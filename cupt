@@ -1,0 +1,792 @@
+#!/usr/bin/perl
+#BEGIN { $SIG{__DIE__} = sub { require Carp; Carp::confess(@_) } }
+
+package Cupt::Error;
+
+use base Error;
+
+package Cupt::Core;
+
+use 5.10.0;
+use warnings;
+use strict;
+
+require Exporter;
+our @ISA = ("Exporter");
+our @EXPORT = qw(&myprint &mywarn &myerr &mydie &myinternaldie);
+
+use Locale::gettext;
+
+import Cupt::Error;
+
+#sub __ {
+#	return gettext(shift);
+#}
+
+textdomain("cupt");
+
+sub myprint {
+	print sprintf(gettext(shift), @_);
+}
+
+sub mywarn {
+	print "W: ";
+	myprint @_;
+	print "\n";
+}
+
+sub myerr {
+	print "E: ";
+	myprint @_;
+	print "\n";
+}
+
+sub mydie {
+	myerr @_;
+	die new Cupt::Error;
+}
+
+sub myinternaldie {
+	print "E:", gettext("internal error: ");
+	myprint $_;
+	exit 255;
+}
+1;
+
+package Cupt::ISCConfigParser;
+
+import Cupt::Core;
+use Parse::RecDescent;
+
+$::RD_AUTOACTION = q{ $item[1] };
+
+my $grammar = q{
+
+	program:
+		  <skip: qr{\s*
+		            (?:(?://|\#)[^\n]*\n\s*|/\*(?:[^*]+|\*(?!/))*\*/\s*)*
+		           }x> statement(s) eofile { $item[2] }
+
+	statement:
+		  simple | nested
+
+	simple:
+		  value(s) ';'
+
+	nested:
+		  value value(s?) '{' statement(s?) '}' ';'
+		  { [ $item[1], $item[2], $item[4] ] }
+
+	value:
+		  /[\w.\/=-]+/ | /"[\w.\/ =-]+"/
+
+	eofile:
+		  /^\Z/
+};
+
+sub new {
+	my $class = shift;
+
+	my $self = {
+		'_statement' => \&_handle_statement,
+	};
+
+	our $grammar;
+	$self->{'_parser'} = new Parse::RecDescent($grammar)
+		or myinternaldie("bad grammar");
+
+	bless $self, $class;
+	return $self;
+}
+
+sub parse_file
+{
+	my $self = shift;
+	my $conffile = shift;
+
+	open(FILE, $conffile) or mydie("unable to open file %s: %s", $conffile, $!);
+	my $text = join("", <FILE>);
+	close FILE;
+
+	defined( my $tree = $self->{'_parser'}->program($text) )
+		or mydie("bad config in file %s", $conffile);
+
+	$self->_recurse( $tree );
+}
+
+sub set_statement_handler
+{
+	my $self = shift;
+	$self->{'_statement'} = shift;
+}
+
+sub _recurse
+{
+	my $self = shift;
+	my $tree = shift;
+
+	foreach my $node ( @{ $tree } ) {
+		if ( ref( $node->[-1] ) eq 'ARRAY' ) {
+
+			# If the last child of the node is an array then the
+			# node must be a nested statement, so handle the
+			# opening line, recurse through the contents and
+			# close with the curly brace
+
+			# $self->open_block_handler->( $node->[0], @{ $node->[1] } );
+			$self->_recurse( $node->[-1] );
+			# $self->close_block_handler->();
+		} else {
+
+			# Normal single-line statement
+
+			$self->statement_handler->( @{ $node } );
+		}
+	}
+}
+
+sub _handle_statement {}
+
+1;
+
+package Cupt::Config;
+
+import Cupt::ISCConfigParser;
+use Hash::Util qw(lock_keys);
+
+import Cupt::Core;
+
+sub new {
+	my $class = shift;
+	# APT::Build-Essential "";
+	# APT::Build-Essential:: "build-essential";
+	# APT::Acquire "";
+	# APT::Acquire::Translation "environment";
+	# APT::Acquire::Max-Default-Age "";
+	# APT::Acquire::Max-Default-Age::Debian-Security "7";
+	# APT::Authentication "";
+	# APT::Authentication::TrustCDROM "true";
+	# Dir::State::cdroms "cdroms.list";
+	# Dir::State::userstatus "status.user";
+	# Dir::Etc::vendorlist "vendors.list";
+	# Dir::Etc::vendorparts "vendors.list.d";
+	# Dir::Bin::methods "/usr/lib/apt/methods";
+	# Dir::Log "var/log/apt";
+	# Dir::Log::Terminal "term.log";
+	# DPkg "";
+	# DPkg::Pre-Install-Pkgs "";
+	# DPkg::Pre-Install-Pkgs:: "/usr/bin/apt-listchanges --apt || test $? -ne 10";
+	# DPkg::Pre-Install-Pkgs:: "/usr/sbin/dpkg-preconfigure --apt || true";
+	# DPkg::Tools "";
+	# DPkg::Tools::Options "";
+	# DPkg::Tools::Options::/usr/bin/apt-listchanges "";
+	# DPkg::Tools::Options::/usr/bin/apt-listchanges::Version "2";
+	#
+	my $self = {
+		'acquire::http::dl-limit' => 0,
+		'apt::install-recommends' => 1,
+		'apt::install-suggests' => 0,
+		'apt::neverautoremove::' => [],
+		'dir' => '/',
+		'dir::bin::dpkg' => '/usr/bin/dpkg',
+		'dir::cache' => 'var/cache/apt',
+		'dir::cache::archives' => 'archives',
+		'dir::etc' => 'etc/apt',
+		'dir::etc::sourcelist' => 'sources.list',
+		'dir::etc::sourceparts' => 'sources.list.d',
+		'dir::etc::parts' => 'apt.conf.d',
+		'dir::etc::main' => 'apt.conf',
+		'dir::etc::preferences' => 'preferences',
+		'dir::state' => 'var/lib/apt',
+		'dir::state::lists' => 'lists',
+		'dir::state::status' => '/var/lib/dpkg/status',
+		'dpkg::pre-install-pkgs::' => [],
+
+		'cupt::delayed-index-parsing' => 1
+	};
+	$self->{'apt::architecture'} = __get_architecture();
+	bless $self, $class;
+	$self->_read_configs();
+	return $self;
+}
+
+sub var {
+	my $self = shift;
+	my $var_name = shift;
+	if (defined ($self->{$var_name})) {
+		return $self->{$var_name};
+	} else {
+		mydie("attempt to get wrong option %s", $var_name);
+	}
+}
+
+sub set_var {
+	my $self = shift;
+	my $var_name = shift;
+	if (defined ($self->{$var_name})) {
+		my $new_value = shift;
+		$self->{$var_name} = $new_value;
+	} else {
+		mydie("attempt to set wrong option %s", $var_name);
+	}
+}
+
+sub _read_configs {
+	#TODO
+}
+
+sub __get_architecture {
+	my $answer = qx/dpkg --print-architecture/;
+	chomp($answer);
+	return $answer;
+}
+
+package Cupt::Cache::Relation;
+
+use fields qw(package_name relation version);
+
+sub new {
+	my $class = shift;
+	my $self = fields::new($class);
+
+	my $unparsed = shift;
+
+	(($self->{package_name}, $self->{relation}, $self->{version}) =
+		$unparsed =~ m/	^(
+			[a-z_0-9-] # package name
+			)
+			\s+ # spaces
+			\( # open relation brace
+				(
+					>=|=|<=|<<|>> # relation
+				)
+				\s+ # spaces
+				(
+					[a-z+0-9~.-] # version
+				)
+			\) # close relation brace
+			$
+		/x
+	) or mydie("failed to parse relation '%s'", $unparsed);
+}
+
+sub __parse_relation_line {
+	my $relation_line = shift;
+	my $relation_substring;
+	my @result;
+	while ($relation_substring = m/(.*?)(?:,|$)/g) {
+		push @result, (new Cupt::Cache::Relation($relation_substring));
+	}
+	return \@result;
+}
+
+1;
+
+package Cupt::Cache::SourcePkg::Version;
+
+import Cupt::Core;
+import Cupt::Cache::Relation;
+
+use Error qw(:try);
+use fields qw(	priority section installed_size maintainer architecture 
+				source_name version depends recommends suggests conflicts breaks
+				enhances provides pre_depends uris size md5sum sha1sum sha256sum
+				short_description long_description homepage
+			);
+
+sub new {
+	my $class = shift;
+	my $self = fields::new($class);
+
+	# parsing fields
+	my $ref_lines = shift;
+
+	foreach my $line (@$ref_lines) {
+		if ($line =~ /^ /) {
+			# part of long description
+			$self->{long_description} .= $line;
+		} else {
+			((my $field_name, my $field_value) = ($line =~ m/^((\w|-)+?): (.*)$/))
+				or mydie("cannot parse line '%s'", $line);
+
+			try {
+				given ($field_name) {
+					when ('Priority') { $self->{priority} = $field_value }
+					when ('Section') { $self->{section} = $field_value }
+					when ('Installed-Size') { $self->{installed_size} = $field_value }
+					when ('Maintainer') { $self->{maintainer} = $field_value }
+					when ('Source') { $self->{source_name} = $field_value }
+					when ('Architecture') { $self->{architecture} = $field_value }
+					when ('Version') { $self->{version} = $field_value }
+					when ('Depends') { $self->{depends} = __parse_relation_line($line) }
+					when ('Recommends') { $self->{recommends} = __parse_relation_line($line) }
+					when ('Suggests') { $self->{suggests} = __parse_relation_line($line) }
+					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($line) }
+					when ('Enhances') { $self->{enhances} = __parse_relation_line($line) }
+					when ('Breaks') { $self->{breaks} = __parse_relation_line($line) }
+					when ('Provides') { $self->{provides} = __parse_relation_line($line) }
+					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($line) }
+					when ('Filename') { push @{$self->{uris}}, $field_value }
+					when ('Size') { $self->{size} = $field_value }
+					when ('MD5sum') { $self->{md5sum} = $field_value }
+					when ('SHA1') { $self->{sha1sum} = $field_value }
+					when ('SHA256') { $self->{sha256sum} = $field_value }
+					when ('Description') { $self->{short_description} = $field_value }
+				}
+			}
+			catch Cupt::Error with {
+				myerr("error while parsing field '%s'", $field_name);
+				my $err = shift;
+				$err->throw();
+			};
+		}
+	}
+
+	return $self;
+}
+
+sub is_hashes_equal {
+	my $self = shift;
+	my $other = shift;
+	return ($self->{md5sum} eq $other->{md5sum} &&
+			$self->{sha1sum} eq $other->{sha1sum} &&
+			$self->{sha256sum} eq $other->{sha256sum});
+}
+
+1;
+
+package Cupt::Cache::BinaryPkg::Version;
+
+import Cupt::Core;
+import Cupt::Cache::Relation;
+
+use Error qw(:try);
+use fields qw(	priority section installed_size maintainer architecture 
+				source_name version depends recommends suggests conflicts breaks
+				enhances provides pre_depends uris size md5sum sha1sum sha256sum
+				short_description long_description homepage
+			);
+
+sub new {
+	my $class = shift;
+	my $self = fields::new($class);
+
+	# parsing fields
+	my $ref_lines = shift;
+
+	foreach my $line (@$ref_lines) {
+		if ($line =~ /^ /) {
+			# part of long description
+			$self->{long_description} .= $line;
+		} else {
+			((my $field_name, my $field_value) = ($line =~ m/^((\w|-)+?): (.*)$/))
+				or mydie("cannot parse line '%s'", $line);
+
+			try {
+				given ($field_name) {
+					when ('Priority') { $self->{priority} = $field_value }
+					when ('Section') { $self->{section} = $field_value }
+					when ('Installed-Size') { $self->{installed_size} = $field_value }
+					when ('Maintainer') { $self->{maintainer} = $field_value }
+					when ('Source') { $self->{source_name} = $field_value }
+					when ('Architecture') { $self->{architecture} = $field_value }
+					when ('Version') { $self->{version} = $field_value }
+					when ('Depends') { $self->{depends} = __parse_relation_line($line) }
+					when ('Recommends') { $self->{recommends} = __parse_relation_line($line) }
+					when ('Suggests') { $self->{suggests} = __parse_relation_line($line) }
+					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($line) }
+					when ('Enhances') { $self->{enhances} = __parse_relation_line($line) }
+					when ('Breaks') { $self->{breaks} = __parse_relation_line($line) }
+					when ('Provides') { $self->{provides} = __parse_relation_line($line) }
+					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($line) }
+					when ('Filename') { push @{$self->{uris}}, $field_value }
+					when ('Size') { $self->{size} = $field_value }
+					when ('MD5sum') { $self->{md5sum} = $field_value }
+					when ('SHA1') { $self->{sha1sum} = $field_value }
+					when ('SHA256') { $self->{sha256sum} = $field_value }
+					when ('Description') { $self->{short_description} = $field_value }
+				}
+			}
+			catch Cupt::Error with {
+				myerr("error while parsing field '%s'", $field_name);
+				my $err = shift;
+				$err->throw();
+			};
+		}
+	}
+
+	return $self;
+}
+
+sub is_hashes_equal {
+	my $self = shift;
+	my $other = shift;
+	return ($self->{md5sum} eq $other->{md5sum} &&
+			$self->{sha1sum} eq $other->{sha1sum} &&
+			$self->{sha256sum} eq $other->{sha256sum});
+}
+
+1;
+
+package Cupt::Cache::Pkg;
+
+use fields qw(_versions _unparsed_versions);
+import Cupt::Cache::Relation;
+
+sub new {
+	my $class = shift;
+	my $self = fields::new($class);
+	return $self;
+}
+
+# adds unparsed entry to package
+sub add_entry {
+	my $self = shift;
+	my $entry = shift;
+	my $delay_parsing = shift;
+	if ($delay_parsing) {
+		push @{$self->{_unparsed_versions}}, $entry;
+	} else {
+		try {
+			$self->_parse_and_merge_version($entry);
+		}
+		catch Cupt::Error with {
+			myerr("error while parsing package info");
+			my $err = shift;
+			$err->throw();
+		};
+	}
+}
+
+# returns reference to versions array
+sub versions {
+	my $self = shift;
+
+	# in case parsing of versions of this package was delayed, we parse them now (on-demand)
+	try {
+		foreach (@{$self->{_unparsed_versions}}) {
+			$self->_parse_and_merge_version($_);
+		}
+	}
+	catch Cupt::Error with {
+		myerr("error while parsing package info on demand (if your want to disable parsing on-demand to get this error earlier, set option 'cupt::delayed-index-parsing' to 0, but doing that will slow down cache initialization)");
+		my $err = shift;
+		$err->throw();
+	};
+
+	return $self->{_versions};
+}
+
+sub _find_version {
+	my $self = shift;
+	my $lookup_version = shift;
+
+	my $version_string_found = 0;
+	foreach my $version (@{$self->versions()})
+	{
+		return $version if ($version->{version} eq $lookup_version);
+	}
+	return undef;
+}
+
+sub _parse_and_merge_version {
+	# parsing
+	my $self = shift;
+	my $entry = shift;
+	my $parsed_version;
+	try {
+		$parsed_version = $self->_construct_version($entry);
+	}
+	catch Cupt::Error with {
+		myerr("error while parsing new version entry");
+		my $err = shift;
+		$err->throw();
+	};
+
+	# merging
+	try {
+		my $found_version = $self->_find_version($parsed_version->{version});
+		if (!defined($found_version)) {
+			# no such version before, just add it
+			push @{$self->{_versions}}, $parsed_version;
+		} else {
+			# there is such version string
+
+			# checking hash sums
+			if (is_hashes_equal($found_version, $parsed_version))
+			{
+				# ok, this is the same entry; looking maybe it defines new uri for package?
+				my $uri_from_parsed_version = $parsed_version->{uris}->[0];
+				if (!(grep $_ eq $uri_from_parsed_version, @$found_version->{uris})) {
+					# yes, it defines, so adding it
+					push @{$found_version->{uris}}, $uri_from_parsed_version;
+				}
+			} else {
+				# err, no, this is different package :(
+				# just skip it for now
+			}
+		}
+	}
+	catch Cupt::Error with {
+		myerr("error while merging version '%s'", $parsed_version->{version});
+		my $err = shift;
+		$err->throw();
+	};
+}
+
+1;
+
+package Cupt::Cache::SourcePkg;
+
+use base qw(Cupt::Cache::Pkg);
+
+sub _construct_version {
+	my $entry = shift;
+	return new Cupt::Cache::SourcePkg::Version($entry);
+}
+
+1;
+
+package Cupt::Cache::BinaryPkg;
+
+use base qw(Cupt::Cache::Pkg);
+
+sub _construct_version {
+	my $entry = shift;
+	return new Cupt::Cache::BinaryPkg::Version($entry);
+}
+
+1;
+
+package Cupt::Cache;
+
+import Cupt::Core;
+use fields qw(source_packages binary_packages config);
+use Error qw(:try);
+
+sub new {
+	my $class = shift;
+	my $self = fields::new($class);
+	$self->{config} = shift;
+	my $ref_index_entries;
+	try {
+		$ref_index_entries = $self->_parse_sources_lists();
+	}
+	catch Cupt::Error with {
+		myerr("error while parsing sources list");
+		my $err = shift;
+		$err->throw();
+	};
+	my @index_files_to_parse = map { $self->_target_path_for_source($_) } @$ref_index_entries;
+	foreach my $idx (0 .. $#index_files_to_parse) {
+		try {
+			$self->_process_index_file($index_files_to_parse[$idx], $ref_index_entries->[$idx]{'type'});
+		}
+		catch Cupt::Error with {
+			mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
+		};
+	}
+	return $self;
+}
+
+sub _parse_sources_lists {
+	my $self = shift;
+	my $root_prefix = $self->{config}->var('dir');
+	my $etc_dir = $self->{config}->var('dir::etc');
+
+	my $parts_dir = $self->{config}->var('dir::etc::sourceparts');
+	my @source_files = glob("$root_prefix$etc_dir/$parts_dir/*");
+
+	my $main_file = $self->{config}->var('dir::etc::sourcelist');
+	push @source_files, "$root_prefix$etc_dir/$main_file";
+
+	my @result;
+	foreach (@source_files) {
+		push @result, __parse_source_list($_);
+	}
+
+	return \@result;
+}
+
+sub __parse_source_list {
+	my $file = shift;
+	my @result;
+	open(HFILE, '<', "$file") or mydie("unable to open file %s: %s", $file, $!);
+	while (<HFILE>) {
+		chomp;
+		# skip all empty lines and lines with comments
+		next if /^\s*(#.*)?$/;
+
+		my %entry;
+		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
+		#print %entry;
+
+		mydie("incorrent source line at file %s, line %d", $file, $.) if (!scalar @sections);
+		mydie("incorrent source type at file %s, line %d", $file, $.)
+			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
+
+		map { $entry{'section'} = $_; push @result, { %entry }; } @sections;
+	}
+	close(HFILE) or mydie("unable to close file %s: %s", $file, $!);
+	return @result;
+}
+
+sub _process_index_file {
+	my $self = shift;
+	my $file = shift;
+	my $type = shift;
+
+	#print STDERR "$file, $type\n";
+
+	my $package_class_constructor;
+	my $packages_storage;
+	if ($type eq 'deb') {
+		$package_class_constructor = sub { return new Cupt::Cache::BinaryPkg() };
+		$packages_storage = $self->{binary_packages};
+	} elsif ($type eq 'deb-src') {
+		$package_class_constructor = sub { return new Cupt::Cache::SourcePkg() };
+		$packages_storage = $self->{source_packages};
+	}
+
+	open(INDEX, '<', $file) or mydie("unable to open index file '%s'", $file);
+
+	my $current_package_name;
+	my @accumulated;
+	my $is_parsing_delayed = $self->{config}->var('cupt::delayed-index-parsing');
+	while (<INDEX>) {
+		chomp;
+		try {
+			if ($_ eq "") {
+				defined ($current_package_name) or mydie("unexpected 'Package' line");
+				# end of entry, adding accumulated info
+				$packages_storage->{$current_package_name} //= $package_class_constructor->();
+				$packages_storage->{$current_package_name}->add_entry([ @accumulated ], $is_parsing_delayed);
+				@accumulated = ();
+				undef $current_package_name;
+			} elsif (/^Package: (.*)$/) {
+				# this is new package name
+				$current_package_name = $1;
+
+				# check it for correctness
+				($current_package_name =~ /^[a-z0-9.+-]+$/)
+					or mydie("bad package name '%s'", $current_package_name);
+			} else {
+				# this is some line in entry
+				push @accumulated, $_;
+			}
+		}
+		catch Cupt::Error with {
+			myerr("error parsing index file '%s', line '%d'", $file, $.);
+			my $err = shift;
+			$err->throw();
+		};
+	}
+
+	close(INDEX) or mydie("unable to close index file '%s'", $file);
+}
+
+sub _target_path_for_source {
+	my $self = shift;
+	my $entry = shift;
+	my $arch = $self->{config}->var('apt::architecture');
+	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+
+	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
+	(my $uri_prefix = $entry->{'uri'}) =~ s[^\w+://][];
+
+	# "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
+	$uri_prefix =~ tr[/][_];
+
+	my $filename = join('_',
+		$uri_prefix,
+		'dists',
+		$entry->{'distribution'},
+		$entry->{'section'},
+		$suffix
+	);
+
+	my $dirname = join('',
+		$self->{config}->var('dir'),
+		$self->{config}->var('dir::state'),
+		'/',
+		$self->{config}->var('dir::state::lists')
+	);
+
+	return join('', $dirname, '/', $filename);
+}
+
+package main;
+
+import Cupt::Core;
+import Cupt::Config;
+import Cupt::Cache;
+use Error qw(:try);
+
+my $config;
+try {
+	$config = new Cupt::Config;
+}
+catch Cupt::Error with {
+	myerr("error while loading config");
+	exit 1;
+};
+
+# disable delayed parsing for testing purposes
+# $config->set_var('cupt::delayed-index-parsing', 0);
+
+my $cache;
+try {
+	$cache = new Cupt::Cache($config);
+}
+catch Cupt::Error with {
+	myerr("error while creating package cache");
+	exit 1;
+};
+
+my $command = $ARGV[0];
+
+myerr("no command specified") and exit 2 if (!defined($command));
+
+my %command_handlers = (
+	'config-dump' => \&config_dump
+);
+
+if (defined($command_handlers{$command})) {
+	$command_handlers{$command}->();
+} else {
+	myerr("unrecognized command") and exit 2;
+}
+
+sub config_dump {
+	my $print_key_value = sub {
+		my $key = shift;
+		my $value = shift;
+		print $key, ' ', "\"", $value, "\"\n";
+	};
+
+	our $config;
+	my @keys = sort keys %$config;
+	foreach my $key (@keys) {
+		if (ref($config->{$key}) eq 'ARRAY') {
+			# list
+			my @values = @{$config->{$key}};
+			foreach (@values) {
+				$print_key_value->($key, $_);
+			}
+		} else {
+			# plain var
+			$print_key_value->($key, $config->{$key});
+		}
+	}
+}
+
+__END__
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (c) 2008 Eugene V. Lyubimkin
+Copyright (c) 2005 Matt Dainty.
+
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
