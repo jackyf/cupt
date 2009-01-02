@@ -53,7 +53,7 @@ sub mydie {
 }
 
 sub myinternaldie {
-	print "E:", gettext("internal error: ");
+	print "E: ", gettext("internal error: ");
 	myprint @_;
 	print "\n";
 	exit 255;
