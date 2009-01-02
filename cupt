@@ -54,7 +54,8 @@ sub mydie {
 
 sub myinternaldie {
 	print "E:", gettext("internal error: ");
-	myprint $_;
+	myprint @_;
+	print "\n";
 	exit 255;
 }
 
