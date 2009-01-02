@@ -305,7 +305,7 @@ sub __parse_relation_line {
 	my $relation_line = shift or myinternaldie("relation line is not defined");
 
 	my @result;
-	while ($relation_line =~ m/(.*?)(?:,|$)/g) {
+	while ($relation_line =~ m/\s*(.*?)(?:,|$)/g) {
 		push @result, (new Cupt::Cache::Relation($1));
 	}
 	return \@result;
