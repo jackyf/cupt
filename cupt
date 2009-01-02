@@ -266,7 +266,7 @@ sub __get_architecture {
 package Cupt::Cache::Relation;
 
 use fields qw(package_name relation version);
-use Exporter;
+use Exporter qw(import);
 
 import Cupt::Core;
 
