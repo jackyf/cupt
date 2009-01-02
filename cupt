@@ -421,14 +421,14 @@ sub new {
 					when ('Source') { $self->{source_name} = $field_value }
 					when ('Architecture') { $self->{architecture} = $field_value }
 					when ('Version') { $self->{version} = $field_value }
-					when ('Depends') { $self->{depends} = __parse_relation_line($line) }
-					when ('Recommends') { $self->{recommends} = __parse_relation_line($line) }
-					when ('Suggests') { $self->{suggests} = __parse_relation_line($line) }
-					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($line) }
-					when ('Enhances') { $self->{enhances} = __parse_relation_line($line) }
-					when ('Breaks') { $self->{breaks} = __parse_relation_line($line) }
-					when ('Provides') { $self->{provides} = __parse_relation_line($line) }
-					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($line) }
+					when ('Depends') { $self->{depends} = __parse_relation_line($field_value) }
+					when ('Recommends') { $self->{recommends} = __parse_relation_line($field_value) }
+					when ('Suggests') { $self->{suggests} = __parse_relation_line($field_value) }
+					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($field_value) }
+					when ('Enhances') { $self->{enhances} = __parse_relation_line($field_value) }
+					when ('Breaks') { $self->{breaks} = __parse_relation_line($field_value) }
+					when ('Provides') { $self->{provides} = __parse_relation_line($field_value) }
+					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($field_value) }
 					when ('Filename') { push @{$self->{uris}}, $field_value }
 					when ('Size') { $self->{size} = $field_value }
 					when ('MD5sum') { $self->{md5sum} = $field_value }
