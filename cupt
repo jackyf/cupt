@@ -298,6 +298,7 @@ sub new {
 			$
 		/x
 	) or mydie("failed to parse relation '%s'", $unparsed);
+	return $self;
 }
 
 sub __parse_relation_line {
