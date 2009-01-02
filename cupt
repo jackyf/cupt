@@ -265,7 +265,6 @@ sub __get_architecture {
 
 package Cupt::Cache::Relation;
 
-use fields qw(package_name relation version);
 use Exporter qw(import);
 
 import Cupt::Core;
@@ -274,7 +273,12 @@ our @EXPORT_OK = qw(&__parse_relation_line);
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
+	my $self = {
+		package_name => undef,
+		relation => undef,
+		version => undef,
+	};
+	bless $self => $class;
 
 	my $unparsed = shift;
 
