@@ -1,19 +1,25 @@
 #!/usr/bin/perl
 #BEGIN { $SIG{__DIE__} = sub { require Carp; Carp::confess(@_) } }
 
+package Cupt::Error;
+
+sub new {
+	return bless {};
+}
+
 package Cupt::Core;
 
 use 5.10.0;
 use warnings;
 use strict;
-use Exception::Class ('Cupt::Error');
-use Exception::Class::TryCatch;
 
 require Exporter;
 our @ISA = ("Exporter");
-our @EXPORT = qw(&myprint &mywarn &myerr &mydie &myinternaldie);
+our @EXPORT = qw(&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch);
 
 use Locale::gettext;
+
+import Cupt::Error;
 
 #sub __ {
 #	return gettext(shift);
@@ -37,9 +43,13 @@ sub myerr {
 	print "\n";
 }
 
+sub myredie() {
+	die new Cupt::Error;
+}
+
 sub mydie {
 	myerr @_;
-	die new Cupt::Error;
+	myredie();
 }
 
 sub myinternaldie {
@@ -48,9 +58,20 @@ sub myinternaldie {
 	exit 255;
 }
 
+sub mycatch() {
+	# This subroutine is inspired from David Golden's Exception::Class::TryCatch::&catch
+    my $err = $@;
+    if (UNIVERSAL::isa($err, 'Cupt::Error')) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 1;
 
 package Cupt::ISCConfigParser;
+# This package is modified version of Matt Dainly's BIND::Config::Parser
 
 import Cupt::Core;
 use Parse::RecDescent;
@@ -334,11 +355,11 @@ sub new {
 			}
 		}
 	};
-	if (catch(my $err, ['Cupt::Error']) ) {
+	if (mycatch()) {
 		if (defined($field_name)) {
 			myerr("error while parsing field '%s'", $field_name);
 		}
-		$err->rethrow();
+		myredie();
 	}
 
 	return $self;
@@ -409,11 +430,11 @@ sub new {
 			}
 		}
 	};
-	if (catch(my $err, ['Cupt::Error']) ) {
+	if (mycatch()) {
 		if (defined($field_name)) {
 			myerr("error while parsing field '%s'", $field_name);
 		}
-		$err->rethrow();
+		myredie();
 	}
 	return $self;
 }
@@ -450,9 +471,9 @@ sub add_entry {
 		eval {
 			$self->_parse_and_merge_version($entry);
 		};
-		if (catch(my $err, ['Cupt::Error'])) {
+		if (mycatch()) {
 			myerr("error while parsing package info");
-			$err->rethrow();
+			myredie();
 		}
 	}
 }
@@ -467,9 +488,9 @@ sub versions {
 			$self->_parse_and_merge_version($_);
 		}
 	};
-	if (catch(my $err, ['Cupt::Error'])) {
+	if (mycatch()) {
 		myerr("error while parsing package info on demand (if your want to disable parsing on-demand to get this error earlier, set option 'cupt::delayed-index-parsing' to 0, but doing that will slow down cache initialization)");
-		$err->rethrow();
+		myredie();
 	};
 
 	return $self->{_versions};
@@ -495,9 +516,9 @@ sub _parse_and_merge_version {
 	eval {
 		$parsed_version = $self->_construct_version($entry);
 	};
-	if (catch(my $err, ['Cupt::Error'])) {
+	if (catch()) {
 		myerr("error while parsing new version entry");
-		$err->rethrow();
+		myredie();
 	}
 
 	# merging
@@ -524,9 +545,9 @@ sub _parse_and_merge_version {
 			}
 		}
 	};
-	if (catch(my $err, ['Cupt::Error'])) {
+	if (mycatch()) {
 		myerr("error while merging version '%s'", $parsed_version->{version});
-		$err->rethrow();
+		myredie();
 	};
 }
 
@@ -558,7 +579,6 @@ package Cupt::Cache;
 
 import Cupt::Core;
 use fields qw(source_packages binary_packages config);
-use Exception::Class::TryCatch;
 
 sub new {
 	my $class = shift;
@@ -568,16 +588,16 @@ sub new {
 	eval {
 		$ref_index_entries = $self->_parse_sources_lists();
 	};
-	if (catch(my $err, ['Cupt::Error'])) {
+	if (mycatch()) {
 		myerr("error while parsing sources list");
-		$err->rethrow();
+		myredie();
 	}
 	my @index_files_to_parse = map { $self->_target_path_for_source($_) } @$ref_index_entries;
 	foreach my $idx (0 .. $#index_files_to_parse) {
 		eval {
 			$self->_process_index_file($index_files_to_parse[$idx], $ref_index_entries->[$idx]{'type'});
 		};
-		if (catch(my $err, ['Cupt::Error'])) {
+		if (mycatch()) {
 			mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
 		}
 	}
@@ -670,9 +690,9 @@ sub _process_index_file {
 				push @accumulated, $_;
 			}
 		};
-		if (catch(my $err, ['Cupt::Error'])) {
+		if (mycatch()) {
 			myerr("error parsing index file '%s', line '%d'", $file, $.);
-			$err->rethrow();
+			myredie();
 		}
 	}
 
@@ -714,13 +734,12 @@ package main;
 import Cupt::Core;
 import Cupt::Config;
 import Cupt::Cache;
-use Exception::Class::TryCatch;
 
 my $config;
 eval {
 	$config = new Cupt::Config;
 };
-if (catch(my $err, ['Cupt::Error'])) {
+if (mycatch()) {
 	myerr("error while loading config");
 	exit 1;
 }
@@ -732,7 +751,7 @@ my $cache;
 eval {
 	$cache = new Cupt::Cache($config);
 };
-if (catch(undef, ['Cupt::Error'])) {
+if (mycatch()) {
 	myerr("error while creating package cache");
 	exit 1;
 }
@@ -780,6 +799,7 @@ __END__
 
 Copyright (c) 2008 Eugene V. Lyubimkin
 Copyright (c) 2005 Matt Dainty.
+Copyright (c) 2008 David Golden
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
