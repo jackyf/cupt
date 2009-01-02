@@ -279,8 +279,9 @@ sub new {
 	my $unparsed = shift;
 
 	(($self->{package_name}, $self->{relation}, $self->{version}) =
-		$unparsed =~ m/	^(
-			[a-z_0-9-] # package name
+		$unparsed =~ m/^
+			(
+			[a-z_0-9-]+ # package name
 			)
 			\s+ # spaces
 			\( # open relation brace
@@ -289,7 +290,7 @@ sub new {
 				)
 				\s+ # spaces
 				(
-					[a-z+0-9~.-] # version
+					[a-z+0-9~.-]+ # version
 				)
 			\) # close relation brace
 			$
