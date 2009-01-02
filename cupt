@@ -429,7 +429,7 @@ sub new {
 	my $field_name = undef;
 	eval {
 		foreach my $line (@$ref_lines) {
-			if ($line =~ /^ /) {
+			if ($line =~ /^( |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
 				$self->{long_description} .= $line;
 			} else {
