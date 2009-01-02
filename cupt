@@ -63,6 +63,9 @@ sub mycatch() {
     my $err = $@;
     if (UNIVERSAL::isa($err, 'Cupt::Error')) {
         return 1;
+	} elsif ($err ne "") {
+		# some other error received, propagate it
+		die $err;
     } else {
         return 0;
     }
