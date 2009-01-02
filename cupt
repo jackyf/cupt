@@ -291,7 +291,7 @@ sub new {
 			\s* # possible spaces
 			\( # open relation brace
 				(
-					>=|=|<=|<<|>> # relation
+					>=|=|<=|<<|>>|<|> # relation
 				)
 				\s* # possible spaces
 				(
