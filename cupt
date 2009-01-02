@@ -265,6 +265,11 @@ sub __get_architecture {
 package Cupt::Cache::Relation;
 
 use fields qw(package_name relation version);
+use Exporter;
+
+import Cupt::Core;
+
+our @EXPORT_OK = (&__parse_relation_line);
 
 sub new {
 	my $class = shift;
@@ -381,7 +386,7 @@ sub is_hashes_equal {
 package Cupt::Cache::BinaryPkg::Version;
 
 import Cupt::Core;
-import Cupt::Cache::Relation;
+import Cupt::Cache::Relation qw(__parse_relation_line);
 
 use fields qw(	priority section installed_size maintainer architecture 
 				source_name version depends recommends suggests conflicts breaks
