@@ -270,7 +270,7 @@ use Exporter;
 
 import Cupt::Core;
 
-our @EXPORT_OK = (&__parse_relation_line);
+our @EXPORT_OK = qw(&__parse_relation_line);
 
 sub new {
 	my $class = shift;
