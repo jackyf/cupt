@@ -460,6 +460,7 @@ use constant {
 };
 
 import Cupt::Cache::Relation;
+import Cupt::Core;
 
 sub new {
 	my $class = shift;
@@ -526,7 +527,7 @@ sub _parse_and_merge_version {
 	eval {
 		$parsed_version = $self->_construct_version($entry);
 	};
-	if (catch()) {
+	if (mycatch()) {
 		myerr("error while parsing new version entry");
 		myredie();
 	}
