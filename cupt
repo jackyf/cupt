@@ -454,13 +454,20 @@ sub is_hashes_equal {
 
 package Cupt::Cache::Pkg;
 
-use fields qw(_versions _unparsed_versions);
+use constant {
+	_VERSIONS => 0,
+	_UNPARSED_VERSIONS => 1,
+};
+
 import Cupt::Cache::Relation;
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
-	return $self;
+	my $self = [
+		[], # _versions
+		[], # _unparsed_versions
+	];
+	return bless $self => $class;
 }
 
 # adds unparsed entry to package
@@ -469,7 +476,7 @@ sub add_entry {
 	my $entry = shift;
 	my $delay_parsing = shift;
 	if ($delay_parsing) {
-		push @{$self->{_unparsed_versions}}, $entry;
+		push @{$self->[_UNPARSED_VERSIONS]}, $entry;
 	} else {
 		eval {
 			$self->_parse_and_merge_version($entry);
@@ -487,7 +494,7 @@ sub versions {
 
 	# in case parsing of versions of this package was delayed, we parse them now (on-demand)
 	eval {
-		foreach (@{$self->{_unparsed_versions}}) {
+		foreach (@{$self->[_UNPARSED_VERSIONS]}) {
 			$self->_parse_and_merge_version($_);
 		}
 	};
@@ -496,7 +503,7 @@ sub versions {
 		myredie();
 	};
 
-	return $self->{_versions};
+	return $self->[_VERSIONS];
 }
 
 sub _find_version {
@@ -529,7 +536,7 @@ sub _parse_and_merge_version {
 		my $found_version = $self->_find_version($parsed_version->{version});
 		if (!defined($found_version)) {
 			# no such version before, just add it
-			push @{$self->{_versions}}, $parsed_version;
+			push @{$self->[_VERSIONS]}, $parsed_version;
 		} else {
 			# there is such version string
 
