@@ -727,26 +727,30 @@ sub _process_index_file {
 
 	open(INDEX, '<', $file) or mydie("unable to open index file '%s'", $file);
 
-	my $current_package_name;
 	my @accumulated;
 	my $is_parsing_delayed = $self->{config}->var('cupt::delayed-index-parsing');
 	eval {
 		while (<INDEX>) {
 			chomp;
 			if ($_ eq "") {
-				defined ($current_package_name) or mydie("unexpected 'Package' line");
-				# end of entry, adding accumulated info
-				$packages_storage->{$current_package_name} //= $package_class_constructor->();
-				$packages_storage->{$current_package_name}->add_entry([ @accumulated ], $is_parsing_delayed);
-				@accumulated = ();
-				undef $current_package_name;
-			} elsif (/^Package: (.*)$/) {
-				# this is new package name
-				$current_package_name = $1;
+				scalar @accumulated or mydie("unexpected end of package entry");
 
-				# check it for correctness
-				($current_package_name =~ /^[a-z0-9.+-]+$/)
-					or mydie("bad package name '%s'", $current_package_name);
+				my $first_line = shift @accumulated;
+				if ($first_line =~ /^Package: (.*)$/) {
+					# this is new package name
+					my $current_package_name = $1;
+
+					# check it for correctness
+					($current_package_name =~ /^[a-z0-9.+-]+$/)
+						or mydie("bad package name '%s'", $current_package_name);
+
+					# end of entry, so adding accumulated info
+					$packages_storage->{$current_package_name} //= $package_class_constructor->();
+					$packages_storage->{$current_package_name}->add_entry([ @accumulated ], $is_parsing_delayed);
+					@accumulated = ();
+				} else {
+					mydie("expected 'Package' line, but haven't got it");
+				}
 			} else {
 				# this is some line in entry
 				push @accumulated, $_;
