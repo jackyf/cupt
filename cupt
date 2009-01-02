@@ -288,12 +288,12 @@ sub new {
 
 	if ($unparsed =~ m/
 			\G # start at end of previous regex
-			\s+ # spaces
+			\s* # possible spaces
 			\( # open relation brace
 				(
 					>=|=|<=|<<|>> # relation
 				)
-				\s+ # spaces
+				\s* # possible spaces
 				(
 					[a-zA-Z+0-9~:.-]+ # version
 				)
