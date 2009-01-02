@@ -410,7 +410,7 @@ sub new {
 				# part of long description
 				$self->{long_description} .= $line;
 			} else {
-				(($field_name, my $field_value) = ($line =~ m/^((\w|-)+?): (.*)$/))
+				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)$/))
 					or mydie("cannot parse line '%s'", $line);
 
 				given ($field_name) {
