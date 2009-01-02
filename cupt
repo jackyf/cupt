@@ -476,6 +476,7 @@ sub new {
 					when ('SHA1') { $self->{sha1sum} = $field_value }
 					when ('SHA256') { $self->{sha256sum} = $field_value }
 					when ('Description') { $self->{short_description} = $field_value }
+					# default { mydie("unexpected field '%s'", $field_name) }
 				}
 				undef $field_name;
 			}
