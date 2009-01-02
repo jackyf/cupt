@@ -756,7 +756,7 @@ if (mycatch()) {
 }
 
 # disable delayed parsing for testing purposes
-# $config->set_var('cupt::delayed-index-parsing', 0);
+$config->set_var('cupt::delayed-index-parsing', 0);
 
 my $cache;
 eval {
