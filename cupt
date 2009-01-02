@@ -278,21 +278,23 @@ sub new {
 
 	my $unparsed = shift;
 
-	(($self->{package_name}, $self->{relation}, $self->{version}) =
+	(($self->{package_name}, undef, $self->{relation}, $self->{version}) =
 		$unparsed =~ m/^
 			(
 			[a-z_0-9-]+ # package name
 			)
 			\s+ # spaces
-			\( # open relation brace
-				(
-					>=|=|<=|<<|>> # relation
-				)
-				\s+ # spaces
-				(
-					[a-z+0-9~.-]+ # version
-				)
-			\) # close relation brace
+			(
+				\( # open relation brace
+					(
+						>=|=|<=|<<|>> # relation
+					)
+					\s+ # spaces
+					(
+						[a-z+0-9~.-]+ # version
+					)
+				\) # close relation brace
+			)? # versioned part may be absent
 			$
 		/x
 	) or mydie("failed to parse relation '%s'", $unparsed);
