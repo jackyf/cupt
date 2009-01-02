@@ -413,16 +413,34 @@ package Cupt::Cache::BinaryPkg::Version;
 import Cupt::Core;
 import Cupt::Cache::Relation qw(__parse_relation_line);
 
-use fields qw(	priority section installed_size maintainer architecture 
-				source_name version depends recommends suggests conflicts breaks
-				enhances provides pre_depends uris size md5sum sha1sum sha256sum
-				short_description long_description homepage
-			);
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
-
+	my $self = {
+		priority => undef,
+		section => undef,
+		installed_size => undef,
+		maintainer => undef,
+		architecture => undef,
+		source_name => undef,
+		version => undef,
+		depends => undef,
+		recommends => undef,
+		suggests => undef,
+		conflicts => undef,
+		breaks => undef,
+		enhances => undef,
+		provides => undef,
+		pre_depends => undef,
+		uris => [],
+		size => undef,
+		md5sum => undef,
+		sha1sum => undef,
+		sha256sum => undef,
+		short_description => undef,
+		long_description => undef,
+		homepage => undef,
+	};
 	# parsing fields
 	my $ref_lines = shift;
 
