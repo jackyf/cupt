@@ -278,26 +278,40 @@ sub new {
 
 	my $unparsed = shift;
 
-	(($self->{package_name}, undef, $self->{relation}, $self->{version}) =
-		$unparsed =~ m/^
-			(
-			[a-z_0-9-]+ # package name
-			)
+	if ($unparsed =~ m/^([a-z_0-9.-]+)/g) {
+		# package name is here
+		$self->{package_name} = $1;
+	} else {
+		# no package name, badly
+		mydie("failed to parse package name in relation '%s'", $unparsed);
+	}
+
+	if ($unparsed =~ m/
+			\G # start at end of previous regex
 			\s+ # spaces
-			(
-				\( # open relation brace
-					(
-						>=|=|<=|<<|>> # relation
-					)
-					\s+ # spaces
-					(
-						[a-z+0-9~.-]+ # version
-					)
-				\) # close relation brace
-			)? # versioned part may be absent
+			\( # open relation brace
+				(
+					>=|=|<=|<<|>> # relation
+				)
+				\s+ # spaces
+				(
+					[a-zA-Z+0-9~.-]+ # version
+				)
+			\) # close relation brace
 			$
-		/x
-	) or mydie("failed to parse relation '%s'", $unparsed);
+		/xgc
+	)
+	{
+		# versioned info is here, assigning
+		($self->{relation}, $self->{version}) = ($1, $2);
+	} else {
+		# $unparsed =~ m/\G(.*)$/g;
+		# print "$1\n";
+		# no valid versioned info, maybe empty?
+		($unparsed =~ m/\G\s*$/g) # empty versioned info, this is also acceptable
+			or mydie("failed to parse versioned info in relation '%s'", $unparsed); # what else can we do?..
+	}
+
 	return $self;
 }
 
