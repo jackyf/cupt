@@ -305,8 +305,6 @@ sub new {
 		# versioned info is here, assigning
 		($self->{relation}, $self->{version}) = ($1, $2);
 	} else {
-		# $unparsed =~ m/\G(.*)$/g;
-		# print "$1\n";
 		# no valid versioned info, maybe empty?
 		($unparsed =~ m/\G\s*$/g) # empty versioned info, this is also acceptable
 			or mydie("failed to parse versioned info in relation '%s'", $unparsed); # what else can we do?..
