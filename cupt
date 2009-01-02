@@ -278,7 +278,7 @@ sub new {
 
 	my $unparsed = shift;
 
-	if ($unparsed =~ m/^([a-z_0-9.-]+)/g) {
+	if ($unparsed =~ m/^([a-z_0-9.+-]+)/g) {
 		# package name is here
 		$self->{package_name} = $1;
 	} else {
@@ -295,7 +295,7 @@ sub new {
 				)
 				\s+ # spaces
 				(
-					[a-zA-Z+0-9~.-]+ # version
+					[a-zA-Z+0-9~:.-]+ # version
 				)
 			\) # close relation brace
 			$
