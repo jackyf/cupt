@@ -580,6 +580,7 @@ package Cupt::Cache::BinaryPkg;
 use base qw(Cupt::Cache::Pkg);
 
 sub _construct_version {
+	shift; # $self skipped
 	my $entry = shift;
 	return new Cupt::Cache::BinaryPkg::Version($entry);
 }
