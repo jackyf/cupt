@@ -672,6 +672,8 @@ sub _process_index_file {
 	} elsif ($type eq 'deb-src') {
 		$package_class_constructor = sub { return new Cupt::Cache::SourcePkg() };
 		$packages_storage = $self->{source_packages};
+		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
+		return;
 	}
 
 	open(INDEX, '<', $file) or mydie("unable to open index file '%s'", $file);
