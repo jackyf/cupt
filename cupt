@@ -668,9 +668,9 @@ sub _process_index_file {
 	my $current_package_name;
 	my @accumulated;
 	my $is_parsing_delayed = $self->{config}->var('cupt::delayed-index-parsing');
-	while (<INDEX>) {
-		chomp;
-		eval {
+	eval {
+		while (<INDEX>) {
+			chomp;
 			if ($_ eq "") {
 				defined ($current_package_name) or mydie("unexpected 'Package' line");
 				# end of entry, adding accumulated info
@@ -689,11 +689,11 @@ sub _process_index_file {
 				# this is some line in entry
 				push @accumulated, $_;
 			}
-		};
-		if (mycatch()) {
-			myerr("error parsing index file '%s', line '%d'", $file, $.);
-			myredie();
 		}
+	};
+	if (mycatch()) {
+		myerr("error parsing index file '%s', line '%d'", $file, $.);
+		myredie();
 	}
 
 	close(INDEX) or mydie("unable to close index file '%s'", $file);
