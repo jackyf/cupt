@@ -802,6 +802,8 @@ sub _target_path_for_source {
 
 package main;
 
+use Getopt::Long;
+
 import Cupt::Core;
 import Cupt::Config;
 import Cupt::Cache;
@@ -826,6 +828,9 @@ if (mycatch()) {
 	myerr("error while creating package cache");
 	exit 1;
 }
+
+# strip options out (for now)
+GetOptions();
 
 my $command = $ARGV[0];
 
