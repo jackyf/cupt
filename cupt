@@ -80,27 +80,32 @@ package Cupt::ISCConfigParser;
 import Cupt::Core;
 use Parse::RecDescent;
 
-$::RD_AUTOACTION = q{ $item[1] };
-
 my $grammar = q{
+
+	<autotree>
 
 	program:
 		  <skip: qr{\s*
 		            (?:(?://|\#)[^\n]*\n\s*|/\*(?:[^*]+|\*(?!/))*\*/\s*)*
-		           }x> statement(s) eofile { $item[2] }
+		           }x> statement(s?) eofile { $item[2] }
 
 	statement:
-		  simple | nested
+		  simple | nested | list
 
 	simple:
-		  value(s) ';'
+		  name value ';'
 
 	nested:
-		  value value(s?) '{' statement(s?) '}' ';'
-		  { [ $item[1], $item[2], $item[4] ] }
+		  name '{' statement(s?) '}' ';'
+
+	list:
+		  name '{' (value ';')(s?) '}' ';'
+
+	name:
+		  /([\w\/-]+::)*([\w\/-]+)/
 
 	value:
-		  /[\w.\/=-]+/ | /"[\w.\/ =-]+"/
+		  /".*"/
 
 	eofile:
 		  /^\Z/
@@ -110,7 +115,8 @@ sub new {
 	my $class = shift;
 
 	my $self = {
-		'_statement' => \&_handle_statement,
+		'_regular_handler' => undef,
+		'_list_handler' => undef,
 	};
 
 	$self->{'_parser'} = new Parse::RecDescent($grammar)
@@ -120,8 +126,7 @@ sub new {
 	return $self;
 }
 
-sub parse_file
-{
+sub parse_file {
 	my $self = shift;
 	my $conffile = shift;
 
@@ -135,38 +140,30 @@ sub parse_file
 	$self->_recurse( $tree );
 }
 
-sub set_statement_handler
-{
+sub set_regular_handler {;
 	my $self = shift;
-	$self->{'_statement'} = shift;
+	$self->{'_regular_handler'} = shift;
 }
 
-sub _recurse
+sub set_list_handler
 {
+	my $self = shift;
+	$self->{'_list_handler'} = shift;
+}
+
+sub _recurse {
 	my $self = shift;
 	my $tree = shift;
 
-	foreach my $node ( @{ $tree } ) {
-		if ( ref( $node->[-1] ) eq 'ARRAY' ) {
-
-			# If the last child of the node is an array then the
-			# node must be a nested statement, so handle the
-			# opening line, recurse through the contents and
-			# close with the curly brace
-
-			# $self->open_block_handler->( $node->[0], @{ $node->[1] } );
-			$self->_recurse( $node->[-1] );
-			# $self->close_block_handler->();
+	foreach my $node (@{$tree}) {
+		if (exists $node->{'simple'}) {
+			my $item = $node->{'simple'};
+			$self->{'_regular_handler'}->( $item->{'name'}->{'__VALUE__'}, $item->{'value'}->{'__VALUE__'} );
 		} else {
-
-			# Normal single-line statement
-
-			$self->statement_handler->( @{ $node } );
+			#TODO: list parsing and recursion
 		}
 	}
 }
-
-sub _handle_statement {}
 
 1;
 
@@ -181,10 +178,6 @@ sub new {
 	# APT::Build-Essential:: "build-essential";
 	# APT::Acquire "";
 	# APT::Acquire::Translation "environment";
-	# APT::Acquire::Max-Default-Age "";
-	# APT::Acquire::Max-Default-Age::Debian-Security "7";
-	# APT::Authentication "";
-	# APT::Authentication::TrustCDROM "true";
 	# Dir::State::cdroms "cdroms.list";
 	# Dir::State::userstatus "status.user";
 	# Dir::Etc::vendorlist "vendors.list";
@@ -192,36 +185,37 @@ sub new {
 	# Dir::Bin::methods "/usr/lib/apt/methods";
 	# Dir::Log "var/log/apt";
 	# Dir::Log::Terminal "term.log";
-	# DPkg "";
-	# DPkg::Pre-Install-Pkgs "";
-	# DPkg::Pre-Install-Pkgs:: "/usr/bin/apt-listchanges --apt || test $? -ne 10";
-	# DPkg::Pre-Install-Pkgs:: "/usr/sbin/dpkg-preconfigure --apt || true";
-	# DPkg::Tools "";
-	# DPkg::Tools::Options "";
-	# DPkg::Tools::Options::/usr/bin/apt-listchanges "";
-	# DPkg::Tools::Options::/usr/bin/apt-listchanges::Version "2";
 	#
 	my $self = {
-		'acquire::http::dl-limit' => 0,
-		'apt::install-recommends' => 1,
-		'apt::install-suggests' => 0,
-		'apt::neverautoremove::' => [],
-		'dir' => '/',
-		'dir::bin::dpkg' => '/usr/bin/dpkg',
-		'dir::cache' => 'var/cache/apt',
-		'dir::cache::archives' => 'archives',
-		'dir::etc' => 'etc/apt',
-		'dir::etc::sourcelist' => 'sources.list',
-		'dir::etc::sourceparts' => 'sources.list.d',
-		'dir::etc::parts' => 'apt.conf.d',
-		'dir::etc::main' => 'apt.conf',
-		'dir::etc::preferences' => 'preferences',
-		'dir::state' => 'var/lib/apt',
-		'dir::state::lists' => 'lists',
-		'dir::state::status' => '/var/lib/dpkg/status',
-		'dpkg::pre-install-pkgs::' => [],
+		regular_vars => {
+			'acquire::http::dl-limit' => 0,
+			'apt::acquire::max-default-age::debian-security' => 7,
+			'apt::authentication::trustcdrom' => 0,
+			'apt::install-recommends' => 1,
+			'apt::install-suggests' => 0,
+			'dir' => '/',
+			'dir::bin::dpkg' => '/usr/bin/dpkg',
+			'dir::cache' => 'var/cache/apt',
+			'dir::cache::archives' => 'archives',
+			'dir::etc' => 'etc/apt',
+			'dir::etc::sourcelist' => 'sources.list',
+			'dir::etc::sourceparts' => 'sources.list.d',
+			'dir::etc::parts' => 'apt.conf.d',
+			'dir::etc::main' => 'apt.conf',
+			'dir::etc::preferences' => 'preferences',
+			'dir::state' => 'var/lib/apt',
+			'dir::state::lists' => 'lists',
+			'dir::state::status' => '/var/lib/dpkg/status',
+			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 
-		'cupt::delayed-index-parsing' => 1
+			'cupt::delayed-index-parsing' => 1
+		},
+
+		list_vars => {
+			'apt::neverautoremove' => [],
+			'dpkg::pre-install-pkgs' => [],
+		},
+
 	};
 	$self->{'apt::architecture'} = __get_architecture();
 	bless $self, $class;
@@ -232,19 +226,32 @@ sub new {
 sub var {
 	my $self = shift;
 	my $var_name = shift;
-	if (defined ($self->{$var_name})) {
-		return $self->{$var_name};
+	if (defined ($self->{regular_vars}->{$var_name})) {
+		return $self->{regular_vars}->{$var_name};
+	} elsif (defined ($self->{list_vars}->{$var_name})) {
+		return $self->{list_vars}->{$var_name};
 	} else {
 		mydie("attempt to get wrong option %s", $var_name);
 	}
 }
 
-sub set_var {
+sub set_regular_var {
 	my $self = shift;
-	my $var_name = shift;
-	if (defined ($self->{$var_name})) {
+	my $var_name = lc(shift);
+	if (defined ($self->{regular_vars}->{$var_name})) {
 		my $new_value = shift;
-		$self->{$var_name} = $new_value;
+		$self->{regular_vars}->{$var_name} = $new_value;
+	} else {
+		mydie("attempt to set wrong option %s", $var_name);
+	}
+}
+
+sub set_list_var {
+	my $self = shift;
+	my $var_name = lc(shift);
+	if (defined ($self->{list_vars}->{$var_name})) {
+		my $new_value = shift;
+		push @{$self->{list_vars}->{$var_name}}, $new_value;
 	} else {
 		mydie("attempt to set wrong option %s", $var_name);
 	}
@@ -253,12 +260,21 @@ sub set_var {
 sub _read_configs {
 	my $self = shift;
 	my $parser = new Cupt::ISCConfigParser;
-	my $new_option_sub = sub {
+
+	my $regular_option_sub = sub {
 		my $option_name = shift;
 		my $value = shift;
-		$self->set_var($option_name, $value);
+		$value =~ s/"(.*)"/$1/;
+		$self->set_regular_var($option_name, $value);
 	};
-	$parser->set_statement_handler($new_option_sub);
+
+	my $list_option_sub = sub {
+		my $option_name = shift;
+		map { s/"(.*)"/$1/; $self->set_list_var($option_name, $_); } @_;
+	};
+
+	$parser->set_regular_handler($regular_option_sub);
+	$parser->set_list_handler($list_option_sub);
 
 	my $root_prefix = $self->var('dir');
 	my $etc_dir = $self->var('dir::etc');
@@ -886,7 +902,7 @@ if (mycatch()) {
 }
 
 # disable delayed parsing for testing purposes
-# $config->set_var('cupt::delayed-index-parsing', 0);
+# $config->set_regular_var('cupt::delayed-index-parsing', 0);
 
 # strip options out (for now)
 GetOptions();
@@ -924,17 +940,16 @@ sub config_dump {
 		print $key, ' ', "\"", $value, "\"\n";
 	};
 
-	my @keys = sort keys %$config;
-	foreach my $key (@keys) {
-		if (ref($config->{$key}) eq 'ARRAY') {
-			# list
-			my @values = @{$config->{$key}};
-			foreach (@values) {
-				$print_key_value->($key, $_);
-			}
-		} else {
-			# plain var
-			$print_key_value->($key, $config->{$key});
+	my @regular_keys = sort keys %{$config->{regular_vars}};
+	foreach my $key (@regular_keys) {
+		$print_key_value->($key, $config->{regular_vars}->{$key});
+	}
+
+	my @list_keys = sort keys %{$config->{list_vars}};
+	foreach my $key (@list_keys) {
+		my @values = @{$config->{list_vars}->{$key}};
+		foreach (@values) {
+			$print_key_value->("${key}::", $_);
 		}
 	}
 }
