@@ -722,10 +722,10 @@ sub _process_index_file {
 	my $packages_storage;
 	if ($type eq 'deb') {
 		$package_class_constructor = sub { return new Cupt::Cache::BinaryPkg() };
-		$packages_storage = $self->{binary_packages};
+		$packages_storage = \$self->{binary_packages};
 	} elsif ($type eq 'deb-src') {
 		$package_class_constructor = sub { return new Cupt::Cache::SourcePkg() };
-		$packages_storage = $self->{source_packages};
+		$packages_storage = \$self->{source_packages};
 		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
 		return;
 	}
@@ -750,8 +750,8 @@ sub _process_index_file {
 						or mydie("bad package name '%s'", $current_package_name);
 
 					# end of entry, so adding accumulated info
-					$packages_storage->{$current_package_name} //= $package_class_constructor->();
-					$packages_storage->{$current_package_name}->add_entry([ @accumulated ], $is_parsing_delayed);
+					$$packages_storage->{$current_package_name} //= $package_class_constructor->();
+					$$packages_storage->{$current_package_name}->add_entry([ @accumulated ], $is_parsing_delayed);
 					@accumulated = ();
 				} else {
 					mydie("expected 'Package' line, but haven't got it");
