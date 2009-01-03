@@ -815,6 +815,7 @@ sub _target_path_for_source {
 package main;
 
 use Getopt::Long;
+use Locale::gettext;
 
 import Cupt::Core;
 import Cupt::Config;
@@ -844,12 +845,13 @@ if (mycatch()) {
 # strip options out (for now)
 GetOptions();
 
-my $command = $ARGV[0];
+my $command = shift @ARGV;
 
 myerr("no command specified") and exit 2 if (!defined($command));
 
 my %command_handlers = (
-	'config-dump' => \&config_dump
+	'config-dump' => \&config_dump,
+	'show' => \&show_package_versions,
 );
 
 if (defined($command_handlers{$command})) {
@@ -876,6 +878,41 @@ sub config_dump {
 		} else {
 			# plain var
 			$print_key_value->($key, $config->{$key});
+		}
+	}
+}
+
+sub show_package_versions {
+	my @package_names = @ARGV;
+	foreach my $package_name (@package_names) {
+		my $ref_package = exists $cache->{binary_packages}->{$package_name} ?
+			$cache->{binary_packages}->{$package_name} : undef;
+
+		if (!defined($ref_package)) {
+			mywarn("know nothing about package '%s', skipped", $package_name);
+			next;
+		}
+
+		my $ref_versions = $ref_package->versions();
+
+		my $p = sub { print gettext(shift), ': ', shift, "\n" };
+		foreach my $version (@$ref_versions) {
+			$p->('Package', $package_name);
+			$p->('Priority', $version->{priority});
+			$p->('Section', $version->{section});
+			$p->('Installed-Size', $version->{installed_size});
+			$p->('Maintainer', $version->{maintainer});
+			$p->('Architecture', $version->{architecture});
+			$p->('Version', $version->{version});
+			$p->('Depends', $version->{depends}) if defined($version->{depends});
+			$p->('Recommends', $version->{recommends}) if defined($version->{recommends});
+			$p->('Suggests', $version->{suggests}) if defined($version->{suggests});
+			$p->('Conflicts', $version->{conflicts}) if defined($version->{conflicts});
+			$p->('Provides', $version->{provides}) if defined($version->{provides});
+			$p->('Enhances', $version->{enhances}) if defined($version->{enhances});
+			$p->('Description', $version->{short_description});
+			# TODO: translated descriptions...
+			map { print "$_\n"} @{$version->{long_description}};
 		}
 	}
 }
