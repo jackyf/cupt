@@ -269,7 +269,7 @@ use Exporter qw(import);
 
 import Cupt::Core;
 
-our @EXPORT_OK = qw(&__parse_relation_line);
+our @EXPORT_OK = qw(&__parse_relation_line &stringify_relations);
 
 sub new {
 	my $class = shift;
@@ -315,6 +315,30 @@ sub new {
 	}
 
 	return $self;
+}
+
+sub stringify {
+	my $self = shift;
+	my $result = $self->{package_name};
+	if (defined($self->{relation})) {
+		# there is versioned info
+		$result .= join('', " (", $self->{relation}, ' ', $self->{version}, ')');
+	}
+	return $result;
+}
+
+sub stringify_relations {
+	my @relation_strings;
+	foreach my $object (@{$_[0]}) {
+		if (UNIVERSAL::isa($object, 'Cupt::Cache::Relation')) {
+			# it's ordinary relation object
+			push @relation_strings, $object->stringify();
+		} else {
+			# it have be an 'OR' group of relations
+			push @relation_strings, join(" | ", map { $_->stringify() } @$object);
+		}
+	}
+	return join(", ", @relation_strings);
 }
 
 sub __parse_relation_line {
@@ -820,6 +844,7 @@ use Locale::gettext;
 import Cupt::Core;
 import Cupt::Config;
 import Cupt::Cache;
+import Cupt::Cache::Relation qw(stringify_relations);
 
 my $config;
 eval {
@@ -904,12 +929,12 @@ sub show_package_versions {
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
 			$p->('Version', $version->{version});
-			$p->('Depends', $version->{depends}) if defined($version->{depends});
-			$p->('Recommends', $version->{recommends}) if defined($version->{recommends});
-			$p->('Suggests', $version->{suggests}) if defined($version->{suggests});
-			$p->('Conflicts', $version->{conflicts}) if defined($version->{conflicts});
-			$p->('Provides', $version->{provides}) if defined($version->{provides});
-			$p->('Enhances', $version->{enhances}) if defined($version->{enhances});
+			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
+			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
+			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
+			$p->('Conflicts', stringify_relations($version->{conflicts})) if defined($version->{conflicts});
+			$p->('Provides', stringify_relations($version->{provides})) if defined($version->{provides});
+			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
 			map { print "$_\n"} @{$version->{long_description}};
