@@ -468,6 +468,7 @@ sub new {
 		short_description => undef,
 		long_description => undef,
 		homepage => undef,
+		tags => undef,
 	};
 	# parsing fields
 	my $ref_lines = shift;
@@ -504,6 +505,8 @@ sub new {
 					when ('SHA1') { $self->{sha1sum} = $field_value }
 					when ('SHA256') { $self->{sha256sum} = $field_value }
 					when ('Description') { $self->{short_description} = $field_value }
+					when ('Homepage') { $self->{homepage} = $field_value }
+					when ('Tag') { $self->{tags} = $field_value }
 					# default { mydie("unexpected field '%s'", $field_name) }
 				}
 				undef $field_name;
@@ -938,6 +941,8 @@ sub show_package_versions {
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
 			print $version->{long_description};
+			$p->('Homepage', $version->{homepage}) if defined($version->{homepage});
+			$p->('Tag', $version->{tags}) if defined($version->{tags});
 			print "\n";
 		}
 	}
