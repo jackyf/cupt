@@ -565,6 +565,18 @@ sub _find_version {
 	my $lookup_version = shift;
 
 	my $version_string_found = 0;
+	foreach my $version (@{$self->[_VERSIONS]})
+	{
+		return $version if ($version->{version} eq $lookup_version);
+	}
+	return undef;
+}
+
+sub find_version {
+	my $self = shift;
+	my $lookup_version = shift;
+
+	my $version_string_found = 0;
 	foreach my $version (@{$self->versions()})
 	{
 		return $version if ($version->{version} eq $lookup_version);
