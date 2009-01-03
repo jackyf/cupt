@@ -113,7 +113,6 @@ sub new {
 		'_statement' => \&_handle_statement,
 	};
 
-	our $grammar;
 	$self->{'_parser'} = new Parse::RecDescent($grammar)
 		or myinternaldie("bad grammar");
 
@@ -252,7 +251,27 @@ sub set_var {
 }
 
 sub _read_configs {
-	#TODO
+	my $self = shift;
+	my $parser = new Cupt::ISCConfigParser;
+	my $new_option_sub = sub {
+		my $option_name = shift;
+		my $value = shift;
+		$self->set_var($option_name, $value);
+	};
+	$parser->set_statement_handler($new_option_sub);
+
+	my $root_prefix = $self->var('dir');
+	my $etc_dir = $self->var('dir::etc');
+
+	my $parts_dir = $self->var('dir::etc::parts');
+	my @config_files = glob("$root_prefix$etc_dir/$parts_dir/*");
+
+	my $main_file = $self->var('dir::etc::main');
+	push @config_files, "$root_prefix$etc_dir/$main_file";
+
+	foreach (@config_files) {
+		$parser->parse_file($_);
+	}
 }
 
 sub __get_architecture {
