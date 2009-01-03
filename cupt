@@ -696,13 +696,27 @@ sub new {
 		myerr("error while parsing sources list");
 		myredie();
 	}
+
+	# determining which parts of cache we wish to build
+	my %build_config = (
+		-source => 1,
+		-binary => 1,
+		@_ # applying passed parameters
+	);
+
 	my @index_files_to_parse = map { $self->_target_path_for_source($_) } @$ref_index_entries;
 	foreach my $idx (0 .. $#index_files_to_parse) {
-		eval {
-			$self->_process_index_file($index_files_to_parse[$idx], $ref_index_entries->[$idx]{'type'});
-		};
-		if (mycatch()) {
-			mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
+		my $source_type = $ref_index_entries->[$idx]{'type'};
+		# don't parse unneeded indexes
+		if (($source_type eq 'deb' && $build_config{'-binary'}) ||
+			($source_type eq 'deb-src' && $build_config{'-source'}))
+		{
+			eval {
+				$self->_process_index_file($index_files_to_parse[$idx], $source_type);
+			};
+			if (mycatch()) {
+				mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
+			}
 		}
 	}
 	return $self;
@@ -850,6 +864,9 @@ import Cupt::Cache;
 import Cupt::Cache::Relation qw(stringify_relations);
 
 my $config;
+my $cache;
+
+# build config at start
 eval {
 	$config = new Cupt::Config;
 };
@@ -860,15 +877,6 @@ if (mycatch()) {
 
 # disable delayed parsing for testing purposes
 # $config->set_var('cupt::delayed-index-parsing', 0);
-
-my $cache;
-eval {
-	$cache = new Cupt::Cache($config);
-};
-if (mycatch()) {
-	myerr("error while creating package cache");
-	exit 1;
-}
 
 # strip options out (for now)
 GetOptions();
@@ -886,6 +894,17 @@ if (defined($command_handlers{$command})) {
 	$command_handlers{$command}->();
 } else {
 	myerr("unrecognized command") and exit 2;
+}
+
+sub build_cache {
+	eval {
+		# propagate any parameters passed to Cupt::Cache::&new
+		$cache = new Cupt::Cache($config, @_);
+	};
+	if (mycatch()) {
+		myerr("error while creating package cache");
+		exit 1;
+	}
 }
 
 sub config_dump {
@@ -911,6 +930,9 @@ sub config_dump {
 }
 
 sub show_package_versions {
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1);
+
 	my @package_names = @ARGV;
 	foreach my $package_name (@package_names) {
 		my $ref_package = exists $cache->{binary_packages}->{$package_name} ?
