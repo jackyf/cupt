@@ -477,7 +477,7 @@ sub new {
 		foreach my $line (@$ref_lines) {
 			if ($line =~ /^( |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
-				$self->{long_description} .= $line;
+				$self->{long_description} .= "$line\n";
 			} else {
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)$/))
 					or mydie("cannot parse line '%s'", $line);
@@ -937,7 +937,8 @@ sub show_package_versions {
 			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
-			map { print "$_\n"} @{$version->{long_description}};
+			print $version->{long_description};
+			print "\n";
 		}
 	}
 }
