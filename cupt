@@ -848,7 +848,6 @@ sub config_dump {
 		print $key, ' ', "\"", $value, "\"\n";
 	};
 
-	our $config;
 	my @keys = sort keys %$config;
 	foreach my $key (@keys) {
 		if (ref($config->{$key}) eq 'ARRAY') {
