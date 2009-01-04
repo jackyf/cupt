@@ -491,6 +491,17 @@ import Cupt::Cache::Relation qw(__parse_relation_line);
 sub new {
 	my $class = shift;
 	my $self = {
+		avail_as => [],
+		# should contain array of hashes
+		#	release => {
+		#		archive,
+		#		version,
+		#		vendor,
+		#		component,
+		#	},
+		#	base_uri
+		#	filename
+
 		priority => undef,
 		section => undef,
 		installed_size => undef,
@@ -506,7 +517,6 @@ sub new {
 		enhances => undef,
 		provides => undef,
 		pre_depends => undef,
-		uris => [],
 		size => undef,
 		md5sum => undef,
 		sha1sum => undef,
@@ -517,7 +527,13 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my $ref_lines = shift;
+	my $ref_arg = shift;
+	my $ref_lines = $ref_arg->[0];
+	my $base_uri = $ref_arg->[1];
+	my $ref_release_info = $ref_arg->[2];
+
+	$self->{avail_as}->[0]->{base_uri} = $base_uri;
+	$self->{avail_as}->[0]->{release} = $ref_release_info;
 
 	my $field_name = undef;
 	eval {
@@ -545,7 +561,7 @@ sub new {
 					when ('Breaks') { $self->{breaks} = __parse_relation_line($field_value) }
 					when ('Provides') { $self->{provides} = __parse_relation_line($field_value) }
 					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($field_value) }
-					when ('Filename') { push @{$self->{uris}}, $field_value }
+					when ('Filename') { $self->{avail_as}->[0]->{filename} = $field_value }
 					when ('Size') { $self->{size} = $field_value }
 					when ('MD5sum') { $self->{md5sum} = $field_value }
 					when ('SHA1') { $self->{sha1sum} = $field_value }
@@ -565,7 +581,7 @@ sub new {
 		}
 		myredie();
 	}
-	return $self;
+	return bless $self => $class;
 }
 
 sub is_hashes_equal {
@@ -574,6 +590,11 @@ sub is_hashes_equal {
 	return ($self->{md5sum} eq $other->{md5sum} &&
 			$self->{sha1sum} eq $other->{sha1sum} &&
 			$self->{sha256sum} eq $other->{sha256sum});
+}
+
+sub uris {
+	my $self = shift;
+	map { $_->{base_uri} . '/dists/' . $_->{filename} } @{$self->{avail_as}};
 }
 
 1;
@@ -599,13 +620,12 @@ sub new {
 # adds unparsed entry to package
 sub add_entry {
 	my $self = shift;
-	my $entry = shift;
 	my $delay_parsing = shift;
 	if ($delay_parsing) {
-		push @{$self->[_UNPARSED_VERSIONS]}, $entry;
+		push @{$self->[_UNPARSED_VERSIONS]}, \@_;
 	} else {
 		eval {
-			$self->_parse_and_merge_version($entry);
+			$self->_parse_and_merge_version(\@_);
 		};
 		if (mycatch()) {
 			myerr("error while parsing package info");
@@ -814,7 +834,8 @@ sub _process_index_file {
 	my $file = shift;
 	my $type = shift;
 
-	#print STDERR "$file, $type\n";
+	my $base_uri = 'fakeuri://fake.org';
+	my %release_info;
 
 	my $package_class_constructor;
 	my $packages_storage;
@@ -849,7 +870,8 @@ sub _process_index_file {
 
 					# end of entry, so adding accumulated info
 					$$packages_storage->{$current_package_name} //= $package_class_constructor->();
-					$$packages_storage->{$current_package_name}->add_entry([ @accumulated ], $is_parsing_delayed);
+					$$packages_storage->{$current_package_name}->add_entry
+							($is_parsing_delayed, [ @accumulated ], $base_uri, \%release_info);
 					@accumulated = ();
 				} else {
 					mydie("expected 'Package' line, but haven't got it");
@@ -1004,8 +1026,8 @@ sub show_package_versions {
 			$p->('Conflicts', stringify_relations($version->{conflicts})) if defined($version->{conflicts});
 			$p->('Provides', stringify_relations($version->{provides})) if defined($version->{provides});
 			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
-			foreach (@{$version->{uris}}) {
-				$p->('Filename', $_);
+			foreach ($version->uris()) {
+				$p->('URI', $_);
 			}
 			$p->('Size', $version->{size});
 			$p->('MD5', $version->{md5sum});
