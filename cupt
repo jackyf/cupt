@@ -1004,6 +1004,9 @@ sub show_package_versions {
 			$p->('Conflicts', stringify_relations($version->{conflicts})) if defined($version->{conflicts});
 			$p->('Provides', stringify_relations($version->{provides})) if defined($version->{provides});
 			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
+			foreach (@{$version->{uris}}) {
+				$p->('Filename', $_);
+			}
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
 			print $version->{long_description};
