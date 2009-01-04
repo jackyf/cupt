@@ -1007,6 +1007,10 @@ sub show_package_versions {
 			foreach (@{$version->{uris}}) {
 				$p->('Filename', $_);
 			}
+			$p->('Size', $version->{size});
+			$p->('MD5', $version->{md5sum});
+			$p->('SHA1', $version->{sha1sum});
+			$p->('SHA256', $version->{sha256sum});
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
 			print $version->{long_description};
