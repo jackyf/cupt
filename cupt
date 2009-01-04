@@ -487,7 +487,6 @@ package Cupt::Cache::BinaryPkg::Version;
 import Cupt::Core;
 import Cupt::Cache::Relation qw(__parse_relation_line);
 
-
 sub new {
 	my $class = shift;
 	my $self = {
@@ -495,9 +494,12 @@ sub new {
 		# should contain array of hashes
 		#	release => {
 		#		archive,
+		#		label,
 		#		version,
+		#		codename,
 		#		vendor,
 		#		component,
+		#		signed,
 		#	},
 		#	base_uri
 		#	filename
@@ -769,7 +771,7 @@ sub new {
 		@_ # applying passed parameters
 	);
 
-	my @index_files_to_parse = map { $self->_target_path_for_source($_) } @$ref_index_entries;
+	my @index_files_to_parse = map { $self->_path_of_source_list($_) } @$ref_index_entries;
 	foreach my $idx (0 .. $#index_files_to_parse) {
 		my $source_type = $ref_index_entries->[$idx]{'type'};
 		# don't parse unneeded indexes
@@ -785,6 +787,46 @@ sub new {
 		}
 	}
 	return $self;
+}
+
+sub _get_release_info {
+	my $self = shift;
+	my $file = shift;
+
+	my %release_info;
+
+	open(RELEASE, '<', $file) or mydie("unable to open release file '%s'", $file);
+	my $field_name = undef;
+	eval {
+		while (<RELEASE>) {
+			(($field_name, my $field_value) = ($_ =~ m/^((?:\w|-)+?): (.*)$/))
+				or mydie("cannot parse line '%s'", $_);
+
+			given ($field_name) {
+				when ('Origin') { $release_info{vendor} = $field_value }
+				when ('Label') { $release_info{label} = $field_value }
+				when ('Suite') { $release_info{archive} = $field_value }
+				when ('Codename') { $release_info{codename} = $field_value }
+				when ('Date') { $release_info{date} = $field_value }
+				when ('Valid-Until') { $release_info{valid_until} = $field_value }
+				when ('Architectures') { $release_info{architectures} = [ split / /, $field_value ] }
+				when ('Description') {
+					if ($field_value =~ /^Debian ([0-9a-z._-]+)/) {
+						$release_info{version} = $1;
+					}
+				}
+			}
+			$release_info{version} //= "";
+
+			undef $field_name;
+		}
+	};
+	if (mycatch()) {
+		myerr("error parsing release file '%s', line '%d'", $file, $.);
+		myredie();
+	}
+
+	close(RELEASE) or mydie("unable to close index file '%s'", $file);
 }
 
 sub _parse_sources_lists {
@@ -890,25 +932,15 @@ sub _process_index_file {
 	close(INDEX) or mydie("unable to close index file '%s'", $file);
 }
 
-sub _target_path_for_source {
+sub _path_of_base_uri {
 	my $self = shift;
 	my $entry = shift;
-	my $arch = $self->{config}->var('apt::architecture');
-	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
 	(my $uri_prefix = $entry->{'uri'}) =~ s[^\w+://][];
 
 	# "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
 	$uri_prefix =~ tr[/][_];
-
-	my $filename = join('_',
-		$uri_prefix,
-		'dists',
-		$entry->{'distribution'},
-		$entry->{'section'},
-		$suffix
-	);
 
 	my $dirname = join('',
 		$self->{config}->var('dir'),
@@ -917,7 +949,34 @@ sub _target_path_for_source {
 		$self->{config}->var('dir::state::lists')
 	);
 
-	return join('', $dirname, '/', $filename);
+	my $base_uri_part = join('_',
+		$uri_prefix,
+		'dists',
+		$entry->{'distribution'}
+	);
+
+	return join('', $dirname, '/', $base_uri_part);
+}
+
+sub _path_of_source_list {
+	my $self = shift;
+	my $entry = shift;
+
+	my $arch = $self->{config}->var('apt::architecture');
+	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+
+	my $filename = join('_', $self->_path_of_base_uri($entry), $entry->{'section'}, $suffix);
+
+	return $filename;
+}
+
+sub __path_of_release_list {
+	my $self = shift;
+	my $entry = shift;
+
+	my $filename = join('_', $self->_path_of_base_uri($entry), 'Release');
+
+	return $filename;
 }
 
 package main;
