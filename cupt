@@ -236,7 +236,7 @@ sub new {
 		},
 
 	};
-	$self->{'apt::architecture'} = __get_architecture();
+	$self->{regular_vars}->{'apt::architecture'} = __get_architecture();
 	bless $self, $class;
 	$self->_read_configs();
 	return $self;
