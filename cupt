@@ -137,7 +137,7 @@ sub parse_file {
 	defined( my $tree = $self->{'_parser'}->program($text) )
 		or mydie("bad config in file %s", $conffile);
 
-	$self->_recurse( $tree );
+	$self->_recurse($tree, "");
 }
 
 sub set_regular_handler {;
@@ -154,11 +154,12 @@ sub set_list_handler
 sub _recurse {
 	my $self = shift;
 	my $tree = shift;
+	my $name_prefix = shift;
 
 	foreach my $node (@{$tree}) {
 		if (exists $node->{'simple'}) {
 			my $item = $node->{'simple'};
-			$self->{'_regular_handler'}->( $item->{'name'}->{'__VALUE__'}, $item->{'value'}->{'__VALUE__'} );
+			$self->{'_regular_handler'}->( $name_prefix . $item->{'name'}->{'__VALUE__'}, $item->{'value'}->{'__VALUE__'} );
 		} elsif (exists $node->{'list'}) {
 			my $item = $node->{'list'};
 			my $name = $item->{'name'}->{'__VALUE__'};
@@ -166,16 +167,17 @@ sub _recurse {
 				if (ref($value) eq 'ARRAY') {
 					# list items here
 					foreach my $listitem (@$value) {
-						$self->{'_list_handler'}->( $name, $listitem->{'value'}->{'__VALUE__'} );
+						$self->{'_list_handler'}->( $name_prefix . $name, $listitem->{'value'}->{'__VALUE__'} );
 					}
 					last; # should be only one array of list items
 				}
 			}
-			#TODO: list parsing and recursion
 		} else {
-			#require Data::Dumper;
-			#import Data::Dumper;
-			#print Dumper($item);
+			if (exists $node->{'nested'}) {
+				my $item = $node->{'nested'};
+				$name_prefix .= $item->{'name'}->{'__VALUE__'} . '::';
+				$self->_recurse($item->{'statement(s?)'}, $name_prefix);
+			}
 		}
 	}
 }
