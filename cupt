@@ -488,7 +488,7 @@ import Cupt::Core;
 import Cupt::Cache::Relation qw(__parse_relation_line);
 
 sub new {
-	my $class = shift;
+	my ($class, $ref_arg) = @_;
 	my $self = {
 		avail_as => [],
 		# should contain array of hashes
@@ -529,7 +529,6 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my $ref_arg = shift;
 	my $ref_lines = $ref_arg->[0];
 	my $base_uri = $ref_arg->[1];
 	my $ref_release_info = $ref_arg->[2];
@@ -749,6 +748,7 @@ sub _construct_version {
 package Cupt::Cache;
 
 import Cupt::Core;
+
 use fields qw(source_packages binary_packages config);
 
 sub new {
