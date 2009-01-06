@@ -894,8 +894,7 @@ sub _process_index_file {
 	my $is_parsing_delayed = $self->{config}->var('cupt::delayed-index-parsing');
 	eval {
 		while (<INDEX>) {
-			chomp;
-			if ($_ eq "") {
+			if ($_ eq "\n") {
 				scalar @accumulated or mydie("unexpected end of package entry");
 
 				my $first_line = shift @accumulated;
@@ -917,6 +916,7 @@ sub _process_index_file {
 				}
 			} else {
 				# this is some line in entry
+				chomp;
 				push @accumulated, $_;
 			}
 		}
@@ -999,7 +999,7 @@ if (mycatch()) {
 }
 
 # disable delayed parsing for testing purposes
-$config->set_regular_var('cupt::delayed-index-parsing', 0);
+#$config->set_regular_var('cupt::delayed-index-parsing', 0);
 
 # strip options out (for now)
 GetOptions();
