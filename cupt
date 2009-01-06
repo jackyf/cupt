@@ -44,7 +44,7 @@ sub myerr {
 }
 
 sub myredie() {
-	die new Cupt::Error;
+	die 'Cupt::Error';
 }
 
 sub mydie {
@@ -62,7 +62,7 @@ sub myinternaldie {
 sub mycatch() {
 	# This subroutine is inspired from David Golden's Exception::Class::TryCatch::&catch
     my $err = $@;
-    if (UNIVERSAL::isa($err, 'Cupt::Error')) {
+    if ($err eq 'Cupt::Error') {
         return 1;
 	} elsif ($err ne "") {
 		# some other error received, propagate it
