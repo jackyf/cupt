@@ -428,7 +428,7 @@ sub new {
 	my $field_name = undef;
 	eval {
 		foreach my $line (@$ref_lines) {
-			if ($line =~ /^ /) {
+			if ($line =~ m/^ /) {
 				# part of long description
 				$self->{long_description} .= $line;
 			} else {
@@ -540,7 +540,7 @@ sub new {
 	my $field_name = undef;
 	eval {
 		foreach my $line (@$ref_lines) {
-			if ($line =~ /^( |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
+			if ($line =~ m/^( |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
 				$self->{long_description} .= "$line\n";
 			} else {
@@ -811,7 +811,7 @@ sub _get_release_info {
 				when ('Valid-Until') { $release_info{valid_until} = $field_value }
 				when ('Architectures') { $release_info{architectures} = [ split / /, $field_value ] }
 				when ('Description') {
-					if ($field_value =~ /^Debian ([0-9a-z._-]+)/) {
+					if ($field_value =~ m/^Debian ([0-9a-z._-]+)/) {
 						$release_info{version} = $1;
 					}
 				}
@@ -855,7 +855,7 @@ sub __parse_source_list {
 	while (<HFILE>) {
 		chomp;
 		# skip all empty lines and lines with comments
-		next if /^\s*(#.*)?$/;
+		next if m/^\s*(#.*)?$/;
 
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
@@ -902,12 +902,12 @@ sub _process_index_file {
 				scalar @accumulated or mydie("unexpected end of package entry");
 
 				my $first_line = shift @accumulated;
-				if ($first_line =~ /^Package: (.*)$/) {
+				if ($first_line =~ m/^Package: (.*)$/) {
 					# this is new package name
 					my $current_package_name = $1;
 
 					# check it for correctness
-					($current_package_name =~ /^[a-z0-9.+-]+$/)
+					($current_package_name =~ m/^[a-z0-9.+-]+$/)
 						or mydie("bad package name '%s'", $current_package_name);
 
 					# end of entry, so adding accumulated info
