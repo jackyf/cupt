@@ -540,11 +540,11 @@ sub new {
 	my $field_name = undef;
 	eval {
 		foreach my $line (@$ref_lines) {
-			if ($line =~ m/^( |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
+			if ($line =~ m/^(?: |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
 				$self->{long_description} .= "$line\n";
 			} else {
-				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)$/))
+				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
 					or mydie("cannot parse line '%s'", $line);
 
 				given ($field_name) {
@@ -799,7 +799,7 @@ sub _get_release_info {
 	my $field_name = undef;
 	eval {
 		while (<RELEASE>) {
-			(($field_name, my $field_value) = ($_ =~ m/^((?:\w|-)+?): (.*)$/))
+			(($field_name, my $field_value) = ($_ =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
 				or mydie("cannot parse line '%s'", $_);
 
 			given ($field_name) {
@@ -855,7 +855,7 @@ sub __parse_source_list {
 	while (<HFILE>) {
 		chomp;
 		# skip all empty lines and lines with comments
-		next if m/^\s*(#.*)?$/;
+		next if m/^\s*(?:#.*)?$/;
 
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
@@ -902,7 +902,7 @@ sub _process_index_file {
 				scalar @accumulated or mydie("unexpected end of package entry");
 
 				my $first_line = shift @accumulated;
-				if ($first_line =~ m/^Package: (.*)$/) {
+				if ($first_line =~ m/^Package: (.*)/) { # '$' implied in regexp
 					# this is new package name
 					my $current_package_name = $1;
 
@@ -1002,7 +1002,7 @@ if (mycatch()) {
 }
 
 # disable delayed parsing for testing purposes
-# $config->set_regular_var('cupt::delayed-index-parsing', 0);
+$config->set_regular_var('cupt::delayed-index-parsing', 0);
 
 # strip options out (for now)
 GetOptions();
