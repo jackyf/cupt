@@ -679,8 +679,7 @@ sub find_version {
 
 sub _parse_and_merge_version {
 	# parsing
-	my $self = shift;
-	my $entry = shift;
+	my ($self, $entry) = @_;
 	my $parsed_version;
 	eval {
 		$parsed_version = $self->_construct_version($entry);
@@ -738,9 +737,7 @@ package Cupt::Cache::BinaryPkg;
 use base qw(Cupt::Cache::Pkg);
 
 sub _construct_version {
-	shift; # $self skipped
-	my $entry = shift;
-	return new Cupt::Cache::BinaryPkg::Version($entry);
+	return new Cupt::Cache::BinaryPkg::Version($_[1]);
 }
 
 1;
