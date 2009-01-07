@@ -521,20 +521,23 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my $ref_lines = $ref_arg->[0];
-	my $base_uri = $ref_arg->[1];
-	my $ref_release_info = $ref_arg->[2];
+	my ($fh, $offset, $base_uri, $ref_release_info) = @$ref_arg;
 
 	$self->{avail_as}->[0]->{base_uri} = $base_uri;
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
 
 	my $field_name = undef;
 	eval {
-		foreach my $line (@$ref_lines) {
+		my $line;
+		# go to starting byte of the entry
+		seek $fh, $offset, 0;
+		# we have already opened file handle and offset for reading the entry
+		while (($line = <$fh>) ne "\n") {
 			if ($line =~ m/^(?: |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
-				$self->{long_description} .= "$line\n";
+				$self->{long_description} .= $line;
 			} else {
+				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
 					or mydie("cannot parse line '%s'", $line);
 
@@ -880,36 +883,27 @@ sub _process_index_file {
 		return;
 	}
 
-	open(INDEX, '<', $file) or mydie("unable to open index file '%s'", $file);
+	my $fh;
+	open($fh, '<', $file) or mydie("unable to open index file '%s'", $file);
+	open(OFFSETS, "/bin/grep -b '^Package: ' $file |"); 
 
-	my @accumulated;
 	my $is_parsing_delayed = $self->{config}->var('cupt::delayed-index-parsing');
 	eval {
-		while (<INDEX>) {
-			if ($_ eq "\n") {
-				scalar @accumulated or mydie("unexpected end of package entry");
+		while (<OFFSETS>) {
+			if (m/^(\d+):Package: (.*)/) { # '$' implied in regexp
+				my $offset = $1;
+				my $package_name = $2;
 
-				my $first_line = shift @accumulated;
-				if ($first_line =~ m/^Package: (.*)/) { # '$' implied in regexp
-					# this is new package name
-					my $current_package_name = $1;
+				# check it for correctness
+				($package_name =~ m/^[a-z0-9.+-]+$/)
+					or mydie("bad package name '%s'", $package_name);
 
-					# check it for correctness
-					($current_package_name =~ m/^[a-z0-9.+-]+$/)
-						or mydie("bad package name '%s'", $current_package_name);
-
-					# end of entry, so adding accumulated info
-					$$packages_storage->{$current_package_name} //= $package_class_constructor->();
-					$$packages_storage->{$current_package_name}->add_entry
-							($is_parsing_delayed, [ @accumulated ], $base_uri, \%release_info);
-					@accumulated = ();
-				} else {
-					mydie("expected 'Package' line, but haven't got it");
-				}
+				# end of entry, so adding accumulated info
+				$$packages_storage->{$package_name} //= $package_class_constructor->();
+				$$packages_storage->{$package_name}->add_entry
+						($is_parsing_delayed, $fh, $offset, $base_uri, \%release_info);
 			} else {
-				# this is some line in entry
-				chomp;
-				push @accumulated, $_;
+				mydie("expected 'Package' line, but haven't got it");
 			}
 		}
 	};
@@ -918,7 +912,7 @@ sub _process_index_file {
 		myredie();
 	}
 
-	close(INDEX) or mydie("unable to close index file '%s'", $file);
+	close(OFFSETS);
 }
 
 sub _path_of_base_uri {
