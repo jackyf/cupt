@@ -863,6 +863,14 @@ sub __parse_source_list {
 	return @result;
 }
 
+sub __new_binary_package() {
+	return new Cupt::Cache::BinaryPkg();
+}
+
+sub __new_source_package() {
+	return new Cupt::Cache::SourcePkg();
+}
+
 sub _process_index_file {
 	my ($self, $file, $type) = @_;
 
@@ -872,10 +880,10 @@ sub _process_index_file {
 	my $package_class_constructor;
 	my $packages_storage;
 	if ($type eq 'deb') {
-		$package_class_constructor = sub { return new Cupt::Cache::BinaryPkg() };
+		*create_package_sub = *__new_binary_package;
 		$packages_storage = \$self->{binary_packages};
 	} elsif ($type eq 'deb-src') {
-		$package_class_constructor = sub { return new Cupt::Cache::SourcePkg() };
+		*create_package_sub = *__new_source_package;
 		$packages_storage = \$self->{source_packages};
 		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
 		return;
@@ -896,10 +904,10 @@ sub _process_index_file {
 				($package_name =~ m/^[a-z0-9.+-]+$/)
 					or mydie("bad package name '%s'", $package_name);
 
-				# end of entry, so adding accumulated info
-				$$packages_storage->{$package_name} //= $package_class_constructor->();
-				$$packages_storage->{$package_name}->add_entry
-						($is_parsing_delayed, $fh, $offset, $base_uri, \%release_info);
+				# end of entry, so creating new package
+				$$packages_storage->{$package_name} //= &create_package_sub();
+				$$packages_storage->{$package_name}->add_entry(
+						($is_parsing_delayed, $fh, $offset, $base_uri, \%release_info));
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}
