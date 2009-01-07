@@ -986,8 +986,7 @@ if (mycatch()) {
 # disable delayed parsing for testing purposes
 #$config->set_regular_var('cupt::delayed-index-parsing', 0);
 
-# strip options out (for now)
-GetOptions();
+process_options();
 
 my $command = shift @ARGV;
 
@@ -1082,6 +1081,32 @@ sub show_package_versions {
 			$p->('Tag', $version->{tags}) if defined($version->{tags});
 			print "\n";
 		}
+	}
+}
+
+sub process_options {
+	# strip options out (for now)
+	my @direct_options;
+	eval {
+		GetOptions(
+			'o=s@' => \@direct_options
+		);
+		foreach (@direct_options) {
+			if (m/(.*?)=(.*)/) {
+				my ($key, $value) = ($1, $2);
+				if ($key =~ m/^(.*?)::$/) {
+					# this is list option
+					$config->set_list_var($1, $value);
+				} else {
+					# regular option
+					$config->set_regular_var($key, $value);
+				}
+			}
+		}
+	};
+	if (mycatch()) {
+		myerr("error while processing command-line options");
+		exit 2;
 	}
 }
 
