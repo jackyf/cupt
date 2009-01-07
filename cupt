@@ -1137,6 +1137,7 @@ sub search {
 					next PACKAGE;
 				}
 			}
+			delete $cache->{binary_packages}->{$package_name};
 		}
 	}
 }
