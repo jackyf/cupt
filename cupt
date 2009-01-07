@@ -1126,8 +1126,8 @@ sub search {
 				next;
 			}
 			foreach (@{$package->versions()}) {
-				if ($_->{short_description} =~ m/$pattern/o ||
-					$_->{long_description} =~ m/$pattern/o)
+				if ($_->{short_description} =~ m/$pattern/o or
+					defined($_->{long_description}) && $_->{long_description} =~ m/$pattern/o)
 				{
 					say $package_name . " - " . $_->{short_description};
 					next PACKAGE;
