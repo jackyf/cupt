@@ -1104,6 +1104,31 @@ sub search {
 
 	my $pattern = shift @ARGV;
 	check_for_extra_args();
+
+	if ($o_names_only) {
+		# search only in package names
+		foreach (keys %{$cache->{binary_packages}}) {
+			if (m/$pattern/o) {
+				say;
+			}
+		}
+	} else {
+		PACKAGE:
+		while (my ($package_name, $package) = each %{$cache->{binary_packages}}) {
+			if ($package_name =~ m/$pattern/o) {
+				say $package_name;
+				next;
+			}
+			foreach (@{$package->versions()}) {
+				if ($_->{short_description} =~ m/$pattern/o ||
+					$_->{long_description} =~ m/$pattern/o)
+				{
+					say $package_name . " - " . $_->{short_description};
+					next PACKAGE;
+				}
+			}
+		}
+	}
 }
 
 sub process_options {
