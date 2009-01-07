@@ -906,8 +906,8 @@ sub _process_index_file {
 
 				# end of entry, so creating new package
 				$$packages_storage->{$package_name} //= &create_package_sub();
-				$$packages_storage->{$package_name}->add_entry(
-						($is_parsing_delayed, $fh, $offset, $base_uri, \%release_info));
+				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name},
+						$is_parsing_delayed, $fh, $offset, $base_uri, \%release_info);
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}
