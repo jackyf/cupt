@@ -1091,7 +1091,7 @@ sub show_package_versions {
 			$p->('SHA256', $version->{sha256sum});
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
-			print $version->{long_description};
+			print $version->{long_description} if defined ($version->{long_description});
 			$p->('Homepage', $version->{homepage}) if defined($version->{homepage});
 			$p->('Tag', $version->{tags}) if defined($version->{tags});
 			print "\n";
