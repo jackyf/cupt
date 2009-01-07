@@ -1001,7 +1001,13 @@ my %command_handlers = (
 );
 
 if (defined($command_handlers{$command})) {
-	$command_handlers{$command}->();
+	eval {
+		$command_handlers{$command}->();
+	};
+	if (mycatch()) {
+		myerr("error performing command '%s'", $command);
+		exit 3;
+	}
 } else {
 	myerr("unrecognized command") and exit 2;
 }
