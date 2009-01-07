@@ -890,8 +890,10 @@ sub _process_index_file {
 	eval {
 		while (<OFFSETS>) {
 			if (m/^(\d+):Package: (.*)/) { # '$' implied in regexp
-				my $offset = $1;
 				my $package_name = $2;
+
+				# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
+				my $offset = $1 + length("Package: $package_name\n");
 
 				# check it for correctness
 				($package_name =~ m/^[a-z0-9.+-]+$/)
