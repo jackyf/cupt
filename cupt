@@ -864,9 +864,7 @@ sub __parse_source_list {
 }
 
 sub _process_index_file {
-	my $self = shift;
-	my $file = shift;
-	my $type = shift;
+	my ($self, $file, $type) = @_;
 
 	my $base_uri = 'fakeuri://fake.org';
 	my %release_info;
