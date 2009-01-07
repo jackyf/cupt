@@ -964,6 +964,8 @@ sub __path_of_release_list {
 package main;
 
 use Getopt::Long;
+Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
+
 use Locale::gettext;
 
 import Cupt::Core;
@@ -995,6 +997,7 @@ myerr("no command specified") and exit 2 if (!defined($command));
 my %command_handlers = (
 	'config-dump' => \&config_dump,
 	'show' => \&show_package_versions,
+	'search' => \&search,
 );
 
 if (defined($command_handlers{$command})) {
@@ -1011,6 +1014,12 @@ sub build_cache {
 	if (mycatch()) {
 		myerr("error while creating package cache");
 		exit 1;
+	}
+}
+
+sub check_for_extra_args {
+	if (scalar @ARGV > 0) {
+		mywarn("extra arguments '%s' are not processed", "@ARGV");
 	}
 }
 
@@ -1082,6 +1091,19 @@ sub show_package_versions {
 			print "\n";
 		}
 	}
+}
+
+sub search {
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1);
+
+	my $o_names_only = 0;
+	GetOptions(
+		'--names-only' => \$o_names_only,
+	);
+
+	my $pattern = shift @ARGV;
+	check_for_extra_args();
 }
 
 sub process_options {
