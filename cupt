@@ -476,6 +476,10 @@ package Cupt::Cache::BinaryPkg::Version;
 import Cupt::Core;
 import Cupt::Cache::Relation qw(__parse_relation_line);
 
+# parsing options
+our $o_no_parse_relations = 0; # don't parse depends, recommends, conflicts etc
+our $o_no_parse_info_onlys = 0; # don't parse maintainer, descriptions, tag, homepage
+
 sub new {
 	my ($class, $ref_arg) = @_;
 	my $self = {
@@ -521,17 +525,7 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my ($package_name, $fh, $offset, $base_uri, $ref_release_info, $ref_parse_options) = @$ref_arg;
-
-	# options parsing
-	my $o_no_parse_relations = 0; # don't parse depends, recommends, conflicts etc
-	my $o_no_parse_info_onlys = 0; # don't parse maintainer, descriptions, tag, homepage
-	foreach (@$ref_parse_options) {
-		given ($_) {
-			when ('no-parse-relations') { $o_no_parse_relations = 1; }
-			when ('no-parse-info-onlys') { $o_no_parse_info_onlys = 1; }
-		}
-	}
+	my ($package_name, $fh, $offset, $base_uri, $ref_release_info) = @$ref_arg;
 
 	$self->{avail_as}->[0]->{base_uri} = $base_uri;
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
@@ -771,17 +765,8 @@ sub new {
 	my %build_config = (
 		'-source' => 1,
 		'-binary' => 1,
-		'-no-parse_relations' => 0,
-		'-no-parse_info_onlys' => 0,
 		@_ # applying passed parameters
 	);
-	my @version_parse_options;
-	if ($build_config{'-no-parse-relations'}) {
-		push @version_parse_options, 'no-parse-relations';
-	}
-	if ($build_config{'-no-parse-info-onlys'}) {
-		push @version_parse_options, 'no-parse-info-onlys';
-	}
 
 	my @index_files_to_parse = map { $self->_path_of_source_list($_) } @$ref_index_entries;
 	foreach my $idx (0 .. $#index_files_to_parse) {
@@ -791,7 +776,7 @@ sub new {
 			($source_type eq 'deb-src' && $build_config{'-source'}))
 		{
 			eval {
-				$self->_process_index_file($index_files_to_parse[$idx], $source_type, \@version_parse_options);
+				$self->_process_index_file($index_files_to_parse[$idx], $source_type);
 			};
 			if (mycatch()) {
 				mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
@@ -884,7 +869,7 @@ sub __parse_source_list {
 }
 
 sub _process_index_file {
-	my ($self, $file, $type, $ref_version_parse_options) = @_;
+	my ($self, $file, $type) = @_;
 
 	my $base_uri = 'fakeuri://fake.org';
 	my %release_info;
@@ -920,7 +905,7 @@ sub _process_index_file {
 				# end of entry, so creating new package
 				$$packages_storage->{$package_name} //= $package_class->new();
 				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name},
-						$package_name, $fh, $offset, $base_uri, \%release_info, $ref_version_parse_options);
+						$package_name, $fh, $offset, $base_uri, \%release_info);
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}
@@ -1124,7 +1109,10 @@ sub show_package_versions {
 
 sub search {
 	# we need to build binary-only cache for this operation
-	build_cache('-source' => 0, '-binary' => 1, '-no-parse-relations' => 1);
+	build_cache('-source' => 0, '-binary' => 1);
+
+	# turn off relations parsing, we don't need them
+	$Cupt::Cache::BinaryPkg::Version::o_no_parse_relations = 1;
 
 	my $o_names_only = 0;
 	my $o_case_sensitive = 0;
