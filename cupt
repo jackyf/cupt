@@ -502,6 +502,7 @@ sub new {
 		architecture => undef,
 		source_name => undef,
 		version => undef,
+		essential => undef,
 		depends => undef,
 		recommends => undef,
 		suggests => undef,
@@ -509,6 +510,7 @@ sub new {
 		breaks => undef,
 		enhances => undef,
 		provides => undef,
+		replaces => undef,
 		pre_depends => undef,
 		size => undef,
 		md5sum => undef,
@@ -517,6 +519,7 @@ sub new {
 		short_description => undef,
 		long_description => undef,
 		homepage => undef,
+		task => undef,
 		tags => undef,
 	};
 	# parsing fields
@@ -549,6 +552,7 @@ sub new {
 					when ('Source') { $self->{source_name} = $field_value }
 					when ('Architecture') { $self->{architecture} = $field_value }
 					when ('Version') { $self->{version} = $field_value }
+					when ('Essential') { $self->{essential} = $field_value }
 					when ('Depends') { $self->{depends} = __parse_relation_line($field_value) }
 					when ('Recommends') { $self->{recommends} = __parse_relation_line($field_value) }
 					when ('Suggests') { $self->{suggests} = __parse_relation_line($field_value) }
@@ -557,6 +561,7 @@ sub new {
 					when ('Breaks') { $self->{breaks} = __parse_relation_line($field_value) }
 					when ('Provides') { $self->{provides} = __parse_relation_line($field_value) }
 					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($field_value) }
+					when ('Replaces') { $self->{replaces} = __parse_relation_line($field_value) }
 					when ('Filename') { $self->{avail_as}->[0]->{filename} = $field_value }
 					when ('Size') { $self->{size} = $field_value }
 					when ('MD5sum') { $self->{md5sum} = $field_value }
@@ -564,8 +569,8 @@ sub new {
 					when ('SHA256') { $self->{sha256sum} = $field_value }
 					when ('Description') { $self->{short_description} = $field_value }
 					when ('Homepage') { $self->{homepage} = $field_value }
+					when ('Task') { $self->{homepage} = $field_value }
 					when ('Tag') { $self->{tags} = $field_value }
-					# default { mydie("unexpected field '%s'", $field_name) }
 				}
 				undef $field_name;
 			}
@@ -1077,10 +1082,12 @@ sub show_package_versions {
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
 			$p->('Version', $version->{version});
+			$p->('Essential', $version->{essential});
 			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
 			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
 			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
 			$p->('Conflicts', stringify_relations($version->{conflicts})) if defined($version->{conflicts});
+			$p->('Replaces', stringify_relations($version->{replaces})) if defined($version->{replaces});
 			$p->('Provides', stringify_relations($version->{provides})) if defined($version->{provides});
 			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
 			foreach ($version->uris()) {
@@ -1094,6 +1101,7 @@ sub show_package_versions {
 			# TODO: translated descriptions...
 			print $version->{long_description} if defined ($version->{long_description});
 			$p->('Homepage', $version->{homepage}) if defined($version->{homepage});
+			$p->('Task', $version->{task}) if defined($version->{task});
 			$p->('Tag', $version->{tags}) if defined($version->{tags});
 			print "\n";
 		}
