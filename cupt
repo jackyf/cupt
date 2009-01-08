@@ -316,15 +316,13 @@ import Cupt::Core;
 our @EXPORT_OK = qw(&__parse_relation_line &stringify_relations);
 
 sub new {
-	my $class = shift;
+	my ($class, $unparsed) = @_;
 	my $self = {
 		package_name => undef,
 		relation => undef,
 		version => undef,
 	};
 	bless $self => $class;
-
-	my $unparsed = shift;
 
 	if ($unparsed =~ m/^([a-z_0-9.+-]+)/g) {
 		# package name is here
@@ -386,10 +384,11 @@ sub stringify_relations {
 }
 
 sub __parse_relation_line {
-	my $relation_line = shift or myinternaldie("relation line is not defined");
+	# my $relation_line = $_[0] 
+	# or myinternaldie("relation line is not defined");
 
 	my @result;
-	while ($relation_line =~ m/(.+?)(?:,\s*|$)/g) {
+	while ($_[0] =~ m/(.+?)(?:,\s*|$)/g) {
 		# looking for OR groups
 		my @relations = split / ?\| ?/, $1;
 		if (scalar @relations == 1) {
@@ -534,7 +533,7 @@ sub new {
 		seek $fh, $offset, 0;
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
-			if ($line =~ m/^(?: |\t)/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
+			if ($line =~ m/^ / or $line =~ m/^\t/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
 				$self->{long_description} .= $line;
 			} else {
