@@ -216,8 +216,6 @@ sub new {
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
-
-			'cupt::delayed-index-parsing' => 1
 		},
 
 		list_vars => {
@@ -602,74 +600,43 @@ sub uris {
 
 package Cupt::Cache::Pkg;
 
-use constant {
-	_VERSIONS => 0,
-	_UNPARSED_VERSIONS => 1,
-};
-
 import Cupt::Core;
 
 sub new {
-	my $class = shift;
-	my $self = [
-		[], # _versions
-		[], # _unparsed_versions
-	];
+	my ($class) = @_;
+	my $self = []; # only unparsed versions
 	return bless $self => $class;
 }
 
 # adds unparsed entry to package
 sub add_entry {
 	my $self = shift;
-	my $delay_parsing = shift;
-	if ($delay_parsing) {
-		push @{$self->[_UNPARSED_VERSIONS]}, \@_;
-	} else {
-		eval {
-			$self->_parse_and_merge_version(\@_);
-		};
-		if (mycatch()) {
-			myerr("error while parsing package info");
-			myredie();
-		}
-	}
+	push @$self, \@_;
 }
 
 # returns reference to versions array
 sub versions {
 	my $self = shift;
 
+	my @result;
 	# in case parsing of versions of this package was delayed, we parse them now (on-demand)
 	eval {
-		foreach (@{$self->[_UNPARSED_VERSIONS]}) {
-			$self->_parse_and_merge_version($_);
+		foreach (@$self) {
+			$self->_parse_and_merge_version($_, \@result);
 		}
 	};
 	if (mycatch()) {
-		myerr("error while parsing package info on demand (if your want to disable parsing on-demand to get this error earlier, set option 'cupt::delayed-index-parsing' to 0, but doing that will slow down cache initialization)");
+		myerr("error while parsing package info");
 		myredie();
 	};
 
-	return $self->[_VERSIONS];
-}
-
-sub _find_version {
-	my $self = shift;
-	my $lookup_version = shift;
-
-	my $version_string_found = 0;
-	foreach my $version (@{$self->[_VERSIONS]})
-	{
-		return $version if ($version->{version} eq $lookup_version);
-	}
-	return undef;
+	return \@result;
 }
 
 sub find_version {
 	my $self = shift;
 	my $lookup_version = shift;
 
-	my $version_string_found = 0;
 	foreach my $version (@{$self->versions()})
 	{
 		return $version if ($version->{version} eq $lookup_version);
@@ -679,7 +646,7 @@ sub find_version {
 
 sub _parse_and_merge_version {
 	# parsing
-	my ($self, $entry) = @_;
+	my ($self, $entry, $ref_result) = @_;
 	my $parsed_version;
 	eval {
 		$parsed_version = $self->_construct_version($entry);
@@ -691,10 +658,17 @@ sub _parse_and_merge_version {
 
 	# merging
 	eval {
-		my $found_version = $self->_find_version($parsed_version->{version});
+		my $found_version;
+		foreach my $version (@$ref_result)
+		{
+			if ($version->{version} eq $parsed_version->{version}) {
+				$found_version = $version;
+				last;
+			}
+		}
 		if (!defined($found_version)) {
 			# no such version before, just add it
-			push @{$self->[_VERSIONS]}, $parsed_version;
+			push @$ref_result, $parsed_version;
 		} else {
 			# there is such version string
 
@@ -890,7 +864,6 @@ sub _process_index_file {
 	open($fh, '<', $file) or mydie("unable to open index file '%s'", $file);
 	open(OFFSETS, "/bin/grep -b '^Package: ' $file |"); 
 
-	my $is_parsing_delayed = $self->{config}->var('cupt::delayed-index-parsing');
 	eval {
 		while (<OFFSETS>) {
 			if (m/^(\d+):Package: (.*)/) { # '$' implied in regexp
@@ -906,7 +879,7 @@ sub _process_index_file {
 				# end of entry, so creating new package
 				$$packages_storage->{$package_name} //= $package_class->new();
 				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name},
-						$is_parsing_delayed, $package_name, $fh, $offset, $base_uri, \%release_info);
+						$package_name, $fh, $offset, $base_uri, \%release_info);
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}
@@ -1082,7 +1055,7 @@ sub show_package_versions {
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
 			$p->('Version', $version->{version});
-			$p->('Essential', $version->{essential});
+			$p->('Essential', $version->{essential}) if defined($version->{essential});
 			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
 			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
 			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
