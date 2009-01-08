@@ -554,32 +554,53 @@ sub new {
 					or mydie("cannot parse line '%s'", $line);
 
 				given ($field_name) {
+					# mandatory fields
 					when ('Priority') { $self->{priority} = $field_value }
 					when ('Section') { $self->{section} = $field_value }
 					when ('Installed-Size') { $self->{installed_size} = $field_value }
 					when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
-					when ('Source') { $self->{source_name} = $field_value }
 					when ('Architecture') { $self->{architecture} = $field_value }
 					when ('Version') { $self->{version} = $field_value }
-					when ('Essential') { $self->{essential} = $field_value }
-					when ('Depends') { $self->{depends} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Recommends') { $self->{recommends} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Suggests') { $self->{suggests} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Enhances') { $self->{enhances} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Breaks') { $self->{breaks} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Provides') { $self->{provides} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($field_value) unless $o_no_parse_relations }
-					when ('Replaces') { $self->{replaces} = __parse_relation_line($field_value) unless $o_no_parse_relations }
 					when ('Filename') { $self->{avail_as}->[0]->{filename} = $field_value }
 					when ('Size') { $self->{size} = $field_value }
 					when ('MD5sum') { $self->{md5sum} = $field_value }
 					when ('SHA1') { $self->{sha1sum} = $field_value }
 					when ('SHA256') { $self->{sha256sum} = $field_value }
 					when ('Description') { $self->{short_description} = $field_value unless $o_no_parse_info_onlys }
-					when ('Homepage') { $self->{homepage} = $field_value unless $o_no_parse_info_onlys }
-					when ('Task') { $self->{homepage} = $field_value }
+					# often fields
+					when ('Depends') {
+						$self->{depends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
 					when ('Tag') { $self->{tags} = $field_value unless $o_no_parse_info_onlys }
+					when ('Source') { $self->{source_name} = $field_value }
+					when ('Homepage') { $self->{homepage} = $field_value unless $o_no_parse_info_onlys }
+					when ('Recommends') {
+						$self->{recommends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					when ('Suggests') {
+						$self->{suggests} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					when ('Conflicts') {
+						$self->{conflicts} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					when ('Replaces') {
+						$self->{replaces} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					when ('Provides') {
+						$self->{provides} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					# rare fields
+					when ('Pre-Depends') {
+						$self->{pre_depends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					when ('Task') { $self->{homepage} = $field_value }
+					when ('Enhances') {
+						$self->{enhances} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
+					when ('Essential') { $self->{essential} = $field_value }
+					when ('Breaks') {
+						$self->{breaks} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+					}
 				}
 				undef $field_name;
 			}
