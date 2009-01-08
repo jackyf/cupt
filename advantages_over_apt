@@ -1,0 +1,1 @@
+'search' command also searches all versions of package, not policy or default ones;
