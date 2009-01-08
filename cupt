@@ -521,7 +521,17 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my ($package_name, $fh, $offset, $base_uri, $ref_release_info) = @$ref_arg;
+	my ($package_name, $fh, $offset, $base_uri, $ref_release_info, $ref_parse_options) = @$ref_arg;
+
+	# options parsing
+	my $o_no_parse_relations = 0; # don't parse depends, recommends, conflicts etc
+	my $o_no_parse_info_onlys = 0; # don't parse maintainer, descriptions, tag, homepage
+	foreach (@$ref_parse_options) {
+		given ($_) {
+			when ('no-parse-relations') { $o_no_parse_relations = 1; }
+			when ('no-parse-info-onlys') { $o_no_parse_info_onlys = 1; }
+		}
+	}
 
 	$self->{avail_as}->[0]->{base_uri} = $base_uri;
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
@@ -534,7 +544,8 @@ sub new {
 		seek $fh, $offset, 0;
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
-			if ($line =~ m/^ / or $line =~ m/^\t/) { # TODO: remove this bogus '\t' after libobject-declare-perl is fixed
+			if (!$o_no_parse_info_onlys and ($line =~ m/^ / or $line =~ m/^\t/)) {
+				# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
 				$self->{long_description} .= $line;
 			} else {
@@ -546,29 +557,29 @@ sub new {
 					when ('Priority') { $self->{priority} = $field_value }
 					when ('Section') { $self->{section} = $field_value }
 					when ('Installed-Size') { $self->{installed_size} = $field_value }
-					when ('Maintainer') { $self->{maintainer} = $field_value }
+					when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
 					when ('Source') { $self->{source_name} = $field_value }
 					when ('Architecture') { $self->{architecture} = $field_value }
 					when ('Version') { $self->{version} = $field_value }
 					when ('Essential') { $self->{essential} = $field_value }
-					when ('Depends') { $self->{depends} = __parse_relation_line($field_value) }
-					when ('Recommends') { $self->{recommends} = __parse_relation_line($field_value) }
-					when ('Suggests') { $self->{suggests} = __parse_relation_line($field_value) }
-					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($field_value) }
-					when ('Enhances') { $self->{enhances} = __parse_relation_line($field_value) }
-					when ('Breaks') { $self->{breaks} = __parse_relation_line($field_value) }
-					when ('Provides') { $self->{provides} = __parse_relation_line($field_value) }
-					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($field_value) }
-					when ('Replaces') { $self->{replaces} = __parse_relation_line($field_value) }
+					when ('Depends') { $self->{depends} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Recommends') { $self->{recommends} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Suggests') { $self->{suggests} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Pre-Depends') { $self->{pre_depends} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Enhances') { $self->{enhances} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Breaks') { $self->{breaks} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Provides') { $self->{provides} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Conflicts') { $self->{conflicts} = __parse_relation_line($field_value) unless $o_no_parse_relations }
+					when ('Replaces') { $self->{replaces} = __parse_relation_line($field_value) unless $o_no_parse_relations }
 					when ('Filename') { $self->{avail_as}->[0]->{filename} = $field_value }
 					when ('Size') { $self->{size} = $field_value }
 					when ('MD5sum') { $self->{md5sum} = $field_value }
 					when ('SHA1') { $self->{sha1sum} = $field_value }
 					when ('SHA256') { $self->{sha256sum} = $field_value }
-					when ('Description') { $self->{short_description} = $field_value }
-					when ('Homepage') { $self->{homepage} = $field_value }
+					when ('Description') { $self->{short_description} = $field_value unless $o_no_parse_info_onlys }
+					when ('Homepage') { $self->{homepage} = $field_value unless $o_no_parse_info_onlys }
 					when ('Task') { $self->{homepage} = $field_value }
-					when ('Tag') { $self->{tags} = $field_value }
+					when ('Tag') { $self->{tags} = $field_value unless $o_no_parse_info_onlys }
 				}
 				undef $field_name;
 			}
@@ -737,10 +748,19 @@ sub new {
 
 	# determining which parts of cache we wish to build
 	my %build_config = (
-		-source => 1,
-		-binary => 1,
+		'-source' => 1,
+		'-binary' => 1,
+		'-no-parse_relations' => 0,
+		'-no-parse_info_onlys' => 0,
 		@_ # applying passed parameters
 	);
+	my @version_parse_options;
+	if ($build_config{'-no-parse-relations'}) {
+		push @version_parse_options, 'no-parse-relations';
+	}
+	if ($build_config{'-no-parse-info-onlys'}) {
+		push @version_parse_options, 'no-parse-info-onlys';
+	}
 
 	my @index_files_to_parse = map { $self->_path_of_source_list($_) } @$ref_index_entries;
 	foreach my $idx (0 .. $#index_files_to_parse) {
@@ -750,7 +770,7 @@ sub new {
 			($source_type eq 'deb-src' && $build_config{'-source'}))
 		{
 			eval {
-				$self->_process_index_file($index_files_to_parse[$idx], $source_type);
+				$self->_process_index_file($index_files_to_parse[$idx], $source_type, \@version_parse_options);
 			};
 			if (mycatch()) {
 				mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
@@ -843,7 +863,7 @@ sub __parse_source_list {
 }
 
 sub _process_index_file {
-	my ($self, $file, $type) = @_;
+	my ($self, $file, $type, $ref_version_parse_options) = @_;
 
 	my $base_uri = 'fakeuri://fake.org';
 	my %release_info;
@@ -879,7 +899,7 @@ sub _process_index_file {
 				# end of entry, so creating new package
 				$$packages_storage->{$package_name} //= $package_class->new();
 				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name},
-						$package_name, $fh, $offset, $base_uri, \%release_info);
+						$package_name, $fh, $offset, $base_uri, \%release_info, $ref_version_parse_options);
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}
@@ -1083,7 +1103,7 @@ sub show_package_versions {
 
 sub search {
 	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1);
+	build_cache('-source' => 0, '-binary' => 1, '-no-parse-relations' => 1);
 
 	my $o_names_only = 0;
 	my $o_case_sensitive = 0;
@@ -1119,7 +1139,6 @@ sub search {
 					next PACKAGE;
 				}
 			}
-			delete $cache->{binary_packages}->{$package_name};
 		}
 	}
 }
