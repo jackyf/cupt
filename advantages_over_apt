@@ -1,1 +1,2 @@
 'search' command also searches all versions of package, not policy or default ones;
+'search' command can search case-sensitively ('--case-sensitive' switch);
