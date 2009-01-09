@@ -9,7 +9,7 @@ use strict;
 
 require Exporter;
 our @ISA = ("Exporter");
-our @EXPORT = qw(&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &max);
+our @EXPORT = qw(&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch);
 
 use Locale::gettext;
 
@@ -62,10 +62,6 @@ sub mycatch() {
     } else {
         return 0;
     }
-}
-
-sub max ($$) {
-	return ($_[0] > $_[1] ? $_[0] : $_[1]);
 }
 
 1;
@@ -794,7 +790,15 @@ sub new {
 
 sub get_pin {
 	my ($self, $version) = @_;
-	my $result = 500; # default pin
+	my $result;
+
+	my $update_pin = sub ($) {
+		if (!defined($result)) {
+			$result = $_[0];
+		} elsif ($result < $_[0]) {
+			$result = $_[0];
+		}
+	};
 
 	my $default_release = $self->{config}->var("apt::default-release");
 	if (defined($default_release)) {
@@ -802,7 +806,7 @@ sub get_pin {
 			if ($_->{release}->archive eq $default_release ||
 				$_->{release}->codename eq $default_release)
 			{
-				$result = 990;
+				$update_pin->(990);
 			}
 		}
 	}
