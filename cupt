@@ -786,6 +786,22 @@ sub new {
 	return $self;
 }
 
+sub get_pin {
+	my ($self, $ref_version) = @_;
+	my $result = 500; # default pin
+
+	my $default_release = $self->{config}->var("apt::default-release");
+	foreach (@{$ref_version->{avail_as}}) {
+		if ($_->{release}->archive eq $default_release ||
+			$_->{release}->codename eq $default_release)
+		{
+			$result = 990;
+		}
+	}
+
+	return $result;
+}
+
 sub _get_release_info {
 	my $self = shift;
 	my $file = shift;
