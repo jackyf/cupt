@@ -817,7 +817,18 @@ sub get_pin {
 sub __get_release_info {
 	my $file = shift;
 
-	my %release_info;
+	my %release_info = (
+		'version' => undef,
+		'description' => undef,
+		'signed' => 0,
+		'vendor' => undef,
+		'label' => undef,
+		'archive' => undef,
+		'codename' => undef,
+		'date' => undef,
+		'valid-until' => undef,
+		'architectures' => undef,
+	);
 
 	open(RELEASE, '<', $file) or mydie("unable to open release file '%s'", $file);
 	my $field_name = undef;
@@ -835,12 +846,12 @@ sub __get_release_info {
 				when ('Valid-Until') { $release_info{valid_until} = $field_value }
 				when ('Architectures') { $release_info{architectures} = [ split / /, $field_value ] }
 				when ('Description') {
-					if ($field_value =~ m/^Debian ([0-9a-z._-]+)/) {
+					$release_info{description} = $field_value;
+					if ($field_value =~ m/([0-9a-z._-]+)/) {
 						$release_info{version} = $1;
 					}
 				}
 			}
-			$release_info{version} //= "";
 
 			undef $field_name;
 		}
@@ -849,13 +860,16 @@ sub __get_release_info {
 		myerr("error parsing release file '%s', line '%d'", $file, $.);
 		myredie();
 	}
-	if (!exists $release_info{vendor}) {
+	if (!defined($release_info{description})) {
+		mydie("no description specified in release file '%s'", $file);
+	}
+	if (!defined($release_info{vendor})) {
 		mydie("no vendor specified in release file '%s'", $file);
 	}
-	if (!exists $release_info{archive}) {
-		mydie("no codename specified in release file '%s'", $file);
+	if (!defined($release_info{archive})) {
+		mydie("no archive specified in release file '%s'", $file);
 	}
-	if (!exists $release_info{codename}) {
+	if (!defined($release_info{codename})) {
 		mydie("no codename specified in release file '%s'", $file);
 	}
 
@@ -1141,6 +1155,11 @@ sub show_package_versions {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1);
 
+	my $o_with_release_info = 0;
+	GetOptions(
+		'--with-release-info' => \$o_with_release_info
+	);	
+
 	my @package_names = @ARGV;
 	foreach my $package_name (@package_names) {
 		my $ref_package = exists $cache->{binary_packages}->{$package_name} ?
@@ -1163,6 +1182,12 @@ sub show_package_versions {
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
 			$p->('Version', $version->{version});
+			if ($o_with_release_info) {
+				foreach (@{$version->{avail_as}}) {
+					next if !defined($_); # no release info available
+					$p->('Release', $_->{release}->{description});
+				}
+			}
 			$p->('Essential', $version->{essential}) if defined($version->{essential});
 			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
 			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
