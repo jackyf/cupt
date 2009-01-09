@@ -200,6 +200,7 @@ sub new {
 			'acquire::http::dl-limit' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
+			'apt::default-release' => undef,
 			'apt::install-recommends' => 1,
 			'apt::install-suggests' => 0,
 			'dir' => '/',
@@ -235,7 +236,7 @@ sub new {
 sub var {
 	my $self = shift;
 	my $var_name = shift;
-	if (defined ($self->{regular_vars}->{$var_name})) {
+	if (exists ($self->{regular_vars}->{$var_name})) {
 		return $self->{regular_vars}->{$var_name};
 	} elsif (defined ($self->{list_vars}->{$var_name})) {
 		return $self->{list_vars}->{$var_name};
@@ -788,15 +789,17 @@ sub new {
 }
 
 sub get_pin {
-	my ($self, $ref_version) = @_;
+	my ($self, $version) = @_;
 	my $result = 500; # default pin
 
 	my $default_release = $self->{config}->var("apt::default-release");
-	foreach (@{$ref_version->{avail_as}}) {
-		if ($_->{release}->archive eq $default_release ||
-			$_->{release}->codename eq $default_release)
-		{
-			$result = 990;
+	if (defined($default_release)) {
+		foreach (@{$version->{avail_as}}) {
+			if ($_->{release}->archive eq $default_release ||
+				$_->{release}->codename eq $default_release)
+			{
+				$result = 990;
+			}
 		}
 	}
 
@@ -1054,6 +1057,51 @@ sub build_cache {
 	}
 }
 
+sub select_binary_package_version {
+	my ($package_expression) = @_;
+
+	my $get_package_versions = sub {
+		my ($package_name) = @_;
+		if (exists $cache->{binary_packages}->{$package_name}) {
+			return $cache->{binary_packages}->{$package_name};
+		} else {
+			mydie("cannot find binary package '%s'", $package_name);
+		}
+	};
+
+	if ($package_expression =~ m/^(.*?)=(.*)/) {
+		# selecting by strict version string
+		my $package_name = $1;
+		my $version_string = $2;
+		# example: "nlkt=0.3.2.1-1"
+		foreach my $version ($get_package_versions->($package_name)) {
+			if ($version->{version} eq $version_string) {
+				# found such a version
+				return $version;
+			}
+		}
+		# not found
+		mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+	} else {
+		# selecting by policy (pins)
+		my $result_version;
+		my $max_pin;
+
+		foreach my $version ($get_package_versions->($package_expression)) {
+			my $new_pin = $cache->get_pin($version);
+			if (!defined($max_pin) || $max_pin < $new_pin) {
+				$max_pin = $new_pin;
+				$result_version = $version;
+			}
+		}
+
+		# we assume that every existent package have at least one version
+		# this is how we add versions in 'Cupt::Cache::&_process_index_file'
+
+		return $result_version;
+	}
+}
+
 sub check_for_extra_args {
 	if (scalar @ARGV > 0) {
 		mywarn("extra arguments '%s' are not processed", "@ARGV");
@@ -1185,7 +1233,11 @@ sub show_package_relations {
 	# turn off info parsing, we don't need it, only relations :)
 	$Cupt::Cache::BinaryPkg::Version::o_no_parse_info_onlys = 1;
 
-	my @package_names = @ARGV;
+	my @package_expressions = @ARGV;
+
+	foreach (@package_expressions) {
+		my $ref_version = select_binary_package_version($_);
+	}
 }
 
 sub process_options {
