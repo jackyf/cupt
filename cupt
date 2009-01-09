@@ -789,7 +789,6 @@ sub new {
 }
 
 sub get_pin {
-	# TODO: implement pin '1' for experimental
 	# TODO: implement pin '100' for installed packages?
 	my ($self, $version) = @_;
 	my $result;
@@ -802,14 +801,21 @@ sub get_pin {
 		}
 	};
 
+	# release-dependent settings
 	my $default_release = $self->{config}->var("apt::default-release");
-	if (defined($default_release)) {
-		foreach (@{$version->{avail_as}}) {
-			if ($_->{release}->archive eq $default_release ||
-				$_->{release}->codename eq $default_release)
+	foreach (@{$version->{avail_as}}) {
+		if (defined($default_release)) {
+			if ($_->{release}->{archive} eq $default_release ||
+				$_->{release}->{codename} eq $default_release)
 			{
 				$update_pin->(990);
+				last; # no sense to search further, this is maximum
 			}
+		}
+		if ($_->{release}->{archive} eq 'experimental') {
+			$update_pin->(1);
+		} else {
+			$update_pin->(500);
 		}
 	}
 
