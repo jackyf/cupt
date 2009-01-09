@@ -9,7 +9,7 @@ use strict;
 
 require Exporter;
 our @ISA = ("Exporter");
-our @EXPORT = qw(&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch);
+our @EXPORT = qw(&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &max);
 
 use Locale::gettext;
 
@@ -62,6 +62,10 @@ sub mycatch() {
     } else {
         return 0;
     }
+}
+
+sub max ($$) {
+	return ($_[0] > $_[1] ? $_[0] : $_[1]);
 }
 
 1;
