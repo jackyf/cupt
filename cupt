@@ -776,7 +776,8 @@ sub new {
 			($source_type eq 'deb-src' && $build_config{'-source'}))
 		{
 			eval {
-				$self->_process_index_file($index_files_to_parse[$idx], $source_type);
+				my $ref_release_info = __get_release_info($self->_path_of_release_list($ref_index_entries->[$idx]));
+				$self->_process_index_file($index_files_to_parse[$idx], $source_type, $ref_release_info);
 			};
 			if (mycatch()) {
 				mywarn("skipped index file '%s'", $index_files_to_parse[$idx]);
@@ -802,8 +803,7 @@ sub get_pin {
 	return $result;
 }
 
-sub _get_release_info {
-	my $self = shift;
+sub __get_release_info {
 	my $file = shift;
 
 	my %release_info;
@@ -813,7 +813,7 @@ sub _get_release_info {
 	eval {
 		while (<RELEASE>) {
 			(($field_name, my $field_value) = ($_ =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
-				or mydie("cannot parse line '%s'", $_);
+				or last;
 
 			given ($field_name) {
 				when ('Origin') { $release_info{vendor} = $field_value }
@@ -838,8 +838,18 @@ sub _get_release_info {
 		myerr("error parsing release file '%s', line '%d'", $file, $.);
 		myredie();
 	}
+	if (!exists $release_info{vendor}) {
+		mydie("no vendor specified in release file '%s'", $file);
+	}
+	if (!exists $release_info{archive}) {
+		mydie("no codename specified in release file '%s'", $file);
+	}
+	if (!exists $release_info{codename}) {
+		mydie("no codename specified in release file '%s'", $file);
+	}
 
 	close(RELEASE) or mydie("unable to close index file '%s'", $file);
+	return \%release_info;
 }
 
 sub _parse_sources_lists {
@@ -885,10 +895,9 @@ sub __parse_source_list {
 }
 
 sub _process_index_file {
-	my ($self, $file, $type) = @_;
+	my ($self, $file, $type, $ref_release_info) = @_;
 
 	my $base_uri = 'fakeuri://fake.org';
-	my %release_info;
 
 	my $package_class;
 	my $packages_storage;
@@ -921,7 +930,7 @@ sub _process_index_file {
 				# end of entry, so creating new package
 				$$packages_storage->{$package_name} //= $package_class->new();
 				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name},
-						$package_name, $fh, $offset, $base_uri, \%release_info);
+						$package_name, $fh, $offset, $base_uri, $ref_release_info);
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}
@@ -973,7 +982,7 @@ sub _path_of_source_list {
 	return $filename;
 }
 
-sub __path_of_release_list {
+sub _path_of_release_list {
 	my $self = shift;
 	my $entry = shift;
 
