@@ -1114,7 +1114,6 @@ sub select_binary_package_version {
 		}
 	};
 
-	# TODO: implement "<package>/<release>"
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
 		my $package_name = $1;
@@ -1130,6 +1129,28 @@ sub select_binary_package_version {
 		}
 		# not found
 		mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+	} elsif ($package_expression =~ m/^(.*?)\/(.*)/) {
+		# selecting by release distibution
+		my $package_name = $1;
+		check_package_name($package_name);
+		my $distribution_expression = $2;
+		if (! ($distribution_expression =~ m/^[a-z]+$/)) {
+			mydie("bad distribution '%s' requested, use archive or codename", $distribution_expression);
+		}
+		# example: "nlkt/sid" or "nlkt/unstable"
+		foreach my $version (@{$get_package_versions->($package_name)}) {
+			foreach (@{$version->{avail_as}}) {
+				if (defined($_->{release}) and
+					$_->{release}->{archive} eq $distribution_expression ||
+					$_->{release}->{codename} eq $distribution_expression)
+				{
+					# found such a version
+					return ($package_name, $version);
+				}
+			}
+		}
+		# not found
+		mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
 	} else {
 		# TODO: move this to 'Cupt::Cache'
 		# selecting by policy (pins)
