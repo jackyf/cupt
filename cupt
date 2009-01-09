@@ -404,6 +404,7 @@ sub __parse_relation_line {
 1;
 
 package Cupt::Cache::SourcePkg::Version;
+# TODO: full rework
 
 import Cupt::Core;
 import Cupt::Cache::Relation;
@@ -487,13 +488,7 @@ sub new {
 		avail_as => [],
 		# should contain array of hashes
 		#	release => {
-		#		archive,
-		#		label,
-		#		version,
-		#		codename,
-		#		vendor,
-		#		component,
-		#		signed,
+		#		...
 		#	},
 		#	base_uri
 		#	filename
@@ -700,6 +695,7 @@ sub _parse_and_merge_version {
 			# there is such version string
 
 			# checking hash sums
+			# TODO: how this is supposed to work now? look deeper
 			if (is_hashes_equal($found_version, $parsed_version))
 			{
 				# ok, this is the same entry; looking maybe it defines new uri for package?
@@ -744,6 +740,10 @@ sub _construct_version {
 1;
 
 package Cupt::Cache;
+# TODO: implement parsing /var/lib/dpkg/status
+# TODO: sub pinned_versions { ... }
+# TODO: implement checking for signedness
+# TODO: implement reading /etc/apt/preferences
 
 import Cupt::Core;
 
@@ -789,6 +789,8 @@ sub new {
 }
 
 sub get_pin {
+	# TODO: implement pin '1' for experimental
+	# TODO: implement pin '100' for installed packages?
 	my ($self, $version) = @_;
 	my $result;
 
@@ -922,6 +924,7 @@ sub __parse_source_list {
 sub _process_index_file {
 	my ($self, $file, $type, $ref_release_info) = @_;
 
+	# TODO: implement proper base uri detection
 	my $base_uri = 'fakeuri://fake.org';
 
 	my $package_class;
@@ -1040,9 +1043,6 @@ if (mycatch()) {
 	exit 1;
 }
 
-# disable delayed parsing for testing purposes
-#$config->set_regular_var('cupt::delayed-index-parsing', 0);
-
 process_options();
 
 my $command = shift @ARGV;
@@ -1091,6 +1091,7 @@ sub select_binary_package_version {
 		}
 	};
 
+	# TODO: implement "<package>/<release>"
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
 		my $package_name = $1;
@@ -1105,6 +1106,7 @@ sub select_binary_package_version {
 		# not found
 		mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
 	} else {
+		# TODO: move this to 'Cupt::Cache'
 		# selecting by policy (pins)
 		my $result_version;
 		my $max_pin;
@@ -1159,6 +1161,7 @@ sub show_package_versions {
 	GetOptions(
 		'--with-release-info' => \$o_with_release_info
 	);	
+	# TODO: implement '--[no-]all-versions'
 
 	my @package_names = @ARGV;
 	foreach my $package_name (@package_names) {
@@ -1272,6 +1275,8 @@ sub show_package_relations {
 		my ($package_name, $version) = select_binary_package_version($_);
 		say $package_name . " - " . $version->{version};
 	}
+
+	# TODO: implement it!
 }
 
 sub process_options {
