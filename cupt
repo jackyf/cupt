@@ -539,10 +539,10 @@ sub new {
 		seek $fh, $offset, 0;
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
-			if (!$o_no_parse_info_onlys and ($line =~ m/^ / or $line =~ m/^\t/)) {
+			if (($line =~ m/^ / or $line =~ m/^\t/)) {
 				# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
 				# part of long description
-				$self->{long_description} .= $line;
+				$self->{long_description} .= $line unless $o_no_parse_info_onlys;
 			} else {
 				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
@@ -1063,7 +1063,7 @@ sub select_binary_package_version {
 	my $get_package_versions = sub {
 		my ($package_name) = @_;
 		if (exists $cache->{binary_packages}->{$package_name}) {
-			return $cache->{binary_packages}->{$package_name};
+			return $cache->{binary_packages}->{$package_name}->versions();
 		} else {
 			mydie("cannot find binary package '%s'", $package_name);
 		}
@@ -1074,10 +1074,10 @@ sub select_binary_package_version {
 		my $package_name = $1;
 		my $version_string = $2;
 		# example: "nlkt=0.3.2.1-1"
-		foreach my $version ($get_package_versions->($package_name)) {
+		foreach my $version (@{$get_package_versions->($package_name)}) {
 			if ($version->{version} eq $version_string) {
 				# found such a version
-				return $version;
+				return ($package_name, $version);
 			}
 		}
 		# not found
@@ -1087,7 +1087,7 @@ sub select_binary_package_version {
 		my $result_version;
 		my $max_pin;
 
-		foreach my $version ($get_package_versions->($package_expression)) {
+		foreach my $version (@{$get_package_versions->($package_expression)}) {
 			my $new_pin = $cache->get_pin($version);
 			if (!defined($max_pin) || $max_pin < $new_pin) {
 				$max_pin = $new_pin;
@@ -1098,7 +1098,7 @@ sub select_binary_package_version {
 		# we assume that every existent package have at least one version
 		# this is how we add versions in 'Cupt::Cache::&_process_index_file'
 
-		return $result_version;
+		return ($package_expression, $result_version);
 	}
 }
 
@@ -1236,7 +1236,8 @@ sub show_package_relations {
 	my @package_expressions = @ARGV;
 
 	foreach (@package_expressions) {
-		my $ref_version = select_binary_package_version($_);
+		my ($package_name, $version) = select_binary_package_version($_);
+		say $package_name . " - " . $version->{version};
 	}
 }
 
