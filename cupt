@@ -9,7 +9,9 @@ use strict;
 
 require Exporter;
 our @ISA = ("Exporter");
-our @EXPORT = qw(&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch);
+our @EXPORT = qw(
+	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch
+	$package_name_regex $version_string_regex);
 
 use Locale::gettext;
 
@@ -63,6 +65,9 @@ sub mycatch() {
         return 0;
     }
 }
+
+our $package_name_regex = qr/[a-z_0-9.+-]+/;
+our $version_string_regex = qr/[a-zA-Z+0-9~:.-]+/;
 
 1;
 
@@ -323,7 +328,7 @@ sub new {
 	};
 	bless $self => $class;
 
-	if ($unparsed =~ m/^([a-z_0-9.+-]+)/g) {
+	if ($unparsed =~ m/^($package_name_regex)/g) {
 		# package name is here
 		$self->{package_name} = $1;
 	} else {
@@ -340,7 +345,7 @@ sub new {
 				)
 				\s* # possible spaces
 				(
-					[a-zA-Z+0-9~:.-]+ # version
+					 $version_string_regex# version
 				)
 			\) # close relation brace
 			$
@@ -958,7 +963,7 @@ sub _process_index_file {
 				my $offset = $1 + length("Package: $package_name\n");
 
 				# check it for correctness
-				($package_name =~ m/^[a-z0-9.+-]+$/)
+				($package_name =~ m/^$package_name_regex$/)
 					or mydie("bad package name '%s'", $package_name);
 
 				# end of entry, so creating new package
@@ -1085,6 +1090,18 @@ sub build_cache {
 	}
 }
 
+sub check_package_name ($) {
+	if (! ($_[0] =~ m/$package_name_regex/)) {
+		mydie("bad package name '%s'", $_[0]);
+	}
+}
+
+sub check_version_string ($) {
+	if (! ($_[0] =~ m/$version_string_regex/)) {
+		mydie("bad version string '%s'", $_[0]);
+	}
+}
+
 sub select_binary_package_version {
 	my ($package_expression) = @_;
 
@@ -1101,7 +1118,9 @@ sub select_binary_package_version {
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
 		my $package_name = $1;
+		check_package_name($package_name);
 		my $version_string = $2;
+		check_version_string($version_string);
 		# example: "nlkt=0.3.2.1-1"
 		foreach my $version (@{$get_package_versions->($package_name)}) {
 			if ($version->{version} eq $version_string) {
