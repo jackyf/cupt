@@ -1003,6 +1003,7 @@ my %command_handlers = (
 	'config-dump' => \&config_dump,
 	'show' => \&show_package_versions,
 	'search' => \&search,
+	'depends' => \&show_package_relations,
 );
 
 if (defined($command_handlers{$command})) {
@@ -1150,6 +1151,16 @@ sub search {
 			}
 		}
 	}
+}
+
+sub show_package_relations {
+	# we need to build binary-only cache for this operation
+	build_cache('-source' => 0, '-binary' => 1);
+
+	# turn off info parsing, we don't need it, only relations :)
+	$Cupt::Cache::BinaryPkg::Version::o_no_parse_info_onlys = 1;
+
+	my @package_names = @ARGV;
 }
 
 sub process_options {
