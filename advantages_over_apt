@@ -1,3 +1,7 @@
-'search' command also searches all versions of package, not policy or default ones;
-'search' command can search case-sensitively ('--case-sensitive' switch);
-'show' command can show release description ('--with-release-info' switch);
+Advantages over apt-cache:
+ - 'search' command also searches all versions of package, not policy or
+   default ones;
+ - 'search' command can search case-sensitively ('--case-sensitive' switch);
+ - 'show' command can show release description ('--with-release-info' switch);
+ - '/<distibution' and '=<version>' suffixes can be used with 'show' (you
+   should also specify --no-all-versions) and 'depends' commands.

@@ -167,7 +167,6 @@ sub show_package_versions {
 	GetOptions(
 		'--with-release-info' => \$o_with_release_info
 	);	
-	# TODO: implement '--[no-]all-versions'
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
