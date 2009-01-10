@@ -206,6 +206,7 @@ sub new {
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::important' => 0,
+			'apt::cache::namesonly' => 0,
 			'apt::default-release' => undef,
 			'apt::install-recommends' => 1,
 			'apt::install-suggests' => 0,
@@ -1272,7 +1273,7 @@ sub search {
 	my $o_names_only = 0;
 	my $o_case_sensitive = 0;
 	GetOptions(
-		'names-only' => sub { $config->set_regular_var('apt::cache::namesonly', 1) },
+		'names-only|n' => sub { $config->set_regular_var('apt::cache::namesonly', 1) },
 		'case-sensitive' => \$o_case_sensitive,
 	);
 
@@ -1281,7 +1282,7 @@ sub search {
 
 	my $regex = $o_case_sensitive ? qr/$pattern/ : qr/$pattern/i;
 
-	if ($o_names_only) {
+	if ($config->var('apt::cache::namesonly')) {
 		# search only in package names
 		foreach (keys %{$cache->{binary_packages}}) {
 			if (m/$regex/) {
