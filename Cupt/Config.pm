@@ -1,5 +1,8 @@
 package Cupt::Config;
 
+use strict;
+use warnings;
+
 use Cupt::ISCConfigParser;
 use Cupt::Core;
 

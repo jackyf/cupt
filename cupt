@@ -4,6 +4,9 @@
 package main;
 
 use 5.10.0;
+use warnings;
+use strict;
+
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
 
@@ -225,7 +228,7 @@ sub search {
 	build_cache('-source' => 0, '-binary' => 1);
 
 	# turn off relations parsing, we don't need them
-	$Cupt::Cache::BinaryPkg::Version::o_no_parse_relations = 1;
+	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
 	my $o_names_only = 0;
 	my $o_case_sensitive = 0;
@@ -270,7 +273,7 @@ sub show_package_relations {
 	build_cache('-source' => 0, '-binary' => 1);
 
 	# turn off info parsing, we don't need it, only relations :)
-	$Cupt::Cache::BinaryPkg::Version::o_no_parse_info_onlys = 1;
+	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
 	my @package_expressions = @ARGV;
 

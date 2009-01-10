@@ -5,6 +5,8 @@ package Cupt::Cache;
 # TODO: implement reading /etc/apt/preferences
 
 use 5.10.0;
+use strict;
+use warnings;
 
 use Cupt::Core;
 use Cupt::Cache::Pkg;
@@ -246,8 +248,8 @@ sub _process_index_file {
 				# end of entry, so creating new package
 				$$packages_storage->{$package_name} //= Cupt::Cache::Pkg->new();
 
-				$version = $version_class->new($package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
-				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name}, $version);
+				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name}, $version_class,
+						$package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
 			} else {
 				mydie("expected 'Package' line, but haven't got it");
 			}

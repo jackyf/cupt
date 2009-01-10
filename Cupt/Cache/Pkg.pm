@@ -1,5 +1,8 @@
 package Cupt::Cache::Pkg;
 
+use strict;
+use warnings;
+
 use Cupt::Core;
 
 sub new {
@@ -11,18 +14,27 @@ sub new {
 # adds unparsed entry to package
 sub add_entry {
 	my $self = shift;
-	push @$self, $_[0];
+	push @$self, \@_;
 }
 
 # returns reference to versions array
 sub versions {
-	my $self = shift;
+	my ($self) = @_;
 
 	my @result;
 	# in case parsing of versions of this package was delayed, we parse them now (on-demand)
 	eval {
 		foreach (@$self) {
-			$self->_parse_and_merge_version($_, \@result);
+			my $parsed_version;
+			eval {
+				my $version_class = shift @$_;
+				$parsed_version = $version_class->new($_);
+			};
+			if (mycatch()) {
+				myerr("error while parsing new version entry");
+				myredie();
+			}
+			$self->_parse_and_merge_version($parsed_version, \@result);
 		}
 	};
 	if (mycatch()) {
@@ -46,15 +58,7 @@ sub find_version {
 
 sub _parse_and_merge_version {
 	# parsing
-	my ($self, $entry, $ref_result) = @_;
-	my $parsed_version;
-	eval {
-		$parsed_version = $self->_construct_version($entry);
-	};
-	if (mycatch()) {
-		myerr("error while parsing new version entry");
-		myredie();
-	}
+	my ($self, $parsed_version, $ref_result) = @_;
 
 	# merging
 	eval {

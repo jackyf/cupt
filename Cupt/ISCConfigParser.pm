@@ -1,8 +1,12 @@
 package Cupt::ISCConfigParser;
 # This package is modified version of Matt Dainly's BIND::Config::Parser
 
-import Cupt::Core;
+use strict;
+use warnings;
+
 use Parse::RecDescent;
+
+use Cupt::Core;
 
 my $grammar = q{
 

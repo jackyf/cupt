@@ -1,9 +1,11 @@
 package Cupt::Cache::BinaryVersion;
 
 use 5.10.0;
+use warnings;
+use strict;
 
-import Cupt::Core;
-import Cupt::Cache::Relation qw(__parse_relation_line);
+use Cupt::Core;
+use Cupt::Cache::Relation qw(__parse_relation_line);
 
 # parsing options
 our $o_no_parse_relations = 0; # don't parse depends, recommends, conflicts etc

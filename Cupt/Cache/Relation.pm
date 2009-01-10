@@ -1,8 +1,11 @@
 package Cupt::Cache::Relation;
 
+use strict;
+use warnings;
+
 use Exporter qw(import);
 
-import Cupt::Core;
+use Cupt::Core;
 
 our @EXPORT_OK = qw(&__parse_relation_line &stringify_relations);
 
