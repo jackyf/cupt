@@ -25,6 +25,7 @@ sub new {
 			'acquire::http::dl-limit' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
+			'apt::cache::allversions' => 1,
 			'apt::cache::important' => 0,
 			'apt::cache::namesonly' => 0,
 			'apt::default-release' => undef,

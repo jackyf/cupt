@@ -169,17 +169,24 @@ sub show_package_versions {
 	);	
 	# TODO: implement '--[no-]all-versions'
 
-	my @package_names = @ARGV;
-	foreach my $package_name (@package_names) {
-		my $ref_package = exists $cache->{binary_packages}->{$package_name} ?
-			$cache->{binary_packages}->{$package_name} : undef;
+	my @package_expressions = @ARGV;
+	foreach my $package_expression (@package_expressions) {
+		my $package_name;
+		my $ref_versions;
+		if ($config->var('apt::cache::allversions')) {
+			$package_name = $package_expression;
+			my $ref_package = exists $cache->{binary_packages}->{$package_name} ?
+				$cache->{binary_packages}->{$package_name} : undef;
 
-		if (!defined($ref_package)) {
-			mywarn("know nothing about package '%s', skipped", $package_name);
-			next;
+			if (!defined($ref_package)) {
+				mywarn("know nothing about package '%s', skipped", $package_name);
+				next;
+			}
+			$ref_versions = $ref_package->versions();
+		} else {
+			($package_name, my $version) = select_binary_package_version($package_expression);
+			$ref_versions = [ $version ];
 		}
-
-		my $ref_versions = $ref_package->versions();
 
 		my $p = sub { print gettext(shift), ': ', shift, "\n" };
 		foreach my $version (@$ref_versions) {
@@ -314,6 +321,8 @@ sub process_options {
 		GetOptions(
 			'o=s@' => \@direct_options,
 			'important|i' => sub { $config->set_regular_var('apt::cache::important', 1) },
+			'all-versions|a' => sub { $config->set_regular_var('apt::cache::allversions', 1) },
+			'no-all-versions' => sub { $config->set_regular_var('apt::cache::allversions', 0) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {
