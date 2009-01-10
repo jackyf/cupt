@@ -1317,10 +1317,30 @@ sub show_package_relations {
 
 	foreach (@package_expressions) {
 		my ($package_name, $version) = select_binary_package_version($_);
-		say $package_name . " - " . $version->{version};
+		my $version_string = $version->{version};
+
+		say "$package_name $version_string:";
+		my @relation_groups = (
+			[ $version->{pre_depends}, 'Pre-Depends' ],
+			[ $version->{depends}, 'Depends' ],
+			[ $version->{recommends}, 'Recommends' ],
+			[ $version->{suggests}, 'Suggests' ],
+			[ $version->{conflicts}, 'Conflicts' ],
+			[ $version->{replaces}, 'Replaces' ],
+		);
+
+		foreach my $item (@relation_groups) {
+			next unless defined($item);
+
+			my $relations = $item->[0];
+			my $caption = $item->[1];
+			my @split = split /, /,  stringify_relations($relations);
+			my $starter = "  " . gettext($caption) . ": ";
+			map { say $starter, $_; } @split;
+		}
 	}
 
-	# TODO: implement it!
+	# TODO: implement '--important'
 }
 
 sub process_options {
