@@ -205,6 +205,7 @@ sub new {
 			'acquire::http::dl-limit' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
+			'apt::cache::important' => 0,
 			'apt::default-release' => undef,
 			'apt::install-recommends' => 1,
 			'apt::install-suggests' => 0,
@@ -1271,8 +1272,8 @@ sub search {
 	my $o_names_only = 0;
 	my $o_case_sensitive = 0;
 	GetOptions(
-		'--names-only' => \$o_names_only,
-		'--case-sensitive' => \$o_case_sensitive,
+		'names-only' => sub { $config->set_regular_var('apt::cache::namesonly', 1) },
+		'case-sensitive' => \$o_case_sensitive,
 	);
 
 	my $pattern = shift @ARGV;
@@ -1323,11 +1324,15 @@ sub show_package_relations {
 		my @relation_groups = (
 			[ $version->{pre_depends}, 'Pre-Depends' ],
 			[ $version->{depends}, 'Depends' ],
-			[ $version->{recommends}, 'Recommends' ],
-			[ $version->{suggests}, 'Suggests' ],
 			[ $version->{conflicts}, 'Conflicts' ],
-			[ $version->{replaces}, 'Replaces' ],
 		);
+		if (!$config->var('apt::cache::important')) {
+			push @relation_groups, 
+					[ $version->{recommends}, 'Recommends' ],
+					[ $version->{suggests}, 'Suggests' ],
+					[ $version->{replaces}, 'Replaces' ]
+			;
+		}
 
 		foreach my $item (@relation_groups) {
 			next unless defined($item);
@@ -1339,8 +1344,6 @@ sub show_package_relations {
 			map { say $starter, $_; } @split;
 		}
 	}
-
-	# TODO: implement '--important'
 }
 
 sub process_options {
@@ -1348,7 +1351,8 @@ sub process_options {
 	my @direct_options;
 	eval {
 		GetOptions(
-			'o=s@' => \@direct_options
+			'o=s@' => \@direct_options,
+			'important|i' => sub { $config->set_regular_var('apt::cache::important', 1) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {
