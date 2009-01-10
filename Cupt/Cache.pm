@@ -13,7 +13,7 @@ use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
 
-use fields qw(source_packages binary_packages config);
+use fields qw(source_packages binary_packages config pin_settings);
 
 sub new {
 	my $class = shift;
@@ -52,6 +52,10 @@ sub new {
 			}
 		}
 	}
+
+	# reading pin settings
+	# in progress
+
 	return $self;
 }
 
@@ -214,6 +218,59 @@ sub __parse_source_list {
 	return @result;
 }
 
+sub _parse_preferences {
+	my ($self, $file) = @_;
+
+	# we are parsing triades like:
+
+	# Package: perl
+	# Pin: o=debian
+	# Pin-Priority: 800
+
+	# Source: unetbootin
+	# Pin: a=experimental
+	# Pin-Priority: 1100
+
+	open(PREF, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+	while (<PREF>) {
+		chomp;
+		# skip all empty lines and lines with comments
+		next if m/^\s*(?:#.*)?$/;
+
+		# ok, real triade should be here
+		my $package_or_source_line = $_;
+
+		m/^(Package|Source): (.*)/ or
+				mydie("bad package/source line at file '%s', line '%u'", $file, $.);
+
+		my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_name');
+		my $name_value = $2;
+
+		my $pin_line = <PREF>;
+		defined($pin) or
+				mydie("no pin line at file '%s' line '%u'", $file, $.);
+
+		$pin_line =~ m/^Pin: (\w+?) (.*)/) or
+				mydie("bad pin line at file '%s' line '%u'", $file, $.);
+
+		my $pin_type = $1;
+		my $pin_expression = $2;
+		given ($2) {
+			when ('release') {
+
+			}
+			when ('version') {
+
+			}
+			when ('origin') { # this is 'base_uri', really...
+
+			}
+		}
+	}
+
+	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
+}
+
 sub _process_index_file {
 	my ($self, $file, $ref_base_uri, $type, $ref_release_info) = @_;
 
@@ -308,6 +365,17 @@ sub _path_of_release_list {
 	my $filename = join('_', $self->_path_of_base_uri($entry), 'Release');
 
 	return $filename;
+}
+
+sub _path_of_preferences {
+	my ($self) = @_;
+
+	my $root_prefix = $self->{config}->var('dir');
+	my $etc_dir = $self->{config}->var('dir::etc');
+
+	my $leaf = $self->{config}->var('dir::etc::preferences');
+
+	return "$root_prefix$etc_dir/$main_file";
 }
 
 1;
