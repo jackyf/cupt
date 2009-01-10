@@ -3,15 +3,16 @@
 
 package main;
 
+use 5.10.0;
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
 
 use Locale::gettext;
 
-import Cupt::Core;
-import Cupt::Config;
-import Cupt::Cache;
-import Cupt::Cache::Relation qw(stringify_relations);
+use Cupt::Core;
+use Cupt::Config;
+use Cupt::Cache;
+use Cupt::Cache::Relation qw(stringify_relations);
 
 my $config;
 my $cache;

@@ -68,4 +68,3 @@ our $version_string_regex = qr/[a-zA-Z+0-9~:.-]+/;
 
 1;
 
-

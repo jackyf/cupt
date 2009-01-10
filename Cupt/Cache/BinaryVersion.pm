@@ -1,5 +1,7 @@
 package Cupt::Cache::BinaryVersion;
 
+use 5.10.0;
+
 import Cupt::Core;
 import Cupt::Cache::Relation qw(__parse_relation_line);
 

@@ -1,7 +1,7 @@
 package Cupt::Config;
 
-import Cupt::ISCConfigParser;
-import Cupt::Core;
+use Cupt::ISCConfigParser;
+use Cupt::Core;
 
 sub new {
 	my $class = shift;
@@ -129,4 +129,6 @@ sub __get_architecture {
 	chomp($answer);
 	return $answer;
 }
+
+1;
 

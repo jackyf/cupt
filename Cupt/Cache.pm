@@ -4,7 +4,12 @@ package Cupt::Cache;
 # TODO: implement checking for signedness
 # TODO: implement reading /etc/apt/preferences
 
-import Cupt::Core;
+use 5.10.0;
+
+use Cupt::Core;
+use Cupt::Cache::Pkg;
+use Cupt::Cache::BinaryVersion;
+use Cupt::Cache::SourceVersion;
 
 use fields qw(source_packages binary_packages config);
 
@@ -210,7 +215,7 @@ sub __parse_source_list {
 sub _process_index_file {
 	my ($self, $file, $ref_base_uri, $type, $ref_release_info) = @_;
 
-	my $package_class;
+	my $version_class;
 	my $packages_storage;
 	if ($type eq 'deb') {
 		$version_class = 'Cupt::Cache::BinaryVersion';

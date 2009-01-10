@@ -1,6 +1,6 @@
 package Cupt::Cache::Pkg;
 
-import Cupt::Core;
+use Cupt::Core;
 
 sub new {
 	my ($class) = @_;
@@ -11,7 +11,7 @@ sub new {
 # adds unparsed entry to package
 sub add_entry {
 	my $self = shift;
-	push @$self, \@_;
+	push @$self, $_[0];
 }
 
 # returns reference to versions array
