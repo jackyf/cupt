@@ -22,6 +22,8 @@ sub new {
 		#	ref_base_uri
 		#	filename
 
+		package_name => undef,
+
 		priority => undef,
 		section => undef,
 		installed_size => undef,
@@ -54,7 +56,8 @@ sub new {
 
 	$self->{avail_as}->[0]->{ref_base_uri} = $ref_base_uri;
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
-	$self->{source_name} = $package_name; # default, if not specified
+	$self->{package_name} = $package_name;
+	$self->{source_name} = $package_name; # may be redefined in appropriate tag
 
 	my $field_name = undef;
 	eval {

@@ -99,7 +99,7 @@ sub select_binary_package_version {
 		foreach my $version (@{$get_package->($package_name)->versions()}) {
 			if ($version->{version} eq $version_string) {
 				# found such a version
-				return ($package_name, $version);
+				return $version;
 			}
 		}
 		# not found
@@ -120,7 +120,7 @@ sub select_binary_package_version {
 					$_->{release}->{codename} eq $distribution_expression)
 				{
 					# found such a version
-					return ($package_name, $version);
+					return $version;
 				}
 			}
 		}
@@ -128,7 +128,7 @@ sub select_binary_package_version {
 		mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
 	} else {
 		my $result_version = $cache->get_policy_version($get_package->($package_expression));
-		return ($package_expression, $result_version);
+		return $result_version;
 	}
 }
 
@@ -183,7 +183,8 @@ sub show_package_versions {
 			}
 			$ref_versions = $ref_package->versions();
 		} else {
-			($package_name, my $version) = select_binary_package_version($package_expression);
+			my $version = select_binary_package_version($package_expression);
+			$package_name = $version->{package_name};
 			$ref_versions = [ $version ];
 		}
 
@@ -284,7 +285,8 @@ sub show_package_relations {
 	my @package_expressions = @ARGV;
 
 	foreach (@package_expressions) {
-		my ($package_name, $version) = select_binary_package_version($_);
+		my $version = select_binary_package_version($_);
+		my $package_name = $version->{package_name};
 		my $version_string = $version->{version};
 
 		say "$package_name $version_string:";
