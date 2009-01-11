@@ -58,7 +58,7 @@ sub new {
 
 	# reading pin settings
 	my $pin_settings_file = $self->_path_of_preferences();
-	$self->_parse_preferences() if -r $pin_settings_file;
+	$self->_parse_preferences($pin_settings_file) if -r $pin_settings_file;
 
 	return $self;
 }
