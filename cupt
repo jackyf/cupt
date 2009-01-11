@@ -32,6 +32,11 @@ if (mycatch()) {
 process_options();
 
 my $command = shift @ARGV;
+while ($command =~ m/^-/) { # this is some option which may be processed later
+	my $new_command = shift @ARGV;
+	unshift @ARGV, $command;
+	$command = $new_command;
+}
 
 myerr("no command specified") and exit 2 if (!defined($command));
 
@@ -51,7 +56,7 @@ if (defined($command_handlers{$command})) {
 		exit 3;
 	}
 } else {
-	myerr("unrecognized command") and exit 2;
+	myerr("unrecognized command '%s'", $command) and exit 2;
 }
 
 sub build_cache {
