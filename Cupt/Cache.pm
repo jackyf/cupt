@@ -113,7 +113,7 @@ sub get_pin {
 			my $value = $pin->{'base_uri'};
 
 			my $found = 0;
-			foreach (@{$version->{avail_as})
+			foreach (@{$version->{avail_as}}) {
 				if ($_->{base_uri} =~ m/$value/) {
 					$found = 1;
 					last;
