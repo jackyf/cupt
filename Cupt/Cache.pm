@@ -2,7 +2,6 @@ package Cupt::Cache;
 # TODO: implement parsing /var/lib/dpkg/status
 # TODO: sub pinned_versions { ... }
 # TODO: implement checking for signedness
-# TODO: implement reading /etc/apt/preferences
 
 use 5.10.0;
 use strict;
@@ -58,7 +57,8 @@ sub new {
 	}
 
 	# reading pin settings
-	$self->_parse_preferences($self->_path_of_preferences());
+	my $pin_settings_file = $self->_path_of_preferences();
+	$self->_parse_preferences() if -r $pin_settings_file;
 
 	return $self;
 }
