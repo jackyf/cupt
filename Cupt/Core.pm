@@ -63,6 +63,11 @@ sub mycatch() {
     }
 }
 
+sub compare_version_strings($$) {
+	# TODO: implement comparing versions
+	return $_[0] cmp $_[1];
+}
+
 our $package_name_regex = qr/[a-z_0-9.+-]+/;
 our $version_string_regex = qr/[a-zA-Z+0-9~:.-]+/;
 

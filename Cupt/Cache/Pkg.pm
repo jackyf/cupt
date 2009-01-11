@@ -3,6 +3,10 @@ package Cupt::Cache::Pkg;
 use strict;
 use warnings;
 
+use Exporter qw(import);
+
+our @EXPORT = qw(&compare_versions);
+
 use Cupt::Core;
 
 sub new {
@@ -54,6 +58,10 @@ sub find_version {
 		return $version if ($version->{version} eq $lookup_version);
 	}
 	return undef;
+}
+
+sub compare_versions ($$) {
+	return Cupt::Core::compare_version_strings($_[0], $_[1]);
 }
 
 sub _parse_and_merge_version {
