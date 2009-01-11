@@ -55,7 +55,7 @@ sub new {
 	}
 
 	# reading pin settings
-	# in progress
+	$self->_parse_preferences();
 
 	return $self;
 }
@@ -233,9 +233,9 @@ sub _parse_preferences {
 	# Pin-Priority: 1100
 
 	sub glob_to_regex ($) {
-		${$_[0]} =~ s/*/.*?/g
-		${$_[0]} =~ s/^/.*?/g
-		${$_[0]} =~ s/$/.*/g
+		$_[0] =~ s/\*/.*?/g;
+		$_[0] =~ s/^/.*?/g;
+		$_[0] =~ s/$/.*/g;
 	}
 
 	open(PREF, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
@@ -256,7 +256,7 @@ sub _parse_preferences {
 			glob_to_regex($name_value);
 
 			$pin_result{$name_type} = $name_value;
-		}
+		};
 
 		do { # processing second line
 			my $pin_line = <PREF>;
@@ -288,7 +288,7 @@ sub _parse_preferences {
 							when ('o') { $pin_result{'release'}->{'vendor'} = $condition_value; }
 							when ('l') { $pin_result{'release'}->{'label'} = $condition_value; }
 							default {
-								mydie("bad condition type (should be one of 'a', 'v', 'c', 'n', 'o', 'l')" . 
+								mydie("bad condition type (should be one of 'a', 'v', 'c', 'n', 'o', 'l') " . 
 										"in release expression at file '%s' line '%u'", $file, $.);
 							}
 						}
@@ -302,10 +302,11 @@ sub _parse_preferences {
 					$pin_result{'base_uri'} = $pin_expression;
 				}
 				default {
-					mydie("bad pin type (should be one of 'release', 'version', 'origin') at file '%s' line '%u'", $file, $.);
+					mydie("bad pin type (should be one of 'release', 'version', 'origin') " . 
+							"at file '%s' line '%u'", $file, $.);
 				}
 			}
-		}
+		};
 
 		do { # processing third line
 			my $priority_line = <PREF>;
@@ -317,7 +318,10 @@ sub _parse_preferences {
 
 			my $priority = $1;
 			$pin_result{'value'} = $priority;
-		}
+		};
+
+		# adding to storage
+		push @{$self->{'pin_settings'}}, \%pin_hash;
 	}
 
 	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
