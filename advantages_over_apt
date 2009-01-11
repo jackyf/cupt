@@ -1,3 +1,6 @@
+Core advantags:
+ - Pins can be specified also by source package.
+
 Advantages over apt-cache:
  - 'search' command also searches all versions of package, not policy or
    default ones;
