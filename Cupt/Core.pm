@@ -63,13 +63,32 @@ sub mycatch() {
     }
 }
 
-sub compare_version_strings($$) {
-	# TODO: implement comparing versions
-	return $_[0] cmp $_[1];
-}
-
 our $package_name_regex = qr/[a-z_0-9.+-]+/;
 our $version_string_regex = qr/[a-zA-Z+0-9~:.-]+/;
+
+sub compare_version_strings($$) {
+	# version part can be epoch, version and debian revision
+	my $compare_version_part = sub {
+		my $compare_symbol = sub {
+			my ($left, $right) = @_;
+			my $left_ord = ord($left);
+			my $right_ord = ord($right);
+			$left_ord = 0 if $left eq '~';
+			$right_ord = 0 if $right eq '~';
+			return $left_ord <=> $right_ord;
+		};
+
+		my ($left, $right) = @_;
+
+		#if (length($left) > 
+	};
+	# TODO: implement comparing versions
+
+	my ($left_epoch, $left_version, $left_revision) = ~/(\d?*:)?$version_string_regex(-\d+)?/;
+	# the above regular expression cannot return false because in worst case
+	# whole version number was been already checked for $version_string_regex
+	return $_[0] cmp $_[1];
+}
 
 1;
 
