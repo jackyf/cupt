@@ -45,6 +45,7 @@ sub new {
 			eval {
 				my $base_uri = $ref_index_entry->{'uri'};
 				my $ref_release_info = __get_release_info($self->_path_of_release_list($ref_index_entry));
+				$ref_release_info->{component} = $ref_index_entry->{'component'};
 				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
 			};
 			if (mycatch()) {
@@ -212,7 +213,7 @@ sub __parse_source_list {
 		mydie("incorrent source type at file %s, line %d", $file, $.)
 			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
 
-		map { $entry{'section'} = $_; push @result, { %entry }; } @sections;
+		map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
 	}
 	close(HFILE) or mydie("unable to close file %s: %s", $file, $!);
 	return @result;
@@ -224,12 +225,18 @@ sub _parse_preferences {
 	# we are parsing triades like:
 
 	# Package: perl
-	# Pin: o=debian
+	# Pin: o=debian,a=unstable
 	# Pin-Priority: 800
 
 	# Source: unetbootin
 	# Pin: a=experimental
 	# Pin-Priority: 1100
+
+	sub glob_to_regex ($) {
+		${$_[0]} =~ s/*/.*?/g
+		${$_[0]} =~ s/^/.*?/g
+		${$_[0]} =~ s/$/.*/g
+	}
 
 	open(PREF, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
 	while (<PREF>) {
@@ -238,33 +245,78 @@ sub _parse_preferences {
 		next if m/^\s*(?:#.*)?$/;
 
 		# ok, real triade should be here
-		my $package_or_source_line = $_;
+		my %pin_result;
 
-		m/^(Package|Source): (.*)/ or
-				mydie("bad package/source line at file '%s', line '%u'", $file, $.);
+		do { # processing first line
+			m/^(Package|Source): (.*)/ or
+					mydie("bad package/source line at file '%s', line '%u'", $file, $.);
 
-		my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_name');
-		my $name_value = $2;
+			my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_name');
+			my $name_value = $2;
+			glob_to_regex($name_value);
 
-		my $pin_line = <PREF>;
-		defined($pin) or
-				mydie("no pin line at file '%s' line '%u'", $file, $.);
+			$pin_result{$name_type} = $name_value;
+		}
 
-		$pin_line =~ m/^Pin: (\w+?) (.*)/) or
-				mydie("bad pin line at file '%s' line '%u'", $file, $.);
+		do { # processing second line
+			my $pin_line = <PREF>;
+			defined($pin_line) or
+					mydie("no pin line at file '%s' line '%u'", $file, $.);
 
-		my $pin_type = $1;
-		my $pin_expression = $2;
-		given ($2) {
-			when ('release') {
+			$pin_line =~ m/^Pin: (\w+?) (.*)/) or
+					mydie("bad pin line at file '%s' line '%u'", $file, $.);
 
+			my $pin_type = $1;
+			my $pin_expression = $2;
+			given ($pin_type) {
+				when ('release') {
+					my @conditions = split /,/, $pin_expression;
+					scalar @conditions or
+							mydie("bad release expression at file '%s' line '%u'", $file, $.);
+
+					foreach (@conditions) {
+						m/^(\w)=(.*)/ or
+								mydie("bad condition in release expression at file '%s' line '%u'", $file, $.);
+
+						my $condition_type = $1;
+						my $condition_value = $2;
+						given ($condition_type) {
+							when ('a') { $pin_result{'release'}->{'archive'} = $condition_value; }
+							when ('v') { $pin_result{'release'}->{'version'} = $condition_value; }
+							when ('c') { $pin_result{'release'}->{'component'} = $condition_value; }
+							when ('n') { $pin_result{'release'}->{'codename'} = $condition_value; }
+							when ('o') { $pin_result{'release'}->{'vendor'} = $condition_value; }
+							when ('l') { $pin_result{'release'}->{'label'} = $condition_value; }
+							default {
+								mydie("bad condition type (should be one of 'a', 'v', 'c', 'n', 'o', 'l')" . 
+										"in release expression at file '%s' line '%u'", $file, $.);
+							}
+						}
+					}
+				}
+				when ('version') {
+					glob_to_regex($pin_expression);
+					$pin_result{'version'} = $pin_expresion;
+				}
+				when ('origin') { # this is 'base_uri', really...
+					$pin_result{'base_uri'} = $pin_expression;
+				}
+				default {
+					mydie("bad pin type (should be one of 'release', 'version', 'origin') at file '%s' line '%u'", $file, $.);
+				}
 			}
-			when ('version') {
+		}
 
-			}
-			when ('origin') { # this is 'base_uri', really...
+		do { # processing third line
+			my $priority_line = <PREF>;
+			defined($priority_line) or
+					mydie("no priority line at file '%s' line '%u'", $file, $.);
 
-			}
+			$priority_line =~ m/^Priority: ([+-]?\d+)/) or
+					mydie("bad priority line at file '%s' line '%u'", $file, $.);
+
+			my $priority = $1;
+			$pin_result{'value'} = $priority;
 		}
 	}
 
@@ -353,7 +405,7 @@ sub _path_of_source_list {
 	my $arch = $self->{config}->var('apt::architecture');
 	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
 
-	my $filename = join('_', $self->_path_of_base_uri($entry), $entry->{'section'}, $suffix);
+	my $filename = join('_', $self->_path_of_base_uri($entry), $entry->{'component'}, $suffix);
 
 	return $filename;
 }
