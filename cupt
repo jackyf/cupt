@@ -82,6 +82,18 @@ sub check_version_string ($) {
 	}
 }
 
+sub check_no_extra_args {
+	if (scalar @ARGV > 0) {
+		mywarn("extra arguments '%s' are not processed", "@ARGV");
+	}
+}
+
+sub check_no_more_options {
+	foreach (@ARGV) {
+		m/^-/ and mydie("unknown option '%s'", $_);
+	}
+}
+
 sub select_binary_package_version {
 	my ($package_expression) = @_;
 
@@ -137,13 +149,10 @@ sub select_binary_package_version {
 	}
 }
 
-sub check_for_extra_args {
-	if (scalar @ARGV > 0) {
-		mywarn("extra arguments '%s' are not processed", "@ARGV");
-	}
-}
-
 sub config_dump {
+	check_no_more_options();
+	check_no_extra_args();
+
 	my $print_key_value = sub {
 		my $key = shift;
 		my $value = shift;
@@ -171,7 +180,9 @@ sub show_package_versions {
 	my $o_with_release_info = 0;
 	GetOptions(
 		'--with-release-info' => \$o_with_release_info
-	);	
+	);
+
+	check_no_more_options();
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
@@ -250,6 +261,7 @@ sub search {
 	);
 
 	my $pattern = shift @ARGV;
+	check_no_more_options();
 	check_for_extra_args();
 
 	my $regex = $o_case_sensitive ? qr/$pattern/ : qr/$pattern/i;
@@ -286,6 +298,8 @@ sub show_package_relations {
 
 	# turn off info parsing, we don't need it, only relations :)
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+
+	check_no_more_options();
 
 	my @package_expressions = @ARGV;
 
