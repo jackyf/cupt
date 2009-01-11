@@ -18,7 +18,10 @@ use fields qw(source_packages binary_packages config pin_settings);
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
+
 	$self->{config} = shift;
+	$self->{pin_settings} = [];
+
 	my $ref_index_entries;
 	eval {
 		$ref_index_entries = $self->_parse_sources_lists();
@@ -89,6 +92,52 @@ sub get_pin {
 		} else {
 			$update_pin->(500);
 		}
+	}
+
+	# looking in pin settings
+	PIN:
+	foreach my $pin (@{$self->{pin_settings}}) {
+		if (exists $pin->{'package_name'}) {
+			my $value = $pin->{'package_name'};
+			$version->{package_name} =~ m/$value/ or next PIN;
+		}
+		if (exists $pin->{'source_name'}) {
+			my $value = $pin->{'source_name'};
+			$version->{source_name} =~ m/$value/ or next PIN;
+		}
+		if (exists $pin->{'version'}) {
+			my $value = $pin->{'version'};
+			$version->{version} =~ m/$value/ or next PIN;
+		}
+		if (exists $pin->{'base_uri'}) {
+			my $value = $pin->{'base_uri'};
+
+			my $found = 0;
+			foreach (@{$version->{avail_as})
+				if ($_->{base_uri} =~ m/$value/) {
+					$found = 1;
+					last;
+				}
+			}
+			$found or next PIN;
+		}
+		if (exists $pin->{'release'}) {
+			while (my ($key, $value) = each %{$pin->{'release'}}) {
+				my $value = $value;
+
+				my $found = 0;
+				foreach (@{$version->{avail_as}}) {
+					if ($_->{release}->{$key} =~ m/$value/) {
+						$found = 1;
+						last;
+					}
+				}
+				$found or next PIN;
+			}
+		}
+
+		# yeah, all conditions satisfied here
+		$update_pin->($pin->{'value'});
 	}
 
 	return $result;
@@ -313,7 +362,7 @@ sub _parse_preferences {
 			defined($priority_line) or
 					mydie("no priority line at file '%s' line '%u'", $file, $.);
 
-			$priority_line =~ m/^Priority: ([+-]?\d+)/ or
+			$priority_line =~ m/^Pin-Priority: ([+-]?\d+)/ or
 					mydie("bad priority line at file '%s' line '%u'", $file, $.);
 
 			my $priority = $1;
