@@ -55,7 +55,7 @@ sub new {
 	}
 
 	# reading pin settings
-	$self->_parse_preferences();
+	$self->_parse_preferences($self->_path_of_preferences());
 
 	return $self;
 }
@@ -263,7 +263,7 @@ sub _parse_preferences {
 			defined($pin_line) or
 					mydie("no pin line at file '%s' line '%u'", $file, $.);
 
-			$pin_line =~ m/^Pin: (\w+?) (.*)/) or
+			$pin_line =~ m/^Pin: (\w+?) (.*)/ or
 					mydie("bad pin line at file '%s' line '%u'", $file, $.);
 
 			my $pin_type = $1;
@@ -296,7 +296,7 @@ sub _parse_preferences {
 				}
 				when ('version') {
 					glob_to_regex($pin_expression);
-					$pin_result{'version'} = $pin_expresion;
+					$pin_result{'version'} = $pin_expression;
 				}
 				when ('origin') { # this is 'base_uri', really...
 					$pin_result{'base_uri'} = $pin_expression;
@@ -313,7 +313,7 @@ sub _parse_preferences {
 			defined($priority_line) or
 					mydie("no priority line at file '%s' line '%u'", $file, $.);
 
-			$priority_line =~ m/^Priority: ([+-]?\d+)/) or
+			$priority_line =~ m/^Priority: ([+-]?\d+)/ or
 					mydie("bad priority line at file '%s' line '%u'", $file, $.);
 
 			my $priority = $1;
@@ -321,7 +321,7 @@ sub _parse_preferences {
 		};
 
 		# adding to storage
-		push @{$self->{'pin_settings'}}, \%pin_hash;
+		push @{$self->{'pin_settings'}}, \%pin_result;
 	}
 
 	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
@@ -431,7 +431,7 @@ sub _path_of_preferences {
 
 	my $leaf = $self->{config}->var('dir::etc::preferences');
 
-	return "$root_prefix$etc_dir/$main_file";
+	return "$root_prefix$etc_dir/$leaf";
 }
 
 1;
