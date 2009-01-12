@@ -100,7 +100,7 @@ sub compare_version_strings($$) {
 	};
 	# TODO: implement comparing versions
 
-	my ($left_epoch, $left_version, $left_revision) = ~/(\d+:)?$version_string_regex(-\d+)?/;
+	# my ($left_epoch, $left_version, $left_revision) = ~/(\d+:)?$version_string_regex(-\d+)?/;
 	# the above regular expression cannot return false because in worst case
 	# whole version number was been already checked for $version_string_regex
 	return $_[0] cmp $_[1];
