@@ -97,13 +97,35 @@ sub compare_version_strings($$) {
 		my ($left, $right) = @_;
 
 		#if (length($left) > 
+		return $_[0] cmp $_[1];
 	};
 	# TODO: implement comparing versions
 
-	# my ($left_epoch, $left_version, $left_revision) = ~/(\d+:)?$version_string_regex(-\d+)?/;
-	# the above regular expression cannot return false because in worst case
-	# whole version number was been already checked for $version_string_regex
-	return $_[0] cmp $_[1];
+	my ($left, $right) = @_;
+	my ($left_epoch, $left_upstream, $left_revision) = ($left =~ /$version_string_regex/);
+	my ($right_epoch, $right_upstream, $right_revision) = ($right =~ /$version_string_regex/);
+
+	if (!defined($left_epoch)) {
+		$left_epoch = '0';
+	}
+	if (!defined($right_epoch)) {
+		$left_epoch = '0';
+	}
+	if (!defined($left_revision)) {
+		$left_revision = '0';
+	}
+	if (!defined($right_revision)) {
+		$left_revision = '0';
+	}
+
+	my $epoch_comparison_result = $compare_version_part->($left_epoch, $right_epoch);
+	return $epoch_comparison_result unless $epoch_comparison_result == 0;
+
+	my $upstream_comparison_result = $compare_version_part->($left_upstream, $right_upstream);
+	return $upstream_comparison_result unless $upstream_comparison_result == 0;
+
+	my $revision_comparison_result = $compare_version_part->($left_revision, $right_revision);
+	return $revision_comparison_result;
 }
 
 1;
