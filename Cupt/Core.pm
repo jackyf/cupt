@@ -102,8 +102,8 @@ sub compare_version_strings($$) {
 	# TODO: implement comparing versions
 
 	my ($left, $right) = @_;
-	my ($left_epoch, $left_upstream, $left_revision) = ($left =~ /$version_string_regex/);
-	my ($right_epoch, $right_upstream, $right_revision) = ($right =~ /$version_string_regex/);
+	my ($left_epoch, $left_upstream, $left_revision) = ($left =~ /^$version_string_regex$/);
+	my ($right_epoch, $right_upstream, $right_revision) = ($right =~ /^$version_string_regex$/);
 
 	if (!defined($left_epoch)) {
 		$left_epoch = '0';
@@ -117,6 +117,9 @@ sub compare_version_strings($$) {
 	if (!defined($right_revision)) {
 		$right_revision = '0';
 	}
+
+	say "String: '$left', epoch: '$left_epoch', upstream: '$left_upstream', revision: '$left_revision'";
+	say "String: '$right', epoch: '$right_epoch', upstream: '$right_upstream', revision: '$right_revision'";
 
 	my $epoch_comparison_result = $compare_version_part->($left_epoch, $right_epoch);
 	return $epoch_comparison_result unless $epoch_comparison_result == 0;
