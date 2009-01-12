@@ -96,10 +96,59 @@ sub compare_version_strings($$) {
 
 		my ($left, $right) = @_;
 
-		#if (length($left) > 
-		return $left cmp $right;
+		# add "empty" characters to make strings char-comparable
+		# 1 will be less than all but '~' character
+		if (length($left) > length($right)) {
+			$right .= chr(1) x (length($left) - length($right));
+		} elsif (length($left) < length($right)) {
+			$left .= chr(1) x (length($right) - length($left));
+		}
+
+		my $len = length($left);
+		my $last_char_idx = $len - 1;
+		foreach my $idx (0 .. $last_char_idx) {
+			my $left_char = substr($left, $idx, 1);
+			my $right_char = substr($right, $idx, 1);
+			my $char_comparison_result = $compare_symbol->($left_char, $right_char);
+
+			if ($char_comparison_result == 0) {
+				# draw for now
+				next;
+			} else {
+				# no possible draw here, one will be the winner
+				if ($left_char =~ m/[0-9]/ && $right_char =~ m/[0-9]/) {
+					# then we have to check lengthes of futher numeric parts
+					# if some numeric part have greater length, then it will be
+					# the winner, otherwise previous comparison result is used
+					# examples: 'abc120de' < 'abc123', but 'abc1200' > 'abc123'
+					my $left_num_pos = $idx;
+					while ($left_num_pos+1 < $len and
+							substr($left, $left_num_pos+1, 1) =~ m/[0-9]/)
+					{
+						++$left_num_pos;
+					}
+
+					my $right_num_pos = $idx;
+					while ($right_num_pos+1 < $len and
+							substr($right, $right_num_pos+1, 1) =~ m/[0-9]/)
+					{
+						++$right_num_pos;
+					}
+
+					my $num_pos_comparison_result = ($left_num_pos <=> $right_num_pos);
+					return $num_pos_comparison_result unless $num_pos_comparison_result == 0;
+
+					# the same number the digits
+					return $char_comparison_result;
+				} else {
+					# some char is not a digit, so general rule applies
+					return $char_comparison_result;
+				}
+			}
+		}
+		# oh, we are out of strings here... well, they are equal then
+		return 0;
 	};
-	# TODO: implement comparing versions
 
 	my ($left, $right) = @_;
 	my ($left_epoch, $left_upstream, $left_revision) = ($left =~ /^$version_string_regex$/);
