@@ -32,7 +32,7 @@ my @correct_version_strings = (
 	[ '3.2', '2.3', 1 ], # major number rocks
 	[ 'a', '2', 1 ], # letters rock
 	[ '1.3.2a', '1.3.2', 1 ], # letters still rock
-	[ '1.3.2a', '1.3.2b', 1 ], # but there is another letter
+	[ '1.3.2a', '1.3.2b', -1 ], # but there is another letter
 	[ '1:1.2.3', '1.2.4', 1 ], # epoch rocks
 	[ '1:1.2.3', '1:1.2.4', -1 ], # bigger anyway
 	[ '1.2a+~bCd3', '1.2a++', -1 ], # tilde doesn't rock
