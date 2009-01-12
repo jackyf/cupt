@@ -171,9 +171,6 @@ sub compare_version_strings($$) {
 		$right_revision = '-0';
 	}
 
-	say "Left string: '$left', epoch: '$left_epoch', upstream: '$left_upstream', revision: '$left_revision'";
-	say "Right string: '$right', epoch: '$right_epoch', upstream: '$right_upstream', revision: '$right_revision'";
-
 	my $epoch_comparison_result = $left_epoch <=> $right_epoch;
 	return $epoch_comparison_result unless $epoch_comparison_result == 0;
 
