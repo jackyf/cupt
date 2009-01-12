@@ -12,7 +12,7 @@ my $test_count = 0;
 
 my @incorrect_version_strings = (
 		'ab:5', ':1.2.3', '2a5:1.2', # broken epoch
-		'2.5-', '1.2.3-a6', '1.2.3-6a', '1.2.3-a', '1.2--5', '1.2-:5', # broken revision
+		'1.2.3-a:6', '1.2-:5', # broken revision
 		'', '$', '2в.3.4', '5.2.5&', '%%', '()', '2.6.7!!!' # broken upstream version 
 );
 # each incorrect version is checked once
