@@ -52,14 +52,14 @@ $test_count += scalar @correct_version_strings * 3;
 plan tests => $test_count;
 
 foreach (@incorrect_version_strings) {
-	unlike($_, qr/^$version_string_regex$/, "incorrectness of version '$_'");
+	unlike($_, qr/^$version_string_regex$/, "incorrectness of version $_");
 }
 foreach my $item (@correct_version_strings) {
 	my $v1 = $item->[0];
 	my $v2 = $item->[1];
-	like($v1, qr/^$version_string_regex$/, "correctness of version '$v1'");
-	like($v2, qr/^$version_string_regex$/, "correctness of version '$v2'");
+	like($v1, qr/^$version_string_regex$/, "correctness of version $v1");
+	like($v2, qr/^$version_string_regex$/, "correctness of version $v2");
 
 	my $expected_result = $item->[2];
-	is(Cupt::Core::compare_version_strings($v1, $v2), $expected_result, "comparison of '$v1' and '$v2'");
+	is(Cupt::Core::compare_version_strings($v1, $v2), $expected_result, "comparison of $v1 and $v2");
 }
