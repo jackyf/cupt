@@ -109,13 +109,13 @@ sub compare_version_strings($$) {
 		$left_epoch = '0';
 	}
 	if (!defined($right_epoch)) {
-		$left_epoch = '0';
+		$right_epoch = '0';
 	}
 	if (!defined($left_revision)) {
 		$left_revision = '0';
 	}
 	if (!defined($right_revision)) {
-		$left_revision = '0';
+		$right_revision = '0';
 	}
 
 	my $epoch_comparison_result = $compare_version_part->($left_epoch, $right_epoch);
