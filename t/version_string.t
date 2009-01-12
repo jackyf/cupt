@@ -25,6 +25,7 @@ my @correct_version_strings = (
 	[ '57:1.2.3abYZ+~-4-5', '57:1.2.3abYZ+~-4-5', 0 ], # and those too
 	[ '1.2.3', '0:1.2.3', 0 ], # zero epoch
 	[ '1.2.3', '1.2.3-0', 0 ], # zero revision
+	[ '1.2.3', '1.2.3-1', -1 ], # added non-zero revision
 	[ '1.2.3', '1.2.4', -1 ], # just bigger
 	[ '1.2.4', '1.2.3', 1 ], # order doesn't matter
 	[ '1.2.24', '1.2.3', 1 ], # bigger, eh?
