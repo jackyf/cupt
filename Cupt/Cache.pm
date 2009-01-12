@@ -158,7 +158,7 @@ sub get_policy_version {
 		if (!defined($max_pin) || $max_pin < $new_pin) {
 			$max_pin = $new_pin;
 			$result_version = $version;
-		} elsif ($new_pin == $max_pin && compare_versions($result_version, $version)) {
+		} elsif ($new_pin == $max_pin && compare_versions($version, $result_version) > 0) {
 			# version with the same pin but greater version string has priority
 			$result_version = $version;
 		}
