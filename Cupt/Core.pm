@@ -107,21 +107,25 @@ sub compare_version_strings($$) {
 
 	if (!defined($left_epoch)) {
 		$left_epoch = '0';
+	} else {
+		chop($left_epoch);
 	}
 	if (!defined($right_epoch)) {
 		$right_epoch = '0';
+	} else {
+		chop($right_epoch);
 	}
 	if (!defined($left_revision)) {
-		$left_revision = '0';
+		$left_revision = '-0';
 	}
 	if (!defined($right_revision)) {
-		$right_revision = '0';
+		$right_revision = '-0';
 	}
 
 	say "String: '$left', epoch: '$left_epoch', upstream: '$left_upstream', revision: '$left_revision'";
 	say "String: '$right', epoch: '$right_epoch', upstream: '$right_upstream', revision: '$right_revision'";
 
-	my $epoch_comparison_result = $compare_version_part->($left_epoch, $right_epoch);
+	my $epoch_comparison_result = $left_epoch <=> $right_epoch;
 	return $epoch_comparison_result unless $epoch_comparison_result == 0;
 
 	my $upstream_comparison_result = $compare_version_part->($left_upstream, $right_upstream);
