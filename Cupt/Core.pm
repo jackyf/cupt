@@ -73,7 +73,7 @@ our $version_string_regex =
 			(?:
 				(?(<EPOCH>):|0) # allow ':' if there was valid epoch, otherwise something neutral
 					| # or
-				[a-zA-Z+0-9~.-]+? # upstream version allowed characters
+				[a-zA-Z+0-9~.-] # upstream version allowed characters
 			)+? # '?' to not eat last '-' before debian revision
 		)
 		(
