@@ -165,21 +165,23 @@ sub get_policy_version {
 	return $result_version;
 }
 
+our %_empty_release_info = (
+	'version' => undef,
+	'description' => undef,
+	'signed' => 0,
+	'vendor' => undef,
+	'label' => undef,
+	'archive' => undef,
+	'codename' => undef,
+	'date' => undef,
+	'valid-until' => undef,
+	'architectures' => undef,
+);
+
 sub __get_release_info {
 	my $file = shift;
 
-	my %release_info = (
-		'version' => undef,
-		'description' => undef,
-		'signed' => 0,
-		'vendor' => undef,
-		'label' => undef,
-		'archive' => undef,
-		'codename' => undef,
-		'date' => undef,
-		'valid-until' => undef,
-		'architectures' => undef,
-	);
+	my %release_info = %_empty_release_info;
 
 	open(RELEASE, '<', $file) or mydie("unable to open release file '%s'", $file);
 	my $field_name = undef;

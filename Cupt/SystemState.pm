@@ -21,6 +21,9 @@ sub new {
 	# in next line we don't use 'dir' and 'dir::state' variables as we do
 	# in all others path builder functions, that's apt decision
 	my $dpkg_status_path = $self->{config}->var('dir::state::status');
+	if (! -r $dpkg_status_path) {
+		mydie("unable to open dpkg status file '%s'", $dpkg_status_path);
+	}
 	$self->_parse_dpkg_status();
 }
 
@@ -41,7 +44,37 @@ sub _parse_dpkg_status {
 
 	my ($self, $file) = @_;
 
-	open(STATUS, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+	my $fh;
+	open($fh, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+	# '-B 1' to read also 'Package: <package>' line
+	open(OFFSETS, "/bin/grep -b -B 1 '^Status: ' $file |"); 
+
+	eval {
+		while (<OFFSETS>) {
+			if (m/^(\d+):Package: (.*)/) { # '$' implied in regexp
+				my $package_name = $2;
+
+				# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
+				my $offset = $1 + length("Package: $package_name\n");
+
+				# don't check it for correctness, dpkg has to be done this already
+
+				# adding new version to cache
+				$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
+
+				Cupt::Cache::Pkg::add_entry(
+						$self->{cache}->{binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
+						$package_name, $fh, $offset, undef, \%Cupt::Cache::_empty_release_info);
+			} else {
+				mydie("expected 'Package' line, but haven't got it");
+			}
+		}
+	};
+	if (mycatch()) {
+		myerr("error parsing index file '%s', line '%d'", $file, $.);
+		myredie();
+	}
+
 	close(STATUS) or mydie("unable to close file %s: %s", $file, $!);
 }
 
