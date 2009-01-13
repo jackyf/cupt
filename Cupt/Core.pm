@@ -4,8 +4,7 @@ use 5.10.0;
 use warnings;
 use strict;
 
-require Exporter;
-our @ISA = ("Exporter");
+use Exporter qw(import);
 our @EXPORT = qw(
 	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch
 	$package_name_regex $version_string_regex);
