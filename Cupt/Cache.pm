@@ -1,5 +1,4 @@
 package Cupt::Cache;
-# TODO: implement parsing /var/lib/dpkg/status
 # TODO: sub pinned_versions { ... }
 # TODO: implement checking for signedness
 
