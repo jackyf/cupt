@@ -76,7 +76,7 @@ sub var {
 sub set_regular_var {
 	my $self = shift;
 	my $var_name = lc(shift);
-	if (defined ($self->{regular_vars}->{$var_name})) {
+	if (exists ($self->{regular_vars}->{$var_name})) {
 		my $new_value = shift;
 		$self->{regular_vars}->{$var_name} = $new_value;
 	} else {
