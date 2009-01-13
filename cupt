@@ -71,13 +71,13 @@ sub build_cache {
 }
 
 sub check_package_name ($) {
-	if (! ($_[0] =~ m/$package_name_regex/)) {
+	if (! ($_[0] =~ m/^$package_name_regex$/)) {
 		mydie("bad package name '%s'", $_[0]);
 	}
 }
 
 sub check_version_string ($) {
-	if (! ($_[0] =~ m/$version_string_regex/)) {
+	if (! ($_[0] =~ m/^$version_string_regex$/)) {
 		mydie("bad version string '%s'", $_[0]);
 	}
 }
