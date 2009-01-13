@@ -17,6 +17,11 @@ sub new {
 
 	$self->{config} = shift;
 	$self->{cache} = shift;
+
+	# in next line we don't use 'dir' and 'dir::state' variables as we do
+	# in all others path builder functions, that's apt decision
+	my $dpkg_status_path = $self->{config}->var('dir::state::status');
+	$self->_parse_dpkg_status();
 }
 
 sub _parse_dpkg_status {
@@ -34,5 +39,9 @@ sub _parse_dpkg_status {
 	#    and 'Section' fields.
 	# TODO: get info about 'post-inst-failed' and 'removal-failed' statuses.
 
+	my ($self, $file) = @_;
+
+	open(STATUS, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+	close(STATUS) or mydie("unable to close file %s: %s", $file, $!);
 }
 
