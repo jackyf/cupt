@@ -22,11 +22,17 @@ sub new {
 sub _parse_dpkg_status {
 	# Status lines are similar to apt Packages ones, with two differences:
 	# 1) 'Status' field: "<want> <flag> <status>"
-	#    a) 'want' - "wanted" status of package
+	#    a) <want> - desired status of package
 	#       can be: 'unknown', 'install', 'hold', 'deinstall', 'purge'
-	   flag = ok, reinstreq, hold, hold-reinstreq
-	   status = not-installed, unpacked, half-configured,
-				half-installed, config-files, post-inst-failed, 
-				removal-failed, installed
+	#    b) <flag> - ok/bad
+	#       can be: ok, reinstreq, hold, hold-reinstreq
+	#    c) <status> - current status of package
+	#       can be: not-installed, unpacked, half-configured,
+	#               half-installed, config-files, post-inst-failed, 
+	#               removal-failed, installed
+	# 2) purged packages contain only 'Package', 'Status', 'Priority'
+	#    and 'Section' fields.
+	# TODO: get info about 'post-inst-failed' and 'removal-failed' statuses.
+
 }
 
