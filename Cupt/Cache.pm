@@ -127,7 +127,9 @@ sub get_pin {
 
 				my $found = 0;
 				foreach (@{$version->{avail_as}}) {
-					if ($_->{release}->{$key} =~ m/$value/) {
+					if (defined $_->{release}->{$key} &&
+						$_->{release}->{$key} =~ m/$value/)
+					{
 						$found = 1;
 						last;
 					}
