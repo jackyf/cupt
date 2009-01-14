@@ -70,7 +70,6 @@ sub new {
 }
 
 sub get_pin {
-	# TODO: implement pin '100' for installed packages?
 	my ($self, $version) = @_;
 	my $result;
 
@@ -81,6 +80,19 @@ sub get_pin {
 			$result = $_[0];
 		}
 	};
+
+	# look for installed package?
+	my $installed_info = $self->{system_state}->{installed_info};
+	if (exists $installed_info->{$version->{package_name}} and
+		my $installed_package_entry = $installed_info}->{$version->{package_name}};
+	{
+		if ($installed_package_entry->{'version'} eq $version->{version} and
+			$installed_package_entry->{'status'} eq 'installed')
+		{
+			# yes, this version is installed
+			$update_pin->(100);
+		}
+	}
 
 	# release-dependent settings
 	my $default_release = $self->{config}->var("apt::default-release");

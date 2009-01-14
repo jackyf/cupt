@@ -49,6 +49,7 @@ sub _parse_dpkg_status {
 	open($fh, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
 	open(PACKAGES, "/bin/grep -b '^Package: ' $file |"); 
 	open(STATUSES, "/bin/grep '^Status: ' $file |"); 
+	open(VERSIONS, "/bin/grep '^Version: ' $file |"); 
 
 	eval {
 		while (<PACKAGES>) {
@@ -106,6 +107,16 @@ sub _parse_dpkg_status {
 				}
 			};
 
+			# extract info from 'Status' line, primary correctness was already checked by grep
+			m/^Version: (.*)/;
+
+			my $version_string = $1;
+
+			$version_string =~ m/^$version_string_regex$/ or
+					mydie("bad version '%s'", $version_string);
+
+			$installed_info{'version'} = $version_string;
+
 			# add parsed info to installed_info
 			push @{$self->{installed_info}}, \%installed_info;
 
@@ -129,6 +140,7 @@ sub _parse_dpkg_status {
 
 	close(PACKAGES) or mydie("unable to close grep pipe");
 	close(STATUSES) or mydie("unable to close grep pipe");
+	close(VERSIONS) or mydie("unable to close grep pipe");
 }
 
 1;
