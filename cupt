@@ -71,13 +71,13 @@ sub build_cache {
 }
 
 sub check_package_name ($) {
-	if (! ($_[0] =~ m/$package_name_regex/)) {
+	if (! ($_[0] =~ m/^$package_name_regex$/)) {
 		mydie("bad package name '%s'", $_[0]);
 	}
 }
 
 sub check_version_string ($) {
-	if (! ($_[0] =~ m/$version_string_regex/)) {
+	if (! ($_[0] =~ m/^$version_string_regex$/)) {
 		mydie("bad version string '%s'", $_[0]);
 	}
 }
@@ -343,6 +343,7 @@ sub process_options {
 			'important|i' => sub { $config->set_regular_var('apt::cache::important', 1) },
 			'all-versions|a' => sub { $config->set_regular_var('apt::cache::allversions', 1) },
 			'no-all-versions' => sub { $config->set_regular_var('apt::cache::allversions', 0) },
+			'target-release|default-release|t=s' => sub { $config->set_regular_var('apt::default-release', $_[1]) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {
