@@ -47,33 +47,36 @@ sub _parse_dpkg_status {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
-	# '-B 1' to read also 'Package: <package>' line
-	open(OFFSETS, "/bin/grep -b -B 1 '^Status: ' $file |"); 
+	open(PACKAGES, "/bin/grep -b '^Package: ' $file |"); 
+	open(STATUSES, "/bin/grep '^Status: ' $file |"); 
 
 	eval {
-		while (<OFFSETS>) {
+		while (<PACKAGES>) {
 			chomp;
 
 			# firstly, make sure that this is 'Package' line
-			# "12345-" is prefix by grep
-			m/^(\d+)-Package: (.*)/ or
-					mydie("expected 'Package' line, but haven't got it");
+			# "12345:" is prefix by grep
+			m/^(\d+):Package: (.*)/ or
+					mydie("expected 'Package' line, but haven't got it, got '%s' instead", $_);
 
 			# don't check package name for correctness, dpkg has to check this already
 			my $package_name = $2;
 
-			# read next line
-			<OFFSETS>;
+			my $offset = $1 + length("Package: $package_name\n");
 
-			# now make sure that next line is proper 'Status' line
-			m/^(\d+):Status (.*)/ or
+			# try to read status line
+			$_ = readline(STATUSES);
+			defined($_) or
 					mydie("expected 'Status' line, but haven't got it (for package '%s')", $package_name);
 
-			my $offset = $1;
+			chomp;
+
+			# extract info from 'Status' line, primary correctness was already checked by grep
+			m/^Status: (.*)/;
 
 			my %installed_info;
 			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
-					split / /, $2 or
+					split / /, $1 or
 					mydie("malformed 'Status' line (for package '%s')", $package_name);
 
 			do { # check 'want'
