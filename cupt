@@ -175,7 +175,7 @@ sub config_dump {
 
 sub show_package_versions {
 	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1);
+	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my $o_with_release_info = 0;
 	GetOptions(
@@ -248,7 +248,7 @@ sub show_package_versions {
 
 sub search {
 	# we need to build binary-only cache for this operation
-	build_cache('-source' => 0, '-binary' => 1);
+	build_cache(-source => 0, -binary => 1, -installed => 0);
 
 	# turn off relations parsing, we don't need them
 	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
@@ -294,7 +294,7 @@ sub search {
 
 sub show_package_relations {
 	# we need to build binary-only cache for this operation
-	build_cache('-source' => 0, '-binary' => 1);
+	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	# turn off info parsing, we don't need it, only relations :)
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;

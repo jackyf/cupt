@@ -10,8 +10,9 @@ use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
+use Cupt::SystemState;
 
-use fields qw(source_packages binary_packages config pin_settings);
+use fields qw(source_packages binary_packages config pin_settings system_state);
 
 sub new {
 	my $class = shift;
@@ -33,8 +34,14 @@ sub new {
 	my %build_config = (
 		'-source' => 1,
 		'-binary' => 1,
+		'-installed' => 1,
 		@_ # applying passed parameters
 	);
+
+	if ($build_config{'-installed'}) {
+		# read system settings
+		$self->{system_state} = new Cupt::SystemState($self->{config}, $self);
+	}
 
 	foreach my $ref_index_entry (@$ref_index_entries) {
 		my $index_file_to_parse = $self->_path_of_source_list($ref_index_entry);
