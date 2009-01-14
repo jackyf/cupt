@@ -129,7 +129,7 @@ sub _parse_dpkg_status {
 			}
 
 			# add parsed info to installed_info
-			push @{$self->{installed_info}}, \%installed_info;
+			$self->{installed_info}->{$package_name} = \%installed_info;
 
 			if ($installed_info{'flag'} eq 'ok' and $installed_info{'status'} eq 'installed') {
 				# this conditions mean that package is properly installed
