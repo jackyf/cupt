@@ -113,10 +113,6 @@ sub _parse_dpkg_status {
 				# this conditions mean that package is properly installed
 				# and have full entry info, so add it (info) to cache
 
-				# offset is returned by grep -b, and we skips 'Status: <...>' line additionally
-				# bun it is also needed to compensate prefix "<offset>:", inserted by grep
-				$offset += length("$_\n") - length("$offset:");
-
 				# adding new version to cache
 				$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
 
