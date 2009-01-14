@@ -162,7 +162,6 @@ sub get_pin {
 	return $result;
 }
 
-# TODO: take installed versions (pin 100) into account
 sub get_policy_version {
 	my ($self, $ref_package) = @_;
 
