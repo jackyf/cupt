@@ -172,5 +172,16 @@ sub get_status_line {
 	return undef;
 }
 
+sub get_installed_version_string {
+	my ($self, $package_name) = @_;
+	if (exists $self->{installed_info}->{$package_name}) {
+		my $info = $self->{installed_info}->{$package_name};
+		if (defined $info->{'version'}) {
+			return $info->{'version'};
+		}
+	}
+	return undef;
+}
+
 1;
 

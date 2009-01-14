@@ -45,6 +45,7 @@ my %command_handlers = (
 	'show' => \&show_package_versions,
 	'search' => \&search,
 	'depends' => \&show_package_relations,
+	'policy' => \&policy,
 );
 
 if (defined($command_handlers{$command})) {
@@ -330,6 +331,64 @@ sub show_package_relations {
 			my @split = split /, /,  stringify_relations($relations);
 			my $starter = "  " . gettext($caption) . ": ";
 			map { say $starter, $_; } @split;
+		}
+	}
+}
+
+sub policy {
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1, -installed => 1);
+
+	# turn off info and relations parsing, we don't need it
+	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+
+	check_no_more_options();
+
+	my @packages = @ARGV;
+	for my $package_name (@packages) {
+		my $package = get_binary_package($package_name);
+		my $policy_version = $cache->get_policy_version($package);
+
+		my $installed_version_string = $cache->{system_state}->get_installed_version_string($package_name);
+		say "$package_name:";
+		say "  " . gettext('Installed') . ": " .
+				(defined($installed_version_string) ?
+				$installed_version_string : ('(' . gettext('none') . ')'));
+
+		say "  " . gettext('Candidate') . ": " . $policy_version->{version};
+		say "  " . gettext('Version table') . ":";
+
+		my @versions;
+		foreach (@{$package->versions()}) {
+			push @versions, $_;
+		}
+
+		# sorting versions by pin priorities in descending order
+		@versions = sort { $cache->get_pin($b) <=> $cache->get_pin($a) } @versions;
+
+		foreach my $version (@versions) {
+			if (defined($installed_version_string) && 
+				$version->{version} eq $installed_version_string)
+			{
+				print " *** ";
+			} else {
+				print "     ";
+			}
+
+			say $version->{version} . ' ' . $cache->get_pin($version);
+			# throw out local version if present
+			my @avail_as = @{$version->{avail_as}};
+			shift @avail_as if $version->is_local();
+
+			foreach (@avail_as) {
+				print (' ' x 8);
+				print ${$_->{ref_base_uri}} . ' ';
+				say $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
+			}
+			if ($version->is_local()) {
+				say ' ' x 8, $config->var('dir::state::status');
+			}
 		}
 	}
 }
