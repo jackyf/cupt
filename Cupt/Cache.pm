@@ -435,7 +435,7 @@ sub _process_index_file {
 		myredie();
 	}
 
-	close(OFFSETS);
+	close(OFFSETS) or mydie("unable to close grep pipe");
 }
 
 sub _path_of_base_uri {
