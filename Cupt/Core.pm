@@ -1,4 +1,5 @@
 package Cupt::Core;
+BEGIN { use Carp; $SIG{__WARN__} = \&Carp::confess; }
 
 use 5.10.0;
 use warnings;
