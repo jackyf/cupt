@@ -131,7 +131,8 @@ sub _parse_dpkg_status {
 		myredie();
 	}
 
-	close(OFFSETS) or mydie("unable to close file %s: %s", $file, $!);
+	close(PACKAGES) or mydie("unable to close grep pipe");
+	close(STATUSES) or mydie("unable to close grep pipe");
 }
 
 1;
