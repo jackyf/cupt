@@ -147,7 +147,18 @@ sub is_hashes_equal {
 
 sub uris {
 	my $self = shift;
-	map { ${$_->{ref_base_uri}} . '/' . $_->{filename} if defined($_->{ref_base_uri}) } @{$self->{avail_as}};
+	my @result;
+    foreach (@{$self->{avail_as}}) {
+		if (defined($_->{ref_base_uri})) {
+			push @result, ( ${$_->{ref_base_uri}} . '/' . $_->{filename} );
+		}
+	}
+	return \@result;
+}
+
+sub is_local {
+	(my $self) = @_;
+	return defined($self->{avail_as}->[0]->{ref_base_uri});
 }
 
 1;
