@@ -93,7 +93,7 @@ sub _parse_and_merge_version {
 				# ok, this is the same version;
 
 				# so, adding new "avail_as" info
-				push @{$found_version->{avail_as}}, $parsed_version->{avail_as}->[0]; 
+				push @{$found_version->{avail_as}}, $parsed_version->{avail_as}->[0];
 			} else {
 				# err, no, this is different package :(
 				# just skip it for now
