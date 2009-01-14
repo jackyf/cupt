@@ -149,16 +149,14 @@ sub uris {
 	my $self = shift;
 	my @result;
     foreach (@{$self->{avail_as}}) {
-		if (defined($_->{ref_base_uri})) {
-			push @result, ( ${$_->{ref_base_uri}} . '/' . $_->{filename} );
-		}
+		push @result, ( ${$_->{ref_base_uri}} . '/' . $_->{filename} );
 	}
 	return @result;
 }
 
 sub is_local {
 	(my $self) = @_;
-	return defined($self->{avail_as}->[0]->{ref_base_uri});
+	return ($self->{avail_as}->[0]->{ref_base_uri} eq "");
 }
 
 1;

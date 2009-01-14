@@ -85,7 +85,7 @@ sub get_pin {
 	my @avail_as = @{$version->{avail_as}};
 
 	# look for installed package?
-	if ($version->is_local())
+	if ($version->is_local()) {
 		# yes, this version is installed
 		$update_pin->(100);
 		shift @avail_as;
