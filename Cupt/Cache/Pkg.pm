@@ -33,6 +33,7 @@ sub versions {
 			eval {
 				my $version_class = shift @$_;
 				$parsed_version = $version_class->new($_);
+				unshift @$_, $version_class;
 			};
 			if (mycatch()) {
 				myerr("error while parsing new version entry");
