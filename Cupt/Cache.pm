@@ -160,6 +160,16 @@ sub get_pin {
 	return $result;
 }
 
+sub get_binary_package {
+	my ($self, $package_name) = @_;
+	if (exists $self->{binary_packages}->{$package_name}) {
+		return $self->{binary_packages}->{$package_name};
+	} else {
+		return undef;
+	}
+};
+
+
 sub get_policy_version {
 	my ($self, $ref_package) = @_;
 

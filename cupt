@@ -93,18 +93,18 @@ sub check_no_more_options {
 		m/^-/ and mydie("unknown option '%s'", $_);
 	}
 }
+sub get_binary_package {
+	my ($package_name) = @_;
+	my $package = $cache->get_binary_package($package_name);
+	if (defined $package) {
+		return $package;
+	} else {
+		mydie("cannot find binary package '%s'", $package_name);
+	}
+}
 
 sub select_binary_package_version {
 	my ($package_expression) = @_;
-
-	my $get_package = sub {
-		my ($package_name) = @_;
-		if (exists $cache->{binary_packages}->{$package_name}) {
-			return $cache->{binary_packages}->{$package_name};
-		} else {
-			mydie("cannot find binary package '%s'", $package_name);
-		}
-	};
 
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
@@ -113,7 +113,7 @@ sub select_binary_package_version {
 		my $version_string = $2;
 		check_version_string($version_string);
 		# example: "nlkt=0.3.2.1-1"
-		foreach my $version (@{$get_package->($package_name)->versions()}) {
+		foreach my $version (@{get_binary_package($package_name)->versions()}) {
 			if ($version->{version} eq $version_string) {
 				# found such a version
 				return $version;
@@ -130,7 +130,7 @@ sub select_binary_package_version {
 			mydie("bad distribution '%s' requested, use archive or codename", $distribution_expression);
 		}
 		# example: "nlkt/sid" or "nlkt/unstable"
-		foreach my $version (@{$get_package->($package_name)->versions()}) {
+		foreach my $version (@{get_binary_package($package_name)->versions()}) {
 			# 'avail as' for non-local versions
 			my @avail_as = @{$version->{avail_as}};
 			# first avail entry is for local version
@@ -149,7 +149,7 @@ sub select_binary_package_version {
 		# not found
 		mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
 	} else {
-		my $result_version = $cache->get_policy_version($get_package->($package_expression));
+		my $result_version = $cache->get_policy_version(get_binary_package($package_expression));
 		return $result_version;
 	}
 }
@@ -195,14 +195,7 @@ sub show_package_versions {
 		my $ref_versions;
 		if ($config->var('apt::cache::allversions')) {
 			$package_name = $package_expression;
-			my $ref_package = exists $cache->{binary_packages}->{$package_name} ?
-				$cache->{binary_packages}->{$package_name} : undef;
-
-			if (!defined($ref_package)) {
-				mywarn("know nothing about package '%s', skipped", $package_name);
-				next;
-			}
-			$ref_versions = $ref_package->versions();
+			$ref_versions = get_binary_package($package_name)->versions();
 		} else {
 			my $version = select_binary_package_version($package_expression);
 			$package_name = $version->{package_name};
