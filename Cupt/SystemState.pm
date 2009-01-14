@@ -1,5 +1,4 @@
 package Cupt::SystemState;
-# TODO: implement parsing /var/lib/dpkg/status
 
 use 5.10.0;
 use strict;
@@ -159,6 +158,18 @@ sub _parse_dpkg_status {
 	close(PACKAGES) or mydie("unable to close grep pipe");
 	close(STATUSES) or mydie("unable to close grep pipe");
 	close(VERSIONS) or mydie("unable to close grep pipe");
+}
+
+sub get_status_line {
+	my ($self, $version) = @_;
+	my $package_name = $version->{package_name};
+	if (exists $self->{installed_info}->{$package_name}) {
+		my $info = $self->{installed_info}->{$package_name};
+		if (defined $info->{'version'} and $info->{'version'} eq $version->{version}) {
+			return join(' ', $info->{'want'}, $info->{'flag'}, $info->{'status'});
+		}
+	}
+	return undef;
 }
 
 1;
