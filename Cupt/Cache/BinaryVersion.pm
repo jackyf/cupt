@@ -163,7 +163,7 @@ sub uris {
 
 sub is_local {
 	(my $self) = @_;
-	return ($self->{avail_as}->[0]->{ref_base_uri} eq "");
+	return (${$self->{avail_as}->[0]->{ref_base_uri}} eq "");
 }
 
 1;

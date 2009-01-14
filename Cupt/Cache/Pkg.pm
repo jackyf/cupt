@@ -84,7 +84,7 @@ sub _parse_and_merge_version {
 		} else {
 			# there is such version string
 
-			if ($parsed_version->is_local() or $found_version->is_hashes_equal($parsed_version)) {
+			if ($found_version->is_local() or $found_version->is_hashes_equal($parsed_version)) {
 				# 1)
 				# this is locally installed version
 				# as dpkg now doesn't provide hash sums, let's assume that
