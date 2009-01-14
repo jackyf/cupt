@@ -229,7 +229,7 @@ sub show_package_versions {
 			$p->('Provides', stringify_relations($version->{provides})) if defined($version->{provides});
 			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
 			foreach ($version->uris()) {
-				$p->('URI', $_);
+				$p->('URI', ($_ eq "" ? gettext("<locally installed>") : $_));
 			}
 			$p->('Size', $version->{size}) if defined($version->{size});
 			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});

@@ -149,7 +149,14 @@ sub uris {
 	my $self = shift;
 	my @result;
     foreach (@{$self->{avail_as}}) {
-		push @result, ( ${$_->{ref_base_uri}} . '/' . $_->{filename} );
+		my $base_uri = ${$_->{ref_base_uri}};
+		if ($base_uri ne "") {
+			# real download path
+			push @result, ( $base_uri . '/' . $_->{filename} );
+		} else {
+			# for locally installed
+			push @result, "";
+		}
 	}
 	return @result;
 }
