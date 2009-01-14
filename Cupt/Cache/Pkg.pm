@@ -84,19 +84,16 @@ sub _parse_and_merge_version {
 		} else {
 			# there is such version string
 
-			if ($parsed_version->is_local()) {
+			} elsif ($parsed_version->is_local() or $found_version->is_hashes_equal($parsed_version)) {
+				# 1)
 				# this is locally installed version
 				# as dpkg now doesn't provide hash sums, let's assume that
 				# local version is the same that available from archive
-				return;
-			} elsif ($found_version->is_hashes_equal($parsed_version)) {
-				# ok, this is the same entry; looking maybe it defines new uri for package?
-				# new non-local version should define exactly one URI
-				my $uri_from_parsed_version = ($parsed_version->uris())[0];
-				if (!(grep $_ eq $uri_from_parsed_version, @$found_version->uris())) {
-					# yes, it defines, so adding it
-					push @{$found_version->{uris}}, $uri_from_parsed_version;
-				}
+				# 2)
+				# ok, this is the same version;
+
+				# so, adding new "avail_as" info
+				push @{$found_version->{avail_as}}, $parsed_version->{avail_as}->[0]; 
 			} else {
 				# err, no, this is different package :(
 				# just skip it for now

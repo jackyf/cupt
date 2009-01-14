@@ -81,21 +81,19 @@ sub get_pin {
 		}
 	};
 
+	# 'available as' array, excluding local version if it present
+	my @avail_as = @{$version->{avail_as}};
+
 	# look for installed package?
-	my $installed_info = $self->{system_state}->{installed_info};
-	if (exists $installed_info->{$version->{package_name}}) {
-		my $installed_package_entry = $installed_info->{$version->{package_name}};
-		if ($installed_package_entry->{'version'} eq $version->{version} and
-			$installed_package_entry->{'status'} eq 'installed')
-		{
-			# yes, this version is installed
-			$update_pin->(100);
-		}
+	if ($version->is_local())
+		# yes, this version is installed
+		$update_pin->(100);
+		shift @avail_as;
 	}
 
 	# release-dependent settings
 	my $default_release = $self->{config}->var("apt::default-release");
-	foreach (@{$version->{avail_as}}) {
+	foreach (@avail_as) {
 		if (defined($default_release)) {
 			if ($_->{release}->{archive} eq $default_release ||
 				$_->{release}->{codename} eq $default_release)
@@ -130,7 +128,7 @@ sub get_pin {
 			my $value = $pin->{'base_uri'};
 
 			my $found = 0;
-			foreach (@{$version->{avail_as}}) {
+			foreach (@avail_as) {
 				if ($_->{base_uri} =~ m/$value/) {
 					$found = 1;
 					last;
@@ -143,7 +141,7 @@ sub get_pin {
 				my $value = $value;
 
 				my $found = 0;
-				foreach (@{$version->{avail_as}}) {
+				foreach (@avail_as) {
 					if (defined $_->{release}->{$key} &&
 						$_->{release}->{$key} =~ m/$value/)
 					{

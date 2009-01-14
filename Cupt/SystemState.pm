@@ -108,16 +108,20 @@ sub _parse_dpkg_status {
 			};
 
 			if ($installed_info{'flag'} eq 'ok' and
-				($installed_info{'status'} eq 'installed' or $installed_info{'status'} eq 'config-files')) {
-				# this conditions mean that package is properly installed or have config files
-				# and have full entry info, so add it (info) to cache
+				($installed_info{'status'} eq 'installed' or $installed_info{'status'} eq 'config-files'))
+			{
+				if ($installed_info{'status'} eq 'installed') {
+					# this conditions mean that package is properly installed
+					# and have full entry info, so add it (info) to cache
 
-				# adding new version to cache
-				$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
+					# adding new version to cache
+					$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
 
-				Cupt::Cache::Pkg::add_entry(
-						$self->{cache}->{binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
-						$package_name, $fh, $offset, undef, \%Cupt::Cache::_empty_release_info);
+					Cupt::Cache::Pkg::add_entry(
+							$self->{cache}->{binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
+							$package_name, $fh, $offset, undef, \%Cupt::Cache::_empty_release_info);
+
+				}
 
 				# try to read version line
 				$_ = readline(VERSIONS);
