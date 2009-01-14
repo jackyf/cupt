@@ -101,7 +101,9 @@ sub _parse_dpkg_status {
 					mydie("malformed 'status' status indicator (for package '%s')", $package_name);
 				}
 			}
-			
+
+			# add parsed info to installed_info
+			push @{$self->{installed_info}}, \%installed_info;
 
 			if ($installed{'flag'} eq 'ok' and $installed{'status'} eq 'installed') {
 				# this conditions mean that package is properly installed
@@ -121,7 +123,7 @@ sub _parse_dpkg_status {
 		}
 	};
 	if (mycatch()) {
-		myerr("error parsing index file '%s', line '%d'", $file, $.);
+		myerr("error parsing system status file '%s'", $file);
 		myredie();
 	}
 
