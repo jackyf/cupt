@@ -231,13 +231,13 @@ sub show_package_versions {
 			foreach ($version->uris()) {
 				$p->('URI', $_);
 			}
-			$p->('Size', $version->{size});
-			$p->('MD5', $version->{md5sum});
-			$p->('SHA1', $version->{sha1sum});
-			$p->('SHA256', $version->{sha256sum});
+			$p->('Size', $version->{size}) if defined($version->{size});
+			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});
+			$p->('SHA1', $version->{sha1sum}) if defined($version->{sha1sum});
+			$p->('SHA256', $version->{sha256sum}) if defined($version->{sha1sum});
 			$p->('Description', $version->{short_description});
 			# TODO: translated descriptions...
-			print $version->{long_description} if defined ($version->{long_description});
+			print $version->{long_description} if defined($version->{long_description});
 			$p->('Homepage', $version->{homepage}) if defined($version->{homepage});
 			$p->('Task', $version->{task}) if defined($version->{task});
 			$p->('Tag', $version->{tags}) if defined($version->{tags});
