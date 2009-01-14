@@ -83,9 +83,8 @@ sub get_pin {
 
 	# look for installed package?
 	my $installed_info = $self->{system_state}->{installed_info};
-	if (exists $installed_info->{$version->{package_name}} and
-		my $installed_package_entry = $installed_info}->{$version->{package_name}};
-	{
+	if (exists $installed_info->{$version->{package_name}}) {
+		my $installed_package_entry = $installed_info->{$version->{package_name}};
 		if ($installed_package_entry->{'version'} eq $version->{version} and
 			$installed_package_entry->{'status'} eq 'installed')
 		{

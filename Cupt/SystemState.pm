@@ -107,15 +107,26 @@ sub _parse_dpkg_status {
 				}
 			};
 
-			# extract info from 'Status' line, primary correctness was already checked by grep
-			m/^Version: (.*)/;
+			if ($installed_info{'status'} eq 'installed') {
+				# try to read version line
+				$_ = readline(VERSIONS);
+				defined($_) or
+						mydie("expected 'Version' line, but haven't got it (for package '%s')", $package_name);
 
-			my $version_string = $1;
+				chomp;
 
-			$version_string =~ m/^$version_string_regex$/ or
-					mydie("bad version '%s'", $version_string);
+				# extract info from 'Version' line, primary correctness was already checked by grep
+				m/^Version: (.*)/;
 
-			$installed_info{'version'} = $version_string;
+				my $version_string = $1;
+
+				$version_string =~ m/^$version_string_regex$/ or
+						mydie("bad version '%s'", $version_string);
+
+				$installed_info{'version'} = $version_string;
+			} else {
+				$installed_info{'version'} = undef;
+			}
 
 			# add parsed info to installed_info
 			push @{$self->{installed_info}}, \%installed_info;
