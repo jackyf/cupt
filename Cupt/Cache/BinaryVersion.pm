@@ -153,7 +153,7 @@ sub uris {
 			push @result, ( ${$_->{ref_base_uri}} . '/' . $_->{filename} );
 		}
 	}
-	return \@result;
+	return @result;
 }
 
 sub is_local {
