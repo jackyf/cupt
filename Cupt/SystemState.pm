@@ -24,7 +24,8 @@ sub new {
 	if (! -r $dpkg_status_path) {
 		mydie("unable to open dpkg status file '%s'", $dpkg_status_path);
 	}
-	$self->_parse_dpkg_status();
+	$self->_parse_dpkg_status($dpkg_status_path);
+	return $self;
 }
 
 sub _parse_dpkg_status {
@@ -55,7 +56,7 @@ sub _parse_dpkg_status {
 
 			# firstly, make sure that this is 'Package' line
 			# "12345-" is prefix by grep
-			m/^(\d+)-Package: (.*)/) or
+			m/^(\d+)-Package: (.*)/ or
 					mydie("expected 'Package' line, but haven't got it");
 
 			# don't check package name for correctness, dpkg has to check this already
@@ -76,36 +77,36 @@ sub _parse_dpkg_status {
 					mydie("malformed 'Status' line (for package '%s')", $package_name);
 
 			do { # check 'want'
-				local $_ = $installed{'want'};
+				local $_ = $installed_info{'want'};
 				if ($_ ne 'install' and $_ ne 'deinstall' and $_ ne 'purge' and
 					$_ ne 'hold' and $_ ne 'unknown')
 				{
 					mydie("malformed 'desired' status indicator (for package '%s')", $package_name);
 				}
-			}
+			};
 			do { # check 'flag'
-				local $_ = $installed{'flag'};
+				local $_ = $installed_info{'flag'};
 				if ($_ ne 'ok' and $_ ne 'reinstreq' and
 					$_ ne 'hold' and $_ ne 'hold-reinstreq')
 				{
 					mydie("malformed 'error' status indicator (for package '%s')", $package_name);
 				}
-			}
+			};
 			do { # check 'status'
-				local $_ = $installed{'status'};
+				local $_ = $installed_info{'status'};
 				if ($_ ne 'not-installed' and $_ ne 'unpacked' and
 					$_ ne 'half-configured' and $_ ne 'half-installed' and
-					$_ ne 'config-files' and $_ ne 'post-inst-failed')
+					$_ ne 'config-files' and $_ ne 'post-inst-failed' and
 					$_ ne 'removal-failed' and $_ ne 'installed')
 				{
 					mydie("malformed 'status' status indicator (for package '%s')", $package_name);
 				}
-			}
+			};
 
 			# add parsed info to installed_info
 			push @{$self->{installed_info}}, \%installed_info;
 
-			if ($installed{'flag'} eq 'ok' and $installed{'status'} eq 'installed') {
+			if ($installed_info{'flag'} eq 'ok' and $installed_info{'status'} eq 'installed') {
 				# this conditions mean that package is properly installed
 				# and have full entry info, so add it (info) to cache
 
@@ -127,6 +128,8 @@ sub _parse_dpkg_status {
 		myredie();
 	}
 
-	close(STATUS) or mydie("unable to close file %s: %s", $file, $!);
+	close(OFFSETS) or mydie("unable to close file %s: %s", $file, $!);
 }
+
+1;
 
