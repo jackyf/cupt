@@ -9,7 +9,7 @@ use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 
-use fields qw(config cache);
+use fields qw(config cache installed_info);
 
 sub new {
 	my $class = shift;
@@ -51,6 +51,8 @@ sub _parse_dpkg_status {
 
 	eval {
 		while (<OFFSETS>) {
+			chomp;
+
 			# firstly, make sure that this is 'Package' line
 			# "12345-" is prefix by grep
 			m/^(\d+)-Package: (.*)/) or
@@ -59,27 +61,63 @@ sub _parse_dpkg_status {
 			# don't check package name for correctness, dpkg has to check this already
 			my $package_name = $2;
 
+			# read next line
+			<OFFSETS>;
+
 			# now make sure that next line is proper 'Status' line
 			m/^(\d+):Status (.*)/ or
 					mydie("expected 'Status' line, but haven't got it (for package '%s')", $package_name);
+
+			my $offset = $1;
 
 			my %installed_info;
 			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
 					split / /, $2 or
 					mydie("malformed 'Status' line (for package '%s')", $package_name);
 
+			do { # check 'want'
+				local $_ = $installed{'want'};
+				if ($_ ne 'install' and $_ ne 'deinstall' and $_ ne 'purge' and
+					$_ ne 'hold' and $_ ne 'unknown')
+				{
+					mydie("malformed 'desired' status indicator (for package '%s')", $package_name);
+				}
+			}
+			do { # check 'flag'
+				local $_ = $installed{'flag'};
+				if ($_ ne 'ok' and $_ ne 'reinstreq' and
+					$_ ne 'hold' and $_ ne 'hold-reinstreq')
+				{
+					mydie("malformed 'error' status indicator (for package '%s')", $package_name);
+				}
+			}
+			do { # check 'status'
+				local $_ = $installed{'status'};
+				if ($_ ne 'not-installed' and $_ ne 'unpacked' and
+					$_ ne 'half-configured' and $_ ne 'half-installed' and
+					$_ ne 'config-files' and $_ ne 'post-inst-failed')
+					$_ ne 'removal-failed' and $_ ne 'installed')
+				{
+					mydie("malformed 'status' status indicator (for package '%s')", $package_name);
+				}
+			}
 			
 
-			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
-			my $offset = $1 + length("Package: $package_name\n");
+			if ($installed{'flag'} eq 'ok' and $installed{'status'} eq 'installed') {
+				# this conditions mean that package is properly installed
+				# and have full entry info, so add it (info) to cache
 
+				# offset is returned by grep -b, and we skips 'Status: <...>' line additionally
+				# bun it is also needed to compensate prefix "<offset>:", inserted by grep
+				$offset += length("$_\n") - length("$offset:");
 
-			# adding new version to cache
-			$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
+				# adding new version to cache
+				$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
 
-			Cupt::Cache::Pkg::add_entry(
-					$self->{cache}->{binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
-					$package_name, $fh, $offset, undef, \%Cupt::Cache::_empty_release_info);
+				Cupt::Cache::Pkg::add_entry(
+						$self->{cache}->{binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
+						$package_name, $fh, $offset, undef, \%Cupt::Cache::_empty_release_info);
+			}
 		}
 	};
 	if (mycatch()) {

@@ -147,7 +147,7 @@ sub is_hashes_equal {
 
 sub uris {
 	my $self = shift;
-	map { ${$_->{ref_base_uri}} . '/' . $_->{filename} } @{$self->{avail_as}};
+	map { ${$_->{ref_base_uri}} . '/' . $_->{filename} if defined($_->{ref_base_uri}) } @{$self->{avail_as}};
 }
 
 1;
