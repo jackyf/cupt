@@ -131,7 +131,12 @@ sub select_binary_package_version {
 		}
 		# example: "nlkt/sid" or "nlkt/unstable"
 		foreach my $version (@{$get_package->($package_name)->versions()}) {
-			foreach (@{$version->{avail_as}}) {
+			# 'avail as' for non-local versions
+			my @avail_as = @{$version->{avail_as}};
+			# first avail entry is for local version
+			shift @avail_as if $version->is_local();
+
+			foreach (@avail_as) {
 				if (defined($_->{release}) and
 					$_->{release}->{archive} eq $distribution_expression ||
 					$_->{release}->{codename} eq $distribution_expression)
