@@ -423,7 +423,7 @@ sub _process_index_file {
 		}
 	};
 	if (mycatch()) {
-		myerr("error parsing index file '%s', line '%d'", $file, $.);
+		myerr("error parsing index file '%s'", $file);
 		myredie();
 	}
 
