@@ -1,5 +1,4 @@
 package Cupt::Cache;
-# TODO: sub pinned_versions { ... }
 # TODO: implement checking for signedness
 
 use 5.10.0;
