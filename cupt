@@ -217,7 +217,7 @@ sub show_package_versions {
 			$p->('Version', $version->{version});
 			if ($o_with_release_info) {
 				foreach (@{$version->{avail_as}}) {
-					next if !defined($_); # no release info available
+					next if !defined($_->{release}->{description}); # no release description available
 					$p->('Release', $_->{release}->{description});
 				}
 			}
