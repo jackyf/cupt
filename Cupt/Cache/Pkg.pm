@@ -62,7 +62,7 @@ sub find_version {
 }
 
 sub compare_versions ($$) {
-	return Cupt::Core::compare_version_strings($_[0], $_[1]);
+	return Cupt::Core::compare_version_strings($_[0]->{version}, $_[1]->{version});
 }
 
 sub _parse_and_merge_version {

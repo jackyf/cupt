@@ -169,27 +169,62 @@ sub get_binary_package {
 	}
 };
 
+# return array reference of sorted versions by pin priorities in descending order
+sub get_sorted_pinned_versions {
+	my ($self, $package) = @_;
+
+	my @result;
+	foreach my $version (@{$package->versions()}) {
+		push @result, { 'version' => $version, 'pin' => $self->get_pin($version) };
+	}
+
+	do {
+		use sort 'stable';
+
+		# sort in descending order, first key is pin, second is version string
+		@result = sort { compare_versions($b->{'version'}, $a->{'version'}) } @result;
+		@result = sort { $b->{'pin'} <=> $a->{'pin'} } @result;
+	};
+
+	return \@result;
+}
 
 sub get_policy_version {
-	my ($self, $ref_package) = @_;
+	my ($self, $package) = @_;
 
 	# selecting by policy (pins)
 	# we assume that every existent package have at least one version
 	# this is how we add versions in 'Cupt::Cache::&_process_index_file'
-	my $result_version;
-	my $max_pin;
+	my $ref_sorted_pinned_versions = $self->get_sorted_pinned_versions($package);
 
-	foreach my $version (@{$ref_package->versions()}) {
-		my $new_pin = $self->get_pin($version);
-		if (!defined($max_pin) || $max_pin < $new_pin) {
-			$max_pin = $new_pin;
-			$result_version = $version;
-		} elsif ($new_pin == $max_pin && compare_versions($version, $result_version) > 0) {
-			# version with the same pin but greater version string has priority
-			$result_version = $version;
+	my $installed_version_string =
+			$self->{system_state}->get_installed_version_string(
+			$ref_sorted_pinned_versions->[0]->{'version'}->{package_name}
+			);
+
+	if (!defined($installed_version_string)) {
+		# package is not installed, so just return the version with the greater pin
+		return $ref_sorted_pinned_versions->[0]->{'version'};
+	} else {
+		# we don't allow downgrades until pin of version > 1000
+		foreach my $entry (@$ref_sorted_pinned_versions) {
+			my $version = $entry->{'version'};
+
+			# if it's local, no downgrade possible, return it
+			return $version if $version->is_local();
+
+			# if version string is greater than installed one, no downgrade, return it
+			return $version if
+					Cupt::Core::compare_version_strings($version->{version}, $installed_version_string) > 0;
+
+			# if version pin exceeds 1000, downgrade allowed
+			return $version if $entry->{'pin'} > 1000;
+
+			# otherwise go to next candidate
 		}
+		# if some version is installed, at least one candidate would have is_local(),
+		# so some version will always be returned
 	}
-	return $result_version;
 }
 
 our %_empty_release_info = (

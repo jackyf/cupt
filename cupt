@@ -359,15 +359,12 @@ sub policy {
 		say "  " . gettext('Candidate') . ": " . $policy_version->{version};
 		say "  " . gettext('Version table') . ":";
 
-		my @versions;
-		foreach (@{$package->versions()}) {
-			push @versions, $_;
-		}
+		my $ref_versions = $cache->get_sorted_pinned_versions($package);
 
-		# sorting versions by pin priorities in descending order
-		@versions = sort { $cache->get_pin($b) <=> $cache->get_pin($a) } @versions;
+		foreach my $entry (@$ref_versions) {
+			my $version = $entry->{'version'};
+			my $pin = $entry->{'pin'};
 
-		foreach my $version (@versions) {
 			if (defined($installed_version_string) && 
 				$version->{version} eq $installed_version_string)
 			{
@@ -376,7 +373,7 @@ sub policy {
 				print "     ";
 			}
 
-			say $version->{version} . ' ' . $cache->get_pin($version);
+			say $version->{version} . ' ' . $pin;
 			# throw out local version if present
 			my @avail_as = @{$version->{avail_as}};
 			shift @avail_as if $version->is_local();
