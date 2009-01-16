@@ -225,7 +225,7 @@ sub show_package_versions () {
 			$p->('Priority', $version->{priority});
 			$p->('Section', $version->{section});
 			$p->('Size', human_readable_size_string($version->{size})) if defined($version->{size});
-			$p->('Installed-Size', human_readable_size_string($version->{installed_size}*1024));
+			$p->('Uncompressed size', human_readable_size_string($version->{installed_size}*1024));
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
 			if ($o_with_release_info) {
