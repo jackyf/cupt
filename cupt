@@ -218,21 +218,22 @@ sub show_package_versions () {
 		foreach my $version (@$ref_versions) {
 			$p->('Package', $package_name);
 			my $installed_status = $cache->{system_state}->get_status_line($version);
+			$p->('Version', $version->{version});
 			$p->('Status', $installed_status) if defined($installed_status);
 			$p->('Source', $version->{source_name});
+			$p->('Essential', $version->{essential}) if defined($version->{essential});
 			$p->('Priority', $version->{priority});
 			$p->('Section', $version->{section});
+			$p->('Size', human_readable_size_string($version->{size})) if defined($version->{size});
 			$p->('Installed-Size', human_readable_size_string($version->{installed_size}*1024));
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
-			$p->('Version', $version->{version});
 			if ($o_with_release_info) {
 				foreach (@{$version->{avail_as}}) {
 					next if !defined($_->{release}->{description}); # no release description available
 					$p->('Release', $_->{release}->{description});
 				}
 			}
-			$p->('Essential', $version->{essential}) if defined($version->{essential});
 			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
 			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
 			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
@@ -243,7 +244,6 @@ sub show_package_versions () {
 			foreach ($version->uris()) {
 				$p->('URI', ($_ eq "" ? gettext("<locally installed>") : $_));
 			}
-			$p->('Size', human_readable_size_string($version->{size})) if defined($version->{size});
 			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});
 			$p->('SHA1', $version->{sha1sum}) if defined($version->{sha1sum});
 			$p->('SHA256', $version->{sha256sum}) if defined($version->{sha1sum});
@@ -252,7 +252,7 @@ sub show_package_versions () {
 			print $version->{long_description} if defined($version->{long_description});
 			$p->('Homepage', $version->{homepage}) if defined($version->{homepage});
 			$p->('Task', $version->{task}) if defined($version->{task});
-			$p->('Tag', $version->{tags}) if defined($version->{tags});
+			$p->('Tags', $version->{tags}) if defined($version->{tags});
 			print "\n";
 		}
 	}
