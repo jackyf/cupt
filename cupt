@@ -263,7 +263,7 @@ sub search {
 
 	my $pattern = shift @ARGV;
 	check_no_more_options();
-	check_for_extra_args();
+	check_no_extra_args();
 
 	my $regex = $o_case_sensitive ? qr/$pattern/ : qr/$pattern/i;
 
