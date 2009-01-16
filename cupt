@@ -234,6 +234,7 @@ sub show_package_versions () {
 					$p->('Release', $_->{release}->{description});
 				}
 			}
+			$p->('PreDepends', stringify_relations($version->{pre_depends})) if defined($version->{pre_depends});
 			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
 			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
 			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
