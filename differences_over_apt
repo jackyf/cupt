@@ -1,0 +1,2 @@
+Configuration:
+ - 'apt::cache::allversions' defaults to 0, not 1 as in apt-cache.
