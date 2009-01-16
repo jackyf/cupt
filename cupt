@@ -104,6 +104,17 @@ sub get_binary_package {
 	}
 }
 
+sub human_readable_size_string ($) {
+	my ($bytes) = @_;
+
+	return "$bytes B" if ($bytes < 10*1024);
+	return sprintf("%.1f KiB", ($bytes / 1024)) if ($bytes < 100*1024);
+	return sprintf("%.0f KiB", ($bytes / 1024)) if ($bytes < 10*1024*1024);
+	return sprintf("%.1f MiB", ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);
+	return sprintf("%.0f MiB", ($bytes / (1024*1024))) if ($bytes < 10*1024*1024*1024);
+	return sprintf("%.1f GiB", ($bytes / (1024*1024*1024)));
+}
+
 sub select_binary_package_version {
 	my ($package_expression) = @_;
 
@@ -211,7 +222,7 @@ sub show_package_versions {
 			$p->('Source', $version->{source_name});
 			$p->('Priority', $version->{priority});
 			$p->('Section', $version->{section});
-			$p->('Installed-Size', $version->{installed_size});
+			$p->('Installed-Size', human_readable_size_string($version->{installed_size}*1024));
 			$p->('Maintainer', $version->{maintainer});
 			$p->('Architecture', $version->{architecture});
 			$p->('Version', $version->{version});
@@ -232,7 +243,7 @@ sub show_package_versions {
 			foreach ($version->uris()) {
 				$p->('URI', ($_ eq "" ? gettext("<locally installed>") : $_));
 			}
-			$p->('Size', $version->{size}) if defined($version->{size});
+			$p->('Size', human_readable_size_string($version->{size})) if defined($version->{size});
 			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});
 			$p->('SHA1', $version->{sha1sum}) if defined($version->{sha1sum});
 			$p->('SHA256', $version->{sha256sum}) if defined($version->{sha1sum});
