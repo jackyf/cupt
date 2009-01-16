@@ -325,13 +325,11 @@ sub show_package_relations () {
 		my @relation_groups = (
 			[ $version->{pre_depends}, 'Pre-Depends' ],
 			[ $version->{depends}, 'Depends' ],
-			[ $version->{conflicts}, 'Conflicts' ],
 		);
 		if (!$config->var('apt::cache::important')) {
 			push @relation_groups, 
 					[ $version->{recommends}, 'Recommends' ],
 					[ $version->{suggests}, 'Suggests' ],
-					[ $version->{replaces}, 'Replaces' ]
 			;
 		}
 
