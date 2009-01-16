@@ -83,18 +83,18 @@ sub check_version_string ($) {
 	}
 }
 
-sub check_no_extra_args {
+sub check_no_extra_args () {
 	if (scalar @ARGV > 0) {
 		mywarn("extra arguments '%s' are not processed", "@ARGV");
 	}
 }
 
-sub check_no_more_options {
+sub check_no_more_options () {
 	foreach (@ARGV) {
 		m/^-/ and mydie("unknown option '%s'", $_);
 	}
 }
-sub get_binary_package {
+sub get_binary_package ($) {
 	my ($package_name) = @_;
 	my $package = $cache->get_binary_package($package_name);
 	if (defined $package) {
@@ -115,7 +115,7 @@ sub human_readable_size_string ($) {
 	return sprintf("%.1f GiB", ($bytes / (1024*1024*1024)));
 }
 
-sub select_binary_package_version {
+sub select_binary_package_version ($) {
 	my ($package_expression) = @_;
 
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
@@ -166,7 +166,7 @@ sub select_binary_package_version {
 	}
 }
 
-sub config_dump {
+sub config_dump () {
 	check_no_more_options();
 	check_no_extra_args();
 
@@ -190,7 +190,7 @@ sub config_dump {
 	}
 }
 
-sub show_package_versions {
+sub show_package_versions () {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
@@ -258,7 +258,7 @@ sub show_package_versions {
 	}
 }
 
-sub search {
+sub search () {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 0);
 
@@ -304,7 +304,7 @@ sub search {
 	}
 }
 
-sub show_package_relations {
+sub show_package_relations () {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
@@ -346,7 +346,7 @@ sub show_package_relations {
 	}
 }
 
-sub policy {
+sub policy () {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
