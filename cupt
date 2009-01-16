@@ -312,6 +312,11 @@ sub show_package_relations () {
 	# turn off info parsing, we don't need it, only relations :)
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
+	my $o_with_suggests = 0;
+	GetOptions(
+		'with-suggests' => \$o_with_suggests,
+	);
+
 	check_no_more_options();
 
 	my @package_expressions = @ARGV;
@@ -328,9 +333,12 @@ sub show_package_relations () {
 		);
 		if (!$config->var('apt::cache::important')) {
 			push @relation_groups, 
-					[ $version->{recommends}, 'Recommends' ],
-					[ $version->{suggests}, 'Suggests' ],
-			;
+					[ $version->{recommends}, 'Recommends' ];
+
+			if ($o_with_suggests) {
+				push @relation_groups,
+						[ $version->{suggests}, 'Suggests' ];
+			}
 		}
 
 		foreach my $item (@relation_groups) {
