@@ -160,13 +160,13 @@ sub _parse_dpkg_status {
 	close(VERSIONS) or mydie("unable to close grep pipe");
 }
 
-sub get_status_line {
+sub get_status_for_version {
 	my ($self, $version) = @_;
 	my $package_name = $version->{package_name};
 	if (exists $self->{installed_info}->{$package_name}) {
 		my $info = $self->{installed_info}->{$package_name};
 		if (defined $info->{'version'} and $info->{'version'} eq $version->{version}) {
-			return join(' ', $info->{'want'}, $info->{'flag'}, $info->{'status'});
+			return $info;
 		}
 	}
 	return undef;

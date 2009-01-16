@@ -217,9 +217,9 @@ sub show_package_versions () {
 		my $p = sub { print gettext(shift), ': ', shift, "\n" };
 		foreach my $version (@$ref_versions) {
 			$p->('Package', $package_name);
-			my $installed_status = $cache->{system_state}->get_status_line($version);
 			$p->('Version', $version->{version});
-			$p->('Status', $installed_status) if defined($installed_status);
+			my $installed_status = $cache->{system_state}->get_status_for_version($version);
+			$p->('Status', defined($installed_status) ? $installed_status->{'status'} : "not installed");
 			$p->('Source', $version->{source_name});
 			$p->('Essential', $version->{essential}) if defined($version->{essential});
 			$p->('Priority', $version->{priority});
