@@ -230,10 +230,10 @@ sub get_satisfying_versions ($$) {
 
 	if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
 		# relation expression is just one relation
-		return [ get_satisfying_versions_for_one_relation->($relation_expression) ];
+		return [ $get_satisfying_versions_for_one_relation->($relation_expression) ];
 	} else {
 		# othersise it's OR group of expressions
-		return [ map { get_satisfying_versions_for_one_relation->($_) } @$relation_expression ];
+		return [ map { $get_satisfying_versions_for_one_relation->($_) } @$relation_expression ];
 	}
 }
 

@@ -319,10 +319,10 @@ sub show_package_relations () {
 
 	check_no_more_options();
 
-	my @package_expressions = @ARGV;
+	my @versions = map { select_binary_package_version($_) } @ARGV;
 
-	foreach (@package_expressions) {
-		my $version = select_binary_package_version($_);
+	while (scalar @versions) {
+		my $version = shift @versions;
 		my $package_name = $version->{package_name};
 		my $version_string = $version->{version};
 
@@ -349,6 +349,11 @@ sub show_package_relations () {
 			my @split = split /, /,  stringify_relations($relations);
 			my $starter = "  " . gettext($caption) . ": ";
 			map { say $starter, $_; } @split;
+
+			if ($config->var('apt::cache::recursedepends')) {
+				# insertive recursive depends into queue
+				push @versions, map { @{$cache->get_satisfying_versions($_)} } @$relations;
+			}
 		}
 	}
 }
