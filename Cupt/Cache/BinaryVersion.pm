@@ -70,6 +70,9 @@ sub new {
 
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
+			# skip all fields that haven't a value on the same line
+			next if $line =~ m/:\n$/;
+
 			if (($line =~ m/^ / or $line =~ m/^\t/)) {
 				if ($in_long_description) {
 					# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
