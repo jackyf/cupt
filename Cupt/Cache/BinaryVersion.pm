@@ -61,16 +61,23 @@ sub new {
 
 	my $field_name = undef;
 	eval {
+		# next boolean variable determines whether we are in long description
+		my $in_long_description = 0;
+
 		my $line;
 		# go to starting byte of the entry
 		seek $fh, $offset, 0;
+
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
 			if (($line =~ m/^ / or $line =~ m/^\t/)) {
-				# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
-				# part of long description
-				$self->{long_description} .= $line unless $o_no_parse_info_onlys;
+				if ($in_long_description) {
+					# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
+					# part of long description
+					$self->{long_description} .= $line unless $o_no_parse_info_onlys;
+				}
 			} else {
+				$in_long_description = 0;
 				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
 					or mydie("cannot parse line '%s'", $line);
@@ -88,7 +95,12 @@ sub new {
 					when ('MD5sum') { $self->{md5sum} = $field_value }
 					when ('SHA1') { $self->{sha1sum} = $field_value }
 					when ('SHA256') { $self->{sha256sum} = $field_value }
-					when ('Description') { $self->{short_description} = $field_value unless $o_no_parse_info_onlys }
+					when ('Description') {
+						if (!$o_no_parse_info_onlys) {
+							$self->{short_description} = $field_value;
+							$in_long_description = 1;
+						}
+					}
 					# often fields
 					when ('Depends') {
 						$self->{depends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
