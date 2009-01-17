@@ -78,7 +78,7 @@ sub new {
 				given ($field_name) {
 					# mandatory fields
 					when ('Priority') { $self->{priority} = $field_value }
-					when ('Section') { $self->{section} = $field_value }
+					when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
 					when ('Installed-Size') { $self->{installed_size} = $field_value }
 					when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
 					when ('Architecture') { $self->{architecture} = $field_value }
