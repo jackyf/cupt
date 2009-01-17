@@ -1,5 +1,6 @@
 package Cupt::Core;
-BEGIN { require Carp; $SIG{__WARN__} = \&Carp::confess; $SIG{__DIE__} = \&Carp::confess; }
+
+INIT { require Carp; $SIG{__WARN__} = \&Carp::confess; $SIG{__DIE__} = \&Carp::confess; }
 
 use 5.10.0;
 use warnings;
