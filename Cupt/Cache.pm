@@ -211,11 +211,30 @@ sub get_policy_version {
 }
 
 
-sub get_satisfying_version ($$$) {
-	my ($self, $relation_expression, $sub_select_preferred, @sub_accepted) = @_;
+sub get_satisfying_versions ($$) {
+	my ($self, $relation_expression) = @_;
 
-	#if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation)')) {
-	#	my $package_name = $relation->
+	my $get_satisfying_versions_for_one_relation = sub {
+		my ($relation) = @_;
+		my $package_name = $relation->{package_name};
+		my $package = $self->get_binary_package($package_name);
+		defined($package) or return ();
+		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
+		my @result;
+		foreach (@$ref_sorted_versions) {
+			my $version = $_->{'version'};
+			push @result, $version if $relation->satisfied_by($version->{version});
+		}
+		return @result;
+	};
+
+	if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
+		# relation expression is just one relation
+		return [ get_satisfying_versions_for_one_relation->($relation_expression) ];
+	} else {
+		# othersise it's OR group of expressions
+		return [ map { get_satisfying_versions_for_one_relation->($_) } @$relation_expression ];
+	}
 }
 
 our %_empty_release_info = (
