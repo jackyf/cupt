@@ -1,5 +1,6 @@
 package Cupt::Cache::Relation;
 
+use 5.10.0;
 use strict;
 use warnings;
 
@@ -75,6 +76,25 @@ sub stringify_relations {
 		}
 	}
 	return join(", ", @relation_strings);
+}
+
+sub satisfied_by ($$) {
+	my ($self, $version_string) = @_;
+	if (defined($self->{relation})) {
+		# relation is defined, checking
+		my $comparison_result = return Cupt::Core::compare_version_strings($version_string, $self->{version});
+		given($self->{relation}) {
+			when('<') { continue }
+			when('<<') { return ($comparison_result < 0) }
+			when('<=') { return ($comparison_result <= 0) }
+			when('=') { return ($comparison_result == 0) }
+			when('>=') { return ($comparison_result >= 0) }
+			when('>') { continue }
+			when('<<') { return ($comparison_result > 0) }
+		}
+	}
+	# no versioned info, so return true
+	return 1;
 }
 
 sub __parse_relation_line {
