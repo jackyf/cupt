@@ -321,10 +321,17 @@ sub show_package_relations () {
 
 	my @versions = map { select_binary_package_version($_) } @ARGV;
 
+	# don't output the same version more than one time
+	my %processed_entries;
+
 	while (scalar @versions) {
 		my $version = shift @versions;
+
 		my $package_name = $version->{package_name};
 		my $version_string = $version->{version};
+
+		next if exists $processed_entries{$package_name,$version_string};
+		$processed_entries{$package_name,$version_string} = 1;
 
 		say "$package_name $version_string:";
 		my @relation_groups = (
