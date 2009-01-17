@@ -358,7 +358,7 @@ sub show_package_relations () {
 			map { say $starter, $_; } @split;
 
 			if ($config->var('apt::cache::recursedepends')) {
-				# insertive recursive depends into queue
+				# insert recursive depends into queue
 				foreach (@$relations) {
 					my $ref_satisfying_versions = $cache->get_satisfying_versions($_);
 					# if some versions exist
