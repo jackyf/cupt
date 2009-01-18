@@ -141,13 +141,10 @@ sub _parse_dpkg_status {
 						mydie("bad version '%s'", $version_string);
 
 				$installed_info{'version'} = $version_string;
-			} else {
-				$installed_info{'version'} = undef;
+
+				# add parsed info to installed_info
+				$self->{installed_info}->{$package_name} = \%installed_info;
 			}
-
-			# add parsed info to installed_info
-			$self->{installed_info}->{$package_name} = \%installed_info;
-
 		}
 	};
 	if (mycatch()) {
@@ -164,9 +161,9 @@ sub get_status_for_version {
 	my ($self, $version) = @_;
 	my $package_name = $version->{package_name};
 	if (exists $self->{installed_info}->{$package_name}) {
-		my $info = $self->{installed_info}->{$package_name};
-		if (defined $info->{'version'} and $info->{'version'} eq $version->{version}) {
-			return $info;
+		my $ref_info = $self->{installed_info}->{$package_name};
+		if ($ref_info->{'version'} eq $version->{version}) {
+			return $ref_info;
 		}
 	}
 	return undef;
@@ -175,12 +172,29 @@ sub get_status_for_version {
 sub get_installed_version_string {
 	my ($self, $package_name) = @_;
 	if (exists $self->{installed_info}->{$package_name}) {
-		my $info = $self->{installed_info}->{$package_name};
-		if (defined $info->{'version'}) {
-			return $info->{'version'};
-		}
+		my $ref_info = $self->{installed_info}->{$package_name};
+		return $ref_info->{'version'};
 	}
 	return undef;
+}
+
+sub export_versions ($) {
+	my ($self) = @_;
+	my @result;
+
+	PACKAGE:
+	while (my ($package_name, $ref_installed_info) = each $self->{installed_info}) {
+		my $version_string = $ref_installed_info{'version'};
+		foreach my $version (@{$cache->get_binary_package($package_name)->versions()}) {
+			if ($version->{version} eq $version_string) {
+				# found such a version
+				push @result, $version;
+				next PACKAGE;
+			}
+		}
+		mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+	}
+	return \@result;
 }
 
 1;
