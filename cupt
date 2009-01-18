@@ -46,6 +46,7 @@ my %command_handlers = (
 	'search' => \&search,
 	'depends' => \&show_package_relations,
 	'policy' => \&policy,
+	'pkgnames' => \&pkgnames,
 );
 
 if (defined($command_handlers{$command})) {
@@ -424,6 +425,24 @@ sub policy () {
 				say ' ' x 8, $config->var('dir::state::status');
 			}
 		}
+	}
+}
+
+sub pkgnames () {
+	build_cache(-source => 0, -binary => 1, -installed => 1);
+
+	check_no_more_options();
+
+	my $prefix = "";
+	if (scalar @ARGV) {
+		$prefix = quotemeta(shift @ARGV);
+	}
+
+	check_no_extra_args();
+
+	while ((my $package_name) = each %{$cache->{binary_packages}}) {
+		# check package name for pattern and output it
+		$package_name =~ m/^$prefix/o and say $package_name;
 	}
 }
 
