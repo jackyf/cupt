@@ -9,7 +9,7 @@ use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
-use Cupt::SystemState;
+use Cupt::System::State;
 
 use fields qw(source_packages binary_packages config pin_settings system_state);
 
@@ -39,7 +39,7 @@ sub new {
 
 	if ($build_config{'-installed'}) {
 		# read system settings
-		$self->{system_state} = new Cupt::SystemState($self->{config}, $self);
+		$self->{system_state} = new Cupt::System::State($self->{config}, $self);
 	}
 
 	foreach my $ref_index_entry (@$ref_index_entries) {
