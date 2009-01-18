@@ -7,6 +7,15 @@ use Cupt::Core;
 
 use fields qw(config params packages);
 
+=head1 OBJECT STRUCTURE
+
+=head2 packages
+
+hash of hashes{I<version>,I<stick>}, where I<version> - a version object,
+I<stick> - a boolean flag to indicate can resolver modify this item or no
+
+=cut
+
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
@@ -39,23 +48,25 @@ sub remove_package ($$) {
 	delete $self->{packages}->{$package_name};
 }
 
-sub resolve ($) {
-	my ($self) = 0;
+# every package version has a weight
+sub __version_weight {
+	my ($version) = @_;
+	my $result = $self->{cache}->get_pin($version);
+	$result += 5000 if $version->{essential} eq 'yes';
+	$result += 2000 if $version->{priority} eq 'required';
+	$result += 1000 if $version->{priority} eq 'important';
+	$result += 400 if $version->{priority} eq 'standard';
+	$result += 100 if $version->{priority} eq 'optional';
+}
 
-	my $result = 0;
-	my $self_weight = sub {
-		my ($version) = @_;
-		$result += 100 if $version->{essential} eq 'yes';
-		$result += 100 if $version->{essential} eq 'yes';
-	}
-	# every package version have its own weight, starting with 0
-	# every depend modifies weight
-	while (my $package_name = each $self->{packages}) {
-		my $package_entry = $self->{packages}->{$package_name};
-		$package_entry->{weight} = $self->self_weight($package_entry->{version});
-	}
+sub resolve ($) {
+	my ($self, $sub_accept) = 0;
+
 	while (my $package_name = each $self->{packages}) {
 		my $package_entry = $self->{packages}->{$package_name};
 		my $version = $package_entry->{version};
 	}
 }
+
+1;
+
