@@ -1,4 +1,4 @@
-package Cupt::SystemState;
+package Cupt::System::State;
 
 use 5.10.0;
 use strict;
