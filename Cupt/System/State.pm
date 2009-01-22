@@ -183,9 +183,9 @@ sub export_versions ($) {
 	my @result;
 
 	PACKAGE:
-	while (my ($package_name, $ref_installed_info) = each $self->{installed_info}) {
-		my $version_string = $ref_installed_info{'version'};
-		foreach my $version (@{$cache->get_binary_package($package_name)->versions()}) {
+	while (my ($package_name, $ref_installed_info) = each %{$self->{installed_info}}) {
+		my $version_string = $ref_installed_info->{'version'};
+		foreach my $version (@{$self->{cache}->get_binary_package($package_name)->versions()}) {
 			if ($version->{version} eq $version_string) {
 				# found such a version
 				push @result, $version;

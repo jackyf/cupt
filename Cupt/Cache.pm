@@ -211,6 +211,19 @@ sub get_policy_version {
 }
 
 
+=head2 get_satisfying_versions
+
+returns array of versions that satisfy relation, if no any version can satisfy the relation, return empty array
+
+Parameters - (C<self>, C<relation_expression>)
+
+C<self> - object
+C<relation_expression> - reference to Cupt::Cache::Relation, or relation OR
+group (see documentation for Cupt::Cache::Relation for the info about OR
+groups)
+
+=cut
+
 sub get_satisfying_versions ($$) {
 	my ($self, $relation_expression) = @_;
 
