@@ -454,6 +454,7 @@ sub install () {
 	check_no_more_options();
 
 	my $resolver = new Cupt::System::Resolver($config, $cache);
+	$resolver->import_versions($cache->{system_state}->export_installed_versions());
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {

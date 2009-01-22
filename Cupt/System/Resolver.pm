@@ -77,7 +77,7 @@ sub new {
 =head2 import_versions
 
 member function, imports already installed versions, usually used in pair with
-C<&Cupt::System::State::export_versions>
+C<&Cupt::System::State::export_installed_versions>
 
 Parameters: 
 
@@ -151,6 +151,7 @@ sub satisfy_relation ($$) {
 
 	my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
 	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+		# if relation is not satisfied
 		if ($self->{config}->var('debug::resolver::autoinstall')) {
 			print "auto-installing relation ";
 			if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
@@ -197,7 +198,8 @@ sub __is_version_array_intersects_with_packages ($$) {
 		my Cupt::Cache::BinaryVersion $version = $_;
 		++$seen{$version->{package_name}, $version->{version}};
 	}
-	return grep { $_ == 2 } values %seen;
+	my $result = scalar grep { $_ == 2 } values %seen;
+	return $result;
 }
 
 sub _recursive_resolve ($$) {
