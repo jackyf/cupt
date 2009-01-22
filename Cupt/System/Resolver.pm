@@ -234,6 +234,8 @@ sub _recursive_resolve ($$) {
 
 	if ($check_failed) {
 		# some depends are not satisfied, try to fix them
+
+		# firstly rank all solutions
 		foreach (@possible_actions) {
 			my $package_name = $_->[0];
 			my $supposed_version = $_->[1];
@@ -244,6 +246,30 @@ sub _recursive_resolve ($$) {
 
 			# 3rd field in the structure will be "profit" of the change
 			push @$_, $supposed_version_weight - $original_version_weight;
+		}
+
+		# sort them by "rank"
+		sort { $a->[2] <=> $b->[2] } @possible_actions;
+
+		# apply by one
+		foreach (@possible_actions) {
+			my $package_name = $_->[0];
+			my $supposed_version = $_->[1];
+			my $ref_package_entry = $self->{packages}->{$supposed_version->{package_name}};
+			my $original_version = $ref_package_entry->{version};
+
+			# set stick for change for the time on underlying solutions
+			$package_entry->{stick} = 1;
+			$package_entry->{version} = $supposed_version;
+
+			if ($self->_recursive_resolve($sub_accept)) {
+				# some underlying solution has been accepted, moving up
+				return 1;
+			}
+
+			# otherwise remove it and try next...
+			$package_entry->{version} = $original_version;
+			delete $package_entry->{stick};
 		}
 		return 0;
 	} else {
