@@ -213,7 +213,7 @@ sub get_policy_version {
 
 =head2 get_satisfying_versions
 
-returns array of versions that satisfy relation, if no any version can satisfy the relation, return empty array
+returns reference to array of versions that satisfy relation, if no any version can satisfy the relation, return empty array
 
 Parameters - (C<self>, C<relation_expression>)
 

@@ -16,6 +16,7 @@ use Cupt::Core;
 use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relations);
+use Cupt::System::Resolver;
 
 my $config;
 my $cache;
@@ -47,6 +48,7 @@ my %command_handlers = (
 	'depends' => \&show_package_relations,
 	'policy' => \&policy,
 	'pkgnames' => \&pkgnames,
+	'install' => \&install,
 );
 
 if (defined($command_handlers{$command})) {
@@ -444,6 +446,22 @@ sub pkgnames () {
 		# check package name for pattern and output it
 		$package_name =~ m/^$prefix/o and say $package_name;
 	}
+}
+
+sub install () {
+	build_cache(-source => 0, -binary => 1, -installed => 1);
+
+	check_no_more_options();
+
+	my $resolver = new Cupt::System::Resolver($config, $cache);
+
+	my @package_expressions = @ARGV;
+	foreach my $package_expression (@package_expressions) {
+		my $version = select_binary_package_version($package_expression);
+		$resolver->install_version($version);
+	}
+
+	$resolver->resolve();
 }
 
 sub process_options {

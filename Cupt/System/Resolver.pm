@@ -1,9 +1,11 @@
 package Cupt::System::Resolver;
 
+use 5.10.0;
 use strict;
 use warnings;
 
 use Cupt::Core;
+use Cupt::Cache::Relation qw(stringify_relations);
 
 =head1 FIELDS
 
@@ -37,7 +39,7 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(config params packages pending_relations);
+use fields qw(config cache params packages pending_relations);
 
 =head1 METHODS
 
@@ -64,8 +66,12 @@ sub new {
 
 	# resolver params
 	$self->{params} = (
-		@_;
+		@_
 	);
+
+	$self->{pending_relations} = ();
+
+	return $self;
 }
 
 =head2 import_versions
@@ -82,31 +88,31 @@ I<ref_versions> - reference to array of Cupt::Cache::BinaryVersion
 sub import_versions ($$) {
 	my ($self, $ref_versions) = @_;
 
-	foreach my $version = (@$ref_versions) {
+	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		$self->{packages}->{$version->{package_name}}->{version} = $version;
 	}
 }
 
 sub _schedule_new_version_relations ($$) {
-	my ($self, $version);
+	my ($self, $version) = @_;
 
 	if (defined($version->{depends})) {
 		# ok, unconditionally adding depends
-		foreach ($version->{depends}) {
-			push @$self->{pending_relations};
+		foreach (@{$version->{depends}}) {
+			$self->satisfy_relation($_);
 		}
 	}
 	if ($self->{config}->var('apt::install-recommends') && defined($version->{recommends})) {
 		# ok, so adding recommends
-		foreach ($version->{recommends}) {
-			push @$self->{pending_relations};
+		foreach (@{$version->{recommends}}) {
+			$self->satisfy_relation($_);
 		}
 	}
 	if ($self->{config}->var('apt::install-suggests') && defined($version->{suggests})) {
 		# ok, so adding suggests
-		foreach ($version->{suggests}) {
-			push @$self->{pending_relations};
+		foreach (@{$version->{suggests}}) {
+			$self->satisfy_relation($_);
 		}
 	}
 }
@@ -122,7 +128,7 @@ I<version> - reference to Cupt::Cache::BinaryVersion
 =cut
 
 sub install_version ($$) {
-	my ($self, $version} = @_;
+	my ($self, $version) = @_;
 	$self->{packages}->{$version->{package_name}}->{version} = $version;
 
 	$self->_schedule_new_version_relations($version);
@@ -141,8 +147,20 @@ groups)
 =cut
 
 sub satisfy_relation ($$) {
-	my ($self, $relation_expresson) = @_;
-	push @{$self{pending_relations}}, $relation_expression;
+	my ($self, $relation_expression) = @_;
+
+	my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+		if ($self->{config}->var('debug::resolver::autoinstall')) {
+			print "auto-installing relation ";
+			if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
+				say $relation_expression->stringify();
+			} else {
+				say join(" | ", map { $_->stringify() } @$relation_expression);
+			}
+		}
+		push @{$self->{pending_relations}}, $relation_expression;
+	}
 }
 
 =head2 remove_package
@@ -161,7 +179,7 @@ sub remove_package ($$) {
 }
 
 # every package version has a weight
-sub __version_weight ($$) {
+sub _version_weight ($$) {
 	my ($self, $version) = @_;
 	my $result = $self->{cache}->get_pin($version);
 	$result += 5000 if $version->{essential} eq 'yes';
@@ -175,11 +193,11 @@ sub __is_version_array_intersects_with_packages ($$) {
 	my ($ref_versions, $ref_packages) = @_;
 
 	my %seen;
-	foreach (@$ref_versions, map { $_->{version} } @$ref_packages) {
-		my Cupt::Cache::BinaryPackage $version = $_;
+	foreach (@$ref_versions, map { $_->{version} } values %$ref_packages) {
+		my Cupt::Cache::BinaryVersion $version = $_;
 		++$seen{$version->{package_name}, $version->{version}};
 	}
-	return grep { $_ == 2 } @seen;
+	return grep { $_ == 2 } values %seen;
 }
 
 sub _recursive_resolve ($$) {
@@ -196,9 +214,10 @@ sub _recursive_resolve ($$) {
 
 		# checking that all 'Depends' are satisfied
 		if (defined($version->{depends})) {
-			foreach (@$version->{depends} {
-				my @satisfying_versions = $self->{cache}->get_satisfying_relations($_);
-				if (__is_version_array_intersects_with_packages(\@satisfying_versions, $ref_packages)) {
+			foreach (@{$version->{depends}}) {
+				# check if relation is already satisfied
+				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
+				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
 					# good, nothing to do
 					next;
 				} else {
@@ -206,7 +225,7 @@ sub _recursive_resolve ($$) {
 					# for resolving we can do:
 
 					# install one of versions package needs
-					foreach my $satisfying_version (@satisfying_versions) {
+					foreach my $satisfying_version (@$ref_satisfying_versions) {
 						if (!exists $self->{packages}->{$satisfying_version->{package_name}}->{stick}) {
 							push @possible_actions, [ $satisfying_version->{package_name}, $satisfying_version ];
 						}
@@ -241,15 +260,15 @@ sub _recursive_resolve ($$) {
 			my $supposed_version = $_->[1];
 			my $original_version = $self->{packages}->{$supposed_version->{package_name}}->{version};
 
-			my $supposed_version_weight = defined($supposed_version) ? __version_weight($supposed_version) : 0;
-			my $original_version_weight = defined($original_version) ? __version_weight($original_version) : 0;
+			my $supposed_version_weight = defined($supposed_version) ? $self->__version_weight($supposed_version) : 0;
+			my $original_version_weight = defined($original_version) ? $self->__version_weight($original_version) : 0;
 
 			# 3rd field in the structure will be "profit" of the change
 			push @$_, $supposed_version_weight - $original_version_weight;
 		}
 
 		# sort them by "rank"
-		sort { $a->[2] <=> $b->[2] } @possible_actions;
+		@possible_actions = sort { $a->[2] <=> $b->[2] } @possible_actions;
 
 		# apply by one
 		foreach (@possible_actions) {
@@ -259,8 +278,8 @@ sub _recursive_resolve ($$) {
 			my $original_version = $ref_package_entry->{version};
 
 			# set stick for change for the time on underlying solutions
-			$package_entry->{stick} = 1;
-			$package_entry->{version} = $supposed_version;
+			$ref_package_entry->{stick} = 1;
+			$ref_package_entry->{version} = $supposed_version;
 
 			if ($self->_recursive_resolve($sub_accept)) {
 				# some underlying solution has been accepted, moving up
@@ -268,13 +287,13 @@ sub _recursive_resolve ($$) {
 			}
 
 			# otherwise remove it and try next...
-			$package_entry->{version} = $original_version;
-			delete $package_entry->{stick};
+			$ref_package_entry->{version} = $original_version;
+			delete $ref_package_entry->{stick};
 		}
 		return 0;
 	} else {
 		# suggest found solution
-		if ($sub_accept(map { $_->{version} } $self->{packages})) {
+		if ($sub_accept->(map { $_->{version} } $self->{packages})) {
 			# yeah, this is end of our tortures
 			return 1;
 		} else {
@@ -303,9 +322,9 @@ sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
 	# unwinding relations
-	while (scalar $self->{pending_relations}) {
-		my $relation_expression = shift $self->{pending_relations};
-		my $ref_satisfying_versions = $self->{cache}->get_satisfying_relations($relation_expression);
+	while (scalar @{$self->{pending_relations}}) {
+		my $relation_expression = shift @{$self->{pending_relations}};
+		my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
 		
 		# if we have no candidates, skip the relation
 		scalar @$ref_satisfying_versions or next;
@@ -317,7 +336,7 @@ sub resolve ($$) {
 	}
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
-	$self->_recursive_resolve($sub_accept);
+	return $self->_recursive_resolve($sub_accept);
 }
 
 1;
