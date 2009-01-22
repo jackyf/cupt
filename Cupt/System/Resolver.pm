@@ -171,22 +171,90 @@ sub __version_weight ($$) {
 	$result += 100 if $version->{priority} eq 'optional';
 }
 
+sub __is_version_array_intersects_with_packages ($$) {
+	my ($ref_versions, $ref_packages) = @_;
+
+	my %seen;
+	foreach (@$ref_versions, map { $_->{version} } @$ref_packages) {
+		my Cupt::Cache::BinaryPackage $version = $_;
+		++$seen{$version->{package_name}, $version->{version}};
+	}
+	return grep { $_ == 2 } @seen;
+}
+
 sub _recursive_resolve ($$) {
 	my ($self, $sub_accept) = @_;
+	
+	# [ package_name, version ]
+	my @possible_actions;
+	my $check_failed = 0;
 
-	while (my $package_name = each $self->{packages}) {
+	MAIN_LOOP:
+	while (my $package_name = each %{$self->{packages}}) {
 		my $package_entry = $self->{packages}->{$package_name};
 		my $version = $package_entry->{version};
 
 		# checking that all 'Depends' are satisfied
 		if (defined($version->{depends})) {
 			foreach (@$version->{depends} {
-				my $ref_satisfying_versions = $self->{cache}->get_satisfying_relations($_);
-				if (scalar @$ref_satisfying_versions == 0) {
-					# oh, bad, no versions can satisfy this package
-					if (exists $package_entry->{stick}) {
-						# and we can't even remove it... fail then
-						return 0;
+				my @satisfying_versions = $self->{cache}->get_satisfying_relations($_);
+				if (__is_version_array_intersects_with_packages(\@satisfying_versions, $ref_packages)) {
+					# good, nothing to do
+					next;
+				} else {
+
+					# for resolving we can do:
+
+					# install one of versions package needs
+					foreach my $satisfying_version (@satisfying_versions) {
+						if (!exists $self->{packages}->{$satisfying_version->{package_name}}->{stick}) {
+							push @possible_actions, [ $satisfying_version->{package_name}, $satisfying_version ];
+						}
+					}
+
+					if (!exists $package_entry->{stick}) {
+						# change version of the package
+						my $package = $self->{cache}->get_binary_package($package_name);
+						my $ref_pinned_versions = $self->{cache}->get_sorted_pinned_versions($package);
+						my @other_versions = map { $_->{version} } @$ref_pinned_versions;
+						foreach my $other_version (@other_versions) {
+							push @possible_actions, [ $package_name, $other_version ];
+						}
+						
+						# remove the package
+						push @possible_actions, [ $package_name, undef ];
+					}
+
+					$check_failed = 1;
+					last MAIN_LOOP;
+				}
+			}
+		}
+	}
+
+	if ($check_failed) {
+		# some depends are not satisfied, try to fix them
+		foreach (@possible_actions) {
+			my $package_name = $_->[0];
+			my $supposed_version = $_->[1];
+			my $original_version = $self->{packages}->{$supposed_version->{package_name}}->{version};
+
+			my $supposed_version_weight = defined($supposed_version) ? __version_weight($supposed_version) : 0;
+			my $original_version_weight = defined($original_version) ? __version_weight($original_version) : 0;
+
+			# 3rd field in the structure will be "profit" of the change
+			push @$_, $supposed_version_weight - $original_version_weight;
+		}
+		return 0;
+	} else {
+		# suggest found solution
+		if ($sub_accept(map { $_->{version} } $self->{packages})) {
+			# yeah, this is end of our tortures
+			return 1;
+		} else {
+			# caller hasn't accepted this solution, well, go next...
+			return 0;
+		}
 	}
 }
 
@@ -223,6 +291,7 @@ sub resolve ($$) {
 	}
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
+	$self->_recursive_resolve($sub_accept);
 }
 
 1;
