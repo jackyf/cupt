@@ -45,7 +45,7 @@ sub new {
 			'dir::state' => 'var/lib/apt',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
-			'debug::resolver::autoinstall' => 0,
+			'debug::resolver' => 0,
 			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 		},
 

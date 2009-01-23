@@ -8,7 +8,7 @@ use strict;
 
 use Exporter qw(import);
 our @EXPORT = qw(
-	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch
+	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
 	$package_name_regex $version_string_regex);
 
 use Locale::gettext;
@@ -62,6 +62,11 @@ sub mycatch() {
     } else {
         return 0;
     }
+}
+
+sub mydebug {
+	print "D: ";
+	say @_;
 }
 
 our $package_name_regex = qr/[a-z_0-9.+-]+/;

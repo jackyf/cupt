@@ -152,13 +152,14 @@ sub satisfy_relation ($$) {
 	my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
 	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
 		# if relation is not satisfied
-		if ($self->{config}->var('debug::resolver::autoinstall')) {
-			print "auto-installing relation ";
+		if ($self->{config}->var('debug::resolver')) {
+			my $message = "auto-installing relation ";
 			if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
-				say $relation_expression->stringify();
+				$message .= $relation_expression->stringify();
 			} else {
-				say join(" | ", map { $_->stringify() } @$relation_expression);
+				$message .= join(" | ", map { $_->stringify() } @$relation_expression);
 			}
+			mydebug($message);
 		}
 		push @{$self->{pending_relations}}, $relation_expression;
 	}
