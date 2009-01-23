@@ -451,6 +451,9 @@ sub pkgnames () {
 sub install () {
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
+	# turn off info parsing, we don't need it
+	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+
 	check_no_more_options();
 
 	my $resolver = new Cupt::System::Resolver($config, $cache);
