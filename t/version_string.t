@@ -20,6 +20,7 @@ $test_count += scalar @incorrect_version_strings;
 
 my @correct_version_strings = (
 	[ '1.2.3', '1.2.3', 0 ], # identical
+	[ '4.4.3-2', '4.4.3-2', 0 ], # identical
 	[ '1:ab:5', '1:ab:5', 0 ], # this is correct...
 	[ '7:1-a:b-5', '7:1-a:b-5', 0 ], # and this
 	[ '57:1.2.3abYZ+~-4-5', '57:1.2.3abYZ+~-4-5', 0 ], # and those too
