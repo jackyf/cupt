@@ -88,18 +88,18 @@ our $version_string_regex =
 		)? # which is non-mandatory
 	/x;
 
+sub __compare_version_symbol ($$) {
+	my ($left, $right) = @_;
+	my $left_ord = ord($left);
+	my $right_ord = ord($right);
+	$left_ord = 0 if $left eq '~';
+	$right_ord = 0 if $right eq '~';
+	return $left_ord <=> $right_ord;
+}
+
 sub compare_version_strings($$) {
 	# version part can be epoch, version and debian revision
 	my $compare_version_part = sub {
-		my $compare_symbol = sub {
-			my ($left, $right) = @_;
-			my $left_ord = ord($left);
-			my $right_ord = ord($right);
-			$left_ord = 0 if $left eq '~';
-			$right_ord = 0 if $right eq '~';
-			return $left_ord <=> $right_ord;
-		};
-
 		my ($left, $right) = @_;
 
 		# add "empty" characters to make strings char-comparable
@@ -115,13 +115,11 @@ sub compare_version_strings($$) {
 		foreach my $idx (0 .. $last_char_idx) {
 			my $left_char = substr($left, $idx, 1);
 			my $right_char = substr($right, $idx, 1);
-			my $char_comparison_result = $compare_symbol->($left_char, $right_char);
 
-			if ($char_comparison_result == 0) {
-				# draw for now
-				next;
-			} else {
-				# no possible draw here, one will be the winner
+			if ($left_char ne $right_char) {
+				# no draw here, one will be the winner
+				my $char_comparison_result = __compare_version_symbol($left_char, $right_char);
+
 				if ($left_char =~ m/[0-9]/ && $right_char =~ m/[0-9]/) {
 					# then we have to check lengthes of futher numeric parts
 					# if some numeric part have greater length, then it will be

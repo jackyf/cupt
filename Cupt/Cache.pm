@@ -192,8 +192,10 @@ sub get_sorted_pinned_versions {
 	do {
 		use sort 'stable';
 		# sort in descending order, first key is pin, second is version string
-		@result = sort { compare_versions($b->{'version'}, $a->{'version'}) } @result;
-		@result = sort { $b->{'pin'} <=> $a->{'pin'} } @result;
+		@result = sort {
+			$b->{'pin'} <=> $a->{'pin'} or 
+			compare_versions($b->{'version'}, $a->{'version'})
+		} @result;
 	};
 
 	return \@result;
