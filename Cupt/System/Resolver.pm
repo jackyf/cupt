@@ -196,7 +196,8 @@ sub __is_version_array_intersects_with_packages ($$) {
 	my ($ref_versions, $ref_packages) = @_;
 
 	my %seen;
-	foreach (@$ref_versions, map { $_->{version} } values %$ref_packages) {
+	my @installed_versions = map { defined($_->{version}) ? $_->{version} : () } values %$ref_packages;
+	foreach (@$ref_versions, @installed_versions) {
 		my Cupt::Cache::BinaryVersion $version = $_;
 		++$seen{$version->{package_name}, $version->{version}};
 	}
@@ -246,7 +247,7 @@ sub _recursive_resolve ($$$) {
 
 					if ($self->{config}->var('debug::resolver')) {
 						my $stringified_relation = $_->stringify();
-						$sub_mydebug_wrapper->("problem: $package_name: " . 
+						$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 								"relation '$stringified_relation' is not satisfied");
 					}
 					# for resolving we can do:
