@@ -94,7 +94,7 @@ sub satisfied_by ($$) {
 			when('=') { return ($comparison_result == 0) }
 			when('>=') { return ($comparison_result >= 0) }
 			when('>') { continue }
-			when('<<') { return ($comparison_result > 0) }
+			when('>>') { return ($comparison_result > 0) }
 		}
 	}
 	# no versioned info, so return true
