@@ -8,7 +8,7 @@ use Exporter qw(import);
 
 use Cupt::Core;
 
-our @EXPORT_OK = qw(&__parse_relation_line &stringify_relations);
+our @EXPORT_OK = qw(&__parse_relation_line &stringify_relations &stringify_relation_or_group);
 
 sub new {
 	my ($class, $unparsed) = @_;
@@ -64,16 +64,20 @@ sub stringify {
 	return $result;
 }
 
+sub stringify_relation_or_group ($) {
+	if (UNIVERSAL::isa($_, 'Cupt::Cache::Relation')) {
+		# it's ordinary relation object
+		return $_->stringify();
+	} else {
+		# it have be an 'OR' group of relations
+		return join(" | ", map { $_->stringify() } @$_);
+	}
+}
+
 sub stringify_relations {
 	my @relation_strings;
 	foreach my $object (@{$_[0]}) {
-		if (UNIVERSAL::isa($object, 'Cupt::Cache::Relation')) {
-			# it's ordinary relation object
-			push @relation_strings, $object->stringify();
-		} else {
-			# it have be an 'OR' group of relations
-			push @relation_strings, join(" | ", map { $_->stringify() } @$object);
-		}
+		push @relation_strings, stringify_relation_or_group($_);
 	}
 	return join(", ", @relation_strings);
 }

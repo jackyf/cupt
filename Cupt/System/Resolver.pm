@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use Cupt::Core;
-use Cupt::Cache::Relation qw(stringify_relations);
+use Cupt::Cache::Relation qw(stringify_relation_or_group);
 
 =head1 FIELDS
 
@@ -154,11 +154,7 @@ sub satisfy_relation ($$) {
 		# if relation is not satisfied
 		if ($self->{config}->var('debug::resolver')) {
 			my $message = "auto-installing relation '";
-			if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
-				$message .= $relation_expression->stringify();
-			} else {
-				$message .= join(" | ", map { $_->stringify() } @$relation_expression);
-			}
+			$message .= stringify_relation_or_group($relation_expression);
 			$message .= "'";
 			mydebug($message);
 		}
@@ -245,7 +241,7 @@ sub _recursive_resolve ($$$) {
 					# good, nothing to do
 				} else {
 					if ($self->{config}->var('debug::resolver')) {
-						my $stringified_relation = $_->stringify();
+						my $stringified_relation = stringify_relation_or_group($_);
 						$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 								"relation '$stringified_relation' is not satisfied");
 					}
