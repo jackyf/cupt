@@ -87,7 +87,7 @@ sub satisfied_by ($$) {
 	my ($self, $version_string) = @_;
 	if (defined($self->{relation})) {
 		# relation is defined, checking
-		my $comparison_result = return Cupt::Core::compare_version_strings($version_string, $self->{version});
+		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->{version});
 		given($self->{relation}) {
 			when('<') { continue }
 			when('<<') { return ($comparison_result < 0) }
