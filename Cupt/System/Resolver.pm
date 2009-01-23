@@ -244,7 +244,6 @@ sub _recursive_resolve ($$$) {
 				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
 					# good, nothing to do
 				} else {
-
 					if ($self->{config}->var('debug::resolver')) {
 						my $stringified_relation = $_->stringify();
 						$sub_mydebug_wrapper->("problem: package '$package_name': " . 
