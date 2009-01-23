@@ -153,12 +153,13 @@ sub satisfy_relation ($$) {
 	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
 		# if relation is not satisfied
 		if ($self->{config}->var('debug::resolver')) {
-			my $message = "auto-installing relation ";
+			my $message = "auto-installing relation '";
 			if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
 				$message .= $relation_expression->stringify();
 			} else {
 				$message .= join(" | ", map { $_->stringify() } @$relation_expression);
 			}
+			$message .= "'";
 			mydebug($message);
 		}
 		push @{$self->{pending_relations}}, $relation_expression;
@@ -184,7 +185,7 @@ sub remove_package ($$) {
 sub _version_weight ($$) {
 	my ($self, $version) = @_;
 	my $result = $self->{cache}->get_pin($version);
-	$result += 5000 if $version->{essential} eq 'yes';
+	$result += 5000 if defined($version->{essential});
 	$result += 2000 if $version->{priority} eq 'required';
 	$result += 1000 if $version->{priority} eq 'important';
 	$result += 400 if $version->{priority} eq 'standard';
@@ -216,7 +217,7 @@ sub _recursive_resolve ($$$) {
 
 		my $old_version_string = defined($original_version) ? $original_version->{version} : '<not installed>';
 		my $new_version_string = defined($supposed_version) ? $supposed_version->{version} : '<not installed>';
-		my $message = "$package_name: trying '$old_version_string' -> '$new_version_string'";
+		my $message = "package '$package_name': trying '$old_version_string' -> '$new_version_string'";
 		$sub_mydebug_wrapper->($message);
 	};
 	
@@ -232,7 +233,7 @@ sub _recursive_resolve ($$$) {
 		my $package_entry = $self->{packages}->{$package_name};
 		my $version = $package_entry->{version};
 
-		$sub_mydebug_wrapper->("processing package $package_name");
+		$sub_mydebug_wrapper->("processing package '$package_name'");
 
 		# checking that all 'Depends' are satisfied
 		if (defined($version->{depends})) {
@@ -285,7 +286,8 @@ sub _recursive_resolve ($$$) {
 		foreach (@possible_actions) {
 			my $package_name = $_->[0];
 			my $supposed_version = $_->[1];
-			my $original_version = $self->{packages}->{$supposed_version->{package_name}}->{version};
+			my $original_version = exists $self->{packages}->{$package_name} ?
+					$self->{packages}->{$package_name}->{version} : undef;
 
 			my $supposed_version_weight = defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
 			my $original_version_weight = defined($original_version) ? $self->_version_weight($original_version) : 0;
@@ -301,7 +303,7 @@ sub _recursive_resolve ($$$) {
 		foreach (@possible_actions) {
 			my $package_name = $_->[0];
 			my $supposed_version = $_->[1];
-			my $ref_package_entry = $self->{packages}->{$supposed_version->{package_name}};
+			my $ref_package_entry = $self->{packages}->{$package_name};
 			my $original_version = $ref_package_entry->{version};
 
 			if ($self->{config}->var('debug::resolver')) {
