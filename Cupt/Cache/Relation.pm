@@ -65,19 +65,20 @@ sub stringify {
 }
 
 sub stringify_relation_or_group ($) {
-	if (UNIVERSAL::isa($_, 'Cupt::Cache::Relation')) {
+	my $arg = $_[0];
+	if (UNIVERSAL::isa($arg, 'Cupt::Cache::Relation')) {
 		# it's ordinary relation object
-		return $_->stringify();
+		return $arg->stringify();
 	} else {
 		# it have be an 'OR' group of relations
-		return join(" | ", map { $_->stringify() } @$_);
+		return join(" | ", map { $_->stringify() } @$arg);
 	}
 }
 
 sub stringify_relations {
 	my @relation_strings;
 	foreach my $object (@{$_[0]}) {
-		push @relation_strings, stringify_relation_or_group($_);
+		push @relation_strings, stringify_relation_or_group($object);
 	}
 	return join(", ", @relation_strings);
 }
