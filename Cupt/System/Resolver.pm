@@ -191,18 +191,22 @@ sub _version_weight ($$) {
 sub __is_version_array_intersects_with_packages ($$) {
 	my ($ref_versions, $ref_packages) = @_;
 
-	my %seen;
-	my @installed_versions = map { defined($_->{version}) ? $_->{version} : () } values %$ref_packages;
-	foreach (@$ref_versions, @installed_versions) {
-		my Cupt::Cache::BinaryVersion $version = $_;
-		++$seen{$version->{package_name}, $version->{version}};
+	foreach my $version (@$ref_versions) {
+		exists $ref_packages->{$version->{package_name}} or next;
+
+		my $installed_version = $ref_packages->{$version->{package_name}}->{version};
+		defined $installed_version or next;
+		
+		return 1 if $version->{version} eq $installed_version->{version};
 	}
-	my $result = scalar grep { $_ == 2 } values %seen;
-	return $result;
+	return 0;
 }
 
 sub _recursive_resolve ($$$) {
 	my ($self, $sub_accept, $recurse_level) = @_;
+
+	# for debug purposes
+	return 1 if $recurse_level > 7;
 
 	my $sub_mydebug_wrapper = sub {
 		mydebug('  ' x $recurse_level, @_);
@@ -229,8 +233,6 @@ sub _recursive_resolve ($$$) {
 		my $package_name = $_;
 		my $package_entry = $self->{packages}->{$package_name};
 		my $version = $package_entry->{version};
-
-		$sub_mydebug_wrapper->("processing package '$package_name'");
 
 		# checking that all 'Depends' are satisfied
 		if (defined($version->{depends})) {
