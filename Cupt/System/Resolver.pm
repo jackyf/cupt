@@ -203,17 +203,36 @@ sub __is_version_array_intersects_with_packages ($$) {
 	return $result;
 }
 
-sub _recursive_resolve ($$) {
-	my ($self, $sub_accept) = @_;
+sub _recursive_resolve ($$$) {
+	my ($self, $sub_accept, $recurse_level) = @_;
+
+	my $sub_mydebug_wrapper = sub {
+		mydebug('  ' x $recurse_level, @_);
+	};
+
+	# debugging subroutine
+	my $sub_debug_version_change = sub {
+		my ($package_name, $supposed_version, $original_version) = @_;
+
+		my $old_version_string = defined($original_version) ? $original_version->{version} : '<not installed>';
+		my $new_version_string = defined($supposed_version) ? $supposed_version->{version} : '<not installed>';
+		my $message = "$package_name: trying '$old_version_string' -> '$new_version_string'";
+		$sub_mydebug_wrapper->($message);
+	};
 	
 	# [ package_name, version ]
 	my @possible_actions;
 	my $check_failed = 0;
 
+
 	MAIN_LOOP:
-	while (my $package_name = each %{$self->{packages}}) {
+	my $package_name;
+	foreach (keys %{$self->{packages}}) {
+		my $package_name = $_;
 		my $package_entry = $self->{packages}->{$package_name};
 		my $version = $package_entry->{version};
+
+		$sub_mydebug_wrapper->("processing package $package_name");
 
 		# checking that all 'Depends' are satisfied
 		if (defined($version->{depends})) {
@@ -222,9 +241,13 @@ sub _recursive_resolve ($$) {
 				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
 				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
 					# good, nothing to do
-					next;
 				} else {
 
+					if ($self->{config}->var('debug::resolver')) {
+						my $stringified_relation = $_->stringify();
+						$sub_mydebug_wrapper->("problem: $package_name: " . 
+								"relation '$stringified_relation' is not satisfied");
+					}
 					# for resolving we can do:
 
 					# install one of versions package needs
@@ -248,10 +271,11 @@ sub _recursive_resolve ($$) {
 					}
 
 					$check_failed = 1;
-					last MAIN_LOOP;
+					last;
 				}
 			}
 		}
+		last if $check_failed;
 	}
 
 	if ($check_failed) {
@@ -263,8 +287,8 @@ sub _recursive_resolve ($$) {
 			my $supposed_version = $_->[1];
 			my $original_version = $self->{packages}->{$supposed_version->{package_name}}->{version};
 
-			my $supposed_version_weight = defined($supposed_version) ? $self->__version_weight($supposed_version) : 0;
-			my $original_version_weight = defined($original_version) ? $self->__version_weight($original_version) : 0;
+			my $supposed_version_weight = defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
+			my $original_version_weight = defined($original_version) ? $self->_version_weight($original_version) : 0;
 
 			# 3rd field in the structure will be "profit" of the change
 			push @$_, $supposed_version_weight - $original_version_weight;
@@ -280,11 +304,15 @@ sub _recursive_resolve ($$) {
 			my $ref_package_entry = $self->{packages}->{$supposed_version->{package_name}};
 			my $original_version = $ref_package_entry->{version};
 
+			if ($self->{config}->var('debug::resolver')) {
+				$sub_debug_version_change->($package_name, $supposed_version, $original_version);
+			}
+
 			# set stick for change for the time on underlying solutions
 			$ref_package_entry->{stick} = 1;
 			$ref_package_entry->{version} = $supposed_version;
 
-			if ($self->_recursive_resolve($sub_accept)) {
+			if ($self->_recursive_resolve($sub_accept, $recurse_level+1)) {
 				# some underlying solution has been accepted, moving up
 				return 1;
 			}
@@ -339,7 +367,7 @@ sub resolve ($$) {
 	}
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
-	return $self->_recursive_resolve($sub_accept);
+	return $self->_recursive_resolve($sub_accept, 0);
 }
 
 1;
