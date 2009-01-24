@@ -130,6 +130,7 @@ I<version> - reference to Cupt::Cache::BinaryVersion
 sub install_version ($$) {
 	my ($self, $version) = @_;
 	$self->{packages}->{$version->{package_name}}->{version} = $version;
+	$self->{packages}->{$version->{package_name}}->{stick} = 1;
 
 	$self->_schedule_new_version_relations($version);
 }
@@ -174,7 +175,8 @@ I<package_name> - string, name of package to remove
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	delete $self->{packages}->{$package_name};
+	$self->{packages}->{$package_name}->{version} = undef;
+	$self->{packages}->{$package_name}->{stick} = 1;
 }
 
 # every package version has a weight
