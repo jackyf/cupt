@@ -89,13 +89,11 @@ our $version_string_regex =
 		)? # which is non-mandatory
 	/x;
 
+my $__version_symbol_sort_string = "~abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.0123456789:";
+
 sub __compare_version_symbol ($$) {
 	my ($left, $right) = @_;
-	my $left_ord = ord($left);
-	my $right_ord = ord($right);
-	$left_ord = 0 if $left eq '~';
-	$right_ord = 0 if $right eq '~';
-	return $left_ord <=> $right_ord;
+	return index($__version_symbol_sort_string, $left) <=> index($__version_symbol_sort_string, $right);
 }
 
 sub __compare_version_part ($$) {
@@ -103,8 +101,8 @@ sub __compare_version_part ($$) {
 
 	# take into account that preceding zeroes in numbers must be stripped
 	foreach ($left, $right) {
-		# strip out any group of zeroes, which have non-zero after and non-number before
-		s/[^0-9]\K 0+ (?=[1-9])//xg;
+		# strip out any group of zeroes, which have non-zero after and non-number or nothing before
+		s/(?:[^0-9]|)\K 0+ (?=[1-9])//xg;
 	}
 
 	# add "empty" characters to make strings char-comparable

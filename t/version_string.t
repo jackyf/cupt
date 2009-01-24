@@ -26,14 +26,15 @@ my @correct_version_strings = (
 	[ '57:1.2.3abYZ+~-4-5', '57:1.2.3abYZ+~-4-5', 0 ], # and those too
 	[ '1.2.3', '0:1.2.3', 0 ], # zero epoch
 	[ '1.2.3', '1.2.3-0', 0 ], # zero revision
+	[ '009', '9', 0 ], # zeroes...
 	[ '1.2.3', '1.2.3-1', -1 ], # added non-zero revision
 	[ '1.2.3', '1.2.4', -1 ], # just bigger
 	[ '1.2.4', '1.2.3', 1 ], # order doesn't matter
 	[ '1.2.24', '1.2.3', 1 ], # bigger, eh?
 	[ '0.10.0', '0.8.7', 1 ], # bigger, eh?
 	[ '3.2', '2.3', 1 ], # major number rocks
-	[ '2a', '21', 1 ], # letters rock
-	[ '1.3.2a', '1.3.2', 1 ], # letters still rock
+	[ '1.3.2a', '1.3.2', 1 ], # letters rock
+	[ '2a', '21', -1 ], # but not in all places
 	[ '1.3.2a', '1.3.2b', -1 ], # but there is another letter
 	[ '1:1.2.3', '1.2.4', 1 ], # epoch rocks
 	[ '1:1.2.3', '1:1.2.4', -1 ], # bigger anyway
@@ -45,6 +46,8 @@ my @correct_version_strings = (
 	[ '1:2:123', '1:12:3', -1 ], # 12 > 2
 	[ '1.2-5', '1.2-3-5', -1 ], # 1.2 < 1.2-3
 	[ '5.10.0', '5.005', 1 ], # preceding zeroes don't matters
+	[ '3a9.8', '3.10.2', -1 ], # letters are before all letter symbols
+	[ '3a9.8', '3~10', 1 ], # but after the tilde
 );
 # each array has to be
 # 1) check v1 for correctness
