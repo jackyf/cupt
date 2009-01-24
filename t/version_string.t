@@ -27,6 +27,7 @@ my @correct_version_strings = (
 	[ '1.2.3', '0:1.2.3', 0 ], # zero epoch
 	[ '1.2.3', '1.2.3-0', 0 ], # zero revision
 	[ '009', '9', 0 ], # zeroes...
+	[ '009ab5', '9ab5', 0 ], # there as well
 	[ '1.2.3', '1.2.3-1', -1 ], # added non-zero revision
 	[ '1.2.3', '1.2.4', -1 ], # just bigger
 	[ '1.2.4', '1.2.3', 1 ], # order doesn't matter
@@ -48,7 +49,8 @@ my @correct_version_strings = (
 	[ '5.10.0', '5.005', 1 ], # preceding zeroes don't matters
 	[ '3a9.8', '3.10.2', -1 ], # letters are before all letter symbols
 	[ '3a9.8', '3~10', 1 ], # but after the tilde
-	[ '1.4+OOo3.0.0~', '1.4+OOo3.0.0-4', -1 ] # another tilde check
+	[ '1.4+OOo3.0.0~', '1.4+OOo3.0.0-4', -1 ], # another tilde check
+	[ '2.4.7-1', '2.4.7-z', -1 ], # revision comparing
 );
 # each array has to be
 # 1) check v1 for correctness

@@ -83,15 +83,15 @@ our $version_string_regex =
 				[a-zA-Z+0-9~.-] # upstream version allowed characters
 			)*? # '?' to not eat last '-' before debian revision
 		)
-		(
+		(?:
 			-
-			[a-zA-Z+0-9~.]+ # debian revision
+			([a-zA-Z+0-9~.]+) # debian revision
 		)? # which is non-mandatory
 	/x;
 
-my $__version_symbol_sort_string = "~ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.0123456789:";
+my $__version_symbol_sort_string = "~ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.:";
 
-sub __compare_version_symbol ($$) {
+sub __compare_letter_symbol ($$) {
 	my ($left, $right) = @_;
 	return index($__version_symbol_sort_string, $left) <=> index($__version_symbol_sort_string, $right);
 }
@@ -102,7 +102,8 @@ sub __compare_version_part ($$) {
 	# take into account that preceding zeroes in numbers must be stripped
 	foreach ($left, $right) {
 		# strip out any group of zeroes, which have non-zero after and non-number or nothing before
-		s/(?:[^0-9]|)\K 0+ (?=[1-9])//xg;
+		# but don't strip zero in the start of string
+		s/(?:[^0-9]|^)\K 0+ (?=[1-9])//xg;
 	}
 
 	# add "empty" characters to make strings char-comparable
@@ -115,29 +116,32 @@ sub __compare_version_part ($$) {
 
 	my $len = length($left);
 	my $last_char_idx = $len - 1;
+	my $current_part_is_digit = 0;
 	foreach my $idx (0 .. $last_char_idx) {
 		my $left_char = substr($left, $idx, 1);
 		my $right_char = substr($right, $idx, 1);
 
 		if ($left_char ne $right_char) {
 			# no draw here, one will be the winner
-			my $char_comparison_result = __compare_version_symbol($left_char, $right_char);
 
-			if ($left_char =~ m/[0-9]/ && $right_char =~ m/[0-9]/) {
+			my $left_char_is_digit = $left_char =~ m/\d/;
+			my $right_char_is_digit = $right_char =~ m/\d/;
+
+			if ($left_char_is_digit && $right_char_is_digit) {
 				# then we have to check lengthes of futher numeric parts
 				# if some numeric part have greater length, then it will be
 				# the winner, otherwise previous comparison result is used
 				# examples: 'abc120de' < 'abc123', but 'abc1200' > 'abc123'
 				my $left_num_pos = $idx;
 				while ($left_num_pos+1 < $len and
-						substr($left, $left_num_pos+1, 1) =~ m/[0-9]/)
+						substr($left, $left_num_pos+1, 1) =~ m/\d/)
 				{
 					++$left_num_pos;
 				}
 
 				my $right_num_pos = $idx;
 				while ($right_num_pos+1 < $len and
-						substr($right, $right_num_pos+1, 1) =~ m/[0-9]/)
+						substr($right, $right_num_pos+1, 1) =~ m/\d/)
 				{
 					++$right_num_pos;
 				}
@@ -145,12 +149,19 @@ sub __compare_version_part ($$) {
 				my $num_pos_comparison_result = ($left_num_pos <=> $right_num_pos);
 				return $num_pos_comparison_result unless $num_pos_comparison_result == 0;
 
-				# the same number the digits
-				return $char_comparison_result;
-			} else {
-				# some char is not a digit, so general rule applies
-				return $char_comparison_result;
+				# the same number of the digits
+				return $left_char <=> $right_char;
 			}
+
+			if (!$left_char_is_digit && !$right_char_is_digit) {
+				return __compare_letter_symbol($left_char, $right_char);
+			} elsif ($left_char_is_digit) {
+				return $current_part_is_digit ? 1 : -1;
+			} else { # right char is digit
+				return $current_part_is_digit ? -1 : 1;
+			}
+		} else {
+			$current_part_is_digit = ($left_char =~ m/\d/);
 		}
 	}
 	# oh, we are out of strings here... well, they are equal then
@@ -169,17 +180,24 @@ sub compare_version_strings($$) {
 	} else {
 		chop($left_epoch);
 	}
+
 	if (!defined($right_epoch)) {
 		$right_epoch = '0';
 	} else {
 		chop($right_epoch);
 	}
+
 	if (!defined($left_revision)) {
-		$left_revision = '-0';
+		$left_revision = '0';
 	}
+	# first numeric part of revision may be empty, so adding it, see policy 5.6.12
+	$left_revision = 'a' . $left_revision;
+
 	if (!defined($right_revision)) {
-		$right_revision = '-0';
+		$right_revision = '0';
 	}
+	# same for right part
+	$right_revision = 'a' . $right_revision;
 
 	my $epoch_comparison_result = $left_epoch <=> $right_epoch;
 	return $epoch_comparison_result unless $epoch_comparison_result == 0;
