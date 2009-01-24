@@ -261,7 +261,8 @@ sub get_satisfying_versions ($$) {
 			}
 		}
 
-		if (exists $self->{can_provide}->{$package_name}) {
+		# virtual package can only be considered if no relation sign is specified
+		if (!defined($relation->{relation}) && exists $self->{can_provide}->{$package_name}) {
 			# looking for reverse-provides
 			foreach (@{$self->{can_provide}->{$package_name}}) {
 				my $reverse_provide_package = $self->get_binary_package($_);
