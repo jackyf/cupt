@@ -324,7 +324,7 @@ sub _recursive_resolve ($$$) {
 		return 0;
 	} else {
 		# suggest found solution
-		if ($sub_accept->(map { $_->{version} } $self->{packages})) {
+		if ($sub_accept->(map { defined($_->{version}) ? $_->{version} : () } $self->{packages})) {
 			# yeah, this is end of our tortures
 			return 1;
 		} else {

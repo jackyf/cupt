@@ -465,7 +465,7 @@ sub install () {
 		$resolver->install_version($version);
 	}
 
-	$resolver->resolve();
+	$resolver->resolve( sub { return 1 } );
 }
 
 sub process_options {
