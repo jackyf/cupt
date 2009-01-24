@@ -124,7 +124,7 @@ sub new {
 						$self->{replaces} = __parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Provides') {
-						$self->{provides} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{provides} = [ split /\s*,\s*/, $field_value ] unless $o_no_parse_relations;
 					}
 					# rare fields
 					when ('Pre-Depends') {

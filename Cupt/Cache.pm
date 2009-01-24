@@ -11,7 +11,21 @@ use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
 use Cupt::System::State;
 
-use fields qw(source_packages binary_packages config pin_settings system_state);
+=head1 FIELDS
+
+=head2 can_provide
+
+{ I<virtual_package> => [ I<package_name>... ] }
+
+For each I<virtual_package> this field contains the list of I<package_name>s
+that B<can> provide given I<virtual_package>. Depending of package versions,
+some versions of the some of <package_name>s may provide and may not provide
+given I<virtual_package>. This field exists solely for
+I<get_satisfying_versions> subroutine for rapid lookup.
+
+=cut
+
+use fields qw(source_packages binary_packages config pin_settings system_state can_provide);
 
 sub new {
 	my $class = shift;
@@ -233,13 +247,36 @@ sub get_satisfying_versions ($$) {
 		my ($relation) = @_;
 		my $package_name = $relation->{package_name};
 		my $package = $self->get_binary_package($package_name);
-		defined($package) or return ();
-		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
 		my @result;
-		foreach (@$ref_sorted_versions) {
-			my $version = $_->{'version'};
-			push @result, $version if $relation->satisfied_by($version->{version});
+
+		if (defined($package)) {
+			# if such binary package exists
+			my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
+			foreach (@$ref_sorted_versions) {
+				my $version = $_->{'version'};
+				push @result, $version if $relation->satisfied_by($version->{version});
+			}
 		}
+
+		if (exists $self->{can_provide}->{$package_name}) {
+			# looking for reverse-provides
+			foreach (@{$self->{can_provide}->{$package_name}}) {
+				my $reverse_provide_package = $self->get_binary_package($_);
+				defined ($reverse_provide_package) or next;
+				foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
+					my $version = @_;
+					defined $version->{provides} or next;
+					foreach (@{$version->{provides}}) {
+						my $provides_package_name = $_;
+						if ($provides_package_name eq $package_name) {
+							# ok, this particular version does provide this virtual package
+							push @result, $version;
+						}
+					}
+				}
+			}
+		}
+
 		return @result;
 	};
 
@@ -313,7 +350,7 @@ sub __get_release_info {
 		mydie("no codename specified in release file '%s'", $file);
 	}
 
-	close(RELEASE) or mydie("unable to close index file '%s'", $file);
+	close(RELEASE) or mydie("unable to close release file '%s'", $file);
 	return \%release_info;
 }
 
@@ -467,6 +504,39 @@ sub _parse_preferences {
 	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
 }
 
+sub _process_provides_in_index_file {
+	my ($self, $file) = @_;
+
+	open(ENTRIES, "/usr/bin/grep-dctrl -r -n -F Provides '.' -s Package,Provides $file |") or
+			mydie("unable to open grep-dctrl pipe on file '%s': %s", $file, $!);
+
+	# entries will be in format:
+	#
+	# <package_name>
+	# <provides list>
+	# <newline>
+	# ...
+
+	eval {
+		while(<ENTRIES>) {
+			my $package_name = chomp($_);
+			my @provides = split /\s*,\s*/, chomp($_ = readline(ENTRIES));
+			foreach (@provides) {
+				push @{$self->{can_provide}->{$_}}, $package_name;
+			}
+			readline(ENTRIES) eq "\n" or
+					mydie("expected newline, but haven't got it");
+		}
+	};
+	if (mycatch()) {
+		myerr("error parsing provides in index file '%s'", $file);
+		myredie();
+	}
+
+	close(ENTRIES) or $! == 0 or # '$! == 0' - no entries found, nothing bad
+			mydie("unable to close grep-dctrl pipe on file '%s'", $file);
+}
+
 sub _process_index_file {
 	my ($self, $file, $ref_base_uri, $type, $ref_release_info) = @_;
 
@@ -514,6 +584,9 @@ sub _process_index_file {
 	}
 
 	close(OFFSETS) or mydie("unable to close grep pipe");
+
+	# additionally, preparse Provides fields...
+	$self->_process_provides_in_index_file($file);
 }
 
 sub _path_of_base_uri {

@@ -155,6 +155,9 @@ sub _parse_dpkg_status {
 	close(PACKAGES) or mydie("unable to close grep pipe");
 	close(STATUSES) or mydie("unable to close grep pipe");
 	close(VERSIONS) or mydie("unable to close grep pipe");
+
+	# additionally, preparse Provides fields for status file
+	$self->{cache}->_process_provides_in_index_file($file);
 }
 
 sub get_status_for_version {
