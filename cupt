@@ -243,7 +243,7 @@ sub show_package_versions () {
 			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
 			$p->('Conflicts', stringify_relations($version->{conflicts})) if defined($version->{conflicts});
 			$p->('Replaces', stringify_relations($version->{replaces})) if defined($version->{replaces});
-			$p->('Provides', stringify_relations($version->{provides})) if defined($version->{provides});
+			$p->('Provides', join(", ", @{$version->{provides}})) if defined($version->{provides});
 			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
 			foreach ($version->uris()) {
 				$p->('URI', ($_ eq "" ? gettext("<locally installed>") : $_));

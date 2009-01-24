@@ -69,7 +69,7 @@ sub new {
 		@_
 	);
 
-	$self->{pending_relations} = ();
+	$self->{pending_relations} = [];
 
 	return $self;
 }
