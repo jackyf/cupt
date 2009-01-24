@@ -264,7 +264,7 @@ sub get_satisfying_versions ($$) {
 				my $reverse_provide_package = $self->get_binary_package($_);
 				defined ($reverse_provide_package) or next;
 				foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
-					my $version = @_;
+					my $version = $_->{version};
 					defined $version->{provides} or next;
 					foreach (@{$version->{provides}}) {
 						my $provides_package_name = $_;
@@ -519,8 +519,13 @@ sub _process_provides_in_index_file {
 
 	eval {
 		while(<ENTRIES>) {
-			my $package_name = chomp($_);
-			my @provides = split /\s*,\s*/, chomp($_ = readline(ENTRIES));
+			chomp;
+			my $package_name = $_;
+
+			$_ = readline(ENTRIES);
+			chomp;
+			my @provides = split /\s*,\s*/, $_;
+
 			foreach (@provides) {
 				push @{$self->{can_provide}->{$_}}, $package_name;
 			}
