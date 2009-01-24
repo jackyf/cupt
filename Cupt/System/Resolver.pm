@@ -365,8 +365,17 @@ sub resolve ($$) {
 
 		# installing most preferrable version
 
-		$self->install_version($ref_satisfying_versions->[0]);
+		my $version_to_install = $ref_satisfying_versions->[0];
+		$self->install_version($version_to_install);
 		# note that install_version can add some pending relations
+
+		if ($self->{config}->var('debug::resolver')) {
+			mydebug("selected package '%s', version '%s' for relation expression '%s'",
+					$version_to_install->{package_name},
+					$version_to_install->{version},
+					stringify_relation_or_group($relation_expression)
+			);
+		}
 	}
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
