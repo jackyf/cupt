@@ -13,7 +13,7 @@ my $test_count = 0;
 my @incorrect_version_strings = (
 		'ab:5', ':1.2.3', '2a5:1.2', # broken epoch
 		'1.2.3-a:6', '1.2-:5', # broken revision
-		'', '$', '2в.3.4', '5.2.5&', '%%', '()', '2.6.7!!!' # broken upstream version 
+		'', '$', '2в.3.4', '5.2.5&', '%%', '()', '2.6.7!!!', 'abc', # broken upstream version 
 );
 # each incorrect version is checked once
 $test_count += scalar @incorrect_version_strings;
@@ -21,7 +21,7 @@ $test_count += scalar @incorrect_version_strings;
 my @correct_version_strings = (
 	[ '1.2.3', '1.2.3', 0 ], # identical
 	[ '4.4.3-2', '4.4.3-2', 0 ], # identical
-	[ '1:ab:5', '1:ab:5', 0 ], # this is correct...
+	[ '1:2ab:5', '1:2ab:5', 0 ], # this is correct...
 	[ '7:1-a:b-5', '7:1-a:b-5', 0 ], # and this
 	[ '57:1.2.3abYZ+~-4-5', '57:1.2.3abYZ+~-4-5', 0 ], # and those too
 	[ '1.2.3', '0:1.2.3', 0 ], # zero epoch
@@ -32,7 +32,7 @@ my @correct_version_strings = (
 	[ '1.2.24', '1.2.3', 1 ], # bigger, eh?
 	[ '0.10.0', '0.8.7', 1 ], # bigger, eh?
 	[ '3.2', '2.3', 1 ], # major number rocks
-	[ 'a', '2', 1 ], # letters rock
+	[ '2a', '21', 1 ], # letters rock
 	[ '1.3.2a', '1.3.2', 1 ], # letters still rock
 	[ '1.3.2a', '1.3.2b', -1 ], # but there is another letter
 	[ '1:1.2.3', '1.2.4', 1 ], # epoch rocks
