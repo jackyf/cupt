@@ -209,7 +209,7 @@ sub _recursive_resolve ($$$) {
 	return 1 if $recurse_level > 7;
 
 	my $sub_mydebug_wrapper = sub {
-		mydebug('  ' x $recurse_level, @_);
+		mydebug('  ' x $recurse_level . "@_");
 	};
 
 	# debugging subroutine
@@ -242,11 +242,6 @@ sub _recursive_resolve ($$$) {
 				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
 					# good, nothing to do
 				} else {
-					if ($self->{config}->var('debug::resolver')) {
-						my $stringified_relation = stringify_relation_or_group($_);
-						$sub_mydebug_wrapper->("problem: package '$package_name': " . 
-								"relation '$stringified_relation' is not satisfied");
-					}
 					# for resolving we can do:
 
 					# install one of versions package needs
@@ -258,22 +253,94 @@ sub _recursive_resolve ($$$) {
 
 					if (!exists $package_entry->{stick}) {
 						# change version of the package
-						my $package = $self->{cache}->get_binary_package($package_name);
-						my $ref_pinned_versions = $self->{cache}->get_sorted_pinned_versions($package);
-						my @other_versions = map { $_->{version} } @$ref_pinned_versions;
-						foreach my $other_version (@other_versions) {
+						my $other_package = $self->{cache}->get_binary_package($package_name);
+						foreach my $other_version (@{$other_package->versions()}) {
 							# don't try existing version
 							next if $other_version->{version} eq $version->{version};
 
 							push @possible_actions, [ $package_name, $other_version ];
 						}
-						
+
 						# remove the package
 						push @possible_actions, [ $package_name, undef ];
 					}
 
+					if ($self->{config}->var('debug::resolver')) {
+						my $stringified_relation = stringify_relation_or_group($_);
+						$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+								"unsatisfied depends '$stringified_relation'");
+					}
 					$check_failed = 1;
 					last;
+				}
+			}
+		}
+		last if $check_failed;
+
+		# checking that all 'Conflicts' are not satisfied
+		if (defined($version->{conflicts})) {
+			foreach (@{$version->{conflicts}}) {
+				# check if relation is accidentally satisfied
+				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
+
+				if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+					# good, nothing to do
+				} else {
+					# so, this can conflict... check it deeper on the fly
+					foreach my $satisfying_version (@$ref_satisfying_versions) {
+						my $other_package_name = $satisfying_version->{package_name};
+
+						# package can't conflict with itself
+						$other_package_name ne $package_name or next;
+
+						# is the package installed?
+						exists $self->{packages}->{$other_package_name} or next;
+
+						my $other_package_entry = $self->{packages}->{$other_package_name};
+
+						# does the stick exists?
+						!exists $other_package_entry->{stick} or next;
+						# does the package have an installed version?
+						defined($other_package_entry->{version}) or next;
+						# is this our version?
+						$other_package_entry->{version}->{version} eq $satisfying_version->{version} or next;
+
+						$check_failed = 1;
+						# yes... so change it
+						my $other_package = $self->{cache}->get_binary_package($package_name);
+						foreach my $other_version (@{$other_package->versions()}) {
+							# don't try existing version
+							next if $other_version->{version} eq $satisfying_version->{version};
+
+							push @possible_actions, [ $other_package_name, $other_version ];
+						}
+
+						# or remove it
+						push @possible_actions, [ $other_package_name, undef ];
+					}
+
+					if ($check_failed) {
+						if (!exists $package_entry->{stick}) {
+							# change version of the package
+							my $package = $self->{cache}->get_binary_package($package_name);
+							foreach my $other_version (@{$package->versions()}) {
+								# don't try existing version
+								next if $other_version->{version} eq $version->{version};
+
+								push @possible_actions, [ $package_name, $other_version ];
+							}
+							
+							# remove the package
+							push @possible_actions, [ $package_name, undef ];
+						}
+
+						if ($self->{config}->var('debug::resolver')) {
+							my $stringified_relation = stringify_relation_or_group($_);
+							$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+									"satisfied conflicts '$stringified_relation'");
+						}
+						last;
+					}
 				}
 			}
 		}
