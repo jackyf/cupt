@@ -89,7 +89,7 @@ our $version_string_regex =
 		)? # which is non-mandatory
 	/x;
 
-my $__version_symbol_sort_string = "~abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.0123456789:";
+my $__version_symbol_sort_string = "~ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.0123456789:";
 
 sub __compare_version_symbol ($$) {
 	my ($left, $right) = @_;
@@ -108,9 +108,9 @@ sub __compare_version_part ($$) {
 	# add "empty" characters to make strings char-comparable
 	# 1 will be less than all but '~' character
 	if (length($left) > length($right)) {
-		$right .= chr(1) x (length($left) - length($right));
+		$right .= ' ' x (length($left) - length($right));
 	} elsif (length($left) < length($right)) {
-		$left .= chr(1) x (length($right) - length($left));
+		$left .= ' ' x (length($right) - length($left));
 	}
 
 	my $len = length($left);

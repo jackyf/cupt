@@ -48,6 +48,7 @@ my @correct_version_strings = (
 	[ '5.10.0', '5.005', 1 ], # preceding zeroes don't matters
 	[ '3a9.8', '3.10.2', -1 ], # letters are before all letter symbols
 	[ '3a9.8', '3~10', 1 ], # but after the tilde
+	[ '1.4+OOo3.0.0~', '1.4+OOo3.0.0-4', -1 ] # another tilde check
 );
 # each array has to be
 # 1) check v1 for correctness
