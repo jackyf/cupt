@@ -262,6 +262,9 @@ sub _recursive_resolve ($$$) {
 						my $ref_pinned_versions = $self->{cache}->get_sorted_pinned_versions($package);
 						my @other_versions = map { $_->{version} } @$ref_pinned_versions;
 						foreach my $other_version (@other_versions) {
+							# don't try existing version
+							next if $other_version->{version} eq $version->{version};
+
 							push @possible_actions, [ $package_name, $other_version ];
 						}
 						
