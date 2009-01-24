@@ -298,7 +298,7 @@ sub _recursive_resolve ($$$) {
 		}
 
 		# sort them by "rank"
-		@possible_actions = sort { $a->[2] <=> $b->[2] } @possible_actions;
+		@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
 
 		# apply by one
 		foreach (@possible_actions) {
