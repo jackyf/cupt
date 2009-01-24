@@ -44,6 +44,7 @@ my @correct_version_strings = (
 	[ '25:2', '3:2', 1 ], # 25 > 3, obviously
 	[ '1:2:123', '1:12:3', -1 ], # 12 > 2
 	[ '1.2-5', '1.2-3-5', -1 ], # 1.2 < 1.2-3
+	[ '5.10.0', '5.005', 1 ], # preceding zeroes don't matters
 );
 # each array has to be
 # 1) check v1 for correctness

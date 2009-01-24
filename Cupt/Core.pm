@@ -100,6 +100,12 @@ sub __compare_version_symbol ($$) {
 sub __compare_version_part ($$) {
 	my ($left, $right) = @_;
 
+	# take into account that preceding zeroes in numbers must be stripped
+	foreach ($left, $right) {
+		# strip out any group of zeroes, which have non-zero after and non-number before
+		s/[^0-9]\K 0+ (?=[1-9])//xg;
+	}
+
 	# add "empty" characters to make strings char-comparable
 	# 1 will be less than all but '~' character
 	if (length($left) > length($right)) {
