@@ -229,6 +229,19 @@ sub get_policy_version {
 sub _get_satisfying_versions_for_one_relation {
 	my ($self, $relation) = @_;
 	my $package_name = $relation->{package_name};
+
+	# caching results
+	state %cache;
+	my $key = join(",",
+			$self,
+			$package_name,
+			defined($relation->{relation}) ? $relation->{relation} : "",
+			defined($relation->{version}) ? $relation->{version} : ""
+	);
+	if (exists $cache{$key}) {
+		return @{$cache{$key}};
+	}
+
 	my $package = $self->get_binary_package($package_name);
 	my @result;
 
@@ -261,6 +274,7 @@ sub _get_satisfying_versions_for_one_relation {
 		}
 	}
 
+	$cache{$key} = \@result;
 	return @result;
 }
 
