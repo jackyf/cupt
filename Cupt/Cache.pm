@@ -27,6 +27,25 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 
 use fields qw(source_packages binary_packages config pin_settings system_state can_provide);
 
+=head1 FLAGS
+
+=head2 o_memoize
+
+This flag determines whether it worth trade space for time in time-consuming
+functions. On by default. By now, it affects
+I<get_satisfying_versions> and I<get_sorted_pinned_versions>
+methods. If it's on, it stores references, so B<don't> modify results of these
+functions, use them in read-only mode. It it's on, these functions are not
+thread-safe.
+
+=cut
+
+our $o_memoize = 1;
+
+=head1 METHODS
+
+=cut
+
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
@@ -199,6 +218,20 @@ sub get_sorted_pinned_versions {
 	my ($self, $package) = @_;
 
 	my @result;
+	state %cache;
+
+	# caching results
+	if ($o_memoize) {
+		my $key = join(",", $self, $package);
+		if (exists $cache{$key}) {
+			return $cache{$key};
+		} else {
+			$cache{$key} = \@result;
+			# the @result itself will be filled by under lines of code so at
+			# next run moment cache will contain the correct result
+		}
+	}
+
 	foreach my $version (@{$package->versions()}) {
 		push @result, { 'version' => $version, 'pin' => $self->get_pin($version) };
 	}
@@ -230,20 +263,27 @@ sub _get_satisfying_versions_for_one_relation {
 	my ($self, $relation) = @_;
 	my $package_name = $relation->{package_name};
 
-	# caching results
+	my @result;
 	state %cache;
-	my $key = join(",",
-			$self,
-			$package_name,
-			defined($relation->{relation}) ? $relation->{relation} : "",
-			defined($relation->{version}) ? $relation->{version} : ""
-	);
-	if (exists $cache{$key}) {
-		return @{$cache{$key}};
+
+	# caching results
+	if ($o_memoize) {
+		my $key = join(",",
+				$self,
+				$package_name,
+				defined($relation->{relation}) ? $relation->{relation} : "",
+				defined($relation->{version}) ? $relation->{version} : ""
+		);
+		if (exists $cache{$key}) {
+			return @{$cache{$key}};
+		} else {
+			$cache{$key} = \@result;
+			# the @result itself will be filled by under lines of code so at
+			# next run moment cache will contain the correct result
+		}
 	}
 
 	my $package = $self->get_binary_package($package_name);
-	my @result;
 
 	if (defined($package)) {
 		# if such binary package exists
@@ -274,7 +314,6 @@ sub _get_satisfying_versions_for_one_relation {
 		}
 	}
 
-	$cache{$key} = \@result;
 	return @result;
 }
 
