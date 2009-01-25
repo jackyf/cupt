@@ -49,6 +49,8 @@ my %command_handlers = (
 	'policy' => \&policy,
 	'pkgnames' => \&pkgnames,
 	'install' => \&install,
+	'remove' => \&remove,
+	'purge' => \&purge,
 );
 
 if (defined($command_handlers{$command})) {
@@ -448,7 +450,16 @@ sub pkgnames () {
 	}
 }
 
-sub install () {
+sub manage_packages ($) {
+	# action can be 'install', 'remove', 'purge'
+	my ($action) = @_;
+	my $o_purge = 0;
+
+	if ($action eq 'purge') {
+		$action = 'remove';
+		$o_purge = 1;
+	}
+
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	# turn off info parsing, we don't need it
@@ -461,11 +472,32 @@ sub install () {
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
-		my $version = select_binary_package_version($package_expression);
-		$resolver->install_version($version);
+		if ($action eq 'install') {
+			my $version = select_binary_package_version($package_expression);
+			$resolver->install_version($version);
+		} else { # 'remove'
+			check_package_name($package_expression);
+			$resolver->remove_package($package_expression);
+		}
 	}
 
 	$resolver->resolve( sub { return 1 } );
+}
+
+sub install () {
+	manage_packages('install');
+}
+
+sub remove () {
+	my $o_purge = 0;
+	GetOptions(
+		'purge' => \$o_purge,
+	);
+	manage_packages($o_purge ? 'purge' : 'remove');
+}
+
+sub purge () {
+	manage_packages('purge');
 }
 
 sub process_options {
