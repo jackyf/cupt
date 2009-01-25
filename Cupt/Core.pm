@@ -187,6 +187,12 @@ sub compare_version_strings($$) {
 		chop($right_epoch);
 	}
 
+	my $epoch_comparison_result = $left_epoch <=> $right_epoch;
+	return $epoch_comparison_result unless $epoch_comparison_result == 0;
+
+	my $upstream_comparison_result = __compare_version_part($left_upstream, $right_upstream);
+	return $upstream_comparison_result unless $upstream_comparison_result == 0;
+
 	if (!defined($left_revision)) {
 		$left_revision = '0';
 	}
@@ -198,12 +204,6 @@ sub compare_version_strings($$) {
 	}
 	# same for right part
 	$right_revision = 'a' . $right_revision;
-
-	my $epoch_comparison_result = $left_epoch <=> $right_epoch;
-	return $epoch_comparison_result unless $epoch_comparison_result == 0;
-
-	my $upstream_comparison_result = __compare_version_part($left_upstream, $right_upstream);
-	return $upstream_comparison_result unless $upstream_comparison_result == 0;
 
 	my $revision_comparison_result = __compare_version_part($left_revision, $right_revision);
 	return $revision_comparison_result;
