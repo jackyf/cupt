@@ -208,7 +208,7 @@ sub _recursive_resolve ($$$) {
 	my ($self, $sub_accept, $recurse_level) = @_;
 
 	my $sub_mydebug_wrapper = sub {
-		mydebug('  ' x $recurse_level . "@_");
+		mydebug(' ' x $recurse_level . "@_");
 	};
 
 	# debugging subroutine
@@ -389,6 +389,9 @@ sub _recursive_resolve ($$$) {
 			# otherwise remove it and try next...
 			$ref_package_entry->{version} = $original_version;
 			delete $ref_package_entry->{stick};
+		}
+		if ($self->{config}->var('debug::resolver')) {
+			$sub_mydebug_wrapper->("no solution");
 		}
 		return 0;
 	} else {
