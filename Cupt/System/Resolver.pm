@@ -207,9 +207,6 @@ sub __is_version_array_intersects_with_packages ($$) {
 sub _recursive_resolve ($$$) {
 	my ($self, $sub_accept, $recurse_level) = @_;
 
-	# for debug purposes
-	return 1 if $recurse_level > 7;
-
 	my $sub_mydebug_wrapper = sub {
 		mydebug('  ' x $recurse_level . "@_");
 	};
