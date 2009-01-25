@@ -226,6 +226,43 @@ sub get_policy_version {
 	return $self->get_sorted_pinned_versions($package)->[0]->{'version'};
 }
 
+sub _get_satisfying_versions_for_one_relation {
+	my ($self, $relation) = @_;
+	my $package_name = $relation->{package_name};
+	my $package = $self->get_binary_package($package_name);
+	my @result;
+
+	if (defined($package)) {
+		# if such binary package exists
+		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
+		foreach (@$ref_sorted_versions) {
+			my $version = $_->{'version'};
+			push @result, $version if $relation->satisfied_by($version->{version});
+		}
+	}
+
+	# virtual package can only be considered if no relation sign is specified
+	if (!defined($relation->{relation}) && exists $self->{can_provide}->{$package_name}) {
+		# looking for reverse-provides
+		foreach (@{$self->{can_provide}->{$package_name}}) {
+			my $reverse_provide_package = $self->get_binary_package($_);
+			defined ($reverse_provide_package) or next;
+			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
+				my $version = $_->{version};
+				defined $version->{provides} or next;
+				foreach (@{$version->{provides}}) {
+					my $provides_package_name = $_;
+					if ($provides_package_name eq $package_name) {
+						# ok, this particular version does provide this virtual package
+						push @result, $version;
+					}
+				}
+			}
+		}
+	}
+
+	return @result;
+}
 
 =head2 get_satisfying_versions
 
@@ -243,50 +280,12 @@ groups)
 sub get_satisfying_versions ($$) {
 	my ($self, $relation_expression) = @_;
 
-	my $get_satisfying_versions_for_one_relation = sub {
-		my ($relation) = @_;
-		my $package_name = $relation->{package_name};
-		my $package = $self->get_binary_package($package_name);
-		my @result;
-
-		if (defined($package)) {
-			# if such binary package exists
-			my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
-			foreach (@$ref_sorted_versions) {
-				my $version = $_->{'version'};
-				push @result, $version if $relation->satisfied_by($version->{version});
-			}
-		}
-
-		# virtual package can only be considered if no relation sign is specified
-		if (!defined($relation->{relation}) && exists $self->{can_provide}->{$package_name}) {
-			# looking for reverse-provides
-			foreach (@{$self->{can_provide}->{$package_name}}) {
-				my $reverse_provide_package = $self->get_binary_package($_);
-				defined ($reverse_provide_package) or next;
-				foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
-					my $version = $_->{version};
-					defined $version->{provides} or next;
-					foreach (@{$version->{provides}}) {
-						my $provides_package_name = $_;
-						if ($provides_package_name eq $package_name) {
-							# ok, this particular version does provide this virtual package
-							push @result, $version;
-						}
-					}
-				}
-			}
-		}
-
-		return @result;
-	};
-
 	if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
 		# relation expression is just one relation
-		return [ $get_satisfying_versions_for_one_relation->($relation_expression) ];
+		return [ $self->_get_satisfying_versions_for_one_relation($relation_expression) ];
 	} else {
 		# othersise it's OR group of expressions
-		return [ map { $get_satisfying_versions_for_one_relation->($_) } @$relation_expression ];
+		return [ map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression ];
 	}
 }
 
