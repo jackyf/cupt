@@ -294,7 +294,7 @@ groups)
 sub get_satisfying_versions ($$) {
 	my ($self, $relation_expression) = @_;
 
-	if (UNIVERSAL::isa($relation_expression, 'Cupt::Cache::Relation')) {
+	if (ref $relation_expression ne 'ARRAY') {
 		# relation expression is just one relation
 		return [ $self->_get_satisfying_versions_for_one_relation($relation_expression) ];
 	} else {

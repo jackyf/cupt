@@ -66,7 +66,7 @@ sub stringify {
 
 sub stringify_relation_or_group ($) {
 	my $arg = $_[0];
-	if (UNIVERSAL::isa($arg, 'Cupt::Cache::Relation')) {
+	if (ref $arg ne 'ARRAY' ) {
 		# it's ordinary relation object
 		return $arg->stringify();
 	} else {
