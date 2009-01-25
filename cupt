@@ -477,6 +477,9 @@ sub manage_packages ($) {
 			$resolver->install_version($version);
 		} else { # 'remove'
 			check_package_name($package_expression);
+			defined($cache->get_binary_package($package_expression)) or
+					mydie("unable to find binary package '%s'", $package_expression);
+
 			$resolver->remove_package($package_expression);
 		}
 	}
