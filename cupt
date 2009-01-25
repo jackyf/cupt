@@ -11,6 +11,7 @@ use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
 
 use Locale::gettext;
+use Memoize;
 
 use Cupt::Core;
 use Cupt::Config;
@@ -484,6 +485,8 @@ sub manage_packages ($) {
 		}
 	}
 
+	memoize('Cupt::Cache::get_sorted_pinned_versions');
+	memoize('Cupt::Core::compare_version_strings');
 	$resolver->resolve( sub { return 1 } );
 }
 

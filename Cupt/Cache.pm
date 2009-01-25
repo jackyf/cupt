@@ -5,9 +5,6 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use Memoize;
-memoize('get_sorted_pinned_versions');
-
 use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
