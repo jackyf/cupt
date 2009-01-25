@@ -89,11 +89,11 @@ sub satisfied_by ($$) {
 		# relation is defined, checking
 		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->{version});
 		given($self->{relation}) {
+			when('>=') { return ($comparison_result >= 0) }
 			when('<') { continue }
 			when('<<') { return ($comparison_result < 0) }
 			when('<=') { return ($comparison_result <= 0) }
 			when('=') { return ($comparison_result == 0) }
-			when('>=') { return ($comparison_result >= 0) }
 			when('>') { continue }
 			when('>>') { return ($comparison_result > 0) }
 		}
