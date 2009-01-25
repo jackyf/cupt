@@ -26,7 +26,7 @@ sub versions {
 	my ($self) = @_;
 
 	my @result;
-	# in case parsing of versions of this package was delayed, we parse them now (on-demand)
+	# parsing of versions of this package was delayed, we parse them now (on-demand)
 	eval {
 		foreach (@$self) {
 			my $parsed_version;
@@ -39,7 +39,7 @@ sub versions {
 				myerr("error while parsing new version entry");
 				myredie();
 			}
-			$self->_parse_and_merge_version($parsed_version, \@result);
+			$self->_merge_version($parsed_version, \@result);
 		}
 	};
 	if (mycatch()) {
@@ -65,8 +65,7 @@ sub compare_versions ($$) {
 	return Cupt::Core::compare_version_strings($_[0]->{version}, $_[1]->{version});
 }
 
-sub _parse_and_merge_version {
-	# parsing
+sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
 	# merging
