@@ -207,11 +207,16 @@ sub __is_version_array_intersects_with_packages ($$) {
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
+	if ($self->{config}->var('debug::resolver')) {
+		mydebug("started resolving");
+	}
 	my @solution_stack;
+	push @solution_stack, [];
+
 	my $check_failed;
 	do {
 		my $sub_mydebug_wrapper = sub {
-			mydebug(' ' x $recurse_level . "@_");
+			mydebug("  " x (scalar @solution_stack) . "@_");
 		};
 
 		# debugging subroutine
@@ -220,15 +225,15 @@ sub _resolve ($$) {
 
 			my $old_version_string = defined($original_version) ? $original_version->{version} : '<not installed>';
 			my $new_version_string = defined($supposed_version) ? $supposed_version->{version} : '<not installed>';
-			my $message = "package '$package_name': trying '$old_version_string' -> '$new_version_string'";
+			my $message = "trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
 			$sub_mydebug_wrapper->($message);
 		};
 		
 		# [ package_name, version ]
 		my @possible_actions;
 
-		MAIN_LOOP:
 		my $package_name;
+		MAIN_LOOP:
 		foreach (keys %{$self->{packages}}) {
 			my $package_name = $_;
 			my $package_entry = $self->{packages}->{$package_name};
@@ -348,66 +353,81 @@ sub _resolve ($$) {
 		if ($check_failed) {
 			# some dependencies are broken, try to fix them
 
-			# if only one solution available, don't fork, just use it now
-			$solution_stack[$#solution_stack]
+			} else {
+				# firstly rank all solutions
+				foreach (@possible_actions) {
+					my $package_name = $_->[0];
+					my $supposed_version = $_->[1];
+					my $original_version = exists $self->{packages}->{$package_name} ?
+							$self->{packages}->{$package_name}->{version} : undef;
 
-			# firstly rank all solutions
-			foreach (@possible_actions) {
-				my $package_name = $_->[0];
-				my $supposed_version = $_->[1];
-				my $original_version = exists $self->{packages}->{$package_name} ?
-						$self->{packages}->{$package_name}->{version} : undef;
+					my $supposed_version_weight =
+							defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
+					my $original_version_weight =
+							defined($original_version) ? $self->_version_weight($original_version) : 0;
 
-				my $supposed_version_weight =
-						defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
-				my $original_version_weight =
-						defined($original_version) ? $self->_version_weight($original_version) : 0;
+					# 3rd field in the structure will be "profit" of the change
+					push @$_, $supposed_version_weight - $original_version_weight;
+				}
 
-				# 3rd field in the structure will be "profit" of the change
-				push @$_, $supposed_version_weight - $original_version_weight;
+				# sort them by "rank"
+				@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
+
+				# push them into solution stack
+				push @solution_stack, \@possible_actions;
 			}
 
-			# sort them by "rank"
-			@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
-
-			# push them into solution stack
-			push @solution_stack, \@possible_actions;
-
-			# apply by one
-			foreach (@possible_actions) {
-				my $package_name = $_->[0];
-				my $supposed_version = $_->[1];
-				my $ref_package_entry = $self->{packages}->{$package_name};
-				my $original_version = $ref_package_entry->{version};
+			# while there is nothing more on the current level, pop the stack...
+			while (scalar @{$solution_stack[$#solution_stack]} == 0) {
+				# pop
+				pop @solution_stack;
 
 				if ($self->{config}->var('debug::resolver')) {
-					$sub_debug_version_change->($package_name, $supposed_version, $original_version);
+					$sub_mydebug_wrapper->("no solution");
 				}
 
-				# set stick for change for the time on underlying solutions
-				$ref_package_entry->{stick} = 1;
-				$ref_package_entry->{version} = $supposed_version;
+				# continue only if solution stack is not empty, otherwise we have a great fail
+				scalar @solution_stack or return 0;
 
-				if ($self->_recursive_resolve($sub_accept, $recurse_level+1)) {
-					# some underlying solution has been accepted, moving up
-					return 1;
-				}
+				# undone previous decision
+				my $ref_previous_state = pop @{$solution_stack[$#solution_stack]};
+				my $package_name = $ref_previous_state->[0];
+				my $original_version = $ref_previous_state->[1];
 
-				# otherwise remove it and try next...
+				my $ref_package_entry = $self->{packages}->{$package_name};
 				$ref_package_entry->{version} = $original_version;
 				delete $ref_package_entry->{stick};
 			}
+
+			# if only one solution available, don't fork, just use it now
+			# so push the solution on the same level
+			if (scalar @{$solution_stack[$#solution_stack]} == 1) {
+				my $elem = pop @{$solution_stack[$#solution_stack]};
+
+			# apply pending solution
+			my $ref_next_state = $solution_stack[$#solution_stack]->[0];
+			my $package_name_to_change = $ref_next_state->[0];
+			my $supposed_version = $ref_next_state->[1];
+			my $ref_package_entry_to_change = $self->{packages}->{$package_name_to_change};
+			my $original_version = $ref_package_entry_to_change->{version};
+
 			if ($self->{config}->var('debug::resolver')) {
-				$sub_mydebug_wrapper->("no solution");
+				$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
 			}
-			return 0;
+
+			# set stick for change for the time on underlying solutions
+			$ref_package_entry_to_change->{stick} = 1;
+			$ref_package_entry_to_change->{version} = $supposed_version;
+
+			# leave original version for returning
+			$ref_next_state->[1] = $original_version;
 		} else {
 			# suggest found solution
 			if ($sub_accept->(map { defined($_->{version}) ? $_->{version} : () } $self->{packages})) {
 				# yeah, this is end of our tortures
 			} else {
 				# caller hasn't accepted this solution, well, go next...
-				$check_failed;
+				$check_failed = 1;
 			}
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->($check_failed ? "declined" : "accepted");
@@ -458,7 +478,7 @@ sub resolve ($$) {
 	}
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
-	return $self->_recursive_resolve($sub_accept, 0);
+	return $self->_resolve($sub_accept);
 }
 
 1;
