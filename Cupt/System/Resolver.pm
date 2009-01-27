@@ -351,30 +351,35 @@ sub _resolve ($$) {
 		}
 
 		if ($check_failed) {
-			# some dependencies are broken, try to fix them
+			# firstly rank all solutions
+			foreach (@possible_actions) {
+				my $package_name = $_->[0];
+				my $supposed_version = $_->[1];
+				my $original_version = exists $self->{packages}->{$package_name} ?
+						$self->{packages}->{$package_name}->{version} : undef;
 
-			} else {
-				# firstly rank all solutions
-				foreach (@possible_actions) {
-					my $package_name = $_->[0];
-					my $supposed_version = $_->[1];
-					my $original_version = exists $self->{packages}->{$package_name} ?
-							$self->{packages}->{$package_name}->{version} : undef;
+				my $supposed_version_weight =
+						defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
+				my $original_version_weight =
+						defined($original_version) ? $self->_version_weight($original_version) : 0;
 
-					my $supposed_version_weight =
-							defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
-					my $original_version_weight =
-							defined($original_version) ? $self->_version_weight($original_version) : 0;
+				# 3rd field in the structure will be "profit" of the change
+				push @$_, $supposed_version_weight - $original_version_weight;
+			}
 
-					# 3rd field in the structure will be "profit" of the change
-					push @$_, $supposed_version_weight - $original_version_weight;
-				}
+			# sort them by "rank"
+			@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
 
-				# sort them by "rank"
-				@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
+			# push them into solution stack
+			push @solution_stack, \@possible_actions;
 
-				# push them into solution stack
-				push @solution_stack, \@possible_actions;
+			# if only one solution available, don't fork, just use it now
+			# so push the solution on the same level
+			# don't do it if we are at the first level
+			if (scalar @{$solution_stack[$#solution_stack]} == 1 && scalar @solution_stack > 1) {
+				my $elem = pop @{$solution_stack[$#solution_stack]};
+				pop @solution_stack;
+				push @{$solution_stack[$#solution_stack]}, $elem;
 			}
 
 			# while there is nothing more on the current level, pop the stack...
@@ -398,11 +403,6 @@ sub _resolve ($$) {
 				$ref_package_entry->{version} = $original_version;
 				delete $ref_package_entry->{stick};
 			}
-
-			# if only one solution available, don't fork, just use it now
-			# so push the solution on the same level
-			if (scalar @{$solution_stack[$#solution_stack]} == 1) {
-				my $elem = pop @{$solution_stack[$#solution_stack]};
 
 			# apply pending solution
 			my $ref_next_state = $solution_stack[$#solution_stack]->[0];
