@@ -452,7 +452,7 @@ sub __parse_source_list {
 sub _parse_preferences {
 	my ($self, $file) = @_;
 
-	# we are parsing triades like:
+	# we are parsing triads like:
 
 	# Package: perl
 	# Pin: o=debian,a=unstable
@@ -474,7 +474,7 @@ sub _parse_preferences {
 		# skip all empty lines and lines with comments
 		next if m/^\s*(?:#.*)?$/;
 
-		# ok, real triade should be here
+		# ok, real triad should be here
 		my %pin_result;
 
 		do { # processing first line
