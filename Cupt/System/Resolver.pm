@@ -211,12 +211,12 @@ sub _resolve ($$) {
 		mydebug("started resolving");
 	}
 	my @solution_stack;
-	push @solution_stack, [];
+	my $recurse_level = 0;
 
 	my $check_failed;
 	do {
 		my $sub_mydebug_wrapper = sub {
-			mydebug("  " x (scalar @solution_stack) . "@_");
+			mydebug("  " x ($recurse_level) . "@_");
 		};
 
 		# debugging subroutine
@@ -233,6 +233,10 @@ sub _resolve ($$) {
 		my @possible_actions;
 
 		my $package_name;
+
+		# clearing check_failed
+		$check_failed = 0;
+
 		MAIN_LOOP:
 		foreach (keys %{$self->{packages}}) {
 			my $package_name = $_;
@@ -373,15 +377,6 @@ sub _resolve ($$) {
 			# push them into solution stack
 			push @solution_stack, \@possible_actions;
 
-			# if only one solution available, don't fork, just use it now
-			# so push the solution on the same level
-			# don't do it if we are at the first level
-			if (scalar @{$solution_stack[$#solution_stack]} == 1 && scalar @solution_stack > 1) {
-				my $elem = pop @{$solution_stack[$#solution_stack]};
-				pop @solution_stack;
-				push @{$solution_stack[$#solution_stack]}, $elem;
-			}
-
 			# while there is nothing more on the current level, pop the stack...
 			while (scalar @{$solution_stack[$#solution_stack]} == 0) {
 				# pop
@@ -390,12 +385,13 @@ sub _resolve ($$) {
 				if ($self->{config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("no solution");
 				}
+				--$recurse_level;
 
 				# continue only if solution stack is not empty, otherwise we have a great fail
 				scalar @solution_stack or return 0;
 
 				# undone previous decision
-				my $ref_previous_state = pop @{$solution_stack[$#solution_stack]};
+				my $ref_previous_state = shift @{$solution_stack[$#solution_stack]};
 				my $package_name = $ref_previous_state->[0];
 				my $original_version = $ref_previous_state->[1];
 
@@ -414,6 +410,7 @@ sub _resolve ($$) {
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
 			}
+			++$recurse_level if scalar @possible_actions > 1;
 
 			# set stick for change for the time on underlying solutions
 			$ref_package_entry_to_change->{stick} = 1;
