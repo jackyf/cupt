@@ -215,7 +215,7 @@ sub _resolve ($$) {
 	my $check_failed;
 	do {
 		my $sub_mydebug_wrapper = sub {
-			mydebug("  " x (scalar @solution_stack) . "@_");
+			mydebug(" " x (scalar @solution_stack) . "@_");
 		};
 
 		# debugging subroutine
