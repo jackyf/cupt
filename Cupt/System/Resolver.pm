@@ -148,6 +148,9 @@ sub _schedule_new_version_relations ($$) {
 sub _install_version_no_stick ($$) {
 	my ($self, $version) = @_;
 	$self->{packages}->{$version->{package_name}}->{version} = $version;
+	if ($self->{config}->var('debug::resolver')) {
+		mydebug("install package '$version->{package_name}', version '$version->{version}'");
+	}
 	$self->_schedule_new_version_relations($version);
 }
 
@@ -224,7 +227,11 @@ sub upgrade ($) {
 	foreach (keys %{$self->{packages}}) {
 		my $package_name = $_;
 		my $package = $self->{cache}->get_binary_package($package_name);
-		$self->{packages}->{$package_name}->{version} = $self->{cache}->get_policy_version($package);
+		my $original_version = $self->{packages}->{$package_name}->{version};
+		my $supposed_version = $self->{cache}->get_policy_version($package);
+		# no need to install the same version
+		$original_version->{version} ne $supposed_version->{version} or next;
+		$self->_install_version_no_stick($supposed_version);
 	}
 }
 
@@ -534,9 +541,6 @@ sub resolve ($$) {
 		# installing most preferrable version
 
 		my $version_to_install = $ref_satisfying_versions->[0];
-		$self->_install_version_no_stick($version_to_install);
-		# note that install_version can add some pending relations
-
 		if ($self->{config}->var('debug::resolver')) {
 			mydebug("selected package '%s', version '%s' for relation expression '%s'",
 					$version_to_install->{package_name},
@@ -544,6 +548,8 @@ sub resolve ($$) {
 					stringify_relation_or_group($relation_expression)
 			);
 		}
+		$self->_install_version_no_stick($version_to_install);
+		# note that _install_version_no_stick can add some pending relations
 	}
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
