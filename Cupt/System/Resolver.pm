@@ -318,7 +318,7 @@ sub _resolve ($$) {
 
 							$check_failed = 1;
 							# yes... so change it
-							my $other_package = $self->{cache}->get_binary_package($package_name);
+							my $other_package = $self->{cache}->get_binary_package($other_package_name);
 							foreach my $other_version (@{$other_package->versions()}) {
 								# don't try existing version
 								next if $other_version->{version} eq $satisfying_version->{version};
