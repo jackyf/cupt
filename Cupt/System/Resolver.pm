@@ -17,6 +17,14 @@ stores reference to config (Cupt::Config)
 
 stores reference to cache (Cupt::Cache)
 
+=head2 params
+
+parameters that configure resolver's actions:
+
+=head3 no-remove
+
+disallow removing packages for resolving dependencies
+
 =head2 packages
 
 hash { I<package_name> => {S<< 'version' => I<version> >>, S<< 'stick' => I<stick> >>} }
@@ -65,13 +73,32 @@ sub new {
 	$self->{cache} = shift;
 
 	# resolver params
-	$self->{params} = (
-		@_
+	%{$self->{params}} = (
+		'no-remove' => 0,
 	);
 
 	$self->{pending_relations} = [];
 
 	return $self;
+}
+
+=head2 set_params
+
+member function, sets params for the resolver
+
+Parameters: hash (as list) of params and their values
+
+Example: C<< $resolver->set_params('no-remove' => 1); >>
+
+=cut
+
+sub set_params {
+	my ($self) = shift;
+	while (@_) {
+		my $key = shift;
+		my $value = shift;
+		$self->{config}->{$key} = $value;
+	}
 }
 
 =head2 import_versions
@@ -184,6 +211,23 @@ sub remove_package ($$) {
 	$self->{packages}->{$package_name}->{stick} = 1;
 }
 
+=head2 upgrade
+
+member function, schedule upgrade of as much packages in system as possible
+
+No parameters.
+
+=cut
+
+sub upgrade ($) {
+	my ($self) = @_;
+	foreach (keys %{$self->{packages}}) {
+		my $package_name = $_;
+		my $package = $self->{cache}->get_binary_package($package_name);
+		$self->{packages}->{$package_name}->{version} = $self->{cache}->get_policy_version($package);
+	}
+}
+
 # every package version has a weight
 sub _version_weight ($$) {
 	my ($self, $version) = @_;
@@ -291,8 +335,10 @@ sub _resolve ($$) {
 								push @possible_actions, [ $package_name, $other_version ];
 							}
 
-							# remove the package
-							push @possible_actions, [ $package_name, undef ];
+							if (!$self->{config}->{'no-remove'}) {
+								# remove the package
+								push @possible_actions, [ $package_name, undef ];
+							}
 						}
 
 						if ($self->{config}->var('debug::resolver')) {
@@ -344,8 +390,10 @@ sub _resolve ($$) {
 								push @possible_actions, [ $other_package_name, $other_version ];
 							}
 
-							# or remove it
-							push @possible_actions, [ $other_package_name, undef ];
+							if (!$self->{config}->{'no-remove'}) {
+								# or remove it
+								push @possible_actions, [ $other_package_name, undef ];
+							}
 						}
 
 						if ($check_failed) {
@@ -359,8 +407,10 @@ sub _resolve ($$) {
 									push @possible_actions, [ $package_name, $other_version ];
 								}
 								
-								# remove the package
-								push @possible_actions, [ $package_name, undef ];
+								if (!$self->{config}->{'no-remove'}) {
+									# remove the package
+									push @possible_actions, [ $package_name, undef ];
+								}
 							}
 
 							if ($self->{config}->var('debug::resolver')) {

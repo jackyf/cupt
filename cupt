@@ -51,6 +51,8 @@ my %command_handlers = (
 	'install' => \&install,
 	'remove' => \&remove,
 	'purge' => \&purge,
+	'safe-upgrade' => \&safe_upgrade,
+	'full-upgrade' => \&full_upgrade,
 );
 
 if (defined($command_handlers{$command})) {
@@ -451,14 +453,8 @@ sub pkgnames () {
 }
 
 sub manage_packages ($) {
-	# action can be 'install', 'remove', 'purge'
+	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
-	my $o_purge = 0;
-
-	if ($action eq 'purge') {
-		$action = 'remove';
-		$o_purge = 1;
-	}
 
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
@@ -470,17 +466,31 @@ sub manage_packages ($) {
 	my $resolver = new Cupt::System::Resolver($config, $cache);
 	$resolver->import_versions($cache->{system_state}->export_installed_versions());
 
-	my @package_expressions = @ARGV;
-	foreach my $package_expression (@package_expressions) {
-		if ($action eq 'install') {
-			my $version = select_binary_package_version($package_expression);
-			$resolver->install_version($version);
-		} else { # 'remove'
-			check_package_name($package_expression);
-			defined($cache->get_binary_package($package_expression)) or
-					mydie("unable to find binary package '%s'", $package_expression);
+	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
+		check_no_extra_args();
+		my $o_no_remove = ($action eq 'safe-upgrade');
+		$resolver->set_params('no-remove' => $o_no_remove);
+		$resolver->upgrade();
+	} else {
+		my $o_purge = 0;
 
-			$resolver->remove_package($package_expression);
+		if ($action eq 'purge') {
+			$action = 'remove';
+			$o_purge = 1;
+		}
+
+		my @package_expressions = @ARGV;
+		foreach my $package_expression (@package_expressions) {
+			if ($action eq 'install') {
+				my $version = select_binary_package_version($package_expression);
+				$resolver->install_version($version);
+			} else { # 'remove'
+				check_package_name($package_expression);
+				defined($cache->get_binary_package($package_expression)) or
+						mydie("unable to find binary package '%s'", $package_expression);
+
+				$resolver->remove_package($package_expression);
+			}
 		}
 	}
 
@@ -501,6 +511,14 @@ sub remove () {
 
 sub purge () {
 	manage_packages('purge');
+}
+
+sub full_upgrade () {
+	manage_packages('full-upgrade');
+}
+
+sub safe_upgrade () {
+	manage_packages('safe-upgrade');
 }
 
 sub process_options {
