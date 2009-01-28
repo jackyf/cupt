@@ -236,8 +236,12 @@ sub _resolve ($$) {
 		# clearing check_failed
 		$check_failed = 0;
 
+		# to speed up the complex decision steps, if solution stack is not
+		# empty, firstly check the package that had a problem
+		# @problematic_packages, so, will have one or zero package names
+		my @problematic_packages = scalar @solution_stack ? ($solution_stack[$#solution_stack]->[0]->[0]) : ();
 		MAIN_LOOP:
-		foreach (keys %{$self->{packages}}) {
+		foreach (@problematic_packages, keys %{$self->{packages}}) {
 			my $package_name = $_;
 			my $package_entry = $self->{packages}->{$package_name};
 			my $version = $package_entry->{version};
