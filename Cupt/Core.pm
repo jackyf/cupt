@@ -103,7 +103,7 @@ sub __compare_version_part ($$) {
 	foreach ($left, $right) {
 		# strip out any group of zeroes, which have non-zero after and non-number or nothing before
 		# but don't strip zero in the start of string
-		s/(?:[^0-9]|^)\K 0+ (?=[1-9])//xg;
+		s/(?:\D|^)\K 0+ (?=\d)//xg;
 	}
 
 	# add "empty" characters to make strings char-comparable

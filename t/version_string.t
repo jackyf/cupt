@@ -51,6 +51,7 @@ my @correct_version_strings = (
 	[ '3a9.8', '3~10', 1 ], # but after the tilde
 	[ '1.4+OOo3.0.0~', '1.4+OOo3.0.0-4', -1 ], # another tilde check
 	[ '2.4.7-1', '2.4.7-z', -1 ], # revision comparing
+	[ '1.002-1+b2', '1.00', 1 ], # whatever...
 );
 # each array has to be
 # 1) check v1 for correctness
