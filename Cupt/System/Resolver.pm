@@ -117,6 +117,13 @@ sub _schedule_new_version_relations ($$) {
 	}
 }
 
+# installs new version, shedules new dependencies, but not sticks it
+sub _install_version_no_stick ($$) {
+	my ($self, $version) = @_;
+	$self->{packages}->{$version->{package_name}}->{version} = $version;
+	$self->_schedule_new_version_relations($version);
+}
+
 =head2 install_version
 
 member function, installs a new version with requested depends
@@ -129,10 +136,8 @@ I<version> - reference to Cupt::Cache::BinaryVersion
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->{packages}->{$version->{package_name}}->{version} = $version;
 	$self->{packages}->{$version->{package_name}}->{stick} = 1;
-
-	$self->_schedule_new_version_relations($version);
+	$self->_install_version_no_stick($version);
 }
 
 =head2 satisfy_relation
@@ -213,6 +218,11 @@ sub _resolve ($$) {
 	my @solution_stack;
 
 	my $check_failed;
+
+	# will be filled in MAIN_LOOP
+	my $package_entry;
+	my $package_name;
+
 	do {
 		my $sub_mydebug_wrapper = sub {
 			mydebug(" " x (scalar @solution_stack) . "@_");
@@ -237,13 +247,21 @@ sub _resolve ($$) {
 		$check_failed = 0;
 
 		# to speed up the complex decision steps, if solution stack is not
-		# empty, firstly check the package that had a problem
-		# @problematic_packages, so, will have one or zero package names
-		my @problematic_packages = scalar @solution_stack ? ($solution_stack[$#solution_stack]->[0]->[0]) : ();
+		# empty, firstly check the packages that had a problem
+		#
+		# @last_packages: will have one or zero package name, which was last in solution stack
+		# 
+		# additionally, each package entry will contain 'failed' field, which
+		# contains the number of failures during processing these packages
+		my @last_package = scalar @solution_stack ? ($solution_stack[$#solution_stack]->[0]->[0]) : ();
+		my @packages_in_order = sort {
+			($self->{packages}->{$b}->{failed} // 0) <=> ($self->{packages}->{$a}->{failed} // 0)
+		} keys %{$self->{packages}};
+
 		MAIN_LOOP:
-		foreach (@problematic_packages, keys %{$self->{packages}}) {
-			my $package_name = $_;
-			my $package_entry = $self->{packages}->{$package_name};
+		foreach (@last_package, @packages_in_order) {
+			$package_name = $_;
+			$package_entry = $self->{packages}->{$package_name};
 			my $version = $package_entry->{version};
 
 			# checking that all 'Depends' are satisfied
@@ -358,6 +376,7 @@ sub _resolve ($$) {
 		}
 
 		if ($check_failed) {
+
 			# firstly rank all solutions
 			foreach (@possible_actions) {
 				my $package_name = $_->[0];
@@ -386,8 +405,10 @@ sub _resolve ($$) {
 				pop @solution_stack;
 
 				if ($self->{config}->var('debug::resolver')) {
-					$sub_mydebug_wrapper->("no solution");
+					$sub_mydebug_wrapper->("no solution for broken package $package_name");
 				}
+				# mark package as failed one more time
+				++$package_entry->{failed};
 
 				# continue only if solution stack is not empty, otherwise we have a great fail
 				scalar @solution_stack or return 0;
@@ -463,7 +484,7 @@ sub resolve ($$) {
 		# installing most preferrable version
 
 		my $version_to_install = $ref_satisfying_versions->[0];
-		$self->install_version($version_to_install);
+		$self->_install_version_no_stick($version_to_install);
 		# note that install_version can add some pending relations
 
 		if ($self->{config}->var('debug::resolver')) {
