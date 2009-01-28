@@ -211,12 +211,11 @@ sub _resolve ($$) {
 		mydebug("started resolving");
 	}
 	my @solution_stack;
-	my $recurse_level = 0;
 
 	my $check_failed;
 	do {
 		my $sub_mydebug_wrapper = sub {
-			mydebug("  " x ($recurse_level) . "@_");
+			mydebug("  " x (scalar @solution_stack) . "@_");
 		};
 
 		# debugging subroutine
@@ -385,7 +384,6 @@ sub _resolve ($$) {
 				if ($self->{config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("no solution");
 				}
-				--$recurse_level;
 
 				# continue only if solution stack is not empty, otherwise we have a great fail
 				scalar @solution_stack or return 0;
@@ -410,7 +408,6 @@ sub _resolve ($$) {
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
 			}
-			++$recurse_level if scalar @possible_actions > 1;
 
 			# set stick for change for the time on underlying solutions
 			$ref_package_entry_to_change->{stick} = 1;
