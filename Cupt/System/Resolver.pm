@@ -212,6 +212,9 @@ sub remove_package ($$) {
 	my ($self, $package_name) = @_;
 	$self->{packages}->{$package_name}->{version} = undef;
 	$self->{packages}->{$package_name}->{stick} = 1;
+	if ($self->{config}->var('debug::resolver')) {
+		mydebug("removing package $package_name");
+	}
 }
 
 =head2 upgrade
