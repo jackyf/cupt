@@ -8,6 +8,23 @@ use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 
+=head1 FIELDS
+
+=head2 installed_info
+
+contains info of packages which dpkg knows about
+
+Format:
+  {
+    I<package_name> => {
+      'want' => I<want>,
+      'flag' => I<flag>,
+      'status' => I<status>,
+    }
+  }
+
+=cut
+
 use fields qw(config cache installed_info);
 
 sub new {

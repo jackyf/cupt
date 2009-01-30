@@ -101,7 +101,7 @@ sub set_params {
 	}
 }
 
-=head2 import_versions
+=head2 import_installed_versions
 
 member function, imports already installed versions, usually used in pair with
 C<&Cupt::System::State::export_installed_versions>
@@ -112,7 +112,7 @@ I<ref_versions> - reference to array of Cupt::Cache::BinaryVersion
 
 =cut
 
-sub import_versions ($$) {
+sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
 
 	foreach my $version (@$ref_versions) {
