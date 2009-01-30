@@ -79,6 +79,7 @@ sub get_actions_preview ($) {
 		'deconfigure' => [],
 	);
 	foreach my $package_name (keys %{$self->{desired_state}}) {
+		my $action;
 		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
 		if (defined $version) {
 			# some package version is to be installed
@@ -91,10 +92,20 @@ sub get_actions_preview ($) {
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
 				{
-					# package was in some interim state
-					push @
+					if ($ref_installed_info->{version} eq $version->{version}) {
+						# the same version, but the package was in some interim state
+						$action = 'configure';
+					} else {
+						# some interim state, but other version
+						$action = 'install';
+					}
+				} else {
+					if ($ref_installed_info->{'status'} eq 'installed'
+
 		} else {
 
+		}
+		defined $action and push @{$result{$action}}, $package_name;
 	}
 }
 
