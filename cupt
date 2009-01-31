@@ -23,7 +23,9 @@ my $cache;
 
 # build config at start
 eval {
+	print __('Reading configuration... ');
 	$config = new Cupt::Config;
+	say __('[done]');
 };
 if (mycatch()) {
 	myerr("error while loading config");
@@ -70,7 +72,9 @@ if (defined($command_handlers{$command})) {
 sub build_cache {
 	eval {
 		# propagate any parameters passed to Cupt::Cache::&new
+		print __('Building the package cache... ');
 		$cache = new Cupt::Cache($config, @_);
+		say __('[done]');
 	};
 	if (mycatch()) {
 		myerr("error while creating package cache");
