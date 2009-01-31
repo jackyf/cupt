@@ -473,32 +473,35 @@ sub manage_packages ($) {
 
 	print __('Scheduling requested actions... ');
 	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
-		check_no_extra_args();
 		my $o_no_remove = ($action eq 'safe-upgrade');
 		$resolver->set_params('no-remove' => $o_no_remove);
 		$resolver->upgrade();
-	} else {
-		my $o_purge = 0;
 
-		if ($action eq 'purge') {
-			$action = 'remove';
-			$config->set_regular_var('cupt::worker::purge', 1)
-		}
+		# despite the main action is {safe,full}-upgrade, allow package
+		# modifiers in the command line just as with the install command
+		$action = 'install';
+	}
 
-		my @package_expressions = @ARGV;
-		foreach my $package_expression (@package_expressions) {
-			if ($action eq 'install') {
-				my $version = select_binary_package_version($package_expression);
-				$resolver->install_version($version);
-			} else { # 'remove'
-				check_package_name($package_expression);
-				defined($cache->get_binary_package($package_expression)) or
-						mydie("unable to find binary package '%s'", $package_expression);
+	my $o_purge = 0;
+	if ($action eq 'purge') {
+		$action = 'remove';
+		$config->set_regular_var('cupt::worker::purge', 1)
+	}
 
-				$resolver->remove_package($package_expression);
-			}
+	my @package_expressions = @ARGV;
+	foreach my $package_expression (@package_expressions) {
+		if ($action eq 'install') {
+			my $version = select_binary_package_version($package_expression);
+			$resolver->install_version($version);
+		} else { # 'remove'
+			check_package_name($package_expression);
+			defined($cache->get_binary_package($package_expression)) or
+					mydie("unable to find binary package '%s'", $package_expression);
+
+			$resolver->remove_package($package_expression);
 		}
 	}
+
 	say __('[done]');
 
 	print __('Resolving possible unmet dependencies... ');

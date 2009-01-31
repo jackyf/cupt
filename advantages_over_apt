@@ -1,11 +1,16 @@
-Core advantages:
+Core:
  - Pins can be specified also by source package.
  - Correctness of APT options is checked.
 
-Advantages over apt-cache:
+Searching:
  - 'search' command searches all versions of package, not policy or
    default ones;
  - 'search' command can search case-sensitively ('--case-sensitive' switch);
+
+Show:
  - 'show' command can show release description ('--with-release-info' switch);
- - '/<distribution' and '=<version>' suffixes can be used with 'show' (you
-   should also specify --no-all-versions) and 'depends' commands.
+ - '/<distribution' and '=<version>' suffixes can be used with 'depends' command.
+
+Managing packages (safe-upgrade,full-upgrade,install,remove,purge):
+ - 'safe-upgrade' and 'full-upgrade' commands can accept addtional packages
+   (with optional modifiers) from the command line.
