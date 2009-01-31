@@ -456,6 +456,7 @@ sub manage_packages ($) {
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
+	local $| = 1;
 	print __('Building the package cache... ');
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 	say __('[done]');
@@ -465,9 +466,12 @@ sub manage_packages ($) {
 
 	check_no_more_options();
 
+	print __('Initializing package resolver... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
 	$resolver->import_installed_versions($cache->{system_state}->export_installed_versions());
+	say __('[done]');
 
+	print __('Scheduling requested actions... ');
 	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
 		check_no_extra_args();
 		my $o_no_remove = ($action eq 'safe-upgrade');
@@ -495,9 +499,12 @@ sub manage_packages ($) {
 			}
 		}
 	}
+	say __('[done]');
 
+	print __('Resolving possible unmet dependencies... ');
 	# TODO: query user
 	$resolver->resolve( sub { return 1 } );
+	say __('[done]');
 
 	# TODO: make $cache->get_system_state
 	my $worker = new Cupt::System::Worker($config, $cache->{system_state});
