@@ -490,6 +490,17 @@ sub manage_packages ($) {
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
+		# "localizing" action to make it modifiable by package modifiers
+		my $action = $action;
+		my $last_letter = substr($package_expression, -1, 1);
+		if ($last_letter eq '+') {
+			$action = 'install';
+			$package_expression = substr($package_expression, 0, length($package_expression)-1);
+		} elsif ($last_letter eq '-') {
+			$action = 'remove';
+			$package_expression = substr($package_expression, 0, length($package_expression)-1);
+		}
+
 		if ($action eq 'install') {
 			my $version = select_binary_package_version($package_expression);
 			$resolver->install_version($version);
