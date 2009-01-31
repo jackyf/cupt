@@ -147,6 +147,13 @@ sub _schedule_new_version_relations ($$) {
 # installs new version, shedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$) {
 	my ($self, $version) = @_;
+	if (exists $self->{packages}->{$version->{package_name}} &&
+		exists $self->{packages}->{$version->{package_name}}->{stick})
+	{
+		# package is restricted to be updated
+		return;
+	}
+
 	$self->{packages}->{$version->{package_name}}->{version} = $version;
 	if ($self->{config}->var('debug::resolver')) {
 		mydebug("install package '$version->{package_name}', version '$version->{version}'");
@@ -166,8 +173,8 @@ I<version> - reference to Cupt::Cache::BinaryVersion
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->{packages}->{$version->{package_name}}->{stick} = 1;
 	$self->_install_version_no_stick($version);
+	$self->{packages}->{$version->{package_name}}->{stick} = 1;
 }
 
 =head2 satisfy_relation
