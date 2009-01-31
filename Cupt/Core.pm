@@ -9,9 +9,11 @@ use strict;
 use Exporter qw(import);
 our @EXPORT = qw(
 	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
-	$package_name_regex $version_string_regex);
+	$package_name_regex $version_string_regex &__);
 
 use Locale::gettext;
+
+*__ = *gettext;
 
 #sub __ {
 #	return gettext(shift);

@@ -1,4 +1,4 @@
-package Cupt::System::Worker
+package Cupt::System::Worker;
 
 use warnings;
 use strict;
@@ -15,7 +15,7 @@ I<system_state> - reference to Cupt::System::State
 
 =cut
 
-use fields qw(config cache system);
+use fields qw(config system_state desired_state);
 
 =head1 METHODS
 
@@ -35,6 +35,7 @@ sub new {
 	my $self = fields::new($class);
 	$self->{config} = shift;
 	$self->{system_state} = shift;
+	$self->{desired_state} = undef;
 	return $self;
 }
 
@@ -80,13 +81,18 @@ sub get_actions_preview ($) {
 		'remove' => [],
 		'purge' => [],
 		'upgrade' => [],
+		'downgrade' => [],
 		'configure' => [],
 		'deconfigure' => [],
 	);
+
+	if (!defined $self->{desired_state}) {
+		myinternaldie("worker desired state is not given");
+	}
 	foreach my $package_name (keys %{$self->{desired_state}}) {
 		my $action;
 		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
-		if (defined $version) {
+		if (defined $supposed_version) {
 			# some package version is to be installed
 			if (!exists $self->{system_state}->{installed_info}->{$package_name}) {
 				# no installed info for package
@@ -101,7 +107,7 @@ sub get_actions_preview ($) {
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
 				{
-					if ($ref_installed_info->{'version'} eq $version->{version}) {
+					if ($ref_installed_info->{'version'} eq $supposed_version->{version}) {
 						# the same version, but the package was in some interim state
 						$action = 'configure';
 					} else {
@@ -123,6 +129,8 @@ sub get_actions_preview ($) {
 		} else { 
 			# package is to be removed
 			if (exists $self->{system_state}->{installed_info}->{$package_name}) {
+				# there is some installed info about package
+				my $ref_installed_info = $self->{system_state}->{installed_info}->{$package_name};
 				if ($ref_installed_info->{'status'} eq 'unpacked' ||
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
@@ -149,6 +157,7 @@ sub get_actions_preview ($) {
 		}
 		defined $action and push @{$result{$action}}, $package_name;
 	}
+	return \%result;
 }
 
 1;

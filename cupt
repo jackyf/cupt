@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-#BEGIN { $SIG{__DIE__} = sub { require Carp; Carp::confess(@_) } }
 
 package main;
 
@@ -17,6 +16,7 @@ use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relations);
 use Cupt::System::Resolver;
+use Cupt::System::Worker;
 
 my $config;
 my $cache;
@@ -464,7 +464,7 @@ sub manage_packages ($) {
 	check_no_more_options();
 
 	my $resolver = new Cupt::System::Resolver($config, $cache);
-	$resolver->import_versions($cache->{system_state}->export_installed_versions());
+	$resolver->import_installed_versions($cache->{system_state}->export_installed_versions());
 
 	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
 		check_no_extra_args();
@@ -494,7 +494,33 @@ sub manage_packages ($) {
 		}
 	}
 
+	# TODO: query user
 	$resolver->resolve( sub { return 1 } );
+
+	# TODO: make $cache->get_system_state
+	my $worker = new Cupt::System::Worker($config, $cache->{system_state});
+	# TODO: make $resolver->export_packages
+	$worker->set_desired_state($resolver->{packages});
+
+	my $ref_actions_preview = $worker->get_actions_preview();
+	my %action_names = (
+		'install' => __('INSTALLED'),
+		'remove' => __('REMOVED'),
+		'upgrade' => __('UPGRADED'),
+		'purge' => __('PURGED'),
+		'downgrade' => __('DOWNGRADED'),
+		'configure' => __('CONFIGURED'),
+		'deconfigure' => __('DECONFIGURED'),
+	);
+	foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
+		my $ref_packages = $ref_actions_preview->{$action};
+		scalar @$ref_packages or next; # don't print empty lists
+		my $action_name = $action_names{$action};
+		say sprintf __("The following packages will be %s:"), $action_name;
+		say "";
+		say "@{$ref_packages}";
+		say "";
+	}
 }
 
 sub install () {
