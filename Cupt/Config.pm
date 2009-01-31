@@ -47,6 +47,8 @@ sub new {
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'debug::resolver' => 0,
 			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
+
+			'cupt::worker::purge' => 0,
 		},
 
 		list_vars => {

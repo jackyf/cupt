@@ -476,7 +476,7 @@ sub manage_packages ($) {
 
 		if ($action eq 'purge') {
 			$action = 'remove';
-			$o_purge = 1;
+			$config->set_regular_var('cupt::worker::purge', 1)
 		}
 
 		my @package_expressions = @ARGV;

@@ -1,5 +1,10 @@
 package Cupt::System::Worker
 
+use warnings;
+use strict;
+
+use Cupt::Core;
+
 =head1 FIELDS
 
 I<config> - reference to Cupt::Config
@@ -85,14 +90,18 @@ sub get_actions_preview ($) {
 			# some package version is to be installed
 			if (!exists $self->{system_state}->{installed_info}->{$package_name}) {
 				# no installed info for package
-				push @{$result{'install'}}, $package_name;
+				$action = 'install';
 			} else {
+				# there is some installed info about package
 				my $ref_installed_info = $self->{system_state}->{installed_info}->{$package_name};
-				if ($ref_installed_info->{'status'} eq 'unpacked' ||
+				if ($ref_installed_info->{'status'} eq 'config-files') {
+					# treat as the same as uninstalled
+					$action = 'install';
+				} elsif ($ref_installed_info->{'status'} eq 'unpacked' ||
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
 				{
-					if ($ref_installed_info->{version} eq $version->{version}) {
+					if ($ref_installed_info->{'version'} eq $version->{version}) {
 						# the same version, but the package was in some interim state
 						$action = 'configure';
 					} else {
@@ -100,10 +109,43 @@ sub get_actions_preview ($) {
 						$action = 'install';
 					}
 				} else {
-					if ($ref_installed_info->{'status'} eq 'installed'
+					# otherwise some package version is installed
+					my $version_comparison_result = Cupt::Core::compare_version_strings(
+							$supposed_version->{version}, $ref_installed_info->{'version'});
 
-		} else {
-
+					if ($version_comparison_result > 0) {
+						$action = 'upgrade';
+					} elsif ($version_comparison_result < 0) {
+						$action = 'downgrade';
+					}
+				}
+			}
+		} else { 
+			# package is to be removed
+			if (exists $self->{system_state}->{installed_info}->{$package_name}) {
+				if ($ref_installed_info->{'status'} eq 'unpacked' ||
+					$ref_installed_info->{'status'} eq 'half-configured' ||
+					$ref_installed_info->{'status'} eq 'half-installed')
+				{
+					# package was in some interim state
+					$action = 'deconfigure';
+				} else {
+					if ($self->{config}->var('cupt::worker::purge')) {
+						# package is requested to be purged
+						# do it only if we can
+						if ($ref_installed_info->{'status'} eq 'config-files' ||
+							$ref_installed_info->{'status'} eq 'installed')
+						{
+							$action = 'purge';
+						}
+					} else {
+						# package is requested to be removed
+						if ($ref_installed_info->{'status'} eq 'installed') {
+							$action = 'remove';
+						}
+					}
+				}
+			}
 		}
 		defined $action and push @{$result{$action}}, $package_name;
 	}
