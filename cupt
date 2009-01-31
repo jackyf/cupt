@@ -505,6 +505,7 @@ sub manage_packages ($) {
 	# TODO: query user
 	$resolver->resolve( sub { return 1 } );
 	say __('[done]');
+	say "";
 
 	# TODO: make $cache->get_system_state
 	my $worker = new Cupt::System::Worker($config, $cache->{system_state});
@@ -527,7 +528,8 @@ sub manage_packages ($) {
 		my $action_name = $action_names{$action};
 		say sprintf __("The following packages will be %s:"), $action_name;
 		say "";
-		say "@{$ref_packages}";
+		my @packages_list = sort @$ref_packages;
+		say "@packages_list";
 		say "";
 	}
 }
