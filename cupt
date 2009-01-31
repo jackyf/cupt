@@ -23,9 +23,7 @@ my $cache;
 
 # build config at start
 eval {
-	print __('Reading configuration... ');
 	$config = new Cupt::Config;
-	say __('[done]');
 };
 if (mycatch()) {
 	myerr("error while loading config");
@@ -72,9 +70,7 @@ if (defined($command_handlers{$command})) {
 sub build_cache {
 	eval {
 		# propagate any parameters passed to Cupt::Cache::&new
-		print __('Building the package cache... ');
 		$cache = new Cupt::Cache($config, @_);
-		say __('[done]');
 	};
 	if (mycatch()) {
 		myerr("error while creating package cache");
@@ -225,46 +221,46 @@ sub show_package_versions () {
 			$ref_versions = [ $version ];
 		}
 
-		my $p = sub { print gettext(shift), ': ', shift, "\n" };
+		my $p = sub { print shift, ': ', shift, "\n" };
 		foreach my $version (@$ref_versions) {
-			$p->('Package', $package_name);
-			$p->('Version', $version->{version});
+			$p->(__('Package'), $package_name);
+			$p->(__('Version'), $version->{version});
 			my $installed_status = $cache->{system_state}->get_status_for_version($version);
-			$p->('Status', defined($installed_status) ? $installed_status->{'status'} : "not installed");
-			$p->('Source', $version->{source_name});
-			$p->('Essential', $version->{essential}) if defined($version->{essential});
-			$p->('Priority', $version->{priority});
-			$p->('Section', $version->{section});
-			$p->('Size', human_readable_size_string($version->{size})) if defined($version->{size});
-			$p->('Uncompressed size', human_readable_size_string($version->{installed_size}*1024));
-			$p->('Maintainer', $version->{maintainer});
-			$p->('Architecture', $version->{architecture});
+			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : "not installed");
+			$p->(__('Source'), $version->{source_name});
+			$p->(__('Essential'), $version->{essential}) if defined($version->{essential});
+			$p->(__('Priority'), $version->{priority});
+			$p->(__('Section'), $version->{section});
+			$p->(__('Size'), human_readable_size_string($version->{size})) if defined($version->{size});
+			$p->(__('Uncompressed size'), human_readable_size_string($version->{installed_size}*1024));
+			$p->(__('Maintainer'), $version->{maintainer});
+			$p->(__('Architecture'), $version->{architecture});
 			if ($o_with_release_info) {
 				foreach (@{$version->{avail_as}}) {
 					next if !defined($_->{release}->{description}); # no release description available
-					$p->('Release', $_->{release}->{description});
+					$p->(__('Release'), $_->{release}->{description});
 				}
 			}
-			$p->('PreDepends', stringify_relations($version->{pre_depends})) if defined($version->{pre_depends});
-			$p->('Depends', stringify_relations($version->{depends})) if defined($version->{depends});
-			$p->('Recommends', stringify_relations($version->{recommends})) if defined($version->{recommends});
-			$p->('Suggests', stringify_relations($version->{suggests})) if defined($version->{suggests});
-			$p->('Conflicts', stringify_relations($version->{conflicts})) if defined($version->{conflicts});
-			$p->('Replaces', stringify_relations($version->{replaces})) if defined($version->{replaces});
-			$p->('Provides', join(", ", @{$version->{provides}})) if defined($version->{provides});
-			$p->('Enhances', stringify_relations($version->{enhances})) if defined($version->{enhances});
+			$p->(__('PreDepends'), stringify_relations($version->{pre_depends})) if defined($version->{pre_depends});
+			$p->(__('Depends'), stringify_relations($version->{depends})) if defined($version->{depends});
+			$p->(__('Recommends'), stringify_relations($version->{recommends})) if defined($version->{recommends});
+			$p->(__('Suggests'), stringify_relations($version->{suggests})) if defined($version->{suggests});
+			$p->(__('Conflicts'), stringify_relations($version->{conflicts})) if defined($version->{conflicts});
+			$p->(__('Replaces'), stringify_relations($version->{replaces})) if defined($version->{replaces});
+			$p->(__('Provides'), join(", ", @{$version->{provides}})) if defined($version->{provides});
+			$p->(__('Enhances'), stringify_relations($version->{enhances})) if defined($version->{enhances});
 			foreach ($version->uris()) {
-				$p->('URI', ($_ eq "" ? gettext("<locally installed>") : $_));
+				$p->(__('URI'), ($_ eq "" ? gettext("<locally installed>") : $_));
 			}
-			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});
-			$p->('SHA1', $version->{sha1sum}) if defined($version->{sha1sum});
-			$p->('SHA256', $version->{sha256sum}) if defined($version->{sha1sum});
-			$p->('Description', $version->{short_description});
+			$p->(__('MD5'), $version->{md5sum}) if defined($version->{md5sum});
+			$p->(__('SHA1'), $version->{sha1sum}) if defined($version->{sha1sum});
+			$p->(__('SHA256'), $version->{sha256sum}) if defined($version->{sha1sum});
+			$p->(__('Description'), $version->{short_description});
 			# TODO: translated descriptions...
 			print $version->{long_description} if defined($version->{long_description});
-			$p->('Homepage', $version->{homepage}) if defined($version->{homepage});
-			$p->('Task', $version->{task}) if defined($version->{task});
-			$p->('Tags', $version->{tags}) if defined($version->{tags});
+			$p->(__('Homepage'), $version->{homepage}) if defined($version->{homepage});
+			$p->(__('Task'), $version->{task}) if defined($version->{task});
+			$p->(__('Tags'), $version->{tags}) if defined($version->{tags});
 			print "\n";
 		}
 	}
@@ -460,7 +456,9 @@ sub manage_packages ($) {
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
+	print __('Building the package cache... ');
 	build_cache(-source => 0, -binary => 1, -installed => 1);
+	say __('[done]');
 
 	# turn off info parsing, we don't need it
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
