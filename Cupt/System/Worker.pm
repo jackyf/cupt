@@ -160,5 +160,74 @@ sub get_actions_preview ($) {
 	return \%result;
 }
 
+# Auxiliary topological sort function
+# downloaded from http://www.perlmonks.org/?node_id=84192
+#
+# Pass it as input a list of array references; these
+# specify that that index into the list must come before all
+# elements of its array. Output is a topologically sorted
+# list of indices, or undef if input contains a cycle. Note
+# that you must pass an array ref for every input
+# elements (if necessary, by adding an empty list
+# reference)
+#
+# For instance, tsort ([1,2,3], [3], [3], []) returns
+# (0,2,1,3).
+
+sub tsort {
+	my @out = @_;
+	my @ret;
+
+	# Compute initial in degrees
+	my @ind;
+	for my $l (@out) {
+		++$ind[$_] for (@$l)
+	}
+
+	# Work queue
+	my @q;
+	@q = grep { ! $ind[$_] } 0..$#out;
+
+	# Loop
+	while (@q) {
+		my $el = pop @q;
+		$ret[@ret] = $el;
+		for (@{$out[$el]}) {
+			push @q, $_ if (! --$ind[$_]);
+		}
+	}
+
+	@ret == @out ? @ret : undef;
+}
+
+=head2 do_actions
+
+member function, performes planned actions
+
+Returns true if successful, false otherwise
+
+=cut
+
+sub do_actions {
+	$ref_actions_preview = $self->get_actions_preview();
+	# firstly, divide all actions into basic ones
+	if (!defined $self->{desired_state}) {
+		myinternaldie("worker desired state is not given");
+	}
+	foreach my $package_name (keys %{$self->{desired_state}}) {
+		my $action;
+		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
+
+	# TODO: extract loops and place them into single action groups
+
+	# action = {
+	# 	'package_name' => package
+	# 	'version_string' => version_string,
+	# 	'action_name' => ('deconfigure', 'configure', 'install', 'remove', 'purge')
+	# }
+	my %graph = ( 'actions' => [], 'edges' => {} );
+
+}
+
 1;
 
