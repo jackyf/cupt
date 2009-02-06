@@ -9,9 +9,11 @@ use Cupt::Core;
 
 I<config> - reference to Cupt::Config
 
+I<cache> - reference to Cupt::Cache
+
 I<desired_state> - { I<package_name> => { 'version' => I<version> } }
 
-I<system_state> - reference to Cupt::System::State
+I<system_state> - { I<package_name> => { 'version' => I<version> } }
 
 =cut
 
@@ -34,6 +36,7 @@ sub new {
 	my $class = shift;
 	my $self = fields::new($class);
 	$self->{config} = shift;
+	$self->{cache} = shift;
 	$self->{system_state} = shift;
 	$self->{desired_state} = undef;
 	return $self;
@@ -210,7 +213,6 @@ Returns true if successful, false otherwise
 
 sub do_actions {
 	$ref_actions_preview = $self->get_actions_preview();
-	# firstly, divide all actions into basic ones
 	if (!defined $self->{desired_state}) {
 		myinternaldie("worker desired state is not given");
 	}
@@ -222,6 +224,7 @@ sub do_actions {
 	# }
 	my %graph = ( 'actions' => [], 'edges' => {} );
 
+	# user action - action name from actions preview
 	my %user_action_to_inner_actions = (
 		'install' => [ 'unpack', 'configure' ],
 		'upgrade' => [ 'unpack', 'configure' ],
@@ -239,20 +242,50 @@ sub do_actions {
 		'deconfigure' => $self->{system_state};
 		'remove' => $self->{system_state};
 		'purge' => $self->{system_state};
+	);
 
-	# user action - action name from actions preview
+	# convert all actions into inner ones
 	foreach my $user_action (keys %$ref_actions_preview) {
-		my @actions_to_be_performed = $user_action_to_inner_actions{$user_action};
+		my $ref_actions_to_be_performed = $user_action_to_inner_actions{$user_action};
 		my $source_state = $user_action_to_source_state{$user_action};
 
-		foreach my $inner_action (@actions_to_be_performed) {
+		foreach my $inner_action (@$ref_actions_to_be_performed) {
 			foreach $package_name (@{$ref_actions_preview->{$user_action}}) {
-				$version_string = $self->{desired_state}->{$package_name}-{version}->{version};
+				$version_string = $self->{desired_state}->{$package_name}->{version}->{version};
 				push @{$graph{'actions'}}, {
 						'package_name' => $package_name,
 						'version_string' => $version_string,
 						'action_name' => $inner_action,
 				};
+			}
+		}
+	}
+
+	# initialize dependency lists
+	push @{$graph{'edges'}}, [] for 0..@{$graph{'actions'}};
+
+	# fill the actions' dependencies
+	foreach my $ref_inner_action (@{$graph{'actions'}}) {
+		if ($ref_inner_action->{'action_name'} eq 'unpack') {
+			# if the package has pre-depends, they needs to be satisfied before
+			# unpack (policy 7.2)
+			my $desired_version = $self->{desired_state}->{$ref_inner_action->{'package_name'}}->{version};
+			if (defined $desired_version->{pre_depends}) {
+				foreach my $relation_expression (@$desired_version->{pre_depends}) {
+					my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+
+					foreach my $other_version (@$ref_satisfying_versions) {
+						my $other_version_string = $self->{desired_state}->{$version->{package_name}}->{version}->{version};
+						if ($version->is_local() &&
+							$other_version_string eq $ref_inner_action->{'version_string'})
+						{
+							# package version that satisfies this pre-depends, already installed in system
+							# and won't be removed
+
+							#TODO: rename 'is_local' -> 'is_installed'
+							#TODO: implement
+						}
+				}
 			}
 		}
 	}
