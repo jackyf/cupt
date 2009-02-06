@@ -214,18 +214,51 @@ sub do_actions {
 	if (!defined $self->{desired_state}) {
 		myinternaldie("worker desired state is not given");
 	}
-	foreach my $package_name (keys %{$self->{desired_state}}) {
-		my $action;
-		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
-
-	# TODO: extract loops and place them into single action groups
 
 	# action = {
 	# 	'package_name' => package
 	# 	'version_string' => version_string,
-	# 	'action_name' => ('deconfigure', 'configure', 'install', 'remove', 'purge')
+	# 	'action_name' => ('unpack', 'configure', 'remove', 'purge')
 	# }
 	my %graph = ( 'actions' => [], 'edges' => {} );
+
+	my %user_action_to_inner_actions = (
+		'install' => [ 'unpack', 'configure' ],
+		'upgrade' => [ 'unpack', 'configure' ],
+		'downgrade' => [ 'unpack', 'configure' ],
+		'configure' => [ 'configure' ],
+		'deconfigure' => [ 'remove' ],
+		'remove' => [ 'remove' ],
+		'purge' => [ 'purge' ],
+	);
+	my %user_action_to_source_state = (
+		'install' => $self->{desired_state};
+		'upgrade' => $self->{desired_state};
+		'downgrade' => $self->{desired_state};
+		'configure' => $self->{system_state};
+		'deconfigure' => $self->{system_state};
+		'remove' => $self->{system_state};
+		'purge' => $self->{system_state};
+
+	# user action - action name from actions preview
+	foreach my $user_action (keys %$ref_actions_preview) {
+		my @actions_to_be_performed = $user_action_to_inner_actions{$user_action};
+		my $source_state = $user_action_to_source_state{$user_action};
+
+		foreach my $inner_action (@actions_to_be_performed) {
+			foreach $package_name (@{$ref_actions_preview->{$user_action}}) {
+				$version_string = $self->{desired_state}->{$package_name}-{version}->{version};
+				push @{$graph{'actions'}}, {
+						'package_name' => $package_name,
+						'version_string' => $version_string,
+						'action_name' => $inner_action,
+				};
+			}
+		}
+	}
+
+	# TODO: extract loops and place them into single action groups
+
 
 }
 
