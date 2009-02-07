@@ -203,27 +203,8 @@ sub tsort {
 	@ret == @out ? @ret : undef;
 }
 
-=head2 do_actions
-
-member function, performes planned actions
-
-Returns true if successful, false otherwise
-
-=cut
-
-sub do_actions {
-	my ($self) = @_;
-	my $ref_actions_preview = $self->get_actions_preview();
-	if (!defined $self->{desired_state}) {
-		myinternaldie("worker desired state is not given");
-	}
-
-	# action = {
-	# 	'package_name' => package
-	# 	'version_string' => version_string,
-	# 	'action_name' => ('unpack' | 'configure' | 'remove' | 'purge')
-	# }
-	my %graph = ( 'actions' => [], 'edges' => {} );
+sub _fill_actions ($$\@) {
+	my ($self, $ref_actions_preview, $ref_result) = @_;
 
 	# user action - action name from actions preview
 	my %user_action_to_inner_actions = (
@@ -252,8 +233,8 @@ sub do_actions {
 
 		foreach my $inner_action (@$ref_actions_to_be_performed) {
 			foreach my $package_name (@{$ref_actions_preview->{$user_action}}) {
-				my $version_string = $self->{desired_state}->{$package_name}->{version}->{version};
-				push @{$graph{'actions'}}, {
+				my $version_string = $source_state->{$package_name}->{version}->{version};
+				push @$ref_result, {
 						'package_name' => $package_name,
 						'version_string' => $version_string,
 						'action_name' => $inner_action,
@@ -261,6 +242,31 @@ sub do_actions {
 			}
 		}
 	}
+}
+
+=head2 do_actions
+
+member function, performes planned actions
+
+Returns true if successful, false otherwise
+
+=cut
+
+sub do_actions {
+	my ($self) = @_;
+	my $ref_actions_preview = $self->get_actions_preview();
+	if (!defined $self->{desired_state}) {
+		myinternaldie("worker desired state is not given");
+	}
+
+	# action = {
+	# 	'package_name' => package
+	# 	'version_string' => version_string,
+	# 	'action_name' => ('unpack' | 'configure' | 'remove' | 'purge')
+	# }
+	my %graph = ( 'actions' => [], 'edges' => {} );
+
+	$self->_fill_actions($ref_actions_preview, $graph{'actions'});
 
 	# initialize dependency lists
 	push @{$graph{'edges'}}, [] for 0..@{$graph{'actions'}};
