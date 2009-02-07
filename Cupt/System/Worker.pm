@@ -220,7 +220,7 @@ sub do_actions {
 	# action = {
 	# 	'package_name' => package
 	# 	'version_string' => version_string,
-	# 	'action_name' => ('unpack', 'configure', 'remove', 'purge')
+	# 	'action_name' => ('unpack' | 'configure' | 'remove' | 'purge')
 	# }
 	my %graph = ( 'actions' => [], 'edges' => {} );
 
@@ -265,7 +265,11 @@ sub do_actions {
 	push @{$graph{'edges'}}, [] for 0..@{$graph{'actions'}};
 
 	# fill the actions' dependencies
-	foreach my $ref_inner_action (@{$graph{'actions'}}) {
+	# legend: if $edge[$a] contains $b, then $action[$a] needs to be done before $action[$b]
+	# this is the format used by tsort subroutine
+	foreach my $inner_action_idx (0..@{$graph{'actions'}}) {
+		my $ref_inner_aciton = $graph{'actions'}->[$inner_action_idx];
+
 		if ($ref_inner_action->{'action_name'} eq 'unpack') {
 			# if the package has pre-depends, they needs to be satisfied before
 			# unpack (policy 7.2)
@@ -274,25 +278,65 @@ sub do_actions {
 				foreach my $relation_expression (@$desired_version->{pre_depends}) {
 					my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
 
+					my $solution_is_found = 0;
+					# maybe, we have some needed version already installed?
 					foreach my $other_version (@$ref_satisfying_versions) {
-						my $other_version_string = $self->{desired_state}->{$version->{package_name}}->{version}->{version};
-						if ($version->is_local() &&
-							$other_version_string eq $ref_inner_action->{'version_string'})
-						{
-							# package version that satisfies this pre-depends, already installed in system
-							# and won't be removed
-
+						if ($version->is_local()) {
+							my $other_desired_version_string = $self->{desired_state}->{$version->{package_name}}->{version}->{version};
+							my $other_system_version_string = $self->{system_state}->{$version->{package_name}}->{version}->{version};
 							#TODO: rename 'is_local' -> 'is_installed'
-							#TODO: implement
+							if ($other_desired_version_string eq $other_system_version_string) {
+								# package version that satisfies this pre-depends, already installed in system
+								# and won't be removed
+								$solution_is_found = 1;
+								last;
+							}
 						}
+					}
+
+					next if $solution_is_found;
+
+					# ok, then look for packages in desired system state
+					SATISFYING_VERSIONS:
+					foreach my $other_version (@$ref_satisfying_versions) {
+						my $other_package_name = $other_version->{package_name};
+						if (exists $self->{desired_state}->{$other_package_name}) {
+							# yes, this package is to be installed
+							my $other_desired_version_string = $self->{desired_state}->{$version->{package_name}}->{version}->{version};
+							if ($other_desired_version_string eq $other_version->{version}) {
+								# ok, we found the valid candidate for this relation
+								if (grep { $_ eq $other_package_name } $ref_actions_preview->{'configure'}) {
+									# the valid candidate is already unpacked (only needs configuring)
+									# this satisfies the pre-dependency
+									$solution_is_found = 1;
+									last;
+								} else {
+									# unpack for candidate is to be satisfied
+									my %candidate_action = (
+										'package_name' => $other_package_name,
+										'version_string' => $other_desired_version_string,
+										'action_name' => 'unpack'
+									);
+									# search for the appropriate unpack action
+									foreach my $idx (0..@{$graph{'actions'}}) {
+										if (%candidate_action == %{$graph{'actions'}->[$idx]}) {
+											# it's it!
+											push @{$graph{'edges'}->[$idx]}, $inner_action_idx;
+
+											$solution_is_found = 1;
+											last SATISFYING_VERSIONS;
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 	}
 
 	# TODO: extract loops and place them into single action groups
-
-
 }
 
 1;
