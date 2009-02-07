@@ -257,7 +257,12 @@ sub _fill_action_dependencies ($$$\%) {
 			if ($action_name eq 'unpack') {
 				my $other_package_name = $other_version->{package_name};
 				foreach my $other_version (@$ref_satisfying_versions) {
-					if (exists $self->{system_state}->{
+					if (exists $self->{system_state}->{$other_package_name}) {
+						my $ref_system_info = $self->{system_state}->{$other_package_name};
+						if ($ref_system_info->{'version'} eq $other_version->{version} &&
+							($ref_system_info->{'status'} eq 'unpacked' ||
+							$ref_system_info->{'status'
+						
 =begin comment
 					if ($other_version->is_local()) {
 						my $other_package_name = $other_version->{package_name};
