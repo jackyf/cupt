@@ -212,7 +212,8 @@ Returns true if successful, false otherwise
 =cut
 
 sub do_actions {
-	$ref_actions_preview = $self->get_actions_preview();
+	my ($self) = @_;
+	my $ref_actions_preview = $self->get_actions_preview();
 	if (!defined $self->{desired_state}) {
 		myinternaldie("worker desired state is not given");
 	}
@@ -235,13 +236,13 @@ sub do_actions {
 		'purge' => [ 'purge' ],
 	);
 	my %user_action_to_source_state = (
-		'install' => $self->{desired_state};
-		'upgrade' => $self->{desired_state};
-		'downgrade' => $self->{desired_state};
-		'configure' => $self->{system_state};
-		'deconfigure' => $self->{system_state};
-		'remove' => $self->{system_state};
-		'purge' => $self->{system_state};
+		'install' => $self->{desired_state},
+		'upgrade' => $self->{desired_state},
+		'downgrade' => $self->{desired_state},
+		'configure' => $self->{system_state},
+		'deconfigure' => $self->{system_state},
+		'remove' => $self->{system_state},
+		'purge' => $self->{system_state},
 	);
 
 	# convert all actions into inner ones
@@ -250,8 +251,8 @@ sub do_actions {
 		my $source_state = $user_action_to_source_state{$user_action};
 
 		foreach my $inner_action (@$ref_actions_to_be_performed) {
-			foreach $package_name (@{$ref_actions_preview->{$user_action}}) {
-				$version_string = $self->{desired_state}->{$package_name}->{version}->{version};
+			foreach my $package_name (@{$ref_actions_preview->{$user_action}}) {
+				my $version_string = $self->{desired_state}->{$package_name}->{version}->{version};
 				push @{$graph{'actions'}}, {
 						'package_name' => $package_name,
 						'version_string' => $version_string,
@@ -268,7 +269,7 @@ sub do_actions {
 	# legend: if $edge[$a] contains $b, then $action[$a] needs to be done before $action[$b]
 	# this is the format used by tsort subroutine
 	foreach my $inner_action_idx (0..@{$graph{'actions'}}) {
-		my $ref_inner_aciton = $graph{'actions'}->[$inner_action_idx];
+		my $ref_inner_action = $graph{'actions'}->[$inner_action_idx];
 
 		if ($ref_inner_action->{'action_name'} eq 'unpack') {
 			# if the package has pre-depends, they needs to be satisfied before
@@ -281,11 +282,11 @@ sub do_actions {
 					my $solution_is_found = 0;
 					# maybe, we have some needed version already installed?
 					foreach my $other_version (@$ref_satisfying_versions) {
-						if ($version->is_local()) {
-							my $other_desired_version_string = $self->{desired_state}->{$version->{package_name}}->{version}->{version};
-							my $other_system_version_string = $self->{system_state}->{$version->{package_name}}->{version}->{version};
+						if ($other_version->is_local()) {
+							my $other_package_name = $other_version->{package_name};
+							my $other_desired_version_string = $self->{desired_state}->{$other_package_name}->{version}->{version};
 							#TODO: rename 'is_local' -> 'is_installed'
-							if ($other_desired_version_string eq $other_system_version_string) {
+							if ($other_desired_version_string eq $other_version->{version}) {
 								# package version that satisfies this pre-depends, already installed in system
 								# and won't be removed
 								$solution_is_found = 1;
@@ -302,7 +303,7 @@ sub do_actions {
 						my $other_package_name = $other_version->{package_name};
 						if (exists $self->{desired_state}->{$other_package_name}) {
 							# yes, this package is to be installed
-							my $other_desired_version_string = $self->{desired_state}->{$version->{package_name}}->{version}->{version};
+							my $other_desired_version_string = $self->{desired_state}->{$other_package_name}->{version}->{version};
 							if ($other_desired_version_string eq $other_version->{version}) {
 								# ok, we found the valid candidate for this relation
 								if (grep { $_ eq $other_package_name } $ref_actions_preview->{'configure'}) {
