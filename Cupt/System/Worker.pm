@@ -13,7 +13,7 @@ I<cache> - reference to Cupt::Cache
 
 I<desired_state> - { I<package_name> => { 'version' => I<version> } }
 
-I<system_state> - { I<package_name> => { 'version' => I<version> } }
+I<system_state> - reference to Cupt::System::State;
 
 =cut
 
@@ -214,7 +214,7 @@ sub _fill_actions ($$\@) {
 		'configure' => [ 'configure' ],
 		'deconfigure' => [ 'remove' ],
 		'remove' => [ 'remove' ],
-		'purge' => [ 'purge' ],
+		'purge' => [ 'remove' ],
 	);
 	my %user_action_to_source_state = (
 		'install' => $self->{desired_state},
@@ -244,6 +244,78 @@ sub _fill_actions ($$\@) {
 	}
 }
 
+# fills ref_graph with dependencies specified in ref_relations_expressions
+sub _fill_action_dependencies ($$$\%) {
+	my ($self, $ref_relation_expressions, $action_name, $inner_action_idx, $ref_graph) = @_;
+
+	if (defined $ref_relations_expressions) {
+		foreach my $relation_expression (@$ref_relation_expressions) {
+			my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+
+			my $solution_is_found = 0;
+			# maybe, we have this relation already satisfied?
+			if ($action_name eq 'unpack') {
+				my $other_package_name = $other_version->{package_name};
+				foreach my $other_version (@$ref_satisfying_versions) {
+					if (exists $self->{system_state}->{
+=begin comment
+					if ($other_version->is_local()) {
+						my $other_package_name = $other_version->{package_name};
+						my $other_desired_version_string = $self->{desired_state}->{$other_package_name}->{version}->{version};
+						if ($other_desired_version_string eq $other_version->{version}) {
+							# and won't be removed
+							$solution_is_found = 1;
+							last;
+						}
+=cut
+					}
+				}
+			}
+
+			next if $solution_is_found;
+
+			# ok, then look for packages in desired system state
+			SATISFYING_VERSIONS:
+			foreach my $other_version (@$ref_satisfying_versions) {
+				my $other_package_name = $other_version->{package_name};
+				if (exists $self->{desired_state}->{$other_package_name}) {
+					# yes, this package is to be installed
+					my $other_desired_version_string = $self->{desired_state}->{$other_package_name}->{version}->{version};
+					if ($other_desired_version_string eq $other_version->{version}) {
+						# ok, we found the valid candidate for this relation
+						if (grep { $_ eq $other_package_name } $ref_actions_preview->{'configure'}) {
+							# the valid candidate is already unpacked (only needs configuring)
+							# this satisfies the pre-dependency
+							$solution_is_found = 1;
+							last;
+						} else {
+							# unpack for candidate is to be satisfied
+							my %candidate_action = (
+								'package_name' => $other_package_name,
+								'version_string' => $other_desired_version_string,
+								'action_name' => $before_action_name
+							);
+							# search for the appropriate unpack action
+							foreach my $idx (0..@{$ref_graph{'actions'}}) {
+								if (%candidate_action == %{$ref_graph->{'actions'}->[$idx]}) {
+									# it's it!
+									push @{$ref_graph->{'edges'}->[$idx]}, $inner_action_idx;
+
+									$solution_is_found = 1;
+									last SATISFYING_VERSIONS;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			$solution_is_found or
+					myinternaldie("failed to find appropriate unpack action for configuring package $package_name");
+		}
+	}
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -252,7 +324,7 @@ Returns true if successful, false otherwise
 
 =cut
 
-sub do_actions {
+sub do_actions ($) {
 	my ($self) = @_;
 	my $ref_actions_preview = $self->get_actions_preview();
 	if (!defined $self->{desired_state}) {
@@ -262,7 +334,7 @@ sub do_actions {
 	# action = {
 	# 	'package_name' => package
 	# 	'version_string' => version_string,
-	# 	'action_name' => ('unpack' | 'configure' | 'remove' | 'purge')
+	# 	'action_name' => ('unpack' | 'configure' | 'remove')
 	# }
 	my %graph = ( 'actions' => [], 'edges' => {} );
 
@@ -277,68 +349,44 @@ sub do_actions {
 	foreach my $inner_action_idx (0..@{$graph{'actions'}}) {
 		my $ref_inner_action = $graph{'actions'}->[$inner_action_idx];
 
+		my $package_name = $ref_inner_action->{'package_name'};
 		if ($ref_inner_action->{'action_name'} eq 'unpack') {
 			# if the package has pre-depends, they needs to be satisfied before
 			# unpack (policy 7.2)
-			my $desired_version = $self->{desired_state}->{$ref_inner_action->{'package_name'}}->{version};
-			if (defined $desired_version->{pre_depends}) {
-				foreach my $relation_expression (@$desired_version->{pre_depends}) {
-					my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+			my $desired_version = $self->{desired_state}->{$package_name}->{version};
+			# pre-depends must be unpacked before
+			$self->_fill_action_dependencies(
+					$desired_version->{pre_depends}, 'unpack', $inner_action_idx, \%graph);
+		} elsif ($ref_inner_action->{'action_name'} eq 'configure') {
+			# configure can be done only after the unpack of the same version
+			my $desired_version = $self->{desired_state}->{$package_name}->{version};
+			# pre-depends must be configured before
+			$self->_fill_action_dependencies(
+					$desired_version->{pre_depends}, 'configure', $inner_action_idx, \%graph);
+			# depends must be configured before
+			$self->_fill_action_dependencies(
+					$desired_version->{depends}, 'configure', $inner_action_idx, \%graph);
+			# it has also to be unpacked if the same version was not in state 'unpacked'
+			if (exists $self->{system_state}->{$package_name} &&
+				$self->{system_state}->{$package_name}->{version} eq $ref_inner_action->{'version_string'})
+			{
+				# search for the appropriate unpack action
+				my $found = 0;
 
-					my $solution_is_found = 0;
-					# maybe, we have some needed version already installed?
-					foreach my $other_version (@$ref_satisfying_versions) {
-						if ($other_version->is_local()) {
-							my $other_package_name = $other_version->{package_name};
-							my $other_desired_version_string = $self->{desired_state}->{$other_package_name}->{version}->{version};
-							#TODO: rename 'is_local' -> 'is_installed'
-							if ($other_desired_version_string eq $other_version->{version}) {
-								# package version that satisfies this pre-depends, already installed in system
-								# and won't be removed
-								$solution_is_found = 1;
-								last;
-							}
-						}
-					}
+				my %candidate_action = %$ref_inner_action;
+				$candidate_action{'action_name'} = 'unpack';
+				foreach my $idx (0..@{$graph{'actions'}}) {
+					if (%candidate_action == %{$graph{'actions'}->[$idx]}) {
+						# found...
+						push @{$graph{'edges'}->[$idx]}, $inner_action_idx;
 
-					next if $solution_is_found;
-
-					# ok, then look for packages in desired system state
-					SATISFYING_VERSIONS:
-					foreach my $other_version (@$ref_satisfying_versions) {
-						my $other_package_name = $other_version->{package_name};
-						if (exists $self->{desired_state}->{$other_package_name}) {
-							# yes, this package is to be installed
-							my $other_desired_version_string = $self->{desired_state}->{$other_package_name}->{version}->{version};
-							if ($other_desired_version_string eq $other_version->{version}) {
-								# ok, we found the valid candidate for this relation
-								if (grep { $_ eq $other_package_name } $ref_actions_preview->{'configure'}) {
-									# the valid candidate is already unpacked (only needs configuring)
-									# this satisfies the pre-dependency
-									$solution_is_found = 1;
-									last;
-								} else {
-									# unpack for candidate is to be satisfied
-									my %candidate_action = (
-										'package_name' => $other_package_name,
-										'version_string' => $other_desired_version_string,
-										'action_name' => 'unpack'
-									);
-									# search for the appropriate unpack action
-									foreach my $idx (0..@{$graph{'actions'}}) {
-										if (%candidate_action == %{$graph{'actions'}->[$idx]}) {
-											# it's it!
-											push @{$graph{'edges'}->[$idx]}, $inner_action_idx;
-
-											$solution_is_found = 1;
-											last SATISFYING_VERSIONS;
-										}
-									}
-								}
-							}
-						}
+						$found = 1;
+						last;
 					}
 				}
+
+				$found or
+						myinternaldie("failed to find appropriate unpack action for configuring package $package_name");
 			}
 		}
 	}
