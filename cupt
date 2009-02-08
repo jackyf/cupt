@@ -133,7 +133,7 @@ sub select_binary_package_version ($) {
 		my $version_string = $2;
 		check_version_string($version_string);
 		my $package = get_binary_package($package_name);
-		my $version = $cache->get_specific_version($package);
+		my $version = $cache->get_specific_version($package, $version_string);
 		# not found
 		if (defined $version) {
 			return $version;

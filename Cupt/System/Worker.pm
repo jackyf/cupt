@@ -1,5 +1,6 @@
 package Cupt::System::Worker;
 
+use 5.10.0;
 use warnings;
 use strict;
 
@@ -246,7 +247,7 @@ sub _fill_actions ($$\@) {
 sub _fill_action_dependencies ($$$\%) {
 	my ($self, $ref_relation_expressions, $action_name, $inner_action_idx, $ref_graph) = @_;
 
-	if (defined $ref_relations_expressions) {
+	if (defined $ref_relation_expressions) {
 		foreach my $relation_expression (@$ref_relation_expressions) {
 			my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
 
@@ -260,7 +261,7 @@ sub _fill_action_dependencies ($$$\%) {
 					'action_name' => $action_name
 				);
 				# search for the appropriate action in action list
-				foreach my $idx (0..@{$ref_graph{'actions'}}) {
+				foreach my $idx (0..@{$ref_graph->{'actions'}}) {
 					if (%candidate_action == %{$ref_graph->{'actions'}->[$idx]}) {
 						# it's it!
 						my $master_action_idx = $action_name eq 'remove' ? $idx : $inner_action_idx;
@@ -344,11 +345,17 @@ sub do_actions ($) {
 			}
 			when ('remove') {
 				# package dependencies can be removed only after removal of the package
-				my $system_version = $self->{desired_state}->{$package_name}->{version};
+				my $package = $self->{cache}->get_binary_package($package_name);
+				my $version_string = $ref_inner_action->{'version_string'};
+				my $system_version = $self->{cache}->get_specific_version($package, $version_string);
 				# pre-depends must be removed after
 				$self->_fill_action_dependencies(
-						$desired_version->{depends}, 'removed', $inner_action_idx, \%graph);
+						$system_version->{pre_depends}, 'remove', $inner_action_idx, \%graph);
+				# depends must be removed after
+				$self->_fill_action_dependencies(
+						$system_version->{depends}, 'remove', $inner_action_idx, \%graph);
 			}
+		}
 	}
 
 	# TODO: extract loops and place them into single action groups
