@@ -379,6 +379,8 @@ sub do_actions ($) {
 		my $package_expression = $ref_action->{'package_name'};
 		if ($action_name eq 'unpack') {
 			$package_expression .= '<' . $ref_action->{'version_string'} . '>';
+		} elsif ($action_name eq 'remove' && $self->{config}->var('cupt::worker::purge')) {
+			$action_name = 'purge';
 		}
 		say "simulating: dpkg --$action_name $package_expression";
 	}

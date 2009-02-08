@@ -68,31 +68,43 @@ sub _parse_dpkg_status {
 	open($fh, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
 	open(PACKAGES, "/bin/grep -bE '^(Package|Status|Version): ' $file |"); 
 
+	# algorithm: loop through the strings, searching the 'Version' line, once
+	# found, look at first and second previous strings, they have to contain
+	# 'Package' and 'Status' strings
 	eval {
+		my $prev_line = "";
+		my $prev_prev_line = "";
 		while (<PACKAGES>) {
 			chomp;
 
+			# extract info from 'Version' line, primary correctness was already checked by grep
+			m/^(?:\d+):Version: (.*)/ or
+					# save two previous lines then and loop next
+					do { $prev_prev_line = $prev_line; $prev_line = $_; next; };
+
+			# at this place, we ought to have needed triad here
+			my $version_string = $1;
+
+			$version_string =~ m/^$version_string_regex$/ or
+					mydie("bad version '%s'", $version_string);
+
+			my %installed_info;
+			$installed_info{'version'} = $version_string;
+
 			# firstly, make sure that this is 'Package' line
 			# "12345:" is prefix by grep
-			m/^(\d+):Package: (.*)/ or
-					mydie("expected 'Package' line, but haven't got it, got '%s' instead", $_);
+			$prev_prev_line =~ m/^(\d+):Package: (.*)/ or
+					mydie("expected 'Package' line, but haven't got it, got '%s' instead", $prev_prev_line);
 
 			# don't check package name for correctness, dpkg has to check this already
 			my $package_name = $2;
 
 			my $offset = $1 + length("Package: $package_name\n");
 
-			# try to read status line
-			$_ = readline(PACKAGES);
-			defined($_) or
-					mydie("expected 'Status' line, but haven't got it (for package '%s')", $package_name);
-			chomp;
+			# extract info from 'Status' line, ignore number prefix from grep
+			$prev_line =~ m/^(?:\d+):Status: (.*)/ or
+					mydie("expected 'Status' line, but haven't got it, got '%s' instead", $prev_line);
 
-			# extract info from 'Status' line, primary correctness was already checked by grep
-			m/^(?:\d+):Status: (.*)/ or
-					mydie("expected 'Status' line, but haven't got it, got '%s' instead", $_);
-
-			my %installed_info;
 			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
 					split / /, $1 or
 					mydie("malformed 'Status' line (for package '%s')", $package_name);
@@ -124,10 +136,7 @@ sub _parse_dpkg_status {
 				}
 			};
 
-			if ($installed_info{'flag'} eq 'ok' and
-				($installed_info{'status'} eq 'installed' or
-				$installed_info{'status'} eq 'config-files' or
-				$installed_info{'want'} eq 'install'))
+			if ($installed_info{'flag'} eq 'ok')
 			{
 				if ($installed_info{'status'} eq 'installed') {
 					# this conditions mean that package is properly installed
@@ -141,24 +150,6 @@ sub _parse_dpkg_status {
 							$package_name, $fh, $offset, \$base_uri, \%Cupt::Cache::_empty_release_info);
 
 				}
-
-				# try to read version line
-				$_ = readline(PACKAGES);
-				defined($_) or
-						mydie("expected 'Version' line, but haven't got it (for package '%s')", $package_name);
-
-				chomp;
-
-				# extract info from 'Version' line, primary correctness was already checked by grep
-				m/^(?:\d+):Version: (.*)/ or
-						mydie("expected 'Version' line, but haven't got it, got '%s' instead", $package_name);
-
-				my $version_string = $1;
-
-				$version_string =~ m/^$version_string_regex$/ or
-						mydie("bad version '%s'", $version_string);
-
-				$installed_info{'version'} = $version_string;
 
 				# add parsed info to installed_info
 				$self->{installed_info}->{$package_name} = \%installed_info;
