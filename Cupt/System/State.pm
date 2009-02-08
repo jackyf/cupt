@@ -125,7 +125,9 @@ sub _parse_dpkg_status {
 			};
 
 			if ($installed_info{'flag'} eq 'ok' and
-				($installed_info{'status'} eq 'installed' or $installed_info{'status'} eq 'config-files'))
+				($installed_info{'status'} eq 'installed' or
+				$installed_info{'status'} eq 'config-files' or
+				$installed_info{'want'} eq 'install'))
 			{
 				if ($installed_info{'status'} eq 'installed') {
 					# this conditions mean that package is properly installed
