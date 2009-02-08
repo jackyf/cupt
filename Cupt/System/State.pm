@@ -66,9 +66,7 @@ sub _parse_dpkg_status {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
-	open(PACKAGES, "/bin/grep -b '^Package: ' $file |"); 
-	open(STATUSES, "/bin/grep '^Status: ' $file |"); 
-	open(VERSIONS, "/bin/grep '^Version: ' $file |"); 
+	open(PACKAGES, "/bin/grep -bE '^(Package|Status|Version): ' $file |"); 
 
 	eval {
 		while (<PACKAGES>) {
@@ -85,14 +83,14 @@ sub _parse_dpkg_status {
 			my $offset = $1 + length("Package: $package_name\n");
 
 			# try to read status line
-			$_ = readline(STATUSES);
+			$_ = readline(PACKAGES);
 			defined($_) or
 					mydie("expected 'Status' line, but haven't got it (for package '%s')", $package_name);
-
 			chomp;
 
 			# extract info from 'Status' line, primary correctness was already checked by grep
-			m/^Status: (.*)/;
+			m/^(?:\d+):Status: (.*)/ or
+					mydie("expected 'Status' line, but haven't got it, got '%s' instead", $_);
 
 			my %installed_info;
 			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
@@ -143,14 +141,15 @@ sub _parse_dpkg_status {
 				}
 
 				# try to read version line
-				$_ = readline(VERSIONS);
+				$_ = readline(PACKAGES);
 				defined($_) or
 						mydie("expected 'Version' line, but haven't got it (for package '%s')", $package_name);
 
 				chomp;
 
 				# extract info from 'Version' line, primary correctness was already checked by grep
-				m/^Version: (.*)/;
+				m/^(?:\d+):Version: (.*)/ or
+						mydie("expected 'Version' line, but haven't got it, got '%s' instead", $package_name);
 
 				my $version_string = $1;
 
@@ -170,8 +169,6 @@ sub _parse_dpkg_status {
 	}
 
 	close(PACKAGES) or mydie("unable to close grep pipe");
-	close(STATUSES) or mydie("unable to close grep pipe");
-	close(VERSIONS) or mydie("unable to close grep pipe");
 
 	# additionally, preparse Provides fields for status file
 	$self->{cache}->_process_provides_in_index_file($file);
