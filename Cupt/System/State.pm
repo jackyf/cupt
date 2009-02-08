@@ -202,18 +202,15 @@ sub export_installed_versions ($) {
 	my ($self) = @_;
 	my @result;
 
-	PACKAGE:
 	while (my ($package_name, $ref_installed_info) = each %{$self->{installed_info}}) {
 		$ref_installed_info->{'status'} eq 'installed' or next;
 		my $version_string = $ref_installed_info->{'version'};
-		foreach my $version (@{$self->{cache}->get_binary_package($package_name)->versions()}) {
-			if ($version->{version} eq $version_string) {
-				# found such a version
-				push @result, $version;
-				next PACKAGE;
-			}
-		}
-		mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+		my $package = $self->{cache}->get_binary_package($package_name);
+		my $version = $self->{cache}->get_specific_version($package, $version_string);
+		defined $version or
+				mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+		push @result, $version;
+		next;
 	}
 	return \@result;
 }
