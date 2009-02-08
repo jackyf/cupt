@@ -370,6 +370,9 @@ sub do_actions ($) {
 	# topologic sort of actions
 	my @sorted_action_indexes = tsort(@{$graph{'edges'}});
 
+	scalar @sorted_action_indexes or
+			mydie(__("unable to schedule dpkg commands"));
+
 	# simulating actions
 	foreach my $ref_action (map { $graph{'actions'}->[$_] } @sorted_action_indexes) {
 		my $action_name = $ref_action->{'action_name'};
