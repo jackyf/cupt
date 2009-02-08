@@ -524,7 +524,7 @@ sub manage_packages ($) {
 	say "";
 
 	# TODO: make $cache->get_system_state
-	my $worker = new Cupt::System::Worker($config, $cache->{system_state});
+	my $worker = new Cupt::System::Worker($config, $cache, $cache->{system_state});
 	# TODO: make $resolver->export_packages
 	$worker->set_desired_state($resolver->{packages});
 

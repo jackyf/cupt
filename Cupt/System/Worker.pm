@@ -18,7 +18,7 @@ I<system_state> - reference to Cupt::System::State;
 
 =cut
 
-use fields qw(config system_state desired_state);
+use fields qw(config cache system_state desired_state);
 
 =head1 METHODS
 
@@ -204,6 +204,13 @@ sub tsort {
 	@ret == @out ? @ret : undef;
 }
 
+sub __is_inner_actions_equal ($$) {
+	my ($ref_left_action, $ref_right_action) = @_;
+	return ($ref_left_action->{'package_name'} eq $ref_right_action->{'package_name'} &&
+			$ref_left_action->{'version_string'} eq $ref_right_action->{'version_string'} &&
+			$ref_left_action->{'action_name'} eq $ref_right_action->{'version_string'});
+}
+
 sub _fill_actions ($$\@) {
 	my ($self, $ref_actions_preview, $ref_result) = @_;
 
@@ -262,7 +269,7 @@ sub _fill_action_dependencies ($$$\%) {
 				);
 				# search for the appropriate action in action list
 				foreach my $idx (0..@{$ref_graph->{'actions'}}) {
-					if (%candidate_action == %{$ref_graph->{'actions'}->[$idx]}) {
+					if (__is_inner_actions_equal(\%candidate_action, \%{$ref_graph->{'actions'}->[$idx]})) {
 						# it's it!
 						my $master_action_idx = $action_name eq 'remove' ? $idx : $inner_action_idx;
 						my $slave_action_idx = $action_name eq 'remove' ? $inner_action_idx : $idx;
@@ -297,9 +304,9 @@ sub do_actions ($) {
 	# 	'version_string' => version_string,
 	# 	'action_name' => ('unpack' | 'configure' | 'remove')
 	# }
-	my %graph = ( 'actions' => [], 'edges' => {} );
+	my %graph = ( 'actions' => [], 'edges' => [] );
 
-	$self->_fill_actions($ref_actions_preview, $graph{'actions'});
+	$self->_fill_actions($ref_actions_preview, \@{$graph{'actions'}});
 
 	# initialize dependency lists
 	push @{$graph{'edges'}}, [] for 0..@{$graph{'actions'}};
@@ -336,7 +343,7 @@ sub do_actions ($) {
 				my %candidate_action = %$ref_inner_action;
 				$candidate_action{'action_name'} = 'unpack';
 				foreach my $idx (0..@{$graph{'actions'}}) {
-					if (%candidate_action == %{$graph{'actions'}->[$idx]}) {
+					if (__is_inner_actions_equal(\%candidate_action, \%{$graph{'actions'}->[$idx]})) {
 						# found...
 						push @{$graph{'edges'}->[$idx]}, $inner_action_idx;
 						last;
