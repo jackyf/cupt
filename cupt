@@ -548,6 +548,8 @@ sub manage_packages ($) {
 		say "@packages_list";
 		say "";
 	}
+
+	$worker->do_actions();
 }
 
 sub install () {

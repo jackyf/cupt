@@ -359,6 +359,19 @@ sub do_actions ($) {
 	}
 
 	# TODO: extract loops and place them into single action groups
+
+	# topologic sort of actions
+	my @sorted_action_indexes = tsort(@{$graph{'edges'}});
+
+	# simulating actions
+	foreach my $ref_action (@sorted_action_indexes) {
+		my $action_name = $ref_action->{'action_name'};
+		my $package_expression = $ref_action->{'package_name'};
+		if ($action_name eq 'unpack') {
+			$package_expression .= '<' . $ref_action->{'version_string'} . '>';
+		}
+		say "simulating: dpkg --$action_name $package_expression";
+	}
 }
 
 1;
