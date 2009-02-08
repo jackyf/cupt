@@ -208,7 +208,7 @@ sub __is_inner_actions_equal ($$) {
 	my ($ref_left_action, $ref_right_action) = @_;
 	return ($ref_left_action->{'package_name'} eq $ref_right_action->{'package_name'} &&
 			$ref_left_action->{'version_string'} eq $ref_right_action->{'version_string'} &&
-			$ref_left_action->{'action_name'} eq $ref_right_action->{'version_string'});
+			$ref_left_action->{'action_name'} eq $ref_right_action->{'action_name'});
 }
 
 sub _fill_actions ($$\@) {
@@ -268,7 +268,7 @@ sub _fill_action_dependencies ($$$\%) {
 					'action_name' => $action_name
 				);
 				# search for the appropriate action in action list
-				foreach my $idx (0..@{$ref_graph->{'actions'}}) {
+				foreach my $idx (0..$#{$ref_graph->{'actions'}}) {
 					if (__is_inner_actions_equal(\%candidate_action, \%{$ref_graph->{'actions'}->[$idx]})) {
 						# it's it!
 						my $master_action_idx = $action_name eq 'remove' ? $idx : $inner_action_idx;
@@ -309,7 +309,7 @@ sub do_actions ($) {
 	$self->_fill_actions($ref_actions_preview, \@{$graph{'actions'}});
 
 	# initialize dependency lists
-	push @{$graph{'edges'}}, [] for 0..@{$graph{'actions'}};
+	push @{$graph{'edges'}}, [] for 1..@{$graph{'actions'}};
 
 	# fill the actions' dependencies
 	# legend: if $edge[$a] contains $b, then $action[$a] needs to be done before $action[$b]
@@ -342,7 +342,7 @@ sub do_actions ($) {
 				# search for the appropriate unpack action
 				my %candidate_action = %$ref_inner_action;
 				$candidate_action{'action_name'} = 'unpack';
-				foreach my $idx (0..@{$graph{'actions'}}) {
+				foreach my $idx (0..$#{$graph{'actions'}}) {
 					if (__is_inner_actions_equal(\%candidate_action, \%{$graph{'actions'}->[$idx]})) {
 						# found...
 						push @{$graph{'edges'}->[$idx]}, $inner_action_idx;
@@ -371,7 +371,7 @@ sub do_actions ($) {
 	my @sorted_action_indexes = tsort(@{$graph{'edges'}});
 
 	# simulating actions
-	foreach my $ref_action (@sorted_action_indexes) {
+	foreach my $ref_action (map { $graph{'actions'}->[$_] } @sorted_action_indexes) {
 		my $action_name = $ref_action->{'action_name'};
 		my $package_expression = $ref_action->{'package_name'};
 		if ($action_name eq 'unpack') {
