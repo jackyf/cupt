@@ -308,6 +308,9 @@ sub do_actions ($) {
 
 	$self->_fill_actions($ref_actions_preview, \@{$graph{'actions'}});
 
+	# maybe, we have nothing to do?
+	return if scalar @{$graph{'actions'}} == 0;
+
 	# initialize dependency lists
 	push @{$graph{'edges'}}, [] for 1..@{$graph{'actions'}};
 
