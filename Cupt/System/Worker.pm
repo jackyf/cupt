@@ -178,7 +178,7 @@ sub get_actions_preview ($) {
 # For instance, tsort ([1,2,3], [3], [3], []) returns
 # (0,2,1,3).
 
-sub tsort {
+sub __topologic_sort {
 	my @out = @_;
 	my @ret;
 
@@ -284,6 +284,10 @@ sub _fill_action_dependencies ($$$\%) {
 	}
 }
 
+sub __roll_loops ($) {
+	my ($ref_edges) = @_;
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -369,9 +373,10 @@ sub do_actions ($) {
 	}
 
 	# TODO: extract loops and place them into single action groups
+	__roll_loops($graph{'edges'});
 
 	# topologic sort of actions
-	my @sorted_action_indexes = tsort(@{$graph{'edges'}});
+	my @sorted_action_indexes = __topologic_sort(@{$graph{'edges'}});
 
 	defined $sorted_action_indexes[0] or
 			mydie(__("unable to schedule dpkg commands"));
