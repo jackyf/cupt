@@ -4,6 +4,8 @@ use 5.10.0;
 use warnings;
 use strict;
 
+use Graph;
+
 use Cupt::Core;
 
 =head1 FIELDS
@@ -164,46 +166,6 @@ sub get_actions_preview ($) {
 	return \%result;
 }
 
-# Auxiliary topological sort function
-# downloaded from http://www.perlmonks.org/?node_id=84192
-#
-# Pass it as input a list of array references; these
-# specify that that index into the list must come before all
-# elements of its array. Output is a topologically sorted
-# list of indices, or undef if input contains a cycle. Note
-# that you must pass an array ref for every input
-# elements (if necessary, by adding an empty list
-# reference)
-#
-# For instance, tsort ([1,2,3], [3], [3], []) returns
-# (0,2,1,3).
-
-sub __topologic_sort {
-	my @out = @_;
-	my @ret;
-
-	# Compute initial in degrees
-	my @ind;
-	for my $l (@out) {
-		++$ind[$_] for (@$l)
-	}
-
-	# Work queue
-	my @q;
-	@q = grep { ! $ind[$_] } 0..$#out;
-
-	# Loop
-	while (@q) {
-		my $el = pop @q;
-		$ret[@ret] = $el;
-		for (@{$out[$el]}) {
-			push @q, $_ if (! --$ind[$_]);
-		}
-	}
-
-	@ret == @out ? @ret : undef;
-}
-
 sub __is_inner_actions_equal ($$) {
 	my ($ref_left_action, $ref_right_action) = @_;
 	return ($ref_left_action->{'package_name'} eq $ref_right_action->{'package_name'} &&
@@ -212,7 +174,7 @@ sub __is_inner_actions_equal ($$) {
 }
 
 sub _fill_actions ($$\@) {
-	my ($self, $ref_actions_preview, $ref_result) = @_;
+	my ($self, $ref_actions_preview, $graph) = @_;
 
 	# user action - action name from actions preview
 	my %user_action_to_inner_actions = (
@@ -240,19 +202,19 @@ sub _fill_actions ($$\@) {
 				} else {
 					$version_string = $self->{system_state}->get_installed_version_string($package_name);
 				}
-				push @$ref_result, {
+				$graph->add_vertex({
 						'package_name' => $package_name,
 						'version_string' => $version_string,
 						'action_name' => $inner_action,
-				};
+				});
 			}
 		}
 	}
 }
 
 # fills ref_graph with dependencies specified in ref_relations_expressions
-sub _fill_action_dependencies ($$$\%) {
-	my ($self, $ref_relation_expressions, $action_name, $inner_action_idx, $ref_graph) = @_;
+sub _fill_action_dependencies ($$$$) {
+	my ($self, $ref_relation_expressions, $action_name, $ref_inner_action, $graph) = @_;
 
 	if (defined $ref_relation_expressions) {
 		foreach my $relation_expression (@$ref_relation_expressions) {
@@ -268,32 +230,17 @@ sub _fill_action_dependencies ($$$\%) {
 					'action_name' => $action_name
 				);
 				# search for the appropriate action in action list
-				foreach my $idx (0..$#{$ref_graph->{'actions'}}) {
-					if (__is_inner_actions_equal(\%candidate_action, \%{$ref_graph->{'actions'}->[$idx]})) {
+				foreach my $ref_current_action ($graph->vertices()) {
+					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 						# it's it!
-						my $master_action_idx = $action_name eq 'remove' ? $idx : $inner_action_idx;
-						my $slave_action_idx = $action_name eq 'remove' ? $inner_action_idx : $idx;
+						my $ref_master_action = $action_name eq 'remove' ? $ref_current_action : $ref_inner_action;
+						my $ref_slave_action = $action_name eq 'remove' ? $ref_inner_action : $ref_current_action;
 
-						push @{$ref_graph->{'edges'}->[$slave_action_idx]}, $master_action_idx;
+						$graph->add_edge($ref_slave_action, $ref_master_action);
 
 						last SATISFYING_VERSIONS;
 					}
 				}
-			}
-		}
-	}
-}
-
-sub __roll_loops ($) {
-	my ($ref_edges) = @_;
-
-	foreach my $idx (0..$#{$ref_edges}) {
-		# will contain all vertexes than depends on this one
-		my %dependency_vertexes = ( $idx => 1 );
-
-		foreach my $dependent_idx(0..$#{$ref_edges->[$idx]}) {
-			if (exists $dependency_vertexes{$dependent_idx}) {
-				# TODO...
 			}
 		}
 	}
@@ -319,22 +266,15 @@ sub do_actions ($) {
 	# 	'version_string' => version_string,
 	# 	'action_name' => ('unpack' | 'configure' | 'remove')
 	# }
-	my %graph = ( 'actions' => [], 'edges' => [] );
+	my $graph = new Graph ('directed' => 1, 'refvertexed' => 1);
 
-	$self->_fill_actions($ref_actions_preview, \@{$graph{'actions'}});
+	$self->_fill_actions($ref_actions_preview, $graph);
 
 	# maybe, we have nothing to do?
-	return if scalar @{$graph{'actions'}} == 0;
-
-	# initialize dependency lists
-	push @{$graph{'edges'}}, [] for 1..@{$graph{'actions'}};
+	return if scalar $graph->vertices() == 0;
 
 	# fill the actions' dependencies
-	# legend: if $edge[$a] contains $b, then $action[$a] needs to be done before $action[$b]
-	# this is the format used by tsort subroutine
-	foreach my $inner_action_idx (0..@{$graph{'actions'}}) {
-		my $ref_inner_action = $graph{'actions'}->[$inner_action_idx];
-
+	foreach my $ref_inner_action ($graph->vertices()) {
 		my $package_name = $ref_inner_action->{'package_name'};
 		given ($ref_inner_action->{'action_name'}) {
 			when ('unpack') {
@@ -343,7 +283,7 @@ sub do_actions ($) {
 				my $desired_version = $self->{desired_state}->{$package_name}->{version};
 				# pre-depends must be unpacked before
 				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'unpack', $inner_action_idx, \%graph);
+						$desired_version->{pre_depends}, 'unpack', $ref_inner_action, $graph);
 			}
 			when ('configure') {
 				# configure can be done only after the unpack of the same version
@@ -351,19 +291,19 @@ sub do_actions ($) {
 
 				# pre-depends must be configured before
 				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'configure', $inner_action_idx, \%graph);
+						$desired_version->{pre_depends}, 'configure', $ref_inner_action, $graph);
 				# depends must be configured before
 				$self->_fill_action_dependencies(
-						$desired_version->{depends}, 'configure', $inner_action_idx, \%graph);
+						$desired_version->{depends}, 'configure', $ref_inner_action, $graph);
 
 				# it has also to be unpacked if the same version was not in state 'unpacked'
 				# search for the appropriate unpack action
 				my %candidate_action = %$ref_inner_action;
 				$candidate_action{'action_name'} = 'unpack';
-				foreach my $idx (0..$#{$graph{'actions'}}) {
-					if (__is_inner_actions_equal(\%candidate_action, \%{$graph{'actions'}->[$idx]})) {
+				foreach my $ref_current_action ($graph->vertices()) {
+					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 						# found...
-						push @{$graph{'edges'}->[$idx]}, $inner_action_idx;
+						$graph->add_edge($ref_current_action, $ref_inner_action);
 						last;
 					}
 				}
@@ -375,33 +315,35 @@ sub do_actions ($) {
 				my $system_version = $self->{cache}->get_specific_version($package, $version_string);
 				# pre-depends must be removed after
 				$self->_fill_action_dependencies(
-						$system_version->{pre_depends}, 'remove', $inner_action_idx, \%graph);
+						$system_version->{pre_depends}, 'remove', $ref_inner_action, $graph);
 				# depends must be removed after
 				$self->_fill_action_dependencies(
-						$system_version->{depends}, 'remove', $inner_action_idx, \%graph);
+						$system_version->{depends}, 'remove', $ref_inner_action, $graph);
 			}
 		}
 	}
 
-	# TODO: extract loops and place them into single action groups
-	__roll_loops($graph{'edges'});
+	my $scg = $graph->strongly_connected_graph();
 
-	# topologic sort of actions
-	my @sorted_action_indexes = __topologic_sort(@{$graph{'edges'}});
-
-	defined $sorted_action_indexes[0] or
-			mydie(__("unable to schedule dpkg commands"));
+	# topologically sorted action names
+	my @action_group_names = $scg->topological_sort();
 
 	# simulating actions
-	foreach my $ref_action (map { $graph{'actions'}->[$_] } @sorted_action_indexes) {
-		my $action_name = $ref_action->{'action_name'};
-		my $package_expression = $ref_action->{'package_name'};
-		if ($action_name eq 'unpack') {
-			$package_expression .= '<' . $ref_action->{'version_string'} . '>';
-		} elsif ($action_name eq 'remove' && $self->{config}->var('cupt::worker::purge')) {
-			$action_name = 'purge';
+	foreach my $action_group_name (@action_group_names) {
+		my @vertices_group = @{$scg->get_vertex_attribute($action_group_name, 'subvertices')};
+		# all the actions will have the same action name by algorithm
+		my $action_name = $vertices_group[0]->{'action_name'};
+		print "simulating: dpkg --$action_name";
+		foreach my $ref_action (@vertices_group) {
+			my $package_expression = $ref_action->{'package_name'};
+			if ($action_name eq 'unpack') {
+				$package_expression .= '<' . $ref_action->{'version_string'} . '>';
+			} elsif ($action_name eq 'remove' && $self->{config}->var('cupt::worker::purge')) {
+				$action_name = 'purge';
+			}
+			print " $package_expression";
 		}
-		say "simulating: dpkg --$action_name $package_expression";
+		say "";
 	}
 }
 
