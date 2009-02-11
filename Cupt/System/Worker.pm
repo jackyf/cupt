@@ -286,6 +286,17 @@ sub _fill_action_dependencies ($$$\%) {
 
 sub __roll_loops ($) {
 	my ($ref_edges) = @_;
+
+	foreach my $idx (0..$#{$ref_edges}) {
+		# will contain all vertexes than depends on this one
+		my %dependency_vertexes = ( $idx => 1 );
+
+		foreach my $dependent_idx(0..$#{$ref_edges->[$idx]}) {
+			if (exists $dependency_vertexes{$dependent_idx}) {
+				# TODO...
+			}
+		}
+	}
 }
 
 =head2 do_actions
