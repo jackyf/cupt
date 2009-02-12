@@ -550,16 +550,16 @@ sub manage_packages ($) {
 		my $answer = <STDIN>;
 		chomp $answer;
 		$answer = lc($answer);
-		if ($answer eq 'n') {
-			# user haven't chosen this solution, try next one
-			print __("Resolving further...");
-			return 0;
+		if ($answer eq 'y') {
+			# solution has been accepted
+			return 1;
 		} elsif ($answer eq 'q') {
 			# user is willing to abandon all further tryings
 			return undef;
 		} else {
-			# solution has been accepted
-			return 1;
+			# user haven't chosen this solution, try next one
+			print __("Resolving further...");
+			return 0;
 		}
 	});
 

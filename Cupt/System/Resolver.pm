@@ -449,72 +449,7 @@ sub _resolve ($$) {
 			}
 		}
 
-		if ($check_failed) {
-
-			# firstly rank all solutions
-			foreach (@possible_actions) {
-				my $package_name = $_->[0];
-				my $supposed_version = $_->[1];
-				my $original_version = exists $self->{packages}->{$package_name} ?
-						$self->{packages}->{$package_name}->{version} : undef;
-
-				my $supposed_version_weight =
-						defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
-				my $original_version_weight =
-						defined($original_version) ? $self->_version_weight($original_version) : 0;
-
-				# 3rd field in the structure will be "profit" of the change
-				push @$_, $supposed_version_weight - $original_version_weight;
-			}
-
-			# sort them by "rank"
-			@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
-
-			# push them into solution stack
-			push @solution_stack, \@possible_actions;
-
-			# while there is nothing more on the current level, pop the stack...
-			while (scalar @{$solution_stack[$#solution_stack]} == 0) {
-				# pop
-				pop @solution_stack;
-
-				if ($self->{config}->var('debug::resolver')) {
-					$sub_mydebug_wrapper->("no solution for broken package $package_name");
-				}
-				# mark package as failed one more time
-				++$package_entry->{failed};
-
-				# continue only if solution stack is not empty, otherwise we have a great fail
-				scalar @solution_stack or return 0;
-
-				# undone previous decision
-				my $ref_previous_state = shift @{$solution_stack[$#solution_stack]};
-				my $package_name = $ref_previous_state->[0];
-				my $original_version = $ref_previous_state->[1];
-
-				my $ref_package_entry = $self->{packages}->{$package_name};
-				$ref_package_entry->{version} = $original_version;
-				delete $ref_package_entry->{stick};
-			}
-
-			# apply pending solution
-			my $ref_next_state = $solution_stack[$#solution_stack]->[0];
-			my $package_name_to_change = $ref_next_state->[0];
-			my $supposed_version = $ref_next_state->[1];
-			my $ref_package_entry_to_change = $self->{packages}->{$package_name_to_change};
-			my $original_version = $ref_package_entry_to_change->{version};
-
-			if ($self->{config}->var('debug::resolver')) {
-				$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
-			}
-
-			# set stick for change for the time on underlying solutions
-			$ref_package_entry_to_change->{stick} = 1;
-			$ref_package_entry_to_change->{version} = $supposed_version;
-
-			# leave original version for returning
-			$ref_next_state->[1] = $original_version;
-		} else {
+		if (!$check_failed) {
 			# suggest found solution
 			my $user_answer = $sub_accept->($self->{packages});
 			if (!defined $user_answer) {
@@ -534,6 +469,70 @@ sub _resolve ($$) {
 				}
 			}
 		}
+
+		# firstly rank all solutions
+		foreach (@possible_actions) {
+			my $package_name = $_->[0];
+			my $supposed_version = $_->[1];
+			my $original_version = exists $self->{packages}->{$package_name} ?
+					$self->{packages}->{$package_name}->{version} : undef;
+
+			my $supposed_version_weight =
+					defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
+			my $original_version_weight =
+					defined($original_version) ? $self->_version_weight($original_version) : 0;
+
+			# 3rd field in the structure will be "profit" of the change
+			push @$_, $supposed_version_weight - $original_version_weight;
+		}
+
+		# sort them by "rank"
+		@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
+
+		# push them into solution stack
+		push @solution_stack, \@possible_actions;
+
+		# while there is nothing more on the current level, pop the stack...
+		while (scalar @{$solution_stack[$#solution_stack]} == 0) {
+			# pop
+			pop @solution_stack;
+
+			if ($self->{config}->var('debug::resolver')) {
+				$sub_mydebug_wrapper->("no solution for broken package $package_name");
+			}
+			# mark package as failed one more time
+			++$package_entry->{failed};
+
+			# continue only if solution stack is not empty, otherwise we have a great fail
+			scalar @solution_stack or return 0;
+
+			# undone previous decision
+			my $ref_previous_state = shift @{$solution_stack[$#solution_stack]};
+			my $package_name = $ref_previous_state->[0];
+			my $original_version = $ref_previous_state->[1];
+
+			my $ref_package_entry = $self->{packages}->{$package_name};
+			$ref_package_entry->{version} = $original_version;
+			delete $ref_package_entry->{stick};
+		}
+
+		# apply pending solution
+		my $ref_next_state = $solution_stack[$#solution_stack]->[0];
+		my $package_name_to_change = $ref_next_state->[0];
+		my $supposed_version = $ref_next_state->[1];
+		my $ref_package_entry_to_change = $self->{packages}->{$package_name_to_change};
+		my $original_version = $ref_package_entry_to_change->{version};
+
+		if ($self->{config}->var('debug::resolver')) {
+			$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
+		}
+
+		# set stick for change for the time on underlying solutions
+		$ref_package_entry_to_change->{stick} = 1;
+		$ref_package_entry_to_change->{version} = $supposed_version;
+
+		# leave original version for returning
+		$ref_next_state->[1] = $original_version;
 	} while $check_failed;
 }
 
