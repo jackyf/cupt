@@ -23,9 +23,18 @@ some versions of the some of <package_name>s may provide and may not provide
 given I<virtual_package>. This field exists solely for
 I<get_satisfying_versions> subroutine for rapid lookup.
 
+=head2 extended_info
+
+  {
+    'automatically_installed' => { I<package_name> => 1 },
+  }
+
+Holds info about automatically installed packages.
+
 =cut
 
-use fields qw(source_packages binary_packages config pin_settings system_state can_provide);
+use fields qw(source_packages binary_packages config pin_settings system_state
+		can_provide extended_info);
 
 =head1 FLAGS
 
@@ -97,6 +106,10 @@ sub new {
 	# reading pin settings
 	my $pin_settings_file = $self->_path_of_preferences();
 	$self->_parse_preferences($pin_settings_file) if -r $pin_settings_file;
+
+	# reading list of automatically installed packages
+	my $extended_states_file = $self->_path_of_extended_states();
+	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
 	return $self;
 }
@@ -583,6 +596,60 @@ sub _parse_preferences {
 	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
 }
 
+sub _parse_extended_states {
+	my ($self, $file) = @_;
+
+	# we are parsing duals like:
+
+	# Package: perl
+	# Auto-Installed: 1
+
+	eval {
+		my $package_name;
+		my $value;
+
+		open(STATES, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+		while (<STATES>) {
+			chomp;
+
+			do { # processing first line
+				m/^Package: (.*)/ or
+						mydie("bad package line at file '%s', line '%u'", $file, $.);
+
+				$package_name = $1;
+			};
+
+			do { # processing second line
+				my $value_line = <STATES>;
+				defined($value_line) or
+						mydie("no value line at file '%s' line '%u'", $file, $.);
+
+				$value_line =~ m/^Auto-Installed: (0|1)/ or
+						mydie("bad value line at file '%s' line '%u'", $file, $.);
+
+				my $value = $1;
+			};
+
+			if ($value) {
+				# adding to storage
+				$self->{extended_states}->{$package_name} = $value;
+			}
+
+			do { # skipping newline
+				my $newline = <STATES>;
+				$newline eq "\n" or
+						mydie("expected newline, but haven't got it at file '%s' line '%u'", $file, $.);
+			};
+		}
+
+		close(STATES) or mydie("unable to close file %s: %s", $file, $!);
+	};
+	if (mycatch()) {
+		myerr("error while parsing extended states");
+		myredie();
+	}
+}
+
 sub _process_provides_in_index_file {
 	my ($self, $file) = @_;
 
@@ -727,6 +794,17 @@ sub _path_of_preferences {
 	my $etc_dir = $self->{config}->var('dir::etc');
 
 	my $leaf = $self->{config}->var('dir::etc::preferences');
+
+	return "$root_prefix$etc_dir/$leaf";
+}
+
+sub _path_of_extended_states {
+	my ($self) = @_;
+
+	my $root_prefix = $self->{config}->var('dir');
+	my $etc_dir = $self->{config}->var('dir::state');
+
+	my $leaf = $self->{config}->var('dir::state::extendedstates');
 
 	return "$root_prefix$etc_dir/$leaf";
 }

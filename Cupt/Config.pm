@@ -43,6 +43,7 @@ sub new {
 			'dir::etc::main' => 'apt.conf',
 			'dir::etc::preferences' => 'preferences',
 			'dir::state' => 'var/lib/apt',
+			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'debug::resolver' => 0,
