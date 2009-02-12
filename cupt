@@ -466,9 +466,11 @@ sub manage_packages ($) {
 
 	check_no_more_options();
 
-	print __('Initializing package resolver... ');
+	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
 	$resolver->import_installed_versions($cache->{system_state}->export_installed_versions());
+	# TODO: make $cache->get_system_state
+	my $worker = new Cupt::System::Worker($config, $cache, $cache->{system_state});
 	say __('[done]');
 
 	print __('Scheduling requested actions... ');
@@ -523,8 +525,6 @@ sub manage_packages ($) {
 	say __('[done]');
 	say "";
 
-	# TODO: make $cache->get_system_state
-	my $worker = new Cupt::System::Worker($config, $cache, $cache->{system_state});
 	# TODO: make $resolver->export_packages
 	$worker->set_desired_state($resolver->{packages});
 
