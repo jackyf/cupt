@@ -125,6 +125,12 @@ sub import_installed_versions ($$) {
 sub _schedule_new_version_relations ($$) {
 	my ($self, $version) = @_;
 
+	if (defined($version->{pre_depends})) {
+		# ok, unconditionally adding pre-depends
+		foreach (@{$version->{pre_depends}}) {
+			$self->satisfy_relation($_);
+		}
+	}
 	if (defined($version->{depends})) {
 		# ok, unconditionally adding depends
 		foreach (@{$version->{depends}}) {
