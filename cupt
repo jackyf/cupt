@@ -558,16 +558,20 @@ sub manage_packages ($) {
 			return undef;
 		} else {
 			# user haven't chosen this solution, try next one
-			print __("Resolving further...");
+			print __("Resolving further... ");
 			return 0;
 		}
 	});
 
-	if ($resolve_result) {
+	if (!defined $resolve_result) {
+		# tryings were abandoned
+	} elsif ($resolve_result) {
 		# if some solution was found and user has accepted it
-		print __('Calculating action call order... ');
+		print __("Calculating action call order... ");
 		$worker->do_actions();
 		say __('[done]');
+	} else {
+		say __("no more solutions.");
 	}
 }
 

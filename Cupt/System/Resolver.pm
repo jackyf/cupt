@@ -454,7 +454,7 @@ sub _resolve ($$) {
 			my $user_answer = $sub_accept->($self->{packages});
 			if (!defined $user_answer) {
 				# exiting...
-				return 0;
+				return undef;
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
 				if ($self->{config}->var('debug::resolver')) {
@@ -534,6 +534,9 @@ sub _resolve ($$) {
 		# leave original version for returning
 		$ref_next_state->[1] = $original_version;
 	} while $check_failed;
+
+	# so, nothing found and/or accepted...
+	return 0;
 }
 
 =head2 resolve
