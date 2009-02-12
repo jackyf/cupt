@@ -58,6 +58,7 @@ sub _parse_dpkg_status {
 	# 2) purged packages contain only 'Package', 'Status', 'Priority'
 	#    and 'Section' fields.
 	# TODO: get info about 'post-inst-failed' and 'removal-failed' statuses.
+	# TODO: add trigger statuses
 
 	my ($self, $file) = @_;
 
