@@ -119,6 +119,8 @@ sub import_installed_versions ($$) {
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		$self->{packages}->{$version->{package_name}}->{version} = $version;
+		# marking them as originally installed
+		$self->{packages}->{$version->{package_name}}->{installed} = 1;
 	}
 }
 
@@ -362,7 +364,7 @@ sub _resolve ($$) {
 							push @possible_actions, [ $package_name, $other_version ];
 						}
 
-						if (!$self->{config}->{'no-remove'}) {
+						if (!$self->{config}->{'no-remove'} || !exists $package_entry->{'installed'}) {
 							# remove the package
 							push @possible_actions, [ $package_name, undef ];
 						}
@@ -416,7 +418,7 @@ sub _resolve ($$) {
 								push @possible_actions, [ $other_package_name, $other_version ];
 							}
 
-							if (!$self->{config}->{'no-remove'}) {
+							if (!$self->{config}->{'no-remove'} || !exists $other_package_entry->{'installed'}) {
 								# or remove it
 								push @possible_actions, [ $other_package_name, undef ];
 							}
@@ -433,7 +435,7 @@ sub _resolve ($$) {
 									push @possible_actions, [ $package_name, $other_version ];
 								}
 								
-								if (!$self->{config}->{'no-remove'}) {
+								if (!$self->{config}->{'no-remove'} || !exists $package_entry->{'installed'}) {
 									# remove the package
 									push @possible_actions, [ $package_name, undef ];
 								}
