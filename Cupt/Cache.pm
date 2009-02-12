@@ -670,7 +670,7 @@ sub _process_provides_in_index_file {
 
 			$_ = readline(ENTRIES);
 			chomp;
-			my @provides = split /\s*,\s*/, $_;
+			my @provides = split /\s*,\s*/;
 
 			foreach (@provides) {
 				push @{$self->{can_provide}->{$_}}, $package_name;
