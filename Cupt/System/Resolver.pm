@@ -534,9 +534,6 @@ sub _resolve ($$) {
 		# leave original version for returning
 		$ref_next_state->[1] = $original_version;
 	} while $check_failed;
-
-	# so, nothing found and/or accepted...
-	return 0;
 }
 
 =head2 resolve
