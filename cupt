@@ -474,7 +474,6 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Scheduling requested actions... ');
-	print "\n" if $config->var('debug::resolver'); # for resolver debug messages
 	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
 		my $o_no_remove = ($action eq 'safe-upgrade');
 		$resolver->set_params('no-remove' => $o_no_remove);
@@ -519,7 +518,6 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Resolving possible unmet dependencies... ');
-	print "\n" if $config->var('debug::resolver'); # for resolver debug messages
 	# TODO: query user
 	my $resolve_result = $resolver->resolve( sub {
 		my $desired_packages = $_[0];

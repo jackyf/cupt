@@ -67,8 +67,8 @@ sub mycatch() {
 }
 
 sub mydebug {
-	print "D: ";
-	say sprintf(shift, @_);
+	print STDERR "D: ";
+	say STDERR sprintf(shift, @_);
 }
 
 our $package_name_regex = qr/[a-z_0-9.+-]+/;
