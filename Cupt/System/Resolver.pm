@@ -516,14 +516,22 @@ sub _resolve ($$) {
 			$ref_next_state->[1] = $original_version;
 		} else {
 			# suggest found solution
-			if ($sub_accept->(map { defined($_->{version}) ? $_->{version} : () } $self->{packages})) {
+			my $user_answer = $sub_accept->($self->{packages});
+			if (!defined $user_answer) {
+				# exiting...
+				return 0;
+			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
+				if ($self->{config}->var('debug::resolver')) {
+					$sub_mydebug_wrapper->("accepted");
+				}
+				return 1;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
 				$check_failed = 1;
-			}
-			if ($self->{config}->var('debug::resolver')) {
-				$sub_mydebug_wrapper->($check_failed ? "declined" : "accepted");
+				if ($self->{config}->var('debug::resolver')) {
+					$sub_mydebug_wrapper->("declined");
+				}
 			}
 		}
 	} while $check_failed;

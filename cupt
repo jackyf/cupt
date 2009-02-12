@@ -521,37 +521,56 @@ sub manage_packages ($) {
 	print __('Resolving possible unmet dependencies... ');
 	print "\n" if $config->var('debug::resolver'); # for resolver debug messages
 	# TODO: query user
-	$resolver->resolve( sub { return 1 } );
-	say __('[done]');
-	say "";
+	my $resolve_result = $resolver->resolve( sub {
+		my $desired_packages = $_[0];
+		# TODO: make $resolver->export_packages
+		$worker->set_desired_state($desired_packages);
 
-	# TODO: make $resolver->export_packages
-	$worker->set_desired_state($resolver->{packages});
+		my $ref_actions_preview = $worker->get_actions_preview();
+		my %action_names = (
+			'install' => __('INSTALLED'),
+			'remove' => __('REMOVED'),
+			'upgrade' => __('UPGRADED'),
+			'purge' => __('PURGED'),
+			'downgrade' => __('DOWNGRADED'),
+			'configure' => __('CONFIGURED'),
+			'deconfigure' => __('DECONFIGURED'),
+		);
+		say "";
+		foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
+			my $ref_packages = $ref_actions_preview->{$action};
+			scalar @$ref_packages or next; # don't print empty lists
+			my $action_name = $action_names{$action};
+			say sprintf __("The following packages will be %s:"), $action_name;
+			say "";
+			my @packages_list = sort @$ref_packages;
+			say "@packages_list";
+			say "";
+		}
 
-	my $ref_actions_preview = $worker->get_actions_preview();
-	my %action_names = (
-		'install' => __('INSTALLED'),
-		'remove' => __('REMOVED'),
-		'upgrade' => __('UPGRADED'),
-		'purge' => __('PURGED'),
-		'downgrade' => __('DOWNGRADED'),
-		'configure' => __('CONFIGURED'),
-		'deconfigure' => __('DECONFIGURED'),
-	);
-	foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
-		my $ref_packages = $ref_actions_preview->{$action};
-		scalar @$ref_packages or next; # don't print empty lists
-		my $action_name = $action_names{$action};
-		say sprintf __("The following packages will be %s:"), $action_name;
-		say "";
-		my @packages_list = sort @$ref_packages;
-		say "@packages_list";
-		say "";
+		print __("Do you want to continue? [y/N/q] ");
+		my $answer = <STDIN>;
+		chomp $answer;
+		$answer = lc($answer);
+		if ($answer eq 'n') {
+			# user haven't chosen this solution, try next one
+			print __("Resolving further...");
+			return 0;
+		} elsif ($answer eq 'q') {
+			# user is willing to abandon all further tryings
+			return undef;
+		} else {
+			# solution has been accepted
+			return 1;
+		}
+	});
+
+	if ($resolve_result) {
+		# if some solution was found and user has accepted it
+		print __('Calculating action call order... ');
+		$worker->do_actions();
+		say __('[done]');
 	}
-
-	print __('Calculating action call order... ');
-	$worker->do_actions();
-	say __('[done]');
 }
 
 sub install () {
