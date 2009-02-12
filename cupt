@@ -549,7 +549,9 @@ sub manage_packages ($) {
 		say "";
 	}
 
+	print __('Calculating action call order... ');
 	$worker->do_actions();
+	say __('[done]');
 }
 
 sub install () {
