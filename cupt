@@ -15,8 +15,6 @@ use Cupt::Core;
 use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relations);
-use Cupt::System::Resolver;
-use Cupt::System::Worker;
 
 my $config;
 my $cache;
@@ -453,6 +451,9 @@ sub pkgnames () {
 }
 
 sub manage_packages ($) {
+	require Cupt::System::Resolver;
+	require Cupt::System::Worker;
+
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
