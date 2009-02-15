@@ -14,7 +14,7 @@ use Locale::gettext;
 use Cupt::Core;
 use Cupt::Config;
 use Cupt::Cache;
-use Cupt::Cache::Relation qw(stringify_relations);
+use Cupt::Cache::Relation qw(stringify_relations stringify_relation_or_group);
 
 my $config;
 my $cache;
@@ -521,31 +521,95 @@ sub manage_packages ($) {
 	print __('Resolving possible unmet dependencies... ');
 	# TODO: query user
 	my $resolve_result = $resolver->resolve( sub {
-		my $desired_packages = $_[0];
+		my $ref_desired_packages = $_[0];
 		# TODO: make $resolver->export_packages
-		$worker->set_desired_state($desired_packages);
+		$worker->set_desired_state($ref_desired_packages);
 
 		my $ref_actions_preview = $worker->get_actions_preview();
-		my %action_names = (
-			'install' => __('INSTALLED'),
-			'remove' => __('REMOVED'),
-			'upgrade' => __('UPGRADED'),
-			'purge' => __('PURGED'),
-			'downgrade' => __('DOWNGRADED'),
-			'configure' => __('CONFIGURED'),
-			'deconfigure' => __('DECONFIGURED'),
-		);
-		say "";
-		foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
-			my $ref_packages = $ref_actions_preview->{$action};
-			scalar @$ref_packages or next; # don't print empty lists
-			my $action_name = $action_names{$action};
-			say sprintf __("The following packages will be %s:"), $action_name;
+		# print planned actions
+		do {
+			my %action_names = (
+				'install' => __('INSTALLED'),
+				'remove' => __('REMOVED'),
+				'upgrade' => __('UPGRADED'),
+				'purge' => __('PURGED'),
+				'downgrade' => __('DOWNGRADED'),
+				'configure' => __('CONFIGURED'),
+				'deconfigure' => __('DECONFIGURED'),
+			);
 			say "";
-			my @packages_list = sort @$ref_packages;
-			say "@packages_list";
-			say "";
-		}
+			foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
+				my $ref_package_names = $ref_actions_preview->{$action};
+				scalar @$ref_package_names or next; # don't print empty lists
+				my $action_name = $action_names{$action};
+				say sprintf __("The following packages will be %s:"), $action_name;
+				say "";
+				my @package_names_list = sort @$ref_package_names;
+				say "@package_names_list";
+				say "";
+			}
+		};
+		# prepare list of soft dependencies that are not satisfied
+		do {
+			my @unsatisfied_soft_dependencies;
+			my @versions_to_remove;
+			foreach my $action (qw(remove purge deconfigure)) {
+				my $ref_package_names = $ref_actions_preview->{$action};
+				foreach my $package_name (@$ref_package_names) {
+					my $package = $cache->get_binary_package($package_name);
+					# TODO: make cache->get_installed_version
+					my $version_string = $cache->{system_state}->get_installed_version_string($package_name);
+					my $version = $cache->get_specific_version($package, $version_string);
+					push @versions_to_remove, $version;
+				}
+			}
+			foreach my $package_name (keys %$ref_desired_packages) {
+				my $ref_package_entry = $ref_desired_packages->{$package_name};
+				next if !defined $ref_package_entry->{version};
+				next if !defined $ref_package_entry->{version}->{recommends};
+
+				foreach my $relation_expression (@{$ref_package_entry->{version}->{recommends}}) {
+					my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
+					
+					my $soft_breakage_possible = 0;
+					RELATION_ENTRY:
+					foreach my $satisfying_version (@$ref_satisfying_versions) {
+						foreach my $version_to_remove (@versions_to_remove) {
+							next if $satisfying_version->{package_name} ne $version_to_remove->{package_name};
+							next if $satisfying_version->{version} ne $version_to_remove->{version};
+							$soft_breakage_possible = 1;
+							last RELATION_ENTRY;
+						}
+					}
+
+					if ($soft_breakage_possible) {
+						my $is_broken = 1;
+						foreach my $satisfying_version (@$ref_satisfying_versions) {
+							my $satisfying_package_name = $satisfying_version->{package_name};
+							next if !defined $ref_desired_packages->{$satisfying_package_name};
+							my $desired_version = $ref_desired_packages->{$satisfying_package_name}->{version};
+							next if !defined $desired_version;
+							next if $desired_version->{version} ne $satisfying_version->{version};
+							$is_broken = 0;
+							last;
+						}
+						if ($is_broken) {
+							my $version_string = $ref_package_entry->{version}->{version};
+							push @unsatisfied_soft_dependencies, 
+									sprintf __("%s %s recommends %s"), $package_name, $version_string,
+									stringify_relation_or_group($relation_expression);
+									
+						}
+					}
+				}
+			}
+			if (scalar @unsatisfied_soft_dependencies) {
+				say sprintf __("Leave the following dependencies unresolved:");
+				say "";
+				say $_ for @unsatisfied_soft_dependencies;
+				say "";
+			}
+		};
 
 		print __("Do you want to continue? [y/N/q] ");
 		my $answer = <STDIN>;
