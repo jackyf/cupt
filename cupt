@@ -517,7 +517,6 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Resolving possible unmet dependencies... ');
-	# TODO: query user
 	my $resolve_result = $resolver->resolve( sub {
 		my $ref_desired_packages = $_[0];
 		# TODO: make $resolver->export_packages
