@@ -173,7 +173,7 @@ sub get_status_for_version {
 	my $package_name = $version->{package_name};
 	if (exists $self->{installed_info}->{$package_name}) {
 		my $ref_info = $self->{installed_info}->{$package_name};
-		if ($ref_info->{'version'} eq $version->{version}) {
+		if ($ref_info->{'version'} eq $version->{version_string}) {
 			return $ref_info;
 		}
 	}

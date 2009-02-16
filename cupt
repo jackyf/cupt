@@ -222,7 +222,7 @@ sub show_package_versions () {
 		my $p = sub { print shift, ': ', shift, "\n" };
 		foreach my $version (@$ref_versions) {
 			$p->(__('Package'), $package_name);
-			$p->(__('Version'), $version->{version});
+			$p->(__('Version'), $version->{version_string});
 			my $installed_status = $cache->{system_state}->get_status_for_version($version);
 			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : "not installed");
 			$p->(__('Source'), $version->{source_name});
@@ -333,7 +333,7 @@ sub show_package_relations () {
 		my $version = shift @versions;
 
 		my $package_name = $version->{package_name};
-		my $version_string = $version->{version};
+		my $version_string = $version->{version_string};
 
 		next if exists $processed_entries{$package_name,$version_string};
 		$processed_entries{$package_name,$version_string} = 1;
@@ -398,7 +398,7 @@ sub policy () {
 				(defined($installed_version_string) ?
 				$installed_version_string : ('(' . gettext('none') . ')'));
 
-		say "  " . gettext('Candidate') . ": " . $policy_version->{version};
+		say "  " . gettext('Candidate') . ": " . $policy_version->{version_string};
 		say "  " . gettext('Version table') . ":";
 
 		my $ref_versions = $cache->get_sorted_pinned_versions($package);
@@ -408,14 +408,14 @@ sub policy () {
 			my $pin = $entry->{'pin'};
 
 			if (defined($installed_version_string) && 
-				$version->{version} eq $installed_version_string)
+				$version->{version_string} eq $installed_version_string)
 			{
 				print " *** ";
 			} else {
 				print "     ";
 			}
 
-			say $version->{version} . ' ' . $pin;
+			say $version->{version_string} . ' ' . $pin;
 			# throw out local version if present
 			my @avail_as = @{$version->{avail_as}};
 			shift @avail_as if $version->is_local();
@@ -576,7 +576,7 @@ sub manage_packages ($) {
 					foreach my $satisfying_version (@$ref_satisfying_versions) {
 						foreach my $version_to_remove (@versions_to_remove) {
 							next if $satisfying_version->{package_name} ne $version_to_remove->{package_name};
-							next if $satisfying_version->{version} ne $version_to_remove->{version};
+							next if $satisfying_version->{version_string} ne $version_to_remove->{version_string};
 							$soft_breakage_possible = 1;
 							last RELATION_ENTRY;
 						}
@@ -589,12 +589,12 @@ sub manage_packages ($) {
 							next if !defined $ref_desired_packages->{$satisfying_package_name};
 							my $desired_version = $ref_desired_packages->{$satisfying_package_name}->{version};
 							next if !defined $desired_version;
-							next if $desired_version->{version} ne $satisfying_version->{version};
+							next if $desired_version->{version_string} ne $satisfying_version->{version_string};
 							$is_broken = 0;
 							last;
 						}
 						if ($is_broken) {
-							my $version_string = $ref_package_entry->{version}->{version};
+							my $version_string = $ref_package_entry->{version}->{version_string};
 							push @unsatisfied_soft_dependencies, 
 									sprintf __("%s %s recommends %s"), $package_name, $version_string,
 									stringify_relation_or_group($relation_expression);

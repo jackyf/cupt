@@ -113,7 +113,7 @@ sub get_actions_preview ($) {
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
 				{
-					if ($ref_installed_info->{'version'} eq $supposed_version->{version}) {
+					if ($ref_installed_info->{'version'} eq $supposed_version->{version_string}) {
 						# the same version, but the package was in some interim state
 						$action = 'configure';
 					} else {
@@ -123,7 +123,7 @@ sub get_actions_preview ($) {
 				} else {
 					# otherwise some package version is installed
 					my $version_comparison_result = Cupt::Core::compare_version_strings(
-							$supposed_version->{version}, $ref_installed_info->{'version'});
+							$supposed_version->{version_string}, $ref_installed_info->{'version'});
 
 					if ($version_comparison_result > 0) {
 						$action = 'upgrade';
@@ -198,7 +198,7 @@ sub _fill_actions ($$\@) {
 					$user_action eq 'upgrade' ||
 					$user_action eq 'downgrade')
 				{
-					$version_string = $self->{desired_state}->{$package_name}->{version}->{version};
+					$version_string = $self->{desired_state}->{$package_name}->{version}->{version_string};
 				} else {
 					$version_string = $self->{system_state}->get_installed_version_string($package_name);
 				}
@@ -223,7 +223,7 @@ sub _fill_action_dependencies ($$$$) {
 			SATISFYING_VERSIONS:
 			foreach my $other_version (@$ref_satisfying_versions) {
 				my $other_package_name = $other_version->{package_name};
-				my $other_version_string = $other_version->{version};
+				my $other_version_string = $other_version->{version_string};
 				my %candidate_action = (
 					'package_name' => $other_package_name,
 					'version_string' => $other_version_string,

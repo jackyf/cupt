@@ -56,13 +56,13 @@ sub find_version {
 
 	foreach my $version (@{$self->versions()})
 	{
-		return $version if ($version->{version} eq $lookup_version);
+		return $version if ($version->{version_string} eq $lookup_version);
 	}
 	return undef;
 }
 
 sub compare_versions ($$) {
-	return Cupt::Core::compare_version_strings($_[0]->{version}, $_[1]->{version});
+	return Cupt::Core::compare_version_strings($_[0]->{version_string}, $_[1]->{version_string});
 }
 
 sub _merge_version {
@@ -73,7 +73,7 @@ sub _merge_version {
 		my $found_version;
 		foreach my $version (@$ref_result)
 		{
-			if ($version->{version} eq $parsed_version->{version}) {
+			if ($version->{version_string} eq $parsed_version->{version_string}) {
 				$found_version = $version;
 				last;
 			}
@@ -101,7 +101,7 @@ sub _merge_version {
 		}
 	};
 	if (mycatch()) {
-		myerr("error while merging version '%s'", $parsed_version->{version});
+		myerr("error while merging version '%s'", $parsed_version->{version_string});
 		myredie();
 	};
 }

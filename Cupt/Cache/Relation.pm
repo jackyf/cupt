@@ -15,7 +15,7 @@ sub new {
 	my $self = {
 		package_name => undef,
 		relation => undef,
-		version => undef,
+		version_string => undef,
 	};
 	bless $self => $class;
 
@@ -44,7 +44,7 @@ sub new {
 	)
 	{
 		# versioned info is here, assigning
-		($self->{relation}, $self->{version}) = ($1, $2);
+		($self->{relation}, $self->{version_string}) = ($1, $2);
 	} else {
 		# no valid versioned info, maybe empty?
 		($unparsed =~ m/\G\s*$/g) # empty versioned info, this is also acceptable
@@ -59,7 +59,7 @@ sub stringify {
 	my $result = $self->{package_name};
 	if (defined($self->{relation})) {
 		# there is versioned info
-		$result .= join('', " (", $self->{relation}, ' ', $self->{version}, ')');
+		$result .= join('', " (", $self->{relation}, ' ', $self->{version_string}, ')');
 	}
 	return $result;
 }
@@ -87,7 +87,7 @@ sub satisfied_by ($$) {
 	my ($self, $version_string) = @_;
 	if (defined($self->{relation})) {
 		# relation is defined, checking
-		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->{version});
+		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->{version_string});
 		given($self->{relation}) {
 			when('>=') { return ($comparison_result >= 0) }
 			when('<') { continue }

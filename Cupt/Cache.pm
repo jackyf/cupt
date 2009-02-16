@@ -167,7 +167,7 @@ sub get_pin {
 		}
 		if (exists $pin->{'version'}) {
 			my $value = $pin->{'version'};
-			$version->{version} =~ m/$value/ or next PIN;
+			$version->{version_string} =~ m/$value/ or next PIN;
 		}
 		if (exists $pin->{'base_uri'}) {
 			my $value = $pin->{'base_uri'};
@@ -208,7 +208,7 @@ sub get_pin {
 		my $package_name = $version->{package_name};
 		my $installed_version_string = $self->{system_state}->get_installed_version_string($package_name);
 		if (defined($installed_version_string)
-			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version}) > 0)
+			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
 		{
 			$result -= 1000;
 		}
@@ -288,7 +288,7 @@ I<version_string> - version string to search
 sub get_specific_version ($$$) {
 	my ($self, $package, $version_string) = @_;
 	foreach my $version (@{$package->versions()}) {
-		if ($version->{version} eq $version_string) {
+		if ($version->{version_string} eq $version_string) {
 			# found such a version
 			return $version;
 		}
@@ -311,7 +311,7 @@ sub _get_satisfying_versions_for_one_relation {
 				$self,
 				$package_name,
 				defined($relation->{relation}) ? $relation->{relation} : "",
-				defined($relation->{version}) ? $relation->{version} : ""
+				defined($relation->{version_string}) ? $relation->{version_string} : ""
 		);
 		if (exists $cache{$key}) {
 			return @{$cache{$key}};
@@ -329,7 +329,7 @@ sub _get_satisfying_versions_for_one_relation {
 		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
 		foreach (@$ref_sorted_versions) {
 			my $version = $_->{'version'};
-			push @result, $version if $relation->satisfied_by($version->{version});
+			push @result, $version if $relation->satisfied_by($version->{version_string});
 		}
 	}
 

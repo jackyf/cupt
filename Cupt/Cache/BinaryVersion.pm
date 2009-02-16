@@ -30,7 +30,7 @@ sub new {
 		maintainer => undef,
 		architecture => undef,
 		source_name => undef,
-		version => undef,
+		version_string => undef,
 		essential => undef,
 		depends => undef,
 		recommends => undef,
@@ -92,7 +92,7 @@ sub new {
 					when ('Installed-Size') { $self->{installed_size} = $field_value }
 					when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
 					when ('Architecture') { $self->{architecture} = $field_value }
-					when ('Version') { $self->{version} = $field_value }
+					when ('Version') { $self->{version_string} = $field_value }
 					when ('Filename') { $self->{avail_as}->[0]->{filename} = $field_value }
 					when ('Size') { $self->{size} = $field_value }
 					when ('MD5sum') { $self->{md5sum} = $field_value }

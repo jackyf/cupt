@@ -165,7 +165,7 @@ sub _install_version_no_stick ($$) {
 
 	$self->{packages}->{$version->{package_name}}->{version} = $version;
 	if ($self->{config}->var('debug::resolver')) {
-		mydebug("install package '$version->{package_name}', version '$version->{version}'");
+		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
 	}
 	$self->_schedule_new_version_relations($version);
 }
@@ -249,7 +249,7 @@ sub upgrade ($) {
 		my $original_version = $self->{packages}->{$package_name}->{version};
 		my $supposed_version = $self->{cache}->get_policy_version($package);
 		# no need to install the same version
-		$original_version->{version} ne $supposed_version->{version} or next;
+		$original_version->{version_string} ne $supposed_version->{version_string} or next;
 		$self->_install_version_no_stick($supposed_version);
 	}
 }
@@ -274,7 +274,7 @@ sub __is_version_array_intersects_with_packages ($$) {
 		my $installed_version = $ref_packages->{$version->{package_name}}->{version};
 		defined $installed_version or next;
 		
-		return 1 if $version->{version} eq $installed_version->{version};
+		return 1 if $version->{version_string} eq $installed_version->{version_string};
 	}
 	return 0;
 }
@@ -302,8 +302,8 @@ sub _resolve ($$) {
 		my $sub_debug_version_change = sub {
 			my ($package_name, $supposed_version, $original_version) = @_;
 
-			my $old_version_string = defined($original_version) ? $original_version->{version} : '<not installed>';
-			my $new_version_string = defined($supposed_version) ? $supposed_version->{version} : '<not installed>';
+			my $old_version_string = defined($original_version) ? $original_version->{version_string} : '<not installed>';
+			my $new_version_string = defined($supposed_version) ? $supposed_version->{version_string} : '<not installed>';
 			my $message = "trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
 			$sub_mydebug_wrapper->($message);
 		};
@@ -359,7 +359,7 @@ sub _resolve ($$) {
 						my $other_package = $self->{cache}->get_binary_package($package_name);
 						foreach my $other_version (@{$other_package->versions()}) {
 							# don't try existing version
-							next if $other_version->{version} eq $version->{version};
+							next if $other_version->{version_string} eq $version->{version_string};
 
 							push @possible_actions, [ $package_name, $other_version ];
 						}
@@ -406,14 +406,14 @@ sub _resolve ($$) {
 							# does the package have an installed version?
 							defined($other_package_entry->{version}) or next;
 							# is this our version?
-							$other_package_entry->{version}->{version} eq $satisfying_version->{version} or next;
+							$other_package_entry->{version}->{version_string} eq $satisfying_version->{version_string} or next;
 
 							$check_failed = 1;
 							# yes... so change it
 							my $other_package = $self->{cache}->get_binary_package($other_package_name);
 							foreach my $other_version (@{$other_package->versions()}) {
 								# don't try existing version
-								next if $other_version->{version} eq $satisfying_version->{version};
+								next if $other_version->{version_string} eq $satisfying_version->{version_string};
 
 								push @possible_actions, [ $other_package_name, $other_version ];
 							}
@@ -430,7 +430,7 @@ sub _resolve ($$) {
 								my $package = $self->{cache}->get_binary_package($package_name);
 								foreach my $other_version (@{$package->versions()}) {
 									# don't try existing version
-									next if $other_version->{version} eq $version->{version};
+									next if $other_version->{version_string} eq $version->{version_string};
 
 									push @possible_actions, [ $package_name, $other_version ];
 								}
