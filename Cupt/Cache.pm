@@ -272,32 +272,6 @@ sub get_policy_version {
 	return $self->get_sorted_pinned_versions($package)->[0]->{'version'};
 }
 
-=head2 get_specific_version
-
-member function, return reference to Cupt::Cache::{Binary,Source}Version
-(depending on the value of the I<package>), which has specific version string
-
-Parameters:
-
-I<package> - reference to Cupt::Cache::Pkg
-
-I<version_string> - version string to search
-
-=cut
-
-sub get_specific_version ($$$) {
-	my ($self, $package, $version_string) = @_;
-	foreach my $version (@{$package->versions()}) {
-		if ($version->{version_string} eq $version_string) {
-			# found such a version
-			return $version;
-		}
-	}
-
-	# found nothing
-	return undef;
-}
-
 sub _get_satisfying_versions_for_one_relation {
 	my ($self, $relation) = @_;
 	my $package_name = $relation->{package_name};

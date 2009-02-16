@@ -131,7 +131,7 @@ sub select_binary_package_version ($) {
 		my $version_string = $2;
 		check_version_string($version_string);
 		my $package = get_binary_package($package_name);
-		my $version = $cache->get_specific_version($package, $version_string);
+		my $version = $package->find_version($version_string);
 		# not found
 		if (defined $version) {
 			return $version;
@@ -559,7 +559,7 @@ sub manage_packages ($) {
 					my $package = $cache->get_binary_package($package_name);
 					# TODO: make cache->get_installed_version
 					my $version_string = $cache->{system_state}->get_installed_version_string($package_name);
-					my $version = $cache->get_specific_version($package, $version_string);
+					my $version = $package->find_version($version_string);
 					push @versions_to_remove, $version;
 				}
 			}

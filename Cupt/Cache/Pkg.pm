@@ -50,13 +50,23 @@ sub versions {
 	return \@result;
 }
 
-sub find_version {
-	my $self = shift;
-	my $lookup_version = shift;
+=head2 find_version
+
+member function, return reference to Cupt::Cache::{Binary,Source}Version
+(depending on the value of the object), which has specific version string
+
+Parameters:
+
+I<version_string> - version string to search
+
+=cut
+
+sub find_version ($$) {
+	my ($self, $lookup_version_string) = @_;
 
 	foreach my $version (@{$self->versions()})
 	{
-		return $version if ($version->{version_string} eq $lookup_version);
+		return $version if ($version->{version_string} eq $lookup_version_string);
 	}
 	return undef;
 }

@@ -312,7 +312,7 @@ sub do_actions ($) {
 				# package dependencies can be removed only after removal of the package
 				my $package = $self->{cache}->get_binary_package($package_name);
 				my $version_string = $ref_inner_action->{'version_string'};
-				my $system_version = $self->{cache}->get_specific_version($package, $version_string);
+				my $system_version = $package->find_version($version_string);
 				# pre-depends must be removed after
 				$self->_fill_action_dependencies(
 						$system_version->{pre_depends}, 'remove', $ref_inner_action, $graph);

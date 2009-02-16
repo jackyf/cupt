@@ -197,7 +197,7 @@ sub export_installed_versions ($) {
 		$ref_installed_info->{'status'} eq 'installed' or next;
 		my $version_string = $ref_installed_info->{'version'};
 		my $package = $self->{cache}->get_binary_package($package_name);
-		my $version = $self->{cache}->get_specific_version($package, $version_string);
+		my $version = $package->find_version($version_string);
 		defined $version or
 				mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
 		push @result, $version;
