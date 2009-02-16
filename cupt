@@ -248,7 +248,7 @@ sub show_package_versions () {
 			$p->(__('Provides'), join(", ", @{$version->{provides}})) if defined($version->{provides});
 			$p->(__('Enhances'), stringify_relations($version->{enhances})) if defined($version->{enhances});
 			foreach ($version->uris()) {
-				$p->(__('URI'), ($_ eq "" ? gettext("<locally installed>") : $_));
+				$p->(__('URI'), ($_ eq "" ? gettext("<installed>") : $_));
 			}
 			$p->(__('MD5'), $version->{md5sum}) if defined($version->{md5sum});
 			$p->(__('SHA1'), $version->{sha1sum}) if defined($version->{sha1sum});
