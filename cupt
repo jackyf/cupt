@@ -239,14 +239,14 @@ sub show_package_versions () {
 					$p->(__('Release'), $_->{release}->{description});
 				}
 			}
-			$p->(__('PreDepends'), stringify_relations($version->{pre_depends})) if defined($version->{pre_depends});
-			$p->(__('Depends'), stringify_relations($version->{depends})) if defined($version->{depends});
-			$p->(__('Recommends'), stringify_relations($version->{recommends})) if defined($version->{recommends});
-			$p->(__('Suggests'), stringify_relations($version->{suggests})) if defined($version->{suggests});
-			$p->(__('Conflicts'), stringify_relations($version->{conflicts})) if defined($version->{conflicts});
-			$p->(__('Replaces'), stringify_relations($version->{replaces})) if defined($version->{replaces});
-			$p->(__('Provides'), join(", ", @{$version->{provides}})) if defined($version->{provides});
-			$p->(__('Enhances'), stringify_relations($version->{enhances})) if defined($version->{enhances});
+			$p->(__('PreDepends'), stringify_relations($version->{pre_depends})) if @{$version->{pre_depends}};
+			$p->(__('Depends'), stringify_relations($version->{depends})) if @{$version->{depends}};
+			$p->(__('Recommends'), stringify_relations($version->{recommends})) if @{$version->{recommends}};
+			$p->(__('Suggests'), stringify_relations($version->{suggests})) if @{$version->{suggests}};
+			$p->(__('Conflicts'), stringify_relations($version->{conflicts})) if @{$version->{conflicts}};
+			$p->(__('Replaces'), stringify_relations($version->{replaces})) if @{$version->{replaces}};
+			$p->(__('Provides'), join(", ", @{$version->{provides}})) if @{$version->{provides}};
+			$p->(__('Enhances'), stringify_relations($version->{enhances})) if @{$version->{enhances}};
 			foreach ($version->uris()) {
 				$p->(__('URI'), ($_ eq "" ? gettext("<installed>") : $_));
 			}
@@ -354,8 +354,6 @@ sub show_package_relations () {
 		}
 
 		foreach my $item (@relation_groups) {
-			next unless defined($item);
-
 			my $relations = $item->[0];
 			my $caption = $item->[1];
 			my @split = split /, /,  stringify_relations($relations);
@@ -566,7 +564,6 @@ sub manage_packages ($) {
 			foreach my $package_name (keys %$ref_desired_packages) {
 				my $ref_package_entry = $ref_desired_packages->{$package_name};
 				next if !defined $ref_package_entry->{version};
-				next if !defined $ref_package_entry->{version}->{recommends};
 
 				foreach my $relation_expression (@{$ref_package_entry->{version}->{recommends}}) {
 					my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);

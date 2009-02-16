@@ -127,25 +127,21 @@ sub import_installed_versions ($$) {
 sub _schedule_new_version_relations ($$) {
 	my ($self, $version) = @_;
 
-	if (defined($version->{pre_depends})) {
-		# ok, unconditionally adding pre-depends
-		foreach (@{$version->{pre_depends}}) {
-			$self->satisfy_relation($_);
-		}
+	# unconditionally adding pre-depends
+	foreach (@{$version->{pre_depends}}) {
+		$self->satisfy_relation($_);
 	}
-	if (defined($version->{depends})) {
-		# ok, unconditionally adding depends
-		foreach (@{$version->{depends}}) {
-			$self->satisfy_relation($_);
-		}
+	# unconditionally adding depends
+	foreach (@{$version->{depends}}) {
+		$self->satisfy_relation($_);
 	}
-	if ($self->{config}->var('apt::install-recommends') && defined($version->{recommends})) {
+	if ($self->{config}->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
 			$self->satisfy_relation($_);
 		}
 	}
-	if ($self->{config}->var('apt::install-suggests') && defined($version->{suggests})) {
+	if ($self->{config}->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
 			$self->satisfy_relation($_);
@@ -335,11 +331,7 @@ sub _resolve ($$) {
 			my $version = $package_entry->{version};
 
 			# checking that all 'Depends' are satisfied
-			my @strong_dependencies;
-			push @strong_dependencies, defined $version->{depends} ? @{$version->{depends}} : ();
-			push @strong_dependencies, defined $version->{pre_depends} ? @{$version->{pre_depends}} : ();
-
-			foreach (@strong_dependencies) {
+			foreach (@{$version->{depends}}, @{$version->{pre_depends}}) {
 				# check if relation is already satisfied
 				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
 				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
@@ -381,73 +373,71 @@ sub _resolve ($$) {
 			}
 
 			# checking that all 'Conflicts' are not satisfied
-			if (defined($version->{conflicts})) {
-				foreach (@{$version->{conflicts}}) {
-					# check if relation is accidentally satisfied
-					my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
+			foreach (@{$version->{conflicts}}) {
+				# check if relation is accidentally satisfied
+				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
 
-					if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
-						# good, nothing to do
-					} else {
-						# so, this can conflict... check it deeper on the fly
-						foreach my $satisfying_version (@$ref_satisfying_versions) {
-							my $other_package_name = $satisfying_version->{package_name};
+				if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+					# good, nothing to do
+				} else {
+					# so, this can conflict... check it deeper on the fly
+					foreach my $satisfying_version (@$ref_satisfying_versions) {
+						my $other_package_name = $satisfying_version->{package_name};
 
-							# package can't conflict with itself
-							$other_package_name ne $package_name or next;
+						# package can't conflict with itself
+						$other_package_name ne $package_name or next;
 
-							# is the package installed?
-							exists $self->{packages}->{$other_package_name} or next;
+						# is the package installed?
+						exists $self->{packages}->{$other_package_name} or next;
 
-							my $other_package_entry = $self->{packages}->{$other_package_name};
+						my $other_package_entry = $self->{packages}->{$other_package_name};
 
-							# does the stick exists?
-							!exists $other_package_entry->{stick} or next;
-							# does the package have an installed version?
-							defined($other_package_entry->{version}) or next;
-							# is this our version?
-							$other_package_entry->{version}->{version_string} eq $satisfying_version->{version_string} or next;
+						# does the stick exists?
+						!exists $other_package_entry->{stick} or next;
+						# does the package have an installed version?
+						defined($other_package_entry->{version}) or next;
+						# is this our version?
+						$other_package_entry->{version}->{version_string} eq $satisfying_version->{version_string} or next;
 
-							$check_failed = 1;
-							# yes... so change it
-							my $other_package = $self->{cache}->get_binary_package($other_package_name);
-							foreach my $other_version (@{$other_package->versions()}) {
+						$check_failed = 1;
+						# yes... so change it
+						my $other_package = $self->{cache}->get_binary_package($other_package_name);
+						foreach my $other_version (@{$other_package->versions()}) {
+							# don't try existing version
+							next if $other_version->{version_string} eq $satisfying_version->{version_string};
+
+							push @possible_actions, [ $other_package_name, $other_version ];
+						}
+
+						if (!$self->{config}->{'no-remove'} || !exists $other_package_entry->{'installed'}) {
+							# or remove it
+							push @possible_actions, [ $other_package_name, undef ];
+						}
+					}
+
+					if ($check_failed) {
+						if (!exists $package_entry->{stick}) {
+							# change version of the package
+							my $package = $self->{cache}->get_binary_package($package_name);
+							foreach my $other_version (@{$package->versions()}) {
 								# don't try existing version
-								next if $other_version->{version_string} eq $satisfying_version->{version_string};
+								next if $other_version->{version_string} eq $version->{version_string};
 
-								push @possible_actions, [ $other_package_name, $other_version ];
+								push @possible_actions, [ $package_name, $other_version ];
 							}
-
-							if (!$self->{config}->{'no-remove'} || !exists $other_package_entry->{'installed'}) {
-								# or remove it
-								push @possible_actions, [ $other_package_name, undef ];
+							
+							if (!$self->{config}->{'no-remove'} || !exists $package_entry->{'installed'}) {
+								# remove the package
+								push @possible_actions, [ $package_name, undef ];
 							}
 						}
 
-						if ($check_failed) {
-							if (!exists $package_entry->{stick}) {
-								# change version of the package
-								my $package = $self->{cache}->get_binary_package($package_name);
-								foreach my $other_version (@{$package->versions()}) {
-									# don't try existing version
-									next if $other_version->{version_string} eq $version->{version_string};
-
-									push @possible_actions, [ $package_name, $other_version ];
-								}
-								
-								if (!$self->{config}->{'no-remove'} || !exists $package_entry->{'installed'}) {
-									# remove the package
-									push @possible_actions, [ $package_name, undef ];
-								}
-							}
-
-							if ($self->{config}->var('debug::resolver')) {
-								my $stringified_relation = stringify_relation_or_group($_);
-								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
-										"satisfied conflicts '$stringified_relation'");
-							}
-							last MAIN_LOOP;
+						if ($self->{config}->var('debug::resolver')) {
+							my $stringified_relation = stringify_relation_or_group($_);
+							$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+									"satisfied conflicts '$stringified_relation'");
 						}
+						last MAIN_LOOP;
 					}
 				}
 			}

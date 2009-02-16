@@ -216,30 +216,28 @@ sub _fill_actions ($$\@) {
 sub _fill_action_dependencies ($$$$) {
 	my ($self, $ref_relation_expressions, $action_name, $ref_inner_action, $graph) = @_;
 
-	if (defined $ref_relation_expressions) {
-		foreach my $relation_expression (@$ref_relation_expressions) {
-			my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+	foreach my $relation_expression (@$ref_relation_expressions) {
+		my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
 
-			SATISFYING_VERSIONS:
-			foreach my $other_version (@$ref_satisfying_versions) {
-				my $other_package_name = $other_version->{package_name};
-				my $other_version_string = $other_version->{version_string};
-				my %candidate_action = (
-					'package_name' => $other_package_name,
-					'version_string' => $other_version_string,
-					'action_name' => $action_name
-				);
-				# search for the appropriate action in action list
-				foreach my $ref_current_action ($graph->vertices()) {
-					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
-						# it's it!
-						my $ref_master_action = $action_name eq 'remove' ? $ref_current_action : $ref_inner_action;
-						my $ref_slave_action = $action_name eq 'remove' ? $ref_inner_action : $ref_current_action;
+		SATISFYING_VERSIONS:
+		foreach my $other_version (@$ref_satisfying_versions) {
+			my $other_package_name = $other_version->{package_name};
+			my $other_version_string = $other_version->{version_string};
+			my %candidate_action = (
+				'package_name' => $other_package_name,
+				'version_string' => $other_version_string,
+				'action_name' => $action_name
+			);
+			# search for the appropriate action in action list
+			foreach my $ref_current_action ($graph->vertices()) {
+				if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
+					# it's it!
+					my $ref_master_action = $action_name eq 'remove' ? $ref_current_action : $ref_inner_action;
+					my $ref_slave_action = $action_name eq 'remove' ? $ref_inner_action : $ref_current_action;
 
-						$graph->add_edge($ref_slave_action, $ref_master_action);
+					$graph->add_edge($ref_slave_action, $ref_master_action);
 
-						last SATISFYING_VERSIONS;
-					}
+					last SATISFYING_VERSIONS;
 				}
 			}
 		}
