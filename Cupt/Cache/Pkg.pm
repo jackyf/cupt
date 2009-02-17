@@ -75,6 +75,23 @@ sub compare_versions ($$) {
 	return Cupt::Core::compare_version_strings($_[0]->{version_string}, $_[1]->{version_string});
 }
 
+=head2 get_installed_version
+
+member function, returns reference to Cupt::Cache::BinaryVersion which is
+installed in the system; if package is not installed, returns undef
+
+=cut
+
+sub get_installed_version ($) {
+	my ($self) = @_;
+
+	foreach my $version (@{$self->versions()})
+	{
+		return $version if ($version->is_local());
+	}
+	return undef;
+}
+
 sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
