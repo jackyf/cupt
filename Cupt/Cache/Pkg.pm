@@ -87,7 +87,7 @@ sub get_installed_version ($) {
 
 	foreach my $version (@{$self->versions()})
 	{
-		return $version if ($version->is_local());
+		return $version if ($version->is_installed());
 	}
 	return undef;
 }
@@ -111,7 +111,7 @@ sub _merge_version {
 		} else {
 			# there is such version string
 
-			if ($found_version->is_local() or $found_version->is_hashes_equal($parsed_version)) {
+			if ($found_version->is_installed() or $found_version->is_hashes_equal($parsed_version)) {
 				# 1)
 				# this is locally installed version
 				# as dpkg now doesn't provide hash sums, let's assume that
