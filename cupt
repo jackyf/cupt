@@ -223,7 +223,7 @@ sub show_package_versions () {
 		foreach my $version (@$ref_versions) {
 			$p->(__('Package'), $package_name);
 			$p->(__('Version'), $version->{version_string});
-			my $installed_status = $cache->{system_state}->get_status_for_version($version);
+			my $installed_status = $cache->get_system_state()->get_status_for_version($version);
 			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : "not installed");
 			$p->(__('Source'), $version->{source_name});
 			$p->(__('Essential'), $version->{essential}) if defined($version->{essential});
@@ -389,7 +389,7 @@ sub policy () {
 		my $package = get_binary_package($package_name);
 		my $policy_version = $cache->get_policy_version($package);
 
-		my $installed_version_string = $cache->{system_state}->get_installed_version_string($package_name);
+		my $installed_version_string = $cache->get_system_state()->get_installed_version_string($package_name);
 		say "$package_name:";
 		say "  " . gettext('Installed') . ": " .
 				(defined($installed_version_string) ?
@@ -466,8 +466,8 @@ sub manage_packages ($) {
 
 	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
-	$resolver->import_installed_versions($cache->{system_state}->export_installed_versions());
-	my $worker = new Cupt::System::Worker($config, $cache, $cache->{system_state});
+	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
+	my $worker = new Cupt::System::Worker($config, $cache);
 	say __('[done]');
 
 	print __('Scheduling requested actions... ');

@@ -32,7 +32,7 @@ Holds info about automatically installed packages.
 
 =cut
 
-use fields qw(source_packages binary_packages config pin_settings system_state
+use fields qw(source_packages binary_packages config pin_settings _system_state
 		can_provide extended_info);
 
 =head1 FLAGS
@@ -80,7 +80,7 @@ sub new {
 
 	if ($build_config{'-installed'}) {
 		# read system settings
-		$self->{system_state} = new Cupt::System::State($self->{config}, $self);
+		$self->{_system_state} = new Cupt::System::State($self->{config}, $self);
 	}
 
 	foreach my $ref_index_entry (@$ref_index_entries) {
@@ -111,6 +111,18 @@ sub new {
 	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
 	return $self;
+}
+
+=head2 get_system_state
+
+member function, returns reference to Cupt::System::State
+
+=cut
+
+sub get_system_state ($) {
+	my ($self) = @_;
+
+	return $self->{_system_state};
 }
 
 sub get_pin {
@@ -205,7 +217,7 @@ sub get_pin {
 	# downgradings will have pin <= 0
 	if ($result <= 1000) {
 		my $package_name = $version->{package_name};
-		my $installed_version_string = $self->{system_state}->get_installed_version_string($package_name);
+		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
 		if (defined($installed_version_string)
 			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
 		{
