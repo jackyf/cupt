@@ -1,4 +1,5 @@
 resolver: take automatically installed packages into account
+worker: do real actions instead of simulating
 resolver: rework, add multi-line fair resolver
 state: add trigger-related statuses
 cache: add checking for index sigs
