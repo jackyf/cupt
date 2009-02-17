@@ -4,5 +4,6 @@ resolver: rework, add multi-line fair resolver
 state: add trigger-related statuses
 cache: add checking for index sigs
 downloader: implement :)
+downloader: debdelta integration
 binary version: implement translated description
 source version: implement :)
