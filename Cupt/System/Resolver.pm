@@ -1,5 +1,4 @@
 package Cupt::System::Resolver;
-# TODO: multi-line resolver
 
 use 5.10.0;
 use strict;

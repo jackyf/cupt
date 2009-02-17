@@ -254,7 +254,6 @@ sub show_package_versions () {
 			$p->(__('SHA1'), $version->{sha1sum}) if defined($version->{sha1sum});
 			$p->(__('SHA256'), $version->{sha256sum}) if defined($version->{sha1sum});
 			$p->(__('Description'), $version->{short_description});
-			# TODO: translated descriptions...
 			print $version->{long_description} if defined($version->{long_description});
 			$p->(__('Homepage'), $version->{homepage}) if defined($version->{homepage});
 			$p->(__('Task'), $version->{task}) if defined($version->{task});
@@ -468,7 +467,6 @@ sub manage_packages ($) {
 	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
 	$resolver->import_installed_versions($cache->{system_state}->export_installed_versions());
-	# TODO: make $cache->get_system_state
 	my $worker = new Cupt::System::Worker($config, $cache, $cache->{system_state});
 	say __('[done]');
 
@@ -519,7 +517,6 @@ sub manage_packages ($) {
 	print __('Resolving possible unmet dependencies... ');
 	my $resolve_result = $resolver->resolve( sub {
 		my $ref_desired_packages = $_[0];
-		# TODO: make $resolver->export_packages
 		$worker->set_desired_state($ref_desired_packages);
 
 		my $ref_actions_preview = $worker->get_actions_preview();
@@ -554,7 +551,6 @@ sub manage_packages ($) {
 				my $ref_package_names = $ref_actions_preview->{$action};
 				foreach my $package_name (@$ref_package_names) {
 					my $package = $cache->get_binary_package($package_name);
-					# TODO: make cache->get_installed_version
 					my $version_string = $cache->{system_state}->get_installed_version_string($package_name);
 					my $version = $package->find_version($version_string);
 					push @versions_to_remove, $version;
