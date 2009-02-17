@@ -551,8 +551,7 @@ sub manage_packages ($) {
 				my $ref_package_names = $ref_actions_preview->{$action};
 				foreach my $package_name (@$ref_package_names) {
 					my $package = $cache->get_binary_package($package_name);
-					my $version_string = $cache->{system_state}->get_installed_version_string($package_name);
-					my $version = $package->find_version($version_string);
+					my $version = $package->get_installed_version();
 					push @versions_to_remove, $version;
 				}
 			}
