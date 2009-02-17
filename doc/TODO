@@ -1,5 +1,4 @@
 package: implement get_installed_version
-cache: implement get_system_state
 resolver: take automatically installed packages into account
 resolver: rework, add multi-line fair resolver
 state: add trigger-related statuses

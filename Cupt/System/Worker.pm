@@ -16,11 +16,9 @@ I<cache> - reference to Cupt::Cache
 
 I<desired_state> - { I<package_name> => { 'version' => I<version> } }
 
-I<system_state> - reference to Cupt::System::State;
-
 =cut
 
-use fields qw(config cache system_state desired_state);
+use fields qw(config cache _system_state desired_state);
 
 =head1 METHODS
 
@@ -40,7 +38,7 @@ sub new {
 	my $self = fields::new($class);
 	$self->{config} = shift;
 	$self->{cache} = shift;
-	$self->{system_state} = shift;
+	$self->{_system_state} = $self->{cache}->get_system_state();
 	$self->{desired_state} = undef;
 	return $self;
 }
@@ -100,12 +98,12 @@ sub get_actions_preview ($) {
 		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
 		if (defined $supposed_version) {
 			# some package version is to be installed
-			if (!exists $self->{system_state}->{installed_info}->{$package_name}) {
+			if (!exists $self->{_system_state}->{installed_info}->{$package_name}) {
 				# no installed info for package
 				$action = 'install';
 			} else {
 				# there is some installed info about package
-				my $ref_installed_info = $self->{system_state}->{installed_info}->{$package_name};
+				my $ref_installed_info = $self->{_system_state}->{installed_info}->{$package_name};
 				if ($ref_installed_info->{'status'} eq 'config-files') {
 					# treat as the same as uninstalled
 					$action = 'install';
@@ -134,9 +132,9 @@ sub get_actions_preview ($) {
 			}
 		} else { 
 			# package is to be removed
-			if (exists $self->{system_state}->{installed_info}->{$package_name}) {
+			if (exists $self->{_system_state}->{installed_info}->{$package_name}) {
 				# there is some installed info about package
-				my $ref_installed_info = $self->{system_state}->{installed_info}->{$package_name};
+				my $ref_installed_info = $self->{_system_state}->{installed_info}->{$package_name};
 				if ($ref_installed_info->{'status'} eq 'unpacked' ||
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
@@ -200,7 +198,7 @@ sub _fill_actions ($$\@) {
 				{
 					$version_string = $self->{desired_state}->{$package_name}->{version}->{version_string};
 				} else {
-					$version_string = $self->{system_state}->get_installed_version_string($package_name);
+					$version_string = $self->{_system_state}->get_installed_version_string($package_name);
 				}
 				$graph->add_vertex({
 						'package_name' => $package_name,
