@@ -52,7 +52,7 @@ sub versions {
 
 =head2 find_version
 
-member function, return reference to Cupt::Cache::{Binary,Source}Version
+member function, returns reference to Cupt::Cache::{Binary,Source}Version
 (depending on the value of the object), which has specific version string
 
 Parameters:
