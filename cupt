@@ -151,7 +151,7 @@ sub select_binary_package_version ($) {
 			# 'avail as' for non-local versions
 			my @avail_as = @{$version->{avail_as}};
 			# first avail entry is for local version
-			shift @avail_as if $version->is_local();
+			shift @avail_as if $version->is_installed();
 
 			foreach (@avail_as) {
 				if (defined($_->{release}) and
@@ -415,14 +415,14 @@ sub policy () {
 			say $version->{version_string} . ' ' . $pin;
 			# throw out local version if present
 			my @avail_as = @{$version->{avail_as}};
-			shift @avail_as if $version->is_local();
+			shift @avail_as if $version->is_installed();
 
 			foreach (@avail_as) {
 				print (' ' x 8);
 				print ${$_->{ref_base_uri}} . ' ';
 				say $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
 			}
-			if ($version->is_local()) {
+			if ($version->is_installed()) {
 				say ' ' x 8, $config->var('dir::state::status');
 			}
 		}

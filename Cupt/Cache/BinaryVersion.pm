@@ -176,7 +176,13 @@ sub uris {
 	return @result;
 }
 
-sub is_local {
+=head2 is_installed
+
+member function, returns whether this version is installed in the system or not
+
+=cut
+
+sub is_installed {
 	(my $self) = @_;
 	return (${$self->{avail_as}->[0]->{ref_base_uri}} eq "");
 }
