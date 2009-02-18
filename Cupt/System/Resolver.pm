@@ -179,6 +179,7 @@ sub install_version ($$) {
 	my ($self, $version) = @_;
 	$self->_install_version_no_stick($version);
 	$self->{packages}->{$version->{package_name}}->{stick} = 1;
+	$self->{packages}->{$version->{package_name}}->{manually_selected} = 1;
 }
 
 =head2 satisfy_relation
@@ -230,6 +231,7 @@ sub remove_package ($$) {
 	my ($self, $package_name) = @_;
 	$self->{packages}->{$package_name}->{version} = undef;
 	$self->{packages}->{$package_name}->{stick} = 1;
+	$self->{packages}->{$package_name}->{manually_selected} = 1;
 	if ($self->{config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
