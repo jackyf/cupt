@@ -312,7 +312,8 @@ sub _resolve ($$) {
 			$sub_mydebug_wrapper->($message);
 		};
 		
-		# [ package_name, version ]
+		# possible actions to resolve dependencies if needed
+		# array of [ package_name, version ]
 		my @possible_actions;
 
 		my $package_name;
