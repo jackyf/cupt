@@ -297,21 +297,21 @@ sub _resolve ($$) {
 	my $package_entry;
 	my $package_name;
 
-	do {
-		my $sub_mydebug_wrapper = sub {
-			mydebug(" " x (scalar @solution_stack) . "@_");
-		};
+	my $sub_mydebug_wrapper = sub {
+		mydebug(" " x (scalar @solution_stack) . "@_");
+	};
 
-		# debugging subroutine
-		my $sub_debug_version_change = sub {
-			my ($package_name, $supposed_version, $original_version) = @_;
+	# debugging subroutine
+	my $sub_debug_version_change = sub {
+		my ($package_name, $supposed_version, $original_version) = @_;
 
-			my $old_version_string = defined($original_version) ? $original_version->{version_string} : '<not installed>';
-			my $new_version_string = defined($supposed_version) ? $supposed_version->{version_string} : '<not installed>';
-			my $message = "trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
-			$sub_mydebug_wrapper->($message);
-		};
+		my $old_version_string = defined($original_version) ? $original_version->{version_string} : '<not installed>';
+		my $new_version_string = defined($supposed_version) ? $supposed_version->{version_string} : '<not installed>';
+		my $message = "trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
+		$sub_mydebug_wrapper->($message);
+	};
 		
+	do {
 		# possible actions to resolve dependencies if needed
 		# array of [ package_name, version ]
 		my @possible_actions;
