@@ -355,7 +355,7 @@ sub _resolve ($$) {
 							push @possible_actions, [ $package_name, $other_version ];
 						}
 
-						if (!$self->{config}->{'no-remove'} || !exists $package_entry->{'installed'}) {
+						if (!$self->{config}->{'no-remove'} || !exists $package_entry->{installed}) {
 							# remove the package
 							push @possible_actions, [ $package_name, undef ];
 						}
@@ -408,7 +408,7 @@ sub _resolve ($$) {
 							push @possible_actions, [ $other_package_name, $other_version ];
 						}
 
-						if (!$self->{config}->{'no-remove'} || !exists $other_package_entry->{'installed'}) {
+						if (!$self->{config}->{'no-remove'} || !exists $other_package_entry->{installed}) {
 							# or remove it
 							push @possible_actions, [ $other_package_name, undef ];
 						}
@@ -425,7 +425,7 @@ sub _resolve ($$) {
 								push @possible_actions, [ $package_name, $other_version ];
 							}
 							
-							if (!$self->{config}->{'no-remove'} || !exists $package_entry->{'installed'}) {
+							if (!$self->{config}->{'no-remove'} || !exists $package_entry->{installed}) {
 								# remove the package
 								push @possible_actions, [ $package_name, undef ];
 							}
