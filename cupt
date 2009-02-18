@@ -225,6 +225,10 @@ sub show_package_versions () {
 			$p->(__('Version'), $version->{version_string});
 			my $installed_status = $cache->get_system_state()->get_status_for_version($version);
 			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : "not installed");
+			if ($version->is_installed()) {
+				my $is_auto_installed = $cache->is_automatically_installed($package_name);
+				$p->(__('Automatically installed'), $is_auto_installed ? __('yes') : __('no'));
+			}
 			$p->(__('Source'), $version->{source_name});
 			$p->(__('Essential'), $version->{essential}) if defined($version->{essential});
 			$p->(__('Priority'), $version->{priority});
