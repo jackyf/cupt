@@ -128,22 +128,22 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->satisfy_relation($_);
+		$self->_auto_satisfy_relation($_);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
-		$self->satisfy_relation($_);
+		$self->_auto_satisfy_relation($_);
 	}
 	if ($self->{config}->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
-			$self->satisfy_relation($_);
+			$self->_auto_satisfy_relation($_);
 		}
 	}
 	if ($self->{config}->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
-			$self->satisfy_relation($_);
+			$self->_auto_satisfy_relation($_);
 		}
 	}
 }
@@ -194,6 +194,13 @@ groups)
 =cut
 
 sub satisfy_relation ($$) {
+	my ($self, $relation_expression) = @_;
+
+	# FIXME: implement dummy package dependencies
+	$self->_auto_satisfy_relation($relation_expression);
+}
+
+sub _auto_satisfy_relation ($$) {
 	my ($self, $relation_expression) = @_;
 
 	my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
