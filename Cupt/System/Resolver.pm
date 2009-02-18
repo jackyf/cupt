@@ -259,8 +259,13 @@ sub upgrade ($) {
 }
 
 # every package version has a weight
-sub _version_weight ($$) {
-	my ($self, $version) = @_;
+sub _package_weight ($$$) {
+	my ($self, $package_name, $version) = @_;
+	return 0 if !defined $version;
+	if ($version->is_installed() && $self->{cache}->is_automatically_installed($package_name)) {
+		# automatically installed packages count nothing for user
+		return 0;
+	}
 	my $result = $self->{cache}->get_pin($version);
 	$result += 5000 if defined($version->{essential});
 	$result += 2000 if $version->{priority} eq 'required';
@@ -480,10 +485,8 @@ sub _resolve ($$) {
 			my $original_version = exists $self->{packages}->{$package_name} ?
 					$self->{packages}->{$package_name}->{version} : undef;
 
-			my $supposed_version_weight =
-					defined($supposed_version) ? $self->_version_weight($supposed_version) : 0;
-			my $original_version_weight =
-					defined($original_version) ? $self->_version_weight($original_version) : 0;
+			my $supposed_version_weight = $self->_package_weight($package_name, $supposed_version);
+			my $original_version_weight = $self->_package_weight($package_name, $original_version);
 
 			# 3rd field in the structure will be "profit" of the change
 			push @$_, $supposed_version_weight - $original_version_weight;
