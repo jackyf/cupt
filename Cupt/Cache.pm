@@ -22,18 +22,10 @@ some versions of the some of <package_name>s may provide and may not provide
 given I<virtual_package>. This field exists solely for
 I<get_satisfying_versions> subroutine for rapid lookup.
 
-=head2 extended_info
-
-  {
-    'automatically_installed' => { I<package_name> => 1 },
-  }
-
-Holds info about automatically installed packages.
-
 =cut
 
 use fields qw(source_packages binary_packages config pin_settings _system_state
-		can_provide extended_info);
+		can_provide _extended_info);
 
 =head1 FLAGS
 
@@ -123,6 +115,35 @@ sub get_system_state ($) {
 	my ($self) = @_;
 
 	return $self->{_system_state};
+}
+
+=head2 get_extended_info
+
+member function, returns info about extended package statuses in format:
+
+  {
+    'automatically_installed' => { I<package_name> => 1 },
+  }
+
+=cut
+
+sub get_extended_info ($) {
+	my ($self) = @_;
+
+	return $self->{_extended_info};
+}
+
+sub is_automatically_installed ($$) {
+	my ($self, $package_name) = @_;
+
+	my $ref_auto_installed = $self->{_extended_info}->{'automatically_installed'};
+	if (exists $ref_auto_installed->{$package_name} &&
+		$ref_auto_installed->{$package_name})
+	{
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 sub get_pin {
@@ -611,12 +632,12 @@ sub _parse_extended_states {
 				$value_line =~ m/^Auto-Installed: (0|1)/ or
 						mydie("bad value line at file '%s' line '%u'", $file, $.);
 
-				my $value = $1;
+				$value = $1;
 			};
 
 			if ($value) {
 				# adding to storage
-				$self->{extended_states}->{$package_name} = $value;
+				$self->{_extended_info}->{'automatically_installed'}->{$package_name} = $value;
 			}
 
 			do { # skipping newline
