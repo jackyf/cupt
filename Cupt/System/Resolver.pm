@@ -574,7 +574,7 @@ sub resolve ($$) {
 		if ($self->{config}->var('debug::resolver')) {
 			mydebug("selected package '%s', version '%s' for relation expression '%s'",
 					$version_to_install->{package_name},
-					$version_to_install->{version},
+					$version_to_install->{version_string},
 					stringify_relation_or_group($relation_expression)
 			);
 		}
