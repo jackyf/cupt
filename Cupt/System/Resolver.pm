@@ -521,15 +521,9 @@ sub _resolve ($$) {
 
 			# fork the solution entry and apply all the solutions by one
 			foreach my $idx (0..$#possible_actions) {
-				my $ref_cloned_solution_entry;
-				if ($idx == 0) {
-					# don't actually clone current solution stack, just leave it
-					$ref_cloned_solution_entry = $ref_current_solution_entry;
-				} else {
-					# clone the current stack to form a new one
-					$ref_cloned_solution_entry = dclone($ref_current_solution_entry);
-					push @solution_entries, $ref_cloned_solution_entry;
-				}
+				# clone the current stack to form a new one
+				my $ref_cloned_solution_entry = dclone($ref_current_solution_entry);
+				push @solution_entries, $ref_cloned_solution_entry;
 
 				my $ref_cloned_packages = $ref_cloned_solution_entry->{packages};
 
@@ -557,9 +551,9 @@ sub _resolve ($$) {
 			}
 			# mark package as failed one more time
 			++$failed_counts{$package_name};
-			# purge current solution
-			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
+		# purge current solution
+		splice @solution_entries, $selected_solution_entry_index, 1;
 	} while $check_failed;
 }
 
