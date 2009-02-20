@@ -4,6 +4,8 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Storable qw(dclone);
+
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_or_group);
 
@@ -25,7 +27,7 @@ parameters that configure resolver's actions:
 
 disallow removing packages for resolving dependencies
 
-=head2 packages
+=head2 _packages
 
 hash { I<package_name> => {S<< 'version' => I<version> >>, S<< 'stick' => I<stick> >>} }
 
@@ -47,7 +49,7 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(config cache params packages pending_relations);
+use fields qw(config cache params _packages pending_relations);
 
 =head1 METHODS
 
@@ -117,9 +119,7 @@ sub import_installed_versions ($$) {
 
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
-		$self->{packages}->{$version->{package_name}}->{version} = $version;
-		# marking them as originally installed
-		$self->{packages}->{$version->{package_name}}->{installed} = 1;
+		$self->{_packages}->{$version->{package_name}}->{version} = $version;
 	}
 }
 
@@ -151,14 +151,14 @@ sub _schedule_new_version_relations ($$) {
 # installs new version, shedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$) {
 	my ($self, $version) = @_;
-	if (exists $self->{packages}->{$version->{package_name}} &&
-		exists $self->{packages}->{$version->{package_name}}->{stick})
+	if (exists $self->{_packages}->{$version->{package_name}} &&
+		exists $self->{_packages}->{$version->{package_name}}->{stick})
 	{
 		# package is restricted to be updated
 		return;
 	}
 
-	$self->{packages}->{$version->{package_name}}->{version} = $version;
+	$self->{_packages}->{$version->{package_name}}->{version} = $version;
 	if ($self->{config}->var('debug::resolver')) {
 		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
 	}
@@ -178,8 +178,8 @@ I<version> - reference to Cupt::Cache::BinaryVersion
 sub install_version ($$) {
 	my ($self, $version) = @_;
 	$self->_install_version_no_stick($version);
-	$self->{packages}->{$version->{package_name}}->{stick} = 1;
-	$self->{packages}->{$version->{package_name}}->{manually_selected} = 1;
+	$self->{_packages}->{$version->{package_name}}->{stick} = 1;
+	$self->{_packages}->{$version->{package_name}}->{manually_selected} = 1;
 }
 
 =head2 satisfy_relation
@@ -205,7 +205,7 @@ sub _auto_satisfy_relation ($$) {
 	my ($self, $relation_expression) = @_;
 
 	my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
-	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{_packages})) {
 		# if relation is not satisfied
 		if ($self->{config}->var('debug::resolver')) {
 			my $message = "auto-installing relation '";
@@ -229,9 +229,9 @@ I<package_name> - string, name of package to remove
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{packages}->{$package_name}->{version} = undef;
-	$self->{packages}->{$package_name}->{stick} = 1;
-	$self->{packages}->{$package_name}->{manually_selected} = 1;
+	$self->{_packages}->{$package_name}->{version} = undef;
+	$self->{_packages}->{$package_name}->{stick} = 1;
+	$self->{_packages}->{$package_name}->{manually_selected} = 1;
 	if ($self->{config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
@@ -247,10 +247,10 @@ No parameters.
 
 sub upgrade ($) {
 	my ($self) = @_;
-	foreach (keys %{$self->{packages}}) {
+	foreach (keys %{$self->{_packages}}) {
 		my $package_name = $_;
 		my $package = $self->{cache}->get_binary_package($package_name);
-		my $original_version = $self->{packages}->{$package_name}->{version};
+		my $original_version = $self->{_packages}->{$package_name}->{version};
 		my $supposed_version = $self->{cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
@@ -294,7 +294,24 @@ sub _resolve ($$) {
 	if ($self->{config}->var('debug::resolver')) {
 		mydebug("started resolving");
 	}
-	my @solution_stack;
+
+	# [ 'packages' => {
+	#                         package_name... => {
+	#                                           'version' => version,
+	#                                           'stick' (optional),
+	#                                           'manually_installed' (optional),
+	#                                         }
+	#                       }
+	#   'score' => score
+	#   'level' => level
+	# ]...
+	my @solution_entries = ({ packages => dclone($self->{_packages}), score => 0, level => 0 });
+	my $selected_solution_entry_index = 0;
+
+	# for each package entry 'count' will contain the number of failures
+	# during processing these package
+	# { package_name => count }...
+	my %failed_counts;
 
 	my $check_failed;
 
@@ -303,7 +320,7 @@ sub _resolve ($$) {
 	my $package_name;
 
 	my $sub_mydebug_wrapper = sub {
-		mydebug(" " x (scalar @solution_stack) . "@_");
+		mydebug(" " x (scalar $solution_entries[$selected_solution_entry_index]->{level}) . "@_");
 	};
 
 	# debugging subroutine
@@ -317,6 +334,14 @@ sub _resolve ($$) {
 	};
 		
 	do {
+		# continue only if we have at least one solution pending, otherwise we have a great fail
+		scalar @solution_entries or return 0;
+
+		$selected_solution_entry_index = 0;
+		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
+
+		my $ref_current_packages = $ref_current_solution_entry->{packages};
+
 		# possible actions to resolve dependencies if needed
 		# array of [ package_name, version ]
 		my @possible_actions;
@@ -328,34 +353,29 @@ sub _resolve ($$) {
 
 		# to speed up the complex decision steps, if solution stack is not
 		# empty, firstly check the packages that had a problem
-		#
-		# @last_packages: will have one or zero package name, which was last in solution stack
-		# 
-		# additionally, each package entry will contain 'failed' field, which
-		# contains the number of failures during processing these packages
-		my @last_package = scalar @solution_stack ? ($solution_stack[$#solution_stack]->[0]->[0]) : ();
 		my @packages_in_order = sort {
-			($self->{packages}->{$b}->{failed} // 0) <=> ($self->{packages}->{$a}->{failed} // 0)
-		} keys %{$self->{packages}};
+			($failed_counts{$b} // 0) <=> ($failed_counts{$a} // 0)
+		} keys %$ref_current_packages;
 
 		MAIN_LOOP:
-		foreach (@last_package, @packages_in_order) {
+		foreach (@packages_in_order) {
 			$package_name = $_;
-			$package_entry = $self->{packages}->{$package_name};
+			$package_entry = $ref_current_packages->{$package_name};
 			my $version = $package_entry->{version};
+			defined $version or next;
 
 			# checking that all 'Depends' are satisfied
 			foreach (@{$version->{depends}}, @{$version->{pre_depends}}) {
 				# check if relation is already satisfied
 				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
-				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+				if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 					# good, nothing to do
 				} else {
 					# for resolving we can do:
 
 					# install one of versions package needs
 					foreach my $satisfying_version (@$ref_satisfying_versions) {
-						if (!exists $self->{packages}->{$satisfying_version->{package_name}}->{stick}) {
+						if (!exists $ref_current_packages->{$satisfying_version->{package_name}}->{stick}) {
 							push @possible_actions, [ $satisfying_version->{package_name}, $satisfying_version ];
 						}
 					}
@@ -370,7 +390,7 @@ sub _resolve ($$) {
 							push @possible_actions, [ $package_name, $other_version ];
 						}
 
-						if (!$self->{config}->{'no-remove'} || !exists $package_entry->{installed}) {
+						if (!$self->{config}->{'no-remove'} || !$version->is_installed()) {
 							# remove the package
 							push @possible_actions, [ $package_name, undef ];
 						}
@@ -391,7 +411,7 @@ sub _resolve ($$) {
 				# check if relation is accidentally satisfied
 				my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
 
-				if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{packages})) {
+				if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 					# good, nothing to do
 				} else {
 					# so, this can conflict... check it deeper on the fly
@@ -402,9 +422,9 @@ sub _resolve ($$) {
 						$other_package_name ne $package_name or next;
 
 						# is the package installed?
-						exists $self->{packages}->{$other_package_name} or next;
+						exists $ref_current_packages->{$other_package_name} or next;
 
-						my $other_package_entry = $self->{packages}->{$other_package_name};
+						my $other_package_entry = $ref_current_packages->{$other_package_name};
 
 						# does the stick exists?
 						!exists $other_package_entry->{stick} or next;
@@ -459,7 +479,7 @@ sub _resolve ($$) {
 
 		if (!$check_failed) {
 			# suggest found solution
-			my $user_answer = $sub_accept->($self->{packages});
+			my $user_answer = $sub_accept->($ref_current_packages);
 			if (!defined $user_answer) {
 				# exiting...
 				return undef;
@@ -474,71 +494,72 @@ sub _resolve ($$) {
 				$check_failed = 1;
 				if ($self->{config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("declined");
+					# purge current solution
+					splice @solution_entries, $selected_solution_entry_index, 1;
+					next;
 				}
 			}
 		}
 
-		# firstly rank all solutions
-		foreach (@possible_actions) {
-			my $package_name = $_->[0];
-			my $supposed_version = $_->[1];
-			my $original_version = exists $self->{packages}->{$package_name} ?
-					$self->{packages}->{$package_name}->{version} : undef;
+		if (scalar @possible_actions) {
+			# firstly rank all solutions
+			foreach (@possible_actions) {
+				my $package_name = $_->[0];
+				my $supposed_version = $_->[1];
+				my $original_version = exists $ref_current_packages->{$package_name} ?
+						$ref_current_packages->{$package_name}->{version} : undef;
 
-			my $supposed_version_weight = $self->_package_weight($package_name, $supposed_version);
-			my $original_version_weight = $self->_package_weight($package_name, $original_version);
+				my $supposed_version_weight = $self->_package_weight($package_name, $supposed_version);
+				my $original_version_weight = $self->_package_weight($package_name, $original_version);
 
-			# 3rd field in the structure will be "profit" of the change
-			push @$_, $supposed_version_weight - $original_version_weight;
-		}
+				# 3rd field in the structure will be "profit" of the change
+				push @$_, $supposed_version_weight - $original_version_weight;
+			}
 
-		# sort them by "rank"
-		@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
+			# sort them by "rank"
+			@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
 
-		# push them into solution stack
-		push @solution_stack, \@possible_actions;
+			# fork the solution entry and apply all the solutions by one
+			foreach my $idx (0..$#possible_actions) {
+				my $ref_cloned_solution_entry;
+				if ($idx == 0) {
+					# don't actually clone current solution stack, just leave it
+					$ref_cloned_solution_entry = $ref_current_solution_entry;
+				} else {
+					# clone the current stack to form a new one
+					$ref_cloned_solution_entry = dclone($ref_current_solution_entry);
+					push @solution_entries, $ref_cloned_solution_entry;
+				}
 
-		# while there is nothing more on the current level, pop the stack...
-		while (scalar @{$solution_stack[$#solution_stack]} == 0) {
-			# pop
-			pop @solution_stack;
+				my $ref_cloned_packages = $ref_cloned_solution_entry->{packages};
 
+				my $ref_action_to_apply = $possible_actions[$idx];
+				# apply the solution
+				my $package_name_to_change = $ref_action_to_apply->[0];
+				my $supposed_version = $ref_action_to_apply->[1];
+				my $ref_package_entry_to_change = $ref_cloned_packages->{$package_name_to_change};
+				my $original_version = $ref_package_entry_to_change->{version};
+
+				if ($self->{config}->var('debug::resolver')) {
+					$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
+				}
+
+				# raise the level
+				++$ref_cloned_solution_entry->{level};
+
+				# set stick for change for the time on underlying solutions
+				$ref_package_entry_to_change->{stick} = 1;
+				$ref_package_entry_to_change->{version} = $supposed_version;
+			}
+		} else {
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
 			}
 			# mark package as failed one more time
-			++$package_entry->{failed};
-
-			# continue only if solution stack is not empty, otherwise we have a great fail
-			scalar @solution_stack or return 0;
-
-			# undone previous decision
-			my $ref_previous_state = shift @{$solution_stack[$#solution_stack]};
-			my $package_name = $ref_previous_state->[0];
-			my $original_version = $ref_previous_state->[1];
-
-			my $ref_package_entry = $self->{packages}->{$package_name};
-			$ref_package_entry->{version} = $original_version;
-			delete $ref_package_entry->{stick};
+			++$failed_counts{$package_name};
+			# purge current solution
+			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
-
-		# apply pending solution
-		my $ref_next_state = $solution_stack[$#solution_stack]->[0];
-		my $package_name_to_change = $ref_next_state->[0];
-		my $supposed_version = $ref_next_state->[1];
-		my $ref_package_entry_to_change = $self->{packages}->{$package_name_to_change};
-		my $original_version = $ref_package_entry_to_change->{version};
-
-		if ($self->{config}->var('debug::resolver')) {
-			$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
-		}
-
-		# set stick for change for the time on underlying solutions
-		$ref_package_entry_to_change->{stick} = 1;
-		$ref_package_entry_to_change->{version} = $supposed_version;
-
-		# leave original version for returning
-		$ref_next_state->[1] = $original_version;
 	} while $check_failed;
 }
 
