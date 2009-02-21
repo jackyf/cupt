@@ -455,6 +455,10 @@ sub manage_packages ($) {
 	require Cupt::System::Resolver;
 	require Cupt::System::Worker;
 
+	my $o_resolver_type = 'multiline-fair';
+	GetOptions(
+		'resolver-type=s' => \$o_resolver_type,
+	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
@@ -470,6 +474,7 @@ sub manage_packages ($) {
 
 	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
+	$resolver->set_params('resolver-type' => $o_resolver_type);
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
 	my $worker = new Cupt::System::Worker($config, $cache);
 	say __('[done]');

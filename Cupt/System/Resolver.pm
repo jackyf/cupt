@@ -17,14 +17,6 @@ stores reference to config (Cupt::Config)
 
 stores reference to cache (Cupt::Cache)
 
-=head2 params
-
-parameters that configure resolver's actions:
-
-=head3 no-remove
-
-disallow removing packages for resolving dependencies
-
 =head2 _packages
 
 hash { I<package_name> => {S<< 'version' => I<version> >>, S<< 'stick' => I<stick> >>} }
@@ -47,7 +39,41 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(config cache params _packages pending_relations);
+use fields qw(config cache _params _packages pending_relations);
+
+=head1 PARAMS
+
+parameters that change resolver's behaviour, can be set by C<set_params> method
+
+=head2 no-remove
+
+disallows removing packages for resolving dependencies
+
+=head2 resolver-type
+
+determines type of resolver: can be
+
+=over
+
+=item first-good
+
+most stupid resolver. At each problem situation, chooses the best solution for
+this situation. No lookings ahead. Works pretty good for simple install requests and
+for one-repository system.
+
+=item multiline-fair
+
+medium-class resolver. It chooses best possible solution (by overall score)
+each time. This is a default resolver.
+
+=item multiline-full
+
+full resolver. Guaranteed to suggest solution in precise order from the best to
+the worst result score (by the resolver's opinion). Latter means that resolver
+builds full resolve tree before suggesting the solutions, which means large RAM
+and speed penalties. Use it with caution.
+
+=back
 
 =head1 METHODS
 
@@ -73,8 +99,9 @@ sub new {
 	$self->{cache} = shift;
 
 	# resolver params
-	%{$self->{params}} = (
+	%{$self->{_params}} = (
 		'no-remove' => 0,
+		'resolver-type' => 'multiline-fair',
 	);
 
 	$self->{pending_relations} = [];
@@ -97,7 +124,7 @@ sub set_params {
 	while (@_) {
 		my $key = shift;
 		my $value = shift;
-		$self->{config}->{$key} = $value;
+		$self->{_params}->{$key} = $value;
 	}
 }
 
@@ -256,10 +283,44 @@ sub upgrade ($) {
 	}
 }
 
+sub __first_good_chooser {
+	return 0;
+}
+
+sub __multiline_fair_chooser {
+	my ($ref_solution_entries) = @_;
+
+	my $max_score = $ref_solution_entries->[0]->{score};
+	my $idx_of_max = 0;
+	foreach my $idx (1..$#{$ref_solution_entries}) {
+		if ($max_score < $ref_solution_entries->[$idx]->{score}) {
+			$max_score = $ref_solution_entries->[$idx]->{score};
+			$idx_of_max = $idx;
+		}
+	}
+	return $idx_of_max;
+}
+
+sub __multiline_full_chooser {
+	my ($ref_solution_entries) = @_;
+	# defer the decision until all solution are built
+	foreach my $idx ($#{$ref_solution_entries}) {
+		if (! $ref_solution_entries->[$idx]->{finished}) {
+			# process it
+			return $idx;
+		}
+	}
+
+	# what?! all tree has been already built?.. ok, let's choose the best
+	# solution
+	return __multiline_fair_chooser($ref_solution_entries);
+}
+
 # every package version has a weight
-sub _package_weight ($$$) {
-	my ($self, $package_name, $version) = @_;
+sub _package_weight ($$) {
+	my ($self, $version) = @_;
 	return 0 if !defined $version;
+	my $package_name = $version->{package_name};
 	if ($version->is_installed() && $self->{cache}->is_automatically_installed($package_name)) {
 		# automatically installed packages count nothing for user
 		return 0;
@@ -300,6 +361,14 @@ sub __clone_packages ($) {
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
+	my %solution_choosers = (
+		'first-good' => \&__first_good_chooser,
+		'multiline-fair' => \&__multiline_fair_chooser,
+		'multiline-full' => \&__multiline_full_chooser,
+	);
+
+	my $sub_solution_chooser = $solution_choosers{$self->{_params}->{'resolver-type'}};
+
 	if ($self->{config}->var('debug::resolver')) {
 		mydebug("started resolving");
 	}
@@ -314,9 +383,10 @@ sub _resolve ($$) {
 	#   'score' => score
 	#   'level' => level
 	#   'identifier' => identifier
+	#   'finished' => finished (1 | 0)
 	# ]...
 	my @solution_entries = ({ packages => __clone_packages($self->{_packages}),
-			score => 0, level => 0, identifier => 0 });
+			score => 0, level => 0, identifier => 0, finished => 0 });
 	my $next_free_solution_identifier = 1;
 	my $selected_solution_entry_index = 0;
 
@@ -364,6 +434,9 @@ sub _resolve ($$) {
 		# raise the level
 		++$ref_solution_entry->{level};
 
+		my $profit = $self->_package_weight($supposed_version) - $self->_package_weight($original_version);
+		$ref_solution_entry->{score} += $profit;
+
 		# set stick for change for the time on underlying solutions
 		$ref_package_entry_to_change->{stick} = 1;
 		$ref_package_entry_to_change->{version} = $supposed_version;
@@ -377,7 +450,6 @@ sub _resolve ($$) {
 		# array of [ package_name, version ]
 		my @possible_actions;
 
-		$selected_solution_entry_index = 0;
 		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
 
 		my $ref_current_packages = $ref_current_solution_entry->{packages};
@@ -451,7 +523,7 @@ sub _resolve ($$) {
 								}
 							}
 
-							if (!$self->{config}->{'no-remove'} || !$version->is_installed()) {
+							if (!$self->{_params}->{'no-remove'} || !$version->is_installed()) {
 								# remove the package
 								push @possible_actions, [ $package_name, undef ];
 							}
@@ -513,7 +585,7 @@ sub _resolve ($$) {
 								push @possible_actions, [ $other_package_name, $other_version ];
 							}
 
-							if (!$self->{config}->{'no-remove'} || !exists $other_package_entry->{installed}) {
+							if (!$self->{_params}->{'no-remove'} || !exists $other_package_entry->{installed}) {
 								# or remove it
 								push @possible_actions, [ $other_package_name, undef ];
 							}
@@ -535,7 +607,7 @@ sub _resolve ($$) {
 									push @possible_actions, [ $package_name, $other_version ];
 								}
 								
-								if (!$self->{config}->{'no-remove'} || !exists $package_entry->{installed}) {
+								if (!$self->{_params}->{'no-remove'} || !exists $package_entry->{installed}) {
 									# remove the package
 									push @possible_actions, [ $package_name, undef ];
 								}
@@ -555,6 +627,20 @@ sub _resolve ($$) {
 		}
 
 		if (!$check_failed) {
+			# in case we go next
+			$check_failed = 1;
+
+			$ref_current_solution_entry->{finished} = 1;
+			# resolver can refuse the solution
+			my $new_selected_solution_entry_index = $sub_solution_chooser->(
+					\@solution_entries, $selected_solution_entry_index);
+
+			if ($new_selected_solution_entry_index != $selected_solution_entry_index) {
+				# ok, process other solution
+				$selected_solution_entry_index = $new_selected_solution_entry_index;
+				next;
+			}
+
 			# suggest found solution
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("proposing this solution");
@@ -571,7 +657,6 @@ sub _resolve ($$) {
 				return 1;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
-				$check_failed = 1;
 				if ($self->{config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("declined");
 				}
@@ -589,8 +674,8 @@ sub _resolve ($$) {
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->{version} : undef;
 
-				my $supposed_version_weight = $self->_package_weight($package_name, $supposed_version);
-				my $original_version_weight = $self->_package_weight($package_name, $original_version);
+				my $supposed_version_weight = $self->_package_weight($supposed_version);
+				my $original_version_weight = $self->_package_weight($original_version);
 
 				# 3rd field in the structure will be "profit" of the change
 				push @$_, $supposed_version_weight - $original_version_weight;
@@ -614,6 +699,7 @@ sub _resolve ($$) {
 						level => $ref_current_solution_entry->{level},
 						score => $ref_current_solution_entry->{score},
 						identifier => $next_free_solution_identifier++,
+						finished => 0,
 					};
 					push @forked_solution_entries, $ref_cloned_solution_entry;
 				}
@@ -632,6 +718,8 @@ sub _resolve ($$) {
 			# purge current solution
 			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
+		# choosing the next solution entry to process
+		$selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
 	}} while $check_failed;
 }
 
