@@ -416,7 +416,20 @@ sub _resolve ($$) {
 							# don't try existing version
 							next if $other_version->{version_string} eq $version->{version_string};
 
-							push @possible_actions, [ $package_name, $other_version ];
+							# let's check if other version has the same relation
+							my $failed_relation_string = stringify_relation_or_group($_);
+							my $found = 0;
+							foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
+								if ($failed_relation_string eq stringify_relation_or_group($_)) {
+									# yes, it has the same relation, so other version will also fail
+									# so it seems there is no sense trying it
+									$found = 1;
+									last;
+								}
+							}
+							if (!$found) {
+								push @possible_actions, [ $package_name, $other_version ];
+							}
 						}
 
 						if (!$self->{config}->{'no-remove'} || !$version->is_installed()) {
