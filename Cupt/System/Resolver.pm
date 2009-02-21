@@ -425,7 +425,9 @@ sub _resolve ($$) {
 
 					if (scalar @possible_actions == 1) {
 						# only one solution is available
-						$sub_mydebug_wrapper->("only one solution available");
+						if ($self->{config}->var('debug::resolver')) {
+							$sub_mydebug_wrapper->("only one solution available");
+						}
 						$sub_apply_action->($ref_current_solution_entry, $possible_actions[0]);
 						@possible_actions = ();
 						next MAIN_LOOP;
