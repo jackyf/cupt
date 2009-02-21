@@ -556,6 +556,9 @@ sub _resolve ($$) {
 
 		if (!$check_failed) {
 			# suggest found solution
+			if ($self->{config}->var('debug::resolver')) {
+				$sub_mydebug_wrapper->("proposing this solution");
+			}
 			my $user_answer = $sub_accept->($ref_current_packages);
 			if (!defined $user_answer) {
 				# exiting...
