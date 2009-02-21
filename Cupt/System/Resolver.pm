@@ -313,8 +313,11 @@ sub _resolve ($$) {
 	#                 }
 	#   'score' => score
 	#   'level' => level
+	#   'identifier' => identifier
 	# ]...
-	my @solution_entries = ({ packages => __clone_packages($self->{_packages}), score => 0, level => 0 });
+	my @solution_entries = ({ packages => __clone_packages($self->{_packages}),
+			score => 0, level => 0, identifier => 0 });
+	my $next_free_solution_identifier = 1;
 	my $selected_solution_entry_index = 0;
 
 	# for each package entry 'count' will contain the number of failures
@@ -329,16 +332,19 @@ sub _resolve ($$) {
 	my $package_name;
 
 	my $sub_mydebug_wrapper = sub {
-		mydebug(" " x (scalar $solution_entries[$selected_solution_entry_index]->{level}) . "@_");
+		my $level = $solution_entries[$selected_solution_entry_index]->{level};
+		my $identifier = $solution_entries[$selected_solution_entry_index]->{identifier};
+		mydebug(" " x $level . "($identifier) @_");
 	};
 
 	# debugging subroutine
 	my $sub_debug_version_change = sub {
-		my ($package_name, $supposed_version, $original_version) = @_;
+		my ($new_solution_identifier, $package_name, $supposed_version, $original_version) = @_;
 
 		my $old_version_string = defined($original_version) ? $original_version->{version_string} : '<not installed>';
 		my $new_version_string = defined($supposed_version) ? $supposed_version->{version_string} : '<not installed>';
-		my $message = "trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
+		my $message = "-> ($new_solution_identifier) " .
+				"trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
 		$sub_mydebug_wrapper->($message);
 	};
 
@@ -351,7 +357,8 @@ sub _resolve ($$) {
 		my $original_version = $ref_package_entry_to_change->{version};
 
 		if ($self->{config}->var('debug::resolver')) {
-			$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
+			$sub_debug_version_change->($ref_solution_entry->{identifier},
+					$package_name_to_change, $supposed_version, $original_version);
 		}
 
 		# raise the level
@@ -446,10 +453,6 @@ sub _resolve ($$) {
 					$check_failed = 1;
 
 					if (scalar @possible_actions == 1) {
-						# only one solution is available
-						if ($self->{config}->var('debug::resolver')) {
-							$sub_mydebug_wrapper->("only one solution available");
-						}
 						$sub_apply_action->($ref_current_solution_entry, $possible_actions[0]);
 						@possible_actions = ();
 						next MAIN_LOOP;
@@ -587,6 +590,7 @@ sub _resolve ($$) {
 						packages => __clone_packages($ref_current_solution_entry->{packages}),
 						level => $ref_current_solution_entry->{level},
 						score => $ref_current_solution_entry->{score},
+						identifier => $next_free_solution_identifier++,
 					};
 					push @forked_solution_entries, $ref_cloned_solution_entry;
 				}
