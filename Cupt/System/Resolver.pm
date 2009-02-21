@@ -4,8 +4,6 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use Storable qw(dclone);
-
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_or_group);
 
@@ -288,6 +286,17 @@ sub __is_version_array_intersects_with_packages ($$) {
 	return 0;
 }
 
+sub __clone_packages ($) {
+	my ($ref_packages) = @_;
+
+	my %clone;
+	foreach (keys %$ref_packages) {
+		my %ref_new_package_entry = %{$ref_packages->{$_}};
+		$clone{$_} = \%ref_new_package_entry;
+	}
+	return \%clone;
+}
+
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
@@ -305,7 +314,7 @@ sub _resolve ($$) {
 	#   'score' => score
 	#   'level' => level
 	# ]...
-	my @solution_entries = ({ packages => dclone($self->{_packages}), score => 0, level => 0 });
+	my @solution_entries = ({ packages => __clone_packages($self->{_packages}), score => 0, level => 0 });
 	my $selected_solution_entry_index = 0;
 
 	# for each package entry 'count' will contain the number of failures
@@ -560,7 +569,12 @@ sub _resolve ($$) {
 					$ref_cloned_solution_entry = $ref_current_solution_entry;
 				} else {
 					# clone the current stack to form a new one
-					$ref_cloned_solution_entry = dclone($ref_current_solution_entry);
+					# we can obviously use Storable::dclone, or Clone::Clone here, but speed...
+					$ref_cloned_solution_entry = {
+						packages => __clone_packages($ref_current_solution_entry->{packages}),
+						level => $ref_current_solution_entry->{level},
+						score => $ref_current_solution_entry->{score},
+					};
 					push @forked_solution_entries, $ref_cloned_solution_entry;
 				}
 
