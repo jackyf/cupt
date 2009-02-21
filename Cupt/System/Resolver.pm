@@ -369,7 +369,7 @@ sub _resolve ($$) {
 		$ref_package_entry_to_change->{version} = $supposed_version;
 	};
 
-	do {
+	do {{
 		# continue only if we have at least one solution pending, otherwise we have a great fail
 		scalar @solution_entries or return 0;
 
@@ -624,7 +624,7 @@ sub _resolve ($$) {
 			# purge current solution
 			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
-	} while $check_failed;
+	}} while $check_failed;
 }
 
 =head2 resolve
