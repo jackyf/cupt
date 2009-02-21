@@ -332,19 +332,39 @@ sub _resolve ($$) {
 		my $message = "trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
 		$sub_mydebug_wrapper->($message);
 	};
-		
+
+	my $sub_apply_action = sub {
+		my ($ref_solution_entry, $ref_action_to_apply) = @_;
+
+		my $package_name_to_change = $ref_action_to_apply->[0];
+		my $supposed_version = $ref_action_to_apply->[1];
+		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
+		my $original_version = $ref_package_entry_to_change->{version};
+
+		if ($self->{config}->var('debug::resolver')) {
+			$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
+		}
+
+		# raise the level
+		++$ref_solution_entry->{level};
+
+		# set stick for change for the time on underlying solutions
+		$ref_package_entry_to_change->{stick} = 1;
+		$ref_package_entry_to_change->{version} = $supposed_version;
+	};
+
 	do {
 		# continue only if we have at least one solution pending, otherwise we have a great fail
 		scalar @solution_entries or return 0;
+
+		# possible actions to resolve dependencies if needed
+		# array of [ package_name, version ]
+		my @possible_actions;
 
 		$selected_solution_entry_index = 0;
 		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
 
 		my $ref_current_packages = $ref_current_solution_entry->{packages};
-
-		# possible actions to resolve dependencies if needed
-		# array of [ package_name, version ]
-		my @possible_actions;
 
 		my $package_name;
 
@@ -402,6 +422,14 @@ sub _resolve ($$) {
 								"unsatisfied depends '$stringified_relation'");
 					}
 					$check_failed = 1;
+
+					if (scalar @possible_actions == 1) {
+						# only one solution is available
+						$sub_mydebug_wrapper->("only one solution available");
+						$sub_apply_action->($ref_current_solution_entry, $possible_actions[0]);
+						@possible_actions = ();
+						next MAIN_LOOP;
+					}
 					last MAIN_LOOP;
 				}
 			}
@@ -415,6 +443,7 @@ sub _resolve ($$) {
 					# good, nothing to do
 				} else {
 					# so, this can conflict... check it deeper on the fly
+					my $conflict_found = 0;
 					foreach my $satisfying_version (@$ref_satisfying_versions) {
 						my $other_package_name = $satisfying_version->{package_name};
 
@@ -433,7 +462,7 @@ sub _resolve ($$) {
 						# is this our version?
 						$other_package_entry->{version}->{version_string} eq $satisfying_version->{version_string} or next;
 
-						$check_failed = 1;
+						$conflict_found = 1;
 						# yes... so change it
 						my $other_package = $self->{cache}->get_binary_package($other_package_name);
 						foreach my $other_version (@{$other_package->versions()}) {
@@ -449,7 +478,8 @@ sub _resolve ($$) {
 						}
 					}
 
-					if ($check_failed) {
+					if ($conflict_found) {
+						$check_failed = 1;
 						if (!exists $package_entry->{stick}) {
 							# change version of the package
 							my $package = $self->{cache}->get_binary_package($package_name);
@@ -532,29 +562,13 @@ sub _resolve ($$) {
 					push @forked_solution_entries, $ref_cloned_solution_entry;
 				}
 
-				my $ref_cloned_packages = $ref_cloned_solution_entry->{packages};
-
 				my $ref_action_to_apply = $possible_actions[$idx];
 				# apply the solution
-				my $package_name_to_change = $ref_action_to_apply->[0];
-				my $supposed_version = $ref_action_to_apply->[1];
-				my $ref_package_entry_to_change = $ref_cloned_packages->{$package_name_to_change};
-				my $original_version = $ref_package_entry_to_change->{version};
-
-				if ($self->{config}->var('debug::resolver')) {
-					$sub_debug_version_change->($package_name_to_change, $supposed_version, $original_version);
-				}
-
-				# raise the level
-				++$ref_cloned_solution_entry->{level};
-
-				# set stick for change for the time on underlying solutions
-				$ref_package_entry_to_change->{stick} = 1;
-				$ref_package_entry_to_change->{version} = $supposed_version;
+				$sub_apply_action->($ref_cloned_solution_entry, $ref_action_to_apply);
 			}
 
-			# adding forked solutions to main solution storage
-			splice @solution_entries, $selected_solution_entry_index, 0, reverse @forked_solution_entries;
+			# adding forked solutions to main solution storage just after current solution
+			splice @solution_entries, $selected_solution_entry_index+1, 0, reverse @forked_solution_entries;
 		} else {
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
