@@ -516,14 +516,21 @@ sub _resolve ($$) {
 				push @$_, $supposed_version_weight - $original_version_weight;
 			}
 
-			# sort them by "rank"
-			@possible_actions = sort { $b->[2] <=> $a->[2] } @possible_actions;
+			# sort them by "rank", from more bad to more good
+			@possible_actions = sort { $a->[2] <=> $b->[2] } @possible_actions;
 
+			my @forked_solution_entries;
 			# fork the solution entry and apply all the solutions by one
 			foreach my $idx (0..$#possible_actions) {
-				# clone the current stack to form a new one
-				my $ref_cloned_solution_entry = dclone($ref_current_solution_entry);
-				push @solution_entries, $ref_cloned_solution_entry;
+				my $ref_cloned_solution_entry;
+				if ($idx == $#possible_actions) {
+					# use existing solution entry
+					$ref_cloned_solution_entry = $ref_current_solution_entry;
+				} else {
+					# clone the current stack to form a new one
+					$ref_cloned_solution_entry = dclone($ref_current_solution_entry);
+					push @forked_solution_entries, $ref_cloned_solution_entry;
+				}
 
 				my $ref_cloned_packages = $ref_cloned_solution_entry->{packages};
 
@@ -545,15 +552,18 @@ sub _resolve ($$) {
 				$ref_package_entry_to_change->{stick} = 1;
 				$ref_package_entry_to_change->{version} = $supposed_version;
 			}
+
+			# adding forked solutions to main solution storage
+			splice @solution_entries, $selected_solution_entry_index, 0, reverse @forked_solution_entries;
 		} else {
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
 			}
 			# mark package as failed one more time
 			++$failed_counts{$package_name};
+			# purge current solution
+			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
-		# purge current solution
-		splice @solution_entries, $selected_solution_entry_index, 1;
 	} while $check_failed;
 }
 
