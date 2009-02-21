@@ -416,6 +416,9 @@ sub _resolve ($$) {
 					if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 						# good, nothing to do
 					} else {
+						# mark package as failed one more time
+						++$failed_counts{$package_name};
+
 						# for resolving we can do:
 
 						# install one of versions package needs
@@ -518,6 +521,10 @@ sub _resolve ($$) {
 
 						if ($conflict_found) {
 							$check_failed = 1;
+
+							# mark package as failed one more time
+							++$failed_counts{$package_name};
+
 							if (!exists $package_entry->{stick}) {
 								# change version of the package
 								my $package = $self->{cache}->get_binary_package($package_name);
@@ -619,8 +626,6 @@ sub _resolve ($$) {
 			if ($self->{config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
 			}
-			# mark package as failed one more time
-			++$failed_counts{$package_name};
 			# purge current solution
 			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
