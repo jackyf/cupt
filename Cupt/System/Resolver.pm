@@ -305,12 +305,12 @@ sub _resolve ($$) {
 	}
 
 	# [ 'packages' => {
-	#                         package_name... => {
-	#                                           'version' => version,
-	#                                           'stick' (optional),
-	#                                           'manually_installed' (optional),
-	#                                         }
-	#                       }
+	#                   package_name... => {
+	#                                        'version' => version,
+	#                                        'stick' (optional),
+	#                                        'manually_installed' (optional),
+	#                                      }
+	#                 }
 	#   'score' => score
 	#   'level' => level
 	# ]...
