@@ -551,10 +551,10 @@ sub _resolve ($$) {
 				$check_failed = 1;
 				if ($self->{config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("declined");
-					# purge current solution
-					splice @solution_entries, $selected_solution_entry_index, 1;
-					next;
 				}
+				# purge current solution
+				splice @solution_entries, $selected_solution_entry_index, 1;
+				next;
 			}
 		}
 
