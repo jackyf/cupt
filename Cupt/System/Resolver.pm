@@ -396,9 +396,11 @@ sub _resolve ($$) {
 	my $package_name;
 
 	my $sub_mydebug_wrapper = sub {
-		my $level = $solution_entries[$selected_solution_entry_index]->{level};
-		my $identifier = $solution_entries[$selected_solution_entry_index]->{identifier};
-		mydebug(" " x $level . "($identifier) @_");
+		my $ref_solution_entry = $solution_entries[$selected_solution_entry_index];
+		my $level = $ref_solution_entry->{level};
+		my $identifier = $ref_solution_entry->{identifier};
+		my $score = $ref_solution_entry->{score};
+		mydebug(" " x $level . "($identifier:$score) @_");
 	};
 
 	# debugging subroutine
