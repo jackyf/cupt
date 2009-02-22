@@ -69,7 +69,7 @@ sub versions {
 	return \@result;
 }
 
-=head2 find_version
+=head2 get_specific_version
 
 method, returns reference to Cupt::Cache::{Binary,Source}Version
 (depending on the value of the object), which has specific version string
@@ -80,7 +80,7 @@ I<version_string> - version string to search
 
 =cut
 
-sub find_version ($$) {
+sub get_specific_version ($$) {
 	my ($self, $lookup_version_string) = @_;
 
 	foreach my $version (@{$self->versions()})
