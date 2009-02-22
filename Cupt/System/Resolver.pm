@@ -7,15 +7,7 @@ use warnings;
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_or_group);
 
-=head1 FIELDS
-
-=head2 config
-
-stores reference to config (Cupt::Config)
-
-=head2 cache
-
-stores reference to cache (Cupt::Cache)
+=begin comment
 
 =head2 _packages
 
@@ -36,6 +28,8 @@ indicate can resolver modify this item or not
 array of relations which are to be satisfied by final resolver, used for
 filling depends, recommends (optionally), suggests (optionally) of requested
 packages, or for satisfying some requested relations
+
+=end comment
 
 =cut
 
