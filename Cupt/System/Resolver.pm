@@ -33,7 +33,7 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(config cache _params _packages pending_relations);
+use fields qw(_config _cache _params _packages _pending_relations);
 
 =head1 PARAMS
 
@@ -88,9 +88,9 @@ sub new {
 	my $self = fields::new($class);
 
 	# common apt config
-	$self->{config} = shift;
+	$self->{_config} = shift;
 
-	$self->{cache} = shift;
+	$self->{_cache} = shift;
 
 	# resolver params
 	%{$self->{_params}} = (
@@ -98,7 +98,7 @@ sub new {
 		'resolver-type' => 'multiline-fair',
 	);
 
-	$self->{pending_relations} = [];
+	$self->{_pending_relations} = [];
 
 	return $self;
 }
@@ -153,13 +153,13 @@ sub _schedule_new_version_relations ($$) {
 	foreach (@{$version->{depends}}) {
 		$self->_auto_satisfy_relation($_);
 	}
-	if ($self->{config}->var('apt::install-recommends')) {
+	if ($self->{_config}->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
 			$self->_auto_satisfy_relation($_);
 		}
 	}
-	if ($self->{config}->var('apt::install-suggests')) {
+	if ($self->{_config}->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
 			$self->_auto_satisfy_relation($_);
@@ -178,7 +178,7 @@ sub _install_version_no_stick ($$) {
 	}
 
 	$self->{_packages}->{$version->{package_name}}->{version} = $version;
-	if ($self->{config}->var('debug::resolver')) {
+	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
 	}
 	$self->_schedule_new_version_relations($version);
@@ -223,16 +223,16 @@ sub satisfy_relation ($$) {
 sub _auto_satisfy_relation ($$) {
 	my ($self, $relation_expression) = @_;
 
-	my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+	my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{_packages})) {
 		# if relation is not satisfied
-		if ($self->{config}->var('debug::resolver')) {
+		if ($self->{_config}->var('debug::resolver')) {
 			my $message = "auto-installing relation '";
 			$message .= stringify_relation_or_group($relation_expression);
 			$message .= "'";
 			mydebug($message);
 		}
-		push @{$self->{pending_relations}}, $relation_expression;
+		push @{$self->{_pending_relations}}, $relation_expression;
 	}
 }
 
@@ -251,7 +251,7 @@ sub remove_package ($$) {
 	$self->{_packages}->{$package_name}->{version} = undef;
 	$self->{_packages}->{$package_name}->{stick} = 1;
 	$self->{_packages}->{$package_name}->{manually_selected} = 1;
-	if ($self->{config}->var('debug::resolver')) {
+	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
 }
@@ -268,9 +268,9 @@ sub upgrade ($) {
 	my ($self) = @_;
 	foreach (keys %{$self->{_packages}}) {
 		my $package_name = $_;
-		my $package = $self->{cache}->get_binary_package($package_name);
+		my $package = $self->{_cache}->get_binary_package($package_name);
 		my $original_version = $self->{_packages}->{$package_name}->{version};
-		my $supposed_version = $self->{cache}->get_policy_version($package);
+		my $supposed_version = $self->{_cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
 		$self->_install_version_no_stick($supposed_version);
@@ -315,11 +315,11 @@ sub _package_weight ($$) {
 	my ($self, $version) = @_;
 	return 0 if !defined $version;
 	my $package_name = $version->{package_name};
-	if ($version->is_installed() && $self->{cache}->is_automatically_installed($package_name)) {
+	if ($version->is_installed() && $self->{_cache}->is_automatically_installed($package_name)) {
 		# automatically installed packages count nothing for user
 		return 0;
 	}
-	my $result = $self->{cache}->get_pin($version);
+	my $result = $self->{_cache}->get_pin($version);
 	$result += 5000 if defined($version->{essential});
 	$result += 2000 if $version->{priority} eq 'required';
 	$result += 1000 if $version->{priority} eq 'important';
@@ -363,7 +363,7 @@ sub _resolve ($$) {
 
 	my $sub_solution_chooser = $solution_choosers{$self->{_params}->{'resolver-type'}};
 
-	if ($self->{config}->var('debug::resolver')) {
+	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("started resolving");
 	}
 
@@ -420,7 +420,7 @@ sub _resolve ($$) {
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->{version};
 
-		if ($self->{config}->var('debug::resolver')) {
+		if ($self->{_config}->var('debug::resolver')) {
 			$sub_debug_version_change->($ref_solution_entry->{identifier},
 					$package_name_to_change, $supposed_version, $original_version);
 		}
@@ -478,7 +478,7 @@ sub _resolve ($$) {
 				# checking that all 'Depends' are satisfied
 				foreach (@{$version->{depends}}, @{$version->{pre_depends}}) {
 					# check if relation is already satisfied
-					my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
+					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
 					if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 						# good, nothing to do
 					} else {
@@ -496,7 +496,7 @@ sub _resolve ($$) {
 
 						if (!exists $package_entry->{stick}) {
 							# change version of the package
-							my $other_package = $self->{cache}->get_binary_package($package_name);
+							my $other_package = $self->{_cache}->get_binary_package($package_name);
 							foreach my $other_version (@{$other_package->versions()}) {
 								# don't try existing version
 								next if $other_version->{version_string} eq $version->{version_string};
@@ -523,7 +523,7 @@ sub _resolve ($$) {
 							}
 						}
 
-						if ($self->{config}->var('debug::resolver')) {
+						if ($self->{_config}->var('debug::resolver')) {
 							my $stringified_relation = stringify_relation_or_group($_);
 							$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 									"unsatisfied depends '$stringified_relation'");
@@ -544,7 +544,7 @@ sub _resolve ($$) {
 				# checking that all 'Conflicts' are not satisfied
 				foreach (@{$version->{conflicts}}) {
 					# check if relation is accidentally satisfied
-					my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($_);
+					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
 
 					if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 						# good, nothing to do
@@ -571,7 +571,7 @@ sub _resolve ($$) {
 
 							$conflict_found = 1;
 							# yes... so change it
-							my $other_package = $self->{cache}->get_binary_package($other_package_name);
+							my $other_package = $self->{_cache}->get_binary_package($other_package_name);
 							foreach my $other_version (@{$other_package->versions()}) {
 								# don't try existing version
 								next if $other_version->{version_string} eq $satisfying_version->{version_string};
@@ -593,7 +593,7 @@ sub _resolve ($$) {
 
 							if (!exists $package_entry->{stick}) {
 								# change version of the package
-								my $package = $self->{cache}->get_binary_package($package_name);
+								my $package = $self->{_cache}->get_binary_package($package_name);
 								foreach my $other_version (@{$package->versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $version->{version_string};
@@ -607,7 +607,7 @@ sub _resolve ($$) {
 								}
 							}
 
-							if ($self->{config}->var('debug::resolver')) {
+							if ($self->{_config}->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_or_group($_);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 										"satisfied conflicts '$stringified_relation'");
@@ -636,7 +636,7 @@ sub _resolve ($$) {
 			}
 
 			# suggest found solution
-			if ($self->{config}->var('debug::resolver')) {
+			if ($self->{_config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("proposing this solution");
 			}
 			my $user_answer = $sub_accept->($ref_current_packages);
@@ -645,13 +645,13 @@ sub _resolve ($$) {
 				return undef;
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
-				if ($self->{config}->var('debug::resolver')) {
+				if ($self->{_config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("accepted");
 				}
 				return 1;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
-				if ($self->{config}->var('debug::resolver')) {
+				if ($self->{_config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("declined");
 				}
 				# purge current solution
@@ -706,7 +706,7 @@ sub _resolve ($$) {
 			# adding forked solutions to main solution storage just after current solution
 			splice @solution_entries, $selected_solution_entry_index+1, 0, reverse @forked_solution_entries;
 		} else {
-			if ($self->{config}->var('debug::resolver')) {
+			if ($self->{_config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
 			}
 			# purge current solution
@@ -736,9 +736,9 @@ sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
 	# unwinding relations
-	while (scalar @{$self->{pending_relations}}) {
-		my $relation_expression = shift @{$self->{pending_relations}};
-		my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+	while (scalar @{$self->{_pending_relations}}) {
+		my $relation_expression = shift @{$self->{_pending_relations}};
+		my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 		
 		# if we have no candidates, skip the relation
 		scalar @$ref_satisfying_versions or next;
@@ -746,7 +746,7 @@ sub resolve ($$) {
 		# installing most preferrable version
 
 		my $version_to_install = $ref_satisfying_versions->[0];
-		if ($self->{config}->var('debug::resolver')) {
+		if ($self->{_config}->var('debug::resolver')) {
 			mydebug("selected package '%s', version '%s' for relation expression '%s'",
 					$version_to_install->{package_name},
 					$version_to_install->{version_string},
