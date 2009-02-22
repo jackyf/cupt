@@ -418,7 +418,7 @@ sub _resolve ($$) {
 
 
 	my $sub_apply_action = sub {
-		my ($ref_solution_entry, $ref_action_to_apply) = @_;
+		my ($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier) = @_;
 
 		my $package_name_to_change = $ref_action_to_apply->[0];
 		my $supposed_version = $ref_action_to_apply->[1];
@@ -432,8 +432,6 @@ sub _resolve ($$) {
 				$self->_get_action_profit($original_version, $supposed_version);
 
 		if ($self->{_config}->var('debug::resolver')) {
-			my $new_solution_identifier = $ref_solution_entry->{identifier};
-
 			my $old_version_string = defined($original_version) ?
 					$original_version->{version_string} : '<not installed>';
 			my $new_version_string = defined($supposed_version) ?
@@ -552,7 +550,8 @@ sub _resolve ($$) {
 						$check_failed = 1;
 
 						if (scalar @possible_actions == 1) {
-							$sub_apply_action->($ref_current_solution_entry, $possible_actions[0]);
+							$sub_apply_action->($ref_current_solution_entry,
+									$possible_actions[0], $ref_current_solution_entry->{identifier});
 							@possible_actions = ();
 							$recheck_needed = 1;
 							next MAIN_LOOP;
@@ -706,7 +705,6 @@ sub _resolve ($$) {
 				my $ref_cloned_solution_entry;
 				if ($idx == $#possible_actions) {
 					# use existing solution entry
-					$ref_current_solution_entry->{identifier} = $next_free_solution_identifier++;
 					$ref_cloned_solution_entry = $ref_current_solution_entry;
 				} else {
 					# clone the current stack to form a new one
@@ -715,15 +713,16 @@ sub _resolve ($$) {
 						packages => __clone_packages($ref_current_solution_entry->{packages}),
 						level => $ref_current_solution_entry->{level},
 						score => $ref_current_solution_entry->{score},
-						identifier => $next_free_solution_identifier++,
 						finished => 0,
 					};
 					push @forked_solution_entries, $ref_cloned_solution_entry;
 				}
 
-				my $ref_action_to_apply = $possible_actions[$idx];
 				# apply the solution
-				$sub_apply_action->($ref_cloned_solution_entry, $ref_action_to_apply);
+				my $ref_action_to_apply = $possible_actions[$idx];
+				my $new_solution_identifier = $next_free_solution_identifier++;
+				$sub_apply_action->($ref_cloned_solution_entry, $ref_action_to_apply, $new_solution_identifier);
+				$ref_cloned_solution_entry->{identifier} = $new_solution_identifier;
 			}
 
 			# adding forked solutions to main solution storage just after current solution
