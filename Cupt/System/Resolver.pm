@@ -311,7 +311,7 @@ sub __multiline_full_chooser {
 }
 
 # every package version has a weight
-sub _package_weight ($$) {
+sub _get_version_weight ($$) {
 	my ($self, $version) = @_;
 	return 0 if !defined $version;
 	my $package_name = $version->{package_name};
@@ -325,6 +325,17 @@ sub _package_weight ($$) {
 	$result += 1000 if $version->{priority} eq 'important';
 	$result += 400 if $version->{priority} eq 'standard';
 	$result += 100 if $version->{priority} eq 'optional';
+}
+
+sub _get_action_profit ($$$) {
+	my ($self, $original_version, $supposed_version) = @_;
+
+	# if the package was not installed there is no any profit of installing it,
+	# all packages user want are either installed of selected manually
+	return 0 if !defined $original_version;
+
+	# ok, just return difference in weights
+	return $self->_get_version_weight($supposed_version) - $self->_get_version_weight($original_version);
 }
 
 sub __is_version_array_intersects_with_packages ($$) {
@@ -409,10 +420,14 @@ sub _resolve ($$) {
 
 		my $package_name_to_change = $ref_action_to_apply->[0];
 		my $supposed_version = $ref_action_to_apply->[1];
+
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->{version};
 
-		my $profit = $self->_package_weight($supposed_version) - $self->_package_weight($original_version);
+		# profit might be already written in third field of action structure by
+		# action chooser
+		my $profit = $ref_action_to_apply->[2] //
+				$self->_get_action_profit($original_version, $supposed_version);
 
 		if ($self->{_config}->var('debug::resolver')) {
 			my $new_solution_identifier = $ref_solution_entry->{identifier};
@@ -676,11 +691,8 @@ sub _resolve ($$) {
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->{version} : undef;
 
-				my $supposed_version_weight = $self->_package_weight($supposed_version);
-				my $original_version_weight = $self->_package_weight($original_version);
-
 				# 3rd field in the structure will be "profit" of the change
-				push @$_, $supposed_version_weight - $original_version_weight;
+				push @$_, $self->_get_action_profit($original_version, $supposed_version);
 			}
 
 			# sort them by "rank", from more bad to more good
