@@ -692,6 +692,7 @@ sub _resolve ($$) {
 				my $ref_cloned_solution_entry;
 				if ($idx == $#possible_actions) {
 					# use existing solution entry
+					$ref_current_solution_entry->{identifier} = $next_free_solution_identifier++;
 					$ref_cloned_solution_entry = $ref_current_solution_entry;
 				} else {
 					# clone the current stack to form a new one
