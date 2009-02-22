@@ -403,16 +403,6 @@ sub _resolve ($$) {
 		mydebug(" " x $level . "($identifier:$score) @_");
 	};
 
-	# debugging subroutine
-	my $sub_debug_version_change = sub {
-		my ($new_solution_identifier, $package_name, $supposed_version, $original_version) = @_;
-
-		my $old_version_string = defined($original_version) ? $original_version->{version_string} : '<not installed>';
-		my $new_version_string = defined($supposed_version) ? $supposed_version->{version_string} : '<not installed>';
-		my $message = "-> ($new_solution_identifier) " .
-				"trying: package '$package_name': '$old_version_string' -> '$new_version_string'";
-		$sub_mydebug_wrapper->($message);
-	};
 
 	my $sub_apply_action = sub {
 		my ($ref_solution_entry, $ref_action_to_apply) = @_;
@@ -422,15 +412,27 @@ sub _resolve ($$) {
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->{version};
 
+		my $profit = $self->_package_weight($supposed_version) - $self->_package_weight($original_version);
+
 		if ($self->{_config}->var('debug::resolver')) {
-			$sub_debug_version_change->($ref_solution_entry->{identifier},
-					$package_name_to_change, $supposed_version, $original_version);
+			my $new_solution_identifier = $ref_solution_entry->{identifier};
+
+			my $old_version_string = defined($original_version) ?
+					$original_version->{version_string} : '<not installed>';
+			my $new_version_string = defined($supposed_version) ?
+					$supposed_version->{version_string} : '<not installed>';
+
+			my $profit_string = $profit;
+			$profit_string = "+$profit_string" if $profit > 0;
+
+			my $message = "-> ($new_solution_identifier,$profit_string) " .
+					"trying: package '$package_name_to_change': '$old_version_string' -> '$new_version_string'";
+			$sub_mydebug_wrapper->($message);
 		}
 
 		# raise the level
 		++$ref_solution_entry->{level};
 
-		my $profit = $self->_package_weight($supposed_version) - $self->_package_weight($original_version);
 		$ref_solution_entry->{score} += $profit;
 
 		# set stick for change for the time on underlying solutions
