@@ -457,7 +457,7 @@ sub manage_packages ($) {
 
 	my $o_resolver_type = 'multiline-fair';
 	GetOptions(
-		'resolver-type=s' => \$o_resolver_type,
+		'resolver=s' => \$o_resolver_type,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
