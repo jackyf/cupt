@@ -332,7 +332,9 @@ sub _get_action_profit ($$$) {
 
 	# if the package was not installed there is no any profit of installing it,
 	# all packages user want are either installed of selected manually
-	return 0 if !defined $original_version;
+	#
+	# to limit installing new packages, give it small negative profit
+	return -100 if !defined $original_version;
 
 	# ok, just return difference in weights
 	return $self->_get_version_weight($supposed_version) - $self->_get_version_weight($original_version);
