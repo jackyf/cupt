@@ -513,6 +513,7 @@ sub _resolve ($$) {
 							}
 						}
 
+						# change this package
 						if (!exists $package_entry->{stick}) {
 							# change version of the package
 							my $other_package = $self->{_cache}->get_binary_package($package_name);
@@ -553,6 +554,9 @@ sub _resolve ($$) {
 								push @possible_actions, [ $package_name, undef ];
 							}
 						}
+
+						# in any case, stick this package
+						$package_entry->{stick} = 1;
 
 						if ($self->{_config}->var('debug::resolver')) {
 							my $stringified_relation = stringify_relation_or_group($_);
@@ -638,6 +642,9 @@ sub _resolve ($$) {
 									push @possible_actions, [ $package_name, undef ];
 								}
 							}
+
+							# in any case, stick this package
+							$package_entry->{stick} = 1;
 
 							if ($self->{_config}->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_or_group($_);
