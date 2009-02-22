@@ -525,14 +525,26 @@ sub _resolve ($$) {
 								my $found = 0;
 								foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
 									if ($failed_relation_string eq stringify_relation_or_group($_)) {
-										# yes, it has the same relation, so other version will also fail
+										# yes, it has the same relation expression, so other version will also fail
 										# so it seems there is no sense trying it
 										$found = 1;
 										last;
 									}
 								}
 								if (!$found) {
-									push @possible_actions, [ $package_name, $other_version ];
+									# let's try harder to find if the other version is really appropriate for us
+									foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
+										my $ref_other_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+										if (!__is_version_array_intersects_with_packages($ref_other_satisfying_versions, $ref_current_packages)) {
+											# yes, some relation expression will fail
+											$found = 1;
+											last;
+										}
+									}
+									if (!$found) {
+										# other version seems to be ok
+										push @possible_actions, [ $package_name, $other_version ];
+									}
 								}
 							}
 
