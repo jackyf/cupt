@@ -626,6 +626,10 @@ sub _resolve ($$) {
 			# in case we go next
 			$check_failed = 1;
 
+			# if the solution was only just finished
+			if ($self->{_config}->var('debug::resolver') && $ref_current_solution_entry->{finished}) {
+				$sub_mydebug_wrapper->("finished");
+			}
 			$ref_current_solution_entry->{finished} = 1;
 			# resolver can refuse the solution
 			my $new_selected_solution_entry_index = $sub_solution_chooser->(
