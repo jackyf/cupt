@@ -769,24 +769,20 @@ sub _process_index_file {
 
 	eval {
 		while (<OFFSETS>) {
-			if (m/^(\d+):Package: (.*)/) { # '$' implied in regexp
-				my $package_name = $2;
+			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
 
-				# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
-				my $offset = $1 + length("Package: $package_name\n");
+			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
+			$offset += length("Package: $package_name\n");
 
-				# check it for correctness
-				($package_name =~ m/^$package_name_regex$/)
-					or mydie("bad package name '%s'", $package_name);
+			# check it for correctness
+			($package_name =~ m/^$package_name_regex$/)
+				or mydie("bad package name '%s'", $package_name);
 
-				# end of entry, so creating new package
-				$$packages_storage->{$package_name} //= Cupt::Cache::Pkg->new();
+			# end of entry, so creating new package
+			$$packages_storage->{$package_name} //= Cupt::Cache::Pkg->new();
 
-				Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name}, $version_class,
-						$package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
-			} else {
-				mydie("expected 'Package' line, but haven't got it");
-			}
+			Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name}, $version_class,
+					$package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
 		}
 	};
 	if (mycatch()) {
