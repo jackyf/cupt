@@ -44,6 +44,26 @@ our $o_memoize = 1;
 
 =head1 METHODS
 
+=head2 new
+
+creates a new Cupt::Cache object
+
+Parameters:
+
+I<config> - reference to Cupt::Config
+
+Next params are treated as hash-style param list:
+
+'-source': read Sources
+
+'-binary': read Packages
+
+'-installed': read dpkg status file
+
+Example:
+
+  my $cache = new Cupt::Cache($config, '-source' => 0, '-binary' => 1);
+
 =cut
 
 sub new {
@@ -107,7 +127,7 @@ sub new {
 
 =head2 get_system_state
 
-member function, returns reference to Cupt::System::State
+method, returns reference to Cupt::System::State
 
 =cut
 
@@ -119,7 +139,7 @@ sub get_system_state ($) {
 
 =head2 get_extended_info
 
-member function, returns info about extended package statuses in format:
+method, returns info about extended package statuses in format:
 
   {
     'automatically_installed' => { I<package_name> => 1 },
@@ -132,6 +152,17 @@ sub get_extended_info ($) {
 
 	return $self->{_extended_info};
 }
+
+=head2 is_automatically_installed
+
+method, returns boolean value - is the package automatically installed
+or not
+
+Parameters:
+
+I<package_name> - package name
+
+=cut
 
 sub is_automatically_installed ($$) {
 	my ($self, $package_name) = @_;
@@ -249,6 +280,17 @@ sub get_pin {
 	return $result;
 }
 
+=head2 get_binary_package
+
+method, returns reference to appropriate Cupt::Cache::Pkg for package name.
+Returns undef if there is no such package in cache.
+
+Parameters:
+
+I<package_name> - package name to find
+
+=cut
+
 sub get_binary_package {
 	my ($self, $package_name) = @_;
 	if (exists $self->{binary_packages}->{$package_name}) {
@@ -292,6 +334,18 @@ sub get_sorted_pinned_versions {
 
 	return \@result;
 }
+
+=head2 get_policy_version
+
+method, returns reference to Cupt::Cache::BinaryVersion or
+Cupt::Cache::SourceVersion (depending on I<package> parameter), this is version
+of I<package>, which to be installed by apt policy
+
+Parameters:
+
+I<package> - reference to Cupt::Cache::Pkg, package to select versions from
+
+=cut
 
 sub get_policy_version {
 	my ($self, $package) = @_;
@@ -363,12 +417,13 @@ sub _get_satisfying_versions_for_one_relation {
 
 =head2 get_satisfying_versions
 
-returns reference to array of versions that satisfy relation, if no any version can satisfy the relation, return empty array
+method, returns reference to array of versions (Cupt::Cache::BinaryVersion)
+that satisfy relation, if no version can satisfy the relation, returns an
+empty array
 
-Parameters - (C<self>, C<relation_expression>)
+Parameters
 
-C<self> - object
-C<relation_expression> - reference to Cupt::Cache::Relation, or relation OR
+I<relation_expression> - reference to Cupt::Cache::Relation, or relation OR
 group (see documentation for Cupt::Cache::Relation for the info about OR
 groups)
 

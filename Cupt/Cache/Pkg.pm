@@ -9,19 +9,38 @@ our @EXPORT = qw(&compare_versions);
 
 use Cupt::Core;
 
+=head1 METHODS
+
+=head2 new
+
+returns a new Cupt::Cache::Pkg object. Usually shouldn't be created by hand.
+
+=cut
+
 sub new {
 	my ($class) = @_;
 	my $self = []; # only unparsed versions
 	return bless $self => $class;
 }
 
-# adds unparsed entry to package
+=head2 add_entry
+
+method, adds unparsed entry to package. Usually should't be called by hand.
+
+=cut
+
 sub add_entry {
 	my $self = shift;
 	push @$self, \@_;
 }
 
-# returns reference to versions array
+=head2 versions
+
+method, returns reference to array of versions (Cupt::Cache::BinaryVersion or
+Cupt::Cache::SourceVersion) that this package contains
+
+=cut
+
 sub versions {
 	my ($self) = @_;
 
@@ -50,9 +69,9 @@ sub versions {
 	return \@result;
 }
 
-=head2 find_version
+=head2 get_specific_version
 
-member function, returns reference to Cupt::Cache::{Binary,Source}Version
+method, returns reference to Cupt::Cache::{Binary,Source}Version
 (depending on the value of the object), which has specific version string
 
 Parameters:
@@ -61,7 +80,7 @@ I<version_string> - version string to search
 
 =cut
 
-sub find_version ($$) {
+sub get_specific_version ($$) {
 	my ($self, $lookup_version_string) = @_;
 
 	foreach my $version (@{$self->versions()})
@@ -77,7 +96,7 @@ sub compare_versions ($$) {
 
 =head2 get_installed_version
 
-member function, returns reference to Cupt::Cache::BinaryVersion which is
+method, returns reference to Cupt::Cache::BinaryVersion which is
 installed in the system; if package is not installed, returns undef
 
 =cut
