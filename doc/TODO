@@ -1,4 +1,3 @@
-resolver: take automatically installed packages into account
 resolver, cupt: implement 'satisfy' action
 worker: do real actions instead of simulating
 state: add trigger-related statuses

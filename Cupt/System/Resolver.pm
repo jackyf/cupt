@@ -397,47 +397,62 @@ sub __clone_packages ($) {
 sub _clean_automatically_installed ($) {
 	my ($self, $ref_packages) = @_;
 
+	# firstly, prepare all package names that can be potentially removed
+	my $can_autoremove = !$self->{_params}->{'no-remove'} && $self->{_config}->var('cupt::resolver::auto-remove');
+	my %candidates_for_remove;
+	foreach my $package_name (keys %$ref_packages) {
+		my $ref_package_entry = $ref_packages->{$package_name};
+		my $version = $ref_package_entry->{version};
+		defined $version or next;
+		!exists $ref_package_entry->{stick} or next;
+		!exists $ref_package_entry->{manually_installed} or next;
+		if (!$can_autoremove) {
+			!exists $self->{_old_packages}->{$package_name} or next;
+		} else {
+			$self->{_cache}->is_automatically_installed($package_name) or next;
+		}
+		grep { $package_name eq $_ } @{$self->{_config}->var('apt::neverautoremove')} and next;
+		# ok, candidate for removing
+		$candidates_for_remove{$package_name} = 1;
+	}
+
 	my $last_cleaned;
+	# loop through all dependencies
 	do {
 		$last_cleaned = 0;
-		foreach my $package_name (keys %$ref_packages) {
-			my $ref_package_entry = $ref_packages->{$package_name};
-			my $version = $ref_package_entry->{version};
-			defined $version or next;
-			!exists $ref_package_entry->{stick} or next;
-			!exists $ref_package_entry->{manually_installed} or next;
-			!exists $self->{_old_packages}->{$package_name} or next;
-			# ok, pretendent for removing
-			my $found_dependency = 0;
-			PACKAGE:
-			foreach my $other_package_name (keys %$ref_packages) {
-				my $other_version = $ref_packages->{$other_package_name}->{version};
-				defined $other_version or next;
-				my @valuable_relation_expressions;
-				push @valuable_relation_expressions, @{$other_version->{pre_depends}};
-				push @valuable_relation_expressions, @{$other_version->{depends}};
-				if ($self->{_config}->var('cupt::resolver::keep-recommends')) {
-					push @valuable_relation_expressions, @{$other_version->{recommends}};
-				}
-				if ($self->{_config}->var('cupt::resolver::keep-suggests')) {
-					push @valuable_relation_expressions, @{$other_version->{suggests}};
-				}
+		# this hash will keep names of all packages that are protected by some
+		# other package, so don't need to be removed
+		my %protected_packages;
+		foreach my $other_package_name (keys %$ref_packages) {
+			my $other_version = $ref_packages->{$other_package_name}->{version};
+			defined $other_version or next;
+			my @valuable_relation_expressions;
+			push @valuable_relation_expressions, @{$other_version->{pre_depends}};
+			push @valuable_relation_expressions, @{$other_version->{depends}};
+			if ($self->{_config}->var('cupt::resolver::keep-recommends')) {
+				push @valuable_relation_expressions, @{$other_version->{recommends}};
+			}
+			if ($self->{_config}->var('cupt::resolver::keep-suggests')) {
+				push @valuable_relation_expressions, @{$other_version->{suggests}};
+			}
 
-				foreach (@valuable_relation_expressions) {
-					my $satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
-					foreach (@$satisfying_versions) {
-						$_->{package_name} eq $package_name or next;
-						$_->{version_string} eq $version->{version_string} or next;
-						# well, this is what we need
-						$found_dependency = 1;
-						last PACKAGE;
-					}
+			foreach (@valuable_relation_expressions) {
+				my $satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+				foreach (@$satisfying_versions) {
+					my $candidate_package_name = $_->{package_name};
+					exists $candidates_for_remove{$candidate_package_name} or next;
+					$_->{version_string} eq $ref_packages->{$candidate_package_name}->{version}->{version_string} or next;
+					# well, this is what we need
+					$protected_packages{$candidate_package_name} = 1;
 				}
 			}
-			if (!$found_dependency) {
-				# removing this package
-				$ref_package_entry->{version} = undef;
+		}
+		foreach (keys %candidates_for_remove) {
+			if (!exists $protected_packages{$_}) {
+				# this package wasn't marked as protected, we can remove it
 				++$last_cleaned;
+				$ref_packages->{$_}->{version} = undef;
+				delete $candidates_for_remove{$_};
 			}
 		}
 	} while $last_cleaned;

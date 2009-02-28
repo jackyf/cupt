@@ -46,12 +46,13 @@ sub new {
 			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
-			'debug::resolver' => 0,
 			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
+			'cupt::resolver::auto-remove' => 1,
 			'cupt::worker::purge' => 0,
+			'debug::resolver' => 0,
 		},
 
 		list_vars => {
