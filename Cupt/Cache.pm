@@ -437,7 +437,11 @@ sub get_satisfying_versions ($$) {
 		return [ $self->_get_satisfying_versions_for_one_relation($relation_expression) ];
 	} else {
 		# othersise it's OR group of expressions
-		return [ map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression ];
+		my @result = map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression;
+		# get rid of duplicates
+		my %seen;
+		@result = grep { !$seen{ $_->{package_name}, $_->{version_string} } ++ } @result;
+		return \@result;
 	}
 }
 
