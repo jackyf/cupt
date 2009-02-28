@@ -200,28 +200,55 @@ sub show_package_versions () {
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my $o_with_release_info = 0;
-	my $o_with_provides_info = 0;
 	GetOptions(
 		'--with-release-info' => \$o_with_release_info,
-		'--with-provides-info' => \$o_with_provides_info,
 	);
 
 	check_no_more_options();
+
+	my $sub_get_reverse_provides = sub {
+		my ($package_name) = @_;
+
+		my $virtual_relation = new Cupt::Cache::Relation("$package_name");
+		my $ref_satisfying_versions = $cache->get_satisfying_versions($virtual_relation);
+		my @relations;
+		foreach (@$ref_satisfying_versions) {
+			# we don't need versions of the same package
+			my $new_package_name = $_->{package_name};
+			$new_package_name ne $package_name or next;
+
+			my $new_relation_version_string = $_->{version_string};
+			my $new_relation = new Cupt::Cache::Relation("$new_package_name (= $new_relation_version_string)");
+			push @relations, $new_relation;
+		}
+		return \@relations;
+	};
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
 		my $package_name;
 		my $ref_versions;
+		my $p = sub { print shift, ': ', shift, "\n" };
+
 		if ($config->var('apt::cache::allversions')) {
 			$package_name = $package_expression;
 			$ref_versions = get_binary_package($package_name)->versions();
 		} else {
-			my $version = select_binary_package_version($package_expression);
-			$package_name = $version->{package_name};
-			$ref_versions = [ $version ];
+			if (!defined $cache->get_binary_package($package_expression)) {
+				# there is no such binary binary, maybe it's virtual?
+				my $ref_reverse_provides = $sub_get_reverse_provides->($package_expression);
+				if (scalar @$ref_reverse_provides) {
+					$p->(__('Virtual package, provided by'), stringify_relations($ref_reverse_provides));
+					$ref_versions = [];
+				}
+			}
+			if (!defined $ref_versions) {
+				my $version = select_binary_package_version($package_expression);
+				$package_name = $version->{package_name};
+				$ref_versions = [ $version ];
+			}
 		}
 
-		my $p = sub { print shift, ': ', shift, "\n" };
 		foreach my $version (@$ref_versions) {
 			$p->(__('Package'), $package_name);
 			$p->(__('Version'), $version->{version_string});
@@ -253,22 +280,9 @@ sub show_package_versions () {
 			$p->(__('Replaces'), stringify_relations($version->{replaces})) if @{$version->{replaces}};
 			$p->(__('Provides'), join(", ", @{$version->{provides}})) if @{$version->{provides}};
 			$p->(__('Enhances'), stringify_relations($version->{enhances})) if @{$version->{enhances}};
-			if ($o_with_provides_info) {
-				my $virtual_relation = new Cupt::Cache::Relation("$package_name");
-				my $ref_satisfying_versions = $cache->get_satisfying_versions($virtual_relation);
-				my @relations;
-				foreach (@$ref_satisfying_versions) {
-					# we don't need versions of the same package
-					my $new_package_name = $_->{package_name};
-					$new_package_name ne $package_name or next;
-
-					my $new_relation_version_string = $_->{version_string};
-					my $new_relation = new Cupt::Cache::Relation("$new_package_name (= $new_relation_version_string)");
-					push @relations, $new_relation;
-				}
-				if (scalar @relations) {
-					$p->(__('Provided by'), stringify_relations(\@relations));
-				}
+			my $ref_reverse_provides = $sub_get_reverse_provides->($package_name);
+			if (scalar @$ref_reverse_provides) {
+				$p->(__('Provided by'), stringify_relations($ref_reverse_provides));
 			}
 			foreach ($version->uris()) {
 				$p->(__('URI'), ($_ eq "" ? gettext("<installed>") : $_));
