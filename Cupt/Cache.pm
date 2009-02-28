@@ -733,7 +733,10 @@ sub _process_provides_in_index_file {
 			my @provides = split /\s*,\s*/;
 
 			foreach (@provides) {
-				push @{$self->{can_provide}->{$_}}, $package_name;
+				# if this entry is new one?
+				if (!grep { $_ eq $package_name } @{$self->{can_provide}->{$_}}) {
+					push @{$self->{can_provide}->{$_}}, $package_name ;
+				}
 			}
 			readline(ENTRIES) eq "\n" or
 					mydie("expected newline, but haven't got it");
