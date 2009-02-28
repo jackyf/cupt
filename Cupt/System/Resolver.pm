@@ -96,6 +96,7 @@ sub new {
 	%{$self->{_params}} = (
 		'no-remove' => 0,
 		'resolver-type' => 'first-good',
+		'max-solution-count' => 256,
 	);
 
 	$self->{_pending_relations} = [];
@@ -415,7 +416,7 @@ sub _resolve ($$) {
 	my @solution_entries = ({ packages => __clone_packages($self->{_packages}),
 			score => 0, level => 0, identifier => 0, finished => 0 });
 	my $next_free_solution_identifier = 1;
-	my $selected_solution_entry_index = 0;
+	my $selected_solution_entry_index;
 
 	# for each package entry 'count' will contain the number of failures
 	# during processing these package
@@ -486,6 +487,9 @@ sub _resolve ($$) {
 		# possible actions to resolve dependencies if needed
 		# array of [ package_name, version ]
 		my @possible_actions;
+
+		# choosing the solution entry to process
+		$selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
 
 		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
 
@@ -740,12 +744,10 @@ sub _resolve ($$) {
 			}
 			$ref_current_solution_entry->{finished} = 1;
 			# resolver can refuse the solution
-			my $new_selected_solution_entry_index = $sub_solution_chooser->(
-					\@solution_entries, $selected_solution_entry_index);
+			my $new_selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
 
 			if ($new_selected_solution_entry_index != $selected_solution_entry_index) {
 				# ok, process other solution
-				$selected_solution_entry_index = $new_selected_solution_entry_index;
 				next;
 			}
 
@@ -817,6 +819,24 @@ sub _resolve ($$) {
 
 			# adding forked solutions to main solution storage just after current solution
 			splice @solution_entries, $selected_solution_entry_index+1, 0, reverse @forked_solution_entries;
+
+			# don't allow solution tree to grow unstoppably
+			while (scalar @solution_entries > $self->{_params}->{'max-solution-count'}) {
+				# find the worst solution and drop it
+				my $min_score = $solution_entries[0]->{score};
+				my $idx_of_min = 0;
+				foreach my $idx (1..$#solution_entries) {
+					if ($min_score > $solution_entries[$idx]->{score}) {
+						$min_score = $solution_entries[$idx]->{score};
+						$idx_of_min = $idx;
+					}
+				}
+				$selected_solution_entry_index = $idx_of_min;
+				if ($self->{_config}->var('debug::resolver')) {
+					$sub_mydebug_wrapper->("dropping this solution");
+				}
+				splice @solution_entries, $idx_of_min, 1;
+			}
 		} else {
 			if ($self->{_config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
@@ -824,8 +844,6 @@ sub _resolve ($$) {
 			# purge current solution
 			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
-		# choosing the next solution entry to process
-		$selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
 	}} while $check_failed;
 }
 

@@ -455,9 +455,11 @@ sub manage_packages ($) {
 	require Cupt::System::Resolver;
 	require Cupt::System::Worker;
 
-	my $o_resolver_type = 'first-good';
+	my $o_resolver_type;
+	my $o_max_solution_count;
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
+		'max-solution-count=s' => \$o_max_solution_count,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
@@ -474,7 +476,8 @@ sub manage_packages ($) {
 
 	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
-	$resolver->set_params('resolver-type' => $o_resolver_type);
+	$resolver->set_params('resolver-type' => $o_resolver_type) if defined $o_resolver_type;
+	$resolver->set_params('max-solution-count' => $o_max_solution_count) if defined $o_max_solution_count;
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
 	my $worker = new Cupt::System::Worker($config, $cache);
 	say __('[done]');
