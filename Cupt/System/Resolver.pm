@@ -492,8 +492,6 @@ sub _resolve ($$) {
 		# continue only if we have at least one solution pending, otherwise we have a great fail
 		scalar @solution_entries or return 0;
 
-		# possible actions to resolve dependencies if needed
-		# array of [ package_name, version ]
 		my @possible_actions;
 
 		# choosing the solution entry to process
