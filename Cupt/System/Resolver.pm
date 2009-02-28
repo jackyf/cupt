@@ -679,7 +679,11 @@ sub _resolve ($$) {
 								# don't try existing version
 								next if $other_version->{version_string} eq $satisfying_version->{version_string};
 
-								push @possible_actions, [ $other_package_name, $other_version ];
+								push @possible_actions, {
+									'package_name' => $other_package_name,
+									'version' => $other_version,
+									'koef' => $conflicts_koef,
+								};
 							}
 
 							if (!$self->{_params}->{'no-remove'} || !exists $other_package_entry->{installed}) {
@@ -705,7 +709,11 @@ sub _resolve ($$) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $version->{version_string};
 
-									push @possible_actions, [ $package_name, $other_version ];
+									push @possible_actions, {
+										'package_name' => $package_name,
+										'version' => $other_version,
+										'koef' => $conflicts_koef,
+									};
 								}
 								
 								if (!$self->{_params}->{'no-remove'} || !exists $package_entry->{installed}) {
@@ -784,7 +792,6 @@ sub _resolve ($$) {
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->{version} : undef;
 
-				# 3rd field in the structure will be "profit" of the change
 				$_->{profit} //= $self->_get_action_profit($original_version, $supposed_version);
 			}
 
