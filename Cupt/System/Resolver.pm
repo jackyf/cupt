@@ -33,7 +33,7 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(_config _cache _params _packages _pending_relations);
+use fields qw(_config _cache _params _old_packages _packages _pending_relations);
 
 =head1 PARAMS
 
@@ -139,6 +139,8 @@ sub import_installed_versions ($$) {
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		$self->{_packages}->{$version->{package_name}}->{version} = $version;
+		# '_packages' will be modified, leave '_old_packages' as original system state
+		$self->{_old_packages}->{$version->{package_name}}->{version} = $version;
 	}
 }
 
@@ -529,14 +531,14 @@ sub _resolve ($$) {
 							if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 								# this is a soft dependency
 								if (!__is_version_array_intersects_with_packages(
-										$ref_satisfying_versions, $self->{_packages}))
+										$ref_satisfying_versions, $self->{_old_packages}))
 								{
 									# it wasn't satisfied in the past, don't touch it
 									next;
 								} elsif (grep { $_ == $relation_expression } @{$package_entry->{fake_satisfied}}) {
 									# this soft relation expression was already fakely satisfied (score penalty)
 									next;
-								} elsif (!exists $package_entry->{stick}) {
+								} else {
 									# ok, then we have one more possible solution - do nothing at all
 									push @possible_actions, {
 										'package_name' => $package_name,
