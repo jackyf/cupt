@@ -103,7 +103,7 @@ sub new {
 	# resolver params
 	%{$self->{_params}} = (
 		'no-remove' => 0,
-		'resolver-type' => 'first-good',
+		'resolver-type' => 'multiline-fair',
 		'max-solution-count' => 256,
 	);
 
