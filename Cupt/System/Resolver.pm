@@ -531,10 +531,10 @@ sub _resolve ($$) {
 								if (!__is_version_array_intersects_with_packages(
 										$ref_satisfying_versions, $self->{_packages}))
 								{
-									# it wasn't satisifed in the past, don't touch it
+									# it wasn't satisfied in the past, don't touch it
 									next;
 								} elsif (grep { $_ == $relation_expression } @{$package_entry->{fake_satisfied}}) {
-									# this soft relation was already fakely satisfied (score penalty)
+									# this soft relation expression was already fakely satisfied (score penalty)
 									next;
 								} elsif (!exists $package_entry->{stick}) {
 									# ok, then we have one more possible solution - do nothing at all
