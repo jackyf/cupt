@@ -472,6 +472,9 @@ sub _resolve ($$) {
 		# set stick for change for the time on underlying solutions
 		$ref_package_entry_to_change->{stick} = 1;
 		$ref_package_entry_to_change->{version} = $supposed_version;
+		if (exists $ref_action_to_apply->{fakely_satisfies}) {
+			push @{$ref_package_entry_to_change->{fake_satisfied}}, $ref_action_to_apply->{fakely_satisfies};
+		}
 	};
 
 	do {{
@@ -517,18 +520,33 @@ sub _resolve ($$) {
 				foreach (@{$self->_get_dependencies_groups($version)}) {
 					my $dependency_group_koef = $_->{koef};
 					my $dependency_group_name = $_->{name};
-					foreach (@{$_->{relation_expressions}}) {
+					foreach my $relation_expression (@{$_->{relation_expressions}}) {
 						# check if relation is already satisfied
-						my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+						my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 							# good, nothing to do
 						} else {
-							# if this is a soft dependency and it wasn't satisifed in the past, don't touch it
-							if (($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') and
-								!__is_version_array_intersects_with_packages(
+							if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
+								# this is a soft dependency
+								if (!__is_version_array_intersects_with_packages(
 										$ref_satisfying_versions, $self->{_packages}))
-							{
-								next;
+								{
+									# it wasn't satisifed in the past, don't touch it
+									next;
+								} elsif (grep { $_ == $relation_expression } @{$package_entry->{fake_satisfied}}) {
+									# this soft relation was already fakely satisfied (score penalty)
+									next;
+								} elsif (!exists $package_entry->{stick}) {
+									# ok, then we have one more possible solution - do nothing at all
+									push @possible_actions, {
+										'package_name' => $package_name,
+										'version' => $version,
+										'koef' => $dependency_group_koef,
+										# set profit manually, as we are inserting fake action here
+										'profit' => -50,
+										'fakely_satisfies' => $relation_expression,
+									};
+								}
 							}
 							# mark package as failed one more time
 							++$failed_counts{$package_name};
@@ -555,7 +573,7 @@ sub _resolve ($$) {
 									next if $other_version->{version_string} eq $version->{version_string};
 
 									# let's check if other version has the same relation
-									my $failed_relation_string = stringify_relation_or_group($_);
+									my $failed_relation_string = stringify_relation_or_group($relation_expression);
 									my $found = 0;
 									foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
 										if ($failed_relation_string eq stringify_relation_or_group($_)) {
@@ -600,7 +618,7 @@ sub _resolve ($$) {
 							$package_entry->{stick} = 1;
 
 							if ($self->{_config}->var('debug::resolver')) {
-								my $stringified_relation = stringify_relation_or_group($_);
+								my $stringified_relation = stringify_relation_or_group($relation_expression);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 										"unsatisfied $dependency_group_name '$stringified_relation'");
 							}
