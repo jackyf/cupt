@@ -781,7 +781,7 @@ sub _resolve ($$) {
 						$ref_current_packages->{$package_name}->{version} : undef;
 
 				# 3rd field in the structure will be "profit" of the change
-				$_->{profit} = $self->_get_action_profit($original_version, $supposed_version);
+				$_->{profit} //= $self->_get_action_profit($original_version, $supposed_version);
 			}
 
 			# sort them by "rank", from more bad to more good
