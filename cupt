@@ -200,8 +200,10 @@ sub show_package_versions () {
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my $o_with_release_info = 0;
+	my $o_with_provides_info = 0;
 	GetOptions(
-		'--with-release-info' => \$o_with_release_info
+		'--with-release-info' => \$o_with_release_info,
+		'--with-provides-info' => \$o_with_provides_info,
 	);
 
 	check_no_more_options();
@@ -251,6 +253,23 @@ sub show_package_versions () {
 			$p->(__('Replaces'), stringify_relations($version->{replaces})) if @{$version->{replaces}};
 			$p->(__('Provides'), join(", ", @{$version->{provides}})) if @{$version->{provides}};
 			$p->(__('Enhances'), stringify_relations($version->{enhances})) if @{$version->{enhances}};
+			if ($o_with_provides_info) {
+				my $virtual_relation = new Cupt::Cache::Relation("$package_name");
+				my $ref_satisfying_versions = $cache->get_satisfying_versions($virtual_relation);
+				my @relations;
+				foreach (@$ref_satisfying_versions) {
+					# we don't need versions of the same package
+					my $new_package_name = $_->{package_name};
+					$new_package_name ne $package_name or next;
+
+					my $new_relation_version_string = $_->{version_string};
+					my $new_relation = new Cupt::Cache::Relation("$new_package_name (= $new_relation_version_string)");
+					push @relations, $new_relation;
+				}
+				if (scalar @relations) {
+					$p->(__('Provided by'), stringify_relations(\@relations));
+				}
+			}
 			foreach ($version->uris()) {
 				$p->(__('URI'), ($_ eq "" ? gettext("<installed>") : $_));
 			}
