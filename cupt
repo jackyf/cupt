@@ -455,7 +455,7 @@ sub manage_packages ($) {
 	require Cupt::System::Resolver;
 	require Cupt::System::Worker;
 
-	my $o_resolver_type = 'multiline-fair';
+	my $o_resolver_type = 'first-good';
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
 	);

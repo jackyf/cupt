@@ -95,7 +95,7 @@ sub new {
 	# resolver params
 	%{$self->{_params}} = (
 		'no-remove' => 0,
-		'resolver-type' => 'multiline-fair',
+		'resolver-type' => 'first-good',
 	);
 
 	$self->{_pending_relations} = [];
@@ -354,6 +354,24 @@ sub __is_version_array_intersects_with_packages ($$) {
 	return 0;
 }
 
+sub _get_dependencies_groups ($$) {
+	my ($self, $version) = @_;
+
+	# action koeficient will determine the valuability of action
+	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
+	my @result;
+	push @result, { 'name' => 'pre-depends', 'relation_expressions' => $version->{pre_depends}, 'koef' => 2.0 };
+	push @result, { 'name' => 'depends', 'relation_expressions' => $version->{depends}, 'koef' => 1.0 };
+	if ($self->{_config}->var('cupt::resolver::keep-recommends')) {
+		push @result, { 'name' => 'recommends', 'relation_expressions' => $version->{recommends}, 'koef' => 0.4 };
+	}
+	if ($self->{_config}->var('cupt::resolver::keep-suggests')) {
+		push @result, { 'name' => 'suggests', 'relation_expressions' => $version->{suggests}, 'koef' => 0.1 };
+	}
+
+	return \@result;
+}
+
 sub __clone_packages ($) {
 	my ($ref_packages) = @_;
 
@@ -420,16 +438,17 @@ sub _resolve ($$) {
 	my $sub_apply_action = sub {
 		my ($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier) = @_;
 
-		my $package_name_to_change = $ref_action_to_apply->[0];
-		my $supposed_version = $ref_action_to_apply->[1];
+		my $package_name_to_change = $ref_action_to_apply->{package_name};
+		my $supposed_version = $ref_action_to_apply->{version};
 
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->{version};
 
 		# profit might be already written in third field of action structure by
 		# action chooser
-		my $profit = $ref_action_to_apply->[2] //
+		my $profit = $ref_action_to_apply->{profit} //
 				$self->_get_action_profit($original_version, $supposed_version);
+		$profit *= $ref_action_to_apply->{koef};
 
 		if ($self->{_config}->var('debug::resolver')) {
 			my $old_version_string = defined($original_version) ?
@@ -494,90 +513,114 @@ sub _resolve ($$) {
 				my $version = $package_entry->{version};
 				defined $version or next;
 
-				# checking that all 'Depends' are satisfied
-				foreach (@{$version->{depends}}, @{$version->{pre_depends}}) {
-					# check if relation is already satisfied
-					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
-					if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
-						# good, nothing to do
-					} else {
-						# mark package as failed one more time
-						++$failed_counts{$package_name};
-
-						# for resolving we can do:
-
-						# install one of versions package needs
-						foreach my $satisfying_version (@$ref_satisfying_versions) {
-							if (!exists $ref_current_packages->{$satisfying_version->{package_name}}->{stick}) {
-								push @possible_actions, [ $satisfying_version->{package_name}, $satisfying_version ];
+				# checking that all dependencies are satisfied
+				foreach (@{$self->_get_dependencies_groups($version)}) {
+					my $dependency_group_koef = $_->{koef};
+					my $dependency_group_name = $_->{name};
+					foreach (@{$_->{relation_expressions}}) {
+						# check if relation is already satisfied
+						my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
+							# good, nothing to do
+						} else {
+							# if this is a soft dependency and it wasn't satisifed in the past, don't touch it
+							if (($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') and
+								!__is_version_array_intersects_with_packages(
+										$ref_satisfying_versions, $self->{_packages}))
+							{
+								next;
 							}
-						}
+							# mark package as failed one more time
+							++$failed_counts{$package_name};
 
-						# change this package
-						if (!exists $package_entry->{stick}) {
-							# change version of the package
-							my $other_package = $self->{_cache}->get_binary_package($package_name);
-							foreach my $other_version (@{$other_package->versions()}) {
-								# don't try existing version
-								next if $other_version->{version_string} eq $version->{version_string};
+							# for resolving we can do:
 
-								# let's check if other version has the same relation
-								my $failed_relation_string = stringify_relation_or_group($_);
-								my $found = 0;
-								foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
-									if ($failed_relation_string eq stringify_relation_or_group($_)) {
-										# yes, it has the same relation expression, so other version will also fail
-										# so it seems there is no sense trying it
-										$found = 1;
-										last;
-									}
+							# install one of versions package needs
+							foreach my $satisfying_version (@$ref_satisfying_versions) {
+								if (!exists $ref_current_packages->{$satisfying_version->{package_name}}->{stick}) {
+									push @possible_actions, {
+										'package_name' => $satisfying_version->{package_name},
+										'version' => $satisfying_version,
+										'koef' => $dependency_group_koef,
+									};
 								}
-								if (!$found) {
-									# let's try harder to find if the other version is really appropriate for us
+							}
+
+							# change this package
+							if (!exists $package_entry->{stick}) {
+								# change version of the package
+								my $other_package = $self->{_cache}->get_binary_package($package_name);
+								foreach my $other_version (@{$other_package->versions()}) {
+									# don't try existing version
+									next if $other_version->{version_string} eq $version->{version_string};
+
+									# let's check if other version has the same relation
+									my $failed_relation_string = stringify_relation_or_group($_);
+									my $found = 0;
 									foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
-										my $ref_other_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
-										if (!__is_version_array_intersects_with_packages($ref_other_satisfying_versions, $ref_current_packages)) {
-											# yes, some relation expression will fail
+										if ($failed_relation_string eq stringify_relation_or_group($_)) {
+											# yes, it has the same relation expression, so other version will also fail
+											# so it seems there is no sense trying it
 											$found = 1;
 											last;
 										}
 									}
 									if (!$found) {
-										# other version seems to be ok
-										push @possible_actions, [ $package_name, $other_version ];
+										# let's try harder to find if the other version is really appropriate for us
+										foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
+											my $ref_other_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+											if (!__is_version_array_intersects_with_packages($ref_other_satisfying_versions, $ref_current_packages)) {
+												# yes, some relation expression will fail
+												$found = 1;
+												last;
+											}
+										}
+										if (!$found) {
+											# other version seems to be ok
+											push @possible_actions, {
+												'package_name' => $package_name,
+												'version' => $other_version,
+												'koef' => $dependency_group_koef
+											};
+										}
 									}
+								}
+
+								if (!$self->{_params}->{'no-remove'} || !$version->is_installed()) {
+									# remove the package
+									push @possible_actions, {
+										'package_name' => $package_name,
+										'version' => undef,
+										'koef' => $dependency_group_koef
+									};
 								}
 							}
 
-							if (!$self->{_params}->{'no-remove'} || !$version->is_installed()) {
-								# remove the package
-								push @possible_actions, [ $package_name, undef ];
+							# in any case, stick this package
+							$package_entry->{stick} = 1;
+
+							if ($self->{_config}->var('debug::resolver')) {
+								my $stringified_relation = stringify_relation_or_group($_);
+								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+										"unsatisfied $dependency_group_name '$stringified_relation'");
 							}
-						}
+							$check_failed = 1;
 
-						# in any case, stick this package
-						$package_entry->{stick} = 1;
-
-						if ($self->{_config}->var('debug::resolver')) {
-							my $stringified_relation = stringify_relation_or_group($_);
-							$sub_mydebug_wrapper->("problem: package '$package_name': " . 
-									"unsatisfied depends '$stringified_relation'");
+							if (scalar @possible_actions == 1) {
+								$sub_apply_action->($ref_current_solution_entry,
+										$possible_actions[0], $ref_current_solution_entry->{identifier});
+								@possible_actions = ();
+								$recheck_needed = 1;
+								next MAIN_LOOP;
+							}
+							$recheck_needed = 0;
+							last MAIN_LOOP;
 						}
-						$check_failed = 1;
-
-						if (scalar @possible_actions == 1) {
-							$sub_apply_action->($ref_current_solution_entry,
-									$possible_actions[0], $ref_current_solution_entry->{identifier});
-							@possible_actions = ();
-							$recheck_needed = 1;
-							next MAIN_LOOP;
-						}
-						$recheck_needed = 0;
-						last MAIN_LOOP;
 					}
 				}
 
 				# checking that all 'Conflicts' are not satisfied
+				my $conflicts_koef = 1.0;
 				foreach (@{$version->{conflicts}}) {
 					# check if relation is accidentally satisfied
 					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
@@ -617,7 +660,11 @@ sub _resolve ($$) {
 
 							if (!$self->{_params}->{'no-remove'} || !exists $other_package_entry->{installed}) {
 								# or remove it
-								push @possible_actions, [ $other_package_name, undef ];
+								push @possible_actions, {
+									'package_name' => $other_package_name,
+									'version' => undef,
+									'koef' => $conflicts_koef,
+								};
 							}
 						}
 
@@ -639,7 +686,11 @@ sub _resolve ($$) {
 								
 								if (!$self->{_params}->{'no-remove'} || !exists $package_entry->{installed}) {
 									# remove the package
-									push @possible_actions, [ $package_name, undef ];
+									push @possible_actions, {
+										'package_name' => $package_name,
+										'version' => undef,
+										'koef' => $conflicts_koef,
+									};
 								}
 							}
 
@@ -706,17 +757,17 @@ sub _resolve ($$) {
 		if (scalar @possible_actions) {
 			# firstly rank all solutions
 			foreach (@possible_actions) {
-				my $package_name = $_->[0];
-				my $supposed_version = $_->[1];
+				my $package_name = $_->{package_name};
+				my $supposed_version = $_->{version};
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->{version} : undef;
 
 				# 3rd field in the structure will be "profit" of the change
-				push @$_, $self->_get_action_profit($original_version, $supposed_version);
+				$_->{profit} = $self->_get_action_profit($original_version, $supposed_version);
 			}
 
 			# sort them by "rank", from more bad to more good
-			@possible_actions = sort { $a->[2] <=> $b->[2] } @possible_actions;
+			@possible_actions = sort { $a->{profit} <=> $b->{profit} } @possible_actions;
 
 			my @forked_solution_entries;
 			# fork the solution entry and apply all the solutions by one

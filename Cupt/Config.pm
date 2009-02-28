@@ -49,6 +49,8 @@ sub new {
 			'debug::resolver' => 0,
 			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 
+			'cupt::resolver::keep-recommends' => 1,
+			'cupt::resolver::keep-suggests' => 0,
 			'cupt::worker::purge' => 0,
 		},
 
