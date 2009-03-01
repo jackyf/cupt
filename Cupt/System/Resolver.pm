@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use Cupt::Core;
-use Cupt::Cache::Relation qw(stringify_relation_or_group);
+use Cupt::Cache::Relation qw(stringify_relation_expression);
 
 =begin comment
 
@@ -649,10 +649,10 @@ sub _resolve ($$) {
 									next if $other_version->{version_string} eq $version->{version_string};
 
 									# let's check if other version has the same relation
-									my $failed_relation_string = stringify_relation_or_group($relation_expression);
+									my $failed_relation_string = stringify_relation_expression($relation_expression);
 									my $found = 0;
 									foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
-										if ($failed_relation_string eq stringify_relation_or_group($_)) {
+										if ($failed_relation_string eq stringify_relation_expression($_)) {
 											# yes, it has the same relation expression, so other version will also fail
 											# so it seems there is no sense trying it
 											$found = 1;
@@ -694,7 +694,7 @@ sub _resolve ($$) {
 							$package_entry->{stick} = 1;
 
 							if ($self->{_config}->var('debug::resolver')) {
-								my $stringified_relation = stringify_relation_or_group($relation_expression);
+								my $stringified_relation = stringify_relation_expression($relation_expression);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 										"unsatisfied $dependency_group_name '$stringified_relation'");
 							}
@@ -800,7 +800,7 @@ sub _resolve ($$) {
 							$package_entry->{stick} = 1;
 
 							if ($self->{_config}->var('debug::resolver')) {
-								my $stringified_relation = stringify_relation_or_group($_);
+								my $stringified_relation = stringify_relation_expression($_);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 										"satisfied conflicts '$stringified_relation'");
 							}
@@ -960,7 +960,7 @@ sub resolve ($$) {
 			mydebug("selected package '%s', version '%s' for relation expression '%s'",
 					$version_to_install->{package_name},
 					$version_to_install->{version_string},
-					stringify_relation_or_group($relation_expression)
+					stringify_relation_expression($relation_expression)
 			);
 		}
 		$self->_install_version_no_stick($version_to_install);

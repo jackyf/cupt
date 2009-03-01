@@ -8,13 +8,13 @@ use Exporter qw(import);
 
 use Cupt::Core;
 
-our @EXPORT_OK = qw(&__parse_relation_line &stringify_relations &stringify_relation_or_group);
+our @EXPORT_OK = qw(&__parse_relation_line &stringify_relation_expressions &stringify_relation_expression);
 
 sub new {
 	my ($class, $unparsed) = @_;
 	my $self = {
 		package_name => undef,
-		relation => undef,
+		relation_string => undef,
 		version_string => undef,
 	};
 	bless $self => $class;
@@ -44,7 +44,7 @@ sub new {
 	)
 	{
 		# versioned info is here, assigning
-		($self->{relation}, $self->{version_string}) = ($1, $2);
+		($self->{relation_string}, $self->{version_string}) = ($1, $2);
 	} else {
 		# no valid versioned info, maybe empty?
 		($unparsed =~ m/\G\s*$/g) # empty versioned info, this is also acceptable
@@ -57,14 +57,14 @@ sub new {
 sub stringify {
 	my $self = shift;
 	my $result = $self->{package_name};
-	if (defined($self->{relation})) {
+	if (defined($self->{relation_string})) {
 		# there is versioned info
-		$result .= join('', " (", $self->{relation}, ' ', $self->{version_string}, ')');
+		$result .= join('', " (", $self->{relation_string}, ' ', $self->{version_string}, ')');
 	}
 	return $result;
 }
 
-sub stringify_relation_or_group ($) {
+sub stringify_relation_expression ($) {
 	my $arg = $_[0];
 	if (ref $arg ne 'ARRAY' ) {
 		# it's ordinary relation object
@@ -75,20 +75,20 @@ sub stringify_relation_or_group ($) {
 	}
 }
 
-sub stringify_relations {
+sub stringify_relation_expressions {
 	my @relation_strings;
 	foreach my $object (@{$_[0]}) {
-		push @relation_strings, stringify_relation_or_group($object);
+		push @relation_strings, stringify_relation_expression($object);
 	}
 	return join(", ", @relation_strings);
 }
 
 sub satisfied_by ($$) {
 	my ($self, $version_string) = @_;
-	if (defined($self->{relation})) {
+	if (defined($self->{relation_string})) {
 		# relation is defined, checking
 		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->{version_string});
-		given($self->{relation}) {
+		given($self->{relation_string}) {
 			when('>=') { return ($comparison_result >= 0) }
 			when('<') { continue }
 			when('<<') { return ($comparison_result < 0) }

@@ -370,8 +370,8 @@ sub _get_satisfying_versions_for_one_relation {
 		my $key = join(",",
 				$self,
 				$package_name,
-				defined($relation->{relation}) ? $relation->{relation} : "",
-				defined($relation->{version_string}) ? $relation->{version_string} : ""
+				$relation->{relation_string} // "",
+				$relation->{version_string} // ""
 		);
 		if (exists $cache{$key}) {
 			return @{$cache{$key}};
@@ -394,7 +394,7 @@ sub _get_satisfying_versions_for_one_relation {
 	}
 
 	# virtual package can only be considered if no relation sign is specified
-	if (!defined($relation->{relation}) && exists $self->{can_provide}->{$package_name}) {
+	if (!defined($relation->{relation_string}) && exists $self->{can_provide}->{$package_name}) {
 		# looking for reverse-provides
 		foreach (@{$self->{can_provide}->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
