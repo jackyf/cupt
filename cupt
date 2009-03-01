@@ -277,6 +277,7 @@ sub show_package_versions () {
 			$p->(__('Recommends'), stringify_relation_expressions($version->{recommends})) if @{$version->{recommends}};
 			$p->(__('Suggests'), stringify_relation_expressions($version->{suggests})) if @{$version->{suggests}};
 			$p->(__('Conflicts'), stringify_relation_expressions($version->{conflicts})) if @{$version->{conflicts}};
+			$p->(__('Breaks'), stringify_relation_expressions($version->{breaks})) if @{$version->{breaks}};
 			$p->(__('Replaces'), stringify_relation_expressions($version->{replaces})) if @{$version->{replaces}};
 			$p->(__('Provides'), join(", ", @{$version->{provides}})) if @{$version->{provides}};
 			$p->(__('Enhances'), stringify_relation_expressions($version->{enhances})) if @{$version->{enhances}};
