@@ -234,7 +234,8 @@ sub show_package_versions () {
 			$package_name = $package_expression;
 			$ref_versions = get_binary_package($package_name)->versions();
 		} else {
-			if (!defined $cache->get_binary_package($package_expression)) {
+			if (!defined $cache->get_binary_package($package_expression)
+				&& $package_expression =~ /^$package_name_regex$/) {
 				# there is no such binary binary, maybe it's virtual?
 				my $ref_reverse_provides = $sub_get_reverse_provides->($package_expression);
 				if (scalar @$ref_reverse_provides) {
