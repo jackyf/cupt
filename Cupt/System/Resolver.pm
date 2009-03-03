@@ -239,7 +239,7 @@ sub _auto_satisfy_relation ($$) {
 		# if relation is not satisfied
 		if ($self->{_config}->var('debug::resolver')) {
 			my $message = "auto-installing relation '";
-			$message .= stringify_relation_or_group($relation_expression);
+			$message .= stringify_relation_expression($relation_expression);
 			$message .= "'";
 			mydebug($message);
 		}
