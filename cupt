@@ -43,7 +43,8 @@ my %command_handlers = (
 	'config-dump' => \&config_dump,
 	'show' => \&show_package_versions,
 	'search' => \&search,
-	'depends' => \&show_package_relations,
+	'depends' => sub { show_package_relations('normal') },
+	'rdepends' => sub { show_package_relations('reverse') },
 	'policy' => \&policy,
 	'pkgnames' => \&pkgnames,
 	'install' => \&install,
@@ -358,7 +359,9 @@ sub search () {
 	}
 }
 
-sub show_package_relations () {
+sub show_package_relations ($) {
+	my ($mode) = @_;
+
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
@@ -374,6 +377,20 @@ sub show_package_relations () {
 
 	my @versions = map { select_binary_package_version($_) } @ARGV;
 
+	my @relation_groups = (
+		[ 'pre_depends', 'Pre-Depends' ],
+		[ 'depends', 'Depends' ],
+	);
+	if (!$config->var('apt::cache::important')) {
+		push @relation_groups, 
+				[ 'recommends', 'Recommends' ];
+
+		if ($o_with_suggests) {
+			push @relation_groups,
+					[ 'suggests', 'Suggests' ];
+		}
+	}
+
 	# don't output the same version more than one time
 	my %processed_entries;
 
@@ -387,30 +404,24 @@ sub show_package_relations () {
 		$processed_entries{$package_name,$version_string} = 1;
 
 		say "$package_name $version_string:";
-		my @relation_groups = (
-			[ $version->{pre_depends}, 'Pre-Depends' ],
-			[ $version->{depends}, 'Depends' ],
-		);
-		if (!$config->var('apt::cache::important')) {
-			push @relation_groups, 
-					[ $version->{recommends}, 'Recommends' ];
-
-			if ($o_with_suggests) {
-				push @relation_groups,
-						[ $version->{suggests}, 'Suggests' ];
-			}
-		}
-
 		foreach my $item (@relation_groups) {
-			my $relations = $item->[0];
+			my $relation_group_name = $item->[0];
 			my $caption = $item->[1];
-			my @split = split /, /,  stringify_relation_expressions($relations);
-			my $starter = "  " . gettext($caption) . ": ";
+
+			my @relation_expressions;
+			# fill relations with actual relations
+			if ($mode eq 'normal') {
+				# just add normal dependencies
+				@relation_expressions = @{$version->{$relation_group_name}};
+			}
+
+			my @split = split /, /,  stringify_relation_expressions(\@relation_expressions);
+			my $starter = "  " . ($mode eq 'reverse' ? __('Reverse-') : '') . __($caption) . ": ";
 			map { say $starter, $_; } @split;
 
 			if ($config->var('apt::cache::recursedepends')) {
 				# insert recursive depends into queue
-				foreach (@$relations) {
+				foreach (@relation_expressions) {
 					my $ref_satisfying_versions = $cache->get_satisfying_versions($_);
 					# if some versions exist
 					if (scalar @$ref_satisfying_versions) {
