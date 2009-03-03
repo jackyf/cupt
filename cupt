@@ -717,7 +717,7 @@ sub process_options {
 	my @direct_options;
 	eval {
 		GetOptions(
-			'o=s@' => \@direct_options,
+			'option|o=s@' => \@direct_options,
 			'important|i' => sub { $config->set_regular_var('apt::cache::important', 1) },
 			'all-versions|a' => sub { $config->set_regular_var('apt::cache::allversions', 1) },
 			'no-all-versions' => sub { $config->set_regular_var('apt::cache::allversions', 0) },
