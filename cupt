@@ -408,11 +408,12 @@ sub show_package_relations ($) {
 			my $relation_group_name = $item->[0];
 			my $caption = $item->[1];
 
-			my @relation_expressions;
+			# [ relation_expression, package_name ]
+			my @relation_expressions_and_packages;
 			# fill relations with actual relations
 			if ($mode eq 'normal') {
 				# just add normal dependencies
-				@relation_expressions = @{$version->{$relation_group_name}};
+				@relation_expressions_and_packages = map { [ $_, "" ] } @{$version->{$relation_group_name}};
 			} else {
 				# we have to check all reverse dependencies for this version
 				foreach (values %{$cache->{binary_packages}}) {
@@ -445,20 +446,21 @@ sub show_package_relations ($) {
 						}
 						if ($needed == 1) {
 							# positive result
-							push @relation_expressions, $_;
+							push @relation_expressions_and_packages, [ $_, $reverse_version_candidate->{package_name} ];
 							last;
 						}
 					}
 				}
 			}
 
-			my @split = split /, /,  stringify_relation_expressions(\@relation_expressions);
 			my $starter = "  " . ($mode eq 'reverse' ? __('Reverse-') : '') . __($caption) . ": ";
-			map { say $starter, $_; } @split;
+			foreach (@relation_expressions_and_packages) {
+				say $starter, $_->[1], ": ", stringify_relation_expression($_->[0]);
+			}
 
 			if ($config->var('apt::cache::recursedepends')) {
 				# insert recursive depends into queue
-				foreach (@relation_expressions) {
+				foreach (@relation_expressions_and_packages) {
 					my $ref_satisfying_versions = $cache->get_satisfying_versions($_);
 					# if some versions exist
 					if (scalar @$ref_satisfying_versions) {
