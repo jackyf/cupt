@@ -413,6 +413,42 @@ sub show_package_relations ($) {
 			if ($mode eq 'normal') {
 				# just add normal dependencies
 				@relation_expressions = @{$version->{$relation_group_name}};
+			} else {
+				# we have to check all reverse dependencies for this version
+				foreach (values %{$cache->{binary_packages}}) {
+					my $reverse_version_candidate = $cache->get_policy_version($_);
+					my $needed = undef;
+					foreach (@{$reverse_version_candidate->{$relation_group_name}}) {
+						# check each relation
+						if (ref $_ ne 'ARRAY' && $_->{package_name} eq $package_name) {
+							# don't worry about any virtual packages, just check the relation
+							if (!defined $_->{relation_string}) {
+								# there is no versioned info in relation, all's ok
+								$needed = 1;
+							} elsif ($_->satisfied_by($version_string)) {
+								# versioned info is good
+								$needed = 1;
+							} else {
+								# bad, this is inappropriate relation, stop at this
+								$needed = 0;
+								last;
+							}
+						} else {
+							# ok, check as common
+							my $ref_relation_versions = $cache->get_satisfying_versions($_);
+							foreach (@$ref_relation_versions) {
+								if ($_->{package_name} eq $package_name && $_->{version_string} eq $version_string) {
+									# ok, good
+									$needed = 1;
+								}
+							}
+						}
+						if (defined $needed && $needed == 1) {
+							# positive result
+							push @relation_expressions, $_;
+						}
+					}
+				}
 			}
 
 			my @split = split /, /,  stringify_relation_expressions(\@relation_expressions);
