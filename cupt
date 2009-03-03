@@ -417,7 +417,7 @@ sub show_package_relations ($) {
 				# we have to check all reverse dependencies for this version
 				foreach (values %{$cache->{binary_packages}}) {
 					my $reverse_version_candidate = $cache->get_policy_version($_);
-					my $needed = undef;
+					my $needed = 0;
 					foreach (@{$reverse_version_candidate->{$relation_group_name}}) {
 						# check each relation
 						if (ref $_ ne 'ARRAY' && $_->{package_name} eq $package_name) {
@@ -430,7 +430,6 @@ sub show_package_relations ($) {
 								$needed = 1;
 							} else {
 								# bad, this is inappropriate relation, stop at this
-								$needed = 0;
 								last;
 							}
 						} else {
@@ -440,12 +439,14 @@ sub show_package_relations ($) {
 								if ($_->{package_name} eq $package_name && $_->{version_string} eq $version_string) {
 									# ok, good
 									$needed = 1;
+									last;
 								}
 							}
 						}
-						if (defined $needed && $needed == 1) {
+						if ($needed == 1) {
 							# positive result
 							push @relation_expressions, $_;
+							last;
 						}
 					}
 				}
