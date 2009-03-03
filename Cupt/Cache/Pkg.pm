@@ -54,11 +54,12 @@ sub versions {
 				$parsed_version = $version_class->new($_);
 				unshift @$_, $version_class;
 			};
+			# FIXME: error, not warning after science-mathematics has been fixed in the Debian archive
 			if (mycatch()) {
-				myerr("error while parsing new version entry");
-				myredie();
+				mywarn("error while parsing new version entry");
+			} else {
+				$self->_merge_version($parsed_version, \@result);
 			}
-			$self->_merge_version($parsed_version, \@result);
 		}
 	};
 	if (mycatch()) {
