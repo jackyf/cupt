@@ -810,6 +810,9 @@ sub _path_of_base_uri {
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
 	(my $uri_prefix = $entry->{'uri'}) =~ s[^\w+://][];
 
+	# stripping last '/' from uri if present
+	$uri_prefix =~ s{/$}{};
+
 	# "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
 	$uri_prefix =~ tr[/][_];
 
