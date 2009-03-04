@@ -848,9 +848,7 @@ sub _resolve ($$) {
 			my %suggested_packages;
 			foreach my $package_name (keys %$ref_current_packages) {
 				my $version = $ref_current_packages->{$package_name}->[PE_VERSION];
-				if (defined $version) {
-					$suggested_packages{$package_name}->{version} = $version;
-				}
+				$suggested_packages{$package_name}->{version} = $version;
 			}
 
 			# suggest found solution
