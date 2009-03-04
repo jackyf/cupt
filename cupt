@@ -702,7 +702,7 @@ sub manage_packages ($) {
 							my $version_string = $ref_package_entry->{version}->{version_string};
 							push @unsatisfied_soft_dependencies, 
 									sprintf __("%s %s recommends %s"), $package_name, $version_string,
-									stringify_relation_or_group($relation_expression);
+									stringify_relation_expression($relation_expression);
 									
 						}
 					}
