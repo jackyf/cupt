@@ -7,21 +7,15 @@ use warnings;
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
 
+use constant {
+	PE_VERSION => 0,
+	PE_STICK => 1,
+	PE_FAKE_SATISFIED => 2,
+	SPE_MANUALLY_SELECTED => 3,
+	SPE_INSTALLED => 4,
+};
+
 =begin comment
-
-=head2 _packages
-
-hash { I<package_name> => {S<< 'version' => I<version> >>, S<< 'stick' => I<stick> >>} }
-
-where:
-
-I<package_name> - name of binary package
-
-I<version> - reference to Cupt::Cache::BinaryVersion, can
-be undefined if package has to be removed
-
-I<stick> - a boolean flag to
-indicate can resolver modify this item or not
 
 =head2 pending_relations
 
@@ -147,9 +141,14 @@ sub import_installed_versions ($$) {
 
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
-		$self->{_packages}->{$version->{package_name}}->{version} = $version;
+		my $package_entry = ($self->{_packages}->{$version->{package_name}} = []);
+		$package_entry->[PE_VERSION] = $version;
+		$package_entry->[PE_STICK] = 0;
+		$package_entry->[PE_FAKE_SATISFIED] = [];
+		$package_entry->[SPE_MANUALLY_SELECTED] = 0;
+		$package_entry->[SPE_INSTALLED] = 1;
 		# '_packages' will be modified, leave '_old_packages' as original system state
-		$self->{_old_packages}->{$version->{package_name}}->{version} = $version;
+		@{$self->{_old_packages}->{$version->{package_name}}} = @$package_entry;
 	}
 }
 
@@ -182,13 +181,17 @@ sub _schedule_new_version_relations ($$) {
 sub _install_version_no_stick ($$) {
 	my ($self, $version) = @_;
 	if (exists $self->{_packages}->{$version->{package_name}} &&
-		exists $self->{_packages}->{$version->{package_name}}->{stick})
+		$self->{_packages}->{$version->{package_name}}->[PE_STICK])
 	{
 		# package is restricted to be updated
 		return;
 	}
 
-	$self->{_packages}->{$version->{package_name}}->{version} = $version;
+	$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
+	$self->{_packages}->{$version->{package_name}}->[PE_FAKE_SATISFIED] = [];
+	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 0;
+	$self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED] = 0
+			if !exists $self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED];
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
 	}
@@ -208,8 +211,8 @@ I<version> - reference to Cupt::Cache::BinaryVersion
 sub install_version ($$) {
 	my ($self, $version) = @_;
 	$self->_install_version_no_stick($version);
-	$self->{_packages}->{$version->{package_name}}->{stick} = 1;
-	$self->{_packages}->{$version->{package_name}}->{manually_selected} = 1;
+	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
+	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
 }
 
 =head2 satisfy_relation
@@ -259,9 +262,12 @@ I<package_name> - string, name of package to remove
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{_packages}->{$package_name}->{version} = undef;
-	$self->{_packages}->{$package_name}->{stick} = 1;
-	$self->{_packages}->{$package_name}->{manually_selected} = 1;
+	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
+	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
+	$self->{_packages}->{$package_name}->[PE_FAKE_SATISFIED] = [];
+	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
+	$self->{_packages}->{$package_name}->[SPE_INSTALLED] = 0
+			if !exists $self->{_packages}->{$package_name}->[SPE_INSTALLED];
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
@@ -280,7 +286,7 @@ sub upgrade ($) {
 	foreach (keys %{$self->{_packages}}) {
 		my $package_name = $_;
 		my $package = $self->{_cache}->get_binary_package($package_name);
-		my $original_version = $self->{_packages}->{$package_name}->{version};
+		my $original_version = $self->{_packages}->{$package_name}->[PE_VERSION];
 		my $supposed_version = $self->{_cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
@@ -357,12 +363,17 @@ sub __is_version_array_intersects_with_packages ($$) {
 	foreach my $version (@$ref_versions) {
 		exists $ref_packages->{$version->{package_name}} or next;
 
-		my $installed_version = $ref_packages->{$version->{package_name}}->{version};
+		my $installed_version = $ref_packages->{$version->{package_name}}->[PE_VERSION];
 		defined $installed_version or next;
 		
 		return 1 if $version->{version_string} eq $installed_version->{version_string};
 	}
 	return 0;
+}
+
+sub _is_package_can_be_removed ($$) {
+	my ($self, $package_name) = @_;
+	return !$self->{_params}->{'no-remove'} || !$self->{_packages}->{$package_name}->[SPE_INSTALLED];
 }
 
 sub _get_dependencies_groups ($$) {
@@ -388,8 +399,9 @@ sub __clone_packages ($) {
 
 	my %clone;
 	foreach (keys %$ref_packages) {
-		my %ref_new_package_entry = %{$ref_packages->{$_}};
-		$clone{$_} = \%ref_new_package_entry;
+		my $ref_new_package_entry = $ref_packages->{$_};
+		$clone{$_}->[PE_VERSION] = $ref_new_package_entry->[PE_VERSION];
+		$clone{$_}->[PE_STICK] = $ref_new_package_entry->[PE_STICK];
 	}
 	return \%clone;
 }
@@ -402,10 +414,10 @@ sub _clean_automatically_installed ($) {
 	my %candidates_for_remove;
 	foreach my $package_name (keys %$ref_packages) {
 		my $ref_package_entry = $ref_packages->{$package_name};
-		my $version = $ref_package_entry->{version};
+		my $version = $ref_package_entry->[PE_VERSION];
 		defined $version or next;
-		!exists $ref_package_entry->{stick} or next;
-		!exists $ref_package_entry->{manually_installed} or next;
+		!$ref_package_entry->[PE_STICK] or next;
+		!$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] or next;
 		if (!$can_autoremove) {
 			!exists $self->{_old_packages}->{$package_name} or next;
 		} else {
@@ -424,7 +436,7 @@ sub _clean_automatically_installed ($) {
 		# other package, so don't need to be removed
 		my %protected_packages;
 		foreach my $other_package_name (keys %$ref_packages) {
-			my $other_version = $ref_packages->{$other_package_name}->{version};
+			my $other_version = $ref_packages->{$other_package_name}->[PE_VERSION];
 			defined $other_version or next;
 			my @valuable_relation_expressions;
 			push @valuable_relation_expressions, @{$other_version->{pre_depends}};
@@ -441,7 +453,7 @@ sub _clean_automatically_installed ($) {
 				foreach (@$satisfying_versions) {
 					my $candidate_package_name = $_->{package_name};
 					exists $candidates_for_remove{$candidate_package_name} or next;
-					$_->{version_string} eq $ref_packages->{$candidate_package_name}->{version}->{version_string} or next;
+					$_->{version_string} eq $ref_packages->{$candidate_package_name}->[PE_VERSION]->{version_string} or next;
 					# well, this is what we need
 					$protected_packages{$candidate_package_name} = 1;
 				}
@@ -451,7 +463,7 @@ sub _clean_automatically_installed ($) {
 			if (!exists $protected_packages{$_}) {
 				# this package wasn't marked as protected, we can remove it
 				++$last_cleaned;
-				$ref_packages->{$_}->{version} = undef;
+				$ref_packages->{$_}->[PE_VERSION] = undef;
 				delete $candidates_for_remove{$_};
 			}
 		}
@@ -477,7 +489,7 @@ sub _resolve ($$) {
 	#                   package_name... => {
 	#                                        'version' => version,
 	#                                        'stick' (optional),
-	#                                        'manually_installed' (optional),
+	#                                        'manually_selected' (optional),
 	#                                      }
 	#                 }
 	#   'score' => score
@@ -517,7 +529,7 @@ sub _resolve ($$) {
 		my $supposed_version = $ref_action_to_apply->{version};
 
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
-		my $original_version = $ref_package_entry_to_change->{version};
+		my $original_version = $ref_package_entry_to_change->[PE_VERSION];
 
 		# profit might be already written in third field of action structure by
 		# action chooser
@@ -545,10 +557,10 @@ sub _resolve ($$) {
 		$ref_solution_entry->{score} += $profit;
 
 		# set stick for change for the time on underlying solutions
-		$ref_package_entry_to_change->{stick} = 1;
-		$ref_package_entry_to_change->{version} = $supposed_version;
+		$ref_package_entry_to_change->[PE_STICK] = 1;
+		$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
 		if (exists $ref_action_to_apply->{fakely_satisfies}) {
-			push @{$ref_package_entry_to_change->{fake_satisfied}}, $ref_action_to_apply->{fakely_satisfies};
+			push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{fakely_satisfies};
 		}
 	};
 
@@ -589,7 +601,7 @@ sub _resolve ($$) {
 			foreach (@packages_in_order) {
 				$package_name = $_;
 				$package_entry = $ref_current_packages->{$package_name};
-				my $version = $package_entry->{version};
+				my $version = $package_entry->[PE_VERSION];
 				defined $version or next;
 
 				# checking that all dependencies are satisfied
@@ -609,7 +621,7 @@ sub _resolve ($$) {
 								{
 									# it wasn't satisfied in the past, don't touch it
 									next;
-								} elsif (grep { $_ == $relation_expression } @{$package_entry->{fake_satisfied}}) {
+								} elsif (grep { $_ == $relation_expression } @{$package_entry->[PE_FAKE_SATISFIED]}) {
 									# this soft relation expression was already fakely satisfied (score penalty)
 									next;
 								} else {
@@ -631,7 +643,7 @@ sub _resolve ($$) {
 
 							# install one of versions package needs
 							foreach my $satisfying_version (@$ref_satisfying_versions) {
-								if (!exists $ref_current_packages->{$satisfying_version->{package_name}}->{stick}) {
+								if (!$ref_current_packages->{$satisfying_version->{package_name}}->[PE_STICK]) {
 									push @possible_actions, {
 										'package_name' => $satisfying_version->{package_name},
 										'version' => $satisfying_version,
@@ -641,7 +653,7 @@ sub _resolve ($$) {
 							}
 
 							# change this package
-							if (!exists $package_entry->{stick}) {
+							if (!$package_entry->[PE_STICK]) {
 								# change version of the package
 								my $other_package = $self->{_cache}->get_binary_package($package_name);
 								foreach my $other_version (@{$other_package->versions()}) {
@@ -680,7 +692,7 @@ sub _resolve ($$) {
 									}
 								}
 
-								if (!$self->{_params}->{'no-remove'} || !$version->is_installed()) {
+								if ($self->_is_package_can_be_removed($package_name)) {
 									# remove the package
 									push @possible_actions, {
 										'package_name' => $package_name,
@@ -691,7 +703,7 @@ sub _resolve ($$) {
 							}
 
 							# in any case, stick this package
-							$package_entry->{stick} = 1;
+							$package_entry->[PE_STICK] = 1;
 
 							if ($self->{_config}->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($relation_expression);
@@ -736,11 +748,11 @@ sub _resolve ($$) {
 							my $other_package_entry = $ref_current_packages->{$other_package_name};
 
 							# does the stick exists?
-							!exists $other_package_entry->{stick} or next;
+							!$other_package_entry->[PE_STICK] or next;
 							# does the package have an installed version?
-							defined($other_package_entry->{version}) or next;
+							defined($other_package_entry->[PE_VERSION]) or next;
 							# is this our version?
-							$other_package_entry->{version}->{version_string} eq $satisfying_version->{version_string} or next;
+							$other_package_entry->[PE_VERSION]->{version_string} eq $satisfying_version->{version_string} or next;
 
 							$conflict_found = 1;
 							# yes... so change it
@@ -756,7 +768,7 @@ sub _resolve ($$) {
 								};
 							}
 
-							if (!$self->{_params}->{'no-remove'} || !exists $other_package_entry->{installed}) {
+							if ($self->_is_package_can_be_removed($other_package_name)) {
 								# or remove it
 								push @possible_actions, {
 									'package_name' => $other_package_name,
@@ -772,7 +784,7 @@ sub _resolve ($$) {
 							# mark package as failed one more time
 							++$failed_counts{$package_name};
 
-							if (!exists $package_entry->{stick}) {
+							if (!$package_entry->[PE_STICK]) {
 								# change version of the package
 								my $package = $self->{_cache}->get_binary_package($package_name);
 								foreach my $other_version (@{$package->versions()}) {
@@ -786,7 +798,7 @@ sub _resolve ($$) {
 									};
 								}
 								
-								if (!$self->{_params}->{'no-remove'} || !exists $package_entry->{installed}) {
+								if ($self->_is_package_can_be_removed($package_name)) {
 									# remove the package
 									push @possible_actions, {
 										'package_name' => $package_name,
@@ -797,7 +809,7 @@ sub _resolve ($$) {
 							}
 
 							# in any case, stick this package
-							$package_entry->{stick} = 1;
+							$package_entry->[PE_STICK] = 1;
 
 							if ($self->{_config}->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($_);
@@ -832,11 +844,20 @@ sub _resolve ($$) {
 			# clean up automatically installed by resolver and now unneeded packages
 			$self->_clean_automatically_installed($ref_current_packages);
 
+			# build "user-frienly" version of solution
+			my %suggested_packages;
+			foreach my $package_name (keys %$ref_current_packages) {
+				my $version = $ref_current_packages->{$package_name}->[PE_VERSION];
+				if (defined $version) {
+					$suggested_packages{$package_name}->{version} = $version;
+				}
+			}
+
 			# suggest found solution
 			if ($self->{_config}->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("proposing this solution");
 			}
-			my $user_answer = $sub_accept->($ref_current_packages);
+			my $user_answer = $sub_accept->(\%suggested_packages);
 			if (!defined $user_answer) {
 				# exiting...
 				return undef;
@@ -863,7 +884,7 @@ sub _resolve ($$) {
 				my $package_name = $_->{package_name};
 				my $supposed_version = $_->{version};
 				my $original_version = exists $ref_current_packages->{$package_name} ?
-						$ref_current_packages->{$package_name}->{version} : undef;
+						$ref_current_packages->{$package_name}->[PE_VERSION] : undef;
 
 				$_->{profit} //= $self->_get_action_profit($original_version, $supposed_version);
 			}
