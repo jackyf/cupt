@@ -136,19 +136,27 @@ I<ref_versions> - reference to array of Cupt::Cache::BinaryVersion
 
 =cut
 
+sub _create_new_package_entry ($$) {
+	my ($self, $package_name) = @_;
+	return if exists $self->{_packages}->{$package_name};
+	my ($package_entry) = ($self->{_packages}->{$package_name} = []);
+	$package_entry->[PE_VERSION] = undef;
+	$package_entry->[PE_STICK] = 0;
+	$package_entry->[PE_FAKE_SATISFIED] = [];
+	$package_entry->[SPE_MANUALLY_SELECTED] = 0;
+	$package_entry->[SPE_INSTALLED] = 0;
+}
+
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
 
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
-		my $package_entry = ($self->{_packages}->{$version->{package_name}} = []);
-		$package_entry->[PE_VERSION] = $version;
-		$package_entry->[PE_STICK] = 0;
-		$package_entry->[PE_FAKE_SATISFIED] = [];
-		$package_entry->[SPE_MANUALLY_SELECTED] = 0;
-		$package_entry->[SPE_INSTALLED] = 1;
 		# '_packages' will be modified, leave '_old_packages' as original system state
-		@{$self->{_old_packages}->{$version->{package_name}}} = @$package_entry;
+		$self->_create_new_package_entry($version->{package_name});
+		$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
+		$self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED] = 1;
+		@{$self->{_old_packages}->{$version->{package_name}}} = @{$self->{_packages}->{$version->{package_name}}};
 	}
 }
 
@@ -180,18 +188,14 @@ sub _schedule_new_version_relations ($$) {
 # installs new version, shedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$) {
 	my ($self, $version) = @_;
-	if (exists $self->{_packages}->{$version->{package_name}} &&
-		$self->{_packages}->{$version->{package_name}}->[PE_STICK])
+	$self->_create_new_package_entry($version->{package_name});
+	if ($self->{_packages}->{$version->{package_name}}->[PE_STICK])
 	{
 		# package is restricted to be updated
 		return;
 	}
 
 	$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
-	$self->{_packages}->{$version->{package_name}}->[PE_FAKE_SATISFIED] = [];
-	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 0;
-	$self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED] = 0
-			if !exists $self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED];
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
 	}
@@ -262,12 +266,10 @@ I<package_name> - string, name of package to remove
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
+	$self->_create_new_package_entry($package_name);
 	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
-	$self->{_packages}->{$package_name}->[PE_FAKE_SATISFIED] = [];
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
-	$self->{_packages}->{$package_name}->[SPE_INSTALLED] = 0
-			if !exists $self->{_packages}->{$package_name}->[SPE_INSTALLED];
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
