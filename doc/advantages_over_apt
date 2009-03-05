@@ -11,6 +11,7 @@ Show:
  - 'show' command can show release description ('--with-release-info' switch);
  - '/<distribution' and '=<version>' suffixes can be used with 'depends' command.
 
-Managing packages (safe-upgrade,full-upgrade,install,remove,purge):
+Managing packages:
  - 'safe-upgrade' and 'full-upgrade' commands can accept addtional packages
    (with optional modifiers) from the command line.
+ - 'satisfy' command is present.
