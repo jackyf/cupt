@@ -404,6 +404,7 @@ sub __clone_packages ($) {
 		my $ref_new_package_entry = $ref_packages->{$_};
 		$clone{$_}->[PE_VERSION] = $ref_new_package_entry->[PE_VERSION];
 		$clone{$_}->[PE_STICK] = $ref_new_package_entry->[PE_STICK];
+		$clone{$_}->[PE_FAKE_SATISFIED] = $ref_new_package_entry->[PE_FAKE_SATISFIED];
 	}
 	return \%clone;
 }
