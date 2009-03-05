@@ -1,4 +1,3 @@
-resolver, cupt: implement 'satisfy' action
 worker: do real actions instead of simulating
 state: add trigger-related statuses
 cache: add checking for index sigs
