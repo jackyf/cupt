@@ -607,10 +607,10 @@ sub _resolve ($$) {
 				defined $version or next;
 
 				# checking that all dependencies are satisfied
-				foreach (@{$self->_get_dependencies_groups($version)}) {
-					my $dependency_group_koef = $_->{koef};
-					my $dependency_group_name = $_->{name};
-					foreach my $relation_expression (@{$_->{relation_expressions}}) {
+				foreach my $ref_dependency_group (@{$self->_get_dependencies_groups($version)}) {
+					my $dependency_group_koef = $ref_dependency_group->{koef};
+					my $dependency_group_name = $ref_dependency_group->{name};
+					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
 						# check if relation is already satisfied
 						my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
@@ -665,7 +665,7 @@ sub _resolve ($$) {
 									# let's check if other version has the same relation
 									my $failed_relation_string = stringify_relation_expression($relation_expression);
 									my $found = 0;
-									foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
+									foreach (@{$other_version->{$dependency_group_name}}) {
 										if ($failed_relation_string eq stringify_relation_expression($_)) {
 											# yes, it has the same relation expression, so other version will also fail
 											# so it seems there is no sense trying it
@@ -675,7 +675,7 @@ sub _resolve ($$) {
 									}
 									if (!$found) {
 										# let's try harder to find if the other version is really appropriate for us
-										foreach (@{$other_version->{depends}}, @{$other_version->{pre_depends}}) {
+										foreach (@{$other_version->{$dependency_group_name}}) {
 											my $ref_other_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
 											if (!__is_version_array_intersects_with_packages($ref_other_satisfying_versions, $ref_current_packages)) {
 												# yes, some relation expression will fail
