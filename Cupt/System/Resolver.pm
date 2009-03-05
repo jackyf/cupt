@@ -29,7 +29,8 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(_config _cache _params _old_packages _packages _pending_relations);
+use fields qw(_config _cache _params _old_packages _packages _pending_relations
+		_strict_relation_expressions);
 
 =head1 PARAMS
 
@@ -104,20 +105,7 @@ sub new {
 	);
 
 	$self->{_pending_relations} = [];
-
-	# "installing" virtual package, which will be used for strict 'satisfy' requests
-	my $version = {
-		package_name => $_dummy_package_name,
-		pre_depends => [],
-		depends => [],
-		recommends => [],
-		suggests => [],
-		breaks => [],
-		conflicts => [],
-	};
-	$self->_create_new_package_entry($_dummy_package_name);
-	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
-	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
+	$self->{_strict_relation_expressions} = [];
 
 	return $self;
 }
@@ -250,7 +238,8 @@ groups)
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 
-	push @{$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends}}, $relation_expression;
+	# schedule checking strict relation expression, it will be checked later
+	push @{$self->{_strict_relation_expressions}}, $relation_expression;
 }
 
 sub _auto_satisfy_relation ($$) {
@@ -486,6 +475,9 @@ sub _clean_automatically_installed ($) {
 			}
 		}
 	} while $last_cleaned;
+
+	# also remove dummy package
+	delete $ref_packages->{$_dummy_package_name};
 }
 
 sub _resolve ($$) {
@@ -503,6 +495,22 @@ sub _resolve ($$) {
 		mydebug("started resolving");
 	}
 
+	# "installing" virtual package, which will be used for strict 'satisfy' requests
+	my $version = {
+		package_name => $_dummy_package_name,
+		pre_depends => [],
+		depends => [],
+		recommends => [],
+		suggests => [],
+		breaks => [],
+		conflicts => [],
+	};
+	$self->_create_new_package_entry($_dummy_package_name);
+	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
+	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
+	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends} = 
+			$self->{_strict_relation_expressions};
+
 	# [ 'packages' => {
 	#                   package_name... => {
 	#                                        'version' => version,
@@ -517,6 +525,7 @@ sub _resolve ($$) {
 	# ]...
 	my @solution_entries = ({ packages => __clone_packages($self->{_packages}),
 			score => 0, level => 0, identifier => 0, finished => 0 });
+
 	my $next_free_solution_identifier = 1;
 	my $selected_solution_entry_index;
 
@@ -582,9 +591,11 @@ sub _resolve ($$) {
 		}
 	};
 
+	my $return_code;
+
 	do {{
 		# continue only if we have at least one solution pending, otherwise we have a great fail
-		scalar @solution_entries or return 0;
+		scalar @solution_entries or do { $return_code = 0; goto EXIT };
 
 		my @possible_actions;
 
@@ -875,14 +886,15 @@ sub _resolve ($$) {
 			}
 			my $user_answer = $sub_accept->(\%suggested_packages);
 			if (!defined $user_answer) {
-				# exiting...
-				return undef;
+				# user has selected abandoning all further efforts
+				goto EXIT;
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
 				if ($self->{_config}->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("accepted");
 				}
-				return 1;
+				$return_code = 1;
+				goto EXIT;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
 				if ($self->{_config}->var('debug::resolver')) {
@@ -962,6 +974,10 @@ sub _resolve ($$) {
 			splice @solution_entries, $selected_solution_entry_index, 1;
 		}
 	}} while $check_failed;
+
+	EXIT:
+	delete $self->{_packages}->{$_dummy_package_name};
+	return $return_code;
 }
 
 =head2 resolve
