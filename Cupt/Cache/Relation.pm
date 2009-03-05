@@ -8,7 +8,8 @@ use Exporter qw(import);
 
 use Cupt::Core;
 
-our @EXPORT_OK = qw(&__parse_relation_line &stringify_relation_expressions &stringify_relation_expression);
+our @EXPORT_OK = qw(&__parse_relation_line &stringify_relation_expressions
+		&stringify_relation_expression &parse_relation_expression);
 
 sub new {
 	my ($class, $unparsed) = @_;
@@ -102,21 +103,33 @@ sub satisfied_by ($$) {
 	return 1;
 }
 
+=head2
+
+free subroutine, parses relation expression in string form, builds relation expression and returns it
+
+=cut
+
+sub parse_relation_expression ($) {
+	my ($relation_expression_string) = @_;
+
+	# looking for OR groups
+	my @relations = split / ?\| ?/, $relation_expression_string;
+	if (scalar @relations == 1) {
+		# ordinary relation
+		return new Cupt::Cache::Relation($relations[0]);
+	} else {
+		# 'OR' group of relations
+		return [ map { new Cupt::Cache::Relation($_) } @relations ];
+	}
+}
+
 sub __parse_relation_line {
 	# my $relation_line = $_[0] 
 	# or myinternaldie("relation line is not defined");
 
 	my @result;
 	while ($_[0] =~ m/(.+?)(?:,\s*|$)/g) {
-		# looking for OR groups
-		my @relations = split / ?\| ?/, $1;
-		if (scalar @relations == 1) {
-			# ordinary relation
-			push @result, new Cupt::Cache::Relation($relations[0]);
-		} else {
-			# 'OR' group of relations
-			push @result, [ map { new Cupt::Cache::Relation($_) } @relations ];
-		}
+		push @result, parse_relation_expression($1);
 	}
 	return \@result;
 }

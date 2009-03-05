@@ -14,7 +14,8 @@ use Locale::gettext;
 use Cupt::Core;
 use Cupt::Config;
 use Cupt::Cache;
-use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression);
+use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression
+		parse_relation_expression);
 
 my $config;
 my $cache;
@@ -50,6 +51,7 @@ my %command_handlers = (
 	'install' => \&install,
 	'remove' => \&remove,
 	'purge' => \&purge,
+	'satisfy' => \&satisfy,
 	'safe-upgrade' => \&safe_upgrade,
 	'full-upgrade' => \&full_upgrade,
 );
@@ -603,26 +605,31 @@ sub manage_packages ($) {
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
-		# "localizing" action to make it modifiable by package modifiers
-		my $action = $action;
-		my $last_letter = substr($package_expression, -1, 1);
-		if ($last_letter eq '+') {
-			$action = 'install';
-			$package_expression = substr($package_expression, 0, length($package_expression)-1);
-		} elsif ($last_letter eq '-') {
-			$action = 'remove';
-			$package_expression = substr($package_expression, 0, length($package_expression)-1);
-		}
+		if ($action eq 'satisfy') {
+			my $relation_expression = parse_relation_expression($package_expression);
+			$resolver->satisfy_relation_expression($relation_expression);
+		} else {
+			# "localizing" action to make it modifiable by package modifiers
+			my $action = $action;
+			my $last_letter = substr($package_expression, -1, 1);
+			if ($last_letter eq '+') {
+				$action = 'install';
+				$package_expression = substr($package_expression, 0, length($package_expression)-1);
+			} elsif ($last_letter eq '-') {
+				$action = 'remove';
+				$package_expression = substr($package_expression, 0, length($package_expression)-1);
+			}
 
-		if ($action eq 'install') {
-			my $version = select_binary_package_version($package_expression);
-			$resolver->install_version($version);
-		} else { # 'remove'
-			check_package_name($package_expression);
-			defined($cache->get_binary_package($package_expression)) or
-					mydie("unable to find binary package '%s'", $package_expression);
+			if ($action eq 'install') {
+				my $version = select_binary_package_version($package_expression);
+				$resolver->install_version($version);
+			} else { # 'remove'
+				check_package_name($package_expression);
+				defined($cache->get_binary_package($package_expression)) or
+						mydie("unable to find binary package '%s'", $package_expression);
 
-			$resolver->remove_package($package_expression);
+				$resolver->remove_package($package_expression);
+			}
 		}
 	}
 
@@ -759,6 +766,10 @@ sub remove () {
 
 sub purge () {
 	manage_packages('purge');
+}
+
+sub satisfy () {
+	manage_packages('satisfy');
 }
 
 sub full_upgrade () {

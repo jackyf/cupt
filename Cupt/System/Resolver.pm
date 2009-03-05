@@ -15,6 +15,8 @@ use constant {
 	SPE_INSTALLED => 4,
 };
 
+our $_dummy_package_name = "dummy_package_name";
+
 =begin comment
 
 =head2 pending_relations
@@ -102,6 +104,20 @@ sub new {
 	);
 
 	$self->{_pending_relations} = [];
+
+	# "installing" virtual package, which will be used for strict 'satisfy' requests
+	my $version = {
+		package_name => $_dummy_package_name,
+		pre_depends => [],
+		depends => [],
+		recommends => [],
+		suggests => [],
+		breaks => [],
+		conflicts => [],
+	};
+	$self->_create_new_package_entry($_dummy_package_name);
+	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
+	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
 
 	return $self;
 }
@@ -221,7 +237,7 @@ sub install_version ($$) {
 
 =head2 satisfy_relation
 
-member function, installs all needed versions to satisfy relation or relation group
+method, installs all needed versions to satisfy relation or relation group
 
 Parameters:
 
@@ -231,11 +247,10 @@ groups)
 
 =cut
 
-sub satisfy_relation ($$) {
+sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 
-	# FIXME: implement dummy package dependencies
-	$self->_auto_satisfy_relation($relation_expression);
+	push @{$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends}}, $relation_expression;
 }
 
 sub _auto_satisfy_relation ($$) {
