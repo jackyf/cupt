@@ -10,7 +10,9 @@ use Cupt::Core;
 
 use WWW::Curl::Share;
 
-=head1 new
+=head1 METHODS
+
+=head2 new
 
 creates new Cupt::Download::Manager and returns reference to it
 
@@ -23,5 +25,11 @@ sub new {
 	$self->{_curl_share_handle} = new WWW::Curl::Share;
 }
 
-=head2 
+=head2
+
+=cut
+
+sub add ($$$) {
+	my 
+}
 
