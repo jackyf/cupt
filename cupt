@@ -380,16 +380,16 @@ sub show_package_relations ($) {
 	my @versions = map { select_binary_package_version($_) } @ARGV;
 
 	my @relation_groups = (
-		[ 'pre_depends', 'Pre-Depends' ],
-		[ 'depends', 'Depends' ],
+		[ 'pre_depends', __('Pre-Depends') ],
+		[ 'depends', __('Depends') ],
 	);
 	if (!$config->var('apt::cache::important')) {
 		push @relation_groups, 
-				[ 'recommends', 'Recommends' ];
+				[ 'recommends', __('Recommends') ];
 
 		if ($o_with_suggests) {
 			push @relation_groups,
-					[ 'suggests', 'Suggests' ];
+					[ 'suggests', __('Suggests') ];
 		}
 	}
 
@@ -455,9 +455,9 @@ sub show_package_relations ($) {
 				}
 			}
 
-			my $starter = "  " . ($mode eq 'reverse' ? __('Reverse-') : '') . __($caption) . ": ";
+			my $starter = "  " . ($mode eq 'reverse' ? __('Reverse-') : '') . $caption . ": ";
 			foreach (@relation_expressions_and_packages) {
-				say $starter, $_->[1], ": ", stringify_relation_expression($_->[0]);
+				say $starter, ($_->[1] ? $_->[1] . ": " : ""), stringify_relation_expression($_->[0]);
 			}
 
 			if ($config->var('apt::cache::recursedepends')) {
