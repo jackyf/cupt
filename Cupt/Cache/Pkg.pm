@@ -47,20 +47,26 @@ sub versions {
 	my @result;
 	# parsing of versions of this package was delayed, we parse them now (on-demand)
 	eval {
-		foreach (@$self) {
+		my @errored_indexes;
+		foreach my $idx (0..$#{$self}) {
+			my $ref_params = $self->[$idx];
 			my $parsed_version;
 			eval {
-				my $version_class = shift @$_;
-				$parsed_version = $version_class->new($_);
-				unshift @$_, $version_class;
+				my $version_class = shift @$ref_params;
+				$parsed_version = $version_class->new($ref_params);
+				unshift @$ref_params, $version_class;
 			};
 			# FIXME: error, not warning after science-mathematics has been fixed in the Debian archive
+			# and remove this fat index stuff for removing broken entries
 			if (mycatch()) {
+				# delete broken entry at all...
+				push @errored_indexes, $idx;
 				mywarn("error while parsing new version entry");
 			} else {
 				$self->_merge_version($parsed_version, \@result);
 			}
 		}
+		splice @$self, $_, 1 foreach @errored_indexes;
 	};
 	if (mycatch()) {
 		myerr("error while parsing package info");
