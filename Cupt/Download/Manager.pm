@@ -4,11 +4,9 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use fields qw(_curl_share_handle);
+use fields qw(_active_queries _waiting_queries);
 
 use Cupt::Core;
-
-use WWW::Curl::Share;
 
 =head1 METHODS
 
@@ -21,15 +19,22 @@ creates new Cupt::Download::Manager and returns reference to it
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
-
-	$self->{_curl_share_handle} = new WWW::Curl::Share;
+	$self->{_active_queries} = 
 }
 
-=head2
+=head2 add
+
+method, adds download query to queue
+
+Parameters:
+
+I<uri> - URI to download
+
+I<filename> - target filename
 
 =cut
 
 sub add ($$$) {
-	my 
+	my ($self, $uri, $filename)
 }
 
