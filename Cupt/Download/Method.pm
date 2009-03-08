@@ -4,7 +4,7 @@ package Cupt::Download::Method
 
 Base package of all cupt downloading methods. It should be never instantiated
 directly. If you want to wrote your own download method for Cupt, you are need
-to implement 'pefrom' method specified under.
+to implement 'perform' method specified under.
 
 =head1 METHODS
 
@@ -29,7 +29,6 @@ I<filename> - target file name
 
 I<sub_callback> - subroutine to report status change of download, takes two arguments: I<name> and I<value>.
 Allowed pairs I<name> - I<value>:
-  "dns" - "<hostname>";
   "connecting" - "<ip>";
   "expected-size" - "<size of file to download>";
   "downloading" - "<number of bytes done for download>" (in case of resumed
