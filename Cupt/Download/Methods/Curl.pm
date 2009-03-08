@@ -1,12 +1,4 @@
-package Cupt::Download::Downloader
-
-=head1 SYNOPSIS
-
-  my $config = new Cupt::Config;
-  my $downloader = new Cupt::Download::Downloader($config, $uri, $filename);
-  $downloader->perform();
-
-=cut
+package Cupt::Download::Methods::Curl
 
 use strict;
 use warnings;
@@ -29,7 +21,7 @@ $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
 
 =head2 new
 
-return the reference to Cupt::Download::Downloader.
+return the reference to Cupt::Download::Method::Curl.
 
 Parameters:
 
