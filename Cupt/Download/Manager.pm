@@ -19,7 +19,8 @@ creates new Cupt::Download::Manager and returns reference to it
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
-	$self->{_active_queries} = 
+	$self->{_active_queries} = [];
+	$self->{_waiting_queries} = [];
 }
 
 =head2 add
@@ -34,7 +35,9 @@ I<filename> - target filename
 
 =cut
 
-sub add ($$$) {
-	my ($self, $uri, $filename)
+sub add ($$$) : locked method {
+	my ($self, $uri, $filename) = @_;
+
+	push $self->{_waiting_queries};
 }
 
