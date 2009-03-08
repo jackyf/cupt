@@ -1,4 +1,4 @@
-package Cupt::Download::Method
+package Cupt::Download::Method;
 
 =head1 ABSTRACT
 
@@ -39,4 +39,6 @@ download this number should include already downloaded size).
 sub perform ($$$$$) {
 	# stub
 }
+
+1;
 

@@ -1,4 +1,4 @@
-package Cupt::Download::Methods::Curl
+package Cupt::Download::Methods::Curl;
 
 use strict;
 use warnings;
@@ -21,7 +21,7 @@ sub perform ($$$$$) {
 	my ($self, $config, $uri, $filename, $sub_callback) = shift;
 
 	my $curl = new WWW::Curl::Easy;
-	open(my $fd, '>>', $filename});
+	open(my $fd, '>>', $filename);
 
 	my $total_bytes = tell($fd);
 
@@ -34,14 +34,18 @@ sub perform ($$$$$) {
 		$sub_callback->('downloading', $total_bytes);
 
 		return $written_bytes;
-	}
+	};
 
 	my ($protocol) = ($uri =~ m{(\w+)::/});
 
 	$curl->setopt(CURLOPT_URL, $uri);
-	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $config->var("acquire::${protocol}::dl-limit");
+	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $config->var("acquire::${protocol}::dl-limit"));
 	$curl->setopt(CURLOPT_WRITEFUNCTION, \&writefunction);
+	# FIXME: replace 1 with CURL_NETRC_OPTIONAL after libwww-curl is advanced to provide it
+	$curl->setopt(CURLOPT_NETRC, 1);
 	$curl->setopt(CURLOPT_RESUME_FROM, tell($fd));
 	return $curl->perform();
 }
+
+1;
 
