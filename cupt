@@ -609,15 +609,22 @@ sub manage_packages ($) {
 			my $relation_expression = parse_relation_expression($package_expression);
 			$resolver->satisfy_relation_expression($relation_expression);
 		} else {
-			# "localizing" action to make it modifiable by package modifiers
 			my $action = $action;
-			my $last_letter = substr($package_expression, -1, 1);
-			if ($last_letter eq '+') {
-				$action = 'install';
-				$package_expression = substr($package_expression, 0, length($package_expression)-1);
-			} elsif ($last_letter eq '-') {
-				$action = 'remove';
-				$package_expression = substr($package_expression, 0, length($package_expression)-1);
+			if (!defined $cache->get_binary_package($package_expression)) {
+				# we have a funny situation with package names like 'g++',
+				# where one don't know is there simple package name or '+'/'-'
+				# modifier at the end of package name, so we enter here only if
+				# it seems that there is no such binary package
+
+				# "localizing" action to make it modifiable by package modifiers
+				my $last_letter = substr($package_expression, -1, 1);
+				if ($last_letter eq '+') {
+					$action = 'install';
+					$package_expression = substr($package_expression, 0, length($package_expression)-1);
+				} elsif ($last_letter eq '-') {
+					$action = 'remove';
+					$package_expression = substr($package_expression, 0, length($package_expression)-1);
+				}
 			}
 
 			if ($action eq 'install') {
