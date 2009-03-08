@@ -17,22 +17,6 @@ $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_DNS);
 $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_CONNECT);
 $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
 
-=head1 METHODS
-
-=head2 new
-
-return the reference to Cupt::Download::Method::Curl.
-
-Parameters:
-
-I<config> - reference to Cupt::Config
-
-I<uri> - string that determines which URL to download
-
-I<filename> - target file name to download
-
-=cut
-
 sub new {
 	my ($class, $config, $uri, $filename) = shift;
 	my $self = fields::new($class);
@@ -41,12 +25,6 @@ sub new {
 	$self->{_filename} = $filename;
 	return $self;
 }
-
-=head2 perform
-
-downloads specified file
-
-=cut
 
 sub perform ($) {
 	my ($self)
