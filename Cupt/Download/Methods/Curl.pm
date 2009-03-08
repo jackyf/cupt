@@ -27,7 +27,7 @@ sub perform ($$$$$) {
 
 	my $sub_writefunction = sub {
 		# writing data to file
-		print { $_[1] } $_[0];
+		print $fd $_[0];
 
 		my $written_bytes = length($_[0]);
 		$total_bytes += $written_bytes;
@@ -41,8 +41,7 @@ sub perform ($$$$$) {
 	$curl->setopt(CURLOPT_URL, $uri);
 	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $config->var("acquire::${protocol}::dl-limit");
 	$curl->setopt(CURLOPT_WRITEFUNCTION, \&writefunction);
-	$curl->setopt(CURLOPT_WRITEDATA, $fd);
 	$curl->setopt(CURLOPT_RESUME_FROM, tell($fd));
-	$curl->perform();
+	return $curl->perform();
 }
 
