@@ -4,7 +4,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use fields qw(_active_queries _waiting_queries);
+use fields qw(_active_queries _waiting_queries _downloads_done);
 
 use Cupt::Core;
 
@@ -21,6 +21,7 @@ sub new {
 	my $self = fields::new($class);
 	$self->{_active_queries} = [];
 	$self->{_waiting_queries} = [];
+	$self->{_downloads_done} = {};
 }
 
 =head2 add
@@ -35,9 +36,10 @@ I<filename> - target filename
 
 =cut
 
-sub add ($$$) : locked method {
+sub download ($$$) : locked method {
 	my ($self, $uri, $filename) = @_;
 
+	if 
 	push $self->{_waiting_queries};
 }
 
