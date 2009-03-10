@@ -694,8 +694,8 @@ sub _resolve ($$) {
 									my $found = 0;
 									foreach (@{$other_version->{$dependency_group_name}}) {
 										if ($failed_relation_string eq stringify_relation_expression($_)) {
-											# yes, it has the same relation expression, so other version will also fail
-											# so it seems there is no sense trying it
+											# yes, it has the same relation expression, so other version will
+											# also fail so it seems there is no sense trying it
 											$found = 1;
 											last;
 										}
@@ -703,12 +703,37 @@ sub _resolve ($$) {
 									if (!$found) {
 										# let's try harder to find if the other version is really appropriate for us
 										foreach (@{$other_version->{$dependency_group_name}}) {
-											my $ref_other_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
-											if (!__is_version_array_intersects_with_packages($ref_other_satisfying_versions, $ref_current_packages)) {
-												# yes, some relation expression will fail
-												$found = 1;
-												last;
+											# we check only relations from dependency group that caused
+											# missing depends, it's not a full check, but pretty reasonable for
+											# most cases; in rare cases that some problematic dependency
+											# migrated to other dependency group, it will be revealed at
+											# next check run
+
+											# fail revealed that no one of available versions of dependent
+											# packages can satisfy the main package, so if some relation's
+											# satisfying versions are subset of failed ones, the version won't
+											# be accepted as a resolution
+											my $has_resolution_outside = 0;
+											my $ref_candidate_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+											foreach (@$ref_candidate_satisfying_versions) {
+												my $candidate_package_name = $_->{package_name};
+												my $candidate_version_string = $_->{version_string};
+												my $is_candidate_appropriate = 1;
+												foreach (@$ref_satisfying_versions) {
+													next if $_->{package_name} ne $candidate_package_name;
+													next if $_->{version_string} ne $candidate_version_string;
+													# this candidate has fallen into dead-end
+													$is_candidate_appropriate = 0;
+													last;
+												}
+												if ($is_candidate_appropriate) {
+													# more wide relation, can't say nothing bad with it at time being
+													$has_resolution_outside = 1;
+													last;
+												}
 											}
+											$found = !$has_resolution_outside;
+											last if $found;
 										}
 										if (!$found) {
 											# other version seems to be ok
