@@ -27,32 +27,8 @@ sub new {
 
 =head2 download
 
-method, adds download query to queue. Blocks execution of program until
-download is done.
-
-Parameters:
-
-I<uri> - URI to download
-
-I<filename> - target filename
-
-Example:
-
-  my $download_manager = new Cupt::Download::Manager;
-  $download_manager->download('http://www.debian.org' => '/tmp/123.html');
-
-=cut
-
-sub download ($$$) : locked method {
-	my ($self, $uri, $filename) = @_;
-
-	return $self->_download($uri, $filename);
-}
-
-=head2 download_group
-
 method, adds group of download queries to queue. Blocks execution of program until
-all downloads from groups are done.
+all downloads are done.
 
 Parameters:
 
@@ -65,7 +41,7 @@ I<filename> - target filename
 Example:
 
   my $download_manager = new Cupt::Download::Manager;
-  $download_manager->download_group(
+  $download_manager->download(
       'http://www.en.debian.org' => '/tmp/en.html',
 	  'http://www.ru.debian.org' => '/tmp/ru.html',
 	  'http://www.ua.debian.org' => '/tmp/ua.html'
@@ -73,7 +49,7 @@ Example:
 
 =cut
 
-sub download_group ($$) : locked method {
+sub download ($@) {
 	my $self = shift;
 
 	my @threads;
