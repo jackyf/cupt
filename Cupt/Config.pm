@@ -48,6 +48,7 @@ sub new {
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 
+			'cupt::downloader::max-simultaneous-downloads' => 4,
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::auto-remove' => 1,
