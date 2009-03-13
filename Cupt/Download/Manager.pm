@@ -45,8 +45,8 @@ sub _worker {
 			when ('exit') { return; }
 			when ('download') {
 				# new query appeared
+				my ($uri, $filename, $waiter_thread_queue) = @params;
 				if (scalar @active_downloads < $max_simultaneous_downloads_allowed) {
-					my ($uri, $filename, $waiter_thread_queue) = @params;
 					# filling the active downloads hash
 					$waiting_downloads{$uri,$filename}->{waiter_thread_queue} = $waiter_thread_queue;
 					# there is a space for new download, start it
@@ -62,6 +62,8 @@ sub _worker {
 			}
 			when ('done') {
 				# some query ended
+				my ($uri, $filename) = @params;
+				delete $active_downloads{$uri,$filename};
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
@@ -111,7 +113,7 @@ Example:
 sub download ($@) {
 	my $self = shift;
 
-	my @thread_waiters;
+	my @waiter_thread_queues;
 	# schedule download of each uri at its own thread
 	while (scalar @_) {
 		# extract next pair
@@ -124,15 +126,15 @@ sub download ($@) {
 		} else {
 			# schedule new download
 
-			my $thread_waiter = new Thread::Queue;
-			$self->{_worker_queue}->enqueue('download', $uri, $filename, $waiter_queue);
-			push @thread_waiters, $thread_waiter;
+			my $waiter_thread_queue = new Thread::Queue;
+			$self->{_worker_queue}->enqueue('download', $uri, $filename, $waiter_thread_queue);
+			push @waiter_thread_queues, $waiter_thread_queue;
 		}
 	}
 
 	# all are scheduled successfully, wait for them
-	foreach my $waiter_queue (@thread_waiters) {
-		my ($result, $error_string) = $waiter_queue->dequeue();
+	foreach my $waiter_thread_queue (@thread_waiters) {
+		my ($result, $error_string) = $waiter_thread_queue->dequeue();
 		if (!$result) {
 			# this download has'n been processed smoothly
 			return ($result, $error_string);
