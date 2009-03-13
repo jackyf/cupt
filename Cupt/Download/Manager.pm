@@ -46,6 +46,11 @@ sub _worker {
 			when ('download') {
 				if (scalar @active_downloads < $max_simultaneous_downloads_allowed) {
 					# there is a space for new download, start it
+					async {
+						my ($uri, $filename, $waiter_thread) = @params;
+						my $worker_waiting_thread
+						$self->_download(
+					}
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
