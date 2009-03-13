@@ -779,9 +779,9 @@ sub _resolve ($$) {
 					}
 				}
 
-				# checking that all 'Conflicts' are not satisfied
+				# checking that all 'Conflicts' and 'Breaks' are not satisfied
 				my $conflicts_koef = 1.0;
-				foreach (@{$version->{conflicts}}) {
+				foreach (@{$version->{conflicts}}, @{$version->{breaks}}) {
 					# check if relation is accidentally satisfied
 					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
 
@@ -793,7 +793,7 @@ sub _resolve ($$) {
 						foreach my $satisfying_version (@$ref_satisfying_versions) {
 							my $other_package_name = $satisfying_version->{package_name};
 
-							# package can't conflict with itself
+							# package can't conflict (or break) with itself
 							$other_package_name ne $package_name or next;
 
 							# is the package installed?
@@ -868,7 +868,7 @@ sub _resolve ($$) {
 							if ($self->{_config}->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($_);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
-										"satisfied conflicts '$stringified_relation'");
+										"satisfied conflicts/breaks '$stringified_relation'");
 							}
 							$recheck_needed = 0;
 							last MAIN_LOOP;
