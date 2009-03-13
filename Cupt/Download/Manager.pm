@@ -41,23 +41,16 @@ sub _worker {
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	while (my @params = $self->{_worker_queue}->dequeue()) {
 		my $command = shift @params;
+		my $uri, $filename, $sub_callback;
 		given ($command) {
 			when ('exit') { return; }
 			when ('download') {
 				# new query appeared
-				my ($uri, $filename, $waiter_thread_queue) = @params;
-				if (scalar @active_downloads < $max_simultaneous_downloads_allowed) {
-					# filling the active downloads hash
-					$waiting_downloads{$uri,$filename}->{waiter_thread_queue} = $waiter_thread_queue;
-					# there is a space for new download, start it
-					async {
-						my $worker_waiting_thread = new Thread::Queue;
-						my ($result, $error_code) = $self->_download($uri, $filename);
-						$worker_waiting_thread->enqueue('done', $uri, $filename);
-					}
-				} else {
+				($uri, $filename, $sub_callback, my $waiter_thread_queue) = @params;
+				if (scalar @active_downloads >= $max_simultaneous_downloads_allowed) {
 					# put the query on hold
 					push @waiting_downloads, [ $uri, $filename, $waiter_thread ];
+					next;
 				}
 			}
 			when ('done') {
@@ -67,6 +60,14 @@ sub _worker {
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
+		# filling the active downloads hash
+		$waiting_downloads{$uri,$filename}->{waiter_thread_queue} = $waiter_thread_queue;
+		# there is a space for new download, start it
+		async {
+			my $worker_waiting_thread = new Thread::Queue;
+			my ($result, $error_code) = $self->_download($uri, $filename, $sub_callback);
+			$worker_waiting_thread->enqueue('done', $uri, $filename);
+		};
 	}
 }
 
@@ -110,8 +111,9 @@ Example:
 
 =cut
 
-sub download ($@) {
+sub download ($$@) {
 	my $self = shift;
+	my $sub_callback = shift;
 
 	my @waiter_thread_queues;
 	# schedule download of each uri at its own thread
@@ -127,7 +129,7 @@ sub download ($@) {
 			# schedule new download
 
 			my $waiter_thread_queue = new Thread::Queue;
-			$self->{_worker_queue}->enqueue('download', $uri, $filename, $waiter_thread_queue);
+			$self->{_worker_queue}->enqueue('download', $uri, $filename, $sub_callback, $waiter_thread_queue);
 			push @waiter_thread_queues, $waiter_thread_queue;
 		}
 	}
@@ -146,7 +148,7 @@ sub download ($@) {
 }
 
 sub _download ($$$) {
-	my ($self, $uri, $filename) = @_;
+	my ($self, $uri, $filename, $sub_callback) = @_;
 
 	my %protocol_handlers = (
 		'http' => 'Curl',
@@ -163,5 +165,5 @@ sub _download ($$$) {
 		$handler = "Cupt::Download::Methods::$handler_name"->new();
 	}
 	# download the file
-	$handler->perform($self->{_config}, $uri, $filename); 
+	$handler->perform($self->{_config}, $uri, $filename, $sub_callback); 
 }
