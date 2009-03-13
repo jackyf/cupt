@@ -36,7 +36,7 @@ sub new {
 sub _worker {
 	my ($self) = @_;
 
-	my @active_downloads;
+	my %active_downloads;
 	my @waiting_downloads;
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	while (my @params = $self->{_worker_queue}->dequeue()) {
@@ -44,14 +44,24 @@ sub _worker {
 		given ($command) {
 			when ('exit') { return; }
 			when ('download') {
+				# new query appeared
 				if (scalar @active_downloads < $max_simultaneous_downloads_allowed) {
+					my ($uri, $filename, $waiter_thread_queue) = @params;
+					# filling the active downloads hash
+					$waiting_downloads{$uri,$filename}->{waiter_thread_queue} = $waiter_thread_queue;
 					# there is a space for new download, start it
 					async {
-						my ($uri, $filename, $waiter_thread) = @params;
 						my $worker_waiting_thread = new Thread::Queue;
 						my ($result, $error_code) = $self->_download($uri, $filename);
 						$worker_waiting_thread->enqueue('done', $uri, $filename);
 					}
+				} else {
+					# put the query on hold
+					push @waiting_downloads, [ $uri, $filename, $waiter_thread ];
+				}
+			}
+			when ('done') {
+				# some query ended
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
