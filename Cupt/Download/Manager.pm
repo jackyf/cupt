@@ -1,4 +1,4 @@
-package Cupt::Download::Manager
+package Cupt::Download::Manager;
 
 use 5.10.0;
 use strict;
@@ -41,15 +41,19 @@ sub _worker {
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	while (my @params = $self->{_worker_queue}->dequeue()) {
 		my $command = shift @params;
-		my $uri, $filename, $sub_callback;
+		my $uri;
+		my $filename;
+		my $sub_callback;
+		my $waiter_thread_queue;
+
 		given ($command) {
 			when ('exit') { return; }
 			when ('download') {
 				# new query appeared
 				($uri, $filename, $sub_callback, my $waiter_thread_queue) = @params;
-				if (scalar @active_downloads >= $max_simultaneous_downloads_allowed) {
+				if (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 					# put the query on hold
-					push @waiting_downloads, [ $uri, $filename, $waiter_thread ];
+					push @waiting_downloads, [ $uri, $filename, $sub_callback, $waiter_thread_queue ];
 					next;
 				}
 			}
@@ -57,11 +61,18 @@ sub _worker {
 				# some query ended
 				my ($uri, $filename) = @params;
 				delete $active_downloads{$uri,$filename};
+
+				if (scalar @waiting_downloads) {
+					# put next of waiting queries
+					my ($uri, $filename, $sub_callback, $waiter_thread_queue) = @{shift @waiting_downloads};
+				} else {
+					next;
+				}
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
 		# filling the active downloads hash
-		$waiting_downloads{$uri,$filename}->{waiter_thread_queue} = $waiter_thread_queue;
+		$active_downloads{$uri,$filename} = $waiter_thread_queue;
 		# there is a space for new download, start it
 		async {
 			my $worker_waiting_thread = new Thread::Queue;
@@ -135,7 +146,7 @@ sub download ($$@) {
 	}
 
 	# all are scheduled successfully, wait for them
-	foreach my $waiter_thread_queue (@thread_waiters) {
+	foreach my $waiter_thread_queue (@waiter_thread_queues) {
 		my ($result, $error_string) = $waiter_thread_queue->dequeue();
 		if (!$result) {
 			# this download has'n been processed smoothly
