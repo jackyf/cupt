@@ -48,8 +48,9 @@ sub _worker {
 					# there is a space for new download, start it
 					async {
 						my ($uri, $filename, $waiter_thread) = @params;
-						my $worker_waiting_thread
-						$self->_download(
+						my $worker_waiting_thread = new Thread::Queue;
+						my ($result, $error_code) = $self->_download($uri, $filename);
+						$worker_waiting_thread->enqueue('done', $uri, $filename);
 					}
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
@@ -130,4 +131,25 @@ sub download ($@) {
 
 	# correct finish
 	return (1, undef);
+}
+
+sub _download ($$$) {
+	my ($self, $uri, $filename) = @_;
+
+	my %protocol_handlers = (
+		'http' => 'Curl',
+		'ftp' => 'Curl',
+	);
+	my ($protocol) = ($uri =~ m{(\w+)::/});
+	my $handler_name = $protocol_handlers{$protocol} // 
+			mydie("no protocol download handler defined for $protocol");
+
+	my $handler;
+	{
+		no strict 'subs';
+		# create handler by name
+		$handler = "Cupt::Download::Methods::$handler_name"->new();
+	}
+	# download the file
+	$handler->perform($self->{_config}, $uri, $filename); 
 }
