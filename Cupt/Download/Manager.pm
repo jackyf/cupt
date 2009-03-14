@@ -8,7 +8,7 @@ use threads;
 use threads::shared 1.21;
 use Thread::Queue 2.01;
 
-use fields qw(_config _downloads_done _worker_queue _worker_thread);
+use fields qw(_config _progress _downloads_done _worker_queue _worker_thread);
 
 use Cupt::Core;
 
@@ -22,7 +22,7 @@ Parameters:
 
 I<config> - reference to Cupt::Config
 
-I<sub_callback> - CODE reference, callback function for downloads
+I<progress> - reference to subclass of Cupt::Download::Progress
 
 =cut
 
@@ -31,6 +31,7 @@ sub new {
 	my $self : shared;
 	$self = shared_clone(fields::new($class));
 	$self->{_config} = shift;
+	$self->{_progress} = shift;
 	$self->{_worker_queue} = shared_clone(new Thread::Queue);
 	$self->{_worker_thread} = shared_clone(threads->create(\&_worker, $self);
 	return $self;
@@ -55,7 +56,7 @@ sub _worker {
 			when ('exit') { return; }
 			when ('download') {
 				# new query appeared
-				($uri, $filename, $sub_callback, $waiter_thread_queue) = @params;
+				($uri, $filename, $waiter_thread_queue) = @params;
 				# check if this download was already done
 				if (exists $done_downloads{$uri,$filename}) {
 					# just end it
@@ -64,7 +65,7 @@ sub _worker {
 				}
 				if (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 					# put the query on hold
-					push @waiting_downloads, [ $uri, $filename, $sub_callback, $waiter_thread_queue ];
+					push @waiting_downloads, [ $uri, $filename, $waiter_thread_queue ];
 					next;
 				}
 			}
@@ -81,10 +82,14 @@ sub _worker {
 
 				if (scalar @waiting_downloads) {
 					# put next of waiting queries
-					($uri, $filename, $sub_callback, $waiter_thread_queue) = @{shift @waiting_downloads};
+					($uri, $filename, $waiter_thread_queue) = @{shift @waiting_downloads};
 				} else {
 					next;
 				}
+			}
+			when ('progress') {
+				# progress meter needs updating
+				$self->{_progress}->progress(@params);
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
@@ -139,9 +144,8 @@ Example:
 
 =cut
 
-sub download ($$@) {
+sub download ($@) {
 	my $self = shift;
-	my $sub_callback = shift;
 
 	my @waiter_queues;
 	# schedule download of each uri at its own thread
