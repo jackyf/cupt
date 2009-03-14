@@ -51,9 +51,9 @@ sub _worker {
 		my $command = shift @params;
 		my $uri;
 		my $filename;
-		my $sub_callback;
 		my $waiter_thread_queue;
 
+		my $proceed_next_download = 0;
 		given ($command) {
 			when ('exit') { return; }
 			when ('download') {
@@ -63,12 +63,11 @@ sub _worker {
 				if (exists $done_downloads{$uri,$filename}) {
 					# just end it
 					$worker_queue->enqueue([ 'done', $uri, $filename, 1, undef ]);
-					next;
-				}
-				if (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
+				} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 					# put the query on hold
 					push @waiting_downloads, [ $uri, $filename, $waiter_thread_queue ];
-					next;
+				} else {
+					$proceed_next_download = 1;
 				}
 			}
 			when ('done') {
@@ -85,24 +84,22 @@ sub _worker {
 				if (scalar @waiting_downloads) {
 					# put next of waiting queries
 					($uri, $filename, $waiter_thread_queue) = @{shift @waiting_downloads};
-				} else {
-					next;
+					$proceed_next_download = 1;
 				}
 			}
 			when ('progress') {
 				# progress meter needs updating
 				$self->{_progress}->progress(@params);
-				next;
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
+		$proceed_next_download or next;
 		# filling the active downloads hash
 		$active_downloads{$uri,$filename} = $waiter_thread_queue;
 		# there is a space for new download, start it
 		async {
-			my $worker_waiting_queue = new Thread::Queue;
 			my ($result, $error) = $self->_download($uri, $filename);
-			$worker_waiting_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
+			$worker_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
 		};
 	}
 }
