@@ -53,6 +53,7 @@ sub new {
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::auto-remove' => 1,
 			'cupt::worker::purge' => 0,
+			'cupt::worker::simulate' => 0,
 			'debug::resolver' => 0,
 		},
 

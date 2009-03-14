@@ -18,7 +18,7 @@ I<desired_state> - { I<package_name> => { 'version' => I<version> } }
 
 =cut
 
-use fields qw(config cache _system_state desired_state);
+use fields qw(_config _cache _system_state desired_state);
 
 =head1 METHODS
 
@@ -36,9 +36,9 @@ section.
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
-	$self->{config} = shift;
-	$self->{cache} = shift;
-	$self->{_system_state} = $self->{cache}->get_system_state();
+	$self->{_config} = shift;
+	$self->{_cache} = shift;
+	$self->{_system_state} = $self->{_cache}->get_system_state();
 	$self->{desired_state} = undef;
 	return $self;
 }
@@ -142,7 +142,7 @@ sub get_actions_preview ($) {
 					# package was in some interim state
 					$action = 'deconfigure';
 				} else {
-					if ($self->{config}->var('cupt::worker::purge')) {
+					if ($self->{_config}->var('cupt::worker::purge')) {
 						# package is requested to be purged
 						# do it only if we can
 						if ($ref_installed_info->{'status'} eq 'config-files' ||
@@ -215,7 +215,7 @@ sub _fill_action_dependencies ($$$$) {
 	my ($self, $ref_relation_expressions, $action_name, $ref_inner_action, $graph) = @_;
 
 	foreach my $relation_expression (@$ref_relation_expressions) {
-		my $ref_satisfying_versions = $self->{cache}->get_satisfying_versions($relation_expression);
+		my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 
 		SATISFYING_VERSIONS:
 		foreach my $other_version (@$ref_satisfying_versions) {
@@ -306,7 +306,7 @@ sub do_actions ($) {
 			}
 			when ('remove') {
 				# package dependencies can be removed only after removal of the package
-				my $package = $self->{cache}->get_binary_package($package_name);
+				my $package = $self->{_cache}->get_binary_package($package_name);
 				my $version_string = $ref_inner_action->{'version_string'};
 				my $system_version = $package->get_specific_version($version_string);
 				# pre-depends must be removed after
@@ -324,17 +324,49 @@ sub do_actions ($) {
 	# topologically sorted action names
 	my @action_group_names = $scg->topological_sort();
 
-	# simulating actions
+	# downloading packages
+	my @pending_downloads;
 	foreach my $action_group_name (@action_group_names) {
 		my @vertices_group = @{$scg->get_vertex_attribute($action_group_name, 'subvertices')};
 		# all the actions will have the same action name by algorithm
 		my $action_name = $vertices_group[0]->{'action_name'};
-		print "simulating: dpkg --$action_name";
+		if ($action_name eq 'unpack') {
+			# we have to download this package(s)
+			foreach my $ref_action (@vertices_group) {
+				my $package_name = $ref_action->{'package_name'};
+				my $version_string = $ref_action->{'version_string'};
+				my $package = $self->{_cache}->get_binary_package($package_name);
+				my $version = $package->get_specific_version($version_string);
+				# for now, take just first URI
+				my @uris = $version->uris();
+				while ($uris[0] eq "") {
+					# no real URI, just installed, skip it
+					shift @uris;
+				}
+				# we need at least one real URI
+				scalar @uris or
+						mydie("no available download URIs for $package_name $version_string");
+
+				push @pending_downloads, $uris[0];
+			}
+		}
+	}
+
+	foreach (@pending_downloads) {
+		print __("downloading"), ": $_\n";
+	}
+
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+	foreach my $action_group_name (@action_group_names) {
+		my @vertices_group = @{$scg->get_vertex_attribute($action_group_name, 'subvertices')};
+		# all the actions will have the same action name by algorithm
+		my $action_name = $vertices_group[0]->{'action_name'};
+		print __("simulating"), ": dpkg --$action_name";
 		foreach my $ref_action (@vertices_group) {
 			my $package_expression = $ref_action->{'package_name'};
 			if ($action_name eq 'unpack') {
 				$package_expression .= '<' . $ref_action->{'version_string'} . '>';
-			} elsif ($action_name eq 'remove' && $self->{config}->var('cupt::worker::purge')) {
+			} elsif ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
 				$action_name = 'purge';
 			}
 			print " $package_expression";
