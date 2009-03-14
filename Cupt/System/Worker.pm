@@ -4,10 +4,10 @@ use 5.10.0;
 use warnings;
 use strict;
 
-use File::Basename;
 use Graph;
 
 use Cupt::Core;
+use Cupt::Download::Manager;
 
 =head1 FIELDS
 
@@ -366,7 +366,8 @@ sub do_actions ($) {
 				$self->{_config}->var('dir::cache::archives');
 
 		foreach my $uri (@pending_downloads) {
-			push @download_list, ($uri, $archives_location . '/' . basename($uri));
+			(my $basename = $uri) =~ s{^(?:.*)/(.*)$}{$1};
+			push @download_list, ($uri, $archives_location . '/' . $basename);
 		}
 
 		my $download_manager = new Cupt::Download::Manager($self->{_config});
