@@ -4,6 +4,7 @@ use 5.10.0;
 use warnings;
 use strict;
 
+use File::Basename;
 use Graph;
 
 use Cupt::Core;
@@ -352,11 +353,27 @@ sub do_actions ($) {
 		}
 	}
 
-	foreach (@pending_downloads) {
-		print __("downloading"), ": $_\n";
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+
+	if ($simulate) {
+		foreach (@pending_downloads) {
+			print __("downloading"), ": $_\n";
+		}
+	} else {
+		my @download_list;
+		my $archives_location = $self->{_config}->var('dir') .
+				$self->{_config}->var('dir::cache') . '/' .
+				$self->{_config}->var('dir::cache::archives');
+
+		foreach my $uri (@pending_downloads) {
+			push @download_list, ($uri, $archives_location . '/' . basename($uri));
+		}
+
+		my $download_manager = new Cupt::Download::Manager($self->{_config});
+		$download_manager->download(sub { print @_, "\n" }, @download_list);
 	}
 
-	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+
 	foreach my $action_group_name (@action_group_names) {
 		my @vertices_group = @{$scg->get_vertex_attribute($action_group_name, 'subvertices')};
 		# all the actions will have the same action name by algorithm
