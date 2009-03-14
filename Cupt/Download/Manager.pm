@@ -5,7 +5,8 @@ use strict;
 use warnings;
 
 use threads;
-use Thread::Queue;
+use threads::shared 1.21;
+use Thread::Queue 2.01;
 
 use fields qw(_config _downloads_done _worker_queue _worker_thread);
 
@@ -21,25 +22,28 @@ Parameters:
 
 I<config> - reference to Cupt::Config
 
+I<sub_callback> - CODE reference, callback function for downloads
+
 =cut
 
 sub new {
 	my $class = shift;
-	my $self;
-	$self = fields::new($class);
-	my $config = shift;
-	$self->{_worker_queue} = new Thread::Queue;
-	$self->{_worker_thread} = threads->create(\&__worker, $self->{_worker_queue}, $config);
+	my $self : shared;
+	$self = shared_clone(fields::new($class));
+	$self->{_config} = shift;
+	$self->{_worker_queue} = shared_clone(new Thread::Queue);
+	$self->{_worker_thread} = shared_clone(threads->create(\&_worker, $self);
 	return $self;
 }
 
-sub __worker {
-	my ($worker_queue, $config) = @_;
+sub _worker {
+	my ($self) = @_;
+	my $worker_queue = $self->{_worker_queue};
 
 	my %done_downloads;
 	my %active_downloads;
 	my @waiting_downloads;
-	my $max_simultaneous_downloads_allowed = $config->var('cupt::downloader::max-simultaneous-downloads');
+	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	while (my @params = @{$worker_queue->dequeue()}) {
 		my $command = shift @params;
 		my $uri;
@@ -89,7 +93,7 @@ sub __worker {
 		# there is a space for new download, start it
 		async {
 			my $worker_waiting_queue = new Thread::Queue;
-			my ($result, $error) = __download($config, $uri, $filename, $sub_callback);
+			my ($result, $error) = $self->_download($uri, $filename);
 			$worker_waiting_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
 		};
 	}
@@ -150,7 +154,8 @@ sub download ($$@) {
 		# schedule new download
 
 		my $waiter_queue = new Thread::Queue;
-		$self->{_worker_queue}->enqueue([ 'download', $uri, $filename, $sub_callback, $waiter_queue ]);
+		my $worker_queue = $self->{_worker_queue};
+		$worker_queue->enqueue([ 'download', $uri, $filename, $sub_callback, $waiter_queue ]);
 		push @waiter_queues, $waiter_queue;
 	}
 
@@ -167,13 +172,14 @@ sub download ($$@) {
 	return (1, undef);
 }
 
-sub __download ($$$) {
-	my ($config, $uri, $filename, $sub_callback) = @_;
+sub _download ($$$) {
+	my ($self, $uri, $filename) = @_;
 
 	my %protocol_handlers = (
 		'http' => 'Curl',
 		'ftp' => 'Curl',
 	);
+	# FIXME: use URI object
 	my ($protocol) = ($uri =~ m{(\w+)::/});
 	my $handler_name = $protocol_handlers{$protocol} // 
 			mydie("no protocol download handler defined for $protocol");
@@ -185,7 +191,10 @@ sub __download ($$$) {
 		$handler = "Cupt::Download::Methods::$handler_name"->new();
 	}
 	# download the file
-	$handler->perform($config, $uri, $filename, $sub_callback); 
+	my $sub_callback = sub {
+		$self->{_worker_queue}->enqueue([ 'progress', $uri, $filename, @_ ]);
+	};
+	$handler->perform($self->{_config}, $uri, $filename, $sub_callback); 
 }
 
 1;
