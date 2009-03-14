@@ -7,10 +7,12 @@ use warnings;
 use threads;
 use threads::shared 1.21;
 use Thread::Queue 2.01;
+use URI;
 
 use fields qw(_config _progress _downloads_done _worker_queue _worker_thread);
 
 use Cupt::Core;
+use Cupt::Download::Methods::Curl;
 
 =head1 METHODS
 
@@ -26,12 +28,12 @@ I<progress> - reference to subclass of Cupt::Download::Progress
 
 =cut
 
-sub new {
+sub new ($$$) {
 	my $class = shift;
 	my $self : shared;
 	$self = shared_clone(fields::new($class));
-	$self->{_config} = shift;
-	$self->{_progress} = shift;
+	$self->{_config} = shared_clone(shift);
+	$self->{_progress} = shared_clone(shift);
 	$self->{_worker_queue} = shared_clone(new Thread::Queue);
 	$self->{_worker_thread} = shared_clone(threads->create(\&_worker, $self));
 	return $self;
@@ -71,7 +73,7 @@ sub _worker {
 			}
 			when ('done') {
 				# some query ended
-				my ($uri, $filename, $result, $error) = @params;
+				($uri, $filename, my $result, my $error) = @params;
 				# send an answer for a download
 				$active_downloads{$uri,$filename}->enqueue([ $result, $error ]);
 
@@ -90,6 +92,7 @@ sub _worker {
 			when ('progress') {
 				# progress meter needs updating
 				$self->{_progress}->progress(@params);
+				next;
 			}
 			default { myinternaldie("download manager: invalid worker command"); }
 		}
@@ -183,8 +186,7 @@ sub _download ($$$) {
 		'http' => 'Curl',
 		'ftp' => 'Curl',
 	);
-	# FIXME: use URI object
-	my ($protocol) = ($uri =~ m{(\w+)::/});
+	my $protocol = URI->new($uri)->scheme();
 	my $handler_name = $protocol_handlers{$protocol} // 
 			mydie("no protocol download handler defined for $protocol");
 

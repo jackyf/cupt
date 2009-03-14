@@ -4,7 +4,8 @@ use base Cupt::Download::Progress;
 
 sub new {
 	my $class = shift;
-	my $self = $class->new();
+	my $self = $class->SUPER::new();
+	return $self;
 }
 
 sub progress {

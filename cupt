@@ -751,8 +751,10 @@ sub manage_packages ($) {
 		# tryings were abandoned
 	} elsif ($resolve_result) {
 		# if some solution was found and user has accepted it
+		require Cupt::Download::Progresses::Console;
+		my $download_progess = new Cupt::Download::Progresses::Console;
 		print __("Calculating action call order... ");
-		$worker->do_actions();
+		$worker->do_actions($download_progess);
 		say __('[done]');
 	} else {
 		say __("no more solutions.");
