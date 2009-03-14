@@ -249,10 +249,14 @@ member function, performes planned actions
 
 Returns true if successful, false otherwise
 
+Parameters:
+
+I<download_progress> - reference to subclass of Cupt::Download::Progress
+
 =cut
 
-sub do_actions ($) {
-	my ($self) = @_;
+sub do_actions ($$) {
+	my ($self, $download_progress) = @_;
 	my $ref_actions_preview = $self->get_actions_preview();
 	if (!defined $self->{desired_state}) {
 		myinternaldie("worker desired state is not given");
@@ -370,8 +374,8 @@ sub do_actions ($) {
 			push @download_list, ($uri, $archives_location . '/' . $basename);
 		}
 
-		my $download_manager = new Cupt::Download::Manager($self->{_config});
-		$download_manager->download(sub { print @_, "\n" }, @download_list);
+		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+		$download_manager->download(@download_list);
 	}
 
 

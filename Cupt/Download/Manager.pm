@@ -33,7 +33,7 @@ sub new {
 	$self->{_config} = shift;
 	$self->{_progress} = shift;
 	$self->{_worker_queue} = shared_clone(new Thread::Queue);
-	$self->{_worker_thread} = shared_clone(threads->create(\&_worker, $self);
+	$self->{_worker_thread} = shared_clone(threads->create(\&_worker, $self));
 	return $self;
 }
 
@@ -159,7 +159,7 @@ sub download ($@) {
 
 		my $waiter_queue = new Thread::Queue;
 		my $worker_queue = $self->{_worker_queue};
-		$worker_queue->enqueue([ 'download', $uri, $filename, $sub_callback, $waiter_queue ]);
+		$worker_queue->enqueue([ 'download', $uri, $filename, $waiter_queue ]);
 		push @waiter_queues, $waiter_queue;
 	}
 
