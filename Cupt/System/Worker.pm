@@ -257,82 +257,88 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 
 sub do_actions ($$) {
 	my ($self, $download_progress) = @_;
-	my $ref_actions_preview = $self->get_actions_preview();
-	if (!defined $self->{desired_state}) {
-		myinternaldie("worker desired state is not given");
-	}
 
-	# action = {
-	# 	'package_name' => package
-	# 	'version_string' => version_string,
-	# 	'action_name' => ('unpack' | 'configure' | 'remove')
-	# }
-	my $graph = new Graph ('directed' => 1, 'refvertexed' => 1);
+	my @action_groups;
+	my $scg;
+	# building actions graph
+	do {
+		my $ref_actions_preview = $self->get_actions_preview();
+		if (!defined $self->{desired_state}) {
+			myinternaldie("worker desired state is not given");
+		}
 
-	$self->_fill_actions($ref_actions_preview, $graph);
+		# action = {
+		# 	'package_name' => package
+		# 	'version_string' => version_string,
+		# 	'action_name' => ('unpack' | 'configure' | 'remove')
+		# }
+		my $graph = new Graph ('directed' => 1, 'refvertexed' => 1);
 
-	# maybe, we have nothing to do?
-	return if scalar $graph->vertices() == 0;
+		$self->_fill_actions($ref_actions_preview, $graph);
 
-	# fill the actions' dependencies
-	foreach my $ref_inner_action ($graph->vertices()) {
-		my $package_name = $ref_inner_action->{'package_name'};
-		given ($ref_inner_action->{'action_name'}) {
-			when ('unpack') {
-				# if the package has pre-depends, they needs to be satisfied before
-				# unpack (policy 7.2)
-				my $desired_version = $self->{desired_state}->{$package_name}->{version};
-				# pre-depends must be unpacked before
-				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'unpack', $ref_inner_action, $graph);
-			}
-			when ('configure') {
-				# configure can be done only after the unpack of the same version
-				my $desired_version = $self->{desired_state}->{$package_name}->{version};
+		# maybe, we have nothing to do?
+		return if scalar $graph->vertices() == 0;
 
-				# pre-depends must be configured before
-				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'configure', $ref_inner_action, $graph);
-				# depends must be configured before
-				$self->_fill_action_dependencies(
-						$desired_version->{depends}, 'configure', $ref_inner_action, $graph);
+		# fill the actions' dependencies
+		foreach my $ref_inner_action ($graph->vertices()) {
+			my $package_name = $ref_inner_action->{'package_name'};
+			given ($ref_inner_action->{'action_name'}) {
+				when ('unpack') {
+					# if the package has pre-depends, they needs to be satisfied before
+					# unpack (policy 7.2)
+					my $desired_version = $self->{desired_state}->{$package_name}->{version};
+					# pre-depends must be unpacked before
+					$self->_fill_action_dependencies(
+							$desired_version->{pre_depends}, 'unpack', $ref_inner_action, $graph);
+				}
+				when ('configure') {
+					# configure can be done only after the unpack of the same version
+					my $desired_version = $self->{desired_state}->{$package_name}->{version};
 
-				# it has also to be unpacked if the same version was not in state 'unpacked'
-				# search for the appropriate unpack action
-				my %candidate_action = %$ref_inner_action;
-				$candidate_action{'action_name'} = 'unpack';
-				foreach my $ref_current_action ($graph->vertices()) {
-					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
-						# found...
-						$graph->add_edge($ref_current_action, $ref_inner_action);
-						last;
+					# pre-depends must be configured before
+					$self->_fill_action_dependencies(
+							$desired_version->{pre_depends}, 'configure', $ref_inner_action, $graph);
+					# depends must be configured before
+					$self->_fill_action_dependencies(
+							$desired_version->{depends}, 'configure', $ref_inner_action, $graph);
+
+					# it has also to be unpacked if the same version was not in state 'unpacked'
+					# search for the appropriate unpack action
+					my %candidate_action = %$ref_inner_action;
+					$candidate_action{'action_name'} = 'unpack';
+					foreach my $ref_current_action ($graph->vertices()) {
+						if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
+							# found...
+							$graph->add_edge($ref_current_action, $ref_inner_action);
+							last;
+						}
 					}
 				}
-			}
-			when ('remove') {
-				# package dependencies can be removed only after removal of the package
-				my $package = $self->{_cache}->get_binary_package($package_name);
-				my $version_string = $ref_inner_action->{'version_string'};
-				my $system_version = $package->get_specific_version($version_string);
-				# pre-depends must be removed after
-				$self->_fill_action_dependencies(
-						$system_version->{pre_depends}, 'remove', $ref_inner_action, $graph);
-				# depends must be removed after
-				$self->_fill_action_dependencies(
-						$system_version->{depends}, 'remove', $ref_inner_action, $graph);
+				when ('remove') {
+					# package dependencies can be removed only after removal of the package
+					my $package = $self->{_cache}->get_binary_package($package_name);
+					my $version_string = $ref_inner_action->{'version_string'};
+					my $system_version = $package->get_specific_version($version_string);
+					# pre-depends must be removed after
+					$self->_fill_action_dependencies(
+							$system_version->{pre_depends}, 'remove', $ref_inner_action, $graph);
+					# depends must be removed after
+					$self->_fill_action_dependencies(
+							$system_version->{depends}, 'remove', $ref_inner_action, $graph);
+				}
 			}
 		}
-	}
 
-	my $scg = $graph->strongly_connected_graph();
+		$scg = $graph->strongly_connected_graph();
 
-	# topologically sorted action names
-	my @action_group_names = $scg->topological_sort();
+		# topologically sorted action names
+		@action_groups = $scg->topological_sort();
+	};
 
 	# downloading packages
 	my @pending_downloads;
-	foreach my $action_group_name (@action_group_names) {
-		my @vertices_group = @{$scg->get_vertex_attribute($action_group_name, 'subvertices')};
+	foreach my $action_group (@action_groups) {
+		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
 		# all the actions will have the same action name by algorithm
 		my $action_name = $vertices_group[0]->{'action_name'};
 		if ($action_name eq 'unpack') {
@@ -379,8 +385,8 @@ sub do_actions ($$) {
 	}
 
 
-	foreach my $action_group_name (@action_group_names) {
-		my @vertices_group = @{$scg->get_vertex_attribute($action_group_name, 'subvertices')};
+	foreach my $action_group (@action_groups) {
+		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
 		# all the actions will have the same action name by algorithm
 		my $action_name = $vertices_group[0]->{'action_name'};
 		print __("simulating"), ": dpkg --$action_name";
