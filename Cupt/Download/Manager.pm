@@ -97,10 +97,10 @@ sub _worker {
 		# filling the active downloads hash
 		$active_downloads{$uri,$filename} = $waiter_thread_queue;
 		# there is a space for new download, start it
-		async {
+		(async {
 			my ($result, $error) = $self->_download($uri, $filename);
 			$worker_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
-		};
+		})->detach();
 	}
 }
 
