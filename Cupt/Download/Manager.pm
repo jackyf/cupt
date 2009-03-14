@@ -4,12 +4,10 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use threads;
-use threads::shared 1.21;
-use Thread::Queue 2.01;
 use URI;
+use IO::Handle;
 
-use fields qw(_config _progress _downloads_done _worker_queue _worker_thread);
+use fields qw(_config _progress _downloads_done _worker_input_fh _worker_pid);
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
@@ -28,87 +26,101 @@ I<progress> - reference to subclass of Cupt::Download::Progress
 
 =cut
 
-sub new ($$$) {
-	my $class = shift;
-	my $self : shared;
-	$self = shared_clone(fields::new($class));
-	$self->{_config} = shared_clone(shift);
-	$self->{_progress} = shared_clone(shift);
-	$self->{_worker_queue} = shared_clone(new Thread::Queue);
-	$self->{_worker_thread} = shared_clone(threads->create(\&_worker, $self));
-	return $self;
+sub __fhbits {
+	my($bits, @file_handles) = @_;
+	for (@fhlist) {
+		vec($bits,fileno($_),1) = 1;
+	}
+	return $bits;
 }
 
-sub _worker {
-	my ($self) = @_;
-	my $worker_queue = $self->{_worker_queue};
 
-	my %done_downloads;
-	my %active_downloads;
-	my @waiting_downloads;
-	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
-	while (my @params = @{$worker_queue->dequeue()}) {
-		my $command = shift @params;
-		my $uri;
-		my $filename;
-		my $waiter_thread_queue;
+sub new ($$$) {
+	my $class = shift;
+	my $self;
+	$self = fields::new($class);
+	$self->{_config} = shift;
+	$self->{_progress} = shift;
 
-		my $proceed_next_download = 0;
-		given ($command) {
-			when ('exit') { return; }
-			when ('download') {
-				# new query appeared
-				($uri, $filename, $waiter_thread_queue) = @params;
-				# check if this download was already done
-				if (exists $done_downloads{$uri,$filename}) {
-					# just end it
-					$worker_queue->enqueue([ 'done', $uri, $filename, 1, undef ]);
-				} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
-					# put the query on hold
-					push @waiting_downloads, [ $uri, $filename, $waiter_thread_queue ];
-				} else {
-					$proceed_next_download = 1;
+	socketpair($self->{_main_fh}, $self->{_worker_fh}, AF_UNIX, SOCK_STREAM, PF_UNSPEC);
+	$self->{_main_fh}->autoflush(1);
+	$self->{_worker_fh}->autoflush(1);
+
+	if (my $pid = fork()) {
+		# this is a main process
+		return $self;
+	} else {
+		# this is background worker process
+		$pid // myinternaldie("unable to fork: $!");
+
+		my %done_downloads;
+		my %active_downloads;
+		my @waiting_downloads;
+		my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
+		while (my @params = split(chr(0), readline($self->{_worker_fh}))) {
+			my $command = shift @params;
+			my $uri;
+			my $filename;
+			my $waiter_thread_queue;
+
+			my $proceed_next_download = 0;
+			given ($command) {
+				when ('exit') { return; }
+				when ('download') {
+					# new query appeared
+					($uri, $filename, $waiter_thread_queue) = @params;
+					# check if this download was already done
+					if (exists $done_downloads{$uri,$filename}) {
+						# just end it
+						$worker_queue->enqueue([ 'done', $uri, $filename, 1, undef ]);
+					} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
+						# put the query on hold
+						push @waiting_downloads, [ $uri, $filename, $waiter_thread_queue ];
+					} else {
+						$proceed_next_download = 1;
+					}
 				}
-			}
-			when ('done') {
-				# some query ended
-				($uri, $filename, my $result, my $error) = @params;
-				# send an answer for a download
-				$active_downloads{$uri,$filename}->enqueue([ $result, $error ]);
+				when ('done') {
+					# some query ended
+					($uri, $filename, my $result, my $error) = @params;
+					# send an answer for a download
+					$active_downloads{$uri,$filename}->enqueue([ $result, $error ]);
 
-				# removing the query from active download list and put it to
-				# the list of ended ones
-				delete $active_downloads{$uri,$filename};
-				$done_downloads{$uri,$filename} = 1;
+					# removing the query from active download list and put it to
+					# the list of ended ones
+					delete $active_downloads{$uri,$filename};
+					$done_downloads{$uri,$filename} = 1;
 
-				if (scalar @waiting_downloads) {
-					# put next of waiting queries
-					($uri, $filename, $waiter_thread_queue) = @{shift @waiting_downloads};
-					$proceed_next_download = 1;
+					if (scalar @waiting_downloads) {
+						# put next of waiting queries
+						($uri, $filename, $waiter_thread_queue) = @{shift @waiting_downloads};
+						$proceed_next_download = 1;
+					}
 				}
+				when ('progress') {
+					# progress meter needs updating
+					$self->{_progress}->progress(@params);
+				}
+				default { myinternaldie("download manager: invalid worker command"); }
 			}
-			when ('progress') {
-				# progress meter needs updating
-				$self->{_progress}->progress(@params);
-			}
-			default { myinternaldie("download manager: invalid worker command"); }
+			$proceed_next_download or next;
+			# filling the active downloads hash
+			$active_downloads{$uri,$filename} = $waiter_thread_queue;
+			# there is a space for new download, start it
+			(async {
+				my ($result, $error) = $self->_download($uri, $filename);
+				$worker_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
+			})->detach();
 		}
-		$proceed_next_download or next;
-		# filling the active downloads hash
-		$active_downloads{$uri,$filename} = $waiter_thread_queue;
-		# there is a space for new download, start it
-		(async {
-			my ($result, $error) = $self->_download($uri, $filename);
-			$worker_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
-		})->detach();
+		close $self->{_main_fh};
+		exit;
 	}
 }
 
 sub DESTROY {
 	my ($self) = @_;
 	# shutdowning worker thread
-	$self->{_worker_queue}->enqueue([ 'exit' ]);
-	$self->{_worker_thread}->join();
+	waitpid($self->{_worker_pid}, 0);
 }
 
 =head2 download
