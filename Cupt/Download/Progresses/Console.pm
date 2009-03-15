@@ -49,6 +49,9 @@ sub progress {
 					return;
 				}
 			}
+			when ('expected-size') {
+				$ref_entry->{size} = shift @params;
+			}
 			when('done') {
 				delete $self->{_now_downloading}->{$uri};
 			}

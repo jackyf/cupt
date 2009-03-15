@@ -26,6 +26,7 @@ sub perform ($$$$$) {
 	open(my $fd, '>>', $filename);
 
 	my $total_bytes = tell($fd);
+	my $is_expected_size_reported = 0;
 
 	my $sub_writefunction = sub {
 		# writing data to file
@@ -34,6 +35,11 @@ sub perform ($$$$$) {
 		my $written_bytes = length($_[0]);
 		$total_bytes += $written_bytes;
 		$sub_callback->('downloading', $total_bytes);
+
+		if (!$is_expected_size_reported) {
+			$sub_callback->('expected-size', $curl->getinfo(CURLINFO_CONTENT_LENGTH_DOWNLOAD) + $total_bytes);
+			$is_expected_size_reported = 1;
+		}
 
 		return $written_bytes;
 	};
