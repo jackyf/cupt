@@ -46,7 +46,14 @@ sub perform ($$$$$) {
 	# FIXME: replace 1 with CURL_NETRC_OPTIONAL after libwww-curl is advanced to provide it
 	$curl->setopt(CURLOPT_NETRC, 1);
 	$curl->setopt(CURLOPT_RESUME_FROM, tell($fd));
-	return $curl->perform();
+	my $curl_result = $curl->perform();
+	if ($curl_result == 0) {
+		# all went ok
+		return (1, '');
+	} else {
+		# something went wrong
+		return (0, $curl->strerror($curl_result));
+	}
 }
 
 1;
