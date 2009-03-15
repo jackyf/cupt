@@ -7,8 +7,10 @@ use warnings;
 use URI;
 use IO::Handle;
 use IO::Select;
+use Fcntl qw(:flock);
+use File::Temp;
 
-use fields qw(_config _progress _downloads_done _worker_input_fh _worker_pid);
+use fields qw(_config _progress _downloads_done _worker_fh _worker_pid _fifo_dir);
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
@@ -28,17 +30,21 @@ I<progress> - reference to subclass of Cupt::Download::Progress
 =cut
 
 sub __my_write_pipe ($@) {
-	my $fd = shift;
+	my $fh = shift;
 	my $string = join(chr(0), @_);
 	my $len = length($string);
-	my $packed_len = pack S, $len;
-	syswrite $fd, $packed_len . $string;
+	my $packed_len = pack("S", $len);
+	syswrite $fh, ($packed_len . $string);
 }
 
 sub __my_read_pipe ($) {
-	sysread $fd, my $packed_len, 4;
-	my $len = unpack S, $packed_len;
-	sysread $fd, my $string, $len;
+	my $fh = shift;
+	my $packed_len;
+	sysread $fh, $packed_len, 2;
+	my $packed_len_size = length($packed_len);
+	my ($len) = unpack("S", $packed_len);
+	my $string;
+	sysread $fh, $string, $len;
 	return split(chr(0), $string);
 }
 
@@ -49,89 +55,121 @@ sub new ($$$) {
 	$self->{_config} = shift;
 	$self->{_progress} = shift;
 
-	socketpair($self->{_main_fh}, $self->{_worker_fh}, AF_UNIX, SOCK_STREAM, PF_UNSPEC) or
-			myinternaldie("unable to creat socketpair");
-	$self->{_main_fh}->autoflush(1);
-	$self->{_worker_fh}->autoflush(1);
+	# making fifo storage dir if it's absend
+	$self->{_fifo_dir} = File::Temp::tempdir('cupt-XXXXXX', CLEANUP => 1, TMPDIR => 1) or
+			mydie("unable to create temporary directory for fifo storage: $!");
 
-	if (my $pid = fork()) {
+	my $worker_fh;
+	my $pid;
+	do {
+		# don't close this handle on forks
+		local $^F = 10_000;
+
+		$pid = open($worker_fh, "|-");
+		defined $pid or
+				myinternaldie("unable to create download worker stream: $!");
+	};
+	autoflush $worker_fh;
+	$self->{_worker_fh} = $worker_fh;
+	my $worker_fileno = fileno($worker_fh);
+
+	if ($pid) {
 		# this is a main process
+		$self->{_worker_pid} = $pid;
 		return $self;
 	} else {
 		# this is background worker process
-		$pid // myinternaldie("unable to fork: $!");
 
 		# { ($uri, $filename) => 1 }
 		my %done_downloads;
-		# { ($uri, $filename) => $filehandle }
+		# { ($uri, $filename) => $waiter_fh, $pid, $input_fh }
 		my %active_downloads;
 		# [ $uri, $filename, $filehandle ]
 		my @waiting_downloads;
 
-		my %pair_file_handles = ($self->{_worker_fh} => $self->{_main_fh});
-
 		my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
+		pipe(SELF_READ, SELF_WRITE) or
+				mydie("cannot create worker's own pipe");
 		for (;;) {
-			# select ready pipes
-		    @ready = IO::Select->new($self->{_worker_fh}, values %active_downloads)->can_read(0);
+			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read(0);
 			foreach my $fh (@ready) {
-				my @params = __my_read_pipe($fh);
-				my $command = shift @params;
-				my $uri;
-				my $filename;
-				my $waiter_thread_queue;
+				while (my @params = __my_read_pipe($fh)) {
+					my $command = shift @params;
+					my $uri;
+					my $filename;
+					my $waiter_fh;
 
-				my $proceed_next_download = 0;
-				given ($command) {
-					when ('exit') { return; }
-					when ('download') {
-						# new query appeared
-						($uri, $filename, $waiter_fh) = @params;
-						# check if this download was already done
-						if (exists $done_downloads{$uri,$filename}) {
-							# just end it
-							__my_write_pipe($self->{_worker_fh}, 'done', $uri, $filename, 1, undef);
-						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
-							# put the query on hold
-							push @waiting_downloads, [ $uri, $filename, $waiter_fh ];
-						} else {
-							$proceed_next_download = 1;
+					my $proceed_next_download = 0;
+					given ($command) {
+						when ('exit') { return; }
+						when ('download') {
+							# new query appeared
+							($uri, $filename, my $waiter_fifo) = @params;
+							open($waiter_fh, ">", $waiter_fifo) or
+									mydie("unable to connect to download fifo for '$uri' -> '$filename': $!");
+							autoflush $waiter_fh;
+							# check if this download was already done
+							if (exists $done_downloads{$uri,$filename}) {
+								# just end it
+								__my_write_pipe(\*SELF_WRITE, 'done', $uri, $filename, 1, '');
+							} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
+								# put the query on hold
+								push @waiting_downloads, [ $uri, $filename, $waiter_fh ];
+							} else {
+								$proceed_next_download = 1;
+							}
 						}
-					}
-					when ('done') {
-						# some query ended
-						($uri, $filename, my $result, my $error) = @params;
-						# send an answer for a download
-						__my_write_pipe($pair_file_handles{$fh}, $result, $error);
+						when ('done') {
+							# some query ended
+							($uri, $filename, my $result, my $error) = @params;
+							# send an answer for a download
+							__my_write_pipe($active_downloads{$uri,$filename}->{waiter_fh}, $result, $error);
 
-						# removing the query from active download list and put it to
-						# the list of ended ones
-						delete $active_downloads{$uri,$filename};
-						$done_downloads{$uri,$filename} = 1;
+							# clean after child
+							close($active_downloads{$uri,$filename}->{input_fh});
+							close($active_downloads{$uri,$filename}->{waiter_fh});
+							waitpid($active_downloads{$uri,$filename}->{pid}, 0);
+							# removing the query from active download list and put it to
+							# the list of ended ones
+							delete $active_downloads{$uri,$filename};
+							$done_downloads{$uri,$filename} = 1;
 
-						if (scalar @waiting_downloads) {
-							# put next of waiting queries
-							($uri, $filename, $waiter_fh) = @{shift @waiting_downloads};
-							$proceed_next_download = 1;
+							if (scalar @waiting_downloads) {
+								# put next of waiting queries
+								($uri, $filename, $waiter_fh) = @{shift @waiting_downloads};
+								$proceed_next_download = 1;
+							}
 						}
+						when ('progress') {
+							# progress meter needs updating
+							$self->{_progress}->progress(@params);
+						}
+						default { myinternaldie("download manager: invalid worker command"); }
 					}
-					when ('progress') {
-						# progress meter needs updating
-						$self->{_progress}->progress(@params);
+					$proceed_next_download or next;
+					# filling the active downloads hash
+					$active_downloads{$uri,$filename}->{waiter_fh} = $waiter_fh;
+					# there is a space for new download, start it
+					my $download_pid = open(my $download_fh, "-|");
+					if ($download_pid) {
+						# worker process
+						$active_downloads{$uri,$filename}->{pid} = $download_pid;
+						$active_downloads{$uri,$filename}->{input_fh} = $download_fh;
+					} else {
+						close(STDIN);
+						$download_pid // myinternaldie("unable to fork: $!");
+						# background downloader process
+
+						my ($result, $error) = $self->_download($uri, $filename);
+						__my_write_pipe(\*STDOUT, $uri, $filename, $result, $error);
+						exit;
 					}
-					default { myinternaldie("download manager: invalid worker command"); }
 				}
-				$proceed_next_download or next;
-				# filling the active downloads hash
-				$active_downloads{$uri,$filename} = $waiter_fh;
-				# there is a space for new download, start it
-				(async {
-					my ($result, $error) = $self->_download($uri, $filename);
-					$worker_queue->enqueue([ 'done', $uri, $filename, $result, $error ]);
-				})->detach();
 			}
 		}
-		close $self->{_main_fh};
+		close STDIN or mydie("unable to close STDIN for worker: $!");
+		close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: $!");
+		close SELF_READ or mydie("unable to close reading side of worker's own pipe: $!");
 		exit;
 	}
 }
@@ -162,7 +200,7 @@ Pair of
 I<return_code> - boolean, non-zero is success, zero is fail
 
 I<fail_reason> - if I<return_code> is fail, this string determines the reason,
-otherwise undef
+otherwise empty
 
 Example:
 
@@ -178,7 +216,7 @@ Example:
 sub download ($@) {
 	my $self = shift;
 
-	my @waiter_queues;
+	my @waiter_fifos;
 	# schedule download of each uri at its own thread
 	while (scalar @_) {
 		# extract next pair
@@ -188,23 +226,37 @@ sub download ($@) {
 
 		# schedule new download
 
-		my $waiter_queue = new Thread::Queue;
-		my $worker_queue = $self->{_worker_queue};
-		$worker_queue->enqueue([ 'download', $uri, $filename, $waiter_queue ]);
-		push @waiter_queues, $waiter_queue;
+		my $waiter_fifo = File::Temp::tempnam($self->{_fifo_dir}, "download") or
+				mydie("unable to choose name for download fifo for '$uri' -> '$filename': $!");
+		system('mkfifo', '-m', '600', $waiter_fifo) == 0 or
+				mydie("unable to create download fifo for '$uri' -> '$filename': $?");
+
+		flock($self->{_worker_fh}, LOCK_EX);
+		__my_write_pipe($self->{_worker_fh}, 'download', $uri, $filename, $waiter_fifo);
+		flock($self->{_worker_fh}, LOCK_UN);
+
+		push @waiter_fifos, $waiter_fifo;
 	}
 
 	# all are scheduled successfully, wait for them
-	foreach my $waiter_queue (@waiter_queues) {
-		my ($result, $error_string) = @{$waiter_queue->dequeue()};
-		if (!$result) {
-			# this download has'n been processed smoothly
-			return ($result, $error_string);
+	my $result = 1;
+	my $error_string = '';
+	foreach my $waiter_fifo (@waiter_fifos) {
+		open(my $waiter_fh, "<", $waiter_fifo) or
+				mydie("unable to listen to download fifo: $!");
+		my ($current_result, $current_error_string) = __my_read_pipe($waiter_fh);
+		close($waiter_fh) or
+				mydie("unable to close download fifo: $!");
+		unlink $waiter_fifo;
+		if (!$current_result) {
+			# this download hasn't been processed smoothly
+			$result = $current_result;
+			$error_string = $current_error_string;
 		}
 	}
 
-	# correct finish
-	return (1, undef);
+	# finish
+	return ($result, $error_string);
 }
 
 sub _download ($$$) {
@@ -226,9 +278,9 @@ sub _download ($$$) {
 	}
 	# download the file
 	my $sub_callback = sub {
-		$self->{_worker_queue}->enqueue([ 'progress', $uri, $filename, @_ ]);
+		__my_write_pipe(\*STDOUT, 'progress', $uri, $filename, @_);
 	};
-	$handler->perform($self->{_config}, $uri, $filename, $sub_callback); 
+	return $handler->perform($self->{_config}, $uri, $filename, $sub_callback); 
 }
 
 1;
