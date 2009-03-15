@@ -77,7 +77,8 @@ sub progress {
 		my $size_substring = "";
 		if (defined $ref_entry->{size}) {
 			# filling size substring
-			$size_substring = sprintf "/%u %.0f%%", $ref_entry->{size}, $ref_entry->{downloaded} / $ref_entry->{size} * 100;
+			$size_substring = sprintf "/%s %.0f%%", human_readable_size_string($ref_entry->{size}),
+					$ref_entry->{downloaded} / $ref_entry->{size} * 100;
 		}
 		print sprintf "[%u %s %u%s]", $ref_entry->{number}, $alias, $ref_entry->{downloaded}, $size_substring;
 	}

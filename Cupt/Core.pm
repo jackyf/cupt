@@ -9,7 +9,7 @@ use strict;
 use Exporter qw(import);
 our @EXPORT = qw(
 	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
-	$package_name_regex $version_string_regex &__);
+	$package_name_regex $version_string_regex &human_readable_size_string &__);
 
 use Locale::gettext;
 
@@ -209,6 +209,17 @@ sub compare_version_strings($$) {
 
 	my $revision_comparison_result = __compare_version_part($left_revision, $right_revision);
 	return $revision_comparison_result;
+}
+
+sub human_readable_size_string ($) {
+	my ($bytes) = @_;
+
+	return "$bytes B" if ($bytes < 10*1024);
+	return sprintf("%.1f KiB", ($bytes / 1024)) if ($bytes < 100*1024);
+	return sprintf("%.0f KiB", ($bytes / 1024)) if ($bytes < 10*1024*1024);
+	return sprintf("%.1f MiB", ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);
+	return sprintf("%.0f MiB", ($bytes / (1024*1024))) if ($bytes < 10*1024*1024*1024);
+	return sprintf("%.1f GiB", ($bytes / (1024*1024*1024)));
 }
 
 1;

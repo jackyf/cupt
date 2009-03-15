@@ -676,6 +676,9 @@ sub _parse_extended_states {
 		while (<STATES>) {
 			chomp;
 
+			# skipping newlines
+			next if $_ eq "";
+
 			do { # processing first line
 				m/^Package: (.*)/ or
 						mydie("bad package line at file '%s', line '%u'", $file, $.);
@@ -698,12 +701,6 @@ sub _parse_extended_states {
 				# adding to storage
 				$self->{_extended_info}->{'automatically_installed'}->{$package_name} = $value;
 			}
-
-			do { # skipping newline
-				my $newline = <STATES>;
-				$newline eq "\n" or
-						mydie("expected newline, but haven't got it at file '%s' line '%u'", $file, $.);
-			};
 		}
 
 		close(STATES) or mydie("unable to close file %s: %s", $file, $!);
