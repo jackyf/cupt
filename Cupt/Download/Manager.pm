@@ -41,8 +41,8 @@ sub __my_read_pipe ($) {
 	my $fh = shift;
 	my $packed_len;
 	sysread $fh, $packed_len, 2;
-	my $packed_len_size = length($packed_len);
 	my ($len) = unpack("S", $packed_len);
+	$len or mydie("attempt to read from closed pipe");
 	my $string;
 	sysread $fh, $string, $len;
 	return split(chr(0), $string);
@@ -71,7 +71,6 @@ sub new ($$$) {
 	};
 	autoflush $worker_fh;
 	$self->{_worker_fh} = $worker_fh;
-	my $worker_fileno = fileno($worker_fh);
 
 	if ($pid) {
 		# this is a main process
@@ -90,10 +89,12 @@ sub new ($$$) {
 		my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 		pipe(SELF_READ, SELF_WRITE) or
 				mydie("cannot create worker's own pipe");
+		autoflush SELF_WRITE;
 		for (;;) {
-			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read(0);
+			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read();
 			foreach my $fh (@ready) {
 				while (my @params = __my_read_pipe($fh)) {
+					print "worker: '@params'\n";
 					my $command = shift @params;
 					my $uri;
 					my $filename;
@@ -151,13 +152,13 @@ sub new ($$$) {
 					$active_downloads{$uri,$filename}->{waiter_fh} = $waiter_fh;
 					# there is a space for new download, start it
 					my $download_pid = open(my $download_fh, "-|");
+					$download_pid // myinternaldie("unable to fork: $!");
 					if ($download_pid) {
 						# worker process
 						$active_downloads{$uri,$filename}->{pid} = $download_pid;
 						$active_downloads{$uri,$filename}->{input_fh} = $download_fh;
 					} else {
 						close(STDIN);
-						$download_pid // myinternaldie("unable to fork: $!");
 						# background downloader process
 
 						my ($result, $error) = $self->_download($uri, $filename);
@@ -216,7 +217,7 @@ Example:
 sub download ($@) {
 	my $self = shift;
 
-	my @waiter_fifos;
+	my %waiter_fifos;
 	# schedule download of each uri at its own thread
 	while (scalar @_) {
 		# extract next pair
@@ -235,23 +236,29 @@ sub download ($@) {
 		__my_write_pipe($self->{_worker_fh}, 'download', $uri, $filename, $waiter_fifo);
 		flock($self->{_worker_fh}, LOCK_UN);
 
-		push @waiter_fifos, $waiter_fifo;
+		open(my $waiter_fh, "<", $waiter_fifo) or
+				mydie("unable to listen to download fifo: $!");
+
+		$waiter_fifos{$waiter_fh} = $waiter_fifo;
 	}
 
 	# all are scheduled successfully, wait for them
 	my $result = 1;
 	my $error_string = '';
-	foreach my $waiter_fifo (@waiter_fifos) {
-		open(my $waiter_fh, "<", $waiter_fifo) or
-				mydie("unable to listen to download fifo: $!");
-		my ($current_result, $current_error_string) = __my_read_pipe($waiter_fh);
-		close($waiter_fh) or
-				mydie("unable to close download fifo: $!");
-		unlink $waiter_fifo;
-		if (!$current_result) {
-			# this download hasn't been processed smoothly
-			$result = $current_result;
-			$error_string = $current_error_string;
+	while (scalar keys %waiter_fifos) {
+		my @ready = IO::Select->new(keys %waiter_fifos)->can_read();
+		foreach my $waiter_fh (@ready) {
+			my $waiter_fifo = $waiter_fifos{$waiter_fh};
+			my ($current_result, $current_error_string) = __my_read_pipe($waiter_fh);
+			close($waiter_fh) or
+					mydie("unable to close download fifo: $!");
+			unlink $waiter_fifo;
+			delete $waiter_fifos{$waiter_fh};
+			if (!$current_result) {
+				# this download hasn't been processed smoothly
+				$result = $current_result;
+				$error_string = $current_error_string;
+			}
 		}
 	}
 
