@@ -39,9 +39,17 @@ sub progress {
 		given ($action) {
 			when('downloading') {
 				$ref_entry->{downloaded} = shift @params;
+
+				state $prev_timestamp = time();
+				my $timestamp = time();
+				if ($timestamp != $prev_timestamp) {
+					$prev_timestamp = $timestamp;
+				} else {
+					# don't renew stats too often just for download totals
+					return;
+				}
 			}
 			when('done') {
-				print STDERR "process done $uri!\n";
 				delete $self->{_now_downloading}->{$uri};
 			}
 		}
