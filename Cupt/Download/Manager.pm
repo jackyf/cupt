@@ -164,6 +164,8 @@ sub new ($$$) {
 					# worker process
 					$active_downloads{$uri,$filename}->{pid} = $download_pid;
 					$active_downloads{$uri,$filename}->{input_fh} = $download_fh;
+					# update progress
+					$self->{_progress}->progress($uri, 'start');
 				} else {
 					# background downloader process
 					autoflush STDOUT;
