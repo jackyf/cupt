@@ -1,6 +1,12 @@
 package Cupt::Download::Progresses::Console;
 
-use base Cupt::Download::Progress;
+use 5.10.0;
+use warnings;
+use strict;
+
+use base qw(Cupt::Download::Progress);
+
+use Cupt::Core;
 
 sub new {
 	my $class = shift;
@@ -26,7 +32,8 @@ sub progress {
 			$ref_entry->{number} = $self->{_next_download_number}++;
 			$ref_entry->{size} = undef;
 			$ref_entry->{downloaded} = 0;
-			print __("Get") . ":" . $ref_entry->{number} . " " . $uri . "\n";
+			my $alias = $self->{_long_aliases}->{$uri} // $uri;
+			print sprintf "%s:%u %s\n", __("Get"), $ref_entry->{number}, $alias;
 		}
 
 		given ($action) {
@@ -34,28 +41,31 @@ sub progress {
 				$ref_entry->{downloaded} = shift @params;
 			}
 		}
-	}
+	};
 	undef $uri;
 	undef $action;
 
 	# print 'em all!
 	my @ref_entries_to_print;
-	foreach my $uri (keys $self->{_now_downloading}) {
+	foreach my $uri (keys %{$self->{_now_downloading}}) {
 		my $ref_entry;
 		%{$ref_entry} = %{$self->{_now_downloading}->{$uri}};
 		$ref_entry->{uri} = $uri;
-		push @entries_to_print, $ref_entry;
+		push @ref_entries_to_print, $ref_entry;
 	}
 	# sort by download numbers
-	@entries_to_print = sort { $a->{number} <=> $b->{number} } @ref_entries_to_print;
+	@ref_entries_to_print = sort { $a->{number} <=> $b->{number} } @ref_entries_to_print;
 
-	foreach my $ref_entry (@entries_to_print) {
-		print "[";
-		print $ref_entry->{number}
-		print "]";
+	foreach my $ref_entry (@ref_entries_to_print) {
+		my $uri = $ref_entry->{uri};
+		my $alias = $self->{_short_aliases}->{$uri} // $uri;
+		my $size_substring = "";
+		if (defined $ref_entry->{size}) {
+			# filling size substring
+			$size_substring = sprintf "/%u %.0f%%", $ref_entry->{size}, $ref_entry->{downloaded} / $ref_entry->{size} * 100;
+		}
+		print sprintf "[%u %s %u%s]", $ref_entry->{number}, $alias, $ref_entry->{downloaded}, $size_substring;
 	}
-
-	print "@params\n";
 }
 
 1;
