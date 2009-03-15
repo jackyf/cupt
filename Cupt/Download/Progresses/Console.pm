@@ -40,6 +40,10 @@ sub progress {
 			when('downloading') {
 				$ref_entry->{downloaded} = shift @params;
 			}
+			when('done') {
+				print STDERR "process done $uri!\n";
+				delete $self->{_now_downloading}->{$uri};
+			}
 		}
 	};
 	undef $uri;

@@ -129,6 +129,9 @@ sub new ($$$) {
 						# send an answer for a download
 						__my_write_pipe($active_downloads{$uri,$filename}->{waiter_fh}, $result);
 
+						# update progress
+						$self->{_progress}->progress($uri, 'done');
+
 						# clean after child
 						close($active_downloads{$uri,$filename}->{input_fh});
 						close($active_downloads{$uri,$filename}->{waiter_fh});
@@ -138,14 +141,15 @@ sub new ($$$) {
 						delete $active_downloads{$uri,$filename};
 						$done_downloads{$uri,$filename} = 1;
 
-						if (scalar @waiting_downloads) {
+						if (scalar @waiting_downloads && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
 							# put next of waiting queries
 							($uri, $filename, $waiter_fh) = @{shift @waiting_downloads};
 							$proceed_next_download = 1;
 						}
+
 					}
 					when ('progress') {
-						# progress meter needs updating
+						# update progress
 						$self->{_progress}->progress(@params);
 					}
 					default { myinternaldie("download manager: invalid worker command"); }
