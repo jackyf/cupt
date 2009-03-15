@@ -98,7 +98,6 @@ sub new ($$$) {
 			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read();
 			foreach my $fh (@ready) {
 				my @params = __my_read_pipe($fh);
-				print "worker: '@params'\n";
 				my $command = shift @params;
 				my $uri;
 				my $filename;

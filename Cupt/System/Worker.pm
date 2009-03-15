@@ -358,7 +358,9 @@ sub do_actions ($$) {
 				scalar @uris or
 						mydie("no available download URIs for $package_name $version_string");
 
-				push @pending_downloads, $uris[0];
+				my $uri = $uris[0];
+				push @pending_downloads, $uri;
+				$download_progress->set_short_alias_for_uri($uri, $package_name);
 			}
 		}
 	}
