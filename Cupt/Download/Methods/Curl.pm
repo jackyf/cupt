@@ -52,7 +52,7 @@ sub perform ($$$$$) {
 		return (1, '');
 	} else {
 		# something went wrong
-		return (0, $curl->strerror($curl_result));
+		return (0, $curl_result . $curl->strerror($curl_result));
 	}
 }
 
