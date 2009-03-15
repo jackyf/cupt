@@ -125,9 +125,9 @@ sub new ($$$) {
 					}
 					when ('done') {
 						# some query ended
-						($uri, $filename, my $result, my $error) = @params;
+						($uri, $filename, my $result) = @params;
 						# send an answer for a download
-						__my_write_pipe($active_downloads{$uri,$filename}->{waiter_fh}, $result, $error);
+						__my_write_pipe($active_downloads{$uri,$filename}->{waiter_fh}, $result);
 
 						# clean after child
 						close($active_downloads{$uri,$filename}->{input_fh});
@@ -165,8 +165,8 @@ sub new ($$$) {
 					autoflush STDOUT;
 
 					select STDERR;
-					my ($result, $error) = $self->_download($uri, $filename);
-					__my_write_pipe(\*STDOUT, 'done', $uri, $filename, $result, $error);
+					my $result = $self->_download($uri, $filename);
+					__my_write_pipe(\*STDOUT, 'done', $uri, $filename, $result);
 					POSIX::_exit(0);
 				}
 			}
@@ -181,7 +181,6 @@ sub new ($$$) {
 sub DESTROY {
 	my ($self) = @_;
 	# shutdowning worker thread
-	print STDERR "exiting download manager\n";
 	__my_write_pipe($self->{_worker_fh}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
 }
@@ -247,8 +246,7 @@ sub download ($@) {
 	}
 
 	# all are scheduled successfully, wait for them
-	my $result = 1;
-	my $error_string = '';
+	my $result = 0;
 	while (scalar @waiters) {
 		my @ready = IO::Select->new(map { $_->{fh} } @waiters)->can_read();
 		foreach my $waiter_fh (@ready) {
@@ -262,7 +260,7 @@ sub download ($@) {
 			}
 			my $waiter_fifo = $waiters[$waiter_idx]->{fifo};
 
-			my ($current_result, $current_error_string) = __my_read_pipe($waiter_fh);
+			my ($current_result) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
 					mydie("unable to close download fifo: $!");
 
@@ -272,16 +270,15 @@ sub download ($@) {
 			# delete from entry from list
 			splice @waiters, $waiter_idx, 1;
 
-			if (!$current_result) {
+			if ($current_result ne '0') {
 				# this download hasn't been processed smoothly
 				$result = $current_result;
-				$error_string = $current_error_string;
 			}
 		}
 	}
 
 	# finish
-	return ($result, $error_string);
+	return $result;
 }
 
 sub _download ($$$) {
@@ -305,7 +302,7 @@ sub _download ($$$) {
 	my $sub_callback = sub {
 		__my_write_pipe(\*STDOUT, 'progress', $uri, @_);
 	};
-	return $handler->perform($self->{_config}, $uri, $filename, $sub_callback); 
+	return $handler->perform($self->{_config}, $uri, $filename, $sub_callback);
 }
 
 1;

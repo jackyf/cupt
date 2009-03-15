@@ -34,6 +34,8 @@ Allowed pairs I<name> - I<value>:
   "downloading" - "<number of bytes done for download>" (in case of resumed
 download this number should include already downloaded size).
 
+Returns: 0 if all went smoothly, error string in case of error
+
 =cut
 
 sub perform ($$$$$) {
