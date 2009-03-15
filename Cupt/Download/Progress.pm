@@ -9,11 +9,49 @@ Base class for possible download progess meters
 sub new {
 	my $class = shift;
 	my $self = {};
+	$self->{_long_aliases} = {};
+	$self->{_short_aliases} = {};
     return bless $self => $class;
 }
 
-sub progress {
+=head2 set_long_alias_for_uri
 
+methods, sets long alias for uri to show
+
+=cut
+
+sub set_long_alias_for_uri ($$$) {
+	my ($self, $uri, $alias) = @_;
+	$self->{_long_aliases}->{$uri} = $alias;
+}
+
+=head2 set_short_alias_for_uri
+
+methods, sets short alias for uri to show
+
+=cut
+
+sub set_short_alias_for_uri ($$$) {
+	my ($self, $uri, $alias) = @_;
+	$self->{_short_aliases}->{$uri} = $alias;
+}
+
+=head2 progress
+
+this method is called everytime something changed within downloading process
+
+Parameters:
+
+I<uri> - URI of the download
+
+Next parameters are the same as specified for the callback function for the
+'perform' method of the Cupt::Download::Method class, consult its
+documentation.
+
+=cut
+
+sub progress ($$;@){
+	# stub
 }
 
 1;

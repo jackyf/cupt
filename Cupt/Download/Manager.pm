@@ -304,7 +304,7 @@ sub _download ($$$) {
 	}
 	# download the file
 	my $sub_callback = sub {
-		__my_write_pipe(\*STDOUT, 'progress', $uri, $filename, @_);
+		__my_write_pipe(\*STDOUT, 'progress', $uri, @_);
 	};
 	return $handler->perform($self->{_config}, $uri, $filename, $sub_callback); 
 }
