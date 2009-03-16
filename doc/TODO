@@ -1,9 +1,12 @@
 For version 0.1~alpha1:
 
+worker: download to partial subdirectory, only then move
+worker: hashsums checks after download
 worker: do real actions instead of simulating
 downloader: implement
 downloader: http protocol
 downloader: ftp protocol
+console progress: fix last-line rewriting behavior
 downloader: file protocol
 downloader: proxy for http
 worker, cupt, console progress: size estimating before downloading
