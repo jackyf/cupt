@@ -1,8 +1,11 @@
 For version 0.1~alpha1:
 
+worker: download to partial subdirectory, only then move
+worker: hashsums checks after download
 worker: do real actions instead of simulating
 downloader: file protocol
-worker, cupt: size estimating before downloading
+worker, cupt, console progress: size estimating before downloading
+console progress: fix last-line rewriting behavior
 doc: write tutorial
 config: ignoring classes of options
 config, cupt: only warn when setting unknown options
@@ -12,6 +15,7 @@ For version 0.1~alpha2:
 worker: simulating
 resolver, cupt: querying about decisions
 cupt: implement '--installed' option
+downloader, config: support per-host acquire settings
 
 For version 0.1:
 
