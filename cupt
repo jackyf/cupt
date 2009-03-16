@@ -191,6 +191,7 @@ sub config_dump () {
 	my $print_key_value = sub {
 		my $key = shift;
 		my $value = shift;
+		defined $value or return;
 		print $key, ' ', "\"", $value, "\"\n";
 	};
 
