@@ -46,7 +46,6 @@ sub new {
 			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
-			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
@@ -57,7 +56,9 @@ sub new {
 
 		_optional_patterns => [
 			'acquire::*::*::proxy',
-			'acquire::*::*::dl-limit'
+			'acquire::*::*::dl-limit',
+			'dpkg::tools::options::*',
+			'dpkg::tools::options::*::*',
 		],
 
 		list_vars => {
