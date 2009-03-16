@@ -16,6 +16,7 @@ For version 0.1~alpha2:
 worker: simulating
 resolver, cupt: querying about decisions
 cupt: implement '--installed' option
+downloader, config: support per-host acquire settings
 
 For version 0.1:
 
