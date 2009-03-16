@@ -98,14 +98,30 @@ sub var {
 	}
 }
 
+=head2 set_regular_var
+
+method, sets I<option_name> to I<option_value>
+
+Parameters:
+
+I<option_name> - string option name to set
+
+I<option_value> - desired value
+
+Returns: true on success, false on fail.
+
+=cut
+
 sub set_regular_var {
 	my $self = shift;
 	my $var_name = lc(shift);
 	if (exists $self->{regular_vars}->{$var_name} || $self->_is_optional_option($var_name)) {
 		my $new_value = shift;
 		$self->{regular_vars}->{$var_name} = $new_value;
+		return 1;
 	} else {
-		mydie("attempt to set wrong option %s", $var_name);
+		mywarn("attempt to set wrong option %s", $var_name);
+		return 0;
 	}
 }
 
