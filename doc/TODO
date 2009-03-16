@@ -6,7 +6,7 @@ downloader: http protocol
 downloader: ftp protocol
 downloader: file protocol
 downloader: proxy for http
-worker, cupt: size estimating before downloading
+worker, cupt, console progress: size estimating before downloading
 doc: write tutorial
 config: ignoring classes of options
 config, cupt: only warn when setting unknown options
