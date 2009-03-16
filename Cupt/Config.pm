@@ -55,6 +55,11 @@ sub new {
 			'debug::resolver' => 0,
 		},
 
+		_optional_patterns => [
+			'acquire::*::*::proxy',
+			'acquire::*::*::dl-limit'
+		],
+
 		list_vars => {
 			'apt::neverautoremove' => [],
 			'apt::update::pre-invoke' => [],
@@ -69,6 +74,16 @@ sub new {
 	return $self;
 }
 
+# determines if the option matches some of the optional patterns
+sub _is_optional_option ($$) {
+	my ($self, $var_name) = @_;
+	foreach my $pattern (@{$self->{_optional_patterns}}) {
+		(my $regex = $pattern) =~ s/\*/[^:]*?/g;
+		return 1 if ($var_name =~ m/$regex/);
+	}
+	return 0;
+}
+
 sub var {
 	my $self = shift;
 	my $var_name = shift;
@@ -76,6 +91,8 @@ sub var {
 		return $self->{regular_vars}->{$var_name};
 	} elsif (defined ($self->{list_vars}->{$var_name})) {
 		return $self->{list_vars}->{$var_name};
+	} elsif ($self->_is_optional_option($var_name)) {
+		return undef;
 	} else {
 		mydie("attempt to get wrong option %s", $var_name);
 	}
@@ -84,7 +101,7 @@ sub var {
 sub set_regular_var {
 	my $self = shift;
 	my $var_name = lc(shift);
-	if (exists ($self->{regular_vars}->{$var_name})) {
+	if (exists $self->{regular_vars}->{$var_name} || $self->_is_optional_option($var_name)) {
 		my $new_value = shift;
 		$self->{regular_vars}->{$var_name} = $new_value;
 	} else {
