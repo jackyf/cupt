@@ -8,6 +8,8 @@ downloader: file protocol
 downloader: proxy for http
 worker, cupt: size estimating before downloading
 doc: write tutorial
+config: ignoring classes of options
+config, cupt: only warn when setting unknown options
 
 For version 0.1~alpha2:
 
@@ -19,6 +21,7 @@ For version 0.1:
 
 state: add trigger-related statuses
 cache: add checking for index sigs
+cupt: loudly warn when installing/upgrading unsigned packages
 worker, downloader: size checks
 
 For version 0.2:
