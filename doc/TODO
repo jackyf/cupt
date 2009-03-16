@@ -2,7 +2,6 @@ For version 0.1~alpha1:
 
 worker: do real actions instead of simulating
 downloader: file protocol
-downloader: proxy for http
 worker, cupt: size estimating before downloading
 doc: write tutorial
 config: ignoring classes of options

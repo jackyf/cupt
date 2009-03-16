@@ -23,6 +23,7 @@ sub new {
 	my $self = {
 		regular_vars => {
 			'acquire::http::dl-limit' => 0,
+			'acquire::http::proxy' => undef,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::allversions' => 0,
