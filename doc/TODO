@@ -1,7 +1,25 @@
+For version 0.1~alpha1:
+
 worker: do real actions instead of simulating
+downloader: implement
+downloader: proxy
+
+For version 0.1~alpha2:
+
+worker: simulating
+
+For version 0.1:
+
 state: add trigger-related statuses
 cache: add checking for index sigs
-downloader: implement :)
+
+For version 0.2:
+
 downloader: debdelta integration
+downloader: https protocol
+source version: implement
+
+For version 0.3:
+
 binary version: implement translated description
-source version: implement :)
+
