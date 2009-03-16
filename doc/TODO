@@ -1,7 +1,34 @@
+For version 0.1~alpha1:
+
 worker: do real actions instead of simulating
+downloader: implement
+downloader: http protocol
+downloader: ftp protocol
+downloader: file protocol
+downloader: proxy for http
+worker, cupt: size estimating before downloading
+
+For version 0.1~alpha2:
+
+worker: simulating
+resolver, cupt: querying about decisions
+cupt: implement '--installed' option
+
+For version 0.1:
+
 state: add trigger-related statuses
 cache: add checking for index sigs
-downloader: implement :)
+worker, downloader: size checks
+
+For version 0.2:
+
 downloader: debdelta integration
+downloader: https protocol
+source version: implement
+
+For version 0.3:
+
 binary version: implement translated description
-source version: implement :)
+why command: implement
+why-not command: implement
+
