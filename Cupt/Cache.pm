@@ -782,11 +782,9 @@ sub _process_index_file {
 			($package_name =~ m/^$package_name_regex$/)
 				or mydie("bad package name '%s'", $package_name);
 
-			# end of entry, so creating new package
-			$ref_packages_storage->{$package_name} //= Cupt::Cache::Pkg->new();
-
-			Cupt::Cache::Pkg::add_entry($ref_packages_storage->{$package_name}, $version_class,
-					$package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
+			# adding new entry (and possible creating new package if absend)
+			Cupt::Cache::Pkg::add_entry($ref_packages_storage->{$package_name} //= Cupt::Cache::Pkg->new(),
+					$version_class, $package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
 		}
 	};
 	if (mycatch()) {
