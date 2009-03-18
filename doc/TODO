@@ -28,6 +28,7 @@ state: add trigger-related statuses
 cache: add checking for index sigs
 cupt: loudly warn when installing/upgrading unsigned packages
 worker, downloader: size checks
+downloader: proceed correctly when child processes die
 
 For version 0.2:
 
