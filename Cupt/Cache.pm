@@ -718,33 +718,33 @@ sub _parse_extended_states {
 sub _process_provides_in_index_files {
 	my ($self, @files) = @_;
 
-	open(ENTRIES, "/usr/bin/grep-dctrl -r -n -F Provides '.' -s Package,Provides @files |") or
-			mydie("unable to open grep-dctrl pipe: %s", $!);
-
-	# entries will be in format:
-	#
-	# <package_name>
-	# <provides list>
-	# <newline>
-	# ...
-
 	eval {
-		while(<ENTRIES>) {
-			chomp;
-			my $package_name = $_;
+		foreach my $file (@files) {
+			open(FILE, '<', $file) or
+					mydie("unable to open file '$file'");
 
-			$_ = readline(ENTRIES);
-			chomp;
-			my @provides = split /\s*,\s*/;
+			my $package_line = '';
+			while(<FILE>) {
+				next if !m/^Package: / and !m/^Provides: /;
+				chomp;
+				if (m/^Pa/) {
+					$package_line = $_;
+					next;
+				} else {
+					my ($package_name) = ($package_line =~ m/^Package: (.*)/);
+					my ($provides_subline) = m/^Provides: (.*)/;
+					my @provides = split /\s*,\s*/, $provides_subline;
 
-			foreach (@provides) {
-				# if this entry is new one?
-				if (!grep { $_ eq $package_name } @{$self->{can_provide}->{$_}}) {
-					push @{$self->{can_provide}->{$_}}, $package_name ;
+					foreach (@provides) {
+						# if this entry is new one?
+						if (!grep { $_ eq $package_name } @{$self->{can_provide}->{$_}}) {
+							push @{$self->{can_provide}->{$_}}, $package_name ;
+						}
+					}
 				}
 			}
-			readline(ENTRIES) eq "\n" or
-					mydie("expected newline, but haven't got it");
+			close(FILE) or
+					mydie("unable to close file '$file'");
 		}
 	};
 	if (mycatch()) {
@@ -752,8 +752,6 @@ sub _process_provides_in_index_files {
 		myredie();
 	}
 
-	close(ENTRIES) or $! == 0 or # '$! == 0' - no entries found, nothing bad
-			mydie("unable to close grep-dctrl pipe");
 }
 
 sub _process_index_file {
