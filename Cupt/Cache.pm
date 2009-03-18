@@ -95,6 +95,7 @@ sub new {
 		$self->{_system_state} = new Cupt::System::State($self->{config}, $self);
 	}
 
+	my @index_files;
 	foreach my $ref_index_entry (@$ref_index_entries) {
 		my $index_file_to_parse = $self->_path_of_source_list($ref_index_entry);
 		my $source_type = $ref_index_entry->{'type'};
@@ -107,12 +108,15 @@ sub new {
 				my $ref_release_info = __get_release_info($self->_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
 				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
+				push @index_files, $index_file_to_parse;
 			};
 			if (mycatch()) {
 				mywarn("skipped index file '%s'", $index_file_to_parse);
 			}
 		}
 	}
+
+	$self->_process_provides_in_index_files(@index_files);
 
 	# reading pin settings
 	my $pin_settings_file = $self->_path_of_preferences();
@@ -711,11 +715,11 @@ sub _parse_extended_states {
 	}
 }
 
-sub _process_provides_in_index_file {
-	my ($self, $file) = @_;
+sub _process_provides_in_index_files {
+	my ($self, @files) = @_;
 
-	open(ENTRIES, "/usr/bin/grep-dctrl -r -n -F Provides '.' -s Package,Provides $file |") or
-			mydie("unable to open grep-dctrl pipe on file '%s': %s", $file, $!);
+	open(ENTRIES, "/usr/bin/grep-dctrl -r -n -F Provides '.' -s Package,Provides @files |") or
+			mydie("unable to open grep-dctrl pipe: %s", $!);
 
 	# entries will be in format:
 	#
@@ -744,12 +748,12 @@ sub _process_provides_in_index_file {
 		}
 	};
 	if (mycatch()) {
-		myerr("error parsing provides in index file '%s'", $file);
+		myerr("error parsing provides");
 		myredie();
 	}
 
 	close(ENTRIES) or $! == 0 or # '$! == 0' - no entries found, nothing bad
-			mydie("unable to close grep-dctrl pipe on file '%s'", $file);
+			mydie("unable to close grep-dctrl pipe");
 }
 
 sub _process_index_file {
@@ -793,9 +797,6 @@ sub _process_index_file {
 	}
 
 	close(OFFSETS) or mydie("unable to close grep pipe");
-
-	# additionally, preparse Provides fields...
-	$self->_process_provides_in_index_file($file);
 }
 
 sub _path_of_base_uri {
