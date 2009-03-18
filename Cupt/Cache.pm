@@ -776,7 +776,7 @@ sub _process_index_file {
 			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
 
 			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
-			$offset += length("Package: $package_name\n");
+			$offset += length("Package: ") + length($package_name) + 1;
 
 			# check it for correctness
 			($package_name =~ m/^$package_name_regex$/)
