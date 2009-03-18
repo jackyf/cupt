@@ -11,6 +11,7 @@ downloader: file protocol
 downloader: proxy for http
 worker, cupt, console progress: size estimating before downloading
 doc: write tutorial
+worker: write updated info about automatically installed packages
 
 For version 0.1~alpha2:
 
@@ -18,6 +19,8 @@ worker: simulating
 resolver, cupt: querying about decisions
 cupt: implement '--installed' option
 downloader, config: support per-host acquire settings
+cupt, worker, resolver: reasoning for installing/removing packages (-D option)
+cupt, worker: version info installing/removing packages (-V option)
 
 For version 0.1:
 
