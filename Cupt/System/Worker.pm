@@ -5,6 +5,8 @@ use warnings;
 use strict;
 
 use Graph;
+use Digest;
+use Fcntl qw(:seek);
 
 use Cupt::Core;
 use Cupt::Download::Manager;
@@ -59,6 +61,49 @@ sub set_desired_state ($$) {
 	$self->{desired_state} = $ref_desired_state;
 }
 
+sub _get_archives_location ($) {
+	my ($self) = @_;
+	return $self->{_config}->var('dir') .
+			$self->{_config}->var('dir::cache') . '/' .
+			$self->{_config}->var('dir::cache::archives');
+}
+
+sub __get_archive_basename ($) {
+	my ($version) = @_;
+
+	return $version->{package_name} . '_' .
+			$version->{version_string} . '_' .
+			$version->{architecture} . '.deb';
+}
+
+sub __verify_hash_sums ($$) {
+	my ($version, $path) = @_;
+
+	my @checks = 	(
+					[ $version->{md5sum}, 'MD5' ],
+					[ $version->{sha1sum}, 'SHA-1' ],
+					[ $version->{sha256sum}, 'SHA-256' ],
+					);
+	open(FILE, '<', $path) or
+			mydie("unable to open file '%s'", $path);
+	binmode(FILE);
+
+	foreach (@checks) {
+		my $expected_result = $_->[0];
+		my $hash_type = $_->[1];
+		my $hasher = Digest->new($hash_type);
+		seek(FILE, 0, SEEK_SET);
+		$hasher->addfile(*FILE);
+		my $computed_sum = $hasher->hexdigest();
+		return 0 if ($computed_sum ne $expected_result);
+	}
+
+	close(FILE) or
+			mydie("unable to close file '%s'", $path);
+
+	return 1;
+}
+
 =head2 get_actions_preview
 
 member function, returns actions to be done to achieve desired state of the system (I<desired_state>)
@@ -73,9 +118,14 @@ Returns:
     'downgrade' => I<packages>,
     'configure' => I<packages>,
     'deconfigure' => I<packages>,
+    'total_bytes' => I<total_bytes>,
+    'need_bytes' => I<need_bytes>,
   }
 
-where I<packages> = [ I<package_name>... ]
+where:
+I<packages> = [ { 'package_name' => I<package_name>, 'version' => I<version> }... ],
+I<total_bytes> - total byte count needed for action,
+I<need_bytes> - byte count, needed to download, <= I<total_bytes>
 
 =cut
 
@@ -89,6 +139,8 @@ sub get_actions_preview ($) {
 		'downgrade' => [],
 		'configure' => [],
 		'deconfigure' => [],
+		'total_bytes' => 0,
+		'need_bytes' => 0,
 	);
 
 	if (!defined $self->{desired_state}) {
@@ -160,8 +212,30 @@ sub get_actions_preview ($) {
 				}
 			}
 		}
-		defined $action and push @{$result{$action}}, $package_name;
+		if (defined $action) {
+			my $ref_entry;
+			$ref_entry->{package_name} = $package_name;
+			$ref_entry->{version} = $supposed_version;
+			push @{$result{$action}}, $ref_entry;
+		}
 	}
+
+	do { # size estimating of operation
+		my $archives_location = $self->_get_archives_location();
+		foreach my $ref_package_entry (@{$result{'install'}}, @{$result{'upgrade'}}, @{$result{'downgrade'}}) {
+			my $version = $ref_package_entry->{version};
+			my $size = $version->{size};
+			$result{'total_bytes'} += $size;
+			$result{'need_bytes'} += $size; # for start
+			my $basename = __get_archive_basename($ref_package_entry->{version});
+			my $path = $archives_location . '/' . $basename;
+			-e $path or next; # skip if the file is not present in the cache dir
+			__verify_hash_sums($version, $path) or next; # skip if the file is not what we want
+			# ok, no need to download the file
+			$result{'need_bytes'} -= $size;
+		}
+	};
+
 	return \%result;
 }
 
@@ -188,6 +262,9 @@ sub _fill_actions ($$\@) {
 
 	# convert all actions into inner ones
 	foreach my $user_action (keys %$ref_actions_preview) {
+		# skip non-action preview details
+		exists $user_action_to_inner_actions{$user_action} or next;
+
 		my $ref_actions_to_be_performed = $user_action_to_inner_actions{$user_action};
 
 		foreach my $inner_action (@$ref_actions_to_be_performed) {
@@ -359,7 +436,7 @@ sub do_actions ($$) {
 						mydie("no available download URIs for $package_name $version_string");
 
 				my $uri = $uris[0];
-				push @pending_downloads, $uri;
+				push @pending_downloads, [ $uri, __get_archive_basename($version) ];
 				$download_progress->set_short_alias_for_uri($uri, $package_name);
 			}
 		}
@@ -373,13 +450,9 @@ sub do_actions ($$) {
 		}
 	} else {
 		my @download_list;
-		my $archives_location = $self->{_config}->var('dir') .
-				$self->{_config}->var('dir::cache') . '/' .
-				$self->{_config}->var('dir::cache::archives');
-
-		foreach my $uri (@pending_downloads) {
-			(my $basename = $uri) =~ s{^(?:.*)/(.*)$}{$1};
-			push @download_list, ($uri, $archives_location . '/' . $basename);
+		my $archives_location = $self->_get_archives_location();
+		foreach (@pending_downloads) {
+			push @download_list, ($_->[0], $archives_location . '/' . $_->[1]);
 		}
 
 		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);

@@ -566,12 +566,12 @@ sub generate_management_prompt ($) {
 			);
 			say "";
 			foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
-				my $ref_package_names = $ref_actions_preview->{$action};
-				scalar @$ref_package_names or next; # don't print empty lists
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				scalar @$ref_package_entries or next; # don't print empty lists
 				my $action_name = $action_names{$action};
 				say sprintf __("The following packages will be %s:"), $action_name;
 				say "";
-				my @package_names_list = sort @$ref_package_names;
+				my @package_names_list = sort map { $_->{package_name} } @$ref_package_entries;
 				say "@package_names_list";
 				say "";
 			}
@@ -582,8 +582,8 @@ sub generate_management_prompt ($) {
 			my @versions_to_remove;
 			foreach my $action (qw(remove purge deconfigure)) {
 				my $ref_package_names = $ref_actions_preview->{$action};
-				foreach my $package_name (@$ref_package_names) {
-					my $package = $cache->get_binary_package($package_name);
+				foreach my $ref_package_entry (@$ref_package_names) {
+					my $package = $cache->get_binary_package($ref_package_entry->{package_name});
 					my $version = $package->get_installed_version();
 					push @versions_to_remove, $version;
 				}
@@ -633,6 +633,13 @@ sub generate_management_prompt ($) {
 				say $_ for @unsatisfied_soft_dependencies;
 				say "";
 			}
+		};
+
+		# print size estimation
+		do {
+			say sprintf __("Need to get %s/%s of archives."),
+					human_readable_size_string($ref_actions_preview->{'need_bytes'}),
+					human_readable_size_string($ref_actions_preview->{'total_bytes'});
 		};
 
 		print __("Do you want to continue? [y/N/q] ");
