@@ -22,7 +22,6 @@ sub new {
 	#
 	my $self = {
 		regular_vars => {
-			'acquire::http::dl-limit' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::allversions' => 0,
@@ -56,7 +55,9 @@ sub new {
 
 		_optional_patterns => [
 			'acquire::*::*::proxy',
+			'acquire::*::proxy',
 			'acquire::*::*::dl-limit',
+			'acquire::*::dl-limit',
 			'dpkg::tools::options::*',
 			'dpkg::tools::options::*::*',
 		],
