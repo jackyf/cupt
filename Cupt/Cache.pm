@@ -95,6 +95,7 @@ sub new {
 		$self->{_system_state} = new Cupt::System::State($self->{config}, $self);
 	}
 
+	my @index_files;
 	foreach my $ref_index_entry (@$ref_index_entries) {
 		my $index_file_to_parse = $self->_path_of_source_list($ref_index_entry);
 		my $source_type = $ref_index_entry->{'type'};
@@ -107,12 +108,15 @@ sub new {
 				my $ref_release_info = __get_release_info($self->_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
 				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
+				push @index_files, $index_file_to_parse;
 			};
 			if (mycatch()) {
 				mywarn("skipped index file '%s'", $index_file_to_parse);
 			}
 		}
 	}
+
+	$self->_process_provides_in_index_files(@index_files);
 
 	# reading pin settings
 	my $pin_settings_file = $self->_path_of_preferences();
@@ -711,58 +715,56 @@ sub _parse_extended_states {
 	}
 }
 
-sub _process_provides_in_index_file {
-	my ($self, $file) = @_;
-
-	open(ENTRIES, "/usr/bin/grep-dctrl -r -n -F Provides '.' -s Package,Provides $file |") or
-			mydie("unable to open grep-dctrl pipe on file '%s': %s", $file, $!);
-
-	# entries will be in format:
-	#
-	# <package_name>
-	# <provides list>
-	# <newline>
-	# ...
+sub _process_provides_in_index_files {
+	my ($self, @files) = @_;
 
 	eval {
-		while(<ENTRIES>) {
-			chomp;
-			my $package_name = $_;
+		foreach my $file (@files) {
+			open(FILE, '<', $file) or
+					mydie("unable to open file '$file'");
 
-			$_ = readline(ENTRIES);
-			chomp;
-			my @provides = split /\s*,\s*/;
+			my $package_line = '';
+			while(<FILE>) {
+				next if !m/^Package: / and !m/^Provides: /;
+				chomp;
+				if (m/^Pa/) {
+					$package_line = $_;
+					next;
+				} else {
+					my ($package_name) = ($package_line =~ m/^Package: (.*)/);
+					my ($provides_subline) = m/^Provides: (.*)/;
+					my @provides = split /\s*,\s*/, $provides_subline;
 
-			foreach (@provides) {
-				# if this entry is new one?
-				if (!grep { $_ eq $package_name } @{$self->{can_provide}->{$_}}) {
-					push @{$self->{can_provide}->{$_}}, $package_name ;
+					foreach (@provides) {
+						# if this entry is new one?
+						if (!grep { $_ eq $package_name } @{$self->{can_provide}->{$_}}) {
+							push @{$self->{can_provide}->{$_}}, $package_name ;
+						}
+					}
 				}
 			}
-			readline(ENTRIES) eq "\n" or
-					mydie("expected newline, but haven't got it");
+			close(FILE) or
+					mydie("unable to close file '$file'");
 		}
 	};
 	if (mycatch()) {
-		myerr("error parsing provides in index file '%s'", $file);
+		myerr("error parsing provides");
 		myredie();
 	}
 
-	close(ENTRIES) or $! == 0 or # '$! == 0' - no entries found, nothing bad
-			mydie("unable to close grep-dctrl pipe on file '%s'", $file);
 }
 
 sub _process_index_file {
 	my ($self, $file, $ref_base_uri, $type, $ref_release_info) = @_;
 
 	my $version_class;
-	my $packages_storage;
+	my $ref_packages_storage;
 	if ($type eq 'deb') {
 		$version_class = 'Cupt::Cache::BinaryVersion';
-		$packages_storage = \$self->{binary_packages};
+		$ref_packages_storage = $self->{binary_packages};
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
-		$packages_storage = \$self->{source_packages};
+		$ref_packages_storage = $self->{source_packages};
 		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
 		return;
 	}
@@ -776,17 +778,15 @@ sub _process_index_file {
 			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
 
 			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
-			$offset += length("Package: $package_name\n");
+			$offset += length("Package: ") + length($package_name) + 1;
 
 			# check it for correctness
 			($package_name =~ m/^$package_name_regex$/)
 				or mydie("bad package name '%s'", $package_name);
 
-			# end of entry, so creating new package
-			$$packages_storage->{$package_name} //= Cupt::Cache::Pkg->new();
-
-			Cupt::Cache::Pkg::add_entry($$packages_storage->{$package_name}, $version_class,
-					$package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
+			# adding new entry (and possible creating new package if absend)
+			Cupt::Cache::Pkg::add_entry($ref_packages_storage->{$package_name} //= Cupt::Cache::Pkg->new(),
+					$version_class, $package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
 		}
 	};
 	if (mycatch()) {
@@ -795,9 +795,6 @@ sub _process_index_file {
 	}
 
 	close(OFFSETS) or mydie("unable to close grep pipe");
-
-	# additionally, preparse Provides fields...
-	$self->_process_provides_in_index_file($file);
 }
 
 sub _path_of_base_uri {

@@ -22,8 +22,6 @@ sub new {
 	#
 	my $self = {
 		regular_vars => {
-			'acquire::http::dl-limit' => 0,
-			'acquire::http::proxy' => undef,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::allversions' => 0,
@@ -47,7 +45,6 @@ sub new {
 			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
-			'dpkg::tools::options::/usr/bin/apt-listchanges::version' => 2,
 
 			'cupt::downloader::max-simultaneous-downloads' => 4,
 			'cupt::resolver::keep-recommends' => 1,
@@ -57,6 +54,15 @@ sub new {
 			'cupt::worker::simulate' => 0,
 			'debug::resolver' => 0,
 		},
+
+		_optional_patterns => [
+			'acquire::*::*::proxy',
+			'acquire::*::proxy',
+			'acquire::*::*::dl-limit',
+			'acquire::*::dl-limit',
+			'dpkg::tools::options::*',
+			'dpkg::tools::options::*::*',
+		],
 
 		list_vars => {
 			'apt::neverautoremove' => [],
@@ -72,6 +78,16 @@ sub new {
 	return $self;
 }
 
+# determines if the option matches some of the optional patterns
+sub _is_optional_option ($$) {
+	my ($self, $var_name) = @_;
+	foreach my $pattern (@{$self->{_optional_patterns}}) {
+		(my $regex = $pattern) =~ s/\*/[^:]*?/g;
+		return 1 if ($var_name =~ m/$regex/);
+	}
+	return 0;
+}
+
 sub var {
 	my $self = shift;
 	my $var_name = shift;
@@ -79,19 +95,37 @@ sub var {
 		return $self->{regular_vars}->{$var_name};
 	} elsif (defined ($self->{list_vars}->{$var_name})) {
 		return $self->{list_vars}->{$var_name};
+	} elsif ($self->_is_optional_option($var_name)) {
+		return undef;
 	} else {
 		mydie("attempt to get wrong option %s", $var_name);
 	}
 }
 
+=head2 set_regular_var
+
+method, sets I<option_name> to I<option_value>
+
+Parameters:
+
+I<option_name> - string option name to set
+
+I<option_value> - desired value
+
+Returns: true on success, false on fail.
+
+=cut
+
 sub set_regular_var {
 	my $self = shift;
 	my $var_name = lc(shift);
-	if (exists ($self->{regular_vars}->{$var_name})) {
+	if (exists $self->{regular_vars}->{$var_name} || $self->_is_optional_option($var_name)) {
 		my $new_value = shift;
 		$self->{regular_vars}->{$var_name} = $new_value;
+		return 1;
 	} else {
-		mydie("attempt to set wrong option %s", $var_name);
+		mywarn("attempt to set wrong option %s", $var_name);
+		return 0;
 	}
 }
 
