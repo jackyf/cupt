@@ -557,95 +557,10 @@ sub pkgnames () {
 	}
 }
 
-sub manage_packages ($) {
-	require Cupt::System::Resolver;
-	require Cupt::System::Worker;
+sub generate_management_prompt ($) {
+	my ($worker) = @_;
 
-	my $o_resolver_type;
-	my $o_max_solution_count;
-	GetOptions(
-		'resolver=s' => \$o_resolver_type,
-		'max-solution-count=s' => \$o_max_solution_count,
-	);
-	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
-	my ($action) = @_;
-
-	local $| = 1;
-	print __('Building the package cache... ');
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-	say __('[done]');
-
-	# turn off info parsing, we don't need it
-	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
-
-	check_no_more_options();
-
-	print __('Initializing package resolver and worker... ');
-	my $resolver = new Cupt::System::Resolver($config, $cache);
-	$resolver->set_params('resolver-type' => $o_resolver_type) if defined $o_resolver_type;
-	$resolver->set_params('max-solution-count' => $o_max_solution_count) if defined $o_max_solution_count;
-	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
-	my $worker = new Cupt::System::Worker($config, $cache);
-	say __('[done]');
-
-	print __('Scheduling requested actions... ');
-	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
-		my $o_no_remove = ($action eq 'safe-upgrade');
-		$resolver->set_params('no-remove' => $o_no_remove);
-		$resolver->upgrade();
-
-		# despite the main action is {safe,full}-upgrade, allow package
-		# modifiers in the command line just as with the install command
-		$action = 'install';
-	}
-
-	my $o_purge = 0;
-	if ($action eq 'purge') {
-		$action = 'remove';
-		$config->set_regular_var('cupt::worker::purge', 1)
-	}
-
-	my @package_expressions = @ARGV;
-	foreach my $package_expression (@package_expressions) {
-		if ($action eq 'satisfy') {
-			my $relation_expression = parse_relation_expression($package_expression);
-			$resolver->satisfy_relation_expression($relation_expression);
-		} else {
-			my $action = $action;
-			if (!defined $cache->get_binary_package($package_expression)) {
-				# we have a funny situation with package names like 'g++',
-				# where one don't know is there simple package name or '+'/'-'
-				# modifier at the end of package name, so we enter here only if
-				# it seems that there is no such binary package
-
-				# "localizing" action to make it modifiable by package modifiers
-				my $last_letter = substr($package_expression, -1, 1);
-				if ($last_letter eq '+') {
-					$action = 'install';
-					$package_expression = substr($package_expression, 0, length($package_expression)-1);
-				} elsif ($last_letter eq '-') {
-					$action = 'remove';
-					$package_expression = substr($package_expression, 0, length($package_expression)-1);
-				}
-			}
-
-			if ($action eq 'install') {
-				my $version = select_binary_package_version($package_expression);
-				$resolver->install_version($version);
-			} else { # 'remove'
-				check_package_name($package_expression);
-				defined($cache->get_binary_package($package_expression)) or
-						mydie("unable to find binary package '%s'", $package_expression);
-
-				$resolver->remove_package($package_expression);
-			}
-		}
-	}
-
-	say __('[done]');
-
-	print __('Resolving possible unmet dependencies... ');
-	my $resolve_result = $resolver->resolve( sub {
+	my $sub_prompt = sub {
 		my $ref_desired_packages = $_[0];
 		$worker->set_desired_state($ref_desired_packages);
 
@@ -747,7 +662,100 @@ sub manage_packages ($) {
 			print __("Resolving further... ");
 			return 0;
 		}
-	});
+	};
+
+	return $sub_prompt;
+}
+
+sub manage_packages ($) {
+	require Cupt::System::Resolver;
+	require Cupt::System::Worker;
+
+	my $o_resolver_type;
+	my $o_max_solution_count;
+	GetOptions(
+		'resolver=s' => \$o_resolver_type,
+		'max-solution-count=s' => \$o_max_solution_count,
+	);
+	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
+	my ($action) = @_;
+
+	local $| = 1;
+	print __('Building the package cache... ');
+	build_cache(-source => 0, -binary => 1, -installed => 1);
+	say __('[done]');
+
+	# turn off info parsing, we don't need it
+	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+
+	check_no_more_options();
+
+	print __('Initializing package resolver and worker... ');
+	my $resolver = new Cupt::System::Resolver($config, $cache);
+	$resolver->set_params('resolver-type' => $o_resolver_type) if defined $o_resolver_type;
+	$resolver->set_params('max-solution-count' => $o_max_solution_count) if defined $o_max_solution_count;
+	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
+	my $worker = new Cupt::System::Worker($config, $cache);
+	say __('[done]');
+
+	print __('Scheduling requested actions... ');
+	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
+		my $o_no_remove = ($action eq 'safe-upgrade');
+		$resolver->set_params('no-remove' => $o_no_remove);
+		$resolver->upgrade();
+
+		# despite the main action is {safe,full}-upgrade, allow package
+		# modifiers in the command line just as with the install command
+		$action = 'install';
+	}
+
+	my $o_purge = 0;
+	if ($action eq 'purge') {
+		$action = 'remove';
+		$config->set_regular_var('cupt::worker::purge', 1)
+	}
+
+	my @package_expressions = @ARGV;
+	foreach my $package_expression (@package_expressions) {
+		if ($action eq 'satisfy') {
+			my $relation_expression = parse_relation_expression($package_expression);
+			$resolver->satisfy_relation_expression($relation_expression);
+		} else {
+			my $action = $action;
+			if (!defined $cache->get_binary_package($package_expression)) {
+				# we have a funny situation with package names like 'g++',
+				# where one don't know is there simple package name or '+'/'-'
+				# modifier at the end of package name, so we enter here only if
+				# it seems that there is no such binary package
+
+				# "localizing" action to make it modifiable by package modifiers
+				my $last_letter = substr($package_expression, -1, 1);
+				if ($last_letter eq '+') {
+					$action = 'install';
+					$package_expression = substr($package_expression, 0, length($package_expression)-1);
+				} elsif ($last_letter eq '-') {
+					$action = 'remove';
+					$package_expression = substr($package_expression, 0, length($package_expression)-1);
+				}
+			}
+
+			if ($action eq 'install') {
+				my $version = select_binary_package_version($package_expression);
+				$resolver->install_version($version);
+			} else { # 'remove'
+				check_package_name($package_expression);
+				defined($cache->get_binary_package($package_expression)) or
+						mydie("unable to find binary package '%s'", $package_expression);
+
+				$resolver->remove_package($package_expression);
+			}
+		}
+	}
+
+	say __('[done]');
+
+	print __('Resolving possible unmet dependencies... ');
+	my $resolve_result = $resolver->resolve( generate_management_prompt($worker) );
 
 	if (!defined $resolve_result) {
 		# tryings were abandoned
