@@ -5,7 +5,6 @@ worker: hashsums checks after download
 worker: do real actions instead of simulating
 downloader: file protocol
 worker, cupt, console progress: size estimating before downloading
-console progress: fix last-line rewriting behavior
 doc: write tutorial
 worker: write updated info about automatically installed packages
 cache: add checking for index sigs

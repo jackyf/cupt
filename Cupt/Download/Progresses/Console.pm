@@ -6,6 +6,8 @@ use strict;
 
 use base qw(Cupt::Download::Progress);
 
+use Term::Size;
+
 use Cupt::Core;
 
 sub new {
@@ -13,7 +15,19 @@ sub new {
 	my $self = $class->SUPER::new();
 	$self->{_now_downloading} = {};
 	$self->{_next_download_number} = 1;
+	($self->{_termwidth}, undef) = Term::Size::chars();
 	return $self;
+}
+
+sub _termprint ($$) {
+	my ($self, $string) = @_;
+
+	if (length($string) > $self->{_termwidth}) {
+		print substr($string, 0, $self->{_termwidth});
+	} else {
+		my $string_to_print = $string . (' ' x ($self->{_termwidth} - length($string)));
+		print $string_to_print;
+	}
 }
 
 sub progress {
@@ -33,7 +47,7 @@ sub progress {
 			$ref_entry->{size} = undef;
 			$ref_entry->{downloaded} = 0;
 			my $alias = $self->{_long_aliases}->{$uri} // $uri;
-			print sprintf "%s:%u %s\n", __("Get"), $ref_entry->{number}, $alias;
+			$self->_termprint(sprintf "%s:%u %s", __("Get"), $ref_entry->{number}, $alias);
 		}
 
 		given ($action) {
@@ -71,6 +85,7 @@ sub progress {
 	# sort by download numbers
 	@ref_entries_to_print = sort { $a->{number} <=> $b->{number} } @ref_entries_to_print;
 
+	my $whole_string;
 	foreach my $ref_entry (@ref_entries_to_print) {
 		my $uri = $ref_entry->{uri};
 		my $alias = $self->{_short_aliases}->{$uri} // $uri;
@@ -80,8 +95,10 @@ sub progress {
 			$size_substring = sprintf "/%s %.0f%%", human_readable_size_string($ref_entry->{size}),
 					$ref_entry->{downloaded} / $ref_entry->{size} * 100;
 		}
-		print sprintf "[%u %s %u%s]", $ref_entry->{number}, $alias, $ref_entry->{downloaded}, $size_substring;
+		$whole_string .= (sprintf "[%u %s %u%s]",
+				$ref_entry->{number}, $alias, $ref_entry->{downloaded}, $size_substring);
 	}
+	$self->_termprint($whole_string);
 }
 
 1;
