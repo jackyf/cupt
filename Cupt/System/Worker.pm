@@ -149,14 +149,14 @@ sub get_actions_preview ($) {
 	foreach my $package_name (keys %{$self->{desired_state}}) {
 		my $action;
 		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
+		my $ref_installed_info = $self->{_system_state}->get_installed_info($package_name);
 		if (defined $supposed_version) {
 			# some package version is to be installed
-			if (!exists $self->{_system_state}->{installed_info}->{$package_name}) {
+			if (!defined $ref_installed_info) {
 				# no installed info for package
 				$action = 'install';
 			} else {
 				# there is some installed info about package
-				my $ref_installed_info = $self->{_system_state}->{installed_info}->{$package_name};
 				if ($ref_installed_info->{'status'} eq 'config-files') {
 					# treat as the same as uninstalled
 					$action = 'install';
@@ -164,7 +164,7 @@ sub get_actions_preview ($) {
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
 				{
-					if ($ref_installed_info->{'version'} eq $supposed_version->{version_string}) {
+					if ($ref_installed_info->{'version_string'} eq $supposed_version->{version_string}) {
 						# the same version, but the package was in some interim state
 						$action = 'configure';
 					} else {
@@ -174,7 +174,7 @@ sub get_actions_preview ($) {
 				} else {
 					# otherwise some package version is installed
 					my $version_comparison_result = Cupt::Core::compare_version_strings(
-							$supposed_version->{version_string}, $ref_installed_info->{'version'});
+							$supposed_version->{version_string}, $ref_installed_info->{'version_string'});
 
 					if ($version_comparison_result > 0) {
 						$action = 'upgrade';
@@ -185,9 +185,8 @@ sub get_actions_preview ($) {
 			}
 		} else { 
 			# package is to be removed
-			if (exists $self->{_system_state}->{installed_info}->{$package_name}) {
+			if (defined $ref_installed_info) {
 				# there is some installed info about package
-				my $ref_installed_info = $self->{_system_state}->{installed_info}->{$package_name};
 				if ($ref_installed_info->{'status'} eq 'unpacked' ||
 					$ref_installed_info->{'status'} eq 'half-configured' ||
 					$ref_installed_info->{'status'} eq 'half-installed')
