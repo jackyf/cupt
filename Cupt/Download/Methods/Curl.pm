@@ -23,7 +23,8 @@ sub perform ($$$$$) {
 	my ($self, $config, $uri, $filename, $sub_callback) = @_;
 
 	my $curl = new WWW::Curl::Easy;
-	open(my $fd, '>>', $filename);
+	open(my $fd, '>>', $filename) or
+			mydie("unable to open file '%s': %s", $filename, $!);
 
 	my $total_bytes = tell($fd);
 	my $is_expected_size_reported = 0;
@@ -55,7 +56,12 @@ sub perform ($$$$$) {
 	# FIXME: replace 1 with CURL_NETRC_OPTIONAL after libwww-curl is advanced to provide it
 	$curl->setopt(CURLOPT_NETRC, 1);
 	$curl->setopt(CURLOPT_RESUME_FROM, tell($fd));
+
 	my $curl_result = $curl->perform();
+
+	close($fd) or
+			mydie("unable to close file '%s': %s", $filename, $!);
+
 	if ($curl_result == 0) {
 		# all went ok
 		return 0;
