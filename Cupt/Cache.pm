@@ -761,10 +761,10 @@ sub _process_index_file {
 	my $ref_packages_storage;
 	if ($type eq 'deb') {
 		$version_class = 'Cupt::Cache::BinaryVersion';
-		$ref_packages_storage = $self->{binary_packages};
+		$ref_packages_storage = \$self->{binary_packages};
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
-		$ref_packages_storage = $self->{source_packages};
+		$ref_packages_storage = \$self->{source_packages};
 		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
 		return;
 	}
@@ -785,7 +785,7 @@ sub _process_index_file {
 				or mydie("bad package name '%s'", $package_name);
 
 			# adding new entry (and possible creating new package if absend)
-			Cupt::Cache::Pkg::add_entry($ref_packages_storage->{$package_name} //= Cupt::Cache::Pkg->new(),
+			Cupt::Cache::Pkg::add_entry($$ref_packages_storage->{$package_name} //= Cupt::Cache::Pkg->new(),
 					$version_class, $package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
 		}
 	};
