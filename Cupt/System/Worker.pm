@@ -273,13 +273,10 @@ sub _fill_actions ($$\@) {
 
 	# convert all actions into inner ones
 	foreach my $user_action (keys %$ref_actions_preview) {
-		# skip non-action preview details
-		exists $user_action_to_inner_actions{$user_action} or next;
-
 		my $ref_actions_to_be_performed = $user_action_to_inner_actions{$user_action};
 
 		foreach my $inner_action (@$ref_actions_to_be_performed) {
-			foreach my $package_name (@{$ref_actions_preview->{$user_action}}) {
+			foreach my $package_name (map { $_->{package_name} } @{$ref_actions_preview->{$user_action}}) {
 				my $version_string;
 				if ($user_action eq 'install' ||
 					$user_action eq 'upgrade' ||
