@@ -47,9 +47,10 @@ sub perform ($$$$$) {
 	my $protocol = URI->new($uri)->scheme();
 
 	$curl->setopt(CURLOPT_URL, $uri);
-	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $config->var("acquire::${protocol}::dl-limit")*1024);
+	my $download_limit = $config->var("acquire::${protocol}::dl-limit");
+	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $download_limit*1024) if defined $download_limit;
 	my $proxy = $config->var("acquire::${protocol}::proxy");
-	$curl->setopt(CURLOPT_PROXY, $proxy) if defined($proxy);
+	$curl->setopt(CURLOPT_PROXY, $proxy) if defined $proxy;
 	$curl->setopt(CURLOPT_WRITEFUNCTION, $sub_writefunction);
 	# FIXME: replace 1 with CURL_NETRC_OPTIONAL after libwww-curl is advanced to provide it
 	$curl->setopt(CURLOPT_NETRC, 1);
