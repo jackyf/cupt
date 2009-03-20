@@ -123,9 +123,7 @@ Returns:
   }
 
 where:
-I<packages> = [ { 'package_name' => I<package_name>, 'version' => I<version> }... ],
-I<total_bytes> - total byte count needed for action,
-I<need_bytes> - byte count, needed to download, <= I<total_bytes>
+I<packages> = [ { 'package_name' => I<package_name>, 'version' => I<version> }... ]
 
 =cut
 
@@ -139,8 +137,6 @@ sub get_actions_preview ($) {
 		'downgrade' => [],
 		'configure' => [],
 		'deconfigure' => [],
-		'total_bytes' => 0,
-		'need_bytes' => 0,
 	);
 
 	if (!defined $self->{desired_state}) {
@@ -219,23 +215,39 @@ sub get_actions_preview ($) {
 		}
 	}
 
-	do { # size estimating of operation
-		my $archives_location = $self->_get_archives_location();
-		foreach my $ref_package_entry (@{$result{'install'}}, @{$result{'upgrade'}}, @{$result{'downgrade'}}) {
-			my $version = $ref_package_entry->{version};
-			my $size = $version->{size};
-			$result{'total_bytes'} += $size;
-			$result{'need_bytes'} += $size; # for start
-			my $basename = __get_archive_basename($ref_package_entry->{version});
-			my $path = $archives_location . '/' . $basename;
-			-e $path or next; # skip if the file is not present in the cache dir
-			__verify_hash_sums($version, $path) or next; # skip if the file is not what we want
-			# ok, no need to download the file
-			$result{'need_bytes'} -= $size;
-		}
-	};
-
 	return \%result;
+}
+
+=head2 get_sizes_preview
+
+Returns (I<total_bytes>, I<need_bytes>);
+
+I<total_bytes> - total byte count needed for action,
+I<need_bytes> - byte count, needed to download, <= I<total_bytes>
+
+=cut
+
+sub get_sizes_preview ($$) {
+	my ($self, $ref_actions_preview) = @_;
+	# size estimating of operation
+	my $archives_location = $self->_get_archives_location();
+	my $total_bytes = 0;
+	my $need_bytes = 0;
+	my @ref_package_entries = map { @{$ref_actions_preview->{$_}} } ('install', 'upgrade', 'downgrade');
+	foreach my $ref_package_entry (@ref_package_entries) {
+		my $version = $ref_package_entry->{version};
+		my $size = $version->{size};
+		$total_bytes += $size;
+		$need_bytes += $size; # for start
+		my $basename = __get_archive_basename($ref_package_entry->{version});
+		my $path = $archives_location . '/' . $basename;
+		-e $path or next; # skip if the file is not present in the cache dir
+		__verify_hash_sums($version, $path) or next; # skip if the file is not what we want
+		# ok, no need to download the file
+		$need_bytes -= $size;
+	}
+
+	return ($total_bytes, $need_bytes);
 }
 
 sub __is_inner_actions_equal ($$) {
