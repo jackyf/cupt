@@ -205,6 +205,7 @@ sub get_pin {
 
 	# release-dependent settings
 	my $default_release = $self->{config}->var("apt::default-release");
+	my $have_signed_source = 0;
 	foreach (@avail_as) {
 		if (defined($default_release)) {
 			if ($_->{release}->{archive} eq $default_release ||
@@ -218,6 +219,9 @@ sub get_pin {
 			$update_pin->(1);
 		} else {
 			$update_pin->(500);
+		}
+		if ($_->{release}->{signed}) {
+			$have_signed_source = 1;
 		}
 	}
 
@@ -280,6 +284,8 @@ sub get_pin {
 			$result -= 1000;
 		}
 	}
+
+	$result += 1 if $have_signed_source;
 
 	return $result;
 }
