@@ -465,6 +465,9 @@ our %_empty_release_info = (
 sub _verify_signature ($$) {
 	my ($self, $file) = @_;
 
+	state %cache;
+	exists $cache{$file} and return $cache{$file};
+
 	my $config_dir = $self->{config}->var('dir') . $self->{config}->var('dir::etc');
 	my $keyring_file = $config_dir . '/trusted.gpg';
 	my $signature_file = "$file.gpg";
@@ -546,6 +549,7 @@ sub _verify_signature ($$) {
 	close(GPG_VERIFY) or $! == 0 or
 			mydie("unable to close gpg pipe: $!");
 
+	$cache{$file} = $verify_result;
 	return $verify_result;
 }
 
