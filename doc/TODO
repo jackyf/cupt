@@ -12,7 +12,6 @@ downloader: proxy for http
 worker, cupt, console progress: size estimating before downloading
 doc: write tutorial
 worker: write updated info about automatically installed packages
-cache: add checking for index sigs
 cupt: loudly warn when installing/upgrading unsigned packages
 
 For version 0.2:

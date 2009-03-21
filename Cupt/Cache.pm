@@ -105,7 +105,7 @@ sub new {
 		{
 			eval {
 				my $base_uri = $ref_index_entry->{'uri'};
-				my $ref_release_info = __get_release_info($self->_path_of_release_list($ref_index_entry));
+				my $ref_release_info = $self->_get_release_info($self->_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
 				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
 				push @index_files, $index_file_to_parse;
@@ -462,8 +462,95 @@ our %_empty_release_info = (
 	'architectures' => undef,
 );
 
-sub __get_release_info {
-	my $file = shift;
+sub _verify_signature ($$) {
+	my ($self, $file) = @_;
+
+	my $config_dir = $self->{config}->var('dir') . $self->{config}->var('dir::etc');
+	my $keyring_file = $config_dir . '/trusted.gpg';
+	my $signature_file = "$file.gpg";
+	-r $signature_file or return 0;
+	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
+			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
+			mydie("unable to open gpg pipe: $!");
+	my $sub_gpg_readline = sub {
+		my $result;
+		do {
+			$result = readline(GPG_VERIFY);
+		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or !($result =~ m/^\[GNUPG:\]/)));
+
+		if (!defined $result) {
+			return undef;
+		} else {
+			$result =~ s/^\[GNUPG:\] //;
+			return $result;
+		}
+	};
+	my $verify_result;
+
+	my $status_string = $sub_gpg_readline->();
+	if (defined $status_string) {
+		# first line ought to be validness indicator
+		my ($message_type, $message) = ($status_string =~ m/(\w+) (.*)/);
+		given ($message_type) {
+			when ('GOODSIG') {
+				my $further_info = $sub_gpg_readline->();
+				defined $further_info or
+						mydie("gpg: '%s': unfinished status");
+
+				my ($check_result_type, $check_message) = ($further_info =~ m/(\w+) (.*)/);
+				given ($check_result_type) {
+					when ('VALIDSIG') {
+						# no comments :)
+						$verify_result = 1;
+					}
+					when ('EXPSIG') {
+						$verify_result = 0;
+						mywarn("gpg: '%s': expired signature: %s", $file, $check_message);
+					}
+					when ('EXPKEYSIG') {
+						$verify_result = 0;
+						mywarn("gpg: '%s': expired key: %s", $file, $check_message);
+					}
+					when ('REVKEYSIG') {
+						$verify_result = 0;
+						mywarn("gpg: '%s': revoked key: %s", $file, $check_message);
+					}
+					default {
+						mydie("gpg: '%s': unknown error: %s %s", $file, $check_result_type, $check_message);
+					}
+				}
+			}
+			when ('BADSIG') {
+				mywarn("gpg: '%s': bad signature: %s", $file, $message);
+				$verify_result = 0;
+			}
+			when ('ERRSIG') {
+				# gpg was not able to verify signature
+				mywarn("gpg: '%s': could not verify signature: %s", $file, $message);
+				$verify_result = 0;
+			}
+			when ('NODATA') {
+				# no signature
+				mywarn("gpg: '%s': empty signature", $file);
+				$verify_result = 0;
+			}
+			default {
+				mydie("gpg: '%s': unknown message received: %s %s", $file, $message_type, $message);
+			}
+		}
+	} else {
+		# no info from gpg at all
+		mydie("error while verifying signature for file '%s'", $file);
+	}
+
+	close(GPG_VERIFY) or $! == 0 or
+			mydie("unable to close gpg pipe: $!");
+
+	return $verify_result;
+}
+
+sub _get_release_info {
+	my ($self, $file) = @_;
 
 	my %release_info = %_empty_release_info;
 
@@ -511,6 +598,9 @@ sub __get_release_info {
 	}
 
 	close(RELEASE) or mydie("unable to close release file '%s'", $file);
+
+	$release_info{signed} = $self->_verify_signature($file);
+
 	return \%release_info;
 }
 
