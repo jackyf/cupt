@@ -444,7 +444,11 @@ sub do_actions ($$) {
 						mydie("no available download URIs for $package_name $version_string");
 
 				my $uri = $uris[0];
-				push @pending_downloads, [ $uri, __get_archive_basename($version) ];
+				push @pending_downloads, {
+					'uri' => $uri,
+					'basename' => __get_archive_basename($version),
+					'size' => $version->{size},
+				};
 				$download_progress->set_short_alias_for_uri($uri, $package_name);
 			}
 		}
@@ -459,11 +463,14 @@ sub do_actions ($$) {
 	} else {
 		my @download_list;
 		my $archives_location = $self->_get_archives_location();
-		foreach (@pending_downloads) {
-			push @download_list, ($_->[0], $archives_location . '/' . $_->[1]);
-		}
 
 		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+		foreach my $download_entry (@pending_downloads) {
+			push @download_list, ($download_entry->{'uri'},
+					$archives_location . '/' . $download_entry->{'basename'});
+			$download_manager->set_size_for_uri($download_entry->{'uri'}, $download_entry->{'size'});
+		}
+
 		$download_manager->download(@download_list);
 	}
 

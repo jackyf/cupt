@@ -48,6 +48,13 @@ Next parameters are the same as specified for the callback function for the
 'perform' method of the Cupt::Download::Method class, consult its
 documentation.
 
+One exception:
+
+I<start> - message turns download start
+
+I<size> - size in bytes of the download, can be undef if it's unknown before
+the download
+
 =cut
 
 sub progress ($$;@){

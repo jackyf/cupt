@@ -86,6 +86,8 @@ sub new ($$$) {
 		my %active_downloads;
 		# [ $uri, $filename, $filehandle ]
 		my @waiting_downloads;
+		# { $uri => size }
+		my %download_sizes;
 
 		my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 		pipe(SELF_READ, SELF_WRITE) or
@@ -123,6 +125,10 @@ sub new ($$$) {
 							$proceed_next_download = 1;
 						}
 					}
+					when ('set-download-size') {
+						($uri, my $size) = @params;
+						$download_sizes{$uri} = $size;
+					}
 					when ('done') {
 						# some query ended
 						($uri, $filename, my $result) = @params;
@@ -158,14 +164,19 @@ sub new ($$$) {
 				# filling the active downloads hash
 				$active_downloads{$uri,$filename}->{waiter_fh} = $waiter_fh;
 				# there is a space for new download, start it
+
+				# start progress
+				my $size = $download_sizes{$uri};
+				__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'start', $size);
+
 				my $download_pid = open(my $download_fh, "-|");
 				$download_pid // myinternaldie("unable to fork: $!");
+
+				$active_downloads{$uri,$filename}->{pid} = $download_pid;
+				$active_downloads{$uri,$filename}->{input_fh} = $download_fh;
+
 				if ($download_pid) {
-					# worker process
-					$active_downloads{$uri,$filename}->{pid} = $download_pid;
-					$active_downloads{$uri,$filename}->{input_fh} = $download_fh;
-					# update progress
-					$self->{_progress}->progress($uri, 'start');
+					# worker process, nothing to do, go ahead
 				} else {
 					# background downloader process
 					autoflush STDOUT;
@@ -189,6 +200,23 @@ sub DESTROY {
 	# shutdowning worker thread
 	__my_write_pipe($self->{_worker_fh}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
+}
+
+=head2 set_size_for_uri
+
+method, set fixed download size for uri
+
+Parameters:
+
+I<uri> - URI
+
+I<size> - fixed download size in bytes
+
+=cut
+
+sub set_size_for_uri {
+	my ($self, $uri, $size) = @_;
+	__my_write_pipe($self->{_worker_fh}, 'set-download-size', $uri, $size);
 }
 
 =head2 download

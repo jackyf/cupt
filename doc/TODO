@@ -4,7 +4,6 @@ worker: download to partial subdirectory, only then move
 worker: hashsums checks after download
 worker: do real actions instead of simulating
 downloader: file protocol
-worker, cupt, console progress: size estimating before downloading
 doc: write tutorial
 worker: write updated info about automatically installed packages
 cupt: loudly warn when installing/upgrading unsigned packages

@@ -37,37 +37,40 @@ sub progress {
 	do {
 		my $ref_entry;
 		print "\r";
-		if (exists $self->{_now_downloading}->{$uri}) {
-			# this is info about something that currently downloading
-			$ref_entry = $self->{_now_downloading}->{$uri};
-		} else {
+		if ($action eq 'start') {
 			# new entry, create it
 			$ref_entry = ($self->{_now_downloading}->{$uri} = {});
 			$ref_entry->{number} = $self->{_next_download_number}++;
-			$ref_entry->{size} = undef;
+			# can be undef, be cautious
+			$ref_entry->{size} = shift @params;
 			$ref_entry->{downloaded} = 0;
 			my $alias = $self->{_long_aliases}->{$uri} // $uri;
-			$self->_termprint(sprintf "%s:%u %s", __("Get"), $ref_entry->{number}, $alias);
-		}
+			my $size_suffix = defined $ref_entry->{size} ?
+					" [" . human_readable_size_string($ref_entry->{size}) . "]" :
+					"";
+			$self->_termprint(sprintf "%s:%u %s%s", __("Get"), $ref_entry->{number}, $alias, $size_suffix);
+		} else {
+			# this is info about something that currently downloading
+			$ref_entry = $self->{_now_downloading}->{$uri};
+			given ($action) {
+				when('downloading') {
+					$ref_entry->{downloaded} = shift @params;
 
-		given ($action) {
-			when('downloading') {
-				$ref_entry->{downloaded} = shift @params;
-
-				state $prev_timestamp = time();
-				my $timestamp = time();
-				if ($timestamp != $prev_timestamp) {
-					$prev_timestamp = $timestamp;
-				} else {
-					# don't renew stats too often just for download totals
-					return;
+					state $prev_timestamp = time();
+					my $timestamp = time();
+					if ($timestamp != $prev_timestamp) {
+						$prev_timestamp = $timestamp;
+					} else {
+						# don't renew stats too often just for download totals
+						return;
+					}
 				}
-			}
-			when ('expected-size') {
-				$ref_entry->{size} = shift @params;
-			}
-			when('done') {
-				delete $self->{_now_downloading}->{$uri};
+				when ('expected-size') {
+					$ref_entry->{size} = shift @params;
+				}
+				when('done') {
+					delete $self->{_now_downloading}->{$uri};
+				}
 			}
 		}
 	};
