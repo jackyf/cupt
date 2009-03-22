@@ -41,9 +41,9 @@ sub __my_write_pipe ($@) {
 sub __my_read_pipe ($) {
 	my $fh = shift;
 	my $packed_len;
-	sysread $fh, $packed_len, 2;
+	my $read_result = sysread $fh, $packed_len, 2;
+	$read_result or mydie("attempt to read from closed pipe");
 	my ($len) = unpack("S", $packed_len);
-	$len or mydie("attempt to read from closed pipe");
 	my $string;
 	sysread $fh, $string, $len;
 	return split(chr(0), $string);
@@ -80,14 +80,16 @@ sub new ($$$) {
 	} else {
 		# this is background worker process
 
-		# { ($uri, $filename) => 1 }
+		# { $uri => 1 }
 		my %done_downloads;
-		# { ($uri, $filename) => $waiter_fh, $pid, $input_fh }
+		# { $uri => $waiter_fh, $pid, $input_fh }
 		my %active_downloads;
 		# [ $uri, $filename, $filehandle ]
 		my @waiting_downloads;
-		# { $uri => size }
+		# { $uri => $size }
 		my %download_sizes;
+		# { $uri => $filename }
+		my %target_filenames;
 
 		my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 		pipe(SELF_READ, SELF_WRITE) or
@@ -114,9 +116,9 @@ sub new ($$$) {
 								mydie("unable to connect to download fifo for '$uri' -> '$filename': $!");
 						autoflush $waiter_fh;
 						# check if this download was already done
-						if (exists $done_downloads{$uri,$filename}) {
+						if (exists $done_downloads{$uri}) {
 							# just end it
-							__my_write_pipe(\*SELF_WRITE, 'done', $uri, $filename, 1, '');
+							__my_write_pipe(\*SELF_WRITE, 'done', $uri, 1, '');
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 							# put the query on hold
 							push @waiting_downloads, [ $uri, $filename, $waiter_fh ];
@@ -130,38 +132,55 @@ sub new ($$$) {
 					}
 					when ('done') {
 						# some query ended
-						($uri, $filename, my $result) = @params;
+						($uri, my $result) = @params;
 						# send an answer for a download
-						__my_write_pipe($active_downloads{$uri,$filename}->{waiter_fh}, $result);
+						__my_write_pipe($active_downloads{$uri}->{waiter_fh}, $result);
 
 						# update progress
 						$self->{_progress}->progress($uri, 'done');
 
 						# clean after child
-						close($active_downloads{$uri,$filename}->{input_fh});
-						close($active_downloads{$uri,$filename}->{waiter_fh});
-						waitpid($active_downloads{$uri,$filename}->{pid}, 0);
+						close($active_downloads{$uri}->{input_fh});
+						close($active_downloads{$uri}->{waiter_fh});
+						waitpid($active_downloads{$uri}->{pid}, 0);
 						# removing the query from active download list and put it to
 						# the list of ended ones
-						delete $active_downloads{$uri,$filename};
-						$done_downloads{$uri,$filename} = 1;
+						delete $active_downloads{$uri};
+						$done_downloads{$uri} = 1;
 
 						if (scalar @waiting_downloads && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
 							# put next of waiting queries
 							($uri, $filename, $waiter_fh) = @{shift @waiting_downloads};
 							$proceed_next_download = 1;
 						}
-
 					}
 					when ('progress') {
-						# update progress
-						$self->{_progress}->progress(@params);
+						$uri = shift @params;
+						my $action = shift @params;
+						if ($action eq 'expected-size' && exists $download_sizes{$uri}) {
+							# ok, we knew what size we should get, and the method has reported his variant
+							# now compare them strictly
+							my $expected_size = shift @params;
+							if ($expected_size != $download_sizes{$uri}) {
+								# so, this download don't make sense
+								$filename = $target_filenames{$uri};
+								# rest in peace, young process
+								kill SIGTERM, $active_downloads{$uri}->{pid};
+								# process it as failed
+								__my_write_pipe(\*SELF_WRITE, 'done', $uri, 'invalid size');
+								unlink $filename;
+							}
+						} else {
+							# update progress
+							$self->{_progress}->progress($uri, $action, @params);
+						}
 					}
 					default { myinternaldie("download manager: invalid worker command"); }
 				}
 				$proceed_next_download or next;
+				$target_filenames{$uri} = $filename;
 				# filling the active downloads hash
-				$active_downloads{$uri,$filename}->{waiter_fh} = $waiter_fh;
+				$active_downloads{$uri}->{waiter_fh} = $waiter_fh;
 				# there is a space for new download, start it
 
 				# start progress
@@ -171,18 +190,21 @@ sub new ($$$) {
 				my $download_pid = open(my $download_fh, "-|");
 				$download_pid // myinternaldie("unable to fork: $!");
 
-				$active_downloads{$uri,$filename}->{pid} = $download_pid;
-				$active_downloads{$uri,$filename}->{input_fh} = $download_fh;
+				$active_downloads{$uri}->{pid} = $download_pid;
+				$active_downloads{$uri}->{input_fh} = $download_fh;
 
 				if ($download_pid) {
 					# worker process, nothing to do, go ahead
 				} else {
 					# background downloader process
+					$SIG{TERM} = sub { POSIX::_exit(0) };
+
 					autoflush STDOUT;
 
-					select STDERR;
 					my $result = $self->_download($uri, $filename);
-					__my_write_pipe(\*STDOUT, 'done', $uri, $filename, $result);
+					__my_write_pipe(\*STDOUT, 'done', $uri, $result);
+					close(STDOUT) or
+							mydie("unable to close STDOUT");
 					POSIX::_exit(0);
 				}
 			}

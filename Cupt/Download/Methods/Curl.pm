@@ -34,7 +34,7 @@ sub perform ($$$$$) {
 		print $fd $_[0];
 
 		if (!$is_expected_size_reported) {
-			$sub_callback->('expected-size', $curl->getinfo(CURLINFO_CONTENT_LENGTH_DOWNLOAD) + $total_bytes);
+			$sub_callback->('expected-size', 12345 + $curl->getinfo(CURLINFO_CONTENT_LENGTH_DOWNLOAD) + $total_bytes);
 			$is_expected_size_reported = 1;
 		}
 
