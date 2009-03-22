@@ -518,7 +518,8 @@ sub policy () {
 			foreach (@avail_as) {
 				print (' ' x 8);
 				print ${$_->{ref_base_uri}} . ' ';
-				say $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
+				print $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
+				say '(' . ($_->{release}->{signed} ? __('signed') : __('unsigned')) . ')';
 			}
 			if ($version->is_installed()) {
 				say ' ' x 8, $config->var('dir::state::status');
