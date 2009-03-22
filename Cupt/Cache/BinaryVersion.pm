@@ -176,6 +176,29 @@ sub uris {
 	return @result;
 }
 
+=head2 is_signed
+
+method, returns whether this version has signed source or not
+
+=cut
+
+sub is_signed ($$) {
+	my ($self) = @_;
+
+	my $has_signed_source = 0;
+	foreach (@{$self->{avail_as}}) {
+		# skip fake installed source
+		next if ${$_->{ref_base_uri}} eq "";
+
+		if ($_->{release}->{signed}) {
+			$has_signed_source = 1;
+			last;
+		}
+	}
+
+	return $has_signed_source;
+}
+
 =head2 is_installed
 
 member function, returns whether this version is installed in the system or not
