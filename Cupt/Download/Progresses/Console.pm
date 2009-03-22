@@ -88,7 +88,7 @@ sub progress {
 	# sort by download numbers
 	@ref_entries_to_print = sort { $a->{number} <=> $b->{number} } @ref_entries_to_print;
 
-	my $whole_string;
+	my $whole_string = '';
 	foreach my $ref_entry (@ref_entries_to_print) {
 		my $uri = $ref_entry->{uri};
 		my $alias = $self->{_short_aliases}->{$uri} // $uri;
