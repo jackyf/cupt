@@ -6,7 +6,6 @@ worker: do real actions instead of simulating
 downloader: file protocol
 doc: write tutorial
 worker: write updated info about automatically installed packages
-cupt: loudly warn when installing/upgrading unsigned packages
 
 For version 0.2:
 
