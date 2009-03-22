@@ -33,14 +33,14 @@ sub perform ($$$$$) {
 		# writing data to file
 		print $fd $_[0];
 
-		my $written_bytes = length($_[0]);
-		$total_bytes += $written_bytes;
-		$sub_callback->('downloading', $total_bytes);
-
 		if (!$is_expected_size_reported) {
 			$sub_callback->('expected-size', $curl->getinfo(CURLINFO_CONTENT_LENGTH_DOWNLOAD) + $total_bytes);
 			$is_expected_size_reported = 1;
 		}
+
+		my $written_bytes = length($_[0]);
+		$total_bytes += $written_bytes;
+		$sub_callback->('downloading', $total_bytes);
 
 		return $written_bytes;
 	};
