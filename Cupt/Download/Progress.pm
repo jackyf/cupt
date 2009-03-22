@@ -61,5 +61,15 @@ sub progress ($$;@){
 	# stub
 }
 
+=head2 finish
+
+this method is called when all downloads are done
+
+=cut
+
+sub finish ($) {
+	# stub
+}
+
 1;
 

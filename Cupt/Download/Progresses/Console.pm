@@ -15,6 +15,7 @@ sub new {
 	my $self = $class->SUPER::new();
 	$self->{_now_downloading} = {};
 	$self->{_next_download_number} = 1;
+	$self->{_start_time} = time();
 	($self->{_termwidth}, undef) = Term::Size::chars();
 	return $self;
 }
@@ -28,6 +29,11 @@ sub _termprint ($$) {
 		my $string_to_print = $string . (' ' x ($self->{_termwidth} - length($string)));
 		print $string_to_print;
 	}
+}
+
+sub __human_readable_speed ($) {
+	my $bytes;
+	return human_readable_size_string($bytes) . '/s';
 }
 
 sub progress {
@@ -102,6 +108,30 @@ sub progress {
 				$ref_entry->{number}, $alias, $ref_entry->{downloaded}, $size_substring);
 	}
 	$self->_termprint($whole_string);
+}
+
+sub __human_readable_difftime_string ($) {
+	my ($time) = @_;
+
+	my $days = int($time / 86400);
+	$time -= ($days * 86400);
+	my $hours = int($time / 3600);
+	$time -= ($hours * 3600);
+	my $minutes = int($time / 60);
+	my $seconds = $time % 60;
+
+	my $day_string = $days < 1 ? '' : $days .'d';
+	my $hour_string = ($hours < 1 && length($day_string) == 0) ? '' : $hours .'h';
+	my $minute_string = ($minutes < 1 && length($hour_string) == 0) ? '' : $minutes . 'm';
+
+	return $day_string . $hour_string . $minute_string . $seconds . 's';
+}
+
+sub finish ($) {
+	my ($self) = @_;
+
+	print "\r";
+	$self->_termprint(sprintf __("Fetched in %s."), __human_readable_difftime_string(time() - $self->{_start_time}));
 }
 
 1;

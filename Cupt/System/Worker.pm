@@ -472,6 +472,7 @@ sub do_actions ($$) {
 		}
 
 		$download_manager->download(@download_list);
+		$download_progress->finish();
 	}
 
 
