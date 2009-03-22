@@ -648,7 +648,7 @@ sub generate_management_prompt ($) {
 			if (scalar @untrusted_package_names) {
 				say sprintf __("The untrusted versions of the following packages will be installed:");
 				say "";
-				say @_ for @untrusted_package_names;
+				say $_ for @untrusted_package_names;
 				say "";
 			}
 		}
