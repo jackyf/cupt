@@ -45,6 +45,7 @@ sub new {
 			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
+			'gpgv::trustedkeyring' => '/etc/apt/trusted.gpg',
 
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,

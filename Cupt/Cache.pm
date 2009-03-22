@@ -470,8 +470,8 @@ sub _verify_signature ($$) {
 	state %cache;
 	exists $cache{$file} and return $cache{$file};
 
-	my $config_dir = $self->{config}->var('dir') . $self->{config}->var('dir::etc');
-	my $keyring_file = $config_dir . '/trusted.gpg';
+	my $keyring_file = $self->{config}->var('gpgv::trustedkeyring');
+
 	my $signature_file = "$file.gpg";
 	-r $signature_file or return 0;
 	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
