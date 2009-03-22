@@ -636,6 +636,23 @@ sub generate_management_prompt ($) {
 			}
 		};
 
+		if (!$config->var('apt::get::allowunauthenticated')) {
+			my @untrusted_package_names;
+			# generate loud warning for unsigned versions
+			foreach my $action (qw(install upgrade downgrade)) {
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				foreach my $version (map { $_->{version} } @$ref_package_entries) {
+					push @untrusted_package_names, $version->{package_name} if !$version->is_signed();
+				}
+			}
+			if (scalar @untrusted_package_names) {
+				say sprintf __("The untrusted versions of the following packages will be installed:");
+				say "";
+				say @_ for @untrusted_package_names;
+				say "";
+			}
+		}
+
 		# print size estimation
 		do {
 			my ($total_bytes, $need_bytes) = $worker->get_sizes_preview($ref_actions_preview);

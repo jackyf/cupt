@@ -31,6 +31,7 @@ sub new {
 			'apt::default-release' => undef,
 			'apt::install-recommends' => 1,
 			'apt::install-suggests' => 0,
+			'apt::get::allowunauthenticated' => 0,
 			'dir' => '/',
 			'dir::bin::dpkg' => '/usr/bin/dpkg',
 			'dir::cache' => 'home/jackyf/Work/Programming/linux/cupt',
