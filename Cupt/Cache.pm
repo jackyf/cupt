@@ -205,7 +205,6 @@ sub get_pin {
 
 	# release-dependent settings
 	my $default_release = $self->{config}->var("apt::default-release");
-	my $have_signed_source = 0;
 	foreach (@avail_as) {
 		if (defined($default_release)) {
 			if ($_->{release}->{archive} eq $default_release ||
@@ -219,9 +218,6 @@ sub get_pin {
 			$update_pin->(1);
 		} else {
 			$update_pin->(500);
-		}
-		if ($_->{release}->{signed}) {
-			$have_signed_source = 1;
 		}
 	}
 
@@ -285,7 +281,7 @@ sub get_pin {
 		}
 	}
 
-	$result += 1 if $have_signed_source;
+	$result += 1 if $version->is_signed();
 
 	return $result;
 }
@@ -474,8 +470,8 @@ sub _verify_signature ($$) {
 	state %cache;
 	exists $cache{$file} and return $cache{$file};
 
-	my $config_dir = $self->{config}->var('dir') . $self->{config}->var('dir::etc');
-	my $keyring_file = $config_dir . '/trusted.gpg';
+	my $keyring_file = $self->{config}->var('gpgv::trustedkeyring');
+
 	my $signature_file = "$file.gpg";
 	-r $signature_file or return 0;
 	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
