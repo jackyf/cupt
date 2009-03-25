@@ -256,12 +256,7 @@ I<filename> - target filename
 
 Returns:
 
-Pair of
-
-I<return_code> - boolean, non-zero is success, zero is fail
-
-I<fail_reason> - if I<return_code> is fail, this string determines the reason,
-otherwise empty
+I<result> - '0' on success, otherwise the string determines the reason,
 
 Example:
 

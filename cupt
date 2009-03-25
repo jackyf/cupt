@@ -778,8 +778,9 @@ sub manage_packages ($) {
 		require Cupt::Download::Progresses::Console;
 		my $download_progess = new Cupt::Download::Progresses::Console;
 		print __("Calculating action call order... ");
-		$worker->do_actions($download_progess);
+		my $overall_result = $worker->do_actions($download_progess);
 		say __('[done]');
+		mydie("unable to do requested actions") unless $overall_result;
 	} else {
 		say __("no more solutions.");
 	}

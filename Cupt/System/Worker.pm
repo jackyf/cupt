@@ -471,7 +471,10 @@ sub do_actions ($$) {
 			$download_manager->set_size_for_uri($download_entry->{'uri'}, $download_entry->{'size'});
 		}
 
-		$download_manager->download(@download_list);
+		my $download_result = $download_manager->download(@download_list);
+		# fail and exit if it was something bad with downloading
+		return 0 if $download_result;
+
 		$download_progress->finish();
 	}
 
@@ -492,6 +495,8 @@ sub do_actions ($$) {
 		}
 		say "";
 	}
+
+	return 1;
 }
 
 1;
