@@ -6,6 +6,10 @@ Base class for possible download progess meters
 
 =cut
 
+=head1 METHODS
+
+=cut
+
 sub new {
 	my $class = shift;
 	my $self = {};
