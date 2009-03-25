@@ -19,6 +19,12 @@ sub new {
 
 method, sets long alias for uri to show
 
+Parameters:
+
+I<uri> - URI
+
+I<alias> - long alias
+
 =cut
 
 sub set_long_alias_for_uri ($$$) {
@@ -29,6 +35,12 @@ sub set_long_alias_for_uri ($$$) {
 =head2 set_short_alias_for_uri
 
 method, sets short alias for uri to show
+
+Parameters:
+
+I<uri> - URI
+
+I<alias> - short alias
 
 =cut
 
