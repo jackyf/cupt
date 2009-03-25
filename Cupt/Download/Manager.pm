@@ -100,6 +100,7 @@ sub new ($$$) {
 		while (!$exit_flag) {
 			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read();
 			foreach my $fh (@ready) {
+				next unless $fh->opened;
 				my @params = __my_read_pipe($fh);
 				my $command = shift @params;
 				my $uri;
