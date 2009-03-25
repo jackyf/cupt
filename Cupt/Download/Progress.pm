@@ -11,12 +11,13 @@ sub new {
 	my $self = {};
 	$self->{_long_aliases} = {};
 	$self->{_short_aliases} = {};
+	$self->{_total_estimated_size} = undef;
     return bless $self => $class;
 }
 
 =head2 set_long_alias_for_uri
 
-methods, sets long alias for uri to show
+method, sets long alias for uri to show
 
 =cut
 
@@ -27,13 +28,28 @@ sub set_long_alias_for_uri ($$$) {
 
 =head2 set_short_alias_for_uri
 
-methods, sets short alias for uri to show
+method, sets short alias for uri to show
 
 =cut
 
 sub set_short_alias_for_uri ($$$) {
 	my ($self, $uri, $alias) = @_;
 	$self->{_short_aliases}->{$uri} = $alias;
+}
+
+=head2 set_total_estimated_size
+
+method, set estimated total size of downloads
+
+Parameters:
+
+I<total_size> - total estimated size in bytes
+
+=cut
+
+sub set_total_estimated_size ($$) {
+	my ($self, $size) = @_;
+	$self->{_total_estimated_size} = $size;
 }
 
 =head2 progress

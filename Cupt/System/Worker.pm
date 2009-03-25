@@ -7,6 +7,7 @@ use strict;
 use Graph;
 use Digest;
 use Fcntl qw(:seek);
+use List::Util qw(sum);
 
 use Cupt::Core;
 use Cupt::Download::Manager;
@@ -463,6 +464,9 @@ sub do_actions ($$) {
 	} else {
 		my @download_list;
 		my $archives_location = $self->_get_archives_location();
+
+		my $download_size = sum map { $_->{'size'} } @pending_downloads;
+		$download_progress->set_total_estimated_size($download_size);
 
 		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 		foreach my $download_entry (@pending_downloads) {
