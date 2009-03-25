@@ -6,6 +6,7 @@ use strict;
 
 use base qw(Cupt::Download::Progress);
 
+use List::Util qw(sum);
 use Term::Size;
 
 use Cupt::Core;
@@ -16,6 +17,7 @@ sub new {
 	$self->{_now_downloading} = {};
 	$self->{_next_download_number} = 1;
 	$self->{_start_time} = time();
+	$self->{_size_done} = 0;
 	($self->{_termwidth}, undef) = Term::Size::chars();
 	return $self;
 }
@@ -75,6 +77,7 @@ sub progress {
 					$ref_entry->{size} = shift @params;
 				}
 				when('done') {
+					$self->{_size_done} += $ref_entry->{size} // $ref_entry->{downloaded};
 					delete $self->{_now_downloading}->{$uri};
 				}
 			}
@@ -95,6 +98,29 @@ sub progress {
 	@ref_entries_to_print = sort { $a->{number} <=> $b->{number} } @ref_entries_to_print;
 
 	my $whole_string = '';
+
+	do { # calculating overall download percent
+		# firstly, start up with filling size of already downloaded things
+		my $total_downloaded_size = $self->{_size_done};
+		# count each amount bytes download for all active entries
+		$total_downloaded_size += (sum map { $_->{downloaded} } values %{$self->{_now_downloading}}) // 0;
+
+		my $total_estimated_size;
+	    if (defined $self->{_total_estimated_size}) {
+			# if caller has specified the estimated size, just use it
+			$total_estimated_size = $self->{_total_estimated_size};
+		} else {
+			# otherwise compute it based on data we have
+			$total_estimated_size = $self->{_size_done};
+			foreach my $ref_entry (values %{$self->{_now_downloading}}) {
+				# add or real estimated size, or downloaded size (for entries
+				# where download size hasn't been determined yet)
+				$total_estimated_size += $ref_entry->{size} // $ref_entry->{downloaded};
+			}
+		}
+		$whole_string .= sprintf "[%.0f%%] ", $total_downloaded_size / $total_estimated_size * 100;
+	};
+
 	foreach my $ref_entry (@ref_entries_to_print) {
 		my $uri = $ref_entry->{uri};
 		my $alias = $self->{_short_aliases}->{$uri} // $uri;
