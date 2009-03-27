@@ -472,23 +472,26 @@ sub do_actions ($$) {
 			print __("downloading"), ": $_\n";
 		}
 	} else {
-		my @download_list;
+		# don't bother ourselves with download preparings if nothing to download
+		if (scalar @pending_downloads) {
+			my @download_list;
 
-		my $download_size = sum map { $_->{'size'} } @pending_downloads;
-		$download_progress->set_total_estimated_size($download_size);
+			my $download_size = sum map { $_->{'size'} } @pending_downloads;
+			$download_progress->set_total_estimated_size($download_size);
 
-		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
-		foreach my $download_entry (@pending_downloads) {
-			push @download_list, ($download_entry->{'uri'},
-					$download_entry->{'target'});
-			$download_manager->set_size_for_uri($download_entry->{'uri'}, $download_entry->{'size'});
+			my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+			foreach my $download_entry (@pending_downloads) {
+				push @download_list, ($download_entry->{'uri'},
+						$download_entry->{'target'});
+				$download_manager->set_size_for_uri($download_entry->{'uri'}, $download_entry->{'size'});
+			}
+
+			my $download_result = $download_manager->download(@download_list);
+			# fail and exit if it was something bad with downloading
+			return 0 if $download_result;
+
+			$download_progress->finish();
 		}
-
-		my $download_result = $download_manager->download(@download_list);
-		# fail and exit if it was something bad with downloading
-		return 0 if $download_result;
-
-		$download_progress->finish();
 	}
 
 
