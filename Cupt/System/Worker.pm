@@ -423,39 +423,47 @@ sub do_actions ($$) {
 		@action_groups = $scg->topological_sort();
 	};
 
-	# downloading packages
 	my @pending_downloads;
-	foreach my $action_group (@action_groups) {
-		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
-		# all the actions will have the same action name by algorithm
-		my $action_name = $vertices_group[0]->{'action_name'};
-		if ($action_name eq 'unpack') {
-			# we have to download this package(s)
-			foreach my $ref_action (@vertices_group) {
-				my $package_name = $ref_action->{'package_name'};
-				my $version_string = $ref_action->{'version_string'};
-				my $package = $self->{_cache}->get_binary_package($package_name);
-				my $version = $package->get_specific_version($version_string);
-				# for now, take just first URI
-				my @uris = $version->uris();
-				while ($uris[0] eq "") {
-					# no real URI, just installed, skip it
-					shift @uris;
-				}
-				# we need at least one real URI
-				scalar @uris or
-						mydie("no available download URIs for $package_name $version_string");
+	do { # downloading packages
+		my $archives_location = $self->_get_archives_location();
+		foreach my $action_group (@action_groups) {
+			my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
+			# all the actions will have the same action name by algorithm
+			my $action_name = $vertices_group[0]->{'action_name'};
+			if ($action_name eq 'unpack') {
+				# we have to download this package(s)
+				foreach my $ref_action (@vertices_group) {
+					my $package_name = $ref_action->{'package_name'};
+					my $version_string = $ref_action->{'version_string'};
+					my $package = $self->{_cache}->get_binary_package($package_name);
+					my $version = $package->get_specific_version($version_string);
+					# for now, take just first URI
+					my @uris = $version->uris();
+					while ($uris[0] eq "") {
+						# no real URI, just installed, skip it
+						shift @uris;
+					}
+					# we need at least one real URI
+					scalar @uris or
+							mydie("no available download URIs for $package_name $version_string");
 
-				my $uri = $uris[0];
-				push @pending_downloads, {
-					'uri' => $uri,
-					'basename' => __get_archive_basename($version),
-					'size' => $version->{size},
-				};
-				$download_progress->set_short_alias_for_uri($uri, $package_name);
+					my $uri = $uris[0];
+
+					# target path
+					my $target = $archives_location . '/'. __get_archive_basename($version);
+					# exclude from downloading packages that are already present
+					next if (-e $target && __verify_hash_sums($version, $target));
+
+					push @pending_downloads, {
+						'uri' => $uri,
+						'target' => $target,
+						'size' => $version->{size},
+					};
+					$download_progress->set_short_alias_for_uri($uri, $package_name);
+				}
 			}
 		}
-	}
+	};
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
@@ -465,7 +473,6 @@ sub do_actions ($$) {
 		}
 	} else {
 		my @download_list;
-		my $archives_location = $self->_get_archives_location();
 
 		my $download_size = sum map { $_->{'size'} } @pending_downloads;
 		$download_progress->set_total_estimated_size($download_size);
@@ -473,7 +480,7 @@ sub do_actions ($$) {
 		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 		foreach my $download_entry (@pending_downloads) {
 			push @download_list, ($download_entry->{'uri'},
-					$archives_location . '/' . $download_entry->{'basename'});
+					$download_entry->{'target'});
 			$download_manager->set_size_for_uri($download_entry->{'uri'}, $download_entry->{'size'});
 		}
 
