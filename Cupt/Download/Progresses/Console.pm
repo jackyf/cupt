@@ -118,7 +118,7 @@ sub progress {
 				$total_estimated_size += $ref_entry->{size} // $ref_entry->{downloaded};
 			}
 		}
-		$whole_string .= sprintf "[%.0f%%] ", $total_downloaded_size / $total_estimated_size * 100;
+		$whole_string .= sprintf "%.0f%% ", $total_downloaded_size / $total_estimated_size * 100;
 	};
 
 	foreach my $ref_entry (@ref_entries_to_print) {
