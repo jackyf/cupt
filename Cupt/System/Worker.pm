@@ -419,7 +419,7 @@ sub do_actions ($$) {
 
 		$scg = $graph->strongly_connected_graph();
 
-		# topologically sorted action names
+		# topologically sorted actions
 		@action_groups = $scg->topological_sort();
 	};
 
