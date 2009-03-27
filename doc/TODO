@@ -16,6 +16,7 @@ cupt, worker, resolver: reasoning for installing/removing packages (-D option)
 cupt, worker: version info installing/removing packages (-V option)
 cupt, worker: implement 'update' action
 state: add trigger-related statuses
+downloader: multi-url downloading
 
 For version 0.3:
 
