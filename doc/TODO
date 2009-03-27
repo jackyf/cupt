@@ -20,7 +20,6 @@ downloader: multi-url downloading
 
 For version 0.3:
 
-worker, downloader: size checks
 downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
 downloader: debdelta integration
