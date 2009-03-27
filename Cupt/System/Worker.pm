@@ -348,10 +348,10 @@ sub do_actions ($$) {
 	my $scg;
 	# building actions graph
 	do {
-		my $ref_actions_preview = $self->get_actions_preview();
 		if (!defined $self->{desired_state}) {
 			myinternaldie("worker desired state is not given");
 		}
+		my $ref_actions_preview = $self->get_actions_preview();
 
 		# action = {
 		# 	'package_name' => package
