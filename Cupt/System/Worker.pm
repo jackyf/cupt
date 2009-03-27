@@ -277,13 +277,15 @@ sub _fill_actions ($$\@) {
 		my $ref_actions_to_be_performed = $user_action_to_inner_actions{$user_action};
 
 		foreach my $inner_action (@$ref_actions_to_be_performed) {
-			foreach my $package_name (map { $_->{package_name} } @{$ref_actions_preview->{$user_action}}) {
+			foreach my $ref_package_entry (@{$ref_actions_preview->{$user_action}}) {
+				#foreach my $package_name (map { $_->{package_name} } @{$ref_actions_preview->{$user_action}}) {
+				my $package_name = $ref_package_entry->{package_name};
 				my $version_string;
 				if ($user_action eq 'install' ||
 					$user_action eq 'upgrade' ||
 					$user_action eq 'downgrade')
 				{
-					$version_string = $self->{desired_state}->{$package_name}->{version}->{version_string};
+					$version_string = $ref_package_entry->{'version'}->{version_string};
 				} else {
 					$version_string = $self->{_system_state}->get_installed_version_string($package_name);
 				}
