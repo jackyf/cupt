@@ -6,7 +6,7 @@ use strict;
 
 use Graph;
 use Digest;
-use Fcntl qw(:seek);
+use Fcntl qw(:seek :flock);
 use List::Util qw(sum);
 use File::Copy;
 
@@ -465,9 +465,11 @@ sub do_actions ($$) {
 						'size' => $version->{size},
 						'post-action' => sub {
 							__verify_hash_sums($version, $download_filename) or
-									return __('hash sums mismatch');
+									do { unlink $download_filename; return __('hash sums mismatch'); };
 							move($download_filename, $target_filename) or
-									return __('unable to move target file');
+									return __("unable to move target file: %s", $!);
+
+							# return success
 							return 0;
 						},
 					};
@@ -488,12 +490,22 @@ sub do_actions ($$) {
 		if (scalar @pending_downloads) {
 			my @download_list;
 
+			open(LOCK, '>', $self->_get_archives_location() . '/lock') or
+					mydie("unable to open archives lock file: %s", $!);
+			flock(LOCK, LOCK_EX | LOCK_NB) or
+					mydie("unable to obtain archives lock");
+
 			my $download_size = sum map { $_->{'size'} } @pending_downloads;
 			$download_progress->set_total_estimated_size($download_size);
 
 			my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
-
 			my $download_result = $download_manager->download(@pending_downloads);
+
+			flock(LOCK, LOCK_UN) or
+					mydie("unable to release archives lock");
+			close(LOCK) or
+					mydie("unable to close archives lock file: %s", $!);
+
 			# fail and exit if it was something bad with downloading
 			return 0 if $download_result;
 
