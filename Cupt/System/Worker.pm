@@ -6,7 +6,7 @@ use strict;
 
 use Graph;
 use Digest;
-use Fcntl qw(:seek :flock);
+use Fcntl qw(:seek :DEFAULT);
 use List::Util qw(sum);
 use File::Copy;
 
@@ -490,10 +490,8 @@ sub do_actions ($$) {
 		if (scalar @pending_downloads) {
 			my @download_list;
 
-			open(LOCK, '>', $self->_get_archives_location() . '/lock') or
+			sysopen(LOCK, $self->_get_archives_location() . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 					mydie("unable to open archives lock file: %s", $!);
-			flock(LOCK, LOCK_EX | LOCK_NB) or
-					mydie("unable to obtain archives lock");
 
 			my $download_size = sum map { $_->{'size'} } @pending_downloads;
 			$download_progress->set_total_estimated_size($download_size);
@@ -501,8 +499,6 @@ sub do_actions ($$) {
 			my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 			my $download_result = $download_manager->download(@pending_downloads);
 
-			flock(LOCK, LOCK_UN) or
-					mydie("unable to release archives lock");
 			close(LOCK) or
 					mydie("unable to close archives lock file: %s", $!);
 
