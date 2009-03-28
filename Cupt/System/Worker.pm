@@ -367,7 +367,7 @@ sub do_actions ($$) {
 		$self->_fill_actions($ref_actions_preview, $graph);
 
 		# maybe, we have nothing to do?
-		return if scalar $graph->vertices() == 0;
+		return 1 if scalar $graph->vertices() == 0;
 
 		# fill the actions' dependencies
 		foreach my $ref_inner_action ($graph->vertices()) {
