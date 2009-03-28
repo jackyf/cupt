@@ -450,14 +450,15 @@ sub do_actions ($$) {
 					my $uri = $uris[0];
 
 					# target path
-					my $target = $archives_location . '/'. __get_archive_basename($version);
+					my $filename = $archives_location . '/'. __get_archive_basename($version);
 					# exclude from downloading packages that are already present
-					next if (-e $target && __verify_hash_sums($version, $target));
+					next if (-e $filename && __verify_hash_sums($version, $filename));
 
 					push @pending_downloads, {
 						'uri' => $uri,
-						'target' => $target,
+						'filename' => $filename,
 						'size' => $version->{size},
+						'checker' => sub { return __verify_hash_sums($version, $filename) },
 					};
 					$download_progress->set_short_alias_for_uri($uri, $package_name);
 				}
@@ -480,13 +481,8 @@ sub do_actions ($$) {
 			$download_progress->set_total_estimated_size($download_size);
 
 			my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
-			foreach my $download_entry (@pending_downloads) {
-				push @download_list, ($download_entry->{'uri'},
-						$download_entry->{'target'});
-				$download_manager->set_size_for_uri($download_entry->{'uri'}, $download_entry->{'size'});
-			}
 
-			my $download_result = $download_manager->download(@download_list);
+			my $download_result = $download_manager->download(@pending_downloads);
 			# fail and exit if it was something bad with downloading
 			return 0 if $download_result;
 

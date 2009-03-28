@@ -185,8 +185,10 @@ sub new ($$$) {
 				# there is a space for new download, start it
 
 				# start progress
+				my @progress_message = ('progress', $uri, 'start');
 				my $size = $download_sizes{$uri};
-				__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'start', $size);
+				push @progress_message, $size if defined $size;
+				__my_write_pipe(\*SELF_WRITE, @progress_message);
 
 				my $download_pid = open(my $download_fh, "-|");
 				$download_pid // myinternaldie("unable to fork: $!");
@@ -224,23 +226,6 @@ sub DESTROY {
 	waitpid($self->{_worker_pid}, 0);
 }
 
-=head2 set_size_for_uri
-
-method, set fixed download size for uri
-
-Parameters:
-
-I<uri> - URI
-
-I<size> - fixed download size in bytes
-
-=cut
-
-sub set_size_for_uri {
-	my ($self, $uri, $size) = @_;
-	__my_write_pipe($self->{_worker_fh}, 'set-download-size', $uri, $size);
-}
-
 =head2 download
 
 method, adds group of download queries to queue. Blocks execution of program until
@@ -248,11 +233,16 @@ all downloads are done.
 
 Parameters:
 
-Sequence of pairs of:
+Sequence of hash entries with the following fields:
 
-I<uri> - URI to download
+I<uri> - URI to download, mandatory
 
-I<filename> - target filename
+I<filename> - target filename, mandatory
+
+I<checker> - reference to subroutine that will check the downloaded target file
+for correctness, optional
+
+i<size> - fixed size for target, will be used in sanity checks, optional
 
 Returns:
 
@@ -262,9 +252,9 @@ Example:
 
   my $download_manager = new Cupt::Download::Manager;
   $download_manager->download(
-      'http://www.en.debian.org' => '/tmp/en.html',
-	  'http://www.ru.debian.org' => '/tmp/ru.html',
-	  'http://www.ua.debian.org' => '/tmp/ua.html'
+	  { 'uri' => 'http://www.en.debian.org', 'filename' => '/tmp/en.html' },
+	  { 'uri' => 'http://www.ru.debian.org', 'filename' => '/tmp/ru.html', 'checker' => \&checker },
+	  { 'uri' => 'http://www.ua.debian.org', 'filename' => '/tmp/ua.html', 'size' => 10254 }
   );
 
 =cut
@@ -275,9 +265,10 @@ sub download ($@) {
 	my @waiters;
 	# schedule download of each uri at its own thread
 	while (scalar @_) {
-		# extract next pair
-		my $uri = shift;
-		my $filename = shift;
+		# extract next entry
+		my $ref_entry = shift;
+		my $uri = $ref_entry->{'uri'};
+		my $filename = $ref_entry->{'filename'};
 
 		# schedule new download
 
@@ -287,13 +278,16 @@ sub download ($@) {
 				mydie("unable to create download fifo for '$uri' -> '$filename': $?");
 
 		flock($self->{_worker_fh}, LOCK_EX);
+		if (exists $ref_entry->{'size'}) {
+			__my_write_pipe($self->{_worker_fh}, 'set-download-size', $uri, $ref_entry->{'size'});
+		}
 		__my_write_pipe($self->{_worker_fh}, 'download', $uri, $filename, $waiter_fifo);
 		flock($self->{_worker_fh}, LOCK_UN);
 
 		open(my $waiter_fh, "<", $waiter_fifo) or
 				mydie("unable to listen to download fifo: $!");
 
-		push @waiters, { 'fifo' => $waiter_fifo, 'fh' => $waiter_fh };
+		push @waiters, { 'fifo' => $waiter_fifo, 'fh' => $waiter_fh, 'checker' => $ref_entry->{'checker'} };
 	}
 
 	# all are scheduled successfully, wait for them
@@ -309,7 +303,8 @@ sub download ($@) {
 					last;
 				}
 			}
-			my $waiter_fifo = $waiters[$waiter_idx]->{fifo};
+			my $waiter_fifo = $waiters[$waiter_idx]->{'fifo'};
+			my $sub_external_checker = $waiters[$waiter_idx]->{'checker'};
 
 			my ($current_result) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
@@ -321,10 +316,16 @@ sub download ($@) {
 			# delete from entry from list
 			splice @waiters, $waiter_idx, 1;
 
+			if ($current_result eq '0' && defined $sub_external_checker) {
+				# download seems to be done well, but we also have external checker specified
+				$current_result = ($sub_external_checker->() ? '0' : 'external check failed');
+			}
+
 			if ($current_result ne '0') {
 				# this download hasn't been processed smoothly
 				$result = $current_result;
 			}
+
 		}
 	}
 

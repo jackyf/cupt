@@ -1,7 +1,6 @@
 For version 0.1:
 
 worker: download to partial subdirectory, only then move
-worker: hashsums checks after download
 worker: do real actions instead of simulating
 downloader: file protocol
 doc: write tutorial

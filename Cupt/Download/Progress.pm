@@ -84,7 +84,7 @@ One exception:
 
 I<start> - message turns download start
 
-I<size> - size in bytes of the download, can be undef if it's unknown before
+I<size> - size in bytes of the download, can be skipped if it's unknown before
 the download
 
 =cut
