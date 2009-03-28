@@ -239,8 +239,8 @@ I<uri> - URI to download, mandatory
 
 I<filename> - target filename, mandatory
 
-I<checker> - reference to subroutine that will check the downloaded target file
-for correctness, optional
+I<post-action> - reference to subroutine that will be called in case of
+successful download, optional
 
 i<size> - fixed size for target, will be used in sanity checks, optional
 
@@ -253,7 +253,7 @@ Example:
   my $download_manager = new Cupt::Download::Manager;
   $download_manager->download(
 	  { 'uri' => 'http://www.en.debian.org', 'filename' => '/tmp/en.html' },
-	  { 'uri' => 'http://www.ru.debian.org', 'filename' => '/tmp/ru.html', 'checker' => \&checker },
+	  { 'uri' => 'http://www.ru.debian.org', 'filename' => '/tmp/ru.html', 'post-action' => \&checker },
 	  { 'uri' => 'http://www.ua.debian.org', 'filename' => '/tmp/ua.html', 'size' => 10254 }
   );
 
@@ -287,7 +287,7 @@ sub download ($@) {
 		open(my $waiter_fh, "<", $waiter_fifo) or
 				mydie("unable to listen to download fifo: $!");
 
-		push @waiters, { 'fifo' => $waiter_fifo, 'fh' => $waiter_fh, 'checker' => $ref_entry->{'checker'} };
+		push @waiters, { 'fifo' => $waiter_fifo, 'fh' => $waiter_fh, 'checker' => $ref_entry->{'post-action'} };
 	}
 
 	# all are scheduled successfully, wait for them
@@ -304,7 +304,7 @@ sub download ($@) {
 				}
 			}
 			my $waiter_fifo = $waiters[$waiter_idx]->{'fifo'};
-			my $sub_external_checker = $waiters[$waiter_idx]->{'checker'};
+			my $sub_post_action = $waiters[$waiter_idx]->{'checker'};
 
 			my ($current_result) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
@@ -316,9 +316,9 @@ sub download ($@) {
 			# delete from entry from list
 			splice @waiters, $waiter_idx, 1;
 
-			if ($current_result eq '0' && defined $sub_external_checker) {
+			if ($current_result eq '0' && defined $sub_post_action) {
 				# download seems to be done well, but we also have external checker specified
-				$current_result = ($sub_external_checker->() ? '0' : 'external check failed');
+				$current_result = $sub_post_action->();
 			}
 
 			if ($current_result ne '0') {

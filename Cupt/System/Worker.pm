@@ -8,10 +8,12 @@ use Graph;
 use Digest;
 use Fcntl qw(:seek);
 use List::Util qw(sum);
+use File::Copy;
 
 use Cupt::Core;
 use Cupt::Download::Manager;
 
+my $_download_partial_suffix = '/partial';
 =head1 FIELDS
 
 I<config> - reference to Cupt::Config
@@ -450,15 +452,24 @@ sub do_actions ($$) {
 					my $uri = $uris[0];
 
 					# target path
-					my $filename = $archives_location . '/'. __get_archive_basename($version);
+					my $basename = __get_archive_basename($version);
+					my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
+					my $target_filename = $archives_location . '/' . $basename;
+
 					# exclude from downloading packages that are already present
-					next if (-e $filename && __verify_hash_sums($version, $filename));
+					next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
 
 					push @pending_downloads, {
 						'uri' => $uri,
-						'filename' => $filename,
+						'filename' => $download_filename,
 						'size' => $version->{size},
-						'checker' => sub { return __verify_hash_sums($version, $filename) },
+						'post-action' => sub {
+							__verify_hash_sums($version, $download_filename) or
+									return __('hash sums mismatch');
+							move($download_filename, $target_filename) or
+									return __('unable to move target file');
+							return 0;
+						},
 					};
 					$download_progress->set_short_alias_for_uri($uri, $package_name);
 				}
