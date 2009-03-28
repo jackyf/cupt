@@ -77,6 +77,11 @@ sub progress {
 					$ref_entry->{size} = shift @params;
 				}
 				when('done') {
+					my $result = shift @params;
+					if ($result ne '0') {
+						# some error occured, output it
+						$self->_termprint(sprintf "error downloading %s: %s", $uri, $result);
+					}
 					$self->{_size_done} += $ref_entry->{size} // $ref_entry->{downloaded};
 					delete $self->{_now_downloading}->{$uri};
 				}

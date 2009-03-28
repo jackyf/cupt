@@ -138,7 +138,7 @@ sub new ($$$) {
 						__my_write_pipe($active_downloads{$uri}->{waiter_fh}, $result);
 
 						# update progress
-						$self->{_progress}->progress($uri, 'done');
+						$self->{_progress}->progress($uri, 'done', $result);
 
 						# clean after child
 						close($active_downloads{$uri}->{input_fh});

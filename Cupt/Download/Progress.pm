@@ -80,12 +80,24 @@ Next parameters are the same as specified for the callback function for the
 'perform' method of the Cupt::Download::Method class, consult its
 documentation.
 
-One exception:
+Exceptions:
+
+=over 1
+
+=item
 
 I<start> - message turns download start
 
 I<size> - size in bytes of the download, can be skipped if it's unknown before
 the download
+
+=item
+
+I<done> - message turns download finish
+
+I<result> - 0 if success, error string in case of error
+
+=back
 
 =cut
 
