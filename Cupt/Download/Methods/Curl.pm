@@ -27,6 +27,8 @@ sub perform ($$$$$) {
 			mydie("unable to open file '%s': %s", $filename, $!);
 
 	my $total_bytes = tell($fd);
+	$sub_callback->('downloading', $total_bytes);
+
 	my $is_expected_size_reported = 0;
 
 	my $sub_writefunction = sub {
