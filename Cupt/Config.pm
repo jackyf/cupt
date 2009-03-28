@@ -22,6 +22,10 @@ sub new {
 	#
 	my $self = {
 		regular_vars => {
+			'acquire::http::timeout' => 120,
+			'acquire::https::timeout' => 120,
+			'acquire::ftp::timeout' => 120,
+			'acquire::file::timeout' => 20,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::allversions' => 0,
@@ -62,6 +66,7 @@ sub new {
 			'acquire::*::proxy',
 			'acquire::*::*::dl-limit',
 			'acquire::*::dl-limit',
+			'acquire::*::timeout',
 			'dpkg::tools::options::*',
 			'dpkg::tools::options::*::*',
 		],

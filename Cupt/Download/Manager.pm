@@ -179,16 +179,11 @@ sub new ($$$) {
 					default { myinternaldie("download manager: invalid worker command"); }
 				}
 				$proceed_next_download or next;
+				# there is a space for new download, start it
+
 				$target_filenames{$uri} = $filename;
 				# filling the active downloads hash
 				$active_downloads{$uri}->{waiter_fh} = $waiter_fh;
-				# there is a space for new download, start it
-
-				# start progress
-				my @progress_message = ('progress', $uri, 'start');
-				my $size = $download_sizes{$uri};
-				push @progress_message, $size if defined $size;
-				__my_write_pipe(\*SELF_WRITE, @progress_message);
 
 				my $download_pid = open(my $download_fh, "-|");
 				$download_pid // myinternaldie("unable to fork: $!");
@@ -203,6 +198,12 @@ sub new ($$$) {
 					$SIG{TERM} = sub { POSIX::_exit(0) };
 
 					autoflush STDOUT;
+
+					# start progress
+					my @progress_message = ('progress', $uri, 'start');
+					my $size = $download_sizes{$uri};
+					push @progress_message, $size if defined $size;
+					__my_write_pipe(\*STDOUT, @progress_message);
 
 					my $result = $self->_download($uri, $filename);
 					__my_write_pipe(\*STDOUT, 'done', $uri, $result);
