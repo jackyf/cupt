@@ -31,6 +31,7 @@ sub new {
 			'apt::default-release' => undef,
 			'apt::install-recommends' => 1,
 			'apt::install-suggests' => 0,
+			'apt::get::allowunauthenticated' => 0,
 			'dir' => '/',
 			'dir::bin::dpkg' => '/usr/bin/dpkg',
 			'dir::cache' => 'var/cache/apt',
@@ -47,10 +48,12 @@ sub new {
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'gpgv::trustedkeyring' => '/etc/apt/trusted.gpg',
 
+			'cupt::downloader::max-simultaneous-downloads' => 4,
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::auto-remove' => 1,
 			'cupt::worker::purge' => 0,
+			'cupt::worker::simulate' => 0,
 			'debug::resolver' => 0,
 		},
 

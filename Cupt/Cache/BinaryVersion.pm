@@ -160,6 +160,13 @@ sub is_hashes_equal {
 			$self->{sha256sum} eq $other->{sha256sum});
 }
 
+=head2 uris
+
+method, returs array of available URIs to download the version .deb. Array can
+contain empty string in case version is installed in the system
+
+=cut
+
 sub uris {
 	my $self = shift;
 	my @result;

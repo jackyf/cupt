@@ -112,17 +112,6 @@ sub get_binary_package ($) {
 	}
 }
 
-sub human_readable_size_string ($) {
-	my ($bytes) = @_;
-
-	return "$bytes B" if ($bytes < 10*1024);
-	return sprintf("%.1f KiB", ($bytes / 1024)) if ($bytes < 100*1024);
-	return sprintf("%.0f KiB", ($bytes / 1024)) if ($bytes < 10*1024*1024);
-	return sprintf("%.1f MiB", ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);
-	return sprintf("%.0f MiB", ($bytes / (1024*1024))) if ($bytes < 10*1024*1024*1024);
-	return sprintf("%.1f GiB", ($bytes / (1024*1024*1024)));
-}
-
 sub select_binary_package_version ($) {
 	my ($package_expression) = @_;
 
@@ -578,12 +567,12 @@ sub generate_management_prompt ($) {
 			);
 			say "";
 			foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
-				my $ref_package_names = $ref_actions_preview->{$action};
-				scalar @$ref_package_names or next; # don't print empty lists
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				scalar @$ref_package_entries or next; # don't print empty lists
 				my $action_name = $action_names{$action};
 				say sprintf __("The following packages will be %s:"), $action_name;
 				say "";
-				my @package_names_list = sort @$ref_package_names;
+				my @package_names_list = sort map { $_->{package_name} } @$ref_package_entries;
 				say "@package_names_list";
 				say "";
 			}
@@ -593,9 +582,9 @@ sub generate_management_prompt ($) {
 			my @unsatisfied_soft_dependencies;
 			my @versions_to_remove;
 			foreach my $action (qw(remove purge deconfigure)) {
-				my $ref_package_names = $ref_actions_preview->{$action};
-				foreach my $package_name (@$ref_package_names) {
-					my $package = $cache->get_binary_package($package_name);
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				foreach my $ref_package_entry (@$ref_package_entries) {
+					my $package = $cache->get_binary_package($ref_package_entry->{package_name});
 					my $version = $package->get_installed_version();
 					push @versions_to_remove, $version;
 				}
@@ -645,6 +634,31 @@ sub generate_management_prompt ($) {
 				say $_ for @unsatisfied_soft_dependencies;
 				say "";
 			}
+		};
+
+		if (!$config->var('apt::get::allowunauthenticated')) {
+			my @untrusted_package_names;
+			# generate loud warning for unsigned versions
+			foreach my $action (qw(install upgrade downgrade)) {
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				foreach my $version (map { $_->{version} } @$ref_package_entries) {
+					push @untrusted_package_names, $version->{package_name} if !$version->is_signed();
+				}
+			}
+			if (scalar @untrusted_package_names) {
+				say sprintf __("WARNING! The untrusted versions of the following packages will be installed:");
+				say "";
+				say $_ for @untrusted_package_names;
+				say "";
+			}
+		}
+
+		# print size estimation
+		do {
+			my ($total_bytes, $need_bytes) = $worker->get_sizes_preview($ref_actions_preview);
+			say sprintf __("Need to get %s/%s of archives."),
+					human_readable_size_string($need_bytes),
+					human_readable_size_string($total_bytes);
 		};
 
 		print __("Do you want to continue? [y/N/q] ");
@@ -761,9 +775,12 @@ sub manage_packages ($) {
 		# tryings were abandoned
 	} elsif ($resolve_result) {
 		# if some solution was found and user has accepted it
+		require Cupt::Download::Progresses::Console;
+		my $download_progess = new Cupt::Download::Progresses::Console;
 		print __("Calculating action call order... ");
-		$worker->do_actions();
+		my $overall_result = $worker->do_actions($download_progess);
 		say __('[done]');
+		mydie("unable to do requested actions") unless $overall_result;
 	} else {
 		say __("no more solutions.");
 	}

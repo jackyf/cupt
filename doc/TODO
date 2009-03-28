@@ -1,18 +1,9 @@
 For version 0.1:
 
-worker: download to partial subdirectory, only then move
-worker: hashsums checks after download
 worker: do real actions instead of simulating
-downloader: implement
-downloader: http protocol
-downloader: ftp protocol
-console progress: fix last-line rewriting behavior
 downloader: file protocol
-downloader: proxy for http
-worker, cupt, console progress: size estimating before downloading
 doc: write tutorial
 worker: write updated info about automatically installed packages
-cupt: loudly warn when installing/upgrading unsigned packages
 
 For version 0.2:
 
@@ -23,10 +14,10 @@ cupt, worker, resolver: reasoning for installing/removing packages (-D option)
 cupt, worker: version info installing/removing packages (-V option)
 cupt, worker: implement 'update' action
 state: add trigger-related statuses
+downloader: multi-url downloading
 
 For version 0.3:
 
-worker, downloader: size checks
 downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
 downloader: debdelta integration
