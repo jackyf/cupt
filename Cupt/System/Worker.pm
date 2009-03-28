@@ -510,21 +510,30 @@ sub do_actions ($$) {
 	}
 
 
-	foreach my $action_group (@action_groups) {
-		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
-		# all the actions will have the same action name by algorithm
-		my $action_name = $vertices_group[0]->{'action_name'};
-		print __("simulating"), ": dpkg --$action_name";
-		foreach my $ref_action (@vertices_group) {
-			my $package_expression = $ref_action->{'package_name'};
-			if ($action_name eq 'unpack') {
-				$package_expression .= '<' . $ref_action->{'version_string'} . '>';
-			} elsif ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
-				$action_name = 'purge';
+	if ($simulate) {
+		# ok, just simulating
+		foreach my $action_group (@action_groups) {
+			my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
+			# all the actions will have the same action name by algorithm
+			my $action_name = $vertices_group[0]->{'action_name'};
+			print __("simulating"), ": dpkg --$action_name";
+			foreach my $ref_action (@vertices_group) {
+				my $package_expression = $ref_action->{'package_name'};
+				if ($action_name eq 'unpack') {
+					$package_expression .= '<' . $ref_action->{'version_string'} . '>';
+				} elsif ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
+					$action_name = 'purge';
+				}
+				print " $package_expression";
 			}
-			print " $package_expression";
+			say "";
 		}
-		say "";
+	} else {
+		# do real actions here
+		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
+				mydie("unable to open dpkg lock file: %s", $!);
+		close(LOCK) or
+				mydie("unable to close dpkg lock file: %s", $!);
 	}
 
 	return 1;
