@@ -7,6 +7,7 @@ use warnings;
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
 
+use Graph;
 use constant {
 	PE_VERSION => 0,
 	PE_STICK => 1,
@@ -432,27 +433,23 @@ sub _clean_automatically_installed ($) {
 		}
 		grep { $package_name eq $_ } @{$self->{_config}->var('apt::neverautoremove')} and next;
 		# ok, candidate for removing
-		$candidates_for_remove{$package_name} = 1;
+		$candidates_for_remove{$package_name} = 0;
 	}
 
-	my $last_cleaned;
-	# loop through all dependencies
-	do {
-		$last_cleaned = 0;
-		# this hash will keep names of all packages that are protected by some
-		# other package, so don't need to be removed
-		my %protected_packages;
-		foreach my $other_package_name (keys %$ref_packages) {
-			my $other_version = $ref_packages->{$other_package_name}->[PE_VERSION];
-			defined $other_version or next;
+	my $dependency_graph = new Graph('directed' => 1);
+	my $main_vertex_package_name = "main_vertex";
+	do { # building dependency graph
+		foreach my $package_name (keys %$ref_packages) {
+			my $version = $ref_packages->{$package_name}->[PE_VERSION];
+			defined $version or next;
 			my @valuable_relation_expressions;
-			push @valuable_relation_expressions, @{$other_version->{pre_depends}};
-			push @valuable_relation_expressions, @{$other_version->{depends}};
+			push @valuable_relation_expressions, @{$version->{pre_depends}};
+			push @valuable_relation_expressions, @{$version->{depends}};
 			if ($self->{_config}->var('cupt::resolver::keep-recommends')) {
-				push @valuable_relation_expressions, @{$other_version->{recommends}};
+				push @valuable_relation_expressions, @{$version->{recommends}};
 			}
 			if ($self->{_config}->var('cupt::resolver::keep-suggests')) {
-				push @valuable_relation_expressions, @{$other_version->{suggests}};
+				push @valuable_relation_expressions, @{$version->{suggests}};
 			}
 
 			foreach (@valuable_relation_expressions) {
@@ -460,21 +457,50 @@ sub _clean_automatically_installed ($) {
 				foreach (@$satisfying_versions) {
 					my $candidate_package_name = $_->{package_name};
 					exists $candidates_for_remove{$candidate_package_name} or next;
-					$_->{version_string} eq $ref_packages->{$candidate_package_name}->[PE_VERSION]->{version_string} or next;
+					my $candidate_version = $ref_packages->{$candidate_package_name}->[PE_VERSION];
+					$_->{version_string} eq $candidate_version->{version_string} or next;
 					# well, this is what we need
-					$protected_packages{$candidate_package_name} = 1;
+					if (exists $candidates_for_remove{$package_name}) {
+						# this is a relation between two weak packages
+						$dependency_graph->add_edge($package_name, $candidate_package_name);
+					} else {
+						# this is a relation between installed system and a weak package
+						$dependency_graph->add_edge($main_vertex_package_name, $candidate_package_name);
+					}
+					# counting that candidate package was referenced
+					++$candidates_for_remove{$candidate_package_name};
 				}
 			}
 		}
-		foreach (keys %candidates_for_remove) {
-			if (!exists $protected_packages{$_}) {
-				# this package wasn't marked as protected, we can remove it
-				++$last_cleaned;
-				$ref_packages->{$_}->[PE_VERSION] = undef;
-				delete $candidates_for_remove{$_};
+	};
+
+	do { # looping the candidates
+		# generally speaking, the sane way is to use Graph::TransitiveClosure,
+		# but it's sloooow
+		my %reachable_vertexes;
+		do {
+			my @current_vertexes = ($main_vertex_package_name);
+			while (scalar @current_vertexes) {
+				my $vertex = shift @current_vertexes;
+				if (!exists $reachable_vertexes{$vertex}) {
+					# ok, new vertex
+					$reachable_vertexes{$vertex} = 1;
+					push @current_vertexes, $dependency_graph->successors($vertex);
+				}
 			}
+		};
+		while (my $package_name = each %candidates_for_remove) {
+			my $remove;
+			if ($candidates_for_remove{$package_name}) {
+				# package is in the graph, checking
+				$remove = !exists $reachable_vertexes{$package_name};
+			} else {
+				# remove non-referenced candidates at all
+				$remove = 1;
+			}
+			$ref_packages->{$package_name}->[PE_VERSION] = undef if $remove;
 		}
-	} while $last_cleaned;
+	};
 
 	# also remove dummy package
 	delete $ref_packages->{$_dummy_package_name};
