@@ -425,9 +425,10 @@ sub do_actions ($$) {
 		@action_groups = $scg->topological_sort();
 	};
 
+	my $archives_location = $self->_get_archives_location();
+
 	my @pending_downloads;
 	do { # downloading packages
-		my $archives_location = $self->_get_archives_location();
 		foreach my $action_group (@action_groups) {
 			my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
 			# all the actions will have the same action name by algorithm
@@ -490,7 +491,7 @@ sub do_actions ($$) {
 		if (scalar @pending_downloads) {
 			my @download_list;
 
-			sysopen(LOCK, $self->_get_archives_location() . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 					mydie("unable to open archives lock file: %s", $!);
 
 			my $download_size = sum map { $_->{'size'} } @pending_downloads;
@@ -510,28 +511,40 @@ sub do_actions ($$) {
 	}
 
 
-	if ($simulate) {
-		# ok, just simulating
-		foreach my $action_group (@action_groups) {
-			my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
-			# all the actions will have the same action name by algorithm
-			my $action_name = $vertices_group[0]->{'action_name'};
-			print __("simulating"), ": dpkg --$action_name";
-			foreach my $ref_action (@vertices_group) {
-				my $package_expression = $ref_action->{'package_name'};
-				if ($action_name eq 'unpack') {
-					$package_expression .= '<' . $ref_action->{'version_string'} . '>';
-				} elsif ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
-					$action_name = 'purge';
-				}
-				print " $package_expression";
-			}
-			say "";
-		}
-	} else {
-		# do real actions here
+	# doing or simulating the actions
+	if (!$simulate) {
 		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
 				mydie("unable to open dpkg lock file: %s", $!);
+	}
+	foreach my $action_group (@action_groups) {
+		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
+		# all the actions will have the same action name by algorithm
+		my $action_name = $vertices_group[0]->{'action_name'};
+		if ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
+			$action_name = 'purge';
+		}
+
+		my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
+		my $dpkg_command = "$dpkg_binary --$action_name";
+		foreach my $ref_action (@vertices_group) {
+			my $action_expression;
+			my $package_name = $ref_action->{'package_name'};
+			if ($action_name eq 'unpack') {
+				my $version_string = $ref_action->{'version_string'};
+				my $package = $self->{_cache}->get_binary_package($package_name);
+				my $version = $package->get_specific_version($version_string);
+				$action_expression = $archives_location . '/' .  __get_archive_basename($version);
+			} else {
+				$action_expression = $package_name;
+			}
+			$dpkg_command .= " $action_expression";
+		}
+		if ($simulate) {
+			print __("simulating"), ": $dpkg_command";
+			say "";
+		}
+	}
+	if (!$simulate) {
 		close(LOCK) or
 				mydie("unable to close dpkg lock file: %s", $!);
 	}
