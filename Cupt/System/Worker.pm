@@ -484,7 +484,7 @@ sub do_actions ($$) {
 
 	if ($simulate) {
 		foreach (@pending_downloads) {
-			print __("downloading"), ": $_\n";
+			print __("downloading") . ": " . $_->{'uri'} . "\n";
 		}
 	} else {
 		# don't bother ourselves with download preparings if nothing to download
