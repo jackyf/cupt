@@ -71,7 +71,7 @@ sub perform ($$$$$) {
 		return 0;
 	} else {
 		# something went wrong
-		return $curl_result . $curl->strerror($curl_result);
+		return $curl_result . " " . $curl->strerror($curl_result);
 	}
 }
 
