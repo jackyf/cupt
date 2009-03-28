@@ -10,6 +10,7 @@ debianization: write it
 For version 0.2:
 
 worker: simulating
+worker: provide user-friendly long download alias
 cupt: implement '--installed' option
 downloader, config: support per-host acquire settings
 cupt, worker, resolver: reasoning for installing/removing packages (-D option)
