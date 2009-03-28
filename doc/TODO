@@ -1,6 +1,5 @@
 For version 0.1:
 
-worker: do real actions instead of simulating
 downloader: file protocol
 doc: write tutorial
 worker: write updated info about automatically installed packages
