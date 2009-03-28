@@ -777,9 +777,8 @@ sub manage_packages ($) {
 		# if some solution was found and user has accepted it
 		require Cupt::Download::Progresses::Console;
 		my $download_progess = new Cupt::Download::Progresses::Console;
-		print __("Calculating action call order... ");
+		say __("Performing requested actions:");
 		my $overall_result = $worker->do_actions($download_progess);
-		say __('[done]');
 		mydie("unable to do requested actions") unless $overall_result;
 	} else {
 		say __("no more solutions.");

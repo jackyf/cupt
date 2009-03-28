@@ -542,6 +542,10 @@ sub do_actions ($$) {
 		if ($simulate) {
 			print __("simulating"), ": $dpkg_command";
 			say "";
+		} else {
+			# invoking command
+			system($dpkg_command) == 0 or
+					mydie("dpkg returned non-zero status: %s", $?);
 		}
 	}
 	if (!$simulate) {
