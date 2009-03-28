@@ -512,9 +512,18 @@ sub do_actions ($$) {
 
 
 	# doing or simulating the actions
+	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
+	my $dpkg_pending_actions_command = "$dpkg_binary --configure --pending";
+	my $defer_triggers = $self->{_config}->var('cupt::worker::defer-triggers');
 	if (!$simulate) {
 		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
 				mydie("unable to open dpkg lock file: %s", $!);
+
+		# process pending actions if any
+		system($dpkg_pending_actions_command) == 0 or
+				mydie("dpkg couldn't do pending actions, the system is in inconsistent state, the situation needs manual resolving");
+	} else {
+		say __("simulating"), ": $dpkg_pending_actions_command";
 	}
 	foreach my $action_group (@action_groups) {
 		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
@@ -524,8 +533,8 @@ sub do_actions ($$) {
 			$action_name = 'purge';
 		}
 
-		my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
 		my $dpkg_command = "$dpkg_binary --$action_name";
+		$dpkg_command .= ' --no-triggers' if $defer_triggers;
 		foreach my $ref_action (@vertices_group) {
 			my $action_expression;
 			my $package_name = $ref_action->{'package_name'};
@@ -540,8 +549,7 @@ sub do_actions ($$) {
 			$dpkg_command .= " $action_expression";
 		}
 		if ($simulate) {
-			print __("simulating"), ": $dpkg_command";
-			say "";
+			say __("simulating"), ": $dpkg_command";
 		} else {
 			# invoking command
 			system($dpkg_command) == 0 or
@@ -549,8 +557,18 @@ sub do_actions ($$) {
 		}
 	}
 	if (!$simulate) {
+		if ($defer_triggers) {
+			# triggers were not processed during actions perfomed before, do it now at once
+			system($dpkg_pending_actions_command) == 0 or
+					mydie("error processing triggers");
+		}
+
 		close(LOCK) or
 				mydie("unable to close dpkg lock file: %s", $!);
+	} else {
+		if ($defer_triggers) {
+			say __("simulating"), ": $dpkg_pending_actions_command";
+		}
 	}
 
 	return 1;
