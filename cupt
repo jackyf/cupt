@@ -819,6 +819,8 @@ sub process_options {
 					# regular option
 					$config->set_regular_var($key, $value);
 				}
+			} else {
+				mydie("incorrect option syntax (right is '<option>=<value>')");
 			}
 		}
 	};
