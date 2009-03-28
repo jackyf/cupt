@@ -687,10 +687,13 @@ sub manage_packages ($) {
 
 	my $o_resolver_type;
 	my $o_max_solution_count;
+	my $o_simulate;
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
 		'max-solution-count=s' => \$o_max_solution_count,
+		'simulate|s' => \$o_simulate,
 	);
+	$config->set_regular_var('cupt::worker::simulate' => $o_simulate) if defined $o_simulate;
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
