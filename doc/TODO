@@ -2,7 +2,6 @@ For version 0.1:
 
 downloader: file protocol
 doc: write tutorial
-worker: write updated info about automatically installed packages
 internal: make private member names underscored
 debianization: write it
 
