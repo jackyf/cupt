@@ -346,6 +346,31 @@ sub _fill_action_dependencies ($$$$) {
 	}
 }
 
+=head2 mark_as_automatically_installed
+
+method, marks group of packages as automatically/manually installed
+
+Parameters:
+
+I<value> - boolean value: true - mark as automatically installed, false - mark
+as manually installed
+
+I<package_name>... - array of of package names to mark
+
+=cut
+
+sub mark_as_automatically_installed ($$;@) {
+	my ($self, $markauto, @package_names) = @_;
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+
+	foreach my $package_name (@package_names) {
+		# simulating for now
+		my $prefix = $markauto ?
+				__('marking as automatically installed') : __('marking as manually installed');
+		say __("simulating") . ": $prefix: $package_name";
+	}
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -564,12 +589,16 @@ sub do_actions ($$) {
 				$auto_action = 'unmarkauto';
 			}
 			if (defined $auto_action) {
+				my @package_names_to_mark;
 				foreach my $package_name (@{$auto_status_manipulations{$auto_action}}) {
-					next unless exists $packages_changed{$package_name};
-					# simulating now
-					my $prefix = $auto_action eq 'markauto' ?
-							__('marking as automatically installed') : __('marking as manually installed');
-					say __("simulating") . ": $prefix: $package_name";
+					if (exists $packages_changed{$package_name}) {
+						push @package_names_to_mark, $package_name;
+					}
+				}
+
+				if (scalar @package_names_to_mark) {
+					# mark on unmark as autoinstalled
+					$self->mark_as_automatically_installed($auto_action eq 'markauto', @package_names_to_mark);
 				}
 			}
 		};
