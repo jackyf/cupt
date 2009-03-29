@@ -201,15 +201,15 @@ sub config_dump () {
 }
 
 sub show_package_versions () {
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-
 	my $o_with_release_info = 0;
 	GetOptions(
 		'--with-release-info' => \$o_with_release_info,
 	);
 
 	check_no_more_options();
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my $sub_get_reverse_provides = sub {
 		my ($package_name) = @_;
@@ -308,9 +308,6 @@ sub show_package_versions () {
 }
 
 sub search () {
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 0);
-
 	# turn off relations parsing, we don't need them
 	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
@@ -321,9 +318,12 @@ sub search () {
 		'case-sensitive' => \$o_case_sensitive,
 	);
 
-	my $pattern = shift @ARGV;
 	check_no_more_options();
+	my $pattern = shift @ARGV;
 	check_no_extra_args();
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1, -installed => 0);
 
 	my $regex = $o_case_sensitive ? qr/$pattern/ : qr/$pattern/i;
 
@@ -356,9 +356,6 @@ sub search () {
 sub show_package_relations ($) {
 	my ($mode) = @_;
 
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-
 	# turn off info parsing, we don't need it, only relations :)
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
@@ -368,6 +365,9 @@ sub show_package_relations ($) {
 	);
 
 	check_no_more_options();
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my @versions = map { select_binary_package_version($_) } @ARGV;
 
@@ -475,14 +475,14 @@ sub show_package_relations ($) {
 }
 
 sub policy () {
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-
 	# turn off info and relations parsing, we don't need it
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
 	check_no_more_options();
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my @packages = @ARGV;
 	for my $package_name (@packages) {
@@ -533,9 +533,10 @@ sub policy () {
 sub mark_autoinstalled ($) {
 	use Cupt::System::Worker;
 	my ($mark_action) = @_;
-	build_cache(-source => 0, -binary => 0, -installed => 0);
 
 	check_no_more_options();
+
+	build_cache(-source => 0, -binary => 0, -installed => 0);
 
 	my $worker = new Cupt::System::Worker($config, $cache);
 	my $markauto = $mark_action eq 'markauto' ? 1 : 0;
@@ -543,9 +544,9 @@ sub mark_autoinstalled ($) {
 }
 
 sub pkgnames () {
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-
 	check_no_more_options();
+
+	build_cache(-source => 0, -binary => 1, -installed => 1);
 
 	my $prefix = "";
 	if (scalar @ARGV) {
@@ -709,15 +710,15 @@ sub manage_packages ($) {
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
-	local $| = 1;
-	print __('Building the package cache... ');
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-	say __('[done]');
-
 	# turn off info parsing, we don't need it
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
 	check_no_more_options();
+
+	local $| = 1;
+	print __('Building the package cache... ');
+	build_cache(-source => 0, -binary => 1, -installed => 1);
+	say __('[done]');
 
 	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
