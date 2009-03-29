@@ -929,8 +929,10 @@ sub _resolve ($$) {
 			# build "user-frienly" version of solution
 			my %suggested_packages;
 			foreach my $package_name (keys %$ref_current_packages) {
-				my $version = $ref_current_packages->{$package_name}->[PE_VERSION];
-				$suggested_packages{$package_name}->{version} = $version;
+				my $ref_package_entry = $ref_current_packages->{$package_name};
+				$suggested_packages{$package_name}->{'version'} = $ref_package_entry->[PE_VERSION];
+				$suggested_packages{$package_name}->{'manually_selected'} =
+						$ref_package_entry->[SPE_MANUALLY_SELECTED];
 			}
 
 			# suggest found solution

@@ -20,7 +20,7 @@ I<config> - reference to Cupt::Config
 
 I<cache> - reference to Cupt::Cache
 
-I<desired_state> - { I<package_name> => { 'version' => I<version> } }
+I<desired_state> - { I<package_name> => { 'version' => I<version>, 'manually_selected' => 1 } }
 
 =cut
 
@@ -140,6 +140,8 @@ sub get_actions_preview ($) {
 		'downgrade' => [],
 		'configure' => [],
 		'deconfigure' => [],
+		'markauto' => [],
+		'unmarkauto' => [],
 	);
 
 	if (!defined $self->{desired_state}) {
@@ -147,7 +149,8 @@ sub get_actions_preview ($) {
 	}
 	foreach my $package_name (keys %{$self->{desired_state}}) {
 		my $action;
-		my $supposed_version = $self->{desired_state}->{$package_name}->{version};
+		my $ref_supposed_package_entry = $self->{desired_state}->{$package_name};
+		my $supposed_version = $ref_supposed_package_entry->{'version'};
 		my $ref_installed_info = $self->{_system_state}->get_installed_info($package_name);
 		if (defined $supposed_version) {
 			# some package version is to be installed
@@ -215,6 +218,16 @@ sub get_actions_preview ($) {
 			$ref_entry->{package_name} = $package_name;
 			$ref_entry->{version} = $supposed_version;
 			push @{$result{$action}}, $ref_entry;
+
+			if ($action eq 'remove' || ($action eq 'purge' && $ref_installed_info->{'status'} eq 'installed')) {
+				# in case of removing a package we delete the 'automatically
+				# installed' info regardless was this flag set or not so next
+				# time when this package is installed it has 'clean' info
+				push @{$result{'unmarkauto'}}, $package_name;
+			} elsif ($action eq 'install' && !$ref_supposed_package_entry->{'manually_selected'}) {;
+				# set 'automatically installed' for new non-manually selected packages
+				push @{$result{'markauto'}}, $package_name;
+			}
 		}
 	}
 
@@ -349,6 +362,10 @@ sub do_actions ($$) {
 	my ($self, $download_progress) = @_;
 
 	my @action_groups;
+	my %auto_status_manipulations = (
+		'markauto' => [],
+		'unmarkauto' => [],
+	);
 	my $scg;
 	# building actions graph
 	do {
@@ -356,6 +373,10 @@ sub do_actions ($$) {
 			myinternaldie("worker desired state is not given");
 		}
 		my $ref_actions_preview = $self->get_actions_preview();
+
+		# fill auto status manipulations
+		$auto_status_manipulations{'markauto'} = $ref_actions_preview->{'markauto'};
+		$auto_status_manipulations{'unmarkauto'} = $ref_actions_preview->{'unmarkauto'};
 
 		# action = {
 		# 	'package_name' => package
@@ -529,32 +550,54 @@ sub do_actions ($$) {
 		my @vertices_group = @{$scg->get_vertex_attribute($action_group, 'subvertices')};
 		# all the actions will have the same action name by algorithm
 		my $action_name = $vertices_group[0]->{'action_name'};
+
 		if ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
 			$action_name = 'purge';
 		}
 
-		my $dpkg_command = "$dpkg_binary --$action_name";
-		$dpkg_command .= ' --no-triggers' if $defer_triggers;
-		foreach my $ref_action (@vertices_group) {
-			my $action_expression;
-			my $package_name = $ref_action->{'package_name'};
+		do { # do auto status info manipulations
+			my %packages_changed = map { $_->{'package_name'} => 1 } @vertices_group;
+			my $auto_action; # 'markauto' or 'unmarkauto'
 			if ($action_name eq 'unpack') {
-				my $version_string = $ref_action->{'version_string'};
-				my $package = $self->{_cache}->get_binary_package($package_name);
-				my $version = $package->get_specific_version($version_string);
-				$action_expression = $archives_location . '/' .  __get_archive_basename($version);
-			} else {
-				$action_expression = $package_name;
+				$auto_action = 'markauto';
+			} elsif ($action_name eq 'remove' || $action_name eq 'purge') {
+				$auto_action = 'unmarkauto';
 			}
-			$dpkg_command .= " $action_expression";
-		}
-		if ($simulate) {
-			say __("simulating"), ": $dpkg_command";
-		} else {
-			# invoking command
-			system($dpkg_command) == 0 or
-					mydie("dpkg returned non-zero status: %s", $?);
-		}
+			if (defined $auto_action) {
+				foreach my $package_name (@{$auto_status_manipulations{$auto_action}}) {
+					next unless exists $packages_changed{$package_name};
+					# simulating now
+					my $prefix = $auto_action eq 'markauto' ?
+							__('marking as automatically installed') : __('marking as manually installed');
+					say __("simulating") . ": $prefix: $package_name";
+				}
+			}
+		};
+
+		do { # dpkg action
+			my $dpkg_command = "$dpkg_binary --$action_name";
+			$dpkg_command .= ' --no-triggers' if $defer_triggers;
+			foreach my $ref_action (@vertices_group) {
+				my $action_expression;
+				my $package_name = $ref_action->{'package_name'};
+				if ($action_name eq 'unpack') {
+					my $version_string = $ref_action->{'version_string'};
+					my $package = $self->{_cache}->get_binary_package($package_name);
+					my $version = $package->get_specific_version($version_string);
+					$action_expression = $archives_location . '/' .  __get_archive_basename($version);
+				} else {
+					$action_expression = $package_name;
+				}
+				$dpkg_command .= " $action_expression";
+			}
+			if ($simulate) {
+				say __("simulating"), ": $dpkg_command";
+			} else {
+				# invoking command
+				system($dpkg_command) == 0 or
+						mydie("dpkg returned non-zero status: %s", $?);
+			}
+		};
 	}
 	if (!$simulate) {
 		if ($defer_triggers) {
