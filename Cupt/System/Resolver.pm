@@ -539,9 +539,11 @@ sub _resolve ($$) {
 
 	# [ 'packages' => {
 	#                   package_name... => {
-	#                                        'version' => version,
-	#                                        'stick' (optional),
-	#                                        'manually_selected' (optional),
+	#                                        PE_VERSION => version,
+	#                                        PE_STICK => boolean
+	#                                        PE_FAKE_SATISFIED => [ relation_expression... ]
+	#                                        SPE_MANUALLY_SELECTED => boolean
+	#                                        SPE_INSTALLED => boolean
 	#                                      }
 	#                 }
 	#   'score' => score
