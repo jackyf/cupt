@@ -54,6 +54,8 @@ my %command_handlers = (
 	'satisfy' => \&satisfy,
 	'safe-upgrade' => \&safe_upgrade,
 	'full-upgrade' => \&full_upgrade,
+	'markauto' => sub { mark_autoinstalled('markauto') },
+	'unmarkauto' => sub { mark_autoinstalled('unmarkauto') },
 );
 
 if (defined($command_handlers{$command})) {
@@ -528,6 +530,18 @@ sub policy () {
 	}
 }
 
+sub mark_autoinstalled ($) {
+	use Cupt::System::Worker;
+	my ($mark_action) = @_;
+	build_cache(-source => 0, -binary => 0, -installed => 0);
+
+	check_no_more_options();
+
+	my $worker = new Cupt::System::Worker($config, $cache);
+	my $markauto = $mark_action eq 'markauto' ? 1 : 0;
+	$worker->mark_as_automatically_installed($markauto, @ARGV);
+}
+
 sub pkgnames () {
 	build_cache(-source => 0, -binary => 1, -installed => 1);
 
@@ -691,9 +705,7 @@ sub manage_packages ($) {
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
 		'max-solution-count=s' => \$o_max_solution_count,
-		'simulate|s' => \$o_simulate,
 	);
-	$config->set_regular_var('cupt::worker::simulate' => $o_simulate) if defined $o_simulate;
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
 
@@ -827,6 +839,7 @@ sub process_options {
 			'no-all-versions' => sub { $config->set_regular_var('apt::cache::allversions', 0) },
 			'target-release|default-release|t=s' => sub { $config->set_regular_var('apt::default-release', $_[1]) },
 			'recurse' => sub { $config->set_regular_var('apt::cache::recursedepends', 1) },
+			'simulate|s' => sub { $config->set_regular_var('cupt::worker::simulate' => 1) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {
