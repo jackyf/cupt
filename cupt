@@ -48,12 +48,12 @@ my %command_handlers = (
 	'rdepends' => sub { show_package_relations('reverse') },
 	'policy' => \&policy,
 	'pkgnames' => \&pkgnames,
-	'install' => \&install,
-	'remove' => \&remove,
-	'purge' => \&purge,
-	'satisfy' => \&satisfy,
-	'safe-upgrade' => \&safe_upgrade,
-	'full-upgrade' => \&full_upgrade,
+	'install' => sub { manage_packages('install') },
+	'remove' => sub { manage_packages('remove') },
+	'purge' => sub { manage_packages('purge') },
+	'satisfy' => sub { manage_packages('satisfy') },
+	'safe-upgrade' => sub { manage_packages('safe-upgrade') },
+	'full-upgrade' => sub { manage_packages('full-upgrade') },
 	'markauto' => sub { mark_autoinstalled('markauto') },
 	'unmarkauto' => sub { mark_autoinstalled('unmarkauto') },
 );
@@ -800,34 +800,6 @@ sub manage_packages ($) {
 	}
 }
 
-sub install () {
-	manage_packages('install');
-}
-
-sub remove () {
-	my $o_purge = 0;
-	GetOptions(
-		'purge' => \$o_purge,
-	);
-	manage_packages($o_purge ? 'purge' : 'remove');
-}
-
-sub purge () {
-	manage_packages('purge');
-}
-
-sub satisfy () {
-	manage_packages('satisfy');
-}
-
-sub full_upgrade () {
-	manage_packages('full-upgrade');
-}
-
-sub safe_upgrade () {
-	manage_packages('safe-upgrade');
-}
-
 sub process_options {
 	# strip options out (for now)
 	my @direct_options;
@@ -840,6 +812,7 @@ sub process_options {
 			'target-release|default-release|t=s' => sub { $config->set_regular_var('apt::default-release', $_[1]) },
 			'recurse' => sub { $config->set_regular_var('apt::cache::recursedepends', 1) },
 			'simulate|s' => sub { $config->set_regular_var('cupt::worker::simulate' => 1) },
+			'purge' => sub { $config->set_regular_var('cupt::worker::purge' => 1) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {
