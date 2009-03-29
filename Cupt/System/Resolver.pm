@@ -931,8 +931,9 @@ sub _resolve ($$) {
 			foreach my $package_name (keys %$ref_current_packages) {
 				my $ref_package_entry = $ref_current_packages->{$package_name};
 				$suggested_packages{$package_name}->{'version'} = $ref_package_entry->[PE_VERSION];
+
 				$suggested_packages{$package_name}->{'manually_selected'} =
-						$ref_package_entry->[SPE_MANUALLY_SELECTED];
+						$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED];
 			}
 
 			# suggest found solution
