@@ -296,13 +296,10 @@ sub _fill_actions ($$\@) {
 				#foreach my $package_name (map { $_->{package_name} } @{$ref_actions_preview->{$user_action}}) {
 				my $package_name = $ref_package_entry->{package_name};
 				my $version_string;
-				if ($user_action eq 'install' ||
-					$user_action eq 'upgrade' ||
-					$user_action eq 'downgrade')
-				{
-					$version_string = $ref_package_entry->{'version'}->{version_string};
-				} else {
+				if ($inner_action eq 'remove') {
 					$version_string = $self->{_system_state}->get_installed_version_string($package_name);
+				} else {
+					$version_string = $ref_package_entry->{'version'}->{version_string};
 				}
 				$graph->add_vertex({
 						'package_name' => $package_name,
