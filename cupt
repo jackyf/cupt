@@ -208,9 +208,6 @@ sub show_package_versions () {
 
 	check_no_more_options();
 
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
-
 	my $sub_get_reverse_provides = sub {
 		my ($package_name) = @_;
 
@@ -230,6 +227,12 @@ sub show_package_versions () {
 	};
 
 	my @package_expressions = @ARGV;
+	scalar @package_expressions or
+			mydie("no package expressions specified");
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => 1, -installed => 1);
+
 	foreach my $package_expression (@package_expressions) {
 		my $package_name;
 		my $ref_versions;
