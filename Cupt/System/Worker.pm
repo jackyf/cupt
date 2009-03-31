@@ -642,6 +642,39 @@ sub do_actions ($$) {
 	} else {
 		say __("simulating"), ": $dpkg_pending_actions_command";
 	}
+
+	my $archives_location = $self->_get_archives_location();
+	# performing pre-install actions
+	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
+		# ignore apt-listchanges, at least for now
+		#
+		# how great is to write that "apt-listchanges uses special pipe from
+		# apt" and document nowhere the format of this pipe, so I have to look
+		# through the Python sources (I don't know Python btw) to determine
+		# what the hell should I put to STDIN to satisfy apt-listchanges
+		#
+		# also, it's great idea to have pluggable hooks with different formats,
+		# so a package manager should know about every tool...
+		next if $command =~ /apt-listchanges/;
+
+		# debs are pulled to command through STDIN, one by line
+		my $stdin;
+		foreach my $ref_entry (@{$ref_actions_preview->{'upgrade'}}) {
+			my $version = $ref_entry->{'version'};
+			my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
+			$stdin .= "$deb_location\n";
+		}
+		$command = "echo '$stdin' | $command";
+
+		if ($simulate) {
+			say __("simulating"), ": $command";
+		} else {
+			# invoking command
+			system($command) == 0 or
+					mydie("pre-install action returned non-zero status: %s", $?);
+		}
+	}
+
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
@@ -678,8 +711,7 @@ sub do_actions ($$) {
 			}
 		};
 
-		do { # dpkg action
-			my $archives_location = $self->_get_archives_location();
+		do { # dpkg actions
 			my $dpkg_command = "$dpkg_binary --$action_name";
 			$dpkg_command .= ' --no-triggers' if $defer_triggers;
 			foreach my $ref_action (@$ref_action_group) {
