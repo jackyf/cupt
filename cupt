@@ -323,6 +323,8 @@ sub search () {
 
 	check_no_more_options();
 	my $pattern = shift @ARGV;
+	defined $pattern or
+			mydie("no search patterns specified");
 	check_no_extra_args();
 
 	# we need to build binary-only cache for this operation
