@@ -521,19 +521,22 @@ sub do_actions ($$) {
 	my $ref_actions_preview = $self->get_actions_preview();
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
 	# topologically sorted actions
-	my @action_groups = $action_graph->topological_sort();
+	my @sorted_graph_vertices = $action_graph->topological_sort();
+	my @action_group_list;
+	foreach my $action_vertice (@sorted_graph_vertices) {
+		push @action_group_list, $action_graph->get_vertex_attribute($action_vertice, 'subvertices');
+	}
 
 	my $archives_location = $self->_get_archives_location();
 
 	my @pending_downloads;
 	do { # downloading packages
-		foreach my $action_group (@action_groups) {
-			my @vertices_group = @{$action_graph->get_vertex_attribute($action_group, 'subvertices')};
+		foreach my $ref_action_group (@action_group_list) {
 			# all the actions will have the same action name by algorithm
-			my $action_name = $vertices_group[0]->{'action_name'};
+			my $action_name = $ref_action_group->[0]->{'action_name'};
 			if ($action_name eq 'unpack') {
 				# we have to download this package(s)
-				foreach my $ref_action (@vertices_group) {
+				foreach my $ref_action (@$ref_action_group) {
 					my $package_name = $ref_action->{'package_name'};
 					my $version_string = $ref_action->{'version_string'};
 					my $package = $self->{_cache}->get_binary_package($package_name);
@@ -623,13 +626,12 @@ sub do_actions ($$) {
 	} else {
 		say __("simulating"), ": $dpkg_pending_actions_command";
 	}
-	foreach my $action_group (@action_groups) {
-		my @vertices_group = @{$action_graph->get_vertex_attribute($action_group, 'subvertices')};
+	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
-		my $action_name = $vertices_group[0]->{'action_name'};
+		my $action_name = $ref_action_group->[0]->{'action_name'};
 
 		# check actions equality for groups
-		if (grep { $_->{'action_name'} ne $action_name } @vertices_group) {
+		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
 			myinternaldie("heterogeneous action detected");
 		}
 
@@ -638,7 +640,7 @@ sub do_actions ($$) {
 		}
 
 		do { # do auto status info manipulations
-			my %packages_changed = map { $_->{'package_name'} => 1 } @vertices_group;
+			my %packages_changed = map { $_->{'package_name'} => 1 } @$ref_action_group;
 			my $auto_action; # 'markauto' or 'unmarkauto'
 			if ($action_name eq 'unpack') {
 				$auto_action = 'markauto';
@@ -663,7 +665,7 @@ sub do_actions ($$) {
 		do { # dpkg action
 			my $dpkg_command = "$dpkg_binary --$action_name";
 			$dpkg_command .= ' --no-triggers' if $defer_triggers;
-			foreach my $ref_action (@vertices_group) {
+			foreach my $ref_action (@$ref_action_group) {
 				my $action_expression;
 				my $package_name = $ref_action->{'package_name'};
 				if ($action_name eq 'unpack') {
