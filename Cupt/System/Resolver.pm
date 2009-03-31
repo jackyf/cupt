@@ -586,8 +586,6 @@ sub _resolve ($$) {
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->[PE_VERSION];
 
-		# profit might be already written in third field of action structure by
-		# action chooser
 		my $profit = $ref_action_to_apply->{profit} //
 				$self->_get_action_profit($original_version, $supposed_version);
 		$profit *= $ref_action_to_apply->{koef};
