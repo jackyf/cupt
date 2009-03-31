@@ -503,6 +503,65 @@ sub _build_actions_graph ($$) {
 	return $graph->strongly_connected_graph();
 }
 
+sub _prepare_downloads ($$) {
+	my ($self, $ref_action_group_list, $download_progress) = @_;
+
+	my $archives_location = $self->_get_archives_location();
+
+	my @pending_downloads;
+
+	foreach my $ref_action_group (@$ref_action_group_list) {
+		# all the actions will have the same action name by algorithm
+		my $action_name = $ref_action_group->[0]->{'action_name'};
+		if ($action_name eq 'unpack') {
+			# we have to download this package(s)
+			foreach my $ref_action (@$ref_action_group) {
+				my $package_name = $ref_action->{'package_name'};
+				my $version_string = $ref_action->{'version_string'};
+				my $package = $self->{_cache}->get_binary_package($package_name);
+				my $version = $package->get_specific_version($version_string);
+				# for now, take just first URI
+				my @uris = $version->uris();
+				while ($uris[0] eq "") {
+					# no real URI, just installed, skip it
+					shift @uris;
+				}
+				# we need at least one real URI
+				scalar @uris or
+						mydie("no available download URIs for $package_name $version_string");
+
+				my $uri = $uris[0];
+
+				# target path
+				my $basename = __get_archive_basename($version);
+				my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
+				my $target_filename = $archives_location . '/' . $basename;
+
+				# exclude from downloading packages that are already present
+				next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
+
+				push @pending_downloads, {
+					'uri' => $uri,
+					'filename' => $download_filename,
+					'size' => $version->{size},
+					'post-action' => sub {
+						__verify_hash_sums($version, $download_filename) or
+								do { unlink $download_filename; return __('hash sums mismatch'); };
+						move($download_filename, $target_filename) or
+								return __("unable to move target file: %s", $!);
+
+						# return success
+						return 0;
+					},
+				};
+				$download_progress->set_short_alias_for_uri($uri, $package_name);
+			}
+		}
+	}
+
+	return @pending_downloads;
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -527,59 +586,7 @@ sub do_actions ($$) {
 		push @action_group_list, $action_graph->get_vertex_attribute($action_vertice, 'subvertices');
 	}
 
-	my $archives_location = $self->_get_archives_location();
-
-	my @pending_downloads;
-	do { # downloading packages
-		foreach my $ref_action_group (@action_group_list) {
-			# all the actions will have the same action name by algorithm
-			my $action_name = $ref_action_group->[0]->{'action_name'};
-			if ($action_name eq 'unpack') {
-				# we have to download this package(s)
-				foreach my $ref_action (@$ref_action_group) {
-					my $package_name = $ref_action->{'package_name'};
-					my $version_string = $ref_action->{'version_string'};
-					my $package = $self->{_cache}->get_binary_package($package_name);
-					my $version = $package->get_specific_version($version_string);
-					# for now, take just first URI
-					my @uris = $version->uris();
-					while ($uris[0] eq "") {
-						# no real URI, just installed, skip it
-						shift @uris;
-					}
-					# we need at least one real URI
-					scalar @uris or
-							mydie("no available download URIs for $package_name $version_string");
-
-					my $uri = $uris[0];
-
-					# target path
-					my $basename = __get_archive_basename($version);
-					my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
-					my $target_filename = $archives_location . '/' . $basename;
-
-					# exclude from downloading packages that are already present
-					next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
-
-					push @pending_downloads, {
-						'uri' => $uri,
-						'filename' => $download_filename,
-						'size' => $version->{size},
-						'post-action' => sub {
-							__verify_hash_sums($version, $download_filename) or
-									do { unlink $download_filename; return __('hash sums mismatch'); };
-							move($download_filename, $target_filename) or
-									return __("unable to move target file: %s", $!);
-
-							# return success
-							return 0;
-						},
-					};
-					$download_progress->set_short_alias_for_uri($uri, $package_name);
-				}
-			}
-		}
-	};
+	my @pending_downloads = $self->_prepare_downloads(\@action_group_list, $download_progress);
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
@@ -591,6 +598,8 @@ sub do_actions ($$) {
 		# don't bother ourselves with download preparings if nothing to download
 		if (scalar @pending_downloads) {
 			my @download_list;
+
+			my $archives_location = $self->_get_archives_location();
 
 			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 					mydie("unable to open archives lock file: %s", $!);
@@ -663,6 +672,7 @@ sub do_actions ($$) {
 		};
 
 		do { # dpkg action
+			my $archives_location = $self->_get_archives_location();
 			my $dpkg_command = "$dpkg_binary --$action_name";
 			$dpkg_command .= ' --no-triggers' if $defer_triggers;
 			foreach my $ref_action (@$ref_action_group) {
