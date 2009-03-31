@@ -431,7 +431,7 @@ sub _clean_automatically_installed ($) {
 		} else {
 			$self->{_cache}->is_automatically_installed($package_name) or next;
 		}
-		grep { $package_name eq $_ } @{$self->{_config}->var('apt::neverautoremove')} and next;
+		grep { $package_name eq $_ } $self->{_config}->var('apt::neverautoremove') and next;
 		# ok, candidate for removing
 		$candidates_for_remove{$package_name} = 0;
 	}

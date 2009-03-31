@@ -102,7 +102,7 @@ sub var {
 	if (exists ($self->{regular_vars}->{$var_name})) {
 		return $self->{regular_vars}->{$var_name};
 	} elsif (defined ($self->{list_vars}->{$var_name})) {
-		return $self->{list_vars}->{$var_name};
+		return @{$self->{list_vars}->{$var_name}};
 	} elsif ($self->_is_optional_option($var_name)) {
 		return undef;
 	} else {
