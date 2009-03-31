@@ -827,34 +827,38 @@ sub _resolve ($$) {
 
 							my $other_package_entry = $ref_current_packages->{$other_package_name};
 
-							# does the stick exists?
-							!$other_package_entry->[PE_STICK] or next;
 							# does the package have an installed version?
 							defined($other_package_entry->[PE_VERSION]) or next;
+
 							# is this our version?
 							$other_package_entry->[PE_VERSION]->{version_string} eq $satisfying_version->{version_string} or next;
 
+							# :(
 							$conflict_found = 1;
-							# yes... so change it
-							my $other_package = $self->{_cache}->get_binary_package($other_package_name);
-							foreach my $other_version (@{$other_package->versions()}) {
-								# don't try existing version
-								next if $other_version->{version_string} eq $satisfying_version->{version_string};
 
-								push @possible_actions, {
-									'package_name' => $other_package_name,
-									'version' => $other_version,
-									'koef' => $conflicts_koef,
-								};
-							}
+							# additionally, in case of absense of stick, also contribute to possible actions
+							if (!$other_package_entry->[PE_STICK]) {
+								# so change it
+								my $other_package = $self->{_cache}->get_binary_package($other_package_name);
+								foreach my $other_version (@{$other_package->versions()}) {
+									# don't try existing version
+									next if $other_version->{version_string} eq $satisfying_version->{version_string};
 
-							if ($self->_is_package_can_be_removed($other_package_name)) {
-								# or remove it
-								push @possible_actions, {
-									'package_name' => $other_package_name,
-									'version' => undef,
-									'koef' => $conflicts_koef,
-								};
+									push @possible_actions, {
+										'package_name' => $other_package_name,
+										'version' => $other_version,
+										'koef' => $conflicts_koef,
+									};
+								}
+
+								if ($self->_is_package_can_be_removed($other_package_name)) {
+									# or remove it
+									push @possible_actions, {
+										'package_name' => $other_package_name,
+										'version' => undef,
+										'koef' => $conflicts_koef,
+									};
+								}
 							}
 						}
 
