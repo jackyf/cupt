@@ -313,7 +313,7 @@ sub _fill_actions ($$\@) {
 
 # fills ref_graph with dependencies specified in ref_relations_expressions
 sub _fill_action_dependencies ($$$$) {
-	my ($self, $ref_relation_expressions, $action_name, $ref_inner_action, $graph) = @_;
+	my ($self, $ref_relation_expressions, $action_name, $direction, $ref_inner_action, $graph) = @_;
 
 	foreach my $relation_expression (@$ref_relation_expressions) {
 		my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
@@ -321,6 +321,7 @@ sub _fill_action_dependencies ($$$$) {
 		SATISFYING_VERSIONS:
 		foreach my $other_version (@$ref_satisfying_versions) {
 			my $other_package_name = $other_version->{package_name};
+
 			my $other_version_string = $other_version->{version_string};
 			my %candidate_action = (
 				'package_name' => $other_package_name,
@@ -331,8 +332,8 @@ sub _fill_action_dependencies ($$$$) {
 			foreach my $ref_current_action ($graph->vertices()) {
 				if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 					# it's it!
-					my $ref_master_action = $action_name eq 'remove' ? $ref_current_action : $ref_inner_action;
-					my $ref_slave_action = $action_name eq 'remove' ? $ref_inner_action : $ref_current_action;
+					my $ref_master_action = $direction eq 'after' ? $ref_current_action : $ref_inner_action;
+					my $ref_slave_action = $direction eq 'after' ? $ref_inner_action : $ref_current_action;
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
@@ -425,7 +426,10 @@ sub _build_actions_graph ($$) {
 				my $desired_version = $self->{desired_state}->{$package_name}->{version};
 				# pre-depends must be unpacked before
 				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'unpack', $ref_inner_action, $graph);
+						$desired_version->{pre_depends}, 'unpack', 'before', $ref_inner_action, $graph);
+				# conflicts must be unsatisfied before
+				$self->_fill_action_dependencies(
+						$desired_version->{conflicts}, 'remove', 'before', $ref_inner_action, $graph);
 			}
 			when ('configure') {
 				# configure can be done only after the unpack of the same version
@@ -433,10 +437,13 @@ sub _build_actions_graph ($$) {
 
 				# pre-depends must be configured before
 				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'configure', $ref_inner_action, $graph);
+						$desired_version->{pre_depends}, 'configure', 'before', $ref_inner_action, $graph);
 				# depends must be configured before
 				$self->_fill_action_dependencies(
-						$desired_version->{depends}, 'configure', $ref_inner_action, $graph);
+						$desired_version->{depends}, 'configure', 'before', $ref_inner_action, $graph);
+				# breaks must be unsatisfied before
+				$self->_fill_action_dependencies(
+						$desired_version->{breaks}, 'remove', 'before', $ref_inner_action, $graph);
 
 				# it has also to be unpacked if the same version was not in state 'unpacked'
 				# search for the appropriate unpack action
@@ -457,10 +464,10 @@ sub _build_actions_graph ($$) {
 				my $system_version = $package->get_specific_version($version_string);
 				# pre-depends must be removed after
 				$self->_fill_action_dependencies(
-						$system_version->{pre_depends}, 'remove', $ref_inner_action, $graph);
+						$system_version->{pre_depends}, 'remove', 'after', $ref_inner_action, $graph);
 				# depends must be removed after
 				$self->_fill_action_dependencies(
-						$system_version->{depends}, 'remove', $ref_inner_action, $graph);
+						$system_version->{depends}, 'remove', 'after', $ref_inner_action, $graph);
 			}
 		}
 	}
