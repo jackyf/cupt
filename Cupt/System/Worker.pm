@@ -279,8 +279,8 @@ sub _fill_actions ($$\@) {
 	# user action - action name from actions preview
 	my %user_action_to_inner_actions = (
 		'install' => [ 'unpack', 'configure' ],
-		'upgrade' => [ 'unpack', 'configure' ],
-		'downgrade' => [ 'unpack', 'configure' ],
+		'upgrade' => [ 'remove', 'unpack', 'configure' ],
+		'downgrade' => [ 'remove', 'unpack', 'configure' ],
 		'configure' => [ 'configure' ],
 		'deconfigure' => [ 'remove' ],
 		'remove' => [ 'remove' ],
@@ -489,6 +489,41 @@ sub do_actions ($$) {
 				}
 			}
 		}
+
+		do { # unit all downgrades/upgrades
+			# list of packages affected
+			my @package_names_affected;
+			push @package_names_affected, map { $_->{'package_name'} } @{$ref_actions_preview->{'upgrade'}};
+			push @package_names_affected, map { $_->{'package_name'} } @{$ref_actions_preview->{'downgrade'}};
+
+			# { $package_name => { 'from' => $vertex, 'to' => $vertex } }
+			my %vertex_changes = map { $_ => {} } @package_names_affected;
+
+			# pre-fill the list of downgrades/upgrades vertices
+			foreach my $ref_inner_action ($graph->vertices()) {
+				my $package_name = $ref_inner_action->{'package_name'};
+				if (exists $vertex_changes{$package_name}) {
+					if ($ref_inner_action->{'action_name'} eq 'remove') {
+						$vertex_changes{$package_name}->{'from'} = $ref_inner_action;
+					} elsif ($ref_inner_action->{'action_name'} eq 'unpack') {
+						$vertex_changes{$package_name}->{'to'} = $ref_inner_action;
+					}
+				}
+			}
+
+			# unit!
+			foreach my $ref_change_entry (values %vertex_changes) {
+				my $from = $ref_change_entry->{'from'};
+				my $to = $ref_change_entry->{'to'};
+				for my $successor_vertex ($graph->successors($from)) {
+					$graph->add_edge($to, $successor_vertex);
+				}
+				for my $predecessor_vertex ($graph->predecessors($from)) {
+					$graph->add_edge($predecessor_vertex, $to);
+				}
+				$graph->delete_vertex($from);
+			}
+		};
 
 		$scg = $graph->strongly_connected_graph();
 
