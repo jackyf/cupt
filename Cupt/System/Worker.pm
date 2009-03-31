@@ -636,6 +636,11 @@ sub do_actions ($$) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $vertices_group[0]->{'action_name'};
 
+		# check actions equality for groups
+		if (grep { $_->{'action_name'} ne $action_name } @vertices_group) {
+			myinternaldie("heterogeneous action detected");
+		}
+
 		if ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
 			$action_name = 'purge';
 		}
