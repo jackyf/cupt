@@ -32,4 +32,5 @@ source version: implement
 binary version: implement translated description
 cupt: implement 'why' command
 cupt: implement 'why-not' command
+shell: implement
 
