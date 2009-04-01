@@ -635,12 +635,6 @@ sub do_actions ($$) {
 	if (!$simulate) {
 		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
 				mydie("unable to open dpkg lock file: %s", $!);
-
-		# process pending actions if any
-		system($dpkg_pending_actions_command) == 0 or
-				mydie("dpkg couldn't do pending actions, the system is in inconsistent state, the situation needs manual resolving");
-	} else {
-		say __("simulating"), ": $dpkg_pending_actions_command";
 	}
 
 	my $archives_location = $self->_get_archives_location();
