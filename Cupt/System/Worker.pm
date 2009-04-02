@@ -652,7 +652,7 @@ sub do_actions ($$) {
 		next if $command =~ /apt-listchanges/;
 
 		# debs are pulled to command through STDIN, one by line
-		my $stdin;
+		my $stdin = '';
 		foreach my $ref_entry (@{$ref_actions_preview->{'upgrade'}}) {
 			my $version = $ref_entry->{'version'};
 			my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
