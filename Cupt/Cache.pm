@@ -72,6 +72,8 @@ sub new {
 
 	$self->{_config} = shift;
 	$self->{_pin_settings} = [];
+	$self->{_source_packages} = {};
+	$self->{_binary_packages} = {};
 
 	my $ref_index_entries;
 	eval {
