@@ -582,6 +582,31 @@ sub _generate_stdin_for_apt_listchanges ($$) {
 	my $listchanges_version_string = $self->{_config}->var('dpkg::tools::options::/usr/bin/apt-listchanges::version');
 	$result .= "VERSION $listchanges_version_string\n" if defined $listchanges_version_string;
 
+	do { # writing out a configuration
+		my $config = $self->{_config};
+
+		my $print_key_value = sub {
+			my $key = shift;
+			my $value = shift;
+			defined $value or return;
+			$result .= qq/$key="$value"\n/;
+		};
+
+		my @regular_keys = sort keys %{$config->{regular_vars}};
+		foreach my $key (@regular_keys) {
+			$print_key_value->($key, $config->{regular_vars}->{$key});
+		}
+
+		my @list_keys = sort keys %{$config->{list_vars}};
+		foreach my $key (@list_keys) {
+			my @values = @{$config->{list_vars}->{$key}};
+			foreach (@values) {
+				$print_key_value->("${key}::", $_);
+			}
+		}
+
+		$result .= "\n";
+	};
 	foreach my $ref_action_group (@$ref_action_group_list) {
 		my $action_name = $ref_action_group->[0]->{'action_name'};
 
