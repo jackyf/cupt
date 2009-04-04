@@ -322,37 +322,55 @@ sub search () {
 	);
 
 	check_no_more_options();
-	my $pattern = shift @ARGV;
-	defined $pattern or
+	my @patterns = @ARGV;
+	scalar @patterns or
 			mydie("no search patterns specified");
-	check_no_extra_args();
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 0);
 
-	my $regex = $o_case_sensitive ? qr/$pattern/ : qr/$pattern/i;
+	my @regexes = map { $o_case_sensitive ? qr/$_/ : qr/$_/i } @patterns;
 
 	if ($config->var('apt::cache::namesonly')) {
 		# search only in package names
-		foreach (keys %{$cache->get_binary_packages()}) {
-			if (m/$regex/) {
-				say;
+		foreach my $package_name (keys %{$cache->get_binary_packages()}) {
+			my $matched = 1;
+			foreach my $regex (@regexes) {
+				if ($package_name !~ m/$regex/) {
+					$matched = 0;
+					last;
+				}
 			}
+
+			say $package_name if $matched;
 		}
 	} else {
-		PACKAGE:
 		while (my ($package_name, $package) = each %{$cache->get_binary_packages()}) {
-			if ($package_name =~ m/$regex/) {
-				say $package_name;
-				next;
-			}
-			foreach (@{$package->versions()}) {
-				if ($_->{short_description} =~ m/$regex/ or
-					defined($_->{long_description}) && $_->{long_description} =~ m/$regex/)
-				{
-					say $package_name . " - " . $_->{short_description};
-					next PACKAGE;
+			my $matched = 1;
+			my $version;
+			REGEX:
+			foreach my $regex (@regexes) {
+				if ($package_name =~ m/$regex/) {
+					next REGEX;
+				} else {
+					foreach (@{$package->versions()}) {
+						if ($_->{short_description} =~ m/$regex/ or
+							defined($_->{long_description}) && $_->{long_description} =~ m/$regex/)
+						{
+							$version = $_;
+							next REGEX;
+						}
+					}
 				}
+				$matched = 0;
+				last REGEX;
+			}
+			next if !$matched;
+
+			if (defined $version) {
+				say $package_name . " - " . $version->{short_description} if $matched;
+			} else {
+				say $package_name;
 			}
 		}
 	}
