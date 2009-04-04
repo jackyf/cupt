@@ -631,6 +631,9 @@ sub _generate_stdin_for_apt_listchanges ($$) {
 		}
 	}
 
+	# strip last "\n", because apt-listchanges cannot live with it somewhy
+	chop($result);
+
 	return $result;
 }
 
