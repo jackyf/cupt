@@ -183,7 +183,7 @@ sub config_dump () {
 		my $key = shift;
 		my $value = shift;
 		defined $value or return;
-		print $key, ' ', "\"", $value, "\"\n";
+		print qq/$key "$value"\n/;
 	};
 
 	my @regular_keys = sort keys %{$config->{regular_vars}};
