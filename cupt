@@ -334,14 +334,14 @@ sub search () {
 
 	if ($config->var('apt::cache::namesonly')) {
 		# search only in package names
-		foreach (keys %{$cache->{binary_packages}}) {
+		foreach (keys %{$cache->get_binary_packages()}) {
 			if (m/$regex/) {
 				say;
 			}
 		}
 	} else {
 		PACKAGE:
-		while (my ($package_name, $package) = each %{$cache->{binary_packages}}) {
+		while (my ($package_name, $package) = each %{$cache->get_binary_packages()}) {
 			if ($package_name =~ m/$regex/) {
 				say $package_name;
 				next;
@@ -418,7 +418,7 @@ sub show_package_relations ($) {
 				@relation_expressions_and_packages = map { [ $_, "" ] } @{$version->{$relation_group_name}};
 			} else {
 				# we have to check all reverse dependencies for this version
-				foreach (values %{$cache->{binary_packages}}) {
+				foreach (values %{$cache->get_binary_packages()}) {
 					my $reverse_version_candidate = $cache->get_policy_version($_);
 					my $needed = 0;
 					foreach (@{$reverse_version_candidate->{$relation_group_name}}) {
@@ -566,7 +566,7 @@ sub pkgnames () {
 
 	check_no_extra_args();
 
-	while ((my $package_name) = each %{$cache->{binary_packages}}) {
+	while ((my $package_name) = each %{$cache->get_binary_packages()}) {
 		# check package name for pattern and output it
 		$package_name =~ m/^$prefix/o and say $package_name;
 	}

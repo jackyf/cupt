@@ -24,8 +24,8 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 
 =cut
 
-use fields qw(source_packages binary_packages config pin_settings _system_state
-		can_provide _extended_info);
+use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
+		_can_provide _extended_info);
 
 =head1 FLAGS
 
@@ -70,8 +70,8 @@ sub new {
 	my $class = shift;
 	my $self = fields::new($class);
 
-	$self->{config} = shift;
-	$self->{pin_settings} = [];
+	$self->{_config} = shift;
+	$self->{_pin_settings} = [];
 
 	my $ref_index_entries;
 	eval {
@@ -92,7 +92,7 @@ sub new {
 
 	if ($build_config{'-installed'}) {
 		# read system settings
-		$self->{_system_state} = new Cupt::System::State($self->{config}, $self);
+		$self->{_system_state} = new Cupt::System::State($self->{_config}, $self);
 	}
 
 	my @index_files;
@@ -127,6 +127,19 @@ sub new {
 	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
 	return $self;
+}
+
+=head2 get_binary_packages
+
+method, returns all binary packages as hash reference in form { $package_name
+=> I<pkg> }, where I<pkg> is reference to Cupt::Cache::Pkg
+
+=cut
+
+sub get_binary_packages ($) {
+	my ($self) = @_;
+
+	return $self->{_binary_packages};
 }
 
 =head2 get_system_state
@@ -204,7 +217,7 @@ sub get_pin {
 	}
 
 	# release-dependent settings
-	my $default_release = $self->{config}->var("apt::default-release");
+	my $default_release = $self->{_config}->var("apt::default-release");
 	foreach (@avail_as) {
 		if (defined($default_release)) {
 			if ($_->{release}->{archive} eq $default_release ||
@@ -223,7 +236,7 @@ sub get_pin {
 
 	# looking in pin settings
 	PIN:
-	foreach my $pin (@{$self->{pin_settings}}) {
+	foreach my $pin (@{$self->{_pin_settings}}) {
 		if (exists $pin->{'package_name'}) {
 			my $value = $pin->{'package_name'};
 			$version->{package_name} =~ m/$value/ or next PIN;
@@ -299,8 +312,8 @@ I<package_name> - package name to find
 
 sub get_binary_package {
 	my ($self, $package_name) = @_;
-	if (exists $self->{binary_packages}->{$package_name}) {
-		return $self->{binary_packages}->{$package_name};
+	if (exists $self->{_binary_packages}->{$package_name}) {
+		return $self->{_binary_packages}->{$package_name};
 	} else {
 		return undef;
 	}
@@ -400,9 +413,9 @@ sub _get_satisfying_versions_for_one_relation {
 	}
 
 	# virtual package can only be considered if no relation sign is specified
-	if (!defined($relation->{relation_string}) && exists $self->{can_provide}->{$package_name}) {
+	if (!defined($relation->{relation_string}) && exists $self->{_can_provide}->{$package_name}) {
 		# looking for reverse-provides
-		foreach (@{$self->{can_provide}->{$package_name}}) {
+		foreach (@{$self->{_can_provide}->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
 			defined ($reverse_provide_package) or next;
 			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
@@ -470,7 +483,7 @@ sub _verify_signature ($$) {
 	state %cache;
 	exists $cache{$file} and return $cache{$file};
 
-	my $keyring_file = $self->{config}->var('gpgv::trustedkeyring');
+	my $keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
 
 	my $signature_file = "$file.gpg";
 	-r $signature_file or return 0;
@@ -612,13 +625,13 @@ sub _get_release_info {
 
 sub _parse_sources_lists {
 	my $self = shift;
-	my $root_prefix = $self->{config}->var('dir');
-	my $etc_dir = $self->{config}->var('dir::etc');
+	my $root_prefix = $self->{_config}->var('dir');
+	my $etc_dir = $self->{_config}->var('dir::etc');
 
-	my $parts_dir = $self->{config}->var('dir::etc::sourceparts');
+	my $parts_dir = $self->{_config}->var('dir::etc::sourceparts');
 	my @source_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
-	my $main_file = $self->{config}->var('dir::etc::sourcelist');
+	my $main_file = $self->{_config}->var('dir::etc::sourcelist');
 	push @source_files, "$root_prefix$etc_dir/$main_file";
 
 	my @result;
@@ -754,7 +767,7 @@ sub _parse_preferences {
 		};
 
 		# adding to storage
-		push @{$self->{'pin_settings'}}, \%pin_result;
+		push @{$self->{'_pin_settings'}}, \%pin_result;
 	}
 
 	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
@@ -833,8 +846,8 @@ sub _process_provides_in_index_files {
 
 					foreach (@provides) {
 						# if this entry is new one?
-						if (!grep { $_ eq $package_name } @{$self->{can_provide}->{$_}}) {
-							push @{$self->{can_provide}->{$_}}, $package_name ;
+						if (!grep { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
+							push @{$self->{_can_provide}->{$_}}, $package_name ;
 						}
 					}
 				}
@@ -857,10 +870,10 @@ sub _process_index_file {
 	my $ref_packages_storage;
 	if ($type eq 'deb') {
 		$version_class = 'Cupt::Cache::BinaryVersion';
-		$ref_packages_storage = \$self->{binary_packages};
+		$ref_packages_storage = \$self->{_binary_packages};
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
-		$ref_packages_storage = \$self->{source_packages};
+		$ref_packages_storage = \$self->{_source_packages};
 		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
 		return;
 	}
@@ -907,10 +920,10 @@ sub _path_of_base_uri {
 	$uri_prefix =~ tr[/][_];
 
 	my $dirname = join('',
-		$self->{config}->var('dir'),
-		$self->{config}->var('dir::state'),
+		$self->{_config}->var('dir'),
+		$self->{_config}->var('dir::state'),
 		'/',
-		$self->{config}->var('dir::state::lists')
+		$self->{_config}->var('dir::state::lists')
 	);
 
 	my $base_uri_part = join('_',
@@ -926,7 +939,7 @@ sub _path_of_source_list {
 	my $self = shift;
 	my $entry = shift;
 
-	my $arch = $self->{config}->var('apt::architecture');
+	my $arch = $self->{_config}->var('apt::architecture');
 	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
 
 	my $filename = join('_', $self->_path_of_base_uri($entry), $entry->{'component'}, $suffix);
@@ -946,10 +959,10 @@ sub _path_of_release_list {
 sub _path_of_preferences {
 	my ($self) = @_;
 
-	my $root_prefix = $self->{config}->var('dir');
-	my $etc_dir = $self->{config}->var('dir::etc');
+	my $root_prefix = $self->{_config}->var('dir');
+	my $etc_dir = $self->{_config}->var('dir::etc');
 
-	my $leaf = $self->{config}->var('dir::etc::preferences');
+	my $leaf = $self->{_config}->var('dir::etc::preferences');
 
 	return "$root_prefix$etc_dir/$leaf";
 }
@@ -957,10 +970,10 @@ sub _path_of_preferences {
 sub _path_of_extended_states {
 	my ($self) = @_;
 
-	my $root_prefix = $self->{config}->var('dir');
-	my $etc_dir = $self->{config}->var('dir::state');
+	my $root_prefix = $self->{_config}->var('dir');
+	my $etc_dir = $self->{_config}->var('dir::state');
 
-	my $leaf = $self->{config}->var('dir::state::extendedstates');
+	my $leaf = $self->{_config}->var('dir::state::extendedstates');
 
 	return "$root_prefix$etc_dir/$leaf";
 }

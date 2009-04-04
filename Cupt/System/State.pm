@@ -125,10 +125,10 @@ sub _parse_dpkg_status {
 					# and have full entry info, so add it (info) to cache
 
 					# adding new version to cache
-					$self->{cache}->{binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
+					$self->{cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
 
 					Cupt::Cache::Pkg::add_entry(
-							$self->{cache}->{binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
+							$self->{cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
 							$package_name, $fh, $offset, \$base_uri, \%Cupt::Cache::_empty_release_info);
 
 				}
