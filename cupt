@@ -590,8 +590,8 @@ sub pkgnames () {
 	}
 }
 
-sub generate_management_prompt ($) {
-	my ($worker) = @_;
+sub generate_management_prompt ($$) {
+	my ($worker, $versioned_output) = @_;
 
 	my $sub_prompt = sub {
 		my $ref_desired_packages = $_[0];
@@ -616,8 +616,21 @@ sub generate_management_prompt ($) {
 				my $action_name = $action_names{$action};
 				say sprintf __("The following packages will be %s:"), $action_name;
 				say "";
-				my @package_names_list = sort map { $_->{package_name} } @$ref_package_entries;
-				say "@package_names_list";
+				if ($versioned_output) {
+					foreach my $ref_package_entry (@$ref_package_entries) {
+						my $package_name = $ref_package_entry->{'package_name'};
+						my $old_version_string =
+								$cache->get_system_state()->get_installed_version_string($package_name);
+						$old_version_string = $old_version_string // __("<not installed>");
+						my $new_version = $ref_package_entry->{'version'};
+						my $new_version_string = defined $new_version ?
+								$new_version->{version_string} : __("<not installed>");
+						say "$package_name [$old_version_string -> $new_version_string]";
+					}
+				} else {
+					my @package_names_list = sort map { $_->{package_name} } @$ref_package_entries;
+					say "@package_names_list";
+				}
 				say "";
 			}
 		};
@@ -628,7 +641,7 @@ sub generate_management_prompt ($) {
 			foreach my $action (qw(remove purge deconfigure)) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
 				foreach my $ref_package_entry (@$ref_package_entries) {
-					my $package = $cache->get_binary_package($ref_package_entry->{package_name});
+					my $package = $cache->get_binary_package($ref_package_entry->{'package_name'});
 					my $version = $package->get_installed_version();
 					push @versions_to_remove, $version;
 				}
@@ -731,11 +744,13 @@ sub manage_packages ($) {
 
 	my $o_resolver_type;
 	my $o_max_solution_count;
+	my $o_versioned_output = 0;
 	my $o_simulate;
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
 		'max-solution-count=s' => \$o_max_solution_count,
 		'no-install-recommends|R' => sub { $config->set_regular_var('apt::install-recommends' => 0) },
+		'show-versions|V' => \$o_versioned_output,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
@@ -815,7 +830,7 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Resolving possible unmet dependencies... ');
-	my $resolve_result = $resolver->resolve( generate_management_prompt($worker) );
+	my $resolve_result = $resolver->resolve( generate_management_prompt($worker, $o_versioned_output) );
 
 	if (!defined $resolve_result) {
 		# tryings were abandoned
