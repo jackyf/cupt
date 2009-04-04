@@ -8,18 +8,18 @@ use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 
-use fields qw(config cache _installed_info);
+use fields qw(_config _cache _installed_info);
 
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
 
-	$self->{config} = shift;
-	$self->{cache} = shift;
+	$self->{_config} = shift;
+	$self->{_cache} = shift;
 
 	# in next line we don't use 'dir' and 'dir::state' variables as we do
 	# in all others path builder functions, that's apt decision
-	my $dpkg_status_path = $self->{config}->var('dir::state::status');
+	my $dpkg_status_path = $self->{_config}->var('dir::state::status');
 	if (! -r $dpkg_status_path) {
 		mydie("unable to open dpkg status file '%s'", $dpkg_status_path);
 	}
@@ -125,10 +125,10 @@ sub _parse_dpkg_status {
 					# and have full entry info, so add it (info) to cache
 
 					# adding new version to cache
-					$self->{cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
+					$self->{_cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
 
 					Cupt::Cache::Pkg::add_entry(
-							$self->{cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
+							$self->{_cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
 							$package_name, $fh, $offset, \$base_uri, \%Cupt::Cache::_empty_release_info);
 
 				}
@@ -146,7 +146,7 @@ sub _parse_dpkg_status {
 	close(PACKAGES) or mydie("unable to close grep pipe");
 
 	# additionally, preparse Provides fields for status file
-	$self->{cache}->_process_provides_in_index_files($file);
+	$self->{_cache}->_process_provides_in_index_files($file);
 }
 
 sub get_status_for_version {
@@ -218,7 +218,7 @@ sub export_installed_versions ($) {
 	while (my ($package_name, $ref_installed_info) = each %{$self->{_installed_info}}) {
 		$ref_installed_info->{'status'} eq 'installed' or next;
 		my $version_string = $ref_installed_info->{'version_string'};
-		my $package = $self->{cache}->get_binary_package($package_name);
+		my $package = $self->{_cache}->get_binary_package($package_name);
 		my $version = $package->get_specific_version($version_string);
 		defined $version or
 				mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
