@@ -569,6 +569,46 @@ sub _prepare_downloads ($$) {
 	return @pending_downloads;
 }
 
+sub _generate_stdin_for_apt_listchanges ($$) {
+	# how great is to write that "apt-listchanges uses special pipe from
+	# apt" and document nowhere the format of this pipe, so I have to look
+	# through the Python sources (I don't know Python btw) to determine
+	# what the hell should I put to STDIN to satisfy apt-listchanges
+	#
+	# also, it's great idea to have pluggable hooks with different formats,
+	# so a package manager should know about every tool...
+	my ($self, $ref_action_group_list) = @_;
+	my $result = '';
+	my $listchanges_version_string = $self->{_config}->var('dpkg::tools::options::/usr/bin/apt-listchanges::version');
+	$result .= "VERSION $listchanges_version_string\n" if defined $listchanges_version_string;
+
+	foreach my $ref_action_group (@$ref_action_group_list) {
+		my $action_name = $ref_action_group->[0]->{'action_name'};
+
+		next if $action_name eq 'remove';
+		foreach my $ref_action (@$ref_action_group) {
+			my $package_name = $ref_action->{'package_name'};
+			my $old_version_string = $self->{_cache}->get_system_state()->get_installed_version_string($package_name);
+			next unless defined $old_version_string;
+			my $new_version_string = $ref_action->{'version_string'};
+			# if not an upgrade
+			next if Cupt::Core::compare_version_strings($old_version_string, $new_version_string) != -1;
+			my $filename;
+			if ($action_name eq 'configure') {
+				# apt_listchanges needs special case for that
+				$filename = "**CONFIGURE**";
+			} else {
+				my $package = $self->{_cache}->get_binary_package($package_name);
+				my $version = $package->get_specific_version($new_version_string);
+				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($version);
+			}
+			$result .= "$package_name $old_version_string < $new_version_string $filename\n";
+		}
+	}
+
+	return $result;
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -640,23 +680,18 @@ sub do_actions ($$) {
 	my $archives_location = $self->_get_archives_location();
 	# performing pre-install actions
 	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
-		# ignore apt-listchanges, at least for now
-		#
-		# how great is to write that "apt-listchanges uses special pipe from
-		# apt" and document nowhere the format of this pipe, so I have to look
-		# through the Python sources (I don't know Python btw) to determine
-		# what the hell should I put to STDIN to satisfy apt-listchanges
-		#
-		# also, it's great idea to have pluggable hooks with different formats,
-		# so a package manager should know about every tool...
-		next if $command =~ /apt-listchanges/;
+		my $stdin;
 
-		# debs are pulled to command through STDIN, one by line
-		my $stdin = '';
-		foreach my $ref_entry (@{$ref_actions_preview->{'upgrade'}}) {
-			my $version = $ref_entry->{'version'};
-			my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
-			$stdin .= "$deb_location\n";
+		if ($command =~ /apt-listchanges/) {
+			$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
+		} else {
+			$stdin = '';
+			# debs are pulled to command through STDIN, one by line
+			foreach my $ref_entry (@{$ref_actions_preview->{'upgrade'}}) {
+				my $version = $ref_entry->{'version'};
+				my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
+				$stdin .= "$deb_location\n";
+			}
 		}
 		$command = "echo '$stdin' | $command";
 
