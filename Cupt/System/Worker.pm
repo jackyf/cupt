@@ -14,17 +14,8 @@ use Cupt::Core;
 use Cupt::Download::Manager;
 
 my $_download_partial_suffix = '/partial';
-=head1 FIELDS
 
-I<config> - reference to Cupt::Config
-
-I<cache> - reference to Cupt::Cache
-
-I<desired_state> - { I<package_name> => { 'version' => I<version>, 'manually_selected' => 1 } }
-
-=cut
-
-use fields qw(_config _cache _system_state desired_state);
+use fields qw(_config _cache _system_state _desired_state);
 
 =head1 METHODS
 
@@ -34,8 +25,10 @@ creates the worker
 
 Parameters:
 
-I<config>, I<system_state>. See appropriate fields in FIELDS
-section.
+I<config> - reference to Cupt::Config
+
+I<cache> - reference to Cupt::Cache
+
 
 =cut
 
@@ -45,7 +38,7 @@ sub new {
 	$self->{_config} = shift;
 	$self->{_cache} = shift;
 	$self->{_system_state} = $self->{_cache}->get_system_state();
-	$self->{desired_state} = undef;
+	$self->{_desired_state} = undef;
 	return $self;
 }
 
@@ -55,13 +48,19 @@ member function, sets desired state of the system
 
 Parameters:
 
-I<desired_state> - see FIELDS section for its structure
+I<desired_state> - the desired state after the actions, hash reference:
+
+{ I<package_name> => { 'version' => I<version>, 'manually_selected' => 1 } }
+
+where:
+I<version> - reference to Cupt::Cache::BinaryVersion
+'manually_selected' is optional key
 
 =cut
 
 sub set_desired_state ($$) {
 	my ($self, $ref_desired_state) = @_;
-	$self->{desired_state} = $ref_desired_state;
+	$self->{_desired_state} = $ref_desired_state;
 }
 
 sub _get_archives_location ($) {
@@ -144,12 +143,12 @@ sub get_actions_preview ($) {
 		'unmarkauto' => [],
 	);
 
-	if (!defined $self->{desired_state}) {
+	if (!defined $self->{_desired_state}) {
 		myinternaldie("worker desired state is not given");
 	}
-	foreach my $package_name (keys %{$self->{desired_state}}) {
+	foreach my $package_name (keys %{$self->{_desired_state}}) {
 		my $action;
-		my $ref_supposed_package_entry = $self->{desired_state}->{$package_name};
+		my $ref_supposed_package_entry = $self->{_desired_state}->{$package_name};
 		my $supposed_version = $ref_supposed_package_entry->{'version'};
 		my $ref_installed_info = $self->{_system_state}->get_installed_info($package_name);
 		if (defined $supposed_version) {
@@ -400,7 +399,7 @@ sub mark_as_automatically_installed ($$;@) {
 sub _build_actions_graph ($$) {
 	my ($self, $ref_actions_preview) = @_;
 
-	if (!defined $self->{desired_state}) {
+	if (!defined $self->{_desired_state}) {
 		myinternaldie("worker desired state is not given");
 	}
 
@@ -423,7 +422,7 @@ sub _build_actions_graph ($$) {
 			when ('unpack') {
 				# if the package has pre-depends, they needs to be satisfied before
 				# unpack (policy 7.2)
-				my $desired_version = $self->{desired_state}->{$package_name}->{version};
+				my $desired_version = $self->{_desired_state}->{$package_name}->{version};
 				# pre-depends must be unpacked before
 				$self->_fill_action_dependencies(
 						$desired_version->{pre_depends}, 'unpack', 'before', $ref_inner_action, $graph);
@@ -433,7 +432,7 @@ sub _build_actions_graph ($$) {
 			}
 			when ('configure') {
 				# configure can be done only after the unpack of the same version
-				my $desired_version = $self->{desired_state}->{$package_name}->{version};
+				my $desired_version = $self->{_desired_state}->{$package_name}->{version};
 
 				# pre-depends must be configured before
 				$self->_fill_action_dependencies(
