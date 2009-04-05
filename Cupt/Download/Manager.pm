@@ -243,7 +243,7 @@ I<filename> - target filename, mandatory
 I<post-action> - reference to subroutine that will be called in case of
 successful download, optional
 
-i<size> - fixed size for target, will be used in sanity checks, optional
+I<size> - fixed size for target, will be used in sanity checks, optional
 
 Returns:
 
