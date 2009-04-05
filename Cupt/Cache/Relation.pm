@@ -1,5 +1,11 @@
 package Cupt::Cache::Relation;
 
+=head1 NAME
+
+Cupt::Cache::Relation - store and combine information about package interrelations
+
+=cut
+
 use 5.10.0;
 use strict;
 use warnings;
@@ -103,7 +109,9 @@ sub satisfied_by ($$) {
 	return 1;
 }
 
-=head2
+=head1 METHODS
+
+=head2 parse_relation_expression
 
 free subroutine, parses relation expression in string form, builds relation expression and returns it
 

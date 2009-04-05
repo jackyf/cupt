@@ -1,5 +1,11 @@
 package Cupt::Cache::Pkg;
 
+=head1 NAME
+
+Cupt::Cache::Pkg - store versions of binary or source deb package
+
+=cut
+
 use strict;
 use warnings;
 

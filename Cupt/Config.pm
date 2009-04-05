@@ -1,5 +1,11 @@
 package Cupt::Config;
 
+=head1 NAME
+
+Cupt::Config - store and retrieve APT-like config variables
+
+=cut
+
 use strict;
 use warnings;
 
@@ -96,6 +102,19 @@ sub _is_optional_option ($$) {
 	return 0;
 }
 
+=head1 METHODS
+
+=head2 var
+
+method, returns value of config option - scalar in case of scalar option and
+list in case of list option
+
+Parameters:
+
+I<option_name> - string name of option
+
+=cut
+
 sub var {
 	my $self = shift;
 	my $var_name = shift;
@@ -112,7 +131,7 @@ sub var {
 
 =head2 set_regular_var
 
-method, sets I<option_name> to I<option_value>
+method, sets scalar option I<option_name> to I<option_value>
 
 Parameters:
 
@@ -136,6 +155,20 @@ sub set_regular_var {
 		return 0;
 	}
 }
+
+=head2 set_list_var
+
+method, adds a I<option_value> to a list option I<option_name>
+
+Parameters:
+
+I<option_name> - string option name to advance
+
+I<option_value> - value to add
+
+Returns: true on success, false on fail.
+
+=cut
 
 sub set_list_var {
 	my $self = shift;

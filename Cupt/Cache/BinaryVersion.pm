@@ -1,5 +1,11 @@
 package Cupt::Cache::BinaryVersion;
 
+=head1 NAME
+
+Cupt::Cache::BinaryVersion - store info about specific version of deb binary package
+
+=cut
+
 use 5.10.0;
 use warnings;
 use strict;
@@ -159,6 +165,8 @@ sub is_hashes_equal {
 			$self->{sha1sum} eq $other->{sha1sum} &&
 			$self->{sha256sum} eq $other->{sha256sum});
 }
+
+=head1 METHODS
 
 =head2 uris
 
