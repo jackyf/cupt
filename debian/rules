@@ -1,8 +1,12 @@
 #!/usr/bin/make -f
 
+ifndef PERL
+	PERL=/usr/bin/perl
+endif
+
 build: build-stamp
 build-stamp:
-	dh build
+	$(PERL) Makefile.PL INSTALLDIRS=vendor
 	touch $@
 
 clean:
@@ -10,7 +14,9 @@ clean:
 
 install: install-stamp
 install-stamp: build-stamp
-	dh install
+	dh install --before dh_auto_install
+	$(MAKE) install PREFIX=$(TMP)/usr
+	dh install --after dh_auto_install
 	touch $@
 
 binary-arch:
