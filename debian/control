@@ -1,0 +1,15 @@
+Source: cupt
+Section: perl
+Priority: optional
+Build-Depends: debhelper (>= 7)
+Build-Depends-Indep: perl (>= 5.6.0-12)
+Maintainer: Eugene V. Lyubimkin <jackyf.devel@gmail.com>
+Standards-Version: 3.8.1
+
+Package: libcupt-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
+Description: alternative dpkg frontend modules
+ This is Cupt Perl library which implements alternative 
+ .
+ This description was automagically extracted from the module by dh-make-perl.
