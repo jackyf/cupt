@@ -1,5 +1,9 @@
 #!/usr/bin/perl
 
+BEGIN {
+	unshift @INC, "./";
+}
+
 package main;
 
 use 5.10.0;
