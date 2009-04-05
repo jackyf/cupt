@@ -343,7 +343,7 @@ sub _download ($$$) {
 	);
 	my $protocol = URI->new($uri)->scheme();
 	my $handler_name = $protocol_handlers{$protocol} // 
-			mydie("no protocol download handler defined for $protocol");
+			return sprintf __("no protocol download handler defined for %s"), $protocol;
 
 	my $handler;
 	{
