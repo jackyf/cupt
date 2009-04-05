@@ -15,5 +15,5 @@ my $target = 'cupt_copy';
 my $config = new Cupt::Config;
 my $dmanager = new Cupt::Download::Manager($config, new Cupt::Download::Progress);
 
-is($dmanager->download({ 'uri' => "file://cupt", 'filename' => $target }), 0, "download a file");
+is($dmanager->download({ 'uri' => "file:cupt", 'filename' => $target }), 0, "download a file");
 
