@@ -15,6 +15,7 @@ use fields qw(_config _progress _downloads_done _worker_fh _worker_pid _fifo_dir
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
+use Cupt::Download::Methods::File;
 
 =head1 METHODS
 
