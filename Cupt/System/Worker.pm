@@ -413,7 +413,7 @@ sub _build_actions_graph ($$) {
 	$self->_fill_actions($ref_actions_preview, $graph);
 
 	# maybe, we have nothing to do?
-	return 1 if scalar $graph->vertices() == 0;
+	return undef if scalar $graph->vertices() == 0;
 
 	# fill the actions' dependencies
 	foreach my $ref_inner_action ($graph->vertices()) {
@@ -653,6 +653,8 @@ sub do_actions ($$) {
 
 	my $ref_actions_preview = $self->get_actions_preview();
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
+	# exit when nothing to do
+	defined $action_graph or return 1;
 	# topologically sorted actions
 	my @sorted_graph_vertices = $action_graph->topological_sort();
 	my @action_group_list;
