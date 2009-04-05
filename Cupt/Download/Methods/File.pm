@@ -21,13 +21,13 @@ sub perform ($$$$$) {
 	$sub_callback->('downloading', $total_bytes);
 	
 	# checking and preparing target
-	my $source_filename = URI->new($uri)->fragment;
+	my $source_filename = URI->new($uri)->file();
 	open(my $source_fd, '<', $source_filename) or
 			return sprintf "unable to open file '%s' for reading: %s", $source_filename, $!;
 
-	my $stat = new File::stat($source_fd) or
+	my $stat = stat($source_fd) or
 			return sprintf "unable to stat file '%s': %s", $source_filename, $!;
-	$sub_callback->('expected-size', $stat->size);
+	$sub_callback->('expected-size', $stat->size());
 
 	# writing
 	my $chunk;
@@ -37,7 +37,7 @@ sub perform ($$$$$) {
 		print $fd $chunk or
 				return sprintf "unable to write to file '%s': %s", $filename, $!;
 
-		my $written_bytes = length($_);
+		my $written_bytes = length($chunk);
 		$total_bytes += $written_bytes;
 		$sub_callback->('downloading', $total_bytes);
 	};
