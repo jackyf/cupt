@@ -9,8 +9,8 @@ Standards-Version: 3.8.1
 Package: libcupt-perl
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}
-Description: alternative dpkg front-end modules
- This is a set of Cupt Perl modules implementing dpkg front-end.
+Description: alternative front-end for dpkg modules
+ This is a set of Cupt Perl modules implementing front-end to dpkg.
  See description of 'cupt' package for more information.
 
 Package: cupt
@@ -27,6 +27,11 @@ Description: alternative console front-end for dpkg
  .
  Some features:
   - strict and full-case resolver;
-  - command-line and APT-like options name checker.
+  - command-line and APT-like option name checker;
+  - case-sensitive search;
+  - pinning by source package name;
+  - pinning by package groups using shell-like patterns;
+  - configurable 'depends' and 'rdepends' subcommands;
+  - 'satisfy' subcommand.
  .
  Its interface is mostly like apt-get/aptitude console interface.
