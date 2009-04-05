@@ -8,15 +8,16 @@ Standards-Version: 3.8.1
 
 Package: libcupt-perl
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}
+Depends: ${misc:Depends}, ${perl:Depends}, liburi-perl, libwww-perl (>= 4.05),
+  libgraph-perl, libterm-size-perl, libparse-recdescent-perl
+Recommends: liblocale-gettext
 Description: alternative front-end for dpkg modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
  See description of 'cupt' package for more information.
 
 Package: cupt
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}
-Recommends: liblocale-gettext
+Depends: ${misc:Depends}, ${perl:Depends}, libcupt-perl
 Description: alternative console front-end for dpkg
  This package provides a console interface to Cupt library, which is a
  re-implementation of libapt-pkg C++ library using Perl. The aim is to produce
