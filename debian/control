@@ -2,14 +2,31 @@ Source: cupt
 Section: perl
 Priority: optional
 Build-Depends: debhelper (>= 7)
-Build-Depends-Indep: perl (>= 5.6.0-12)
+Build-Depends-Indep: perl (>= 5.10.0)
 Maintainer: Eugene V. Lyubimkin <jackyf.devel@gmail.com>
 Standards-Version: 3.8.1
 
 Package: libcupt-perl
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}
-Description: alternative dpkg frontend modules
- This is Cupt Perl library which implements alternative 
+Description: alternative dpkg front-end modules
+ This is a set of Cupt Perl modules implementing dpkg front-end.
+ See description of 'cupt' package for more information.
+
+Package: cupt
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}
+Recommends: liblocale-gettext
+Description: alternative console front-end for dpkg
+ This package provides a console interface to Cupt library, which is a
+ re-implementation of libapt-pkg C++ library using Perl. The aim is to produce
+ more strict, more robust, less buggy front-end than APT.
  .
- This description was automagically extracted from the module by dh-make-perl.
+ It uses the same APT infrastructure, e.g. index files, deb cache archive
+ files, configuration files. It understands some of widely used APT options.
+ .
+ Some features:
+  - strict and full-case resolver;
+  - command-line and APT-like options name checker.
+ .
+ Its interface is mostly like apt-get/aptitude console interface.
