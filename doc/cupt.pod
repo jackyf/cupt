@@ -8,5 +8,17 @@ cupt - console package management tool
 
 cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
 
+=head1 ACTIONS
+
+=head2 query actions
+
+=over
+
+=item config-dump
+
+print all configuration variables to standard output
+
+=back
+
 =cut
 
