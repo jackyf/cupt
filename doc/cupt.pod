@@ -16,9 +16,83 @@ cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
 
 =item config-dump
 
-print all configuration variables to standard output
+prints all configuration variables to standard output
+
+=item show
+
+prints version info of specified packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Specific options:
+
+=over
+
+=item --all-versions
+
+print all versions of the package, not selected one
+
+Corresponding configuration variable: L<apt::cache::allversions>
+
+=item --with-release-info
+
+also print information about release info where the version of the package live
 
 =back
+
+Examples:
+
+C<cupt show qmmp>
+
+C<cupt show --all-versions qmmp debianutils>
+
+C<cupt show --with-release-info audacious/testing apt debianutils=2.3.38>
+
+=back
+
+=head1 EXPRESSIONS
+
+This section documents some common expressions used by actions.
+
+=head2 Binary package version expression
+
+I<package_name>[I<modifier>]
+
+selects one version of given binary package.
+
+Possible modifiers:
+
+=over
+
+=item <none>
+
+selects L<policy version|/"Policy version"> of the package
+
+Example: C<audacious>.
+
+=item =<version string>
+
+selects specified version of the package
+
+Example: C<audacious=1.5.1-2>
+
+=item /<distribution>
+
+selects a version from specified distribution (archive name or codename)
+
+Examples: C<audacious/lenny> (by codename), C<audacious/stable> (by archive name)
+
+=item /installed
+
+selects installed version of the package
+
+Example: C<audacious/installed>
+
+=back
+
+=head1 DEFINITIONS
+
+TODO
 
 =cut
 
