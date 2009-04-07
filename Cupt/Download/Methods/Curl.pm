@@ -24,7 +24,7 @@ sub perform ($$$$$) {
 
 	my $curl = new WWW::Curl::Easy;
 	open(my $fd, '>>', $filename) or
-			mydie("unable to open file '%s': %s", $filename, $!);
+			return sprintf "unable to open file '%s': %s", $filename, $!;
 
 	my $total_bytes = tell($fd);
 	$sub_callback->('downloading', $total_bytes);
@@ -68,7 +68,7 @@ sub perform ($$$$$) {
 	my $curl_result = $curl->perform();
 
 	close($fd) or
-			mydie("unable to close file '%s': %s", $filename, $!);
+			return sprintf "unable to close file '%s': %s", $filename, $!;
 
 	if ($curl_result == 0) {
 		# all went ok
