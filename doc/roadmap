@@ -1,10 +1,12 @@
 For version 0.1:
 
-doc: write tutorial
+cupt: preview of changes: hide '<not installed>' for appropriate actions
+libcupt: check return codes of 'write' call
+doc: write man page
 
 For version 0.2:
 
-worker: simulating
+doc: write tutorial
 worker: provide user-friendly long download alias
 cupt: implement '--installed' option
 downloader, config: support per-host acquire settings
@@ -17,7 +19,7 @@ For version 0.3:
 
 downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
-downloader: debdelta integration
+downloader: debdelta integration (or re-implementation)
 worker: check disk available size before downloading
 doc: document the API
 
