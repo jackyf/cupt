@@ -31,9 +31,12 @@ sub perform ($$$$$) {
 
 	my $is_expected_size_reported = 0;
 
+	my $write_error;
+
 	my $sub_writefunction = sub {
 		# writing data to file
-		print $fd $_[0];
+		print $fd $_[0] or
+				do { $write_error = $!; return 0; };
 
 		if (!$is_expected_size_reported) {
 			$sub_callback->('expected-size', $curl->getinfo(CURLINFO_CONTENT_LENGTH_DOWNLOAD) + $total_bytes);
@@ -70,7 +73,9 @@ sub perform ($$$$$) {
 	close($fd) or
 			return sprintf "unable to close file '%s': %s", $filename, $!;
 
-	if ($curl_result == 0) {
+	if (defined $write_error) {
+		return sprintf "unable to write to file '%s': %s", $filename, $write_error;
+	} elsif ($curl_result == 0) {
 		# all went ok
 		return 0;
 	# FIXME: replace 18 with CURLE_PARTIAL_FILE after libwww-curl is advanced to provide it
