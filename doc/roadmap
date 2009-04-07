@@ -4,6 +4,7 @@ cupt: preview of changes: hide '<not installed>' for appropriate actions
 libcupt: check return codes of 'write' call
 doc: write man page
 core: make 'Locale::gettext' dependency optional
+curl download method: not die but return errors
 
 For version 0.2:
 
