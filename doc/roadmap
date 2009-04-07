@@ -3,6 +3,7 @@ For version 0.1:
 cupt: preview of changes: hide '<not installed>' for appropriate actions
 libcupt: check return codes of 'write' call
 doc: write man page
+core: make 'Locale::gettext' dependency optional
 
 For version 0.2:
 
