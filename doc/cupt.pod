@@ -1,0 +1,8 @@
+=pod
+
+=head1 NAME
+
+cupt - console package management tool
+
+=cut
+
