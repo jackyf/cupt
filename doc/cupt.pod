@@ -4,5 +4,9 @@
 
 cupt - console package management tool
 
+=head1 SYNOPSIS
+
+cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
+
 =cut
 
