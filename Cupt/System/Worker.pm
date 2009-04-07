@@ -385,7 +385,8 @@ sub mark_as_automatically_installed ($$;@) {
 
 		# filling new info
 		foreach my $package_name (@refreshed_autoinstalled_packages) {
-			print TEMP "Package: $package_name\nAuto-Installed: 1\n\n";
+			print TEMP "Package: $package_name\nAuto-Installed: 1\n\n" or
+					mydie("unable to write to file '%s': %s", $temp_file, $!);
 		}
 
 		close(TEMP) or
@@ -668,7 +669,7 @@ sub do_actions ($$) {
 
 	if ($simulate) {
 		foreach (@pending_downloads) {
-			print __("downloading") . ": " . $_->{'uri'} . "\n";
+			say __("downloading") . ": " . $_->{'uri'};
 		}
 	} else {
 		# don't bother ourselves with download preparings if nothing to download
