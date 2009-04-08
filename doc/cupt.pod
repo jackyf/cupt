@@ -48,6 +48,40 @@ C<cupt show --all-versions qmmp debianutils>
 
 C<cupt show --with-release-info audacious/testing apt debianutils=2.3.38>
 
+=item search
+
+searches for packages that contains some string within package names and package descriptions
+
+This subcommand receives a list a Perl-compatible Regular Expressions (PCRE) to
+search. Only those packages will be printed that contain all of specified
+patterns.
+
+Specific options:
+
+=over
+
+=item --case-sensitive
+
+search case-sensitively
+
+=item --names-only,-n
+
+search only in package names
+
+Corresponding configuration variable: L<apt::cache::namesonly>
+
+=back
+
+Examples:
+
+C<cupt search nvidia driver>
+
+C<cupt search --case-sensitive Vim>
+
+C<cupt search -n vim>
+
+C<cupt search "package manager">
+
 =back
 
 =head1 EXPRESSIONS
