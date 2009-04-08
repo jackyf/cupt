@@ -418,7 +418,7 @@ sub _clean_automatically_installed ($) {
 	my ($self, $ref_packages) = @_;
 
 	# firstly, prepare all package names that can be potentially removed
-	my $can_autoremove = !$self->{_params}->{'no-remove'} && $self->{_config}->var('cupt::resolver::auto-remove');
+	my $can_autoremove = $self->{_config}->var('cupt::resolver::auto-remove');
 	my %candidates_for_remove;
 	foreach my $package_name (keys %$ref_packages) {
 		my $ref_package_entry = $ref_packages->{$package_name};
@@ -426,11 +426,12 @@ sub _clean_automatically_installed ($) {
 		defined $version or next;
 		!$ref_package_entry->[PE_STICK] or next;
 		!$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] or next;
-		if (!$can_autoremove) {
-			!exists $self->{_old_packages}->{$package_name} or next;
-		} else {
-			$self->{_cache}->is_automatically_installed($package_name) or next;
-		}
+
+		my $can_autoremove_this_package = $can_autoremove ?
+				$self->{_cache}->is_automatically_installed($package_name) : 0;
+		my $package_was_installed = exists $self->{_old_packages}->{$package_name};
+		(!$package_was_installed or $can_autoremove_this_package) or next;
+
 		grep { $package_name eq $_ } $self->{_config}->var('apt::neverautoremove') and next;
 		# ok, candidate for removing
 		$candidates_for_remove{$package_name} = 0;
