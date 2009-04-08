@@ -553,9 +553,9 @@ sub _prepare_downloads ($$) {
 					'size' => $version->{size},
 					'post-action' => sub {
 						__verify_hash_sums($version, $download_filename) or
-								do { unlink $download_filename; return __('hash sums mismatch'); };
+								do { unlink $download_filename; return sprintf __("%s: hash sums mismatch"), $download_filename; };
 						move($download_filename, $target_filename) or
-								return __("unable to move target file: %s", $!);
+								return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
 
 						# return success
 						return 0;
