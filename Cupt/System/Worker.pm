@@ -691,7 +691,7 @@ sub do_actions ($$) {
 					mydie("unable to close archives lock file: %s", $!);
 
 			# fail and exit if it was something bad with downloading
-			return 0 if $download_result;
+			mydie($download_result) if $download_result;
 
 			$download_progress->finish();
 		}
