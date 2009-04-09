@@ -82,6 +82,44 @@ C<cupt search -n vim>
 
 C<cupt search "package manager">
 
+=item depends
+
+prints dependency relation expressions for given version of package
+
+By default prints 'Pre-Depends', 'Depends' and 'Recommends' for the version.
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Specific options:
+
+=over
+
+=item --important
+
+don't take 'Recommends' dependencies into account
+
+Corresponding configuration variable: L<apt::cache::important>
+
+=item --with-suggests
+
+take also 'Suggests' dependencies into account
+
+=item --recurse
+
+process the dependencies recursively
+
+Corresponding configuration variable: L<apt::cache::recursedepends>
+
+=back
+
+Examples:
+
+C<cupt depends nlkt perl/stable>
+
+C<cupt depends --important xserver-xorg-core>
+
+C<cupt depends --recurse xmlto>
+
 =back
 
 =head1 EXPRESSIONS
