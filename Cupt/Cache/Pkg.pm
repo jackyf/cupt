@@ -153,6 +153,14 @@ sub _merge_version {
 
 				# so, adding new "avail_as" info
 				push @{$found_version->{avail_as}}, $parsed_version->{avail_as}->[0];
+
+				if ($found_version->is_installed()) {
+					# merge hashsums that are not available from installed
+					# packages' info
+					$found_version->{md5sum} = $parsed_version->{md5sum};
+					$found_version->{sha1sum} = $parsed_version->{sha1sum};
+					$found_version->{sha256sum} = $parsed_version->{sha256sum};
+				}
 			} else {
 				# err, no, this is different package :(
 				# just skip it for now
