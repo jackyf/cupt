@@ -120,6 +120,10 @@ C<cupt depends --important xserver-xorg-core>
 
 C<cupt depends --recurse xmlto>
 
+=item rdepends
+
+same as L<depends>, but prints reverse relations instead of forward ones
+
 =back
 
 =head1 EXPRESSIONS
