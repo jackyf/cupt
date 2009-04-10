@@ -520,6 +520,12 @@ sub _prepare_downloads ($$) {
 	foreach my $ref_action_group (@$ref_action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
+
+		# check actions equality for groups
+		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
+			myinternaldie("heterogeneous action detected");
+		}
+
 		if ($action_name eq 'unpack') {
 			# we have to download this package(s)
 			foreach my $ref_action (@$ref_action_group) {
@@ -737,11 +743,6 @@ sub do_actions ($$) {
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
-
-		# check actions equality for groups
-		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
-			myinternaldie("heterogeneous action detected");
-		}
 
 		if ($action_name eq 'remove' && $self->{_config}->var('cupt::worker::purge')) {
 			$action_name = 'purge';
