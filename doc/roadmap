@@ -4,6 +4,7 @@ cupt: preview of changes: hide '<not installed>' for appropriate actions
 doc: write man page
 core: make 'Locale::gettext' dependency optional
 worker: warn about bad rights on APT keyring
+debianization: put read rights for APT keyring in postinst
 
 For version 0.2:
 
