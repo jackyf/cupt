@@ -321,7 +321,7 @@ sub __multiline_fair_chooser {
 
 sub __multiline_full_chooser {
 	my ($ref_solution_entries) = @_;
-	# defer the decision until all solution are built
+	# defer the decision until all solutions are built
 	foreach my $idx ($#{$ref_solution_entries}) {
 		if (! $ref_solution_entries->[$idx]->{finished}) {
 			# process it
