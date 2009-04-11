@@ -301,6 +301,11 @@ sub upgrade ($) {
 	}
 }
 
+sub __normalized_score ($) {
+	my ($ref_solution_entry) = @_;
+	return $ref_solution_entry->{'score'} / sqrt($ref_solution_entry->{'level'} + 1);
+}
+
 sub __first_good_chooser {
 	return 0;
 }
@@ -308,11 +313,12 @@ sub __first_good_chooser {
 sub __multiline_fair_chooser {
 	my ($ref_solution_entries) = @_;
 
-	my $max_score = $ref_solution_entries->[0]->{score};
+	my $max_normalized_score = __normalized_score($ref_solution_entries->[0]);
 	my $idx_of_max = 0;
 	foreach my $idx (1..$#{$ref_solution_entries}) {
-		if ($max_score < $ref_solution_entries->[$idx]->{score}) {
-			$max_score = $ref_solution_entries->[$idx]->{score};
+		my $current_normalized_score = __normalized_score($ref_solution_entries->[$idx]);
+		if ($max_normalized_score < $current_normalized_score) {
+			$max_normalized_score = $current_normalized_score;
 			$idx_of_max = $idx;
 		}
 	}
@@ -573,8 +579,8 @@ sub _resolve ($$) {
 		my $ref_solution_entry = $solution_entries[$selected_solution_entry_index];
 		my $level = $ref_solution_entry->{level};
 		my $identifier = $ref_solution_entry->{identifier};
-		my $score = $ref_solution_entry->{score};
-		mydebug(" " x $level . "($identifier:$score) @_");
+		my $normalized_score_string = sprintf "%.1f", __normalized_score($ref_solution_entry);
+		mydebug(" " x $level . "($identifier:$normalized_score_string) @_");
 	};
 
 
