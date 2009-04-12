@@ -17,6 +17,18 @@ use Cupt::Core;
 our @EXPORT_OK = qw(&__parse_relation_line &stringify_relation_expressions
 		&stringify_relation_expression &parse_relation_expression);
 
+=head1 METHODS
+
+=head2 new
+
+creates new Cupt::Cache::Relation object
+
+Parameters:
+
+I<relation_string> - bare relation string (examples: C<nlkt>, C<nlkt (E<gt>= 0.3.1)>
+
+=cut
+
 sub new {
 	my ($class, $unparsed) = @_;
 	my $self = {
@@ -61,6 +73,12 @@ sub new {
 	return $self;
 }
 
+=head2 stringify
+
+method, returns canonical stringified form of the relation
+
+=cut
+
 sub stringify {
 	my $self = shift;
 	my $result = $self->{package_name};
@@ -70,6 +88,16 @@ sub stringify {
 	}
 	return $result;
 }
+
+=head2 stringify_relation_expression
+
+free subroutine, returns canonical stringified form of the L</Relation expression>
+
+Parameters:
+
+I<relation_expression> - L</Relation expression> to stringify
+
+=cut
 
 sub stringify_relation_expression ($) {
 	my $arg = $_[0];
@@ -82,6 +110,16 @@ sub stringify_relation_expression ($) {
 	}
 }
 
+=head2 stringify_relation_expressions
+
+free subroutine, returns canonical stringified form of the L</Relation expression>'s as a line
+
+Parameters:
+
+I<relation_expressions> - [ L</Relation expression> ... ]
+
+=cut
+
 sub stringify_relation_expressions {
 	my @relation_strings;
 	foreach my $object (@{$_[0]}) {
@@ -89,6 +127,16 @@ sub stringify_relation_expressions {
 	}
 	return join(", ", @relation_strings);
 }
+
+=head2 satisfied_by
+
+method, returns whether is this relation satisfied with the supplied version of the relation's package
+
+Parameters:
+
+I<version_string> - version string to check
+
+=cut
 
 sub satisfied_by ($$) {
 	my ($self, $version_string) = @_;
@@ -109,11 +157,9 @@ sub satisfied_by ($$) {
 	return 1;
 }
 
-=head1 METHODS
-
 =head2 parse_relation_expression
 
-free subroutine, parses relation expression in string form, builds relation expression and returns it
+free subroutine, parses relation expression in string form, builds L</Relation expression> and returns it
 
 =cut
 
@@ -141,6 +187,32 @@ sub __parse_relation_line {
 	}
 	return \@result;
 }
+
+=head1 Relation expression
+
+Can be in two forms:
+
+=over
+
+=item *
+
+I<relation>, which stands for single relation
+
+=item *
+
+[ I<relation> ... ], which stands for relation OR group, where only one of relations need to be satisfied
+
+=back
+
+where
+
+I<relation> - Cupt::Cache::Relation object
+
+=head1 SEE ALSO
+
+Debian Policy 7.1
+
+=cut
 
 1;
 
