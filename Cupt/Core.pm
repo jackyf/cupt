@@ -77,7 +77,21 @@ sub mydebug {
 	say STDERR sprintf(shift, @_);
 }
 
+=head1 REGEXES
+
+=head2 package_name_regex
+
+regular expression to check package name string
+
+=cut
+
 our $package_name_regex = qr/[a-z_0-9.+-]+/;
+
+=head2 version_string_regex
+
+regular expression to check version string
+
+=cut
 
 our $version_string_regex =
 	qr/ (?<EPOCH> # name of this match is 'EPOCH'
@@ -175,6 +189,38 @@ sub __compare_version_part ($$) {
 	# oh, we are out of strings here... well, they are equal then
 	return 0;
 };
+
+=head1 SUBROUTINES
+
+=head2 compare_version_strings
+
+free subroutine, compares two version strings
+
+Parameters:
+
+I<first_version_string>
+
+I<second_version_string>
+
+Returns:
+
+=over
+
+=item *
+
+-1, if the I<first_version_string> is less than I<second_version_string>
+
+=item *
+
+0, if the I<first_version_string> is equal to I<second_version_string>
+
+=item *
+
+1, if the I<first_version-string> if greater than I<second_version_string>
+
+=back
+
+=cut
 
 sub compare_version_strings($$) {
 	# version part can be epoch, version and debian revision
