@@ -16,7 +16,7 @@ use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
 use Cupt::System::State;
 
-=head1 FIELDS
+=begin internal
 
 =head2 can_provide
 
@@ -27,6 +27,8 @@ that B<can> provide given I<virtual_package>. Depending of package versions,
 some versions of the some of <package_name>s may provide and may not provide
 given I<virtual_package>. This field exists solely for
 I<get_satisfying_versions> subroutine for rapid lookup.
+
+=end internal
 
 =cut
 
@@ -39,7 +41,7 @@ use fields qw(_source_packages _binary_packages _config _pin_settings _system_st
 
 This flag determines whether it worth trade space for time in time-consuming
 functions. On by default. By now, it affects
-I<get_satisfying_versions> and I<get_sorted_pinned_versions>
+L</get_satisfying_versions> and L</get_sorted_pinned_versions>
 methods. If it's on, it stores references, so B<don't> modify results of these
 functions, use them in read-only mode. It it's on, these functions are not
 thread-safe.
@@ -56,7 +58,7 @@ creates a new Cupt::Cache object
 
 Parameters:
 
-I<config> - reference to Cupt::Config
+I<config> - reference to L<Cupt::Config|Cupt::Config>
 
 Next params are treated as hash-style param list:
 
@@ -140,7 +142,7 @@ sub new {
 =head2 get_binary_packages
 
 method, returns all binary packages as hash reference in form { $package_name
-=> I<pkg> }, where I<pkg> is reference to Cupt::Cache::Pkg
+=> I<pkg> }, where I<pkg> is reference to L<Cupt::Cache::Pkg|Cupt::Cache::Pkg>
 
 =cut
 
@@ -152,7 +154,7 @@ sub get_binary_packages ($) {
 
 =head2 get_system_state
 
-method, returns reference to Cupt::System::State
+method, returns reference to L<Cupt::System::State|Cupt::System::State>
 
 =cut
 
@@ -201,6 +203,16 @@ sub is_automatically_installed ($$) {
 		return 0;
 	}
 }
+
+=head2 get_pin
+
+method, returns pin value for the supplied version
+
+Parameters:
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
 
 sub get_pin {
 	my ($self, $version) = @_;
@@ -309,7 +321,7 @@ sub get_pin {
 
 =head2 get_binary_package
 
-method, returns reference to appropriate Cupt::Cache::Pkg for package name.
+method, returns reference to appropriate L<Cupt::Cache::Pkg|Cupt::Cache::Pkg> for package name.
 Returns undef if there is no such package in cache.
 
 Parameters:
@@ -327,7 +339,24 @@ sub get_binary_package {
 	}
 };
 
-# return array reference of sorted versions by "candidatness" in descending order
+=head2 get_sorted_pinned_versions
+
+method to get sorted by "candidatness" versions in descending order
+
+Parameters:
+
+I<package> - reference to L<Cupt::Cache::Pkg|Cupt::Cache::Pkg>
+
+Returns: [ { 'version' => I<version>, 'pin' => I<pin> }... ]
+
+where:
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+I<pin> - pin value
+
+=cut
+
 sub get_sorted_pinned_versions {
 	my ($self, $package) = @_;
 
@@ -364,13 +393,12 @@ sub get_sorted_pinned_versions {
 
 =head2 get_policy_version
 
-method, returns reference to Cupt::Cache::BinaryVersion or
-Cupt::Cache::SourceVersion (depending on I<package> parameter), this is version
-of I<package>, which to be installed by apt policy
+method, returns reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>, this is the version
+of I<package>, which to be installed by cupt policy
 
 Parameters:
 
-I<package> - reference to Cupt::Cache::Pkg, package to select versions from
+I<package> - reference to L<Cupt::Cache::Pkg|Cupt::Cache::Pkg>, package to select versions from
 
 =cut
 
@@ -444,14 +472,14 @@ sub _get_satisfying_versions_for_one_relation {
 
 =head2 get_satisfying_versions
 
-method, returns reference to array of versions (Cupt::Cache::BinaryVersion)
+method, returns reference to array of L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
 that satisfy relation, if no version can satisfy the relation, returns an
 empty array
 
-Parameters
+Parameters:
 
-I<relation_expression> - reference to Cupt::Cache::Relation, or relation OR
-group (see documentation for Cupt::Cache::Relation for the info about OR
+I<relation_expression> - reference to L<Cupt::Cache::Relation|Cupt::Cache::Relation>, or relation OR
+group (see L<Cupt::Cache::Relation reference|Cupt::Cache::Relation> for the info about OR
 groups)
 
 =cut
