@@ -1,5 +1,15 @@
 package Cupt::Download::Methods::File;
 
+=head1 NAME
+
+Cupt::Download::Methods::File - local file download method for Cupt
+
+=head1 ABSTRACT
+
+Used for handling file:// URIs.
+
+=cut
+
 use strict;
 use warnings;
 use 5.10.0;
