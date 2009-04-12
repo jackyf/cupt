@@ -13,6 +13,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, liburi-perl, libwww-perl (>= 4.05),
 Recommends: liblocale-gettext
 Description: alternative front-end for dpkg modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
+ .
  See description of 'cupt' package for more information.
 
 Package: cupt
