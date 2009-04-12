@@ -625,6 +625,10 @@ sub generate_management_prompt ($$) {
 			say "";
 			foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
+
+				# sort by package name
+				@$ref_package_entries = sort { $a->{'package_name'} cmp $b->{'package_name'} } @$ref_package_entries;
+
 				scalar @$ref_package_entries or next; # don't print empty lists
 				my $action_name = $action_names{$action};
 				say sprintf __("The following packages will be %s:"), $action_name;
@@ -646,7 +650,7 @@ sub generate_management_prompt ($$) {
 						}
 					}
 				} else {
-					my @package_names_list = sort map { $_->{package_name} } @$ref_package_entries;
+					my @package_names_list = map { $_->{package_name} } @$ref_package_entries;
 					say "@package_names_list";
 				}
 				say "";
