@@ -4,6 +4,7 @@ cupt: preview of changes: hide '<not installed>' for appropriate actions
 doc: write man page
 worker: warn about bad rights on APT keyring
 debianization: put read rights for APT keyring in postinst
+all: substitute string interpolation for all to-be-translated strings with sprintf
 
 For version 0.2:
 
