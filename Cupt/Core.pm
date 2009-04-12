@@ -28,7 +28,7 @@ if ($@) {
 }
 
 sub myprint {
-	print sprintf(gettext(shift), @_);
+	print sprintf(__(shift), @_);
 }
 
 sub mywarn {
@@ -53,7 +53,7 @@ sub mydie {
 }
 
 sub myinternaldie {
-	print "E: ", gettext("internal error: ");
+	print "E: ", __("internal error: ");
 	myprint @_;
 	print "\n";
 	exit 255;
