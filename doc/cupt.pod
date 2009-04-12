@@ -136,6 +136,18 @@ C<cupt policy dpkg>
 
 C<cupt policy libpqxx-2.6.9ldbl libpqxx-3.0>
 
+=item pkgnames
+
+prints package names that start with a supplied suffix
+
+If no suffix is given, prints all package names
+
+Examples:
+
+C<cupt pkgnames>
+
+C<cupt pkgnames liba>
+
 =back
 
 =head1 EXPRESSIONS
