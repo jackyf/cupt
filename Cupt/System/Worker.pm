@@ -1,5 +1,11 @@
 package Cupt::System::Worker;
 
+=head1 NAME
+
+Cupt::System::Worker
+
+=cut
+
 use 5.10.0;
 use warnings;
 use strict;
@@ -21,14 +27,13 @@ use fields qw(_config _cache _system_state _desired_state);
 
 =head2 new
 
-creates the worker
+creates new Cupt::System::Worker object
 
 Parameters:
 
-I<config> - reference to Cupt::Config
+I<config> - reference to L<Cupt::Config|Cupt::Config>
 
-I<cache> - reference to Cupt::Cache
-
+I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
 
 =cut
 
@@ -44,7 +49,7 @@ sub new {
 
 =head2 set_desired_state
 
-member function, sets desired state of the system
+method, sets desired state of the system
 
 Parameters:
 
@@ -53,7 +58,9 @@ I<desired_state> - the desired state after the actions, hash reference:
 { I<package_name> => { 'version' => I<version>, 'manually_selected' => 1 } }
 
 where:
-I<version> - reference to Cupt::Cache::BinaryVersion
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
 'manually_selected' is optional key
 
 =cut
@@ -108,7 +115,7 @@ sub __verify_hash_sums ($$) {
 
 =head2 get_actions_preview
 
-member function, returns actions to be done to achieve desired state of the system (I<desired_state>)
+method, returns actions to be done to achieve desired state of the system (I<desired_state>)
 
 Returns:
 
@@ -120,12 +127,15 @@ Returns:
     'downgrade' => I<packages>,
     'configure' => I<packages>,
     'deconfigure' => I<packages>,
-    'total_bytes' => I<total_bytes>,
-    'need_bytes' => I<need_bytes>,
+    'markauto' => [ $package_name ... ]
+    'unmarkauto' => [ $package_name ... ]
   }
 
 where:
-I<packages> = [ { 'package_name' => I<package_name>, 'version' => I<version> }... ]
+
+I<packages> = [ { 'package_name' => $package_name, 'version' => I<version> }... ]
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
 
 =cut
 
@@ -234,6 +244,10 @@ sub get_actions_preview ($) {
 }
 
 =head2 get_sizes_preview
+
+Parameters:
+
+I<ref_actions_preview> - supply result of L</get_actions_preview> here
 
 Returns (I<total_bytes>, I<need_bytes>);
 
