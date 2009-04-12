@@ -1,12 +1,20 @@
 package Cupt::Download::Method;
 
+=head1 NAME
+
+Cupt::Download::Method - base class for all Cupt download methods
+
 =head1 ABSTRACT
 
-Base package of all cupt downloading methods. It should be never instantiated
-directly. If you want to wrote your own download method for Cupt, you are need
-to implement 'perform' method specified under.
+It should be never instantiated directly. If you want to write your own
+download method for Cupt, you are need to implement 'perform' method specified
+under.
 
 =head1 METHODS
+
+=head2 new
+
+creates new Cupt::Download::Method object
 
 =cut
 
