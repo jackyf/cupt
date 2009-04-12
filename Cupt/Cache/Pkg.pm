@@ -19,7 +19,7 @@ use Cupt::Core;
 
 =head2 new
 
-returns a new Cupt::Cache::Pkg object. Usually shouldn't be created by hand.
+returns a new Cupt::Cache::Pkg object. Usually shouldn't be called by hand.
 
 =cut
 
@@ -42,8 +42,10 @@ sub add_entry {
 
 =head2 versions
 
-method, returns reference to array of versions (Cupt::Cache::BinaryVersion or
-Cupt::Cache::SourceVersion) that this package contains
+method, returns reference to array of versions
+(L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
+L<Cupt::Cache::SourceVersion|Cupt::Cache::SourceVersion>) that this package
+contains
 
 =cut
 
@@ -84,7 +86,8 @@ sub versions {
 
 =head2 get_specific_version
 
-method, returns reference to Cupt::Cache::{Binary,Source}Version
+method, returns reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
+L<Cupt::Cache::SourceVersion|Cupt::Cache::SourceVersion>
 (depending on the value of the object), which has specific version string
 
 Parameters:
@@ -103,13 +106,31 @@ sub get_specific_version ($$) {
 	return undef;
 }
 
+=head2 compare_versions
+
+free subroutine, compares two versions by version number
+
+Parameters:
+
+I<first_version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
+L<Cupt::Cache::SourceVersion|Cupt::Cache::SourceVersion>
+
+I<second_verson> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
+L<Cupt::Cache::SourceVersion|Cupt::Cache::SourceVersion>
+
+Returns:
+
+the same as L<Cupt::Core::compare_version_strings|Cupt::Core/compare_version_strings>
+
+=cut
+
 sub compare_versions ($$) {
 	return Cupt::Core::compare_version_strings($_[0]->{version_string}, $_[1]->{version_string});
 }
 
 =head2 get_installed_version
 
-method, returns reference to Cupt::Cache::BinaryVersion which is
+method, returns reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> which is
 installed in the system; if package is not installed, returns undef
 
 =cut
