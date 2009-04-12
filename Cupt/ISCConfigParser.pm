@@ -1,5 +1,12 @@
 package Cupt::ISCConfigParser;
-# This package is modified version of Matt Dainly's BIND::Config::Parser
+
+=head1 NAME
+
+Cupt::ISCConfigParser - parser for bind-like configuration files
+
+=cut
+
+# This package is inspired from Matt Dainly's BIND::Config::Parser
 
 use strict;
 use warnings;
