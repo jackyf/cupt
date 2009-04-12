@@ -1,8 +1,8 @@
-package Cupt::ISCConfigParser;
+package Cupt::Config::ISCConfigParser;
 
 =head1 NAME
 
-Cupt::ISCConfigParser - parser for bind-like configuration files
+Cupt::Config::ISCConfigParser - parser for bind-like configuration files
 
 =cut
 

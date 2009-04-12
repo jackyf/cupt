@@ -9,7 +9,7 @@ Cupt::Config - store and retrieve APT-style config variables
 use strict;
 use warnings;
 
-use Cupt::ISCConfigParser;
+use Cupt::Config::ISCConfigParser;
 use Cupt::Core;
 
 =head1 METHODS
@@ -189,7 +189,7 @@ sub set_list_var {
 
 sub _read_configs {
 	my $self = shift;
-	my $parser = new Cupt::ISCConfigParser;
+	my $parser = new Cupt::Config::ISCConfigParser;
 
 	my $regular_option_sub = sub {
 		my $option_name = shift;
