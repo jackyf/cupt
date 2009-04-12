@@ -1,5 +1,11 @@
 package Cupt::System::State;
 
+=head1 NAME
+
+Cupt::System::State - holds info about installed packages
+
+=cut
+
 use 5.10.0;
 use strict;
 use warnings;
@@ -9,6 +15,20 @@ use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
 
 use fields qw(_config _cache _installed_info);
+
+=head1 METHODS
+
+=head2 new
+
+creates new Cupt::System::State object, usually shouldn't be called by hand
+
+Parameters:
+
+I<config> - reference to L<Cupt::Config|Cupt::Config>
+
+I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
+
+=cut
 
 sub new {
 	my $class = shift;
@@ -149,6 +169,17 @@ sub _parse_dpkg_status {
 	$self->{_cache}->_process_provides_in_index_files($file);
 }
 
+=head2 get_status_for_version
+
+method, return undef if the version isn't installed, installed info otherwise
+(see L</get_installed_info>)
+
+Parameters:
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
+
 sub get_status_for_version {
 	my ($self, $version) = @_;
 	my $package_name = $version->{package_name};
@@ -163,7 +194,7 @@ sub get_status_for_version {
 
 =head2 get_installed_info
 
-contains info of packages which dpkg knows about
+returns installed info of the package
 
 Parameters:
 
@@ -196,7 +227,10 @@ Parameters:
 
 I<package_name> - package name to lookup
 
-Returns: version string of installed version or undef if no version of package is installed
+Returns:
+
+version string of installed version or undef if no version of the
+package is installed
 
 =cut
 
@@ -210,6 +244,17 @@ sub get_installed_version_string ($$) {
 		return undef;
 	}
 }
+
+=head2 export_installed_versions
+
+method, returns array reference of installed I<version>s (for those packages
+that have configured version in the system)
+
+where:
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
 
 sub export_installed_versions ($) {
 	my ($self) = @_;
