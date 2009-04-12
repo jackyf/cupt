@@ -333,7 +333,16 @@ sub search () {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 0);
 
-	my @regexes = map { $o_case_sensitive ? qr/$_/ : qr/$_/i } @patterns;
+	my @regexes;
+	foreach my $pattern (@patterns) {
+		eval {
+			push @regexes, ($o_case_sensitive ? qr/$pattern/ : qr/$pattern/i);
+		};
+		if ($@) {
+			# something was bad with regex compilation
+			mydie("regular expression '%s' is not valid", $pattern);
+		}
+	}
 
 	if ($config->var('apt::cache::namesonly')) {
 		# search only in package names
