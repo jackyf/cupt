@@ -10,6 +10,9 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Memoize;
+memoize('_verify_signature');
+
 use Cupt::Core;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::BinaryVersion;
@@ -516,9 +519,6 @@ our %_empty_release_info = (
 sub _verify_signature ($$) {
 	my ($self, $file) = @_;
 
-	state %cache;
-	exists $cache{$file} and return $cache{$file};
-
 	my $keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
 
 	my $signature_file = "$file.gpg";
@@ -609,7 +609,6 @@ sub _verify_signature ($$) {
 	close(GPG_VERIFY) or $! == 0 or
 			mydie("unable to close gpg pipe: $!");
 
-	$cache{$file} = $verify_result;
 	return $verify_result;
 }
 
