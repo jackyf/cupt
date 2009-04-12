@@ -1,5 +1,11 @@
 package Cupt::System::Resolver;
 
+=head1 NAME
+
+Cupt::System::Resolver - dependency problem resolver for Cupt
+
+=cut
+
 use 5.10.0;
 use strict;
 use warnings;
@@ -18,15 +24,15 @@ use constant {
 
 our $_dummy_package_name = "dummy_package_name";
 
-=begin comment
+=begin internal
 
-=head2 pending_relations
+=head2 _pending_relations
 
 array of relations which are to be satisfied by final resolver, used for
 filling depends, recommends (optionally), suggests (optionally) of requested
 packages, or for satisfying some requested relations
 
-=end comment
+=end internal
 
 =cut
 
@@ -35,7 +41,7 @@ use fields qw(_config _cache _params _old_packages _packages _pending_relations
 
 =head1 PARAMS
 
-parameters that change resolver's behaviour, can be set by C<set_params> method
+parameters that change resolver's behaviour, can be set by L</set_params> method
 
 =head2 no-remove
 
@@ -79,13 +85,13 @@ prepare to play with increasing this option accordingly.
 
 =head2 new
 
-creates new resolver
+creates new Cupt::System::Resolver object
 
 Parameters: 
 
-I<config> - reference to Cupt::Config
+I<config> - reference to L<Cupt::Config|Cupt::Config>
 
-I<cache> - reference to Cupt::Cache
+I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
 
 =cut
 
@@ -113,7 +119,7 @@ sub new {
 
 =head2 set_params
 
-member function, sets params for the resolver
+method, sets params for the resolver
 
 Parameters: hash (as list) of params and their values
 
@@ -130,17 +136,6 @@ sub set_params {
 	}
 }
 
-=head2 import_installed_versions
-
-member function, imports already installed versions, usually used in pair with
-C<&Cupt::System::State::export_installed_versions>
-
-Parameters: 
-
-I<ref_versions> - reference to array of Cupt::Cache::BinaryVersion
-
-=cut
-
 sub _create_new_package_entry ($$) {
 	my ($self, $package_name) = @_;
 	return if exists $self->{_packages}->{$package_name};
@@ -151,6 +146,17 @@ sub _create_new_package_entry ($$) {
 	$package_entry->[SPE_MANUALLY_SELECTED] = 0;
 	$package_entry->[SPE_INSTALLED] = 0;
 }
+
+=head2 import_installed_versions
+
+method, imports already installed versions, usually used in pair with
+L<&Cupt::System::State::export_installed_versions|Cupt::System::State/export_installed_versions>
+
+Parameters:
+
+I<ref_versions> - reference to array of L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
 
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
@@ -209,11 +215,11 @@ sub _install_version_no_stick ($$) {
 
 =head2 install_version
 
-member function, installs a new version with requested depends
+method, installs a new version with requested dependencies
 
 Parameters:
 
-I<version> - reference to Cupt::Cache::BinaryVersion
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
 
 =cut
 
@@ -226,13 +232,11 @@ sub install_version ($$) {
 
 =head2 satisfy_relation
 
-method, installs all needed versions to satisfy relation or relation group
+method, installs all needed versions to satisfy L<relation expression|Cupt::Cache::Relation/Relation expression>
 
 Parameters:
 
-I<relation_expression> - reference to Cupt::Cache::Relation, or relation OR
-group (see documentation for Cupt::Cache::Relation for the info about OR
-groups)
+I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
 
 =cut
 
@@ -261,7 +265,7 @@ sub _auto_satisfy_relation ($$) {
 
 =head2 remove_package
 
-member function, removes a package
+method, removes a package
 
 Parameters:
 
@@ -282,9 +286,7 @@ sub remove_package ($$) {
 
 =head2 upgrade
 
-member function, schedule upgrade of as much packages in system as possible
-
-No parameters.
+method, schedule upgrade of as much packages in system as possible
 
 =cut
 
@@ -1047,16 +1049,12 @@ sub _resolve ($$) {
 
 =head2 resolve
 
-member function, finds a solution for requested actions
+method, finds a solution for requested actions
 
 Parameters:
 
-I<sub_accept> - reference to subroutine which have return true if solution is
-accepted, and false otherwise
-
-Returns:
-
-true if some solution was found and accepted, false otherwise
+I<sub_accept> - reference to subroutine which has to return true if solution is
+accepted, false if solution is rejected, undef if user abandoned further searches
 
 =cut
 
