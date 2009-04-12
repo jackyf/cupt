@@ -15,10 +15,6 @@ use Locale::gettext;
 
 *__ = *gettext;
 
-#sub __ {
-#	return gettext(shift);
-#}
-
 textdomain("cupt");
 
 sub myprint {
