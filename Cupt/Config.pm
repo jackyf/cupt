@@ -2,7 +2,7 @@ package Cupt::Config;
 
 =head1 NAME
 
-Cupt::Config - store and retrieve APT-like config variables
+Cupt::Config - store and retrieve APT-style config variables
 
 =cut
 
@@ -11,6 +11,14 @@ use warnings;
 
 use Cupt::ISCConfigParser;
 use Cupt::Core;
+
+=head1 METHODS
+
+=head2 new
+
+creates a new Cupt::Config object
+
+=cut
 
 sub new {
 	my $class = shift;
@@ -101,8 +109,6 @@ sub _is_optional_option ($$) {
 	}
 	return 0;
 }
-
-=head1 METHODS
 
 =head2 var
 
