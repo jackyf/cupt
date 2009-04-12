@@ -1,5 +1,11 @@
 package Cupt::Download::Manager;
 
+=head1 NAME
+
+Cupt::Download::Manager - file download manager for Cupt
+
+=cut
+
 use 5.10.0;
 use strict;
 use warnings;
@@ -16,20 +22,6 @@ use fields qw(_config _progress _downloads_done _worker_fh _worker_pid _fifo_dir
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
 use Cupt::Download::Methods::File;
-
-=head1 METHODS
-
-=head2 new
-
-creates new Cupt::Download::Manager and returns reference to it
-
-Parameters:
-
-I<config> - reference to Cupt::Config
-
-I<progress> - reference to subclass of Cupt::Download::Progress
-
-=cut
 
 sub __my_write_pipe ($@) {
 	my $fh = shift;
@@ -49,6 +41,20 @@ sub __my_read_pipe ($) {
 	sysread $fh, $string, $len;
 	return split(chr(0), $string);
 }
+
+=head1 METHODS
+
+=head2 new
+
+creates new Cupt::Download::Manager and returns reference to it
+
+Parameters:
+
+I<config> - reference to L<Cupt::Config|Cupt::Config>
+
+I<progress> - reference to object of subclass of L<Cupt::Download::Progress|Cupt::Download::Progress>
+
+=cut
 
 sub new ($$$) {
 	my $class = shift;
@@ -248,7 +254,7 @@ I<size> - fixed size for target, will be used in sanity checks, optional
 
 Returns:
 
-I<result> - '0' on success, otherwise the string determines the reason,
+I<result> - '0' on success, otherwise the string that contains the fail reason,
 
 Example:
 
