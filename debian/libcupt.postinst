@@ -3,5 +3,5 @@
 set -e
 
 # only public keys, why not readable by all?
-chmod +r /etc/apt/trusted.gpg
+chmod a+r /etc/apt/trusted.gpg
 
