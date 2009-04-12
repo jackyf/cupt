@@ -66,7 +66,7 @@ sub new {
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'gpgv::trustedkeyring' => '/etc/apt/trusted.gpg',
 
-			'cupt::downloader::max-simultaneous-downloads' => 4,
+			'cupt::downloader::max-simultaneous-downloads' => 3,
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::auto-remove' => 1,
