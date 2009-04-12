@@ -522,7 +522,16 @@ sub _verify_signature ($$) {
 	my $keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
 
 	my $signature_file = "$file.gpg";
-	-r $signature_file or return 0;
+	-r $signature_file or
+			return 0;
+
+	-r $keyring_file or
+			do {
+				mywarn("no read rights on keyring file '%s', please do 'chmod +r %s' with root rights",
+						$keyring_file, $keyring_file);
+				return 0;
+			};
+
 	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
 			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
 			mydie("unable to open gpg pipe: $!");
