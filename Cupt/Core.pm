@@ -11,11 +11,21 @@ our @EXPORT = qw(
 	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
 	$package_name_regex $version_string_regex &human_readable_size_string &__);
 
-use Locale::gettext;
-
-*__ = *gettext;
-
-textdomain("cupt");
+# configuring the translator
+eval {
+	require Locale::gettext;
+};
+if ($@) {
+	# require failed, most probably, we don't have Locale::gettext installed
+	*__ = sub { $_[0] };
+} else {
+	# require succeeded
+	Locale::gettext::textdomain("cupt");
+	do {
+		no warnings;
+		*__ = *Locale::gettext::gettext;
+	};
+}
 
 sub myprint {
 	print sprintf(gettext(shift), @_);
