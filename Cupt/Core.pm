@@ -1,5 +1,11 @@
 package Cupt::Core;
 
+=head1 NAME
+
+Cupt::Core - core subroutines for Cupt
+
+=cut
+
 INIT { require Carp; $SIG{__WARN__} = \&Carp::confess; $SIG{__DIE__} = \&Carp::confess; }
 
 use 5.10.0;
