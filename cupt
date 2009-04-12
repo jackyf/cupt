@@ -454,9 +454,9 @@ sub show_package_relations ($) {
 					my $needed = 0;
 					foreach (@{$reverse_version_candidate->{$relation_group_name}}) {
 						# check each relation
-						if (ref $_ ne 'ARRAY' && $_->{package_name} eq $package_name) {
+						if (ref $_ ne 'ARRAY' && $_->package_name eq $package_name) {
 							# don't worry about any virtual packages, just check the relation
-							if (!defined $_->{relation_string}) {
+							if (!defined $_->relation_string) {
 								# there is no versioned info in relation, all's ok
 								$needed = 1;
 							} elsif ($_->satisfied_by($version_string)) {

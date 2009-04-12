@@ -418,7 +418,7 @@ sub get_policy_version {
 
 sub _get_satisfying_versions_for_one_relation {
 	my ($self, $relation) = @_;
-	my $package_name = $relation->{package_name};
+	my $package_name = $relation->package_name;
 
 	my @result;
 	state %cache;
@@ -428,8 +428,8 @@ sub _get_satisfying_versions_for_one_relation {
 		my $key = join(",",
 				$self,
 				$package_name,
-				$relation->{relation_string} // "",
-				$relation->{version_string} // ""
+				$relation->relation_string // "",
+				$relation->version_string // ""
 		);
 		if (exists $cache{$key}) {
 			return @{$cache{$key}};
@@ -452,7 +452,7 @@ sub _get_satisfying_versions_for_one_relation {
 	}
 
 	# virtual package can only be considered if no relation sign is specified
-	if (!defined($relation->{relation_string}) && exists $self->{_can_provide}->{$package_name}) {
+	if (!defined($relation->relation_string) && exists $self->{_can_provide}->{$package_name}) {
 		# looking for reverse-provides
 		foreach (@{$self->{_can_provide}->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
