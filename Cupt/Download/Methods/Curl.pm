@@ -1,5 +1,15 @@
 package Cupt::Download::Methods::Curl;
 
+=head1 NAME
+
+Cupt::Download::Methods::Curl - download method for Cupt using libwww-curl
+
+=head1 ABSTRACT
+
+May be used for handling http, https, ftp schemes.
+
+=cut
+
 use strict;
 use warnings;
 use 5.10.0;
