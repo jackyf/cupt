@@ -1,12 +1,15 @@
 package Cupt::Download::Progress;
 
-=head1 ABSTRACT
+=head1 NAME
 
-Base class for possible download progess meters
-
-=cut
+Cupt::Download::Progress - base class for download progess meters
 
 =head1 METHODS
+
+=head2 new
+
+creates new Cupt::Download::Progress object; should be called by subclass
+creating methods before all other actions
 
 =cut
 
@@ -77,21 +80,21 @@ Parameters:
 I<uri> - URI of the download
 
 Next parameters are the same as specified for the callback function for the
-'perform' method of the Cupt::Download::Method class, consult its
+'perform' method of the L<Cupt::Download::Method|Cupt::Download::Method> class, consult its
 documentation.
 
 Exceptions:
 
-=over 1
+=over
 
-=item
+=item *
 
 I<start> - message turns download start
 
 I<size> - size in bytes of the download, can be skipped if it's unknown before
 the download
 
-=item
+=item *
 
 I<done> - message turns download finish
 
