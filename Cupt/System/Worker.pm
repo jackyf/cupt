@@ -2,7 +2,7 @@ package Cupt::System::Worker;
 
 =head1 NAME
 
-Cupt::System::Worker
+Cupt::System::Worker - system modifier for Cupt
 
 =cut
 
