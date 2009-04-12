@@ -1013,5 +1013,11 @@ sub _path_of_extended_states {
 	return "$root_prefix$etc_dir/$leaf";
 }
 
+=head1 Release info
+
+TODO
+
+=cut
+
 1;
 

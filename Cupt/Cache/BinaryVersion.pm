@@ -13,9 +13,47 @@ use strict;
 use Cupt::Core;
 use Cupt::Cache::Relation qw(__parse_relation_line);
 
-# parsing options
-our $o_no_parse_relations = 0; # don't parse depends, recommends, conflicts etc
-our $o_no_parse_info_onlys = 0; # don't parse maintainer, descriptions, tag, homepage
+=head1 FLAGS
+
+=head2 o_no_parse_relations
+
+Option to don't parse dependency relation between packages, can speed-up
+parsing the version if this info isn't needed. Off by default.
+
+=cut
+
+our $o_no_parse_relations = 0;
+
+=head2 o_no_parse_info_onlys
+
+Option to don't parse 'Maintainer', 'Description', 'Tag', 'Homepage', can
+speed-up parsing the version if this info isn't needed. Off by default.
+
+=cut
+
+our $o_no_parse_info_onlys = 0;
+
+=head1 METHODS
+
+=head2 new
+
+creates an Cupt::Cache::BinaryVersion
+
+Parameters:
+
+I<initializer_argument> - [ $package_name, I<fh>, I<offset>, I<ref_base_uri>, I<ref_release_info> ]
+
+where
+
+I<fh> - file handle to opened file that contains version entry
+
+I<offset> - offset in bytes to locate version entry in I<fh>, may include 'Package:' line or not
+
+I<ref_base_uri> - reference to first base download URI for this version
+
+I<ref_release_info> - reference to L<release info|Cupt::Cache/Release info>
+
+=cut
 
 sub new {
 	my ($class, $ref_arg) = @_;
@@ -170,8 +208,8 @@ sub is_hashes_equal {
 
 =head2 uris
 
-method, returs array of available URIs to download the version .deb. Array can
-contain empty string in case version is installed in the system
+method, returs array of available URIs to download the version .deb. This array
+can contain empty string in case version is installed in the system
 
 =cut
 
@@ -216,7 +254,7 @@ sub is_signed ($$) {
 
 =head2 is_installed
 
-member function, returns whether this version is installed in the system or not
+method, returns whether this version is installed in the system or not
 
 =cut
 
