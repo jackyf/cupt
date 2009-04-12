@@ -1,5 +1,11 @@
 package Cupt::Download::Progresses::Console;
 
+=head1 NAME
+
+Cupt::Download::Progresses::Console - console download progress for Cupt
+
+=cut
+
 use 5.10.0;
 use warnings;
 use strict;
