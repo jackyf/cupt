@@ -524,6 +524,43 @@ sub _build_actions_graph ($$) {
 	return $graph->strongly_connected_graph();
 }
 
+sub __split_heterogeneous_actions (@) {
+	my @action_group_list = @_;
+
+	my @new_action_group_list;
+	foreach my $ref_action_group (@action_group_list) {
+		# all the actions will have the same action name by algorithm
+		my $action_name = $ref_action_group->[0]->{'action_name'};
+		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
+			# heterogeneous actions
+			my %subgroups = ('remove' => [], 'unpack' => [], 'configure' => []);
+
+			# split by action names
+			map { push @{$subgroups{$_->{'action_name'}}}, $_ } @$ref_action_group;
+
+			# set needed dpkg flags to first action in action group
+			if (@{$subgroups{'remove'}}) {
+				$subgroups{'remove'}->[0]->{'dpkg_flags'} = ' --force-depends';
+			}
+			if (@{$subgroups{'unpack'}}) {
+				$subgroups{'unpack'}->[0]->{'dpkg_flags'} = ' --force-depends';
+			}
+
+			# pushing by one
+			foreach my $subgroup (@subgroups{'remove','unpack','configure'}) {
+				# push if there are some actions in group
+				push @new_action_group_list, $subgroup if @$subgroup;
+			}
+
+			# unset dpkg flags in last pushed group
+			delete $new_action_group_list[0]->[0]->{'dpkg_flags'};
+		} else {
+			push @new_action_group_list, $ref_action_group;
+		}
+	}
+	return @new_action_group_list;
+}
+
 sub _prepare_downloads ($$) {
 	my ($self, $ref_action_group_list, $download_progress) = @_;
 
@@ -534,11 +571,6 @@ sub _prepare_downloads ($$) {
 	foreach my $ref_action_group (@$ref_action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
-
-		# check actions equality for groups
-		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
-			myinternaldie("heterogeneous action detected");
-		}
 
 		if ($action_name eq 'unpack') {
 			# we have to download this package(s)
@@ -683,6 +715,8 @@ sub do_actions ($$) {
 		push @action_group_list, $action_graph->get_vertex_attribute($action_vertice, 'subvertices');
 	}
 
+	@action_group_list = __split_heterogeneous_actions(@action_group_list);
+
 	my @pending_downloads = $self->_prepare_downloads(\@action_group_list, $download_progress);
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
@@ -788,6 +822,9 @@ sub do_actions ($$) {
 		do { # dpkg actions
 			my $dpkg_command = "$dpkg_binary --$action_name";
 			$dpkg_command .= ' --no-triggers' if $defer_triggers;
+			# add necessary options if requested
+			$dpkg_command .= $ref_action_group->[0]->{'dpkg_flags'} // "";
+
 			foreach my $ref_action (@$ref_action_group) {
 				my $action_expression;
 				my $package_name = $ref_action->{'package_name'};
