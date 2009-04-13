@@ -551,9 +551,6 @@ sub __split_heterogeneous_actions (@) {
 				# push if there are some actions in group
 				push @new_action_group_list, $subgroup if @$subgroup;
 			}
-
-			# unset dpkg flags in last pushed group
-			delete $new_action_group_list[$#new_action_group_list]->[0]->{'dpkg_flags'};
 		} else {
 			push @new_action_group_list, $ref_action_group;
 		}
