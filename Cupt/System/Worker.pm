@@ -553,7 +553,7 @@ sub __split_heterogeneous_actions (@) {
 			}
 
 			# unset dpkg flags in last pushed group
-			delete $new_action_group_list[0]->[0]->{'dpkg_flags'};
+			delete $new_action_group_list[$#new_action_group_list]->[0]->{'dpkg_flags'};
 		} else {
 			push @new_action_group_list, $ref_action_group;
 		}
