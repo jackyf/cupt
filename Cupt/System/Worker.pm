@@ -751,7 +751,6 @@ sub do_actions ($$) {
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
-	my $dpkg_pending_actions_command = "$dpkg_binary --configure --pending";
 	my $defer_triggers = $self->{_config}->var('cupt::worker::defer-triggers');
 	if (!$simulate) {
 		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
@@ -844,10 +843,11 @@ sub do_actions ($$) {
 			}
 		};
 	}
+	my $dpkg_pending_triggers_command = "$dpkg_binary --triggers-only --pending";
 	if (!$simulate) {
 		if ($defer_triggers) {
 			# triggers were not processed during actions perfomed before, do it now at once
-			system($dpkg_pending_actions_command) == 0 or
+			system($dpkg_pending_triggers_command) == 0 or
 					mydie("error processing triggers");
 		}
 
@@ -855,7 +855,7 @@ sub do_actions ($$) {
 				mydie("unable to close dpkg lock file: %s", $!);
 	} else {
 		if ($defer_triggers) {
-			say __("simulating"), ": $dpkg_pending_actions_command";
+			say __("simulating"), ": $dpkg_pending_triggers_command";
 		}
 	}
 
