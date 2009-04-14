@@ -57,7 +57,8 @@ sub _parse_dpkg_status {
 	#    c) <status> - current status of package
 	#       can be: not-installed, unpacked, half-configured,
 	#               half-installed, config-files, post-inst-failed, 
-	#               removal-failed, installed
+	#               removal-failed, installed, triggers-pending,
+	#               triggers-awaited
 	# 2) purged packages contain only 'Package', 'Status', 'Priority'
 	#    and 'Section' fields.
 
@@ -129,6 +130,9 @@ sub _parse_dpkg_status {
 			};
 			do { # check 'status'
 				local $_ = $installed_info{'status'};
+				if (m/^trigger/) {
+					mydie("some dpkg triggers are not processed, please run 'dpkg --triggers-only -a' as root");
+				}
 				if ($_ ne 'not-installed' and $_ ne 'unpacked' and
 					$_ ne 'half-configured' and $_ ne 'half-installed' and
 					$_ ne 'config-files' and $_ ne 'post-inst-failed' and
