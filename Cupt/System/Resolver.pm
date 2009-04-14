@@ -959,7 +959,15 @@ sub _resolve ($$) {
 			}
 
 			# sort them by "rank", from more bad to more good
-			@possible_actions = sort { $a->{profit} <=> $b->{profit} } @possible_actions;
+			do {
+				use sort 'stable';
+				# don't try to remove 'reverse' and swap $a <-> $b
+				#
+				# using stable sort and reversing guarantees that possible
+				# actions with equal profits will be processed in generated
+				# order
+				@possible_actions = reverse sort { $b->{profit} <=> $a->{profit} } @possible_actions;
+			};
 
 			my @forked_solution_entries;
 			# fork the solution entry and apply all the solutions by one
