@@ -281,6 +281,12 @@ Example: C<audacious/installed>
 
 =over
 
+=item --option=,-o
+
+sets specified configuration option, syntax: "<name>=<value>"
+
+Example: C<cupt remove nlkt -o 'cupt::resolver::keep-recommends=0'>
+
 =item --purge
 
 when removing packages, also delete their configuration files
