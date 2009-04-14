@@ -205,7 +205,7 @@ Returns:
     'want' => I<want>,
     'flag' => I<flag>,
     'status' => I<status>,
-	'version_string' => I<version_string>,
+    'version_string' => I<version_string>,
   }
 
 if info is present, undef otherwise
