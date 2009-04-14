@@ -94,12 +94,6 @@ Specific options:
 
 =over
 
-=item --important
-
-don't take 'Recommends' dependencies into account
-
-Corresponding configuration variable: L<apt::cache::important>
-
 =item --with-suggests
 
 take also 'Suggests' dependencies into account
@@ -147,6 +141,18 @@ Examples:
 C<cupt pkgnames>
 
 C<cupt pkgnames liba>
+
+=back
+
+=head3 query-specific options
+
+=over
+
+=item --important,-i
+
+don't take 'Recommends' dependencies into account
+
+Corresponding configuration variable: L<apt::cache::important>
 
 =back
 
