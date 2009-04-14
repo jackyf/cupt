@@ -660,7 +660,7 @@ sub generate_management_prompt ($$) {
 		do {
 			my @unsatisfied_soft_dependencies;
 			my @versions_to_remove;
-			foreach my $action (qw(remove purge deconfigure)) {
+			foreach my $action (qw(remove purge)) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
 				foreach my $ref_package_entry (@$ref_package_entries) {
 					my $package = $cache->get_binary_package($ref_package_entry->{'package_name'});
