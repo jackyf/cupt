@@ -768,11 +768,13 @@ sub manage_packages ($) {
 	my $o_max_solution_count;
 	my $o_versioned_output = 0;
 	my $o_simulate;
+	my $o_install_unpacked;
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
 		'max-solution-count=s' => \$o_max_solution_count,
 		'no-install-recommends|R' => sub { $config->set_regular_var('apt::install-recommends' => 0) },
 		'show-versions|V' => \$o_versioned_output,
+		'install-unpacked' => \$o_install_unpacked,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
@@ -810,6 +812,22 @@ sub manage_packages ($) {
 	if ($action eq 'purge') {
 		$action = 'remove';
 		$config->set_regular_var('cupt::worker::purge', 1)
+	}
+
+	if (defined $o_install_unpacked) {
+		# find all unpacked packages and install them if the appropriate
+		# version exist
+
+		my $system_state = $cache->get_system_state();
+		foreach my $package_name (keys %{$cache->get_binary_packages()}) {
+			my $ref_install_info = $system_state->get_installed_info($package_name);
+			next unless defined $ref_install_info;
+			next if $ref_install_info->{'status'} ne 'unpacked';
+			my $version_string = $ref_install_info->{'version_string'};
+			my $version = $cache->get_binary_package($package_name)->get_specific_version($version_string);
+			next unless defined $version;
+			$resolver->install_version($version);
+		}
 	}
 
 	my @package_expressions = @ARGV;
