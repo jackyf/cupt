@@ -28,9 +28,15 @@ Specific options:
 
 =over
 
-=item --all-versions
+=item --all-versions,-a
 
 print all versions of the package, not selected one
+
+Corresponding configuration variable: L<apt::cache::allversions>
+
+=item --no-all-versions
+
+don't print all versions of the package, use only selected one
 
 Corresponding configuration variable: L<apt::cache::allversions>
 
