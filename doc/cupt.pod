@@ -10,7 +10,7 @@ cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
 
 =head1 ACTIONS
 
-=head2 query actions
+=head2 Query actions
 
 =over
 
@@ -150,6 +150,93 @@ C<cupt pkgnames liba>
 
 =back
 
+=head2 Management actions
+
+=over
+
+=item install
+
+installs, upgrades or downgrades specified packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+If some version of package was already installed, this command will
+upgrade/downgrade it; otherwise, the package will be freshly installed.
+
+Examples:
+
+C<cupt install nlkt>
+
+C<cupt install devscripts xserver-xorg/experimental xfce4-mixer=4.6.0-2>
+
+=item remove
+
+removes specified packages
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt remove nlkt>
+
+C<cupt remove devscripts kde4-minimal>
+
+=back
+
+=head3 management-specific options
+
+=over
+
+=item --resolver=
+
+string, determines type of resolver: can be
+
+=over
+
+=item first-good
+
+most stupid resolver. At each problem situation, chooses the best solution for
+this situation. No lookings ahead. Works pretty good for simple install requests and
+for one-repository system.
+
+=item multiline-fair
+
+medium-class resolver. It chooses best possible solution (by overall score)
+each time. This is a default resolver.
+
+=item multiline-full
+
+full resolver. Guaranteed to suggest solution in precise order from the best to
+the worst result score (by the resolver's opinion). Latter means that resolver
+builds full resolve tree before suggesting the solutions, which means large RAM
+and speed penalties. Use it with caution.
+
+=back
+
+=item --max-solution-count=
+
+number, determines how many maximum solutions will resolver store in memory. This
+option prevents large memory grows by purging away solutions with worst scores.
+Defaults to 256.  Note that very complex requests or requests on
+multi-repository system will increase size of solution tree dramatically, so
+prepare to play with increasing this option accordingly.
+
+=item --no-install-recommends,-R
+
+cupt installs recommended packages by default, this option cancels described behavior
+
+Corresponding configuration option: L<apt::install-recommends>
+
+=item --show-versions,-V
+
+when displaying actions preview prompt, display also versions of packages
+
+=back
+
+=head3 management modifiers
+
+TODO
+
 =head1 EXPRESSIONS
 
 This section documents some common expressions used by actions.
@@ -187,6 +274,20 @@ Examples: C<audacious/lenny> (by codename), C<audacious/stable> (by archive name
 selects installed version of the package
 
 Example: C<audacious/installed>
+
+=back
+
+=head1 COMMON OPTIONS
+
+=over
+
+=item --purge
+
+when removing packages, also delete their configuration files
+
+Corresponding configuration option: L<cupt::worker::purge>
+
+=item TODO
 
 =back
 

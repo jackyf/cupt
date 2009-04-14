@@ -49,37 +49,11 @@ disallows removing packages for resolving dependencies
 
 =head2 resolver-type
 
-determines type of resolver: can be
-
-=over
-
-=item first-good
-
-most stupid resolver. At each problem situation, chooses the best solution for
-this situation. No lookings ahead. Works pretty good for simple install requests and
-for one-repository system.
-
-=item multiline-fair
-
-medium-class resolver. It chooses best possible solution (by overall score)
-each time. This is a default resolver.
-
-=item multiline-full
-
-full resolver. Guaranteed to suggest solution in precise order from the best to
-the worst result score (by the resolver's opinion). Latter means that resolver
-builds full resolve tree before suggesting the solutions, which means large RAM
-and speed penalties. Use it with caution.
-
-=back
+see L<cupt manual|cupt/--resolver=>
 
 =head2 max-solution-count
 
-determines how many maximum solutions will resolver store in memory. This
-option prevents large memory grows by purging away solutions with worst scores.
-Defaults to 256.  Note that very complex requests or requests on
-multi-repository system will increase size of solution tree dramatically, so
-prepare to play with increasing this option accordingly.
+see L<cupt manual|cupt/--max-resolver-count=>
 
 =head1 METHODS
 
