@@ -11,6 +11,7 @@ Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, liburi-perl, libwww-perl (>= 4.05),
   libgraph-perl, libterm-size-perl, libparse-recdescent-perl
 Recommends: liblocale-gettext
+Suggests: cupt
 Description: alternative front-end for dpkg modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
  .
