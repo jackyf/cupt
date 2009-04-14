@@ -307,6 +307,12 @@ Corresponding configuration option: L<apt::default-release>
 
 Examples: C<cupt install -t unstable xserver-xorg>, C<cupt -t squeeze full-upgrade>
 
+=item --simulate,-s
+
+don't modify anything in the system, just print supposed actions
+
+Doesn't require root privileges.
+
 =item --purge
 
 when removing packages, also delete their configuration files
