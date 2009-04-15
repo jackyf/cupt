@@ -1,6 +1,5 @@
 For version 0.1:
 
-doc: write man page
 all: substitute string interpolation for all to-be-translated strings with sprintf
 
 For version 0.2:
