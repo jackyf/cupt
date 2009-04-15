@@ -65,7 +65,7 @@ sub new ($$$) {
 
 	# making fifo storage dir if it's absend
 	$self->{_fifo_dir} = File::Temp::tempdir('cupt-XXXXXX', CLEANUP => 1, TMPDIR => 1) or
-			mydie("unable to create temporary directory for fifo storage: $!");
+			mydie("unable to create temporary directory for fifo storage: %s", $!);
 
 	my $worker_fh;
 	my $pid;
