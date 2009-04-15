@@ -65,7 +65,7 @@ sub parse_file {
 	my $self = shift;
 	my $conffile = shift;
 
-	open(FILE, $conffile) or mydie("unable to open file %s: %s", $conffile, $!);
+	open(FILE, $conffile) or mydie("unable to open file '%s': %s", $conffile, $!);
 	my $text = join("", <FILE>);
 	close FILE;
 
