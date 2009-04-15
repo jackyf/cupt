@@ -896,7 +896,7 @@ sub _process_provides_in_index_files {
 				}
 			}
 			close(FILE) or
-					mydie("unable to close file '$file'");
+					mydie("unable to close file '%s'", $file");
 		}
 	};
 	if (mycatch()) {
