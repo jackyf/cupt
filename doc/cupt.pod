@@ -193,6 +193,19 @@ C<cupt remove nlkt>
 
 C<cupt remove devscripts kde4-minimal>
 
+=item satisfy
+
+performs all needed operations to satisfy list of specified relations
+
+This subcommand receives the list of relations. Relation has the same syntax as
+defined in Debian Policy, 7.1.
+
+Examples:
+
+C<< cupt satisfy "kmail (>= 4:4.2)" >>
+
+C<< cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)" >>
+
 =back
 
 =head3 management-specific options
