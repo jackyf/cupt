@@ -70,7 +70,7 @@ sub parse_file {
 	close FILE;
 
 	defined( my $tree = $self->{'_parser'}->program($text) )
-		or mydie("bad config in file %s", $conffile);
+		or mydie("bad config in file '%s'", $conffile);
 
 	$self->_recurse($tree, "");
 }
