@@ -607,7 +607,7 @@ sub _verify_signature ($$) {
 	}
 
 	close(GPG_VERIFY) or $! == 0 or
-			mydie("unable to close gpg pipe: $!");
+			mydie("unable to close gpg pipe: %s", $!);
 
 	return $verify_result;
 }
