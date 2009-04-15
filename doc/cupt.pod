@@ -310,7 +310,30 @@ upgrades
 
 =head3 management modifiers
 
-TODO
+=over
+
+=item -
+
+remove the package, can be used in non-remove actions
+
+Examples:
+
+C<cupt install kde4 icewm-> - install the package
+'kde4' and remove the package 'icewm' simultaneously.
+
+C<cupt full-upgrade iceweasel- icedove-> - upgrade the system, deleting iceweasel and icedove
+
+=item +
+
+install the package, can be used in remove actions
+
+Examples:
+
+C<cupt remove kde konqueror+> - remove kde, but install/upgrade konqueror
+
+C<cupt remove kde konqueror/installed+> - remove kde, but install/leave konqueror
+
+=back
 
 =head1 EXPRESSIONS
 
