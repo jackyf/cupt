@@ -121,7 +121,7 @@ sub new ($$$) {
 						# new query appeared
 						($uri, $filename, my $waiter_fifo) = @params;
 						open($waiter_fh, ">", $waiter_fifo) or
-								mydie("unable to connect to download fifo for '$uri' -> '$filename': $!");
+								mydie("unable to connect to download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
 						autoflush $waiter_fh;
 						# check if this download was already done
 						if (exists $done_downloads{$uri}) {
