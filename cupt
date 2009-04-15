@@ -631,7 +631,7 @@ sub generate_management_prompt ($$) {
 
 				scalar @$ref_package_entries or next; # don't print empty lists
 				my $action_name = $action_names{$action};
-				say sprintf __("The following packages will be %s:"), $action_name;
+				say sprintf __("The following %u packages will be %s:"), scalar @$ref_package_entries, $action_name;
 				say "";
 				if ($versioned_output) {
 					foreach my $ref_package_entry (@$ref_package_entries) {
@@ -732,8 +732,7 @@ sub generate_management_prompt ($$) {
 			}
 		}
 
-		# print size estimation
-		do {
+		do { # print size estimation
 			my ($total_bytes, $need_bytes) = $worker->get_sizes_preview($ref_actions_preview);
 			say sprintf __("Need to get %s/%s of archives."),
 					human_readable_size_string($need_bytes),
