@@ -584,7 +584,7 @@ sub _prepare_downloads ($$) {
 				}
 				# we need at least one real URI
 				scalar @uris or
-						mydie("no available download URIs for $package_name $version_string");
+						mydie("no available download URIs for %s %s", $package_name, $version_string);
 
 				my $uri = $uris[0];
 
