@@ -193,6 +193,27 @@ C<cupt remove nlkt>
 
 C<cupt remove devscripts kde4-minimal>
 
+=item full-upgrade
+
+performs as more upgrades of the installed packages as possible, the
+recommended way to do upgrades
+
+This subcommand is usually invoked without any further parameters:
+
+C<cupt full-upgrade>
+
+List of L</"Binary package version expression">'s can be however specified as additional parameters.
+
+Example: the command C<cupt full-upgrade xserver-xorg/installed> will try to upgrade
+your system, however preserving package 'xserver-xorg' to be sticked with
+currently installed version.
+
+=item safe-upgrade
+
+the same as L<full-upgrade>, but with the change that problem resolver won't
+try to remove non-automatically installed packages in order to upgrade more
+packages
+
 =item satisfy
 
 performs all needed operations to satisfy list of specified relations
