@@ -16,3 +16,4 @@ Managing packages:
  - 'safe-upgrade' and 'full-upgrade' commands can accept additional packages
    (with optional modifiers) from the command line;
  - 'satisfy' command is present.
+ - passes '--force-*' options to dpkg only when really needed, not always
