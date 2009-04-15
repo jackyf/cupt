@@ -689,7 +689,7 @@ sub _parse_sources_lists {
 sub __parse_source_list {
 	my $file = shift;
 	my @result;
-	open(HFILE, '<', "$file") or mydie("unable to open file %s: %s", $file, $!);
+	open(HFILE, '<', "$file") or mydie("unable to open file '%s': %s", $file, $!);
 	while (<HFILE>) {
 		chomp;
 		# skip all empty lines and lines with comments
