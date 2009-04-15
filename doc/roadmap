@@ -1,6 +1,6 @@
 For version 0.1:
 
-all: substitute string interpolation for all to-be-translated strings with sprintf
+<milestone completed, release scheduled to April 18-19, 2009>
 
 For version 0.2:
 
