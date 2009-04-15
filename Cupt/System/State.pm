@@ -41,7 +41,7 @@ sub new {
 	# in all others path builder functions, that's apt decision
 	my $dpkg_status_path = $self->{_config}->var('dir::state::status');
 	if (! -r $dpkg_status_path) {
-		mydie("unable to open dpkg status file '%s'", $dpkg_status_path);
+		mydie("unable to open dpkg status file '%s': %s", $dpkg_status_path, $!);
 	}
 	$self->_parse_dpkg_status($dpkg_status_path);
 	return $self;
@@ -68,7 +68,7 @@ sub _parse_dpkg_status {
 	my $base_uri = "";
 
 	my $fh;
-	open($fh, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+	open($fh, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
 	open(PACKAGES, "/bin/grep -bE '^(Package|Status|Version): ' $file |"); 
 
 	# algorithm: loop through the strings, searching the 'Version' line, once
@@ -167,7 +167,7 @@ sub _parse_dpkg_status {
 		myredie();
 	}
 
-	close(PACKAGES) or mydie("unable to close grep pipe");
+	close(PACKAGES) or mydie("unable to close grep pipe: %s", $!);
 
 	# additionally, preparse Provides fields for status file
 	$self->{_cache}->_process_provides_in_index_files($file);
