@@ -331,7 +331,7 @@ Examples:
 
 C<cupt remove kde konqueror+> - remove kde, but install/upgrade konqueror
 
-C<cupt remove kde konqueror/installed+> - remove kde, but install/leave konqueror
+C<cupt remove kde konqueror/installed+> - remove kde, but leave konqueror
 
 =back
 
