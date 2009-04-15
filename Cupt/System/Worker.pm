@@ -94,7 +94,7 @@ sub __verify_hash_sums ($$) {
 					[ $version->{sha256sum}, 'SHA-256' ],
 					);
 	open(FILE, '<', $path) or
-			mydie("unable to open file '%s'", $path);
+			mydie("unable to open file '%s': %s", $path, $!);
 	binmode(FILE);
 
 	foreach (@checks) {
@@ -108,7 +108,7 @@ sub __verify_hash_sums ($$) {
 	}
 
 	close(FILE) or
-			mydie("unable to close file '%s'", $path);
+			mydie("unable to close file '%s': %s", $path, $!);
 
 	return 1;
 }
@@ -406,7 +406,7 @@ sub mark_as_automatically_installed ($$;@) {
 		close(TEMP) or
 				mydie("unable to close temporary file '%s': %s", $temp_file, $!);
 		move($temp_file, $extended_info_file) or
-				mydie("unable to rename temporary file '%s' to extended states file '%s: %s",
+				mydie("unable to rename temporary file '%s' to extended states file '%s': %s",
 						$temp_file, $extended_info_file, $!);
 	}
 }
