@@ -214,6 +214,30 @@ the same as L<full-upgrade>, but with the change that problem resolver won't
 try to remove non-automatically installed packages in order to upgrade more
 packages
 
+=item markauto
+
+marks specified packages as automatically installed
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt markauto libstreamanalyzer0>
+
+C<cupt markauto lsof gimp-data>
+
+=item unmarkauto
+
+marks specified packages as manually installed
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt unmarkauto kpogre>
+
+C<cupt unmarkauto dpkg-dev>
+
 =item satisfy
 
 performs all needed operations to satisfy list of specified relations
