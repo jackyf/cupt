@@ -644,7 +644,7 @@ sub _get_release_info {
 		}
 	};
 	if (mycatch()) {
-		myerr("error parsing release file '%s', line '%d'", $file, $.);
+		myerr("error parsing release file '%s', line %u", $file, $.);
 		myredie();
 	}
 	if (!defined($release_info{description})) {
@@ -698,8 +698,8 @@ sub __parse_source_list {
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
 
-		mydie("incorrent source line at file '%s', line %d", $file, $.) if (!scalar @sections);
-		mydie("incorrent source type at file '%s', line %d", $file, $.)
+		mydie("incorrent source line at file '%s', line %u", $file, $.) if (!scalar @sections);
+		mydie("incorrent source type at file '%s', line %u", $file, $.)
 			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
 
 		map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
@@ -738,7 +738,7 @@ sub _parse_preferences {
 
 		do { # processing first line
 			m/^(Package|Source): (.*)/ or
-					mydie("bad package/source line at file '%s', line '%u'", $file, $.);
+					mydie("bad package/source line at file '%s', line %u", $file, $.);
 
 			my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_name');
 			my $name_value = $2;
@@ -750,10 +750,10 @@ sub _parse_preferences {
 		do { # processing second line
 			my $pin_line = <PREF>;
 			defined($pin_line) or
-					mydie("no pin line at file '%s' line '%u'", $file, $.);
+					mydie("no pin line at file '%s' line %u", $file, $.);
 
 			$pin_line =~ m/^Pin: (\w+?) (.*)/ or
-					mydie("bad pin line at file '%s' line '%u'", $file, $.);
+					mydie("bad pin line at file '%s' line %u", $file, $.);
 
 			my $pin_type = $1;
 			my $pin_expression = $2;
@@ -761,11 +761,11 @@ sub _parse_preferences {
 				when ('release') {
 					my @conditions = split /,/, $pin_expression;
 					scalar @conditions or
-							mydie("bad release expression at file '%s' line '%u'", $file, $.);
+							mydie("bad release expression at file '%s' line %u", $file, $.);
 
 					foreach (@conditions) {
 						m/^(\w)=(.*)/ or
-								mydie("bad condition in release expression at file '%s' line '%u'", $file, $.);
+								mydie("bad condition in release expression at file '%s' line %u", $file, $.);
 
 						my $condition_type = $1;
 						my $condition_value = $2;
@@ -778,7 +778,7 @@ sub _parse_preferences {
 							when ('l') { $pin_result{'release'}->{'label'} = $condition_value; }
 							default {
 								mydie("bad condition type (should be one of 'a', 'v', 'c', 'n', 'o', 'l') " . 
-										"in release expression at file '%s' line '%u'", $file, $.);
+										"in release expression at file '%s' line %u", $file, $.);
 							}
 						}
 					}
@@ -792,7 +792,7 @@ sub _parse_preferences {
 				}
 				default {
 					mydie("bad pin type (should be one of 'release', 'version', 'origin') " . 
-							"at file '%s' line '%u'", $file, $.);
+							"at file '%s' line %u", $file, $.);
 				}
 			}
 		};
@@ -800,10 +800,10 @@ sub _parse_preferences {
 		do { # processing third line
 			my $priority_line = <PREF>;
 			defined($priority_line) or
-					mydie("no priority line at file '%s' line '%u'", $file, $.);
+					mydie("no priority line at file '%s' line %u", $file, $.);
 
 			$priority_line =~ m/^Pin-Priority: ([+-]?\d+)/ or
-					mydie("bad priority line at file '%s' line '%u'", $file, $.);
+					mydie("bad priority line at file '%s' line %u", $file, $.);
 
 			my $priority = $1;
 			$pin_result{'value'} = $priority;
@@ -837,7 +837,7 @@ sub _parse_extended_states {
 
 			do { # processing first line
 				m/^Package: (.*)/ or
-						mydie("bad package line at file '%s', line '%u'", $file, $.);
+						mydie("bad package line at file '%s', line %u", $file, $.);
 
 				$package_name = $1;
 			};
@@ -845,10 +845,10 @@ sub _parse_extended_states {
 			do { # processing second line
 				my $value_line = <STATES>;
 				defined($value_line) or
-						mydie("no value line at file '%s' line '%u'", $file, $.);
+						mydie("no value line at file '%s' line %u", $file, $.);
 
 				$value_line =~ m/^Auto-Installed: (0|1)/ or
-						mydie("bad value line at file '%s' line '%u'", $file, $.);
+						mydie("bad value line at file '%s' line %u", $file, $.);
 
 				$value = $1;
 			};
