@@ -69,7 +69,7 @@ sub versions {
 			if (mycatch()) {
 				# delete broken entry at all...
 				push @errored_indexes, $idx;
-				mywarn("error while parsing new version entry for package %s", shift @$ref_params);
+				mywarn("error while parsing new version entry for package '%s'", shift @$ref_params);
 			} else {
 				$self->_merge_version($parsed_version, \@result);
 			}
