@@ -704,7 +704,7 @@ sub __parse_source_list {
 
 		map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
 	}
-	close(HFILE) or mydie("unable to close file %s: %s", $file, $!);
+	close(HFILE) or mydie("unable to close file '%s': %s", $file, $!);
 	return @result;
 }
 
@@ -727,7 +727,7 @@ sub _parse_preferences {
 		$_[0] =~ s/$/.*/g;
 	}
 
-	open(PREF, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+	open(PREF, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
 	while (<PREF>) {
 		chomp;
 		# skip all empty lines and lines with comments
@@ -813,7 +813,7 @@ sub _parse_preferences {
 		push @{$self->{'_pin_settings'}}, \%pin_result;
 	}
 
-	close(PREF) or mydie("unable to close file %s: %s", $file, $!);
+	close(PREF) or mydie("unable to close file '%s': %s", $file, $!);
 }
 
 sub _parse_extended_states {
@@ -828,7 +828,7 @@ sub _parse_extended_states {
 		my $package_name;
 		my $value;
 
-		open(STATES, '<', $file) or mydie("unable to open file %s: %s'", $file, $!);
+		open(STATES, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
 		while (<STATES>) {
 			chomp;
 
@@ -859,7 +859,7 @@ sub _parse_extended_states {
 			}
 		}
 
-		close(STATES) or mydie("unable to close file %s: %s", $file, $!);
+		close(STATES) or mydie("unable to close file '%s': %s", $file, $!);
 	};
 	if (mycatch()) {
 		myerr("error while parsing extended states");
@@ -873,7 +873,7 @@ sub _process_provides_in_index_files {
 	eval {
 		foreach my $file (@files) {
 			open(FILE, '<', $file) or
-					mydie("unable to open file '%s'", $file);
+					mydie("unable to open file '%s': %s", $file, $!);
 
 			my $package_line = '';
 			while(<FILE>) {
@@ -896,7 +896,7 @@ sub _process_provides_in_index_files {
 				}
 			}
 			close(FILE) or
-					mydie("unable to close file '%s'", $file");
+					mydie("unable to close file '%s': %s", $file, $!);
 		}
 	};
 	if (mycatch()) {
@@ -922,7 +922,7 @@ sub _process_index_file {
 	}
 
 	my $fh;
-	open($fh, '<', $file) or mydie("unable to open index file '%s'", $file);
+	open($fh, '<', $file) or mydie("unable to open index file '%s': %s", $file, $!);
 	open(OFFSETS, "/bin/grep -b '^Package: ' $file |"); 
 
 	eval {
