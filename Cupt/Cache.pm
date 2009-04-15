@@ -873,7 +873,7 @@ sub _process_provides_in_index_files {
 	eval {
 		foreach my $file (@files) {
 			open(FILE, '<', $file) or
-					mydie("unable to open file '$file'");
+					mydie("unable to open file '%s'", $file);
 
 			my $package_line = '';
 			while(<FILE>) {
