@@ -131,7 +131,7 @@ sub var {
 	} elsif ($self->_is_optional_option($var_name)) {
 		return undef;
 	} else {
-		mydie("attempt to get wrong option %s", $var_name);
+		mydie("attempt to get wrong option '%s'", $var_name);
 	}
 }
 
@@ -157,7 +157,7 @@ sub set_regular_var {
 		$self->{regular_vars}->{$var_name} = $new_value;
 		return 1;
 	} else {
-		mywarn("attempt to set wrong option %s", $var_name);
+		mywarn("attempt to set wrong option '%s'", $var_name);
 		return 0;
 	}
 }
@@ -183,7 +183,7 @@ sub set_list_var {
 		my $new_value = shift;
 		push @{$self->{list_vars}->{$var_name}}, $new_value;
 	} else {
-		mydie("attempt to set wrong option %s", $var_name);
+		mydie("attempt to set wrong option '%s'", $var_name);
 	}
 }
 
