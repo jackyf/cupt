@@ -5,7 +5,6 @@ For version 0.1:
 For version 0.2:
 
 doc: write tutorial
-worker: provide user-friendly long download alias
 cupt: implement '--installed' option
 downloader, config: support per-host acquire settings
 cupt, worker, resolver: reasoning for installing/removing packages (-D option)
