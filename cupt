@@ -733,7 +733,7 @@ sub generate_management_prompt ($$) {
 		}
 
 		do { # print size estimation
-			my ($total_bytes, $need_bytes) = $worker->get_sizes_preview($ref_actions_preview);
+			my ($total_bytes, $need_bytes) = $worker->get_download_sizes_preview($ref_actions_preview);
 			say sprintf __("Need to get %s/%s of archives."),
 					human_readable_size_string($need_bytes),
 					human_readable_size_string($total_bytes);

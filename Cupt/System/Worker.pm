@@ -243,7 +243,7 @@ sub get_actions_preview ($) {
 	return \%result;
 }
 
-=head2 get_sizes_preview
+=head2 get_download_sizes_preview
 
 Parameters:
 
@@ -256,7 +256,7 @@ I<need_bytes> - byte count, needed to download, <= I<total_bytes>
 
 =cut
 
-sub get_sizes_preview ($$) {
+sub get_download_sizes_preview ($$) {
 	my ($self, $ref_actions_preview) = @_;
 	# size estimating of operation
 	my $archives_location = $self->_get_archives_location();
