@@ -10,6 +10,7 @@ use 5.10.0;
 use warnings;
 use strict;
 
+use List::Util qw(sum);
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
 
@@ -732,11 +733,21 @@ sub generate_management_prompt ($$) {
 			}
 		}
 
-		do { # print size estimation
+		do { # print size estimations
 			my ($total_bytes, $need_bytes) = $worker->get_download_sizes_preview($ref_actions_preview);
-			say sprintf __("Need to get %s/%s of archives."),
+			print sprintf __("Need to get %s/%s of archives. "),
 					human_readable_size_string($need_bytes),
 					human_readable_size_string($total_bytes);
+
+			my $total_unpacked_size_change =
+					sum(values %{$worker->get_unpacked_sizes_preview($ref_actions_preview)}) // 0;
+			if ($total_unpacked_size_change >= 0) {
+				say sprintf __("After unpacking %s will be used."),
+						human_readable_size_string($total_unpacked_size_change);
+			} else {
+				say sprintf __("After unpacking %s will be freed."),
+						human_readable_size_string(-$total_unpacked_size_change);
+			}
 		};
 
 		print __("Do you want to continue? [y/N/q] ");

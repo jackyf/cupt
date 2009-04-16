@@ -258,7 +258,7 @@ I<need_bytes> - byte count, needed to download, <= I<total_bytes>
 
 sub get_download_sizes_preview ($$) {
 	my ($self, $ref_actions_preview) = @_;
-	# size estimating of operation
+
 	my $archives_location = $self->_get_archives_location();
 	my $total_bytes = 0;
 	my $need_bytes = 0;
@@ -277,6 +277,64 @@ sub get_download_sizes_preview ($$) {
 	}
 
 	return ($total_bytes, $need_bytes);
+}
+
+=head2 get_unpacked_sizes_preview
+
+returns changes in unpacked sizes after whole operation for each package
+
+Parameters:
+
+I<ref_actions_preview> - supply result of L</get_actions_preview> here
+
+Returns: { $package_name => $size_change }
+
+=cut
+
+sub get_unpacked_sizes_preview ($$) {
+	my ($self, $ref_actions_preview) = @_;
+
+	my %result;
+
+	# install
+	foreach my $ref_package_entry (@{$ref_actions_preview->{'install'}}) {
+		my $version = $ref_package_entry->{'version'};
+		$result{$ref_package_entry->{'package_name'}} = $version->{installed_size};
+	}
+
+	# remove/purge
+	foreach my $ref_package_entry (@{$ref_actions_preview->{'remove'}}, @{$ref_actions_preview->{'purge'}}) {
+		my $package_name = $ref_package_entry->{'package_name'};
+		my $old_version = $self->{_cache}->get_binary_package($package_name)->get_installed_version();
+		$result{$ref_package_entry->{'package_name'}} = - $old_version->{installed_size};
+	}
+
+	# upgrade/downgrade
+	foreach my $ref_package_entry (@{$ref_actions_preview->{'upgrade'}}, @{$ref_actions_preview->{'downgrade'}}) {
+		my $new_version = $ref_package_entry->{'version'};
+		my $package_name = $ref_package_entry->{'package_name'};
+		my $old_version = $self->{_cache}->get_binary_package($package_name)->get_installed_version();
+		$result{$package_name} = $new_version->{installed_size} - $old_version->{installed_size};
+	}
+
+	# deconfigure
+	foreach my $ref_package_entry (@{$ref_actions_preview->{'deconfigure'}}) {
+		my $package_name = $ref_package_entry->{'package_name'};
+		if ($self->{_config}->var('dir::state::status') !~ m{/status$}) {
+			mywarn("unable to determine installed size for package '%s'", $package_name);
+			$result{$package_name} = 0;
+		} else {
+			(my $admindir = $self->{_config}->var('dir::state::status')) =~ s{/status$}{};
+			$result{$package_name} = - qx/dpkg-query --admindir=$admindir -f '\${Installed-Size}' --show $package_name/;
+		}
+	}
+
+	# configure is uninteresting, it doesn't change unpacked size in system
+
+	# installed sizes are specified in kibibytes, convert them to bytes
+	map { $_ *= 1024 } values %result;
+
+	return \%result;
 }
 
 sub __is_inner_actions_equal ($$) {
