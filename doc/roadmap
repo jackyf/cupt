@@ -17,10 +17,10 @@ downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
 downloader: debdelta integration (or re-implementation)
 worker: check disk available size before downloading
+downloader: https protocol
 
 For version 0.4:
 
-downloader: https protocol
 source version: implement
 binary version: implement translated description
 cupt: implement 'why' command
