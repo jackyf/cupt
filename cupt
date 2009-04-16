@@ -604,14 +604,15 @@ sub pkgnames () {
 	}
 }
 
-sub generate_management_prompt ($$) {
-	my ($worker, $versioned_output) = @_;
+sub generate_management_prompt ($$$) {
+	my ($worker, $show_versions, $show_size_changes) = @_;
 
 	my $sub_prompt = sub {
 		my $ref_desired_packages = $_[0];
 		$worker->set_desired_state($ref_desired_packages);
 
 		my $ref_actions_preview = $worker->get_actions_preview();
+		my $ref_unpacked_sizes_preview = $worker->get_unpacked_sizes_preview($ref_actions_preview);
 		# print planned actions
 		do {
 			my %action_names = (
@@ -634,26 +635,42 @@ sub generate_management_prompt ($$) {
 				my $action_name = $action_names{$action};
 				say sprintf __("The following %u packages will be %s:"), scalar @$ref_package_entries, $action_name;
 				say "";
-				if ($versioned_output) {
-					foreach my $ref_package_entry (@$ref_package_entries) {
-						my $package_name = $ref_package_entry->{'package_name'};
+				foreach my $ref_package_entry (@$ref_package_entries) {
+					my $package_name = $ref_package_entry->{'package_name'};
+					print "$package_name";
+					if ($show_versions) {
 						my $old_version_string =
 								$cache->get_system_state()->get_installed_version_string($package_name);
 						my $new_version = $ref_package_entry->{'version'};
 						my $new_version_string = defined $new_version ?
 								$new_version->{version_string} : undef;
 						if (!defined $old_version_string) {
-							say "$package_name [$new_version_string]";
+							print " [$new_version_string]";
 						} elsif (!defined $new_version_string) {
-							say "$package_name [$old_version_string]";
+							print " [$old_version_string]";
 						} else {
-							say "$package_name [$old_version_string -> $new_version_string]";
+							print " [$old_version_string -> $new_version_string]";
 						}
 					}
-				} else {
-					my @package_names_list = map { $_->{package_name} } @$ref_package_entries;
-					say "@package_names_list";
+					if ($show_size_changes) {
+						my $size_change = $ref_unpacked_sizes_preview->{$package_name};
+						if ($size_change != 0) {
+							my $size_change_string = ($size_change >= 0) ?
+									'+' . human_readable_size_string($size_change) :
+									'-' . human_readable_size_string(-$size_change);
+							print " <$size_change_string>";
+						}
+					}
+
+					if ($show_versions || $show_size_changes) {
+						# put newline
+						say "";
+					} else {
+						# put a space between package names
+						print ' ';
+					}
 				}
+				say "" if !$show_versions && !$show_size_changes;
 				say "";
 			}
 		};
@@ -740,7 +757,7 @@ sub generate_management_prompt ($$) {
 					human_readable_size_string($total_bytes);
 
 			my $total_unpacked_size_change =
-					sum(values %{$worker->get_unpacked_sizes_preview($ref_actions_preview)}) // 0;
+					sum(values %$ref_unpacked_sizes_preview) // 0;
 			if ($total_unpacked_size_change >= 0) {
 				say sprintf __("After unpacking %s will be used."),
 						human_readable_size_string($total_unpacked_size_change);
@@ -776,14 +793,16 @@ sub manage_packages ($) {
 
 	my $o_resolver_type;
 	my $o_max_solution_count;
-	my $o_versioned_output = 0;
+	my $o_show_versions = 0;
+	my $o_show_size_changes = 0;
 	my $o_simulate;
 	my $o_install_unpacked;
 	GetOptions(
 		'resolver=s' => \$o_resolver_type,
 		'max-solution-count=s' => \$o_max_solution_count,
 		'no-install-recommends|R' => sub { $config->set_regular_var('apt::install-recommends' => 0) },
-		'show-versions|V' => \$o_versioned_output,
+		'show-versions|V' => \$o_show_versions,
+		'show-size-changes|Z' => \$o_show_size_changes,
 		'install-unpacked' => \$o_install_unpacked,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
@@ -880,7 +899,9 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Resolving possible unmet dependencies... ');
-	my $resolve_result = $resolver->resolve( generate_management_prompt($worker, $o_versioned_output) );
+	my $resolve_result = $resolver->resolve(
+			generate_management_prompt($worker, $o_show_versions, $o_show_size_changes)
+	);
 
 	if (!defined $resolve_result) {
 		# tryings were abandoned

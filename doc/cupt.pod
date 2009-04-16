@@ -301,6 +301,11 @@ Corresponding configuration option: L<apt::install-recommends>
 
 when displaying actions preview prompt, display also versions of packages
 
+=item --show-size-changes,-Z
+
+when displaying actions preview prompt, display also changes in disk space
+usage for each package
+
 =item --install-unpacked
 
 implicitly install all unpacked packages, useful for continuing interrupted

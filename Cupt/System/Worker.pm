@@ -330,6 +330,9 @@ sub get_unpacked_sizes_preview ($$) {
 	}
 
 	# configure is uninteresting, it doesn't change unpacked size in system
+	foreach my $ref_package_entry (@{$ref_actions_preview->{'configure'}}) {
+		$result{$ref_package_entry->{'package_name'}} = 0;
+	}
 
 	# installed sizes are specified in kibibytes, convert them to bytes
 	map { $_ *= 1024 } values %result;
