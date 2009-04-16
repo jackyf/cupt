@@ -264,11 +264,11 @@ sub get_sizes_preview ($$) {
 	my $need_bytes = 0;
 	my @ref_package_entries = map { @{$ref_actions_preview->{$_}} } ('install', 'upgrade', 'downgrade');
 	foreach my $ref_package_entry (@ref_package_entries) {
-		my $version = $ref_package_entry->{version};
+		my $version = $ref_package_entry->{'version'};
 		my $size = $version->{size};
 		$total_bytes += $size;
 		$need_bytes += $size; # for start
-		my $basename = __get_archive_basename($ref_package_entry->{version});
+		my $basename = __get_archive_basename($version);
 		my $path = $archives_location . '/' . $basename;
 		-e $path or next; # skip if the file is not present in the cache dir
 		__verify_hash_sums($version, $path) or next; # skip if the file is not what we want
