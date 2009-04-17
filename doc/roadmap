@@ -13,6 +13,7 @@ downloader: multi-url downloading
 
 For version 0.3:
 
+cupt: changelog action
 downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
 downloader: debdelta integration (or re-implementation)
