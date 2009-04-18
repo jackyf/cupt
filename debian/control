@@ -23,7 +23,7 @@ Description: alternative front-end for dpkg -- Perl modules
   - parsing and working with relations and relation expressions;
   - download manager and downloaders for some schemes;
   - problem resolver;
-  - worker for modifying system state;
+  - worker for modifying system state.
  .
  See also description of 'cupt' package for more information.
 
