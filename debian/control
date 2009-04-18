@@ -15,7 +15,17 @@ Suggests: cupt
 Description: alternative front-end for dpkg -- Perl modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
  .
- See description of 'cupt' package for more information.
+ Provides:
+  - parsing and manipulating configuration info;
+  - version strings comparison;
+  - inspection of the binary package' versions;
+  - parsing and querying info about installed packages;
+  - parsing and working with relations and relation expressions;
+  - download manager and downloaders for some schemes;
+  - problem resolver;
+  - worker for modifying system state;
+ .
+ See also description of 'cupt' package for more information.
 
 Package: cupt
 Architecture: all
