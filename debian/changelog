@@ -1,5 +1,6 @@
-cupt (0.0.91) unstable; urgency=low
+cupt (0.1.0) experimental; urgency=low
 
-  * Initial release.
+  * Initial release. Dedicated to Pavel Chernyshov. Developers and advanced
+    users only.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Apr 2009 23:23:04 +0300
