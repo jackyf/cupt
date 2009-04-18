@@ -29,7 +29,7 @@ Description: alternative front-end for dpkg -- console interface
  files, configuration files. It understands some of widely used APT options.
  .
  Some features:
-  - strict and full-case resolver;
+  - strict full-case resolver;
   - command-line and APT-like option name checker;
   - case-sensitive search;
   - pinning by source package name;
