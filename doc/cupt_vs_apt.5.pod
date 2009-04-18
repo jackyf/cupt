@@ -64,6 +64,10 @@ optional modifiers) from the command line
 
 =item
 
+three types of multi-case problem resolvers available (see L<--resolver in cupt(1)|cupt(1)/--resolver>)
+
+=item
+
 worker passes '--force-*' options to dpkg only when really needed, not always
 
 =back
