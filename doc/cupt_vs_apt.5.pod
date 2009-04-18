@@ -55,11 +55,6 @@ correctness of APT options is checked
 
 =item
 
-'safe-upgrade' and 'full-upgrade' commands can accept additional packages (with
-optional modifiers) from the command line
-
-=item
-
 'satisfy' command is present
 
 =item
