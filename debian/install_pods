@@ -12,7 +12,7 @@ foreach my $pod_file (glob("doc/*.pod")) {
 	my $pod2man_command = "pod2man --name $uppercased_name --section $section $pod_file > $man_page_name";
 	my $dh_command = "dh_installman -pcupt $man_page_name";
 	my $command = "$pod2man_command && $dh_command && rm $man_page_name";
-	print $command . "\n";
+	print "   $command\n";
 	system($command) == 0 or
 			die "installing man page $man_page_name failed";
 }
