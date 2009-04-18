@@ -1,0 +1,69 @@
+=pod
+
+=head1 NAME
+
+cupt_vs_apt - overview of things Cupt and APT differ in
+
+=head1 ADVANTAGES
+
+=head2 Core
+
+=over
+
+=item
+
+Pins can be specified also by source package.
+
+=item
+
+Correctness of APT options is checked.
+
+=back
+
+=head2 Search
+
+=over
+
+=item
+
+'search' command searches all versions of package, not policy or installed ones
+
+=item
+
+'search' command can search case-sensitively ('--case-sensitive' switch)
+
+=back
+
+=head2 Show
+
+=over
+
+=item
+
+'show' command can show release description ('--with-release-info' switch);
+
+=item
+
+'/<distribution' and '=<version>' suffixes can be used with 'depends' and
+'rdepends' commands.
+
+=back
+
+=head2 Managing packages
+
+=over
+
+=item
+
+'safe-upgrade' and 'full-upgrade' commands can accept additional packages (with
+optional modifiers) from the command line;
+
+=item
+
+'satisfy' command is present.
+
+=item
+
+worker passes '--force-*' options to dpkg only when really needed, not always
+
+=back
