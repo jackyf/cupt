@@ -86,4 +86,8 @@ worker passes '--force-*' options to dpkg only when really needed, not always
 
 to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "", not to "DIRECT"
 
+=item
+
+'acquire::<protocol>::[<host>::]proxy' options take precedence over "<protocol>_proxy" shell variables
+
 =back
