@@ -16,8 +16,8 @@ install: install-stamp
 install-stamp: build-stamp
 	dh install --before dh_auto_install
 	$(MAKE) install PREFIX=$(CURDIR)/debian/libcupt-perl/usr
-	# produce a man page for cupt
-	pod2man doc/cupt.pod > cupt.1 && dh_installman -pcupt cupt.1 && rm cupt.1
+	# produce additional man pages for cupt
+	perl doc/install_pods
 	dh install --after dh_auto_install
 	touch $@
 

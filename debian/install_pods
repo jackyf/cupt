@@ -1,0 +1,16 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+
+foreach my $pod_file (glob("doc/*.pod")) {
+	# example: doc/cupt.1.pod
+	my ($name, $section) = ($pod_file =~ m{.*/(\w+)\.(\d)\.pod)}) or
+			die "badly formatted POD name $pod_file";
+	$man_page_name = $name.$section;
+	$uppercased_name = uc $name;
+	$pod2man_command = "pod2man --name $uppercased_name --section $section $pod_file > $man_page_name"
+	$dh_command = "dh_installman -pcupt $man_page_name";
+	system("$pod2man_command && $dh_command && rm $man_page_name") == 0 or
+			die "installing man page $man_page_name failed";
+}
