@@ -480,5 +480,9 @@ standard error
 
 TODO
 
+=head1 SEE ALSO
+
+L<cupt_vs_apt(5)>
+
 =cut
 
