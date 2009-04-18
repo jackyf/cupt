@@ -80,6 +80,10 @@ worker passes '--force-*' options to dpkg only when really needed, not always
 
 'update' command is not yet implemented
 
+=item
+
+working with source packages is not yet implemented
+
 =back
 
 =head1 DIFFERENT BEHAVIOR
