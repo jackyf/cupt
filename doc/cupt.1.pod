@@ -484,5 +484,9 @@ TODO
 
 L<cupt_vs_apt(5)>
 
+=head1 AUTHOR
+
+Eugene V. Lyubimkin <jackyf.devel@gmail.com>
+
 =cut
 

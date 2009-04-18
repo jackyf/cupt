@@ -1,3 +1,10 @@
+cupt (0.1.1) UNRELEASED; urgency=low
+
+  * doc/cupt.1.pod:
+    - Added 'Author' section.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 18 Apr 2009 18:12:34 +0300
+
 cupt (0.1.0) experimental; urgency=low
 
   * Initial release. Dedicated to Pavel Chernyshov. Developers and advanced
