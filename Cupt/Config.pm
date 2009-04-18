@@ -233,7 +233,8 @@ sub _read_configs {
 	my @config_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
 	my $main_file = $self->var('dir::etc::main');
-	push @config_files, "$root_prefix$etc_dir/$main_file";
+	my $main_file_path = "$root_prefix$etc_dir/$main_file";
+	push @config_files, $main_file_path if -e $main_file_path;
 
 	foreach (@config_files) {
 		$parser->parse_file($_);
