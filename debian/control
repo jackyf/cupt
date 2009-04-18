@@ -4,6 +4,7 @@ Priority: optional
 Build-Depends: debhelper (>= 7)
 Build-Depends-Indep: perl (>= 5.10.0), liburi-perl, libparse-recdescent-perl
 Maintainer: Eugene V. Lyubimkin <jackyf.devel@gmail.com>
+Homepage: http://wiki.github.com/jackyf/cupt
 Standards-Version: 3.8.1
 
 Package: libcupt-perl
