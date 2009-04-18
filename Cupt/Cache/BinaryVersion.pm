@@ -134,8 +134,8 @@ sub new {
 
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
-			# skip all fields that haven't a value on the same line
-			next if $line =~ m/:\n$/;
+			# skip all fields that haven't a value on the same line and aren't a part of multi-line fields
+			next if $line =~ m/^\S.*:\n$/;
 
 			if (($line =~ m/^ / or $line =~ m/^\t/)) {
 				if ($in_long_description) {
