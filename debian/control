@@ -9,7 +9,7 @@ Standards-Version: 3.8.1
 Package: libcupt-perl
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, perl (>= 5.10.0), liburi-perl, libwww-perl (>= 4.05),
-  libgraph-perl, libterm-size-perl, libparse-recdescent-perl
+  libgraph-perl, libterm-size-perl, libparse-recdescent-perl, libdigest-sha-perl
 Recommends: liblocale-gettext
 Suggests: cupt
 Description: alternative front-end for dpkg -- Perl modules
