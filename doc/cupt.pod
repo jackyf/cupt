@@ -404,6 +404,8 @@ don't modify anything in the system, just print supposed actions
 
 Doesn't require root privileges.
 
+Corresponding configuration option: L<cupt::worker::simulate>
+
 =item --purge
 
 when removing packages, also delete their configuration files
@@ -431,7 +433,46 @@ Secondly, Cupt introduces following cupt-specific configuration variables:
 
 =over
 
-TODO
+=item cupt::downloader::max-simultaneous-downloads
+
+positive number, specifies maximum number of simultaneous downloads
+
+=item cupt::resolver::keep-recommends
+
+boolean (0/1), specifies whether should resolver try to keep already installed
+recommended packages or not. True by default.
+
+=item cupt::resolver::keep-suggests
+
+boolean (0/1), specifies whether should resolver try to keep already installed
+suggested packages or not. False by default.
+
+=item cupt::resolver::auto-remove
+
+boolean (0/1), specifies whether should resolver try to remove automatically
+installed packages after doing requested actions or not. True by default.
+
+=item cupt::worker::defer-triggers
+
+boolean (0/1), specifies whether should worker defer dpkg trigger processing to
+the end of the whole operation or not. Being set to true, speeds up
+large-amount actions, but if the operation will somewhy interrupted, leaves
+system in the interim trigger state, which can be fixed by manual run of 'dpkg
+--triggers-only --pending' command. True by default.
+
+=item cupt::worker::purge
+
+boolean (0/1), specifies whether purge packages in addition to removing or not.
+False by default.
+
+=item cupt::worker::simulate
+
+see L<--simulate|/--simulate,-s>
+
+=item debug::resolver
+
+boolean (0/1), if true, resolver will print a lot of debug information to the
+standard error
 
 =back
 
