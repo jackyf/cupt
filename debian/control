@@ -35,7 +35,7 @@ Description: alternative front-end for dpkg -- console interface
  re-implementation of libapt-pkg C++ library using Perl. The aim is to produce
  more strict, more robust, less buggy front-end than APT.
  .
- It uses the same APT infrastructure, e.g. index files, deb cache archive
+ Cupt uses the same APT infrastructure, e.g. index files, deb cache archive
  files, configuration files. It understands some of widely used APT options.
  .
  Some features:
