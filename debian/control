@@ -8,7 +8,7 @@ Standards-Version: 3.8.1
 
 Package: libcupt-perl
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}, liburi-perl, libwww-perl (>= 4.05),
+Depends: ${misc:Depends}, ${perl:Depends}, perl (>= 5.10.0), liburi-perl, libwww-perl (>= 4.05),
   libgraph-perl, libterm-size-perl, libparse-recdescent-perl
 Recommends: liblocale-gettext
 Suggests: cupt
