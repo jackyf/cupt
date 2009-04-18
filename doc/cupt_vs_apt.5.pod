@@ -12,11 +12,11 @@ cupt_vs_apt - overview of things Cupt and APT differ in
 
 =item
 
-Pins can be specified also by source package.
+pins can be specified also by source package
 
 =item
 
-Correctness of APT options is checked.
+correctness of APT options is checked
 
 =back
 
@@ -40,12 +40,12 @@ Correctness of APT options is checked.
 
 =item
 
-'show' command can show release description ('--with-release-info' switch);
+'show' command can show release description ('--with-release-info' switch)
 
 =item
 
 '/<distribution' and '=<version>' suffixes can be used with 'depends' and
-'rdepends' commands.
+'rdepends' commands
 
 =back
 
@@ -56,14 +56,30 @@ Correctness of APT options is checked.
 =item
 
 'safe-upgrade' and 'full-upgrade' commands can accept additional packages (with
-optional modifiers) from the command line;
+optional modifiers) from the command line
 
 =item
 
-'satisfy' command is present.
+'satisfy' command is present
 
 =item
 
 worker passes '--force-*' options to dpkg only when really needed, not always
+
+=back
+
+=head1 DIFFERENT BEHAVIOR
+
+=head2 Configuration
+
+=over
+
+=item
+
+'apt::cache::allversions' defaults to 0, not 1 as in apt-cache
+
+=item
+
+to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "", not to "DIRECT"
 
 =back

@@ -1,3 +1,0 @@
-Configuration:
- - 'apt::cache::allversions' defaults to 0, not 1 as in apt-cache;
- - to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "", not to "DIRECT".
