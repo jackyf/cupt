@@ -17,6 +17,7 @@ WriteMakefile(
 		'Digest::SHA' => 0,
 		'Getopt::Long' => 0,
 		'Test::More' => 0,
+		'Time::HiRes' => 0,
 	},
 );
 

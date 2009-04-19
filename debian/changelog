@@ -24,10 +24,13 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - New method 'hook' for subclasses.
         - New method 'get_overall_download_progress'.
         - New accessor/mutator 'download_entries'.
+        - New method 'get_download_speed'.
+        - New class-wide parameter variable 'o_download_speed_accuracy';
         - Various documentation improvements.
       - Progresses/Console:
         - Substituted obsoleted 'progress' method with new 'hook' method.
         - Fixed dangling, wrong-placed console cursor.
+        - Also output download speed.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 

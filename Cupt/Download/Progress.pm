@@ -20,15 +20,29 @@
 #***************************************************************************
 package Cupt::Download::Progress;
 
+=head1 NAME
+
+Cupt::Download::Progress - base class for download progess meters
+
+=cut
+
 use 5.10.0;
 use strict;
 use warnings;
 
 use List::Util qw(sum);
+use Time::HiRes qw(tv_interval gettimeofday);
 
-=head1 NAME
+=head1 PARAMS
 
-Cupt::Download::Progress - base class for download progess meters
+=head2 o_download_speed_accuracy
+
+specifies the number of milliseconds that will be used for speed counting. The
+bigger value means more smooth speed changes. Defaults to 2000.
+
+=cut
+
+our $o_download_speed_accuracy = 2000;
 
 =head1 METHODS
 
@@ -50,6 +64,8 @@ sub new {
 	$self->{_start_time} = time();
 	$self->{_size_done} = 0;
 	$self->{_downloaded} = 0;
+	# for download speed counting
+	$self->{_size_changes} = [];
     return bless $self => $class;
 }
 
@@ -203,7 +219,9 @@ sub progress ($$$;@) {
 		given ($action) {
 			when('downloading') {
 				$ref_entry->{'downloaded'} = shift @params;
-				$self->{_downloaded} += shift @params;
+				my $bytes_in_fetched_piece = shift @params;
+				$self->{_downloaded} += $bytes_in_fetched_piece;
+				push @{$self->{_size_changes}}, [ [gettimeofday()], $bytes_in_fetched_piece ];
 				$self->hook('ping', 0);
 			}
 			when ('expected-size') {
@@ -211,7 +229,7 @@ sub progress ($$$;@) {
 				$self->hook('ping', 1);
 			}
 			when ('done') {
-				$self->{_size_done} += $ref_entry->{size} // $ref_entry->{downloaded};
+				$self->{_size_done} += $ref_entry->{'size'} // $ref_entry->{'downloaded'};
 				$self->hook($uri, 'done');
 				delete $self->{_now_downloading}->{$uri};
 				$self->hook('ping', 1);
@@ -264,7 +282,7 @@ sub get_overall_download_percent ($) {
 	# firstly, start up with filling size of already downloaded things
 	my $total_downloaded_size = $self->{_size_done};
 	# count each amount bytes download for all active entries
-	$total_downloaded_size += (sum map { $_->{downloaded} } values %{$self->{_now_downloading}}) // 0;
+	$total_downloaded_size += (sum map { $_->{'downloaded'} } values %{$self->{_now_downloading}}) // 0;
 
 	my $total_estimated_size;
 	if (defined $self->{_total_estimated_size}) {
@@ -276,7 +294,7 @@ sub get_overall_download_percent ($) {
 		foreach my $ref_entry (values %{$self->{_now_downloading}}) {
 			# add or real estimated size, or downloaded size (for entries
 			# where download size hasn't been determined yet)
-			$total_estimated_size += $ref_entry->{size} // $ref_entry->{downloaded};
+			$total_estimated_size += $ref_entry->{size} // $ref_entry->{'downloaded'};
 		}
 	}
 	return $total_downloaded_size / $total_estimated_size * 100;
@@ -302,6 +320,43 @@ key->value will be preserved.
 sub download_entries ($$) {
 	my ($self) = @_;
 	return $self->{_now_downloading};
+}
+
+sub _update_size_changes ($) {
+	my ($self) = @_;
+
+	my $now = [gettimeofday()];
+	my $float_time_accuracy = $o_download_speed_accuracy / 1000;
+	my $exit_flag = 0;
+	while (!$exit_flag) {
+		my $piece = shift @{$self->{_size_changes}};
+		last if !defined $piece;
+
+		my ($piece_time, $piece_size) = @$piece;
+		if (tv_interval($piece_time, $now) < $float_time_accuracy) {
+			# all further times will be even near to now
+			unshift @{$self->{_size_changes}}, $piece;
+			$exit_flag = 1;
+		}
+	}
+}
+
+=head2 get_download_speed
+
+method, returns current download speed in bytes/seconds
+
+=cut
+
+sub get_download_speed ($) {
+	my ($self) = @_;
+
+	$self->_update_size_changes();
+	my $bytes = 0;
+	foreach (@{$self->{_size_changes}}) {
+		$bytes += $_->[1];
+	}
+
+	return $bytes * 1000 / $o_download_speed_accuracy;
 }
 
 =head2 finish
