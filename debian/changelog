@@ -2,6 +2,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
 
   * doc/cupt.1.pod:
     - Added 'Author' section.
+  * cupt:
+    - Generate additional warning when deleting essential packages.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 18 Apr 2009 18:12:34 +0300
 

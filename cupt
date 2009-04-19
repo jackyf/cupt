@@ -770,6 +770,26 @@ sub generate_management_prompt ($$$) {
 			}
 		}
 
+		my $is_dangerous_action = 0;
+		do { # generate loud warnings for removing essential packages
+			my @essential_package_names;
+			# generate loud warning for unsigned versions
+			foreach my $action (qw(remove purge)) {
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				foreach my $package_name (map { $_->{'package_name'} } @$ref_package_entries) {
+					my $version = $cache->get_binary_package($package_name)->get_installed_version();
+					push @essential_package_names, $version->{package_name} if $version->{essential};
+				}
+			}
+			if (scalar @essential_package_names) {
+				$is_dangerous_action = 1;
+				say sprintf __("WARNING! The following essential packages will be REMOVED:");
+				say "";
+				say $_ for @essential_package_names;
+				say "";
+			}
+		};
+
 		do { # print size estimations
 			my ($total_bytes, $need_bytes) = $worker->get_download_sizes_preview($ref_actions_preview);
 			print sprintf __("Need to get %s/%s of archives. "),
