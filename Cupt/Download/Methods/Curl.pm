@@ -57,7 +57,7 @@ sub perform ($$$$$) {
 			return sprintf "unable to open file '%s': %s", $filename, $!;
 
 	my $total_bytes = tell($fd);
-	$sub_callback->('downloading', $total_bytes);
+	$sub_callback->('downloading', $total_bytes, 0);
 
 	my $is_expected_size_reported = 0;
 
@@ -75,7 +75,7 @@ sub perform ($$$$$) {
 
 		my $written_bytes = length($_[0]);
 		$total_bytes += $written_bytes;
-		$sub_callback->('downloading', $total_bytes);
+		$sub_callback->('downloading', $total_bytes, $written_bytes);
 
 		return $written_bytes;
 	};

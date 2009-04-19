@@ -7,8 +7,29 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - Generate additional warning when deleting essential packages.
       - Require typing the confirmation phrase for really dangerous actions.
       - Changed 'installed' -> 'INSTALLED' for untrusted packages warning.
+  * Cupt:
+    - Download:
+      - Method, Methods/*:
+        - [API break] 'sub_callback' in 'perform', added fetched bytes
+          parameter for 'downloading' callback
+        - Various documentation improvements.
+      - Manager:
+        - Road all progress requests through own pipe, not directly.
+      - Progress:
+        - New method 'get_start_time'.
+        - New method 'get_long_alias_for_uri'.
+        - New method 'get_short_alias_for_uri'.
+        - [API break] The control and flow logic was moved from
+          Progresses/Console to 'progress' method.
+        - New method 'hook' for subclasses.
+        - New method 'get_overall_download_progress'.
+        - New accessor/mutator 'download_entries'.
+        - Various documentation improvements.
+      - Progresses/Console:
+        - Substituted obsoleted 'progress' method with new 'hook' method.
+        - Fixed dangling, wrong-placed console cursor.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 18 Apr 2009 18:12:34 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 
 cupt (0.1.0) experimental; urgency=low
 

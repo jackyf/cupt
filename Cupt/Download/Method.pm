@@ -51,16 +51,42 @@ Parameters:
 
 I<config> - reference to Cupt::Config
 
-I<uri> - string that determines which URL to download
+I<uri> - string that determines URL to download
 
 I<filename> - target file name
 
-I<sub_callback> - subroutine to report status change of download, takes two arguments: I<name> and I<value>.
-Allowed pairs I<name> - I<value>:
-  "connecting" - "<ip>";
-  "expected-size" - "<size of file to download>";
-  "downloading" - "<number of bytes done for download>" (in case of resumed
-download this number should include already downloaded size).
+I<sub_callback> - callback subroutine to report status change of download
+
+=over
+
+Allowed param sets:
+
+=over
+
+=item *
+
+"connecting", "$ip[:$port]"
+
+=item *
+
+"expected-size", I<expected_size>
+
+=item *
+
+"downloading" - I<total_downloaded_bytes> I<fetched_bytes>;
+
+=back
+
+where:
+
+I<expected_size> - size of file to download
+
+I<total_downloaded_bytes> - number of bytes done for download; in case of resumed
+download this number should include already downloaded size
+
+I<fetched_bytes> - number of bytes that were really fetched since the last callback call
+
+=back
 
 Returns: 0 if all went smoothly, error string in case of error
 

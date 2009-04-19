@@ -32,7 +32,6 @@ use strict;
 
 use base qw(Cupt::Download::Progress);
 
-use List::Util qw(sum);
 use Term::Size;
 
 use Cupt::Core;
@@ -40,131 +39,99 @@ use Cupt::Core;
 sub new {
 	my $class = shift;
 	my $self = $class->SUPER::new();
-	$self->{_now_downloading} = {};
-	$self->{_next_download_number} = 1;
-	$self->{_start_time} = time();
-	$self->{_size_done} = 0;
+	$self->{_previous_report_time} = time();
 	($self->{_termwidth}, undef) = Term::Size::chars();
 	return $self;
 }
 
-sub _termprint ($$) {
-	my ($self, $string) = @_;
+sub _termprint ($$$) {
+	my ($self, $string, $right_appendage) = @_;
 
-	if (length($string) > $self->{_termwidth}) {
-		print substr($string, 0, $self->{_termwidth});
+	$right_appendage //= "";
+	my $allowed_width = $self->{_termwidth} - length($right_appendage);
+	if (length($string) > $allowed_width) {
+		print substr($string, 0, $allowed_width);
 	} else {
-		my $string_to_print = $string . (' ' x ($self->{_termwidth} - length($string)));
+		my $string_to_print = $string . (' ' x ($allowed_width - length($string)));
 		print $string_to_print;
 	}
+	print $right_appendage;
 }
 
 sub __human_readable_speed ($) {
-	my $bytes;
+	my ($bytes) = @_;
 	return human_readable_size_string($bytes) . '/s';
 }
 
-sub progress {
-	my ($self, $uri, $action, @params) = @_;
+sub hook {
+	my ($self, $message, @params) = @_;
 
 	# update info
-	do {
-		my $ref_entry;
-		print "\r";
-		if ($action eq 'start') {
-			# new entry, create it
-			$ref_entry = ($self->{_now_downloading}->{$uri} = {});
-			$ref_entry->{number} = $self->{_next_download_number}++;
-			# can be undef, be cautious
-			$ref_entry->{size} = shift @params;
-			$ref_entry->{downloaded} = 0;
-			my $alias = $self->{_long_aliases}->{$uri} // $uri;
+	given ($message) {
+		when ('start') {
+			print "\r";
+			my $uri = shift @params;
+			my $ref_entry = $self->download_entries->{$uri};
+
+			my $alias = $self->get_long_alias_for_uri($uri) // $uri;
 			my $size_suffix = defined $ref_entry->{size} ?
 					" [" . human_readable_size_string($ref_entry->{size}) . "]" :
 					"";
 			$self->_termprint(sprintf "%s:%u %s%s", __("Get"), $ref_entry->{number}, $alias, $size_suffix);
-		} else {
-			# this is info about something that currently downloading
-			$ref_entry = $self->{_now_downloading}->{$uri};
-			given ($action) {
-				when('downloading') {
-					$ref_entry->{downloaded} = shift @params;
-
-					state $prev_timestamp = time();
-					my $timestamp = time();
-					if ($timestamp != $prev_timestamp) {
-						$prev_timestamp = $timestamp;
-					} else {
-						# don't renew stats too often just for download totals
-						return;
-					}
-				}
-				when ('expected-size') {
-					$ref_entry->{size} = shift @params;
-				}
-				when('done') {
-					my $result = shift @params;
-					if ($result ne '0') {
-						# some error occured, output it
-						$self->_termprint(sprintf "error downloading %s: %s", $uri, $result);
-					}
-					$self->{_size_done} += $ref_entry->{size} // $ref_entry->{downloaded};
-					delete $self->{_now_downloading}->{$uri};
-				}
+		}
+		when ('done') {
+			print "\r";
+			my $uri = shift @params;
+			my $ref_entry = $self->download_entries->{$uri};
+			my $result = shift @params;
+			if ($result ne '0') {
+				# some error occured, output it
+				$self->_termprint(sprintf "error downloading %s: %s", $uri, $result);
 			}
 		}
-	};
-	undef $uri;
-	undef $action;
-
-	# print 'em all!
-	my @ref_entries_to_print;
-	foreach my $uri (keys %{$self->{_now_downloading}}) {
-		my $ref_entry;
-		%{$ref_entry} = %{$self->{_now_downloading}->{$uri}};
-		$ref_entry->{uri} = $uri;
-		push @ref_entries_to_print, $ref_entry;
-	}
-	# sort by download numbers
-	@ref_entries_to_print = sort { $a->{number} <=> $b->{number} } @ref_entries_to_print;
-
-	my $whole_string = '';
-
-	do { # calculating overall download percent
-		# firstly, start up with filling size of already downloaded things
-		my $total_downloaded_size = $self->{_size_done};
-		# count each amount bytes download for all active entries
-		$total_downloaded_size += (sum map { $_->{downloaded} } values %{$self->{_now_downloading}}) // 0;
-
-		my $total_estimated_size;
-	    if (defined $self->{_total_estimated_size}) {
-			# if caller has specified the estimated size, just use it
-			$total_estimated_size = $self->{_total_estimated_size};
-		} else {
-			# otherwise compute it based on data we have
-			$total_estimated_size = $self->{_size_done};
-			foreach my $ref_entry (values %{$self->{_now_downloading}}) {
-				# add or real estimated size, or downloaded size (for entries
-				# where download size hasn't been determined yet)
-				$total_estimated_size += $ref_entry->{size} // $ref_entry->{downloaded};
+		when ('ping') {
+			my $update_required = shift @params;
+			if (!$update_required) {
+				my $timestamp = time();
+				if ($timestamp != $self->{_previous_report_time}) {
+					$self->{_previous_report_time} = $timestamp;
+				} else {
+					# don't renew stats too often just for download totals
+					return;
+				}
 			}
-		}
-		$whole_string .= sprintf "%.0f%% ", $total_downloaded_size / $total_estimated_size * 100;
-	};
 
-	foreach my $ref_entry (@ref_entries_to_print) {
-		my $uri = $ref_entry->{uri};
-		my $alias = $self->{_short_aliases}->{$uri} // $uri;
-		my $size_substring = "";
-		if (defined $ref_entry->{size}) {
-			# filling size substring
-			$size_substring = sprintf "/%s %.0f%%", human_readable_size_string($ref_entry->{size}),
-					$ref_entry->{downloaded} / $ref_entry->{size} * 100;
+			# print 'em all!
+			print "\r";
+
+			my @ref_entries_to_print;
+			foreach my $uri (keys %{$self->download_entries}) {
+				my $ref_entry;
+				%{$ref_entry} = %{$self->download_entries->{$uri}};
+				$ref_entry->{'uri'} = $uri;
+				push @ref_entries_to_print, $ref_entry;
+			}
+			# sort by download numbers
+			@ref_entries_to_print = sort { $a->{'number'} <=> $b->{'number'} } @ref_entries_to_print;
+
+			my $whole_string .= sprintf "%.0f%% ", $self->get_overall_download_percent();
+
+			foreach my $ref_entry (@ref_entries_to_print) {
+				my $uri = $ref_entry->{'uri'};
+				my $alias = $self->get_short_alias_for_uri($uri) // $uri;
+				my $size_substring = "";
+				if (defined $ref_entry->{'size'}) {
+					# filling size substring
+					$size_substring = sprintf "/%s %.0f%%", human_readable_size_string($ref_entry->{'size'}),
+							$ref_entry->{'downloaded'} / $ref_entry->{'size'} * 100;
+				}
+				$whole_string .= (sprintf "[%u %s %u%s]",
+						$ref_entry->{'number'}, $alias, $ref_entry->{'downloaded'}, $size_substring);
+			}
+			#my $speed_appendage = __human_readable_speed($self->speed());
+			$self->_termprint($whole_string);
 		}
-		$whole_string .= (sprintf "[%u %s %u%s]",
-				$ref_entry->{number}, $alias, $ref_entry->{downloaded}, $size_substring);
 	}
-	$self->_termprint($whole_string);
 }
 
 sub __human_readable_difftime_string ($) {
@@ -188,7 +155,7 @@ sub finish ($) {
 	my ($self) = @_;
 
 	print "\r";
-	$self->_termprint(sprintf __("Fetched in %s."), __human_readable_difftime_string(time() - $self->{_start_time}));
+	$self->_termprint(sprintf __("Fetched in %s."), __human_readable_difftime_string(time() - $self->get_start_time()));
 }
 
 1;

@@ -48,7 +48,7 @@ sub perform ($$$$$) {
 	open(my $fd, '>>', $filename) or
 			return sprintf "unable to open file '%s' for appending: %s", $filename, $!;
 	my $total_bytes = tell($fd);
-	$sub_callback->('downloading', $total_bytes);
+	$sub_callback->('downloading', $total_bytes, 0);
 	
 	# checking and preparing target
 	my $source_filename = URI->new($uri)->file();
@@ -69,7 +69,7 @@ sub perform ($$$$$) {
 
 		my $written_bytes = length($chunk);
 		$total_bytes += $written_bytes;
-		$sub_callback->('downloading', $total_bytes);
+		$sub_callback->('downloading', $total_bytes, $written_bytes);
 	};
 
 	close($fd) or
