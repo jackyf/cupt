@@ -31,6 +31,9 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - Substituted obsoleted 'progress' method with new 'hook' method.
         - Fixed dangling, wrong-placed console cursor.
         - Also output download speed.
+        - Output count of downloaded bytes for each package in
+          human-readable form too (in addition to all size bytes count for
+          package). In four words, "10829837/15.9MiB" -> '10.1MiB/15.9MiB'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 

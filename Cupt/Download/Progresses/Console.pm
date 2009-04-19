@@ -125,8 +125,9 @@ sub hook {
 					$size_substring = sprintf "/%s %.0f%%", human_readable_size_string($ref_entry->{'size'}),
 							$ref_entry->{'downloaded'} / $ref_entry->{'size'} * 100;
 				}
-				$whole_string .= (sprintf "[%u %s %u%s]",
-						$ref_entry->{'number'}, $alias, $ref_entry->{'downloaded'}, $size_substring);
+				$whole_string .= (sprintf "[%u %s %s%s]",
+						$ref_entry->{'number'}, $alias,
+						human_readable_size_string($ref_entry->{'downloaded'}), $size_substring);
 			}
 			my $speed_appendage = __human_readable_speed($self->get_download_speed());
 			$self->_termprint($whole_string, $speed_appendage);
