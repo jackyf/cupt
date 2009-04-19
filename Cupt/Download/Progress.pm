@@ -33,6 +33,8 @@ use warnings;
 use List::Util qw(sum);
 use Time::HiRes qw(tv_interval gettimeofday);
 
+use Cupt::Core;
+
 =head1 PARAMS
 
 =head2 o_download_speed_accuracy
