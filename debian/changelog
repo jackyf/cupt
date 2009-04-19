@@ -7,6 +7,7 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - Generate additional warning when deleting essential packages.
       - Require typing the confirmation phrase for really dangerous actions.
       - Changed 'installed' -> 'INSTALLED' for untrusted packages warning.
+    - Implemented option '--installed-only' for some query actions.
   * Cupt:
     - Download:
       - Method, Methods/*:

@@ -227,8 +227,10 @@ sub config_dump () {
 
 sub show_package_versions () {
 	my $o_with_release_info = 0;
+	my $o_installed_only = 0;
 	GetOptions(
-		'--with-release-info' => \$o_with_release_info,
+		'with-release-info' => \$o_with_release_info,
+		'installed-only' => \$o_installed_only,
 	);
 
 	check_no_more_options();
@@ -256,7 +258,7 @@ sub show_package_versions () {
 			mydie("no package expressions specified");
 
 	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
 	foreach my $package_expression (@package_expressions) {
 		my $package_name;
@@ -340,10 +342,12 @@ sub search () {
 	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
 	my $o_names_only = 0;
+	my $o_installed_only = 0;
 	my $o_case_sensitive = 0;
 	GetOptions(
 		'names-only|n' => sub { $config->set_regular_var('apt::cache::namesonly', 1) },
 		'case-sensitive' => \$o_case_sensitive,
+		'installed-only' => \$o_installed_only,
 	);
 
 	check_no_more_options();
@@ -352,7 +356,7 @@ sub search () {
 			mydie("no search patterns specified");
 
 	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 0);
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 0);
 
 	my @regexes;
 	foreach my $pattern (@patterns) {
@@ -417,8 +421,10 @@ sub show_package_relations ($) {
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
 	my $o_with_suggests = 0;
+	my $o_installed_only = 0;
 	GetOptions(
 		'with-suggests' => \$o_with_suggests,
+		'installed-only' => \$o_installed_only,
 	);
 
 	check_no_more_options();
@@ -427,7 +433,7 @@ sub show_package_relations ($) {
 			mydie("no package expressions specified");
 
 	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
 	my @versions = map { select_binary_package_version($_) } @ARGV;
 
@@ -607,9 +613,14 @@ sub mark_autoinstalled ($) {
 }
 
 sub pkgnames () {
+	my $o_installed_only = 0;
+	GetOptions(
+		'installed-only' => \$o_installed_only,
+	);
+
 	check_no_more_options();
 
-	build_cache(-source => 0, -binary => 1, -installed => 1);
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
 	my $prefix = "";
 	if (scalar @ARGV) {

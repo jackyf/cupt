@@ -160,6 +160,10 @@ don't take 'Recommends' dependencies into account
 
 Corresponding configuration variable: L<apt::cache::important>
 
+=item --installed-only
+
+work only with installed versions of packages; valuable only for L</show>, L</depends>, L</rdepends>, L</search>, L</pkgnames> actions
+
 =back
 
 =head2 Management actions
