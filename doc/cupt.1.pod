@@ -315,6 +315,13 @@ usage for each package
 implicitly install all unpacked packages, useful for continuing interrupted
 upgrades
 
+=item --download-only,-d
+
+stop after download stage, don't modify the system; not applicable for
+L</markauto> and L</markauto> actions
+
+Corresponding configuration option: L<cupt::worker::download-only>
+
 =back
 
 =head3 management modifiers
@@ -463,6 +470,10 @@ the end of the whole operation or not. Being set to true, speeds up
 large-amount actions, but if the operation will somewhy interrupted, leaves
 system in the interim trigger state, which can be fixed by manual run of 'dpkg
 --triggers-only --pending' command. True by default.
+
+=item cupt::worker::download-only
+
+see L<--download-only|/--download-only,-d>
 
 =item cupt::worker::purge
 

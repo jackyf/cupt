@@ -858,6 +858,7 @@ sub manage_packages ($) {
 		'resolver=s' => \$o_resolver_type,
 		'max-solution-count=s' => \$o_max_solution_count,
 		'no-install-recommends|R' => sub { $config->set_regular_var('apt::install-recommends' => 0) },
+		'download-only|d' => sub { $config->set_regular_var('cupt::worker::download-only', 1) },
 		'show-versions|V' => \$o_show_versions,
 		'show-size-changes|Z' => \$o_show_size_changes,
 		'install-unpacked' => \$o_install_unpacked,

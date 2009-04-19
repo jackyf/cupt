@@ -8,6 +8,7 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - Require typing the confirmation phrase for really dangerous actions.
       - Changed 'installed' -> 'INSTALLED' for untrusted packages warning.
     - Implemented option '--installed-only' for some query actions.
+    - Implemented option '--download-only' for management actions.
   * Cupt:
     - Download:
       - Method, Methods/*:
@@ -36,6 +37,10 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - Output count of downloaded bytes for each package in
           human-readable form too (in addition to all size bytes count for
           package). In four words, "10829837/15.9MiB" -> '10.1MiB/15.9MiB'.
+    - System:
+      - Worker: honor 'cupt::worker::download-only' option.
+    - Config:
+      - New option 'cupt::worker::download-only', defaults to false.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 

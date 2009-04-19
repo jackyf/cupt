@@ -834,6 +834,8 @@ sub do_actions ($$) {
 		}
 	}
 
+	return 1 if $self->{_config}->var('cupt::worker::download-only');
+
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
