@@ -187,16 +187,20 @@ Exceptions:
 
 =item *
 
-I<start> - message turns download start
+'start' - message turns download start
 
 I<size> - size in bytes of the download, can be skipped if it's unknown before
 the download
 
 =item *
 
-I<done> - message turns download finish
+'done' - message turns download finish
 
 I<result> - 0 if success, error string in case of error
+
+=item *
+
+'ping' - update progress view
 
 =back
 
@@ -206,7 +210,9 @@ sub progress ($$$;@) {
 	my ($self, $uri, $action, @params) = @_;
 
 	my $ref_entry;
-	if ($action eq 'start') {
+	if ($action eq 'ping') {
+		$self->hook('ping', 0);
+	} elsif ($action eq 'start') {
 		# new entry, create it
 		$ref_entry = ($self->{_now_downloading}->{$uri} = {});
 		$ref_entry->{'number'} = $self->{_next_download_number}++;

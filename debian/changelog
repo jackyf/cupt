@@ -15,6 +15,7 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - Various documentation improvements.
       - Manager:
         - Road all progress requests through own pipe, not directly.
+        - Update progress meter several times during a second.
       - Progress:
         - New method 'get_start_time'.
         - New method 'get_long_alias_for_uri'.

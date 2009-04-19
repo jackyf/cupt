@@ -36,6 +36,7 @@ use IO::Select;
 use Fcntl qw(:flock);
 use File::Temp;
 use POSIX;
+use Time::HiRes qw(setitimer ITIMER_REAL);
 
 use fields qw(_config _progress _downloads_done _worker_fh _worker_pid _fifo_dir);
 
@@ -124,6 +125,11 @@ sub new ($$$) {
 		autoflush SELF_WRITE;
 
 		my $exit_flag = 0;
+
+		# setting progress ping timer
+		$SIG{ALRM} = sub { __my_write_pipe(\*SELF_WRITE, 'progress', '', 'ping') };
+		setitimer(ITIMER_REAL, 0, 0.25);
+
 		while (!$exit_flag) {
 			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read();
 			foreach my $fh (@ready) {
