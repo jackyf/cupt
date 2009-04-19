@@ -807,11 +807,17 @@ sub generate_management_prompt ($$$) {
 			}
 		};
 
-		print __("Do you want to continue? [y/N/q] ");
+		my $confirmation_for_dangerous_action = __("Yes, do as I say!");
+		my $question = $is_dangerous_action ?
+				sprintf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, anything else to discard this solution:\n"), $confirmation_for_dangerous_action) :
+				__("Do you want to continue? [y/N/q] ");
+		my $positive_answer = $is_dangerous_action ? $confirmation_for_dangerous_action : 'y';
+
+		print $question;
 		my $answer = <STDIN>;
 		chomp $answer;
-		$answer = lc($answer);
-		if ($answer eq 'y') {
+		$answer = lc($answer) if !$is_dangerous_action;
+		if ($answer eq $positive_answer) {
 			# solution has been accepted
 			return 1;
 		} elsif ($answer eq 'q') {
