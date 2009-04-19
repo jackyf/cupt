@@ -998,12 +998,3 @@ sub process_options {
 	}
 }
 
-__END__
-
-=head1 COPYRIGHT AND LICENSE
-
-Copyright (c) 2008 Eugene V. Lyubimkin
-
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
-
