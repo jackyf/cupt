@@ -41,6 +41,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - Worker: honor 'cupt::worker::download-only' option.
     - Config:
       - New option 'cupt::worker::download-only', defaults to false.
+      - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain
+        archirecture.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 

@@ -61,6 +61,7 @@ sub new {
 			'acquire::ftp::timeout' => 120,
 			'acquire::file::timeout' => 20,
 			'apt::acquire::max-default-age::debian-security' => 7,
+			'apt::architecture' => undef, # will be set a bit later
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::allversions' => 0,
 			'apt::cache::important' => 0,
@@ -115,8 +116,8 @@ sub new {
 		},
 
 	};
-	$self->{regular_vars}->{'apt::architecture'} = __get_architecture();
 	bless $self, $class;
+	$self->set_regular_var('apt::architecture', $self->_get_architecture());
 	$self->_read_configs();
 	return $self;
 }
@@ -242,8 +243,10 @@ sub _read_configs {
 	}
 }
 
-sub __get_architecture {
-	my $answer = qx/dpkg --print-architecture/;
+sub _get_architecture ($) {
+	my ($self) = @_;
+	my $dpkg_binary = $self->var('dir::bin::dpkg');
+	my $answer = qx/$dpkg_binary --print-architecture/;
 	chomp($answer);
 	return $answer;
 }
