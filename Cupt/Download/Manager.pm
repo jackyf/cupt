@@ -96,7 +96,7 @@ sub new ($$$) {
 
 		$pid = open($worker_fh, "|-");
 		defined $pid or
-				myinternaldie("unable to create download worker stream: $!");
+				myinternaldie("unable to create download worker stream: %s", $!);
 	};
 	autoflush $worker_fh;
 	$self->{_worker_fh} = $worker_fh;
@@ -219,7 +219,7 @@ sub new ($$$) {
 				$active_downloads{$uri}->{waiter_fh} = $waiter_fh;
 
 				my $download_pid = open(my $download_fh, "-|");
-				$download_pid // myinternaldie("unable to fork: $!");
+				$download_pid // myinternaldie("unable to fork: %s", $!);
 
 				$active_downloads{$uri}->{pid} = $download_pid;
 				$active_downloads{$uri}->{input_fh} = $download_fh;
@@ -252,9 +252,9 @@ sub new ($$$) {
 		# finishing progress
 		$self->{_progress}->finish();
 
-		close STDIN or mydie("unable to close STDIN for worker: $!");
-		close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: $!");
-		close SELF_READ or mydie("unable to close reading side of worker's own pipe: $!");
+		close STDIN or mydie("unable to close STDIN for worker: %s", $!);
+		close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: %s", $!);
+		close SELF_READ or mydie("unable to close reading side of worker's own pipe: %s", $!);
 		POSIX::_exit(0);
 	}
 }
@@ -313,9 +313,9 @@ sub download ($@) {
 		# schedule new download
 
 		my $waiter_fifo = File::Temp::tempnam($self->{_fifo_dir}, "download-") or
-				mydie("unable to choose name for download fifo for '$uri' -> '$filename': $!");
+				mydie("unable to choose name for download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
 		system('mkfifo', '-m', '600', $waiter_fifo) == 0 or
-				mydie("unable to create download fifo for '$uri' -> '$filename': $?");
+				mydie("unable to create download fifo for '%s' -> '%s': %s", $uri, $filename, $?);
 
 		flock($self->{_worker_fh}, LOCK_EX);
 		if (exists $ref_entry->{'size'}) {
@@ -325,7 +325,7 @@ sub download ($@) {
 		flock($self->{_worker_fh}, LOCK_UN);
 
 		open(my $waiter_fh, "<", $waiter_fifo) or
-				mydie("unable to listen to download fifo: $!");
+				mydie("unable to listen to download fifo: %s", $!);
 
 		push @waiters, { 'fifo' => $waiter_fifo, 'fh' => $waiter_fh, 'checker' => $ref_entry->{'post-action'} };
 	}
@@ -348,7 +348,7 @@ sub download ($@) {
 
 			my ($current_result) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
-					mydie("unable to close download fifo: $!");
+					mydie("unable to close download fifo: %s", $!);
 
 			# remove fifo from system
 			unlink $waiter_fifo;
