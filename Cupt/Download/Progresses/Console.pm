@@ -156,8 +156,8 @@ sub __human_readable_difftime_string ($) {
 sub finish ($) {
 	my ($self) = @_;
 
-	print "\r";
 	$self->_termprint(sprintf __("Fetched in %s."), __human_readable_difftime_string(time() - $self->get_start_time()));
+	print "\n";
 }
 
 1;
