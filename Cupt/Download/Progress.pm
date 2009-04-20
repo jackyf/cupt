@@ -219,7 +219,7 @@ sub progress ($$$;@) {
 		# can be undef, be cautious
 		$ref_entry->{'size'} = shift @params;
 		$ref_entry->{'downloaded'} = 0;
-		$self->hook($uri, 'start');
+		$self->hook('start', $uri);
 		$self->hook('ping', 1);
 	} else {
 		# this is info about something that currently downloading
@@ -238,7 +238,8 @@ sub progress ($$$;@) {
 			}
 			when ('done') {
 				$self->{_size_done} += $ref_entry->{'size'} // $ref_entry->{'downloaded'};
-				$self->hook($uri, 'done');
+				my $result = shift @params;
+				$self->hook('done', $uri, $result);
 				delete $self->{_now_downloading}->{$uri};
 				$self->hook('ping', 1);
 			}

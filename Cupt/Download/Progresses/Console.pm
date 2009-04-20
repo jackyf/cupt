@@ -49,6 +49,7 @@ sub _termprint ($$$) {
 
 	$right_appendage //= "";
 	my $allowed_width = $self->{_termwidth} - length($right_appendage);
+	print "\r";
 	if (length($string) > $allowed_width) {
 		print substr($string, 0, $allowed_width);
 	} else {
@@ -69,7 +70,6 @@ sub hook {
 	# update info
 	given ($message) {
 		when ('start') {
-			print "\r";
 			my $uri = shift @params;
 			my $ref_entry = $self->download_entries->{$uri};
 
@@ -78,15 +78,17 @@ sub hook {
 					" [" . human_readable_size_string($ref_entry->{size}) . "]" :
 					"";
 			$self->_termprint(sprintf "%s:%u %s%s", __("Get"), $ref_entry->{number}, $alias, $size_suffix);
+			print "\n";
 		}
 		when ('done') {
-			print "\r";
 			my $uri = shift @params;
 			my $ref_entry = $self->download_entries->{$uri};
 			my $result = shift @params;
 			if ($result ne '0') {
 				# some error occured, output it
-				$self->_termprint(sprintf "error downloading %s: %s", $uri, $result);
+				$self->_termprint(""); # clean the line
+				# this may cross several lines
+				say sprintf "\rerror downloading %s: %s", $uri, $result;
 			}
 		}
 		when ('ping') {
@@ -102,7 +104,6 @@ sub hook {
 			}
 
 			# print 'em all!
-			print "\r";
 
 			my @ref_entries_to_print;
 			foreach my $uri (keys %{$self->download_entries}) {
