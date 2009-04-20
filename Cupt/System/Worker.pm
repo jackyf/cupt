@@ -829,8 +829,6 @@ sub do_actions ($$) {
 
 			# fail and exit if it was something bad with downloading
 			mydie($download_result) if $download_result;
-
-			$download_progress->finish();
 		}
 	}
 

@@ -246,6 +246,12 @@ sub new ($$$) {
 				}
 			}
 		}
+		# disabling timer
+		$SIG{ALRM} = sub {};
+		setitimer(ITIMER_REAL, 0, 0);
+		# finishing progress
+		$self->{_progress}->finish();
+
 		close STDIN or mydie("unable to close STDIN for worker: $!");
 		close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: $!");
 		close SELF_READ or mydie("unable to close reading side of worker's own pipe: $!");
