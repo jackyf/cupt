@@ -68,6 +68,7 @@ sub new {
 	$self->{_downloaded} = 0;
 	# for download speed counting
 	$self->{_size_changes} = [];
+	$self->{_uncounted_float_seconds} = 0;
     return bless $self => $class;
 }
 
@@ -342,10 +343,13 @@ sub _update_size_changes ($) {
 		last if !defined $piece;
 
 		my ($piece_time, $piece_size) = @$piece;
-		if (tv_interval($piece_time, $now) < $float_time_accuracy) {
+		my $interval = tv_interval($piece_time, $now);
+		if ($interval < $float_time_accuracy) {
 			# all further times will be even near to now
 			unshift @{$self->{_size_changes}}, $piece;
 			$exit_flag = 1;
+		} else {
+			$self->{_uncounted_float_seconds} = $interval - $float_time_accuracy;
 		}
 	}
 }
@@ -360,12 +364,21 @@ sub get_download_speed ($) {
 	my ($self) = @_;
 
 	$self->_update_size_changes();
+	my $earliest_piece_time_correction;
+	if (scalar @{$self->{_size_changes}}) {
+		my $earliest_piece_time = $self->{_size_changes}->[-1]->[0];
+		$earliest_piece_time_correction = tv_interval($earliest_piece_time);
+	} else {
+		$earliest_piece_time_correction = 0;
+	}
 	my $bytes = 0;
 	foreach (@{$self->{_size_changes}}) {
 		$bytes += $_->[1];
 	}
 
-	return $bytes * 1000 / $o_download_speed_accuracy;
+	my $counted_time = $o_download_speed_accuracy / 1000 +
+			$self->{_uncounted_float_seconds} - $earliest_piece_time_correction;
+	return $bytes / $counted_time;
 }
 
 =head2 finish
