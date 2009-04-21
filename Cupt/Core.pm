@@ -292,7 +292,7 @@ sub compare_version_strings($$) {
 sub human_readable_size_string ($) {
 	my ($bytes) = @_;
 
-	return "${bytes}B" if ($bytes < 10*1024);
+	return sprintf("%.0fB", $bytes) if ($bytes < 10*1024);
 	return sprintf("%.1fKiB", ($bytes / 1024)) if ($bytes < 100*1024);
 	return sprintf("%.0fKiB", ($bytes / 1024)) if ($bytes < 10*1024*1024);
 	return sprintf("%.1fMiB", ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);

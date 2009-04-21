@@ -10,6 +10,9 @@ cupt (0.1.1) UNRELEASED; urgency=low
     - Implemented option '--installed-only' for some query actions.
     - Implemented option '--download-only' for management actions.
   * Cupt:
+    - Core:
+      - 'human_readable_size_string': don't print fractional part for small
+        float values.
     - Download:
       - Method, Methods/*:
         - [API break] 'sub_callback' in 'perform', added fetched bytes
