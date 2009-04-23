@@ -431,6 +431,18 @@ sub _fill_action_dependencies ($$$$) {
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_package_name = $ref_slave_action->{'package_name'};
+						my $slave_version_string = $ref_slave_action->{'version_string'};
+						my $slave_action_name = $ref_slave_action->{'action_name'};
+						my $slave_string = "$slave_action_name $slave_package_name $slave_version_string";
+						my $master_package_name = $ref_master_action->{'package_name'};
+						my $master_version_string = $ref_master_action->{'version_string'};
+						my $master_action_name = $ref_master_action->{'action_name'};
+						my $master_string = "$master_action_name $master_package_name $master_version_string";
+						mydebug("action dependency: $slave_string -> $master_string");
+					}
+
 					last SATISFYING_VERSIONS;
 				}
 			}

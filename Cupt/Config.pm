@@ -96,6 +96,7 @@ sub new {
 			'cupt::worker::purge' => 0,
 			'cupt::worker::simulate' => 0,
 			'debug::resolver' => 0,
+			'debug::worker' => 0,
 		},
 
 		_optional_patterns => [

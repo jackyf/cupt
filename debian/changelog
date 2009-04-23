@@ -42,7 +42,9 @@ cupt (0.1.1) UNRELEASED; urgency=low
           human-readable form too (in addition to all size bytes count for
           package). In four words, "10829837/15.9MiB" -> '10.1MiB/15.9MiB'.
     - System:
-      - Worker: honor 'cupt::worker::download-only' option.
+      - Worker:
+        - Honor 'cupt::worker::download-only' option.
+        - Added 'debug::worker' config option to print some debug info.
     - Config:
       - New option 'cupt::worker::download-only', defaults to false.
       - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain

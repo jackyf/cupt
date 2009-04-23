@@ -489,6 +489,11 @@ see L<--simulate|/--simulate,-s>
 boolean (0/1), if true, resolver will print a lot of debug information to the
 standard error
 
+=item debug::worker
+
+boolean (0/1), if true, worker will print some debug information to the
+standard error
+
 =back
 
 =head1 DEFINITIONS
