@@ -128,7 +128,7 @@ sub new ($$$) {
 
 		# setting progress ping timer
 		$SIG{ALRM} = sub { __my_write_pipe(\*SELF_WRITE, 'progress', '', 'ping') };
-		setitimer(ITIMER_REAL, 0, 0.25);
+		setitimer(ITIMER_REAL, 0.25, 0.25);
 
 		while (!$exit_flag) {
 			my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read();
