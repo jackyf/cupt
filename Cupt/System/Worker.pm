@@ -367,14 +367,14 @@ sub __is_inner_actions_equal ($$) {
 			$ref_left_action->{'action_name'} eq $ref_right_action->{'action_name'});
 }
 
-sub _fill_actions ($$\@) {
+sub _fill_actions ($\%$) {
 	my ($self, $ref_actions_preview, $graph) = @_;
 
 	# user action - action name from actions preview
 	my %user_action_to_inner_actions = (
 		'install' => [ 'install' ],
-		'upgrade' => [ 'remove', 'install' ],
-		'downgrade' => [ 'remove', 'install' ],
+		'upgrade' => [ 'install' ],
+		'downgrade' => [ 'install' ],
 		'configure' => [ 'configure' ],
 		'deconfigure' => [ 'remove' ],
 		'remove' => [ 'remove' ],
@@ -560,6 +560,11 @@ sub _build_actions_graph ($$) {
 				# depends must be removed after
 				$self->_fill_action_dependencies(
 						$system_version->{depends}, 'remove', 'after', $ref_inner_action, $graph);
+				# 'install' actions may also implicitly contain 'remove' for upgrades, so
+				$self->_fill_action_dependencies(
+						$system_version->{pre_depends}, 'install', 'after', $ref_inner_action, $graph);
+				$self->_fill_action_dependencies(
+						$system_version->{depends}, 'install', 'after', $ref_inner_action, $graph);
 			}
 		}
 	}

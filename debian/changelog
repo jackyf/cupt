@@ -49,6 +49,9 @@ cupt (0.1.1) UNRELEASED; urgency=low
           violate Debian Policy.
         - Merge all 'unpack' + 'configure' actions into 'install' action
           unconditionally.
+        - Don't create fake 'remove' actions, just use existing 'install'
+          ones instead. This should resolve problems with scheduling
+          upgrading packages containing 'Pre-Depends'.
     - Config:
       - New option 'cupt::worker::download-only', defaults to false.
       - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain
