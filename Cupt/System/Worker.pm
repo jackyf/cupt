@@ -786,8 +786,11 @@ sub do_actions ($$) {
 			my $download_size = sum map { $_->{'size'} } @pending_downloads;
 			$download_progress->set_total_estimated_size($download_size);
 
-			my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
-			my $download_result = $download_manager->download(@pending_downloads);
+			my $download_result;
+			do {
+				my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+				$download_result = $download_manager->download(@pending_downloads);
+			}; # make sure that download manager is already destroyed at this point
 
 			close(LOCK) or
 					mydie("unable to close archives lock file: %s", $!);

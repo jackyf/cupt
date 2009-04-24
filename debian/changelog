@@ -52,6 +52,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - Don't create fake 'remove' actions, just use existing 'install'
           ones instead. This should resolve problems with scheduling
           upgrading packages containing 'Pre-Depends'.
+        - Ensure that download manager is destroyed before processing the
+          result of downloads.
     - Config:
       - New option 'cupt::worker::download-only', defaults to false.
       - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain
