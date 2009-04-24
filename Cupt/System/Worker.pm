@@ -533,7 +533,7 @@ sub _build_actions_graph ($$) {
 				my $desired_version = $self->{_desired_state}->{$package_name}->{version};
 				# pre-depends must be unpacked before
 				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'unpack', 'before', $ref_inner_action, $graph);
+						$desired_version->{pre_depends}, 'configure', 'before', $ref_inner_action, $graph);
 				# conflicts must be unsatisfied before
 				$self->_fill_action_dependencies(
 						$desired_version->{conflicts}, 'remove', 'before', $ref_inner_action, $graph);
