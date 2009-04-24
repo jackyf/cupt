@@ -47,6 +47,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - Added 'debug::worker' config option to print some debug info.
         - Bump Pre-Depends requirements to 'configure' to make sure to not
           violate Debian Policy.
+        - Merge all 'unpack' + 'configure' actions into 'install' action
+          unconditionally.
     - Config:
       - New option 'cupt::worker::download-only', defaults to false.
       - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain
