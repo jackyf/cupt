@@ -372,35 +372,33 @@ sub _fill_actions ($\%$) {
 
 	# user action - action name from actions preview
 	my %user_action_to_inner_actions = (
-		'install' => [ 'install' ],
-		'upgrade' => [ 'install' ],
-		'downgrade' => [ 'install' ],
-		'configure' => [ 'configure' ],
-		'deconfigure' => [ 'remove' ],
-		'remove' => [ 'remove' ],
-		'purge' => [ 'remove' ],
+		'install' => 'install',
+		'upgrade' => 'install',
+		'downgrade' => 'install',
+		'configure' => 'configure',
+		'deconfigure' => 'remove',
+		'remove' => 'remove',
+		'purge' => 'remove',
 	);
 
 	# convert all actions into inner ones
 	foreach my $user_action (keys %$ref_actions_preview) {
-		my $ref_actions_to_be_performed = $user_action_to_inner_actions{$user_action};
+		my $inner_action = $user_action_to_inner_actions{$user_action};
+		defined $inner_action or next;
 
-		foreach my $inner_action (@$ref_actions_to_be_performed) {
-			foreach my $ref_package_entry (@{$ref_actions_preview->{$user_action}}) {
-				#foreach my $package_name (map { $_->{package_name} } @{$ref_actions_preview->{$user_action}}) {
-				my $package_name = $ref_package_entry->{package_name};
-				my $version_string;
-				if ($inner_action eq 'remove') {
-					$version_string = $self->{_system_state}->get_installed_version_string($package_name);
-				} else {
-					$version_string = $ref_package_entry->{'version'}->{version_string};
-				}
-				$graph->add_vertex({
-						'package_name' => $package_name,
-						'version_string' => $version_string,
-						'action_name' => $inner_action,
-				});
+		foreach my $ref_package_entry (@{$ref_actions_preview->{$user_action}}) {
+			my $package_name = $ref_package_entry->{package_name};
+			my $version_string;
+			if ($inner_action eq 'remove') {
+				$version_string = $self->{_system_state}->get_installed_version_string($package_name);
+			} else {
+				$version_string = $ref_package_entry->{'version'}->{version_string};
 			}
+			$graph->add_vertex({
+					'package_name' => $package_name,
+					'version_string' => $version_string,
+					'action_name' => $inner_action,
+			});
 		}
 	}
 }
