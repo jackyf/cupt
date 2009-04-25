@@ -52,6 +52,9 @@ cupt (0.1.1) UNRELEASED; urgency=low
         - Don't create fake 'remove' actions, just use existing 'install'
           ones instead. This should resolve problems with scheduling
           upgrading packages containing 'Pre-Depends'.
+        - Made all inter-action relations unversioned, this should ensure that
+          all 'install' -> 'remove' and 'remove' -> 'install' dependencies are
+          not underestimated.
         - Ensure that download manager is destroyed before processing the
           result of downloads.
     - Config:

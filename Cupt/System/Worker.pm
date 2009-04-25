@@ -363,7 +363,6 @@ sub get_unpacked_sizes_preview ($$) {
 sub __is_inner_actions_equal ($$) {
 	my ($ref_left_action, $ref_right_action) = @_;
 	return ($ref_left_action->{'package_name'} eq $ref_right_action->{'package_name'} &&
-			$ref_left_action->{'version_string'} eq $ref_right_action->{'version_string'} &&
 			$ref_left_action->{'action_name'} eq $ref_right_action->{'action_name'});
 }
 
@@ -414,10 +413,8 @@ sub _fill_action_dependencies ($$$$) {
 		foreach my $other_version (@$ref_satisfying_versions) {
 			my $other_package_name = $other_version->{package_name};
 
-			my $other_version_string = $other_version->{version_string};
 			my %candidate_action = (
 				'package_name' => $other_package_name,
-				'version_string' => $other_version_string,
 				'action_name' => $action_name
 			);
 			# search for the appropriate action in action list
