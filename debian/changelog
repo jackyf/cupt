@@ -10,6 +10,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
     - 'satisfy' subcommand:
       - Now accepts sequences of relation expressions divided by commas within
         one argument.
+    - 'config-dump' subcommand:
+      - Added a mode to print a value of only one configuration option.
     - Implemented option '--installed-only' for some query actions.
     - Implemented option '--download-only' for management actions.
   * Cupt:

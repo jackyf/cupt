@@ -16,7 +16,18 @@ cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
 
 =item config-dump
 
-prints all configuration variables to standard output
+If invoked without arguments, prints all configuration variables to standard
+output.
+
+If one argument is supplied, it is treaten as a configuration option and only
+the value of this option is printed (empty string in case of undefined value).
+Note that only scalar (non-list) options can be retrieved in this mode.
+
+Examples:
+
+C<cupt config-dump>
+
+C<cupt config-dump acquire::http::timeout>
 
 =item show
 

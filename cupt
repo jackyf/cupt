@@ -202,6 +202,9 @@ sub select_binary_package_version ($) {
 
 sub config_dump () {
 	check_no_more_options();
+
+	my $particular_key = shift @ARGV;
+
 	check_no_extra_args();
 
 	my $print_key_value = sub {
@@ -211,16 +214,23 @@ sub config_dump () {
 		print qq/$key "$value"\n/;
 	};
 
-	my @regular_keys = sort keys %{$config->{regular_vars}};
-	foreach my $key (@regular_keys) {
-		$print_key_value->($key, $config->{regular_vars}->{$key});
-	}
+	if (defined $particular_key) {
+		my $value;
+		$value = $config->var($particular_key);
+		$value //= "";
+		say $value;
+	} else {
+		my @regular_keys = sort keys %{$config->{regular_vars}};
+		foreach my $key (@regular_keys) {
+			$print_key_value->($key, $config->{regular_vars}->{$key});
+		}
 
-	my @list_keys = sort keys %{$config->{list_vars}};
-	foreach my $key (@list_keys) {
-		my @values = @{$config->{list_vars}->{$key}};
-		foreach (@values) {
-			$print_key_value->("${key}::", $_);
+		my @list_keys = sort keys %{$config->{list_vars}};
+		foreach my $key (@list_keys) {
+			my @values = @{$config->{list_vars}->{$key}};
+			foreach (@values) {
+				$print_key_value->("${key}::", $_);
+			}
 		}
 	}
 }
