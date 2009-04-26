@@ -40,7 +40,7 @@ use Cupt::Core;
 use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression
-		parse_relation_expression);
+		parse_relation_line);
 
 my $config;
 my $cache;
@@ -920,8 +920,8 @@ sub manage_packages ($) {
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
 		if ($action eq 'satisfy') {
-			my $relation_expression = parse_relation_expression($package_expression);
-			$resolver->satisfy_relation_expression($relation_expression);
+			my $ref_relation_expressions = parse_relation_line($package_expression);
+			$resolver->satisfy_relation_expression($_) for @$ref_relation_expressions;
 		} else {
 			my $action = $action;
 			if (!defined $cache->get_binary_package($package_expression)) {

@@ -7,6 +7,9 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - Generate additional warning when deleting essential packages.
       - Require typing the confirmation phrase for really dangerous actions.
       - Changed 'installed' -> 'INSTALLED' for untrusted packages warning.
+    - 'satisfy' subcommand:
+      - Now accepts sequences of relation expressions divided by commas within
+        one argument.
     - Implemented option '--installed-only' for some query actions.
     - Implemented option '--download-only' for management actions.
   * Cupt:

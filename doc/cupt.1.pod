@@ -246,14 +246,16 @@ C<cupt unmarkauto dpkg-dev>
 
 performs all needed operations to satisfy list of specified relations
 
-This subcommand receives the list of relations. Relation has the same syntax as
-defined in Debian Policy, 7.1.
+This subcommand receives the list of relations or relation lines. Relation and
+relation lines has the same syntax as defined in Debian Policy §7.1.
 
 Examples:
 
 C<< cupt satisfy "kmail (>= 4:4.2)" >>
 
 C<< cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)" >>
+
+C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget (>= 1.10.0)" >>
 
 =back
 
