@@ -318,7 +318,7 @@ sub show_package_versions () {
 					$p->(__('Release'), $_->{release}->{description});
 				}
 			}
-			$p->(__('PreDepends'), stringify_relation_expressions($version->{pre_depends})) if @{$version->{pre_depends}};
+			$p->(__('Pre-Depends'), stringify_relation_expressions($version->{pre_depends})) if @{$version->{pre_depends}};
 			$p->(__('Depends'), stringify_relation_expressions($version->{depends})) if @{$version->{depends}};
 			$p->(__('Recommends'), stringify_relation_expressions($version->{recommends})) if @{$version->{recommends}};
 			$p->(__('Suggests'), stringify_relation_expressions($version->{suggests})) if @{$version->{suggests}};

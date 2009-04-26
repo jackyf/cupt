@@ -12,6 +12,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
         one argument.
     - 'config-dump' subcommand:
       - Added a mode to print a value of only one configuration option.
+    - 'show' subcommand:
+      - Changed 'PreDepends' -> 'Pre-Depends' in output.
     - Implemented option '--installed-only' for some query actions.
     - Implemented option '--download-only' for management actions.
   * Cupt:
