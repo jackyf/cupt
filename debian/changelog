@@ -61,6 +61,10 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - New option 'cupt::worker::download-only', defaults to false.
       - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain
         archirecture.
+    - Cache:
+      - Relation:
+        - New free subroutine 'parse_relation_line' for parsing relation
+          sequences.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 

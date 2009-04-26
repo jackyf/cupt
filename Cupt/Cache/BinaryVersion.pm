@@ -31,7 +31,7 @@ use warnings;
 use strict;
 
 use Cupt::Core;
-use Cupt::Cache::Relation qw(__parse_relation_line);
+use Cupt::Cache::Relation qw(parse_relation_line);
 
 =head1 FLAGS
 
@@ -170,37 +170,37 @@ sub new {
 					}
 					# often fields
 					when ('Depends') {
-						$self->{depends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Tag') { $self->{tags} = $field_value unless $o_no_parse_info_onlys }
 					when ('Source') { $self->{source_name} = $field_value }
 					when ('Homepage') { $self->{homepage} = $field_value unless $o_no_parse_info_onlys }
 					when ('Recommends') {
-						$self->{recommends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{recommends} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Suggests') {
-						$self->{suggests} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{suggests} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Conflicts') {
-						$self->{conflicts} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{conflicts} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Replaces') {
-						$self->{replaces} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{replaces} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Provides') {
 						$self->{provides} = [ split /\s*,\s*/, $field_value ] unless $o_no_parse_relations;
 					}
 					# rare fields
 					when ('Pre-Depends') {
-						$self->{pre_depends} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{pre_depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Task') { $self->{homepage} = $field_value }
 					when ('Enhances') {
-						$self->{enhances} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{enhances} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Essential') { $self->{essential} = $field_value }
 					when ('Breaks') {
-						$self->{breaks} = __parse_relation_line($field_value) unless $o_no_parse_relations;
+						$self->{breaks} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 				}
 				undef $field_name;

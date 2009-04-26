@@ -40,7 +40,7 @@ use Exporter qw(import);
 
 use Cupt::Core;
 
-our @EXPORT_OK = qw(&__parse_relation_line &stringify_relation_expressions
+our @EXPORT_OK = qw(&parse_relation_line &stringify_relation_expressions
 		&stringify_relation_expression &parse_relation_expression);
 
 =head1 METHODS
@@ -230,7 +230,14 @@ sub parse_relation_expression ($) {
 	}
 }
 
-sub __parse_relation_line {
+=head2 parse_relation_line
+
+free subroutine, parses line of relation expressions, builds array of
+L</Relation expression>s and returns reference to it
+
+=cut
+
+sub parse_relation_line {
 	# my $relation_line = $_[0] 
 	# or myinternaldie("relation line is not defined");
 
