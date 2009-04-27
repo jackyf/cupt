@@ -562,6 +562,29 @@ sub _build_actions_graph ($$) {
 						$system_version->{depends}, 'install', 'after', $ref_inner_action, $graph);
 			}
 		}
+
+		if ($ref_inner_action->{'action_name'} eq 'install') {
+			my $package = $self->{_cache}->get_binary_package($package_name);
+			if (defined $package) {
+				# this is an upgrade/downgrade
+
+				# schedule dependencies including the old version of the package
+				my $system_version = $package->get_installed_version();
+				# so perform just like 'remove'
+
+				# pre-depends must be removed after
+				$self->_fill_action_dependencies(
+						$system_version->{pre_depends}, 'remove', 'after', $ref_inner_action, $graph);
+				# depends must be removed after
+				$self->_fill_action_dependencies(
+						$system_version->{depends}, 'remove', 'after', $ref_inner_action, $graph);
+				# 'install' actions may also implicitly contain 'remove' for upgrades, so
+				$self->_fill_action_dependencies(
+						$system_version->{pre_depends}, 'install', 'after', $ref_inner_action, $graph);
+				$self->_fill_action_dependencies(
+						$system_version->{depends}, 'install', 'after', $ref_inner_action, $graph);
+			}
+		}
 	}
 
 	return $graph->strongly_connected_graph();
