@@ -103,4 +103,8 @@ to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "", no
 
 'acquire::<protocol>::[<host>::]proxy' options take precedence over "<protocol>_proxy" shell variables
 
+=item
+
+'gpgv::trustedkeyring' defaults to '/var/lib/cupt/trusted.gpg'
+
 =back

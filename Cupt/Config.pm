@@ -85,7 +85,7 @@ sub new {
 			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',
 			'dir::state::status' => '/var/lib/dpkg/status',
-			'gpgv::trustedkeyring' => '/etc/apt/trusted.gpg',
+			'gpgv::trustedkeyring' => '/var/lib/cupt/trusted.gpg',
 
 			'cupt::downloader::max-simultaneous-downloads' => 3,
 			'cupt::resolver::keep-recommends' => 1,

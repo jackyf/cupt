@@ -106,6 +106,13 @@ sub new {
 	$self->{_source_packages} = {};
 	$self->{_binary_packages} = {};
 
+	do { # ugly hack to copy trusted keyring from APT whenever possible
+		my $cupt_keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
+		my $apt_keyring_file = '/etc/apt/trusted.gpg';
+		# ignore all errors, let install do its best
+		qx#install -m644 $apt_keyring_file $cupt_keyring_file >/dev/null 2>/dev/null#;
+	};
+
 	my $ref_index_entries;
 	eval {
 		$ref_index_entries = $self->_parse_sources_lists();

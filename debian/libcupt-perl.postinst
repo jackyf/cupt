@@ -2,8 +2,7 @@
 
 set -e
 
-# only public keys, why not readable by all?
-chmod a+r /etc/apt/trusted.gpg
+install -m644 /etc/apt/trusted.gpg /var/lib/cupt
 
 #DEBHELPER#
 

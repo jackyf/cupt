@@ -68,10 +68,20 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - New option 'cupt::worker::download-only', defaults to false.
       - Use value of 'dir::bin::dpkg', not plain 'dpkg' to obtain
         archirecture.
+      - The option 'gpgv::trustedkeyring' now defaults to
+        '/var/lib/cupt/trusted.gpg'.
     - Cache:
+      - Introduce the hack to copy APT's trusted keyring whenever possible to
+        cupt's keyring place. It will be removed once key update mechanism
+        would be implemented.
       - Relation:
         - New free subroutine 'parse_relation_line' for parsing relation
           sequences.
+  * debian/libcupt-perl.postinst:
+    - Don't mess with /etc/apt/trusted.gpg for now. Instead copy it to cupt's
+      own keyring place.
+  * debian/libcupt-perl.prerm:
+    - Introduced to clean up /var/lib/cupt directory.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
 
