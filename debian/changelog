@@ -74,6 +74,8 @@ cupt (0.1.1) UNRELEASED; urgency=low
       - Introduce the hack to copy APT's trusted keyring whenever possible to
         cupt's keyring place. It will be removed once key update mechanism
         would be implemented.
+      - When checking signatures, generate proper error message if the keyring
+        file doesn't exist.
       - Relation:
         - New free subroutine 'parse_relation_line' for parsing relation
           sequences.

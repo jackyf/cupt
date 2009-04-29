@@ -552,6 +552,11 @@ sub _verify_signature ($$) {
 	-r $signature_file or
 			return 0;
 
+	-e $keyring_file or
+			do {
+				mywarn("keyring file '%s' doesn't exist", $keyring_file);
+				return 0;
+			};
 	-r $keyring_file or
 			do {
 				mywarn("no read rights on keyring file '%s', please do 'chmod +r %s' with root rights",
