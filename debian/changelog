@@ -1,4 +1,4 @@
-cupt (0.1.1) UNRELEASED; urgency=low
+cupt (0.1.1) experimental; urgency=low
 
   * doc/cupt.1.pod:
     - Added 'Author' section.
@@ -85,7 +85,7 @@ cupt (0.1.1) UNRELEASED; urgency=low
   * debian/libcupt-perl.prerm:
     - Introduced to clean up /var/lib/cupt directory.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 19 Apr 2009 15:16:48 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 30 Apr 2009 23:19:35 +0300
 
 cupt (0.1.0) experimental; urgency=low
 
