@@ -1,3 +1,11 @@
+cupt (0.1.1.1) experimental; urgency=low
+
+  * debian/control:
+    - Put libwww-curl-perl to Build-Depends-Indep so t/file_method.t can load
+      it.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 01:49:41 +0300
+
 cupt (0.1.1) experimental; urgency=low
 
   * doc/cupt.1.pod:
