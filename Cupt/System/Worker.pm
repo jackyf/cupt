@@ -681,8 +681,9 @@ sub _prepare_downloads ($$) {
 					my $ref_release = $version->{avail_as}->[0]->{'release'};
 					my $codename = $ref_release->{'codename'};
 					my $component = $ref_release->{'component'};
+					my $base_uri = $uri->{'base_uri'};
 					$download_progress->set_long_alias_for_uri($download_uri,
-							"$codename/$component $package_name $version_string");
+							"$base_uri $codename/$component $package_name $version_string");
 				}
 			}
 		}
