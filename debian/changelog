@@ -12,6 +12,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Worker:
         - Adapted to to changes in 'download' method of download manager.
         - Send also base URI to download progress so it can display it.
+        - Give back transparent versioned 'remove','unpack','configure'
+          actions and versionful check. Heavy hacks didn't guarantee full
+          correctness, no reason to have them anymore.
     - Cache:
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
