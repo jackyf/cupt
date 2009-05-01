@@ -652,8 +652,6 @@ sub _prepare_downloads ($$) {
 				scalar @uris or
 						mydie("no available download URIs for %s %s", $package_name, $version_string);
 
-				my $uri = $uris[0];
-
 				# target path
 				my $basename = __get_archive_basename($version);
 				my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
@@ -663,7 +661,7 @@ sub _prepare_downloads ($$) {
 				next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
 
 				push @pending_downloads, {
-					'uri' => $uri,
+					'uris' => [ map { $_->{'download_uri' } } @uris ],
 					'filename' => $download_filename,
 					'size' => $version->{size},
 					'post-action' => sub {
@@ -676,12 +674,16 @@ sub _prepare_downloads ($$) {
 						return 0;
 					},
 				};
-				$download_progress->set_short_alias_for_uri($uri, $package_name);
-				my $ref_release = $version->{avail_as}->[0]->{'release'};
-				my $codename = $ref_release->{'codename'};
-				my $component = $ref_release->{'component'};
-				$download_progress->set_long_alias_for_uri($uri,
-						"$codename/$component $package_name $version_string");
+				foreach my $uri (@uris) {
+					my $download_uri = $uri->{'download_uri'};
+
+					$download_progress->set_short_alias_for_uri($download_uri, $package_name);
+					my $ref_release = $version->{avail_as}->[0]->{'release'};
+					my $codename = $ref_release->{'codename'};
+					my $component = $ref_release->{'component'};
+					$download_progress->set_long_alias_for_uri($download_uri,
+							"$codename/$component $package_name $version_string");
+				}
 			}
 		}
 	}
@@ -789,7 +791,7 @@ sub do_actions ($$) {
 
 	if ($simulate) {
 		foreach (@pending_downloads) {
-			say __("downloading") . ": " . $_->{'uri'};
+			say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
 		}
 	} else {
 		# don't bother ourselves with download preparings if nothing to download

@@ -275,7 +275,7 @@ Parameters:
 
 Sequence of hash entries with the following fields:
 
-I<uri> - URI to download, mandatory
+I<uris> - array of mirror URIs to download, mandatory
 
 I<filename> - target filename, mandatory
 
@@ -292,9 +292,13 @@ Example:
 
   my $download_manager = new Cupt::Download::Manager;
   $download_manager->download(
-	  { 'uri' => 'http://www.en.debian.org', 'filename' => '/tmp/en.html' },
-	  { 'uri' => 'http://www.ru.debian.org', 'filename' => '/tmp/ru.html', 'post-action' => \&checker },
-	  { 'uri' => 'http://www.ua.debian.org', 'filename' => '/tmp/ua.html', 'size' => 10254 }
+    { 'uris' => [ 'http://www.en.debian.org' ], 'filename' => '/tmp/en.html' },
+    { 'uris' => [ 'http://www.ru.debian.org' ], 'filename' => '/tmp/ru.html', 'post-action' => \&checker },
+    { 'uris' => [ 'http://www.ua.debian.org' ], 'filename' => '/tmp/ua.html', 'size' => 10254 }
+    { 'uris' => [
+        'http://ftp.de.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
+        'http://ftp.es.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb'
+      ], 'filename' => '/var/cache/apt/nlkt_0.3.2.1-2_amd64.deb' }
   );
 
 =cut
@@ -302,15 +306,18 @@ Example:
 sub download ($@) {
 	my $self = shift;
 
-	my @waiters;
-	# schedule download of each uri at its own thread
-	while (scalar @_) {
-		# extract next entry
-		my $ref_entry = shift;
-		my $uri = $ref_entry->{'uri'};
-		my $filename = $ref_entry->{'filename'};
+	# { $filename => { 'uris' => [ $uri... ], 'size' => $size, 'checker' => $checker }... }
+	my %download_entries;
 
-		# schedule new download
+	# [ { 'filename' => $filename, 'fifo' => $fifo, 'fh' => $fh }... ]
+	my @waiters;
+
+	my $sub_schedule_download = sub {
+		my ($filename) = @_;
+
+		my $uri = shift @{$download_entries{$filename}->{'uris'}};
+		my $size = $download_entries{$filename}->{'size'};
+		my $checker = $download_entries{$filename}->{'checker'};
 
 		my $waiter_fifo = File::Temp::tempnam($self->{_fifo_dir}, "download-") or
 				mydie("unable to choose name for download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
@@ -318,8 +325,8 @@ sub download ($@) {
 				mydie("unable to create download fifo for '%s' -> '%s': %s", $uri, $filename, $?);
 
 		flock($self->{_worker_fh}, LOCK_EX);
-		if (exists $ref_entry->{'size'}) {
-			__my_write_pipe($self->{_worker_fh}, 'set-download-size', $uri, $ref_entry->{'size'});
+		if (defined $size) {
+			__my_write_pipe($self->{_worker_fh}, 'set-download-size', $uri, $size);
 		}
 		__my_write_pipe($self->{_worker_fh}, 'download', $uri, $filename, $waiter_fifo);
 		flock($self->{_worker_fh}, LOCK_UN);
@@ -327,7 +334,27 @@ sub download ($@) {
 		open(my $waiter_fh, "<", $waiter_fifo) or
 				mydie("unable to listen to download fifo: %s", $!);
 
-		push @waiters, { 'fifo' => $waiter_fifo, 'fh' => $waiter_fh, 'checker' => $ref_entry->{'post-action'} };
+		push @waiters, {
+			'filename' => $filename,
+			'fifo' => $waiter_fifo,
+			'fh' => $waiter_fh,
+		};
+	};
+
+	# schedule download of each uri at its own thread
+	while (scalar @_) {
+		# extract next entry
+		my $ref_entry = shift;
+		my $ref_uris= $ref_entry->{'uris'};
+		my $filename = $ref_entry->{'filename'};
+
+		$download_entries{$filename}->{'uris'} = $ref_uris;
+		# may be undef
+		$download_entries{$filename}->{'size'} = $ref_entry->{'size'};
+		# may be undef
+		$download_entries{$filename}->{'checker'} = $ref_entry->{'post-action'};
+
+		$sub_schedule_download->($filename);
 	}
 
 	# all are scheduled successfully, wait for them
@@ -343,8 +370,9 @@ sub download ($@) {
 					last;
 				}
 			}
+			my $filename = $waiters[$waiter_idx]->{'filename'};
 			my $waiter_fifo = $waiters[$waiter_idx]->{'fifo'};
-			my $sub_post_action = $waiters[$waiter_idx]->{'checker'};
+			my $sub_post_action = $download_entries{$filename}->{'checker'};
 
 			my ($current_result) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
@@ -363,7 +391,14 @@ sub download ($@) {
 
 			if ($current_result ne '0') {
 				# this download hasn't been processed smoothly
-				$result = $current_result;
+				# check - maybe we have another URIs for this file
+				if (scalar @{$download_entries{$filename}->{'uris'}}) {
+					# yes, so reschedule a download with another URI
+					$sub_schedule_download->($filename);
+				} else {
+					# no, this URI was last
+					$result = $current_result;
+				}
 			}
 
 		}

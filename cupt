@@ -331,8 +331,8 @@ sub show_package_versions () {
 			if (scalar @$ref_reverse_provides) {
 				$p->(__('Provided by'), stringify_relation_expressions($ref_reverse_provides));
 			}
-			foreach ($version->uris()) {
-				$p->(__('URI'), ($_ eq "" ? gettext("<installed>") : $_));
+			foreach (map { $_->{'download_uri'} } $version->uris()) {
+				$p->(__('URI'), $_);
 			}
 			$p->(__('MD5'), $version->{md5sum}) if defined($version->{md5sum});
 			$p->(__('SHA1'), $version->{sha1sum}) if defined($version->{sha1sum});

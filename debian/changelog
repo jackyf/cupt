@@ -3,6 +3,18 @@ cupt (0.1.2) UNRELEASED; urgency=low
   * cupt:
     - 'markauto'/'unmarkauto' subcommands:
       - Don't require worker at compilation stage. Speeds up compilation a bit.
+  * Cupt:
+    - Download:
+      - Manager:
+        - [API break] 'download' method: now one should specify array of URIs,
+          not single URI for each download entry. Enables mirroring feature.
+    - System:
+      - Worker:
+        - Adapted to to changes in 'download' method of download manager.
+    - Cache:
+      - BinaryVersion:
+        - [API break] Advanced return value for 'uris' method.
+        - 'uris' method: filter duplicates.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 

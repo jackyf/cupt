@@ -228,8 +228,22 @@ sub is_hashes_equal {
 
 =head2 uris
 
-method, returs array of available URIs to download the version .deb. This array
-can contain empty string in case version is installed in the system
+method, returs available URIs to download the .deb file.
+
+Returns:
+
+array of I<URI entry>s.
+
+where:
+
+I<URI entry> - { 'download_uri' => I<download_uri>, 'base_uri' => I<base_uri>, 'appendage' => I<appendage> }
+
+I<download_uri> - full URI to download
+
+I<base_uri> - base URI (as specified in sources.list)
+
+I<appendage> - string to append to base URI to compute I<download_uri>,
+contains 'Filename' property of package entries.
 
 =cut
 
@@ -237,13 +251,16 @@ sub uris {
 	my $self = shift;
 	my @result;
     foreach (@{$self->{avail_as}}) {
-		my $base_uri = ${$_->{ref_base_uri}};
+		my $base_uri = ${$_->{'ref_base_uri'}};
 		if ($base_uri ne "") {
 			# real download path
-			push @result, ( $base_uri . '/' . $_->{filename} );
-		} else {
-			# for locally installed
-			push @result, "";
+			my $new_uri = ( $base_uri . '/' . $_->{'filename'} );
+
+			push @result, {
+				'download_uri' => $new_uri,
+				'base_uri' => $base_uri,
+				'appendage' => $_->{'filename'},
+			} unless grep { $_ eq $new_uri } @result;
 		}
 	}
 	return @result;
