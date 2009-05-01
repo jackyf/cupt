@@ -1,3 +1,11 @@
+cupt (0.1.2) UNRELEASED; urgency=low
+
+  * cupt:
+    - 'markauto'/'unmarkauto' subcommands:
+      - Don't require worker at compilation stage. Speeds up compilation a bit.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
+
 cupt (0.1.1.1) experimental; urgency=low
 
   * debian/control:

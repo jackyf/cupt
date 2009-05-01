@@ -610,7 +610,7 @@ sub policy () {
 }
 
 sub mark_autoinstalled ($) {
-	use Cupt::System::Worker;
+	require Cupt::System::Worker;
 	my ($mark_action) = @_;
 
 	check_no_more_options();
