@@ -600,15 +600,20 @@ sub _build_actions_graph ($$) {
 			}
 		}
 
+		my $transitive_closure = new Graph::TransitiveClosure($graph, 'path_vertices' => 0, 'path_length' => 0);
 		# unit!
 		foreach my $ref_change_entry (values %vertex_changes) {
 			my $from = $ref_change_entry->{'from'};
 			my $to = $ref_change_entry->{'to'};
 			for my $successor_vertex ($graph->successors($from)) {
-				$graph->add_edge($to, $successor_vertex);
+				unless ($transitive_closure->is_reachable($successor_vertex, $to)) {
+					$graph->add_edge($to, $successor_vertex);
+				}
 			}
 			for my $predecessor_vertex ($graph->predecessors($from)) {
-				$graph->add_edge($predecessor_vertex, $to);
+				unless ($transitive_closure->is_reachable($to, $predecessor_vertex)) {
+					$graph->add_edge($predecessor_vertex, $to);
+				}
 			}
 			$graph->delete_vertex($from);
 		}

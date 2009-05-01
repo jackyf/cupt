@@ -15,6 +15,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Give back transparent versioned 'remove','unpack','configure'
           actions and versionful check. Heavy hacks didn't guarantee full
           correctness, no reason to have them anymore.
+        - Don't introduce action loops when uniting 'remove' and 'unpack'
+          actions. This has to fix upgrading of packages containing
+          'Pre-Depends' dependencies finally.
     - Cache:
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
