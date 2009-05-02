@@ -63,10 +63,6 @@ use fields qw(_config _cache _params _old_packages _packages _pending_relations
 
 parameters that change resolver's behaviour, can be set by L</set_params> method
 
-=head2 resolver-type
-
-see L<cupt manual|cupt/--resolver=>
-
 =head2 max-solution-count
 
 see L<cupt manual|cupt/--max-resolver-count=>
@@ -96,7 +92,6 @@ sub new {
 
 	# resolver params
 	%{$self->{_params}} = (
-		'resolver-type' => 'multiline-fair',
 		'max-solution-count' => 256,
 	);
 
@@ -514,7 +509,7 @@ sub _resolve ($$) {
 		'multiline-full' => \&__multiline_full_chooser,
 	);
 
-	my $sub_solution_chooser = $solution_choosers{$self->{_params}->{'resolver-type'}};
+	my $sub_solution_chooser = $solution_choosers{$self->{_config}->var('cupt::resolver::type')};
 
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("started resolving");

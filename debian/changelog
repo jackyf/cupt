@@ -22,12 +22,15 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Resolver:
         - Use 'cupt::resolver::no-remove' option instead of 'no-remove' internal
           param.
+        - Use 'cupt::resolver::type' option instead of 'resolver-type' internal
+          param.
     - Cache:
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.
     - Config:
       - New configuration option 'cupt::resolver::no-remove'.
+      - New configuration option 'cupt::resolver::type'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 

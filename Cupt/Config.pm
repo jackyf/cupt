@@ -92,6 +92,7 @@ sub new {
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::no-remove' => 0,
+			'cupt::resolver::type' => 'multiline-fair',
 			'cupt::worker::defer-triggers' => 1,
 			'cupt::worker::download-only' => 0,
 			'cupt::worker::purge' => 0,

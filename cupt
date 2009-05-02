@@ -858,14 +858,13 @@ sub manage_packages ($) {
 	require Cupt::System::Resolver;
 	require Cupt::System::Worker;
 
-	my $o_resolver_type;
 	my $o_max_solution_count;
 	my $o_show_versions = 0;
 	my $o_show_size_changes = 0;
 	my $o_simulate;
 	my $o_install_unpacked;
 	GetOptions(
-		'resolver=s' => \$o_resolver_type,
+		'resolver=s' => sub { $config->set_regular_var('cupt::resolver::type', $_[1]) },
 		'max-solution-count=s' => \$o_max_solution_count,
 		'no-install-recommends|R' => sub { $config->set_regular_var('apt::install-recommends' => 0) },
 		'no-remove' => sub { $config->set_regular_var('cupt::resolver::no-remove' => 1) },
@@ -889,7 +888,6 @@ sub manage_packages ($) {
 
 	print __('Initializing package resolver and worker... ');
 	my $resolver = new Cupt::System::Resolver($config, $cache);
-	$resolver->set_params('resolver-type' => $o_resolver_type) if defined $o_resolver_type;
 	$resolver->set_params('max-solution-count' => $o_max_solution_count) if defined $o_max_solution_count;
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
 	my $worker = new Cupt::System::Worker($config, $cache);
