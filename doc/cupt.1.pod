@@ -285,7 +285,7 @@ Corresponding configuration option: L<cupt::resolver::no-remove>
 don't try to remove automatically installed packages after doing requested
 actions
 
-Corresponding configuration option: L<cupt::resolver::no-remove>
+Corresponding configuration option: L<cupt::resolver::auto-remove>
 
 =item --simulate,-s
 
@@ -490,6 +490,7 @@ suggested packages or not. False by default.
 
 =item cupt::resolver::auto-remove
 
+see L<--no-auto-remove/|--no-auto-remove>
 
 =item cupt::resolver::max-solution-count
 
