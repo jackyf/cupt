@@ -480,6 +480,10 @@ suggested packages or not. False by default.
 boolean (0/1), specifies whether should resolver try to remove automatically
 installed packages after doing requested actions or not. True by default.
 
+=item cupt::resolver::max-solution-count
+
+see L<--max-solution-count|/--max-solution-count>
+
 =item cupt::worker::defer-triggers
 
 boolean (0/1), specifies whether should worker defer dpkg trigger processing to

@@ -91,6 +91,7 @@ sub new {
 			'cupt::resolver::auto-remove' => 1,
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
+			'cupt::resolver::max-solution-count' => 256,
 			'cupt::resolver::no-remove' => 0,
 			'cupt::resolver::type' => 'multiline-fair',
 			'cupt::worker::defer-triggers' => 1,

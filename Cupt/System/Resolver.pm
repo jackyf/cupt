@@ -56,16 +56,8 @@ packages, or for satisfying some requested relations
 
 =cut
 
-use fields qw(_config _cache _params _old_packages _packages _pending_relations
+use fields qw(_config _cache _old_packages _packages _pending_relations
 		_strict_relation_expressions);
-
-=head1 PARAMS
-
-parameters that change resolver's behaviour, can be set by L</set_params> method
-
-=head2 max-solution-count
-
-see L<cupt manual|cupt/--max-resolver-count=>
 
 =head1 METHODS
 
@@ -90,34 +82,10 @@ sub new {
 
 	$self->{_cache} = shift;
 
-	# resolver params
-	%{$self->{_params}} = (
-		'max-solution-count' => 256,
-	);
-
 	$self->{_pending_relations} = [];
 	$self->{_strict_relation_expressions} = [];
 
 	return $self;
-}
-
-=head2 set_params
-
-method, sets params for the resolver
-
-Parameters: hash (as list) of params and their values
-
-Example: C<< $resolver->set_params('no-remove' => 1); >>
-
-=cut
-
-sub set_params {
-	my ($self) = shift;
-	while (@_) {
-		my $key = shift;
-		my $value = shift;
-		$self->{_params}->{$key} = $value;
-	}
 }
 
 sub _create_new_package_entry ($$) {
@@ -1013,7 +981,7 @@ sub _resolve ($$) {
 			splice @solution_entries, $selected_solution_entry_index+1, 0, reverse @forked_solution_entries;
 
 			# don't allow solution tree to grow unstoppably
-			while (scalar @solution_entries > $self->{_params}->{'max-solution-count'}) {
+			while (scalar @solution_entries > $self->{_config}->var('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
 				my $min_score = $solution_entries[0]->{score};
 				my $idx_of_min = 0;

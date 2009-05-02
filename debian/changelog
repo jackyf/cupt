@@ -25,6 +25,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Use 'cupt::resolver::type' option instead of 'resolver-type' internal
           param.
         - Check 'cupt::resolver::type' option for validity.
+        - Use 'cupt::resolver::max-solution-count' option instead of
+          'max-solution-cont' internal param.
+        - [API break] Removed 'set_params' method, it is not needed anymore.
     - Cache:
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
@@ -32,6 +35,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
     - Config:
       - New configuration option 'cupt::resolver::no-remove'.
       - New configuration option 'cupt::resolver::type'.
+      - New configuration option 'cupt::resolver::max-solution-count'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 
