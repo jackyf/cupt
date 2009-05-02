@@ -774,13 +774,15 @@ sub _generate_stdin_for_apt_listchanges ($$) {
 			# if not an upgrade
 			next if Cupt::Core::compare_version_strings($old_version_string, $new_version_string) != -1;
 			my $filename;
-			if ($action_name eq 'install') {
+			if ($action_name eq 'configure') {
+				# apt_listchanges needs special case for that
+				$filename = "**CONFIGURE**";
+			} else {
 				my $package = $self->{_cache}->get_binary_package($package_name);
 				my $version = $package->get_specific_version($new_version_string);
 				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($version);
-				$result .= "$package_name $old_version_string < $new_version_string $filename\n";
 			}
-			$result .= "$package_name $old_version_string < $new_version_string **CONFIGURE**\n";
+			$result .= "$package_name $old_version_string < $new_version_string $filename\n";
 		}
 	}
 
