@@ -278,6 +278,14 @@ C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget
 
 disallow problem resolver to remove manually installed packages. Packages that are marked to remove/purge in the command line will be remove/purged as usual.
 
+=item --simulate,-s
+
+don't modify anything in the system, just print supposed actions
+
+Doesn't require root privileges.
+
+Corresponding configuration option: L<cupt::worker::simulate>
+
 =item --resolver=
 
 string, determines type of resolver: can be
@@ -425,14 +433,6 @@ sets preferred release to pick up packages from, you can specify codename or arc
 Corresponding configuration option: L<apt::default-release>
 
 Examples: C<cupt install -t unstable xserver-xorg>, C<cupt -t squeeze full-upgrade>
-
-=item --simulate,-s
-
-don't modify anything in the system, just print supposed actions
-
-Doesn't require root privileges.
-
-Corresponding configuration option: L<cupt::worker::simulate>
 
 =item --purge
 
