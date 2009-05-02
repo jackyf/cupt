@@ -18,10 +18,15 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Don't introduce action loops when uniting 'remove' and 'unpack'
           actions. This has to fix upgrading of packages containing
           'Pre-Depends' dependencies finally.
+      - Resolver:
+        - Use 'cupt::resolver::no-remove' option instead of 'no-remove' internal
+          param.
     - Cache:
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.
+    - Config:
+      - New configuration option 'cupt::resolver::no-remove'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 

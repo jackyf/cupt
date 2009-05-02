@@ -63,10 +63,6 @@ use fields qw(_config _cache _params _old_packages _packages _pending_relations
 
 parameters that change resolver's behaviour, can be set by L</set_params> method
 
-=head2 no-remove
-
-disallows removing packages for resolving dependencies
-
 =head2 resolver-type
 
 see L<cupt manual|cupt/--resolver=>
@@ -100,7 +96,6 @@ sub new {
 
 	# resolver params
 	%{$self->{_params}} = (
-		'no-remove' => 0,
 		'resolver-type' => 'multiline-fair',
 		'max-solution-count' => 256,
 	);
@@ -382,7 +377,8 @@ sub __is_version_array_intersects_with_packages ($$) {
 
 sub _is_package_can_be_removed ($$) {
 	my ($self, $package_name) = @_;
-	return !$self->{_params}->{'no-remove'} || !$self->{_packages}->{$package_name}->[SPE_INSTALLED];
+	return !$self->{_config}->var('cupt::resolver::no-remove')
+			|| !$self->{_packages}->{$package_name}->[SPE_INSTALLED];
 }
 
 sub _get_dependencies_groups ($$) {
