@@ -227,7 +227,7 @@ currently installed version.
 
 the same as L<full-upgrade>, but with the change that problem resolver won't
 try to remove non-automatically installed packages in order to upgrade more
-packages
+packages, equivalent of 'full-upgrade --no-remove'.
 
 =item markauto
 
@@ -273,6 +273,10 @@ C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget
 =head3 management-specific options
 
 =over
+
+=item --no-remove
+
+disallow problem resolver to remove manually installed packages. Packages that are marked to remove/purge in the command line will be remove/purged as usual.
 
 =item --resolver=
 
