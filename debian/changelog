@@ -24,6 +24,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
           param.
         - Use 'cupt::resolver::type' option instead of 'resolver-type' internal
           param.
+        - Check 'cupt::resolver::type' option for validity.
     - Cache:
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.

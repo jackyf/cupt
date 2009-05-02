@@ -509,7 +509,10 @@ sub _resolve ($$) {
 		'multiline-full' => \&__multiline_full_chooser,
 	);
 
-	my $sub_solution_chooser = $solution_choosers{$self->{_config}->var('cupt::resolver::type')};
+	my $resolver_type = $self->{_config}->var('cupt::resolver::type');
+	my $sub_solution_chooser = $solution_choosers{$resolver_type};
+	defined $sub_solution_chooser or
+			mydie("wrong resolver type '%s'", $resolver_type);
 
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("started resolving");
