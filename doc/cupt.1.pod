@@ -280,6 +280,13 @@ disallow problem resolver to remove manually installed packages. Packages that a
 
 Corresponding configuration option: L<cupt::resolver::no-remove>
 
+=item --no-auto-remove
+
+don't try to remove automatically installed packages after doing requested
+actions
+
+Corresponding configuration option: L<cupt::resolver::no-remove>
+
 =item --simulate,-s
 
 don't modify anything in the system, just print supposed actions
@@ -483,8 +490,6 @@ suggested packages or not. False by default.
 
 =item cupt::resolver::auto-remove
 
-boolean (0/1), specifies whether should resolver try to remove automatically
-installed packages after doing requested actions or not. True by default.
 
 =item cupt::resolver::max-solution-count
 
