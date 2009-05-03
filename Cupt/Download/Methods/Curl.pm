@@ -115,7 +115,7 @@ sub perform ($$$$$) {
 		return 0;
 	} else {
 		# something went wrong
-		my $result = $curl_result . " " . $curl->strerror($curl_result);
+		my $result = $curl->strerror($curl_result);
 		# some http/https/ftp error, provide an error code
 		if ($curl_result == 22) {
 			$result .= sprintf ": %u", $curl->getinfo(CURLINFO_RESPONSE_CODE);
