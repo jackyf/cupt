@@ -13,6 +13,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Advanced error message in download size check.
       - Methods/Curl:
         - Detect HTTP/FTP/HTTPS error codes.
+        - Put HTTP/FTP/HTTPS response codes into error messages.
     - System:
       - Worker:
         - Adapted to to changes in 'download' method of download manager.
