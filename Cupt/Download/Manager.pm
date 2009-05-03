@@ -201,7 +201,9 @@ sub new ($$$) {
 								# rest in peace, young process
 								kill SIGTERM, $active_downloads{$uri}->{pid};
 								# process it as failed
-								__my_write_pipe(\*SELF_WRITE, 'done', $uri, 'invalid size');
+								my $error_string = sprintf __("invalid size: expected '%u', got '%u'"),
+										$download_sizes{$uri}, $expected_size;
+								__my_write_pipe(\*SELF_WRITE, 'done', $uri, $error_string);
 								unlink $filename;
 							}
 						} else {

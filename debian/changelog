@@ -10,6 +10,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Manager:
         - [API break] 'download' method: now one should specify array of URIs,
           not single URI for each download entry. Enables mirroring feature.
+        - Advanced error message in download size check.
     - System:
       - Worker:
         - Adapted to to changes in 'download' method of download manager.
