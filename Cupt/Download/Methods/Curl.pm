@@ -82,6 +82,7 @@ sub perform ($$$$$) {
 
 	my $protocol = URI->new($uri)->scheme();
 
+	$curl->setopt(CURLOPT_FAILONERROR, 1);
 	$curl->setopt(CURLOPT_URL, $uri);
 	my $download_limit = $config->var("acquire::${protocol}::dl-limit");
 	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $download_limit*1024) if defined $download_limit;
