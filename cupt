@@ -129,6 +129,7 @@ sub check_no_more_options () {
 		m/^-/ and mydie("unknown option '%s'", $_);
 	}
 }
+
 sub get_binary_package ($) {
 	my ($package_name) = @_;
 	my $package = $cache->get_binary_package($package_name);
