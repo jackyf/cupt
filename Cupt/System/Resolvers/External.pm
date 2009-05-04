@@ -18,11 +18,11 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-package Cupt::System::Resolver;
+package Cupt::System::Resolvers::External;
 
 =head1 NAME
 
-Cupt::System::Resolver - base class for Cupt resolvers
+Cupt::System::Resolvers::External - external dependency resolvers wrapper for Cupt
 
 =cut
 
@@ -30,56 +30,21 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use base qw(Cupt::System::Resolver);
+
 use Cupt::Core;
 
-use fields qw(_config _cache);
-
-=head1 METHODS
-
-=head2 new
-
-creates new Cupt::System::Resolver object
-
-Parameters: 
-
-I<config> - reference to L<Cupt::Config|Cupt::Config>
-
-I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
-
-=cut
+use fields qw(_actions _strict_relation_expressions);
 
 sub new {
-	my $self = shift;
-	unless (ref $self) {
-		$self = fields::new($self);
-	}
+	my $class = shift;
+	my $self = fields::new($class);
+	$self->SUPER::new(@_);
 
-	$self->{_config} = shift;
-	$self->{_cache} = shift;
+	$self->{_actions} = {};
+	$self->{_strict_relation_expressions} = [];
 
 	return $self;
-}
-
-=head2 cache
-
-returns reference to L<Cupt::Cache|Cupt::Cache>
-
-=cut
-
-sub cache {
-	my ($self) = @_;
-	return $self->{_cache};
-}
-
-=head2 config
-
-returns reference to L<Cupt::Config|Cupt::Config>
-
-=cut
-
-sub config {
-	my ($self) = @_;
-	return $self->{_config};
 }
 
 =head2 import_installed_versions
