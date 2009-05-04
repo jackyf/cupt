@@ -37,7 +37,7 @@ use IPC::Open2;
 use Cupt::Core;
 use Cupt::Cache;
 use Cupt::Cache::Pkg;
-use Cupt::Cache::Relation;
+use Cupt::Cache::Relation qw(stringify_relation_expressions);
 
 use fields qw(_is_installed _actions _strict_relation_expressions);
 
@@ -109,12 +109,65 @@ sub resolve ($$) {
 sub _write_cudf_info ($$) {
 	my ($self, $fh) = @_;
 
+	# making $fh the default for output
+	my $old_stdout = select $fh;
+
 	# writing package info
 	foreach my $package (values $self->cache->get_binary_packages()) {
 		foreach my $version ($package->versions()) {
+			my $package_name = $version->{package_name};
+			say "Package: " . $package_name;
+			say "Version: " . $version->{version_string};
 
+			do { # print strict dependencies
+				my $ref_pre_depends_relation_expressions = $version->{pre_depends};
+				my $ref_depends_relation_expressions = $version->{depends};
+
+				if (scalar @$ref_pre_depends_relation_expressions && scalar @$ref_depends_relation_expressions) {
+					print "Depends: ";
+					say join(", ", stringify_relation_expressions($ref_pre_depends_relation_expressions),
+							stringify_relation_expressions($ref_depends_relation_expressions));
+				} else if (scalar @$ref_pre_depends_relation_expressions) {
+					print "Depends: ";
+					say stringify_relation_expressions($ref_pre_depends_relation_expressions);
+				} else if (scalar @$ref_depends_relation_expressions) {
+					print "Depends: ";
+					say stringify_relation_expressions($ref_depends_relation_expressions);
+				}
+			};
+
+			do { # print conflicting packages
+				print "Conflicts: ";
+				# cannot install the same package multiple times
+				print "$package_name ";
+
+				my $ref_conflicts_relation_expressions = $version->{conflicts};
+				my $ref_breaks_relation_expressions = $version->{breaks};
+
+				if (scalar @$ref_conflicts_relation_expressions && scalar @$ref_breaks_relation_expressions) {
+					say join(", ", stringify_relation_expressions($ref_conflicts_relation_expressions),
+							stringify_relation_expressions($ref_breaks_relation_expressions));
+				} else if (scalar @$ref_conflicts_relation_expressions) {
+					say stringify_relation_expressions($ref_conflicts_relation_expressions);
+				} else if (scalar @$ref_breaks_relation_expressions) {
+					say stringify_relation_expressions($ref_breaks_relation_expressions);
+				}
+			};
+
+			do { # print provides
+				my $ref_provides_package_names = $version->{provides};
+				if (scalar @$ref_provides_package_names) {
+					print "Provides: ";
+				}
+			};
 		}
 	}
+
+	# writing problems
+	say "Problem: source: Debian/DUDF";
+
+	# exiting
+	select $old_stdout;
 }
 
 1;
