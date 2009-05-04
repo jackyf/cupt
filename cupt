@@ -888,7 +888,12 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Initializing package resolver and worker... ');
-	my $resolver = new Cupt::System::Resolver($config, $cache);
+	my $resolver;
+	if (defined $config->var('cupt::resolver::external-command')) {
+		$resolver = new Cupt::System::Resolvers::External($config, $cache);
+	} else {
+		$resolver = new Cupt::System::Resolvers::Native($config, $cache);
+	}
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
 	my $worker = new Cupt::System::Worker($config, $cache);
 	say __('[done]');
