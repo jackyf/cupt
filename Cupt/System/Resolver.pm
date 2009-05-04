@@ -49,8 +49,10 @@ I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
 =cut
 
 sub new {
-	my $class = shift;
-	my $self = fields::new($class);
+	my $self = shift;
+	unless (ref $self) {
+		$self = fields::new($self);
+	}
 
 	$self->{_config} = shift;
 	$self->{_cache} = shift;
