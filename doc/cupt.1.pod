@@ -500,7 +500,7 @@ see L<--max-solution-count|/--max-solution-count>
 
 experimental option to use external resolver using CUDF protocol
 
-Example: C<< cupt -s install abcde -o "cupt::resolver::external-command=cat > cudfout.txt" >>
+Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cudfout.txt" >>
 
 =item cupt::resolver::no-remove
 
