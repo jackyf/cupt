@@ -55,7 +55,7 @@ sub new {
 }
 
 sub import_installed_versions ($$) {
-	my ($self, $ref_versions);
+	my ($self, $ref_versions) = @_;
 	foreach my $version (@$ref_versions) {
 		$self->{_is_installed}->{$version->{package_name}} = 1;
 	}
@@ -109,15 +109,12 @@ sub resolve ($$) {
 sub _write_cudf_info ($$) {
 	my ($self, $fh) = @_;
 
-	# making $fh the default for output
-	my $old_stdout = select $fh;
-
 	# writing package info
 	foreach my $package (values %{$self->cache->get_binary_packages()}) {
 		foreach my $version (@{$package->versions()}) {
 			my $package_name = $version->{package_name};
-			say "Package: " . $package_name;
-			say "Version: " . $version->{version_string};
+			say $fh "Package: " . $package_name;
+			say $fh "Version: " . $version->{version_string};
 
 			do { # print strict dependencies
 				my @depends_relation_expressions;
@@ -126,13 +123,13 @@ sub _write_cudf_info ($$) {
 				push @depends_relation_expressions, @{$version->{depends}};
 
 				if (scalar @depends_relation_expressions) {
-					print "Depends: ";
-					say stringify_relation_expressions(\@depends_relation_expressions);
+					print $fh "Depends: ";
+					say $fh stringify_relation_expressions(\@depends_relation_expressions);
 				}
 			};
 
 			do { # print conflicting packages
-				print "Conflicts: ";
+				print $fh "Conflicts: ";
 
 				# cannot install the same package multiple times
 				my @conflicts_relation_expressions = (new Cupt::Cache::Relation($package_name));
@@ -140,31 +137,35 @@ sub _write_cudf_info ($$) {
 				push @conflicts_relation_expressions, @{$version->{conflicts}};
 				push @conflicts_relation_expressions, @{$version->{breaks}};
 
-				say stringify_relation_expressions(\@conflicts_relation_expressions);
+				say $fh stringify_relation_expressions(\@conflicts_relation_expressions);
 			};
 
 			do { # print provides
 				my $ref_provides_package_names = $version->{provides};
 				if (scalar @$ref_provides_package_names) {
-					print "Provides: ";
-					say join(", ", @$ref_provides_package_names);
+					say $fh "Provides: " . join(", ", @$ref_provides_package_names);
 				}
 			};
 
+			if ($version->is_installed()) {
+				if ($self->config->var('cupt::resolver::no-remove') &&
+						$self->cache->is_automatically_installed($package_name))
+				{
+					say $fh "Keep: package";
+				}
+			}
+
 			# end of entry
-			say "";
+			say $fh "";
 		}
 	}
 
 	# writing problems
-	say "Problem: source: Debian/DUDF";
+	say $fh "Problem: source: Debian/DUDF";
 
 	if ($self->{_upgrade_all_flag}) {
-		say "Upgrade: " . join(" ", keys %{$self->{_is_installed}});
+		say $fh "Upgrade: " . join(" ", keys %{$self->{_is_installed}});
 	}
-
-	# exiting
-	select $old_stdout;
 }
 
 1;
