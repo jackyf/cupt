@@ -35,6 +35,8 @@ use base qw(Cupt::System::Resolver);
 use IPC::Open2;
 
 use Cupt::Core;
+use Cupt::Cache;
+use Cupt::Cache::Pkg;
 use Cupt::Cache::Relation;
 
 use fields qw(_is_installed _actions _strict_relation_expressions);
@@ -106,6 +108,13 @@ sub resolve ($$) {
 
 sub _write_cudf_info ($$) {
 	my ($self, $fh) = @_;
+
+	# writing package info
+	foreach my $package (values $self->cache->get_binary_packages()) {
+		foreach my $version ($package->versions()) {
+
+		}
+	}
 }
 
 1;
