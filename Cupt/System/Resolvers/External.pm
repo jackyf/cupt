@@ -32,6 +32,8 @@ use warnings;
 
 use base qw(Cupt::System::Resolver);
 
+use IPC::Open2;
+
 use Cupt::Core;
 use Cupt::Cache::Relation;
 
@@ -67,7 +69,6 @@ sub install_version ($$) {
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 	push @{$self->{_strict_relation_expressions}}, $relation_expression;
-	# stub
 }
 
 sub remove_package ($$) {
@@ -83,9 +84,22 @@ sub upgrade ($) {
 sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
 	
-	my $external_command = $self->config->var('cupt::resolver::external-command');
-	defined $external_command or
-			myinternaldie("undefined external command");
+	eval { 
+		my $external_command = $self->config->var('cupt::resolver::external-command');
+		defined $external_command or
+				myinternaldie("undefined external command");
+
+		open2(\*READ, \*WRITE, $external_command) or
+				mydie("unable to create bidirectional pipe for external command '%s'", $external_command);
+
+		close(READ) or
+				mydie("unable to close pipe read channel" ;
+		close(WRITE);
+	};
+	if (mycatch()) {
+		myerr("external resolver error");
+		myredie();
+	}
 }
 
 1;
