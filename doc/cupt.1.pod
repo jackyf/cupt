@@ -496,6 +496,12 @@ see L<--no-auto-remove/|--no-auto-remove>
 
 see L<--max-solution-count|/--max-solution-count>
 
+=item cupt::resolver::external-command
+
+experimental option to use external resolver using CUDF protocol
+
+Example: C<< cupt -s install abcde -o "cupt::resolver::external-command=cat > cudfout.txt" >>
+
 =item cupt::resolver::no-remove
 
 see L<--no-remove|/--no-remove>

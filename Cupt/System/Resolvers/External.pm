@@ -39,14 +39,14 @@ use Cupt::Cache;
 use Cupt::Cache::Pkg;
 use Cupt::Cache::Relation qw(stringify_relation_expressions);
 
-use fields qw(_is_installed _actions _strict_relation_expressions);
+use fields qw(_is_installed _upgrade_all_flag _actions _strict_relation_expressions);
 
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
 	$self->SUPER::new(@_);
 
-	$self->{_installed_package_names} = {};
+	$self->{_is_installed} = {};
 	$self->{_actions} = {};
 	$self->{_strict_relation_expressions} = [];
 	$self->{_upgrade_all_flag} = 0;
@@ -114,7 +114,7 @@ sub _write_cudf_info ($$) {
 
 	# writing package info
 	foreach my $package (values %{$self->cache->get_binary_packages()}) {
-		foreach my $version ($package->versions()) {
+		foreach my $version (@{$package->versions()}) {
 			my $package_name = $version->{package_name};
 			say "Package: " . $package_name;
 			say "Version: " . $version->{version_string};
@@ -151,6 +151,8 @@ sub _write_cudf_info ($$) {
 					say stringify_relation_expressions($ref_conflicts_relation_expressions);
 				} elsif (scalar @$ref_breaks_relation_expressions) {
 					say stringify_relation_expressions($ref_breaks_relation_expressions);
+				} else {
+					say "";
 				}
 			};
 
@@ -158,9 +160,12 @@ sub _write_cudf_info ($$) {
 				my $ref_provides_package_names = $version->{provides};
 				if (scalar @$ref_provides_package_names) {
 					print "Provides: ";
-					say stringify_relation_expressions($ref_provides_package_names);
+					say join(", ", @$ref_provides_package_names);
 				}
 			};
+
+			# end of entry
+			say "";
 		}
 	}
 
