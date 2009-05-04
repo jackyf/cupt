@@ -95,7 +95,7 @@ sub resolve ($$) {
 		$self->_write_cudf_info(\*WRITE);
 
 		close(READ) or
-				mydie("unable to close pipe read channel" ;
+				mydie("unable to close pipe read channel");
 		close(WRITE);
 	};
 	if (mycatch()) {
