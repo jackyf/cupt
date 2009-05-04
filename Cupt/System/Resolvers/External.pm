@@ -120,19 +120,14 @@ sub _write_cudf_info ($$) {
 			say "Version: " . $version->{version_string};
 
 			do { # print strict dependencies
-				my $ref_pre_depends_relation_expressions = $version->{pre_depends};
-				my $ref_depends_relation_expressions = $version->{depends};
+				my @depends_relation_expressions;
 
-				if (scalar @$ref_pre_depends_relation_expressions && scalar @$ref_depends_relation_expressions) {
+				push @depends_relation_expressions, @{$version->{pre_depends}};
+				push @depends_relation_expressions, @{$version->{depends}};
+
+				if (scalar @depends_relation_expressions) {
 					print "Depends: ";
-					say join(", ", stringify_relation_expressions($ref_pre_depends_relation_expressions),
-							stringify_relation_expressions($ref_depends_relation_expressions));
-				} elsif (scalar @$ref_pre_depends_relation_expressions) {
-					print "Depends: ";
-					say stringify_relation_expressions($ref_pre_depends_relation_expressions);
-				} elsif (scalar @$ref_depends_relation_expressions) {
-					print "Depends: ";
-					say stringify_relation_expressions($ref_depends_relation_expressions);
+					say stringify_relation_expressions(\@depends_relation_expressions);
 				}
 			};
 
@@ -163,6 +158,10 @@ sub _write_cudf_info ($$) {
 
 	# writing problems
 	say "Problem: source: Debian/DUDF";
+
+	if ($self->{_upgrade_all_flag}) {
+		say "Upgrade: " . join(" ", keys %{$self->{_is_installed}});
+	}
 
 	# exiting
 	select $old_stdout;
