@@ -107,13 +107,13 @@ sub _schedule_new_version_relations ($$) {
 	foreach (@{$version->{depends}}) {
 		$self->_auto_satisfy_relation($_);
 	}
-	if ($self->{_config}->var('apt::install-recommends')) {
+	if ($self->config->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
 			$self->_auto_satisfy_relation($_);
 		}
 	}
-	if ($self->{_config}->var('apt::install-suggests')) {
+	if ($self->config->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
 			$self->_auto_satisfy_relation($_);
@@ -132,7 +132,7 @@ sub _install_version_no_stick ($$) {
 	}
 
 	$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
-	if ($self->{_config}->var('debug::resolver')) {
+	if ($self->config->var('debug::resolver')) {
 		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
 	}
 	$self->_schedule_new_version_relations($version);
@@ -155,10 +155,10 @@ sub satisfy_relation_expression ($$) {
 sub _auto_satisfy_relation ($$) {
 	my ($self, $relation_expression) = @_;
 
-	my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
+	my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{_packages})) {
 		# if relation is not satisfied
-		if ($self->{_config}->var('debug::resolver')) {
+		if ($self->config->var('debug::resolver')) {
 			my $message = "auto-installing relation '";
 			$message .= stringify_relation_expression($relation_expression);
 			$message .= "'";
@@ -174,7 +174,7 @@ sub remove_package ($$) {
 	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
-	if ($self->{_config}->var('debug::resolver')) {
+	if ($self->config->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
 }
@@ -183,9 +183,9 @@ sub upgrade ($) {
 	my ($self) = @_;
 	foreach (keys %{$self->{_packages}}) {
 		my $package_name = $_;
-		my $package = $self->{_cache}->get_binary_package($package_name);
+		my $package = $self->cache->get_binary_package($package_name);
 		my $original_version = $self->{_packages}->{$package_name}->[PE_VERSION];
-		my $supposed_version = $self->{_cache}->get_policy_version($package);
+		my $supposed_version = $self->cache->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
 		$self->_install_version_no_stick($supposed_version);
@@ -236,11 +236,11 @@ sub _get_version_weight ($$) {
 	my ($self, $version) = @_;
 	return 0 if !defined $version;
 	my $package_name = $version->{package_name};
-	if ($version->is_installed() && $self->{_cache}->is_automatically_installed($package_name)) {
+	if ($version->is_installed() && $self->cache->is_automatically_installed($package_name)) {
 		# automatically installed packages count nothing for user
 		return 0;
 	}
-	my $result = $self->{_cache}->get_pin($version);
+	my $result = $self->cache->get_pin($version);
 	$result += 5000 if defined($version->{essential});
 	$result += 2000 if $version->{priority} eq 'required';
 	$result += 1000 if $version->{priority} eq 'important';
@@ -277,7 +277,7 @@ sub __is_version_array_intersects_with_packages ($$) {
 
 sub _is_package_can_be_removed ($$) {
 	my ($self, $package_name) = @_;
-	return !$self->{_config}->var('cupt::resolver::no-remove')
+	return !$self->config->var('cupt::resolver::no-remove')
 			|| !$self->{_packages}->{$package_name}->[SPE_INSTALLED];
 }
 
@@ -289,10 +289,10 @@ sub _get_dependencies_groups ($$) {
 	my @result;
 	push @result, { 'name' => 'pre-depends', 'relation_expressions' => $version->{pre_depends}, 'koef' => 2.0 };
 	push @result, { 'name' => 'depends', 'relation_expressions' => $version->{depends}, 'koef' => 1.0 };
-	if ($self->{_config}->var('cupt::resolver::keep-recommends')) {
+	if ($self->config->var('cupt::resolver::keep-recommends')) {
 		push @result, { 'name' => 'recommends', 'relation_expressions' => $version->{recommends}, 'koef' => 0.4 };
 	}
-	if ($self->{_config}->var('cupt::resolver::keep-suggests')) {
+	if ($self->config->var('cupt::resolver::keep-suggests')) {
 		push @result, { 'name' => 'suggests', 'relation_expressions' => $version->{suggests}, 'koef' => 0.1 };
 	}
 
@@ -316,7 +316,7 @@ sub _clean_automatically_installed ($) {
 	my ($self, $ref_packages) = @_;
 
 	# firstly, prepare all package names that can be potentially removed
-	my $can_autoremove = $self->{_config}->var('cupt::resolver::auto-remove');
+	my $can_autoremove = $self->config->var('cupt::resolver::auto-remove');
 	my %candidates_for_remove;
 	foreach my $package_name (keys %$ref_packages) {
 		my $ref_package_entry = $ref_packages->{$package_name};
@@ -326,11 +326,11 @@ sub _clean_automatically_installed ($) {
 		!$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] or next;
 
 		my $can_autoremove_this_package = $can_autoremove ?
-				$self->{_cache}->is_automatically_installed($package_name) : 0;
+				$self->cache->is_automatically_installed($package_name) : 0;
 		my $package_was_installed = exists $self->{_old_packages}->{$package_name};
 		(!$package_was_installed or $can_autoremove_this_package) or next;
 
-		grep { $package_name eq $_ } $self->{_config}->var('apt::neverautoremove') and next;
+		grep { $package_name eq $_ } $self->config->var('apt::neverautoremove') and next;
 		# ok, candidate for removing
 		$candidates_for_remove{$package_name} = 0;
 	}
@@ -344,15 +344,15 @@ sub _clean_automatically_installed ($) {
 			my @valuable_relation_expressions;
 			push @valuable_relation_expressions, @{$version->{pre_depends}};
 			push @valuable_relation_expressions, @{$version->{depends}};
-			if ($self->{_config}->var('cupt::resolver::keep-recommends')) {
+			if ($self->config->var('cupt::resolver::keep-recommends')) {
 				push @valuable_relation_expressions, @{$version->{recommends}};
 			}
-			if ($self->{_config}->var('cupt::resolver::keep-suggests')) {
+			if ($self->config->var('cupt::resolver::keep-suggests')) {
 				push @valuable_relation_expressions, @{$version->{suggests}};
 			}
 
 			foreach (@valuable_relation_expressions) {
-				my $satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+				my $satisfying_versions = $self->cache->get_satisfying_versions($_);
 				foreach (@$satisfying_versions) {
 					my $candidate_package_name = $_->{package_name};
 					exists $candidates_for_remove{$candidate_package_name} or next;
@@ -414,12 +414,12 @@ sub _resolve ($$) {
 		'multiline-full' => \&__multiline_full_chooser,
 	);
 
-	my $resolver_type = $self->{_config}->var('cupt::resolver::type');
+	my $resolver_type = $self->config->var('cupt::resolver::type');
 	my $sub_solution_chooser = $solution_choosers{$resolver_type};
 	defined $sub_solution_chooser or
 			mydie("wrong resolver type '%s'", $resolver_type);
 
-	if ($self->{_config}->var('debug::resolver')) {
+	if ($self->config->var('debug::resolver')) {
 		mydebug("started resolving");
 	}
 
@@ -492,7 +492,7 @@ sub _resolve ($$) {
 				$self->_get_action_profit($original_version, $supposed_version);
 		$profit *= $ref_action_to_apply->{koef};
 
-		if ($self->{_config}->var('debug::resolver')) {
+		if ($self->config->var('debug::resolver')) {
 			my $old_version_string = defined($original_version) ?
 					$original_version->{version_string} : '<not installed>';
 			my $new_version_string = defined($supposed_version) ?
@@ -567,7 +567,7 @@ sub _resolve ($$) {
 					my $dependency_group_name = $ref_dependency_group->{name};
 					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
 						# check if relation is already satisfied
-						my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
+						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 							# good, nothing to do
 						} else {
@@ -612,7 +612,7 @@ sub _resolve ($$) {
 							# change this package
 							if (!$package_entry->[PE_STICK]) {
 								# change version of the package
-								my $other_package = $self->{_cache}->get_binary_package($package_name);
+								my $other_package = $self->cache->get_binary_package($package_name);
 								foreach my $other_version (@{$other_package->versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $version->{version_string};
@@ -642,7 +642,7 @@ sub _resolve ($$) {
 											# satisfying versions are subset of failed ones, the version won't
 											# be accepted as a resolution
 											my $has_resolution_outside = 0;
-											my $ref_candidate_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+											my $ref_candidate_satisfying_versions = $self->cache->get_satisfying_versions($_);
 											foreach (@$ref_candidate_satisfying_versions) {
 												my $candidate_package_name = $_->{package_name};
 												my $candidate_version_string = $_->{version_string};
@@ -687,7 +687,7 @@ sub _resolve ($$) {
 							# in any case, stick this package
 							$package_entry->[PE_STICK] = 1;
 
-							if ($self->{_config}->var('debug::resolver')) {
+							if ($self->config->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($relation_expression);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 										"unsatisfied $dependency_group_name '$stringified_relation'");
@@ -711,7 +711,7 @@ sub _resolve ($$) {
 				my $conflicts_koef = 1.0;
 				foreach (@{$version->{conflicts}}, @{$version->{breaks}}) {
 					# check if relation is accidentally satisfied
-					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+					my $ref_satisfying_versions = $self->cache->get_satisfying_versions($_);
 
 					if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 						# good, nothing to do
@@ -741,7 +741,7 @@ sub _resolve ($$) {
 							# additionally, in case of absense of stick, also contribute to possible actions
 							if (!$other_package_entry->[PE_STICK]) {
 								# so change it
-								my $other_package = $self->{_cache}->get_binary_package($other_package_name);
+								my $other_package = $self->cache->get_binary_package($other_package_name);
 								foreach my $other_version (@{$other_package->versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $satisfying_version->{version_string};
@@ -772,7 +772,7 @@ sub _resolve ($$) {
 
 							if (!$package_entry->[PE_STICK]) {
 								# change version of the package
-								my $package = $self->{_cache}->get_binary_package($package_name);
+								my $package = $self->cache->get_binary_package($package_name);
 								foreach my $other_version (@{$package->versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $version->{version_string};
@@ -797,7 +797,7 @@ sub _resolve ($$) {
 							# in any case, stick this package
 							$package_entry->[PE_STICK] = 1;
 
-							if ($self->{_config}->var('debug::resolver')) {
+							if ($self->config->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($_);
 								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 										"satisfied conflicts/breaks '$stringified_relation'");
@@ -815,7 +815,7 @@ sub _resolve ($$) {
 			$check_failed = 1;
 
 			# if the solution was only just finished
-			if ($self->{_config}->var('debug::resolver') && $ref_current_solution_entry->{finished}) {
+			if ($self->config->var('debug::resolver') && $ref_current_solution_entry->{finished}) {
 				$sub_mydebug_wrapper->("finished");
 			}
 			$ref_current_solution_entry->{finished} = 1;
@@ -841,7 +841,7 @@ sub _resolve ($$) {
 			}
 
 			# suggest found solution
-			if ($self->{_config}->var('debug::resolver')) {
+			if ($self->config->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("proposing this solution");
 			}
 			my $user_answer = $sub_accept->(\%suggested_packages);
@@ -850,14 +850,14 @@ sub _resolve ($$) {
 				goto EXIT;
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
-				if ($self->{_config}->var('debug::resolver')) {
+				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("accepted");
 				}
 				$return_code = 1;
 				goto EXIT;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
-				if ($self->{_config}->var('debug::resolver')) {
+				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("declined");
 				}
 				# purge current solution
@@ -918,7 +918,7 @@ sub _resolve ($$) {
 			splice @solution_entries, $selected_solution_entry_index+1, 0, reverse @forked_solution_entries;
 
 			# don't allow solution tree to grow unstoppably
-			while (scalar @solution_entries > $self->{_config}->var('cupt::resolver::max-solution-count')) {
+			while (scalar @solution_entries > $self->config->var('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
 				my $min_score = $solution_entries[0]->{score};
 				my $idx_of_min = 0;
@@ -929,13 +929,13 @@ sub _resolve ($$) {
 					}
 				}
 				$selected_solution_entry_index = $idx_of_min;
-				if ($self->{_config}->var('debug::resolver')) {
+				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("dropping this solution");
 				}
 				splice @solution_entries, $idx_of_min, 1;
 			}
 		} else {
-			if ($self->{_config}->var('debug::resolver')) {
+			if ($self->config->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solution for broken package $package_name");
 			}
 			# purge current solution
@@ -954,7 +954,7 @@ sub resolve ($$) {
 	# unwinding relations
 	while (scalar @{$self->{_pending_relations}}) {
 		my $relation_expression = shift @{$self->{_pending_relations}};
-		my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
+		my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 		
 		# if we have no candidates, skip the relation
 		scalar @$ref_satisfying_versions or next;
@@ -962,7 +962,7 @@ sub resolve ($$) {
 		# installing most preferrable version
 
 		my $version_to_install = $ref_satisfying_versions->[0];
-		if ($self->{_config}->var('debug::resolver')) {
+		if ($self->config->var('debug::resolver')) {
 			mydebug("selected package '%s', version '%s' for relation expression '%s'",
 					$version_to_install->{package_name},
 					$version_to_install->{version_string},
