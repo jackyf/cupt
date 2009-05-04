@@ -64,8 +64,8 @@ sub import_installed_versions ($$) {
 sub install_version ($$) {
 	my ($self, $version) = @_;
 	my $package_name = $version->{package_name};
-	my $action = exists $self->{_is_installed}->{$package_name} ? 'upgrade' : 'install';
-	$self->{_actions}->{$package_name} = $action;
+	$self->{_actions}->{$package_name}->{'action'} = 'install';
+	$self->{_actions}->{$package_name}->{'version_string'} = $version->{version_string};
 }
 
 sub satisfy_relation_expression ($$) {
@@ -75,7 +75,7 @@ sub satisfy_relation_expression ($$) {
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{_actions}->{$package_name} = 'remove';
+	$self->{_actions}->{$package_name}->{'action'} = 'remove';
 }
 
 sub upgrade ($) {
@@ -109,6 +109,11 @@ sub resolve ($$) {
 sub _write_cudf_info ($$) {
 	my ($self, $fh) = @_;
 
+	my $sub_strip_circle_braces = sub {
+		$_[0] =~ tr/()//d;
+		return $_[0];
+	};
+
 	# writing package info
 	foreach my $package (values %{$self->cache->get_binary_packages()}) {
 		foreach my $version (@{$package->versions()}) {
@@ -124,7 +129,7 @@ sub _write_cudf_info ($$) {
 
 				if (scalar @depends_relation_expressions) {
 					print $fh "Depends: ";
-					say $fh stringify_relation_expressions(\@depends_relation_expressions);
+					say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@depends_relation_expressions));
 				}
 			};
 
@@ -137,7 +142,7 @@ sub _write_cudf_info ($$) {
 				push @conflicts_relation_expressions, @{$version->{conflicts}};
 				push @conflicts_relation_expressions, @{$version->{breaks}};
 
-				say $fh stringify_relation_expressions(\@conflicts_relation_expressions);
+				say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
 			};
 
 			do { # print provides
@@ -168,18 +173,26 @@ sub _write_cudf_info ($$) {
 		say $fh "Upgrade: " . join(" ", keys %{$self->{_is_installed}});
 	}
 
-	do { # packages that are to be removed
-		my @package_names_to_remove;
-		foreach my $package_name (keys %{$self->{_actions}}) {
-			if ($self->{_actions}->{$package_name} eq 'remove') {
-				push @package_names_to_remove, $package_name;
-			}
+	my @package_names_to_remove;
+	my @strings_to_install;
+	foreach my $package_name (keys %{$self->{_actions}}) {
+		my $package_entry = $self->{_actions}->{$package_name};
+		if ($package_entry->{'action'} eq 'remove') {
+			push @package_names_to_remove, $package_name;
+		} elsif ($package_entry->{'action'} eq 'install') {
+			push @strings_to_install, "$package_name = $package_entry->{'version_string'}";
 		}
+	}
 
-		if (scalar @package_names_to_remove) {
-			say $fh "Remove: " . join(", ", @package_names_to_remove);
-		}
-	};
+	if (scalar @package_names_to_remove) {
+		say $fh "Remove: " . join(", ", @package_names_to_remove);
+	}
+	if (scalar @strings_to_install) {
+		say $fh "Install: " . join(", ", @strings_to_install);
+	}
+
+	# at last!
+	say $fh "";
 }
 
 1;
