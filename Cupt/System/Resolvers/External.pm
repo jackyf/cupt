@@ -33,118 +33,59 @@ use warnings;
 use base qw(Cupt::System::Resolver);
 
 use Cupt::Core;
+use Cupt::Cache::Relation;
 
-use fields qw(_actions _strict_relation_expressions);
+use fields qw(_is_installed _actions _strict_relation_expressions);
 
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
 	$self->SUPER::new(@_);
 
+	$self->{_installed_package_names} = {};
 	$self->{_actions} = {};
 	$self->{_strict_relation_expressions} = [];
+	$self->{_upgrade_all_flag} = 0;
 
 	return $self;
 }
 
-=head2 import_installed_versions
-
-method, imports already installed versions, usually used in pair with
-L<&Cupt::System::State::export_installed_versions|Cupt::System::State/export_installed_versions>
-
-Should be re-implemented by derived classes.
-
-Parameters:
-
-I<ref_versions> - reference to array of L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
-
-=cut
-
 sub import_installed_versions ($$) {
-	my ($self, $ref_versions) = @_;
-	# stub
+	my ($self, $ref_versions);
+	foreach my $version (@$ref_versions) {
+		$self->{_is_installed}->{$version->{package_name}} = 1;
+	}
 }
-
-=head2 install_version
-
-method, installs a new version with requested dependencies
-
-Should be re-implemented by derived classes.
-
-Parameters:
-
-I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
-
-=cut
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	# stub
+	my $package_name = $version->{package_name};
+	my $action = exists $self->{_is_installed}->{$package_name} ? 'upgrade' : 'install';
+	$self->{_actions}->{$package_name}->{$action};
 }
-
-=head2 satisfy_relation
-
-method, installs all needed versions to satisfy L<relation expression|Cupt::Cache::Relation/Relation expression>
-
-Should be re-implemented by derived classes.
-
-Parameters:
-
-I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
-
-=cut
 
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
+	push @{$self->{_strict_relation_expressions}}, $relation_expression;
 	# stub
 }
-
-=head2 remove_package
-
-method, removes a package
-
-Should be re-implemented by derived classes.
-
-Parameters:
-
-I<package_name> - string, name of package to remove
-
-=cut
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	# stub
+	$self->{_actions}->{$package_name}->{'remove'};
 }
-
-=head2 upgrade
-
-method, schedule upgrade of as much packages in system as possible
-
-Should be re-implemented by derived classes.
-
-=cut
 
 sub upgrade ($) {
 	my ($self) = @_;
-	# stub
+	$self->{_upgrade_all_flag} = 1;
 }
-
-=head2 resolve
-
-method, finds a solution for requested actions
-
-Should be re-implemented by derived classes.
-
-Parameters:
-
-I<sub_accept> - reference to subroutine which has to return true if solution is
-accepted, false if solution is rejected, undef if user abandoned further searches
-
-=cut
 
 sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
-	# stub
+	
+	my $external_command = $self->config->var('cupt::resolver::external-command');
+	defined $external_command or
+			myinternaldie("undefined external command");
 }
 
 1;
