@@ -89,6 +89,7 @@ sub new {
 
 			'cupt::downloader::max-simultaneous-downloads' => 2,
 			'cupt::resolver::auto-remove' => 1,
+			'cupt::resolver::external-command' => undef,
 			'cupt::resolver::keep-recommends' => 1,
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::max-solution-count' => 256,
