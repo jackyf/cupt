@@ -113,7 +113,7 @@ sub _write_cudf_info ($$) {
 	my $old_stdout = select $fh;
 
 	# writing package info
-	foreach my $package (values $self->cache->get_binary_packages()) {
+	foreach my $package (values %{$self->cache->get_binary_packages()}) {
 		foreach my $version ($package->versions()) {
 			my $package_name = $version->{package_name};
 			say "Package: " . $package_name;
@@ -127,10 +127,10 @@ sub _write_cudf_info ($$) {
 					print "Depends: ";
 					say join(", ", stringify_relation_expressions($ref_pre_depends_relation_expressions),
 							stringify_relation_expressions($ref_depends_relation_expressions));
-				} else if (scalar @$ref_pre_depends_relation_expressions) {
+				} elsif (scalar @$ref_pre_depends_relation_expressions) {
 					print "Depends: ";
 					say stringify_relation_expressions($ref_pre_depends_relation_expressions);
-				} else if (scalar @$ref_depends_relation_expressions) {
+				} elsif (scalar @$ref_depends_relation_expressions) {
 					print "Depends: ";
 					say stringify_relation_expressions($ref_depends_relation_expressions);
 				}
@@ -147,9 +147,9 @@ sub _write_cudf_info ($$) {
 				if (scalar @$ref_conflicts_relation_expressions && scalar @$ref_breaks_relation_expressions) {
 					say join(", ", stringify_relation_expressions($ref_conflicts_relation_expressions),
 							stringify_relation_expressions($ref_breaks_relation_expressions));
-				} else if (scalar @$ref_conflicts_relation_expressions) {
+				} elsif (scalar @$ref_conflicts_relation_expressions) {
 					say stringify_relation_expressions($ref_conflicts_relation_expressions);
-				} else if (scalar @$ref_breaks_relation_expressions) {
+				} elsif (scalar @$ref_breaks_relation_expressions) {
 					say stringify_relation_expressions($ref_breaks_relation_expressions);
 				}
 			};
@@ -158,6 +158,7 @@ sub _write_cudf_info ($$) {
 				my $ref_provides_package_names = $version->{provides};
 				if (scalar @$ref_provides_package_names) {
 					print "Provides: ";
+					say stringify_relation_expressions($ref_provides_package_names);
 				}
 			};
 		}
