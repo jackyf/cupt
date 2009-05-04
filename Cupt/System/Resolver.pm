@@ -32,8 +32,6 @@ use warnings;
 
 use Cupt::Core;
 
-our $_dummy_package_name = "dummy_package_name";
-
 use fields qw(_config _cache);
 
 =head1 METHODS
@@ -54,13 +52,8 @@ sub new {
 	my $class = shift;
 	my $self = fields::new($class);
 
-	# common apt config
 	$self->{_config} = shift;
-
 	$self->{_cache} = shift;
-
-	$self->{_pending_relations} = [];
-	$self->{_strict_relation_expressions} = [];
 
 	return $self;
 }
