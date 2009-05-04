@@ -65,7 +65,7 @@ sub install_version ($$) {
 	my ($self, $version) = @_;
 	my $package_name = $version->{package_name};
 	my $action = exists $self->{_is_installed}->{$package_name} ? 'upgrade' : 'install';
-	$self->{_actions}->{$package_name}->{$action};
+	$self->{_actions}->{$package_name} = $action;
 }
 
 sub satisfy_relation_expression ($$) {
@@ -75,7 +75,7 @@ sub satisfy_relation_expression ($$) {
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{_actions}->{$package_name}->{'remove'};
+	$self->{_actions}->{$package_name} = 'remove';
 }
 
 sub upgrade ($) {
@@ -148,8 +148,9 @@ sub _write_cudf_info ($$) {
 			};
 
 			if ($version->is_installed()) {
+				say $fh "Installed: true";
 				if ($self->config->var('cupt::resolver::no-remove') &&
-						$self->cache->is_automatically_installed($package_name))
+						not $self->cache->is_automatically_installed($package_name))
 				{
 					say $fh "Keep: package";
 				}
@@ -166,6 +167,19 @@ sub _write_cudf_info ($$) {
 	if ($self->{_upgrade_all_flag}) {
 		say $fh "Upgrade: " . join(" ", keys %{$self->{_is_installed}});
 	}
+
+	do { # packages that are to be removed
+		my @package_names_to_remove;
+		foreach my $package_name (keys %{$self->{_actions}}) {
+			if ($self->{_actions}->{$package_name} eq 'remove') {
+				push @package_names_to_remove, $package_name;
+			}
+		}
+
+		if (scalar @package_names_to_remove) {
+			say $fh "Remove: " . join(", ", @package_names_to_remove);
+		}
+	};
 }
 
 1;
