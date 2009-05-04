@@ -92,6 +92,8 @@ sub resolve ($$) {
 		open2(\*READ, \*WRITE, $external_command) or
 				mydie("unable to create bidirectional pipe for external command '%s'", $external_command);
 
+		$self->_write_cudf_info(\*WRITE);
+
 		close(READ) or
 				mydie("unable to close pipe read channel" ;
 		close(WRITE);
@@ -100,6 +102,10 @@ sub resolve ($$) {
 		myerr("external resolver error");
 		myredie();
 	}
+}
+
+sub _write_cudf_info ($$) {
+	my ($self, $fh) = @_;
 }
 
 1;
