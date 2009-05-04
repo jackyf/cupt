@@ -129,9 +129,7 @@ I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
 
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
-
-	# schedule checking strict relation expression, it will be checked later
-	push @{$self->{_strict_relation_expressions}}, $relation_expression;
+	# stub
 }
 
 =head2 remove_package
@@ -148,13 +146,7 @@ I<package_name> - string, name of package to remove
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->_create_new_package_entry($package_name);
-	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
-	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
-	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
-	if ($self->{_config}->var('debug::resolver')) {
-		mydebug("removing package $package_name");
-	}
+	# stub
 }
 
 =head2 upgrade
@@ -167,15 +159,7 @@ Should be re-implemented by derived classes.
 
 sub upgrade ($) {
 	my ($self) = @_;
-	foreach (keys %{$self->{_packages}}) {
-		my $package_name = $_;
-		my $package = $self->{_cache}->get_binary_package($package_name);
-		my $original_version = $self->{_packages}->{$package_name}->[PE_VERSION];
-		my $supposed_version = $self->{_cache}->get_policy_version($package);
-		# no need to install the same version
-		$original_version->{version_string} ne $supposed_version->{version_string} or next;
-		$self->_install_version_no_stick($supposed_version);
-	}
+	# stub
 }
 
 =head2 resolve
