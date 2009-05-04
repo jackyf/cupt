@@ -64,7 +64,7 @@ use fields qw(_old_packages _packages _pending_relations
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
-	$self->SUPER::new();
+	$self->SUPER::new(@_);
 
 	$self->{_pending_relations} = [];
 	$self->{_strict_relation_expressions} = [];
