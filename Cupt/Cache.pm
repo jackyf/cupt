@@ -1027,13 +1027,22 @@ sub _path_of_base_uri {
 
 sub _path_of_source_list {
 	my $self = shift;
-	my $entry = shift;
+	my $ref_entry = shift;
 
 	my $arch = $self->{_config}->var('apt::architecture');
-	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+	my $base_uri = $self->_path_of_base_uri($ref_entry);
 
-	my $filename = join('_', $self->_path_of_base_uri($entry), $entry->{'component'}, $suffix);
-
+	my $filename;
+	if ($ref_entry->{'component'} eq "") {
+		# easy source type
+		my $suffix = ($ref_entry->{'type'} eq 'deb') ? "Packages" : 'Sources';
+		$filename = join('_', $base_uri, $suffix);
+	} else {
+		# normal source type
+		my $suffix = ($ref_entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+		$filename = join('_', $base_uri, $ref_entry->{'component'}, $suffix);
+	}
+	
 	return $filename;
 }
 
