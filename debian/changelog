@@ -35,6 +35,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
           'max-solution-cont' internal param.
         - [API break] Removed 'set_params' method, it is not needed anymore.
     - Cache:
+      - Typo fix: 'incorrent' -> 'incorrect'. Thanks to
+        Stefano Zacchiroli <zack@debian.org>.
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.
@@ -45,7 +47,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Changed default value for option
         'cupt::downloader::max-simultaneous-downloads' from 3 to 2.
       - Warn, don't error, on setting unknown list option, just like for
-        regular options. Thanks for Stefano Zacchiroli <zack@debian.org>.
+        regular options. Thanks to Stefano Zacchiroli <zack@debian.org>.
       - Skip broken parts of config files and warn, don't immediately stop.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
