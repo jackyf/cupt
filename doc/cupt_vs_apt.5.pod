@@ -87,6 +87,10 @@ translated descriptions are not yet implemented
 
 debconf is not yet working under Cupt
 
+=item
+
+cdrom URI type is not handled
+
 =back
 
 =head1 DIFFERENT BEHAVIOR
