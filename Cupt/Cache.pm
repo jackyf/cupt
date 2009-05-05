@@ -730,11 +730,19 @@ sub __parse_source_list {
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
 
-		mydie("incorrect source line at file '%s', line %u", $file, $.) if (!scalar @sections);
 		mydie("incorrect source type at file '%s', line %u", $file, $.)
 			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
 
-		map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
+		if (scalar @sections) {
+			# this is normal entry
+			map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
+		} else {
+			# this a candidate for easy entry
+
+			# distribution must end with a slash
+			($entry{'distribution'} =~ m{/$}) or
+					mydie("distribution doesn't end with a slash at file '%s', line %u", $file, $.);
+		}
 	}
 	close(HFILE) or mydie("unable to close file '%s': %s", $file, $!);
 	return @result;
