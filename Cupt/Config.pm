@@ -243,7 +243,12 @@ sub _read_configs {
 	push @config_files, $main_file_path if -e $main_file_path;
 
 	foreach (@config_files) {
-		$parser->parse_file($_);
+		eval {
+			$parser->parse_file($_);
+		};
+		if (mycatch()) {
+			mywarn("skipped configuration file '%s'", $_);
+		}
 	}
 }
 
