@@ -83,6 +83,10 @@ working with source packages is not yet implemented
 
 translated descriptions are not yet implemented
 
+=item
+
+debconf is not yet working under Cupt
+
 =back
 
 =head1 DIFFERENT BEHAVIOR
