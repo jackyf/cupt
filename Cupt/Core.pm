@@ -34,7 +34,7 @@ use strict;
 
 use Exporter qw(import);
 our @EXPORT = qw(
-	&myprint &mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
+	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
 	$package_name_regex $version_string_regex &human_readable_size_string &__);
 
 # configuring the translator
@@ -53,20 +53,20 @@ if ($@) {
 	};
 }
 
-sub myprint {
-	print sprintf(__(shift), @_);
+sub _myprinterror {
+	say STDERR shift;
+}
+
+sub _myformat {
+	return sprintf(__(shift), @_);
 }
 
 sub mywarn {
-	print "W: ";
-	myprint @_;
-	print "\n";
+	_myprinterror("W: " . _myformat(@_));
 }
 
 sub myerr {
-	print "E: ";
-	myprint @_;
-	print "\n";
+	_myprinterror("E: " . _myformat(@_));
 }
 
 sub myredie() {
@@ -79,9 +79,7 @@ sub mydie {
 }
 
 sub myinternaldie {
-	print "E: ", __("internal error: ");
-	myprint @_;
-	print "\n";
+	_myprinterror("E: " . __("internal error: ") . _myformat(@_));
 	exit 255;
 }
 

@@ -210,7 +210,7 @@ sub set_list_var {
 		my $new_value = shift;
 		push @{$self->{list_vars}->{$var_name}}, $new_value;
 	} else {
-		mydie("attempt to set wrong option '%s'", $var_name);
+		mywarn("attempt to set wrong option '%s'", $var_name);
 	}
 }
 
@@ -244,7 +244,12 @@ sub _read_configs {
 	push @config_files, $main_file_path if -e $main_file_path;
 
 	foreach (@config_files) {
-		$parser->parse_file($_);
+		eval {
+			$parser->parse_file($_);
+		};
+		if (mycatch()) {
+			mywarn("skipped configuration file '%s'", $_);
+		}
 	}
 }
 

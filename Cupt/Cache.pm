@@ -730,8 +730,8 @@ sub __parse_source_list {
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
 
-		mydie("incorrent source line at file '%s', line %u", $file, $.) if (!scalar @sections);
-		mydie("incorrent source type at file '%s', line %u", $file, $.)
+		mydie("incorrect source line at file '%s', line %u", $file, $.) if (!scalar @sections);
+		mydie("incorrect source type at file '%s', line %u", $file, $.)
 			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
 
 		map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
