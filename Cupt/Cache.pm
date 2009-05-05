@@ -730,11 +730,23 @@ sub __parse_source_list {
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
 
-		mydie("incorrect source line at file '%s', line %u", $file, $.) if (!scalar @sections);
 		mydie("incorrect source type at file '%s', line %u", $file, $.)
 			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
 
-		map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
+		if (scalar @sections) {
+			# this is normal entry
+			map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
+		} else {
+			# this a candidate for easy entry
+
+			# distribution must end with a slash
+			($entry{'distribution'} =~ s{/$}{}) or
+					mydie("distribution doesn't end with a slash at file '%s', line %u", $file, $.);
+
+			# ok, so adding single entry
+			$entry{'component'} = "";
+			push @result, { %entry };
+		}
 	}
 	close(HFILE) or mydie("unable to close file '%s': %s", $file, $!);
 	return @result;
@@ -983,13 +995,16 @@ sub _process_index_file {
 
 sub _path_of_base_uri {
 	my $self = shift;
-	my $entry = shift;
+	my $ref_entry = shift;
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
-	(my $uri_prefix = $entry->{'uri'}) =~ s[^\w+://][];
+	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+://][];
 
 	# stripping last '/' from uri if present
 	$uri_prefix =~ s{/$}{};
+	
+	# "escaping" tilde, following APT practice :(
+	$uri_prefix =~ s/~/%7e/g;
 
 	# "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
 	$uri_prefix =~ tr[/][_];
@@ -1001,24 +1016,36 @@ sub _path_of_base_uri {
 		$self->{_config}->var('dir::state::lists')
 	);
 
-	my $base_uri_part = join('_',
-		$uri_prefix,
-		'dists',
-		$entry->{'distribution'}
-	);
+	my $base_uri_part;
+    if ($ref_entry->{'component'} eq "") {
+		# easy source type
+		$base_uri_part = join('_', $uri_prefix, $ref_entry->{'distribution'});
+	} else {
+		# normal source type
+		$base_uri_part = join('_', $uri_prefix, 'dists', $ref_entry->{'distribution'});
+	}
 
 	return join('', $dirname, '/', $base_uri_part);
 }
 
 sub _path_of_source_list {
 	my $self = shift;
-	my $entry = shift;
+	my $ref_entry = shift;
 
 	my $arch = $self->{_config}->var('apt::architecture');
-	my $suffix = ($entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+	my $base_uri = $self->_path_of_base_uri($ref_entry);
 
-	my $filename = join('_', $self->_path_of_base_uri($entry), $entry->{'component'}, $suffix);
-
+	my $filename;
+	if ($ref_entry->{'component'} eq "") {
+		# easy source type
+		my $suffix = ($ref_entry->{'type'} eq 'deb') ? "Packages" : 'Sources';
+		$filename = join('_', $base_uri, $suffix);
+	} else {
+		# normal source type
+		my $suffix = ($ref_entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+		$filename = join('_', $base_uri, $ref_entry->{'component'}, $suffix);
+	}
+	
 	return $filename;
 }
 

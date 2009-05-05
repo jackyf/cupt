@@ -5,6 +5,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Don't require worker at compilation stage. Speeds up compilation a bit.
     - Implemented '--no-remove' option for management actions.
     - Implemented '--no-auto-remove' option for management actions.
+    - Selecting a version for binary package:
+      - Allow '-' symbols in distribution names.
   * Cupt:
     - Core:
       - 'mydie', 'myerr', 'mywarn' subroutines now print to STDERR. Thanks to
@@ -39,6 +41,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - [API break] Removed 'set_params' method, it is not needed anymore.
     - Cache:
       - Typo fix: 'incorrent' -> 'incorrect'. Thanks to
+        Stefano Zacchiroli <zack@debian.org>.
+      - Implemented 'easy' type of sources.list entry. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
