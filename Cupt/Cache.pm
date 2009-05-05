@@ -995,13 +995,16 @@ sub _process_index_file {
 
 sub _path_of_base_uri {
 	my $self = shift;
-	my $entry = shift;
+	my $ref_entry = shift;
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
-	(my $uri_prefix = $entry->{'uri'}) =~ s[^\w+://][];
+	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+://][];
 
 	# stripping last '/' from uri if present
 	$uri_prefix =~ s{/$}{};
+	
+	# "escaping" tilde, following APT practice :(
+	$uri_prefix =~ s/~/%7e/g;
 
 	# "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
 	$uri_prefix =~ tr[/][_];
@@ -1015,8 +1018,8 @@ sub _path_of_base_uri {
 
 	my $base_uri_part = join('_',
 		$uri_prefix,
-		'dists',
-		$entry->{'distribution'}
+		($ref_entry->{'component'} eq "" ? "" : 'dists'),
+		$ref_entry->{'distribution'}
 	);
 
 	return join('', $dirname, '/', $base_uri_part);
