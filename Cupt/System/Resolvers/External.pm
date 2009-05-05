@@ -41,6 +41,8 @@ use Cupt::Cache::Relation qw(stringify_relation_expressions);
 
 use fields qw(_is_installed _upgrade_all_flag _actions _strict_relation_expressions);
 
+my $_dummy_package_name = "dummy-package-name";
+
 sub new {
 	my $class = shift;
 	my $self = fields::new($class);
@@ -165,6 +167,14 @@ sub _write_cudf_info ($$) {
 			say $fh "";
 		}
 	}
+	if (scalar @{$self->{_strict_relation_expressions}}) {
+		# writing dummy package entry
+		say $fh "Package: $_dummy_package_name";
+		say $fh "Version: 1";
+		print $fh "Depends: ";
+		say $fh $sub_strip_circle_braces->(stringify_relation_expressions($self->{_strict_relation_expressions}));
+		say $fh "";
+	}
 
 	# writing problems
 	say $fh "Problem: source: Debian/DUDF";
@@ -182,6 +192,10 @@ sub _write_cudf_info ($$) {
 		} elsif ($package_entry->{'action'} eq 'install') {
 			push @strings_to_install, "$package_name = $package_entry->{'version_string'}";
 		}
+	}
+	
+	if (scalar @{$self->{_strict_relation_expressions}}) {
+		push @strings_to_install, $_dummy_package_name;
 	}
 
 	if (scalar @package_names_to_remove) {
