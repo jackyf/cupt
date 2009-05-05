@@ -742,6 +742,10 @@ sub __parse_source_list {
 			# distribution must end with a slash
 			($entry{'distribution'} =~ m{/$}) or
 					mydie("distribution doesn't end with a slash at file '%s', line %u", $file, $.);
+
+			# ok, so adding single entry
+			$entry{'component'} = "";
+			push @result, { %entry };
 		}
 	}
 	close(HFILE) or mydie("unable to close file '%s': %s", $file, $!);
