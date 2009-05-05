@@ -6,6 +6,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
     - Implemented '--no-remove' option for management actions.
     - Implemented '--no-auto-remove' option for management actions.
   * Cupt:
+    - Core:
+      - 'mydie', 'myerr', 'mywarn' subroutines now print to STDERR. Thanks to
+        Stefano Zacchiroli <zack@debian.org>.
     - Download:
       - Manager:
         - [API break] 'download' method: now one should specify array of URIs,
