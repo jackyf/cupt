@@ -740,7 +740,7 @@ sub __parse_source_list {
 			# this a candidate for easy entry
 
 			# distribution must end with a slash
-			($entry{'distribution'} =~ m{/$}) or
+			($entry{'distribution'} =~ s{/$}{}) or
 					mydie("distribution doesn't end with a slash at file '%s', line %u", $file, $.);
 
 			# ok, so adding single entry
