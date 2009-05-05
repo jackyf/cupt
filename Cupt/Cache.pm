@@ -1016,13 +1016,14 @@ sub _path_of_base_uri {
 		$self->{_config}->var('dir::state::lists')
 	);
 
+	(my $distribution_part = $ref_entry->{'distribution'}) =~ tr[/][_];
 	my $base_uri_part;
     if ($ref_entry->{'component'} eq "") {
 		# easy source type
-		$base_uri_part = join('_', $uri_prefix, $ref_entry->{'distribution'});
+		$base_uri_part = join('_', $uri_prefix, $distribution_part);
 	} else {
 		# normal source type
-		$base_uri_part = join('_', $uri_prefix, 'dists', $ref_entry->{'distribution'});
+		$base_uri_part = join('_', $uri_prefix, 'dists', $distribution_part);
 	}
 
 	return join('', $dirname, '/', $base_uri_part);
