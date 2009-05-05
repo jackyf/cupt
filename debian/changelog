@@ -42,6 +42,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
     - Cache:
       - Typo fix: 'incorrent' -> 'incorrect'. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
+      - Implemented 'easy' type of sources.list entry.
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.
