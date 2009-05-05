@@ -990,7 +990,7 @@ sub _process_index_file {
 		myredie();
 	}
 
-	close(OFFSETS) or mydie("unable to close grep pipe");
+	close(OFFSETS) or $! == 0 or mydie("unable to close grep pipe: %s", $!);
 }
 
 sub _path_of_base_uri {
