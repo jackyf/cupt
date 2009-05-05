@@ -44,6 +44,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - New configuration option 'cupt::resolver::max-solution-count'.
       - Changed default value for option
         'cupt::downloader::max-simultaneous-downloads' from 3 to 2.
+      - Warn, don't error, on setting unknown list option, just like for
+        regular options.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 

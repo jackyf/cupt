@@ -209,7 +209,7 @@ sub set_list_var {
 		my $new_value = shift;
 		push @{$self->{list_vars}->{$var_name}}, $new_value;
 	} else {
-		mydie("attempt to set wrong option '%s'", $var_name);
+		mywarn("attempt to set wrong option '%s'", $var_name);
 	}
 }
 
