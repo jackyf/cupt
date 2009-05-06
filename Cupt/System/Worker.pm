@@ -839,7 +839,7 @@ sub _run_external_command ($$$) {
 	}
 }
 
-sub _do_dpkg_pre_actions ($$) {
+sub _do_dpkg_pre_actions ($$$) {
 	my ($self, $ref_actions_preview, $ref_action_group_list) = @_;
 
 	my $archives_location = $self->_get_archives_location();
@@ -866,6 +866,13 @@ sub _do_dpkg_pre_actions ($$) {
 		}
 		$command = "echo '$stdin' | $command";
 		$self->_run_external_command('pre', $command, $alias);
+	}
+}
+
+sub _do_dpkg_post_actions ($) {
+	my ($self) = @_;
+	foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
+		$self->_run_external_command('post', $command, $command);
 	}
 }
 
@@ -991,11 +998,7 @@ sub do_actions ($$) {
 		}
 	}
 
-	do { # performing post-invoke actions
-		foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
-			$self->_run_external_command('post', $command, $command);
-		}
-	};
+	$self->_do_dpkg_post_actions();
 
 	return 1;
 }
