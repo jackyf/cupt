@@ -875,11 +875,13 @@ sub do_actions ($$) {
 			$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
 		} else {
 			$stdin = '';
-			# debs are pulled to command through STDIN, one by line
-			foreach my $ref_entry (@{$ref_actions_preview->{'upgrade'}}) {
-				my $version = $ref_entry->{'version'};
-				my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
-				$stdin .= "$deb_location\n";
+			# new debs are pulled to command through STDIN, one by line
+			foreach my $action ('install', 'upgrade', 'downgrade') {
+				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
+					my $version = $ref_entry->{'version'};
+					my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
+					$stdin .= "$deb_location\n";
+				}
 			}
 		}
 		$command = "echo '$stdin' | $command";

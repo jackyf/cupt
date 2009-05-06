@@ -85,10 +85,6 @@ translated descriptions are not yet implemented
 
 =item
 
-debconf is not yet working under Cupt
-
-=item
-
 cdrom URI type is not handled
 
 =back
