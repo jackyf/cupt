@@ -870,23 +870,24 @@ sub do_actions ($$) {
 
 	do { # performing pre-install actions
 		my $sub_run_command = sub {
-			my ($command) = @_;
+			my ($command, $alias) = @_;
 
 			if ($simulate) {
 				say __("simulating"), ": $command";
 			} else {
 				# invoking command
 				system($command) == 0 or
-						mydie("pre-install action returned non-zero status: %s", $?);
+						mydie("dpkg 'pre' action '%s' returned non-zero status: %s", $alias, $?);
 			}
 		};
 
 		foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
-			$sub_run_command->($command);
+			$sub_run_command->($command, $command);
 		}
 		foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
 			my $stdin;
 
+			my $alias = $command;
 			if ($command =~ /apt-listchanges/) {
 				$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
 			} else {
@@ -901,7 +902,7 @@ sub do_actions ($$) {
 				}
 			}
 			$command = "echo '$stdin' | $command";
-			$sub_run_command->($command);
+			$sub_run_command->($command, $alias);
 		}
 	};
 

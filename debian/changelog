@@ -33,6 +33,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Put also installed and downgraded packages to package list version 1
           output for hooks. Dpkg-preconfigure should now work fully under Cupt.
         - Honor 'dpkg::pre-invoke' option.
+        - Advanced error output for dpkg 'pre' actions.
       - Resolver:
         - Use 'cupt::resolver::no-remove' option instead of 'no-remove' internal
           param.
