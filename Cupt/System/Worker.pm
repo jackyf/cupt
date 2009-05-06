@@ -839,6 +839,36 @@ sub _run_external_command ($$$) {
 	}
 }
 
+sub _do_dpkg_pre_actions ($$) {
+	my ($self, $ref_actions_preview, $ref_action_group_list) = @_;
+
+	my $archives_location = $self->_get_archives_location();
+
+	foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
+		$self->_run_external_command('pre', $command, $command);
+	}
+	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
+		my $stdin;
+
+		my $alias = $command;
+		if ($command =~ /apt-listchanges/) {
+			$stdin = $self->_generate_stdin_for_apt_listchanges($ref_action_group_list);
+		} else {
+			$stdin = '';
+			# new debs are pulled to command through STDIN, one by line
+			foreach my $action ('install', 'upgrade', 'downgrade') {
+				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
+					my $version = $ref_entry->{'version'};
+					my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
+					$stdin .= "$deb_location\n";
+				}
+			}
+		}
+		$command = "echo '$stdin' | $command";
+		$self->_run_external_command('pre', $command, $alias);
+	}
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -883,35 +913,9 @@ sub do_actions ($$) {
 				mydie("unable to open dpkg lock file: %s", $!);
 	}
 
+	$self->_do_dpkg_pre_actions($ref_actions_preview, \@action_group_list);
+
 	my $archives_location = $self->_get_archives_location();
-
-
-	do { # performing pre-install actions
-		foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
-			$self->_run_external_command('pre', $command, $command);
-		}
-		foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
-			my $stdin;
-
-			my $alias = $command;
-			if ($command =~ /apt-listchanges/) {
-				$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
-			} else {
-				$stdin = '';
-				# new debs are pulled to command through STDIN, one by line
-				foreach my $action ('install', 'upgrade', 'downgrade') {
-					foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
-						my $version = $ref_entry->{'version'};
-						my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
-						$stdin .= "$deb_location\n";
-					}
-				}
-			}
-			$command = "echo '$stdin' | $command";
-			$self->_run_external_command('pre', $command, $alias);
-		}
-	};
-
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
