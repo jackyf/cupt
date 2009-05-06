@@ -868,21 +868,21 @@ sub do_actions ($$) {
 
 	my $archives_location = $self->_get_archives_location();
 
+	my $sub_run_command = sub {
+		my ($flavor, $command, $alias) = @_;
+
+		if ($simulate) {
+			say __("simulating"), ": $command";
+		} else {
+			# invoking command
+			system($command) == 0 or
+					mydie("dpkg '%s' action '%s' returned non-zero status: %s", $flavor, $alias, $?);
+		}
+	};
+
 	do { # performing pre-install actions
-		my $sub_run_command = sub {
-			my ($command, $alias) = @_;
-
-			if ($simulate) {
-				say __("simulating"), ": $command";
-			} else {
-				# invoking command
-				system($command) == 0 or
-						mydie("dpkg 'pre' action '%s' returned non-zero status: %s", $alias, $?);
-			}
-		};
-
 		foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
-			$sub_run_command->($command, $command);
+			$sub_run_command->('pre', $command, $command);
 		}
 		foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
 			my $stdin;
@@ -902,7 +902,7 @@ sub do_actions ($$) {
 				}
 			}
 			$command = "echo '$stdin' | $command";
-			$sub_run_command->($command, $alias);
+			$sub_run_command->('pre', $command, $alias);
 		}
 	};
 
@@ -980,6 +980,12 @@ sub do_actions ($$) {
 			say __("simulating"), ": $dpkg_pending_triggers_command";
 		}
 	}
+
+	do { # performing post-invoke actions
+		foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
+			$sub_run_command->('post', $command, $command);
+		}
+	};
 
 	return 1;
 }

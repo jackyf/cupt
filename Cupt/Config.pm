@@ -118,6 +118,7 @@ sub new {
 			'apt::update::post-invoke' => [],
 			'dpkg::pre-install-pkgs' => [],
 			'dpkg::pre-invoke' => [],
+			'dpkg::post-invoke' => [],
 		},
 
 	};

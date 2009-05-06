@@ -34,6 +34,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
           output for hooks. Dpkg-preconfigure should now work fully under Cupt.
         - Honor 'dpkg::pre-invoke' option.
         - Advanced error output for dpkg 'pre' actions.
+        - Honor 'dpkg::post-invoke' option.
       - Resolver:
         - Use 'cupt::resolver::no-remove' option instead of 'no-remove' internal
           param.
@@ -63,6 +64,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
         regular options. Thanks to Stefano Zacchiroli <zack@debian.org>.
       - Skip broken parts of config files and warn, don't immediately stop.
       - Added the configuration option 'dpkg::pre-invoke'.
+      - Added the configuration option 'dpkg::post-invoke'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 
