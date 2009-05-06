@@ -867,33 +867,43 @@ sub do_actions ($$) {
 	}
 
 	my $archives_location = $self->_get_archives_location();
-	# performing pre-install actions
-	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
-		my $stdin;
 
-		if ($command =~ /apt-listchanges/) {
-			$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
-		} else {
-			$stdin = '';
-			# new debs are pulled to command through STDIN, one by line
-			foreach my $action ('install', 'upgrade', 'downgrade') {
-				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
-					my $version = $ref_entry->{'version'};
-					my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
-					$stdin .= "$deb_location\n";
+	do { # performing pre-install actions
+		my $sub_run_command = sub {
+			my ($command) = @_;
+
+			if ($simulate) {
+				say __("simulating"), ": $command";
+			} else {
+				# invoking command
+				system($command) == 0 or
+						mydie("pre-install action returned non-zero status: %s", $?);
+			}
+		};
+
+		foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
+			$sub_run_command->($command);
+		}
+		foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
+			my $stdin;
+
+			if ($command =~ /apt-listchanges/) {
+				$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
+			} else {
+				$stdin = '';
+				# new debs are pulled to command through STDIN, one by line
+				foreach my $action ('install', 'upgrade', 'downgrade') {
+					foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
+						my $version = $ref_entry->{'version'};
+						my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
+						$stdin .= "$deb_location\n";
+					}
 				}
 			}
+			$command = "echo '$stdin' | $command";
+			$sub_run_command->($command);
 		}
-		$command = "echo '$stdin' | $command";
-
-		if ($simulate) {
-			say __("simulating"), ": $command";
-		} else {
-			# invoking command
-			system($command) == 0 or
-					mydie("pre-install action returned non-zero status: %s", $?);
-		}
-	}
+	};
 
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
