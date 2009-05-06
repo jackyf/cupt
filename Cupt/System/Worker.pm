@@ -724,7 +724,7 @@ sub _prepare_downloads ($$) {
 	return @pending_downloads;
 }
 
-sub _do_downloads ($$) {
+sub _do_downloads ($$$) {
 	my ($self, $ref_pending_downloads, $download_progress) = @_;
 
 	if ($self->{_config}->var('cupt::worker::simulate')) {
@@ -827,6 +827,18 @@ sub _generate_stdin_for_apt_listchanges ($$) {
 	return $result;
 }
 
+sub _run_external_command ($$$) {
+	my ($self, $flavor, $command, $alias) = @_;
+
+	if ($self->{_config}->var('cupt::worker::simulate')) {
+		say __("simulating"), ": $command";
+	} else {
+		# invoking command
+		system($command) == 0 or
+				mydie("dpkg '%s' action '%s' returned non-zero status: %s", $flavor, $alias, $?);
+	}
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -873,21 +885,10 @@ sub do_actions ($$) {
 
 	my $archives_location = $self->_get_archives_location();
 
-	my $sub_run_command = sub {
-		my ($flavor, $command, $alias) = @_;
-
-		if ($simulate) {
-			say __("simulating"), ": $command";
-		} else {
-			# invoking command
-			system($command) == 0 or
-					mydie("dpkg '%s' action '%s' returned non-zero status: %s", $flavor, $alias, $?);
-		}
-	};
 
 	do { # performing pre-install actions
 		foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
-			$sub_run_command->('pre', $command, $command);
+			$self->_run_external_command('pre', $command, $command);
 		}
 		foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
 			my $stdin;
@@ -907,7 +908,7 @@ sub do_actions ($$) {
 				}
 			}
 			$command = "echo '$stdin' | $command";
-			$sub_run_command->('pre', $command, $alias);
+			$self->_run_external_command('pre', $command, $alias);
 		}
 	};
 
@@ -988,7 +989,7 @@ sub do_actions ($$) {
 
 	do { # performing post-invoke actions
 		foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
-			$sub_run_command->('post', $command, $command);
+			$self->_run_external_command('post', $command, $command);
 		}
 	};
 
