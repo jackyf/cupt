@@ -724,6 +724,41 @@ sub _prepare_downloads ($$) {
 	return @pending_downloads;
 }
 
+sub _do_downloads ($$$) {
+	my ($self, $ref_pending_downloads, $download_progress) = @_;
+
+	if ($self->{_config}->var('cupt::worker::simulate')) {
+		foreach (@$ref_pending_downloads) {
+			say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
+		}
+	} else {
+		# don't bother ourselves with download preparings if nothing to download
+		if (scalar @$ref_pending_downloads) {
+			my @download_list;
+
+			my $archives_location = $self->_get_archives_location();
+
+			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+					mydie("unable to open archives lock file: %s", $!);
+
+			my $download_size = sum map { $_->{'size'} } @$ref_pending_downloads;
+			$download_progress->set_total_estimated_size($download_size);
+
+			my $download_result;
+			do {
+				my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+				$download_result = $download_manager->download(@$ref_pending_downloads);
+			}; # make sure that download manager is already destroyed at this point
+
+			close(LOCK) or
+					mydie("unable to close archives lock file: %s", $!);
+
+			# fail and exit if it was something bad with downloading
+			mydie($download_result) if $download_result;
+		}
+	}
+}
+
 sub _generate_stdin_for_apt_listchanges ($$) {
 	# how great is to write that "apt-listchanges uses special pipe from
 	# apt" and document nowhere the format of this pipe, so I have to look
@@ -792,6 +827,55 @@ sub _generate_stdin_for_apt_listchanges ($$) {
 	return $result;
 }
 
+sub _run_external_command ($$$) {
+	my ($self, $flavor, $command, $alias) = @_;
+
+	if ($self->{_config}->var('cupt::worker::simulate')) {
+		say __("simulating"), ": $command";
+	} else {
+		# invoking command
+		system($command) == 0 or
+				mydie("dpkg '%s' action '%s' returned non-zero status: %s", $flavor, $alias, $?);
+	}
+}
+
+sub _do_dpkg_pre_actions ($$$) {
+	my ($self, $ref_actions_preview, $ref_action_group_list) = @_;
+
+	my $archives_location = $self->_get_archives_location();
+
+	foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
+		$self->_run_external_command('pre', $command, $command);
+	}
+	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
+		my $stdin;
+
+		my $alias = $command;
+		if ($command =~ /apt-listchanges/) {
+			$stdin = $self->_generate_stdin_for_apt_listchanges($ref_action_group_list);
+		} else {
+			$stdin = '';
+			# new debs are pulled to command through STDIN, one by line
+			foreach my $action ('install', 'upgrade', 'downgrade') {
+				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
+					my $version = $ref_entry->{'version'};
+					my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
+					$stdin .= "$deb_location\n";
+				}
+			}
+		}
+		$command = "echo '$stdin' | $command";
+		$self->_run_external_command('pre', $command, $alias);
+	}
+}
+
+sub _do_dpkg_post_actions ($) {
+	my ($self) = @_;
+	foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
+		$self->_run_external_command('post', $command, $command);
+	}
+}
+
 =head2 do_actions
 
 member function, performes planned actions
@@ -821,42 +905,12 @@ sub do_actions ($$) {
 	@action_group_list = __split_heterogeneous_actions(@action_group_list);
 
 	my @pending_downloads = $self->_prepare_downloads(\@action_group_list, $download_progress);
-
-	my $simulate = $self->{_config}->var('cupt::worker::simulate');
-
-	if ($simulate) {
-		foreach (@pending_downloads) {
-			say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
-		}
-	} else {
-		# don't bother ourselves with download preparings if nothing to download
-		if (scalar @pending_downloads) {
-			my @download_list;
-
-			my $archives_location = $self->_get_archives_location();
-
-			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
-					mydie("unable to open archives lock file: %s", $!);
-
-			my $download_size = sum map { $_->{'size'} } @pending_downloads;
-			$download_progress->set_total_estimated_size($download_size);
-
-			my $download_result;
-			do {
-				my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
-				$download_result = $download_manager->download(@pending_downloads);
-			}; # make sure that download manager is already destroyed at this point
-
-			close(LOCK) or
-					mydie("unable to close archives lock file: %s", $!);
-
-			# fail and exit if it was something bad with downloading
-			mydie($download_result) if $download_result;
-		}
-	}
+	$self->_do_downloads(\@pending_downloads, $download_progress);
 
 	return 1 if $self->{_config}->var('cupt::worker::download-only');
 
+
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
@@ -866,35 +920,9 @@ sub do_actions ($$) {
 				mydie("unable to open dpkg lock file: %s", $!);
 	}
 
+	$self->_do_dpkg_pre_actions($ref_actions_preview, \@action_group_list);
+
 	my $archives_location = $self->_get_archives_location();
-	# performing pre-install actions
-	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
-		my $stdin;
-
-		if ($command =~ /apt-listchanges/) {
-			$stdin = $self->_generate_stdin_for_apt_listchanges(\@action_group_list);
-		} else {
-			$stdin = '';
-			# new debs are pulled to command through STDIN, one by line
-			foreach my $action ('install', 'upgrade', 'downgrade') {
-				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
-					my $version = $ref_entry->{'version'};
-					my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
-					$stdin .= "$deb_location\n";
-				}
-			}
-		}
-		$command = "echo '$stdin' | $command";
-
-		if ($simulate) {
-			say __("simulating"), ": $command";
-		} else {
-			# invoking command
-			system($command) == 0 or
-					mydie("pre-install action returned non-zero status: %s", $?);
-		}
-	}
-
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
@@ -969,6 +997,8 @@ sub do_actions ($$) {
 			say __("simulating"), ": $dpkg_pending_triggers_command";
 		}
 	}
+
+	$self->_do_dpkg_post_actions();
 
 	return 1;
 }

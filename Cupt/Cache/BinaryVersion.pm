@@ -260,7 +260,7 @@ sub uris {
 				'download_uri' => $new_uri,
 				'base_uri' => $base_uri,
 				'appendage' => $_->{'filename'},
-			} unless grep { $_ eq $new_uri } @result;
+			} unless grep { $_->{'download_uri'} eq $new_uri } @result;
 		}
 	}
 	return @result;
