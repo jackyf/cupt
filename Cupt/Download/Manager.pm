@@ -108,7 +108,7 @@ sub new ($$$) {
 	} else {
 		# this is background worker process
 
-		# { $uri => 1 }
+		# { $uri => $result }
 		my %done_downloads;
 		# { $uri => $waiter_fh, $pid, $input_fh }
 		my %active_downloads;
@@ -151,8 +151,9 @@ sub new ($$$) {
 						autoflush $waiter_fh;
 						# check if this download was already done
 						if (exists $done_downloads{$uri}) {
-							# just end it
-							__my_write_pipe(\*SELF_WRITE, 'done', $uri, 1, '');
+							my $result = $done_downloads{$uri};
+							# just immediately end it
+							__my_write_pipe($waiter_fh, $result);
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 							# put the query on hold
 							push @waiting_downloads, [ $uri, $filename, $waiter_fh ];
@@ -180,7 +181,7 @@ sub new ($$$) {
 						# removing the query from active download list and put it to
 						# the list of ended ones
 						delete $active_downloads{$uri};
-						$done_downloads{$uri} = 1;
+						$done_downloads{$uri} = $result;
 
 						if (scalar @waiting_downloads && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
 							# put next of waiting queries
