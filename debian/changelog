@@ -57,6 +57,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Fixed determining path for storing list file for indexes whose protocol
         doesn't have '//', e.g. 'file'.
         Thanks to Michael Stapelberg <michael@stapelberg.de>.
+      - Warn, don't error, when description is not present in Release file.
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.

@@ -680,7 +680,7 @@ sub _get_release_info {
 		myredie();
 	}
 	if (!defined($release_info{description})) {
-		mydie("no description specified in release file '%s'", $file);
+		mywarn("no description specified in release file '%s'", $file);
 	}
 	if (!defined($release_info{vendor})) {
 		mydie("no vendor specified in release file '%s'", $file);
