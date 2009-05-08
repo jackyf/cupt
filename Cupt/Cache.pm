@@ -30,6 +30,10 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Exporter qw(import);
+
+our @EXPORT_OK = qw(&get_path_of_debian_changelog);
+
 use Memoize;
 memoize('_verify_signature');
 
@@ -1080,6 +1084,34 @@ sub _path_of_extended_states {
 	my $leaf = $self->{_config}->var('dir::state::extendedstates');
 
 	return "$root_prefix$etc_dir/$leaf";
+}
+
+=head1 FREE SUBROUTINES
+
+=head2 get_path_of_debian_changelog
+
+free subroutine, returns string path of Debian changelog for version when
+version is installed, undef otherwise
+
+Parameters:
+
+I<version> - reference to
+L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
+
+sub get_path_of_debian_changelog ($) {
+	my ($version) = @_;
+
+	return undef if not $version->is_installed();
+
+	my $package_name = $version->{package_name};
+	my $common_part = "/usr/share/doc/$package_name/";
+	if (is_version_string_native($version->{version_string})) {
+		return $common_part . 'changelog.gz';
+	} else {
+		return $common_part . 'changelog.Debian.gz';
+	}
 }
 
 =head1 Release info
