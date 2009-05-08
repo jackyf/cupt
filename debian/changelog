@@ -10,6 +10,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
     - Properly output error when no command specified.
     - Use '#/usr/bin/env perl' for portability. Thanks to
       Michael Stapelberg <michael@stapelberg.de>.
+    - New 'changelog' subcommand. Currently implemented only for installed
+      packages.
   * Cupt:
     - Core:
       - 'mydie', 'myerr', 'mywarn' subroutines now print to STDERR. Thanks to

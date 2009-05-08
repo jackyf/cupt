@@ -159,6 +159,20 @@ C<cupt pkgnames>
 
 C<cupt pkgnames liba>
 
+=item changelog
+
+displays changelog for given versions of packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Currently works only with installed packages.
+
+Examples:
+
+C<cupt changelog dpkg/installed>
+
+C<cupt changelog --installed-only dpkg nlkt lintian>
+
 =back
 
 =head3 query-specific options
@@ -173,7 +187,8 @@ Corresponding configuration variable: L<apt::cache::important>
 
 =item --installed-only
 
-work only with installed versions of packages; valuable only for L</show>, L</depends>, L</rdepends>, L</search>, L</pkgnames> actions
+work only with installed versions of packages; valuable only for L</show>,
+L</depends>, L</rdepends>, L</search>, L</pkgnames>, L</changelog> actions
 
 =back
 

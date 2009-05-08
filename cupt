@@ -72,6 +72,7 @@ my %command_handlers = (
 	'rdepends' => sub { show_package_relations('reverse') },
 	'policy' => \&policy,
 	'pkgnames' => \&pkgnames,
+	'changelog' => \&show_changelog,
 	'install' => sub { manage_packages('install') },
 	'remove' => sub { manage_packages('remove') },
 	'purge' => sub { manage_packages('purge') },
@@ -981,6 +982,41 @@ sub manage_packages ($) {
 		mydie("unable to do requested actions") unless $overall_result;
 	} else {
 		say __("no more solutions.");
+	}
+}
+
+sub show_changelog {
+	# turn off info and relations parsing, we don't need it
+	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+
+	my $o_installed_only = 0;
+	GetOptions(
+		'installed-only' => \$o_installed_only,
+	);
+
+	check_no_more_options();
+
+	scalar @ARGV or
+			mydie("no package expressions specified");
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
+
+	my @versions = map { select_binary_package_version($_) } @ARGV;
+
+	foreach my $version (@versions) {
+		my $local_changelog_path = Cupt::Cache::get_path_of_debian_changelog($version);
+
+		if (defined $local_changelog_path) {
+			# there is a local changelog, display it
+			my $result = system("zcat $local_changelog_path | sensible-pager");
+			# return non-zero code in case of some error
+			return $result if $result;
+		} else {
+			mydie("cannot display changelog for version '%s' of package '%s'",
+					$version->{version_string}, $version->{package_name});
+		}
 	}
 }
 
