@@ -119,6 +119,8 @@ sub new {
 			'dpkg::pre-install-pkgs' => [],
 			'dpkg::pre-invoke' => [],
 			'dpkg::post-invoke' => [],
+			'rpm::pre-invoke' => [],
+			'rpm::post-invoke' => [],
 		},
 
 	};

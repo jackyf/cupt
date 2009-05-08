@@ -72,6 +72,7 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Skip broken parts of config files and warn, don't immediately stop.
       - Added the configuration option 'dpkg::pre-invoke'.
       - Added the configuration option 'dpkg::post-invoke'.
+      - Added the configuration options 'rpm::pre-invoke' and 'rpm::post-invoke'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
 
