@@ -8,6 +8,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
     - Selecting a version for binary package:
       - Allow '-' symbols in distribution names.
     - Properly output error when no command specified.
+    - Use '#/usr/bin/env perl' for portability. Thanks to
+      Michael Stapelberg <michael@stapelberg.de>.
   * Cupt:
     - Core:
       - 'mydie', 'myerr', 'mywarn' subroutines now print to STDERR. Thanks to
