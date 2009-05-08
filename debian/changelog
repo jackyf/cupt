@@ -54,6 +54,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
         Stefano Zacchiroli <zack@debian.org>.
       - Don't choke on empty-for-us index files. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
+      - Fixed determining path for storing list file for indexes whose protocol
+        doesn't have '//', e.g. 'file'.
+        Thanks to Michael Stapelberg <michael@stapelberg.de>.
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.

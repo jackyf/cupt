@@ -998,7 +998,8 @@ sub _path_of_base_uri {
 	my $ref_entry = shift;
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
-	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+://][];
+	# "file:/home/jackyf" -> "/home/jackyf"
+	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+:(?://)?][];
 
 	# stripping last '/' from uri if present
 	$uri_prefix =~ s{/$}{};
