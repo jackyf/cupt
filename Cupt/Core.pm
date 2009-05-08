@@ -35,7 +35,8 @@ use strict;
 use Exporter qw(import);
 our @EXPORT = qw(
 	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
-	$package_name_regex $version_string_regex &human_readable_size_string &__);
+	$package_name_regex $version_string_regex &human_readable_size_string &__
+	&is_version_string_native);
 
 # configuring the translator
 eval {
@@ -296,6 +297,18 @@ sub human_readable_size_string ($) {
 	return sprintf("%.1fMiB", ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);
 	return sprintf("%.0fMiB", ($bytes / (1024*1024))) if ($bytes < 10*1024*1024*1024);
 	return sprintf("%.1fGiB", ($bytes / (1024*1024*1024)));
+}
+
+=head2 is_version_string_native
+
+return boolean answer, true if the version is version for Debian native
+package, and false otherwise
+
+=cut
+
+sub is_version_string_native ($) {
+	# does it contain minus sign?
+	return ($_[0] !~ m/-/);
 }
 
 1;
