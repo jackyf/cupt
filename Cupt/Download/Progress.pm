@@ -307,7 +307,11 @@ sub get_overall_download_percent ($) {
 			$total_estimated_size += $ref_entry->{size} // $ref_entry->{'downloaded'};
 		}
 	}
-	return $total_downloaded_size / $total_estimated_size * 100;
+	if ($total_estimated_size == 0) {
+		return 0;
+	} else {
+		return $total_downloaded_size / $total_estimated_size * 100;
+	}
 }
 
 =head2 download_entries

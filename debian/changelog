@@ -26,6 +26,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Detect HTTP/FTP/HTTPS error codes.
         - Put HTTP/FTP/HTTPS response codes into error messages.
         - Don't put Curl internal error codes into error messages.
+      - Progress:
+        - 'get_overall_download_percent': fixed division by zero when estimated total is
+          zero.
     - System:
       - Worker:
         - Adapted to to changes in 'download' method of download manager.
