@@ -26,6 +26,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Detect HTTP/FTP/HTTPS error codes.
         - Put HTTP/FTP/HTTPS response codes into error messages.
         - Don't put Curl internal error codes into error messages.
+        - Follow HTTP redirects if the option
+          'acquire::http::allow-redirects' is set to true.
       - Progress:
         - 'get_overall_download_percent': fixed division by zero when estimated total is
           zero.
@@ -82,8 +84,9 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Added the configuration option 'dpkg::pre-invoke'.
       - Added the configuration option 'dpkg::post-invoke'.
       - Added the configuration options 'rpm::pre-invoke' and 'rpm::post-invoke'.
+      - New configuration option 'acquire::http::allow-redirects'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 10 May 2009 13:23:25 +0300
 
 cupt (0.1.1.1) experimental; urgency=low
 

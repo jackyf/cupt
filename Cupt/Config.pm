@@ -87,6 +87,7 @@ sub new {
 			'dir::state::status' => '/var/lib/dpkg/status',
 			'gpgv::trustedkeyring' => '/var/lib/cupt/trusted.gpg',
 
+			'acquire::http::allow-redirects' => 1,
 			'cupt::downloader::max-simultaneous-downloads' => 2,
 			'cupt::resolver::auto-remove' => 1,
 			'cupt::resolver::keep-recommends' => 1,

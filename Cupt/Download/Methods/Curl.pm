@@ -88,6 +88,9 @@ sub perform ($$$$$) {
 	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $download_limit*1024) if defined $download_limit;
 	my $proxy = $config->var("acquire::${protocol}::proxy");
 	$curl->setopt(CURLOPT_PROXY, $proxy) if defined $proxy;
+	if ($protocol eq 'http') {
+		$curl->setopt(CURLOPT_FOLLOWLOCATION, 1) if $config->var('acquire::http::allow-redirects');
+	}
 	my $timeout = $config->var("acquire::${protocol}::timeout");
 	if (defined $timeout) {
 		$curl->setopt(CURLOPT_CONNECTTIMEOUT, $timeout);

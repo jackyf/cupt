@@ -491,6 +491,11 @@ Secondly, Cupt introduces following cupt-specific configuration variables:
 
 =over
 
+=item acquire::http::allow-redirects
+
+boolean (0/1), specifies whether should downloader follow HTTP redirects.
+True by default.
+
 =item cupt::downloader::max-simultaneous-downloads
 
 positive number, specifies maximum number of simultaneous downloads

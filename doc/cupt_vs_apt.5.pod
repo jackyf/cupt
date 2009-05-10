@@ -67,6 +67,16 @@ worker passes '--force-*' options to dpkg only when really needed, not always
 
 =back
 
+=head2 Downloading
+
+=over
+
+=item
+
+HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|cupt(1)/acquire::http::allow-redirects>)
+
+=back
+
 =head1 DISADVANTAGES
 
 =over
