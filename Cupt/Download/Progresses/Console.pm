@@ -47,6 +47,9 @@ sub new {
 sub _termprint ($$$) {
 	my ($self, $string, $right_appendage) = @_;
 
+	# enable flushing STDOUT
+	local $| = 1;
+
 	$right_appendage //= "";
 	my $allowed_width = $self->{_termwidth} - length($right_appendage);
 	print "\r";

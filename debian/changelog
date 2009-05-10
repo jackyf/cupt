@@ -29,6 +29,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Progress:
         - 'get_overall_download_percent': fixed division by zero when estimated total is
           zero.
+      - Progresses/Console:
+        - Enable auto-flushing when printing to the terminal.
     - System:
       - Worker:
         - Adapted to to changes in 'download' method of download manager.
