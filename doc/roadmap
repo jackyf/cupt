@@ -10,7 +10,6 @@ Cupt::Cache::Package: versions -> get_versions
 
 For version 0.3:
 
-cupt: changelog action
 downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
 downloader: debdelta integration (or re-implementation)
