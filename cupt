@@ -33,6 +33,7 @@ use strict;
 use List::Util qw(sum);
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
+use File::Temp qw(tempfile);
 
 use Locale::gettext;
 
@@ -1014,8 +1015,64 @@ sub show_changelog {
 			# return non-zero code in case of some error
 			return $result if $result;
 		} else {
-			mydie("cannot display changelog for version '%s' of package '%s'",
-					$version->{version_string}, $version->{package_name});
+			my %base_uris_by_vendor = (
+				'Debian' => "http://packages.debian.org/changelogs/pool",
+				'Ubuntu' => "http://changelogs.ubuntu.com/changelogs/pool",
+			);
+
+			my @matched_avail_entries;
+			foreach my $ref_avail_entry (@{$version->{avail_as}}) {
+				if ($ref_avail_entry->{release}->{vendor} eq 'Debian') {
+					# this is probably a package from Debian archive
+					push @matched_avail_entries, $ref_avail_entry;
+					last;
+				}
+				if ($ref_avail_entry->{release}->{vendor} eq 'Ubuntu') {
+					# this is probably a package from Debian archive
+					push @matched_avail_entries, $ref_avail_entry;
+					last;
+				}
+			}
+
+			my @changelog_uris;
+			foreach my $ref_matched_avail_entry (@matched_avail_entries) {
+				# all of above are only good guessings
+				my $version_string = $version->{version_string};
+				my $source_name = $version->{source_name};
+				my $short_prefix = ($source_name =~ m/^lib/) ?
+						substr($source_name, 0, 4) : substr($source_name, 0, 1);
+
+				my $component = $ref_matched_avail_entry->{release}->{component};
+				my $remote_changelog_base_uri = $base_uris_by_vendor{$ref_matched_avail_entry->{release}->{vendor}};
+				my $uri_appendage = "$component/$short_prefix/$source_name/${source_name}_$version_string/changelog";
+				push @changelog_uris, "$remote_changelog_base_uri/$uri_appendage";
+			}
+
+			if (scalar @changelog_uris) {
+				require Cupt::Download::Manager;
+				require Cupt::Download::Progresses::Console;
+
+				my (undef, $temp_changelog_path) = tempfile();
+				my $download_progress = new Cupt::Download::Progresses::Console;
+				my $download_result;
+				do {
+					my $download_manager = new Cupt::Download::Manager($config, $download_progress);
+					$download_result = $download_manager->download(
+							{ 'uris' => \@changelog_uris, 'filename' => $temp_changelog_path });
+				}; # make sure that download manager is already destroyed at this point
+
+				# fail and exit if it was something bad with downloading
+				mydie($download_result) if $download_result;
+
+				my $result = system("sensible-pager $temp_changelog_path");
+				# remove the file
+				unlink $temp_changelog_path;
+				# return non-zero code in case of some error
+				return $result if $result;
+			} else {
+				mydie("no info where to acquire changelog for version '%s' of package '%s'",
+						$version->{version_string}, $version->{package_name});
+			}
 		}
 	}
 }

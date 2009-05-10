@@ -165,13 +165,15 @@ displays changelog for given versions of packages
 
 This subcommand receives list of L</"Binary package version expression">'s, see below.
 
-Currently works only with installed packages.
+Works only with installed packages and official Debian and Ubuntu repositories.
 
 Examples:
 
 C<cupt changelog dpkg/installed>
 
 C<cupt changelog --installed-only dpkg nlkt lintian>
+
+C<cupt changelog libqtcore4>
 
 =back
 
