@@ -29,8 +29,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Follow HTTP redirects if the option
           'acquire::http::allow-redirects' is set to true.
       - Progress:
-        - 'get_overall_download_percent': fixed division by zero when estimated total is
-          zero.
+        - 'get_overall_download_percent': fixed division by zero when
+          estimated total is zero.
       - Progresses/Console:
         - Enable auto-flushing when printing to the terminal.
     - System:
@@ -83,7 +83,8 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Skip broken parts of config files and warn, don't immediately stop.
       - Added the configuration option 'dpkg::pre-invoke'.
       - Added the configuration option 'dpkg::post-invoke'.
-      - Added the configuration options 'rpm::pre-invoke' and 'rpm::post-invoke'.
+      - Added the configuration options 'rpm::pre-invoke' and
+        'rpm::post-invoke'.
       - New configuration option 'acquire::http::allow-redirects'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 10 May 2009 13:23:25 +0300
