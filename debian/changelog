@@ -1,4 +1,13 @@
-cupt (0.1.2) UNRELEASED; urgency=low
+cupt (0.1.3) experimental; urgency=low
+
+  * Cupt:
+    - Cache:
+      - Skip 'Explanation: ' lines when parsing preferences. Thanks to
+        Stefano Zacchiroli <zack@debian.org>.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 11 May 2009 17:00:47 +0300
+
+cupt (0.1.2) experimental; urgency=low
 
   * cupt:
     - 'markauto'/'unmarkauto' subcommands:
@@ -7,10 +16,16 @@ cupt (0.1.2) UNRELEASED; urgency=low
     - Implemented '--no-auto-remove' option for management actions.
     - Selecting a version for binary package:
       - Allow '-' symbols in distribution names.
+    - Properly output error when no command specified.
+    - Use '#/usr/bin/env perl' for portability. Thanks to
+      Michael Stapelberg <michael@stapelberg.de>.
+    - New 'changelog' subcommand. Currently implemented only for installed
+      packages and official Debian and Ubuntu repositories.
   * Cupt:
     - Core:
       - 'mydie', 'myerr', 'mywarn' subroutines now print to STDERR. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
+      - New subroutine 'is_version_string_native'.
     - Download:
       - Manager:
         - [API break] 'download' method: now one should specify array of URIs,
@@ -20,6 +35,13 @@ cupt (0.1.2) UNRELEASED; urgency=low
         - Detect HTTP/FTP/HTTPS error codes.
         - Put HTTP/FTP/HTTPS response codes into error messages.
         - Don't put Curl internal error codes into error messages.
+        - Follow HTTP redirects if the option
+          'acquire::http::allow-redirects' is set to true.
+      - Progress:
+        - 'get_overall_download_percent': fixed division by zero when
+          estimated total is zero.
+      - Progresses/Console:
+        - Enable auto-flushing when printing to the terminal.
     - System:
       - Worker:
         - Adapted to to changes in 'download' method of download manager.
@@ -51,6 +73,11 @@ cupt (0.1.2) UNRELEASED; urgency=low
         Stefano Zacchiroli <zack@debian.org>.
       - Don't choke on empty-for-us index files. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
+      - Fixed determining path for storing list file for indexes whose protocol
+        doesn't have '//', e.g. 'file'.
+        Thanks to Michael Stapelberg <michael@stapelberg.de>.
+      - Warn, don't error, when description is not present in Release file.
+      - New free subroutine 'get_path_of_debian_changelog'.
       - BinaryVersion:
         - [API break] Advanced return value for 'uris' method.
         - 'uris' method: filter duplicates.
@@ -65,8 +92,11 @@ cupt (0.1.2) UNRELEASED; urgency=low
       - Skip broken parts of config files and warn, don't immediately stop.
       - Added the configuration option 'dpkg::pre-invoke'.
       - Added the configuration option 'dpkg::post-invoke'.
+      - Added the configuration options 'rpm::pre-invoke' and
+        'rpm::post-invoke'.
+      - New configuration option 'acquire::http::allow-redirects'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 01 May 2009 13:12:00 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 10 May 2009 13:23:25 +0300
 
 cupt (0.1.1.1) experimental; urgency=low
 

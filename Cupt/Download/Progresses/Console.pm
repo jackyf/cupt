@@ -39,13 +39,16 @@ use Cupt::Core;
 sub new {
 	my $class = shift;
 	my $self = $class->SUPER::new();
-	$self->{_previous_report_time} = time();
+	$self->{_previous_report_time} = 0;
 	($self->{_termwidth}, undef) = Term::Size::chars();
 	return $self;
 }
 
 sub _termprint ($$$) {
 	my ($self, $string, $right_appendage) = @_;
+
+	# enable flushing STDOUT
+	local $| = 1;
 
 	$right_appendage //= "";
 	my $allowed_width = $self->{_termwidth} - length($right_appendage);

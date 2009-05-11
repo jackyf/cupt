@@ -159,6 +159,22 @@ C<cupt pkgnames>
 
 C<cupt pkgnames liba>
 
+=item changelog
+
+displays changelog for given versions of packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Works only with installed packages and official Debian and Ubuntu repositories.
+
+Examples:
+
+C<cupt changelog dpkg/installed>
+
+C<cupt changelog --installed-only dpkg nlkt lintian>
+
+C<cupt changelog libqtcore4>
+
 =back
 
 =head3 query-specific options
@@ -173,7 +189,8 @@ Corresponding configuration variable: L<apt::cache::important>
 
 =item --installed-only
 
-work only with installed versions of packages; valuable only for L</show>, L</depends>, L</rdepends>, L</search>, L</pkgnames> actions
+work only with installed versions of packages; valuable only for L</show>,
+L</depends>, L</rdepends>, L</search>, L</pkgnames>, L</changelog> actions
 
 =back
 
@@ -473,6 +490,11 @@ See L<apt.conf(5)> for their meanings.
 Secondly, Cupt introduces following cupt-specific configuration variables:
 
 =over
+
+=item acquire::http::allow-redirects
+
+boolean (0/1), specifies whether should downloader follow HTTP redirects.
+True by default.
 
 =item cupt::downloader::max-simultaneous-downloads
 

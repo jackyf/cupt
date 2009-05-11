@@ -30,6 +30,10 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Exporter qw(import);
+
+our @EXPORT_OK = qw(&get_path_of_debian_changelog);
+
 use Memoize;
 memoize('_verify_signature');
 
@@ -680,7 +684,7 @@ sub _get_release_info {
 		myredie();
 	}
 	if (!defined($release_info{description})) {
-		mydie("no description specified in release file '%s'", $file);
+		mywarn("no description specified in release file '%s'", $file);
 	}
 	if (!defined($release_info{vendor})) {
 		mydie("no vendor specified in release file '%s'", $file);
@@ -776,6 +780,8 @@ sub _parse_preferences {
 		chomp;
 		# skip all empty lines and lines with comments
 		next if m/^\s*(?:#.*)?$/;
+		# skip special explanation lines, they are just comments
+		next if m/^Explanation: /;
 
 		# ok, real triad should be here
 		my %pin_result;
@@ -998,7 +1004,8 @@ sub _path_of_base_uri {
 	my $ref_entry = shift;
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
-	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+://][];
+	# "file:/home/jackyf" -> "/home/jackyf"
+	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+:(?://)?][];
 
 	# stripping last '/' from uri if present
 	$uri_prefix =~ s{/$}{};
@@ -1079,6 +1086,34 @@ sub _path_of_extended_states {
 	my $leaf = $self->{_config}->var('dir::state::extendedstates');
 
 	return "$root_prefix$etc_dir/$leaf";
+}
+
+=head1 FREE SUBROUTINES
+
+=head2 get_path_of_debian_changelog
+
+free subroutine, returns string path of Debian changelog for version when
+version is installed, undef otherwise
+
+Parameters:
+
+I<version> - reference to
+L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
+
+sub get_path_of_debian_changelog ($) {
+	my ($version) = @_;
+
+	return undef if not $version->is_installed();
+
+	my $package_name = $version->{package_name};
+	my $common_part = "/usr/share/doc/$package_name/";
+	if (is_version_string_native($version->{version_string})) {
+		return $common_part . 'changelog.gz';
+	} else {
+		return $common_part . 'changelog.Debian.gz';
+	}
 }
 
 =head1 Release info
