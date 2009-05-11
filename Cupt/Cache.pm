@@ -780,6 +780,8 @@ sub _parse_preferences {
 		chomp;
 		# skip all empty lines and lines with comments
 		next if m/^\s*(?:#.*)?$/;
+		# skip special explanation lines, they are just comments
+		next if m/^Explanation: /;
 
 		# ok, real triad should be here
 		my %pin_result;
