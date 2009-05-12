@@ -11,6 +11,8 @@ cupt (0.1.3) experimental; urgency=low
       - BinaryVersion:
         - New field 'source_package_version'. It's got filled when the source
           version for package differs from the binary one.
+      - Pkg:
+        - Renamed to 'Package'.
       - Skip 'Explanation: ' lines when parsing preferences. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
 

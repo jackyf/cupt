@@ -18,11 +18,11 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-package Cupt::Cache::Pkg;
+package Cupt::Cache::Package;
 
 =head1 NAME
 
-Cupt::Cache::Pkg - store versions of binary or source deb package
+Cupt::Cache::Package - store versions of binary or source deb package
 
 =cut
 
@@ -39,7 +39,7 @@ use Cupt::Core;
 
 =head2 new
 
-returns a new Cupt::Cache::Pkg object. Usually shouldn't be called by hand.
+returns a new Cupt::Cache::Package object. Usually shouldn't be called by hand.
 
 =cut
 
