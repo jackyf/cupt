@@ -1040,7 +1040,7 @@ sub show_changelog {
 			my @changelog_uris;
 			foreach my $ref_matched_avail_entry (@matched_avail_entries) {
 				# all of above are only good guessings
-				my $version_string = $version->{version_string};
+				my $version_string = $version->{source_version_string} // $version->{version_string};
 				my $source_name = $version->{source_name};
 				my $short_prefix = ($source_name =~ m/^lib/) ?
 						substr($source_name, 0, 4) : substr($source_name, 0, 1);
