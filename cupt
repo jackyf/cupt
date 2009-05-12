@@ -178,7 +178,7 @@ sub select_binary_package_version ($) {
 		}
 
 		# example: "nlkt/sid" or "nlkt/unstable"
-		foreach my $version (@{$package->versions()}) {
+		foreach my $version (@{$package->get_versions()}) {
 			# 'avail as' for non-local versions
 			my @avail_as = @{$version->{avail_as}};
 			# first avail entry is for local version
@@ -279,7 +279,7 @@ sub show_package_versions () {
 
 		if ($config->var('apt::cache::allversions')) {
 			$package_name = $package_expression;
-			$ref_versions = get_binary_package($package_name)->versions();
+			$ref_versions = get_binary_package($package_name)->get_versions();
 		} else {
 			if (!defined $cache->get_binary_package($package_expression)
 				&& $package_expression =~ /^$package_name_regex$/) {
@@ -406,7 +406,7 @@ sub search () {
 				if ($package_name =~ m/$regex/) {
 					next REGEX;
 				} else {
-					foreach (@{$package->versions()}) {
+					foreach (@{$package->get_versions()}) {
 						if ($_->{short_description} =~ m/$regex/ or
 							defined($_->{long_description}) && $_->{long_description} =~ m/$regex/)
 						{

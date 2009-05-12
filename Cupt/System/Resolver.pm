@@ -676,7 +676,7 @@ sub _resolve ($$) {
 							if (!$package_entry->[PE_STICK]) {
 								# change version of the package
 								my $other_package = $self->{_cache}->get_binary_package($package_name);
-								foreach my $other_version (@{$other_package->versions()}) {
+								foreach my $other_version (@{$other_package->get_versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $version->{version_string};
 
@@ -805,7 +805,7 @@ sub _resolve ($$) {
 							if (!$other_package_entry->[PE_STICK]) {
 								# so change it
 								my $other_package = $self->{_cache}->get_binary_package($other_package_name);
-								foreach my $other_version (@{$other_package->versions()}) {
+								foreach my $other_version (@{$other_package->get_versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $satisfying_version->{version_string};
 
@@ -836,7 +836,7 @@ sub _resolve ($$) {
 							if (!$package_entry->[PE_STICK]) {
 								# change version of the package
 								my $package = $self->{_cache}->get_binary_package($package_name);
-								foreach my $other_version (@{$package->versions()}) {
+								foreach my $other_version (@{$package->get_versions()}) {
 									# don't try existing version
 									next if $other_version->{version_string} eq $version->{version_string};
 

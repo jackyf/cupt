@@ -12,11 +12,12 @@ cupt (0.1.3) experimental; urgency=low
         - New field 'source_package_version'. It's got filled when the source
           version for package differs from the binary one.
       - Pkg:
-        - Renamed to 'Package'.
+        - [API break] Renamed to 'Package'.
+        - [API break] Renamed method 'versions' to 'get_versions'.
       - Skip 'Explanation: ' lines when parsing preferences. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 11 May 2009 17:00:47 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 12 May 2009 23:29:01 +0300
 
 cupt (0.1.2) experimental; urgency=low
 

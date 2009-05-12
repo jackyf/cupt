@@ -409,7 +409,7 @@ sub get_sorted_pinned_versions {
 		}
 	}
 
-	foreach my $version (@{$package->versions()}) {
+	foreach my $version (@{$package->get_versions()}) {
 		push @result, { 'version' => $version, 'pin' => $self->get_pin($version) };
 	}
 
