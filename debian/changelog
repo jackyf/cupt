@@ -1,7 +1,13 @@
 cupt (0.1.3) experimental; urgency=low
 
+  * cupt:
+    - 'show' subcommand:
+      - Show also source version if present.
   * Cupt:
     - Cache:
+      - BinaryVersion:
+        - New field 'source_package_version'. It's got filled when the source
+          version for package differs from the binary one.
       - Skip 'Explanation: ' lines when parsing preferences. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
 

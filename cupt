@@ -307,6 +307,9 @@ sub show_package_versions () {
 				$p->(__('Automatically installed'), $is_auto_installed ? __('yes') : __('no'));
 			}
 			$p->(__('Source'), $version->{source_name});
+			if (defined $version->{source_version_string}) {
+				$p->(__('Source version'), $version->{source_version_string});
+			}
 			$p->(__('Essential'), $version->{essential}) if defined($version->{essential});
 			$p->(__('Priority'), $version->{priority});
 			$p->(__('Section'), $version->{section});

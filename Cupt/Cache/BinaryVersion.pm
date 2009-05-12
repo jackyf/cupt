@@ -95,6 +95,7 @@ sub new {
 		architecture => undef,
 		source_name => undef,
 		version_string => undef,
+		source_version_string => undef,
 		essential => undef,
 		depends => [],
 		recommends => [],
@@ -173,7 +174,17 @@ sub new {
 						$self->{depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 					when ('Tag') { $self->{tags} = $field_value unless $o_no_parse_info_onlys }
-					when ('Source') { $self->{source_name} = $field_value }
+					when ('Source') {
+						$self->{source_name} = $field_value;
+						if ($self->{source_name} =~ s/ \((.*)\)$//) {
+							# there is a source version, most probably
+							# indicating that it was some binary-only rebuild, and
+							# the source version is different with binary one
+							$self->{source_version_string} = $1;
+							$self->{source_version_string} =~ m/^$version_string_regex$/ or
+									mydie("bad source version '%s'", $1);
+						}
+					}
 					when ('Homepage') { $self->{homepage} = $field_value unless $o_no_parse_info_onlys }
 					when ('Recommends') {
 						$self->{recommends} = parse_relation_line($field_value) unless $o_no_parse_relations;
