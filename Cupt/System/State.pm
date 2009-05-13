@@ -31,7 +31,7 @@ use strict;
 use warnings;
 
 use Cupt::Core;
-use Cupt::Cache::Pkg;
+use Cupt::Cache::Package;
 use Cupt::Cache::BinaryVersion;
 
 use fields qw(_config _cache _installed_info);
@@ -169,9 +169,9 @@ sub _parse_dpkg_status {
 					# and have full entry info, so add it (info) to cache
 
 					# adding new version to cache
-					$self->{_cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Pkg->new();
+					$self->{_cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Package->new();
 
-					Cupt::Cache::Pkg::add_entry(
+					Cupt::Cache::Package::add_entry(
 							$self->{_cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
 							$package_name, $fh, $offset, \$base_uri, \%Cupt::Cache::_empty_release_info);
 

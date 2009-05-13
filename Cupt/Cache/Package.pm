@@ -18,11 +18,11 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-package Cupt::Cache::Pkg;
+package Cupt::Cache::Package;
 
 =head1 NAME
 
-Cupt::Cache::Pkg - store versions of binary or source deb package
+Cupt::Cache::Package - store versions of binary or source deb package
 
 =cut
 
@@ -39,7 +39,7 @@ use Cupt::Core;
 
 =head2 new
 
-returns a new Cupt::Cache::Pkg object. Usually shouldn't be called by hand.
+returns a new Cupt::Cache::Package object. Usually shouldn't be called by hand.
 
 =cut
 
@@ -60,7 +60,7 @@ sub add_entry {
 	push @$self, \@_;
 }
 
-=head2 versions
+=head2 get_versions
 
 method, returns reference to array of versions
 (L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
@@ -69,7 +69,7 @@ contains
 
 =cut
 
-sub versions {
+sub get_versions {
 	my ($self) = @_;
 
 	my @result;
@@ -119,7 +119,7 @@ I<version_string> - version string to search
 sub get_specific_version ($$) {
 	my ($self, $lookup_version_string) = @_;
 
-	foreach my $version (@{$self->versions()})
+	foreach my $version (@{$self->get_versions()})
 	{
 		return $version if ($version->{version_string} eq $lookup_version_string);
 	}
@@ -158,7 +158,7 @@ installed in the system; if package is not installed, returns undef
 sub get_installed_version ($) {
 	my ($self) = @_;
 
-	foreach my $version (@{$self->versions()})
+	foreach my $version (@{$self->get_versions()})
 	{
 		return $version if ($version->is_installed());
 	}

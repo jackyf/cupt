@@ -38,7 +38,7 @@ use Memoize;
 memoize('_verify_signature');
 
 use Cupt::Core;
-use Cupt::Cache::Pkg;
+use Cupt::Cache::Package;
 use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
 use Cupt::System::State;
@@ -176,7 +176,7 @@ sub new {
 =head2 get_binary_packages
 
 method, returns all binary packages as hash reference in form { $package_name
-=> I<pkg> }, where I<pkg> is reference to L<Cupt::Cache::Pkg|Cupt::Cache::Pkg>
+=> I<pkg> }, where I<pkg> is reference to L<Cupt::Cache::Package|Cupt::Cache::Package>
 
 =cut
 
@@ -355,7 +355,7 @@ sub get_pin {
 
 =head2 get_binary_package
 
-method, returns reference to appropriate L<Cupt::Cache::Pkg|Cupt::Cache::Pkg> for package name.
+method, returns reference to appropriate L<Cupt::Cache::Package|Cupt::Cache::Package> for package name.
 Returns undef if there is no such package in cache.
 
 Parameters:
@@ -379,7 +379,7 @@ method to get sorted by "candidatness" versions in descending order
 
 Parameters:
 
-I<package> - reference to L<Cupt::Cache::Pkg|Cupt::Cache::Pkg>
+I<package> - reference to L<Cupt::Cache::Package|Cupt::Cache::Package>
 
 Returns: [ { 'version' => I<version>, 'pin' => I<pin> }... ]
 
@@ -409,7 +409,7 @@ sub get_sorted_pinned_versions {
 		}
 	}
 
-	foreach my $version (@{$package->versions()}) {
+	foreach my $version (@{$package->get_versions()}) {
 		push @result, { 'version' => $version, 'pin' => $self->get_pin($version) };
 	}
 
@@ -432,7 +432,7 @@ of I<package>, which to be installed by cupt policy
 
 Parameters:
 
-I<package> - reference to L<Cupt::Cache::Pkg|Cupt::Cache::Pkg>, package to select versions from
+I<package> - reference to L<Cupt::Cache::Package|Cupt::Cache::Package>, package to select versions from
 
 =cut
 
@@ -987,7 +987,7 @@ sub _process_index_file {
 				or mydie("bad package name '%s'", $package_name);
 
 			# adding new entry (and possible creating new package if absend)
-			Cupt::Cache::Pkg::add_entry($$ref_packages_storage->{$package_name} //= Cupt::Cache::Pkg->new(),
+			Cupt::Cache::Package::add_entry($$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
 					$version_class, $package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
 		}
 	};

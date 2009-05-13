@@ -20,6 +20,15 @@
 #***************************************************************************
 package Cupt::Download::Method;
 
+use warnings;
+use strict;
+
+use Exporter qw(import);
+
+our @EXPORT_OK = qw(&get_acquire_suboption_for_uri);
+
+use URI;
+
 =head1 NAME
 
 Cupt::Download::Method - base class for all Cupt download methods
@@ -94,6 +103,40 @@ Returns: 0 if all went smoothly, error string in case of error
 
 sub perform ($$$$$) {
 	# stub
+}
+
+=head1 FREE SUBROUTINES
+
+=head2 get_acquire_suboption_for_uri
+
+returns the value of some acquire suboption of 'acquire' group should be used
+for supplied URI. This subroutine honors global and per-host settings.
+
+Parameters:
+
+I<config> - reference to L<Cupt::Config|Cupt::Config>
+
+I<uri> - URI string
+
+I<suboption_name> - suboption name
+
+Example:
+
+C<get_acquire_param_for_uri($config, $uri, 'proxy')>
+
+=cut
+
+sub get_acquire_suboption_for_uri ($$$) {
+	my ($config, $uri, $suboption_name) = @_;
+
+	my $uri_object = new URI($uri);
+	my $protocol = $uri_object->scheme();
+	my $host = $uri_object->host();
+	# this "zoo" of per-host variants is given by APT...
+	my $proxy = $config->var("acquire::${protocol}::${suboption_name}::${host}") //
+			$config->var("acquire::${protocol}::${host}::${suboption_name}") //
+			$config->var("acquire::${protocol}::${suboption_name}");
+	return $proxy;
 }
 
 1;

@@ -41,6 +41,7 @@ use WWW::Curl::Share;
 use URI;
 
 use Cupt::Core;
+use Cupt::Download::Method qw(get_acquire_suboption_for_uri);
 
 our $_curl_share_handle = new WWW::Curl::Share;
 $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_COOKIE);
@@ -84,14 +85,14 @@ sub perform ($$$$$) {
 
 	$curl->setopt(CURLOPT_FAILONERROR, 1);
 	$curl->setopt(CURLOPT_URL, $uri);
-	my $download_limit = $config->var("acquire::${protocol}::dl-limit");
+	my $download_limit = get_acquire_suboption_for_uri($config, $uri, 'dl-limit');
 	$curl->setopt(CURLOPT_MAX_RECV_SPEED_LARGE, $download_limit*1024) if defined $download_limit;
-	my $proxy = $config->var("acquire::${protocol}::proxy");
+	my $proxy = get_acquire_suboption_for_uri($config, $uri, 'proxy');
 	$curl->setopt(CURLOPT_PROXY, $proxy) if defined $proxy;
 	if ($protocol eq 'http') {
 		$curl->setopt(CURLOPT_FOLLOWLOCATION, 1) if $config->var('acquire::http::allow-redirects');
 	}
-	my $timeout = $config->var("acquire::${protocol}::timeout");
+	my $timeout = get_acquire_suboption_for_uri($config, $uri, 'timeout');
 	if (defined $timeout) {
 		$curl->setopt(CURLOPT_CONNECTTIMEOUT, $timeout);
 		$curl->setopt(CURLOPT_LOW_SPEED_LIMIT, 1);

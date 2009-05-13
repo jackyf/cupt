@@ -1,12 +1,8 @@
 For version 0.2:
 
 doc: write tutorial
-downloader, config: support per-host acquire settings
 cupt, worker, resolver: reasoning for installing/removing packages (-D option)
 cupt, worker: implement 'update' action
-downloader: multi-url downloading
-Cupt::Cache::Pkg -> Cupt::Cache::Package
-Cupt::Cache::Package: versions -> get_versions
 
 For version 0.3:
 

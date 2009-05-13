@@ -109,6 +109,7 @@ sub new {
 			'acquire::*::proxy',
 			'acquire::*::*::dl-limit',
 			'acquire::*::dl-limit',
+			'acquire::*::*::timeout',
 			'acquire::*::timeout',
 			'dpkg::tools::options::*',
 			'dpkg::tools::options::*::*',
