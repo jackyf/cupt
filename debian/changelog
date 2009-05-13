@@ -16,6 +16,12 @@ cupt (0.1.3) UNRELEASED; urgency=low
         - [API break] Renamed method 'versions' to 'get_versions'.
       - Skip 'Explanation: ' lines when parsing preferences. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
+    - Download:
+      - Method:
+        - New free subroutine 'get_acquire_suboption_for_uri' which honors
+          per-host settings.
+    - Config:
+      - Per-host suboption of 'acquire::*::timeout' is now supported.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 12 May 2009 23:29:01 +0300
 
