@@ -22,7 +22,7 @@ cupt (0.1.3) UNRELEASED; urgency=low
           had the download been processed before or not, and 'download' won't
           run post-action for already processed downloads; this change should
           avoid future race conditions when the multiple downloads of the same
-          file with enable postprocessing were scheduled.
+          file with enabled postprocessing were scheduled.
       - Method:
         - New free subroutine 'get_acquire_suboption_for_uri' which honors
           per-host settings.
