@@ -153,7 +153,8 @@ sub new ($$$) {
 						if (exists $done_downloads{$uri}) {
 							my $result = $done_downloads{$uri};
 							# just immediately end it
-							__my_write_pipe($waiter_fh, $result);
+							my $is_duplicated_download = 1;
+							__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 							# put the query on hold
 							push @waiting_downloads, [ $uri, $filename, $waiter_fh ];
@@ -169,7 +170,8 @@ sub new ($$$) {
 						# some query ended
 						($uri, my $result) = @params;
 						# send an answer for a download
-						__my_write_pipe($active_downloads{$uri}->{waiter_fh}, $result);
+						my $is_duplicated_download = 0;
+						__my_write_pipe($active_downloads{$uri}->{waiter_fh}, $result, $is_duplicated_download);
 
 						# update progress
 						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
@@ -377,7 +379,7 @@ sub download ($@) {
 			my $waiter_fifo = $waiters[$waiter_idx]->{'fifo'};
 			my $sub_post_action = $download_entries{$filename}->{'checker'};
 
-			my ($current_result) = __my_read_pipe($waiter_fh);
+			my ($current_result, $is_duplicated_download) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
 					mydie("unable to close download fifo: %s", $!);
 
@@ -387,8 +389,9 @@ sub download ($@) {
 			# delete from entry from list
 			splice @waiters, $waiter_idx, 1;
 
-			if ($current_result eq '0' && defined $sub_post_action) {
+			if ($current_result eq '0' && defined $sub_post_action && not $is_duplicated_download) {
 				# download seems to be done well, but we also have external checker specified
+				# but do this only if this file wasn't post-processed before
 				$current_result = $sub_post_action->();
 			}
 
