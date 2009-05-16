@@ -891,6 +891,14 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 sub do_actions ($$) {
 	my ($self, $download_progress) = @_;
 
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+	my $download_only = $self->{_config}->var('cupt::worker::download-only');
+
+	if (!$simulate && !$download_only) {
+		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
+				mydie("unable to open dpkg lock file: %s", $!);
+	}
+
 	my $ref_actions_preview = $self->get_actions_preview();
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
 	# exit when nothing to do
@@ -907,18 +915,12 @@ sub do_actions ($$) {
 	my @pending_downloads = $self->_prepare_downloads(\@action_group_list, $download_progress);
 	$self->_do_downloads(\@pending_downloads, $download_progress);
 
-	return 1 if $self->{_config}->var('cupt::worker::download-only');
+	return 1 if $download_only;
 
-
-	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
 	my $defer_triggers = $self->{_config}->var('cupt::worker::defer-triggers');
-	if (!$simulate) {
-		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
-				mydie("unable to open dpkg lock file: %s", $!);
-	}
 
 	$self->_do_dpkg_pre_actions($ref_actions_preview, \@action_group_list);
 
