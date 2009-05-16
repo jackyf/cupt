@@ -76,7 +76,7 @@ sub perform ($$$$$) {
 			mydie("unable to close file '%s': %s", $filename, $!);
 
 	# all went ok
-	return 0;
+	return '';
 }
 
 1;

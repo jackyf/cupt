@@ -17,11 +17,23 @@ cupt (0.1.3) UNRELEASED; urgency=low
       - Skip 'Explanation: ' lines when parsing preferences. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
     - Download:
+      - Manager, Methods/*:
+        - Changed "success" error message from '0' to ''.
+      - Manager:
+        - Worker thread and 'download' method: now worker thread returns info
+          had the download been processed before or not, and 'download' won't
+          run post-action for already processed downloads; this change should
+          avoid future race conditions when the multiple downloads of the same
+          file with enabled postprocessing were scheduled.
       - Method:
         - New free subroutine 'get_acquire_suboption_for_uri' which honors
           per-host settings.
     - Config:
       - Per-host suboption of 'acquire::*::timeout' is now supported.
+    - System:
+      - Worker:
+        - 'do_actions': perform dpkg lock (if needed) before all other
+          prepare actions, not before modifying system.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 12 May 2009 23:29:01 +0300
 
