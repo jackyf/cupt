@@ -167,22 +167,20 @@ sub new ($$$) {
 						$download_sizes{$uri} = $size;
 					}
 					when ('done') {
-						# some query ended
+						# some query ended, we have preliminary result for it
 						scalar @params == 2 or
 								myinternaldie("bad argument count for 'done' message");
 
 						($uri, my $result) = @params;
-						# send an answer for a download
 						my $is_duplicated_download = 0;
 						__my_write_pipe($active_downloads{$uri}->{waiter_fh}, $result, $is_duplicated_download);
 
-						# update progress
-						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
-
 						# clean after child
 						close($active_downloads{$uri}->{input_fh});
-						close($active_downloads{$uri}->{waiter_fh});
 						waitpid($active_downloads{$uri}->{pid}, 0);
+
+						close($active_downloads{$uri}->{waiter_fh});
+
 						# removing the query from active download list and put it to
 						# the list of ended ones
 						delete $active_downloads{$uri};
@@ -193,6 +191,17 @@ sub new ($$$) {
 							($uri, $filename, $waiter_fh) = @{shift @waiting_downloads};
 							$proceed_next_download = 1;
 						}
+					}
+					when ('done-ack') {
+						# this final ACK from download with final result
+						scalar @params == 2 or
+								myinternaldie("bad argument count for 'done-ack' message");
+
+						($uri, my $result) = @params;
+
+						# update progress
+						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
+
 					}
 					when ('progress') {
 						$uri = shift @params;
@@ -324,7 +333,8 @@ sub download ($@) {
 	my $sub_schedule_download = sub {
 		my ($filename) = @_;
 
-		my $uri = shift @{$download_entries{$filename}->{'uris'}};
+		$download_entries{$filename}->{'current_uri'} = shift @{$download_entries{$filename}->{'uris'}};
+		my $uri = $download_entries{$filename}->{'current_uri'};
 		my $size = $download_entries{$filename}->{'size'};
 		my $checker = $download_entries{$filename}->{'checker'};
 
@@ -384,6 +394,7 @@ sub download ($@) {
 			my $sub_post_action = $download_entries{$filename}->{'checker'};
 
 			my ($error_string, $is_duplicated_download) = __my_read_pipe($waiter_fh);
+
 			close($waiter_fh) or
 					mydie("unable to close download fifo: %s", $!);
 
@@ -398,6 +409,12 @@ sub download ($@) {
 				# but do this only if this file wasn't post-processed before
 				$error_string = $sub_post_action->();
 			}
+
+			# now we know final result, send it back (for progress indicator)
+			flock($self->{_worker_fh}, LOCK_EX);
+			__my_write_pipe($self->{_worker_fh}, 'done-ack',
+					$download_entries{$filename}->{'current_uri'}, $error_string);
+			flock($self->{_worker_fh}, LOCK_UN);
 
 			if ($error_string) {
 				# this download hasn't been processed smoothly
