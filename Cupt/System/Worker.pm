@@ -894,8 +894,9 @@ sub do_actions ($$) {
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 	my $download_only = $self->{_config}->var('cupt::worker::download-only');
 
+	my $dpkg_lock_fh;
 	if (!$simulate && !$download_only) {
-		sysopen(LOCK, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
+		sysopen($dpkg_lock_fh, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
 				mydie("unable to open dpkg lock file: %s", $!);
 	}
 
@@ -992,7 +993,7 @@ sub do_actions ($$) {
 					mydie("error processing triggers");
 		}
 
-		close(LOCK) or
+		close($dpkg_lock_fh) or
 				mydie("unable to close dpkg lock file: %s", $!);
 	} else {
 		if ($defer_triggers) {
