@@ -60,7 +60,7 @@ sub __my_read_pipe ($) {
 	my ($len) = unpack("S", $packed_len);
 	my $string;
 	sysread $fh, $string, $len;
-	return split(chr(0), $string);
+	return split(chr(0), $string, -1);
 }
 
 =head1 METHODS
@@ -168,6 +168,9 @@ sub new ($$$) {
 					}
 					when ('done') {
 						# some query ended
+						scalar @params == 2 or
+								myinternaldie("bad argument count for 'done' message");
+
 						($uri, my $result) = @params;
 						# send an answer for a download
 						my $is_duplicated_download = 0;
@@ -244,6 +247,7 @@ sub new ($$$) {
 					__my_write_pipe(\*STDOUT, @progress_message);
 
 					my $result = $self->_download($uri, $filename);
+					myinternaldie("a download method returned undefined result") if not defined $result;
 					__my_write_pipe(\*STDOUT, 'done', $uri, $result);
 					close(STDOUT) or
 							mydie("unable to close STDOUT");
@@ -379,7 +383,7 @@ sub download ($@) {
 			my $waiter_fifo = $waiters[$waiter_idx]->{'fifo'};
 			my $sub_post_action = $download_entries{$filename}->{'checker'};
 
-			my ($current_result, $is_duplicated_download) = __my_read_pipe($waiter_fh);
+			my ($error_string, $is_duplicated_download) = __my_read_pipe($waiter_fh);
 			close($waiter_fh) or
 					mydie("unable to close download fifo: %s", $!);
 
@@ -389,13 +393,13 @@ sub download ($@) {
 			# delete from entry from list
 			splice @waiters, $waiter_idx, 1;
 
-			if ($current_result eq '0' && defined $sub_post_action && not $is_duplicated_download) {
+			if (!$error_string && defined $sub_post_action && not $is_duplicated_download) {
 				# download seems to be done well, but we also have external checker specified
 				# but do this only if this file wasn't post-processed before
-				$current_result = $sub_post_action->();
+				$error_string = $sub_post_action->();
 			}
 
-			if ($current_result ne '0') {
+			if ($error_string) {
 				# this download hasn't been processed smoothly
 				# check - maybe we have another URIs for this file
 				if (scalar @{$download_entries{$filename}->{'uris'}}) {
@@ -403,7 +407,7 @@ sub download ($@) {
 					$sub_schedule_download->($filename);
 				} else {
 					# no, this URI was last
-					$result = $current_result;
+					$result = $error_string;
 				}
 			}
 

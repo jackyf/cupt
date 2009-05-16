@@ -86,12 +86,12 @@ sub hook {
 		when ('done') {
 			my $uri = shift @params;
 			my $ref_entry = $self->download_entries->{$uri};
-			my $result = shift @params;
-			if ($result ne '0') {
+			my $error_string = shift @params;
+			if ($error_string) {
 				# some error occured, output it
 				$self->_termprint(""); # clean the line
 				# this may cross several lines
-				say sprintf "\rerror downloading %s: %s", $uri, $result;
+				say sprintf "\rerror downloading %s: %s", $uri, $error_string;
 			}
 		}
 		when ('ping') {

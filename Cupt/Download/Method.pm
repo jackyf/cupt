@@ -97,7 +97,7 @@ I<fetched_bytes> - number of bytes that were really fetched since the last callb
 
 =back
 
-Returns: 0 if all went smoothly, error string in case of error
+Returns: '' if all went smoothly, error string in case of error
 
 =cut
 

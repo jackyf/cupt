@@ -17,6 +17,8 @@ cupt (0.1.3) UNRELEASED; urgency=low
       - Skip 'Explanation: ' lines when parsing preferences. Thanks to
         Stefano Zacchiroli <zack@debian.org>.
     - Download:
+      - Manager, Methods/*:
+        - Changed "success" error message from '0' to ''.
       - Manager:
         - Worker thread and 'download' method: now worker thread returns info
           had the download been processed before or not, and 'download' won't

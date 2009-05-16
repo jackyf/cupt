@@ -112,11 +112,11 @@ sub perform ($$$$$) {
 		return sprintf "unable to write to file '%s': %s", $filename, $write_error;
 	} elsif ($curl_result == 0) {
 		# all went ok
-		return 0;
+		return '';
 	# FIXME: replace 18 with CURLE_PARTIAL_FILE after libwww-curl is advanced to provide it
 	} elsif ($curl_result == 18) {
 		# partial data? no problem, we may requested it
-		return 0;
+		return '';
 	} else {
 		# something went wrong
 		my $result = $curl->strerror($curl_result);
