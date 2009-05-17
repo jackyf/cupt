@@ -1,5 +1,7 @@
 cupt (0.1.3) UNRELEASED; urgency=low
 
+  * debian/control:
+    - Fixed misspelled Recommends 'liblocale-gettext-perl'.
   * cupt:
     - 'show' subcommand:
       - Show also source version if present.
