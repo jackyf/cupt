@@ -60,7 +60,7 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 =cut
 
 use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
-		_can_provide _extended_info);
+		_can_provide _extended_info _release_data);
 
 =head1 FLAGS
 
@@ -109,6 +109,8 @@ sub new {
 	$self->{_pin_settings} = [];
 	$self->{_source_packages} = {};
 	$self->{_binary_packages} = {};
+	$self->{_release_data}->{source} = [];
+	$self->{_release_data}->{binary} = [];
 
 	do { # ugly hack to copy trusted keyring from APT whenever possible
 		my $cupt_keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
@@ -148,10 +150,16 @@ sub new {
 			($source_type eq 'deb-src' && $build_config{'-source'}))
 		{
 			eval {
-				my $base_uri = $ref_index_entry->{'uri'};
 				my $ref_release_info = $self->_get_release_info($self->_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
-				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
+				$ref_release_info->{base_uri} = $ref_index_entry->{'uri'};
+				if ($source_type eq 'deb') {
+					push @{$self->{_release_data}->{binary}}, $ref_release_info;
+				} else {
+					push @{$self->{_release_data}->{source}}, $ref_release_info;
+				}
+
+				$self->_process_index_file($index_file_to_parse, $source_type, $ref_release_info);
 				push @index_files, $index_file_to_parse;
 			};
 			if (mycatch()) {
@@ -260,15 +268,8 @@ sub get_pin {
 		}
 	};
 
-	# 'available as' array, excluding local version if it present
+	# 'available as' array
 	my @avail_as = @{$version->{avail_as}};
-
-	# look for installed package?
-	if ($version->is_installed()) {
-		# yes, this version is installed
-		$update_pin->(100);
-		shift @avail_as;
-	}
 
 	# release-dependent settings
 	my $default_release = $self->{_config}->var("apt::default-release");
@@ -283,6 +284,8 @@ sub get_pin {
 		}
 		if ($_->{release}->{archive} eq 'experimental') {
 			$update_pin->(1);
+		} elsif ($_->{release}->{archive} eq 'installed') {
+			$update_pin->(100);
 		} else {
 			$update_pin->(500);
 		}
@@ -308,7 +311,7 @@ sub get_pin {
 
 			my $found = 0;
 			foreach (@avail_as) {
-				if ($_->{base_uri} =~ m/$value/) {
+				if ($_->{release}->{base_uri} =~ m/$value/) {
 					$found = 1;
 					last;
 				}
@@ -321,8 +324,7 @@ sub get_pin {
 
 				my $found = 0;
 				foreach (@avail_as) {
-					if (defined $_->{release}->{$key} &&
-						$_->{release}->{$key} =~ m/$value/)
+					if ($_->{release}->{$key} =~ m/$value/)
 					{
 						$found = 1;
 						last;
@@ -534,19 +536,6 @@ sub get_satisfying_versions ($$) {
 	}
 }
 
-our %_empty_release_info = (
-	'version' => undef,
-	'description' => undef,
-	'signed' => 0,
-	'vendor' => undef,
-	'label' => undef,
-	'archive' => undef,
-	'codename' => undef,
-	'date' => undef,
-	'valid-until' => undef,
-	'architectures' => undef,
-);
-
 sub _verify_signature ($$) {
 	my ($self, $file) = @_;
 
@@ -647,6 +636,20 @@ sub _verify_signature ($$) {
 
 	return $verify_result;
 }
+
+our %_empty_release_info = (
+	'version' => undef,
+	'description' => undef,
+	'signed' => 0,
+	'vendor' => undef,
+	'label' => undef,
+	'archive' => undef,
+	'codename' => undef,
+	'date' => undef,
+	'valid-until' => undef,
+	'architectures' => [],
+	'base_uri' => undef,
+);
 
 sub _get_release_info {
 	my ($self, $file) = @_;
@@ -957,7 +960,7 @@ sub _process_provides_in_index_files {
 }
 
 sub _process_index_file {
-	my ($self, $file, $ref_base_uri, $type, $ref_release_info) = @_;
+	my ($self, $file, $type, $ref_release_info) = @_;
 
 	my $version_class;
 	my $ref_packages_storage;
@@ -988,7 +991,7 @@ sub _process_index_file {
 
 			# adding new entry (and possible creating new package if absend)
 			Cupt::Cache::Package::add_entry($$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
-					$version_class, $package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
+					$version_class, $package_name, $fh, $offset, $ref_release_info);
 		}
 	};
 	if (mycatch()) {
@@ -1088,6 +1091,30 @@ sub _path_of_extended_states {
 	return "$root_prefix$etc_dir/$leaf";
 }
 
+=head2 get_binary_release_data
+
+method, returns reference to array of available releases of binary packages in
+form [ L</release_info> ... ]
+
+=cut
+
+sub get_binary_release_data ($) {
+	my ($self) = @_;
+	return $self->{_release_data}->{binary};
+}
+
+=head2 get_source_release_data
+
+method, returns reference to array of available releases of source packages in
+form [ L</release_info> ... ]
+
+=cut
+
+sub get_source_release_data ($) {
+	my ($self) = @_;
+	return $self->{_release_data}->{source};
+}
+
 =head1 FREE SUBROUTINES
 
 =head2 get_path_of_debian_changelog
@@ -1116,9 +1143,25 @@ sub get_path_of_debian_changelog ($) {
 	}
 }
 
-=head1 Release info
+=head1 DATA SPECIFICATION
 
-TODO
+=head2 release_info
+
+This is a hash:
+
+  {
+    'signed' => boolean, whether release signed or not
+    'version' => version of released distribution (can be undef)
+    'description' => description string
+    'vendor' => vendor string
+    'label' => label string
+    'archive' => archive name string
+    'codename' => codename string
+    'date' => date of release (can be undef)
+    'valid-until' => time string when to forget about this release
+    'architectures' => reference to array of available architectures
+    'base_uri' => base URI (origin), empty string in case of "installed" distribution
+  }
 
 =cut
 

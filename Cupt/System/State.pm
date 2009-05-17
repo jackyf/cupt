@@ -84,8 +84,18 @@ sub _parse_dpkg_status {
 
 	my ($self, $file) = @_;
 
-	# fake base_uri, defines local package
-	my $base_uri = "";
+	# filling release info
+	my %release_info = %Cupt::Cache::_empty_release_info;
+	$release_info{archive} = 'installed';
+	$release_info{codename} = 'now';
+	$release_info{label} = '';
+	$release_info{version} = '';
+	$release_info{vendor} = 'dpkg';
+	$release_info{component} = '';
+	$release_info{base_uri} = '';
+	$release_info{signed} = 0;
+
+	push @{$self->{_cache}->{_release_data}->{binary}}, \%release_info;
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
@@ -173,7 +183,7 @@ sub _parse_dpkg_status {
 
 					Cupt::Cache::Package::add_entry(
 							$self->{_cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
-							$package_name, $fh, $offset, \$base_uri, \%Cupt::Cache::_empty_release_info);
+							$package_name, $fh, $offset, \%release_info);
 
 				}
 
