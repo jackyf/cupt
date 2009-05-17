@@ -61,15 +61,13 @@ creates an Cupt::Cache::BinaryVersion
 
 Parameters:
 
-I<initializer_argument> - [ $package_name, I<fh>, I<offset>, I<ref_base_uri>, I<ref_release_info> ]
+I<initializer_argument> - [ $package_name, I<fh>, I<offset>, I<ref_release_info> ]
 
 where
 
 I<fh> - file handle to opened file that contains version entry
 
 I<offset> - offset in bytes to locate version entry in I<fh>, may include 'Package:' line or not
-
-I<ref_base_uri> - reference to first base download URI for this version
 
 I<ref_release_info> - reference to L<release info|Cupt::Cache/Release info>
 
@@ -83,7 +81,6 @@ sub new {
 		#	release => {
 		#		...
 		#	},
-		#	ref_base_uri
 		#	filename
 
 		package_name => undef,
@@ -117,9 +114,8 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my ($package_name, $fh, $offset, $ref_base_uri, $ref_release_info) = @$ref_arg;
+	my ($package_name, $fh, $offset, $ref_release_info) = @$ref_arg;
 
-	$self->{avail_as}->[0]->{ref_base_uri} = $ref_base_uri;
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
 	$self->{package_name} = $package_name;
 	$self->{source_name} = $package_name; # may be redefined in appropriate tag
@@ -262,7 +258,7 @@ sub uris {
 	my $self = shift;
 	my @result;
     foreach (@{$self->{avail_as}}) {
-		my $base_uri = ${$_->{'ref_base_uri'}};
+		my $base_uri = $_->{release}->{base_uri};
 		if ($base_uri ne "") {
 			# real download path
 			my $new_uri = ( $base_uri . '/' . $_->{'filename'} );
@@ -288,9 +284,6 @@ sub is_signed ($$) {
 
 	my $has_signed_source = 0;
 	foreach (@{$self->{avail_as}}) {
-		# skip fake installed source
-		next if ${$_->{ref_base_uri}} eq "";
-
 		if ($_->{release}->{signed}) {
 			$has_signed_source = 1;
 			last;
@@ -308,7 +301,7 @@ method, returns whether this version is installed in the system or not
 
 sub is_installed {
 	(my $self) = @_;
-	return (${$self->{avail_as}->[0]->{ref_base_uri}} eq "");
+	return ($self->{avail_as}->[0]->{release}->{base_uri} eq "");
 }
 
 1;

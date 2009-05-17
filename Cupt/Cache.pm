@@ -150,17 +150,16 @@ sub new {
 			($source_type eq 'deb-src' && $build_config{'-source'}))
 		{
 			eval {
-				my $base_uri = $ref_index_entry->{'uri'};
-
 				my $ref_release_info = $self->_get_release_info($self->_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
+				$ref_release_info->{base_uri} = $ref_index_entry->{'uri'};
 				if ($source_type eq 'deb') {
 					push @{$self->{_release_data}->{binary}}, $ref_release_info;
 				} else {
 					push @{$self->{_release_data}->{source}}, $ref_release_info;
 				}
 
-				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
+				$self->_process_index_file($index_file_to_parse, $source_type, $ref_release_info);
 				push @index_files, $index_file_to_parse;
 			};
 			if (mycatch()) {
@@ -269,15 +268,8 @@ sub get_pin {
 		}
 	};
 
-	# 'available as' array, excluding local version if it present
+	# 'available as' array
 	my @avail_as = @{$version->{avail_as}};
-
-	# look for installed package?
-	if ($version->is_installed()) {
-		# yes, this version is installed
-		$update_pin->(100);
-		shift @avail_as;
-	}
 
 	# release-dependent settings
 	my $default_release = $self->{_config}->var("apt::default-release");
@@ -292,6 +284,8 @@ sub get_pin {
 		}
 		if ($_->{release}->{archive} eq 'experimental') {
 			$update_pin->(1);
+		} elsif ($_->{release}->{archive} eq 'installed') {
+			$update_pin->(100);
 		} else {
 			$update_pin->(500);
 		}
@@ -317,7 +311,7 @@ sub get_pin {
 
 			my $found = 0;
 			foreach (@avail_as) {
-				if ($_->{base_uri} =~ m/$value/) {
+				if ($_->{release}->{base_uri} =~ m/$value/) {
 					$found = 1;
 					last;
 				}
@@ -330,8 +324,7 @@ sub get_pin {
 
 				my $found = 0;
 				foreach (@avail_as) {
-					if (defined $_->{release}->{$key} &&
-						$_->{release}->{$key} =~ m/$value/)
+					if ($_->{release}->{$key} =~ m/$value/)
 					{
 						$found = 1;
 						last;
@@ -655,6 +648,7 @@ our %_empty_release_info = (
 	'date' => undef,
 	'valid-until' => undef,
 	'architectures' => [],
+	'base_uri' => undef,
 );
 
 sub _get_release_info {
@@ -966,7 +960,7 @@ sub _process_provides_in_index_files {
 }
 
 sub _process_index_file {
-	my ($self, $file, $ref_base_uri, $type, $ref_release_info) = @_;
+	my ($self, $file, $type, $ref_release_info) = @_;
 
 	my $version_class;
 	my $ref_packages_storage;
@@ -997,7 +991,7 @@ sub _process_index_file {
 
 			# adding new entry (and possible creating new package if absend)
 			Cupt::Cache::Package::add_entry($$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
-					$version_class, $package_name, $fh, $offset, $ref_base_uri, $ref_release_info);
+					$version_class, $package_name, $fh, $offset, $ref_release_info);
 		}
 	};
 	if (mycatch()) {
@@ -1166,6 +1160,7 @@ This is a hash:
     'date' => date of release (can be undef)
     'valid-until' => time string when to forget about this release
     'architectures' => reference to array of available architectures
+    'base_uri' => base URI (origin), empty string in case of "installed" distribution
   }
 
 =cut
