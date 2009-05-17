@@ -6,8 +6,12 @@ cupt (0.1.3) UNRELEASED; urgency=low
     - 'changelog' subcommand:
       - Use source version for fetching remote changelogs if present. Fixes
         determining remote path for versions that had a binary-only rebuild(s).
+    - 'policy' subcommand:
+      - When called without arguments, print available Releases.
   * Cupt:
     - Cache:
+      - New method 'get_binary_release_data'.
+      - New method 'get_source_release_data'.
       - BinaryVersion:
         - New field 'source_package_version'. It's got filled when the source
           version for package differs from the binary one.

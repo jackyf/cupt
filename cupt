@@ -563,53 +563,82 @@ sub policy () {
 	check_no_more_options();
 
 	my @packages = @ARGV;
-	scalar @packages or
-			mydie("no packages specified");
 
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => 1, -installed => 1);
+	if (scalar @packages) {
+		# print release info for supplied package names
 
-	for my $package_name (@packages) {
-		my $package = get_binary_package($package_name);
-		my $policy_version = $cache->get_policy_version($package);
+		build_cache(-source => 0, -binary => 1, -installed => 1);
 
-		my $installed_version_string = $cache->get_system_state()->get_installed_version_string($package_name);
-		say "$package_name:";
-		say "  " . gettext('Installed') . ": " .
-				(defined($installed_version_string) ?
-				$installed_version_string : ('(' . gettext('none') . ')'));
+		for my $package_name (@packages) {
+			my $package = get_binary_package($package_name);
+			my $policy_version = $cache->get_policy_version($package);
 
-		say "  " . gettext('Candidate') . ": " . $policy_version->{version_string};
-		say "  " . gettext('Version table') . ":";
+			my $installed_version_string = $cache->get_system_state()->get_installed_version_string($package_name);
+			say "$package_name:";
+			say "  " . gettext('Installed') . ": " .
+					(defined($installed_version_string) ?
+					$installed_version_string : ('(' . gettext('none') . ')'));
 
-		my $ref_versions = $cache->get_sorted_pinned_versions($package);
+			say "  " . gettext('Candidate') . ": " . $policy_version->{version_string};
+			say "  " . gettext('Version table') . ":";
 
-		foreach my $entry (@$ref_versions) {
-			my $version = $entry->{'version'};
-			my $pin = $entry->{'pin'};
+			my $ref_versions = $cache->get_sorted_pinned_versions($package);
 
-			if (defined($installed_version_string) && 
-				$version->{version_string} eq $installed_version_string)
-			{
-				print " *** ";
-			} else {
-				print "     ";
+			foreach my $entry (@$ref_versions) {
+				my $version = $entry->{'version'};
+				my $pin = $entry->{'pin'};
+
+				if (defined($installed_version_string) && 
+					$version->{version_string} eq $installed_version_string)
+				{
+					print " *** ";
+				} else {
+					print "     ";
+				}
+
+				say $version->{version_string} . ' ' . $pin;
+				# throw out local version if present
+				my @avail_as = @{$version->{avail_as}};
+				shift @avail_as if $version->is_installed();
+
+				foreach (@avail_as) {
+					print (' ' x 8);
+					print ${$_->{ref_base_uri}} . ' ';
+					print $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
+					say '(' . ($_->{release}->{signed} ? __('signed') : __('unsigned')) . ')';
+				}
+				if ($version->is_installed()) {
+					say ' ' x 8, $config->var('dir::state::status');
+				}
 			}
+		}
+	} else {
+		# print overall release data
+		build_cache(-source => 1, -binary => 1, -installed => 1);
 
-			say $version->{version_string} . ' ' . $pin;
-			# throw out local version if present
-			my @avail_as = @{$version->{avail_as}};
-			shift @avail_as if $version->is_installed();
+		my $sub_say_release_info = sub {
+			my ($ref_release_info) = @_;
+			print "  ";
+			print "o=", $ref_release_info->{vendor};
+			print ",a=", $ref_release_info->{archive};
+			print ",l=", $ref_release_info->{label};
+			print ",c=", $ref_release_info->{component};
+			print ",v=", $ref_release_info->{version};
+			print ",n=", $ref_release_info->{codename};
+			say "";
+		};
 
-			foreach (@avail_as) {
-				print (' ' x 8);
-				print ${$_->{ref_base_uri}} . ' ';
-				print $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
-				say '(' . ($_->{release}->{signed} ? __('signed') : __('unsigned')) . ')';
-			}
-			if ($version->is_installed()) {
-				say ' ' x 8, $config->var('dir::state::status');
-			}
+		#TODO: form release file for 'status' entry too
+		say "Package files:";
+		my $ref_binary_release_data = $cache->get_binary_release_data();
+		foreach my $ref_release_info (@$ref_binary_release_data) {
+			$sub_say_release_info->($ref_release_info);
+		}
+
+		say "Source files:";
+		my $ref_source_release_data = $cache->get_source_release_data();
+		foreach my $ref_release_info (@$ref_source_release_data) {
+			$sub_say_release_info->($ref_release_info);
 		}
 	}
 }

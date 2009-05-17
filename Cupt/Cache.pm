@@ -60,7 +60,7 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 =cut
 
 use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
-		_can_provide _extended_info);
+		_can_provide _extended_info _release_data);
 
 =head1 FLAGS
 
@@ -109,6 +109,8 @@ sub new {
 	$self->{_pin_settings} = [];
 	$self->{_source_packages} = {};
 	$self->{_binary_packages} = {};
+	$self->{_release_data}->{source} = [];
+	$self->{_release_data}->{binary} = [];
 
 	do { # ugly hack to copy trusted keyring from APT whenever possible
 		my $cupt_keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
@@ -149,8 +151,15 @@ sub new {
 		{
 			eval {
 				my $base_uri = $ref_index_entry->{'uri'};
+
 				my $ref_release_info = $self->_get_release_info($self->_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
+				if ($source_type eq 'deb') {
+					push @{$self->{_release_data}->{binary}}, $ref_release_info;
+				} else {
+					push @{$self->{_release_data}->{source}}, $ref_release_info;
+				}
+
 				$self->_process_index_file($index_file_to_parse, \$base_uri, $source_type, $ref_release_info);
 				push @index_files, $index_file_to_parse;
 			};
@@ -534,19 +543,6 @@ sub get_satisfying_versions ($$) {
 	}
 }
 
-our %_empty_release_info = (
-	'version' => undef,
-	'description' => undef,
-	'signed' => 0,
-	'vendor' => undef,
-	'label' => undef,
-	'archive' => undef,
-	'codename' => undef,
-	'date' => undef,
-	'valid-until' => undef,
-	'architectures' => undef,
-);
-
 sub _verify_signature ($$) {
 	my ($self, $file) = @_;
 
@@ -647,6 +643,19 @@ sub _verify_signature ($$) {
 
 	return $verify_result;
 }
+
+our %_empty_release_info = (
+	'version' => undef,
+	'description' => undef,
+	'signed' => 0,
+	'vendor' => undef,
+	'label' => undef,
+	'archive' => undef,
+	'codename' => undef,
+	'date' => undef,
+	'valid-until' => undef,
+	'architectures' => [],
+);
 
 sub _get_release_info {
 	my ($self, $file) = @_;
@@ -1088,6 +1097,30 @@ sub _path_of_extended_states {
 	return "$root_prefix$etc_dir/$leaf";
 }
 
+=head2 get_binary_release_data
+
+method, returns reference to array of available releases of binary packages in
+form [ L</release_info> ... ]
+
+=cut
+
+sub get_binary_release_data ($) {
+	my ($self) = @_;
+	return $self->{_release_data}->{binary};
+}
+
+=head2 get_source_release_data
+
+method, returns reference to array of available releases of source packages in
+form [ L</release_info> ... ]
+
+=cut
+
+sub get_source_release_data ($) {
+	my ($self) = @_;
+	return $self->{_release_data}->{source};
+}
+
 =head1 FREE SUBROUTINES
 
 =head2 get_path_of_debian_changelog
@@ -1116,9 +1149,24 @@ sub get_path_of_debian_changelog ($) {
 	}
 }
 
-=head1 Release info
+=head1 DATA SPECIFICATION
 
-TODO
+=head2 release_info
+
+This is a hash:
+
+  {
+    'signed' => boolean, whether release signed or not
+    'version' => version of released distribution (can be undef)
+    'description' => description string
+    'vendor' => vendor string
+    'label' => label string
+    'archive' => archive name string
+    'codename' => codename string
+    'date' => date of release (can be undef)
+    'valid-until' => time string when to forget about this release
+    'architectures' => reference to array of available architectures
+  }
 
 =cut
 
