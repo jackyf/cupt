@@ -38,8 +38,9 @@ use constant {
 	PE_VERSION => 0,
 	PE_STICK => 1,
 	PE_FAKE_SATISFIED => 2,
-	SPE_MANUALLY_SELECTED => 3,
-	SPE_INSTALLED => 4,
+	PE_REASONS => 3
+	SPE_MANUALLY_SELECTED => 4,
+	SPE_INSTALLED => 5,
 };
 
 our $_dummy_package_name = "dummy_package_name";
