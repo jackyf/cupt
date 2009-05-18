@@ -1,4 +1,4 @@
-cupt (0.1.3) UNRELEASED; urgency=low
+cupt (0.1.3) unstable; urgency=low
 
   * debian/control:
     - Fixed misspelled Recommends 'liblocale-gettext-perl'.
@@ -11,6 +11,9 @@ cupt (0.1.3) UNRELEASED; urgency=low
         determining remote path for versions that had a binary-only rebuild(s).
     - 'policy' subcommand:
       - When called without arguments, print available Releases.
+    - Exclude superfluous 'use Locale::gettext', Cupt::Core module do all
+      needed manipulations to provide gettext. Thanks to
+      David Broome <dbroome@gmail.com>. (Closes: #529167)
   * Cupt:
     - Cache:
       - New method 'get_binary_release_data'.

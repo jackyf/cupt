@@ -35,8 +35,6 @@ use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
 use File::Temp qw(tempfile);
 
-use Locale::gettext;
-
 use Cupt::Core;
 use Cupt::Config;
 use Cupt::Cache;
