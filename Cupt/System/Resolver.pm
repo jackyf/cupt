@@ -606,7 +606,7 @@ sub _resolve ($$) {
 		if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
 			push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
 		}
-		if ($self->{_config}->var('cupt::resover::track-reasons')) {
+		if ($self->{_config}->var('cupt::resolver::track-reasons')) {
 			if (defined $ref_action_to_apply->{'reason'}) {
 				push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
 			}
@@ -1066,7 +1066,8 @@ sub resolve ($$) {
 
 	# unwinding relations
 	while (scalar @{$self->{_pending_relations}}) {
-		my $relation_expression = shift @{$self->{_pending_relations}};
+		my $ref_pending_relation = shift @{$self->{_pending_relations}};
+		my $relation_expression = $ref_pending_relation->{'relation_expression'};
 		my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 		
 		# if we have no candidates, skip the relation
@@ -1082,7 +1083,8 @@ sub resolve ($$) {
 					stringify_relation_expression($relation_expression)
 			);
 		}
-		$self->_install_version_no_stick($version_to_install);
+		my $reason = $ref_pending_relation->{'reason'};
+		$self->_install_version_no_stick($version_to_install, $reason);
 		# note that _install_version_no_stick can add some pending relations
 	}
 

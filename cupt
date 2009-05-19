@@ -32,7 +32,7 @@ use strict;
 
 use List::Util qw(sum);
 use Getopt::Long;
-Getopt::Long::Configure('pass_through', 'no_auto_abbrev');
+Getopt::Long::Configure('pass_through', 'no_auto_abbrev', 'no_ignore_case');
 use File::Temp qw(tempfile);
 
 use Cupt::Core;
