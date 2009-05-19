@@ -88,15 +88,14 @@ sub new {
 	return $self;
 }
 
-sub _create_new_package_entry ($$) {
-	my ($self, $package_name) = @_;
-	return if exists $self->{_packages}->{$package_name};
-	my ($package_entry) = ($self->{_packages}->{$package_name} = []);
-	$package_entry->[PE_VERSION] = undef;
-	$package_entry->[PE_STICK] = 0;
-	$package_entry->[PE_FAKE_SATISFIED] = [];
-	$package_entry->[SPE_MANUALLY_SELECTED] = 0;
-	$package_entry->[SPE_INSTALLED] = 0;
+sub __new_package_entry () {
+	my $ref_package_entry = [];
+	$ref_package_entry->[PE_VERSION] = undef;
+	$ref_package_entry->[PE_STICK] = 0;
+	$ref_package_entry->[PE_FAKE_SATISFIED] = [];
+	$ref_package_entry->[SPE_MANUALLY_SELECTED] = 0;
+	$ref_package_entry->[SPE_INSTALLED] = 0;
+	return $ref_package_entry;
 }
 
 =head2 import_installed_versions
@@ -116,7 +115,7 @@ sub import_installed_versions ($$) {
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		# '_packages' will be modified, leave '_old_packages' as original system state
-		$self->_create_new_package_entry($version->{package_name});
+		$self->{_packages}->{$version->{package_name}} = __new_package_entry();
 		$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
 		$self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED] = 1;
 		@{$self->{_old_packages}->{$version->{package_name}}} = @{$self->{_packages}->{$version->{package_name}}};
@@ -151,7 +150,7 @@ sub _schedule_new_version_relations ($$) {
 # installs new version, shedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$) {
 	my ($self, $version) = @_;
-	$self->_create_new_package_entry($version->{package_name});
+	$self->{_packages}->{$version->{package_name}} //= __new_package_entry();
 	if ($self->{_packages}->{$version->{package_name}}->[PE_STICK])
 	{
 		# package is restricted to be updated
@@ -227,7 +226,7 @@ I<package_name> - string, name of package to remove
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->_create_new_package_entry($package_name);
+	$self->{_packages}->{$package_name} //= __new_package_entry();
 	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
@@ -496,7 +495,7 @@ sub _resolve ($$) {
 		breaks => [],
 		conflicts => [],
 	};
-	$self->_create_new_package_entry($_dummy_package_name);
+	$self->{_packages}->{$_dummy_package_name} = __new_package_entry();
 	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
 	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends} = 
@@ -548,6 +547,7 @@ sub _resolve ($$) {
 		my $package_name_to_change = $ref_action_to_apply->{package_name};
 		my $supposed_version = $ref_action_to_apply->{version};
 
+		$ref_solution_entry->{packages}->{$package_name_to_change} //= __new_package_entry();
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->[PE_VERSION];
 
@@ -664,14 +664,14 @@ sub _resolve ($$) {
 							# install one of versions package needs
 							foreach my $satisfying_version (@$ref_satisfying_versions) {
 								my $satisfying_package_name = $satisfying_version->{package_name};
-								if (exists $ref_current_packages->{$satisfying_package_name}) {
-									if (!$ref_current_packages->{$satisfying_package_name}->[PE_STICK]) {
-										push @possible_actions, {
-											'package_name' => $satisfying_package_name,
-											'version' => $satisfying_version,
-											'koef' => $dependency_group_koef,
-										};
-									}
+								if (!exists $ref_current_packages->{$satisfying_package_name} ||
+									!$ref_current_packages->{$satisfying_package_name}->[PE_STICK])
+								{
+									push @possible_actions, {
+										'package_name' => $satisfying_package_name,
+										'version' => $satisfying_version,
+										'koef' => $dependency_group_koef,
+									};
 								}
 							}
 
