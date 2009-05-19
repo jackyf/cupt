@@ -96,6 +96,7 @@ sub _create_new_package_entry ($$) {
 	$package_entry->[PE_VERSION] = undef;
 	$package_entry->[PE_STICK] = 0;
 	$package_entry->[PE_FAKE_SATISFIED] = [];
+	$package_entry->[PE_REASONS] = [];
 	$package_entry->[SPE_MANUALLY_SELECTED] = 0;
 	$package_entry->[SPE_INSTALLED] = 0;
 }
