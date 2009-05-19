@@ -695,15 +695,6 @@ sub _resolve ($$) {
 
 							# install one of versions package needs
 							foreach my $satisfying_version (@$ref_satisfying_versions) {
-<<<<<<< HEAD:Cupt/System/Resolver.pm
-								if (!$ref_current_packages->{$satisfying_version->{package_name}}->[PE_STICK]) {
-									push @possible_actions, {
-										'package_name' => $satisfying_version->{package_name},
-										'version' => $satisfying_version,
-										'koef' => $dependency_group_koef,
-										'reason' => [ $version, $dependency_group_name, $relation_expression ],
-									};
-=======
 								my $satisfying_package_name = $satisfying_version->{package_name};
 								if (exists $ref_current_packages->{$satisfying_package_name}) {
 									if (!$ref_current_packages->{$satisfying_package_name}->[PE_STICK]) {
@@ -711,9 +702,9 @@ sub _resolve ($$) {
 											'package_name' => $satisfying_package_name,
 											'version' => $satisfying_version,
 											'koef' => $dependency_group_koef,
+											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
->>>>>>> master:Cupt/System/Resolver.pm
 								}
 							}
 
