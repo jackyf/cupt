@@ -38,7 +38,7 @@ use constant {
 	PE_VERSION => 0,
 	PE_STICK => 1,
 	PE_FAKE_SATISFIED => 2,
-	PE_REASONS => 3
+	PE_REASONS => 3,
 	SPE_MANUALLY_SELECTED => 4,
 	SPE_INSTALLED => 5,
 };
@@ -118,10 +118,11 @@ sub import_installed_versions ($$) {
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		# '_packages' will be modified, leave '_old_packages' as original system state
-		$self->_create_new_package_entry($version->{package_name});
-		$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
-		$self->{_packages}->{$version->{package_name}}->[SPE_INSTALLED] = 1;
-		@{$self->{_old_packages}->{$version->{package_name}}} = @{$self->{_packages}->{$version->{package_name}}};
+		my $package_name = $version->{package_name};
+		$self->_create_new_package_entry($package_name);
+		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
+		$self->{_packages}->{$package_name}->[SPE_INSTALLED] = 1;
+		@{$self->{_old_packages}->{$package_name}} = @{$self->{_packages}->{$package_name}};
 	}
 }
 
