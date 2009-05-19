@@ -666,6 +666,8 @@ sub pkgnames () {
 sub generate_management_prompt ($$$) {
 	my ($worker, $show_versions, $show_size_changes) = @_;
 
+	my $show_reasons = $config->var('cupt::resolver::track-reasons');
+
 	my $sub_prompt = sub {
 		my $ref_desired_packages = $_[0];
 		$worker->set_desired_state($ref_desired_packages);
@@ -721,15 +723,49 @@ sub generate_management_prompt ($$$) {
 						}
 					}
 
-					if ($show_versions || $show_size_changes) {
+					if ($show_versions || $show_size_changes || $show_reasons) {
 						# put newline
 						say "";
 					} else {
 						# put a space between package names
 						print ' ';
 					}
+
+					if ($show_reasons) {
+						my $sub_say_reason = sub {
+							say "  " . __("reason: ") . $_[0];
+						};
+						foreach my $reason (@{$ref_package_entry->{'reasons'}}) {
+							my @reason_parts = @$reason;
+							if (scalar @reason_parts) {
+								my %reason_dependency_name_translations = (
+									'pre-depends' => __('pre-depends'),
+									'depends' => __('depends'),
+									'recommends' => __('recommends'),
+									'suggests' => __('suggests'),
+									'conflicts' => __('conflicts'),
+									'breaks' => __('breaks'),
+								);
+								my $reason_version = shift @reason_parts;
+								my $reason_dependency_name = shift @reason_parts;
+								my $reason_relation_expression = shift @reason_parts;
+
+								my $reason_package_name = $reason_version->{package_name};
+								my $reason_version_string = $reason_version->{version_string};
+
+								$sub_say_reason->(sprintf("%s %s %s %s",
+										$reason_package_name, $reason_version_string,
+										$reason_dependency_name_translations{$reason_dependency_name},
+										stringify_relation_expression($reason_relation_expression)
+										));
+							} else {
+								$sub_say_reason->(__('user request'));
+							}
+						}
+						say "";
+					}
 				}
-				say "" if !$show_versions && !$show_size_changes;
+				say "" if !$show_versions && !$show_size_changes && !$show_reasons;
 				say "";
 			}
 		};

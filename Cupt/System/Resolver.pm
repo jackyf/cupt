@@ -131,22 +131,22 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->_auto_satisfy_relation($_, [ 'installed', $version, 'pre-depends', $_ ]);
+		$self->_auto_satisfy_relation($_, [ $version, 'pre-depends', $_ ]);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
-		$self->_auto_satisfy_relation($_, [ 'installed', $version, 'depends', $_ ]);
+		$self->_auto_satisfy_relation($_, [ $version, 'depends', $_ ]);
 	}
 	if ($self->{_config}->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
-			$self->_auto_satisfy_relation($_, [ 'installed', $version, 'recommends', $_ ]);
+			$self->_auto_satisfy_relation($_, [ $version, 'recommends', $_ ]);
 		}
 	}
 	if ($self->{_config}->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
-			$self->_auto_satisfy_relation($_, [ 'installed', $version, 'suggests', $_ ]);
+			$self->_auto_satisfy_relation($_, [ $version, 'suggests', $_ ]);
 		}
 	}
 }
@@ -185,7 +185,7 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->_install_version_no_stick($version, [ 'user' ]);
+	$self->_install_version_no_stick($version, []);
 	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
 	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
 }
@@ -244,7 +244,7 @@ sub remove_package ($$) {
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
 	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
-		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [ 'user' ];
+		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [];
 	}
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
@@ -266,7 +266,7 @@ sub upgrade ($) {
 		my $supposed_version = $self->{_cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
-		$self->_install_version_no_stick($supposed_version, [ 'user' ]);
+		$self->_install_version_no_stick($supposed_version, []);
 	}
 }
 
@@ -700,7 +700,7 @@ sub _resolve ($$) {
 										'package_name' => $satisfying_version->{package_name},
 										'version' => $satisfying_version,
 										'koef' => $dependency_group_koef,
-										'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
+										'reason' => [ $version, $dependency_group_name, $relation_expression ],
 									};
 								}
 							}
@@ -765,7 +765,7 @@ sub _resolve ($$) {
 												'package_name' => $package_name,
 												'version' => $other_version,
 												'koef' => $dependency_group_koef,
-												'reason' => [ 'unsatisfied', $version, $dependency_group_name, $relation_expression ],
+												'reason' => [ $version, $dependency_group_name, $relation_expression ],
 											};
 										}
 									}
@@ -777,7 +777,7 @@ sub _resolve ($$) {
 										'package_name' => $package_name,
 										'version' => undef,
 										'koef' => $dependency_group_koef,
-										'reason' => [ 'unsatisfied', $version, $dependency_group_name, $relation_expression ],
+										'reason' => [ $version, $dependency_group_name, $relation_expression ],
 									};
 								}
 							}
@@ -847,7 +847,7 @@ sub _resolve ($$) {
 											'package_name' => $other_package_name,
 											'version' => $other_version,
 											'koef' => $dependency_group_koef,
-											'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 
@@ -857,7 +857,7 @@ sub _resolve ($$) {
 											'package_name' => $other_package_name,
 											'version' => undef,
 											'koef' => $dependency_group_koef,
-											'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 								}
@@ -880,7 +880,7 @@ sub _resolve ($$) {
 											'package_name' => $package_name,
 											'version' => $other_version,
 											'koef' => $dependency_group_koef,
-											'reason' => [ 'satisfied', $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 									
@@ -890,7 +890,7 @@ sub _resolve ($$) {
 											'package_name' => $package_name,
 											'version' => undef,
 											'koef' => $dependency_group_koef,
-											'reason' => [ 'satisfied', $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 								}
