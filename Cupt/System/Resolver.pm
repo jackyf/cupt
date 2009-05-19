@@ -43,7 +43,7 @@ use constant {
 	SPE_INSTALLED => 5,
 };
 
-our $_dummy_package_name = "dummy_package_name";
+our $_dummy_package_name = "<satisfy>";
 
 =begin internal
 
@@ -533,6 +533,7 @@ sub _resolve ($$) {
 	#                                        PE_VERSION => version,
 	#                                        PE_STICK => boolean
 	#                                        PE_FAKE_SATISFIED => [ relation_expression... ]
+	#                                        PE_REASONS => [ reason... ]
 	#                                        SPE_MANUALLY_SELECTED => boolean
 	#                                        SPE_INSTALLED => boolean
 	#                                      }
@@ -567,19 +568,18 @@ sub _resolve ($$) {
 		mydebug(" " x $level . "($identifier:$normalized_score_string) @_");
 	};
 
-
 	my $sub_apply_action = sub {
 		my ($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier) = @_;
 
-		my $package_name_to_change = $ref_action_to_apply->{package_name};
-		my $supposed_version = $ref_action_to_apply->{version};
+		my $package_name_to_change = $ref_action_to_apply->{'package_name'};
+		my $supposed_version = $ref_action_to_apply->{'version'};
 
 		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 		my $original_version = $ref_package_entry_to_change->[PE_VERSION];
 
-		my $profit = $ref_action_to_apply->{profit} //
+		my $profit = $ref_action_to_apply->{'profit'} //
 				$self->_get_action_profit($original_version, $supposed_version);
-		$profit *= $ref_action_to_apply->{koef};
+		$profit *= $ref_action_to_apply->{'koef'};
 
 		if ($self->{_config}->var('debug::resolver')) {
 			my $old_version_string = defined($original_version) ?
@@ -603,8 +603,13 @@ sub _resolve ($$) {
 		# set stick for change for the time on underlying solutions
 		$ref_package_entry_to_change->[PE_STICK] = 1;
 		$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
-		if (exists $ref_action_to_apply->{fakely_satisfies}) {
-			push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{fakely_satisfies};
+		if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
+			push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
+		}
+		if ($self->{_config}->var('cupt::resover::track-reasons')) {
+			if (defined $ref_action_to_apply->{'reason'}) {
+				push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
+			}
 		}
 	};
 
@@ -816,7 +821,6 @@ sub _resolve ($$) {
 								# package can't conflict (or break) with itself
 								$other_package_name ne $package_name or next;
 
-								#TODO: is this check superfluous?
 								# is the package installed?
 								exists $ref_current_packages->{$other_package_name} or next;
 
@@ -933,7 +937,7 @@ sub _resolve ($$) {
 			foreach my $package_name (keys %$ref_current_packages) {
 				my $ref_package_entry = $ref_current_packages->{$package_name};
 				$suggested_packages{$package_name}->{'version'} = $ref_package_entry->[PE_VERSION];
-
+				$suggested_packages{$package_name}->{'reasons'} = $ref_package_entry->[PE_REASONS];
 				$suggested_packages{$package_name}->{'manually_selected'} =
 						$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED];
 			}
