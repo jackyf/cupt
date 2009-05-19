@@ -131,7 +131,7 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->_auto_satisfy_relation($_, [ 'install', $version, 'pre_depends' ]);
+		$self->_auto_satisfy_relation($_, [ 'install', $version, 'pre-depends' ]);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
@@ -266,7 +266,7 @@ sub upgrade ($) {
 		my $supposed_version = $self->{_cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
-		$self->_install_version_no_stick($supposed_version);
+		$self->_install_version_no_stick($supposed_version, [ 'user', undef, undef ]);
 	}
 }
 
@@ -386,6 +386,7 @@ sub __clone_packages ($) {
 		$clone{$_}->[PE_VERSION] = $ref_new_package_entry->[PE_VERSION];
 		$clone{$_}->[PE_STICK] = $ref_new_package_entry->[PE_STICK];
 		$clone{$_}->[PE_FAKE_SATISFIED] = $ref_new_package_entry->[PE_FAKE_SATISFIED];
+		$clone{$_}->[PE_REASONS] = $ref_new_package_entry->[PE_REASONS];
 	}
 	return \%clone;
 }
@@ -668,6 +669,7 @@ sub _resolve ($$) {
 										# set profit manually, as we are inserting fake action here
 										'profit' => -50,
 										'fakely_satisfies' => $relation_expression,
+										'reason' => undef,
 									};
 								}
 							}
@@ -683,6 +685,7 @@ sub _resolve ($$) {
 										'package_name' => $satisfying_version->{package_name},
 										'version' => $satisfying_version,
 										'koef' => $dependency_group_koef,
+										'reason' => [ 'install', $version, $dependency_group_name ],
 									};
 								}
 							}
