@@ -759,7 +759,7 @@ sub _resolve ($$) {
 											push @possible_actions, {
 												'package_name' => $package_name,
 												'version' => $other_version,
-												'koef' => $dependency_group_koef
+												'koef' => $dependency_group_koef,
 												'reason' => [ 'unsatisfied', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
@@ -842,7 +842,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $other_package_name,
 											'version' => $other_version,
-											'koef' => $conflicts_koef,
+											'koef' => $dependency_group_koef,
 											'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
@@ -852,7 +852,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $other_package_name,
 											'version' => undef,
-											'koef' => $conflicts_koef,
+											'koef' => $dependency_group_koef,
 											'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
@@ -875,7 +875,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $package_name,
 											'version' => $other_version,
-											'koef' => $conflicts_koef,
+											'koef' => $dependency_group_koef,
 											'reason' => [ 'satisfied', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
@@ -885,7 +885,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $package_name,
 											'version' => undef,
-											'koef' => $conflicts_koef,
+											'koef' => $dependency_group_koef,
 											'reason' => [ 'satisfied', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
