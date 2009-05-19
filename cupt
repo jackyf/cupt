@@ -561,12 +561,12 @@ sub policy () {
 
 			my $installed_version_string = $cache->get_system_state()->get_installed_version_string($package_name);
 			say "$package_name:";
-			say "  " . gettext('Installed') . ": " .
+			say "  " . __('Installed') . ": " .
 					(defined($installed_version_string) ?
-					$installed_version_string : ('(' . gettext('none') . ')'));
+					$installed_version_string : ('(' . __('none') . ')'));
 
-			say "  " . gettext('Candidate') . ": " . $policy_version->{version_string};
-			say "  " . gettext('Version table') . ":";
+			say "  " . __('Candidate') . ": " . $policy_version->{version_string};
+			say "  " . __('Version table') . ":";
 
 			my $ref_versions = $cache->get_sorted_pinned_versions($package);
 

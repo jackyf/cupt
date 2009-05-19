@@ -1,5 +1,8 @@
 cupt (0.1.4) unstable; urgency=low
 
+  * cupt:
+    - 'policy' subcommand:
+      - Fixed old code referrings to 'gettext'.
   * Cupt:
     - System:
       - Resolver:
