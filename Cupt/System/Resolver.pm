@@ -396,7 +396,7 @@ sub __clone_packages ($) {
 		$clone{$_}->[PE_VERSION] = $ref_new_package_entry->[PE_VERSION];
 		$clone{$_}->[PE_STICK] = $ref_new_package_entry->[PE_STICK];
 		$clone{$_}->[PE_FAKE_SATISFIED] = $ref_new_package_entry->[PE_FAKE_SATISFIED];
-		$clone{$_}->[PE_REASONS] = $ref_new_package_entry->[PE_REASONS];
+		$clone{$_}->[PE_REASONS] = [ @{$ref_new_package_entry->[PE_REASONS]} ];
 	}
 	return \%clone;
 }
