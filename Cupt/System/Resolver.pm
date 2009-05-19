@@ -118,7 +118,7 @@ sub import_installed_versions ($$) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		# '_packages' will be modified, leave '_old_packages' as original system state
 		my $package_name = $version->{package_name};
-		$self->{_packages}->{$package_name}} = __new_package_entry();
+		$self->{_packages}->{$package_name} = __new_package_entry();
 		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
 		$self->{_packages}->{$package_name}->[SPE_INSTALLED] = 1;
 		@{$self->{_old_packages}->{$package_name}} = @{$self->{_packages}->{$package_name}};
