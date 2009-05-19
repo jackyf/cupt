@@ -743,11 +743,11 @@ sub generate_management_prompt ($$$) {
 							my @reason_parts = @$reason;
 							if (scalar @reason_parts) {
 								my %reason_dependency_name_translations = (
-									'pre-depends' => __('pre-depends'),
-									'depends' => __('depends'),
+									'pre-depends' => __('pre-depends on'),
+									'depends' => __('depends on'),
 									'recommends' => __('recommends'),
 									'suggests' => __('suggests'),
-									'conflicts' => __('conflicts'),
+									'conflicts' => __('conflicts with '),
 									'breaks' => __('breaks'),
 								);
 								my $reason_version = shift @reason_parts;
@@ -757,7 +757,7 @@ sub generate_management_prompt ($$$) {
 								my $reason_package_name = $reason_version->{package_name};
 								my $reason_version_string = $reason_version->{version_string};
 
-								$sub_say_reason->(sprintf("%s %s %s %s",
+								$sub_say_reason->(sprintf("%s %s %s '%s'",
 										$reason_package_name, $reason_version_string,
 										$reason_dependency_name_translations{$reason_dependency_name},
 										stringify_relation_expression($reason_relation_expression)
