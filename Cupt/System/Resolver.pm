@@ -131,22 +131,22 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->_auto_satisfy_relation($_, [ 'install', $version, 'pre-depends' ]);
+		$self->_auto_satisfy_relation($_, [ 'installed', $version, 'pre-depends', $_ ]);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
-		$self->_auto_satisfy_relation($_, [ 'install', $version, 'depends' ]);
+		$self->_auto_satisfy_relation($_, [ 'installed', $version, 'depends', $_ ]);
 	}
 	if ($self->{_config}->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
-			$self->_auto_satisfy_relation($_, [ 'install', $version, 'recommends' ]);
+			$self->_auto_satisfy_relation($_, [ 'installed', $version, 'recommends', $_ ]);
 		}
 	}
 	if ($self->{_config}->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
-			$self->_auto_satisfy_relation($_, [ 'install', $version, 'suggests' ]);
+			$self->_auto_satisfy_relation($_, [ 'installed', $version, 'suggests', $_ ]);
 		}
 	}
 }
@@ -185,7 +185,7 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->_install_version_no_stick($version, [ 'user', undef, undef ]);
+	$self->_install_version_no_stick($version, [ 'user' ]);
 	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
 	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
 }
@@ -244,7 +244,7 @@ sub remove_package ($$) {
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
 	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
-		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [ 'user', undef, undef ];
+		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [ 'user' ];
 	}
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
@@ -266,7 +266,7 @@ sub upgrade ($) {
 		my $supposed_version = $self->{_cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
-		$self->_install_version_no_stick($supposed_version, [ 'user', undef, undef ]);
+		$self->_install_version_no_stick($supposed_version, [ 'user' ]);
 	}
 }
 
@@ -374,6 +374,16 @@ sub _get_dependencies_groups ($$) {
 		push @result, { 'name' => 'suggests', 'relation_expressions' => $version->{suggests}, 'koef' => 0.1 };
 	}
 
+	return \@result;
+}
+
+sub _get_antidependencies_groups ($$) {
+	my ($self, $version) = @_;
+
+	# action koeficient will determine the valuability of action
+	my @result;
+	push @result, { 'name' => 'conflicts', 'relation_expressions' => $version->{conflicts}, 'koef' => 1.0 };
+	push @result, { 'name' => 'breaks', 'relation_expressions' => $version->{breaks}, 'koef' => 1.0 };
 	return \@result;
 }
 
@@ -685,7 +695,7 @@ sub _resolve ($$) {
 										'package_name' => $satisfying_version->{package_name},
 										'version' => $satisfying_version,
 										'koef' => $dependency_group_koef,
-										'reason' => [ 'install', $version, $dependency_group_name ],
+										'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
 									};
 								}
 							}
@@ -750,6 +760,7 @@ sub _resolve ($$) {
 												'package_name' => $package_name,
 												'version' => $other_version,
 												'koef' => $dependency_group_koef
+												'reason' => [ 'unsatisfied', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
 									}
@@ -760,7 +771,8 @@ sub _resolve ($$) {
 									push @possible_actions, {
 										'package_name' => $package_name,
 										'version' => undef,
-										'koef' => $dependency_group_koef
+										'koef' => $dependency_group_koef,
+										'reason' => [ 'unsatisfied', $version, $dependency_group_name, $relation_expression ],
 									};
 								}
 							}
@@ -789,102 +801,107 @@ sub _resolve ($$) {
 				}
 
 				# checking that all 'Conflicts' and 'Breaks' are not satisfied
-				my $conflicts_koef = 1.0;
-				foreach (@{$version->{conflicts}}, @{$version->{breaks}}) {
-					# check if relation is accidentally satisfied
-					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($_);
+				foreach my $ref_dependency_group (@{$self->_get_antidependencies_groups($version)}) {
+					my $dependency_group_koef = $ref_dependency_group->{koef};
+					my $dependency_group_name = $ref_dependency_group->{name};
+					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
+						# check if relation is accidentally satisfied
+						my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
+						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
+							# so, this can conflict... check it deeper on the fly
+							my $conflict_found = 0;
+							foreach my $satisfying_version (@$ref_satisfying_versions) {
+								my $other_package_name = $satisfying_version->{package_name};
 
-					if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
-						# good, nothing to do
-					} else {
-						# so, this can conflict... check it deeper on the fly
-						my $conflict_found = 0;
-						foreach my $satisfying_version (@$ref_satisfying_versions) {
-							my $other_package_name = $satisfying_version->{package_name};
+								# package can't conflict (or break) with itself
+								$other_package_name ne $package_name or next;
 
-							# package can't conflict (or break) with itself
-							$other_package_name ne $package_name or next;
+								#TODO: is this check superfluous?
+								# is the package installed?
+								exists $ref_current_packages->{$other_package_name} or next;
 
-							# is the package installed?
-							exists $ref_current_packages->{$other_package_name} or next;
+								my $other_package_entry = $ref_current_packages->{$other_package_name};
 
-							my $other_package_entry = $ref_current_packages->{$other_package_name};
+								# does the package have an installed version?
+								defined($other_package_entry->[PE_VERSION]) or next;
 
-							# does the package have an installed version?
-							defined($other_package_entry->[PE_VERSION]) or next;
+								# is this our version?
+								$other_package_entry->[PE_VERSION]->{version_string} eq $satisfying_version->{version_string} or next;
 
-							# is this our version?
-							$other_package_entry->[PE_VERSION]->{version_string} eq $satisfying_version->{version_string} or next;
+								# :(
+								$conflict_found = 1;
 
-							# :(
-							$conflict_found = 1;
+								# additionally, in case of absense of stick, also contribute to possible actions
+								if (!$other_package_entry->[PE_STICK]) {
+									# so change it
+									my $other_package = $self->{_cache}->get_binary_package($other_package_name);
+									foreach my $other_version (@{$other_package->get_versions()}) {
+										# don't try existing version
+										next if $other_version->{version_string} eq $satisfying_version->{version_string};
 
-							# additionally, in case of absense of stick, also contribute to possible actions
-							if (!$other_package_entry->[PE_STICK]) {
-								# so change it
-								my $other_package = $self->{_cache}->get_binary_package($other_package_name);
-								foreach my $other_version (@{$other_package->get_versions()}) {
-									# don't try existing version
-									next if $other_version->{version_string} eq $satisfying_version->{version_string};
+										push @possible_actions, {
+											'package_name' => $other_package_name,
+											'version' => $other_version,
+											'koef' => $conflicts_koef,
+											'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
+										};
+									}
 
-									push @possible_actions, {
-										'package_name' => $other_package_name,
-										'version' => $other_version,
-										'koef' => $conflicts_koef,
-									};
-								}
-
-								if ($self->_is_package_can_be_removed($other_package_name)) {
-									# or remove it
-									push @possible_actions, {
-										'package_name' => $other_package_name,
-										'version' => undef,
-										'koef' => $conflicts_koef,
-									};
-								}
-							}
-						}
-
-						if ($conflict_found) {
-							$check_failed = 1;
-
-							# mark package as failed one more time
-							++$failed_counts{$package_name};
-
-							if (!$package_entry->[PE_STICK]) {
-								# change version of the package
-								my $package = $self->{_cache}->get_binary_package($package_name);
-								foreach my $other_version (@{$package->get_versions()}) {
-									# don't try existing version
-									next if $other_version->{version_string} eq $version->{version_string};
-
-									push @possible_actions, {
-										'package_name' => $package_name,
-										'version' => $other_version,
-										'koef' => $conflicts_koef,
-									};
-								}
-								
-								if ($self->_is_package_can_be_removed($package_name)) {
-									# remove the package
-									push @possible_actions, {
-										'package_name' => $package_name,
-										'version' => undef,
-										'koef' => $conflicts_koef,
-									};
+									if ($self->_is_package_can_be_removed($other_package_name)) {
+										# or remove it
+										push @possible_actions, {
+											'package_name' => $other_package_name,
+											'version' => undef,
+											'koef' => $conflicts_koef,
+											'reason' => [ 'installed', $version, $dependency_group_name, $relation_expression ],
+										};
+									}
 								}
 							}
 
-							# in any case, stick this package
-							$package_entry->[PE_STICK] = 1;
+							if ($conflict_found) {
+								$check_failed = 1;
 
-							if ($self->{_config}->var('debug::resolver')) {
-								my $stringified_relation = stringify_relation_expression($_);
-								$sub_mydebug_wrapper->("problem: package '$package_name': " . 
-										"satisfied conflicts/breaks '$stringified_relation'");
+								# mark package as failed one more time
+								++$failed_counts{$package_name};
+
+								if (!$package_entry->[PE_STICK]) {
+									# change version of the package
+									my $package = $self->{_cache}->get_binary_package($package_name);
+									foreach my $other_version (@{$package->get_versions()}) {
+										# don't try existing version
+										next if $other_version->{version_string} eq $version->{version_string};
+
+										push @possible_actions, {
+											'package_name' => $package_name,
+											'version' => $other_version,
+											'koef' => $conflicts_koef,
+											'reason' => [ 'satisfied', $version, $dependency_group_name, $relation_expression ],
+										};
+									}
+									
+									if ($self->_is_package_can_be_removed($package_name)) {
+										# remove the package
+										push @possible_actions, {
+											'package_name' => $package_name,
+											'version' => undef,
+											'koef' => $conflicts_koef,
+											'reason' => [ 'satisfied', $version, $dependency_group_name, $relation_expression ],
+										};
+									}
+								}
+
+								# in any case, stick this package
+								$package_entry->[PE_STICK] = 1;
+
+								if ($self->{_config}->var('debug::resolver')) {
+									my $stringified_relation = stringify_relation_expression($_);
+									$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+											"satisfied $dependency_group_name '$stringified_relation'");
+								}
+								$recheck_needed = 0;
+								last MAIN_LOOP;
 							}
-							$recheck_needed = 0;
-							last MAIN_LOOP;
 						}
 					}
 				}
