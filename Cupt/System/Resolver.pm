@@ -131,39 +131,44 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->_auto_satisfy_relation($_);
+		$self->_auto_satisfy_relation($_, [ 'install', $version, 'pre_depends' ]);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
-		$self->_auto_satisfy_relation($_);
+		$self->_auto_satisfy_relation($_, [ 'install', $version, 'depends' ]);
 	}
 	if ($self->{_config}->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
-			$self->_auto_satisfy_relation($_);
+			$self->_auto_satisfy_relation($_, [ 'install', $version, 'recommends' ]);
 		}
 	}
 	if ($self->{_config}->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
-			$self->_auto_satisfy_relation($_);
+			$self->_auto_satisfy_relation($_, [ 'install', $version, 'suggests' ]);
 		}
 	}
 }
 
 # installs new version, shedules new dependencies, but not sticks it
-sub _install_version_no_stick ($$) {
-	my ($self, $version) = @_;
-	$self->_create_new_package_entry($version->{package_name});
-	if ($self->{_packages}->{$version->{package_name}}->[PE_STICK])
+sub _install_version_no_stick ($$$) {
+	my ($self, $version, $reason) = @_;
+	
+	my $package_name = $version->{package_name};
+	$self->_create_new_package_entry($package_name);
+	if ($self->{_packages}->{$package_name}->[PE_STICK])
 	{
 		# package is restricted to be updated
 		return;
 	}
 
-	$self->{_packages}->{$version->{package_name}}->[PE_VERSION] = $version;
+	$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
+	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
+		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, $reason;
+	}
 	if ($self->{_config}->var('debug::resolver')) {
-		mydebug("install package '$version->{package_name}', version '$version->{version_string}'");
+		mydebug("install package '$package_name', version '$version->{version_string}'");
 	}
 	$self->_schedule_new_version_relations($version);
 }
@@ -180,7 +185,7 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->_install_version_no_stick($version);
+	$self->_install_version_no_stick($version, [ 'user', undef, undef ]);
 	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
 	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
 }
@@ -203,7 +208,7 @@ sub satisfy_relation_expression ($$) {
 }
 
 sub _auto_satisfy_relation ($$) {
-	my ($self, $relation_expression) = @_;
+	my ($self, $relation_expression, $reason) = @_;
 
 	my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->{_packages})) {
@@ -214,7 +219,11 @@ sub _auto_satisfy_relation ($$) {
 			$message .= "'";
 			mydebug($message);
 		}
-		push @{$self->{_pending_relations}}, $relation_expression;
+		my %pending_relation = (
+			'relation_expression' => $relation_expression,
+			'reason' => $reason,
+		);
+		push @{$self->{_pending_relations}}, \%pending_relation;
 	}
 }
 
@@ -234,6 +243,9 @@ sub remove_package ($$) {
 	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
+	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
+		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [ 'user', undef, undef ];
+	}
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
