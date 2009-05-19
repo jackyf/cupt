@@ -395,7 +395,7 @@ sub __clone_packages ($) {
 		my $ref_new_package_entry = $ref_packages->{$_};
 		$clone{$_}->[PE_VERSION] = $ref_new_package_entry->[PE_VERSION];
 		$clone{$_}->[PE_STICK] = $ref_new_package_entry->[PE_STICK];
-		$clone{$_}->[PE_FAKE_SATISFIED] = $ref_new_package_entry->[PE_FAKE_SATISFIED];
+		$clone{$_}->[PE_FAKE_SATISFIED] = [ @{$ref_new_package_entry->[PE_FAKE_SATISFIED]} ];
 		$clone{$_}->[PE_REASONS] = [ @{$ref_new_package_entry->[PE_REASONS]} ];
 	}
 	return \%clone;
@@ -695,6 +695,7 @@ sub _resolve ($$) {
 
 							# install one of versions package needs
 							foreach my $satisfying_version (@$ref_satisfying_versions) {
+<<<<<<< HEAD:Cupt/System/Resolver.pm
 								if (!$ref_current_packages->{$satisfying_version->{package_name}}->[PE_STICK]) {
 									push @possible_actions, {
 										'package_name' => $satisfying_version->{package_name},
@@ -702,6 +703,17 @@ sub _resolve ($$) {
 										'koef' => $dependency_group_koef,
 										'reason' => [ $version, $dependency_group_name, $relation_expression ],
 									};
+=======
+								my $satisfying_package_name = $satisfying_version->{package_name};
+								if (exists $ref_current_packages->{$satisfying_package_name}) {
+									if (!$ref_current_packages->{$satisfying_package_name}->[PE_STICK]) {
+										push @possible_actions, {
+											'package_name' => $satisfying_package_name,
+											'version' => $satisfying_version,
+											'koef' => $dependency_group_koef,
+										};
+									}
+>>>>>>> master:Cupt/System/Resolver.pm
 								}
 							}
 
