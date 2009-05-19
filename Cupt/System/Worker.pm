@@ -75,13 +75,19 @@ Parameters:
 
 I<desired_state> - the desired state after the actions, hash reference:
 
-{ I<package_name> => { 'version' => I<version>, 'manually_selected' => 1 } }
+  { I<package_name> =>
+    {
+      'version' => I<version>,
+      'manually_selected' => boolean
+      'reasons' => [ I<reason>... ]
+    }
+  }
 
 where:
 
 I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
 
-'manually_selected' is optional key
+TODO: reason description
 
 =cut
 
@@ -153,7 +159,13 @@ Returns:
 
 where:
 
-I<packages> = [ { 'package_name' => $package_name, 'version' => I<version> }... ]
+I<packages> = [
+                {
+                  'package_name' => $package_name,
+                  'version' => I<version>,
+				  'reasons' => [ I<reason>... ]
+                }...
+              ]
 
 I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
 
@@ -244,8 +256,9 @@ sub get_actions_preview ($) {
 		}
 		if (defined $action) {
 			my $ref_entry;
-			$ref_entry->{package_name} = $package_name;
-			$ref_entry->{version} = $supposed_version;
+			$ref_entry->{'package_name'} = $package_name;
+			$ref_entry->{'version'} = $supposed_version;
+			$ref_entry->{'reasons'} = $ref_supposed_package_entry->{'reasons'};
 			push @{$result{$action}}, $ref_entry;
 
 			if ($action eq 'remove' || ($action eq 'purge' && $ref_installed_info->{'status'} eq 'installed')) {
