@@ -564,6 +564,12 @@ standard error
 
 TODO
 
+=head1 REPORTING
+
+Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
+
+The discussion channel about Cupt is irc://irc.debian.org#cupt.
+
 =head1 SEE ALSO
 
 L<cupt_vs_apt(5)>

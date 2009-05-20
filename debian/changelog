@@ -15,6 +15,7 @@ cupt (0.1.4) unstable; urgency=low
   * doc:
     - cupt.1:
       - Renewed the list of supported APT configuration options.
+      - Mentioned the way to send bug reports and IRC discussion channel.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 20 May 2009 00:09:32 +0300
 
