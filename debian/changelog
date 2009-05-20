@@ -12,6 +12,10 @@ cupt (0.1.4) unstable; urgency=low
           satisfy forward dependencies.
         - Fixed wrong sharing 'fake satisfied' entries between package entries
           in different solution branches.
+      - Worker:
+        - APT mangles ':' chars in names of deb archives. Cupt doesn't do the
+          same. So, to pick up debs downloaded by libapt, worker now generates
+          symlinks from 'right' names to 'mangled' names whenever possible.
   * doc:
     - cupt.1:
       - Renewed the list of supported APT configuration options.

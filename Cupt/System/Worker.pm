@@ -35,6 +35,7 @@ use Digest;
 use Fcntl qw(:seek :DEFAULT);
 use List::Util qw(sum);
 use File::Copy;
+use File::Basename;
 
 use Cupt::Core;
 use Cupt::Download::Manager;
@@ -64,7 +65,44 @@ sub new {
 	$self->{_cache} = shift;
 	$self->{_system_state} = $self->{_cache}->get_system_state();
 	$self->{_desired_state} = undef;
+	$self->_syncronize_apt_compat_symlinks();
 	return $self;
+}
+
+sub _syncronize_apt_compat_symlinks ($) {
+	my ($self) = @_;
+
+	return if $self->{_config}->var('cupt::worker::simulate');
+
+	my $archives_location = $self->_get_archives_location();
+	my @debs = glob("$archives_location/*.deb");
+	foreach my $deb (@debs) {
+		if (-l $deb) {
+			# this is a symlink
+
+			# fill info about pointed file
+			stat $deb;
+			if (not -e _) {
+				# this is dangling symlink
+				unlink $deb or
+						mywarn("unable to delete dangling APT compatibility symbolic link '%s': %s", $deb, $!);
+			}
+		} elsif (-f $deb) {
+			# this is a regular file
+			my $basename = basename($deb);
+			(my $corrected_basename = $basename) =~ s/%3a/:/;
+
+			my $corrected_deb = "$archives_location/$corrected_basename";
+
+			next if -e $corrected_deb;
+
+			if ($corrected_basename ne $basename) {
+				symlink $basename, $corrected_deb or
+						mywarn("unable to create APT compatibility symbolic link '%s' -> '%s': %s",
+								$corrected_deb, $basename, $!);
+			}
+		}
+	}
 }
 
 =head2 set_desired_state
