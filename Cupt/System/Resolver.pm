@@ -902,7 +902,7 @@ sub _resolve ($$) {
 								$package_entry->[PE_STICK] = 1;
 
 								if ($self->{_config}->var('debug::resolver')) {
-									my $stringified_relation = stringify_relation_expression($_);
+									my $stringified_relation = stringify_relation_expression($relation_expression);
 									$sub_mydebug_wrapper->("problem: package '$package_name': " . 
 											"satisfied $dependency_group_name '$stringified_relation'");
 								}
