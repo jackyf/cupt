@@ -12,6 +12,9 @@ cupt (0.1.4) unstable; urgency=low
           satisfy forward dependencies.
         - Fixed wrong sharing 'fake satisfied' entries between package entries
           in different solution branches.
+  * doc:
+    - cupt.1:
+      - Renewed the list of supported APT configuration options.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 20 May 2009 00:09:32 +0300
 
