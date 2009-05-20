@@ -162,14 +162,18 @@ sub _install_version_no_stick ($$$) {
 		return;
 	}
 
-	$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
-	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
-		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, $reason;
+	if ((not $self->{_packages}->{$package_name}->[PE_VERSION]) ||
+		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
+	{
+		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
+		if ($self->{_config}->var('cupt::resolver::track-reasons')) {
+			push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, $reason;
+		}
+		if ($self->{_config}->var('debug::resolver')) {
+			mydebug("install package '$package_name', version '$version->{version_string}'");
+		}
+		$self->_schedule_new_version_relations($version);
 	}
-	if ($self->{_config}->var('debug::resolver')) {
-		mydebug("install package '$package_name', version '$version->{version_string}'");
-	}
-	$self->_schedule_new_version_relations($version);
 }
 
 =head2 install_version
