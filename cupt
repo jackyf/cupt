@@ -741,7 +741,10 @@ sub generate_management_prompt ($$$) {
 						};
 						foreach my $reason (@{$ref_package_entry->{'reasons'}}) {
 							my @reason_parts = @$reason;
-							if (scalar @reason_parts) {
+							if (ref $reason_parts[0]) {
+								# first element contains a reference, this is
+								# indicator that reason is some dependency
+								# relation
 								my %reason_dependency_name_translations = (
 									'pre-depends' => __('pre-depends on'),
 									'depends' => __('depends on'),
@@ -762,8 +765,12 @@ sub generate_management_prompt ($$$) {
 										$reason_dependency_name_translations{$reason_dependency_name},
 										stringify_relation_expression($reason_relation_expression)
 										));
-							} else {
+							} elsif ($reason_parts[0] eq 'user') {
 								$sub_say_reason->(__('user request'));
+							} elsif ($reason_parts[0] eq 'auto-remove') {
+								$sub_say_reason->(__('auto-removal'));
+							} else {
+								myinternaldie("bad first part '%s' of the reason", $reason_parts[0]);
 							}
 						}
 						say "";

@@ -188,7 +188,7 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->_install_version_no_stick($version, []);
+	$self->_install_version_no_stick($version, [ 'user' ]);
 	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
 	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
 }
@@ -247,7 +247,7 @@ sub remove_package ($$) {
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
 	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
-		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [];
+		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [ 'user' ];
 	}
 	if ($self->{_config}->var('debug::resolver')) {
 		mydebug("removing package $package_name");
@@ -269,7 +269,7 @@ sub upgrade ($) {
 		my $supposed_version = $self->{_cache}->get_policy_version($package);
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
-		$self->_install_version_no_stick($supposed_version, []);
+		$self->_install_version_no_stick($supposed_version, [ 'user' ]);
 	}
 }
 
@@ -489,7 +489,11 @@ sub _clean_automatically_installed ($) {
 				# remove non-referenced candidates at all
 				$remove = 1;
 			}
-			$ref_packages->{$package_name}->[PE_VERSION] = undef if $remove;
+			if ($remove) {
+				$ref_packages->{$package_name}->[PE_VERSION] = undef;
+				# leave only one reason :)
+				@{$ref_packages->{$package_name}->[PE_REASONS]} = ( [ 'auto-remove' ] );
+			}
 		}
 	};
 
