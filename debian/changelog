@@ -5,6 +5,9 @@ cupt (0.1.4) unstable; urgency=low
       - Fixed old code referrings to 'gettext'.
     - Fixed skipping option-like arguments when searching for a command.
     - Implemented option '--show-reasons' for management actions.
+    - New 'copyright' subcommand, similar to 'changelog' subcommand. Currently
+      implemented only for installed packages and official Debian and Ubuntu
+      repositories.
   * Cupt:
     - System:
       - Resolver:
@@ -20,6 +23,8 @@ cupt (0.1.4) unstable; urgency=low
           symlinks from 'right' names to 'mangled' names whenever possible.
     - Config:
       - New configuration option 'cupt::resolver::track-reasons'.
+    - Cache:
+      - New free subroutine 'get_path_of_debian_copyright'.
   * doc:
     - cupt.1:
       - Renewed the list of supported APT configuration options.

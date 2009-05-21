@@ -175,6 +175,22 @@ C<cupt changelog --installed-only dpkg nlkt lintian>
 
 C<cupt changelog libqtcore4>
 
+=item copyright
+
+displays copyright for given versions of packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Works only with installed packages and official Debian and Ubuntu repositories.
+
+Examples:
+
+C<cupt copyright dpkg/installed>
+
+C<cupt copyright --installed-only dpkg nlkt lintian>
+
+C<cupt copyright libqtcore4>
+
 =back
 
 =head3 query-specific options

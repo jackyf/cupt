@@ -1143,6 +1143,27 @@ sub get_path_of_debian_changelog ($) {
 	}
 }
 
+=head2 get_path_of_debian_copyright
+
+free subroutine, returns string path of Debian copyright for version when
+version is installed, undef otherwise
+
+Parameters:
+
+I<version> - reference to
+L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
+
+sub get_path_of_debian_copyright ($) {
+	my ($version) = @_;
+
+	return undef if not $version->is_installed();
+
+	my $package_name = $version->{package_name};
+	return "/usr/share/doc/$package_name/copyright";
+}
+
 =head1 DATA SPECIFICATION
 
 =head2 release_info
