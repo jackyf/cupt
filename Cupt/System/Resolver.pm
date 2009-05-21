@@ -1070,6 +1070,10 @@ Parameters:
 I<sub_accept> - reference to subroutine which has to return true if solution is
 accepted, false if solution is rejected, undef if user abandoned further searches
 
+Returns:
+
+see input parameter for L<Cupt::System::Worker::set_desired_state|Cupt::System::Worker/set_desired_state>
+
 =cut
 
 sub resolve ($$) {
