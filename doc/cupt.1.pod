@@ -490,7 +490,8 @@ apt::neverautoremove, apt::get::allowunauthenticated, dir, dir::bin::dpkg,
 dir::cache, dir::cache::archives, dir::etc, dir::etc::sourcelist,
 dir::etc::sourceparts, dir::etc::parts, dir::etc::main, dir::etc::preferences,
 dir::state, dir::state::extendedstates, dir::state::lists, dir::state::status,
-dpkg::pre-install-pkgs, gpgv::trustedkeyring
+dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
+gpgv::trustedkeyring, rpm::pre-invoke, rpm::post-invoke
 
 See L<apt.conf(5)> for their meanings.
 
@@ -573,6 +574,12 @@ standard error
 =head1 DEFINITIONS
 
 TODO
+
+=head1 REPORTING
+
+Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
+
+The discussion channel about Cupt is irc://irc.debian.org#cupt.
 
 =head1 SEE ALSO
 
