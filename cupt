@@ -1121,6 +1121,17 @@ sub show_changelog_or_copyright {
 				push @target_uris, "$remote_target_base_uri/$uri_appendage";
 			}
 
+			do { # temporary (I hope) hack to work around dropping epoch on Debian/Ubuntu web links
+				my @fallback_uris;
+				foreach my $target_uri (@target_uris) {
+					(my $fallback_uri = $target_uri) =~ s/\d+://;
+					if ($fallback_uri ne $target_uri) {
+						push @fallback_uris, $fallback_uri;
+					}
+				}
+				push @target_uris, @fallback_uris;
+			};
+
 			if (scalar @target_uris) {
 				require Cupt::Download::Manager;
 				require Cupt::Download::Progresses::Console;

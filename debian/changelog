@@ -8,6 +8,8 @@ cupt (0.1.4) UNRELEASED; urgency=low
     - New 'copyright' subcommand, similar to 'changelog' subcommand. Currently
       implemented only for installed packages and official Debian and Ubuntu
       repositories.
+    - 'changelog', 'copyright' subcommands: work around dropping an epoch from
+      version strings in links to Debian/Ubuntu pages.
   * Cupt:
     - System:
       - Resolver:
