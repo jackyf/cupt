@@ -596,9 +596,6 @@ sub _build_actions_graph ($$) {
 				# configure can be done only after the unpack of the same version
 				my $desired_version = $self->{_desired_state}->{$package_name}->{version};
 
-				# pre-depends must be configured before
-				$self->_fill_action_dependencies(
-						$desired_version->{pre_depends}, 'configure', 'before', $ref_inner_action, $graph);
 				# depends must be configured before
 				$self->_fill_action_dependencies(
 						$desired_version->{depends}, 'configure', 'before', $ref_inner_action, $graph);
@@ -610,12 +607,23 @@ sub _build_actions_graph ($$) {
 				# search for the appropriate unpack action
 				my %candidate_action = %$ref_inner_action;
 				$candidate_action{'action_name'} = 'unpack';
+				my $is_unpack_action_found = 0;
 				foreach my $ref_current_action ($graph->vertices()) {
 					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 						# found...
 						$graph->add_edge($ref_current_action, $ref_inner_action);
+						$is_unpack_action_found = 1;
 						last;
 					}
+				}
+
+				if (!$is_unpack_action_found) {
+					# pre-depends must be configured before
+					$self->_fill_action_dependencies(
+							$desired_version->{pre_depends}, 'configure', 'before', $ref_inner_action, $graph);
+					# conflicts must be unsatisfied before
+					$self->_fill_action_dependencies(
+							$desired_version->{conflicts}, 'remove', 'before', $ref_inner_action, $graph);
 				}
 			}
 			when ('remove') {
