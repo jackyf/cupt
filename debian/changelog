@@ -27,6 +27,7 @@ cupt (0.1.4) UNRELEASED; urgency=low
       - New configuration option 'cupt::resolver::track-reasons'.
     - Cache:
       - New free subroutine 'get_path_of_debian_copyright'.
+      - When parsing release data, require first symbol of version to be digit.
   * doc:
     - cupt.1:
       - Renewed the list of supported APT configuration options.

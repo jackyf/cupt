@@ -673,8 +673,10 @@ sub _get_release_info {
 				when ('Architectures') { $release_info{architectures} = [ split / /, $field_value ] }
 				when ('Description') {
 					$release_info{description} = $field_value;
-					if ($field_value =~ m/([0-9a-z._-]+)/) {
+					if ($field_value =~ m/([0-9][0-9a-z._-]*)/) {
 						$release_info{version} = $1;
+					} else {
+						$release_info{version} = '';
 					}
 				}
 			}
