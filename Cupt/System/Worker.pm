@@ -654,32 +654,15 @@ sub _build_actions_graph ($$) {
 			}
 		}
 
-		my $transitive_closure = new Graph::TransitiveClosure($graph, 'path_vertices' => 0, 'path_length' => 0);
 		# unit!
 		foreach my $ref_change_entry (values %vertex_changes) {
 			my $from = $ref_change_entry->{'from'};
 			my $to = $ref_change_entry->{'to'};
 			for my $successor_vertex ($graph->successors($from)) {
-				if ($transitive_closure->is_reachable($successor_vertex, $to)) {
-					if ($self->{_config}->var('debug::worker')) {
-						my $slave_string = __stringify_inner_action($from);
-						my $master_string = __stringify_inner_action($successor_vertex);
-						mydebug("dropping recursive action dependency (out): $slave_string -> $master_string");
-					}
-				} else {
-					$graph->add_edge($to, $successor_vertex);
-				}
+				$graph->add_edge($to, $successor_vertex);
 			}
 			for my $predecessor_vertex ($graph->predecessors($from)) {
-				if ($transitive_closure->is_reachable($to, $predecessor_vertex)) {
-					if ($self->{_config}->var('debug::worker')) {
-						my $slave_string = __stringify_inner_action($predecessor_vertex);
-						my $master_string = __stringify_inner_action($from);
-						mydebug("dropping recursive action dependency (in): $slave_string -> $master_string");
-					}
-				} else {
-					$graph->add_edge($predecessor_vertex, $to);
-				}
+				$graph->add_edge($predecessor_vertex, $to);
 			}
 			$graph->delete_vertex($from);
 		}
