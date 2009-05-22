@@ -708,66 +708,60 @@ sub __split_heterogeneous_actions (@) {
 }
 
 sub _prepare_downloads ($$) {
-	my ($self, $ref_action_group_list, $download_progress) = @_;
+	my ($self, $ref_actions_preview, $download_progress) = @_;
 
 	my $archives_location = $self->_get_archives_location();
 
 	my @pending_downloads;
 
-	foreach my $ref_action_group (@$ref_action_group_list) {
-		# all the actions will have the same action name by algorithm
-		my $action_name = $ref_action_group->[0]->{'action_name'};
+	foreach my $user_action ('install', 'upgrade', 'downgrade') {
+		my $ref_package_entries = $ref_actions_preview->{$user_action};
+		foreach my $version (map { $_->{'version'} } @$ref_package_entries) {
+			my $package_name = $version->{package_name};
+			my $version_string = $version->{version_string};
 
-		if ($action_name eq 'unpack') {
-			# we have to download this package(s)
-			foreach my $ref_action (@$ref_action_group) {
-				my $package_name = $ref_action->{'package_name'};
-				my $version_string = $ref_action->{'version_string'};
-				my $package = $self->{_cache}->get_binary_package($package_name);
-				my $version = $package->get_specific_version($version_string);
-				# for now, take just first URI
-				my @uris = $version->uris();
-				while ($uris[0] eq "") {
-					# no real URI, just installed, skip it
-					shift @uris;
-				}
-				# we need at least one real URI
-				scalar @uris or
-						mydie("no available download URIs for %s %s", $package_name, $version_string);
+			# for now, take just first URI
+			my @uris = $version->uris();
+			while ($uris[0] eq "") {
+				# no real URI, just installed, skip it
+				shift @uris;
+			}
+			# we need at least one real URI
+			scalar @uris or
+					mydie("no available download URIs for %s %s", $package_name, $version_string);
 
-				# target path
-				my $basename = __get_archive_basename($version);
-				my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
-				my $target_filename = $archives_location . '/' . $basename;
+			# target path
+			my $basename = __get_archive_basename($version);
+			my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
+			my $target_filename = $archives_location . '/' . $basename;
 
-				# exclude from downloading packages that are already present
-				next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
+			# exclude from downloading packages that are already present
+			next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
 
-				push @pending_downloads, {
-					'uris' => [ map { $_->{'download_uri' } } @uris ],
-					'filename' => $download_filename,
-					'size' => $version->{size},
-					'post-action' => sub {
-						__verify_hash_sums($version, $download_filename) or
-								do { unlink $download_filename; return sprintf __("%s: hash sums mismatch"), $download_filename; };
-						move($download_filename, $target_filename) or
-								return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
+			push @pending_downloads, {
+				'uris' => [ map { $_->{'download_uri' } } @uris ],
+				'filename' => $download_filename,
+				'size' => $version->{size},
+				'post-action' => sub {
+					__verify_hash_sums($version, $download_filename) or
+							do { unlink $download_filename; return sprintf __("%s: hash sums mismatch"), $download_filename; };
+					move($download_filename, $target_filename) or
+							return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
 
-						# return success
-						return 0;
-					},
-				};
-				foreach my $uri (@uris) {
-					my $download_uri = $uri->{'download_uri'};
+					# return success
+					return 0;
+				},
+			};
+			foreach my $uri (@uris) {
+				my $download_uri = $uri->{'download_uri'};
 
-					$download_progress->set_short_alias_for_uri($download_uri, $package_name);
-					my $ref_release = $version->{avail_as}->[0]->{'release'};
-					my $codename = $ref_release->{'codename'};
-					my $component = $ref_release->{'component'};
-					my $base_uri = $uri->{'base_uri'};
-					$download_progress->set_long_alias_for_uri($download_uri,
-							"$base_uri $codename/$component $package_name $version_string");
-				}
+				$download_progress->set_short_alias_for_uri($download_uri, $package_name);
+				my $ref_release = $version->{avail_as}->[0]->{'release'};
+				my $codename = $ref_release->{'codename'};
+				my $component = $ref_release->{'component'};
+				my $base_uri = $uri->{'base_uri'};
+				$download_progress->set_long_alias_for_uri($download_uri,
+						"$base_uri $codename/$component $package_name $version_string");
 			}
 		}
 	}
@@ -952,6 +946,11 @@ sub do_actions ($$) {
 	}
 
 	my $ref_actions_preview = $self->get_actions_preview();
+
+	my @pending_downloads = $self->_prepare_downloads($ref_actions_preview, $download_progress);
+	$self->_do_downloads(\@pending_downloads, $download_progress);
+	return 1 if $download_only;
+
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
 	# exit when nothing to do
 	defined $action_graph or return 1;
@@ -961,14 +960,7 @@ sub do_actions ($$) {
 	foreach my $action_vertice (@sorted_graph_vertices) {
 		push @action_group_list, $action_graph->get_vertex_attribute($action_vertice, 'subvertices');
 	}
-
 	@action_group_list = __split_heterogeneous_actions(@action_group_list);
-
-	my @pending_downloads = $self->_prepare_downloads(\@action_group_list, $download_progress);
-	$self->_do_downloads(\@pending_downloads, $download_progress);
-
-	return 1 if $download_only;
-
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
