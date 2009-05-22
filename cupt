@@ -567,8 +567,7 @@ sub policy () {
 			my $installed_version_string = $cache->get_system_state()->get_installed_version_string($package_name);
 			say "$package_name:";
 			say "  " . __('Installed') . ": " .
-					(defined($installed_version_string) ?
-					$installed_version_string : ('(' . __('none') . ')'));
+					($installed_version_string // ('(' . __('none') . ')'));
 
 			say "  " . __('Candidate') . ": " . $policy_version->{version_string};
 			say "  " . __('Version table') . ":";
