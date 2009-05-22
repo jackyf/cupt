@@ -664,7 +664,7 @@ sub _build_actions_graph ($$) {
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($from);
 						my $master_string = __stringify_inner_action($successor_vertex);
-						mydebug("dropping action dependency: $slave_string -> $master_string");
+						mydebug("dropping recursive action dependency (out): $slave_string -> $master_string");
 					}
 				} else {
 					$graph->add_edge($to, $successor_vertex);
@@ -675,7 +675,7 @@ sub _build_actions_graph ($$) {
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($predecessor_vertex);
 						my $master_string = __stringify_inner_action($to);
-						mydebug("dropping action dependency: $slave_string -> $master_string");
+						mydebug("dropping recursive action dependency (in): $slave_string -> $master_string");
 					}
 				} else {
 					$graph->add_edge($predecessor_vertex, $to);
