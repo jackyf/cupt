@@ -456,6 +456,15 @@ sub _fill_actions ($$\@) {
 	}
 }
 
+sub __stringify_inner_action ($) {
+	my ($ref_action) = @_;
+
+	my $package_name = $ref_action->{'package_name'};
+	my $version_string = $ref_action->{'version_string'};
+	my $action_name = $ref_action->{'action_name'};
+	return "$action_name $package_name $version_string";
+}
+
 # fills ref_graph with dependencies specified in ref_relations_expressions
 sub _fill_action_dependencies ($$$$) {
 	my ($self, $ref_relation_expressions, $action_name, $direction, $ref_inner_action, $graph) = @_;
@@ -483,15 +492,9 @@ sub _fill_action_dependencies ($$$$) {
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
 					if ($self->{_config}->var('debug::worker')) {
-						my $slave_package_name = $ref_slave_action->{'package_name'};
-						my $slave_version_string = $ref_slave_action->{'version_string'};
-						my $slave_action_name = $ref_slave_action->{'action_name'};
-						my $slave_string = "$slave_action_name $slave_package_name $slave_version_string";
-						my $master_package_name = $ref_master_action->{'package_name'};
-						my $master_version_string = $ref_master_action->{'version_string'};
-						my $master_action_name = $ref_master_action->{'action_name'};
-						my $master_string = "$master_action_name $master_package_name $master_version_string";
-						mydebug("action dependency: $slave_string -> $master_string");
+						my $slave_string = __stringify_inner_action($ref_slave_action);
+						my $master_string = __stringify_inner_action($ref_master_action);
+						mydebug("new action dependency: $slave_string -> $master_string");
 					}
 
 					last SATISFYING_VERSIONS;
@@ -657,12 +660,24 @@ sub _build_actions_graph ($$) {
 			my $from = $ref_change_entry->{'from'};
 			my $to = $ref_change_entry->{'to'};
 			for my $successor_vertex ($graph->successors($from)) {
-				unless ($transitive_closure->is_reachable($successor_vertex, $to)) {
+				if ($transitive_closure->is_reachable($successor_vertex, $to)) {
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_string = __stringify_inner_action($from);
+						my $master_string = __stringify_inner_action($successor_vertex);
+						mydebug("dropping action dependency: $slave_string -> $master_string");
+					}
+				} else {
 					$graph->add_edge($to, $successor_vertex);
 				}
 			}
 			for my $predecessor_vertex ($graph->predecessors($from)) {
-				unless ($transitive_closure->is_reachable($to, $predecessor_vertex)) {
+				if ($transitive_closure->is_reachable($to, $predecessor_vertex)) {
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_string = __stringify_inner_action($predecessor_vertex);
+						my $master_string = __stringify_inner_action($to);
+						mydebug("dropping action dependency: $slave_string -> $master_string");
+					}
+				} else {
 					$graph->add_edge($predecessor_vertex, $to);
 				}
 			}
