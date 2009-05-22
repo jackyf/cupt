@@ -674,7 +674,7 @@ sub _build_actions_graph ($$) {
 				if ($transitive_closure->is_reachable($to, $predecessor_vertex)) {
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($predecessor_vertex);
-						my $master_string = __stringify_inner_action($to);
+						my $master_string = __stringify_inner_action($from);
 						mydebug("dropping recursive action dependency (in): $slave_string -> $master_string");
 					}
 				} else {
