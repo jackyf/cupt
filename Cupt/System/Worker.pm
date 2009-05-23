@@ -490,6 +490,8 @@ sub _fill_action_dependencies ($$$$) {
 					my $ref_slave_action = $direction eq 'after' ? $ref_inner_action : $ref_current_action;
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
+					$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
+							{ 'relation_expression' => $relation_expression });
 
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($ref_slave_action);
@@ -570,7 +572,7 @@ sub _build_actions_graph ($$) {
 	# 	'version_string' => version_string,
 	# 	'action_name' => ('unpack' | 'configure' | 'remove')
 	# }
-	my $graph = new Graph ('directed' => 1, 'refvertexed' => 1);
+	my $graph = new Graph('directed' => 1, 'refvertexed' => 1);
 
 	$self->_fill_actions($ref_actions_preview, $graph);
 
@@ -611,6 +613,7 @@ sub _build_actions_graph ($$) {
 				foreach my $ref_current_action ($graph->vertices()) {
 					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 						# found...
+
 						$graph->add_edge($ref_current_action, $ref_inner_action);
 						$is_unpack_action_found = 1;
 						last;
@@ -644,10 +647,11 @@ sub _build_actions_graph ($$) {
 	do { # unit all downgrades/upgrades
 		# list of packages affected
 		my @package_names_affected;
+		push @package_names_affected, map { $_->{'package_name'} } @{$ref_actions_preview->{'install'}};
 		push @package_names_affected, map { $_->{'package_name'} } @{$ref_actions_preview->{'upgrade'}};
 		push @package_names_affected, map { $_->{'package_name'} } @{$ref_actions_preview->{'downgrade'}};
 
-		# { $package_name => { 'from' => $vertex, 'to' => $vertex } }
+		# { $package_name => { 'from_remove' => $vertex || undef, 'from_unpack' => $vertex, 'to' => $vertex } }
 		my %vertex_changes = map { $_ => {} } @package_names_affected;
 
 		# pre-fill the list of downgrades/upgrades vertices
@@ -655,24 +659,79 @@ sub _build_actions_graph ($$) {
 			my $package_name = $ref_inner_action->{'package_name'};
 			if (exists $vertex_changes{$package_name}) {
 				if ($ref_inner_action->{'action_name'} eq 'remove') {
-					$vertex_changes{$package_name}->{'from'} = $ref_inner_action;
+					$vertex_changes{$package_name}->{'from_remove'} = $ref_inner_action;
 				} elsif ($ref_inner_action->{'action_name'} eq 'unpack') {
+					$vertex_changes{$package_name}->{'from_unpack'} = $ref_inner_action;
+				} elsif ($ref_inner_action->{'action_name'} eq 'configure') {
 					$vertex_changes{$package_name}->{'to'} = $ref_inner_action;
 				}
 			}
 		}
 
+		my $sub_is_eaten_dependency = sub {
+			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
+
+			if ($graph->has_edge_attributes($slave_vertex, $master_vertex)) {
+				my ($relation_expression) = $graph->get_edge_attribute_values($slave_vertex, $master_vertex);
+				my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
+				foreach my $version (@$ref_satisfying_versions) {
+					if ($version->{package_name} eq $version_to_install->{package_name} &&
+						$version->{version_string} eq $version_to_install->{version_string})
+					{
+						return 1;
+					}
+				}
+			}
+			return 0;
+		};
+
+		my $sub_move_edge = sub {
+			my ($from_predecessor, $from_successor, $to_predecessor, $to_successor) = @_;
+
+			my $ref_attributes = $graph->get_edge_attributes($from_predecessor, $from_successor);
+			$graph->delete_edge($from_predecessor, $from_successor);
+			$graph->add_edge($to_predecessor, $to_successor);
+			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
+		};
+
 		# unit!
 		foreach my $ref_change_entry (values %vertex_changes) {
-			my $from = $ref_change_entry->{'from'};
 			my $to = $ref_change_entry->{'to'};
-			for my $successor_vertex ($graph->successors($from)) {
-				$graph->add_edge($to, $successor_vertex);
+			#TODO: substitute inner action with BinaryVersion...
+			my $package_name = $to->{'package_name'};
+			my $version_string = $to->{'version_string'};
+			my $package = $self->{_cache}->get_binary_package($package_name);
+			my $version = $package->get_specific_version($version_string);
+
+			for my $from (@$ref_change_entry{'from_remove', 'from_unpack'}) {
+				defined $from or next;
+
+				for my $successor_vertex ($graph->successors($from)) {
+					if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
+						$sub_move_edge->($from, $successor_vertex, $to, $successor_vertex);
+					} else {
+						if ($self->{_config}->var('debug::worker')) {
+							my $slave_action_string = __stringify_inner_action($from);
+							my $master_action_string = __stringify_inner_action($successor_vertex);
+							mydebug("ate action dependency: $slave_action_string -> $master_action_string");
+						}
+					}
+				}
+				for my $predecessor_vertex ($graph->predecessors($from)) {
+					if (!$sub_is_eaten_dependency->($predecessor_vertex, $from, $version)) {
+						$sub_move_edge->($predecessor_vertex, $from, $predecessor_vertex, $to);
+					} else {
+						if ($self->{_config}->var('debug::worker')) {
+							my $slave_action_string = __stringify_inner_action($predecessor_vertex);
+							my $master_action_string = __stringify_inner_action($from);
+							mydebug("ate action dependency: $slave_action_string -> $master_action_string");
+						}
+					}
+				}
+				$graph->delete_vertex($from);
 			}
-			for my $predecessor_vertex ($graph->predecessors($from)) {
-				$graph->add_edge($predecessor_vertex, $to);
-			}
-			$graph->delete_vertex($from);
+
+			$to->{'action_name'} = 'install';
 		}
 	};
 
@@ -688,7 +747,7 @@ sub __split_heterogeneous_actions (@) {
 		my $action_name = $ref_action_group->[0]->{'action_name'};
 		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
 			# heterogeneous actions
-			my %subgroups = ('remove' => [], 'unpack' => [], 'configure' => []);
+			my %subgroups = ('remove' => [], 'install' => [], 'configure' => []);
 
 			# split by action names
 			map { push @{$subgroups{$_->{'action_name'}}}, $_ } @$ref_action_group;
@@ -697,12 +756,12 @@ sub __split_heterogeneous_actions (@) {
 			if (@{$subgroups{'remove'}}) {
 				$subgroups{'remove'}->[0]->{'dpkg_flags'} = ' --force-depends';
 			}
-			if (@{$subgroups{'unpack'}}) {
-				$subgroups{'unpack'}->[0]->{'dpkg_flags'} = ' --force-depends';
+			if (@{$subgroups{'install'}}) {
+				$subgroups{'install'}->[0]->{'dpkg_flags'} = ' --force-depends';
 			}
 
 			# pushing by one
-			foreach my $subgroup (@subgroups{'remove','unpack','configure'}) {
+			foreach my $subgroup (@subgroups{'remove','install','configure'}) {
 				# push if there are some actions in group
 				push @new_action_group_list, $subgroup if @$subgroup;
 			}
@@ -986,7 +1045,7 @@ sub do_actions ($$) {
 		do { # do auto status info manipulations
 			my %packages_changed = map { $_->{'package_name'} => 1 } @$ref_action_group;
 			my $auto_action; # 'markauto' or 'unmarkauto'
-			if ($action_name eq 'unpack') {
+			if ($action_name eq 'install' || $action_name eq 'configure') {
 				$auto_action = 'markauto';
 			} elsif ($action_name eq 'remove' || $action_name eq 'purge') {
 				$auto_action = 'unmarkauto';
@@ -1015,7 +1074,7 @@ sub do_actions ($$) {
 			foreach my $ref_action (@$ref_action_group) {
 				my $action_expression;
 				my $package_name = $ref_action->{'package_name'};
-				if ($action_name eq 'unpack') {
+				if ($action_name eq 'install') {
 					my $version_string = $ref_action->{'version_string'};
 					my $package = $self->{_cache}->get_binary_package($package_name);
 					my $version = $package->get_specific_version($version_string);

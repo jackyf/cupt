@@ -26,6 +26,8 @@ cupt (0.1.4) UNRELEASED; urgency=low
         - Move downloading stage to start of 'do_actions' method.
         - Reverted "Don't introduce action loops when uniting 'remove' and
           'unpack' actions".
+        - Instead, tried to drop extraneous action interdepedencies by using and
+          checking saved relation info and merging 'unpack' with 'configure'.
         - In case some package have only 'configure' action without 'unpack',
           check for conflicts too in a straightforward way.
     - Config:
