@@ -26,7 +26,7 @@ cupt (0.1.4) UNRELEASED; urgency=low
         - APT mangles ':' chars in names of deb archives. Cupt doesn't do the
           same. So, to pick up debs downloaded by libapt, worker now generates
           symlinks from 'right' names to 'mangled' names whenever possible.
-        - Move downloading stage to start of 'do_actions' method.
+        - Moved downloading stage to start of 'do_actions' method.
         - Reverted "Don't introduce action loops when uniting 'remove' and
           'unpack' actions".
         - Instead, tried to drop extraneous action interdepedencies by using and
@@ -43,7 +43,7 @@ cupt (0.1.4) UNRELEASED; urgency=low
       - Renewed the list of supported APT configuration options.
       - Mentioned the way to send bug reports and IRC discussion channel.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 21 May 2009 11:49:18 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 24 May 2009 12:02:24 +0300
 
 cupt (0.1.3) unstable; urgency=low
 
