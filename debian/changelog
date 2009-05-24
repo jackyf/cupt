@@ -31,6 +31,9 @@ cupt (0.1.4) UNRELEASED; urgency=low
           'unpack' actions".
         - Instead, tried to drop extraneous action interdepedencies by using and
           checking saved relation info and merging 'unpack' with 'configure'.
+        - And, since unconditional merging 'unpack' with 'configure' can
+          introduce another dependency loops, perform merge only if the
+          operation can "eat" some dependencies.
         - In case some package have only 'configure' action without 'unpack',
           check for conflicts too in a straightforward way.
     - Config:

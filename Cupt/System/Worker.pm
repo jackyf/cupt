@@ -703,35 +703,56 @@ sub _build_actions_graph ($$) {
 			my $package = $self->{_cache}->get_binary_package($package_name);
 			my $version = $package->get_specific_version($version_string);
 
+			my @potential_edge_moves;
+			my $some_dependencies_can_be_eaten = 0;
+
 			for my $from (@$ref_change_entry{'from_remove', 'from_unpack'}) {
 				defined $from or next;
 
 				for my $successor_vertex ($graph->successors($from)) {
 					if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
-						$sub_move_edge->($from, $successor_vertex, $to, $successor_vertex);
+						push @potential_edge_moves, [ $from, $successor_vertex, $to, $successor_vertex ];
 					} else {
 						if ($self->{_config}->var('debug::worker')) {
 							my $slave_action_string = __stringify_inner_action($from);
 							my $master_action_string = __stringify_inner_action($successor_vertex);
 							mydebug("ate action dependency: $slave_action_string -> $master_action_string");
+							$some_dependencies_can_be_eaten = 1;
 						}
 					}
 				}
 				for my $predecessor_vertex ($graph->predecessors($from)) {
 					if (!$sub_is_eaten_dependency->($predecessor_vertex, $from, $version)) {
-						$sub_move_edge->($predecessor_vertex, $from, $predecessor_vertex, $to);
+						push @potential_edge_moves, [ $predecessor_vertex, $from, $predecessor_vertex, $to ];
 					} else {
 						if ($self->{_config}->var('debug::worker')) {
 							my $slave_action_string = __stringify_inner_action($predecessor_vertex);
 							my $master_action_string = __stringify_inner_action($from);
 							mydebug("ate action dependency: $slave_action_string -> $master_action_string");
+							$some_dependencies_can_be_eaten = 1;
 						}
 					}
 				}
-				$graph->delete_vertex($from);
 			}
-
-			$to->{'action_name'} = 'install';
+			# now, finally...
+			# when we don't merge unpack and configure, this leads to dependency loops
+			# when we merge unpack and configure always, this also leads to dependency loops
+			# then try to merge only if the merge can drop extraneous dependencies
+			if ($some_dependencies_can_be_eaten) {
+				foreach my $ref_edge_move (@potential_edge_moves) {
+					$sub_move_edge->(@$ref_edge_move);
+				}
+				for my $from (@$ref_change_entry{'from_remove', 'from_unpack'}) {
+					defined $from or next;
+					$graph->delete_vertex($from);
+				}
+				$to->{'action_name'} = 'install';
+			} else {
+				if ($self->{_config}->var('debug::worker')) {
+					my $action_string = __stringify_inner_action($to);
+					mydebug("not merging action $action_string");
+				}
+			}
 		}
 	};
 
@@ -747,7 +768,7 @@ sub __split_heterogeneous_actions (@) {
 		my $action_name = $ref_action_group->[0]->{'action_name'};
 		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
 			# heterogeneous actions
-			my %subgroups = ('remove' => [], 'install' => [], 'configure' => []);
+			my %subgroups = ('remove' => [], 'unpack' => [], 'install' => [], 'configure' => []);
 
 			# split by action names
 			map { push @{$subgroups{$_->{'action_name'}}}, $_ } @$ref_action_group;
@@ -756,12 +777,15 @@ sub __split_heterogeneous_actions (@) {
 			if (@{$subgroups{'remove'}}) {
 				$subgroups{'remove'}->[0]->{'dpkg_flags'} = ' --force-depends';
 			}
+			if (@{$subgroups{'unpack'}}) {
+				$subgroups{'unpack'}->[0]->{'dpkg_flags'} = ' --force-depends';
+			}
 			if (@{$subgroups{'install'}}) {
 				$subgroups{'install'}->[0]->{'dpkg_flags'} = ' --force-depends';
 			}
 
 			# pushing by one
-			foreach my $subgroup (@subgroups{'remove','install','configure'}) {
+			foreach my $subgroup (@subgroups{'remove','unpack','install','configure'}) {
 				# push if there are some actions in group
 				push @new_action_group_list, $subgroup if @$subgroup;
 			}
@@ -1045,7 +1069,7 @@ sub do_actions ($$) {
 		do { # do auto status info manipulations
 			my %packages_changed = map { $_->{'package_name'} => 1 } @$ref_action_group;
 			my $auto_action; # 'markauto' or 'unmarkauto'
-			if ($action_name eq 'install' || $action_name eq 'configure') {
+			if ($action_name eq 'install' || $action_name eq 'unpack') {
 				$auto_action = 'markauto';
 			} elsif ($action_name eq 'remove' || $action_name eq 'purge') {
 				$auto_action = 'unmarkauto';
@@ -1074,7 +1098,7 @@ sub do_actions ($$) {
 			foreach my $ref_action (@$ref_action_group) {
 				my $action_expression;
 				my $package_name = $ref_action->{'package_name'};
-				if ($action_name eq 'install') {
+				if ($action_name eq 'install' || $action_name eq 'unpack') {
 					my $version_string = $ref_action->{'version_string'};
 					my $package = $self->{_cache}->get_binary_package($package_name);
 					my $version = $package->get_specific_version($version_string);
