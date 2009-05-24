@@ -10,6 +10,9 @@ cupt (0.1.4) UNRELEASED; urgency=low
       repositories.
     - 'changelog', 'copyright' subcommands: work around dropping an epoch from
       version strings in links to Debian/Ubuntu pages.
+    - The option '--install-unpacked' went away in favor of new
+      '--no-install-unpacked' one, installing unpacked packages is now the
+      default.
   * Cupt:
     - System:
       - Resolver:

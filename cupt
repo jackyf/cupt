@@ -926,7 +926,7 @@ sub manage_packages ($) {
 	my $o_show_versions = 0;
 	my $o_show_size_changes = 0;
 	my $o_simulate;
-	my $o_install_unpacked;
+	my $o_no_install_unpacked;
 	GetOptions(
 		'resolver=s' => sub { $config->set_regular_var('cupt::resolver::type', $_[1]) },
 		'show-deps|show-reasons|D' => sub { $config->set_regular_var('cupt::resolver::track-reasons', 1) },
@@ -937,7 +937,7 @@ sub manage_packages ($) {
 		'download-only|d' => sub { $config->set_regular_var('cupt::worker::download-only', 1) },
 		'show-versions|V' => \$o_show_versions,
 		'show-size-changes|Z' => \$o_show_size_changes,
-		'install-unpacked' => \$o_install_unpacked,
+		'no-install-unpacked' => \$o_no_install_unpacked,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
@@ -976,7 +976,7 @@ sub manage_packages ($) {
 		$config->set_regular_var('cupt::worker::purge', 1)
 	}
 
-	if (defined $o_install_unpacked) {
+	if (not defined $o_no_install_unpacked) {
 		# find all unpacked packages and install them if the appropriate
 		# version exist
 

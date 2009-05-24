@@ -388,10 +388,11 @@ considered to perform
 
 Corresponding configuration option: L<cupt::resolver::track-reasons>
 
-=item --install-unpacked
+=item --no-install-unpacked
 
-implicitly install all unpacked packages, useful for continuing interrupted
-upgrades
+By default cupt will implicitly install all already unpacked packages, this is
+needed, for example, for proper continue of interrupted upgrades. This option
+cancels behavior described.
 
 =item --download-only,-d
 
