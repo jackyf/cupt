@@ -901,18 +901,14 @@ sub _do_downloads ($$$) {
 	}
 }
 
-sub _generate_stdin_for_apt_listchanges ($$) {
+sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 	# how great is to write that "apt-listchanges uses special pipe from
 	# apt" and document nowhere the format of this pipe, so I have to look
 	# through the Python sources (I don't know Python btw) to determine
 	# what the hell should I put to STDIN to satisfy apt-listchanges
-	#
-	# also, it's great idea to have pluggable hooks with different formats,
-	# so a package manager should know about every tool...
 	my ($self, $ref_action_group_list) = @_;
 	my $result = '';
-	my $listchanges_version_string = $self->{_config}->var('dpkg::tools::options::/usr/bin/apt-listchanges::version');
-	$result .= "VERSION $listchanges_version_string\n" if defined $listchanges_version_string;
+	$result .= "VERSION 2\n";
 
 	do { # writing out a configuration
 		my $config = $self->{_config};
@@ -954,7 +950,7 @@ sub _generate_stdin_for_apt_listchanges ($$) {
 			next if Cupt::Core::compare_version_strings($old_version_string, $new_version_string) != -1;
 			my $filename;
 			if ($action_name eq 'configure') {
-				# apt_listchanges needs special case for that
+				# special case for that
 				$filename = "**CONFIGURE**";
 			} else {
 				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($new_version);
@@ -990,11 +986,13 @@ sub _do_dpkg_pre_actions ($$$) {
 		$self->_run_external_command('pre', $command, $command);
 	}
 	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
+		my ($command_binary) = ($command =~ m/^(.*?)(?: |$)/);
 		my $stdin;
 
+		my $version_of_stdin = $self->{_config}->var("dpkg::tools::options::${command_binary}::version");
 		my $alias = $command;
-		if ($command =~ /apt-listchanges/) {
-			$stdin = $self->_generate_stdin_for_apt_listchanges($ref_action_group_list);
+		if (defined $version_of_stdin and $version_of_stdin eq '2') {
+			$stdin = $self->_generate_stdin_for_preinstall_hooks_version2($ref_action_group_list);
 		} else {
 			$stdin = '';
 			# new debs are pulled to command through STDIN, one by line

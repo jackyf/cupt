@@ -38,6 +38,8 @@ cupt (0.1.4) UNRELEASED; urgency=low
           check for conflicts too in a straightforward way.
         - In the series of heterogeneous actions pass '--force-conflicts' to
           the '--unpack' and '--install'.
+        - Generate stdin version 2 for the 'dpkg::pre-install-pkgs' hook for
+          all hooks declared, not only for apt-listchanges.
     - Config:
       - New configuration option 'cupt::resolver::track-reasons'.
     - Cache:
