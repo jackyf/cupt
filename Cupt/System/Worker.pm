@@ -700,8 +700,8 @@ sub _build_actions_graph ($$) {
 							my $slave_action_string = __stringify_inner_action($from);
 							my $master_action_string = __stringify_inner_action($successor_vertex);
 							mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
-							$some_dependencies_can_be_eaten = 1;
 						}
+						$some_dependencies_can_be_eaten = 1;
 					}
 				}
 				for my $predecessor_vertex ($graph->predecessors($from)) {
@@ -712,8 +712,8 @@ sub _build_actions_graph ($$) {
 							my $slave_action_string = __stringify_inner_action($predecessor_vertex);
 							my $master_action_string = __stringify_inner_action($from);
 							mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
-							$some_dependencies_can_be_eaten = 1;
 						}
+						$some_dependencies_can_be_eaten = 1;
 					}
 				}
 			}
