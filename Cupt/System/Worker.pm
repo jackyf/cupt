@@ -486,8 +486,16 @@ sub _fill_action_dependencies ($$$$) {
 					my $ref_slave_action = $direction eq 'after' ? $ref_inner_action : $ref_current_action;
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
-					$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
-							{ 'relation_expression' => $relation_expression });
+
+					# adding relation to attributes
+					my $ref_attributes = $graph->get_edge_attributes($ref_slave_action, $ref_master_action);
+					if (exists $ref_attributes->{'relation_expressions'}) {
+						push @{$ref_attributes->{'relation_expressions'}}, $relation_expression;
+						$graph->set_edge_attributes($ref_slave_action, $ref_master_action, $ref_attributes);
+					} else {
+						$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
+								{ 'relation_expressions' => [ $relation_expression ] });
+					}
 
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($ref_slave_action);
@@ -653,16 +661,24 @@ sub _build_actions_graph ($$) {
 			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
 
 			if ($graph->has_edge_attributes($slave_vertex, $master_vertex)) {
-				my ($relation_expression) = $graph->get_edge_attribute_values($slave_vertex, $master_vertex);
-				my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
-				foreach my $version (@$ref_satisfying_versions) {
-					if ($version->{package_name} eq $version_to_install->{package_name} &&
-						$version->{version_string} eq $version_to_install->{version_string})
-					{
-						return 1;
+				my ($ref_relation_expressions) = $graph->get_edge_attribute_values($slave_vertex, $master_vertex);
+				RELATION_EXPRESSION:
+				foreach my $relation_expression (@$ref_relation_expressions) {
+					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
+					foreach my $version (@$ref_satisfying_versions) {
+						if ($version->{package_name} eq $version_to_install->{package_name} &&
+							$version->{version_string} eq $version_to_install->{version_string})
+						{
+							next RELATION_EXPRESSION;
+						}
 					}
+					# no version can satisfy this relation expression
+					return 0;
 				}
+				# all relation expressions are satisfying by some versions
+				return 1;
 			}
+			# no relation expressions info, cannot be eaten
 			return 0;
 		};
 
@@ -671,6 +687,11 @@ sub _build_actions_graph ($$) {
 
 			my $ref_attributes = $graph->get_edge_attributes($from_predecessor, $from_successor);
 			$graph->delete_edge($from_predecessor, $from_successor);
+			my $ref_previous_attributes = $graph->get_edge_attributes($to_predecessor, $to_successor);
+			if (exists $ref_previous_attributes->{'relation_expressions'}) {
+				push @{$ref_attributes->{'relation_expressions'}},
+						@{$ref_previous_attributes->{'relation_expressions'}};
+			}
 			$graph->add_edge($to_predecessor, $to_successor);
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
 		};
@@ -734,11 +755,11 @@ sub _build_actions_graph ($$) {
 				}
 				$graph->delete_vertex($from);
 				$to->{'action_name'} = 'install';
-			} else {
-				if ($self->{_config}->var('debug::worker')) {
-					my $action_string = __stringify_inner_action($to);
-					mydebug("not merging action '$action_string'");
-				}
+			}
+			if ($self->{_config}->var('debug::worker')) {
+				my $action_string = __stringify_inner_action($to);
+				my $yes_no = $some_dependencies_can_be_eaten ? '' : 'not ';
+				mydebug("${yes_no}merging action '$action_string'");
 			}
 		}
 	};
