@@ -36,6 +36,8 @@ cupt (0.1.4) UNRELEASED; urgency=low
           operation can "eat" some dependencies.
         - In case some package have only 'configure' action without 'unpack',
           check for conflicts too in a straightforward way.
+        - In the series of heterogeneous actions pass '--force-conflicts' to
+          the '--unpack' and '--install'.
     - Config:
       - New configuration option 'cupt::resolver::track-reasons'.
     - Cache:
