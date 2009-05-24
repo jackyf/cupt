@@ -496,7 +496,7 @@ sub _fill_action_dependencies ($$$$) {
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($ref_slave_action);
 						my $master_string = __stringify_inner_action($ref_master_action);
-						mydebug("new action dependency: $slave_string -> $master_string");
+						mydebug("new action dependency: '$slave_string' -> '$master_string'");
 					}
 
 					last SATISFYING_VERSIONS;
@@ -716,7 +716,7 @@ sub _build_actions_graph ($$) {
 						if ($self->{_config}->var('debug::worker')) {
 							my $slave_action_string = __stringify_inner_action($from);
 							my $master_action_string = __stringify_inner_action($successor_vertex);
-							mydebug("ate action dependency: $slave_action_string -> $master_action_string");
+							mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
 							$some_dependencies_can_be_eaten = 1;
 						}
 					}
@@ -728,7 +728,7 @@ sub _build_actions_graph ($$) {
 						if ($self->{_config}->var('debug::worker')) {
 							my $slave_action_string = __stringify_inner_action($predecessor_vertex);
 							my $master_action_string = __stringify_inner_action($from);
-							mydebug("ate action dependency: $slave_action_string -> $master_action_string");
+							mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
 							$some_dependencies_can_be_eaten = 1;
 						}
 					}
@@ -750,7 +750,7 @@ sub _build_actions_graph ($$) {
 			} else {
 				if ($self->{_config}->var('debug::worker')) {
 					my $action_string = __stringify_inner_action($to);
-					mydebug("not merging action $action_string");
+					mydebug("not merging action '$action_string'");
 				}
 			}
 		}
