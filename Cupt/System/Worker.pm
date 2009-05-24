@@ -938,24 +938,40 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 	foreach my $ref_action_group (@$ref_action_group_list) {
 		my $action_name = $ref_action_group->[0]->{'action_name'};
 
-		next if $action_name eq 'remove';
 		foreach my $ref_action (@$ref_action_group) {
-			my $new_version = $ref_action->{'version'};
-			my $package_name = $new_version->{package_name};
-			my $old_version_string = $self->{_cache}->get_system_state()->get_installed_version_string($package_name);
+			my $action_version = $ref_action->{'version'};
+			my $package_name = $action_version->{package_name};
+			my $old_version_string =
+					$self->{_cache}->get_system_state()->get_installed_version_string($package_name) // '-';
+			my $new_version_string = $action_name eq 'remove' ? '-' : $action_version->{version_string};
 
-			next unless defined $old_version_string;
-			my $new_version_string = $new_version->{version_string};
-			# if not an upgrade
-			next if Cupt::Core::compare_version_strings($old_version_string, $new_version_string) != -1;
+			my $compare_version_strings_sign;
+			if ($old_version_string eq '-') {
+				$compare_version_strings_sign = '<';
+			} elsif ($new_version_string eq '-') {
+				$compare_version_strings_sign = '>';
+			} else {
+				my $compare_result = Cupt::Core::compare_version_strings($old_version_string, $new_version_string);
+				given ($compare_result) {
+					when (-1) { $compare_version_strings_sign = '<' }
+					when (0) { $compare_version_strings_sign = '=' }
+					when (1) { $compare_version_strings_sign = '>' }
+				}
+			}
 			my $filename;
 			if ($action_name eq 'configure') {
 				# special case for that
 				$filename = "**CONFIGURE**";
-			} else {
-				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($new_version);
+			} elsif ($action_name eq 'remove') {
+				# and for this...
+				$filename = "**REMOVE**";
+			} else { # unpack or install
+				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($action_version);
 			}
 			$result .= "$package_name $old_version_string < $new_version_string $filename\n";
+			if ($action_name eq 'install') {
+				$result .= "$package_name $old_version_string < $new_version_string **CONFIGURE**\n";
+			}
 		}
 	}
 

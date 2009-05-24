@@ -40,6 +40,8 @@ cupt (0.1.4) UNRELEASED; urgency=low
           the '--unpack' and '--install'.
         - Generate stdin version 2 for the 'dpkg::pre-install-pkgs' hook for
           all hooks declared, not only for apt-listchanges.
+        - Implemented the installs, downgrades and removes for the stdin
+          version 2 for the 'dpkg::pre-install-pkgs' hook.
     - Config:
       - New configuration option 'cupt::resolver::track-reasons'.
     - Cache:
