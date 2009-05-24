@@ -645,13 +645,7 @@ sub _build_actions_graph ($$) {
 		foreach my $ref_inner_action ($graph->vertices()) {
 			my $package_name = $ref_inner_action->{'version'}->{package_name};
 			if (exists $vertex_changes{$package_name}) {
-				if ($ref_inner_action->{'action_name'} eq 'remove') {
-					$vertex_changes{$package_name}->{'from_remove'} = $ref_inner_action;
-				} elsif ($ref_inner_action->{'action_name'} eq 'unpack') {
-					$vertex_changes{$package_name}->{'from_unpack'} = $ref_inner_action;
-				} elsif ($ref_inner_action->{'action_name'} eq 'configure') {
-					$vertex_changes{$package_name}->{'to'} = $ref_inner_action;
-				}
+					$vertex_changes{$package_name}->{$ref_inner_action->{'action_name'}} = $ref_inner_action;
 			}
 		}
 
@@ -681,42 +675,55 @@ sub _build_actions_graph ($$) {
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
 		};
 
-		# unit!
+		# unit remove/unpack unconditionally
 		foreach my $ref_change_entry (values %vertex_changes) {
-			my $to = $ref_change_entry->{'to'};
+			my $from = $ref_change_entry->{'remove'};
+			defined $from or next;
+			my $to = $ref_change_entry->{'unpack'};
+
+			for my $successor_vertex ($graph->successors($from)) {
+				$sub_move_edge->($from, $successor_vertex, $to, $successor_vertex);
+			}
+			for my $predecessor_vertex ($graph->predecessors($from)) {
+				$sub_move_edge->($predecessor_vertex, $from, $predecessor_vertex, $to);
+			}
+			$graph->delete_vertex($from);
+		}
+
+		# unit unpack/configure using some intelligence
+		foreach my $ref_change_entry (values %vertex_changes) {
+			my $to = $ref_change_entry->{'configure'};
 			my $version = $to->{'version'};
+			my $from = $ref_change_entry->{'unpack'};
 
 			my @potential_edge_moves;
 			my $some_dependencies_can_be_eaten = 0;
 
-			for my $from (@$ref_change_entry{'from_remove', 'from_unpack'}) {
-				defined $from or next;
-
-				for my $successor_vertex ($graph->successors($from)) {
-					if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
-						push @potential_edge_moves, [ $from, $successor_vertex, $to, $successor_vertex ];
-					} else {
-						if ($self->{_config}->var('debug::worker')) {
-							my $slave_action_string = __stringify_inner_action($from);
-							my $master_action_string = __stringify_inner_action($successor_vertex);
-							mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
-						}
-						$some_dependencies_can_be_eaten = 1;
+			for my $successor_vertex ($graph->successors($from)) {
+				if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
+					push @potential_edge_moves, [ $from, $successor_vertex, $to, $successor_vertex ];
+				} else {
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_action_string = __stringify_inner_action($from);
+						my $master_action_string = __stringify_inner_action($successor_vertex);
+						mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
 					}
-				}
-				for my $predecessor_vertex ($graph->predecessors($from)) {
-					if (!$sub_is_eaten_dependency->($predecessor_vertex, $from, $version)) {
-						push @potential_edge_moves, [ $predecessor_vertex, $from, $predecessor_vertex, $to ];
-					} else {
-						if ($self->{_config}->var('debug::worker')) {
-							my $slave_action_string = __stringify_inner_action($predecessor_vertex);
-							my $master_action_string = __stringify_inner_action($from);
-							mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
-						}
-						$some_dependencies_can_be_eaten = 1;
-					}
+					$some_dependencies_can_be_eaten = 1;
 				}
 			}
+			for my $predecessor_vertex ($graph->predecessors($from)) {
+				if (!$sub_is_eaten_dependency->($predecessor_vertex, $from, $version)) {
+					push @potential_edge_moves, [ $predecessor_vertex, $from, $predecessor_vertex, $to ];
+				} else {
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_action_string = __stringify_inner_action($predecessor_vertex);
+						my $master_action_string = __stringify_inner_action($from);
+						mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
+					}
+					$some_dependencies_can_be_eaten = 1;
+				}
+			}
+
 			# now, finally...
 			# when we don't merge unpack and configure, this leads to dependency loops
 			# when we merge unpack and configure always, this also leads to dependency loops
@@ -725,10 +732,7 @@ sub _build_actions_graph ($$) {
 				foreach my $ref_edge_move (@potential_edge_moves) {
 					$sub_move_edge->(@$ref_edge_move);
 				}
-				for my $from (@$ref_change_entry{'from_remove', 'from_unpack'}) {
-					defined $from or next;
-					$graph->delete_vertex($from);
-				}
+				$graph->delete_vertex($from);
 				$to->{'action_name'} = 'install';
 			} else {
 				if ($self->{_config}->var('debug::worker')) {
