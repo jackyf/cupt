@@ -106,6 +106,7 @@ sub resolve ($$) {
 		myerr("external resolver error");
 		myredie();
 	}
+	return undef;
 }
 
 sub _write_cudf_info ($$) {
