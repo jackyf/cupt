@@ -100,7 +100,8 @@ sub resolve ($$) {
 
 		close(READ) or
 				mydie("unable to close pipe read channel");
-		close(WRITE);
+		close(WRITE) or
+				mydie("unable to close pipe write channel");
 	};
 	if (mycatch()) {
 		myerr("external resolver error");
