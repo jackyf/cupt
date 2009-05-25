@@ -36,7 +36,7 @@ use IPC::Open2;
 
 use Cupt::Core;
 use Cupt::Cache;
-use Cupt::Cache::Pkg;
+use Cupt::Cache::Package;
 use Cupt::Cache::Relation qw(stringify_relation_expressions);
 
 use fields qw(_is_installed _upgrade_all_flag _actions _strict_relation_expressions);
