@@ -911,7 +911,7 @@ sub manage_packages ($) {
 	do {
 		my $resolver_module_name = defined $config->var('cupt::resolver::external-command') ?
 				'Cupt::System::Resolvers::External' : 'Cupt::System::Resolvers::Native';
-		eval "require $resolver_module_name";
+		eval "require $resolver_module_name;"; die $@ if $@;
 		$resolver = $resolver_module_name->new($config, $cache);
 	};
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
