@@ -118,7 +118,7 @@ sub _write_cudf_info ($$) {
 
 	# writing package info
 	foreach my $package (values %{$self->cache->get_binary_packages()}) {
-		foreach my $version (@{$package->versions()}) {
+		foreach my $version (@{$package->get_versions()}) {
 			my $package_name = $version->{package_name};
 			say $fh "Package: " . $package_name;
 			say $fh "Version: " . $version->{version_string};
