@@ -1278,6 +1278,10 @@ sub update_release_data ($$) {
 				}
 			};
 
+			do { # phase 2: downloading Packages/Sources
+
+			};
+
 			CHILD_EXIT:
 			POSIX::_exit(0);
 		}

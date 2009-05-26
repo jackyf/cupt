@@ -143,7 +143,7 @@ sub new {
 
 	my @index_files;
 	foreach my $ref_index_entry (@$ref_index_entries) {
-		my $index_file_to_parse = $self->_path_of_source_list($ref_index_entry);
+		my $index_file_to_parse = $self->_path_of_index_list($ref_index_entry);
 		my $source_type = $ref_index_entry->{'type'};
 		# don't parse unneeded indexes
 		if (($source_type eq 'deb' && $build_config{'-binary'}) ||
@@ -1062,25 +1062,60 @@ sub _base_download_uri {
 	}
 }
 
-sub _path_of_source_list {
-	my $self = shift;
-	my $ref_entry = shift;
+sub _index_list_suffix {
+	my ($self, $index_entry) = @_;
 
 	my $arch = $self->{_config}->var('apt::architecture');
-	my $base_uri = $self->_path_of_base_uri($ref_entry);
 
-	my $filename;
-	if ($ref_entry->{'component'} eq "") {
+	if ($index_entry->{'component'} eq "") {
 		# easy source type
-		my $suffix = ($ref_entry->{'type'} eq 'deb') ? "Packages" : 'Sources';
-		$filename = join('_', $base_uri, $suffix);
+		return ($index_entry->{'type'} eq 'deb') ? "Packages" : 'Sources';
 	} else {
 		# normal source type
-		my $suffix = ($ref_entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
-		$filename = join('_', $base_uri, $ref_entry->{'component'}, $suffix);
+		return ($index_entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
 	}
-	
+}
+
+=head2 get_path_of_release_list
+
+method, returns path of Packages/Sources file for I<index_entry>
+
+Parameters:
+
+L</index_entry>
+
+=cut
+
+sub get_path_of_index_list {
+	my ($self, $index_entry) = @_;
+
+	my $base_uri = $self->_path_of_base_uri($index_entry);
+	my $index_list_suffix = $self->_index_list_suffix($index_entry);
+
+	my $filename = join('_', $base_uri, $index_entry->{'component'}, $self->_index_list_suffix($index_entry));
+	$filename =~ s/__/_/; # if component is empty
 	return $filename;
+}
+
+=head2 get_download_uri_of_index_list
+
+method, returns the remote URI of Packages/Sources file for I<index_entry>
+
+Parameters:
+
+L</index_entry>
+
+=cut
+
+sub get_download_uri_of_index_list {
+	my ($self, $index_entry) = @_;
+
+	my $base_download_uri = $self->_base_download_uri($index_entry);
+	my $index_list_suffix = $self->_index_list_suffix($index_entry);
+
+	my $uri = join('/', $base_download_uri, $index_entry->{'component'}, $self->_index_list_suffix($index_entry));
+	$uri =~ s{//}{/}; # if component is empty
+	return $uri;
 }
 
 =head2 get_path_of_release_list
@@ -1098,6 +1133,16 @@ sub get_path_of_release_list {
 
 	return join('_', $self->_path_of_base_uri($index_entry), 'Release');
 }
+
+=head2 get_download_uri_of_release_list
+
+method, returns the remote URI of Release file for I<index_entry>
+
+Parameters:
+
+L</index_entry>
+
+=cut
 
 sub get_download_uri_of_release_list {
 	my ($self, $index_entry) = @_;
