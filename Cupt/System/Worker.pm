@@ -1245,7 +1245,6 @@ sub update_release_data ($$) {
 				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 				my $download_filename = $sub_get_download_filename->($local_path);
 
-				say "local: $local_path, remote: $download_uri";
 				my $download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $download_uri ],
@@ -1279,7 +1278,22 @@ sub update_release_data ($$) {
 			};
 
 			do { # phase 2: downloading Packages/Sources
+				my $local_path = $cache->get_path_of_index_list($index_entry);
+				my $download_uri = $cache->get_download_uri_of_index_list($index_entry);
+				my $download_filename = $sub_get_download_filename->($local_path);
 
+				my $download_result = $sub_download_wrapper->(
+						{
+							'uris' => [ $download_uri ],
+							'filename' => $download_filename,
+							'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
+						}
+				);
+				if ($download_result) {
+					# failed to download
+					mywarn("failed to download index for '%s'", $sub_stringify_index_entry->($index_entry));
+					goto CHILD_EXIT;
+				}
 			};
 
 			CHILD_EXIT:
