@@ -60,7 +60,7 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 =cut
 
 use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
-		_can_provide _extended_info _release_data);
+		_can_provide _extended_info _index_entries _release_data);
 
 =head1 FLAGS
 
@@ -119,14 +119,14 @@ sub new {
 		qx#install -m644 $apt_keyring_file $cupt_keyring_file >/dev/null 2>/dev/null#;
 	};
 
-	my $ref_index_entries;
 	eval {
-		$ref_index_entries = $self->_parse_sources_lists();
+		$self->_parse_sources_lists();
 	};
 	if (mycatch()) {
 		myerr("error while parsing sources list");
 		myredie();
 	}
+	my $ref_index_entries = $self->get_index_entries();
 
 	# determining which parts of cache we wish to build
 	my %build_config = (
@@ -709,7 +709,7 @@ sub _get_release_info {
 }
 
 sub _parse_sources_lists {
-	my $self = shift;
+	my ($self) = @_;
 	my $root_prefix = $self->{_config}->var('dir');
 	my $etc_dir = $self->{_config}->var('dir::etc');
 
@@ -719,12 +719,33 @@ sub _parse_sources_lists {
 	my $main_file = $self->{_config}->var('dir::etc::sourcelist');
 	push @source_files, "$root_prefix$etc_dir/$main_file";
 
-	my @result;
+	@{$self->{_index_entries}} = ();
 	foreach (@source_files) {
-		push @result, __parse_source_list($_);
+		push @{$self->{_index_entries}}, __parse_source_list($_);
 	}
+}
 
-	return \@result;
+=head2 get_index_entries
+
+method, returns reference to list of I<index_entry>'s
+
+where
+
+I<index_entry> - hash reference:
+  
+  {
+    'type' => { 'deb' | 'deb-src' }
+    'uri' => URI string
+    'distribution' => distribution path
+    'component' => component string
+  }
+
+=cut
+
+sub get_index_entries {
+	my ($self) = @_;
+
+	return $self->{_index_entries};
 }
 
 sub __parse_source_list {
