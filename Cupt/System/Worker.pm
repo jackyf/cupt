@@ -1175,6 +1175,13 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 sub update_release_data ($$) {
 	my ($self, $download_progress) = @_;
 
+	my $sub_stringify_index_entry = sub {
+		my ($index_entry) = @_;
+
+		return sprintf "%s %s/%s", $index_entry->{'uri'},
+				$index_entry->{'distribution'}, $index_entry->{'component'};
+	};
+
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
 
@@ -1192,8 +1199,16 @@ sub update_release_data ($$) {
 			# child
 			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			my $release_download_uri = $cache->get_download_uri_of_release_list($index_entry);
+			my $release_signature_download_uri = "$release_download_uri.gpg";
 			say "local: $release_local_path, remote: $release_download_uri";
-			# $download_manager->download({ 'uris' => [ $release_download_uri ], 'filename' => $release_local_path);
+			my $download_result = $download_manager->download(
+					{ 'uris' => [ $release_download_uri ], 'filename' => $release_local_path });
+			if ($download_result) {
+				# failed to download
+				mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry);
+			}
+
+			CHILD_EXIT:
 			POSIX::_exit(0);
 		}
 	}
