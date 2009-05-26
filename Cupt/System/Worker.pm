@@ -1189,6 +1189,24 @@ sub update_release_data ($$) {
 				$index_entry->{'distribution'}, $index_entry->{'component'};
 	};
 
+	my $sub_get_download_filename = sub {
+		my ($target_filename) = @_;
+
+		return dirname($target_filename) . $_download_partial_suffix .
+				'/' . basename($target_filename);
+	};
+
+	my $sub_generate_moving_sub = sub {
+		my ($download_path, $target_path) = @_;
+
+		return sub {
+			move($download_path, $target_path) or
+					return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
+			# return success
+			return 0;
+		};
+	}
+
 	my $indexes_location = $self->_get_indexes_location();
 
 	my $cache = $self->{_cache};
@@ -1207,19 +1225,28 @@ sub update_release_data ($$) {
 		} else {
 			# child
 
-			# phase 1: downloading Release file
-			my $release_local_path = $cache->get_path_of_release_list($index_entry);
-			my $release_download_uri = $cache->get_download_uri_of_release_list($index_entry);
-			say "local: $release_local_path, remote: $release_download_uri";
-			my $download_result = $download_manager->download(
-					{ 'uris' => [ $release_download_uri ], 'filename' => $release_local_path });
-			if ($download_result) {
-				# failed to download
-				mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry);
-			}
+			do { # phase 1: downloading Release file
+				my $local_path = $cache->get_path_of_release_list($index_entry);
+				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
+				my $download_filename = $sub_get_download_filename->($local_path);
+
+				say "local: $release_local_path, remote: $release_download_uri";
+				my $download_result = $download_manager->download(
+						{
+							'uris' => [ $download_uri ],
+							'filename' => $download_filename,
+							'post-action' => $sub_generate_moving_sub->($download_filename => $local_path);
+						}
+				);
+				if ($download_result) {
+					# failed to download
+					mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry);
+				}
+			};
 
 			# phase 1.1: downloading signature for Release file
 			my $release_signature_download_uri = "$release_download_uri.gpg";
+			#TODO
 
 			CHILD_EXIT:
 			POSIX::_exit(0);
