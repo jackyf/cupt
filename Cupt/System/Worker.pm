@@ -36,6 +36,7 @@ use Fcntl qw(:seek :DEFAULT);
 use List::Util qw(sum);
 use File::Copy;
 use File::Basename;
+use POSIX;
 
 use Cupt::Core;
 use Cupt::Cache;
@@ -1177,11 +1178,11 @@ sub update_release_data ($$) {
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
 
-	my $download_manager = new Cupt::Download::Manager($config, $download_progress);
+	my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 
 	my @pids;
 	foreach my $index_entry (@index_entries) {
-		my $pid = fork() or
+		my $pid = fork() //
 				mydie("unable to fork: $!");
 
 		if ($pid) {
@@ -1193,11 +1194,13 @@ sub update_release_data ($$) {
 			my $release_download_uri = $cache->get_download_uri_of_release_list($index_entry);
 			say "local: $release_local_path, remote: $release_download_uri";
 			# $download_manager->download({ 'uris' => [ $release_download_uri ], 'filename' => $release_local_path);
-			exit(0);
+			POSIX::_exit(0);
 		}
 	}
 	foreach my $pid (@pids) {
-		waitpid($pid);
+		waitpid $pid, 0;
 	}
+}
+
 1;
 

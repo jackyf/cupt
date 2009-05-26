@@ -1053,7 +1053,7 @@ sub _path_of_base_uri {
 sub _base_download_uri {
 	my ($self, $index_entry) = @_;
 
-    if ($ref_entry->{'component'} eq "") {
+    if ($index_entry->{'component'} eq "") {
 		# easy source type
 		return join('/', $index_entry->{'uri'}, $index_entry->{'distribution'});
 	} else {
@@ -1100,7 +1100,7 @@ sub get_path_of_release_list {
 }
 
 sub get_download_uri_of_release_list {
-	my ($self, $ref_index_entry) = @_;
+	my ($self, $index_entry) = @_;
 
 	return join('/', $self->_base_download_uri($index_entry), 'Release');
 }

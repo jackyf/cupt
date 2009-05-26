@@ -1067,10 +1067,10 @@ sub update_release_data () {
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
-	my $download_progess = new Cupt::Download::Progresses::Console;
-	my $worker = new Cupt::System::Worker($config, $download_progress);
+	my $download_progress = new Cupt::Download::Progresses::Console;
+	my $worker = new Cupt::System::Worker($config, $cache);
 
-	$worker->update_release_data();
+	$worker->update_release_data($download_progress);
 }
 
 sub show_changelog_or_copyright ($) {
