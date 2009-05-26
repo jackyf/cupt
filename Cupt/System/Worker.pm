@@ -1201,11 +1201,11 @@ sub update_release_data ($$) {
 
 		return sub {
 			move($download_path, $target_path) or
-					return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
+					return sprintf __("%s: unable to move target file: %s"), $download_path, $!;
 			# return success
 			return 0;
 		};
-	}
+	};
 
 	my $indexes_location = $self->_get_indexes_location();
 
@@ -1236,18 +1236,18 @@ sub update_release_data ($$) {
 						{
 							'uris' => [ $download_uri ],
 							'filename' => $download_filename,
-							'post-action' => $sub_generate_moving_sub->($download_filename => $local_path);
+							'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
 						}
 				);
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry));
+					mywarn("failed to download index for '%s'", $sub_stringify_index_entry->($index_entry));
 					goto CHILD_EXIT;
 				}
 
 				# phase 1.1: downloading signature for Release file
 				my $signature_download_uri = "$download_uri.gpg";
-				my $signature_local_path = "$download_path.gpg";
+				my $signature_local_path = "$local_path.gpg";
 				my $signature_download_filename = "$download_filename.gpg";
 				$download_result = $download_manager->download(
 						{
@@ -1260,7 +1260,7 @@ sub update_release_data ($$) {
 				if ($download_result) {
 					# failed to download
 					mywarn("failed to download signature for index for '%s'",
-							$sub_stringify_index_entry($index_entry));
+							$sub_stringify_index_entry->($index_entry));
 				}
 			};
 
