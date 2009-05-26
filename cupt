@@ -77,6 +77,7 @@ my %command_handlers = (
 	'pkgnames' => \&pkgnames,
 	'changelog' => sub { show_changelog_or_copyright('changelog') },
 	'copyright' => sub { show_changelog_or_copyright('copyright') },
+	'update' => \&update_release_data,
 	'install' => sub { manage_packages('install') },
 	'remove' => sub { manage_packages('remove') },
 	'purge' => sub { manage_packages('purge') },
@@ -1057,7 +1058,22 @@ sub manage_packages ($) {
 	}
 }
 
-sub show_changelog_or_copyright {
+sub update_release_data () {
+	require Cupt::System::Worker;
+	require Cupt::Download::Progresses::Console;
+
+	check_no_extra_args();
+	check_no_more_options();
+
+	build_cache(-source => 0, -binary => 0, -installed => 0);
+
+	my $download_progess = new Cupt::Download::Progresses::Console;
+	my $worker = new Cupt::System::Worker($config, $download_progress);
+
+	$worker->update_release_data();
+}
+
+sub show_changelog_or_copyright ($) {
 	my ($target) = @_;
 	# turn off info and relations parsing, we don't need it
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
