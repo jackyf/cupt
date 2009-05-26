@@ -113,7 +113,10 @@ sub new ($$$) {
 		# { $uri => $waiter_fh, $pid, $input_fh }
 		my %active_downloads;
 		# [ $uri, $filename, $filehandle ]
-		my @waiting_downloads;
+		my @download_queue;
+		# the downloads that are already scheduled but not completed, and another waiter fifo appeared
+		# [ $uri, $filehandle ]
+		my @pending_downloads;
 		# { $uri => $size }
 		my %download_sizes;
 		# { $uri => $filename }
@@ -155,9 +158,11 @@ sub new ($$$) {
 							# just immediately end it
 							my $is_duplicated_download = 1;
 							__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
+						} elsif (exists $active_downloads{$uri}) {
+							push @pending_downloads, [ $uri, $waiter_fh ];
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 							# put the query on hold
-							push @waiting_downloads, [ $uri, $filename, $waiter_fh ];
+							push @download_queue, [ $uri, $filename, $waiter_fh ];
 						} else {
 							$proceed_next_download = 1;
 						}
@@ -186,9 +191,24 @@ sub new ($$$) {
 						delete $active_downloads{$uri};
 						$done_downloads{$uri} = $result;
 
-						if (scalar @waiting_downloads && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
+						do { # answering on duplicated requests if any
+							$is_duplicated_download = 1;
+							my @new_pending_downloads;
+
+							foreach (@pending_downloads) {
+								($uri, my $waiter_fh) = @$_;
+								if (exists $done_downloads{$uri}) {
+									__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
+								} else {
+									push @new_pending_downloads, $_;
+								}
+							}
+							@pending_downloads = @new_pending_downloads;
+						};
+
+						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
 							# put next of waiting queries
-							($uri, $filename, $waiter_fh) = @{shift @waiting_downloads};
+							($uri, $filename, $waiter_fh) = @{shift @download_queue};
 							$proceed_next_download = 1;
 						}
 					}

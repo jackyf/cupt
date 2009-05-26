@@ -5,6 +5,11 @@ cupt (0.1.5) unstable; urgency=low
       - Resolver*:
         - Merged an infrastructure to allow multiple resolvers to co-exist in
           future.
+    - Download:
+      - Manager:
+        - Worker thread: handle duplicated download requests that come when
+          the original download request is not yet completed. This use case is
+          possible for future 'update' action.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 26 May 2009 09:50:17 +0300
 
