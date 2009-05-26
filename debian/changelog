@@ -1,10 +1,12 @@
-cupt (0.1.5) unstable; urgency=low
+cupt (0.2.0) unstable; urgency=low
 
   * Cupt:
     - System:
       - Resolver*:
         - Merged an infrastructure to allow multiple resolvers to co-exist in
           future.
+      - Worker:
+        [API break] 'do_actions' renamed to 'change_system'.
     - Download:
       - Manager:
         - Worker thread: handle duplicated download requests that come when

@@ -1032,7 +1032,7 @@ sub _do_dpkg_post_actions ($) {
 	}
 }
 
-=head2 do_actions
+=head2 change_system
 
 member function, performes planned actions
 
@@ -1044,7 +1044,7 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 
 =cut
 
-sub do_actions ($$) {
+sub change_system ($$) {
 	my ($self, $download_progress) = @_;
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');

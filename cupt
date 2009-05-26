@@ -1050,7 +1050,7 @@ sub manage_packages ($) {
 		require Cupt::Download::Progresses::Console;
 		my $download_progess = new Cupt::Download::Progresses::Console;
 		say __("Performing requested actions:");
-		my $overall_result = $worker->do_actions($download_progess);
+		my $overall_result = $worker->change_system($download_progess);
 		mydie("unable to do requested actions") unless $overall_result;
 	} else {
 		say __("no more solutions.");
