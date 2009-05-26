@@ -1209,10 +1209,24 @@ sub update_release_data ($$) {
 
 	my $indexes_location = $self->_get_indexes_location();
 
+	sysopen(my $lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+			mydie("unable to open indexes lock file: %s", $!);
+
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
 
 	my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+
+	my $sub_download_wrapper = sub {
+		if ($self->{_config}->var('cupt::worker::simulate')) {
+			foreach (@_) {
+				say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
+			}
+			return 0;
+		} else {
+			return $download_manager->download(@_);
+		}
+	};
 
 	my @pids;
 	foreach my $index_entry (@index_entries) {
@@ -1232,7 +1246,7 @@ sub update_release_data ($$) {
 				my $download_filename = $sub_get_download_filename->($local_path);
 
 				say "local: $local_path, remote: $download_uri";
-				my $download_result = $download_manager->download(
+				my $download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $download_uri ],
 							'filename' => $download_filename,
@@ -1249,7 +1263,7 @@ sub update_release_data ($$) {
 				my $signature_download_uri = "$download_uri.gpg";
 				my $signature_local_path = "$local_path.gpg";
 				my $signature_download_filename = "$download_filename.gpg";
-				$download_result = $download_manager->download(
+				$download_result = $sub_download_wrapper(
 						{
 							'uris' => [ $signature_download_uri ],
 							'filename' => $signature_download_filename,
@@ -1271,6 +1285,8 @@ sub update_release_data ($$) {
 	foreach my $pid (@pids) {
 		waitpid $pid, 0;
 	}
+	close($lock) or
+			mydie("unable to close indexes lock file: %s", $!);
 }
 
 1;
