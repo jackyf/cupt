@@ -1225,12 +1225,13 @@ sub update_release_data ($$) {
 		} else {
 			# child
 
-			do { # phase 1: downloading Release file
+			do {
+				# phase 1: downloading Release file
 				my $local_path = $cache->get_path_of_release_list($index_entry);
 				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 				my $download_filename = $sub_get_download_filename->($local_path);
 
-				say "local: $release_local_path, remote: $release_download_uri";
+				say "local: $local_path, remote: $download_uri";
 				my $download_result = $download_manager->download(
 						{
 							'uris' => [ $download_uri ],
@@ -1240,13 +1241,28 @@ sub update_release_data ($$) {
 				);
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry);
+					mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry));
+					goto CHILD_EXIT;
+				}
+
+				# phase 1.1: downloading signature for Release file
+				my $signature_download_uri = "$download_uri.gpg";
+				my $signature_local_path = "$download_path.gpg";
+				my $signature_download_filename = "$download_filename.gpg";
+				$download_result = $download_manager->download(
+						{
+							'uris' => [ $signature_download_uri ],
+							'filename' => $signature_download_filename,
+							'post-action' => $sub_generate_moving_sub->(
+									$signature_download_filename => $signature_local_path),
+						}
+				);
+				if ($download_result) {
+					# failed to download
+					mywarn("failed to download signature for index for '%s'",
+							$sub_stringify_index_entry($index_entry));
 				}
 			};
-
-			# phase 1.1: downloading signature for Release file
-			my $release_signature_download_uri = "$release_download_uri.gpg";
-			#TODO
 
 			CHILD_EXIT:
 			POSIX::_exit(0);
