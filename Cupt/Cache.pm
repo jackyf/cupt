@@ -1015,12 +1015,11 @@ sub _process_index_file {
 }
 
 sub _path_of_base_uri {
-	my $self = shift;
-	my $ref_entry = shift;
+	my ($self, $index_entry) = @_;
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
 	# "file:/home/jackyf" -> "/home/jackyf"
-	(my $uri_prefix = $ref_entry->{'uri'}) =~ s[^\w+:(?://)?][];
+	(my $uri_prefix = $index_entry->{'uri'}) =~ s[^\w+:(?://)?][];
 
 	# stripping last '/' from uri if present
 	$uri_prefix =~ s{/$}{};
@@ -1038,9 +1037,9 @@ sub _path_of_base_uri {
 		$self->{_config}->var('dir::state::lists')
 	);
 
-	(my $distribution_part = $ref_entry->{'distribution'}) =~ tr[/][_];
+	(my $distribution_part = $index_entry->{'distribution'}) =~ tr[/][_];
 	my $base_uri_part;
-    if ($ref_entry->{'component'} eq "") {
+    if ($index_entry->{'component'} eq "") {
 		# easy source type
 		$base_uri_part = join('_', $uri_prefix, $distribution_part);
 	} else {
@@ -1049,6 +1048,18 @@ sub _path_of_base_uri {
 	}
 
 	return join('', $dirname, '/', $base_uri_part);
+}
+
+sub _base_download_uri {
+	my ($self, $index_entry) = @_;
+
+    if ($ref_entry->{'component'} eq "") {
+		# easy source type
+		return join('/', $index_entry->{'uri'}, $index_entry->{'distribution'});
+	} else {
+		# normal source type
+		return join('/', $index_entry->{'uri'}, 'dists', $index_entry->{'distribution'});
+	}
 }
 
 sub _path_of_source_list {
@@ -1083,11 +1094,15 @@ L</index_entry>
 =cut
 
 sub get_path_of_release_list {
+	my ($self, $index_entry) = @_;
+
+	return join('_', $self->_path_of_base_uri($index_entry), 'Release');
+}
+
+sub get_download_uri_of_release_list {
 	my ($self, $ref_index_entry) = @_;
 
-	my $filename = join('_', $self->_path_of_base_uri($entry), 'Release');
-
-	return $filename;
+	return join('/', $self->_base_download_uri($index_entry), 'Release');
 }
 
 sub _path_of_preferences {
