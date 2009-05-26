@@ -38,6 +38,7 @@ use File::Copy;
 use File::Basename;
 
 use Cupt::Core;
+use Cupt::Cache;
 use Cupt::Download::Manager;
 
 my $_download_partial_suffix = '/partial';
@@ -1158,5 +1159,35 @@ sub change_system ($$) {
 	return 1;
 }
 
+=head2 update_release_data
+
+member function, performes update of APT/Cupt indexes
+
+Returns true if successful, false otherwise
+
+Parameters:
+
+I<download_progress> - reference to subclass of Cupt::Download::Progress
+
+=cut
+
+sub update_release_data ($$) {
+	my ($self, $download_progress) = @_;
+
+	my @release_data = @{$self->{_cache}->get_binary_release_data()};
+	push @release_data, @{$self->{_cache}->get_source_release_data()};
+
+	my @pids;
+	foreach my $release_info (@release_data) {
+		my $pid = fork() or
+				mydie("unable to fork: $!");
+
+		if ($pid) {
+			# master process
+			push @pids, $pid;
+		} else {
+			# child
+		}
+	}
 1;
 
