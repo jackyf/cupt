@@ -953,7 +953,13 @@ sub manage_packages ($) {
 	say __('[done]');
 
 	print __('Initializing package resolver and worker... ');
-	my $resolver = new Cupt::System::Resolver($config, $cache);
+	my $resolver;
+	do {
+		my $resolver_module_name = defined $config->var('cupt::resolver::external-command') ?
+				'Cupt::System::Resolvers::External' : 'Cupt::System::Resolvers::Native';
+		eval "require $resolver_module_name;"; die $@ if $@;
+		$resolver = $resolver_module_name->new($config, $cache);
+	};
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
 	my $worker = new Cupt::System::Worker($config, $cache);
 	say __('[done]');
