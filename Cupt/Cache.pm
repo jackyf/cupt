@@ -727,18 +727,7 @@ sub _parse_sources_lists {
 
 =head2 get_index_entries
 
-method, returns reference to list of I<index_entry>'s
-
-where
-
-I<index_entry> - hash reference:
-  
-  {
-    'type' => { 'deb' | 'deb-src' }
-    'uri' => URI string
-    'distribution' => distribution path
-    'component' => component string
-  }
+method, returns reference to list of L</index_entry>'s
 
 =cut
 
@@ -1083,9 +1072,18 @@ sub _path_of_source_list {
 	return $filename;
 }
 
-sub _path_of_release_list {
-	my $self = shift;
-	my $entry = shift;
+=head2 get_path_of_release_list
+
+method, returns path of Release file for I<index_entry>
+
+Parameters:
+
+L</index_entry>
+
+=cut
+
+sub get_path_of_release_list {
+	my ($self, $ref_index_entry) = @_;
 
 	my $filename = join('_', $self->_path_of_base_uri($entry), 'Release');
 
@@ -1205,6 +1203,17 @@ This is a hash:
     'valid-until' => time string when to forget about this release
     'architectures' => reference to array of available architectures
     'base_uri' => base URI (origin), empty string in case of "installed" distribution
+  }
+
+=head2 index_entry
+
+This is a hash:
+  
+  {
+    'type' => { 'deb' | 'deb-src' }
+    'uri' => URI string
+    'distribution' => distribution path
+    'component' => component string
   }
 
 =cut

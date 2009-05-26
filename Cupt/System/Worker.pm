@@ -1174,11 +1174,11 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 sub update_release_data ($$) {
 	my ($self, $download_progress) = @_;
 
-	my @release_data = @{$self->{_cache}->get_binary_release_data()};
-	push @release_data, @{$self->{_cache}->get_source_release_data()};
+	my $cache = $self->{_cache};
+	my @index_entries = @{$cache->get_index_entries()};
 
 	my @pids;
-	foreach my $release_info (@release_data) {
+	foreach my $index_entry (@index_entries) {
 		my $pid = fork() or
 				mydie("unable to fork: $!");
 
@@ -1187,6 +1187,8 @@ sub update_release_data ($$) {
 			push @pids, $pid;
 		} else {
 			# child
+			my $release_local_path = $cache->get_path_of_release_list($index_entry);
+			my $release_download_uri = $cache->get_download_uri_of_release_list($index_entry);
 		}
 	}
 1;
