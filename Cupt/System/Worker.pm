@@ -143,6 +143,13 @@ sub _get_archives_location ($) {
 			$self->{_config}->var('dir::cache::archives');
 }
 
+sub _get_indexes_location ($) {
+	my ($self) = @_;
+	return $self->{_config}->var('dir') .
+			$self->{_config}->var('dir::cache') . '/' .
+			$self->{_config}->var('dir::cache::lists');
+}
+
 sub __get_archive_basename ($) {
 	my ($version) = @_;
 
@@ -1182,6 +1189,8 @@ sub update_release_data ($$) {
 				$index_entry->{'distribution'}, $index_entry->{'component'};
 	};
 
+	my $indexes_location = $self->_get_indexes_location();
+
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
 
@@ -1197,9 +1206,10 @@ sub update_release_data ($$) {
 			push @pids, $pid;
 		} else {
 			# child
+
+			# phase 1: downloading Release file
 			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			my $release_download_uri = $cache->get_download_uri_of_release_list($index_entry);
-			my $release_signature_download_uri = "$release_download_uri.gpg";
 			say "local: $release_local_path, remote: $release_download_uri";
 			my $download_result = $download_manager->download(
 					{ 'uris' => [ $release_download_uri ], 'filename' => $release_local_path });
@@ -1207,6 +1217,9 @@ sub update_release_data ($$) {
 				# failed to download
 				mywarn("failed to download index for '%s'", $sub_stringify_index_entry($index_entry);
 			}
+
+			# phase 1.1: downloading signature for Release file
+			my $release_signature_download_uri = "$release_download_uri.gpg";
 
 			CHILD_EXIT:
 			POSIX::_exit(0);
