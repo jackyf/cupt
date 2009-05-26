@@ -1041,6 +1041,7 @@ sub manage_packages ($) {
 	my $resolve_result = $resolver->resolve(
 			generate_management_prompt($worker, $o_show_versions, $o_show_size_changes)
 	);
+	say "";
 
 	if (!defined $resolve_result) {
 		# tryings were abandoned
