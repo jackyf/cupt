@@ -1,3 +1,13 @@
+cupt (0.1.5) unstable; urgency=low
+
+  * Cupt:
+    - System:
+      - Resolver*:
+        - Merged an infrastructure to allow multiple resolvers to co-exist in
+          future.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 26 May 2009 09:50:17 +0300
+
 cupt (0.1.4) unstable; urgency=low
 
   * cupt:
