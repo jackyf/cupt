@@ -93,24 +93,33 @@ sub resolve ($$) {
 		defined $external_command or
 				myinternaldie("undefined external command");
 
+		$SIG{PIPE} = sub { mydie("external command unexpectedly closed the pipe"); };
+
 		open2(\*READ, \*WRITE, $external_command) or
 				mydie("unable to create bidirectional pipe for external command '%s'", $external_command);
 
-		$self->_write_cudf_info(\*WRITE);
-
-		close(READ) or
-				mydie("unable to close pipe read channel");
+		$self->_write_dudf_info(\*WRITE);
 		close(WRITE) or
 				mydie("unable to close pipe write channel");
+
+		my $resolve_result = $self->_read_dudf_result(\*READ);
+		close(READ) or
+				mydie("unable to close pipe read channel");
+
+		my $user_answer = $sub_accept->($resolve_result);
+		if (defined $user_answer && $user_answer) {
+			return 1;
+		} else {
+			return 0;
+		}
 	};
 	if (mycatch()) {
 		myerr("external resolver error");
 		myredie();
 	}
-	return undef;
 }
 
-sub _write_cudf_info ($$) {
+sub _write_dudf_info ($$) {
 	my ($self, $fh) = @_;
 
 	my $sub_strip_circle_braces = sub {
@@ -124,7 +133,7 @@ sub _write_cudf_info ($$) {
 			my $package_name = $version->{package_name};
 			say $fh "Package: " . $package_name;
 			say $fh "Version: " . $version->{version_string};
-			say $fh "Pin-Priority: " . $self->cache->get_pin($version);
+			say $fh "Pin-Priority: " . $self->cache->get_original_apt_pin($version);
 
 			do { # print strict dependencies
 				my @depends_relation_expressions;
@@ -139,15 +148,15 @@ sub _write_cudf_info ($$) {
 			};
 
 			do { # print conflicting packages
-				print $fh "Conflicts: ";
-
-				# cannot install the same package multiple times
-				my @conflicts_relation_expressions = (new Cupt::Cache::Relation($package_name));
+				my @conflicts_relation_expressions;
 
 				push @conflicts_relation_expressions, @{$version->{conflicts}};
 				push @conflicts_relation_expressions, @{$version->{breaks}};
 
-				say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
+				if (scalar @conflicts_relation_expressions) {
+					print $fh "Conflicts: ";
+					say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
+				}
 			};
 
 			do { # print provides
@@ -210,6 +219,41 @@ sub _write_cudf_info ($$) {
 
 	# at last!
 	say $fh "";
+}
+
+sub _read_dudf_result ($$) {
+	my ($self, $fh) = @_;
+
+	my %result;
+	foreach my $installed_package_name (keys %{$self->{_is_installed}}) {
+		$result{$installed_package_name}->{'version'} = undef;
+		$result{$installed_package_name}->{'manually_installed'} = 0;
+		$result{$installed_package_name}->{'reasons'} = [];
+	}
+
+	do {
+		my $previous_delimiter = $/;
+		local $/ = "\n\n"; # set by-entry mode
+		while (my $entry = <$fh>) {
+			local $/ = $previous_delimiter;
+			my ($package_name, $version_string) = ($entry =~ m/^package: (.*?)\n^version: (.*?)$/m) or
+					mydie("wrong resolve result package entry '%s'", $entry);
+			$package_name =~ m/^$package_name_regex$/ or
+					mydie("wrong package name '%s'", $package_name);
+			$version_string =~ m/^$version_string_regex$/ or
+					mydie("wrong version string '%s'", $version_string);
+			my $package = $self->cache->get_binary_package($package_name) or
+					mydie("wrong resolve result package name '%s'", $package_name);
+			my $version = $package->get_specific_version($version_string) or
+					mydie("wrong resolve result version string '%s' for package '%s'", $version_string, $package_name);
+
+			$result{$package_name}->{'version'} = $version;
+			$result{$package_name}->{'manually_installed'} = (exists $self->{_actions}->{$package_name});
+			$result{$package_name}->{'reasons'} = []; # no defined yet
+		}
+	};
+
+	return \%result;
 }
 
 1;

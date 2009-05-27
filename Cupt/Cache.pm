@@ -248,7 +248,7 @@ sub is_automatically_installed ($$) {
 
 =head2 get_pin
 
-method, returns pin value for the supplied version
+method, returns pin value for the supplied version as described in apt_preferences(5)
 
 Parameters:
 
@@ -256,7 +256,7 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 
 =cut
 
-sub get_pin {
+sub get_original_apt_pin {
 	my ($self, $version) = @_;
 	my $result;
 
@@ -337,6 +337,23 @@ sub get_pin {
 		# yeah, all conditions satisfied here
 		$update_pin->($pin->{'value'});
 	}
+
+	return $result;
+}
+
+=head2 get_pin
+
+method, returns Cupt pin value for the supplied version
+
+Parameters:
+
+I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>
+
+=cut
+
+sub get_pin ($$) {
+	my ($self, $version) = @_;
+	my $result = $self->get_original_apt_pin($version);
 
 	# discourage downgrading for pins <= 1000
 	# downgradings will have pin <= 0
