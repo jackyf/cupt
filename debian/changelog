@@ -12,6 +12,9 @@ cupt (0.2.0) unstable; urgency=low
         - Worker thread: handle duplicated download requests that come when
           the original download request is not yet completed. This use case is
           possible for future 'update' action.
+    - Cache:
+      - 'get_pin' method: divided into 'get_original_apt_pin' and 'get_pin'
+        methods.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 26 May 2009 09:50:17 +0300
 
