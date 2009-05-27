@@ -1177,6 +1177,8 @@ sub get_download_entries_of_index_list {
 			my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
 					mydie("malformed release line '%s' at file '%s'", $release_line, $path_to_release_file);
 			$name =~ m/^$full_index_list_suffix/ or next;
+			# skipping diffs for now...
+			$name !~ m/^$full_index_list_suffix.diff/ or next;
 			my $uri = join('/', $base_download_uri, $name);
 			$result{$uri}->{'size'} = $size;
 			$result{$uri}->{$current_hash_sum_name} = $hash_sum;
