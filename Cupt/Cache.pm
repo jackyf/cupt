@@ -1080,7 +1080,7 @@ sub _base_download_uri {
 }
 
 sub _index_list_suffix {
-	my ($self, $index_entry) = @_;
+	my ($self, $index_entry, $delimiter) = @_;
 
 	my $arch = $self->{_config}->var('apt::architecture');
 
@@ -1089,7 +1089,8 @@ sub _index_list_suffix {
 		return ($index_entry->{'type'} eq 'deb') ? "Packages" : 'Sources';
 	} else {
 		# normal source type
-		return ($index_entry->{'type'} eq 'deb') ? "binary-${arch}_Packages" : 'source_Sources';
+		return ($index_entry->{'type'} eq 'deb') ?
+				"binary-${arch}${delimiter}Packages" : "source${delimiter}Sources";
 	}
 }
 
@@ -1107,9 +1108,9 @@ sub get_path_of_index_list {
 	my ($self, $index_entry) = @_;
 
 	my $base_uri = $self->_path_of_base_uri($index_entry);
-	my $index_list_suffix = $self->_index_list_suffix($index_entry);
+	my $index_list_suffix = $self->_index_list_suffix($index_entry, '_');
 
-	my $filename = join('_', $base_uri, $index_entry->{'component'}, $self->_index_list_suffix($index_entry));
+	my $filename = join('_', $base_uri, $index_entry->{'component'}, $index_list_suffix);
 	$filename =~ s/__/_/; # if component is empty
 	return $filename;
 }
@@ -1147,8 +1148,8 @@ sub get_download_entries_of_index_list {
 	my ($self, $index_entry, $path_to_release_file) = @_;
 
 	my $base_download_uri = $self->_base_download_uri($index_entry);
-	my $index_list_suffix = $self->_index_list_suffix($index_entry);
-	my $full_index_list_suffix = join('/', $index_entry->{'component'}, $self->_index_list_suffix($index_entry));
+	my $index_list_suffix = $self->_index_list_suffix($index_entry, '/');
+	my $full_index_list_suffix = join('/', $index_entry->{'component'}, $index_list_suffix);
 	$full_index_list_suffix =~ s{^/}{}; # if component is empty
 
 	open(my $release_file_handle, '<', $path_to_release_file) or
