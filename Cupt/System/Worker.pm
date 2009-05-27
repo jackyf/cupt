@@ -146,8 +146,8 @@ sub _get_archives_location ($) {
 sub _get_indexes_location ($) {
 	my ($self) = @_;
 	return $self->{_config}->var('dir') .
-			$self->{_config}->var('dir::cache') . '/' .
-			$self->{_config}->var('dir::cache::lists');
+			$self->{_config}->var('dir::state') . '/' .
+			$self->{_config}->var('dir::state::lists');
 }
 
 sub __get_archive_basename ($) {

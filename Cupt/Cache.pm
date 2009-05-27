@@ -143,7 +143,7 @@ sub new {
 
 	my @index_files;
 	foreach my $ref_index_entry (@$ref_index_entries) {
-		my $index_file_to_parse = $self->_path_of_index_list($ref_index_entry);
+		my $index_file_to_parse = $self->get_path_of_index_list($ref_index_entry);
 		my $source_type = $ref_index_entry->{'type'};
 		# don't parse unneeded indexes
 		if (($source_type eq 'deb' && $build_config{'-binary'}) ||
