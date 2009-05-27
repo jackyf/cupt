@@ -1280,6 +1280,7 @@ sub update_release_data ($$) {
 					# failed to download
 					mywarn("failed to download signature for index for '%s'",
 							$sub_stringify_index_entry->($index_entry));
+					goto CHILD_EXIT;
 				}
 			};
 
