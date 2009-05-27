@@ -1155,7 +1155,7 @@ sub get_download_entries_of_index_list {
 			mydie("unable to open file '%s': %s", $path_to_release_file, $!);
 	my @release_lines = <$release_file_handle>;
 	close($release_file_handle) or
-			mydie("unable to close file '%s': %s'", $path_to_release_file; 
+			mydie("unable to close file '%s': %s'", $path_to_release_file;
 
 	my %result;
 

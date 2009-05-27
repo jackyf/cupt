@@ -1239,9 +1239,10 @@ sub update_release_data ($$) {
 		} else {
 			# child
 
+			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			do {
 				# phase 1: downloading Release file
-				my $local_path = $cache->get_path_of_release_list($index_entry);
+				my $local_path = $release_local_path;
 				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 				my $download_filename = $sub_get_download_filename->($local_path);
 
@@ -1262,7 +1263,7 @@ sub update_release_data ($$) {
 				my $signature_download_uri = "$download_uri.gpg";
 				my $signature_local_path = "$local_path.gpg";
 				my $signature_download_filename = "$download_filename.gpg";
-				$download_result = $sub_download_wrapper(
+				$download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $signature_download_uri ],
 							'filename' => $signature_download_filename,
@@ -1279,16 +1280,64 @@ sub update_release_data ($$) {
 
 			do { # phase 2: downloading Packages/Sources
 				my $local_path = $cache->get_path_of_index_list($index_entry);
-				my $download_uri = $cache->get_download_uri_of_index_list($index_entry);
-				my $download_filename = $sub_get_download_filename->($local_path);
+				my $ref_download_entries = $cache->get_download_entries_of_index_list($index_entry, $release_local_path);
+				my $base_download_filename = $sub_get_download_filename->($local_path);
 
-				my $download_result = $sub_download_wrapper->(
-						{
-							'uris' => [ $download_uri ],
-							'filename' => $download_filename,
-							'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
+				# try to download files of less size first
+				my @download_uris_in_order = sort {
+					$ref_download_entries->{$a}->{'size'} <=> $ref_download_entries->{$b}->{'size'}
+				} keys %$ref_download_entries;
+
+				my $download_result;
+				DOWNLOAD_URI:
+				foreach my $download_uri (@download_uris_in_order) {
+					my $download_filename_extension = ($download_uri =~ m/(?:.*)(\.\w+|)/);
+					my $download_filename = $base_download_filename . $download_filename_extension;
+					my $sub_post_action;
+					# checking and preparing unpackers
+					given ($download_filename_extension) {
+						when (['.lzma', 'bz2', 'gz']) {
+							my %uncompressors = (
+								'.lzma' => 'lzma',
+								'.bz2' => 'bunzip2',
+								'.gz' => 'gunzip',
+							);
+
+							my $uncompressor_name = $uncompressors{$download_filename_extension};
+						   	if (system("$uncompressor_name --version")) {
+								mywarn("'%s' uncompresser is not available, not downloading '%s'",
+										$uncompressor_name, $download_uri);
+								next DOWNLOAD_URI;
+							}
+
+							$sub_post_action = sub {
+								my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
+								if ($uncompressing_result) {
+									return sprintf "failed to uncompress '%s', '%s' returned error %s",
+											$download_filename, $uncompressor_name, $uncompressing_result;
+								}
+								return '';
+							}
 						}
-				);
+						when ('') {
+							$sub_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
+						}
+						default {
+							mywarn("unknown file extension '%s', not downloading '%s'",
+										$download_filename_extension, $download_uri);
+							next DOWNLOAD_URI;
+						}
+					}
+					$download_result = $sub_download_wrapper->(
+							{
+								'uris' => [ $download_uri ],
+								'filename' => $download_filename,
+								'post-action' => $sub_post_action,
+							}
+					);
+					# if all processed smoothly, exit loop
+					last if !$download_result
+				}
 				if ($download_result) {
 					# failed to download
 					mywarn("failed to download index for '%s'", $sub_stringify_index_entry->($index_entry));
