@@ -124,7 +124,7 @@ sub _write_cudf_info ($$) {
 			my $package_name = $version->{package_name};
 			say $fh "Package: " . $package_name;
 			say $fh "Version: " . $version->{version_string};
-			say $fh "Pin-Priority: " . $self->cache->get_pin($version);
+			say $fh "Pin-Priority: " . $self->cache->get_original_apt_pin($version);
 
 			do { # print strict dependencies
 				my @depends_relation_expressions;
