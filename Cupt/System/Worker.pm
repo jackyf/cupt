@@ -1211,8 +1211,9 @@ sub update_release_data ($$) {
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
+	my $lock;
 	if (!$simulate) {
-		sysopen(my $lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+		sysopen($lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 				mydie("unable to open indexes lock file: %s", $!);
 	}
 
@@ -1293,45 +1294,42 @@ sub update_release_data ($$) {
 				} keys %$ref_download_entries;
 
 				my $download_result;
-				DOWNLOAD_URI:
 				foreach my $download_uri (@download_uris_in_order) {
-					my $download_filename_extension = ($download_uri =~ m/(?:.*)(\.\w+|)/);
+					my ($download_filename_extension) = ($download_uri =~ m/(?:.*)(\.\w+|)/);
 					my $download_filename = $base_download_filename . $download_filename_extension;
 					my $sub_post_action;
+
 					# checking and preparing unpackers
-					given ($download_filename_extension) {
-						when (['.lzma', 'bz2', 'gz']) {
-							my %uncompressors = (
-								'.lzma' => 'lzma',
-								'.bz2' => 'bunzip2',
-								'.gz' => 'gunzip',
-							);
+					if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
+						my %uncompressors = (
+							'.lzma' => 'lzma',
+							'.bz2' => 'bunzip2',
+							'.gz' => 'gunzip',
+						);
 
-							my $uncompressor_name = $uncompressors{$download_filename_extension};
-							if (system("$uncompressor_name --version")) {
-								mywarn("'%s' uncompresser is not available, not downloading '%s'",
-										$uncompressor_name, $download_uri);
-								next DOWNLOAD_URI;
-							}
+						my $uncompressor_name = $uncompressors{$download_filename_extension};
+						if (system("$uncompressor_name --version")) {
+							mywarn("'%s' uncompresser is not available, not downloading '%s'",
+									$uncompressor_name, $download_uri);
+							next;
+						}
 
-							$sub_post_action = sub {
-								my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
-								if ($uncompressing_result) {
-									return sprintf "failed to uncompress '%s', '%s' returned error %s",
-											$download_filename, $uncompressor_name, $uncompressing_result;
-								}
-								return '';
+						$sub_post_action = sub {
+							my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
+							if ($uncompressing_result) {
+								return sprintf "failed to uncompress '%s', '%s' returned error %s",
+										$download_filename, $uncompressor_name, $uncompressing_result;
 							}
+							return '';
 						}
-						when ('') {
-							$sub_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
-						}
-						default {
-							mywarn("unknown file extension '%s', not downloading '%s'",
-										$download_filename_extension, $download_uri);
-							next DOWNLOAD_URI;
-						}
+					} elsif ($download_filename_extension eq '') {
+						$sub_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
+					} else {
+						mywarn("unknown file extension '%s', not downloading '%s'",
+									$download_filename_extension, $download_uri);
+						next;
 					}
+
 					$download_result = $sub_download_wrapper->(
 							{
 								'uris' => [ $download_uri ],
@@ -1356,7 +1354,7 @@ sub update_release_data ($$) {
 	foreach my $pid (@pids) {
 		waitpid $pid, 0;
 	}
-	if ($simulate) {
+	if (!$simulate) {
 		close($lock) or
 				mydie("unable to close indexes lock file: %s", $!);
 	}
