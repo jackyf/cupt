@@ -1304,7 +1304,7 @@ sub update_release_data ($$) {
 							);
 
 							my $uncompressor_name = $uncompressors{$download_filename_extension};
-						   	if (system("$uncompressor_name --version")) {
+							if (system("$uncompressor_name --version")) {
 								mywarn("'%s' uncompresser is not available, not downloading '%s'",
 										$uncompressor_name, $download_uri);
 								next DOWNLOAD_URI;
