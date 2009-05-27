@@ -1097,25 +1097,88 @@ sub get_path_of_index_list {
 	return $filename;
 }
 
-=head2 get_download_uri_of_index_list
+=head2 get_download_entries_of_index_list
 
-method, returns the remote URI of Packages/Sources file for I<index_entry>
+method, returns the download entries of Packages/Sources file for I<index_entry>
 
 Parameters:
 
 L</index_entry>
 
+path to accompanying Release file
+
+Returns:
+
+[ I<download_entry>... ]
+
+where
+
+I<download_entry> is
+
+  {
+    'uri' => {
+               'size' => file size
+               'md5sum' => MD5 hash sum
+               'sha1sum' => SHA1 hash sum
+               'sha256sum' => SHA256 hash sum
+             }
+  }
+
 =cut
 
-sub get_download_uri_of_index_list {
-	my ($self, $index_entry) = @_;
+sub get_download_entries_of_index_list {
+	my ($self, $index_entry, $path_to_release_file) = @_;
 
 	my $base_download_uri = $self->_base_download_uri($index_entry);
 	my $index_list_suffix = $self->_index_list_suffix($index_entry);
+	my $full_index_list_suffix = join('/', $index_entry->{'component'}, $self->_index_list_suffix($index_entry));
+	$full_index_list_suffix =~ s{^/}{}; # if component is empty
 
-	my $uri = join('/', $base_download_uri, $index_entry->{'component'}, $self->_index_list_suffix($index_entry));
-	$uri =~ s{//}{/}; # if component is empty
-	return $uri;
+	open(my $release_file_handle, '<', $path_to_release_file) or
+			mydie("unable to open file '%s': %s", $path_to_release_file, $!);
+	my @release_lines = <$release_file_handle>;
+	close($release_file_handle) or
+			mydie("unable to close file '%s': %s'", $path_to_release_file; 
+
+	my %result;
+
+	my $current_hash_sum_name_name;
+	# now we need to find if this variant is present in the release file
+	foreach (@release_lines) {
+		if (m/^MD5/) {
+			$current_hash_sum_name = 'md5sum';
+		} elsif (m/^SHA1/) {
+			$currnet_hash_sum = 'sha1sum';
+		} elsif (m/^SHA256/) {
+			$current_hash_sum_name = 'sha256sum';
+		} elsif (m/$full_index_list_suffix/) {
+			defined $current_hash_sum_name or
+					mydie("release line '%s' without previous hash sum declaration at file '%s'",
+							$_, $path_to_release_file);
+			my ($hash_sum, $size, $name) = ($release_lines[$idx] =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/ or
+					mydie("malformed release line '%s' at file '%s'", $_, $path_to_release_file, $idx+1);
+			$name =~ m/^$full_index_list_suffix/ or next;
+			my $uri = join('/', $base_download_uri, $name);
+			$result{$uri}->{'size'} = $size;
+			$result{$uri}->{$current_hash_sum_name} = $hash_sum;
+		}
+	}
+
+	# checks
+	foreach $uri (keys %result) {
+		my $download_entry = $result{$key};
+		if (not exists $ref_download_entry->{'md5sum'}) {
+			mydie("MD5 hash sum isn't defined for URI '%s'", $uri);
+		}
+		if (not exists $ref_download_entry->{'sha1sum'}) {
+			mydie("SHA1 hash sum isn't defined for URI '%s'", $uri);
+		}
+		if (not exists $ref_download_entry->{'sha256sum'}) {
+			mydie("SHA256 hash sum isn't defined for URI '%s'", $uri);
+		}
+	}
+
+	return \%result;
 }
 
 =head2 get_path_of_release_list
