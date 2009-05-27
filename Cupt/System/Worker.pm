@@ -1209,8 +1209,12 @@ sub update_release_data ($$) {
 
 	my $indexes_location = $self->_get_indexes_location();
 
-	sysopen(my $lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
-			mydie("unable to open indexes lock file: %s", $!);
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+
+	if (!$simulate) {
+		sysopen(my $lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+				mydie("unable to open indexes lock file: %s", $!);
+	}
 
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
@@ -1352,8 +1356,10 @@ sub update_release_data ($$) {
 	foreach my $pid (@pids) {
 		waitpid $pid, 0;
 	}
-	close($lock) or
-			mydie("unable to close indexes lock file: %s", $!);
+	if ($simulate) {
+		close($lock) or
+				mydie("unable to close indexes lock file: %s", $!);
+	}
 }
 
 1;
