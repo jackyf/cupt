@@ -1155,25 +1155,26 @@ sub get_download_entries_of_index_list {
 			mydie("unable to open file '%s': %s", $path_to_release_file, $!);
 	my @release_lines = <$release_file_handle>;
 	close($release_file_handle) or
-			mydie("unable to close file '%s': %s'", $path_to_release_file;
+			mydie("unable to close file '%s': %s'", $path_to_release_file);
 
 	my %result;
 
-	my $current_hash_sum_name_name;
+	my $current_hash_sum_name;
 	# now we need to find if this variant is present in the release file
 	foreach (@release_lines) {
 		if (m/^MD5/) {
 			$current_hash_sum_name = 'md5sum';
 		} elsif (m/^SHA1/) {
-			$currnet_hash_sum = 'sha1sum';
+			$current_hash_sum_name = 'sha1sum';
 		} elsif (m/^SHA256/) {
 			$current_hash_sum_name = 'sha256sum';
 		} elsif (m/$full_index_list_suffix/) {
+			my $release_line = $_;
 			defined $current_hash_sum_name or
 					mydie("release line '%s' without previous hash sum declaration at file '%s'",
-							$_, $path_to_release_file);
-			my ($hash_sum, $size, $name) = ($release_lines[$idx] =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/ or
-					mydie("malformed release line '%s' at file '%s'", $_, $path_to_release_file, $idx+1);
+							$release_line, $path_to_release_file);
+			my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
+					mydie("malformed release line '%s' at file '%s'", $release_line, $path_to_release_file);
 			$name =~ m/^$full_index_list_suffix/ or next;
 			my $uri = join('/', $base_download_uri, $name);
 			$result{$uri}->{'size'} = $size;
@@ -1182,8 +1183,8 @@ sub get_download_entries_of_index_list {
 	}
 
 	# checks
-	foreach $uri (keys %result) {
-		my $download_entry = $result{$key};
+	foreach my $uri (keys %result) {
+		my $ref_download_entry = $result{$uri};
 		if (not exists $ref_download_entry->{'md5sum'}) {
 			mydie("MD5 hash sum isn't defined for URI '%s'", $uri);
 		}
