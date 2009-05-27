@@ -96,7 +96,7 @@ sub resolve ($$) {
 		open2(\*READ, \*WRITE, $external_command) or
 				mydie("unable to create bidirectional pipe for external command '%s'", $external_command);
 
-		$self->_write_cudf_info(\*WRITE);
+		$self->_write_dudf_info(\*WRITE);
 
 		close(READ) or
 				mydie("unable to close pipe read channel");
@@ -110,7 +110,7 @@ sub resolve ($$) {
 	return undef;
 }
 
-sub _write_cudf_info ($$) {
+sub _write_dudf_info ($$) {
 	my ($self, $fh) = @_;
 
 	my $sub_strip_circle_braces = sub {
