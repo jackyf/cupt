@@ -139,15 +139,15 @@ sub _write_cudf_info ($$) {
 			};
 
 			do { # print conflicting packages
-				print $fh "Conflicts: ";
-
-				# cannot install the same package multiple times
-				my @conflicts_relation_expressions = (new Cupt::Cache::Relation($package_name));
+				my @conflicts_relation_expressions;
 
 				push @conflicts_relation_expressions, @{$version->{conflicts}};
 				push @conflicts_relation_expressions, @{$version->{breaks}};
 
-				say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
+				if (scalar @conflicts_relation_expressions) {
+					print $fh "Conflicts: ";
+					say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
+				}
 			};
 
 			do { # print provides
