@@ -234,7 +234,7 @@ sub progress ($$$;@) {
 				$self->hook('ping', 0);
 			}
 			when ('expected-size') {
-				$ref_entry->{size} = shift @params;
+				$ref_entry->{'size'} = shift @params;
 				$self->hook('ping', 1);
 			}
 			when ('done') {

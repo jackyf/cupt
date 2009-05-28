@@ -160,6 +160,7 @@ sub new ($$$) {
 							__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
 							close $waiter_fh;
 						} elsif (exists $active_downloads{$uri}) {
+							say "downloader: pushing '$uri' to pending"; 
 							push @pending_downloads, [ $uri, $waiter_fh ];
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 							# put the query on hold
@@ -199,9 +200,13 @@ sub new ($$$) {
 							foreach my $ref_pending_download (@pending_downloads) {
 								($uri, $waiter_fh) = @$ref_pending_download;
 								if (exists $done_downloads{$uri}) {
+									say "downloader: answering to duplicated pending '$uri'"; 
 									__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
+									say "downloader: answered to duplicated pending '$uri'"; 
 									close $waiter_fh;
+									say "downloader: closed filehandle to duplicated pending '$uri'"; 
 								} else {
+									say "downloader: re-scheduled pending '$uri'"; 
 									push @new_pending_downloads, $ref_pending_download;
 								}
 							}
