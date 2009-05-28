@@ -160,7 +160,6 @@ sub new ($$$) {
 							__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
 							close $waiter_fh;
 						} elsif (exists $active_downloads{$uri}) {
-							say "downloader: pushing '$uri' to pending"; 
 							push @pending_downloads, [ $uri, $waiter_fh ];
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 							# put the query on hold
