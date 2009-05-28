@@ -83,10 +83,6 @@ HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|
 
 =item
 
-'update' command is not yet implemented
-
-=item
-
 working with source packages is not yet implemented
 
 =item
