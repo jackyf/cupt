@@ -1243,6 +1243,7 @@ sub update_release_data ($$) {
 			push @pids, $pid;
 		} else {
 			# child
+			my $stringified_index_entry = $sub_stringify_index_entry->($index_entry);
 
 			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			do {
@@ -1251,6 +1252,8 @@ sub update_release_data ($$) {
 				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 				my $download_filename = $sub_get_download_filename->($local_path);
 
+				$download_progress->set_short_alias_for_uri($download_uri, 'Release');
+				$download_progress->set_long_alias_for_uri($download_uri, "$stringified_index_entry Release");
 				my $download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $download_uri ],
@@ -1260,7 +1263,7 @@ sub update_release_data ($$) {
 				);
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download index for '%s'", $sub_stringify_index_entry->($index_entry));
+					mywarn("failed to download index for '%s'", $stringified_index_entry);
 					goto CHILD_EXIT;
 				}
 
@@ -1268,6 +1271,10 @@ sub update_release_data ($$) {
 				my $signature_download_uri = "$download_uri.gpg";
 				my $signature_local_path = "$local_path.gpg";
 				my $signature_download_filename = "$download_filename.gpg";
+
+
+				$download_progress->set_short_alias_for_uri($signature_download_uri, 'Release.gpg');
+				$download_progress->set_long_alias_for_uri($signature_download_uri, "$stringified_index_entry Release.gpg");
 				$download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $signature_download_uri ],
@@ -1278,8 +1285,7 @@ sub update_release_data ($$) {
 				);
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download signature for index for '%s'",
-							$sub_stringify_index_entry->($index_entry));
+					mywarn("failed to download signature for index for '%s'", $stringified_index_entry);
 					goto CHILD_EXIT;
 				}
 			};
@@ -1331,6 +1337,11 @@ sub update_release_data ($$) {
 						next;
 					}
 
+					my $download_filename_basename = basename($download_filename);
+					$download_progress->set_short_alias_for_uri($download_uri, $download_filename_basename);
+					$download_progress->set_long_alias_for_uri($download_uri,
+							"$stringified_index_entry $download_filename_basename");
+
 					$download_result = $sub_download_wrapper->(
 							{
 								'uris' => [ $download_uri ],
@@ -1339,7 +1350,7 @@ sub update_release_data ($$) {
 							}
 					);
 					# if all processed smoothly, exit loop
-					last if !$download_result
+					last if !$download_result;
 				}
 				if ($download_result) {
 					# failed to download
