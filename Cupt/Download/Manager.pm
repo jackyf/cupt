@@ -188,11 +188,6 @@ sub new ($$$) {
 
 						close($active_downloads{$uri}->{waiter_fh});
 
-						# removing the query from active download list and put it to
-						# the list of ended ones
-						delete $active_downloads{$uri};
-						$done_downloads{$uri} = $result;
-
 						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
 							# put next of waiting queries
 							($uri, $filename, $waiter_fh) = @{shift @download_queue};
@@ -206,8 +201,13 @@ sub new ($$$) {
 
 						($uri, my $result) = @params;
 
+						# removing the query from active download list and put it to
+						# the list of ended ones
+						delete $active_downloads{$uri};
+						$done_downloads{$uri} = $result;
+
 						do { # answering on duplicated requests if any
-							$is_duplicated_download = 1;
+							my $is_duplicated_download = 1;
 							my @new_pending_downloads;
 
 							foreach my $ref_pending_download (@pending_downloads) {
