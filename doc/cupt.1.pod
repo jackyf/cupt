@@ -214,6 +214,16 @@ L</depends>, L</rdepends>, L</search>, L</pkgnames>, L</changelog> actions
 
 =over
 
+=item update
+
+updates package indexes
+
+This subcommand receives no arguments.
+
+Example:
+
+C<cupt update>
+
 =item install
 
 installs, upgrades or downgrades specified packages
