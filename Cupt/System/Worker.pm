@@ -1182,19 +1182,6 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 sub update_release_data ($$) {
 	my ($self, $download_progress) = @_;
 
-	my $sub_stringify_index_entry_for_release = sub {
-		my ($index_entry) = @_;
-
-		return sprintf "%s %s", $index_entry->{'uri'}, $index_entry->{'distribution'};
-	};
-
-	my $sub_stringify_index_entry_for_index = sub {
-		my ($index_entry) = @_;
-
-		return sprintf "%s %s/%s", $index_entry->{'uri'},
-				$index_entry->{'distribution'}, $index_entry->{'component'};
-	};
-
 	my $sub_get_download_filename = sub {
 		my ($target_filename) = @_;
 
@@ -1252,14 +1239,14 @@ sub update_release_data ($$) {
 			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			do {
 				# phase 1: downloading Release file
-				my $stringified_index_entry = $sub_stringify_index_entry_for_release->($index_entry);
+				my $release_alias = join(' ', $index_entry->{'distribution'}, 'Release');
 
 				my $local_path = $release_local_path;
 				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 				my $download_filename = $sub_get_download_filename->($local_path);
 
-				$download_manager->set_short_alias_for_uri($download_uri, 'Release');
-				$download_manager->set_long_alias_for_uri($download_uri, "$stringified_index_entry Release");
+				$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
+				$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
 				my $download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $download_uri ],
@@ -1269,7 +1256,7 @@ sub update_release_data ($$) {
 				);
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download index for '%s'", $stringified_index_entry);
+					mywarn("failed to download '%s'", $release_alias);
 					goto CHILD_EXIT;
 				}
 
@@ -1279,8 +1266,10 @@ sub update_release_data ($$) {
 				my $signature_download_filename = "$download_filename.gpg";
 
 
-				$download_manager->set_short_alias_for_uri($signature_download_uri, 'Release.gpg');
-				$download_manager->set_long_alias_for_uri($signature_download_uri, "$stringified_index_entry Release.gpg");
+				my $release_signature_alias = "$release_alias.gpg";
+				$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
+				$download_manager->set_long_alias_for_uri($signature_download_uri,
+						"$index_entry->{'uri'} $release_signature_alias");
 				$download_result = $sub_download_wrapper->(
 						{
 							'uris' => [ $signature_download_uri ],
@@ -1291,13 +1280,16 @@ sub update_release_data ($$) {
 				);
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download signature for index for '%s'", $stringified_index_entry);
+					mywarn("failed to download '%s'", $release_signature_alias);
 					goto CHILD_EXIT;
 				}
 			};
 
 			do { # phase 2: downloading Packages/Sources
-				my $stringified_index_entry = $sub_stringify_index_entry_for_index->($index_entry);
+				my $sub_stringify_index_entry_for_index = sub {
+					my ($index_entry) = @_;
+
+				};
 
 				my $local_path = $cache->get_path_of_index_list($index_entry);
 				my $ref_download_entries = $cache->get_download_entries_of_index_list($index_entry, $release_local_path);
@@ -1346,9 +1338,13 @@ sub update_release_data ($$) {
 					}
 
 					(my $download_filename_basename = $download_filename) =~ s{(?:.*)/(.*)}{$1};
-					$download_manager->set_short_alias_for_uri($download_uri, $download_filename_basename);
+
+					my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
+							$index_entry->{'component'}, $download_filename_basename;
+
+					$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
 					$download_manager->set_long_alias_for_uri($download_uri,
-							"$stringified_index_entry $download_filename_basename");
+							"$index_entry->{'uri'} $index_alias");
 
 					$download_result = $sub_download_wrapper->(
 							{
@@ -1358,12 +1354,13 @@ sub update_release_data ($$) {
 							}
 					);
 					# if all processed smoothly, exit loop
-					last if !$download_result;
-				}
-				if ($download_result) {
-					# failed to download
-					mywarn("failed to download index for '%s'", $stringified_index_entry);
-					goto CHILD_EXIT;
+					if ($download_result) {
+						# failed to download
+						mywarn("failed to download index for '%s'", $index_alias);
+					} else {
+						# all's good
+						goto CHILD_EXIT;
+					}
 				}
 			};
 
