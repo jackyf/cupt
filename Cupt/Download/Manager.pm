@@ -193,6 +193,19 @@ sub new ($$$) {
 						delete $active_downloads{$uri};
 						$done_downloads{$uri} = $result;
 
+						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
+							# put next of waiting queries
+							($uri, $filename, $waiter_fh) = @{shift @download_queue};
+							$proceed_next_download = 1;
+						}
+					}
+					when ('done-ack') {
+						# this is final ACK from download with final result
+						scalar @params == 2 or
+								myinternaldie("bad argument count for 'done-ack' message");
+
+						($uri, my $result) = @params;
+
 						do { # answering on duplicated requests if any
 							$is_duplicated_download = 1;
 							my @new_pending_downloads;
@@ -212,19 +225,6 @@ sub new ($$$) {
 							}
 							@pending_downloads = @new_pending_downloads;
 						};
-
-						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
-							# put next of waiting queries
-							($uri, $filename, $waiter_fh) = @{shift @download_queue};
-							$proceed_next_download = 1;
-						}
-					}
-					when ('done-ack') {
-						# this final ACK from download with final result
-						scalar @params == 2 or
-								myinternaldie("bad argument count for 'done-ack' message");
-
-						($uri, my $result) = @params;
 
 						# update progress
 						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);

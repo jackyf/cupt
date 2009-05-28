@@ -225,7 +225,7 @@ sub progress ($$$;@) {
 	} else {
 		# this is info about something that currently downloading
 		$ref_entry = $self->{_now_downloading}->{$uri};
-		defined $ref_entry or myinternaldie("recevied info for not started download");
+		defined $ref_entry or myinternaldie("recevied info for not started download for uri '$uri'");
 		given ($action) {
 			when('downloading') {
 				$ref_entry->{'downloaded'} = shift @params;
