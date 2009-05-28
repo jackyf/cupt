@@ -1070,7 +1070,7 @@ sub update_release_data () {
 	my $download_progress = new Cupt::Download::Progresses::Console;
 	my $worker = new Cupt::System::Worker($config, $cache);
 
-	$worker->update_release_data($download_progress);
+	$worker->update_release_and_index_data($download_progress);
 }
 
 sub show_changelog_or_copyright ($) {

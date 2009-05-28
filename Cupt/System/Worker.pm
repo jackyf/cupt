@@ -1168,7 +1168,7 @@ sub change_system ($$) {
 	return 1;
 }
 
-=head2 update_release_data
+=head2 update_release_and_index_data
 
 member function, performes update of APT/Cupt indexes
 
@@ -1180,7 +1180,7 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 
 =cut
 
-sub update_release_data ($$) {
+sub update_release_and_index_data ($$) {
 	my ($self, $download_progress) = @_;
 
 	my $sub_get_download_filename = sub {

@@ -9,7 +9,7 @@ cupt (0.2.0) UNRELEASED; urgency=low
           future.
       - Worker:
         - [API break] 'do_actions' renamed to 'change_system'.
-        - New method 'update_release_data'.
+        - New method 'update_release_and_index_data'.
     - Download:
       - Manager:
         - Worker thread: handle duplicated download requests that come when
