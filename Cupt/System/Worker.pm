@@ -1337,7 +1337,7 @@ sub update_release_data ($$) {
 						next;
 					}
 
-					(my $download_filename_basename = $download_filename) =~ s{(?:.*)/(.*)}{$1};
+					(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
 
 					my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
 							$index_entry->{'component'}, $download_filename_basename;
