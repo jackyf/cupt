@@ -1182,7 +1182,13 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 sub update_release_data ($$) {
 	my ($self, $download_progress) = @_;
 
-	my $sub_stringify_index_entry = sub {
+	my $sub_stringify_index_entry_for_release = sub {
+		my ($index_entry) = @_;
+
+		return sprintf "%s %s", $index_entry->{'uri'}, $index_entry->{'distribution'};
+	};
+
+	my $sub_stringify_index_entry_for_index = sub {
 		my ($index_entry) = @_;
 
 		return sprintf "%s %s/%s", $index_entry->{'uri'},
@@ -1243,11 +1249,11 @@ sub update_release_data ($$) {
 			push @pids, $pid;
 		} else {
 			# child
-			my $stringified_index_entry = $sub_stringify_index_entry->($index_entry);
-
 			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			do {
 				# phase 1: downloading Release file
+				my $stringified_index_entry = $sub_stringify_index_entry_for_release->($index_entry);
+
 				my $local_path = $release_local_path;
 				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 				my $download_filename = $sub_get_download_filename->($local_path);
@@ -1291,6 +1297,8 @@ sub update_release_data ($$) {
 			};
 
 			do { # phase 2: downloading Packages/Sources
+				my $stringified_index_entry = $sub_stringify_index_entry_for_index->($index_entry);
+
 				my $local_path = $cache->get_path_of_index_list($index_entry);
 				my $ref_download_entries = $cache->get_download_entries_of_index_list($index_entry, $release_local_path);
 				my $base_download_filename = $sub_get_download_filename->($local_path);
@@ -1337,7 +1345,7 @@ sub update_release_data ($$) {
 						next;
 					}
 
-					my $download_filename_basename = basename($download_filename);
+					(my $download_filename_basename = $download_filename) =~ s{(?:.*)/(.*)}{$1};
 					$download_manager->set_short_alias_for_uri($download_uri, $download_filename_basename);
 					$download_manager->set_long_alias_for_uri($download_uri,
 							"$stringified_index_entry $download_filename_basename");
@@ -1354,7 +1362,7 @@ sub update_release_data ($$) {
 				}
 				if ($download_result) {
 					# failed to download
-					mywarn("failed to download index for '%s'", $sub_stringify_index_entry->($index_entry));
+					mywarn("failed to download index for '%s'", $stringified_index_entry);
 					goto CHILD_EXIT;
 				}
 			};
