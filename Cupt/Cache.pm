@@ -1094,7 +1094,7 @@ sub _index_list_suffix {
 	}
 }
 
-=head2 get_path_of_release_list
+=head2 get_path_of_index_list
 
 method, returns path of Packages/Sources file for I<index_entry>
 
