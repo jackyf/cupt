@@ -1304,15 +1304,23 @@ sub update_release_data ($$) {
 				foreach my $download_uri (@download_uris_in_order) {
 					(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
 
-					(my $download_filename_extension = $download_filename_basename) =~ s/(.*)\.//;
+					my $download_filename_extension;
+					if ($download_filename_basename =~ m/(\.\w+)/) {
+						$download_filename_extension = $1;
+					} else {
+						$download_filename_extension = '';
+					}
+
 					my $download_filename = $base_download_filename . $download_filename_extension;
 					my $sub_post_action;
 
 					# checking and preparing unpackers
-					if ($download_filename_extension =~ m/^(lzma|bz2|gz)$/) {
-						my $uncompressor_name = $download_filename_extension;
-						if (system("$uncompressor_name --version")) {
-							mywarn("'%s' uncompresser is not available, not downloading '%s'",
+					if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
+						my %extension_to_uncompressor_name = ('.lzma' => 'lzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
+						my $uncompressor_name = $extension_to_uncompressor_name{$download_filename_extension};
+
+						if (system("which $uncompressor_name")) {
+							mywarn("'%s' uncompressor is not available, not downloading '%s'",
 									$uncompressor_name, $download_uri);
 							next;
 						}
