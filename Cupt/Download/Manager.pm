@@ -246,6 +246,9 @@ sub new ($$$) {
 							$self->{_progress}->progress($uri, $action, @params);
 						}
 					}
+					when ('set-long-alias') {
+						$self->{_progress}->set_long_alias_for_uri(@params);
+					}
 					default { myinternaldie("download manager: invalid worker command"); }
 				}
 				$proceed_next_download or next;
@@ -453,6 +456,20 @@ sub download ($@) {
 
 	# finish
 	return $result;
+}
+
+=head2 set_long_alias_for_uri
+
+method, forwards params to underlying download progress
+L<Cupt::Download::Progress::set_long_alias_for_uri|Cupt::Download::Progress/set_long_alias_for_uri>
+
+=cut
+
+sub set_long_alias_for_uri {
+	my ($self, @params) = @_;
+	flock($self->{_worker_fh}, LOCK_EX);
+	__my_write_pipe($self->{_worker_fh}, 'set-long-alias', @params);
+	flock($self->{_worker_fh}, LOCK_UN);
 }
 
 sub _download ($$$) {
