@@ -158,6 +158,7 @@ sub new ($$$) {
 							# just immediately end it
 							my $is_duplicated_download = 1;
 							__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
+							close $waiter_fh;
 						} elsif (exists $active_downloads{$uri}) {
 							push @pending_downloads, [ $uri, $waiter_fh ];
 						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
@@ -195,12 +196,13 @@ sub new ($$$) {
 							$is_duplicated_download = 1;
 							my @new_pending_downloads;
 
-							foreach (@pending_downloads) {
-								($uri, my $waiter_fh) = @$_;
+							foreach my $ref_pending_download (@pending_downloads) {
+								($uri, $waiter_fh) = @$ref_pending_download;
 								if (exists $done_downloads{$uri}) {
 									__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
+									close $waiter_fh;
 								} else {
-									push @new_pending_downloads, $_;
+									push @new_pending_downloads, $ref_pending_download;
 								}
 							}
 							@pending_downloads = @new_pending_downloads;
