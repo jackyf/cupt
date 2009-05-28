@@ -1302,19 +1302,15 @@ sub update_release_data ($$) {
 
 				my $download_result;
 				foreach my $download_uri (@download_uris_in_order) {
-					my ($download_filename_extension) = ($download_uri =~ m/(?:.*)(\.\w+|)/);
+					(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
+
+					(my $download_filename_extension = $download_filename_basename) =~ s/(.*)\.//;
 					my $download_filename = $base_download_filename . $download_filename_extension;
 					my $sub_post_action;
 
 					# checking and preparing unpackers
-					if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
-						my %uncompressors = (
-							'.lzma' => 'lzma',
-							'.bz2' => 'bunzip2',
-							'.gz' => 'gunzip',
-						);
-
-						my $uncompressor_name = $uncompressors{$download_filename_extension};
+					if ($download_filename_extension =~ m/^(lzma|bz2|gz)$/) {
+						my $uncompressor_name = $download_filename_extension;
 						if (system("$uncompressor_name --version")) {
 							mywarn("'%s' uncompresser is not available, not downloading '%s'",
 									$uncompressor_name, $download_uri);
@@ -1329,7 +1325,8 @@ sub update_release_data ($$) {
 							}
 							return '';
 						}
-					} elsif ($download_filename_extension eq '') {
+					} elsif ($download_filename_extension eq $download_filename_basename) {
+						# no extension
 						$sub_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
 					} else {
 						mywarn("unknown file extension '%s', not downloading '%s'",
@@ -1337,7 +1334,6 @@ sub update_release_data ($$) {
 						next;
 					}
 
-					(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
 
 					my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
 							$index_entry->{'component'}, $download_filename_basename;

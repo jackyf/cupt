@@ -152,21 +152,8 @@ sub new ($$$) {
 						open($waiter_fh, ">", $waiter_fifo) or
 								mydie("unable to connect to download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
 						autoflush $waiter_fh;
-						# check if this download was already done
-						if (exists $done_downloads{$uri}) {
-							my $result = $done_downloads{$uri};
-							# just immediately end it
-							my $is_duplicated_download = 1;
-							__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
-							close $waiter_fh;
-						} elsif (exists $active_downloads{$uri}) {
-							push @pending_downloads, [ $uri, $waiter_fh ];
-						} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
-							# put the query on hold
-							push @download_queue, [ $uri, $filename, $waiter_fh ];
-						} else {
-							$proceed_next_download = 1;
-						}
+
+						$proceed_next_download = 1;
 					}
 					when ('set-download-size') {
 						($uri, my $size) = @params;
@@ -218,7 +205,7 @@ sub new ($$$) {
 						# update progress
 						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
 
-						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
+						if (scalar @download_queue) {
 							# put next of waiting queries
 							($uri, $filename, $waiter_fh) = @{shift @download_queue};
 							$proceed_next_download = 1;
@@ -255,7 +242,25 @@ sub new ($$$) {
 					}
 					default { myinternaldie("download manager: invalid worker command"); }
 				}
+
 				$proceed_next_download or next;
+
+				# check if this download was already done
+				if (exists $done_downloads{$uri}) {
+					my $result = $done_downloads{$uri};
+					# just immediately end it
+					my $is_duplicated_download = 1;
+					__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
+					close $waiter_fh;
+					next;
+				} elsif (exists $active_downloads{$uri}) {
+					push @pending_downloads, [ $uri, $waiter_fh ];
+					next;
+				} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
+					# put the query on hold
+					push @download_queue, [ $uri, $filename, $waiter_fh ];
+					next;
+				}
 				# there is a space for new download, start it
 
 				$target_filenames{$uri} = $filename;
