@@ -1,20 +1,39 @@
 cupt (0.2.0) UNRELEASED; urgency=low
 
+  * cupt:
+    - New 'update' subcommand.
   * Cupt:
     - System:
       - Resolver*:
         - Merged an infrastructure to allow multiple resolvers to co-exist in
           future.
       - Worker:
-        [API break] 'do_actions' renamed to 'change_system'.
+        - [API break] 'do_actions' renamed to 'change_system'.
+        - New method 'update_release_data'.
     - Download:
       - Manager:
         - Worker thread: handle duplicated download requests that come when
           the original download request is not yet completed. This use case is
           possible for future 'update' action.
+        - Worker thread: handle concurrent request of the same URI properly.
+        - Worker thread: pass correct URI to download progress in case of
+          ACKed download.
+        - 'download' method: switched to modern interface of File::Temp,
+          getting rid of compatibility one.
+        - 'download' method: use POSIX::mkfifo install of calling 'mkfifo'
+          program.
+        - 'download' method: return final download result back to worker
+          thread only if this was requested.
+        - New forwarding methods 'set_long_alias_for_uri' and
+          'set_short_alias_for_uri'.
     - Cache:
       - 'get_pin' method: divided into 'get_original_apt_pin' and 'get_pin'
         methods.
+      - New 'get_index_entries' method.
+      - New 'get_path_of_release_list' method.
+      - New 'get_path_of_index_list' method.
+      - New 'get_download_entries_of_index_list' method.
+      - New 'get_download_uri_of_release_list' method.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 26 May 2009 09:50:17 +0300
 
