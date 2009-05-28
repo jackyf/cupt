@@ -159,13 +159,14 @@ sub __get_archive_basename ($) {
 }
 
 sub __verify_hash_sums ($$) {
-	my ($version, $path) = @_;
+	my ($ref_hash_sums, $path) = @_;
 
 	my @checks = 	(
-					[ $version->{md5sum}, 'MD5' ],
-					[ $version->{sha1sum}, 'SHA-1' ],
-					[ $version->{sha256sum}, 'SHA-256' ],
+					[ $ref_hash_sums->{'md5sum'}, 'MD5' ],
+					[ $ref_hash_sums->{'sha1sum'}, 'SHA-1' ],
+					[ $ref_hash_sums->{'sha256sum'}, 'SHA-256' ],
 					);
+
 	open(FILE, '<', $path) or
 			mydie("unable to open file '%s': %s", $path, $!);
 	binmode(FILE);
@@ -1312,7 +1313,7 @@ sub update_release_data ($$) {
 					}
 
 					my $download_filename = $base_download_filename . $download_filename_extension;
-					my $sub_post_action;
+					my $sub_main_post_action;
 
 					# checking and preparing unpackers
 					if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
@@ -1325,7 +1326,7 @@ sub update_release_data ($$) {
 							next;
 						}
 
-						$sub_post_action = sub {
+						$sub_main_post_action = sub {
 							my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
 							if ($uncompressing_result) {
 								return sprintf "failed to uncompress '%s', '%s' returned error %s",
@@ -1335,7 +1336,7 @@ sub update_release_data ($$) {
 						}
 					} elsif ($download_filename_extension eq $download_filename_basename) {
 						# no extension
-						$sub_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
+						$sub_main_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
 					} else {
 						mywarn("unknown file extension '%s', not downloading '%s'",
 									$download_filename_extension, $download_uri);
@@ -1354,7 +1355,14 @@ sub update_release_data ($$) {
 							{
 								'uris' => [ $download_uri ],
 								'filename' => $download_filename,
-								'post-action' => $sub_post_action,
+								'post-action' => sub {
+									__verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
+											do {
+												unlink $download_filename;
+												return sprintf __("%s: hash sums mismatch"), $download_filename;
+											};
+									return $sub_main_post_action->();
+								}
 							}
 					);
 					# if all processed smoothly, exit loop
