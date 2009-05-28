@@ -34,7 +34,7 @@ use URI;
 use IO::Handle;
 use IO::Select;
 use Fcntl qw(:flock);
-use File::Temp;
+use File::Temp qw(tempfile);
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
@@ -358,7 +358,7 @@ sub download ($@) {
 		my $size = $download_entries{$filename}->{'size'};
 		my $checker = $download_entries{$filename}->{'checker'};
 
-		my $waiter_fifo = File::Temp::tempnam($self->{_fifo_dir}, "download-") or
+		(undef, my $waiter_fifo) = tempfile(DIR => $self->{_fifo_dir}, TEMPLATE => "download-XXXXXX", OPEN => 0) or
 				mydie("unable to choose name for download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
 		system('mkfifo', '-m', '600', $waiter_fifo) == 0 or
 				mydie("unable to create download fifo for '%s' -> '%s': %s", $uri, $filename, $?);
