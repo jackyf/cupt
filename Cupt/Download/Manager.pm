@@ -227,6 +227,7 @@ sub new ($$$) {
 						};
 
 						# update progress
+						say "downloader: sending result '$result' to progress for uri '$uri'"; 
 						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
 					}
 					when ('progress') {
@@ -442,11 +443,13 @@ sub download ($@) {
 				$error_string = $sub_post_action->();
 			}
 
-			# now we know final result, send it back (for progress indicator)
-			flock($self->{_worker_fh}, LOCK_EX);
-			__my_write_pipe($self->{_worker_fh}, 'done-ack',
-					$download_entries{$filename}->{'current_uri'}, $error_string);
-			flock($self->{_worker_fh}, LOCK_UN);
+			if (not $is_duplicated_download) {
+				# now we know final result, send it back (for progress indicator)
+				flock($self->{_worker_fh}, LOCK_EX);
+				__my_write_pipe($self->{_worker_fh}, 'done-ack',
+						$download_entries{$filename}->{'current_uri'}, $error_string);
+				flock($self->{_worker_fh}, LOCK_UN);
+			}
 
 			if ($error_string) {
 				# this download hasn't been processed smoothly
