@@ -211,7 +211,7 @@ sub new ($$$) {
 							my @new_pending_downloads;
 
 							foreach my $ref_pending_download (@pending_downloads) {
-								($uri, $waiter_fh) = @$ref_pending_download;
+								(my $uri, $waiter_fh) = @$ref_pending_download;
 								if (exists $done_downloads{$uri}) {
 									say "downloader: answering to duplicated pending '$uri'"; 
 									__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
@@ -228,7 +228,6 @@ sub new ($$$) {
 
 						# update progress
 						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
-
 					}
 					when ('progress') {
 						$uri = shift @params;
