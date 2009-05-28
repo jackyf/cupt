@@ -186,12 +186,6 @@ sub new ($$$) {
 						waitpid($active_downloads{$uri}->{pid}, 0);
 
 						close($active_downloads{$uri}->{waiter_fh});
-
-						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
-							# put next of waiting queries
-							($uri, $filename, $waiter_fh) = @{shift @download_queue};
-							$proceed_next_download = 1;
-						}
 					}
 					when ('done-ack') {
 						# this is final ACK from download with final result
@@ -223,6 +217,12 @@ sub new ($$$) {
 
 						# update progress
 						__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
+
+						if (scalar @download_queue && (scalar keys %active_downloads < $max_simultaneous_downloads_allowed)) {
+							# put next of waiting queries
+							($uri, $filename, $waiter_fh) = @{shift @download_queue};
+							$proceed_next_download = 1;
+						}
 					}
 					when ('progress') {
 						$uri = shift @params;
