@@ -1214,6 +1214,12 @@ sub update_release_and_index_data ($$) {
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
 
+
+	# run pre-actions
+	foreach my $command ($self->{_config}->var('apt::update::pre-invoke')) {
+		$self->_run_external_command('pre', $command, $command);
+	}
+
 	my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 
 	my $sub_download_wrapper = sub {
