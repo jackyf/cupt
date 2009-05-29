@@ -590,6 +590,7 @@ sub _verify_signature ($$) {
 		my $result;
 		do {
 			$result = readline(GPG_VERIFY);
+			chomp $result;
 			mydebug("fetched '%s' from gpg pipe", $result);
 		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or !($result =~ m/^\[GNUPG:\]/)));
 
