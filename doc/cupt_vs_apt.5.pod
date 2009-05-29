@@ -73,6 +73,10 @@ worker passes '--force-*' options to dpkg only when really needed, not always
 
 =item
 
+LZMA-compressed index files are supported.
+
+=item
+
 HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|cupt(1)/acquire::http::allow-redirects>)
 
 =back
