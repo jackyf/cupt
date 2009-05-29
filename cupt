@@ -90,7 +90,7 @@ my %command_handlers = (
 
 if (defined($command_handlers{$command})) {
 	eval {
-		$command_handlers{$command}->();
+		exit $command_handlers{$command}->();
 	};
 	if (mycatch()) {
 		myerr("error performing command '%s'", $command);
@@ -1070,7 +1070,7 @@ sub update_release_data () {
 	my $download_progress = new Cupt::Download::Progresses::Console;
 	my $worker = new Cupt::System::Worker($config, $cache);
 
-	$worker->update_release_and_index_data($download_progress);
+	return $worker->update_release_and_index_data($download_progress);
 }
 
 sub show_changelog_or_copyright ($) {
