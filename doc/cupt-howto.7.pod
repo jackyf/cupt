@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-how to use L<cupt(1)>
+how to use L<cupt(1)> package manager
 
 =head1 PREFACE
 
@@ -69,7 +69,7 @@ How do I:
 
 cupt policy
 
-=head2 print info about pins and available version for a package?
+=head2 print info about pins and available versions for a package?
 
 cupt policy <package name>
 
