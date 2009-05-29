@@ -1,0 +1,140 @@
+=pod
+
+=head1 NAME
+
+how to use L<cupt(1)>
+
+=head1 PREFACE
+
+When using commands that modify a system, you have to either execute cupt with
+root priviledes or supply '--simulate' (or '-s') option.
+
+=head1 BASIC USAGE
+
+How do I:
+
+=over
+
+=item upgrade the whole system?
+
+cupt full-upgrade
+
+=item upgrade the system without removing packages?
+
+cupt safe-upgrade
+
+=item install a package?
+
+cupt install <package name>
+
+=item install several packages at once?
+
+cupt install <package name 1> <package name 2> .. <package name N>
+
+=item remove a package?
+
+cupt remove <package name>
+
+=item remove several packages at once?
+
+cupt remove <package name 1> <package name 2> .. <package name N>
+
+=item remove a package along with its configuration files?
+
+cupt purge <package name>
+
+=item update repository metadata?
+
+cupt update
+
+=item print info about package?
+
+cupt show <package name>
+
+=item print only dependencies for a package?
+
+cupt depends <package name>
+
+=item print reverse dependencies for a package?
+
+cupt rdepends <package name>
+
+=item search for a package?
+
+cupt search <keyword 1> <keyword2> .. <keyword N>
+
+=back
+
+=head2 ADVANCED USAGE
+
+How do I:
+
+=over
+
+=item print info about available releases?
+
+cupt policy
+
+=item print info about pins and available version for a package?
+
+cupt policy <package name>
+
+=item print info about many packages?
+
+cupt show <package name 1> <package name 2> .. <package name N>
+
+=item print all configuration variables?
+
+cupt config-dump
+
+=item print a particular configuration variable?
+
+cupt config-dump <variable>
+
+=item see Debian changelog for a package?
+
+cupt changelog <package name>
+
+=item see copyright info for a package?
+
+cupt copyright <package name>
+
+=item specify a particular version for a package?
+
+<package name>=<version string> (example: cupt install proxychains=3.1-2)
+
+=item specify a particular acrhive/codename for a package?
+
+<package name>/<archive> (example: cupt install libc6/experimental)
+
+<package name>/<codename> (example: cupt install proxychains/lenny)
+
+=item see versions of packages for install/remove/upgrade/etc. ?
+
+use '--show-versions' option
+
+=item see why cupt decided to do that particular action?
+
+use '--show-reasons' option
+
+=item install and remove packages simultaneously?
+
+Examples:
+
+cupt install <package name to install> <package name to remove>-
+
+cupt remove <package name to remove> <package name to install>+
+
+=item satisfy particular dependency relation expressions?
+
+cupt satisfy 
+
+=item mark the package as automatically installed?
+
+cupt markauto <package name>
+
+=item mark the package as manually installed?
+
+cupt unmarkauto <package name>
+
+=back
