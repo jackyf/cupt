@@ -4,6 +4,8 @@ cupt (0.2.0) UNRELEASED; urgency=low
     - New 'update' subcommand.
   * doc/cupt.1.pod:
     - Mentioned how to set list configuration option.
+  * doc/cupt_howto.7.pod:
+    - Added.
   * Cupt:
     - System:
       - Resolver*:
