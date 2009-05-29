@@ -1399,6 +1399,13 @@ sub update_release_and_index_data ($$) {
 				mydie("unable to close indexes lock file: %s", $!);
 	}
 
+	if ($exit_code == 0) {
+		# run post-actions
+		foreach my $command ($self->{_config}->var('apt::update::post-invoke')) {
+			$self->_run_external_command('post', $command, $command);
+		}
+	}
+
 	return $exit_code;
 }
 
