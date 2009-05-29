@@ -21,6 +21,7 @@ Description: alternative front-end for dpkg -- Perl modules
  .
  Provides:
   - parsing and manipulating configuration info;
+  - parsing indexes metadata info;
   - version strings comparison;
   - inspection of the binary package' versions;
   - parsing and querying info about installed packages;
