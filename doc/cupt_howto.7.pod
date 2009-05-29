@@ -130,3 +130,7 @@ cupt markauto <package name>
 =head2 mark the package as manually installed?
 
 cupt unmarkauto <package name>
+
+=head1 SEE ALSO
+
+L<cupt(1)>
