@@ -387,10 +387,7 @@ sub download ($@) {
 		flock($self->{_worker_fh}, LOCK_UN);
 
 		open(my $waiter_fh, "<", $waiter_fifo) or
-				do {
-					`stat $waiter_fifo > /home/jackyf/download/tmp/stat_waiter`;
-					mydie("unable to listen to download fifo '%s': %s", $waiter_fifo, $!);
-				};
+				mydie("unable to listen to download fifo '%s': %s", $waiter_fifo, $!);
 
 		push @waiters, {
 			'filename' => $filename,
