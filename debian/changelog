@@ -39,8 +39,11 @@ cupt (0.2.0) UNRELEASED; urgency=low
       - New 'get_path_of_index_list' method.
       - New 'get_download_entries_of_index_list' method.
       - New 'get_download_uri_of_release_list' method.
+      - Honor 'debug::gpgv' config option to print some debug info while
+        verifying signatures.
     - Config:
       - Added configuration option 'dpkg::options'.
+      - New configuration option 'debug::gpgv'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 29 May 2009 00:48:30 +0300
 

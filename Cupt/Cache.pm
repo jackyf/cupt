@@ -556,11 +556,20 @@ sub get_satisfying_versions ($$) {
 sub _verify_signature ($$) {
 	my ($self, $file) = @_;
 
+	my $debug = $self->{_config}->var('debug::gpgv');
+
+	mydebug("verifying file '%s'", $file) if $debug;
+
 	my $keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
+	mydebug("keyring file is '%s'", $keyring_file) if $debug;
 
 	my $signature_file = "$file.gpg";
+	mydebug("signature file is '%s'", $signature_file) if $debug;
 	-r $signature_file or
-			return 0;
+			do {
+				mydebug("unable to read signature file '%s'", $signature_file) if $debug;
+				return 0;
+			};
 
 	-e $keyring_file or
 			do {
@@ -581,6 +590,7 @@ sub _verify_signature ($$) {
 		my $result;
 		do {
 			$result = readline(GPG_VERIFY);
+			mydebug("fetched '%s' from gpg pipe", $result);
 		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or !($result =~ m/^\[GNUPG:\]/)));
 
 		if (!defined $result) {
@@ -651,6 +661,7 @@ sub _verify_signature ($$) {
 	close(GPG_VERIFY) or $! == 0 or
 			mydie("unable to close gpg pipe: %s", $!);
 
+	mydebug("the verify result is %u", $verify_result) if $debug;
 	return $verify_result;
 }
 

@@ -103,6 +103,7 @@ sub new {
 			'cupt::worker::simulate' => 0,
 			'debug::resolver' => 0,
 			'debug::worker' => 0,
+			'debug::gpgv' => 0,
 		},
 
 		_optional_patterns => [
