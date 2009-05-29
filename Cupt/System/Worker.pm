@@ -1243,6 +1243,7 @@ sub update_release_and_index_data ($$) {
 			push @pids, $pid;
 		} else {
 			# child
+			my $exit_code = 1; # bad by default
 			my $release_local_path = $cache->get_path_of_release_list($index_entry);
 			do {
 				# phase 1: downloading Release file
@@ -1377,13 +1378,14 @@ sub update_release_and_index_data ($$) {
 						mywarn("failed to download index for '%s'", $index_alias);
 					} else {
 						# all's good
+						$exit_code = 0;
 						goto CHILD_EXIT;
 					}
 				}
 			};
 
 			CHILD_EXIT:
-			POSIX::_exit(0);
+			POSIX::_exit($exit_code);
 		}
 	}
 	foreach my $pid (@pids) {
