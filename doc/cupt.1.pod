@@ -521,7 +521,7 @@ apt::neverautoremove, apt::get::allowunauthenticated, dir, dir::bin::dpkg,
 dir::cache, dir::cache::archives, dir::etc, dir::etc::sourcelist,
 dir::etc::sourceparts, dir::etc::parts, dir::etc::main, dir::etc::preferences,
 dir::state, dir::state::extendedstates, dir::state::lists, dir::state::status,
-dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
+dpkg::options, dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
 gpgv::trustedkeyring, rpm::pre-invoke, rpm::post-invoke
 
 See L<apt.conf(5)> for their meanings.
