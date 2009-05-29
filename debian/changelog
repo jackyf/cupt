@@ -10,6 +10,7 @@ cupt (0.2.0) UNRELEASED; urgency=low
       - Worker:
         - [API break] 'do_actions' renamed to 'change_system'.
         - New method 'update_release_and_index_data'.
+        - Honor 'dpkg::options' option.
     - Download:
       - Manager:
         - Worker thread: handle duplicated download requests that come when
@@ -34,6 +35,8 @@ cupt (0.2.0) UNRELEASED; urgency=low
       - New 'get_path_of_index_list' method.
       - New 'get_download_entries_of_index_list' method.
       - New 'get_download_uri_of_release_list' method.
+    - Config:
+      - Added configuration option 'dpkg::options'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 29 May 2009 00:48:30 +0300
 

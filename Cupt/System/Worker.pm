@@ -1085,6 +1085,10 @@ sub change_system ($$) {
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->{_config}->var('dir::bin::dpkg');
+	foreach my $option ($self->{_config}->var('dpkg::options')) {
+		$dpkg_binary .= " $option";
+	}
+
 	my $defer_triggers = $self->{_config}->var('cupt::worker::defer-triggers');
 
 	$self->_do_dpkg_pre_actions($ref_actions_preview, \@action_group_list);

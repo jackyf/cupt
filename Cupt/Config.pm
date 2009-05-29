@@ -120,6 +120,7 @@ sub new {
 			'apt::neverautoremove' => [],
 			'apt::update::pre-invoke' => [],
 			'apt::update::post-invoke' => [],
+			'dpkg::options' => [],
 			'dpkg::pre-install-pkgs' => [],
 			'dpkg::pre-invoke' => [],
 			'dpkg::post-invoke' => [],
