@@ -376,7 +376,7 @@ sub download ($@) {
 			(undef, $waiter_fifo) = tempfile(DIR => $self->{_fifo_dir}, TEMPLATE => "download-XXXXXX", OPEN => 0) or
 					mydie("unable to choose name for download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
 		};
-		POSIX::mkfifo($waiter_fifo, '600') //
+		POSIX::mkfifo($waiter_fifo, 0600) //
 				mydie("unable to create download fifo for '%s' -> '%s': %u", $uri, $filename, $!);
 
 		flock($self->{_worker_fh}, LOCK_EX);
