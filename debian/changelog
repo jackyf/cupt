@@ -1,4 +1,4 @@
-cupt (0.2.0) UNRELEASED; urgency=low
+cupt (0.2.0) unstable; urgency=low
 
   * cupt:
     - New 'update' subcommand.
@@ -48,7 +48,7 @@ cupt (0.2.0) UNRELEASED; urgency=low
     - Recommended 'bzip2' for compressed indexes.
     - Suggested 'lzma' for compressed indexes.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 29 May 2009 00:48:30 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 29 May 2009 22:29:13 +0300
 
 cupt (0.1.4) unstable; urgency=low
 
