@@ -14,8 +14,8 @@ Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, perl (>= 5.10.0), liburi-perl,
   libwww-curl-perl (>= 4.05), libgraph-perl, libterm-size-perl,
   libparse-recdescent-perl, libdigest-sha-perl
-Recommends: liblocale-gettext-perl
-Suggests: cupt
+Recommends: liblocale-gettext-perl, bzip2
+Suggests: cupt, lzma
 Description: alternative front-end for dpkg -- Perl modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
  .

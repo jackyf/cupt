@@ -44,6 +44,9 @@ cupt (0.2.0) UNRELEASED; urgency=low
     - Config:
       - Added configuration option 'dpkg::options'.
       - New configuration option 'debug::gpgv'.
+  * debian/control:
+    - Recommended 'bzip2' for compressed indexes.
+    - Suggested 'lzma' for compressed indexes.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 29 May 2009 00:48:30 +0300
 
