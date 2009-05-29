@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-how to use L<cupt(1)> package manager
+cupt_howto - how to use L<cupt(1)> package manager
 
 =head1 PREFACE
 
