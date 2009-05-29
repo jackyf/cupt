@@ -45,11 +45,13 @@ Description: alternative front-end for dpkg -- console interface
  .
  Some features:
   - strict full-case resolver;
+  - resolver reasons tracking;
   - command-line and APT-like option name checker;
   - case-sensitive search;
   - pinning by source package name;
   - pinning by package groups using shell-like patterns;
   - configurable 'depends' and 'rdepends' subcommands;
-  - 'satisfy' subcommand.
+  - 'satisfy' subcommand;
+  - support of LZMA-compressed indexes.
  .
  Its interface is mostly like apt-get/aptitude console interface.
