@@ -150,7 +150,7 @@ sub new {
 			($source_type eq 'deb-src' && $build_config{'-source'}))
 		{
 			eval {
-				my $ref_release_info = $self->_get_release_info($self->_path_of_release_list($ref_index_entry));
+				my $ref_release_info = $self->_get_release_info($self->get_path_of_release_list($ref_index_entry));
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
 				$ref_release_info->{base_uri} = $ref_index_entry->{'uri'};
 				if ($source_type eq 'deb') {
