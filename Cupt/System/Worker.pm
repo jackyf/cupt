@@ -1388,13 +1388,18 @@ sub update_release_and_index_data ($$) {
 			POSIX::_exit($exit_code);
 		}
 	}
+	my $exit_code = 0;
 	foreach my $pid (@pids) {
 		waitpid $pid, 0;
+		# if something went bad in child, the parent won't return non-zero code too
+		$exit_code += $?;
 	}
 	if (!$simulate) {
 		close($lock) or
 				mydie("unable to close indexes lock file: %s", $!);
 	}
+
+	return $exit_code;
 }
 
 1;
