@@ -370,8 +370,12 @@ sub download ($@) {
 		my $size = $download_entries{$filename}->{'size'};
 		my $checker = $download_entries{$filename}->{'checker'};
 
-		(undef, my $waiter_fifo) = tempfile(DIR => $self->{_fifo_dir}, TEMPLATE => "download-XXXXXX", OPEN => 0) or
-				mydie("unable to choose name for download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
+		my $waiter_fifo;
+		do {
+			local $^W = 0; # suppress the warning about not opened temporary file, we really don't need it
+			(undef, $waiter_fifo) = tempfile(DIR => $self->{_fifo_dir}, TEMPLATE => "download-XXXXXX", OPEN => 0) or
+					mydie("unable to choose name for download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
+		};
 		POSIX::mkfifo($waiter_fifo, '600') //
 				mydie("unable to create download fifo for '%s' -> '%s': %u", $uri, $filename, $!);
 
