@@ -1328,7 +1328,7 @@ sub update_release_and_index_data ($$) {
 
 					# checking and preparing unpackers
 					if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
-						my %extension_to_uncompressor_name = ('.lzma' => 'lzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
+						my %extension_to_uncompressor_name = ('.lzma' => 'unlzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
 						my $uncompressor_name = $extension_to_uncompressor_name{$download_filename_extension};
 
 						if (system("which $uncompressor_name >/dev/null")) {
