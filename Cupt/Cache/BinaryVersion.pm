@@ -226,8 +226,7 @@ sub new {
 }
 
 sub is_hashes_equal {
-	my $self = shift;
-	my $other = shift;
+	my ($self, $other) = @_;
 	return ($self->{md5sum} eq $other->{md5sum} &&
 			$self->{sha1sum} eq $other->{sha1sum} &&
 			$self->{sha256sum} eq $other->{sha256sum});
