@@ -191,6 +191,16 @@ C<cupt copyright --installed-only dpkg nlkt lintian>
 
 C<cupt copyright libqtcore4>
 
+=item screenshots
+
+open a browser window/tab with screenshots of given packages.
+
+This subcommand receives list of package names.
+
+Example:
+
+C<cupt screenshots arora>
+
 =back
 
 =head3 query-specific options
