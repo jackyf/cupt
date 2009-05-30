@@ -213,6 +213,8 @@ sub new {
 				undef $field_name;
 			}
 		}
+
+		$self->{source_version_string} //= $self->{version_string};
 	};
 	if (mycatch()) {
 		if (defined($field_name)) {
