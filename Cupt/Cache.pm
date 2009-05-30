@@ -237,13 +237,8 @@ sub is_automatically_installed ($$) {
 	my ($self, $package_name) = @_;
 
 	my $ref_auto_installed = $self->{_extended_info}->{'automatically_installed'};
-	if (exists $ref_auto_installed->{$package_name} &&
-		$ref_auto_installed->{$package_name})
-	{
-		return 1;
-	} else {
-		return 0;
-	}
+	return (exists $ref_auto_installed->{$package_name} &&
+			$ref_auto_installed->{$package_name});
 }
 
 =head2 get_pin
