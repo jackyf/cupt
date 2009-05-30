@@ -283,15 +283,13 @@ method, returns whether this version has signed source or not
 sub is_signed ($$) {
 	my ($self) = @_;
 
-	my $has_signed_source = 0;
 	foreach (@{$self->{avail_as}}) {
 		if ($_->{release}->{signed}) {
-			$has_signed_source = 1;
-			last;
+			return 1;
 		}
 	}
 
-	return $has_signed_source;
+	return 0;
 }
 
 =head2 is_installed
