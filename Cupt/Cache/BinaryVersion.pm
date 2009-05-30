@@ -118,7 +118,6 @@ sub new {
 
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
 	$self->{package_name} = $package_name;
-	$self->{source_name} = $package_name; # may be redefined in appropriate tag
 
 	my $field_name = undef;
 	eval {
@@ -215,6 +214,7 @@ sub new {
 		}
 
 		$self->{source_version_string} //= $self->{version_string};
+		$self->{source_name} //= $self->{package_name};
 	};
 	if (mycatch()) {
 		if (defined($field_name)) {
