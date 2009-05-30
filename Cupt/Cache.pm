@@ -241,7 +241,7 @@ sub is_automatically_installed ($$) {
 			$ref_auto_installed->{$package_name});
 }
 
-=head2 get_pin
+=head2 get_original_apt_pin
 
 method, returns pin value for the supplied version as described in apt_preferences(5)
 
