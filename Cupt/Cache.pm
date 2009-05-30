@@ -500,8 +500,7 @@ sub _get_satisfying_versions_for_one_relation {
 			defined $reverse_provide_package or next;
 			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
 				my $version = $_->{'version'};
-				foreach (@{$version->{provides}}) {
-					my $provides_package_name = $_;
+				foreach my $provides_package_name (@{$version->{provides}}) {
 					if ($provides_package_name eq $package_name) {
 						# ok, this particular version does provide this virtual package
 						push @result, $version;
