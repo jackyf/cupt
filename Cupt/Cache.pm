@@ -268,7 +268,7 @@ sub get_original_apt_pin {
 	# release-dependent settings
 	my $default_release = $self->{_config}->var("apt::default-release");
 	foreach (@available_as) {
-		if (defined($default_release)) {
+		if (defined $default_release) {
 			if ($_->{release}->{archive} eq $default_release ||
 				$_->{release}->{codename} eq $default_release)
 			{
