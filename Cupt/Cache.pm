@@ -287,21 +287,21 @@ sub get_original_apt_pin {
 
 	# looking in pin settings
 	PIN:
-	foreach my $pin (@{$self->{_pin_settings}}) {
-		if (exists $pin->{'package_name'}) {
-			my $value = $pin->{'package_name'};
+	foreach my $ref_pin (@{$self->{_pin_settings}}) {
+		if (exists $ref_pin->{'package_name'}) {
+			my $value = $ref_pin->{'package_name'};
 			$version->{package_name} =~ m/$value/ or next PIN;
 		}
-		if (exists $pin->{'source_name'}) {
-			my $value = $pin->{'source_name'};
+		if (exists $ref_pin->{'source_name'}) {
+			my $value = $ref_pin->{'source_name'};
 			$version->{source_name} =~ m/$value/ or next PIN;
 		}
-		if (exists $pin->{'version'}) {
-			my $value = $pin->{'version'};
+		if (exists $ref_pin->{'version'}) {
+			my $value = $ref_pin->{'version'};
 			$version->{version_string} =~ m/$value/ or next PIN;
 		}
-		if (exists $pin->{'base_uri'}) {
-			my $value = $pin->{'base_uri'};
+		if (exists $ref_pin->{'base_uri'}) {
+			my $value = $ref_pin->{'base_uri'};
 
 			my $found = 0;
 			foreach (@available_as) {
@@ -312,8 +312,8 @@ sub get_original_apt_pin {
 			}
 			$found or next PIN;
 		}
-		if (exists $pin->{'release'}) {
-			while (my ($key, $value) = each %{$pin->{'release'}}) {
+		if (exists $ref_pin->{'release'}) {
+			while (my ($key, $value) = each %{$ref_pin->{'release'}}) {
 				my $value = $value;
 
 				my $found = 0;
@@ -329,7 +329,7 @@ sub get_original_apt_pin {
 		}
 
 		# yeah, all conditions satisfied here
-		$update_pin->($pin->{'value'});
+		$update_pin->($ref_pin->{'value'});
 	}
 
 	return $result;
