@@ -2,6 +2,10 @@ cupt (0.2.1) UNRELEASED; urgency=low
 
   * cupt:
     - New 'screenshots' subcommand.
+  * Cupt:
+    - System:
+      - Worker:
+        - New 'clean_archives' method.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 30 May 2009 18:24:36 +0300
 

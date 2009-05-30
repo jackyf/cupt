@@ -1413,5 +1413,56 @@ sub update_release_and_index_data ($$) {
 	return $exit_code;
 }
 
+=head2 clean_archives
+
+method, cleans archives directory.
+
+Parameters:
+
+I<sub_callback> - reference to callback subroutine which will be called for
+each deletion with one argument - file path
+
+I<leave_available> - whether to leave .debs that are available from package
+indexes or not
+=cut
+
+sub clean_archives ($$) {
+	my ($self, $sub_callback, $leave_available) = @_;
+
+	my $archives_location = $self->_get_archives_location();
+	my %white_list;
+	if ($leave_available) {
+		foreach my $package (values %{$self->{_cache}->get_binary_packages()}) {
+			foreach my $version (@{$package->get_versions()}) {
+				my $path = $archives_location . '/' . __get_archive_basename($version);
+				$white_list{$archives_location . '/' . __get_archive_basename($version)} = 1;
+
+				# checking for symlinks
+				if (-l $path) {
+					my $target_path = readlink $path;
+					if (-e $target_path) {
+						# don't delete this file too
+						$white_list{$target_path} = 1;
+					}
+				}
+			}
+		}
+	}
+
+	my @paths_to_delete = glob("$archives_location/*");
+
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+	if ($simulate) {
+		say "simulating deletions:";
+	}
+	foreach my $path (@paths_to_delete) {
+		not exists $white_list{$path} or next;
+		if (!$simulate) {
+			unlink $path or mydie("unable to delete file '%s', $path");
+		}
+		$sub_callback->($path);
+	}
+}
+
 1;
 
