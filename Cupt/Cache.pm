@@ -256,7 +256,7 @@ sub get_original_apt_pin {
 	my $result;
 
 	my $update_pin = sub ($) {
-		if (!defined($result)) {
+		if (not defined $result) {
 			$result = $_[0];
 		} elsif ($result < $_[0]) {
 			$result = $_[0];
