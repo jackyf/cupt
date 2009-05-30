@@ -521,9 +521,7 @@ empty array
 
 Parameters:
 
-I<relation_expression> - reference to L<Cupt::Cache::Relation|Cupt::Cache::Relation>, or relation OR
-group (see L<Cupt::Cache::Relation reference|Cupt::Cache::Relation> for the info about OR
-groups)
+I<relation_expression> - see L<Relation expression in Cupt::Cache::Relation|Cupt::Cache::Relation/Relation expression>
 
 =cut
 
