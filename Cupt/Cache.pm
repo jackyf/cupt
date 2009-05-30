@@ -755,9 +755,9 @@ sub get_index_entries {
 }
 
 sub __parse_source_list {
-	my $file = shift;
+	my ($file) = @_;
 	my @result;
-	open(HFILE, '<', "$file") or mydie("unable to open file '%s': %s", $file, $!);
+	open(HFILE, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
 	while (<HFILE>) {
 		chomp;
 		# skip all empty lines and lines with comments
@@ -767,7 +767,7 @@ sub __parse_source_list {
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
 
 		mydie("incorrect source type at file '%s', line %u", $file, $.)
-			if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
+				if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
 
 		if (scalar @sections) {
 			# this is normal entry
