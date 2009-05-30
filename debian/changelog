@@ -2,6 +2,8 @@ cupt (0.2.1) UNRELEASED; urgency=low
 
   * cupt:
     - New 'screenshots' subcommand.
+    - New 'clean' subcommand.
+    - New 'autoclean' subcommand.
   * Cupt:
     - System:
       - Worker:

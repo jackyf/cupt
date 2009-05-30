@@ -34,6 +34,7 @@ use List::Util qw(sum);
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev', 'no_ignore_case');
 use File::Temp qw(tempfile);
+use File::stat;
 
 use Cupt::Core;
 use Cupt::Config;
@@ -85,6 +86,8 @@ my %command_handlers = (
 	'satisfy' => sub { manage_packages('satisfy') },
 	'safe-upgrade' => sub { manage_packages('safe-upgrade') },
 	'full-upgrade' => sub { manage_packages('full-upgrade') },
+	'clean' => sub { clean_archives(0) },
+	'autoclean' => sub { clean_archives(1) },
 	'markauto' => sub { mark_autoinstalled('markauto') },
 	'unmarkauto' => sub { mark_autoinstalled('unmarkauto') },
 );
@@ -1206,6 +1209,28 @@ sub screenshots ($) {
 			return $result;
 		}
 	}
+}
+
+sub clean_archives ($) {
+	require Cupt::System::Worker;
+	my ($leave_available) = @_;
+
+	check_no_more_options();
+	check_no_extra_args();
+
+	build_cache(-source => 0, -binary => 1, -installed => 0);
+
+	my $worker = new Cupt::System::Worker($config, $cache);
+	my $size_deleted = 0;
+
+	my $sub_callback = sub {
+		my $path = $_[0];
+		my $size = lstat($path)->size;
+		$size_deleted += $size;
+		say sprintf __("Deleting '%s' <%s>."), $path, human_readable_size_string($size);
+	};
+	$worker->clean_archives($sub_callback, $leave_available);
+	say sprintf __("Freed %s of disk space."), human_readable_size_string($size_deleted);
 }
 
 sub process_options {

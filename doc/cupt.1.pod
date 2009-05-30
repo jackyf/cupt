@@ -323,7 +323,22 @@ C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget
 
 =back
 
-=head3 management-specific options
+=item clean
+
+removes all deb archives from cache on disk
+
+This subcommand receives no arguments.
+
+Example: C<cupt clean>
+
+=item autoclean
+
+removes deb archives which are not available in package indexes from cache
+on disk
+
+This subcommand receives no arguments.
+
+Example: C<cupt autoclean>
 
 =over
 
