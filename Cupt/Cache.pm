@@ -379,11 +379,8 @@ I<package_name> - package name to find
 
 sub get_binary_package {
 	my ($self, $package_name) = @_;
-	if (exists $self->{_binary_packages}->{$package_name}) {
-		return $self->{_binary_packages}->{$package_name};
-	} else {
-		return undef;
-	}
+	# will transparently return undef if there is no such package
+	return $self->{_binary_packages}->{$package_name};
 };
 
 =head2 get_sorted_pinned_versions
