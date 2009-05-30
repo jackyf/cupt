@@ -263,12 +263,11 @@ sub get_original_apt_pin {
 		}
 	};
 
-	# 'available as' array
-	my @avail_as = @{$version->{avail_as}};
+	my @available_as = @{$version->{avail_as}};
 
 	# release-dependent settings
 	my $default_release = $self->{_config}->var("apt::default-release");
-	foreach (@avail_as) {
+	foreach (@available_as) {
 		if (defined($default_release)) {
 			if ($_->{release}->{archive} eq $default_release ||
 				$_->{release}->{codename} eq $default_release)
@@ -305,7 +304,7 @@ sub get_original_apt_pin {
 			my $value = $pin->{'base_uri'};
 
 			my $found = 0;
-			foreach (@avail_as) {
+			foreach (@available_as) {
 				if ($_->{release}->{base_uri} =~ m/$value/) {
 					$found = 1;
 					last;
@@ -318,7 +317,7 @@ sub get_original_apt_pin {
 				my $value = $value;
 
 				my $found = 0;
-				foreach (@avail_as) {
+				foreach (@available_as) {
 					if ($_->{release}->{$key} =~ m/$value/)
 					{
 						$found = 1;
