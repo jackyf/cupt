@@ -354,7 +354,7 @@ sub get_pin ($$) {
 	if ($result <= 1000) {
 		my $package_name = $version->{package_name};
 		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
-		if (defined($installed_version_string)
+		if (defined $installed_version_string
 			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
 		{
 			$result -= 1000;
