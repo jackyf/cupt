@@ -483,7 +483,7 @@ sub _get_satisfying_versions_for_one_relation {
 
 	my $package = $self->get_binary_package($package_name);
 
-	if (defined($package)) {
+	if (defined $package) {
 		# if such binary package exists
 		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
 		foreach (@$ref_sorted_versions) {
@@ -493,13 +493,13 @@ sub _get_satisfying_versions_for_one_relation {
 	}
 
 	# virtual package can only be considered if no relation sign is specified
-	if (!defined($relation->relation_string) && exists $self->{_can_provide}->{$package_name}) {
+	if (not defined $relation->relation_string && exists $self->{_can_provide}->{$package_name}) {
 		# looking for reverse-provides
 		foreach (@{$self->{_can_provide}->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
-			defined ($reverse_provide_package) or next;
+			defined $reverse_provide_package or next;
 			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
-				my $version = $_->{version};
+				my $version = $_->{'version'};
 				foreach (@{$version->{provides}}) {
 					my $provides_package_name = $_;
 					if ($provides_package_name eq $package_name) {
