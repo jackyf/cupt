@@ -302,16 +302,16 @@ sub _is_package_can_be_removed ($$) {
 sub _get_dependencies_groups ($$) {
 	my ($self, $version) = @_;
 
-	# action koeficient will determine the valuability of action
+	# action factor will determine the valuability of action
 	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
 	my @result;
-	push @result, { 'name' => 'pre-depends', 'relation_expressions' => $version->{pre_depends}, 'koef' => 2.0 };
-	push @result, { 'name' => 'depends', 'relation_expressions' => $version->{depends}, 'koef' => 1.0 };
+	push @result, { 'name' => 'pre-depends', 'relation_expressions' => $version->{pre_depends}, 'factor' => 2.0 };
+	push @result, { 'name' => 'depends', 'relation_expressions' => $version->{depends}, 'factor' => 1.0 };
 	if ($self->config->var('cupt::resolver::keep-recommends')) {
-		push @result, { 'name' => 'recommends', 'relation_expressions' => $version->{recommends}, 'koef' => 0.4 };
+		push @result, { 'name' => 'recommends', 'relation_expressions' => $version->{recommends}, 'factor' => 0.4 };
 	}
 	if ($self->config->var('cupt::resolver::keep-suggests')) {
-		push @result, { 'name' => 'suggests', 'relation_expressions' => $version->{suggests}, 'koef' => 0.1 };
+		push @result, { 'name' => 'suggests', 'relation_expressions' => $version->{suggests}, 'factor' => 0.1 };
 	}
 
 	return \@result;
@@ -320,10 +320,10 @@ sub _get_dependencies_groups ($$) {
 sub _get_antidependencies_groups ($$) {
 	my ($self, $version) = @_;
 
-	# action koeficient will determine the valuability of action
+	# action factor will determine the valuability of action
 	my @result;
-	push @result, { 'name' => 'conflicts', 'relation_expressions' => $version->{conflicts}, 'koef' => 1.0 };
-	push @result, { 'name' => 'breaks', 'relation_expressions' => $version->{breaks}, 'koef' => 1.0 };
+	push @result, { 'name' => 'conflicts', 'relation_expressions' => $version->{conflicts}, 'factor' => 1.0 };
+	push @result, { 'name' => 'breaks', 'relation_expressions' => $version->{breaks}, 'factor' => 1.0 };
 	return \@result;
 }
 
@@ -524,7 +524,7 @@ sub _resolve ($$) {
 
 		my $profit = $ref_action_to_apply->{'profit'} //
 				$self->_get_action_profit($original_version, $supposed_version);
-		$profit *= $ref_action_to_apply->{'koef'};
+		$profit *= $ref_action_to_apply->{'factor'};
 
 		if ($self->config->var('debug::resolver')) {
 			my $old_version_string = defined($original_version) ?
@@ -602,8 +602,8 @@ sub _resolve ($$) {
 
 				# checking that all dependencies are satisfied
 				foreach my $ref_dependency_group (@{$self->_get_dependencies_groups($version)}) {
-					my $dependency_group_koef = $ref_dependency_group->{koef};
-					my $dependency_group_name = $ref_dependency_group->{name};
+					my $dependency_group_factor = $ref_dependency_group->{'factor'};
+					my $dependency_group_name = $ref_dependency_group->{'name'};
 					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
 						# check if relation is already satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
@@ -625,7 +625,7 @@ sub _resolve ($$) {
 									push @possible_actions, {
 										'package_name' => $package_name,
 										'version' => $version,
-										'koef' => $dependency_group_koef,
+										'factor' => $dependency_group_factor,
 										# set profit manually, as we are inserting fake action here
 										'profit' => -50,
 										'fakely_satisfies' => $relation_expression,
@@ -647,7 +647,7 @@ sub _resolve ($$) {
 									push @possible_actions, {
 										'package_name' => $satisfying_package_name,
 										'version' => $satisfying_version,
-										'koef' => $dependency_group_koef,
+										'factor' => $dependency_group_factor,
 										'reason' => [ $version, $dependency_group_name, $relation_expression ],
 									};
 								}
@@ -712,7 +712,7 @@ sub _resolve ($$) {
 											push @possible_actions, {
 												'package_name' => $package_name,
 												'version' => $other_version,
-												'koef' => $dependency_group_koef,
+												'factor' => $dependency_group_factor,
 												'reason' => [ $version, $dependency_group_name, $relation_expression ],
 											};
 										}
@@ -724,7 +724,7 @@ sub _resolve ($$) {
 									push @possible_actions, {
 										'package_name' => $package_name,
 										'version' => undef,
-										'koef' => $dependency_group_koef,
+										'factor' => $dependency_group_factor,
 										'reason' => [ $version, $dependency_group_name, $relation_expression ],
 									};
 								}
@@ -755,8 +755,8 @@ sub _resolve ($$) {
 
 				# checking that all 'Conflicts' and 'Breaks' are not satisfied
 				foreach my $ref_dependency_group (@{$self->_get_antidependencies_groups($version)}) {
-					my $dependency_group_koef = $ref_dependency_group->{koef};
-					my $dependency_group_name = $ref_dependency_group->{name};
+					my $dependency_group_factor = $ref_dependency_group->{'factor'};
+					my $dependency_group_name = $ref_dependency_group->{'name'};
 					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
 						# check if relation is accidentally satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
@@ -794,7 +794,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $other_package_name,
 											'version' => $other_version,
-											'koef' => $dependency_group_koef,
+											'factor' => $dependency_group_factor,
 											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
@@ -804,7 +804,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $other_package_name,
 											'version' => undef,
-											'koef' => $dependency_group_koef,
+											'factor' => $dependency_group_factor,
 											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
@@ -827,7 +827,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $package_name,
 											'version' => $other_version,
-											'koef' => $dependency_group_koef,
+											'factor' => $dependency_group_factor,
 											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
@@ -837,7 +837,7 @@ sub _resolve ($$) {
 										push @possible_actions, {
 											'package_name' => $package_name,
 											'version' => undef,
-											'koef' => $dependency_group_koef,
+											'factor' => $dependency_group_factor,
 											'reason' => [ $version, $dependency_group_name, $relation_expression ],
 										};
 									}
