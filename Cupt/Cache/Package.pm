@@ -206,7 +206,8 @@ sub _merge_version {
 		}
 	};
 	if (mycatch()) {
-		myerr("error while merging version '%s'", $parsed_version->{version_string});
+		myerr("error while merging version '%s' for package '%s'",
+				$parsed_version->{version_string}, $parsed_version->{package_name});
 		myredie();
 	};
 }
