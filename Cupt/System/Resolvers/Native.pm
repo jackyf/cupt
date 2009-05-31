@@ -970,11 +970,12 @@ sub _resolve ($$) {
 			# don't allow solution tree to grow unstoppably
 			while (scalar @solution_entries > $self->config->var('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
-				my $min_score = $solution_entries[0]->{score};
+				my $min_normalized_score = $solution_entries[0]->{score};
 				my $idx_of_min = 0;
 				foreach my $idx (1..$#solution_entries) {
-					if ($min_score > $solution_entries[$idx]->{score}) {
-						$min_score = $solution_entries[$idx]->{score};
+					my $current_normalized_score = __normalized_score($solution_entries[$idx]);
+					if ($min_normalized_score > $current_normalized_score) {
+						$min_normalized_score = $current_normalized_score;
 						$idx_of_min = $idx;
 					}
 				}

@@ -9,6 +9,8 @@ cupt (0.2.1) UNRELEASED; urgency=low
     - System:
       - Worker:
         - New 'clean_archives' method.
+      - Resolvers/Native:
+        - Fixed dropping solutions by normalized score, not by the original one.
     - Cache:
       - BinaryVersion:
         - Always set 'source_version_string' field.
