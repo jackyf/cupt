@@ -175,7 +175,7 @@ sub _merge_version {
 				last;
 			}
 		}
-		if (!defined($found_version)) {
+		if (not defined $found_version) {
 			# no such version before, just add it
 			push @$ref_result, $parsed_version;
 		} else {
@@ -183,7 +183,7 @@ sub _merge_version {
 
 			if ($found_version->is_installed() or $found_version->is_hashes_equal($parsed_version)) {
 				# 1)
-				# this is locally installed version
+				# this is installed version
 				# as dpkg now doesn't provide hash sums, let's assume that
 				# local version is the same that available from archive
 				# 2)
