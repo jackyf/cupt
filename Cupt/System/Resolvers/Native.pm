@@ -588,8 +588,6 @@ sub _resolve ($$) {
 		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
 		my $ref_current_packages = $ref_current_solution_entry->{packages};
 
-		my $package_name;
-
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
 		# so, when an intermediate problem was solved, maybe it breaks packages
 		# we have checked earlier in the loop, so we schedule a recheck
@@ -609,8 +607,7 @@ sub _resolve ($$) {
 			} keys %$ref_current_packages;
 
 			MAIN_LOOP:
-			foreach (@packages_in_order) {
-				$package_name = $_;
+			foreach my $package_name (@packages_in_order) {
 				$package_entry = $ref_current_packages->{$package_name};
 				my $version = $package_entry->[PE_VERSION];
 				defined $version or next;
@@ -1002,7 +999,7 @@ sub _resolve ($$) {
 			}
 		} else {
 			if ($self->config->var('debug::resolver')) {
-				$sub_mydebug_wrapper->("no solution for broken package $package_name");
+				$sub_mydebug_wrapper->("no solutions");
 			}
 			# purge current solution
 			splice @solution_entries, $selected_solution_entry_index, 1;
