@@ -115,7 +115,7 @@ sub perform ($$$$$) {
 		return '';
 	# FIXME: replace 18 with CURLE_PARTIAL_FILE after libwww-curl is advanced to provide it
 	} elsif ($curl_result == 18) {
-		# partial data? no problem, we may requested it
+		# partial data? no problem, we might request it
 		return '';
 	} else {
 		# something went wrong
