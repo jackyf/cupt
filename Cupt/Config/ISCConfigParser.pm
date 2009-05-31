@@ -82,15 +82,14 @@ sub new {
 }
 
 sub parse_file {
-	my $self = shift;
-	my $conffile = shift;
+	my ($self, $file) = @_;
 
-	open(FILE, $conffile) or mydie("unable to open file '%s': %s", $conffile, $!);
-	my $text = join("", <FILE>);
-	close FILE;
+	open(my $file_handle, $file) or mydie("unable to open file '%s': %s", $file, $!);
+	my $text = join("", <$file_handle>);
+	close($file_handle);
 
 	defined( my $tree = $self->{'_parser'}->program($text) )
-		or mydie("bad config in file '%s'", $conffile);
+		or mydie("bad config in file '%s'", $file);
 
 	$self->_recurse($tree, "");
 }
