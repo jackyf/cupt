@@ -106,8 +106,10 @@ sub hook {
 				}
 			}
 
-			# print 'em all!
+			# don't print progress meter when not connected to a TTY
+			-t STDOUT or return;
 
+			# print 'em all!
 			my @ref_entries_to_print;
 			foreach my $uri (keys %{$self->download_entries}) {
 				my $ref_entry;

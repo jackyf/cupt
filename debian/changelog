@@ -14,6 +14,9 @@ cupt (0.2.1) UNRELEASED; urgency=low
         - Always set 'source_version_string' field.
     - Config:
       - Added configuration option 'quiet'.
+    - Download:
+      - Progresses/Console:
+        - Don't output progress meter when standard output is not a TTY.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 30 May 2009 18:24:36 +0300
 
