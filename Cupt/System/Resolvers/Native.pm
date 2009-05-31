@@ -722,9 +722,7 @@ sub _resolve ($$) {
 					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
 						# check if relation is already satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
-						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
-							# good, nothing to do
-						} else {
+						if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 							if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 								# this is a soft dependency
 								if (!__is_version_array_intersects_with_packages(
