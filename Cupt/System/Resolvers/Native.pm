@@ -438,6 +438,23 @@ sub _clean_automatically_installed ($) {
 	delete $ref_packages->{$_dummy_package_name};
 }
 
+sub _select_solution_chooser ($) {
+	my ($self) = @_;
+
+	my %solution_choosers = (
+		'first-good' => \&__first_good_chooser,
+		'multiline-fair' => \&__multiline_fair_chooser,
+		'multiline-full' => \&__multiline_full_chooser,
+	);
+
+	my $resolver_type = $self->config->var('cupt::resolver::type');
+	my $sub_solution_chooser = $solution_choosers{$resolver_type};
+	defined $sub_solution_chooser or
+			mydie("wrong resolver type '%s'", $resolver_type);
+
+	return $sub_solution_chooser;
+}
+
 sub _require_strict_relation_expressions ($) {
 	my ($self) = @_;
 
@@ -461,21 +478,10 @@ sub _require_strict_relation_expressions ($) {
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
-	my %solution_choosers = (
-		'first-good' => \&__first_good_chooser,
-		'multiline-fair' => \&__multiline_fair_chooser,
-		'multiline-full' => \&__multiline_full_chooser,
-	);
-
-	my $resolver_type = $self->config->var('cupt::resolver::type');
-	my $sub_solution_chooser = $solution_choosers{$resolver_type};
-	defined $sub_solution_chooser or
-			mydie("wrong resolver type '%s'", $resolver_type);
-
+	my $sub_solution_chooser = $self->_select_solution_chooser();
 	if ($self->config->var('debug::resolver')) {
 		mydebug("started resolving");
 	}
-
 	$self->_require_strict_relation_expressions();
 
 	# [ 'packages' => {
