@@ -475,6 +475,52 @@ sub _require_strict_relation_expressions ($) {
 			$self->{_strict_relation_expressions};
 }
 
+sub _apply_action ($$$$$) {
+	my ($self, $ref_solution_entry, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper) = @_;
+
+	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
+	my $supposed_version = $ref_action_to_apply->{'version'};
+
+	$ref_solution_entry->{packages}->{$package_name_to_change} //= __new_package_entry();
+	my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
+	my $original_version = $ref_package_entry_to_change->[PE_VERSION];
+
+	my $profit = $ref_action_to_apply->{'profit'} //
+			$self->_get_action_profit($original_version, $supposed_version);
+	$profit *= $ref_action_to_apply->{'factor'};
+
+	if ($self->config->var('debug::resolver')) {
+		my $old_version_string = defined($original_version) ?
+				$original_version->{version_string} : '<not installed>';
+		my $new_version_string = defined($supposed_version) ?
+				$supposed_version->{version_string} : '<not installed>';
+
+		my $profit_string = $profit;
+		$profit_string = "+$profit_string" if $profit > 0;
+
+		my $message = "-> ($new_solution_identifier,$profit_string) " .
+				"trying: package '$package_name_to_change': '$old_version_string' -> '$new_version_string'";
+		$sub_mydebug_wrapper->($message);
+	}
+
+	# raise the level
+	++$ref_solution_entry->{level};
+
+	$ref_solution_entry->{score} += $profit;
+
+	# set stick for change for the time on underlying solutions
+	$ref_package_entry_to_change->[PE_STICK] = 1;
+	$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
+	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
+		push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
+	}
+	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
+		if (defined $ref_action_to_apply->{'reason'}) {
+			push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
+		}
+	}
+}
+
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
@@ -526,48 +572,7 @@ sub _resolve ($$) {
 
 	my $sub_apply_action = sub {
 		my ($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier) = @_;
-
-		my $package_name_to_change = $ref_action_to_apply->{'package_name'};
-		my $supposed_version = $ref_action_to_apply->{'version'};
-
-		$ref_solution_entry->{packages}->{$package_name_to_change} //= __new_package_entry();
-		my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
-		my $original_version = $ref_package_entry_to_change->[PE_VERSION];
-
-		my $profit = $ref_action_to_apply->{'profit'} //
-				$self->_get_action_profit($original_version, $supposed_version);
-		$profit *= $ref_action_to_apply->{'factor'};
-
-		if ($self->config->var('debug::resolver')) {
-			my $old_version_string = defined($original_version) ?
-					$original_version->{version_string} : '<not installed>';
-			my $new_version_string = defined($supposed_version) ?
-					$supposed_version->{version_string} : '<not installed>';
-
-			my $profit_string = $profit;
-			$profit_string = "+$profit_string" if $profit > 0;
-
-			my $message = "-> ($new_solution_identifier,$profit_string) " .
-					"trying: package '$package_name_to_change': '$old_version_string' -> '$new_version_string'";
-			$sub_mydebug_wrapper->($message);
-		}
-
-		# raise the level
-		++$ref_solution_entry->{level};
-
-		$ref_solution_entry->{score} += $profit;
-
-		# set stick for change for the time on underlying solutions
-		$ref_package_entry_to_change->[PE_STICK] = 1;
-		$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
-		if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
-			push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
-		}
-		if ($self->{_config}->var('cupt::resolver::track-reasons')) {
-			if (defined $ref_action_to_apply->{'reason'}) {
-				push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
-			}
-		}
+		$self->_apply_action($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper);
 	};
 
 	my $return_code;
