@@ -158,8 +158,7 @@ I<option_name> - string name of option
 =cut
 
 sub var {
-	my $self = shift;
-	my $var_name = shift;
+	my ($self, $var_name) = @_;
 	if (exists ($self->{regular_vars}->{$var_name})) {
 		return $self->{regular_vars}->{$var_name};
 	} elsif (defined ($self->{list_vars}->{$var_name})) {
