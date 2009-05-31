@@ -585,9 +585,7 @@ sub _resolve ($$) {
 
 		# choosing the solution entry to process
 		$selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
-
 		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
-
 		my $ref_current_packages = $ref_current_solution_entry->{packages};
 
 		my $package_name;
