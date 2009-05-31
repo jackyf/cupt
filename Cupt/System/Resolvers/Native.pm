@@ -521,6 +521,109 @@ sub _apply_action ($$$$$) {
 	}
 }
 
+sub _get_actions_to_fix_dependency ($$$$$$$) {
+	my ($self, $ref_packages, $package_name, $ref_satisfying_versions,
+			$relation_expression, $dependency_group_name, $dependency_group_factor) = @_;
+
+	my @result;
+
+	my $version = $ref_packages->{$package_name}->[PE_VERSION];
+
+	# install one of versions package needs
+	foreach my $satisfying_version (@$ref_satisfying_versions) {
+		my $satisfying_package_name = $satisfying_version->{package_name};
+		if (!exists $ref_packages->{$satisfying_package_name} ||
+			!$ref_packages->{$satisfying_package_name}->[PE_STICK])
+		{
+			push @result, {
+				'package_name' => $satisfying_package_name,
+				'version' => $satisfying_version,
+				'factor' => $dependency_group_factor,
+				'reason' => [ $version, $dependency_group_name, $relation_expression ],
+			};
+		}
+	}
+
+	# change this package
+	if (!$ref_packages->{$package_name}->[PE_STICK]) {
+		# change version of the package
+		my $other_package = $self->cache->get_binary_package($package_name);
+		foreach my $other_version (@{$other_package->get_versions()}) {
+			# don't try existing version
+			next if $other_version->{version_string} eq $version->{version_string};
+
+			# let's check if other version has the same relation
+			my $failed_relation_string = stringify_relation_expression($relation_expression);
+			my $found = 0;
+			foreach (@{$other_version->{$dependency_group_name}}) {
+				if ($failed_relation_string eq stringify_relation_expression($_)) {
+					# yes, it has the same relation expression, so other version will
+					# also fail so it seems there is no sense trying it
+					$found = 1;
+					last;
+				}
+			}
+			if (!$found) {
+				# let's try harder to find if the other version is really appropriate for us
+				foreach (@{$other_version->{$dependency_group_name}}) {
+					# we check only relations from dependency group that caused
+					# missing depends, it's not a full check, but pretty reasonable for
+					# most cases; in rare cases that some problematic dependency
+					# migrated to other dependency group, it will be revealed at
+					# next check run
+
+					# fail revealed that no one of available versions of dependent
+					# packages can satisfy the main package, so if some relation's
+					# satisfying versions are subset of failed ones, the version won't
+					# be accepted as a resolution
+					my $has_resolution_outside = 0;
+					my $ref_candidate_satisfying_versions = $self->cache->get_satisfying_versions($_);
+					foreach (@$ref_candidate_satisfying_versions) {
+						my $candidate_package_name = $_->{package_name};
+						my $candidate_version_string = $_->{version_string};
+						my $is_candidate_appropriate = 1;
+						foreach (@$ref_satisfying_versions) {
+							next if $_->{package_name} ne $candidate_package_name;
+							next if $_->{version_string} ne $candidate_version_string;
+							# this candidate has fallen into dead-end
+							$is_candidate_appropriate = 0;
+							last;
+						}
+						if ($is_candidate_appropriate) {
+							# more wide relation, can't say nothing bad with it at time being
+							$has_resolution_outside = 1;
+							last;
+						}
+					}
+					$found = !$has_resolution_outside;
+					last if $found;
+				}
+				if (!$found) {
+					# other version seems to be ok
+					push @result, {
+						'package_name' => $package_name,
+						'version' => $other_version,
+						'factor' => $dependency_group_factor,
+						'reason' => [ $version, $dependency_group_name, $relation_expression ],
+					};
+				}
+			}
+		}
+
+		if ($self->_is_package_can_be_removed($package_name)) {
+			# remove the package
+			push @result, {
+				'package_name' => $package_name,
+				'version' => undef,
+				'factor' => $dependency_group_factor,
+				'reason' => [ $version, $dependency_group_name, $relation_expression ],
+			};
+		}
+	}
+
+	return @result;
+}
+
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
@@ -649,98 +752,9 @@ sub _resolve ($$) {
 							++$failed_counts{$package_name};
 
 							# for resolving we can do:
-
-							# install one of versions package needs
-							foreach my $satisfying_version (@$ref_satisfying_versions) {
-								my $satisfying_package_name = $satisfying_version->{package_name};
-								if (!exists $ref_current_packages->{$satisfying_package_name} ||
-									!$ref_current_packages->{$satisfying_package_name}->[PE_STICK])
-								{
-									push @possible_actions, {
-										'package_name' => $satisfying_package_name,
-										'version' => $satisfying_version,
-										'factor' => $dependency_group_factor,
-										'reason' => [ $version, $dependency_group_name, $relation_expression ],
-									};
-								}
-							}
-
-							# change this package
-							if (!$package_entry->[PE_STICK]) {
-								# change version of the package
-								my $other_package = $self->cache->get_binary_package($package_name);
-								foreach my $other_version (@{$other_package->get_versions()}) {
-									# don't try existing version
-									next if $other_version->{version_string} eq $version->{version_string};
-
-									# let's check if other version has the same relation
-									my $failed_relation_string = stringify_relation_expression($relation_expression);
-									my $found = 0;
-									foreach (@{$other_version->{$dependency_group_name}}) {
-										if ($failed_relation_string eq stringify_relation_expression($_)) {
-											# yes, it has the same relation expression, so other version will
-											# also fail so it seems there is no sense trying it
-											$found = 1;
-											last;
-										}
-									}
-									if (!$found) {
-										# let's try harder to find if the other version is really appropriate for us
-										foreach (@{$other_version->{$dependency_group_name}}) {
-											# we check only relations from dependency group that caused
-											# missing depends, it's not a full check, but pretty reasonable for
-											# most cases; in rare cases that some problematic dependency
-											# migrated to other dependency group, it will be revealed at
-											# next check run
-
-											# fail revealed that no one of available versions of dependent
-											# packages can satisfy the main package, so if some relation's
-											# satisfying versions are subset of failed ones, the version won't
-											# be accepted as a resolution
-											my $has_resolution_outside = 0;
-											my $ref_candidate_satisfying_versions = $self->cache->get_satisfying_versions($_);
-											foreach (@$ref_candidate_satisfying_versions) {
-												my $candidate_package_name = $_->{package_name};
-												my $candidate_version_string = $_->{version_string};
-												my $is_candidate_appropriate = 1;
-												foreach (@$ref_satisfying_versions) {
-													next if $_->{package_name} ne $candidate_package_name;
-													next if $_->{version_string} ne $candidate_version_string;
-													# this candidate has fallen into dead-end
-													$is_candidate_appropriate = 0;
-													last;
-												}
-												if ($is_candidate_appropriate) {
-													# more wide relation, can't say nothing bad with it at time being
-													$has_resolution_outside = 1;
-													last;
-												}
-											}
-											$found = !$has_resolution_outside;
-											last if $found;
-										}
-										if (!$found) {
-											# other version seems to be ok
-											push @possible_actions, {
-												'package_name' => $package_name,
-												'version' => $other_version,
-												'factor' => $dependency_group_factor,
-												'reason' => [ $version, $dependency_group_name, $relation_expression ],
-											};
-										}
-									}
-								}
-
-								if ($self->_is_package_can_be_removed($package_name)) {
-									# remove the package
-									push @possible_actions, {
-										'package_name' => $package_name,
-										'version' => undef,
-										'factor' => $dependency_group_factor,
-										'reason' => [ $version, $dependency_group_name, $relation_expression ],
-									};
-								}
-							}
+							push @possible_actions, $self->_get_actions_to_fix_dependency(
+									$ref_current_packages, $package_name, $ref_satisfying_versions,
+									$relation_expression, $dependency_group_name, $dependency_group_factor);
 
 							# in any case, stick this package
 							$package_entry->[PE_STICK] = 1;
