@@ -438,6 +438,26 @@ sub _clean_automatically_installed ($) {
 	delete $ref_packages->{$_dummy_package_name};
 }
 
+sub _require_strict_relation_expressions ($) {
+	my ($self) = @_;
+
+	# "installing" virtual package, which will be used for strict 'satisfy' requests
+	my $version = {
+		package_name => $_dummy_package_name,
+		pre_depends => [],
+		depends => [],
+		recommends => [],
+		suggests => [],
+		breaks => [],
+		conflicts => [],
+	};
+	$self->{_packages}->{$_dummy_package_name} = __new_package_entry();
+	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
+	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
+	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends} =
+			$self->{_strict_relation_expressions};
+}
+
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
@@ -456,21 +476,7 @@ sub _resolve ($$) {
 		mydebug("started resolving");
 	}
 
-	# "installing" virtual package, which will be used for strict 'satisfy' requests
-	my $version = {
-		package_name => $_dummy_package_name,
-		pre_depends => [],
-		depends => [],
-		recommends => [],
-		suggests => [],
-		breaks => [],
-		conflicts => [],
-	};
-	$self->{_packages}->{$_dummy_package_name} = __new_package_entry();
-	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
-	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
-	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends} = 
-			$self->{_strict_relation_expressions};
+	$self->_require_strict_relation_expressions();
 
 	# [ 'packages' => {
 	#                   package_name... => {
