@@ -353,7 +353,7 @@ Example:
     { 'uris' => [
         'http://ftp.de.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
         'http://ftp.es.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb'
-      ], 'filename' => '/var/cache/apt/nlkt_0.3.2.1-2_amd64.deb' }
+      ], 'filename' => '/var/cache/apt/archives/nlkt_0.3.2.1-2_amd64.deb' }
   );
 
 =cut
