@@ -223,19 +223,18 @@ sub set_list_var {
 }
 
 sub _read_configs {
-	my $self = shift;
+	my ($self) = @_;
 	my $parser = new Cupt::Config::ISCConfigParser;
 
 	my $regular_option_sub = sub {
-		my $option_name = shift;
-		my $value = shift;
+		my ($option_name, $value) = @_;
 		$value =~ s/"(.*)"/$1/;
 		$self->set_regular_var($option_name, $value);
 	};
 
 	my $list_option_sub = sub {
-		my $option_name = shift;
-		map { s/"(.*)"/$1/; $self->set_list_var($option_name, $_); } @_;
+		my ($option_name, @values) = @_;
+		map { s/"(.*)"/$1/; $self->set_list_var($option_name, $_); } @values;
 	};
 
 	$parser->set_regular_handler($regular_option_sub);
@@ -251,12 +250,12 @@ sub _read_configs {
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	push @config_files, $main_file_path if -e $main_file_path;
 
-	foreach (@config_files) {
+	foreach my $config_file (@config_files) {
 		eval {
-			$parser->parse_file($_);
+			$parser->parse_file($config_file);
 		};
 		if (mycatch()) {
-			mywarn("skipped configuration file '%s'", $_);
+			mywarn("skipped configuration file '%s'", $config_file);
 		}
 	}
 }
