@@ -44,6 +44,7 @@ use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_e
 
 my $config;
 my $cache;
+my $download_progress_class_name = 'Cupt::Download::Progresses::Console';
 
 # build config at start
 eval {
@@ -55,6 +56,12 @@ if (mycatch()) {
 }
 
 process_options();
+
+if ($config->var('quiet')) {
+	close(STDOUT) or mydie("unable to close standard output");
+	open(STDOUT, '>>', '/dev/null') or mydie("unable to turn standard output to /dev/null");
+	$download_progress_class_name = 'Cupt::Download::Progress';
+}
 
 my $command;
 foreach my $idx (0..$#ARGV) {
@@ -1052,10 +1059,10 @@ sub manage_packages ($) {
 		# tryings were abandoned
 	} elsif ($resolve_result) {
 		# if some solution was found and user has accepted it
-		require Cupt::Download::Progresses::Console;
-		my $download_progess = new Cupt::Download::Progresses::Console;
+		eval "require $download_progress_class_name"; die $@ if $@;
+		my $download_progress = $download_progress_class_name->new();
 		say __("Performing requested actions:");
-		my $overall_result = $worker->change_system($download_progess);
+		my $overall_result = $worker->change_system($download_progress);
 		mydie("unable to do requested actions") unless $overall_result;
 	} else {
 		say __("no more solutions.");
@@ -1064,14 +1071,14 @@ sub manage_packages ($) {
 
 sub update_release_data () {
 	require Cupt::System::Worker;
-	require Cupt::Download::Progresses::Console;
 
 	check_no_extra_args();
 	check_no_more_options();
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
-	my $download_progress = new Cupt::Download::Progresses::Console;
+	eval "require $download_progress_class_name"; die $@ if $@;
+	my $download_progress = $download_progress_class_name->new();
 	my $worker = new Cupt::System::Worker($config, $cache);
 
 	return $worker->update_release_and_index_data($download_progress);
@@ -1160,10 +1167,12 @@ sub show_changelog_or_copyright ($) {
 
 			if (scalar @target_uris) {
 				require Cupt::Download::Manager;
-				require Cupt::Download::Progresses::Console;
 
 				my (undef, $temp_target_path) = tempfile();
-				my $download_progress = new Cupt::Download::Progresses::Console;
+
+				eval "require $download_progress_class_name"; die $@ if $@;
+				my $download_progress = $download_progress_class_name->new();
+
 				my $download_result;
 				do {
 					my $download_manager = new Cupt::Download::Manager($config, $download_progress);
@@ -1246,6 +1255,7 @@ sub process_options {
 			'recurse' => sub { $config->set_regular_var('apt::cache::recursedepends', 1) },
 			'simulate|s' => sub { $config->set_regular_var('cupt::worker::simulate' => 1) },
 			'purge' => sub { $config->set_regular_var('cupt::worker::purge' => 1) },
+			'quiet|q' => sub { $config->set_regular_var('quiet' => 1) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {

@@ -4,6 +4,7 @@ cupt (0.2.1) UNRELEASED; urgency=low
     - New 'screenshots' subcommand.
     - New 'clean' subcommand.
     - New 'autoclean' subcommand.
+    - Implemented the option '--quiet'.
   * Cupt:
     - System:
       - Worker:
@@ -11,6 +12,8 @@ cupt (0.2.1) UNRELEASED; urgency=low
     - Cache:
       - BinaryVersion:
         - Always set 'source_version_string' field.
+    - Config:
+      - Added configuration option 'quiet'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 30 May 2009 18:24:36 +0300
 

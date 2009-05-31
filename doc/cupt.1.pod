@@ -533,6 +533,10 @@ when removing packages, also delete their configuration files
 
 Corresponding configuration option: L<cupt::worker::purge>
 
+=item --quiet,-q
+
+don't output anything to standard output
+
 =back
 
 =head1 CONFIGURATION VARIABLES
@@ -547,7 +551,7 @@ dir::cache, dir::cache::archives, dir::etc, dir::etc::sourcelist,
 dir::etc::sourceparts, dir::etc::parts, dir::etc::main, dir::etc::preferences,
 dir::state, dir::state::extendedstates, dir::state::lists, dir::state::status,
 dpkg::options, dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
-gpgv::trustedkeyring, rpm::pre-invoke, rpm::post-invoke
+gpgv::trustedkeyring, rpm::pre-invoke, rpm::post-invoke, quiet
 
 See L<apt.conf(5)> for their meanings.
 
