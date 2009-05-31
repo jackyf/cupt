@@ -133,7 +133,7 @@ method, returns canonical stringified form of the relation
 =cut
 
 sub stringify {
-	my $self = shift;
+	my ($self) = @_;
 	my $result = $self->[REL_PACKAGE_NAME];
 	if (defined $self->[REL_RELATION_STRING]) {
 		# there is versioned info
