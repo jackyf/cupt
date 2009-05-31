@@ -88,10 +88,10 @@ sub parse_file {
 	my $text = join("", <$file_handle>);
 	close($file_handle) or mydie("unable to close file '%s': %s", $file, $!);
 
-	defined( my $tree = $self->{'_parser'}->program($text) )
+	defined( my $ref_tree = $self->{'_parser'}->program($text) )
 		or mydie("bad config in file '%s'", $file);
 
-	$self->_recurse($tree, "");
+	$self->_recurse($ref_tree, "");
 }
 
 sub set_regular_handler {
@@ -105,32 +105,28 @@ sub set_list_handler {
 }
 
 sub _recurse {
-	my $self = shift;
-	my $tree = shift;
-	my $name_prefix = shift;
+	my ($self, $ref_tree, $name_prefix) = @_;
 
-	foreach my $node (@{$tree}) {
-		if (exists $node->{'simple'}) {
-			my $item = $node->{'simple'};
-			$self->{'_regular_handler'}->( $name_prefix . $item->{'name'}->{'__VALUE__'}, $item->{'value'}->{'__VALUE__'} );
-		} elsif (exists $node->{'list'}) {
-			my $item = $node->{'list'};
-			my $name = $item->{'name'}->{'__VALUE__'};
-			while ((my $key, my $value) = each %$item) {
-				if (ref($value) eq 'ARRAY') {
+	foreach my $ref_node (@{$ref_tree}) {
+		if (exists $ref_node->{'simple'}) {
+			my $ref_item = $ref_node->{'simple'};
+			$self->{'_regular_handler'}->( $name_prefix . $ref_item->{'name'}->{'__VALUE__'}, $ref_item->{'value'}->{'__VALUE__'} );
+		} elsif (exists $ref_node->{'list'}) {
+			my $ref_item = $ref_node->{'list'};
+			my $name = $ref_item->{'name'}->{'__VALUE__'};
+			foreach my $ref_value (values %$ref_item) {
+				if (ref $ref_value eq 'ARRAY') {
 					# list items here
-					foreach my $listitem (@$value) {
-						$self->{'_list_handler'}->( $name_prefix . $name, $listitem->{'value'}->{'__VALUE__'} );
+					foreach my $ref_list_item (@$ref_value) {
+						$self->{'_list_handler'}->( $name_prefix . $name, $ref_list_item->{'value'}->{'__VALUE__'} );
 					}
 					last; # should be only one array of list items
 				}
 			}
-		} else {
-			if (exists $node->{'nested'}) {
-				my $item = $node->{'nested'};
-				$name_prefix .= $item->{'name'}->{'__VALUE__'} . '::';
-				$self->_recurse($item->{'statement(s?)'}, $name_prefix);
-			}
+		} elsif (exists $ref_node->{'nested'}) {
+			my $ref_item = $ref_node->{'nested'};
+			$name_prefix .= $ref_item->{'name'}->{'__VALUE__'} . '::';
+			$self->_recurse($ref_item->{'statement(s?)'}, $name_prefix);
 		}
 	}
 }
