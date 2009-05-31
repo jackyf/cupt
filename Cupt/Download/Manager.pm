@@ -291,7 +291,7 @@ sub new ($$$) {
 					myinternaldie("a download method returned undefined result") if not defined $result;
 					__my_write_pipe(\*STDOUT, 'done', $uri, $result);
 					close(STDOUT) or
-							mydie("unable to close STDOUT");
+							mydie("unable to close standard output");
 					POSIX::_exit(0);
 				}
 			}
@@ -302,7 +302,7 @@ sub new ($$$) {
 		# finishing progress
 		$self->{_progress}->finish();
 
-		close STDIN or mydie("unable to close STDIN for worker: %s", $!);
+		close STDIN or mydie("unable to close standard input for worker: %s", $!);
 		close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: %s", $!);
 		close SELF_READ or mydie("unable to close reading side of worker's own pipe: %s", $!);
 		POSIX::_exit(0);
