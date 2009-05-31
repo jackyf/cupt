@@ -86,7 +86,7 @@ sub parse_file {
 
 	open(my $file_handle, $file) or mydie("unable to open file '%s': %s", $file, $!);
 	my $text = join("", <$file_handle>);
-	close($file_handle);
+	close($file_handle) or mydie("unable to close file '%s': %s", $file, $!);
 
 	defined( my $tree = $self->{'_parser'}->program($text) )
 		or mydie("bad config in file '%s'", $file);
