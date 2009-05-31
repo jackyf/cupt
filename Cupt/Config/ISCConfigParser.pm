@@ -99,8 +99,7 @@ sub set_regular_handler {
 	$self->{'_regular_handler'} = shift;
 }
 
-sub set_list_handler
-{
+sub set_list_handler {
 	my $self = shift;
 	$self->{'_list_handler'} = shift;
 }
