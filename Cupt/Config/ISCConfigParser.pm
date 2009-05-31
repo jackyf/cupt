@@ -94,7 +94,7 @@ sub parse_file {
 	$self->_recurse($tree, "");
 }
 
-sub set_regular_handler {;
+sub set_regular_handler {
 	my $self = shift;
 	$self->{'_regular_handler'} = shift;
 }
