@@ -254,13 +254,13 @@ sub compare_version_strings($$) {
 	my ($left_epoch, $left_upstream, $left_revision) = ($left =~ /^$version_string_regex$/);
 	my ($right_epoch, $right_upstream, $right_revision) = ($right =~ /^$version_string_regex$/);
 
-	if (!defined($left_epoch)) {
+	if (not defined $left_epoch) {
 		$left_epoch = '0';
 	} else {
 		chop($left_epoch);
 	}
 
-	if (!defined($right_epoch)) {
+	if (not defined $right_epoch) {
 		$right_epoch = '0';
 	} else {
 		chop($right_epoch);
@@ -272,15 +272,11 @@ sub compare_version_strings($$) {
 	my $upstream_comparison_result = __compare_version_part($left_upstream, $right_upstream);
 	return $upstream_comparison_result unless $upstream_comparison_result == 0;
 
-	if (!defined($left_revision)) {
-		$left_revision = '0';
-	}
-	# first numeric part of revision may be empty, so adding it, see policy 5.6.12
+	$left_revision //= '0';
+	# first numeric part of revision may be empty, so adding it, see Policy §5.6.12
 	$left_revision = 'a' . $left_revision;
 
-	if (!defined($right_revision)) {
-		$right_revision = '0';
-	}
+	$right_revision //= '0';
 	# same for right part
 	$right_revision = 'a' . $right_revision;
 
