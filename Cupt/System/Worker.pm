@@ -924,10 +924,9 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 		my $config = $self->{_config};
 
 		my $print_key_value = sub {
-			my $key = shift;
-			my $value = shift;
+			my ($key, $value) = @_;
 			defined $value or return;
-			$result .= qq/$key="$value"\n/;
+			$result .= qq/$key=$value\n/;
 		};
 
 		my @regular_keys = sort keys %{$config->{regular_vars}};
