@@ -9,6 +9,8 @@ cupt (0.2.1) UNRELEASED; urgency=low
     - System:
       - Worker:
         - New 'clean_archives' method.
+        - 'update_release_and_index_data': fixed deleting download progress
+          immediately after end of all child processes.
       - Resolvers/Native:
         - Fixed dropping solutions by normalized score, not by the original one.
         - Fixed auto-removing of packages which resolver marked to change, but

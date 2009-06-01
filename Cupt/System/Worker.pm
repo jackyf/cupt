@@ -1215,188 +1215,191 @@ sub update_release_and_index_data ($$) {
 		$self->_run_external_command('pre', $command, $command);
 	}
 
-	my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+	my $master_exit_code = 0;
+	do { # download manager involved part
+		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 
-	my $sub_download_wrapper = sub {
-		if ($self->{_config}->var('cupt::worker::simulate')) {
-			foreach (@_) {
-				say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
+		my $sub_download_wrapper = sub {
+			if ($self->{_config}->var('cupt::worker::simulate')) {
+				foreach (@_) {
+					say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
+				}
+				return 0;
+			} else {
+				return $download_manager->download(@_);
 			}
-			return 0;
-		} else {
-			return $download_manager->download(@_);
-		}
-	};
+		};
 
-	my @pids;
-	foreach my $index_entry (@index_entries) {
-		my $pid = fork() //
-				mydie("unable to fork: $!");
+		my @pids;
+		foreach my $index_entry (@index_entries) {
+			my $pid = fork() //
+					mydie("unable to fork: $!");
 
-		if ($pid) {
-			# master process
-			push @pids, $pid;
-		} else {
-			# child
-			my $exit_code = 1; # bad by default
-			my $release_local_path = $cache->get_path_of_release_list($index_entry);
-			do {
-				# phase 1: downloading Release file
-				my $release_alias = join(' ', $index_entry->{'distribution'}, 'Release');
+			if ($pid) {
+				# master process
+				push @pids, $pid;
+			} else {
+				# child
+				my $exit_code = 1; # bad by default
+				my $release_local_path = $cache->get_path_of_release_list($index_entry);
+				do {
+					# phase 1: downloading Release file
+					my $release_alias = join(' ', $index_entry->{'distribution'}, 'Release');
 
-				my $local_path = $release_local_path;
-				my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
-				my $download_filename = $sub_get_download_filename->($local_path);
+					my $local_path = $release_local_path;
+					my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
+					my $download_filename = $sub_get_download_filename->($local_path);
 
-				$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
-				$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
-				my $download_result = $sub_download_wrapper->(
-						{
-							'uris' => [ $download_uri ],
-							'filename' => $download_filename,
-							'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
-						}
-				);
-				if ($download_result) {
-					# failed to download
-					mywarn("failed to download '%s'", $release_alias);
-					goto CHILD_EXIT;
-				}
-
-				# phase 1.1: downloading signature for Release file
-				my $signature_download_uri = "$download_uri.gpg";
-				my $signature_local_path = "$local_path.gpg";
-				my $signature_download_filename = "$download_filename.gpg";
-
-				my $release_signature_alias = "$release_alias.gpg";
-				$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
-				$download_manager->set_long_alias_for_uri($signature_download_uri,
-						"$index_entry->{'uri'} $release_signature_alias");
-				$download_result = $sub_download_wrapper->(
-						{
-							'uris' => [ $signature_download_uri ],
-							'filename' => $signature_download_filename,
-							'post-action' => $sub_generate_moving_sub->(
-									$signature_download_filename => $signature_local_path),
-						}
-				);
-				if ($download_result) {
-					# failed to download
-					mywarn("failed to download '%s'", $release_signature_alias);
-					goto CHILD_EXIT;
-				}
-			};
-
-			do { # phase 2: downloading Packages/Sources
-				my $local_path = $cache->get_path_of_index_list($index_entry);
-				my $ref_download_entries = $cache->get_download_entries_of_index_list(
-						$index_entry, $release_local_path);
-				my $base_download_filename = $sub_get_download_filename->($local_path);
-
-				# try to download files of less size first
-				my @download_uris_in_order = sort {
-					$ref_download_entries->{$a}->{'size'} <=> $ref_download_entries->{$b}->{'size'}
-				} keys %$ref_download_entries;
-
-				my $download_result;
-				foreach my $download_uri (@download_uris_in_order) {
-					(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
-
-					my $download_filename_extension;
-					if ($download_filename_basename =~ m/(\.\w+)/) {
-						$download_filename_extension = $1;
-					} else {
-						$download_filename_extension = '';
-					}
-
-					my $download_filename = $base_download_filename . $download_filename_extension;
-					my $sub_main_post_action;
-
-					# checking and preparing unpackers
-					if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
-						my %extension_to_uncompressor_name = ('.lzma' => 'unlzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
-						my $uncompressor_name = $extension_to_uncompressor_name{$download_filename_extension};
-
-						if (system("which $uncompressor_name >/dev/null")) {
-							mywarn("'%s' uncompressor is not available, not downloading '%s'",
-									$uncompressor_name, $download_uri);
-							next;
-						}
-
-						$sub_main_post_action = sub {
-							my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
-							if ($uncompressing_result) {
-								return sprintf "failed to uncompress '%s', '%s' returned error %s",
-										$download_filename, $uncompressor_name, $uncompressing_result;
-							}
-							return '';
-						}
-					} elsif ($download_filename_extension eq $download_filename_basename) {
-						# no extension
-						$sub_main_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
-					} else {
-						mywarn("unknown file extension '%s', not downloading '%s'",
-									$download_filename_extension, $download_uri);
-						next;
-					}
-
-
-					my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
-							$index_entry->{'component'}, $download_filename_basename;
-
-					$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
-					$download_manager->set_long_alias_for_uri($download_uri,
-							"$index_entry->{'uri'} $index_alias");
-
-					$download_result = $sub_download_wrapper->(
+					$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
+					$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
+					my $download_result = $sub_download_wrapper->(
 							{
 								'uris' => [ $download_uri ],
 								'filename' => $download_filename,
-								'post-action' => sub {
-									__verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
-											do {
-												unlink $download_filename;
-												return sprintf __("%s: hash sums mismatch"), $download_filename;
-											};
-									return $sub_main_post_action->();
-								}
+								'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
 							}
 					);
-					# if all processed smoothly, exit loop
 					if ($download_result) {
 						# failed to download
-						mywarn("failed to download index for '%s'", $index_alias);
-					} else {
-						# all's good
-						$exit_code = 0;
+						mywarn("failed to download '%s'", $release_alias);
 						goto CHILD_EXIT;
 					}
-				}
-			};
 
-			CHILD_EXIT:
-			POSIX::_exit($exit_code);
+					# phase 1.1: downloading signature for Release file
+					my $signature_download_uri = "$download_uri.gpg";
+					my $signature_local_path = "$local_path.gpg";
+					my $signature_download_filename = "$download_filename.gpg";
+
+					my $release_signature_alias = "$release_alias.gpg";
+					$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
+					$download_manager->set_long_alias_for_uri($signature_download_uri,
+							"$index_entry->{'uri'} $release_signature_alias");
+					$download_result = $sub_download_wrapper->(
+							{
+								'uris' => [ $signature_download_uri ],
+								'filename' => $signature_download_filename,
+								'post-action' => $sub_generate_moving_sub->(
+										$signature_download_filename => $signature_local_path),
+							}
+					);
+					if ($download_result) {
+						# failed to download
+						mywarn("failed to download '%s'", $release_signature_alias);
+						goto CHILD_EXIT;
+					}
+				};
+
+				do { # phase 2: downloading Packages/Sources
+					my $local_path = $cache->get_path_of_index_list($index_entry);
+					my $ref_download_entries = $cache->get_download_entries_of_index_list(
+							$index_entry, $release_local_path);
+					my $base_download_filename = $sub_get_download_filename->($local_path);
+
+					# try to download files of less size first
+					my @download_uris_in_order = sort {
+						$ref_download_entries->{$a}->{'size'} <=> $ref_download_entries->{$b}->{'size'}
+					} keys %$ref_download_entries;
+
+					my $download_result;
+					foreach my $download_uri (@download_uris_in_order) {
+						(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
+
+						my $download_filename_extension;
+						if ($download_filename_basename =~ m/(\.\w+)/) {
+							$download_filename_extension = $1;
+						} else {
+							$download_filename_extension = '';
+						}
+
+						my $download_filename = $base_download_filename . $download_filename_extension;
+						my $sub_main_post_action;
+
+						# checking and preparing unpackers
+						if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
+							my %extension_to_uncompressor_name = ('.lzma' => 'unlzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
+							my $uncompressor_name = $extension_to_uncompressor_name{$download_filename_extension};
+
+							if (system("which $uncompressor_name >/dev/null")) {
+								mywarn("'%s' uncompressor is not available, not downloading '%s'",
+										$uncompressor_name, $download_uri);
+								next;
+							}
+
+							$sub_main_post_action = sub {
+								my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
+								if ($uncompressing_result) {
+									return sprintf "failed to uncompress '%s', '%s' returned error %s",
+											$download_filename, $uncompressor_name, $uncompressing_result;
+								}
+								return '';
+							}
+						} elsif ($download_filename_extension eq $download_filename_basename) {
+							# no extension
+							$sub_main_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
+						} else {
+							mywarn("unknown file extension '%s', not downloading '%s'",
+										$download_filename_extension, $download_uri);
+							next;
+						}
+
+
+						my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
+								$index_entry->{'component'}, $download_filename_basename;
+
+						$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
+						$download_manager->set_long_alias_for_uri($download_uri,
+								"$index_entry->{'uri'} $index_alias");
+
+						$download_result = $sub_download_wrapper->(
+								{
+									'uris' => [ $download_uri ],
+									'filename' => $download_filename,
+									'post-action' => sub {
+										__verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
+												do {
+													unlink $download_filename;
+													return sprintf __("%s: hash sums mismatch"), $download_filename;
+												};
+										return $sub_main_post_action->();
+									}
+								}
+						);
+						# if all processed smoothly, exit loop
+						if ($download_result) {
+							# failed to download
+							mywarn("failed to download index for '%s'", $index_alias);
+						} else {
+							# all's good
+							$exit_code = 0;
+							goto CHILD_EXIT;
+						}
+					}
+				};
+
+				CHILD_EXIT:
+				POSIX::_exit($exit_code);
+			}
 		}
-	}
-	my $exit_code = 0;
-	foreach my $pid (@pids) {
-		waitpid $pid, 0;
-		# if something went bad in child, the parent won't return non-zero code too
-		$exit_code += $?;
-	}
+		foreach my $pid (@pids) {
+			waitpid $pid, 0;
+			# if something went bad in child, the parent won't return non-zero code too
+			$master_exit_code += $?;
+		}
+	};
+
 	if (!$simulate) {
 		close($lock) or
 				mydie("unable to close indexes lock file: %s", $!);
 	}
 
-	if ($exit_code == 0) {
+	if ($master_exit_code == 0) {
 		# run post-actions
 		foreach my $command ($self->{_config}->var('apt::update::post-invoke')) {
 			$self->_run_external_command('post', $command, $command);
 		}
 	}
 
-	return $exit_code;
+	return $master_exit_code;
 }
 
 =head2 clean_archives
