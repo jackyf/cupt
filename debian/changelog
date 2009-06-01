@@ -11,6 +11,8 @@ cupt (0.2.1) UNRELEASED; urgency=low
         - New 'clean_archives' method.
       - Resolvers/Native:
         - Fixed dropping solutions by normalized score, not by the original one.
+        - Fixed auto-removing of packages which resolver marked to change, but
+          in the end they became unneeded anyway.
     - Cache:
       - BinaryVersion:
         - Always set 'source_version_string' field.
@@ -20,7 +22,7 @@ cupt (0.2.1) UNRELEASED; urgency=low
       - Progresses/Console:
         - Don't output progress meter when standard output is not a TTY.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 30 May 2009 18:24:36 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 01 Jun 2009 12:53:26 +0300
 
 cupt (0.2.0) unstable; urgency=low
 
