@@ -912,10 +912,7 @@ sub _do_downloads ($$$) {
 }
 
 sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
-	# how great is to write that "apt-listchanges uses special pipe from
-	# apt" and document nowhere the format of this pipe, so I have to look
-	# through the Python sources (I don't know Python btw) to determine
-	# what the hell should I put to STDIN to satisfy apt-listchanges
+	# all hate undocumented formats...
 	my ($self, $ref_action_group_list) = @_;
 	my $result = '';
 	$result .= "VERSION 2\n";
