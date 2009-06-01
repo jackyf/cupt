@@ -22,9 +22,12 @@ cupt (0.2.1) UNRELEASED; urgency=low
         - Always set 'source_version_string' field.
     - Config:
       - Added configuration option 'quiet'.
+      - New configuration option 'debug::downloader'.
     - Download:
       - Progresses/Console:
         - Don't output progress meter when standard output is not a TTY.
+      - Manager:
+        - Worker thread: honor 'debug::downloader' configuration option.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 01 Jun 2009 12:53:26 +0300
 

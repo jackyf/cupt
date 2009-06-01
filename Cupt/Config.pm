@@ -102,6 +102,7 @@ sub new {
 			'cupt::worker::download-only' => 0,
 			'cupt::worker::purge' => 0,
 			'cupt::worker::simulate' => 0,
+			'debug::downloader' => 0,
 			'debug::resolver' => 0,
 			'debug::worker' => 0,
 			'debug::gpgv' => 0,

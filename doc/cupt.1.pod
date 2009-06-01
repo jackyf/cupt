@@ -641,6 +641,10 @@ standard error
 boolean (0/1), if true, cache will print some debug information while verifying
 signatures to the standard error
 
+=item debug::downloader
+
+boolean (0/1), if true, the downloader manager will print some debug messages
+
 =back
 
 =head1 DEFINITIONS
