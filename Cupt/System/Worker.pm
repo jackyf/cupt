@@ -1185,24 +1185,20 @@ sub update_release_and_index_data ($$) {
 
 	my $sub_get_download_filename = sub {
 		my ($target_filename) = @_;
-
 		return dirname($target_filename) . $_download_partial_suffix .
 				'/' . basename($target_filename);
 	};
 
 	my $sub_generate_moving_sub = sub {
 		my ($download_path, $target_path) = @_;
-
 		return sub {
 			move($download_path, $target_path) or
 					return sprintf __("%s: unable to move target file: %s"), $download_path, $!;
-			# return success
-			return 0;
+			return 0; # success
 		};
 	};
 
 	my $indexes_location = $self->_get_indexes_location();
-
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
 	my $lock;
@@ -1213,7 +1209,6 @@ sub update_release_and_index_data ($$) {
 
 	my $cache = $self->{_cache};
 	my @index_entries = @{$cache->get_index_entries()};
-
 
 	# run pre-actions
 	foreach my $command ($self->{_config}->var('apt::update::pre-invoke')) {
@@ -1273,7 +1268,6 @@ sub update_release_and_index_data ($$) {
 				my $signature_local_path = "$local_path.gpg";
 				my $signature_download_filename = "$download_filename.gpg";
 
-
 				my $release_signature_alias = "$release_alias.gpg";
 				$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
 				$download_manager->set_long_alias_for_uri($signature_download_uri,
@@ -1300,7 +1294,8 @@ sub update_release_and_index_data ($$) {
 				};
 
 				my $local_path = $cache->get_path_of_index_list($index_entry);
-				my $ref_download_entries = $cache->get_download_entries_of_index_list($index_entry, $release_local_path);
+				my $ref_download_entries = $cache->get_download_entries_of_index_list(
+						$index_entry, $release_local_path);
 				my $base_download_filename = $sub_get_download_filename->($local_path);
 
 				# try to download files of less size first
