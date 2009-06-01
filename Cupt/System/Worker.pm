@@ -1194,7 +1194,7 @@ sub update_release_and_index_data ($$) {
 		return sub {
 			move($download_path, $target_path) or
 					return sprintf __("%s: unable to move target file: %s"), $download_path, $!;
-			return 0; # success
+			return ''; # success
 		};
 	};
 
