@@ -1293,6 +1293,15 @@ sub update_release_and_index_data ($$) {
 					my $local_path = $cache->get_path_of_index_list($index_entry);
 					my $ref_download_entries = $cache->get_download_entries_of_index_list(
 							$index_entry, $release_local_path);
+					# checking maybe there is no difference between the local and the remote?
+					foreach (values %$ref_download_entries) {
+						if (__verify_hash_sums($_, $local_path)) {
+							# yeah, really
+							$exit_code = 0;
+							goto CHILD_EXIT;
+						}
+					}
+
 					my $base_download_filename = $sub_get_download_filename->($local_path);
 
 					# try to download files of less size first
