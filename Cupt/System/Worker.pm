@@ -1288,11 +1288,6 @@ sub update_release_and_index_data ($$) {
 			};
 
 			do { # phase 2: downloading Packages/Sources
-				my $sub_stringify_index_entry_for_index = sub {
-					my ($index_entry) = @_;
-
-				};
-
 				my $local_path = $cache->get_path_of_index_list($index_entry);
 				my $ref_download_entries = $cache->get_download_entries_of_index_list(
 						$index_entry, $release_local_path);
