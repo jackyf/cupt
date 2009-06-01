@@ -28,6 +28,7 @@ cupt (0.2.1) UNRELEASED; urgency=low
         - Don't output progress meter when standard output is not a TTY.
       - Manager:
         - Worker thread: honor 'debug::downloader' configuration option.
+        - Worker thread: fixed stucking in some complex conditions.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 01 Jun 2009 12:53:26 +0300
 

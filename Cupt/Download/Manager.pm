@@ -221,12 +221,8 @@ sub _worker ($) {
 					# update progress
 					__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
 
-					if (scalar @download_queue) {
-						# put next of waiting queries
-						($uri, $filename, $waiter_fh) = @{shift @download_queue};
-						mydebug("enqueue '$uri' from hold") if $debug;
-						$proceed_next_download = 1;
-					}
+					# schedule next download
+					__my_write_pipe(\*SELF_WRITE, 'pop-download');
 				}
 				when ('progress') {
 					$uri = shift @params;
@@ -251,6 +247,14 @@ sub _worker ($) {
 						$self->{_progress}->progress($uri, $action, @params);
 					}
 				}
+				when ('pop-download') {
+					if (scalar @download_queue) {
+						# put next of waiting queries
+						($uri, $filename, $waiter_fh) = @{shift @download_queue};
+						mydebug("enqueue '$uri' from hold") if $debug;
+						$proceed_next_download = 1;
+					}
+				}
 				when ('set-long-alias') {
 					$self->{_progress}->set_long_alias_for_uri(@params);
 				}
@@ -271,6 +275,9 @@ sub _worker ($) {
 				my $is_duplicated_download = 1;
 				__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
 				close $waiter_fh;
+
+				# schedule next download
+				__my_write_pipe(\*SELF_WRITE, 'pop-download');
 				next;
 			} elsif (exists $active_downloads{$uri}) {
 				mydebug("pushed '$uri' to pending queue") if $debug;
@@ -282,6 +289,7 @@ sub _worker ($) {
 				push @download_queue, [ $uri, $filename, $waiter_fh ];
 				next;
 			}
+
 			# there is a space for new download, start it
 
 			mydebug("starting download '$uri'") if $debug;
