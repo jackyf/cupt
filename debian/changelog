@@ -1,4 +1,4 @@
-cupt (0.2.1) UNRELEASED; urgency=low
+cupt (0.2.1) unstable; urgency=low
 
   * cupt:
     - New 'screenshots' subcommand.
@@ -30,7 +30,7 @@ cupt (0.2.1) UNRELEASED; urgency=low
         - Worker thread: honor 'debug::downloader' configuration option.
         - Worker thread: fixed stucking in some complex conditions.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 01 Jun 2009 12:53:26 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 02 Jun 2009 11:34:28 +0300
 
 cupt (0.2.0) unstable; urgency=low
 
