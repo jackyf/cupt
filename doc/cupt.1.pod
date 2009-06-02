@@ -321,8 +321,6 @@ C<< cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)" >>
 
 C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget (>= 1.10.0)" >>
 
-=back
-
 =item clean
 
 removes all deb archives from cache on disk
@@ -339,6 +337,10 @@ on disk
 This subcommand receives no arguments.
 
 Example: C<cupt autoclean>
+
+=back
+
+=head3 query-specific options
 
 =over
 
