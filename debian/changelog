@@ -5,6 +5,8 @@ cupt (0.2.2) UNRELEASED; urgency=low
       - Resolvers/Native:
         - Stick all packages that can be changed for some problem, regardless
           of what solution will be used.
+      - Worker:
+        - 'clean_archives': fixed callback before actual deletion.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 03 Jun 2009 13:59:52 +0300
 
