@@ -1447,7 +1447,7 @@ sub clean_archives ($$) {
 		}
 	}
 
-	my @paths_to_delete = glob("$archives_location/*");
+	my @paths_to_delete = glob("$archives_location/*.deb");
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 	if ($simulate) {
