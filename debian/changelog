@@ -8,6 +8,7 @@ cupt (0.2.2) UNRELEASED; urgency=low
       - Worker:
         - 'clean_archives': fixed callback before actual deletion.
         - 'clean_archives': delete only '.deb's.
+        - 'clean_archives': fixed error message when deletion failed.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 03 Jun 2009 13:59:52 +0300
 

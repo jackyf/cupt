@@ -1457,7 +1457,7 @@ sub clean_archives ($$) {
 		not exists $white_list{$path} or next;
 		$sub_callback->($path);
 		if (!$simulate) {
-			unlink $path or mydie("unable to delete file '%s', $path");
+			unlink $path or mydie("unable to delete file '%s'", $path);
 		}
 	}
 }
