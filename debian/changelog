@@ -1,3 +1,13 @@
+cupt (0.2.2) UNRELEASED; urgency=low
+
+  * Cupt:
+    - System:
+      - Resolvers/Native:
+        - Stick all packages that can be changed for some problem, regardless
+          of what solution will be used.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 03 Jun 2009 13:59:52 +0300
+
 cupt (0.2.1) unstable; urgency=low
 
   * cupt:

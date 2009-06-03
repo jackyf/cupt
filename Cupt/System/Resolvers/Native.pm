@@ -753,8 +753,13 @@ sub _resolve ($$) {
 									$ref_current_packages, $package_name, $ref_satisfying_versions,
 									$relation_expression, $dependency_group_name, $dependency_group_factor);
 
-							# in any case, stick this package
-							$package_entry->[PE_STICK] = 1;
+							# stick all possible solutions
+							foreach my $ref_action (@possible_actions) {
+								my $action_package_name = $ref_action->{'package_name'};
+								if (exists $ref_current_packages->{$action_package_name}) {
+									$ref_current_packages->{$action_package_name}->[PE_STICK] = 1;
+								}
+							}
 
 							if ($self->config->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($relation_expression);
