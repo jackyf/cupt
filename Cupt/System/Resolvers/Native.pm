@@ -480,7 +480,12 @@ sub _apply_action ($$$$$) {
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
 
-	$ref_solution_entry->{packages}->{$package_name_to_change} //= __new_package_entry();
+	# stick all requested package names
+	foreach my $package_name (@{$ref_action_to_apply->{'package_names_to_stick'}}) {
+		$ref_solution_entry->{packages}->{$package_name} //= __new_package_entry();
+		$ref_solution_entry->{packages}->{$package_name}->[PE_STICK] = 1;
+	}
+
 	my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
 	my $original_version = $ref_package_entry_to_change->[PE_VERSION];
 
@@ -508,7 +513,6 @@ sub _apply_action ($$$$$) {
 	$ref_solution_entry->{score} += $profit;
 
 	# set stick for change for the time on underlying solutions
-	$ref_package_entry_to_change->[PE_STICK] = 1;
 	$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
 		push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
@@ -621,6 +625,18 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 	}
 
 	return @result;
+}
+
+sub __prepare_stick_requests ($) {
+	my ($ref_possible_actions) = @_;
+
+	# the each next action receives one more stick request to not interfere with
+	# all previous solutions
+	my @package_names;
+	foreach my $ref_action (@$ref_possible_actions) {
+		push @package_names, $ref_action->{'package_name'};
+		$ref_action->{'package_names_to_stick'} = [ @package_names ];
+	}
 }
 
 sub _resolve ($$) {
@@ -753,13 +769,7 @@ sub _resolve ($$) {
 									$ref_current_packages, $package_name, $ref_satisfying_versions,
 									$relation_expression, $dependency_group_name, $dependency_group_factor);
 
-							# stick all possible solutions
-							foreach my $ref_action (@possible_actions) {
-								my $action_package_name = $ref_action->{'package_name'};
-								if (exists $ref_current_packages->{$action_package_name}) {
-									$ref_current_packages->{$action_package_name}->[PE_STICK] = 1;
-								}
-							}
+							__prepare_stick_requests(\@possible_actions);
 
 							if ($self->config->var('debug::resolver')) {
 								my $stringified_relation = stringify_relation_expression($relation_expression);
@@ -871,8 +881,7 @@ sub _resolve ($$) {
 									}
 								}
 
-								# in any case, stick this package
-								$package_entry->[PE_STICK] = 1;
+								__prepare_stick_requests(\@possible_actions);
 
 								if ($self->config->var('debug::resolver')) {
 									my $stringified_relation = stringify_relation_expression($relation_expression);

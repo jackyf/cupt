@@ -3,8 +3,7 @@ cupt (0.2.2) UNRELEASED; urgency=low
   * Cupt:
     - System:
       - Resolvers/Native:
-        - Stick all packages that can be changed for some problem, regardless
-          of what solution will be used.
+        - When applying resolve actions, stick packages more aggressively.
       - Worker:
         - 'clean_archives': fixed callback before actual deletion.
         - 'clean_archives': delete only '.deb's.
