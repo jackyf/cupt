@@ -202,6 +202,8 @@ sub __compare_version_part ($$) {
 
 			if (!$left_char_is_digit && !$right_char_is_digit) {
 				return __compare_letter_symbol($left_char, $right_char);
+			} elsif ($left_char eq ' ' || $right_char eq ' ') {
+				return $left_char eq ' ' ? -1 : 1;
 			} elsif ($left_char_is_digit) {
 				return $current_part_is_digit ? 1 : -1;
 			} else { # right char is digit

@@ -19,7 +19,7 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { shift @INC, q(../) }
+BEGIN { unshift @INC, q(.) }
 
 use strict;
 use warnings;
@@ -55,6 +55,7 @@ my @correct_version_strings = (
 	[ '0.10.0', '0.8.7', 1 ], # bigger, eh?
 	[ '3.2', '2.3', 1 ], # major number rocks
 	[ '1.3.2a', '1.3.2', 1 ], # letters rock
+	[ '0.5.0~git', '0.5.0~git2', -1 ], # numbers rock
 	[ '2a', '21', -1 ], # but not in all places
 	[ '1.3.2a', '1.3.2b', -1 ], # but there is another letter
 	[ '1:1.2.3', '1.2.4', 1 ], # epoch rocks
