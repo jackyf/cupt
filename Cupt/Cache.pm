@@ -999,7 +999,7 @@ sub _process_index_file {
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
 		$ref_packages_storage = \$self->{_source_packages};
-		mywarn("not parsing deb-src index '%s' (parsing code is broken now)", $file);
+		mywarn("not parsing deb-src index '%s' (unimplemented yet)", $file);
 		return;
 	}
 
