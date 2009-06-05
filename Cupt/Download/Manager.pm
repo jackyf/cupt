@@ -39,7 +39,7 @@ use File::Temp qw(tempfile);
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
-use fields qw(_config _progress _worker_pid _socket _socket_path);
+use fields qw(_config _progress _worker_pid _server_socket _socket _socket_path);
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
@@ -86,15 +86,20 @@ sub new ($$$) {
 	$self->{_progress} = shift;
 
 	# main socket
-	$self->{_socket_path} = "/tmp/cupt-downloader-$$";
+	$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
 	unlink($self->{_socket_path}); # intentionally ignore errors
-	$self->{_socket} = IO::Socket::UNIX(Local => $self->{_socket_path}, Listen => 1, Type => SOCK_STREAM);
-	defined $self->{_socket} or
-			mydie("unable to create UNIX socket on file '%s'", $self->{_socket_path});
+	$self->{_server_socket} = IO::Socket::UNIX(
+			Local => $self->{_server_socket_path}, Listen => 1, Type => SOCK_STREAM);
+	defined $self->{_server_socket} or
+			mydie("unable to create server UNIX socket on file '%s'", $self->{_server_socket_path});
+	
+	$self->{_socket} = new IO::Socket::UNIX($self->{_socket_path});
+	defined $self->{_server_socket} or
+			mydie("unable to create client UNIX socket on file '%s'", $self->{_server_socket_path});
 
 	my $pid = fork();
 	defined $pid or
-			myinternaldie("unable to create download worker process: %s", $!);
+			mydie("unable to create download worker process: %s", $!);
 
 	if ($pid) {
 		# this is a main process
@@ -111,7 +116,7 @@ sub _worker ($) {
 
 	my $debug = $self->{_config}->var('debug::downloader');
 
-	mydebug("download worker thread started") if $debug;
+	mydebug("download worker process started") if $debug;
 
 	# { $uri => $result }
 	my %done_downloads;
@@ -128,9 +133,9 @@ sub _worker ($) {
 	my %target_filenames;
 
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
-	pipe(SELF_READ, SELF_WRITE) or
-			mydie("cannot create worker's own pipe");
-	autoflush SELF_WRITE;
+	my $worker_socket = new IO::Socket::UNIX($self->{_server_socket_path});
+	defined $self_write_socket or
+			mydie("cannot create worker's own socket connection");
 
 	my $exit_flag = 0;
 
@@ -139,7 +144,7 @@ sub _worker ($) {
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
 	while (!$exit_flag) {
-		my @ready = IO::Select->new(\*SELF_READ, \*STDIN, map { $_->{input_fh} } values %active_downloads)->can_read();
+		my @ready = IO::Select->new($worker_socket, $self->{_socket}, map { $_->{input_socket} } values %active_downloads)->can_read();
 		foreach my $fh (@ready) {
 			next unless $fh->opened;
 			my @params = __my_read_pipe($fh);
@@ -293,7 +298,7 @@ sub _worker ($) {
 			$active_downloads{$uri}->{waiter_fh} = $waiter_fh;
 
 			my $download_pid = open(my $download_fh, "-|");
-			$download_pid // myinternaldie("unable to fork: %s", $!);
+			$download_pid // mydie("unable to fork: %s", $!);
 
 			$active_downloads{$uri}->{pid} = $download_pid;
 			$active_downloads{$uri}->{input_fh} = $download_fh;
@@ -330,7 +335,7 @@ sub _worker ($) {
 	close STDIN or mydie("unable to close standard input for worker: %s", $!);
 	close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: %s", $!);
 	close SELF_READ or mydie("unable to close reading side of worker's own pipe: %s", $!);
-	mydebug("download worker thread finished") if $debug;
+	mydebug("download worker process finished") if $debug;
 	POSIX::_exit(0);
 }
 
