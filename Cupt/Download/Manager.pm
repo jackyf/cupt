@@ -120,7 +120,7 @@ sub _worker ($) {
 
 	# { $uri => $result }
 	my %done_downloads;
-	# { $uri => $waiter_fh, $pid, $input_fh }
+	# { $uri => $waiter_socket, $pid, $input_fh }
 	my %active_downloads;
 	# [ $uri, $filename, $filehandle ]
 	my @download_queue;
@@ -135,7 +135,7 @@ sub _worker ($) {
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	my $worker_socket = new IO::Socket::UNIX($self->{_server_socket_path});
 	defined $self_write_socket or
-			mydie("cannot create worker's own socket connection");
+			mydie("unable to create worker's own socket connection");
 
 	my $exit_flag = 0;
 
@@ -143,11 +143,18 @@ sub _worker ($) {
 	$SIG{ALRM} = sub { __my_write_pipe(\*SELF_WRITE, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
+	my @persistent_sockets = ($worker_socket, $self->{_socket}, $self->{_server_socket});
 	while (!$exit_flag) {
-		my @ready = IO::Select->new($worker_socket, $self->{_socket}, map { $_->{input_socket} } values %active_downloads)->can_read();
-		foreach my $fh (@ready) {
-			next unless $fh->opened;
-			my @params = __my_read_pipe($fh);
+		my @ready = IO::Select->new(@persistent_sockets, map { $_->{input_socket} } values %active_downloads)->can_read();
+		foreach my $socket (@ready) {
+			next unless $socket->opened;
+			if ($socket eq $self->{_server_socket}) {
+				# a new connection appeared
+				$socket = $socket->accept();
+				defined $socket or
+						mydie("unable to accept new socket connection");
+			}
+			my @params = __my_read_socket($socket);
 			my $command = shift @params;
 			my $uri;
 			my $filename;
@@ -158,12 +165,9 @@ sub _worker ($) {
 				when ('exit') { $exit_flag = 1; }
 				when ('download') {
 					# new query appeared
-					($uri, $filename, my $waiter_fifo) = @params;
+					($uri, $filename) = @params;
+					$waiter_socket = $socket;
 					mydebug("download request: '$uri'") if $debug;
-					$self->{_server_socket}->accept($waiter_socket) or
-							mydie("unable to connect to download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
-					autoflush $waiter_fh;
-
 					$proceed_next_download = 1;
 				}
 				when ('set-download-size') {
@@ -178,13 +182,13 @@ sub _worker ($) {
 					($uri, my $result) = @params;
 					mydebug("preliminary download result: '$uri': $result") if $debug;
 					my $is_duplicated_download = 0;
-					__my_write_pipe($active_downloads{$uri}->{waiter_fh}, $result, $is_duplicated_download);
+					__my_write_pipe($active_downloads{$uri}->{waiter_socket}, $result, $is_duplicated_download);
 
 					# clean after child
-					close($active_downloads{$uri}->{input_fh});
+					close($active_downloads{$uri}->{input_socket});
 					waitpid($active_downloads{$uri}->{pid}, 0);
 
-					close($active_downloads{$uri}->{waiter_fh});
+					close($active_downloads{$uri}->{waiter_socket});
 				}
 				when ('done-ack') {
 					# this is final ACK from download with final result
@@ -205,11 +209,11 @@ sub _worker ($) {
 						my @new_pending_downloads;
 
 						foreach my $ref_pending_download (@pending_downloads) {
-							(my $uri, $waiter_fh) = @$ref_pending_download;
+							(my $uri, $waiter_socket) = @$ref_pending_download;
 							if (exists $done_downloads{$uri}) {
 								mydebug("final download result for duplicated request: '$uri': $result") if $debug;
-								__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
-								close $waiter_fh;
+								__my_write_pipe($waiter_socket, $result, $is_duplicated_download);
+								close($waiter_socket);
 							} else {
 								push @new_pending_downloads, $ref_pending_download;
 							}
@@ -219,10 +223,10 @@ sub _worker ($) {
 					mydebug("finished checking pending queue") if $debug;
 
 					# update progress
-					__my_write_pipe(\*SELF_WRITE, 'progress', $uri, 'done', $result);
+					__my_write_pipe($worker_socket, 'progress', $uri, 'done', $result);
 
 					# schedule next download
-					__my_write_pipe(\*SELF_WRITE, 'pop-download');
+					__my_write_pipe($worker_socket, 'pop-download');
 				}
 				when ('progress') {
 					$uri = shift @params;
@@ -239,7 +243,7 @@ sub _worker ($) {
 							# process it as failed
 							my $error_string = sprintf __("invalid size: expected '%u', got '%u'"),
 									$download_sizes{$uri}, $expected_size;
-							__my_write_pipe(\*SELF_WRITE, 'done', $uri, $error_string);
+							__my_write_pipe($worker_socket, 'done', $uri, $error_string);
 							unlink $filename;
 						}
 					} else {
@@ -273,8 +277,8 @@ sub _worker ($) {
 				mydebug("final result for duplicated download '$uri': $result") if $debug;
 				# just immediately end it
 				my $is_duplicated_download = 1;
-				__my_write_pipe($waiter_fh, $result, $is_duplicated_download);
-				close $waiter_fh;
+				__my_write_pipe($waiter_socket, $result, $is_duplicated_download);
+				close($waiter_socket);
 
 				# schedule next download
 				__my_write_pipe(\*SELF_WRITE, 'pop-download');
@@ -332,9 +336,9 @@ sub _worker ($) {
 	# finishing progress
 	$self->{_progress}->finish();
 
-	close STDIN or mydie("unable to close standard input for worker: %s", $!);
-	close SELF_WRITE or mydie("unable to close writing side of worker's own pipe: %s", $!);
-	close SELF_READ or mydie("unable to close reading side of worker's own pipe: %s", $!);
+	close($worker_socket) or mydie("unable create worker's own socket connection");
+	close($self->{_socket}) or mydie("unable to close parent socket connection", $!);
+	close($self->{_server_socket}) or mydie("unable to close server socket", $!);
 	mydebug("download worker process finished") if $debug;
 	POSIX::_exit(0);
 }
