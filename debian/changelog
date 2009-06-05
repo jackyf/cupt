@@ -1,4 +1,4 @@
-cupt (0.2.2) UNRELEASED; urgency=low
+cupt (0.2.2) unstable; urgency=low
 
   * Cupt:
     - System:
@@ -12,7 +12,7 @@ cupt (0.2.2) UNRELEASED; urgency=low
       - Comparing version strings: fixed comparison of versions like 'ab' and
         'ab5'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 03 Jun 2009 13:59:52 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 05 Jun 2009 19:40:19 +0300
 
 cupt (0.2.1) unstable; urgency=low
 
