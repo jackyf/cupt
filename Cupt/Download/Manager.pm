@@ -33,33 +33,34 @@ use warnings;
 use URI;
 use IO::Handle;
 use IO::Select;
+use IO::Socket::UNIX;
 use Fcntl qw(:flock);
 use File::Temp qw(tempfile);
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
-use fields qw(_config _progress _downloads_done _worker_fh _worker_pid _fifo_dir);
+use fields qw(_config _progress _worker_pid _socket _socket_path);
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
 use Cupt::Download::Methods::File;
 
-sub __my_write_pipe ($@) {
-	my $fh = shift;
+sub __my_write_socket ($@) {
+	my $socket = shift;
 	my $string = join(chr(0), @_);
 	my $len = length($string);
 	my $packed_len = pack("S", $len);
-	syswrite $fh, ($packed_len . $string);
+	$socket->send($packed_len . $string, 0);
 }
 
-sub __my_read_pipe ($) {
-	my $fh = shift;
+sub __my_read_socket ($) {
+	my $socket = shift;
 	my $packed_len;
-	my $read_result = sysread $fh, $packed_len, 2;
-	$read_result or mydie("attempt to read from closed pipe");
+	my $read_result = $socket->recv($packed_len, 2, 0);
+	$read_result or mydie("attempt to read from closed socket");
 	my ($len) = unpack("S", $packed_len);
 	my $string;
-	sysread $fh, $string, $len;
+	$socket->recv($string, $len, 0);
 	return split(chr(0), $string, -1);
 }
 
@@ -84,22 +85,16 @@ sub new ($$$) {
 	$self->{_config} = shift;
 	$self->{_progress} = shift;
 
-	# making fifo storage dir if it's absend
-	$self->{_fifo_dir} = File::Temp::tempdir('cupt-XXXXXX', CLEANUP => 1, TMPDIR => 1) or
-			mydie("unable to create temporary directory for fifo storage: %s", $!);
+	# main socket
+	$self->{_socket_path} = "/tmp/cupt-downloader-$$";
+	unlink($self->{_socket_path}); # intentionally ignore errors
+	$self->{_socket} = IO::Socket::UNIX(Local => $self->{_socket_path}, Listen => 1, Type => SOCK_STREAM);
+	defined $self->{_socket} or
+			mydie("unable to create UNIX socket on file '%s'", $self->{_socket_path});
 
-	my $worker_fh;
-	my $pid;
-	do {
-		# don't close this handle on forks
-		local $^F = 10_000;
-
-		$pid = open($worker_fh, "|-");
-		defined $pid or
-				myinternaldie("unable to create download worker stream: %s", $!);
-	};
-	autoflush $worker_fh;
-	$self->{_worker_fh} = $worker_fh;
+	my $pid = fork();
+	defined $pid or
+			myinternaldie("unable to create download worker process: %s", $!);
 
 	if ($pid) {
 		# this is a main process
