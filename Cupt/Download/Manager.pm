@@ -151,7 +151,7 @@ sub _worker ($) {
 			my $command = shift @params;
 			my $uri;
 			my $filename;
-			my $waiter_fh;
+			my $waiter_socket;
 
 			my $proceed_next_download = 0;
 			given ($command) {
@@ -160,7 +160,7 @@ sub _worker ($) {
 					# new query appeared
 					($uri, $filename, my $waiter_fifo) = @params;
 					mydebug("download request: '$uri'") if $debug;
-					open($waiter_fh, ">", $waiter_fifo) or
+					$self->{_server_socket}->accept($waiter_socket) or
 							mydie("unable to connect to download fifo for '%s' -> '%s': %s", $uri, $filename, $!);
 					autoflush $waiter_fh;
 
