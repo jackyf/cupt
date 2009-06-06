@@ -144,7 +144,7 @@ sub _worker ($) {
 	my @persistent_sockets = ($worker_socket, $self->{_socket}, $self->{_server_socket});
 	my @runtime_sockets;
 	while (!$exit_flag) {
-		@persistent_sockets = grep { $_->opened } @persistent_sockets;
+		@runtime_sockets = grep { $_->opened } @runtime_sockets;
 		my @ready = IO::Select->new(@persistent_sockets, @runtime_sockets,
 				map { $_->{input_socket} } values %active_downloads)->can_read();
 		foreach my $socket (@ready) {
