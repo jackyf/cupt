@@ -310,11 +310,11 @@ sub _worker ($) {
 				my $size = $download_sizes{$uri};
 				push @progress_message, $size if defined $size;
 
-				__my_write_socket($worker_writer, @progress_message);
+				__my_write_socket($performer_writer, @progress_message);
 
 				my $result = $self->_download($uri, $filename, $performer_writer);
 				myinternaldie("a download method returned undefined result") if not defined $result;
-				__my_write_socket($worker_writer, 'done', $uri, $result);
+				__my_write_socket($performer_writer, 'done', $uri, $result);
 				close($performer_writer) or mydie("unable to close performer writer socket: %s", $!);
 				POSIX::_exit(0);
 			}
