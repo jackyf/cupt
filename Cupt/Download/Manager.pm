@@ -45,12 +45,14 @@ use Cupt::Download::Methods::File;
 
 sub __my_write_socket ($@) {
 	my $socket = shift;
+	defined $socket or myinternaldie("bad socket parameter");
 	my $string = join(chr(0), @_);
 	(say $socket $string) or myinternaldie("writing to socket failed: $!");
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
+	defined $socket or myinternaldie("bad socket parameter");
 	my $string = readline($socket) // myinternaldie("reading from socket failed: $!");
 	chomp($string);
 	return split(chr(0), $string, -1);
@@ -136,10 +138,16 @@ sub _worker ($) {
 	my @persistent_sockets = ($worker_reader, $self->{_parent_reader}, $self->{_server_socket});
 	my @runtime_sockets;
 	while (!$exit_flag) {
+		# periodic cleaning of sockets which were accept()'ed
 		@runtime_sockets = grep { $_->opened } @runtime_sockets;
 		my @ready = IO::Select->new(@persistent_sockets, @runtime_sockets,
 				map { $_->{performer_reader} } values %active_downloads)->can_read();
 		foreach my $socket (@ready) {
+			# the following is needed because of gap between 'done' and
+			# 'done-ack' messages, where performer socket is already closed,
+			# but $active_downloads for presented URI is already there
+			next unless $socket->opened;
+
 			if ($socket eq $self->{_server_socket}) {
 				# a new connection appeared
 				$socket = $socket->accept();
