@@ -37,7 +37,7 @@ use File::Temp qw(tempfile);
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
-use fields qw(_config _progress _worker_pid _server_socket _socket _server_socket_path);
+use fields qw(_config _progress _worker_pid _server_socket _parent_writer _parent_reader _server_socket_path);
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
@@ -46,19 +46,13 @@ use Cupt::Download::Methods::File;
 sub __my_write_socket ($@) {
 	my $socket = shift;
 	my $string = join(chr(0), @_);
-	my $len = length($string);
-	my $packed_len = pack("S", $len);
-	$socket->send($packed_len . $string, 0);
+	say $socket $string or myinternaldie("writing to socket failed");
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
-	my $packed_len;
-	my $read_result = $socket->recv($packed_len, 2, 0);
-	$read_result or myinternaldie("attempt to read from closed socket");
-	my ($len) = unpack("S", $packed_len);
-	my $string;
-	$socket->recv($string, $len, 0);
+	my $string = readline($socket) // myinternaldie("reading from socket failed");
+	chomp($string);
 	return split(chr(0), $string, -1);
 }
 
@@ -87,13 +81,12 @@ sub new ($$$) {
 	$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
 	unlink($self->{_server_socket_path}); # intentionally ignore errors
 	$self->{_server_socket} = new IO::Socket::UNIX(
-			Local => $self->{_server_socket_path}, Listen => 1, Type => SOCK_STREAM);
+			Local => $self->{_server_socket_path}, Listen => SOMAXCONN, Type => SOCK_STREAM);
 	defined $self->{_server_socket} or
 			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	
-	$self->{_socket} = new IO::Socket::UNIX($self->{_server_socket_path});
-	defined $self->{_socket} or
-			mydie("unable to open client socket: %s", $!);
+	pipe($self->{_parent_reader, _parent_writer}) or
+			mydie("unable to open parent pair of sockets: %s", $!);
 
 	my $pid = fork();
 	defined $pid or
@@ -131,6 +124,9 @@ sub _worker ($) {
 	my %target_filenames;
 
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
+	pipe(my $worker_reader, my $worker_writer}) or
+			mydie("unable to open parent pair of sockets: %s", $!);
+
 	my $worker_socket = new IO::Socket::UNIX($self->{_server_socket_path});
 	defined $worker_socket or
 			mydie("unable to open worker's own socket connection: %s", $!);
@@ -335,9 +331,8 @@ sub _worker ($) {
 	# finishing progress
 	$self->{_progress}->finish();
 
-	close($worker_socket) or mydie("unable to close worker's own socket: %s", $!);
-	close($self->{_socket}) or mydie("unable to close client socket: %s", $!);
-	close($self->{_server_socket}) or mydie("unable to close server socket: %s", $!);
+	close($worker_reader) or mydie("unable to close worker's own reader socket: %s", $!);
+	close($worker_writer) or mydie("unable to close worker's own writer socket: %s", $!);
 	mydebug("download worker process finished") if $debug;
 	POSIX::_exit(0);
 }
@@ -347,6 +342,10 @@ sub DESTROY {
 	# shutdowning worker thread
 	__my_write_socket($self->{_socket}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
+
+	# cleaning parent sockets
+	close($self->{_parent_reader}) or mydie("unable to close parent reader socket: %s", $!);
+	close($self->{_parent_writer}) or mydie("unable to close parent writer socket: %s", $!);
 
 	# cleaning server socket
 	close($self->{_server_socket}) or
