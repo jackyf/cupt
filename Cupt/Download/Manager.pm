@@ -46,12 +46,12 @@ use Cupt::Download::Methods::File;
 sub __my_write_socket ($@) {
 	my $socket = shift;
 	my $string = join(chr(0), @_);
-	say $socket $string or myinternaldie("writing to socket failed");
+	(say $socket $string) or myinternaldie("writing to socket failed: $!");
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
-	my $string = readline($socket) // myinternaldie("reading from socket failed");
+	my $string = readline($socket) // myinternaldie("reading from socket failed: $!");
 	chomp($string);
 	return split(chr(0), $string, -1);
 }
