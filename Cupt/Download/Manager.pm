@@ -292,12 +292,12 @@ sub _worker ($) {
 			# filling the active downloads hash
 			$active_downloads{$uri}->{waiter_socket} = $waiter_socket;
 
+			pipe($active_downloads{$uri}->{performer_reader}, my $performer_writer) or
+					mydie("unable to open performer's pair of sockets: %s", $!);
+
 			my $download_pid = fork();
 			$download_pid // mydie("unable to fork: %s", $!);
 			$active_downloads{$uri}->{pid} = $download_pid;
-
-			pipe($active_downloads{$uri}->{performer_reader}, my $performer_writer) or
-					mydie("unable to open performer's pair of sockets: %s", $!);
 
 			if ($download_pid) {
 				# worker process, nothing to do, go ahead
