@@ -55,7 +55,7 @@ sub __my_read_socket ($) {
 	my $socket = shift;
 	my $packed_len;
 	my $read_result = $socket->recv($packed_len, 2, 0);
-	$read_result or mydie("attempt to read from closed socket");
+	$read_result or myinternaldie("attempt to read from closed socket");
 	my ($len) = unpack("S", $packed_len);
 	my $string;
 	$socket->recv($string, $len, 0);
@@ -142,15 +142,18 @@ sub _worker ($) {
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
 	my @persistent_sockets = ($worker_socket, $self->{_socket}, $self->{_server_socket});
+	my @runtime_sockets;
 	while (!$exit_flag) {
-		my @ready = IO::Select->new(@persistent_sockets, map { $_->{input_socket} } values %active_downloads)->can_read();
+		@persistent_sockets = grep { $_->opened } @persistent_sockets;
+		my @ready = IO::Select->new(@persistent_sockets, @runtime_sockets,
+				map { $_->{input_socket} } values %active_downloads)->can_read();
 		foreach my $socket (@ready) {
-			next unless $socket->opened;
 			if ($socket eq $self->{_server_socket}) {
 				# a new connection appeared
 				$socket = $socket->accept();
 				defined $socket or
 						mydie("unable to accept new socket connection: %s", $!);
+				push @runtime_sockets, $socket;
 			}
 			my @params = __my_read_socket($socket);
 			my $command = shift @params;
