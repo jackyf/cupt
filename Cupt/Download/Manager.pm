@@ -47,13 +47,13 @@ sub __my_write_socket ($@) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
 	my $string = join(chr(0), @_);
-	(say $socket $string) or die("write to socket failed: $!");
+	(say $socket $string) or myinternaldie("write to socket failed: $!");
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
-	my $string = readline($socket) // die("read from socket failed: $!");
+	my $string = readline($socket) // myinternaldie("read from socket failed: $!");
 	chomp($string);
 	return split(chr(0), $string, -1);
 }

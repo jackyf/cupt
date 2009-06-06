@@ -81,7 +81,7 @@ sub mydie {
 
 sub myinternaldie {
 	_myprinterror("E: " . __("internal error: ") . _myformat(@_));
-	exit 255;
+	die;
 }
 
 sub mycatch() {
