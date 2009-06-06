@@ -335,7 +335,7 @@ sub _worker ($) {
 sub DESTROY {
 	my ($self) = @_;
 	# shutdowning worker thread
-	__my_write_socket($self->{_socket}, 'exit');
+	__my_write_socket($self->{_parent_writer}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
 
 	# cleaning parent sockets
@@ -480,7 +480,7 @@ method, forwards params to underlying download progress
 
 sub set_short_alias_for_uri {
 	my ($self, @params) = @_;
-	__my_write_socket($self->{_socket}, 'set-short-alias', @params);
+	__my_write_socket($self->{_parent_writer}, 'set-short-alias', @params);
 }
 
 =head2 set_long_alias_for_uri
@@ -491,7 +491,7 @@ method, forwards params to underlying download progress
 
 sub set_long_alias_for_uri {
 	my ($self, @params) = @_;
-	__my_write_socket($self->{_worker_fh}, 'set-long-alias', @params);
+	__my_write_socket($self->{_parent_writer}, 'set-long-alias', @params);
 }
 
 sub _download ($$$) {
