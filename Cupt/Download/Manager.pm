@@ -339,7 +339,7 @@ sub _worker ($) {
 sub DESTROY {
 	my ($self) = @_;
 	# shutdowning worker thread
-	__my_write_socket($self->{_worker_fh}, 'exit');
+	__my_write_socket($self->{_socket}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
 }
 
@@ -347,6 +347,8 @@ sub DESTROY {
 
 method, adds group of download queries to queue. Blocks execution of program until
 all downloads are done.
+
+This method is re-entrant.
 
 Parameters:
 
@@ -390,6 +392,7 @@ sub download ($@) {
 	my %waiters;
 
 	my $socket = new IO::Socket::UNIX($self->{_server_socket_path});
+	defined $socket or mydie("unable to close download socket: %s", $!);
 
 	my $sub_schedule_download = sub {
 		my ($filename) = @_;
@@ -471,9 +474,7 @@ method, forwards params to underlying download progress
 
 sub set_short_alias_for_uri {
 	my ($self, @params) = @_;
-	flock($self->{_worker_fh}, LOCK_EX);
-	__my_write_socket($self->{_worker_fh}, 'set-short-alias', @params);
-	flock($self->{_worker_fh}, LOCK_UN);
+	__my_write_socket($self->{_socket}, 'set-short-alias', @params);
 }
 
 =head2 set_long_alias_for_uri
@@ -484,9 +485,7 @@ method, forwards params to underlying download progress
 
 sub set_long_alias_for_uri {
 	my ($self, @params) = @_;
-	flock($self->{_worker_fh}, LOCK_EX);
 	__my_write_socket($self->{_worker_fh}, 'set-long-alias', @params);
-	flock($self->{_worker_fh}, LOCK_UN);
 }
 
 sub _download ($$$) {
@@ -507,11 +506,17 @@ sub _download ($$$) {
 		# create handler by name
 		$handler = "Cupt::Download::Methods::$handler_name"->new();
 	}
+
+	my $socket = new IO::Socket::UNIX($self->{_server_socket_path});
+	defined $socket or mydie("unable to close performer socket: %s", $!);
+
 	# download the file
 	my $sub_callback = sub {
 		__my_write_socket(\*STDOUT, 'progress', $uri, @_);
 	};
-	return $handler->perform($self->{_config}, $uri, $filename, $sub_callback);
+	my $result = $handler->perform($self->{_config}, $uri, $filename, $sub_callback);
+	close($socket) or mydie("unable to close performer socket: %s", $!);
+	return $result;
 }
 
 1;
