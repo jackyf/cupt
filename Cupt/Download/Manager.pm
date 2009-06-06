@@ -85,13 +85,13 @@ sub new ($$$) {
 
 	# main socket
 	$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
-	unlink($self->{_socket_path}); # intentionally ignore errors
-	$self->{_server_socket} = IO::Socket::UNIX(
+	unlink($self->{_server_socket_path}); # intentionally ignore errors
+	$self->{_server_socket} = new IO::Socket::UNIX(
 			Local => $self->{_server_socket_path}, Listen => 1, Type => SOCK_STREAM);
 	defined $self->{_server_socket} or
 			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	
-	$self->{_socket} = new IO::Socket::UNIX($self->{_socket_path});
+	$self->{_socket} = new IO::Socket::UNIX($self->{_server_socket_path});
 	defined $self->{_socket} or
 			mydie("unable to open client socket: %s", $!);
 
@@ -138,7 +138,7 @@ sub _worker ($) {
 	my $exit_flag = 0;
 
 	# setting progress ping timer
-	$SIG{ALRM} = sub { __my_write_socket(\*SELF_WRITE, 'progress', '', 'ping') };
+	$SIG{ALRM} = sub { __my_write_socket($worker_socket, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
 	my @persistent_sockets = ($worker_socket, $self->{_socket}, $self->{_server_socket});
