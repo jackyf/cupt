@@ -132,7 +132,7 @@ sub _worker ($) {
 
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	my $worker_socket = new IO::Socket::UNIX($self->{_server_socket_path});
-	defined $self_write_socket or
+	defined $worker_socket or
 			mydie("unable to open worker's own socket connection: %s", $!);
 
 	my $exit_flag = 0;
@@ -348,7 +348,7 @@ sub DESTROY {
 	# cleaning server socket
 	close($self->{_server_socket}) or
 			mydie("unable to close server socket on file '%s': %s", $self->{_server_socket_path}, $!);
-	unlink($self->{_server_socket_path) or
+	unlink($self->{_server_socket_path}) or
 			mydie("unable to delete server socket file '%s': %s", $self->{_server_socket_path}, $!);
 }
 
@@ -414,7 +414,7 @@ sub download ($@) {
 		if (defined $size) {
 			__my_write_socket($socket, 'set-download-size', $uri, $size);
 		}
-		__my_write_socket($socket, 'download', $uri, $filename, $waiter_fifo);
+		__my_write_socket($socket, 'download', $uri, $filename);
 
 		$waiters{$uri} = $filename;
 	};
