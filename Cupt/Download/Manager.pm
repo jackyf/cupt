@@ -89,11 +89,11 @@ sub new ($$$) {
 	$self->{_server_socket} = IO::Socket::UNIX(
 			Local => $self->{_server_socket_path}, Listen => 1, Type => SOCK_STREAM);
 	defined $self->{_server_socket} or
-			mydie("unable to create server UNIX socket on file '%s'", $self->{_server_socket_path});
+			mydie("unable to create server socket on file '%s'", $self->{_server_socket_path});
 	
 	$self->{_socket} = new IO::Socket::UNIX($self->{_socket_path});
-	defined $self->{_server_socket} or
-			mydie("unable to create client UNIX socket on file '%s'", $self->{_server_socket_path});
+	defined $self->{_socket} or
+			mydie("unable to create client socket");
 
 	my $pid = fork();
 	defined $pid or
@@ -341,6 +341,12 @@ sub DESTROY {
 	# shutdowning worker thread
 	__my_write_socket($self->{_socket}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
+
+	# cleaning server socket
+	close($self->{_server_socket}) or
+			mydie("unable to close server socket on file '%s'", $self->{_server_socket_path});
+	unlink($self->{_server_socket_path) or
+			mydie("unable to delete server socket file '%s'", $self->{_server_socket_path});
 }
 
 =head2 download
