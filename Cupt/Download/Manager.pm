@@ -111,7 +111,7 @@ sub _worker ($) {
 
 	# { $uri => $result }
 	my %done_downloads;
-	# { $uri => $waiter_socket, $pid, $input_socket }
+	# { $uri => $waiter_socket, $pid, $performer_reader }
 	my %active_downloads;
 	# [ $uri, $filename, $filehandle ]
 	my @download_queue;
@@ -125,24 +125,20 @@ sub _worker ($) {
 
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	pipe(my $worker_reader, my $worker_writer}) or
-			mydie("unable to open parent pair of sockets: %s", $!);
-
-	my $worker_socket = new IO::Socket::UNIX($self->{_server_socket_path});
-	defined $worker_socket or
-			mydie("unable to open worker's own socket connection: %s", $!);
+			mydie("unable to open worker's own pair of sockets: %s", $!);
 
 	my $exit_flag = 0;
 
 	# setting progress ping timer
-	$SIG{ALRM} = sub { __my_write_socket($worker_socket, 'progress', '', 'ping') };
+	$SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
-	my @persistent_sockets = ($worker_socket, $self->{_socket}, $self->{_server_socket});
+	my @persistent_sockets = ($worker_reader, $parent_reader, $self->{_server_socket});
 	my @runtime_sockets;
 	while (!$exit_flag) {
 		@runtime_sockets = grep { $_->opened } @runtime_sockets;
 		my @ready = IO::Select->new(@persistent_sockets, @runtime_sockets,
-				map { $_->{input_socket} } values %active_downloads)->can_read();
+				map { $_->{performer_reader} } values %active_downloads)->can_read();
 		foreach my $socket (@ready) {
 			if ($socket eq $self->{_server_socket}) {
 				# a new connection appeared
@@ -182,7 +178,7 @@ sub _worker ($) {
 					__my_write_socket($active_downloads{$uri}->{waiter_socket}, $uri, $result, $is_duplicated_download);
 
 					# clean after child
-					close($active_downloads{$uri}->{input_socket}) or
+					close($active_downloads{$uri}->{performer_reader}) or
 							mydie("unable to close performer socket: %s", $!);
 					waitpid($active_downloads{$uri}->{pid}, 0);
 				}
@@ -219,10 +215,10 @@ sub _worker ($) {
 					mydebug("finished checking pending queue") if $debug;
 
 					# update progress
-					__my_write_socket($worker_socket, 'progress', $uri, 'done', $result);
+					__my_write_socket($worker_writer, 'progress', $uri, 'done', $result);
 
 					# schedule next download
-					__my_write_socket($worker_socket, 'pop-download');
+					__my_write_socket($worker_writer, 'pop-download');
 				}
 				when ('progress') {
 					$uri = shift @params;
@@ -239,7 +235,7 @@ sub _worker ($) {
 							# process it as failed
 							my $error_string = sprintf __("invalid size: expected '%u', got '%u'"),
 									$download_sizes{$uri}, $expected_size;
-							__my_write_socket($worker_socket, 'done', $uri, $error_string);
+							__my_write_socket($worker_writer, 'done', $uri, $error_string);
 							unlink $filename;
 						}
 					} else {
@@ -300,8 +296,8 @@ sub _worker ($) {
 			$download_pid // mydie("unable to fork: %s", $!);
 			$active_downloads{$uri}->{pid} = $download_pid;
 
-			$active_downloads{$uri}->{input_socket} = new IO::Socket::UNIX($self->{_server_socket_path}) //
-					mydie("unable to open performer socket: %s", $!);
+			pipe($active_downloads{$uri}->{performer_reader}, my $performer_writer) or
+					mydie("unable to open performer's pair of sockets: %s", $!);
 
 			if ($download_pid) {
 				# worker process, nothing to do, go ahead
@@ -314,11 +310,11 @@ sub _worker ($) {
 				my $size = $download_sizes{$uri};
 				push @progress_message, $size if defined $size;
 
-				__my_write_socket($worker_socket, @progress_message);
+				__my_write_socket($worker_writer, @progress_message);
 
-				my $result = $self->_download($uri, $filename, $active_downloads{$uri}->{input_socket});
+				my $result = $self->_download($uri, $filename, $active_downloads{$uri}->{performer_reader});
 				myinternaldie("a download method returned undefined result") if not defined $result;
-				__my_write_socket($worker_socket, 'done', $uri, $result);
+				__my_write_socket($worker_writer, 'done', $uri, $result);
 				close($socket) or defined $socket or mydie("unable to close performer socket: %s", $!);
 						mydie("unable to close standard output");
 				POSIX::_exit(0);
