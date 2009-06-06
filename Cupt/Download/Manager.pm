@@ -89,11 +89,11 @@ sub new ($$$) {
 	$self->{_server_socket} = IO::Socket::UNIX(
 			Local => $self->{_server_socket_path}, Listen => 1, Type => SOCK_STREAM);
 	defined $self->{_server_socket} or
-			mydie("unable to create server socket on file '%s'", $self->{_server_socket_path});
+			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	
 	$self->{_socket} = new IO::Socket::UNIX($self->{_socket_path});
 	defined $self->{_socket} or
-			mydie("unable to create client socket");
+			mydie("unable to open client socket: %s", $!);
 
 	my $pid = fork();
 	defined $pid or
@@ -118,7 +118,7 @@ sub _worker ($) {
 
 	# { $uri => $result }
 	my %done_downloads;
-	# { $uri => $waiter_socket, $pid, $input_fh }
+	# { $uri => $waiter_socket, $pid, $input_socket }
 	my %active_downloads;
 	# [ $uri, $filename, $filehandle ]
 	my @download_queue;
@@ -133,7 +133,7 @@ sub _worker ($) {
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	my $worker_socket = new IO::Socket::UNIX($self->{_server_socket_path});
 	defined $self_write_socket or
-			mydie("unable to create worker's own socket connection");
+			mydie("unable to open worker's own socket connection: %s", $!);
 
 	my $exit_flag = 0;
 
@@ -150,7 +150,7 @@ sub _worker ($) {
 				# a new connection appeared
 				$socket = $socket->accept();
 				defined $socket or
-						mydie("unable to accept new socket connection");
+						mydie("unable to accept new socket connection: %s", $!);
 			}
 			my @params = __my_read_socket($socket);
 			my $command = shift @params;
@@ -183,7 +183,8 @@ sub _worker ($) {
 					__my_write_socket($active_downloads{$uri}->{waiter_socket}, $uri, $result, $is_duplicated_download);
 
 					# clean after child
-					close($active_downloads{$uri}->{input_socket});
+					close($active_downloads{$uri}->{input_socket}) or
+							mydie("unable to close performer socket: %s", $!);
 					waitpid($active_downloads{$uri}->{pid}, 0);
 				}
 				when ('done-ack') {
@@ -250,7 +251,7 @@ sub _worker ($) {
 				when ('pop-download') {
 					if (scalar @download_queue) {
 						# put next of waiting queries
-						($uri, $filename, $waiter_fh) = @{shift @download_queue};
+						($uri, $filename, $waiter_socket) = @{shift @download_queue};
 						mydebug("enqueue '$uri' from hold") if $debug;
 						$proceed_next_download = 1;
 					}
@@ -296,11 +297,12 @@ sub _worker ($) {
 			# filling the active downloads hash
 			$active_downloads{$uri}->{waiter_socket} = $waiter_socket;
 
-			my $download_pid = open(my $download_fh, "-|");
+			my $download_pid = fork();
 			$download_pid // mydie("unable to fork: %s", $!);
-
 			$active_downloads{$uri}->{pid} = $download_pid;
-			$active_downloads{$uri}->{input_fh} = $download_fh;
+
+			$active_downloads{$uri}->{input_socket} = new IO::Socket::UNIX($self->{_server_socket_path}) //
+					mydie("unable to open performer socket: %s", $!);
 
 			if ($download_pid) {
 				# worker process, nothing to do, go ahead
@@ -312,12 +314,16 @@ sub _worker ($) {
 				my @progress_message = ('progress', $uri, 'start');
 				my $size = $download_sizes{$uri};
 				push @progress_message, $size if defined $size;
-				__my_write_socket(\*STDOUT, @progress_message);
 
-				my $result = $self->_download($uri, $filename);
+				my $socket = ;
+				defined $socket or mydie("unable to close performer socket: %s", $!);
+
+				__my_write_socket($worker_socket, @progress_message);
+
+				my $result = $self->_download($uri, $filename, $active_downloads{$uri}->{input_socket});
 				myinternaldie("a download method returned undefined result") if not defined $result;
-				__my_write_socket(\*STDOUT, 'done', $uri, $result);
-				close(STDOUT) or
+				__my_write_socket($worker_socket, 'done', $uri, $result);
+				close($socket) or defined $socket or mydie("unable to close performer socket: %s", $!);
 						mydie("unable to close standard output");
 				POSIX::_exit(0);
 			}
@@ -329,9 +335,9 @@ sub _worker ($) {
 	# finishing progress
 	$self->{_progress}->finish();
 
-	close($worker_socket) or mydie("unable create worker's own socket connection");
-	close($self->{_socket}) or mydie("unable to close parent socket connection", $!);
-	close($self->{_server_socket}) or mydie("unable to close server socket", $!);
+	close($worker_socket) or mydie("unable to close worker's own socket: %s", $!);
+	close($self->{_socket}) or mydie("unable to close client socket: %s", $!);
+	close($self->{_server_socket}) or mydie("unable to close server socket: %s", $!);
 	mydebug("download worker process finished") if $debug;
 	POSIX::_exit(0);
 }
@@ -344,9 +350,9 @@ sub DESTROY {
 
 	# cleaning server socket
 	close($self->{_server_socket}) or
-			mydie("unable to close server socket on file '%s'", $self->{_server_socket_path});
+			mydie("unable to close server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	unlink($self->{_server_socket_path) or
-			mydie("unable to delete server socket file '%s'", $self->{_server_socket_path});
+			mydie("unable to delete server socket file '%s': %s", $self->{_server_socket_path}, $!);
 }
 
 =head2 download
@@ -398,7 +404,7 @@ sub download ($@) {
 	my %waiters;
 
 	my $socket = new IO::Socket::UNIX($self->{_server_socket_path});
-	defined $socket or mydie("unable to close download socket: %s", $!);
+	defined $socket or mydie("unable to open download socket: %s", $!);
 
 	my $sub_schedule_download = sub {
 		my ($filename) = @_;
@@ -495,7 +501,7 @@ sub set_long_alias_for_uri {
 }
 
 sub _download ($$$) {
-	my ($self, $uri, $filename) = @_;
+	my ($self, $uri, $filename, $socket) = @_;
 
 	my %protocol_handlers = (
 		'http' => 'Curl',
@@ -513,15 +519,11 @@ sub _download ($$$) {
 		$handler = "Cupt::Download::Methods::$handler_name"->new();
 	}
 
-	my $socket = new IO::Socket::UNIX($self->{_server_socket_path});
-	defined $socket or mydie("unable to close performer socket: %s", $!);
-
 	# download the file
 	my $sub_callback = sub {
-		__my_write_socket(\*STDOUT, 'progress', $uri, @_);
+		__my_write_socket($socket, 'progress', $uri, @_);
 	};
 	my $result = $handler->perform($self->{_config}, $uri, $filename, $sub_callback);
-	close($socket) or mydie("unable to close performer socket: %s", $!);
 	return $result;
 }
 
