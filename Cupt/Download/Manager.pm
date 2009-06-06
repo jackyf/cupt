@@ -85,7 +85,7 @@ sub new ($$$) {
 	defined $self->{_server_socket} or
 			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	
-	pipe($self->{_parent_reader, _parent_writer}) or
+	pipe($self->{_parent_reader}, $self->{_parent_writer}) or
 			mydie("unable to open parent pair of sockets: %s", $!);
 
 	my $pid = fork();
@@ -124,7 +124,7 @@ sub _worker ($) {
 	my %target_filenames;
 
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
-	pipe(my $worker_reader, my $worker_writer}) or
+	pipe(my $worker_reader, my $worker_writer) or
 			mydie("unable to open worker's own pair of sockets: %s", $!);
 
 	my $exit_flag = 0;
@@ -133,7 +133,7 @@ sub _worker ($) {
 	$SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
-	my @persistent_sockets = ($worker_reader, $parent_reader, $self->{_server_socket});
+	my @persistent_sockets = ($worker_reader, $self->{_parent_reader}, $self->{_server_socket});
 	my @runtime_sockets;
 	while (!$exit_flag) {
 		@runtime_sockets = grep { $_->opened } @runtime_sockets;
@@ -272,7 +272,7 @@ sub _worker ($) {
 				__my_write_socket($waiter_socket, $uri, $result, $is_duplicated_download);
 
 				# schedule next download
-				__my_write_socket(\*SELF_WRITE, 'pop-download');
+				__my_write_socket($worker_writer, 'pop-download');
 				next;
 			} elsif (exists $active_downloads{$uri}) {
 				mydebug("pushed '$uri' to pending queue") if $debug;
