@@ -315,9 +315,6 @@ sub _worker ($) {
 				my $size = $download_sizes{$uri};
 				push @progress_message, $size if defined $size;
 
-				my $socket = ;
-				defined $socket or mydie("unable to close performer socket: %s", $!);
-
 				__my_write_socket($worker_socket, @progress_message);
 
 				my $result = $self->_download($uri, $filename, $active_downloads{$uri}->{input_socket});
