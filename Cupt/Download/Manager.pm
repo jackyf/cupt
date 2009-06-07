@@ -54,7 +54,8 @@ sub __my_write_socket ($@) {
 sub __my_read_socket ($) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
-	my $string = readline($socket) // "";
+	my $string = readline($socket) // "eof";
+	myinternaldie("read from socket failed: $!") if $!;
 	chomp($string);
 	return split(chr(0), $string, -1);
 }
@@ -160,11 +161,6 @@ sub _worker ($) {
 				push @runtime_sockets, $socket;
 			}
 			my @params = __my_read_socket($socket);
-			if (not scalar @params) {
-				# this is a dead socket
-				close($socket) or mydie("unabel to close dead socket: %s", $!);
-				next;
-			}
 			my $command = shift @params;
 			my $uri;
 			my $filename;
@@ -175,6 +171,11 @@ sub _worker ($) {
 				when ('exit') {
 					mydebug("exit scheduled") if $debug;
 					$exit_flag = 1;
+				}
+				when ('eof') {
+					# the current socket reported EOF
+					mydebug("eof has been reported") if $debug;
+					close($socket) or mydie("unable to close socket: %s", $!);
 				}
 				when ('download') {
 					# new query appeared
