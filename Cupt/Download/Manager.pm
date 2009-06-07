@@ -89,6 +89,7 @@ sub new ($$$) {
 	
 	pipe($self->{_parent_reader}, $self->{_parent_writer}) or
 			mydie("unable to open parent pair of sockets: %s", $!);
+	$self->{_parent_writer}->autoflush(1);
 
 	my $pid = fork();
 	defined $pid or
@@ -128,6 +129,7 @@ sub _worker ($) {
 	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
 	pipe(my $worker_reader, my $worker_writer) or
 			mydie("unable to open worker's own pair of sockets: %s", $!);
+	$worker_writer->autoflush(1);
 
 	my $exit_flag = 0;
 
@@ -139,20 +141,17 @@ sub _worker ($) {
 	my @runtime_sockets;
 	while (!$exit_flag) {
 		# periodic cleaning of sockets which were accept()'ed
-		@runtime_sockets = grep { $_->opened } @runtime_sockets;
+		# @runtime_sockets = grep { $_->opened } @runtime_sockets;
 		my @ready = IO::Select->new(@persistent_sockets, @runtime_sockets,
 				map { $_->{performer_reader} } values %active_downloads)->can_read();
 		foreach my $socket (@ready) {
-			# the following is needed because of gap between 'done' and
-			# 'done-ack' messages, where performer socket is already closed,
-			# but $active_downloads for presented URI is already there
-			next unless $socket->opened;
-
+			next if not $socket->opened;
 			if ($socket eq $self->{_server_socket}) {
 				# a new connection appeared
 				$socket = $socket->accept();
 				defined $socket or
 						mydie("unable to accept new socket connection: %s", $!);
+				mydebug("accepted new connection") if $debug;
 				push @runtime_sockets, $socket;
 			}
 			my @params = __my_read_socket($socket);
@@ -188,6 +187,7 @@ sub _worker ($) {
 					# clean after child
 					close($active_downloads{$uri}->{performer_reader}) or
 							mydie("unable to close performer socket: %s", $!);
+
 					waitpid($active_downloads{$uri}->{pid}, 0);
 				}
 				when ('done-ack') {
@@ -309,9 +309,13 @@ sub _worker ($) {
 
 			if ($download_pid) {
 				# worker process, nothing to do, go ahead
+				close($performer_writer) or mydie("unable to close performer writer socket: %s", $!);
 			} else {
 				# background downloader process
 				$SIG{TERM} = sub { POSIX::_exit(0) };
+
+				close($active_downloads{$uri}->{performer_reader}) or
+						mydie("unable to close performer reader socket: %s", $!);
 
 				# start progress
 				my @progress_message = ('progress', $uri, 'start');
