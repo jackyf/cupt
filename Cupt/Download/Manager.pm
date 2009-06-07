@@ -501,7 +501,7 @@ method, forwards params to underlying download progress
 
 sub set_short_alias_for_uri {
 	my ($self, @params) = @_;
-	__my_write_socket($self->{_parent_writer}, 'set-short-alias', @params);
+	__my_write_socket($self->{_parent_pipe}, 'set-short-alias', @params);
 }
 
 =head2 set_long_alias_for_uri
@@ -512,7 +512,7 @@ method, forwards params to underlying download progress
 
 sub set_long_alias_for_uri {
 	my ($self, @params) = @_;
-	__my_write_socket($self->{_parent_writer}, 'set-long-alias', @params);
+	__my_write_socket($self->{_parent_pipe}, 'set-long-alias', @params);
 }
 
 sub _download ($$$) {
