@@ -91,7 +91,7 @@ sub hook {
 				# some error occured, output it
 				$self->_termprint(""); # clean the line
 				# this may cross several lines
-				myerr("\rdownloading %s failed: %s", $uri, $error_string);
+				myerr("downloading %s failed: %s", $uri, $error_string);
 			}
 		}
 		when ('ping') {
