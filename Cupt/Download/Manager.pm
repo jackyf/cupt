@@ -32,12 +32,13 @@ use warnings;
 
 use URI;
 use IO::Select;
+use IO::Pipe;
 use IO::Socket::UNIX;
 use File::Temp qw(tempfile);
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
-use fields qw(_config _progress _worker_pid _server_socket _parent_writer _parent_reader _server_socket_path);
+use fields qw(_config _progress _worker_pid _server_socket _parent_pipe _server_socket_path);
 
 use Cupt::Core;
 use Cupt::Download::Methods::Curl;
@@ -53,7 +54,7 @@ sub __my_write_socket ($@) {
 sub __my_read_socket ($) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
-	my $string = readline($socket) // myinternaldie("read from socket failed: $!");
+	my $string = readline($socket) // "";
 	chomp($string);
 	return split(chr(0), $string, -1);
 }
@@ -87,9 +88,8 @@ sub new ($$$) {
 	defined $self->{_server_socket} or
 			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	
-	pipe($self->{_parent_reader}, $self->{_parent_writer}) or
-			mydie("unable to open parent pair of sockets: %s", $!);
-	$self->{_parent_writer}->autoflush(1);
+	$self->{_parent_pipe} = new IO::Pipe() //
+			mydie("unable to open parent pipe: %s", $!);
 
 	my $pid = fork();
 	defined $pid or
@@ -98,9 +98,12 @@ sub new ($$$) {
 	if ($pid) {
 		# this is a main process
 		$self->{_worker_pid} = $pid;
+		$self->{_parent_pipe}->writer();
+		$self->{_parent_pipe}->autoflush(1);
 		return $self;
 	} else {
 		# this is background worker process
+		$self->{_parent_pipe}->reader();
 		$self->_worker();
 	}
 }
@@ -137,7 +140,7 @@ sub _worker ($) {
 	$SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
-	my @persistent_sockets = ($worker_reader, $self->{_parent_reader}, $self->{_server_socket});
+	my @persistent_sockets = ($worker_reader, $self->{_parent_pipe}, $self->{_server_socket});
 	my @runtime_sockets;
 	while (!$exit_flag) {
 		# periodic cleaning of sockets which were accept()'ed
@@ -155,6 +158,7 @@ sub _worker ($) {
 				push @runtime_sockets, $socket;
 			}
 			my @params = __my_read_socket($socket);
+			scalar @params or next;
 			my $command = shift @params;
 			my $uri;
 			my $filename;
@@ -162,7 +166,10 @@ sub _worker ($) {
 
 			my $proceed_next_download = 0;
 			given ($command) {
-				when ('exit') { $exit_flag = 1; }
+				when ('exit') {
+					mydebug("exit scheduled") if $debug;
+					$exit_flag = 1;
+				}
 				when ('download') {
 					# new query appeared
 					($uri, $filename) = @params;
@@ -300,7 +307,7 @@ sub _worker ($) {
 			# filling the active downloads hash
 			$active_downloads{$uri}->{waiter_socket} = $waiter_socket;
 
-			pipe($active_downloads{$uri}->{performer_reader}, my $performer_writer) or
+			my $performer_pipe = new IO::Pipe() //
 					mydie("unable to open performer's pair of sockets: %s", $!);
 
 			my $download_pid = fork();
@@ -309,26 +316,27 @@ sub _worker ($) {
 
 			if ($download_pid) {
 				# worker process, nothing to do, go ahead
-				close($performer_writer) or mydie("unable to close performer writer socket: %s", $!);
+				$performer_pipe->reader();
+				$active_downloads{$uri}->{performer_reader} = $performer_pipe;
 			} else {
 				# background downloader process
 				$SIG{TERM} = sub { POSIX::_exit(0) };
 
-				close($active_downloads{$uri}->{performer_reader}) or
-						mydie("unable to close performer reader socket: %s", $!);
+				$performer_pipe->writer();
+				$performer_pipe->autoflush(1);
 
 				# start progress
 				my @progress_message = ('progress', $uri, 'start');
 				my $size = $download_sizes{$uri};
 				push @progress_message, $size if defined $size;
 
-				$performer_writer->autoflush(1);
-				__my_write_socket($performer_writer, @progress_message);
+				__my_write_socket($performer_pipe, @progress_message);
 
-				my $result = $self->_download($uri, $filename, $performer_writer);
+				my $result = $self->_download($uri, $filename, $performer_pipe);
 				myinternaldie("a download method returned undefined result") if not defined $result;
-				__my_write_socket($performer_writer, 'done', $uri, $result);
-				close($performer_writer) or mydie("unable to close performer writer socket: %s", $!);
+
+				__my_write_socket($performer_pipe, 'done', $uri, $result);
+
 				POSIX::_exit(0);
 			}
 		}
@@ -348,7 +356,7 @@ sub _worker ($) {
 sub DESTROY {
 	my ($self) = @_;
 	# shutdowning worker thread
-	__my_write_socket($self->{_parent_writer}, 'exit');
+	__my_write_socket($self->{_parent_pipe}, 'exit');
 	waitpid($self->{_worker_pid}, 0);
 
 	# cleaning parent sockets
