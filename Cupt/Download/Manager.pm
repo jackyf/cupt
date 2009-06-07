@@ -144,9 +144,11 @@ sub _worker ($) {
 	my @runtime_sockets;
 	while (!$exit_flag) {
 		# periodic cleaning of sockets which were accept()'ed
-		# @runtime_sockets = grep { $_->opened } @runtime_sockets;
+		@runtime_sockets = grep { $_->opened } @runtime_sockets;
+
 		my @ready = IO::Select->new(@persistent_sockets, @runtime_sockets,
 				map { $_->{performer_reader} } values %active_downloads)->can_read();
+
 		foreach my $socket (@ready) {
 			next if not $socket->opened;
 			if ($socket eq $self->{_server_socket}) {
@@ -158,7 +160,11 @@ sub _worker ($) {
 				push @runtime_sockets, $socket;
 			}
 			my @params = __my_read_socket($socket);
-			scalar @params or next;
+			if (not scalar @params) {
+				# this is a dead socket
+				close($socket) or mydie("unabel to close dead socket: %s", $!);
+				next;
+			}
 			my $command = shift @params;
 			my $uri;
 			my $filename;
