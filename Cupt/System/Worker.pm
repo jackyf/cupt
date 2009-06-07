@@ -1342,7 +1342,7 @@ sub update_release_and_index_data ($$) {
 								}
 								return '';
 							}
-						} elsif ($download_filename_extension eq $download_filename_basename) {
+						} elsif ($download_filename_extension eq '') {
 							# no extension
 							$sub_main_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
 						} else {
