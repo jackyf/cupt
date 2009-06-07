@@ -1363,6 +1363,7 @@ sub update_release_and_index_data ($$) {
 								{
 									'uris' => [ $download_uri ],
 									'filename' => $download_filename,
+									'size' => $ref_download_entries->{$download_uri}->{'size'},
 									'post-action' => sub {
 										__verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
 												do {
