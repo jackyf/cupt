@@ -47,17 +47,20 @@ use Cupt::Download::Methods::File;
 sub __my_write_socket ($@) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
-	my $string = join(chr(0), @_);
+	my $string = join(chr(1), @_);
 	(say $socket $string) or myinternaldie("write to socket failed: $!");
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
-	my $string = readline($socket) // "eof";
-	myinternaldie("read from socket failed: $!") if $!;
+	my $string = readline($socket);
+	if (not defined $string) {
+		$string = 'eof';
+		myinternaldie("read from socket failed: $!") if $!;
+	}
 	chomp($string);
-	return split(chr(0), $string, -1);
+	return split(chr(1), $string, -1);
 }
 
 =head1 METHODS
