@@ -322,6 +322,7 @@ sub _worker ($) {
 				my $size = $download_sizes{$uri};
 				push @progress_message, $size if defined $size;
 
+				$performer_writer->autoflush(1);
 				__my_write_socket($performer_writer, @progress_message);
 
 				my $result = $self->_download($uri, $filename, $performer_writer);
