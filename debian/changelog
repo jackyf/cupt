@@ -5,6 +5,10 @@ cupt (0.2.3) UNRELEASED; urgency=low
       - Worker:
         - 'update_release_and_index_data': fixed downloading of non-compressed
           indexes.
+      - Resolvers/Native:
+        - Reworked solution rank system.
+        - Dropped 'first-good' solution chooser. It can be mimicked by setting
+          'max-solution-count' option to 1.
     - Download:
       - Manager:
         - Enabled basic HTTPS protocol support.
