@@ -270,7 +270,7 @@ sub _get_action_profit ($$$) {
 	# remove a package
 	$result -= 50 if !defined $supposed_version;
 
-	return 
+	return $result;
 }
 
 sub __is_version_array_intersects_with_packages ($$) {
@@ -694,7 +694,7 @@ sub _resolve ($$) {
 		my @possible_actions;
 
 		# choosing the solution to process
-		my $ref_current_solution = $sub_solution_chooser->(\@solutions);
+		$ref_current_solution = $sub_solution_chooser->(\@solutions);
 		my $ref_current_packages = $ref_current_solution->{'packages'};
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
