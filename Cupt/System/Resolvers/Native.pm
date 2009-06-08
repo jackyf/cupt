@@ -689,13 +689,13 @@ sub _resolve ($$) {
 
 	do {{
 		# continue only if we have at least one solution pending, otherwise we have a great fail
-		scalar @solution_entries or do { $return_code = 0; goto EXIT };
+		scalar @solutions or do { $return_code = 0; goto EXIT };
 
 		my @possible_actions;
 
 		# choosing the solution to process
-		my $ref_current_solution = $sub_solution_chooser->(\@solution_entries);
-		my $ref_current_packages = $ref_current_solution_entry->{packages};
+		my $ref_current_solution = $sub_solution_chooser->(\@solutions);
+		my $ref_current_packages = $ref_current_solution->{'packages'};
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
 		# so, when an intermediate problem was solved, maybe it breaks packages
@@ -898,7 +898,7 @@ sub _resolve ($$) {
 				$ref_current_solution->{'finished'} = 1;
 			}
 			# resolver can refuse the solution
-			my $ref_new_selected_solution = $sub_solution_chooser->(\@solution_entries);
+			my $ref_new_selected_solution = $sub_solution_chooser->(\@solutions);
 
 			if ($ref_new_selected_solution ne $ref_current_solution) {
 				# ok, process other solution
@@ -939,7 +939,7 @@ sub _resolve ($$) {
 					$sub_mydebug_wrapper->("declined");
 				}
 				# purge current solution
-				@solution_entries = grep ( $_ ne $ref_current_solution } @solutions;
+				@solutions = grep { $_ ne $ref_current_solution } @solutions;
 				next;
 			}
 		}
@@ -973,8 +973,8 @@ sub _resolve ($$) {
 					# we can obviously use Storable::dclone, or Clone::Clone here, but speed...
 					$ref_cloned_solution = {
 						packages => __clone_packages($ref_current_solution->{'packages'}),
-						level => $ref_current_solution_entry->{'level'},
-						score => $ref_current_solution_entry->{'score'},
+						level => $ref_current_solution->{'level'},
+						score => $ref_current_solution->{'score'},
 						finished => 0,
 					};
 					push @forked_solutions, $ref_cloned_solution;
@@ -991,7 +991,7 @@ sub _resolve ($$) {
 			push @solutions, @forked_solutions;
 
 			# don't allow solution tree to grow unstoppably
-			while (scalar @solution_entries > $self->config->var('cupt::resolver::max-solution-count')) {
+			while (scalar @solutions > $self->config->var('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
 				my $ref_worst_solution = reduce { $a->{'score'} < $b->{'score'} ? $a : $b } @solutions;
 				# temporary setting current solution to worst
