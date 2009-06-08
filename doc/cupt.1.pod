@@ -371,18 +371,12 @@ string, determines type of resolver: can be
 
 =over
 
-=item first-good
-
-most stupid resolver. At each problem situation, chooses the best solution for
-this situation. No lookings ahead. Works pretty good for simple install requests and
-for one-repository system.
-
-=item multiline-fair
+=item fair
 
 medium-class resolver. It chooses best possible solution (by overall score)
 each time. This is a default resolver.
 
-=item multiline-full
+=item full
 
 full resolver. Guaranteed to suggest solution in precise order from the best to
 the worst result score (by the resolver's opinion). Latter means that resolver

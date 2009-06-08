@@ -59,7 +59,7 @@ correctness of APT options is checked
 
 =item
 
-three types of multi-case problem resolvers available (see L<--resolver in cupt(1)|cupt(1)/--resolver>)
+two types of multi-case problem resolvers available (see L<--resolver in cupt(1)|cupt(1)/--resolver>)
 
 =item
 

@@ -210,16 +210,7 @@ sub upgrade ($) {
 	}
 }
 
-sub __normalized_score ($) {
-	my ($ref_solution_entry) = @_;
-	return $ref_solution_entry->{'score'} / sqrt($ref_solution_entry->{'level'} + 1);
-}
-
-sub __first_good_chooser {
-	return 0;
-}
-
-sub __multiline_fair_chooser {
+sub __fair_chooser {
 	my ($ref_solution_entries) = @_;
 
 	my $max_normalized_score = __normalized_score($ref_solution_entries->[0]);
@@ -234,7 +225,7 @@ sub __multiline_fair_chooser {
 	return $idx_of_max;
 }
 
-sub __multiline_full_chooser {
+sub __full_chooser {
 	my ($ref_solution_entries) = @_;
 	# defer the decision until all solutions are built
 	foreach my $idx ($#{$ref_solution_entries}) {
@@ -246,7 +237,7 @@ sub __multiline_full_chooser {
 
 	# what?! all tree has been already built?.. ok, let's choose the best
 	# solution
-	return __multiline_fair_chooser($ref_solution_entries);
+	return __fair_chooser($ref_solution_entries);
 }
 
 # every package version has a weight
@@ -451,9 +442,8 @@ sub _select_solution_chooser ($) {
 	my ($self) = @_;
 
 	my %solution_choosers = (
-		'first-good' => \&__first_good_chooser,
-		'multiline-fair' => \&__multiline_fair_chooser,
-		'multiline-full' => \&__multiline_full_chooser,
+		'fair' => \&__fair_chooser,
+		'full' => \&__full_chooser,
 	);
 
 	my $resolver_type = $self->config->var('cupt::resolver::type');
