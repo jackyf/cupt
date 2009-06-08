@@ -69,6 +69,7 @@ sub __my_read_socket ($) {
 		$string = 'eof';
 	} else {
 		my ($len) = unpack("S", $packed_len);
+		# don't use anything but sysread here, as we use select() on sockets
 		sysread $socket, $string, $len;
 	}
 
