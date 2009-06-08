@@ -279,14 +279,14 @@ sub _get_version_weight ($$) {
 sub _get_action_profit ($$$) {
 	my ($self, $original_version, $supposed_version) = @_;
 
-	# if the package was not installed there is no any profit of installing it,
-	# all packages user want are either installed of selected manually
-	#
-	# to limit installing new packages, give it small negative profit
-	return -100 if !defined $original_version;
+	my $result = $self->_get_version_weight($supposed_version) -
+   			$self->_get_version_weight($original_version);
+	# installing new package
+	$result -= 10 if !defined $original_version;
+	# remove a package
+	$result -= 50 if !defined $supposed_version;
 
-	# ok, just return difference in weights
-	return $self->_get_version_weight($supposed_version) - $self->_get_version_weight($original_version);
+	return 
 }
 
 sub __is_version_array_intersects_with_packages ($$) {
