@@ -252,18 +252,28 @@ sub __multiline_full_chooser {
 # every package version has a weight
 sub _get_version_weight ($$) {
 	my ($self, $version) = @_;
-	return 0 if !defined $version;
+
+	return 0 if not defined $version;
+
+	my $factor = 1.0;
 	my $package_name = $version->{package_name};
 	if ($version->is_installed() && $self->cache->is_automatically_installed($package_name)) {
 		# automatically installed packages count nothing for user
-		return 0;
+		$factor /= 20.0;
 	}
-	my $result = $self->cache->get_pin($version);
-	$result += 5000 if defined($version->{essential});
-	$result += 2000 if $version->{priority} eq 'required';
-	$result += 1000 if $version->{priority} eq 'important';
-	$result += 400 if $version->{priority} eq 'standard';
-	$result += 100 if $version->{priority} eq 'optional';
+	$factor *= 5.0 if defined($version->{essential});
+
+	# omitting priority 'standard' here
+	if ($version->{priority} eq 'optional') {
+		$factor *= 0.9;
+	} elsif ($version->{priority} eq 'extra') {
+		$factor *= 0.7;
+	} elsif ($version->{priority} eq 'important') {
+		$factor *= 1.4;
+	} elsif ($version->{priority} eq 'required') {
+		$factor *= 2.0;
+	}
+	return $self->cache->get_pin($version) * $factor;
 }
 
 sub _get_action_profit ($$$) {
