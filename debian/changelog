@@ -8,6 +8,7 @@ cupt (0.2.3) UNRELEASED; urgency=low
     - Download:
       - Manager:
         - Enabled basic HTTPS protocol support.
+        - IPC is rewritten using UNIX sockets instead of fifos.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 07 Jun 2009 16:27:41 +0300
 
