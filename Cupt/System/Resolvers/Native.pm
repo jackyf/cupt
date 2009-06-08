@@ -479,7 +479,7 @@ sub _apply_action ($$$$$) {
 		$ref_solution_entry->{packages}->{$package_name}->[PE_STICK] = 1;
 	}
 
-	my $ref_package_entry_to_change = $ref_solution_entry->{packages}->{$package_name_to_change};
+	my $ref_package_entry_to_change = $ref_solution_entry->{'packages'}->{$package_name_to_change};
 	my $original_version = $ref_package_entry_to_change->[PE_VERSION];
 
 	my $profit = $ref_action_to_apply->{'profit'} //
@@ -501,9 +501,9 @@ sub _apply_action ($$$$$) {
 	}
 
 	# raise the level
-	++$ref_solution_entry->{level};
+	++$ref_solution_entry->{'level'};
 
-	$ref_solution_entry->{score} += $profit;
+	$ref_solution_entry->{'score'} += $profit;
 
 	# set stick for change for the time on underlying solutions
 	$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
@@ -656,11 +656,11 @@ sub _resolve ($$) {
 	#   'identifier' => identifier
 	#   'finished' => finished (1 | 0)
 	# ]...
-	my @solution_entries = ({ packages => __clone_packages($self->{_packages}),
+	my @solutions = ({ packages => __clone_packages($self->{_packages}),
 			score => 0, level => 0, identifier => 0, finished => 0 });
 
 	my $next_free_solution_identifier = 1;
-	my $selected_solution_entry_index;
+	my $ref_current_solution;
 
 	# for each package entry 'count' will contain the number of failures
 	# during processing these package
@@ -674,16 +674,15 @@ sub _resolve ($$) {
 	my $package_name;
 
 	my $sub_mydebug_wrapper = sub {
-		my $ref_solution_entry = $solution_entries[$selected_solution_entry_index];
-		my $level = $ref_solution_entry->{level};
-		my $identifier = $ref_solution_entry->{identifier};
-		my $normalized_score_string = sprintf "%.1f", __normalized_score($ref_solution_entry);
-		mydebug(" " x $level . "($identifier:$normalized_score_string) @_");
+		my $level = $ref_current_solution->{'level'};
+		my $identifier = $ref_current_solution->{'identifier'};
+		my $score_string = sprintf "%.1f", $ref_current_solution->{'score'};
+		mydebug(" " x $level . "($identifier:$score_string) @_");
 	};
 
 	my $sub_apply_action = sub {
-		my ($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier) = @_;
-		$self->_apply_action($ref_solution_entry, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper);
+		my ($ref_solution, $ref_action_to_apply, $new_solution_identifier) = @_;
+		$self->_apply_action($ref_solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper);
 	};
 
 	my $return_code;
@@ -694,9 +693,8 @@ sub _resolve ($$) {
 
 		my @possible_actions;
 
-		# choosing the solution entry to process
-		$selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
-		my $ref_current_solution_entry = $solution_entries[$selected_solution_entry_index];
+		# choosing the solution to process
+		my $ref_current_solution = $sub_solution_chooser->(\@solution_entries);
 		my $ref_current_packages = $ref_current_solution_entry->{packages};
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
@@ -772,8 +770,8 @@ sub _resolve ($$) {
 							$check_failed = 1;
 
 							if (scalar @possible_actions == 1) {
-								$sub_apply_action->($ref_current_solution_entry,
-										$possible_actions[0], $ref_current_solution_entry->{identifier});
+								$sub_apply_action->($ref_current_solution,
+										$possible_actions[0], $ref_current_solution->{identifier});
 								@possible_actions = ();
 								$recheck_needed = 1;
 								next MAIN_LOOP;
@@ -895,14 +893,14 @@ sub _resolve ($$) {
 			$check_failed = 1;
 
 			# if the solution was only just finished
-			if ($self->config->var('debug::resolver') && $ref_current_solution_entry->{finished}) {
+			if ($self->config->var('debug::resolver') && !$ref_current_solution->{'finished'}) {
 				$sub_mydebug_wrapper->("finished");
+				$ref_current_solution->{'finished'} = 1;
 			}
-			$ref_current_solution_entry->{finished} = 1;
 			# resolver can refuse the solution
-			my $new_selected_solution_entry_index = $sub_solution_chooser->(\@solution_entries);
+			my $ref_new_selected_solution = $sub_solution_chooser->(\@solution_entries);
 
-			if ($new_selected_solution_entry_index != $selected_solution_entry_index) {
+			if ($ref_new_selected_solution ne $ref_current_solution) {
 				# ok, process other solution
 				next;
 			}
@@ -941,86 +939,74 @@ sub _resolve ($$) {
 					$sub_mydebug_wrapper->("declined");
 				}
 				# purge current solution
-				splice @solution_entries, $selected_solution_entry_index, 1;
+				@solution_entries = grep ( $_ ne $ref_current_solution } @solutions;
 				next;
 			}
 		}
 
 		if (scalar @possible_actions) {
 			# firstly rank all solutions
+			my $position_penalty = 0;
 			foreach (@possible_actions) {
 				my $package_name = $_->{package_name};
 				my $supposed_version = $_->{version};
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->[PE_VERSION] : undef;
 
-				$_->{profit} //= $self->_get_action_profit($original_version, $supposed_version);
+				$_->{'profit'} //= $self->_get_action_profit($original_version, $supposed_version);
+				$_->{'profit'} -= $position_penalty;
+				++$position_penalty;
 			}
 
-			# sort them by "rank", from more bad to more good
-			do {
-				use sort 'stable';
-				# don't try to remove 'reverse' and swap $a <-> $b
-				#
-				# using stable sort and reversing guarantees that possible
-				# actions with equal profits will be processed in generated
-				# order
-				@possible_actions = reverse sort { $b->{profit} <=> $a->{profit} } @possible_actions;
-			};
+			# sort them by "rank", from more good to more bad
+			@possible_actions = sort { $b->{profit} <=> $a->{profit} } @possible_actions;
 
-			my @forked_solution_entries;
+			my @forked_solutions;
 			# fork the solution entry and apply all the solutions by one
 			foreach my $idx (0..$#possible_actions) {
-				my $ref_cloned_solution_entry;
+				my $ref_cloned_solution;
 				if ($idx == $#possible_actions) {
 					# use existing solution entry
-					$ref_cloned_solution_entry = $ref_current_solution_entry;
+					$ref_cloned_solution = $ref_current_solution;
 				} else {
 					# clone the current stack to form a new one
 					# we can obviously use Storable::dclone, or Clone::Clone here, but speed...
-					$ref_cloned_solution_entry = {
-						packages => __clone_packages($ref_current_solution_entry->{packages}),
-						level => $ref_current_solution_entry->{level},
-						score => $ref_current_solution_entry->{score},
+					$ref_cloned_solution = {
+						packages => __clone_packages($ref_current_solution->{'packages'}),
+						level => $ref_current_solution_entry->{'level'},
+						score => $ref_current_solution_entry->{'score'},
 						finished => 0,
 					};
-					push @forked_solution_entries, $ref_cloned_solution_entry;
+					push @forked_solutions, $ref_cloned_solution;
 				}
 
 				# apply the solution
 				my $ref_action_to_apply = $possible_actions[$idx];
 				my $new_solution_identifier = $next_free_solution_identifier++;
-				$sub_apply_action->($ref_cloned_solution_entry, $ref_action_to_apply, $new_solution_identifier);
-				$ref_cloned_solution_entry->{identifier} = $new_solution_identifier;
+				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply, $new_solution_identifier);
+				$ref_cloned_solution->{identifier} = $new_solution_identifier;
 			}
 
-			# adding forked solutions to main solution storage just after current solution
-			splice @solution_entries, $selected_solution_entry_index+1, 0, reverse @forked_solution_entries;
+			# adding forked solutions to main solution storage
+			push @solutions, @forked_solutions;
 
 			# don't allow solution tree to grow unstoppably
 			while (scalar @solution_entries > $self->config->var('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
-				my $min_normalized_score = __normalized_score($solution_entries[0]);
-				my $idx_of_min = 0;
-				foreach my $idx (1..$#solution_entries) {
-					my $current_normalized_score = __normalized_score($solution_entries[$idx]);
-					if ($min_normalized_score > $current_normalized_score) {
-						$min_normalized_score = $current_normalized_score;
-						$idx_of_min = $idx;
-					}
-				}
-				$selected_solution_entry_index = $idx_of_min;
+				my $ref_worst_solution = reduce { $a->{'score'} < $b->{'score'} ? $a : $b } @solutions;
+				# temporary setting current solution to worst
+				$ref_current_solution = $ref_worst_solution;
 				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->("dropping this solution");
 				}
-				splice @solution_entries, $idx_of_min, 1;
+				@solutions = grep { $_ ne $ref_current_solution } @solutions;
 			}
 		} else {
 			if ($self->config->var('debug::resolver')) {
 				$sub_mydebug_wrapper->("no solutions");
 			}
 			# purge current solution
-			splice @solution_entries, $selected_solution_entry_index, 1;
+			@solutions = grep { $_ ne $ref_current_solution } @solutions;
 		}
 	}} while $check_failed;
 
