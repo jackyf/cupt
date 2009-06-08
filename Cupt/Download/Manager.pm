@@ -47,19 +47,31 @@ use Cupt::Download::Methods::File;
 sub __my_write_socket ($@) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
+
 	my $string = join(chr(1), @_);
-	(say $socket $string) or myinternaldie("write to socket failed: $!");
+	my $len = length($string);
+	my $packed_len = pack("S", $len);
+
+	syswrite($socket, ($packed_len . $string)) or
+			myinternaldie("write to socket failed: $!")
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
 	defined $socket or myinternaldie("bad socket parameter");
-	my $string = readline($socket);
-	if (not defined $string) {
+
+	my $string;
+
+	my $read_result = sysread($socket, my $packed_len, 2);
+	defined $read_result or myinternaldie("read from socket failed: $!");
+
+	if ($read_result == 0) {
 		$string = 'eof';
-		myinternaldie("read from socket failed: $!") if $!;
+	} else {
+		my ($len) = unpack("S", $packed_len);
+		sysread $socket, $string, $len;
 	}
-	chomp($string);
+
 	return split(chr(1), $string, -1);
 }
 
