@@ -36,6 +36,7 @@ use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
 
 use Graph;
+use List::Util qw(reduce first);
 use constant {
 	PE_VERSION => 0,
 	PE_STICK => 1,
@@ -213,31 +214,23 @@ sub upgrade ($) {
 sub __fair_chooser {
 	my ($ref_solution_entries) = @_;
 
-	my $max_normalized_score = __normalized_score($ref_solution_entries->[0]);
-	my $idx_of_max = 0;
-	foreach my $idx (1..$#{$ref_solution_entries}) {
-		my $current_normalized_score = __normalized_score($ref_solution_entries->[$idx]);
-		if ($max_normalized_score < $current_normalized_score) {
-			$max_normalized_score = $current_normalized_score;
-			$idx_of_max = $idx;
-		}
-	}
-	return $idx_of_max;
+	# choose the solution with maximum score
+	return reduce { $a->{'score'} > $b->{'score'} ? $a : $b } @$ref_solution_entries;
 }
 
 sub __full_chooser {
 	my ($ref_solution_entries) = @_;
 	# defer the decision until all solutions are built
-	foreach my $idx ($#{$ref_solution_entries}) {
-		if (! $ref_solution_entries->[$idx]->{finished}) {
-			# process it
-			return $idx;
-		}
-	}
 
-	# what?! all tree has been already built?.. ok, let's choose the best
-	# solution
-	return __fair_chooser($ref_solution_entries);
+	my $ref_unfinished_solution = first { ! $_->{'finished' } } @$ref_solution_entries;
+
+	if (defined $ref_unfinished_solution) {
+		return $ref_unfinished_solution;
+	} else {
+		# heh, whole solution tree has been already built?.. ok, let's choose
+		# the best solution
+		return __fair_chooser($ref_solution_entries);
+	}
 }
 
 # every package version has a weight
