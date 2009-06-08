@@ -34,7 +34,6 @@ use URI;
 use IO::Select;
 use IO::Pipe;
 use IO::Socket::UNIX;
-use File::Temp qw(tempfile);
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
