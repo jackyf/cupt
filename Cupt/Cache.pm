@@ -349,16 +349,14 @@ sub get_pin ($$) {
 	my ($self, $version) = @_;
 	my $result = $self->get_original_apt_pin($version);
 
-	# discourage downgrading for pins <= 1000
-	# downgradings will have pin <= 0
-	if ($result <= 1000) {
-		my $package_name = $version->{package_name};
-		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
-		if (defined $installed_version_string
-			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
-		{
-			$result -= 1000;
-		}
+	# discourage downgrading 
+	# downgradings will usually have pin <= 0
+	my $package_name = $version->{package_name};
+	my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
+	if (defined $installed_version_string
+		&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
+	{
+		$result -= 2000;
 	}
 
 	$result += 1 if $version->is_signed();
