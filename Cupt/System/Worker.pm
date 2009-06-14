@@ -906,7 +906,7 @@ sub _do_downloads ($$$) {
 					mydie("unable to close archives lock file: %s", $!);
 
 			# fail and exit if it was something bad with downloading
-			mydie($download_result) if $download_result;
+			mydie("there were download errors") if $download_result;
 		}
 	}
 }
