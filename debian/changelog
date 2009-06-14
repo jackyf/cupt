@@ -5,6 +5,9 @@ cupt (0.2.3) UNRELEASED; urgency=low
       - Worker:
         - 'update_release_and_index_data': fixed downloading of non-compressed
           indexes.
+      - Resolvers/Native:
+        - Run cleaning auto-installed packages also before resolving, aiming
+          to reduce number of solution resolver should work with.
     - Download:
       - Manager:
         - Enabled basic HTTPS protocol support.

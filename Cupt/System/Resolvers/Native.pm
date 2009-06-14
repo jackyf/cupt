@@ -429,6 +429,9 @@ sub _clean_automatically_installed ($) {
 				$ref_packages->{$package_name}->[PE_VERSION] = undef;
 				# leave only one reason :)
 				@{$ref_packages->{$package_name}->[PE_REASONS]} = ( [ 'auto-remove' ] );
+				if ($self->config->var('debug::resolver')) {
+					mydebug("auto-removed package '$package_name'");
+				}
 			}
 		}
 	};
@@ -1062,6 +1065,10 @@ sub resolve ($$) {
 		$self->_install_version_no_stick($version_to_install, $reason);
 		# note that _install_version_no_stick can add some pending relations
 	}
+
+	# throw away all obsoleted packages at this stage to avoid resolver from
+	# ever bothering of them
+	$self->_clean_automatically_installed($self->{_packages});
 
 	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
 	return $self->_resolve($sub_accept);
