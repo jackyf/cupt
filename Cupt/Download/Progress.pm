@@ -40,11 +40,11 @@ use Cupt::Core;
 =head2 o_download_speed_accuracy
 
 specifies the number of milliseconds that will be used for speed counting. The
-bigger value means more smooth speed changes. Defaults to 2000.
+bigger value means more smooth speed changes. Defaults to 4000.
 
 =cut
 
-our $o_download_speed_accuracy = 2000;
+our $o_download_speed_accuracy = 4000;
 
 =head1 METHODS
 
