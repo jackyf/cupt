@@ -10,7 +10,7 @@ cupt (0.2.3) UNRELEASED; urgency=low
         - Dropped 'first-good' solution chooser. It can be mimicked by setting
           'max-solution-count' option to 1.
         - Run cleaning auto-installed packages also before resolving, aiming
-          to reduce number of solution resolver should work with.
+          to reduce number of solutions resolver should work with.
         - Made "zero" line for actions 400 points less, affecting ordering
           solutions for processing for default 'fair' resolver type. Leads to
           significant (several times) speed-up for some cases. Makes possible
@@ -24,7 +24,7 @@ cupt (0.2.3) UNRELEASED; urgency=low
         - Changed speed-o-meter accuracy to 4 seconds (previous value was
           2 seconds).
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 07 Jun 2009 16:27:41 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 15 Jun 2009 22:57:58 +0300
 
 cupt (0.2.2) unstable; urgency=low
 
