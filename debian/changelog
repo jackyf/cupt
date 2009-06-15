@@ -11,6 +11,11 @@ cupt (0.2.3) UNRELEASED; urgency=low
           'max-solution-count' option to 1.
         - Run cleaning auto-installed packages also before resolving, aiming
           to reduce number of solution resolver should work with.
+        - Made "zero" line for actions 400 points less, affecting ordering
+          solutions for processing for default 'fair' resolver type. Leads to
+          significant (several times) speed-up for some cases. Makes possible
+          to obtain at least one solution for some hard queries (like removing
+          core system components).
     - Download:
       - Manager:
         - Enabled basic HTTPS protocol support.

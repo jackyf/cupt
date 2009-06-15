@@ -270,7 +270,7 @@ sub _get_action_profit ($$$) {
 	# remove a package
 	$result -= 50 if !defined $supposed_version;
 
-	return $result;
+	return $result + 400;
 }
 
 sub __is_version_array_intersects_with_packages ($$) {
