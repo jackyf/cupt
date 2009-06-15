@@ -1,4 +1,4 @@
-cupt (0.2.3) UNRELEASED; urgency=low
+cupt (0.3.0) UNRELEASED; urgency=low
 
   * Cupt:
     - System:
@@ -23,6 +23,9 @@ cupt (0.2.3) UNRELEASED; urgency=low
       - Progress:
         - Changed speed-o-meter accuracy to 4 seconds (previous value was
           2 seconds).
+    - Cache:
+      - BinaryVersion:
+        - [API break] Renamed field 'source_name' to 'source_package_name'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 15 Jun 2009 22:57:58 +0300
 

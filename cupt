@@ -309,7 +309,7 @@ sub show_package_versions () {
 				my $is_auto_installed = $cache->is_automatically_installed($package_name);
 				$p->(__('Automatically installed'), $is_auto_installed ? __('yes') : __('no'));
 			}
-			$p->(__('Source'), $version->{source_name});
+			$p->(__('Source'), $version->{source_package_name});
 			if ($version->{source_version_string} ne $version->{version_string}) {
 				$p->(__('Source version'), $version->{source_version_string});
 			}
@@ -1144,13 +1144,13 @@ sub show_changelog_or_copyright ($) {
 			foreach my $ref_matched_avail_entry (@matched_avail_entries) {
 				# all of above are only good guessings
 				my $version_string = $version->{source_version_string};
-				my $source_name = $version->{source_name};
-				my $short_prefix = ($source_name =~ m/^lib/) ?
-						substr($source_name, 0, 4) : substr($source_name, 0, 1);
+				my $source_package_name = $version->{source_package_name};
+				my $short_prefix = ($source_package_name =~ m/^lib/) ?
+						substr($source_package_name, 0, 4) : substr($source_package_name, 0, 1);
 
 				my $component = $ref_matched_avail_entry->{release}->{component};
 				my $remote_target_base_uri = $base_uris_by_vendor{$ref_matched_avail_entry->{release}->{vendor}};
-				my $uri_appendage = "$component/$short_prefix/$source_name/${source_name}_$version_string/$target";
+				my $uri_appendage = "$component/$short_prefix/$source_package_name/${source_package_name}_$version_string/$target";
 				push @target_uris, "$remote_target_base_uri/$uri_appendage";
 			}
 

@@ -90,7 +90,7 @@ sub new {
 		installed_size => undef,
 		maintainer => undef,
 		architecture => undef,
-		source_name => undef,
+		source_package_name => undef,
 		version_string => undef,
 		source_version_string => undef,
 		essential => undef,
@@ -170,8 +170,8 @@ sub new {
 					}
 					when ('Tag') { $self->{tags} = $field_value unless $o_no_parse_info_onlys }
 					when ('Source') {
-						$self->{source_name} = $field_value;
-						if ($self->{source_name} =~ s/ \((.*)\)$//) {
+						$self->{source_package_name} = $field_value;
+						if ($self->{source_package_name} =~ s/ \((.*)\)$//) {
 							# there is a source version, most probably
 							# indicating that it was some binary-only rebuild, and
 							# the source version is different with binary one
@@ -214,7 +214,7 @@ sub new {
 		}
 
 		$self->{source_version_string} //= $self->{version_string};
-		$self->{source_name} //= $self->{package_name};
+		$self->{source_package_name} //= $self->{package_name};
 	};
 	if (mycatch()) {
 		if (defined($field_name)) {

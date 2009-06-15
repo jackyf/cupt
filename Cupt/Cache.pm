@@ -292,9 +292,9 @@ sub get_original_apt_pin {
 			my $value = $ref_pin->{'package_name'};
 			$version->{package_name} =~ m/$value/ or next PIN;
 		}
-		if (exists $ref_pin->{'source_name'}) {
-			my $value = $ref_pin->{'source_name'};
-			$version->{source_name} =~ m/$value/ or next PIN;
+		if (exists $ref_pin->{'source_package_name'}) {
+			my $value = $ref_pin->{'source_package_name'};
+			$version->{source_package_name} =~ m/$value/ or next PIN;
 		}
 		if (exists $ref_pin->{'version'}) {
 			my $value = $ref_pin->{'version'};
@@ -820,7 +820,7 @@ sub _parse_preferences {
 			m/^(Package|Source): (.*)/ or
 					mydie("bad package/source line at file '%s', line %u", $file, $.);
 
-			my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_name');
+			my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_package_name');
 			my $name_value = $2;
 			glob_to_regex($name_value);
 
