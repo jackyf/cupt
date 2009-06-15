@@ -16,6 +16,8 @@ cupt (0.3.0) UNRELEASED; urgency=low
           significant (several times) speed-up for some cases. Makes possible
           to obtain at least one solution for some hard queries (like removing
           core system components).
+        - Fixed erroneous auto-removing of some dependencies which were brought
+          by 'satisfy' query.
     - Download:
       - Manager:
         - Enabled basic HTTPS protocol support.

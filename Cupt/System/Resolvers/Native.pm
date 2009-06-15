@@ -342,6 +342,7 @@ sub _clean_automatically_installed ($) {
 	my $can_autoremove = $self->config->var('cupt::resolver::auto-remove');
 	my %candidates_for_remove;
 	foreach my $package_name (keys %$ref_packages) {
+		$package_name ne $_dummy_package_name or next;
 		my $ref_package_entry = $ref_packages->{$package_name};
 		my $version = $ref_package_entry->[PE_VERSION];
 		defined $version or next;
