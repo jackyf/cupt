@@ -5,6 +5,8 @@ cupt (0.3.0) UNRELEASED; urgency=low
       - Worker:
         - 'update_release_and_index_data': fixed downloading of non-compressed
           indexes.
+        - 'update_release_and_index_data': fixed removing downloaded file after
+          uncompressing.
       - Resolvers/Native:
         - Reworked solution rank system.
         - Dropped 'first-good' solution chooser. It can be mimicked by setting

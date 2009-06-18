@@ -1336,12 +1336,14 @@ sub update_release_and_index_data ($$) {
 
 							$sub_main_post_action = sub {
 								my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
+								# anyway, remove the compressed file
+								unlink $download_filename; # ignore errors...
 								if ($uncompressing_result) {
 									return sprintf "failed to uncompress '%s', '%s' returned error %s",
 											$download_filename, $uncompressor_name, $uncompressing_result;
 								}
 								return '';
-							}
+							};
 						} elsif ($download_filename_extension eq '') {
 							# no extension
 							$sub_main_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
