@@ -1285,7 +1285,6 @@ sub update_release_and_index_data ($$) {
 					if ($download_result) {
 						# failed to download
 						mywarn("failed to download '%s'", $release_signature_alias);
-						goto CHILD_EXIT;
 					} else {
 						# download successful, but need to do signature check
 

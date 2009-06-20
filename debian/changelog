@@ -12,6 +12,8 @@ cupt (0.3.0) UNRELEASED; urgency=medium
           is false (this is the default setting) for the compatibility with APT.
           Thanks to Goswin von Brederlow <goswin-v-b@web.de>.
           (Closes: #533753). Urgency is set to 'medium' because of this fix.
+        - 'update_release_and_index_data': download index file even if
+          signature download/check failed.
       - Resolvers/Native:
         - Reworked solution rank system.
         - Dropped 'first-good' solution chooser. It can be mimicked by setting
