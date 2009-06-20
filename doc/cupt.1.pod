@@ -537,22 +537,26 @@ don't output anything to standard output
 
 =head1 CONFIGURATION VARIABLES
 
-Firstly, Cupt recognizes and uses following APT configuration variables:
+Firstly, Cupt uses following APT configuration variables:
 
 acquire::*::timeout, acquire::*::proxy, apt::cache::allversions,
 apt::cache::important, apt::cache::namesonly, apt::cache::recursedepends,
-apt::cache-limit, apt::default-release, apt::install-recommends,
+apt::default-release, apt::install-recommends,
 apt::install-suggests, apt::neverautoremove, apt::get::allowunauthenticated,
 dir, dir::bin::dpkg, dir::cache, dir::cache::archives, dir::etc,
 dir::etc::sourcelist, dir::etc::sourceparts, dir::etc::parts, dir::etc::main,
 dir::etc::preferences, dir::state, dir::state::extendedstates,
 dir::state::lists, dir::state::status, dpkg::options, dpkg::pre-invoke,
 dpkg::post-invoke, dpkg::pre-install-pkgs, gpgv::trustedkeyring,
-rpm::pre-invoke, rpm::post-invoke, quiet
+quiet
 
 See L<apt.conf(5)> for their meanings.
 
-Secondly, Cupt introduces following cupt-specific configuration variables:
+Secondly, Cupt recognizes (but doesn't use) following configuration variables:
+
+apt::cache-limit, rpm::pre-invoke, rpm::post-invoke
+
+Thirdly, Cupt introduces following cupt-specific configuration variables:
 
 =over
 
