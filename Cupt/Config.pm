@@ -67,6 +67,7 @@ sub new {
 			'apt::cache::important' => 0,
 			'apt::cache::namesonly' => 0,
 			'apt::cache::recursedepends' => 0,
+			'apt::cache-limit' => undef,
 			'apt::default-release' => undef,
 			'apt::install-recommends' => 1,
 			'apt::install-suggests' => 0,

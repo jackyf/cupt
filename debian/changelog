@@ -30,6 +30,9 @@ cupt (0.3.0) UNRELEASED; urgency=low
     - Cache:
       - BinaryVersion:
         - [API break] Renamed field 'source_name' to 'source_package_name'.
+    - Config:
+      - Added configuration option 'apt::cache-limit'. Thanks to
+        Goswin von Brederlow <goswin-v-b@web.de>. (Closes: #533752)
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 15 Jun 2009 22:57:58 +0300
 
