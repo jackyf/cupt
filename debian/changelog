@@ -1,4 +1,4 @@
-cupt (0.3.0) UNRELEASED; urgency=low
+cupt (0.3.0) UNRELEASED; urgency=medium
 
   * Cupt:
     - System:
@@ -7,6 +7,11 @@ cupt (0.3.0) UNRELEASED; urgency=low
           indexes.
         - 'update_release_and_index_data': fixed removing downloaded file after
           uncompressing.
+        - 'update_release_and_index_data': remove the downloaded Release.gpg if
+          signature verification failed and 'cupt::update::keep-bad-signatures'
+          is false (this is the default setting) for the compatibility with APT.
+          Thanks to Goswin von Brederlow <goswin-v-b@web.de>.
+          (Closes: #533753). Urgency is set to 'medium' because of this fix.
       - Resolvers/Native:
         - Reworked solution rank system.
         - Dropped 'first-good' solution chooser. It can be mimicked by setting
@@ -28,11 +33,13 @@ cupt (0.3.0) UNRELEASED; urgency=low
         - Changed speed-o-meter accuracy to 4 seconds (previous value was
           2 seconds).
     - Cache:
+      - New free subroutine 'verify_signature'.
       - BinaryVersion:
         - [API break] Renamed field 'source_name' to 'source_package_name'.
     - Config:
       - Added configuration option 'apt::cache-limit'. Thanks to
         Goswin von Brederlow <goswin-v-b@web.de>. (Closes: #533752)
+      - New configuration option 'cupt::update::keep-bad-signatures'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 15 Jun 2009 22:57:58 +0300
 

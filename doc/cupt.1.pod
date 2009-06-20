@@ -569,6 +569,12 @@ True by default.
 
 positive number, specifies maximum number of simultaneous downloads
 
+=item cupt::update::keep-bad-signatures
+
+boolean (0/1), specifies whether to keep signature files that failed GPG check
+when doing update. False by default. Setting this option to true will break
+compatibility with APT in area of signature checking.
+
 =item cupt::resolver::keep-recommends
 
 boolean (0/1), specifies whether should resolver try to keep already installed

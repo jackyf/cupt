@@ -91,6 +91,7 @@ sub new {
 
 			'acquire::http::allow-redirects' => 1,
 			'cupt::downloader::max-simultaneous-downloads' => 2,
+			'cupt::update::keep-bad-signatures' => 0,
 			'cupt::resolver::auto-remove' => 1,
 			'cupt::resolver::external-command' => undef,
 			'cupt::resolver::keep-recommends' => 1,

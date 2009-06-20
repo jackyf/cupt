@@ -1279,13 +1279,26 @@ sub update_release_and_index_data ($$) {
 								'uris' => [ $signature_download_uri ],
 								'filename' => $signature_download_filename,
 								'post-action' => $sub_generate_moving_sub->(
-										$signature_download_filename => $signature_local_path),
+									$signature_download_filename => $signature_local_path),
 							}
 					);
 					if ($download_result) {
 						# failed to download
 						mywarn("failed to download '%s'", $release_signature_alias);
 						goto CHILD_EXIT;
+					} else {
+						# download successful, but need to do signature check
+
+						# if we have to check signature prior to moving to canonical place
+						# (for compatibility with APT tools) and signature check failed,
+						# delete the downloaded file
+						my $config = $self->{_config};
+						if (!$config->var('cupt::update::keep-bad-signatures') &&
+							!Cupt::Cache::verify_signature($config, $local_path))
+						{
+							unlink $signature_local_path;
+							mywarn("signature verification for '%s' failed", $release_alias);
+						}
 					}
 				};
 

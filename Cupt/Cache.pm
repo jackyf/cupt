@@ -35,7 +35,7 @@ use Exporter qw(import);
 our @EXPORT_OK = qw(&get_path_of_debian_changelog);
 
 use Memoize;
-memoize('_verify_signature');
+memoize('verify_signature');
 
 use Cupt::Core;
 use Cupt::Cache::Package;
@@ -539,119 +539,6 @@ sub get_satisfying_versions ($$) {
 	}
 }
 
-sub _verify_signature ($$) {
-	my ($self, $file) = @_;
-
-	my $debug = $self->{_config}->var('debug::gpgv');
-
-	mydebug("verifying file '%s'", $file) if $debug;
-
-	my $keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
-	mydebug("keyring file is '%s'", $keyring_file) if $debug;
-
-	my $signature_file = "$file.gpg";
-	mydebug("signature file is '%s'", $signature_file) if $debug;
-	-r $signature_file or
-			do {
-				mydebug("unable to read signature file '%s'", $signature_file) if $debug;
-				return 0;
-			};
-
-	-e $keyring_file or
-			do {
-				mywarn("keyring file '%s' doesn't exist", $keyring_file);
-				return 0;
-			};
-	-r $keyring_file or
-			do {
-				mywarn("no read rights on keyring file '%s', please do 'chmod +r %s' with root rights",
-						$keyring_file, $keyring_file);
-				return 0;
-			};
-
-	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
-			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
-			mydie("unable to open gpg pipe: %s", $!);
-	my $sub_gpg_readline = sub {
-		my $result;
-		do {
-			$result = readline(GPG_VERIFY);
-			chomp $result;
-			mydebug("fetched '%s' from gpg pipe", $result) if $debug;
-		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or !($result =~ m/^\[GNUPG:\]/)));
-
-		if (!defined $result) {
-			return undef;
-		} else {
-			$result =~ s/^\[GNUPG:\] //;
-			return $result;
-		}
-	};
-	my $verify_result;
-
-	my $status_string = $sub_gpg_readline->();
-	if (defined $status_string) {
-		# first line ought to be validness indicator
-		my ($message_type, $message) = ($status_string =~ m/(\w+) (.*)/);
-		given ($message_type) {
-			when ('GOODSIG') {
-				my $further_info = $sub_gpg_readline->();
-				defined $further_info or
-						mydie("gpg: '%s': unfinished status");
-
-				my ($check_result_type, $check_message) = ($further_info =~ m/(\w+) (.*)/);
-				given ($check_result_type) {
-					when ('VALIDSIG') {
-						# no comments :)
-						$verify_result = 1;
-					}
-					when ('EXPSIG') {
-						$verify_result = 0;
-						mywarn("gpg: '%s': expired signature: %s", $file, $check_message);
-					}
-					when ('EXPKEYSIG') {
-						$verify_result = 0;
-						mywarn("gpg: '%s': expired key: %s", $file, $check_message);
-					}
-					when ('REVKEYSIG') {
-						$verify_result = 0;
-						mywarn("gpg: '%s': revoked key: %s", $file, $check_message);
-					}
-					default {
-						mydie("gpg: '%s': unknown error: %s %s", $file, $check_result_type, $check_message);
-					}
-				}
-			}
-			when ('BADSIG') {
-				mywarn("gpg: '%s': bad signature: %s", $file, $message);
-				$verify_result = 0;
-			}
-			when ('ERRSIG') {
-				# gpg was not able to verify signature
-				mywarn("gpg: '%s': could not verify signature: %s", $file, $message);
-				$verify_result = 0;
-			}
-			when ('NODATA') {
-				# no signature
-				mywarn("gpg: '%s': empty signature", $file);
-				$verify_result = 0;
-			}
-			default {
-				mydie("gpg: '%s': unknown message received: %s %s", $file, $message_type, $message);
-			}
-		}
-	} else {
-		# no info from gpg at all
-		mydie("error while verifying signature for file '%s'", $file);
-	}
-
-	close(GPG_VERIFY) or $! == 0 or
-			mydie("unable to close gpg pipe: %s", $!);
-
-	mydebug("the verify result is %u", $verify_result) if $debug;
-	return $verify_result;
-}
-
 our %_empty_release_info = (
 	'version' => undef,
 	'description' => undef,
@@ -718,7 +605,7 @@ sub _get_release_info {
 
 	close(RELEASE) or mydie("unable to close release file '%s'", $file);
 
-	$release_info{signed} = $self->_verify_signature($file);
+	$release_info{signed} = verify_signature($self->{_config}, $file);
 
 	return \%release_info;
 }
@@ -1279,6 +1166,135 @@ sub get_source_release_data ($) {
 }
 
 =head1 FREE SUBROUTINES
+
+=head2 verify_signature
+
+Checks signature of supplied file via GPG.
+
+Parameters:
+
+I<config> - reference to L<Cupt::Config|Cupt::Config>
+
+I<file> - path to file
+
+Returns:
+
+non-zero on success, zero on fail
+
+=cut
+
+sub verify_signature ($$) {
+	my ($config, $file) = @_;
+
+	my $debug = $config->var('debug::gpgv');
+
+	mydebug("verifying file '%s'", $file) if $debug;
+
+	my $keyring_file = $config->var('gpgv::trustedkeyring');
+	mydebug("keyring file is '%s'", $keyring_file) if $debug;
+
+	my $signature_file = "$file.gpg";
+	mydebug("signature file is '%s'", $signature_file) if $debug;
+	-r $signature_file or
+			do {
+				mydebug("unable to read signature file '%s'", $signature_file) if $debug;
+				return 0;
+			};
+
+	-e $keyring_file or
+			do {
+				mywarn("keyring file '%s' doesn't exist", $keyring_file);
+				return 0;
+			};
+	-r $keyring_file or
+			do {
+				mywarn("no read rights on keyring file '%s', please do 'chmod +r %s' with root rights",
+						$keyring_file, $keyring_file);
+				return 0;
+			};
+
+	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
+			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
+			mydie("unable to open gpg pipe: %s", $!);
+	my $sub_gpg_readline = sub {
+		my $result;
+		do {
+			$result = readline(GPG_VERIFY);
+			chomp $result;
+			mydebug("fetched '%s' from gpg pipe", $result) if $debug;
+		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or !($result =~ m/^\[GNUPG:\]/)));
+
+		if (!defined $result) {
+			return undef;
+		} else {
+			$result =~ s/^\[GNUPG:\] //;
+			return $result;
+		}
+	};
+	my $verify_result;
+
+	my $status_string = $sub_gpg_readline->();
+	if (defined $status_string) {
+		# first line ought to be validness indicator
+		my ($message_type, $message) = ($status_string =~ m/(\w+) (.*)/);
+		given ($message_type) {
+			when ('GOODSIG') {
+				my $further_info = $sub_gpg_readline->();
+				defined $further_info or
+						mydie("gpg: '%s': unfinished status");
+
+				my ($check_result_type, $check_message) = ($further_info =~ m/(\w+) (.*)/);
+				given ($check_result_type) {
+					when ('VALIDSIG') {
+						# no comments :)
+						$verify_result = 1;
+					}
+					when ('EXPSIG') {
+						$verify_result = 0;
+						mywarn("gpg: '%s': expired signature: %s", $file, $check_message);
+					}
+					when ('EXPKEYSIG') {
+						$verify_result = 0;
+						mywarn("gpg: '%s': expired key: %s", $file, $check_message);
+					}
+					when ('REVKEYSIG') {
+						$verify_result = 0;
+						mywarn("gpg: '%s': revoked key: %s", $file, $check_message);
+					}
+					default {
+						mydie("gpg: '%s': unknown error: %s %s", $file, $check_result_type, $check_message);
+					}
+				}
+			}
+			when ('BADSIG') {
+				mywarn("gpg: '%s': bad signature: %s", $file, $message);
+				$verify_result = 0;
+			}
+			when ('ERRSIG') {
+				# gpg was not able to verify signature
+				mywarn("gpg: '%s': could not verify signature: %s", $file, $message);
+				$verify_result = 0;
+			}
+			when ('NODATA') {
+				# no signature
+				mywarn("gpg: '%s': empty signature", $file);
+				$verify_result = 0;
+			}
+			default {
+				mydie("gpg: '%s': unknown message received: %s %s", $file, $message_type, $message);
+			}
+		}
+	} else {
+		# no info from gpg at all
+		mydie("error while verifying signature for file '%s'", $file);
+	}
+
+	close(GPG_VERIFY) or $! == 0 or
+			mydie("unable to close gpg pipe: %s", $!);
+
+	mydebug("the verify result is %u", $verify_result) if $debug;
+	return $verify_result;
+}
 
 =head2 get_path_of_debian_changelog
 
