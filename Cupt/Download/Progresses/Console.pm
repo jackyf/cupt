@@ -90,6 +90,7 @@ sub hook {
 			if ($error_string) {
 				# some error occured, output it
 				$self->_termprint(""); # clean the line
+				print "\r"; # move to the line start
 				# this may cross several lines
 				myerr("downloading %s failed: %s", $uri, $error_string);
 			}
