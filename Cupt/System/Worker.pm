@@ -1389,15 +1389,17 @@ sub update_release_and_index_data ($$) {
 								}
 						);
 						# if all processed smoothly, exit loop
-						if ($download_result) {
-							# failed to download
-							mywarn("failed to download index for '%s'", $index_alias);
-						} else {
+						if (!$download_result) {
 							# all's good
 							$exit_code = 0;
 							goto CHILD_EXIT;
 						}
 					}
+
+					$download_result or myinternaldie("positive index download result, but it should be negative");
+					# we could be here if neither download URI succeeded
+					mywarn("failed to download index for '%s/%s'",
+							$index_entry->{'distribution'}, $index_entry->{'component'});
 				};
 
 				CHILD_EXIT:
