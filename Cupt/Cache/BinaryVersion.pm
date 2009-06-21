@@ -222,7 +222,16 @@ sub new {
 		}
 		myredie();
 	}
-	return bless $self => $class;
+	bless $self => $class;
+
+	# checking hash sums
+	if (!$self->is_installed()) {
+		defined $self->{md5sum} or mydie("MD5 hash sum isn't defined");
+		defined $self->{sha1sum} or mydie("SHA1 hash sum isn't defined");
+		defined $self->{sha256sum} or mydie("SHA256 hash sum isn't defined");
+	}
+
+	return $self;
 }
 
 sub is_hashes_equal {
