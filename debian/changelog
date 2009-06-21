@@ -47,6 +47,8 @@ cupt (0.2.3) UNRELEASED; urgency=medium
       - Added configuration option 'apt::cache-limit'. Thanks to
         Goswin von Brederlow <goswin-v-b@web.de>. (Closes: #533752)
       - New configuration option 'cupt::update::keep-bad-signatures'.
+  * debian/control:
+    - Bumped Standards-Version to 3.8.2, no changes needed.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 21 Jun 2009 12:18:31 +0300
 
