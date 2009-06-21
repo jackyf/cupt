@@ -42,6 +42,7 @@ cupt (0.2.3) UNRELEASED; urgency=medium
         - [API break] Renamed field 'source_name' to 'source_package_name'.
         - Added a check for hash sums presence. Thanks to
           Goswin von Brederlow <goswin-v-b@web.de>.
+        - Added a check for version string presence.
     - Config:
       - Added configuration option 'apt::cache-limit'. Thanks to
         Goswin von Brederlow <goswin-v-b@web.de>. (Closes: #533752)

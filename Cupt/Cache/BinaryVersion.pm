@@ -224,6 +224,8 @@ sub new {
 	}
 	bless $self => $class;
 
+	# checking a presence of version string
+	defined $self->{version_string} or mydie("version string isn't defined");
 	# checking hash sums
 	if (!$self->is_installed()) {
 		defined $self->{md5sum} or mydie("MD5 hash sum isn't defined");
