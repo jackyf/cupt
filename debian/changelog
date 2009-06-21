@@ -1,4 +1,4 @@
-cupt (0.3.0) UNRELEASED; urgency=medium
+cupt (0.2.3) UNRELEASED; urgency=medium
 
   * Cupt:
     - System:
@@ -45,7 +45,7 @@ cupt (0.3.0) UNRELEASED; urgency=medium
         Goswin von Brederlow <goswin-v-b@web.de>. (Closes: #533752)
       - New configuration option 'cupt::update::keep-bad-signatures'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 15 Jun 2009 22:57:58 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 21 Jun 2009 12:18:31 +0300
 
 cupt (0.2.2) unstable; urgency=low
 
