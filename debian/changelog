@@ -1,4 +1,4 @@
-cupt (0.2.3) UNRELEASED; urgency=medium
+cupt (0.2.3) unstable; urgency=medium
 
   * Cupt:
     - System:
@@ -51,7 +51,7 @@ cupt (0.2.3) UNRELEASED; urgency=medium
     - Bumped Standards-Version to 3.8.2, no changes needed.
     - Changed Homepage to wiki.debian.org/Cupt.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 21 Jun 2009 12:18:31 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 21 Jun 2009 18:42:49 +0300
 
 cupt (0.2.2) unstable; urgency=low
 
