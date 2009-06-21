@@ -73,7 +73,7 @@ sub get_versions {
 	my ($self) = @_;
 
 	my @result;
-	# parsing of versions of is delayed, we parse them now (on-demand)
+	# parsing of versions is delayed, we parse them now (on-demand)
 	eval {
 		my @new_self;
 		foreach my $ref_params (@$self) {
