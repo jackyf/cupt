@@ -34,6 +34,8 @@ cupt (0.3.0) UNRELEASED; urgency=medium
       - Progress:
         - Changed speed-o-meter accuracy to 4 seconds (previous value was
           2 seconds).
+      - Methods/Curl:
+        - Added basic handling of transitive download errors.
     - Cache:
       - New free subroutine 'verify_signature'.
       - BinaryVersion:

@@ -53,17 +53,21 @@ $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
 sub perform ($$$$$) {
 	my ($self, $config, $uri, $filename, $sub_callback) = @_;
 
+	# bad connections can return 'receive failure' transitional error
+	# occasionally, give them several tries to finish the download
+	my $transitive_errors_left = 5;
+
 	my $curl = new WWW::Curl::Easy;
+	my $is_expected_size_reported = 0;
+
+	START:
 	open(my $fd, '>>', $filename) or
 			return sprintf "unable to open file '%s': %s", $filename, $!;
 
 	my $total_bytes = tell($fd);
 	$sub_callback->('downloading', $total_bytes, 0);
 
-	my $is_expected_size_reported = 0;
-
 	my $write_error;
-
 	my $sub_writefunction = sub {
 		# writing data to file
 		print $fd $_[0] or
@@ -99,7 +103,7 @@ sub perform ($$$$$) {
 		$curl->setopt(CURLOPT_LOW_SPEED_TIME, $timeout);
 	}
 	$curl->setopt(CURLOPT_WRITEFUNCTION, $sub_writefunction);
-	# FIXME: replace 1 with CURL_NETRC_OPTIONAL after libwww-curl is advanced to provide it
+	# FIXME: replace 1 with CURL_NETRC_OPTIONAL after Debian Squeeze release
 	$curl->setopt(CURLOPT_NETRC, 1);
 	$curl->setopt(CURLOPT_RESUME_FROM, tell($fd));
 
@@ -113,12 +117,23 @@ sub perform ($$$$$) {
 	} elsif ($curl_result == 0) {
 		# all went ok
 		return '';
-	# FIXME: replace 18 with CURLE_PARTIAL_FILE after libwww-curl is advanced to provide it
+	# FIXME: replace 18 with CURLE_PARTIAL_FILE after Debian Squeeze release
 	} elsif ($curl_result == 18) {
 		# partial data? no problem, we might request it
 		return '';
 	} else {
 		# something went wrong
+
+		# transitive errors handling
+		# FIXME: replace 56 with CURLE_RECV_ERROR after Debian Squeeze release
+		if ($curl_result == 56 && $transitive_errors_left) {
+			if ($config->var('debug::downloader')) {
+				mydebug("transitive error while downloading '$uri'");
+			}
+			--$transitive_errors_left;
+			goto START;
+		}
+
 		my $result = $curl->strerror($curl_result);
 		# some http/https/ftp error, provide an error code
 		if ($curl_result == 22) {
