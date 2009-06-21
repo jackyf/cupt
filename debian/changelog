@@ -49,6 +49,7 @@ cupt (0.2.3) UNRELEASED; urgency=medium
       - New configuration option 'cupt::update::keep-bad-signatures'.
   * debian/control:
     - Bumped Standards-Version to 3.8.2, no changes needed.
+    - Changed Homepage to wiki.debian.org/Cupt.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 21 Jun 2009 12:18:31 +0300
 
