@@ -156,6 +156,7 @@ sub new {
 						when ('Build-Depends') {
 							$self->{build_depends} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
+						when ('Binary') { @{$self->{binary_package_names}} = split(/, /, $field_value) }
 						when ('Priority') { $self->{priority} = $field_value }
 						when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
 						when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
