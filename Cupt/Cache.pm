@@ -381,6 +381,23 @@ sub get_binary_package {
 	return $self->{_binary_packages}->{$package_name};
 };
 
+=head2 get_source_package
+
+method, returns reference to appropriate L<Cupt::Cache::Package|Cupt::Cache::Package> for package name.
+Returns undef if there is no such package in cache.
+
+Parameters:
+
+I<package_name> - package name to find
+
+=cut
+
+sub get_source_package {
+	my ($self, $package_name) = @_;
+	# will transparently return undef if there is no such package
+	return $self->{_source_packages}->{$package_name};
+};
+
 =head2 get_sorted_pinned_versions
 
 method to get sorted by "candidatness" versions in descending order

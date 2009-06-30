@@ -46,7 +46,7 @@ our @EXPORT_OK = qw(&parse_architectured_relation_line &parse_architectured_rela
 
 =head2 new
 
-creates new Cupt::Cache::Relation object
+creates new Cupt::Cache::ArchitecturedRelation object
 
 Parameters:
 
