@@ -41,7 +41,7 @@ use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression
 		parse_relation_line);
-use Cupt::Cache::ArchitecturedRelation qw(stringify_architectured_relation_expressions);
+use Cupt::Cache::ArchitecturedRelation;
 
 my $config;
 my $cache;

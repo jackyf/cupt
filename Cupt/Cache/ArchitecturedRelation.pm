@@ -18,7 +18,7 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-package Cupt::Cache::ArchirecturedRelation;
+package Cupt::Cache::ArchitecturedRelation;
 
 =head1 NAME
 
@@ -75,9 +75,8 @@ sub new {
 		# cleaning square braces info
 		$unparsed =~ s/\[.*//;
 	}
-	my $self;
+	my $self = new Cupt::Cache::Relation($unparsed);
 	bless $self => $class;
-	$self->SUPER::new($unparsed);
 	$self->[REL_ARCHITECTURES] = \@architectures;
 
 	return $self;

@@ -19,7 +19,6 @@
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
 package Cupt::Cache::SourceVersion;
-# TODO: implement
 
 =head1 NAME
 
