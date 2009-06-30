@@ -1,6 +1,5 @@
 For version 0.3:
 
-downloader: proceed correctly when child processes die
 resolver, cupt: querying about decisions
 downloader: debdelta integration (or re-implementation)
 worker: check disk available size before downloading
