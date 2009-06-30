@@ -102,7 +102,7 @@ sub stringify {
 	my ($self) = @_;
 	my $result = $self->SUPER::stringify();
 	if (scalar @{$self->[REL_ARCHITECTURES]}) {
-		$result .= '[' . join(', ', @{$self->[REL_ARCHITECTURES]}) . ']';
+		$result .= ' [' . join(', ', @{$self->[REL_ARCHITECTURES]}) . ']';
 	}
 	return $result;
 }
