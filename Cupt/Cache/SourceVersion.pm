@@ -141,7 +141,7 @@ sub new {
 				my $part = m/.dsc$/ ? 'dsc' : (m/.diff.gz$/ ? 'diff' : 'tarball');
 				$self->{$part}->{'filename'} = $name;
 				$self->{$part}->{'size'} = $size;
-				$result{$part}->{$current_hash_sum_name} = $hash_sum;
+				$self->{$part}->{$current_hash_sum_name} = $hash_sum;
 			} else {
 				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
@@ -266,19 +266,6 @@ sub is_signed ($$) {
 
 	return 0;
 }
-
-=head2 is_installed
-
-method, returns whether this version is installed in the system or not
-
-=cut
-
-sub is_installed {
-	(my $self) = @_;
-	return ($self->{avail_as}->[0]->{release}->{base_uri} eq "");
-}
-
-1;
 
 1;
 
