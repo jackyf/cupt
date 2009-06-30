@@ -95,18 +95,21 @@ sub new {
 		version_string => undef,
 		build_depends => [],
 		tarball => {
+			filename => undef,
 			size => undef,
 			md5sum => undef,
 			sha1sum => undef,
 			sha256sum => undef,
 		},
 		diff => {
+			filename => undef,
 			size => undef,
 			md5sum => undef,
 			sha1sum => undef,
 			sha256sum => undef,
 		},
 		dsc => {
+			filename => undef,
 			size => undef,
 			md5sum => undef,
 		},
@@ -130,32 +133,15 @@ sub new {
 			next if $line =~ m/^\S.*:\n$/;
 
 			if ($line =~ m/^ /) {
-				# now we need to find if this variant is present in the release file
-				foreach (@release_lines) {
-					if (m/^MD5/) {
-						$current_hash_sum_name = 'md5sum';
-					} elsif (m/^SHA1/) {
-						$current_hash_sum_name = 'sha1sum';
-					} elsif (m/^SHA256/) {
-						$current_hash_sum_name = 'sha256sum';
-					} elsif (m/$full_index_list_suffix/) {
-						my $release_line = $_;
-						defined $current_hash_sum_name or
-								mydie("release line '%s' without previous hash sum declaration at file '%s'",
-										$release_line, $path_to_release_file);
-						my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
-								mydie("malformed release line '%s' at file '%s'", $release_line, $path_to_release_file);
-						$name =~ m/^$full_index_list_suffix/ or next;
-						# skipping diffs for now...
-						$name !~ m/^$full_index_list_suffix.diff/ or next;
-						my $uri = join('/', $base_download_uri, $name);
-						$result{$uri}->{'size'} = $size;
-						$result{$uri}->{$current_hash_sum_name} = $hash_sum;
-					}
-				}
-				if (defined $in_sub_entry) {
-					$self->{long_description} .= $line unless $o_no_parse_info_onlys;
-				}
+				defined $current_hash_sum_name or
+						mydie("line '%s' without previous hash sum declaration", $line);
+				my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
+						mydie("malformed line '%s'", $line);
+				local $_ = $name;
+				my $part = m/.dsc$/ ? 'dsc' : (m/.diff.gz$/ ? 'diff' : 'tarball');
+				$self->{$part}->{'filename'} = $name;
+				$self->{$part}->{'size'} = $size;
+				$result{$part}->{$current_hash_sum_name} = $hash_sum;
 			} else {
 				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
@@ -231,7 +217,7 @@ method, returs available URIs to download the .deb file.
 
 Returns:
 
-array of I<URI entry>s.
+array of triples (array which consists of 3 elements) of I<URI entry>s.
 
 where:
 
