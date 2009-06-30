@@ -73,8 +73,9 @@ sub new {
 	{
 		@architectures = split(/\s*,\s*/, $1);
 		# cleaning square braces info
-		$unparsed =~ s/[.*//;
+		$unparsed =~ s/\[.*//;
 	}
+	my $self;
 	bless $self => $class;
 	$self->SUPER::new($unparsed);
 	$self->[REL_ARCHITECTURES] = \@architectures;

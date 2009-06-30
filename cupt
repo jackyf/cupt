@@ -407,7 +407,7 @@ sub show_source_package_versions () {
 
 		foreach my $version (@$ref_versions) {
 			$p->(__('Package'), $package_name);
-			$p->(__('Binary'), join(', ', @{$version->{binary_package_names}});
+			$p->(__('Binary'), join(', ', @{$version->{binary_package_names}}));
 			$p->(__('Version'), $version->{version_string});
 			$p->(__('Priority'), $version->{priority});
 			$p->(__('Section'), $version->{section});
@@ -424,9 +424,9 @@ sub show_source_package_versions () {
 				my $ref_uris = $version->uris();
 				foreach my $part ('tarball', 'diff', 'dsc') {
 					$p->($part, "");
-					$p->('  MD5', $version->{$part}->{md5sum};
-					$p->('  SHA1', $version->{$part}->{sha1sum} unless $part eq 'dsc';
-					$p->('  SHA256', $version->{$part}->{sha256sum} unless $part eq 'dsc';
+					$p->('  MD5', $version->{$part}->{md5sum});
+					$p->('  SHA1', $version->{$part}->{sha1sum}) unless $part eq 'dsc';
+					$p->('  SHA256', $version->{$part}->{sha256sum}) unless $part eq 'dsc';
 					foreach (map { $_->{'download_uri'} } @{$ref_uris->{$part}}) {
 						$p->('  URI', $_);
 					}
