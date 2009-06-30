@@ -47,7 +47,7 @@ our $o_no_parse_relations = 0;
 
 =head2 o_no_parse_info_onlys
 
-Option to don't parse 'Maintainer', 'Description', 'Tag', 'Homepage', can
+Option to don't parse 'Maintainer', 'Section', can
 speed-up parsing the version if this info isn't needed. Off by default.
 
 =cut
@@ -58,7 +58,7 @@ our $o_no_parse_info_onlys = 0;
 
 =head2 new
 
-creates an Cupt::Cache::BinaryVersion
+creates an Cupt::Cache::SourceVersion
 
 Parameters:
 
@@ -82,37 +82,34 @@ sub new {
 		#	release => {
 		#		...
 		#	},
-		#	filename
+		#	directory
 
 		package_name => undef,
+		binary_package_names => [],
 
+		architecture => undef,
 		priority => undef,
 		section => undef,
-		installed_size => undef,
+		standards_version => undef,
 		maintainer => undef,
-		architecture => undef,
-		source_package_name => undef,
 		version_string => undef,
-		source_version_string => undef,
-		essential => undef,
-		depends => [],
-		recommends => [],
-		suggests => [],
-		conflicts => [],
-		breaks => [],
-		enhances => [],
-		provides => [],
-		replaces => [],
-		pre_depends => [],
-		size => undef,
-		md5sum => undef,
-		sha1sum => undef,
-		sha256sum => undef,
-		short_description => undef,
-		long_description => undef,
-		homepage => undef,
-		task => undef,
-		tags => undef,
+		build_depends => [],
+		tarball => {
+			size => undef,
+			md5sum => undef,
+			sha1sum => undef,
+			sha256sum => undef,
+		},
+		diff => {
+			size => undef,
+			md5sum => undef,
+			sha1sum => undef,
+			sha256sum => undef,
+		},
+		dsc => {
+			size => undef,
+			md5sum => undef,
+		},
 	};
 	# parsing fields
 	my ($package_name, $fh, $offset, $ref_release_info) = @$ref_arg;
@@ -122,10 +119,8 @@ sub new {
 
 	my $field_name = undef;
 	eval {
-		# next boolean variable determines whether we are in long description
-		my $in_long_description = 0;
-
 		my $line;
+		my $current_hash_sum_name;
 		# go to starting byte of the entry
 		seek $fh, $offset, 0;
 
@@ -134,80 +129,60 @@ sub new {
 			# skip all fields that haven't a value on the same line and aren't a part of multi-line fields
 			next if $line =~ m/^\S.*:\n$/;
 
-			if (($line =~ m/^ / or $line =~ m/^\t/)) {
-				if ($in_long_description) {
-					# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
-					# part of long description
+			if ($line =~ m/^ /) {
+				# now we need to find if this variant is present in the release file
+				foreach (@release_lines) {
+					if (m/^MD5/) {
+						$current_hash_sum_name = 'md5sum';
+					} elsif (m/^SHA1/) {
+						$current_hash_sum_name = 'sha1sum';
+					} elsif (m/^SHA256/) {
+						$current_hash_sum_name = 'sha256sum';
+					} elsif (m/$full_index_list_suffix/) {
+						my $release_line = $_;
+						defined $current_hash_sum_name or
+								mydie("release line '%s' without previous hash sum declaration at file '%s'",
+										$release_line, $path_to_release_file);
+						my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
+								mydie("malformed release line '%s' at file '%s'", $release_line, $path_to_release_file);
+						$name =~ m/^$full_index_list_suffix/ or next;
+						# skipping diffs for now...
+						$name !~ m/^$full_index_list_suffix.diff/ or next;
+						my $uri = join('/', $base_download_uri, $name);
+						$result{$uri}->{'size'} = $size;
+						$result{$uri}->{$current_hash_sum_name} = $hash_sum;
+					}
+				}
+				if (defined $in_sub_entry) {
 					$self->{long_description} .= $line unless $o_no_parse_info_onlys;
 				}
 			} else {
-				$in_long_description = 0;
 				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
 					or mydie("cannot parse line '%s'", $line);
 
 				given ($field_name) {
-					# mandatory fields
-					when ('Priority') { $self->{priority} = $field_value }
-					when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
-					when ('Installed-Size') { $self->{installed_size} = $field_value }
-					when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
-					when ('Architecture') { $self->{architecture} = $field_value }
-					when ('Version') { $self->{version_string} = $field_value }
-					when ('Filename') { $self->{avail_as}->[0]->{filename} = $field_value }
-					when ('Size') { $self->{size} = $field_value }
-					when ('MD5sum') { $self->{md5sum} = $field_value }
-					when ('SHA1') { $self->{sha1sum} = $field_value }
-					when ('SHA256') { $self->{sha256sum} = $field_value }
-					when ('Description') {
-						if (!$o_no_parse_info_onlys) {
-							$self->{short_description} = $field_value;
-							$in_long_description = 1;
+					when ('Files') { $current_hash_sum_name = 'md5sum' }
+					when ('Checksums-Sha1') { $current_hash_sum_name = 'sha1sum' }
+					when ('Checksums-Sha256') { $current_hash_sum_name = 'sha256sum' }
+					default {
+						undef $current_hash_sum_name;
+						given ($field_name) {
+							when ('Files') { $current_hash_sum_name = 'md5sum' }
+							when ('Checksums-Sha1') { $current_hash_sum_name = 'sha1sum' }
+							when ('Checksums-Sha256') { $current_hash_sum_name = 'sha256sum' }
+							# mandatory fields
+							when ('Build-Depends') {
+								$self->{depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
+							}
+							when ('Priority') { $self->{priority} = $field_value }
+							when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
+							when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
+							when ('Architecture') { $self->{architecture} = $field_value }
+							when ('Version') { $self->{version_string} = $field_value }
+							when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
+							# often fields
 						}
-					}
-					# often fields
-					when ('Depends') {
-						$self->{depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Tag') { $self->{tags} = $field_value unless $o_no_parse_info_onlys }
-					when ('Source') {
-						$self->{source_package_name} = $field_value;
-						if ($self->{source_package_name} =~ s/ \((.*)\)$//) {
-							# there is a source version, most probably
-							# indicating that it was some binary-only rebuild, and
-							# the source version is different with binary one
-							$self->{source_version_string} = $1;
-							$self->{source_version_string} =~ m/^$version_string_regex$/ or
-									mydie("bad source version '%s'", $1);
-						}
-					}
-					when ('Homepage') { $self->{homepage} = $field_value unless $o_no_parse_info_onlys }
-					when ('Recommends') {
-						$self->{recommends} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Suggests') {
-						$self->{suggests} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Conflicts') {
-						$self->{conflicts} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Replaces') {
-						$self->{replaces} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Provides') {
-						$self->{provides} = [ split /\s*,\s*/, $field_value ] unless $o_no_parse_relations;
-					}
-					# rare fields
-					when ('Pre-Depends') {
-						$self->{pre_depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Task') { $self->{homepage} = $field_value }
-					when ('Enhances') {
-						$self->{enhances} = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Essential') { $self->{essential} = $field_value }
-					when ('Breaks') {
-						$self->{breaks} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
 				}
 				undef $field_name;
