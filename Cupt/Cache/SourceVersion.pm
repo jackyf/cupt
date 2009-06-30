@@ -135,7 +135,7 @@ sub new {
 			if ($line =~ m/^ /) {
 				defined $current_hash_sum_name or
 						mydie("line '%s' without previous hash sum declaration", $line);
-				my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
+				my ($hash_sum, $size, $name) = ($line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
 						mydie("malformed line '%s'", $line);
 				local $_ = $name;
 				my $part = m/.dsc$/ ? 'dsc' : (m/.diff.gz$/ ? 'diff' : 'tarball');
@@ -195,10 +195,10 @@ sub is_hashes_equal {
 	my ($self, $other) = @_;
 	return ($self->{diff}->{md5sum} eq $other->{diff}->{md5sum} &&
 			$self->{diff}->{sha1sum} eq $other->{diff}->{sha1sum} &&
-			$self->{diff}->{sha256sum} eq $other->{diff}->sha256sum} &&
+			$self->{diff}->{sha256sum} eq $other->{diff}->{sha256sum} &&
 			$self->{tarball}->{md5sum} eq $other->{tarball}->{md5sum} &&
 			$self->{tarball}->{sha1sum} eq $other->{tarball}->{sha1sum} &&
-			$self->{tarball}->{sha256sum} eq $other->{tarball}->sha256sum});
+			$self->{tarball}->{sha256sum} eq $other->{tarball}->{sha256sum});
 }
 
 =head1 METHODS
