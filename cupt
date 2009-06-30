@@ -158,8 +158,18 @@ sub get_binary_package ($) {
 	}
 }
 
-sub select_binary_package_version ($) {
-	my ($package_expression) = @_;
+sub get_source_package ($) {
+	my ($package_name) = @_;
+	my $package = $cache->get_source_package($package_name);
+	if (defined $package) {
+		return $package;
+	} else {
+		mydie("cannot find source package '%s'", $package_name);
+	}
+}
+
+sub select_package_version ($$) {
+	my ($package_expression, $sub_package_getter) = @_;
 
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
@@ -205,6 +215,16 @@ sub select_binary_package_version ($) {
 		my $result_version = $cache->get_policy_version(get_binary_package($package_expression));
 		return $result_version;
 	}
+}
+
+sub select_binary_package_version ($) {
+	my ($package_name) = @_;
+	return select_package_version($package_name, \&get_binary_package);
+}
+
+sub select_source_package_version ($) {
+	my ($package_name) = @_;
+	return select_package_version($package_name, \&get_source_package);
 }
 
 sub config_dump () {
