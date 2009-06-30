@@ -93,6 +93,7 @@ sub new {
 		maintainer => undef,
 		version_string => undef,
 		build_depends => [],
+		build_depends_indep => [],
 		tarball => {
 			filename => undef,
 			size => undef,
@@ -155,6 +156,9 @@ sub new {
 					given ($field_name) {
 						when ('Build-Depends') {
 							$self->{build_depends} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+						}
+						when ('Build-Depends-Indep') {
+							$self->{build_depends_indep} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
 						when ('Binary') { @{$self->{binary_package_names}} = split(/, /, $field_value) }
 						when ('Priority') { $self->{priority} = $field_value }
