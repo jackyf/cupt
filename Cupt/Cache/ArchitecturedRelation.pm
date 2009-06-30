@@ -61,7 +61,7 @@ sub new {
 		\[ # opening square brace, arch info starter
 			( # catch block start
 				(?:
-					\w | \s | , | ! # allowed letters
+					\w | - | \s | , | ! # allowed letters
 				)
 				+ # multiple times
 			) # catch block end
