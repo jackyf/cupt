@@ -32,7 +32,7 @@ use warnings;
 use strict;
 
 use Cupt::Core;
-use Cupt::Cache::Relation qw(parse_relation_line);
+use Cupt::Cache::ArchitecturedRelation qw(parse_architectured_relation_line);
 
 =head1 FLAGS
 
@@ -155,7 +155,7 @@ sub new {
 						undef $current_hash_sum_name;
 						given ($field_name) {
 							when ('Build-Depends') {
-								$self->{depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
+								$self->{depends} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 							}
 							when ('Priority') { $self->{priority} = $field_value }
 							when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }

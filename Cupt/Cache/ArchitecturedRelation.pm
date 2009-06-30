@@ -30,7 +30,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use base Cupt::Cache::Relation;
+use base qw(Cupt::Cache::Relation);
 
 use constant {
 	REL_ARCHITECTURES => 3,
@@ -40,7 +40,7 @@ use Exporter qw(import);
 
 use Cupt::Core;
 
-our @EXPORT_OK = qw(&parse_relation_line &parse_relation_expression);
+our @EXPORT_OK = qw(&parse_architectured_relation_line &parse_architectured_relation_expression);
 
 =head1 METHODS
 
