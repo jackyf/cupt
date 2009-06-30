@@ -107,69 +107,41 @@ sub stringify {
 	return $result;
 }
 
-=head2 parse_relation_expression
+=head2 parse_architectured_relation_expression
 
-free subroutine, parses relation expression in string form, builds L</Relation expression> and returns it
+free subroutine, parses architectured relation expression in string form,
+builds L</Relation expression> and returns it
 
 =cut
 
-sub parse_relation_expression ($) {
-	my ($relation_expression_string) = @_;
+sub parse_architectured_relation_expression ($) {
+	my ($architectured_relation_expression_string) = @_;
 
 	# looking for OR groups
-	my @relations = split / ?\| ?/, $relation_expression_string;
-	if (scalar @relations == 1) {
+	my @architectured_relations = split / ?\| ?/, $architectured_relation_expression_string;
+	if (scalar @architectured_relations == 1) {
 		# ordinary relation
-		return new Cupt::Cache::Relation($relations[0]);
+		return new Cupt::Cache::ArchitecturedRelation($architectured_relations[0]);
 	} else {
 		# 'OR' group of relations
-		return [ map { new Cupt::Cache::Relation($_) } @relations ];
+		return [ map { new Cupt::Cache::ArchitecturedRelation($_) } @architectured_relations ];
 	}
 }
 
-=head2 parse_relation_line
+=head2 parse_architectured_relation_line
 
-free subroutine, parses line of relation expressions, builds array of
+free subroutine, parses line of architectured relation expressions, builds array of
 L</Relation expression>s and returns reference to it
 
 =cut
 
-sub parse_relation_line {
-	# my $relation_line = $_[0] 
-	# or myinternaldie("relation line is not defined");
-
+sub parse_architectured_relation_line {
 	my @result;
 	while ($_[0] =~ m/(.+?)(?:,\s*|$)/g) {
-		push @result, parse_relation_expression($1);
+		push @result, parse_architectured_relation_expression($1);
 	}
 	return \@result;
 }
-
-=head1 Relation expression
-
-Can be in two forms:
-
-=over
-
-=item *
-
-I<relation>, which stands for single relation
-
-=item *
-
-[ I<relation> ... ], which stands for relation OR group, where only one of relations need to be satisfied
-
-=back
-
-where
-
-I<relation> - Cupt::Cache::Relation object
-
-=head1 SEE ALSO
-
-Debian Policy 7.1
-
-=cut
 
 1;
 
