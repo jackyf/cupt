@@ -154,10 +154,6 @@ sub new {
 					default {
 						undef $current_hash_sum_name;
 						given ($field_name) {
-							when ('Files') { $current_hash_sum_name = 'md5sum' }
-							when ('Checksums-Sha1') { $current_hash_sum_name = 'sha1sum' }
-							when ('Checksums-Sha256') { $current_hash_sum_name = 'sha256sum' }
-							# mandatory fields
 							when ('Build-Depends') {
 								$self->{depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
 							}
@@ -167,16 +163,12 @@ sub new {
 							when ('Architecture') { $self->{architecture} = $field_value }
 							when ('Version') { $self->{version_string} = $field_value }
 							when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
-							# often fields
 						}
 					}
 				}
 				undef $field_name;
 			}
 		}
-
-		$self->{source_version_string} //= $self->{version_string};
-		$self->{source_package_name} //= $self->{package_name};
 	};
 	if (mycatch()) {
 		if (defined($field_name)) {
@@ -213,11 +205,15 @@ sub is_hashes_equal {
 
 =head2 uris
 
-method, returs available URIs to download the .deb file.
+method, returns available URIs to download the .deb file.
 
 Returns:
 
-array of triples (array which consists of 3 elements) of I<URI entry>s.
+  {
+    'tarball' => [ I<URI entry>... ],
+    'diff' => [ I<URI entry>... ],
+    'dsc' => [ I<URI entry>... ],
+  }
 
 where:
 
@@ -235,20 +231,22 @@ contains 'Filename' property of package entries.
 sub uris {
 	my $self = shift;
 	my @result;
-    foreach (@{$self->{avail_as}}) {
+	foreach (@{$self->{avail_as}}) {
 		my $base_uri = $_->{release}->{base_uri};
 		if ($base_uri ne "") {
 			# real download path
-			my $new_uri = ( $base_uri . '/' . $_->{'filename'} );
-
-			push @result, {
-				'download_uri' => $new_uri,
-				'base_uri' => $base_uri,
-				'appendage' => $_->{'filename'},
-			} unless grep { $_->{'download_uri'} eq $new_uri } @result;
+			my $new_uri = ( $base_uri . '/' . $_->{'directory'} );
+			foreach my $part ('tarball', 'diff', 'dsc') {
+				my $download_uri = $new_uri . '/' . $self->{$part}->{filename};
+				push $result{$part}, {
+					'download_uri' => $new_uri ,
+					'base_uri' => $base_uri,
+					'appendage' => $_->{'filename'},
+				} unless grep { $_->{'download_uri'} eq $download_uri } @result;
+			}
 		}
 	}
-	return @result;
+	return \@result;
 }
 
 =head2 is_signed
