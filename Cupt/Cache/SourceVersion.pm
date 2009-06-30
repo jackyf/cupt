@@ -230,7 +230,7 @@ contains 'Filename' property of package entries.
 
 sub uris {
 	my $self = shift;
-	my @result;
+	my %result;
 	foreach (@{$self->{avail_as}}) {
 		my $base_uri = $_->{release}->{base_uri};
 		if ($base_uri ne "") {
@@ -238,15 +238,15 @@ sub uris {
 			my $new_uri = ( $base_uri . '/' . $_->{'directory'} );
 			foreach my $part ('tarball', 'diff', 'dsc') {
 				my $download_uri = $new_uri . '/' . $self->{$part}->{filename};
-				push $result{$part}, {
-					'download_uri' => $new_uri ,
+				push @{$result{$part}}, {
+					'download_uri' => $download_uri,
 					'base_uri' => $base_uri,
-					'appendage' => $_->{'filename'},
-				} unless grep { $_->{'download_uri'} eq $download_uri } @result;
+					'appendage' => $_->{'directory'} . '/' . $self->{$part}->{filename},
+				} unless grep { $_->{'download_uri'} eq $download_uri } @{$result{$part}};
 			}
 		}
 	}
-	return \@result;
+	return \%result;
 }
 
 =head2 is_signed
