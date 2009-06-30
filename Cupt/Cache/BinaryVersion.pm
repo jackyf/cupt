@@ -46,8 +46,9 @@ our $o_no_parse_relations = 0;
 
 =head2 o_no_parse_info_onlys
 
-Option to don't parse 'Maintainer', 'Description', 'Tag', 'Homepage', can
-speed-up parsing the version if this info isn't needed. Off by default.
+Option to don't parse 'Maintainer', 'Description', 'Tag', 'Homepage',
+'Section', can speed-up parsing the version if this info isn't needed. Off by
+default.
 
 =cut
 
