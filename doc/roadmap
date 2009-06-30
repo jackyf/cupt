@@ -3,7 +3,6 @@ For version 0.3:
 resolver, cupt: querying about decisions
 downloader: debdelta integration (or re-implementation)
 worker: check disk available size before downloading
-downloader: https protocol
 
 For version 0.4:
 
