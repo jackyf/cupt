@@ -419,7 +419,7 @@ sub show_source_package_versions () {
 					$p->(__('Release'), $_->{release}->{description});
 				}
 			}
-			$p->(__('Build-Depends'), stringify_relation_expressions($version->{depends}));
+			$p->(__('Build-Depends'), stringify_relation_expressions($version->{build_depends}));
 			{
 				my $ref_uris = $version->uris();
 				foreach my $part ('tarball', 'diff', 'dsc') {
