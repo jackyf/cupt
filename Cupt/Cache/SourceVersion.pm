@@ -131,6 +131,7 @@ sub new {
 			# skip all fields that haven't a value on the same line and aren't a part of multi-line fields
 			next if $line =~ m/^\S.*:\n$/;
 
+			chomp($line);
 			if ($line =~ m/^ /) {
 				defined $current_hash_sum_name or
 						mydie("line '%s' without previous hash sum declaration", $line);
@@ -142,7 +143,6 @@ sub new {
 				$self->{$part}->{'size'} = $size;
 				$self->{$part}->{$current_hash_sum_name} = $hash_sum;
 			} else {
-				chomp($line);
 				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
 					or mydie("cannot parse line '%s'", $line);
 
