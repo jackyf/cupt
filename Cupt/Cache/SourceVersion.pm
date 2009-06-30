@@ -46,7 +46,7 @@ our $o_no_parse_relations = 0;
 
 =head2 o_no_parse_info_onlys
 
-Option to don't parse 'Maintainer', 'Section', can
+Option to don't parse 'Maintainer', 'Uploaders', 'Section', can
 speed-up parsing the version if this info isn't needed. Off by default.
 
 =cut
@@ -91,6 +91,7 @@ sub new {
 		section => undef,
 		standards_version => undef,
 		maintainer => undef,
+		uploaders => undef,
 		version_string => undef,
 		build_depends => [],
 		build_depends_indep => [],
@@ -164,6 +165,7 @@ sub new {
 						when ('Priority') { $self->{priority} = $field_value }
 						when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
 						when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
+						when ('Uploaders') { $self->{uploaders} = $field_value unless $o_no_parse_info_onlys }
 						when ('Architecture') { $self->{architecture} = $field_value }
 						when ('Version') { $self->{version_string} = $field_value }
 						when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
