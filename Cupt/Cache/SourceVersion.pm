@@ -203,20 +203,24 @@ sub new {
 	# checking a presence of version string
 	defined $self->{version_string} or mydie("version string isn't defined");
 	# checking hash sums
-	if (!$self->is_installed()) {
-		defined $self->{md5sum} or mydie("MD5 hash sum isn't defined");
-		defined $self->{sha1sum} or mydie("SHA1 hash sum isn't defined");
-		defined $self->{sha256sum} or mydie("SHA256 hash sum isn't defined");
-	}
+	defined $self->{tarball}->{md5sum} or mydie("MD5 hash sum of tarball isn't defined");
+	defined $self->{tarball}->{sha1sum} or mydie("SHA1 hash sum of tarball isn't defined");
+	defined $self->{tarball}->{sha256sum} or mydie("SHA256 hash sum of tarball isn't defined");
+	defined $self->{diff}->{md5sum} or mydie("MD5 hash sum of diff isn't defined");
+	defined $self->{diff}->{sha1sum} or mydie("SHA1 hash sum of diff isn't defined");
+	defined $self->{diff}->{sha256sum} or mydie("SHA256 hash sum of diff isn't defined");
 
 	return $self;
 }
 
 sub is_hashes_equal {
 	my ($self, $other) = @_;
-	return ($self->{md5sum} eq $other->{md5sum} &&
-			$self->{sha1sum} eq $other->{sha1sum} &&
-			$self->{sha256sum} eq $other->{sha256sum});
+	return ($self->{diff}->{md5sum} eq $other->{diff}->{md5sum} &&
+			$self->{diff}->{sha1sum} eq $other->{diff}->{sha1sum} &&
+			$self->{diff}->{sha256sum} eq $other->{diff}->sha256sum} &&
+			$self->{tarball}->{md5sum} eq $other->{tarball}->{md5sum} &&
+			$self->{tarball}->{sha1sum} eq $other->{tarball}->{sha1sum} &&
+			$self->{tarball}->{sha256sum} eq $other->{tarball}->sha256sum});
 }
 
 =head1 METHODS
