@@ -128,9 +128,6 @@ sub new {
 
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
-			# skip all fields that haven't a value on the same line and aren't a part of multi-line fields
-			next if $line =~ m/^\S.*:\n$/;
-
 			chomp($line);
 			if ($line =~ m/^ /) {
 				defined $current_hash_sum_name or
@@ -143,29 +140,31 @@ sub new {
 				$self->{$part}->{'size'} = $size;
 				$self->{$part}->{$current_hash_sum_name} = $hash_sum;
 			} else {
-				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
-					or mydie("cannot parse line '%s'", $line);
+				if ($line =~ m/^Files:/) {
+					$current_hash_sum_name = 'md5sum';
+				} elsif ($line =~ m/^Checksums-Sha1:/) {
+					$current_hash_sum_name = 'sha1sum';
+				} elsif ($line =~ m/^Checksums-Sha256:/) {
+					$current_hash_sum_name = 'sha256sum';
+				} else {
+					undef $current_hash_sum_name;
 
-				given ($field_name) {
-					when ('Files') { $current_hash_sum_name = 'md5sum' }
-					when ('Checksums-Sha1') { $current_hash_sum_name = 'sha1sum' }
-					when ('Checksums-Sha256') { $current_hash_sum_name = 'sha256sum' }
-					default {
-						undef $current_hash_sum_name;
-						given ($field_name) {
-							when ('Build-Depends') {
-								$self->{build_depends} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
-							}
-							when ('Priority') { $self->{priority} = $field_value }
-							when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
-							when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
-							when ('Architecture') { $self->{architecture} = $field_value }
-							when ('Version') { $self->{version_string} = $field_value }
-							when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
+					(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
+						or mydie("cannot parse line '%s'", $line);
+
+					given ($field_name) {
+						when ('Build-Depends') {
+							$self->{build_depends} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
+						when ('Priority') { $self->{priority} = $field_value }
+						when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
+						when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
+						when ('Architecture') { $self->{architecture} = $field_value }
+						when ('Version') { $self->{version_string} = $field_value }
+						when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
 					}
+					undef $field_name;
 				}
-				undef $field_name;
 			}
 		}
 	};

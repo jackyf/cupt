@@ -352,11 +352,13 @@ sub get_pin ($$) {
 	# discourage downgrading 
 	# downgradings will usually have pin <= 0
 	my $package_name = $version->{package_name};
-	my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
-	if (defined $installed_version_string
-		&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
-	{
-		$result -= 2000;
+	if (defined $self->{_system_state}) { # for example, for source versions will return false...
+		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
+		if (defined $installed_version_string
+			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
+		{
+			$result -= 2000;
+		}
 	}
 
 	$result += 1 if $version->is_signed();
