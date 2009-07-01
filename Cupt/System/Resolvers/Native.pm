@@ -162,6 +162,12 @@ sub satisfy_relation_expression ($$) {
 
 	# schedule checking strict relation expression, it will be checked later
 	push @{$self->{_strict_relation_expressions}}, $relation_expression;
+	if ($self->config->var('debug::resolver')) {
+		my $message = "strictly satisfying relation '";
+		$message .= stringify_relation_expression($relation_expression);
+		$message .= "'";
+		mydebug($message);
+	}
 }
 
 sub _auto_satisfy_relation ($$) {
