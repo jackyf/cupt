@@ -41,6 +41,7 @@ use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression
 		parse_relation_line);
+use Cupt::Cache::ArchitecturedRelation;
 
 my $config;
 my $cache;
@@ -77,7 +78,8 @@ myerr("no command specified") and exit 2 if (!defined($command));
 
 my %command_handlers = (
 	'config-dump' => \&config_dump,
-	'show' => \&show_package_versions,
+	'show' => \&show_binary_package_versions,
+	'showsrc' => \&show_source_package_versions,
 	'search' => \&search,
 	'depends' => sub { show_package_relations('normal') },
 	'rdepends' => sub { show_package_relations('reverse') },
@@ -156,8 +158,18 @@ sub get_binary_package ($) {
 	}
 }
 
-sub select_binary_package_version ($) {
-	my ($package_expression) = @_;
+sub get_source_package ($) {
+	my ($package_name) = @_;
+	my $package = $cache->get_source_package($package_name);
+	if (defined $package) {
+		return $package;
+	} else {
+		mydie("cannot find source package '%s'", $package_name);
+	}
+}
+
+sub select_package_version ($$) {
+	my ($package_expression, $sub_package_getter) = @_;
 
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
@@ -166,7 +178,7 @@ sub select_binary_package_version ($) {
 		check_package_name($package_name);
 		my $version_string = $2;
 		check_version_string($version_string);
-		my $package = get_binary_package($package_name);
+		my $package = $sub_package_getter->($package_name);
 		my $version = $package->get_specific_version($version_string);
 		# not found
 		if (defined $version) {
@@ -182,7 +194,7 @@ sub select_binary_package_version ($) {
 		if (! ($distribution_expression =~ m/^[a-z-]+$/)) {
 			mydie("bad distribution '%s' requested, use archive or codename", $distribution_expression);
 		}
-		my $package = get_binary_package($package_name);
+		my $package = $sub_package_getter->($package_name);
 
 		# example: "nlkt/sid" or "nlkt/unstable"
 		foreach my $version (@{$package->get_versions()}) {
@@ -200,9 +212,19 @@ sub select_binary_package_version ($) {
 		# not found
 		mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
 	} else {
-		my $result_version = $cache->get_policy_version(get_binary_package($package_expression));
+		my $result_version = $cache->get_policy_version($sub_package_getter->($package_expression));
 		return $result_version;
 	}
+}
+
+sub select_binary_package_version ($) {
+	my ($package_name) = @_;
+	return select_package_version($package_name, \&get_binary_package);
+}
+
+sub select_source_package_version ($) {
+	my ($package_name) = @_;
+	return select_package_version($package_name, \&get_source_package);
 }
 
 sub config_dump () {
@@ -240,7 +262,7 @@ sub config_dump () {
 	}
 }
 
-sub show_package_versions () {
+sub show_binary_package_versions () {
 	my $o_with_release_info = 0;
 	my $o_installed_only = 0;
 	GetOptions(
@@ -340,16 +362,78 @@ sub show_package_versions () {
 				$p->(__('Provided by'), stringify_relation_expressions($ref_reverse_provides));
 			}
 			foreach (map { $_->{'download_uri'} } $version->uris()) {
-				$p->(__('URI'), $_);
+				$p->('URI', $_);
 			}
-			$p->(__('MD5'), $version->{md5sum}) if defined($version->{md5sum});
-			$p->(__('SHA1'), $version->{sha1sum}) if defined($version->{sha1sum});
-			$p->(__('SHA256'), $version->{sha256sum}) if defined($version->{sha1sum});
+			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});
+			$p->('SHA1', $version->{sha1sum}) if defined($version->{sha1sum});
+			$p->('SHA256', $version->{sha256sum}) if defined($version->{sha1sum});
 			$p->(__('Description'), $version->{short_description});
 			print $version->{long_description} if defined($version->{long_description});
 			$p->(__('Homepage'), $version->{homepage}) if defined($version->{homepage});
 			$p->(__('Task'), $version->{task}) if defined($version->{task});
 			$p->(__('Tags'), $version->{tags}) if defined($version->{tags});
+			print "\n";
+		}
+	}
+}
+
+sub show_source_package_versions () {
+	my $o_with_release_info = 0;
+	GetOptions(
+		'with-release-info' => \$o_with_release_info,
+	);
+
+	check_no_more_options();
+
+	my @package_expressions = @ARGV;
+	scalar @package_expressions or
+			mydie("no package expressions specified");
+
+	build_cache(-source => 1, -binary => 0, -installed => 0);
+
+	foreach my $package_expression (@package_expressions) {
+		my $package_name;
+		my $ref_versions;
+		my $p = sub { print shift, ': ', shift, "\n" };
+
+		if ($config->var('apt::cache::allversions')) {
+			$package_name = $package_expression;
+			$ref_versions = get_source_package($package_name)->get_versions();
+		} else {
+			my $version = select_source_package_version($package_expression);
+			$package_name = $version->{package_name};
+			$ref_versions = [ $version ];
+		}
+
+		foreach my $version (@$ref_versions) {
+			$p->(__('Package'), $package_name);
+			$p->(__('Binary'), join(', ', @{$version->{binary_package_names}}));
+			$p->(__('Version'), $version->{version_string});
+			$p->(__('Priority'), $version->{priority});
+			$p->(__('Section'), $version->{section});
+			$p->(__('Maintainer'), $version->{maintainer});
+			$p->(__('Uploaders'), $version->{uploaders}) if defined $version->{uploaders};
+			$p->(__('Architecture'), $version->{architecture});
+			if ($o_with_release_info) {
+				foreach (@{$version->{avail_as}}) {
+					next if !defined($_->{release}->{description}); # no release description available
+					$p->(__('Release'), $_->{release}->{description});
+				}
+			}
+			$p->(__('Build-Depends'), stringify_relation_expressions($version->{build_depends}));
+			$p->(__('Build-Depends-Indep'), stringify_relation_expressions($version->{build_depends_indep}));
+			{
+				my $ref_uris = $version->uris();
+				foreach my $part ('tarball', 'diff', 'dsc') {
+					$p->($part, "");
+					$p->('  MD5', $version->{$part}->{md5sum});
+					$p->('  SHA1', $version->{$part}->{sha1sum}) unless $part eq 'dsc';
+					$p->('  SHA256', $version->{$part}->{sha256sum}) unless $part eq 'dsc';
+					foreach (map { $_->{'download_uri'} } @{$ref_uris->{$part}}) {
+						$p->('  URI', $_);
+					}
+				}
+			}
 			print "\n";
 		}
 	}

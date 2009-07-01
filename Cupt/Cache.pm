@@ -352,11 +352,13 @@ sub get_pin ($$) {
 	# discourage downgrading 
 	# downgradings will usually have pin <= 0
 	my $package_name = $version->{package_name};
-	my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
-	if (defined $installed_version_string
-		&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
-	{
-		$result -= 2000;
+	if (defined $self->{_system_state}) { # for example, for source versions will return false...
+		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
+		if (defined $installed_version_string
+			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
+		{
+			$result -= 2000;
+		}
 	}
 
 	$result += 1 if $version->is_signed();
@@ -379,6 +381,23 @@ sub get_binary_package {
 	my ($self, $package_name) = @_;
 	# will transparently return undef if there is no such package
 	return $self->{_binary_packages}->{$package_name};
+};
+
+=head2 get_source_package
+
+method, returns reference to appropriate L<Cupt::Cache::Package|Cupt::Cache::Package> for package name.
+Returns undef if there is no such package in cache.
+
+Parameters:
+
+I<package_name> - package name to find
+
+=cut
+
+sub get_source_package {
+	my ($self, $package_name) = @_;
+	# will transparently return undef if there is no such package
+	return $self->{_source_packages}->{$package_name};
 };
 
 =head2 get_sorted_pinned_versions
@@ -884,8 +903,6 @@ sub _process_index_file {
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
 		$ref_packages_storage = \$self->{_source_packages};
-		mywarn("not parsing deb-src index '%s' (unimplemented yet)", $file);
-		return;
 	}
 
 	my $fh;

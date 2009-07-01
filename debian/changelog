@@ -1,3 +1,22 @@
+cupt (0.2.4) UNRELEASED; urgency=low
+
+  * cupt:
+    - New 'showsrc' subcommand.
+  * Cupt:
+    - Cache:
+      - ArchitecturedRelation:
+        - Implemented.
+      - SourceVersion:
+        - Implemented.
+      - Package:
+        - 'get_versions': generate exception if there are no valid version
+          entries for the package.
+      - New method 'get_source_package'.
+      - 'get_pin': fixed to not attempt to obtain installed version for source
+        packages.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 30 Jun 2009 23:32:10 +0300
+
 cupt (0.2.3) unstable; urgency=medium
 
   * Cupt:
