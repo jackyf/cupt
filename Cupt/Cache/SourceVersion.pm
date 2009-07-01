@@ -95,6 +95,8 @@ sub new {
 		version_string => undef,
 		build_depends => [],
 		build_depends_indep => [],
+		build_conflicts => [],
+		build_conflicts_indep => [],
 		tarball => {
 			filename => undef,
 			size => undef,
@@ -169,6 +171,12 @@ sub new {
 						when ('Architecture') { $self->{architecture} = $field_value }
 						when ('Version') { $self->{version_string} = $field_value }
 						when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
+						when ('Build-Conflicts') {
+							$self->{build_conflicts} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+						}
+						when ('Build-Conflicts-Indep') {
+							$self->{build_conflicts_indep} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+						}
 					}
 					undef $field_name;
 				}

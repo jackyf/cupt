@@ -422,7 +422,15 @@ sub show_source_package_versions () {
 				}
 			}
 			$p->(__('Build-Depends'), stringify_relation_expressions($version->{build_depends}));
-			$p->(__('Build-Depends-Indep'), stringify_relation_expressions($version->{build_depends_indep}));
+			if (scalar @{$version->{build_depends_indep}}) {
+				$p->(__('Build-Depends-Indep'), stringify_relation_expressions($version->{build_depends_indep}));
+			}
+			if (scalar @{$version->{build_conflicts}}) {
+				$p->(__('Build-Conflicts'), stringify_relation_expressions($version->{build_conflicts}));
+			}
+			if (scalar @{$version->{build_conflicts_indep}}) {
+				$p->(__('Build-Conflicts-Indep'), stringify_relation_expressions($version->{build_conflicts_indep}));
+			}
 			{
 				my $ref_uris = $version->uris();
 				foreach my $part ('tarball', 'diff', 'dsc') {
