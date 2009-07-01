@@ -18,6 +18,9 @@ cupt (0.2.4) UNRELEASED; urgency=low
     - System:
       - Resolver,Resolvers/Native,Resolvers/External:
         - New method 'unsatisfy_relation_expression'.
+  * po:
+    - getpot: specified UTF-8 encoding for input files, fixing xgettext error.
+      Thanks to Frederik Schwarzer <schwarzerf@gmail.com>.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 01 Jul 2009 13:25:04 +0300
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 cd ../ && \
 xgettext -k__ -k\$__ -k%__ -k__x -k__n:1,2 -k__nx:1,2 -k__xn:1,2 -kN__ \
-	-kmydie -kmyerr -kmywarn \
+	-kmydie -kmyerr -kmywarn --from-code=UTF-8 \
 	--language='Perl' --copyright-holder='Eugene V. Lyubimkin' \
 	--package-name='cupt' --msgid-bugs-address="jackyf.devel@gmail.com" \
 	--output='po/messages.pot' `find Cupt -type f | xargs echo` cupt
