@@ -39,7 +39,8 @@ use Cupt::Cache;
 use Cupt::Cache::Package;
 use Cupt::Cache::Relation qw(stringify_relation_expressions);
 
-use fields qw(_is_installed _upgrade_all_flag _actions _strict_relation_expressions);
+use fields qw(_is_installed _upgrade_all_flag _actions
+		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 my $_dummy_package_name = "dummy-package-name";
 
@@ -50,7 +51,8 @@ sub new {
 
 	$self->{_is_installed} = {};
 	$self->{_actions} = {};
-	$self->{_strict_relation_expressions} = [];
+	$self->{_strict_satisfy_relation_expressions} = [];
+	$self->{_strict_unsatisfy_relation_expressions} = [];
 	$self->{_upgrade_all_flag} = 0;
 
 	return $self;
@@ -72,7 +74,12 @@ sub install_version ($$) {
 
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
-	push @{$self->{_strict_relation_expressions}}, $relation_expression;
+	push @{$self->{_strict_satisfy_relation_expressions}}, $relation_expression;
+}
+
+sub unsatisfy_relation_expression ($$) {
+	my ($self, $relation_expression) = @_;
+	push @{$self->{_strict_unsatisfy_relation_expressions}}, $relation_expression;
 }
 
 sub remove_package ($$) {
@@ -179,12 +186,22 @@ sub _write_dudf_info ($$) {
 			say $fh "";
 		}
 	}
-	if (scalar @{$self->{_strict_relation_expressions}}) {
+	if (scalar @{$self->{_strict_satisfy_relation_expressions}} ||
+		scalar @{$self->{_strict_unsatisfy_relation_expressions}})
+	{
 		# writing dummy package entry
 		say $fh "Package: $_dummy_package_name";
 		say $fh "Version: 1";
-		print $fh "Depends: ";
-		say $fh $sub_strip_circle_braces->(stringify_relation_expressions($self->{_strict_relation_expressions}));
+		if (scalar @{$self->{_strict_satisfy_relation_expressions}}) {
+			print $fh "Depends: ";
+			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
+					$self->{_strict_satisfy_relation_expressions}));
+		}
+		if (scalar @{$self->{_strict_unsatisfy_relation_expressions}}) {
+			print $fh "Conflicts: ";
+			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
+					$self->{_strict_unsatisfy_relation_expressions}));
+		}
 		say $fh "";
 	}
 
@@ -206,7 +223,9 @@ sub _write_dudf_info ($$) {
 		}
 	}
 	
-	if (scalar @{$self->{_strict_relation_expressions}}) {
+	if (scalar @{$self->{_strict_satisfy_relation_expressions}} ||
+		scalar @{$self->{_strict_unsatisfy_relation_expressions}})
+	{
 		push @strings_to_install, $_dummy_package_name;
 	}
 

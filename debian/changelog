@@ -15,6 +15,9 @@ cupt (0.2.4) UNRELEASED; urgency=low
       - New method 'get_source_package'.
       - 'get_pin': fixed to not attempt to obtain installed version for source
         packages.
+    - System:
+      - Resolver,Resolvers/Native,Resolvers/External:
+        - New method 'unsatisfy_relation_expression'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 01 Jul 2009 13:25:04 +0300
 

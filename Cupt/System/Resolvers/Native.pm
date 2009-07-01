@@ -61,7 +61,7 @@ packages, or for satisfying some requested relations
 =cut
 
 use fields qw(_old_packages _packages _pending_relations
-		_strict_relation_expressions);
+		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 sub new {
 	my $class = shift;
@@ -69,7 +69,8 @@ sub new {
 	$self->SUPER::new(@_);
 
 	$self->{_pending_relations} = [];
-	$self->{_strict_relation_expressions} = [];
+	$self->{_strict_satisfy_relation_expressions} = [];
+	$self->{_strict_unsatisfy_relation_expressions} = [];
 
 	return $self;
 }
@@ -161,9 +162,22 @@ sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 
 	# schedule checking strict relation expression, it will be checked later
-	push @{$self->{_strict_relation_expressions}}, $relation_expression;
+	push @{$self->{_strict_satisfy_relation_expressions}}, $relation_expression;
 	if ($self->config->var('debug::resolver')) {
 		my $message = "strictly satisfying relation '";
+		$message .= stringify_relation_expression($relation_expression);
+		$message .= "'";
+		mydebug($message);
+	}
+}
+
+sub unsatisfy_relation_expression ($$) {
+	my ($self, $relation_expression) = @_;
+
+	# schedule checking strict relation expression, it will be checked later
+	push @{$self->{_strict_unsatisfy_relation_expressions}}, $relation_expression;
+	if ($self->config->var('debug::resolver')) {
+		my $message = "strictly unsatisfying relation '";
 		$message .= stringify_relation_expression($relation_expression);
 		$message .= "'";
 		mydebug($message);
@@ -474,7 +488,9 @@ sub _require_strict_relation_expressions ($) {
 	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
 	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends} =
-			$self->{_strict_relation_expressions};
+			$self->{_strict_satisfy_relation_expressions};
+	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{breaks} =
+			$self->{_strict_unsatisfy_relation_expressions};
 }
 
 sub _apply_action ($$$$$) {

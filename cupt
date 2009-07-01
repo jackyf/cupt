@@ -1111,11 +1111,19 @@ sub manage_packages ($) {
 		} elsif ($action eq 'build-depends') {
 			my $version = select_source_package_version($package_expression);
 			my @relation_expressions;
+
 			push @relation_expressions, @{unarchitecture_relation_expressions(
 					$version->{build_depends}, $config->var('apt::architecture'))};
 			push @relation_expressions, @{unarchitecture_relation_expressions(
 					$version->{build_depends_indep}, $config->var('apt::architecture'))};
 			$resolver->satisfy_relation_expression($_) for @relation_expressions;
+
+			@relation_expressions = ();
+			push @relation_expressions, @{unarchitecture_relation_expressions(
+					$version->{build_conflicts}, $config->var('apt::architecture'))};
+			push @relation_expressions, @{unarchitecture_relation_expressions(
+					$version->{build_conflicts_indep}, $config->var('apt::architecture'))};
+			$resolver->unsatisfy_relation_expression($_) for @relation_expressions;
 		} else {
 			my $action = $action;
 			if (!defined $cache->get_binary_package($package_expression)) {

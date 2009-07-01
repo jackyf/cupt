@@ -117,7 +117,7 @@ sub install_version ($$) {
 	# stub
 }
 
-=head2 satisfy_relation
+=head2 satisfy_relation_expression
 
 method, installs all needed versions to satisfy L<relation expression|Cupt::Cache::Relation/Relation expression>
 
@@ -130,6 +130,24 @@ I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
 =cut
 
 sub satisfy_relation_expression ($$) {
+	my ($self, $relation_expression) = @_;
+	# stub
+}
+
+=head2 unsatisfy_relation_expression
+
+method, removes all needed versions to make sure that L<relation
+expression|Cupt::Cache::Relation/Relation expression> is not satisfied
+
+Should be re-implemented by derived classes.
+
+Parameters:
+
+I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
+
+=cut
+
+sub unsatisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 	# stub
 }
