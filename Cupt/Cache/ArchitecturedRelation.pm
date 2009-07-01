@@ -40,7 +40,8 @@ use Exporter qw(import);
 
 use Cupt::Core;
 
-our @EXPORT_OK = qw(&parse_architectured_relation_line &parse_architectured_relation_expression);
+our @EXPORT_OK = qw(&parse_architectured_relation_line &parse_architectured_relation_expression
+		&unarchitecture_relation_expressions);
 
 =head1 METHODS
 
@@ -71,7 +72,7 @@ sub new {
 		/x
 	)
 	{
-		@architectures = split(/\s*,\s*/, $1);
+		@architectures = split(/ /, $1);
 		# cleaning square braces info
 		$unparsed =~ s/\[.*//;
 	}
@@ -105,6 +106,76 @@ sub stringify {
 		$result .= ' [' . join(', ', @{$self->[REL_ARCHITECTURES]}) . ']';
 	}
 	return $result;
+}
+
+=head1 FREE SUBROUTINES
+
+=head2 unarchitecture_relation_expressions
+
+free subroutine, converts array of architectured relation expressions to array
+of regular relation expressions
+
+Parameters:
+
+I<ref_architectured_relation_expressions> - input array
+
+I<current_architecture> - string, current architecture
+
+=cut
+
+sub unarchitecture_relation_expressions ($$) {
+	my ($ref_architectured_relation_expressions, $current_architecture) = @_;
+
+	my $sub_is_appropriate_relation = sub {
+		my ($architectured_relation) = @_;
+		my @architectures = @{$architectured_relation->architectures};
+		return 1 if not scalar @architectures; # no architectures defined
+
+		if ($architectures[0] =~ m/^!/) {
+			# negative architecture specifications, see Debian Policy §7.1
+			foreach my $architecture (@architectures) {
+				if ($current_architecture eq $architecture) {
+					# not our case
+					return 0;
+				}
+			}
+			return 1;
+		} else {
+			# positive architecture specifications, see Debian Policy §7.1
+			foreach my $architecture (@architectures) {
+				if ($current_architecture eq $architecture) {
+					# our case
+					return 1;
+				}
+			}
+			return 0;
+		}
+	};
+
+	my @result;
+
+	foreach my $archirectured_relation_expression (@$ref_architectured_relation_expressions) {
+		my @group;
+		if (ref $archirectured_relation_expression eq 'ARRAY') { # OR relation group
+			@group = grep { $sub_is_appropriate_relation->($_) } @$archirectured_relation_expression;
+		} else {
+			@group = $sub_is_appropriate_relation->($archirectured_relation_expression) ?
+					($archirectured_relation_expression) : ();
+		}
+		bless $_ => 'Cupt::Cache::Relation' for @group;
+
+		if (scalar @group) {
+			# repacking group
+			if (scalar @group > 1) {
+				# if there are some relations in the group
+				push @result, \@group;
+			} else {
+				push @result, $group[0];
+			}
+		}
+	}
+
+	return \@result;
 }
 
 =head2 parse_architectured_relation_expression

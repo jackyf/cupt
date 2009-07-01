@@ -331,6 +331,19 @@ C<< cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)" >>
 
 C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget (>= 1.10.0)" >>
 
+=item build-dep
+
+performs all needed operations to satisfy list of build-dependencies of
+specified source packages
+
+This subcommand receives the list of L</Source package version expression>'s.
+
+Examples:
+
+C<< cupt build-dep qt4-x11 >>
+
+C<< cupt build-dep unetbootin/unstable libcdio/experimental >>
+
 =item clean
 
 removes all deb archives from cache on disk
@@ -510,6 +523,15 @@ selects installed version of the package
 Example: C<audacious/installed>
 
 =back
+
+=head2 Source package version expression
+
+I<package_name>[I<modifier>]
+
+selects one version of given source package.
+
+Possible modifiers are identical to those defined in L</Binary package version
+expression>, except for '/installed'.
 
 =head1 COMMON OPTIONS
 

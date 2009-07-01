@@ -41,7 +41,7 @@ use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression
 		parse_relation_line);
-use Cupt::Cache::ArchitecturedRelation;
+use Cupt::Cache::ArchitecturedRelation qw(unarchitecture_relation_expressions);
 
 my $config;
 my $cache;
@@ -95,6 +95,7 @@ my %command_handlers = (
 	'satisfy' => sub { manage_packages('satisfy') },
 	'safe-upgrade' => sub { manage_packages('safe-upgrade') },
 	'full-upgrade' => sub { manage_packages('full-upgrade') },
+	'build-dep' => sub { manage_packages('build-depends') },
 	'clean' => sub { clean_archives(0) },
 	'autoclean' => sub { clean_archives(1) },
 	'markauto' => sub { mark_autoinstalled('markauto') },
@@ -1045,7 +1046,7 @@ sub manage_packages ($) {
 
 	local $| = 1;
 	print __('Building the package cache... ');
-	build_cache(-source => 0, -binary => 1, -installed => 1);
+	build_cache(-source => ($action eq 'build-depends'), -binary => 1, -installed => 1);
 	say __('[done]');
 
 	print __('Initializing package resolver and worker... ');
@@ -1099,6 +1100,14 @@ sub manage_packages ($) {
 		if ($action eq 'satisfy') {
 			my $ref_relation_expressions = parse_relation_line($package_expression);
 			$resolver->satisfy_relation_expression($_) for @$ref_relation_expressions;
+		} elsif ($action eq 'build-depends') {
+			my $version = select_source_package_version($package_expression);
+			my @relation_expressions;
+			push @relation_expressions, @{unarchitecture_relation_expressions(
+					$version->{build_depends}, $config->var('apt::architecture'))};
+			push @relation_expressions, @{unarchitecture_relation_expressions(
+					$version->{build_depends_indep}, $config->var('apt::architecture'))};
+			$resolver->satisfy_relation_expression($_) for @relation_expressions;
 		} else {
 			my $action = $action;
 			if (!defined $cache->get_binary_package($package_expression)) {
