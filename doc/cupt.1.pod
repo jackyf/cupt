@@ -31,7 +31,7 @@ C<cupt config-dump acquire::http::timeout>
 
 =item show
 
-prints version info of specified packages
+prints version info of specified binary packages
 
 This subcommand receives list of L</"Binary package version expression">'s, see below.
 
@@ -64,6 +64,16 @@ C<cupt show qmmp>
 C<cupt show --all-versions qmmp debianutils>
 
 C<cupt show --with-release-info audacious/testing apt debianutils=2.3.38>
+
+=item showsrc
+
+The same as L<show>, only for source packages.
+
+Examples:
+
+C<cupt showsrc --all-versions qmmp>
+
+C<cupt showsrc --with-release-info audacious/testing apt>
 
 =item search
 
