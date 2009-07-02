@@ -169,6 +169,13 @@ sub get_installed_version ($) {
 sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
+	# some sanity checks
+	if ($parsed_version->{version_string} !~ m/^\d/) {
+		# the main part doesn't starts with a number, violating Debian Policy
+		mywarn("the upstream part of version string '%s' should start with a number",
+				$parsed_version->{version_string});
+	}
+
 	# merging
 	eval {
 		my $found_version;

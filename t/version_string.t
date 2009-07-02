@@ -33,7 +33,8 @@ my $test_count = 0;
 my @incorrect_version_strings = (
 		'ab:5', ':1.2.3', '2a5:1.2', # broken epoch
 		'1.2.3-a:6', '1.2-:5', # broken revision
-		'', '$', '2в.3.4', '5.2.5&', '%%', '()', '2.6.7!!!', 'abc', # broken upstream version 
+		'', '$', '2в.3.4', '5.2.5&', '%%', '()', '2.6.7!!!', # broken upstream version
+		# 'abc' is excluded from here, people use it... :(
 );
 # each incorrect version is checked once
 $test_count += scalar @incorrect_version_strings;
