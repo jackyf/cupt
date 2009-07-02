@@ -158,7 +158,10 @@ sub _worker ($) {
 
 	my @persistent_sockets = ($worker_reader, $self->{_parent_pipe}, $self->{_server_socket});
 	my @runtime_sockets;
-	while (!$exit_flag) {
+
+	# while caller may set exit flag, we should continue processing as long as
+	# something is pending in internal queue
+	while (!$exit_flag || IO::Select->new($worker_reader)->can_read(0)) {
 		# periodic cleaning of sockets which were accept()'ed
 		@runtime_sockets = grep { $_->opened } @runtime_sockets;
 
