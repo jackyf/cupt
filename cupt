@@ -436,6 +436,7 @@ sub show_source_package_versions () {
 				my $ref_uris = $version->uris();
 				foreach my $part ('tarball', 'diff', 'dsc') {
 					$p->($part, "");
+					$p->('  ' . __('Size'), human_readable_size_string($version->{$part}->{size}));
 					$p->('  MD5', $version->{$part}->{md5sum});
 					$p->('  SHA1', $version->{$part}->{sha1sum}) unless $part eq 'dsc';
 					$p->('  SHA256', $version->{$part}->{sha256sum}) unless $part eq 'dsc';
