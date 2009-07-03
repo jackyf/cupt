@@ -1208,6 +1208,8 @@ sub manage_packages ($) {
 			push @relation_expressions, @{unarchitecture_relation_expressions(
 					$version->{build_conflicts_indep}, $config->var('apt::architecture'))};
 			$resolver->unsatisfy_relation_expression($_) for @relation_expressions;
+
+			$resolver->satisfy_relation_expression(new Cupt::Cache::Relation("build-essential"));
 		} else {
 			my $action = $action;
 			if (!defined $cache->get_binary_package($package_expression)) {
