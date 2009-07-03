@@ -367,6 +367,8 @@ sub _clean_automatically_installed ($) {
 		my $version = $ref_package_entry->[PE_VERSION];
 		defined $version or next;
 		!$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] or next;
+		# don't consider Essential packages for removal
+		$version->{essential} and next;
 
 		my $can_autoremove_this_package = $can_autoremove ?
 				$self->cache->is_automatically_installed($package_name) : 0;
