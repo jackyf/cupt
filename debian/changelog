@@ -18,6 +18,8 @@ cupt (0.2.4) UNRELEASED; urgency=low
         packages.
       - Parsing source lists: allow all whitespace characters between fields.
         Patch by Didier 'OdyX' Raboud <didier@raboud.com>. (Closes: #535520)
+      - Parsing source lists: don't assume that /etc/apt/sources.list exists.
+        Thanks to Didier 'OdyX' Raboud <didier@raboud.com>. (Closes: #535600)
       - New free subroutine 'verify_hash_sums'.
     - System:
       - Resolver,Resolvers/Native,Resolvers/External:
