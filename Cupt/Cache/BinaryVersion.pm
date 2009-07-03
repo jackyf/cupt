@@ -94,7 +94,7 @@ sub new {
 		source_package_name => undef,
 		version_string => undef,
 		source_version_string => undef,
-		essential => undef,
+		essential => 0,
 		depends => [],
 		recommends => [],
 		suggests => [],

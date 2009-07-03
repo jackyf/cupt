@@ -337,7 +337,7 @@ sub show_binary_package_versions () {
 			if ($version->{source_version_string} ne $version->{version_string}) {
 				$p->(__('Source version'), $version->{source_version_string});
 			}
-			$p->(__('Essential'), $version->{essential}) if defined($version->{essential});
+			$p->(__('Essential'), $version->{essential}) if $version->{essential};
 			$p->(__('Priority'), $version->{priority});
 			$p->(__('Section'), $version->{section});
 			$p->(__('Size'), human_readable_size_string($version->{size})) if defined($version->{size});
