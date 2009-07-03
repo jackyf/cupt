@@ -30,6 +30,8 @@ cupt (0.2.4) UNRELEASED; urgency=low
       - Resolvers/Native:
         - Don't consider Essential packages as candidates for auto-removal.
           Thanks to Didier 'OdyX' Raboud and Steve Cotton.
+        - Fixed considering 'apt::neverautoremove' option when trying to
+          auto-remove packages. Thanks to Didier 'OdyX' Raboud.
     - Download:
       - Manager:
         - Worker process: fixed race condition in sending error of the last
