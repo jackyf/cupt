@@ -15,6 +15,8 @@ cupt (0.2.4) UNRELEASED; urgency=low
       - New method 'get_source_package'.
       - 'get_pin': fixed to not attempt to obtain installed version for source
         packages.
+      - Parsing source lists: allow all whitespace characters between fields.
+        Patch by Didier 'OdyX' Raboud <didier@raboud.com>. (Closes: #535520)
     - System:
       - Resolver,Resolvers/Native,Resolvers/External:
         - New method 'unsatisfy_relation_expression'.

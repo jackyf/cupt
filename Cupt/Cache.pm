@@ -668,7 +668,7 @@ sub __parse_source_list {
 		next if m/^\s*(?:#.*)?$/;
 
 		my %entry;
-		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split / +/;
+		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split ' ';
 
 		mydie("incorrect source type at file '%s', line %u", $file, $.)
 				if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
