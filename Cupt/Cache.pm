@@ -623,6 +623,8 @@ sub _get_release_info {
 		mydie("no codename specified in release file '%s'", $file);
 	}
 
+	$release_info{label} //= "";
+
 	close(RELEASE) or mydie("unable to close release file '%s'", $file);
 
 	$release_info{signed} = verify_signature($self->{_config}, $file);
