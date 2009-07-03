@@ -312,15 +312,14 @@ sub get_original_apt_pin {
 			$found or next PIN;
 		}
 		if (exists $ref_pin->{'release'}) {
-			while (my ($key, $value) = each %{$ref_pin->{'release'}}) {
-				my $value = $value;
-
+			my @keys = keys %{$ref_pin->{'release'}};
+			foreach my $key (@keys) {
+				my $value = $ref_pin->{'release'}->{$key};
 				my $found = 0;
 				foreach (@available_as) {
 					defined $_->{release}->{$key} or
 							myinternaldie("unexistent key '%s' in the release entry", $key);
-					if ($_->{release}->{$key} =~ m/$value/)
-					{
+					if ($_->{release}->{$key} =~ m/$value/) {
 						$found = 1;
 						last;
 					}
@@ -329,8 +328,8 @@ sub get_original_apt_pin {
 			}
 		}
 
-		# yeah, all conditions satisfied here
-		$update_pin->($ref_pin->{'value'});
+		# yeah, all conditions satisfied here, and we can set less pin too here
+		$result = $ref_pin->{'value'};
 	}
 
 	return $result;
