@@ -634,7 +634,7 @@ sub _parse_sources_lists {
 	my $etc_dir = $self->{_config}->var('dir::etc');
 
 	my $parts_dir = $self->{_config}->var('dir::etc::sourceparts');
-	my @source_files = glob("$root_prefix$etc_dir/$parts_dir/*");
+	my @source_files = glob("$root_prefix$etc_dir/$parts_dir/*.list");
 
 	my $main_file = $self->{_config}->var('dir::etc::sourcelist');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";

@@ -20,6 +20,9 @@ cupt (0.2.4) UNRELEASED; urgency=low
         Patch by Didier 'OdyX' Raboud <didier@raboud.com>. (Closes: #535520)
       - Parsing source lists: don't assume that /etc/apt/sources.list exists.
         Thanks to Didier 'OdyX' Raboud <didier@raboud.com>. (Closes: #535600)
+      - Parsing source lists: process only files that have '.list' suffix in
+        sources.list.d subdirectory.
+        Thanks to Didier 'OdyX' Raboud <didier@raboud.com>.
       - New free subroutine 'verify_hash_sums'.
     - System:
       - Resolver,Resolvers/Native,Resolvers/External:
