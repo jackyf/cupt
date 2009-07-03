@@ -26,8 +26,8 @@ cupt (0.2.4) UNRELEASED; urgency=low
           download to progress.
     - Core:
       - 'version_string_regex': allow upstream part of the version start with
-        a non-digit symbol, however Cupt::Package will print a warning in this
-        case. Thanks to Steve Cotton. (Closes: #535514)
+        a non-digit symbol, however Cupt::Cache::Package will print a warning
+        in this case. Thanks to Steve Cotton. (Closes: #535514)
   * po:
     - getpot: specified UTF-8 encoding for input files, fixing xgettext error.
       Thanks to Frederik Schwarzer <schwarzerf@gmail.com>.
