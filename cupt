@@ -96,6 +96,7 @@ my %command_handlers = (
 	'safe-upgrade' => sub { manage_packages('safe-upgrade') },
 	'full-upgrade' => sub { manage_packages('full-upgrade') },
 	'build-dep' => sub { manage_packages('build-depends') },
+	'source' => \&acquire_source_package,
 	'clean' => sub { clean_archives(0) },
 	'autoclean' => sub { clean_archives(1) },
 	'markauto' => sub { mark_autoinstalled('markauto') },
@@ -1022,6 +1023,88 @@ sub generate_management_prompt ($$$) {
 	};
 
 	return $sub_prompt;
+}
+
+sub acquire_source_package {
+	my @parts_to_download = ('tarball', 'diff', 'dsc');
+	# turn off info and relations parsing, we don't need it
+	$Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
+	$Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
+
+	my $o_download_only = 0;
+	GetOptions(
+		'download-only|d' => \$o_download_only,
+		'tar-only' => sub { @parts_to_download = ('tarball') },
+		'diff-only' => sub { @parts_to_download = ('diff') },
+		'dsc-only' => sub { @parts_to_download = ('dsc') },
+	);
+
+	check_no_more_options();
+
+	scalar @ARGV or
+			mydie("no package expressions specified");
+
+	# we need to build binary-only cache for this operation
+	build_cache(-source => 1, -binary => 0, -installed => 0);
+
+	my @versions = map { select_source_package_version($_) } @ARGV;
+
+	my @download_entries;
+
+	eval "require $download_progress_class_name"; die $@ if $@;
+	my $download_progress = $download_progress_class_name->new();
+
+	foreach my $version (@versions) {
+		my $package_name = $version->{package_name};
+		my $ref_release = $version->{avail_as}->[0]->{'release'};
+		my $codename = $ref_release->{'codename'};
+		my $component = $ref_release->{'component'};
+
+		my $ref_uris = $version->uris();
+		foreach my $part (@parts_to_download) {
+			my @download_uris;
+			my $filename = $version->{$part}->{filename};
+			foreach my $ref_uri_entry (@{$ref_uris->{$part}}) {
+				my $download_uri = $ref_uri_entry->{'download_uri'};
+				push @download_uris, $download_uri;
+				$download_progress->set_short_alias_for_uri($download_uri, "$package_name $part");
+				my $base_uri = $ref_uri_entry->{'base_uri'};
+				$download_progress->set_long_alias_for_uri($download_uri,
+						"$base_uri $codename/$component $package_name $version->{version_string} $part");
+			}
+			push @download_entries, {
+				'uris' => \@download_uris,
+				'filename' => $filename,
+				'size' => $version->{$part}->{size},
+				'post-action' => $part eq 'dsc' ? sub { 0 } : sub { 
+					Cupt::Cache::verify_hash_sums($version->{$part}, $filename) or
+							do { unlink $filename; return sprintf __("%s: hash sums mismatch"), $filename; };
+					return 0;
+				}
+			}
+		}
+	}
+
+	require Cupt::Download::Manager;
+
+	my $download_result;
+	do {
+		my $download_manager = new Cupt::Download::Manager($config, $download_progress);
+		$download_result = $download_manager->download(@download_entries);
+	}; # make sure that download manager is already destroyed at this point
+
+	# fail and exit if it was something bad with downloading
+	mydie($download_result) if $download_result;
+
+	unless ($o_download_only || scalar @parts_to_download < 3) {
+		# unpack downloaded sources
+		foreach my $version (@versions) {
+			system("dpkg-source -x $version->{dsc}->{filename}");
+		}
+	}
+
+	# all's good
+	return 0;
 }
 
 sub manage_packages ($) {

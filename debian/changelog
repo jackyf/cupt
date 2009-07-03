@@ -3,6 +3,7 @@ cupt (0.2.4) UNRELEASED; urgency=low
   * cupt:
     - New 'showsrc' subcommand.
     - New 'build-dep' subcommand.
+    - New 'source' subcommand.
   * Cupt:
     - Cache:
       - ArchitecturedRelation:
@@ -17,6 +18,7 @@ cupt (0.2.4) UNRELEASED; urgency=low
         packages.
       - Parsing source lists: allow all whitespace characters between fields.
         Patch by Didier 'OdyX' Raboud <didier@raboud.com>. (Closes: #535520)
+      - New free subroutine 'verify_hash_sums'.
     - System:
       - Resolver,Resolvers/Native,Resolvers/External:
         - New method 'unsatisfy_relation_expression'.

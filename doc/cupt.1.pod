@@ -344,6 +344,40 @@ C<< cupt build-dep qt4-x11 >>
 
 C<< cupt build-dep unetbootin/unstable libcdio/experimental >>
 
+=item source
+
+fetches Debian source files needed to build a Debian binary package
+
+This subcommand receives the list of L</Source package version expression>'s.
+
+Parameters:
+
+=over
+
+=item --tar-only
+
+download only original tarball
+
+=item --diff-only
+
+download only Debian diff
+
+=item --dsc-only
+
+download only Debian dsc
+
+=item --download-only
+
+don't unpack downloaded source files
+
+=back
+
+Examples:
+
+C<< cupt source libsort-fields-perl >>
+
+C<< cupt source --diff-only libpqxx cupt/unstable >>
+
 =item clean
 
 removes all deb archives from cache on disk

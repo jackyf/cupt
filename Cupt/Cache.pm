@@ -30,9 +30,8 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use Exporter qw(import);
-
-our @EXPORT_OK = qw(&get_path_of_debian_changelog);
+use Digest;
+use Fcntl qw(:seek :DEFAULT);
 
 use Memoize;
 memoize('verify_signature');
@@ -1311,6 +1310,49 @@ sub verify_signature ($$) {
 
 	mydebug("the verify result is %u", $verify_result) if $debug;
 	return $verify_result;
+}
+
+=head2 verify_hash_sums
+
+verifies MD5, SHA1 and SHA256 hash sums of file
+
+Parameters:
+
+I<hash sums> - { 'md5sum' => $md5sum, 'sha1sum' => $sha1sum', 'sha256sum' => $sha256sum }
+
+I<path> - path to file
+
+Returns: zero on failure, non-zero on success
+
+=cut
+
+sub verify_hash_sums ($$) {
+	my ($ref_hash_sums, $path) = @_;
+
+	my @checks = 	(
+					[ $ref_hash_sums->{'md5sum'}, 'MD5' ],
+					[ $ref_hash_sums->{'sha1sum'}, 'SHA-1' ],
+					[ $ref_hash_sums->{'sha256sum'}, 'SHA-256' ],
+					);
+
+	open(FILE, '<', $path) or
+			mydie("unable to open file '%s': %s", $path, $!);
+	binmode(FILE);
+
+	foreach (@checks) {
+		my $expected_result = $_->[0];
+		my $hash_type = $_->[1];
+		my $hasher = Digest->new($hash_type);
+		seek(FILE, 0, SEEK_SET);
+		$hasher->addfile(*FILE);
+		my $computed_sum = $hasher->hexdigest();
+		return 0 if ($computed_sum ne $expected_result);
+	}
+
+	close(FILE) or
+			mydie("unable to close file '%s': %s", $path, $!);
+
+	return 1;
 }
 
 =head2 get_path_of_debian_changelog

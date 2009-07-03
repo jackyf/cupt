@@ -31,8 +31,6 @@ use warnings;
 use strict;
 
 use Graph;
-use Digest;
-use Fcntl qw(:seek :DEFAULT);
 use List::Util qw(sum);
 use File::Copy;
 use File::Basename;
@@ -156,35 +154,6 @@ sub __get_archive_basename ($) {
 	return $version->{package_name} . '_' .
 			$version->{version_string} . '_' .
 			$version->{architecture} . '.deb';
-}
-
-sub __verify_hash_sums ($$) {
-	my ($ref_hash_sums, $path) = @_;
-
-	my @checks = 	(
-					[ $ref_hash_sums->{'md5sum'}, 'MD5' ],
-					[ $ref_hash_sums->{'sha1sum'}, 'SHA-1' ],
-					[ $ref_hash_sums->{'sha256sum'}, 'SHA-256' ],
-					);
-
-	open(FILE, '<', $path) or
-			mydie("unable to open file '%s': %s", $path, $!);
-	binmode(FILE);
-
-	foreach (@checks) {
-		my $expected_result = $_->[0];
-		my $hash_type = $_->[1];
-		my $hasher = Digest->new($hash_type);
-		seek(FILE, 0, SEEK_SET);
-		$hasher->addfile(*FILE);
-		my $computed_sum = $hasher->hexdigest();
-		return 0 if ($computed_sum ne $expected_result);
-	}
-
-	close(FILE) or
-			mydie("unable to close file '%s': %s", $path, $!);
-
-	return 1;
 }
 
 =head2 get_actions_preview
@@ -352,7 +321,7 @@ sub get_download_sizes_preview ($$) {
 		my $basename = __get_archive_basename($version);
 		my $path = $archives_location . '/' . $basename;
 		-e $path or next; # skip if the file is not present in the cache dir
-		__verify_hash_sums($version, $path) or next; # skip if the file is not what we want
+		Cupt::Cache::verify_hash_sums($version, $path) or next; # skip if the file is not what we want
 		# ok, no need to download the file
 		$need_bytes -= $size;
 	}
@@ -843,14 +812,14 @@ sub _prepare_downloads ($$) {
 			my $target_filename = $archives_location . '/' . $basename;
 
 			# exclude from downloading packages that are already present
-			next if (-e $target_filename && __verify_hash_sums($version, $target_filename));
+			next if (-e $target_filename && Cupt::Cache::verify_hash_sums($version, $target_filename));
 
 			push @pending_downloads, {
 				'uris' => [ map { $_->{'download_uri' } } @uris ],
 				'filename' => $download_filename,
 				'size' => $version->{size},
 				'post-action' => sub {
-					__verify_hash_sums($version, $download_filename) or
+					Cupt::Cache::verify_hash_sums($version, $download_filename) or
 							do { unlink $download_filename; return sprintf __("%s: hash sums mismatch"), $download_filename; };
 					move($download_filename, $target_filename) or
 							return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
@@ -1307,7 +1276,7 @@ sub update_release_and_index_data ($$) {
 							$index_entry, $release_local_path);
 					# checking maybe there is no difference between the local and the remote?
 					foreach (values %$ref_download_entries) {
-						if (__verify_hash_sums($_, $local_path)) {
+						if (Cupt::Cache::verify_hash_sums($_, $local_path)) {
 							# yeah, really
 							$exit_code = 0;
 							goto CHILD_EXIT;
@@ -1379,7 +1348,7 @@ sub update_release_and_index_data ($$) {
 									'filename' => $download_filename,
 									'size' => $ref_download_entries->{$download_uri}->{'size'},
 									'post-action' => sub {
-										__verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
+										Cupt::Cache::verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
 												do {
 													unlink $download_filename;
 													return sprintf __("%s: hash sums mismatch"), $download_filename;
