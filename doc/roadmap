@@ -1,13 +1,16 @@
-For version 0.3:
+For version 0.4:
 
 resolver, cupt: querying about decisions
-downloader: debdelta integration (or re-implementation)
+downloader: debdelta integration
 worker: check disk available size before downloading
 
-For version 0.4:
+For version 0.5:
 
 binary version: implement translated description
 cupt: implement 'why' command
 cupt: implement 'why-not' command
+
+For version 0.6:
+
 shell: implement
 
