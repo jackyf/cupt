@@ -385,8 +385,7 @@ sub DESTROY {
 	waitpid($self->{_worker_pid}, 0);
 
 	# cleaning parent sockets
-	close($self->{_parent_reader}) or mydie("unable to close parent reader socket: %s", $!);
-	close($self->{_parent_writer}) or mydie("unable to close parent writer socket: %s", $!);
+	close($self->{_parent_pipe}) or mydie("unable to close parent writer socket: %s", $!);
 
 	# cleaning server socket
 	close($self->{_server_socket}) or
