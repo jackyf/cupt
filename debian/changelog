@@ -2,6 +2,12 @@ cupt (0.3.1) UNRELEASED; urgency=low
 
   * cupt:
     - New 'policysrc' subcommand.
+  * Cupt:
+    - Download:
+      - Progress:
+        - New method 'get_overall_estimated_time'.
+      - Progresses/Console:
+        - Display estimated time while downloading.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 04 Jul 2009 21:31:20 +0300
 

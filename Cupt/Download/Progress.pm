@@ -30,7 +30,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use List::Util qw(sum);
+use List::Util qw(sum max);
 use Time::HiRes qw(tv_interval gettimeofday);
 
 use Cupt::Core;
@@ -313,6 +313,20 @@ sub get_overall_download_percent ($) {
 	} else {
 		return $total_downloaded_size / $total_estimated_size * 100;
 	}
+}
+
+=head2 get_overall_estimated_time
+
+method, returns estimated time (in seconds) to complete the downloads
+
+=cut
+
+sub get_overall_estimated_time ($) {
+	my ($self) = @_;
+
+	my $overall_part = max($self->get_overall_download_percent(), 0.01) / 100;
+	my $current_time = time();
+	return ($current_time - $self->get_start_time()) / $overall_part * (1 - $overall_part);
 }
 
 =head2 download_entries

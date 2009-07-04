@@ -136,8 +136,10 @@ sub hook {
 						$ref_entry->{'number'}, $alias,
 						human_readable_size_string($ref_entry->{'downloaded'}), $size_substring);
 			}
-			my $speed_appendage = __human_readable_speed($self->get_download_speed());
-			$self->_termprint($whole_string, $speed_appendage);
+			my $speed_and_time_appendage = sprintf "| %s | ETA: %s",
+					__human_readable_speed($self->get_download_speed()),
+					__human_readable_difftime_string($self->get_overall_estimated_time());
+			$self->_termprint($whole_string, $speed_and_time_appendage);
 		}
 	}
 }
