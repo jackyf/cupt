@@ -1,4 +1,4 @@
-cupt (0.3.0) UNRELEASED; urgency=low
+cupt (0.3.0) unstable; urgency=low
 
   * cupt:
     - New 'showsrc' subcommand.
@@ -49,7 +49,7 @@ cupt (0.3.0) UNRELEASED; urgency=low
     - getpot: specified UTF-8 encoding for input files, fixing xgettext error.
       Thanks to Frederik Schwarzer <schwarzerf@gmail.com>.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 04 Jul 2009 12:35:56 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 04 Jul 2009 19:01:58 +0300
 
 cupt (0.2.3) unstable; urgency=medium
 
