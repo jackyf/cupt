@@ -47,6 +47,10 @@ correctness of APT options is checked
 '/<distribution' and '=<version>' suffixes can be used with 'depends' and
 'rdepends' commands
 
+=item
+
+'policysrc' command
+
 =back
 
 =head2 Managing packages

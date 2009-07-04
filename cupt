@@ -83,7 +83,8 @@ my %command_handlers = (
 	'search' => \&search,
 	'depends' => sub { show_package_relations('normal') },
 	'rdepends' => sub { show_package_relations('reverse') },
-	'policy' => \&policy,
+	'policy' => sub { policy('binary') },
+	'policysrc' => sub { policy('source') },
 	'pkgnames' => \&pkgnames,
 	'changelog' => sub { show_changelog_or_copyright('changelog') },
 	'copyright' => sub { show_changelog_or_copyright('copyright') },
@@ -653,10 +654,13 @@ sub show_package_relations ($) {
 	}
 }
 
-sub policy () {
+sub policy ($) {
+	my ($flavour) = @_;
 	# turn off info and relations parsing, we don't need it
 	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+	$Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
+	$Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
 
 	check_no_more_options();
 
@@ -665,16 +669,21 @@ sub policy () {
 	if (scalar @packages) {
 		# print release info for supplied package names
 
-		build_cache(-source => 0, -binary => 1, -installed => 1);
+		build_cache(-source => $flavour eq 'source',
+				-binary => $flavour eq 'binary', -installed => $flavour eq 'binary');
 
 		for my $package_name (@packages) {
-			my $package = get_binary_package($package_name);
+			my $package = $flavour eq 'binary' ?
+					get_binary_package($package_name) : get_source_package($package_name);
 			my $policy_version = $cache->get_policy_version($package);
 
-			my $installed_version_string = $cache->get_system_state()->get_installed_version_string($package_name);
+			my $installed_version_string = $flavour eq 'source' ? undef :
+					$cache->get_system_state()->get_installed_version_string($package_name);
 			say "$package_name:";
-			say "  " . __('Installed') . ": " .
-					($installed_version_string // ('(' . __('none') . ')'));
+			if ($flavour eq 'binary') {
+				say "  " . __('Installed') . ": " .
+						($installed_version_string // ('(' . __('none') . ')'));
+			}
 
 			say "  " . __('Candidate') . ": " . $policy_version->{version_string};
 			say "  " . __('Version table') . ":";

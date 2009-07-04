@@ -147,7 +147,7 @@ same as L<depends>, but prints reverse relations instead of forward ones
 
 =item policy
 
-prints available versions with pins and release info for each package name
+prints available versions with pins and release info for each binary package name
 
 This subcommand receives the list of package names.
 
@@ -156,6 +156,18 @@ Examples:
 C<cupt policy dpkg>
 
 C<cupt policy libpqxx-2.6.9ldbl libpqxx-3.0>
+
+=item policysrc
+
+prints available versions with pins and release info for each source package name
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt policy dpkg>
+
+C<cupt policy libpqxx libpqxx3>
 
 =item pkgnames
 
