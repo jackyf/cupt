@@ -8,6 +8,9 @@ cupt (0.3.1) UNRELEASED; urgency=low
         - New method 'get_overall_estimated_time'.
       - Progresses/Console:
         - Display estimated time while downloading.
+    - Cache:
+      - SourceVersion:
+        - Don't choke on native Debian source packages.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 04 Jul 2009 21:31:20 +0300
 

@@ -191,24 +191,32 @@ sub new {
 	}
 	bless $self => $class;
 
+	# native Debian source packages don't contain Debian diff
+	if (Cupt::Core::is_version_string_native($self->{version_string})) {
+		undef $self->{diff};
+	}
+
 	# checking a presence of version string
 	defined $self->{version_string} or mydie("version string isn't defined");
 	# checking hash sums
 	defined $self->{tarball}->{md5sum} or mydie("MD5 hash sum of tarball isn't defined");
 	defined $self->{tarball}->{sha1sum} or mydie("SHA1 hash sum of tarball isn't defined");
 	defined $self->{tarball}->{sha256sum} or mydie("SHA256 hash sum of tarball isn't defined");
-	defined $self->{diff}->{md5sum} or mydie("MD5 hash sum of diff isn't defined");
-	defined $self->{diff}->{sha1sum} or mydie("SHA1 hash sum of diff isn't defined");
-	defined $self->{diff}->{sha256sum} or mydie("SHA256 hash sum of diff isn't defined");
+	if (defined $self->{diff}) {
+		defined $self->{diff}->{md5sum} or mydie("MD5 hash sum of diff isn't defined");
+		defined $self->{diff}->{sha1sum} or mydie("SHA1 hash sum of diff isn't defined");
+		defined $self->{diff}->{sha256sum} or mydie("SHA256 hash sum of diff isn't defined");
+	}
 
 	return $self;
 }
 
 sub is_hashes_equal {
 	my ($self, $other) = @_;
-	return ($self->{diff}->{md5sum} eq $other->{diff}->{md5sum} &&
+	return ((not defined $self->{diff} ||
+			($self->{diff}->{md5sum} eq $other->{diff}->{md5sum} &&
 			$self->{diff}->{sha1sum} eq $other->{diff}->{sha1sum} &&
-			$self->{diff}->{sha256sum} eq $other->{diff}->{sha256sum} &&
+			$self->{diff}->{sha256sum} eq $other->{diff}->{sha256sum})) &&
 			$self->{tarball}->{md5sum} eq $other->{tarball}->{md5sum} &&
 			$self->{tarball}->{sha1sum} eq $other->{tarball}->{sha1sum} &&
 			$self->{tarball}->{sha256sum} eq $other->{tarball}->{sha256sum});
@@ -224,7 +232,7 @@ Returns:
 
   {
     'tarball' => [ I<URI entry>... ],
-    'diff' => [ I<URI entry>... ],
+    (optionally) 'diff' => [ I<URI entry>... ],
     'dsc' => [ I<URI entry>... ],
   }
 
@@ -250,6 +258,7 @@ sub uris {
 			# real download path
 			my $new_uri = ( $base_uri . '/' . $_->{'directory'} );
 			foreach my $part ('tarball', 'diff', 'dsc') {
+				next if $part eq 'diff' and not defined $self->{diff};
 				my $download_uri = $new_uri . '/' . $self->{$part}->{filename};
 				push @{$result{$part}}, {
 					'download_uri' => $download_uri,
