@@ -1073,6 +1073,7 @@ sub acquire_source_package {
 
 		my $ref_uris = $version->uris();
 		foreach my $part (@parts_to_download) {
+			next if $part eq 'diff' and not defined $version->{diff};
 			my @download_uris;
 			my $filename = $version->{$part}->{filename};
 			foreach my $ref_uri_entry (@{$ref_uris->{$part}}) {
