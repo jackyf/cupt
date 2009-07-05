@@ -1,4 +1,4 @@
-cupt (0.3.1) UNRELEASED; urgency=low
+cupt (0.3.1) unstable; urgency=low
 
   * cupt:
     - New 'policysrc' subcommand.
@@ -12,7 +12,7 @@ cupt (0.3.1) UNRELEASED; urgency=low
       - SourceVersion:
         - Don't choke on native Debian source packages.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 04 Jul 2009 21:31:20 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 05 Jul 2009 12:30:47 +0300
 
 cupt (0.3.0) unstable; urgency=low
 
