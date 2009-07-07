@@ -545,7 +545,7 @@ sub show_package_relations ($) {
 	check_no_more_options();
 
 	scalar @ARGV or
-			mydie("no package expressions specified");
+			mydie("no binary package expressions specified");
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
