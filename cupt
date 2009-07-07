@@ -583,12 +583,16 @@ sub show_package_relations ($) {
 			my $relation_group_name = $item->[0];
 			my $caption = $item->[1];
 
-			# [ relation_expression, package_name ]
-			my @relation_expressions_and_packages;
 			# fill relations with actual relations
 			if ($mode eq 'normal') {
-				# just add normal dependencies
-				@relation_expressions_and_packages = map { [ $_, "" ] } @{$version->{$relation_group_name}};
+				# just plain normal dependencies
+				foreach my $relation_expression (@{$version->{$relation_group_name}}) {
+					say "  $caption: ", stringify_relation_expression($relation_expression);
+					if ($config->var('apt::cache::recursedepends')) {
+						# insert recursive depends into queue
+						push @versions, @{$cache->get_satisfying_versions($relation_expression)};
+					}
+				}
 			} else {
 				# we have to check all reverse dependencies for this version
 				foreach my $package (values %{$cache->get_binary_packages()}) {
@@ -612,8 +616,10 @@ sub show_package_relations ($) {
 							} else {
 								# ok, check as common
 								my $ref_relation_versions = $cache->get_satisfying_versions($_);
-								foreach (@$ref_relation_versions) {
-									if ($_->{package_name} eq $package_name && $_->{version_string} eq $version_string) {
+								foreach my $version_candidate (@$ref_relation_versions) {
+									if ($version_candidate->{package_name} eq $package_name
+										&& $version_candidate->{version_string} eq $version_string)
+									{
 										# ok, good
 										$needed = 1;
 										last;
@@ -624,28 +630,14 @@ sub show_package_relations ($) {
 								# positive result
 								my $label = $reverse_version_candidate->{package_name} .
 										' ' . $reverse_version_candidate->{version_string};
-								push @relation_expressions_and_packages, [ $_, $label ];
+								if ($config->var('apt::cache::recursedepends')) {
+									push @versions, $reverse_version_candidate;
+								}
+								print "  " . __('Reverse-') . "$caption: $label: ";
+								say stringify_relation_expression($_);
 								last;
 							}
 						}
-					}
-				}
-			}
-
-			my $starter = "  " . ($mode eq 'reverse' ? __('Reverse-') : '') . $caption . ": ";
-			foreach (@relation_expressions_and_packages) {
-				say $starter, ($_->[1] ? $_->[1] . ": " : ""), stringify_relation_expression($_->[0]);
-			}
-
-			if ($config->var('apt::cache::recursedepends')) {
-				# insert recursive depends into queue
-				foreach (@relation_expressions_and_packages) {
-					if ($mode eq 'normal') {
-						# normal depends
-						push @versions, @{$cache->get_satisfying_versions($_->[0])};
-					} else {
-						# reverse depends
-						push @versions, $cache->get_policy_version($cache->get_binary_package($_->[1]));
 					}
 				}
 			}
