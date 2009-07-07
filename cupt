@@ -471,7 +471,7 @@ sub search () {
 			mydie("no search patterns specified");
 
 	# we need to build binary-only cache for this operation
-	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 0);
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
 	my @regexes;
 	foreach my $pattern (@patterns) {

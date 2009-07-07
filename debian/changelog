@@ -1,3 +1,11 @@
+cupt (0.3.2) unstable; urgency=low
+
+  * cupt:
+    - 'search':
+      - Fixed searching in installed packages.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Jul 2009 19:20:32 +0300
+
 cupt (0.3.1) unstable; urgency=low
 
   * cupt:
