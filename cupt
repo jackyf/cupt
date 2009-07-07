@@ -621,7 +621,9 @@ sub show_package_relations ($) {
 						}
 						if ($needed == 1) {
 							# positive result
-							push @relation_expressions_and_packages, [ $_, $reverse_version_candidate->{package_name} ];
+							my $label = $reverse_version_candidate->{package_name} .
+									' ' . $reverse_version_candidate->{version_string};
+							push @relation_expressions_and_packages, [ $_, $label ];
 							last;
 						}
 					}
