@@ -642,13 +642,7 @@ sub show_package_relations ($) {
 				foreach (@relation_expressions_and_packages) {
 					if ($mode eq 'normal') {
 						# normal depends
-
-						my $ref_satisfying_versions = $cache->get_satisfying_versions($_->[0]);
-						# if some versions exist
-						if (scalar @$ref_satisfying_versions) {
-							# choose only one version
-							push @versions, $ref_satisfying_versions->[0];
-						}
+						push @versions, @{$cache->get_satisfying_versions($_->[0])};
 					} else {
 						# reverse depends
 						push @versions, $cache->get_policy_version($cache->get_binary_package($_->[1]));

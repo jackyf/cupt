@@ -6,6 +6,8 @@ cupt (0.3.2) unstable; urgency=low
     - 'rdepends':
       - Output also a version of reverse-depending packages.
       - Consider all available versions, not only policy one.
+    - 'depends':
+      - Consider all available versions, not only policy one.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Jul 2009 19:20:32 +0300
 
