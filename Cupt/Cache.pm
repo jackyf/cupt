@@ -292,6 +292,7 @@ sub get_original_apt_pin {
 			$version->{package_name} =~ m/$value/ or next PIN;
 		}
 		if (exists $ref_pin->{'source_package_name'}) {
+			$version->isa('Cupt::Cache::BinaryVersion') or next PIN;
 			my $value = $ref_pin->{'source_package_name'};
 			$version->{source_package_name} =~ m/$value/ or next PIN;
 		}
