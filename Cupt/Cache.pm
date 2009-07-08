@@ -619,11 +619,9 @@ sub _get_release_info {
 	if (!defined($release_info{archive})) {
 		mydie("no archive specified in release file '%s'", $file);
 	}
-	if (!defined($release_info{codename})) {
-		mydie("no codename specified in release file '%s'", $file);
-	}
 
-	$release_info{label} //= "";
+	$release_info{label} //= '';
+	$release_info{codename} //= '-';
 
 	close(RELEASE) or mydie("unable to close release file '%s'", $file);
 
