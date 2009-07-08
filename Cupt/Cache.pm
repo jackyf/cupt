@@ -560,7 +560,7 @@ sub get_satisfying_versions ($$) {
 }
 
 our %_empty_release_info = (
-	'version' => undef,
+	'version' => '',
 	'description' => undef,
 	'signed' => 0,
 	'vendor' => undef,
