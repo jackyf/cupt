@@ -561,7 +561,7 @@ sub get_satisfying_versions ($$) {
 
 our %_empty_release_info = (
 	'version' => '',
-	'description' => undef,
+	'description' => '',
 	'signed' => 0,
 	'vendor' => undef,
 	'label' => '',
@@ -609,9 +609,6 @@ sub _get_release_info {
 	if (mycatch()) {
 		myerr("error parsing release file '%s', line %u", $file, $.);
 		myredie();
-	}
-	if (!defined($release_info{description})) {
-		mywarn("no description specified in release file '%s'", $file);
 	}
 	if (!defined($release_info{vendor})) {
 		mydie("no vendor specified in release file '%s'", $file);
