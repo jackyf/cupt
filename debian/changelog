@@ -8,6 +8,9 @@ cupt (0.3.2) UNRELEASED; urgency=low
       - Consider all available versions, not only policy one.
     - 'depends':
       - Consider all available versions, not only policy one.
+    - 'source', 'showsrc', 'build-dep':
+      - Implemented binary-to-source mapping as second-chance try if supplied
+        source package doesn't exist. Thanks to Steve Cotton.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Jul 2009 19:20:32 +0300
 

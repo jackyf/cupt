@@ -107,9 +107,11 @@ sub get_versions {
 
 =head2 get_specific_version
 
-method, returns reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
-L<Cupt::Cache::SourceVersion|Cupt::Cache::SourceVersion>
-(depending on the value of the object), which has specific version string
+method, returns reference to
+L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion> or
+L<Cupt::Cache::SourceVersion|Cupt::Cache::SourceVersion> (depending on the
+value of the object), which has specific version string, or undef if such
+version isn't found
 
 Parameters:
 

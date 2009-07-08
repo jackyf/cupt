@@ -226,8 +226,28 @@ sub select_binary_package_version ($) {
 }
 
 sub select_source_package_version ($) {
-	my ($package_name) = @_;
-	return select_package_version($package_name, \&get_source_package);
+	my ($package_expression) = @_;
+
+	# there we should gracefully accept both source and binary packages names,
+	# let's try...
+	(my $chopped_package_name = $package_expression) =~ s{(=|/).*}{};
+	if (defined $cache->get_source_package($chopped_package_name)) {
+		# is there a source package with that name?
+		return select_package_version($package_expression, \&get_source_package);
+	} elsif (defined $cache->get_binary_package($chopped_package_name)) {
+		# try binary then...
+		my $binary_version = select_package_version($package_expression, \&get_binary_package);
+		my $source_package = get_source_package($binary_version->{source_package_name});
+		my $source_version_string = $binary_version->{source_version_string};
+		my $source_version = $source_package->get_specific_version($source_version_string);
+		if (not defined $source_version) {
+			mydie("cannot find version '%s' for package '%s'",
+					$source_version_string, $binary_version->{source_package_name});
+		}
+		return $source_version;
+	} else {
+		mydie("cannot find source or binary package '%s'", $chopped_package_name);
+	}
 }
 
 sub config_dump () {
@@ -392,7 +412,7 @@ sub show_source_package_versions () {
 	scalar @package_expressions or
 			mydie("no package expressions specified");
 
-	build_cache(-source => 1, -binary => 0, -installed => 0);
+	build_cache(-source => 1, -binary => 1, -installed => 1);
 
 	foreach my $package_expression (@package_expressions) {
 		my $package_name;
@@ -1045,8 +1065,7 @@ sub acquire_source_package {
 	scalar @ARGV or
 			mydie("no package expressions specified");
 
-	# we need to build binary-only cache for this operation
-	build_cache(-source => 1, -binary => 0, -installed => 0);
+	build_cache(-source => 1, -binary => 1, -installed => 1);
 
 	my @versions = map { select_source_package_version($_) } @ARGV;
 

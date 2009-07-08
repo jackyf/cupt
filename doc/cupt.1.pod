@@ -75,6 +75,8 @@ C<cupt showsrc --all-versions qmmp>
 
 C<cupt showsrc --with-release-info audacious/testing apt>
 
+C<cupt showsrc libxine1>
+
 =item search
 
 searches for packages that contains some string within package names and package descriptions
@@ -390,6 +392,8 @@ C<< cupt source libsort-fields-perl >>
 
 C<< cupt source --diff-only libpqxx cupt/unstable >>
 
+C<< cupt source libxine1 >>
+
 =item clean
 
 removes all deb archives from cache on disk
@@ -578,6 +582,10 @@ selects one version of given source package.
 
 Possible modifiers are identical to those defined in L</Binary package version
 expression>, except for '/installed'.
+
+Also, you can specify L</Binary package version expression> as
+L</Source package version expression>, then binary-to-source mapping
+will be performed.
 
 =head1 COMMON OPTIONS
 
