@@ -36,7 +36,7 @@ use Exporter qw(import);
 our @EXPORT = qw(
 	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
 	$package_name_regex $version_string_regex &human_readable_size_string &__
-	&is_version_string_native);
+	&is_version_string_native &are_hash_sums_present);
 
 # configuring the translator
 eval {
@@ -307,6 +307,19 @@ package, and false otherwise
 sub is_version_string_native ($) {
 	# does it contain minus sign?
 	return ($_[0] !~ m/-/);
+}
+
+=head2 are_hash_sums_present
+
+return boolean answer, true if at least one valid hash sum present
+
+=cut
+
+sub are_hash_sums_present ($) {
+	my ($ref_hash) = @_;
+	return (defined $ref_hash->{md5sum} ||
+		defined $ref_hash->{sha1sum} ||
+		defined $ref_hash->{sha256sum});
 }
 
 1;

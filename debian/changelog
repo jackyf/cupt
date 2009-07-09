@@ -22,6 +22,8 @@ cupt (0.3.2) UNRELEASED; urgency=low
       - Parsing release info: don't require description to be specified.
       - 'verify_hash_sums': advanced to verify only hash sums specified in
         parameter.
+    - Core:
+      - New free subroutine 'are_hash_sums_present'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Jul 2009 19:20:32 +0300
 
