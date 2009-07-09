@@ -35,6 +35,18 @@ our @EXPORT = qw(&compare_versions);
 
 use Cupt::Core;
 
+=head1 FLAGS
+
+=head2 o_binary_architecture
+
+string to filter out package versions with unwanted architectures
+
+Has to be set manually.
+
+=cut
+
+our $o_binary_architecture;
+
 =head1 METHODS
 
 =head2 new
@@ -170,6 +182,15 @@ sub get_installed_version ($) {
 
 sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
+
+	if (defined $o_binary_architecture and defined $parsed_version->{architecture}) {
+		if ($parsed_version->{architecture} ne 'all' and
+			$parsed_version->{architecture} ne $o_binary_architecture)
+		{
+			# no need to keep it
+			return;
+		}
+	}
 
 	# some sanity checks
 	if ($parsed_version->{version_string} !~ m/^\d/) {
