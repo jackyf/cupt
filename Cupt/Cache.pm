@@ -1317,6 +1317,8 @@ Parameters:
 
 I<hash sums> - { 'md5sum' => $md5sum, 'sha1sum' => $sha1sum', 'sha256sum' => $sha256sum }
 
+You should specify at least one hash sum in this parameter.
+
 I<path> - path to file
 
 Returns: zero on failure, non-zero on success
@@ -1336,8 +1338,12 @@ sub verify_hash_sums ($$) {
 			mydie("unable to open file '%s': %s", $path, $!);
 	binmode(FILE);
 
+	my $sums_count = 0;
+
 	foreach (@checks) {
 		my $expected_result = $_->[0];
+		defined $expected_result or next;
+		++$sums_count;
 		my $hash_type = $_->[1];
 		my $hasher = Digest->new($hash_type);
 		seek(FILE, 0, SEEK_SET);
@@ -1349,6 +1355,7 @@ sub verify_hash_sums ($$) {
 	close(FILE) or
 			mydie("unable to close file '%s': %s", $path, $!);
 
+	$sums_count or mydie("no hash sums specified");
 	return 1;
 }
 
