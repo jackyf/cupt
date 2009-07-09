@@ -55,7 +55,7 @@ sub perform ($$$$$) {
 
 	# bad connections can return 'receive failure' transitional error
 	# occasionally, give them several tries to finish the download
-	my $transitive_errors_left = 5;
+	my $transitive_errors_left = $config->var('acquire::retries');
 
 	my $curl = new WWW::Curl::Easy;
 	my $is_expected_size_reported = 0;

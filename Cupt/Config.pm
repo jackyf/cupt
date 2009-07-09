@@ -60,6 +60,7 @@ sub new {
 			'acquire::https::timeout' => 120,
 			'acquire::ftp::timeout' => 120,
 			'acquire::file::timeout' => 20,
+			'acquire::retries' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::architecture' => undef, # will be set a bit later
 			'apt::authentication::trustcdrom' => 0,

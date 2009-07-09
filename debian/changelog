@@ -42,6 +42,11 @@ cupt (0.3.2) UNRELEASED; urgency=low
       - Worker:
         - 'update_release_and_index_data': fixed wrapping errors in child
            processes.
+    - Download:
+      - Methods/Curl:
+        - Honor 'acquire::retries' option instead of hardcoded one.
+    - Config:
+      - Added configuration option 'acquire::retries'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Jul 2009 19:20:32 +0300
 
