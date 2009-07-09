@@ -356,7 +356,8 @@ sub get_unpacked_sizes_preview ($$) {
 	foreach my $ref_package_entry (@{$ref_actions_preview->{'remove'}}, @{$ref_actions_preview->{'purge'}}) {
 		my $package_name = $ref_package_entry->{'package_name'};
 		my $old_version = $self->{_cache}->get_binary_package($package_name)->get_installed_version();
-		$result{$ref_package_entry->{'package_name'}} = - $old_version->{installed_size};
+		# config-files entries won't have installed size
+		$result{$ref_package_entry->{'package_name'}} = - ($old_version->{installed_size} // 0);
 	}
 
 	# upgrade/downgrade
