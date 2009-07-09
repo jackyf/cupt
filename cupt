@@ -917,7 +917,10 @@ sub generate_management_prompt ($$$) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
 				foreach my $ref_package_entry (@$ref_package_entries) {
 					my $package = $cache->get_binary_package($ref_package_entry->{'package_name'});
+					# package or version may be undefined for packages in 'config-files' state
+					defined $package or next;
 					my $version = $package->get_installed_version();
+					defined $version or next;
 					push @versions_to_remove, $version;
 				}
 			}
