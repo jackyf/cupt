@@ -1086,14 +1086,8 @@ sub get_download_entries_of_index_list {
 	# checks
 	foreach my $uri (keys %result) {
 		my $ref_download_entry = $result{$uri};
-		if (not exists $ref_download_entry->{'md5sum'}) {
-			mydie("MD5 hash sum isn't defined for URI '%s'", $uri);
-		}
-		if (not exists $ref_download_entry->{'sha1sum'}) {
-			mydie("SHA1 hash sum isn't defined for URI '%s'", $uri);
-		}
-		if (not exists $ref_download_entry->{'sha256sum'}) {
-			mydie("SHA256 hash sum isn't defined for URI '%s'", $uri);
+		if (!are_hash_sums_present($ref_download_entry)) {
+			mydie("no hash sums defined for URI '%s'", $uri);
 		}
 	}
 
