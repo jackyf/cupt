@@ -213,8 +213,12 @@ sub _merge_version {
 					$found_version->{sha256sum} = $parsed_version->{sha256sum};
 				}
 			} else {
-				# err, no, this is different package :(
-				# just skip it for now
+				# err, no, this is different version :(
+				my $info = sprintf __("package name: '%s', version string: '%s', origin: '%s'"),
+						$parsed_version->{package_name},
+						$parsed_version->{version_string},
+						$parsed_version->{avail_as}->[0]->{release}->{base_uri};
+				mywarn("throwing away duplicating version with different hash sums: %s", $info);
 			}
 		}
 	};

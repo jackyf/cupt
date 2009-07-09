@@ -19,6 +19,9 @@ cupt (0.3.2) UNRELEASED; urgency=low
         - Require only one hash sum to be specified.
       - SourceVersion:
         - Require only one hash sum to be specified for each of part.
+      - Package:
+        - Emit a warning when throwing away duplicating version with
+          non-matched hash sums.
       - 'get_original_apt_pin': don't attempt to pin source versions by source
          package names, they are applicable only to binary versions.
       - Parsing release info: don't require codename to be specified.
