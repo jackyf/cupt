@@ -422,14 +422,24 @@ sub _fill_actions ($$\@) {
 			foreach my $ref_package_entry (@{$ref_actions_preview->{$user_action}}) {
 				my $version;
 				if ($inner_action eq 'remove') {
-					my $package_name = $ref_package_entry->{package_name};
-					$version = $self->{_cache}->get_binary_package($package_name)->get_installed_version();
+					my $package_name = $ref_package_entry->{'package_name'};
+					my $package = $self->{_cache}->get_binary_package($package_name);
+					if (defined $package) {
+						# may be undef too in purge-only case
+						$version = $package->get_installed_version();
+					} else {
+						# always purge-only
+						$version = undef;
+					}
 				} else {
 					$version = $ref_package_entry->{'version'};
 				}
 				$graph->add_vertex({
-						'version' => $version,
-						'action_name' => $inner_action,
+					'version' => $version // {
+						package_name => $ref_package_entry->{'package_name'},
+						version_string => '<dummy>',
+					},
+					'action_name' => defined $version ? $inner_action : 'purge-config-files',
 				});
 			}
 		}
@@ -913,6 +923,7 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 	};
 	foreach my $ref_action_group (@$ref_action_group_list) {
 		my $action_name = $ref_action_group->[0]->{'action_name'};
+		next if $action_name eq 'purge-config-files';
 
 		foreach my $ref_action (@$ref_action_group) {
 			my $action_version = $ref_action->{'version'};
@@ -1090,6 +1101,10 @@ sub change_system ($$) {
 				}
 			}
 		};
+
+		if ($action_name eq 'purge-config-files') {
+			$action_name = 'purge';
+		}
 
 		do { # dpkg actions
 			my $dpkg_command = "$dpkg_binary --$action_name";
