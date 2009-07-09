@@ -36,7 +36,7 @@ use Exporter qw(import);
 our @EXPORT = qw(
 	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
 	$package_name_regex $version_string_regex &human_readable_size_string &__
-	&is_version_string_native &are_hash_sums_present);
+	&is_version_string_native &are_hash_sums_present &compare_hash_sums);
 
 # configuring the translator
 eval {
@@ -299,7 +299,7 @@ sub human_readable_size_string ($) {
 
 =head2 is_version_string_native
 
-return boolean answer, true if the version is version for Debian native
+returns boolean answer, true if the version is version for Debian native
 package, and false otherwise
 
 =cut
@@ -311,7 +311,8 @@ sub is_version_string_native ($) {
 
 =head2 are_hash_sums_present
 
-return boolean answer, true if at least one valid hash sum present
+returns boolean answer, true if at least one valid hash sum (md5, sha1, sha256)
+present
 
 =cut
 
@@ -320,6 +321,30 @@ sub are_hash_sums_present ($) {
 	return (defined $ref_hash->{md5sum} ||
 		defined $ref_hash->{sha1sum} ||
 		defined $ref_hash->{sha256sum});
+}
+
+=head2 compare_hash_sums
+
+returns boolean answer, whether hash sums in the specified hashes match
+
+Parameters:
+
+I<left> - hash
+
+I<right> - hash
+
+=cut
+
+sub compare_hash_sums ($$) {
+	my ($left, $right) = @_;
+	my $sums_count = 0;
+	foreach my $hash_sum_name (qw(md5 sha1 sha256)) {
+		if (defined $left->{$hash_sum_name} and defined $right->{$hash_sum_name}) {
+			++$sums_count;
+			return 0 if $left->{$hash_sum_name} ne $right->{$hash_sum_name};
+		}
+	}
+	return $sums_count;
 }
 
 1;
