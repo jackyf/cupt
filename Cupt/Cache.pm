@@ -1072,7 +1072,7 @@ sub get_download_entries_of_index_list {
 			defined $current_hash_sum_name or
 					mydie("release line '%s' without previous hash sum declaration at file '%s'",
 							$release_line, $path_to_release_file);
-			my ($hash_sum, $size, $name) = ($release_line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
+			my ($hash_sum, $size, $name) = ($release_line =~ m/^\s([[:xdigit:]]+)\s+(\d+)\s+(.*)$/) or
 					mydie("malformed release line '%s' at file '%s'", $release_line, $path_to_release_file);
 			$name =~ m/^$full_index_list_suffix/ or next;
 			# skipping diffs for now...

@@ -29,6 +29,8 @@ cupt (0.3.2) UNRELEASED; urgency=low
       - Parsing release info: don't require codename to be specified.
       - Parsing release info: don't require version to be specified.
       - Parsing release info: don't require description to be specified.
+      - 'get_download_entries_of_index_list': allow all whitespace characters
+        between fields.
       - 'verify_hash_sums': advanced to verify only hash sums specified in
         parameter.
     - Core:
