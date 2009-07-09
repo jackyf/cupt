@@ -214,13 +214,11 @@ sub new {
 
 sub is_hashes_equal {
 	my ($self, $other) = @_;
-	return ((not defined $self->{diff} ||
-			($self->{diff}->{md5sum} eq $other->{diff}->{md5sum} &&
-			$self->{diff}->{sha1sum} eq $other->{diff}->{sha1sum} &&
-			$self->{diff}->{sha256sum} eq $other->{diff}->{sha256sum})) &&
-			$self->{tarball}->{md5sum} eq $other->{tarball}->{md5sum} &&
-			$self->{tarball}->{sha1sum} eq $other->{tarball}->{sha1sum} &&
-			$self->{tarball}->{sha256sum} eq $other->{tarball}->{sha256sum});
+	compare_hash_sums($self->{tarball}, $other->{tarball}) or return 0;
+	if (defined $self->{diff}) {
+		compare_hash_sums($self->{diff}, $other->{diff}) or return 0;
+	}
+	return compare_hash_sums($self->{dsc}, $other->{dsc});
 }
 
 =head1 METHODS
