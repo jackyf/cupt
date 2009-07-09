@@ -479,6 +479,7 @@ sub _require_strict_relation_expressions ($) {
 	# "installing" virtual package, which will be used for strict 'satisfy' requests
 	my $version = {
 		package_name => $_dummy_package_name,
+		version_string => '',
 		pre_depends => [],
 		depends => [],
 		recommends => [],
