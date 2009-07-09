@@ -1097,7 +1097,7 @@ sub acquire_source_package {
 				'uris' => \@download_uris,
 				'filename' => $filename,
 				'size' => $version->{$part}->{size},
-				'post-action' => $part eq 'dsc' ? sub { 0 } : sub { 
+				'post-action' => sub {
 					Cupt::Cache::verify_hash_sums($version->{$part}, $filename) or
 							do { unlink $filename; return sprintf __("%s: hash sums mismatch"), $filename; };
 					return 0;

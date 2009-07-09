@@ -11,6 +11,8 @@ cupt (0.3.2) UNRELEASED; urgency=low
     - 'source', 'showsrc', 'build-dep':
       - Implemented binary-to-source mapping as second-chance try if supplied
         source package doesn't exist. Thanks to Steve Cotton.
+    - 'source':
+      - Verify hash sums for .dsc files too.
   * Cupt:
     - Cache:
       - 'get_original_apt_pin': don't attempt to pin source versions by source
