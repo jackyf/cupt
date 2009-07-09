@@ -39,6 +39,9 @@ cupt (0.3.2) UNRELEASED; urgency=low
         - Fixed a crash when using 'satisfy_relation_expression' and
           'unsatisfy_relation_expression' methods with
           'cupt::resolver::track-reasons' option enabled.
+      - Worker:
+        - 'update_release_and_index_data': fixed wrapping errors in child
+           processes.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 07 Jul 2009 19:20:32 +0300
 
