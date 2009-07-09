@@ -228,10 +228,8 @@ sub new {
 	# checking a presence of version string
 	defined $self->{version_string} or mydie("version string isn't defined");
 	# checking hash sums
-	if (!$self->is_installed()) {
-		defined $self->{md5sum} or mydie("MD5 hash sum isn't defined");
-		defined $self->{sha1sum} or mydie("SHA1 hash sum isn't defined");
-		defined $self->{sha256sum} or mydie("SHA256 hash sum isn't defined");
+	if (!$self->is_installed() && !are_hash_sums_present($self)) {
+		mydie("no hash sums specified");
 	}
 
 	return $self;
