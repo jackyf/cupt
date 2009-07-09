@@ -199,13 +199,14 @@ sub new {
 	# checking a presence of version string
 	defined $self->{version_string} or mydie("version string isn't defined");
 	# checking hash sums
-	defined $self->{tarball}->{md5sum} or mydie("MD5 hash sum of tarball isn't defined");
-	defined $self->{tarball}->{sha1sum} or mydie("SHA1 hash sum of tarball isn't defined");
-	defined $self->{tarball}->{sha256sum} or mydie("SHA256 hash sum of tarball isn't defined");
-	if (defined $self->{diff}) {
-		defined $self->{diff}->{md5sum} or mydie("MD5 hash sum of diff isn't defined");
-		defined $self->{diff}->{sha1sum} or mydie("SHA1 hash sum of diff isn't defined");
-		defined $self->{diff}->{sha256sum} or mydie("SHA256 hash sum of diff isn't defined");
+	if (!are_hash_sums_present($self->{tarball})) {
+		mydie("no hash sums specified for tarball");
+	}
+	if (defined $self->{diff} && !are_hash_sums_present($self->{diff})) {
+		mydie("no hash sums specified for diff");
+	}
+	if (!are_hash_sums_present($self->{dsc})) {
+		mydie("no hash sums specified for dsc");
 	}
 
 	return $self;

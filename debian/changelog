@@ -17,6 +17,8 @@ cupt (0.3.2) UNRELEASED; urgency=low
     - Cache:
       - BinaryVersion:
         - Require only one hash sum to be specified.
+      - SourceVersion:
+        - Require only one hash sum to be specified for each of part.
       - 'get_original_apt_pin': don't attempt to pin source versions by source
          package names, they are applicable only to binary versions.
       - Parsing release info: don't require codename to be specified.
