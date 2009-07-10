@@ -1,4 +1,4 @@
-cupt (0.3.2~) UNRELEASED; urgency=low
+cupt (0.3.2) unstable; urgency=low
 
   * cupt:
     - 'search':
@@ -62,7 +62,7 @@ cupt (0.3.2~) UNRELEASED; urgency=low
     - Config:
       - Added configuration option 'acquire::retries'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 09 Jul 2009 17:31:50 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 10 Jul 2009 15:02:00 +0300
 
 cupt (0.3.1) unstable; urgency=low
 
