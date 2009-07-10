@@ -35,6 +35,8 @@ cupt (0.3.2~) UNRELEASED; urgency=low
         between fields.
       - 'get_download_entries_of_index_list': require only one hash sum to be
         specified for each download entry.
+      - 'verify_signature': fixed a crash when gpg unexpectedly didn't return
+        anything from pipe.
     - Core:
       - New free subroutine 'are_hash_sums_present'.
       - New free subroutine 'compare_hash_sums'.
