@@ -35,6 +35,7 @@ use List::Util qw(sum);
 use File::Copy;
 use File::Basename;
 use POSIX;
+use Digest;
 
 use Cupt::Core;
 use Cupt::Cache;
@@ -1153,6 +1154,27 @@ sub change_system ($$) {
 	return 1;
 }
 
+sub __generate_hash_sums ($$) {
+	my ($ref_hash_sums, $path) = @_;
+
+	my %digests = ('md5sum' => 'MD5', 'sha1sum' => 'SHA-1', 'sha256sum' => 'SHA-256');
+
+	open(FILE, '<', $path) or
+			mydie("unable to open file '%s': %s", $path, $!);
+	binmode(FILE);
+
+	foreach my $hash_key (keys %digests) {
+		my $digest = $digests{$hash_key};
+		my $hasher = Digest->new($digest);
+		seek(FILE, 0, SEEK_SET);
+		$hasher->addfile(*FILE);
+		$ref_hash_sums->{$hash_key} = $hasher->hexdigest();
+	}
+
+	close(FILE) or
+			mydie("unable to close file '%s': %s", $path, $!);
+}
+
 =head2 update_release_and_index_data
 
 member function, performes update of APT/Cupt indexes
@@ -1230,6 +1252,17 @@ sub update_release_and_index_data ($$) {
 				# wrap errors here
 				eval {
 					my $release_local_path = $cache->get_path_of_release_list($index_entry);
+
+					# we'll check hash sums of local file before and after to
+					# determine do we need to clean partial indexes
+					#
+					# this release sums won't match for sure
+					my $ref_release_hash_sums = { 'md5sum' => '1', 'sha1sum' => 2, 'sha256sum' => 3 };
+					if (-r $release_local_path) {
+						# if the Release file already present
+						__generate_hash_sums($ref_release_hash_sums, $release_local_path);
+					}
+
 					do {
 						# phase 1: downloading Release file
 						my $release_alias = join(' ', $index_entry->{'distribution'}, 'Release');
@@ -1360,6 +1393,14 @@ sub update_release_and_index_data ($$) {
 							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
 							$download_manager->set_long_alias_for_uri($download_uri,
 									"$index_entry->{'uri'} $index_alias");
+
+							if (not $simulate) {
+								# here we check for outdated dangling indexes in partial directory
+								if (!Cupt::Cache::verify_hash_sums($ref_release_hash_sums, $release_local_path)) {
+									# Release file has been changed during phase #1
+									unlink $download_filename; # if it's present
+								}
+							}
 
 							$download_result = $sub_download_wrapper->(
 									{

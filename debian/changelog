@@ -52,6 +52,8 @@ cupt (0.3.2~) UNRELEASED; urgency=low
           in 'config-files' state.
         - 'update_release_and_index_data': call update post-actions even there
           were some non-crtical errors in childs.
+        - 'update_release_and_index_data': delete dangling partial index files
+          if Release file has been changed since the last run of this method.
     - Download:
       - Methods/Curl:
         - Honor 'acquire::retries' option instead of hardcoded one.
