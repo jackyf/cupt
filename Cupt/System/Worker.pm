@@ -1391,6 +1391,11 @@ sub update_release_and_index_data ($$) {
 					};
 				};
 
+				if ($@ and not mycatch()) {
+					# Perl error
+					die $@;
+				}
+
 				CHILD_EXIT:
 				POSIX::_exit($exit_code);
 			}
