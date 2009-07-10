@@ -50,6 +50,8 @@ cupt (0.3.2~) UNRELEASED; urgency=low
           'config-files' state.
         - 'change_system': polished to make it able to correctly purge packages
           in 'config-files' state.
+        - 'update_release_and_index_data': call update post-actions even there
+          were some non-crtical errors in childs.
     - Download:
       - Methods/Curl:
         - Honor 'acquire::retries' option instead of hardcoded one.
