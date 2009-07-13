@@ -1,4 +1,4 @@
-cupt (0.3.3) UNRELEASED; urgency=medium
+cupt (0.3.3) unstable; urgency=medium
 
   * Cupt:
     - Cache:
@@ -13,7 +13,7 @@ cupt (0.3.3) UNRELEASED; urgency=medium
         - [Ryan Niebur] Parsing status file: if grep found nothing in the
           file, this is not an error.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 13 Jul 2009 11:47:10 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 13 Jul 2009 20:34:02 +0300
 
 cupt (0.3.2) unstable; urgency=low
 
