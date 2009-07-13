@@ -197,7 +197,19 @@ sub _parse_dpkg_status {
 		myredie();
 	}
 
-	if(!close(PACKAGES) && !($! == 0 && ($? >> 8) == 1)) { mydie("unable to close grep pipe: %s", $!); };
+	if (!close(PACKAGES)) {
+		if ($! != 0) {
+			mydie("unable to close grep pipe: %s", $!);
+		} else {
+			# see 'perldoc -f system' for explanations for following lines
+			if ($? > 256) {
+				mydie("grep returned failure-indicating exit status: %s", $? >> 8);
+			} elsif ($? & 127) {
+				mydie("grep died with signal %d", $? & 127);
+			}
+			# all else (0, 256) is fine
+		}
+	}
 
 	# additionally, preparse Provides fields for status file
 	$self->{_cache}->_process_provides_in_index_files($file);
