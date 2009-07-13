@@ -8,6 +8,10 @@ cupt (0.3.3) UNRELEASED; urgency=medium
           because of this fix.
     - Config:
       - [Ryan Niebur] Support APT_CONFIG environment variable.
+    - System:
+      - State:
+        - [Ryan Niebur] Parsing status file: if grep found nothing in the
+          file, this is not an error.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 13 Jul 2009 11:47:10 +0300
 
