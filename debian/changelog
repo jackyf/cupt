@@ -1,10 +1,11 @@
-cupt (0.3.3) UNRELEASED; urgency=low
+cupt (0.3.3) UNRELEASED; urgency=medium
 
   * Cupt:
     - Cache:
       - Relation:
         - The '>' and '<' compatibility operators now work as really expected.
-          Thanks to Ryan Niebur for report.
+          Thanks to Ryan Niebur for report. The urgency is set to medium
+          because of this fix.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 13 Jul 2009 11:47:10 +0300
 
