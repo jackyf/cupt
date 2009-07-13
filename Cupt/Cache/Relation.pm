@@ -198,11 +198,11 @@ sub satisfied_by ($$) {
 		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->[REL_VERSION_STRING]);
 		given($self->[REL_RELATION_STRING]) {
 			when('>=') { return ($comparison_result >= 0) }
-			when('<') { continue }
+			when('<') { return ($comparison_result < 0) }
 			when('<<') { return ($comparison_result < 0) }
 			when('<=') { return ($comparison_result <= 0) }
 			when('=') { return ($comparison_result == 0) }
-			when('>') { continue }
+			when('>') { return ($comparison_result > 0) }
 			when('>>') { return ($comparison_result > 0) }
 		}
 	}

@@ -1,3 +1,13 @@
+cupt (0.3.3) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Cache:
+      - Relation:
+        - The '>' and '<' compatibility operators now work as really expected.
+          Thanks to Ryan Niebur for report.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 13 Jul 2009 11:47:10 +0300
+
 cupt (0.3.2) unstable; urgency=low
 
   * cupt:
