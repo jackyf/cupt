@@ -197,7 +197,7 @@ sub _parse_dpkg_status {
 		myredie();
 	}
 
-	close(PACKAGES) or mydie("unable to close grep pipe: %s", $!);
+	if(!close(PACKAGES) && !($! == 0 && ($? >> 8) == 1)) { mydie("unable to close grep pipe: %s", $!); };
 
 	# additionally, preparse Provides fields for status file
 	$self->{_cache}->_process_provides_in_index_files($file);
