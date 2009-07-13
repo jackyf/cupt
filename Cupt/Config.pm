@@ -253,8 +253,8 @@ sub _read_configs {
 
 	my $main_file = $self->var('dir::etc::main');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
-	if(defined($ENV{APT_CONF})) {
-		$main_file_path = $ENV{APT_CONF};
+	if(defined $ENV{APT_CONFIG}) {
+		$main_file_path = $ENV{APT_CONFIG};
 	}
 	push @config_files, $main_file_path if -e $main_file_path;
 
