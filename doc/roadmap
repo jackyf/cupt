@@ -1,7 +1,6 @@
 For version 0.4:
 
 resolver, cupt: querying about decisions
-downloader: debdelta integration
 worker: check disk available size before downloading
 
 For version 0.5:
@@ -13,4 +12,8 @@ cupt: implement 'why-not' command
 For version 0.6:
 
 shell: implement
+
+For some future version:
+
+downloader: debdelta download method (waiting for feedback from debdelta hackers)
 
