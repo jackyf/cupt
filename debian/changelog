@@ -1,5 +1,7 @@
-cupt (0.3.4) unstable; urgency=low
+cupt (0.3.4) UNRELEASED; urgency=low
 
+  * cupt
+    - Allowed to purge packages with no installation candidates.
   * Cupt:
     - System:
       - Worker:

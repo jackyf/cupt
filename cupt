@@ -838,12 +838,12 @@ sub generate_management_prompt ($$$) {
 						my $new_version = $ref_package_entry->{'version'};
 						my $new_version_string = defined $new_version ?
 								$new_version->{version_string} : undef;
-						if (!defined $old_version_string) {
-							print " [$new_version_string]";
-						} elsif (!defined $new_version_string) {
-							print " [$old_version_string]";
-						} else {
+						if (defined $old_version_string and defined $new_version_string) {
 							print " [$old_version_string -> $new_version_string]";
+						} elsif (defined $old_version_string) {
+							print " [$old_version_string]";
+						} elsif (defined $new_version_string) {
+							print " [$new_version_string]";
 						}
 					}
 					if ($show_size_changes) {
@@ -995,7 +995,9 @@ sub generate_management_prompt ($$$) {
 			foreach my $action (qw(remove purge)) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
 				foreach my $package_name (map { $_->{'package_name'} } @$ref_package_entries) {
-					my $version = $cache->get_binary_package($package_name)->get_installed_version();
+					my $package = $cache->get_binary_package($package_name);
+					next if not defined $package;
+					my $version = $package->get_installed_version();
 					push @essential_package_names, $version->{package_name} if $version->{essential};
 				}
 			}
@@ -1259,8 +1261,9 @@ sub manage_packages ($) {
 				$resolver->install_version($version);
 			} else { # 'remove'
 				check_package_name($package_expression);
-				defined($cache->get_binary_package($package_expression)) or
-						mydie("unable to find binary package '%s'", $package_expression);
+				if (not defined $cache->get_system_state()->get_installed_info($package_expression)) {
+					mydie("unable to find binary package '%s'", $package_expression);
+				}
 
 				$resolver->remove_package($package_expression);
 			}
