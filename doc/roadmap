@@ -1,7 +1,6 @@
 For version 0.4:
 
 resolver, cupt: querying about decisions
-worker: check disk available size before downloading
 
 For version 0.5:
 
