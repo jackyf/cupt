@@ -159,7 +159,7 @@ sub new {
 					push @{$self->{_release_data}->{source}}, $ref_release_info;
 				}
 
-				my @description_translations_files = $self->get_path_of_localized_descriptions($ref_index_entry);
+				my @description_translations_files = $self->_get_paths_of_localized_descriptions($ref_index_entry);
 				my $chosen_translation_file;
 				foreach my $file (@description_translations_files) {
 					if (-r $file) {
@@ -1079,6 +1079,7 @@ sub _get_paths_of_localized_descriptions {
 	if ($index_entry->{'component'} ne '') {
 		$left_filename_part .= '_' . $index_entry->{'component'};
 	}
+	$left_filename_part .= "_i18n_Translation-";
 
 	my $translation_variable = $self->{_config}->var('apt::acquire::translation');
 	my $locale = $translation_variable eq 'environment' ?
@@ -1088,10 +1089,10 @@ sub _get_paths_of_localized_descriptions {
 
 	# cutting out an encoding
 	$locale =~ s/\..*//;
-	push @result, "${left_filename_part}_${locale}";
+	push @result, "$left_filename_part$locale";
 	# cutting out an country specificator
 	$locale =~ s/_.*//;
-	push @result, "${left_filename_part}_${locale}";
+	push @result, "$left_filename_part$locale";
 
 	return @result;
 }
