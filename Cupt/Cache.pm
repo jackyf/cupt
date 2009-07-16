@@ -1071,30 +1071,39 @@ sub get_path_of_index_list {
 	return $filename;
 }
 
-sub _get_paths_of_localized_descriptions {
+sub _get_chunks_of_localized_descriptions {
 	my ($self, $index_entry) = @_;
 
-	my $base_uri = $self->_path_of_base_uri($index_entry);
-	my $left_filename_part = $base_uri;
+	my @result;
+
+	my @chunks;
 	if ($index_entry->{'component'} ne '') {
-		$left_filename_part .= '_' . $index_entry->{'component'};
+		push @chunks, $index_entry->{'component'};
 	}
-	$left_filename_part .= "_i18n_Translation-";
+	push @chunks, 'i18n';
 
 	my $translation_variable = $self->{_config}->var('apt::acquire::translation');
 	my $locale = $translation_variable eq 'environment' ?
 			POSIX::setlocale(LC_MESSAGES) : $translation_variable;
 
-	my @result;
-
 	# cutting out an encoding
 	$locale =~ s/\..*//;
-	push @result, "$left_filename_part$locale";
+	push @result, [ @chunks, "Translation-$locale" ];
+
 	# cutting out an country specificator
 	$locale =~ s/_.*//;
-	push @result, "$left_filename_part$locale";
+	push @result, [ @chunks, "Translation-$locale" ];
 
 	return @result;
+}
+
+sub _get_paths_of_localized_descriptions {
+	my ($self, $index_entry) = @_;
+
+	my @chunk_arrays = $self->_get_chunks_of_localized_descriptions($index_entry);
+	my $path_of_base_uri = $self->_path_of_base_uri($index_entry);
+
+	return map { join('_', $path_of_base_uri, @$_) } @chunk_arrays;
 }
 
 =head2 get_download_entries_of_index_list
@@ -1208,6 +1217,29 @@ sub get_download_uri_of_release_list {
 	my ($self, $index_entry) = @_;
 
 	return join('/', $self->_base_download_uri($index_entry), 'Release');
+}
+
+=head2 get_download_uris_of_description_translations
+
+method, returns the remote URIs of possible Translation files for I<index_entry>
+
+Parameters:
+
+L</index_entry>
+
+Returns:
+
+[ I<download URI>... ]
+
+=cut
+
+sub get_download_uris_of_description_translations {
+	my ($self, $index_entry) = @_;
+
+	my @chunk_arrays = $self->_get_chunks_of_localized_descriptions();
+	my $base_download_uri = $self->_base_download_uri($index_entry);
+
+	return [ map { join('/', $base_download_uri, @$_) } @chunk_arrays ];
 }
 
 sub _path_of_preferences {
