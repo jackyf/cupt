@@ -15,4 +15,5 @@ shell: implement
 For some future version:
 
 downloader: debdelta download method (waiting for feedback from debdelta hackers)
+cupt, worker: snapshots to save/load
 
