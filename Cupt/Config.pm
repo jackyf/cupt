@@ -62,6 +62,7 @@ sub new {
 			'acquire::file::timeout' => 20,
 			'acquire::retries' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
+			'apt::acquire::translation' => 'environment',
 			'apt::architecture' => undef, # will be set a bit later
 			'apt::authentication::trustcdrom' => 0,
 			'apt::cache::allversions' => 0,
