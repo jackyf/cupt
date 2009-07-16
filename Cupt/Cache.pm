@@ -32,6 +32,7 @@ use warnings;
 
 use Digest;
 use Fcntl qw(:seek :DEFAULT);
+use POSIX qw(locale_h);
 
 use Memoize;
 memoize('verify_signature');
@@ -158,7 +159,17 @@ sub new {
 					push @{$self->{_release_data}->{source}}, $ref_release_info;
 				}
 
-				$self->_process_index_file($index_file_to_parse, $source_type, $ref_release_info);
+				my @description_translations_files = $self->get_path_of_localized_descriptions($ref_index_entry);
+				my $chosen_translation_file;
+				foreach my $file (@description_translations_files) {
+					if (-r $file) {
+						$chosen_translation_file = $file;
+						last;
+					}
+				}
+
+				$self->_process_index_file($index_file_to_parse, $chosen_translation_file,
+						$source_type, $ref_release_info);
 				push @index_files, $index_file_to_parse;
 			};
 			if (mycatch()) {
@@ -1058,6 +1069,31 @@ sub get_path_of_index_list {
 	my $filename = join('_', $base_uri, $index_entry->{'component'}, $index_list_suffix);
 	$filename =~ s/__/_/; # if component is empty
 	return $filename;
+}
+
+sub _get_paths_of_localized_descriptions {
+	my ($self, $index_entry) = @_;
+
+	my $base_uri = $self->_path_of_base_uri($index_entry);
+	my $left_filename_part = $base_uri;
+	if ($index_entry->{'component'} ne '') {
+		$left_filename_part .= '_' . $index_entry->{'component'};
+	}
+
+	my $translation_variable = $self->{_config}->var('apt::acquire::translation');
+	my $locale = $translation_variable eq 'environment' ?
+			POSIX::setlocale(LC_MESSAGES) : $translation_variable;
+
+	my @result;
+
+	# cutting out an encoding
+	$locale =~ s/\..*//;
+	push @result, "${left_filename_part}_${locale}";
+	# cutting out an country specificator
+	$locale =~ s/_.*//;
+	push @result, "${left_filename_part}_${locale}";
+
+	return @result;
 }
 
 =head2 get_download_entries_of_index_list
