@@ -1427,15 +1427,44 @@ sub update_release_and_index_data ($$) {
 							if (!$download_result) {
 								# all's good
 								$exit_code = 0;
-								goto CHILD_EXIT;
+								last;
 							}
 						}
 
-						$download_result or myinternaldie("positive index download result, but it should be negative");
-						# we could be here if neither download URI succeeded
-						mywarn("failed to download index for '%s/%s'",
-								$index_entry->{'distribution'}, $index_entry->{'component'});
+						if ($download_result) {
+							# we could be here if neither download URI succeeded
+							mywarn("failed to download index for '%s/%s'",
+									$index_entry->{'distribution'}, $index_entry->{'component'});
+							goto CHILD_EXIT;
+						}
 					};
+
+					do {
+						# phase 3 (optional): downloading file containing localized descriptions
+
+						my @download_uris = $cache->get_download_uris_of_localized_descriptions($index_entry);
+						foreach my $download_uri (@download_uris) {
+							my $download_filename = $sub_get_download_filename->($local_path);
+							my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
+									$index_entry->{'component'}, $download_filename_basename;
+
+							my $local_path = $self->_get_indexes_location . '/'
+
+							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
+							$download_manager->set_long_alias_for_uri($download_uri,
+									"$index_entry->{'uri'} $index_alias");
+
+							my $download_result = $sub_download_wrapper->(
+									{
+										'uris' => [ $download_uri ],
+										'filename' => $download_filename,
+										'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
+									}
+							);
+							last if not $download_result; # all's ok
+						}
+					};
+
 				};
 
 				if ($@ and not mycatch()) {
