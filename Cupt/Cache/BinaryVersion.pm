@@ -115,7 +115,7 @@ sub new {
 		tags => undef,
 	};
 	# parsing fields
-	my ($package_name, $fh, $offset, $ref_release_info) = @$ref_arg;
+	my ($package_name, $fh, $offset, $ref_release_info, $translation_fh, $translation_offset) = @$ref_arg;
 
 	$self->{avail_as}->[0]->{release} = $ref_release_info;
 	$self->{package_name} = $package_name;

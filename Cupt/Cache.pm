@@ -889,7 +889,7 @@ sub _process_provides_in_index_files {
 }
 
 sub _process_index_file {
-	my ($self, $file, $type, $ref_release_info) = @_;
+	my ($self, $file, $translation_file, $type, $ref_release_info) = @_;
 
 	my $version_class;
 	my $ref_packages_storage;
@@ -899,6 +899,13 @@ sub _process_index_file {
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
 		$ref_packages_storage = \$self->{_source_packages};
+	}
+
+	my $ref_translations;
+	if (defined $translation_file) {
+		$ref_translations = __process_translation_file($translation_file);
+	} else {
+		$ref_translations = {};
 	}
 
 	my $fh;
@@ -916,9 +923,16 @@ sub _process_index_file {
 			($package_name =~ m/^$package_name_regex$/)
 				or mydie("bad package name '%s'", $package_name);
 
+			my @version_params = ($version_class, $package_name, $fh, $offset, $ref_release_info);
+			if (exists $ref_translations->{$package_name}) {
+				push @version_params, $ref_translations->{$package_name}->{'filehandle'};
+				push @version_params, $ref_translations->{$package_name}->{'offset'};
+			}
+
 			# adding new entry (and possible creating new package if absend)
-			Cupt::Cache::Package::add_entry($$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
-					$version_class, $package_name, $fh, $offset, $ref_release_info);
+			Cupt::Cache::Package::add_entry(
+					$$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
+					@version_params);
 		}
 	};
 	if (mycatch()) {
@@ -927,6 +941,39 @@ sub _process_index_file {
 	}
 
 	close(OFFSETS) or $! == 0 or mydie("unable to close grep pipe: %s", $!);
+}
+
+sub __process_translation_file {
+	my ($file) = @_;
+
+	my %result;
+
+	my $fh;
+	open($fh, '<', $file) or mydie("unable to open translation file '%s': %s", $file, $!);
+	open(OFFSETS, "/bin/grep -b '^Package: ' $file |");
+
+	eval {
+		while (<OFFSETS>) {
+			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
+
+			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
+			$offset += length("Package: ") + length($package_name) + 1;
+
+			# check it for correctness
+			($package_name =~ m/^$package_name_regex$/)
+				or mydie("bad package name '%s'", $package_name);
+
+			@{$result{$package_name}}{'offset', 'filehandle'} = ($offset, $fh);
+		}
+	};
+	if (mycatch()) {
+		myerr("error parsing translation file '%s'", $file);
+		myredie();
+	}
+
+	close(OFFSETS) or $! == 0 or mydie("unable to close grep pipe: %s", $!);
+
+	return \%result;
 }
 
 sub _path_of_base_uri {
