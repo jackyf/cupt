@@ -1219,9 +1219,10 @@ sub get_download_uri_of_release_list {
 	return join('/', $self->_base_download_uri($index_entry), 'Release');
 }
 
-=head2 get_download_uris_of_description_translations
+=head2 get_download_entries_of_description_translations
 
-method, returns the remote URIs of possible Translation files for I<index_entry>
+method, returns the remote URIs and corresponding download places of possible
+Translation files for I<index_entry>
 
 Parameters:
 
@@ -1229,17 +1230,24 @@ L</index_entry>
 
 Returns:
 
-[ I<download URI>... ]
+[ [ I<download URI>, I<local path to place> ]... ]
 
 =cut
 
-sub get_download_uris_of_description_translations {
+sub get_download_entries_of_description_translations {
 	my ($self, $index_entry) = @_;
 
 	my @chunk_arrays = $self->_get_chunks_of_localized_descriptions();
 	my $base_download_uri = $self->_base_download_uri($index_entry);
+	my $path_of_base_uri = $self->_path_of_base_uri($index_entry);
 
-	return [ map { join('/', $base_download_uri, @$_) } @chunk_arrays ];
+	my @result;
+	foreach my $ref_chunks (@chunk_arrays) {
+		my $download_uri = join('/', $base_download_uri, @$ref_chunks);
+		my $local_path = join('_', $path_of_base_uri, @$ref_chunks);
+		push @result, [ $download_uri, $local_path ];
+	}
+	return \@result;
 }
 
 sub _path_of_preferences {

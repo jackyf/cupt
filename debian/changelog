@@ -10,7 +10,7 @@ cupt (0.3.4) UNRELEASED; urgency=low
     - Config:
       - Added 'apt::acquire::translation' configuration option.
     - Cache:
-      - New method 'get_download_uris_of_description_translations'.
+      - New method 'get_download_entries_of_description_translations'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 15 Jul 2009 13:20:55 +0300
 
