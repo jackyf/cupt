@@ -216,6 +216,25 @@ sub new {
 
 		$self->{source_version_string} //= $self->{version_string};
 		$self->{source_package_name} //= $self->{package_name};
+
+		# read localized descriptions if available
+		if (defined $translation_fh) {
+			seek $translation_fh, $translation_offset, 0;
+			$self->{long_description} = "";
+			while (($line = <$translation_fh>) ne "\n") {
+				next if $line =~ m/^Description-md5:/;
+				if ($line =~ m/^Description/) {
+					# it's localized short description
+					# delete the field name
+					chomp($line);
+					$line =~ s/.*?: //;
+					$self->{short_description} = $line;
+				} else {
+					# it's localized long description
+					$self->{long_description} .= $line;
+				}
+			}
+		}
 	};
 	if (mycatch()) {
 		if (defined($field_name)) {
