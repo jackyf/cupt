@@ -1442,13 +1442,14 @@ sub update_release_and_index_data ($$) {
 					do {
 						# phase 3 (optional): downloading file containing localized descriptions
 
-						my @download_uris = $cache->get_download_uris_of_localized_descriptions($index_entry);
-						foreach my $download_uri (@download_uris) {
+						my @download_entries = $cache->get_download_entries_of_localized_descriptions($index_entry);
+						foreach my $ref_download_entry (@download_entries) {
+							my ($download_uri, $local_path) = @$ref_download_entry;
 							my $download_filename = $sub_get_download_filename->($local_path);
+							(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
+
 							my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
-
-							my $local_path = $self->_get_indexes_location . '/'
 
 							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
 							$download_manager->set_long_alias_for_uri($download_uri,
@@ -1461,7 +1462,7 @@ sub update_release_and_index_data ($$) {
 										'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
 									}
 							);
-							last if not $download_result; # all's ok
+							last if not $download_result; # if all's ok
 						}
 					};
 
