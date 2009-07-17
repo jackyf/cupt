@@ -1233,7 +1233,7 @@ sub update_release_and_index_data ($$) {
 		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
 
 		my $sub_download_wrapper = sub {
-			if ($self->{_config}->var('cupt::worker::simulate')) {
+			if ($simulate) {
 				foreach (@_) {
 					say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
 				}
@@ -1333,11 +1333,13 @@ sub update_release_and_index_data ($$) {
 						my $ref_download_entries = $cache->get_download_entries_of_index_list(
 								$index_entry, $release_local_path);
 						# checking maybe there is no difference between the local and the remote?
-						foreach (values %$ref_download_entries) {
-							if (Cupt::Cache::verify_hash_sums($_, $local_path)) {
-								# yeah, really
-								$exit_code = 0;
-								goto CHILD_EXIT;
+						if (not $simulate) {
+							foreach (values %$ref_download_entries) {
+								if (Cupt::Cache::verify_hash_sums($_, $local_path)) {
+									# yeah, really
+									$exit_code = 0;
+									goto CHILD_EXIT;
+								}
 							}
 						}
 
