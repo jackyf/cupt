@@ -1237,7 +1237,7 @@ Returns:
 sub get_download_entries_of_localized_descriptions {
 	my ($self, $index_entry) = @_;
 
-	my @chunk_arrays = $self->_get_chunks_of_localized_descriptions();
+	my @chunk_arrays = $self->_get_chunks_of_localized_descriptions($index_entry);
 	my $base_download_uri = $self->_base_download_uri($index_entry);
 	my $path_of_base_uri = $self->_path_of_base_uri($index_entry);
 
