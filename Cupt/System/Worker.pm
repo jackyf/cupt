@@ -1202,6 +1202,24 @@ sub update_release_and_index_data ($$) {
 				'/' . basename($target_filename);
 	};
 
+	my $sub_get_download_filename_basename = sub {
+		my ($download_uri) = @_;
+		(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
+		return $download_filename_basename;
+	};
+
+	my $sub_get_download_filename_extension = sub {
+		my ($download_uri) = @_;
+
+		my $download_filename_basename = $sub_get_download_filename_basename->($download_uri);
+
+		if ($download_filename_basename =~ m/(\.\w+)/) {
+			return $1;
+		} else {
+			return '';
+		}
+	};
+
 	my $sub_generate_moving_sub = sub {
 		my ($download_path, $target_path) = @_;
 		return sub {
@@ -1209,6 +1227,42 @@ sub update_release_and_index_data ($$) {
 					return sprintf __("%s: unable to move target file: %s"), $download_path, $!;
 			return ''; # success
 		};
+	};
+
+	my $sub_generate_uncompressing_sub = sub {
+		my ($download_uri, $download_path, $local_path) = @_;
+
+		my $download_filename_extension = $sub_get_download_filename_extension->($download_uri);
+
+		# checking and preparing unpackers
+		if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
+			my %extension_to_uncompressor_name = ('.lzma' => 'unlzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
+			my $uncompressor_name = $extension_to_uncompressor_name{$download_filename_extension};
+
+			if (system("which $uncompressor_name >/dev/null")) {
+				mywarn("'%s' uncompressor is not available, not downloading '%s'",
+						$uncompressor_name, $download_uri);
+				return undef;
+			}
+
+			return sub {
+				my $uncompressing_result = system("$uncompressor_name $download_path -c > $local_path");
+				# anyway, remove the compressed file
+				unlink $download_path; # ignore errors...
+				if ($uncompressing_result) {
+					return sprintf "failed to uncompress '%s', '%s' returned error %s",
+							$download_path, $uncompressor_name, $uncompressing_result;
+				}
+				return '';
+			};
+		} elsif ($download_filename_extension eq '') {
+			# no extension
+			return $sub_generate_moving_sub->($download_path => $local_path);
+		} else {
+			mywarn("unknown file extension '%s', not downloading '%s'",
+						$download_filename_extension, $download_uri);
+			return undef;
+		}
 	};
 
 	my $indexes_location = $self->_get_indexes_location();
@@ -1352,48 +1406,14 @@ sub update_release_and_index_data ($$) {
 
 						my $download_result;
 						foreach my $download_uri (@download_uris_in_order) {
-							(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
-
-							my $download_filename_extension;
-							if ($download_filename_basename =~ m/(\.\w+)/) {
-								$download_filename_extension = $1;
-							} else {
-								$download_filename_extension = '';
-							}
+							my $download_filename_basename = $sub_get_download_filename_basename->($download_uri);
+							my $download_filename_extension = $sub_get_download_filename_extension->($download_uri);
 
 							my $download_filename = $base_download_filename . $download_filename_extension;
-							my $sub_main_post_action;
 
-							# checking and preparing unpackers
-							if ($download_filename_extension =~ m/^\.(lzma|bz2|gz)$/) {
-								my %extension_to_uncompressor_name = ('.lzma' => 'unlzma', '.bz2' => 'bunzip2', '.gz' => 'gunzip');
-								my $uncompressor_name = $extension_to_uncompressor_name{$download_filename_extension};
-
-								if (system("which $uncompressor_name >/dev/null")) {
-									mywarn("'%s' uncompressor is not available, not downloading '%s'",
-											$uncompressor_name, $download_uri);
-									next;
-								}
-
-								$sub_main_post_action = sub {
-									my $uncompressing_result = system("$uncompressor_name $download_filename -c > $local_path");
-									# anyway, remove the compressed file
-									unlink $download_filename; # ignore errors...
-									if ($uncompressing_result) {
-										return sprintf "failed to uncompress '%s', '%s' returned error %s",
-												$download_filename, $uncompressor_name, $uncompressing_result;
-									}
-									return '';
-								};
-							} elsif ($download_filename_extension eq '') {
-								# no extension
-								$sub_main_post_action = $sub_generate_moving_sub->($download_filename => $local_path);
-							} else {
-								mywarn("unknown file extension '%s', not downloading '%s'",
-											$download_filename_extension, $download_uri);
-								next;
-							}
-
+							my $sub_main_post_action = $sub_generate_uncompressing_sub->(
+									$download_uri, $download_filename, $local_path);
+							next if not defined $sub_main_post_action;
 
 							my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
@@ -1447,8 +1467,15 @@ sub update_release_and_index_data ($$) {
 						my $ref_download_entries = $cache->get_download_entries_of_localized_descriptions($index_entry);
 						foreach my $ref_download_entry (@$ref_download_entries) {
 							my ($download_uri, $local_path) = @$ref_download_entry;
+
 							my $download_filename = $sub_get_download_filename->($local_path);
-							(my $download_filename_basename = $download_uri) =~ s{(?:.*)/(.*)}{$1};
+
+							my $download_filename_basename = $sub_get_download_filename_basename->($download_uri);
+							my $download_filename_extension = $sub_get_download_filename_extension->($download_uri);
+
+							my $sub_post_action = $sub_generate_uncompressing_sub->(
+									$download_uri, $download_filename, $local_path);
+							next if not defined $sub_post_action;
 
 							my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
@@ -1461,7 +1488,7 @@ sub update_release_and_index_data ($$) {
 									{
 										'uris' => [ $download_uri ],
 										'filename' => $download_filename,
-										'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
+										'post-action' => $sub_post_action,
 									}
 							);
 							last if not $download_result; # if all's ok
