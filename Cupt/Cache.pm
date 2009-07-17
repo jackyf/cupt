@@ -1243,7 +1243,8 @@ sub get_download_entries_of_localized_descriptions {
 
 	my @result;
 	foreach my $ref_chunks (@chunk_arrays) {
-		my $download_uri = join('/', $base_download_uri, @$ref_chunks);
+		# yes, somewhy translations are always bzip2'ed
+		my $download_uri = join('/', $base_download_uri, @$ref_chunks) . '.bz2';
 		my $local_path = join('_', $path_of_base_uri, @$ref_chunks);
 		push @result, [ $download_uri, $local_path ];
 	}
