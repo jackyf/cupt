@@ -1219,7 +1219,7 @@ sub get_download_uri_of_release_list {
 	return join('/', $self->_base_download_uri($index_entry), 'Release');
 }
 
-=head2 get_download_entries_of_description_translations
+=head2 get_download_entries_of_localized_descriptions
 
 method, returns the remote URIs and corresponding download places of possible
 Translation files for I<index_entry>
@@ -1234,7 +1234,7 @@ Returns:
 
 =cut
 
-sub get_download_entries_of_description_translations {
+sub get_download_entries_of_localized_descriptions {
 	my ($self, $index_entry) = @_;
 
 	my @chunk_arrays = $self->_get_chunks_of_localized_descriptions();
