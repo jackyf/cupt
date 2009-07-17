@@ -7,6 +7,9 @@ cupt (0.3.4) UNRELEASED; urgency=low
       - Worker:
         - 'get_unpacked_sizes_preview': fixed crash when purging a package
           that has no installation candidates.
+        - 'update_release_and_index_data': don't check hash sums for indexes
+          in simulate mode to "proceed" all actions, not only Release-related
+          ones.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 15 Jul 2009 13:20:55 +0300
 
