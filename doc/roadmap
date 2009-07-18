@@ -4,7 +4,6 @@ resolver, cupt: querying about decisions
 
 For version 0.5:
 
-binary version: implement translated description
 cupt: implement 'why' command
 cupt: implement 'why-not' command
 
