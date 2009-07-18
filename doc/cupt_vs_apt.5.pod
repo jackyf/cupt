@@ -91,10 +91,6 @@ HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|
 
 =item
 
-translated descriptions are not yet implemented
-
-=item
-
 cdrom URI type is not handled
 
 =back
