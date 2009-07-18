@@ -93,6 +93,10 @@ HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|
 
 cdrom URI type is not handled
 
+=item
+
+PDiffs are not supported
+
 =back
 
 =head1 DIFFERENT BEHAVIOR
