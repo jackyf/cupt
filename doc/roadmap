@@ -1,7 +1,6 @@
 For version 0.4:
 
 resolver: option to keep binary versions from one source package in one version
-resolver, cupt: querying about decisions
 
 For version 0.5:
 
