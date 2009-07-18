@@ -1076,6 +1076,8 @@ sub _get_chunks_of_localized_descriptions {
 
 	my @result;
 
+	return @result if $index_entry->{'type'} ne 'deb';
+
 	my @chunks;
 	if ($index_entry->{'component'} ne '') {
 		push @chunks, $index_entry->{'component'};
