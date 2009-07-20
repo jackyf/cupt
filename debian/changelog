@@ -19,6 +19,8 @@ cupt (0.3.4) UNRELEASED; urgency=low
       - BinaryVersion:
         - Implemented localized descriptions support.
       - New method 'get_download_entries_of_localized_descriptions'.
+    - Core:
+      - 'compare_hash_sums': fixed to return true for equal hash sums.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 15 Jul 2009 13:20:55 +0300
 

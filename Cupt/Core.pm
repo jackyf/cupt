@@ -338,7 +338,7 @@ I<right> - hash
 sub compare_hash_sums ($$) {
 	my ($left, $right) = @_;
 	my $sums_count = 0;
-	foreach my $hash_sum_name (qw(md5 sha1 sha256)) {
+	foreach my $hash_sum_name (qw(md5sum sha1sum sha256sum)) {
 		if (defined $left->{$hash_sum_name} and defined $right->{$hash_sum_name}) {
 			++$sums_count;
 			return 0 if $left->{$hash_sum_name} ne $right->{$hash_sum_name};
