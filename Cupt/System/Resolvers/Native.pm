@@ -134,7 +134,7 @@ sub _install_version_no_stick ($$$) {
 	if ($self->{_packages}->{$package_name}->[PE_STICK])
 	{
 		# package is restricted to be updated
-		return;
+		return 0;
 	}
 
 	if ((not $self->{_packages}->{$package_name}->[PE_VERSION]) ||
@@ -149,11 +149,13 @@ sub _install_version_no_stick ($$$) {
 		}
 		$self->_schedule_new_version_relations($version);
 	}
+	return 1;
 }
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->_install_version_no_stick($version, [ 'user' ]);
+	$self->_install_version_no_stick($version, [ 'user' ]) or
+			mydie("unable to re-schedule package '%s'", $version->{package_name});
 	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
 	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
 }
@@ -208,6 +210,9 @@ sub remove_package ($$) {
 	my ($self, $package_name) = @_;
 	$self->{_packages}->{$package_name} //= __new_package_entry();
 	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
+	if ($self->{_packages}->{$package_name}->[PE_STICK]) {
+		mydie("unable to re-schedule package '%s'", $package_name);
+	}
 	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
 	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
 	if ($self->config->var('cupt::resolver::track-reasons')) {
