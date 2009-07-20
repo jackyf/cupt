@@ -1,4 +1,4 @@
-cupt (0.3.4) UNRELEASED; urgency=low
+cupt (0.4.0) UNRELEASED; urgency=low
 
   * cupt
     - Allowed to purge packages with no installation candidates.
@@ -12,6 +12,7 @@ cupt (0.3.4) UNRELEASED; urgency=low
           ones.
     - Config:
       - Added 'apt::acquire::translation' configuration option.
+      - New 'cupt::resolver::syncronize-source-versions' configuration option.
     - Cache:
       - BinaryVersion:
         - Implemented localized descriptions support.
