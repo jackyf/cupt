@@ -10,6 +10,9 @@ cupt (0.3.4) UNRELEASED; urgency=low
         - 'update_release_and_index_data': don't check hash sums for indexes
           in simulate mode to "proceed" all actions, not only Release-related
           ones.
+      - Resolver:
+        - Generate an error when attempting to schedule more than one action
+          on the same package.
     - Config:
       - Added 'apt::acquire::translation' configuration option.
     - Cache:
