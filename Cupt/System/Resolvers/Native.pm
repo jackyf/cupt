@@ -142,26 +142,34 @@ sub __related_binary_package_names ($$) {
 	return @result;
 }
 
+sub _get_package_version_by_source_version_string ($$) {
+	my ($self, $package_name, $source_version_string) = @_;
+
+	foreach my $version (@{$self->{_cache}->get_binary_package($package_name)->get_versions()}) {
+		if ($version->{source_version_string} eq $source_version_string) {
+			return $version;
+		}
+	}
+
+	return undef;
+}
+
 sub _related_packages_can_be_updated ($$) {
 	my ($self, $ref_packages, $package_name) = @_;
 
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
-
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
 
-	PACKAGE:
 	foreach my $package_name (@package_names) {
 		if ($ref_packages->{$package_name}->[PE_STICK]) {
 			# cannot update the package
 			return 0;
 		}
-		foreach my $version (@{$self->{_cache}->get_binary_package($package_name)->get_versions()}) {
-			if ($version->{source_version_string} eq $source_version_string) {
-				next PACKAGE;
-			}
+		if (not defined $self->_get_package_version_by_source_version_string(
+				$package_name, $source_version_string))
+		{
+			return 0;
 		}
-		# didn't found version with appropriate source version, failed
-		return 0;
 	}
 
 	# ok, no errors
@@ -169,7 +177,21 @@ sub _related_packages_can_be_updated ($$) {
 }
 
 sub __update_related_packages ($$) {
-	my ($self, $ref_packages, $package_name) = @_;
+	# $stick - boolean
+	my ($self, $ref_packages, $package_name, $stick) = @_;
+	
+	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
+	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
+
+	foreach my $package_name (@package_names) {
+		my $version = $self->_get_package_version_by_source_version_string(
+				$package_name, $source_version_string))
+		$ref_packages->{$package_name}->[PE_VERSION] = $version;
+		$ref_packages->{$package_name}->[PE_STICK] = $stick;
+	}
+
+	# ok, no errors
+	return 1;
 }
 
 # installs new version, shedules new dependencies, but not sticks it
