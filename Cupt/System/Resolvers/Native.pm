@@ -125,6 +125,53 @@ sub _schedule_new_version_relations ($$) {
 	}
 }
 
+sub __related_binary_package_names ($$) {
+	my ($ref_packages, $package_name) = @_;
+
+	my @result;
+
+	my $source_package_name = $ref_packages->{$package_name}->[PE_VERSION]->{source_package_name};
+
+	foreach my $other_package_name (keys %$ref_packages) {
+		my $version = $ref_packages->{$other_package_name};
+		next if not defined $version;
+		next if $version->{source_package_name} ne $source_package_name;
+		push @result, $other_package_name;
+	}
+
+	return @result;
+}
+
+sub _related_packages_can_be_updated ($$) {
+	my ($self, $ref_packages, $package_name) = @_;
+
+	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
+
+	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
+
+	PACKAGE:
+	foreach my $package_name (@package_names) {
+		if ($ref_packages->{$package_name}->[PE_STICK]) {
+			# cannot update the package
+			return 0;
+		}
+		foreach my $version (@{$self->{_cache}->get_binary_package($package_name)->get_versions()}) {
+			if ($version->{source_version_string} eq $source_version_string) {
+				next PACKAGE;
+			}
+		}
+		# didn't found version with appropriate source version, failed
+		return 0;
+	}
+
+	# ok, no errors
+	return 1;
+}
+
+sub __update_related_packages ($$) {
+	my ($self, $ref_packages, $package_name) = @_;
+}
+
 # installs new version, shedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$$) {
 	my ($self, $version, $reason) = @_;
@@ -136,6 +183,9 @@ sub _install_version_no_stick ($$$) {
 		# package is restricted to be updated
 		return 0;
 	}
+
+	# binary package names from the same source that supplied package
+	my @related_binary_package_names;
 
 	if ((not $self->{_packages}->{$package_name}->[PE_VERSION]) ||
 		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
