@@ -130,12 +130,16 @@ sub __related_binary_package_names ($$) {
 
 	my @result;
 
-	my $source_package_name = $ref_packages->{$package_name}->[PE_VERSION]->{source_package_name};
+	my $version = $ref_packages->{$package_name}->[PE_VERSION];
+	if (not defined $version) {
+		myinternaldie("package '$package_name' doesn't have an installed version");
+	}
+	my $source_package_name = $version->{source_package_name};
 
 	foreach my $other_package_name (keys %$ref_packages) {
-		my $version = $ref_packages->{$other_package_name}->[PE_VERSION];
-		next if not defined $version;
-		next if $version->{source_package_name} ne $source_package_name;
+		my $other_version = $ref_packages->{$other_package_name}->[PE_VERSION];
+		next if not defined $other_version;
+		next if $other_version->{source_package_name} ne $source_package_name;
 		next if $other_package_name eq $package_name;
 		push @result, $other_package_name;
 	}
@@ -194,7 +198,7 @@ sub _syncronize_related_packages ($$$$$) {
 		$ref_package_entry->[PE_VERSION] = $version;
 		$ref_package_entry->[PE_STICK] = $stick;
 		if ($self->config->var('debug::resolver')) {
-			$sub_mydebug_wrapper->("syncronizing package '$other_package' with package '$package_name");
+			$sub_mydebug_wrapper->("syncronizing package '$other_package_name' with package '$package_name");
 		}
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$ref_package_entry->[PE_REASONS]}, [ 'sync', $package_name ];
@@ -205,7 +209,7 @@ sub _syncronize_related_packages ($$$$$) {
 	return 1;
 }
 
-# installs new version, shedules new dependencies, but not sticks it
+# installs new version, schedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$$) {
 	my ($self, $version, $reason) = @_;
 	
@@ -242,7 +246,7 @@ sub _install_version_no_stick ($$$) {
 		$self->_schedule_new_version_relations($version);
 
 		if ($o_syncronize_source_versions ne 'none') {
-			$self->_syncronize_related_packages($self->{_packages}, $package_name, \&mydebug);
+			$self->_syncronize_related_packages($self->{_packages}, $package_name, 0, \&mydebug);
 		}
 	}
 	return 1;
@@ -645,8 +649,11 @@ sub _apply_action ($$$$$) {
 		}
 	}
 	if ($self->config->var('cupt::resolver::syncronize-source-versions')) {
-		$self->_syncronize_related_packages($ref_solution_entry->{'packages'},
-				$package_name_to_change, 1, $sub_mydebug_wrapper);
+		# dont' do syncronization for removals
+		if (defined $supposed_version) {
+			$self->_syncronize_related_packages($ref_solution_entry->{'packages'},
+					$package_name_to_change, 1, $sub_mydebug_wrapper);
+		}
 	}
 }
 
