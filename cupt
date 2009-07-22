@@ -892,24 +892,15 @@ sub generate_management_prompt ($$$) {
 											stringify_relation_expression($reason_relation_expression)
 											));
 								}
-								when ('syncronization') {
+								when ('sync') {
 									my ($package_name) = @reason_parts;
 									$sub_say_reason->(sprintf __("syncronized with package '%s'"), $package_name);
 								}
-								when ('string') {
-									my ($reason_string) = @reason_parts;
-
-									given ($reason_string) {
-										when ('user') {
-											$sub_say_reason->(__('user request'));
-										}
-										when ('auto-remove') {
-											$sub_say_reason->(__('auto-removal'));
-										}
-										default {
-											myinternaldie("unknown reason string '%s'", $reason_string);
-										}
-									}
+								when ('user') {
+									$sub_say_reason->(__('user request'));
+								}
+								when ('auto-remove') {
+									$sub_say_reason->(__('auto-removal'));
 								}
 								default {
 									myinternaldie("bad reason type '%s'", $reason_type);

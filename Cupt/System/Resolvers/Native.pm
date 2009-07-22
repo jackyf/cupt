@@ -145,7 +145,7 @@ sub __related_binary_package_names ($$) {
 sub _get_package_version_by_source_version_string ($$) {
 	my ($self, $package_name, $source_version_string) = @_;
 
-	foreach my $version (@{$self->{_cache}->get_binary_package($package_name)->get_versions()}) {
+	foreach my $version (@{$self->cache->get_binary_package($package_name)->get_versions()}) {
 		if ($version->{source_version_string} eq $source_version_string) {
 			return $version;
 		}
@@ -191,7 +191,9 @@ sub _syncronize_related_packages ($$) {
 		next if not defined $version;
 		$ref_package_entry->[PE_VERSION] = $version;
 		$ref_package_entry->[PE_STICK] = $stick;
-		push @{$ref_package_entry->[PE_REASONS]}, [ "syncronized with package '$package_name'" ];
+		if ($self->config->var('cupt::resolver::track-reasons')) {
+			push @{$ref_package_entry->[PE_REASONS]}, [ 'sync', $package_name ];
+		}
 	}
 
 	# ok, no errors
@@ -214,7 +216,7 @@ sub _install_version_no_stick ($$$) {
 		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
 	{
 		# binary package names from the same source that supplied package
-		my $o_syncronize_source_versions = $self->{_config}->var('cupt::resolver::syncronize-source-versions');
+		my $o_syncronize_source_versions = $self->config->var('cupt::resolver::syncronize-source-versions');
 
 		if ($o_syncronize_source_versions eq 'hard') {
 			# need to check is the whole operation doable
@@ -336,7 +338,7 @@ sub __full_chooser {
 	my ($ref_solution_entries) = @_;
 	# defer the decision until all solutions are built
 
-	my $ref_unfinished_solution = first { ! $_->{'finished' } } @$ref_solution_entries;
+	my $ref_unfinished_solution = first { ! $_->{'finished'} } @$ref_solution_entries;
 
 	if (defined $ref_unfinished_solution) {
 		return $ref_unfinished_solution;
