@@ -541,7 +541,7 @@ sub _clean_automatically_installed ($) {
 			if ($remove) {
 				$ref_packages->{$package_name}->[PE_VERSION] = undef;
 				# leave only one reason :)
-				if ($self->config->var('cupt::resolver::track-reasons') {
+				if ($self->config->var('cupt::resolver::track-reasons')) {
 					@{$ref_packages->{$package_name}->[PE_REASONS]} = ([ 'auto-remove' ]);
 				}
 				if ($self->config->var('debug::resolver')) {
