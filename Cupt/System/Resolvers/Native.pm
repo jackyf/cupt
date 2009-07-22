@@ -1088,7 +1088,8 @@ sub _resolve ($$) {
 		# if we have to syncronize source versions, can related packages be updated too?
 		# filter out actions that don't match this criteria
 		@possible_actions = grep { 
-			$self->config->var('cupt::resolver::syncronize-source-versions') ne 'hard' ||
+			$self->config->var('cupt::resolver::syncronize-source-versions') ne 'hard' or
+			not defined $_->{'version'} or
 			$self->_related_packages_can_be_syncronized($ref_current_packages, $_->{'version'})
 		} @possible_actions;
 
