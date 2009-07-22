@@ -126,14 +126,11 @@ sub _schedule_new_version_relations ($$) {
 }
 
 sub __related_binary_package_names ($$) {
-	my ($ref_packages, $package_name) = @_;
+	my ($ref_packages, $version) = @_;
 
 	my @result;
 
-	my $version = $ref_packages->{$package_name}->[PE_VERSION];
-	if (not defined $version) {
-		myinternaldie("package '$package_name' doesn't have an installed version");
-	}
+	my $package_name = $version->{package_name};
 	my $source_package_name = $version->{source_package_name};
 
 	foreach my $other_package_name (keys %$ref_packages) {
@@ -163,7 +160,7 @@ sub _related_packages_can_be_syncronized ($$) {
 	my ($self, $ref_packages, $version) = @_;
 
 	my $package_name = $version->{package_name};
-	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
+	my @related_package_names = __related_binary_package_names($ref_packages, $version);
 	my $source_version_string = $version->{source_version_string};
 
 	foreach my $other_package_name (@related_package_names) {
@@ -184,10 +181,11 @@ sub _related_packages_can_be_syncronized ($$) {
 
 sub _syncronize_related_packages ($$$$$) {
 	# $stick - boolean
-	my ($self, $ref_packages, $package_name, $stick, $sub_mydebug_wrapper) = @_;
+	my ($self, $ref_packages, $version, $stick, $sub_mydebug_wrapper) = @_;
 	
-	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
-	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
+	my @related_package_names = __related_binary_package_names($ref_packages, $version);
+	my $source_version_string = $version->{source_version_string};
+	my $package_name = $version->{package_name};
 
 	foreach my $other_package_name (@related_package_names) {
 		my $ref_package_entry = $ref_packages->{$other_package_name};
@@ -230,7 +228,7 @@ sub _install_version_no_stick ($$$) {
 
 		if ($o_syncronize_source_versions eq 'hard') {
 			# need to check is the whole operation doable
-			if (!$self->_related_packages_can_be_syncronized($self->{_packages}, $package_name)) {
+			if (!$self->_related_packages_can_be_syncronized($self->{_packages}, $version)) {
 				# we cannot do it, do nothing
 				return 0;
 			}
@@ -247,7 +245,7 @@ sub _install_version_no_stick ($$$) {
 		$self->_schedule_new_version_relations($version);
 
 		if ($o_syncronize_source_versions ne 'none') {
-			$self->_syncronize_related_packages($self->{_packages}, $package_name, 0, \&mydebug);
+			$self->_syncronize_related_packages($self->{_packages}, $version, 0, \&mydebug);
 		}
 	}
 	return 1;
@@ -654,7 +652,7 @@ sub _apply_action ($$$$$) {
 		# dont' do syncronization for removals
 		if (defined $supposed_version) {
 			$self->_syncronize_related_packages($ref_solution_entry->{'packages'},
-					$package_name_to_change, 1, $sub_mydebug_wrapper);
+					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
 }
