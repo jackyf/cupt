@@ -18,6 +18,9 @@ cupt (0.3.4) UNRELEASED; urgency=low
     - Cache:
       - BinaryVersion:
         - Implemented localized descriptions support.
+      - ArchitecturedRelation:
+        - Fixed parsing of architectured relation expressions which contain
+          relation sign.
       - New method 'get_download_entries_of_localized_descriptions'.
     - Core:
       - 'compare_hash_sums': fixed to return true for equal hash sums.
