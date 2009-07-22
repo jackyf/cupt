@@ -177,9 +177,9 @@ sub _related_packages_can_be_syncronized ($$) {
 	return 1;
 }
 
-sub _syncronize_related_packages ($$) {
+sub _syncronize_related_packages ($$$$$) {
 	# $stick - boolean
-	my ($self, $ref_packages, $package_name, $stick) = @_;
+	my ($self, $ref_packages, $package_name, $stick, $sub_mydebug_wrapper) = @_;
 	
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
@@ -190,8 +190,12 @@ sub _syncronize_related_packages ($$) {
 		my $version = $self->_get_package_version_by_source_version_string(
 				$other_package_name, $source_version_string);
 		next if not defined $version;
+		next if $version->{version_string} eq $ref_package_entry->[PE_VERSION]->{version_string};
 		$ref_package_entry->[PE_VERSION] = $version;
 		$ref_package_entry->[PE_STICK] = $stick;
+		if ($self->config->var('debug::resolver')) {
+			$sub_mydebug_wrapper->("syncronizing package '$other_package' with package '$package_name");
+		}
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$ref_package_entry->[PE_REASONS]}, [ 'sync', $package_name ];
 		}
@@ -238,7 +242,7 @@ sub _install_version_no_stick ($$$) {
 		$self->_schedule_new_version_relations($version);
 
 		if ($o_syncronize_source_versions ne 'none') {
-			$self->_syncronize_related_packages($self->{_packages}, $package_name, 0);
+			$self->_syncronize_related_packages($self->{_packages}, $package_name, \&mydebug);
 		}
 	}
 	return 1;
@@ -628,20 +632,21 @@ sub _apply_action ($$$$$) {
 		$sub_mydebug_wrapper->($message);
 	}
 
-	# raise the level
 	++$ref_solution_entry->{'level'};
-
 	$ref_solution_entry->{'score'} += $profit;
 
-	# set stick for change for the time on underlying solutions
 	$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
 		push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
 	}
-	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
+	if ($self->config->var('cupt::resolver::track-reasons')) {
 		if (defined $ref_action_to_apply->{'reason'}) {
 			push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
 		}
+	}
+	if ($self->config->var('cupt::resolver::syncronize-source-versions')) {
+		$self->_syncronize_related_packages($ref_solution_entry->{'packages'},
+				$package_name_to_change, 1, $sub_mydebug_wrapper);
 	}
 }
 
