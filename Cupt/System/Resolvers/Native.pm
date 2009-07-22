@@ -105,22 +105,22 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->_auto_satisfy_relation($_, [ $version, 'pre-depends', $_ ]);
+		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'pre-depends', $_ ]);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
-		$self->_auto_satisfy_relation($_, [ $version, 'depends', $_ ]);
+		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'depends', $_ ]);
 	}
 	if ($self->config->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
-			$self->_auto_satisfy_relation($_, [ $version, 'recommends', $_ ]);
+			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'recommends', $_ ]);
 		}
 	}
 	if ($self->config->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
-			$self->_auto_satisfy_relation($_, [ $version, 'suggests', $_ ]);
+			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'suggests', $_ ]);
 		}
 	}
 }
@@ -136,6 +136,7 @@ sub __related_binary_package_names ($$) {
 		my $version = $ref_packages->{$other_package_name}->[PE_VERSION];
 		next if not defined $version;
 		next if $version->{source_package_name} ne $source_package_name;
+		next if $other_package_name eq $package_name;
 		push @result, $other_package_name;
 	}
 
