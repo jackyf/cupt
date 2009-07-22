@@ -160,10 +160,11 @@ sub _get_package_version_by_source_version_string ($$) {
 }
 
 sub _related_packages_can_be_syncronized ($$) {
-	my ($self, $ref_packages, $package_name) = @_;
+	my ($self, $ref_packages, $version) = @_;
 
+	my $package_name = $version->{package_name};
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
-	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
+	my $source_version_string = $version->{source_version_string};
 
 	foreach my $other_package_name (@related_package_names) {
 		if ($ref_packages->{$other_package_name}->[PE_STICK]) {
@@ -586,6 +587,7 @@ sub _require_strict_relation_expressions ($) {
 	# "installing" virtual package, which will be used for strict 'satisfy' requests
 	my $version = {
 		package_name => $_dummy_package_name,
+		source_package_name => $_dummy_package_name,
 		version_string => '',
 		pre_depends => [],
 		depends => [],
@@ -668,6 +670,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 	# install one of versions package needs
 	foreach my $satisfying_version (@$ref_satisfying_versions) {
 		my $satisfying_package_name = $satisfying_version->{package_name};
+		# can the package be updated?
 		if (!exists $ref_packages->{$satisfying_package_name} ||
 			!$ref_packages->{$satisfying_package_name}->[PE_STICK])
 		{
@@ -1084,12 +1087,19 @@ sub _resolve ($$) {
 			}
 		}
 
+		# if we have to syncronize source versions, can related packages be updated too?
+		# filter out actions that don't match this criteria
+		@possible_actions = grep { 
+			$self->config->var('cupt::resolver::syncronize-source-versions') ne 'hard' ||
+			$self->_related_packages_can_be_syncronized($ref_current_packages, $_->{'version'})
+		} @possible_actions;
+
 		if (scalar @possible_actions) {
 			# firstly rank all solutions
 			my $position_penalty = 0;
 			foreach (@possible_actions) {
-				my $package_name = $_->{package_name};
-				my $supposed_version = $_->{version};
+				my $package_name = $_->{'package_name'};
+				my $supposed_version = $_->{'version'};
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->[PE_VERSION] : undef;
 
