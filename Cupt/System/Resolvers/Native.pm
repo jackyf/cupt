@@ -154,13 +154,13 @@ sub _get_package_version_by_source_version_string ($$) {
 	return undef;
 }
 
-sub _related_packages_can_be_updated ($$) {
+sub _related_packages_can_be_syncronized ($$) {
 	my ($self, $ref_packages, $package_name) = @_;
 
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
 
-	foreach my $package_name (@package_names) {
+	foreach my $package_name (@related_package_names) {
 		if ($ref_packages->{$package_name}->[PE_STICK]) {
 			# cannot update the package
 			return 0;
@@ -176,16 +176,18 @@ sub _related_packages_can_be_updated ($$) {
 	return 1;
 }
 
-sub __update_related_packages ($$) {
+sub _syncronize_related_packages ($$) {
 	# $stick - boolean
 	my ($self, $ref_packages, $package_name, $stick) = @_;
 	
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
 
-	foreach my $package_name (@package_names) {
+	foreach my $package_name (@related_package_names) {
+		next if $ref_packages->{$package_name}->[PE_STICK];
 		my $version = $self->_get_package_version_by_source_version_string(
-				$package_name, $source_version_string))
+				$package_name, $source_version_string);
+		next if not defined $version;
 		$ref_packages->{$package_name}->[PE_VERSION] = $version;
 		$ref_packages->{$package_name}->[PE_STICK] = $stick;
 	}
@@ -206,12 +208,21 @@ sub _install_version_no_stick ($$$) {
 		return 0;
 	}
 
-	# binary package names from the same source that supplied package
-	my @related_binary_package_names;
-
 	if ((not $self->{_packages}->{$package_name}->[PE_VERSION]) ||
 		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
 	{
+		# binary package names from the same source that supplied package
+		my $o_syncronize_source_versions = $self->{_config}->var('cupt::resolver::syncronize-source-versions');
+
+		if ($o_syncronize_source_versions eq 'hard') {
+			# need to check is the whole operation doable
+			if (!$self->_related_packages_can_be_syncronized($self->{_packages}, $package_name)) {
+				# we cannot do it, do nothing
+				return 0;
+			}
+		}
+
+		# update the requested package
 		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, $reason;
@@ -220,6 +231,10 @@ sub _install_version_no_stick ($$$) {
 			mydebug("install package '$package_name', version '$version->{version_string}'");
 		}
 		$self->_schedule_new_version_relations($version);
+
+		if ($o_syncronize_source_versions ne 'none') {
+			$self->_syncronize_related_packages($self->{_packages}, $package_name, 0);
+		}
 	}
 	return 1;
 }
