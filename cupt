@@ -871,40 +871,50 @@ sub generate_management_prompt ($$$) {
 						foreach my $ref_reason (@{$ref_package_entry->{'reasons'}}) {
 							my @reason_parts = @$ref_reason;
 							my $reason_type = shift @reason_parts;
-							if ($reason_type eq 'relation expression') {
-								my %reason_dependency_name_translations = (
-									'pre-depends' => __('pre-depends on'),
-									'depends' => __('depends on'),
-									'recommends' => __('recommends'),
-									'suggests' => __('suggests'),
-									'conflicts' => __('conflicts with '),
-									'breaks' => __('breaks'),
-								);
-								my ($reason_version, $reason_dependency_name, $reason_relation_expression) = @reason_parts;
+							given ($reason_type) {
+								when ('relation expression') {
+									my %reason_dependency_name_translations = (
+										'pre-depends' => __('pre-depends on'),
+										'depends' => __('depends on'),
+										'recommends' => __('recommends'),
+										'suggests' => __('suggests'),
+										'conflicts' => __('conflicts with '),
+										'breaks' => __('breaks'),
+									);
+									my ($reason_version, $reason_dependency_name, $reason_relation_expression) = @reason_parts;
 
-								my $reason_package_name = $reason_version->{package_name};
-								my $reason_version_string = $reason_version->{version_string};
+									my $reason_package_name = $reason_version->{package_name};
+									my $reason_version_string = $reason_version->{version_string};
 
-								$sub_say_reason->(sprintf("%s %s %s '%s'",
-										$reason_package_name, $reason_version_string,
-										$reason_dependency_name_translations{$reason_dependency_name},
-										stringify_relation_expression($reason_relation_expression)
-										));
-							} elsif ($reason_type eq 'syncronization') {
-								my ($package_name) = @reason_parts;
-								$sub_say_reason->(sprintf __("syncronized with package '%s'"), $package_name);
-							} elsif ($reason_type eq 'string') {
-								my ($reason_string) = @reason_parts;
-
-								if ($reason_parts[0] eq 'user') {
-									$sub_say_reason->(__('user request'));
-								} elsif ($reason_parts[0] eq 'auto-remove') {
-									$sub_say_reason->(__('auto-removal'));
-								} else {
-									myinternaldie("unknown reason string '%s'", $reason_parts[0]);
+									$sub_say_reason->(sprintf("%s %s %s '%s'",
+											$reason_package_name, $reason_version_string,
+											$reason_dependency_name_translations{$reason_dependency_name},
+											stringify_relation_expression($reason_relation_expression)
+											));
 								}
-							} else {
-								myinternaldie("bad 
+								when ('syncronization') {
+									my ($package_name) = @reason_parts;
+									$sub_say_reason->(sprintf __("syncronized with package '%s'"), $package_name);
+								}
+								when ('string') {
+									my ($reason_string) = @reason_parts;
+
+									given ($reason_string) {
+										when ('user') {
+											$sub_say_reason->(__('user request'));
+										}
+										when ('auto-remove') {
+											$sub_say_reason->(__('auto-removal'));
+										}
+										default {
+											myinternaldie("unknown reason string '%s'", $reason_string);
+										}
+									}
+								}
+								default {
+									myinternaldie("bad reason type '%s'", $reason_type);
+								}
+							}
 						}
 						say "";
 					}
