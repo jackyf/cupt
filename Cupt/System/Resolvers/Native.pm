@@ -133,7 +133,7 @@ sub __related_binary_package_names ($$) {
 	my $source_package_name = $ref_packages->{$package_name}->[PE_VERSION]->{source_package_name};
 
 	foreach my $other_package_name (keys %$ref_packages) {
-		my $version = $ref_packages->{$other_package_name};
+		my $version = $ref_packages->{$other_package_name}->[PE_VERSION];
 		next if not defined $version;
 		next if $version->{source_package_name} ne $source_package_name;
 		push @result, $other_package_name;
@@ -184,12 +184,14 @@ sub _syncronize_related_packages ($$) {
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
 
 	foreach my $package_name (@related_package_names) {
-		next if $ref_packages->{$package_name}->[PE_STICK];
+		my $ref_package_entry = $ref_packages->{$package_name};
+		next if $ref_package_entry->[PE_STICK];
 		my $version = $self->_get_package_version_by_source_version_string(
 				$package_name, $source_version_string);
 		next if not defined $version;
-		$ref_packages->{$package_name}->[PE_VERSION] = $version;
-		$ref_packages->{$package_name}->[PE_STICK] = $stick;
+		$ref_package_entry->[PE_VERSION] = $version;
+		$ref_package_entry->[PE_STICK] = $stick;
+		push @{$ref_package_entry->[PE_REASONS]}, [ "syncronized with package '$package_name'" ];
 	}
 
 	# ok, no errors
