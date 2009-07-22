@@ -541,7 +541,9 @@ sub _clean_automatically_installed ($) {
 			if ($remove) {
 				$ref_packages->{$package_name}->[PE_VERSION] = undef;
 				# leave only one reason :)
-				@{$ref_packages->{$package_name}->[PE_REASONS]} = ( [ 'auto-remove' ] );
+				if ($self->config->var('cupt::resolver::track-reasons') {
+					@{$ref_packages->{$package_name}->[PE_REASONS]} = ([ 'auto-remove' ]);
+				}
 				if ($self->config->var('debug::resolver')) {
 					mydebug("auto-removed package '$package_name'");
 				}
@@ -660,7 +662,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 				'package_name' => $satisfying_package_name,
 				'version' => $satisfying_version,
 				'factor' => $dependency_group_factor,
-				'reason' => [ $version, $dependency_group_name, $relation_expression ],
+				'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 			};
 		}
 	}
@@ -725,7 +727,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 						'package_name' => $package_name,
 						'version' => $other_version,
 						'factor' => $dependency_group_factor,
-						'reason' => [ $version, $dependency_group_name, $relation_expression ],
+						'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 					};
 				}
 			}
@@ -737,7 +739,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 				'package_name' => $package_name,
 				'version' => undef,
 				'factor' => $dependency_group_factor,
-				'reason' => [ $version, $dependency_group_name, $relation_expression ],
+				'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 			};
 		}
 	}
@@ -949,7 +951,7 @@ sub _resolve ($$) {
 											'package_name' => $other_package_name,
 											'version' => $other_version,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 
@@ -959,7 +961,7 @@ sub _resolve ($$) {
 											'package_name' => $other_package_name,
 											'version' => undef,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 								}
@@ -982,7 +984,7 @@ sub _resolve ($$) {
 											'package_name' => $package_name,
 											'version' => $other_version,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 									
@@ -992,7 +994,7 @@ sub _resolve ($$) {
 											'package_name' => $package_name,
 											'version' => undef,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 								}
