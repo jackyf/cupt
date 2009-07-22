@@ -161,13 +161,13 @@ sub _related_packages_can_be_syncronized ($$) {
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
 
-	foreach my $package_name (@related_package_names) {
-		if ($ref_packages->{$package_name}->[PE_STICK]) {
+	foreach my $other_package_name (@related_package_names) {
+		if ($ref_packages->{$other_package_name}->[PE_STICK]) {
 			# cannot update the package
 			return 0;
 		}
 		if (not defined $self->_get_package_version_by_source_version_string(
-				$package_name, $source_version_string))
+				$other_package_name, $source_version_string))
 		{
 			return 0;
 		}
@@ -184,11 +184,11 @@ sub _syncronize_related_packages ($$) {
 	my @related_package_names = __related_binary_package_names($ref_packages, $package_name);
 	my $source_version_string = $ref_packages->{$package_name}->[PE_VERSION]->{source_version_string};
 
-	foreach my $package_name (@related_package_names) {
-		my $ref_package_entry = $ref_packages->{$package_name};
+	foreach my $other_package_name (@related_package_names) {
+		my $ref_package_entry = $ref_packages->{$other_package_name};
 		next if $ref_package_entry->[PE_STICK];
 		my $version = $self->_get_package_version_by_source_version_string(
-				$package_name, $source_version_string);
+				$other_package_name, $source_version_string);
 		next if not defined $version;
 		$ref_package_entry->[PE_VERSION] = $version;
 		$ref_package_entry->[PE_STICK] = $stick;
