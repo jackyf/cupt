@@ -105,27 +105,110 @@ sub _schedule_new_version_relations ($$) {
 
 	# unconditionally adding pre-depends
 	foreach (@{$version->{pre_depends}}) {
-		$self->_auto_satisfy_relation($_, [ $version, 'pre-depends', $_ ]);
+		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'pre-depends', $_ ]);
 	}
 	# unconditionally adding depends
 	foreach (@{$version->{depends}}) {
-		$self->_auto_satisfy_relation($_, [ $version, 'depends', $_ ]);
+		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'depends', $_ ]);
 	}
 	if ($self->config->var('apt::install-recommends')) {
 		# ok, so adding recommends
 		foreach (@{$version->{recommends}}) {
-			$self->_auto_satisfy_relation($_, [ $version, 'recommends', $_ ]);
+			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'recommends', $_ ]);
 		}
 	}
 	if ($self->config->var('apt::install-suggests')) {
 		# ok, so adding suggests
 		foreach (@{$version->{suggests}}) {
-			$self->_auto_satisfy_relation($_, [ $version, 'suggests', $_ ]);
+			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'suggests', $_ ]);
 		}
 	}
 }
 
-# installs new version, shedules new dependencies, but not sticks it
+sub __related_binary_package_names ($$) {
+	my ($ref_packages, $version) = @_;
+
+	my @result;
+
+	my $package_name = $version->{package_name};
+	my $source_package_name = $version->{source_package_name};
+
+	foreach my $other_package_name (keys %$ref_packages) {
+		my $other_version = $ref_packages->{$other_package_name}->[PE_VERSION];
+		next if not defined $other_version;
+		next if $other_version->{source_package_name} ne $source_package_name;
+		next if $other_package_name eq $package_name;
+		push @result, $other_package_name;
+	}
+
+	return @result;
+}
+
+sub _get_package_version_by_source_version_string ($$) {
+	my ($self, $package_name, $source_version_string) = @_;
+
+	foreach my $version (@{$self->cache->get_binary_package($package_name)->get_versions()}) {
+		if ($version->{source_version_string} eq $source_version_string) {
+			return $version;
+		}
+	}
+
+	return undef;
+}
+
+sub _related_packages_can_be_syncronized ($$) {
+	my ($self, $ref_packages, $version) = @_;
+
+	my $package_name = $version->{package_name};
+	my @related_package_names = __related_binary_package_names($ref_packages, $version);
+	my $source_version_string = $version->{source_version_string};
+
+	foreach my $other_package_name (@related_package_names) {
+		if ($ref_packages->{$other_package_name}->[PE_STICK]) {
+			# cannot update the package
+			return 0;
+		}
+		if (not defined $self->_get_package_version_by_source_version_string(
+				$other_package_name, $source_version_string))
+		{
+			return 0;
+		}
+	}
+
+	# ok, no errors
+	return 1;
+}
+
+sub _syncronize_related_packages ($$$$$) {
+	# $stick - boolean
+	my ($self, $ref_packages, $version, $stick, $sub_mydebug_wrapper) = @_;
+	
+	my @related_package_names = __related_binary_package_names($ref_packages, $version);
+	my $source_version_string = $version->{source_version_string};
+	my $package_name = $version->{package_name};
+
+	foreach my $other_package_name (@related_package_names) {
+		my $ref_package_entry = $ref_packages->{$other_package_name};
+		next if $ref_package_entry->[PE_STICK];
+		my $version = $self->_get_package_version_by_source_version_string(
+				$other_package_name, $source_version_string);
+		next if not defined $version;
+		next if $version->{version_string} eq $ref_package_entry->[PE_VERSION]->{version_string};
+		$ref_package_entry->[PE_VERSION] = $version;
+		$ref_package_entry->[PE_STICK] = $stick;
+		if ($self->config->var('debug::resolver')) {
+			$sub_mydebug_wrapper->("syncronizing package '$other_package_name' with package '$package_name");
+		}
+		if ($self->config->var('cupt::resolver::track-reasons')) {
+			push @{$ref_package_entry->[PE_REASONS]}, [ 'sync', $package_name ];
+		}
+	}
+
+	# ok, no errors
+	return 1;
+}
+
+# installs new version, schedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$$) {
 	my ($self, $version, $reason) = @_;
 	
@@ -140,6 +223,18 @@ sub _install_version_no_stick ($$$) {
 	if ((not $self->{_packages}->{$package_name}->[PE_VERSION]) ||
 		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
 	{
+		# binary package names from the same source that supplied package
+		my $o_syncronize_source_versions = $self->config->var('cupt::resolver::syncronize-source-versions');
+
+		if ($o_syncronize_source_versions eq 'hard') {
+			# need to check is the whole operation doable
+			if (!$self->_related_packages_can_be_syncronized($self->{_packages}, $version)) {
+				# we cannot do it, do nothing
+				return 0;
+			}
+		}
+
+		# update the requested package
 		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, $reason;
@@ -148,6 +243,10 @@ sub _install_version_no_stick ($$$) {
 			mydebug("install package '$package_name', version '$version->{version_string}'");
 		}
 		$self->_schedule_new_version_relations($version);
+
+		if ($o_syncronize_source_versions ne 'none') {
+			$self->_syncronize_related_packages($self->{_packages}, $version, 0, \&mydebug);
+		}
 	}
 	return 1;
 }
@@ -247,7 +346,7 @@ sub __full_chooser {
 	my ($ref_solution_entries) = @_;
 	# defer the decision until all solutions are built
 
-	my $ref_unfinished_solution = first { ! $_->{'finished' } } @$ref_solution_entries;
+	my $ref_unfinished_solution = first { ! $_->{'finished'} } @$ref_solution_entries;
 
 	if (defined $ref_unfinished_solution) {
 		return $ref_unfinished_solution;
@@ -450,7 +549,9 @@ sub _clean_automatically_installed ($) {
 			if ($remove) {
 				$ref_packages->{$package_name}->[PE_VERSION] = undef;
 				# leave only one reason :)
-				@{$ref_packages->{$package_name}->[PE_REASONS]} = ( [ 'auto-remove' ] );
+				if ($self->config->var('cupt::resolver::track-reasons')) {
+					@{$ref_packages->{$package_name}->[PE_REASONS]} = ([ 'auto-remove' ]);
+				}
 				if ($self->config->var('debug::resolver')) {
 					mydebug("auto-removed package '$package_name'");
 				}
@@ -484,6 +585,7 @@ sub _require_strict_relation_expressions ($) {
 	# "installing" virtual package, which will be used for strict 'satisfy' requests
 	my $version = {
 		package_name => $_dummy_package_name,
+		source_package_name => $_dummy_package_name,
 		version_string => '',
 		pre_depends => [],
 		depends => [],
@@ -534,19 +636,23 @@ sub _apply_action ($$$$$) {
 		$sub_mydebug_wrapper->($message);
 	}
 
-	# raise the level
 	++$ref_solution_entry->{'level'};
-
 	$ref_solution_entry->{'score'} += $profit;
 
-	# set stick for change for the time on underlying solutions
 	$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
 		push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
 	}
-	if ($self->{_config}->var('cupt::resolver::track-reasons')) {
+	if ($self->config->var('cupt::resolver::track-reasons')) {
 		if (defined $ref_action_to_apply->{'reason'}) {
 			push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
+		}
+	}
+	if ($self->config->var('cupt::resolver::syncronize-source-versions')) {
+		# dont' do syncronization for removals
+		if (defined $supposed_version) {
+			$self->_syncronize_related_packages($ref_solution_entry->{'packages'},
+					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
 }
@@ -562,6 +668,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 	# install one of versions package needs
 	foreach my $satisfying_version (@$ref_satisfying_versions) {
 		my $satisfying_package_name = $satisfying_version->{package_name};
+		# can the package be updated?
 		if (!exists $ref_packages->{$satisfying_package_name} ||
 			!$ref_packages->{$satisfying_package_name}->[PE_STICK])
 		{
@@ -569,7 +676,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 				'package_name' => $satisfying_package_name,
 				'version' => $satisfying_version,
 				'factor' => $dependency_group_factor,
-				'reason' => [ $version, $dependency_group_name, $relation_expression ],
+				'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 			};
 		}
 	}
@@ -634,7 +741,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 						'package_name' => $package_name,
 						'version' => $other_version,
 						'factor' => $dependency_group_factor,
-						'reason' => [ $version, $dependency_group_name, $relation_expression ],
+						'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 					};
 				}
 			}
@@ -646,7 +753,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 				'package_name' => $package_name,
 				'version' => undef,
 				'factor' => $dependency_group_factor,
-				'reason' => [ $version, $dependency_group_name, $relation_expression ],
+				'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 			};
 		}
 	}
@@ -858,7 +965,7 @@ sub _resolve ($$) {
 											'package_name' => $other_package_name,
 											'version' => $other_version,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 
@@ -868,7 +975,7 @@ sub _resolve ($$) {
 											'package_name' => $other_package_name,
 											'version' => undef,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 								}
@@ -891,7 +998,7 @@ sub _resolve ($$) {
 											'package_name' => $package_name,
 											'version' => $other_version,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 									
@@ -901,7 +1008,7 @@ sub _resolve ($$) {
 											'package_name' => $package_name,
 											'version' => undef,
 											'factor' => $dependency_group_factor,
-											'reason' => [ $version, $dependency_group_name, $relation_expression ],
+											'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 										};
 									}
 								}
@@ -978,12 +1085,20 @@ sub _resolve ($$) {
 			}
 		}
 
+		# if we have to syncronize source versions, can related packages be updated too?
+		# filter out actions that don't match this criteria
+		@possible_actions = grep { 
+			$self->config->var('cupt::resolver::syncronize-source-versions') ne 'hard' or
+			not defined $_->{'version'} or
+			$self->_related_packages_can_be_syncronized($ref_current_packages, $_->{'version'})
+		} @possible_actions;
+
 		if (scalar @possible_actions) {
 			# firstly rank all solutions
 			my $position_penalty = 0;
 			foreach (@possible_actions) {
-				my $package_name = $_->{package_name};
-				my $supposed_version = $_->{version};
+				my $package_name = $_->{'package_name'};
+				my $supposed_version = $_->{'version'};
 				my $original_version = exists $ref_current_packages->{$package_name} ?
 						$ref_current_packages->{$package_name}->[PE_VERSION] : undef;
 

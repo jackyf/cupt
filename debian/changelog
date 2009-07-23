@@ -1,4 +1,4 @@
-cupt (0.3.4) UNRELEASED; urgency=medium
+cupt (0.4.0) UNRELEASED; urgency=medium
 
   * cupt
     - Allowed to purge packages with no installation candidates.
@@ -13,8 +13,10 @@ cupt (0.3.4) UNRELEASED; urgency=medium
       - Resolver:
         - Generate an error when attempting to schedule more than one action
           on the same package.
+        - Honor the 'cupt::resolver::syncronize-source-versions' option.
     - Config:
       - Added 'apt::acquire::translation' configuration option.
+      - New 'cupt::resolver::syncronize-source-versions' configuration option.
     - Cache:
       - BinaryVersion:
         - Implemented localized descriptions support.

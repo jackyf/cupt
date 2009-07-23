@@ -690,6 +690,67 @@ Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cud
 
 see L<--no-remove|/--no-remove>
 
+=item cupt::resolver::syncronize-source-versions
+
+string, this option controls whether and how the native resolver will attempt to keep
+all binary packages from the same source package at the same source version
+
+Possible values:
+
+=over
+
+=item none
+
+Don't attempt to syncronize source versions. This is the default value.
+
+=item soft
+
+Don't forbid any modifications to the packages and attempt to syncronize
+related binary packages when possible upon the modifications of certain binary
+package.
+
+=item hard
+
+Forbid any modifications to the packages when at least one related binary
+package cannot be syncronized with the modified one.
+
+=back
+
+Example:
+
+Suppose we have 'libfoo1' and 'foo' binary packages which came from the same
+source package. We have libfoo1 '1.2-1' and foo '1.2-1' installed.
+
+Situation 1: libfoo1 has new '1.3-1' version and foo has new '1.3-1' version.
+
+Situation 2: libfoo1 has new '1.3-1' version and foo has new '1.3-2' version.
+
+We called: C<cupt install foo>.
+
+What would be done by resolver:
+
+=over
+
+=item none
+
+Situation 1: install new foo, leave libfoo1 as of installed version
+
+Situation 2: install new foo, leave libfoo1 as of installed version
+
+=item soft
+
+Situation 1: install new foo and libfoo1
+
+Situation 2: install new foo, leave libfoo1 as of installed version
+
+=item hard
+
+Situation 1: install new foo and libfoo1
+
+Situation 2: prohibit to install new version of foo
+
+=back
+
 =item cupt::resolver::track-reasons
 
 see L<--show-reasons|/--show-reasons,--show-deps,-D>
