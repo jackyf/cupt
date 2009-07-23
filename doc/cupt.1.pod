@@ -765,7 +765,7 @@ boolean (0/1), specifies whether should worker defer dpkg trigger processing to
 the end of the whole operation or not. Being set to true, speeds up
 large-amount actions, but if the operation will somewhy interrupted, leaves
 system in the interim trigger state, which can be fixed by manual run of 'dpkg
---triggers-only --pending' command. True by default.
+--triggers-only --pending' command. False by default due to tiresome dpkg bug.
 
 =item cupt::worker::download-only
 

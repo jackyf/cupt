@@ -17,6 +17,8 @@ cupt (0.4.0) UNRELEASED; urgency=medium
     - Config:
       - Added 'apt::acquire::translation' configuration option.
       - New 'cupt::resolver::syncronize-source-versions' configuration option.
+      - The option 'cupt::resolver::defer-triggers' now defaults to false due
+        to unfixed dpkg bug (#526774) that can cause upgrade breakage.
     - Cache:
       - BinaryVersion:
         - Implemented localized descriptions support.

@@ -103,7 +103,7 @@ sub new {
 			'cupt::resolver::syncronize-source-versions' => 'none',
 			'cupt::resolver::track-reasons' => 0,
 			'cupt::resolver::type' => 'fair',
-			'cupt::worker::defer-triggers' => 1,
+			'cupt::worker::defer-triggers' => 0,
 			'cupt::worker::download-only' => 0,
 			'cupt::worker::purge' => 0,
 			'cupt::worker::simulate' => 0,
