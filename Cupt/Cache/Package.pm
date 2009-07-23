@@ -183,7 +183,7 @@ sub get_installed_version ($) {
 sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
-	if (defined $o_binary_architecture and defined $parsed_version->{architecture}) {
+	if (defined $o_binary_architecture and ref $parsed_version eq 'Cupt::Cache::BinaryVersion') {
 		if ($parsed_version->{architecture} ne 'all' and
 			$parsed_version->{architecture} ne $o_binary_architecture)
 		{

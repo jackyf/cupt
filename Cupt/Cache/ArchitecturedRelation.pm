@@ -74,7 +74,7 @@ sub new {
 	{
 		@architectures = split(/ /, $1);
 		# cleaning square braces info
-		$unparsed =~ s/\[.*//;
+		$unparsed =~ s/\s*\[.*//;
 	}
 	my $self = new Cupt::Cache::Relation($unparsed);
 	bless $self => $class;
