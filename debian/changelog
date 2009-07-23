@@ -13,10 +13,10 @@ cupt (0.4.0) unstable; urgency=medium
       - Resolver:
         - Generate an error when attempting to schedule more than one action
           on the same package.
-        - Honor the 'cupt::resolver::syncronize-source-versions' option.
+        - Honor the 'cupt::resolver::synchronize-source-versions' option.
     - Config:
       - Added 'apt::acquire::translation' configuration option.
-      - New 'cupt::resolver::syncronize-source-versions' configuration option.
+      - New 'cupt::resolver::synchronize-source-versions' configuration option.
       - The option 'cupt::resolver::defer-triggers' now defaults to false due
         to unfixed dpkg bug (#526774) that can cause upgrade breakage.
     - Cache:

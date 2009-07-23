@@ -156,7 +156,7 @@ sub _get_package_version_by_source_version_string ($$) {
 	return undef;
 }
 
-sub _related_packages_can_be_syncronized ($$) {
+sub _related_packages_can_be_synchronized ($$) {
 	my ($self, $ref_packages, $version) = @_;
 
 	my $package_name = $version->{package_name};
@@ -179,7 +179,7 @@ sub _related_packages_can_be_syncronized ($$) {
 	return 1;
 }
 
-sub _syncronize_related_packages ($$$$$) {
+sub _synchronize_related_packages ($$$$$) {
 	# $stick - boolean
 	my ($self, $ref_packages, $version, $stick, $sub_mydebug_wrapper) = @_;
 	
@@ -197,7 +197,7 @@ sub _syncronize_related_packages ($$$$$) {
 		$ref_package_entry->[PE_VERSION] = $version;
 		$ref_package_entry->[PE_STICK] = $stick;
 		if ($self->config->var('debug::resolver')) {
-			$sub_mydebug_wrapper->("syncronizing package '$other_package_name' with package '$package_name");
+			$sub_mydebug_wrapper->("synchronizing package '$other_package_name' with package '$package_name");
 		}
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$ref_package_entry->[PE_REASONS]}, [ 'sync', $package_name ];
@@ -224,11 +224,11 @@ sub _install_version_no_stick ($$$) {
 		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
 	{
 		# binary package names from the same source that supplied package
-		my $o_syncronize_source_versions = $self->config->var('cupt::resolver::syncronize-source-versions');
+		my $o_synchronize_source_versions = $self->config->var('cupt::resolver::synchronize-source-versions');
 
-		if ($o_syncronize_source_versions eq 'hard') {
+		if ($o_synchronize_source_versions eq 'hard') {
 			# need to check is the whole operation doable
-			if (!$self->_related_packages_can_be_syncronized($self->{_packages}, $version)) {
+			if (!$self->_related_packages_can_be_synchronized($self->{_packages}, $version)) {
 				# we cannot do it, do nothing
 				return 0;
 			}
@@ -244,8 +244,8 @@ sub _install_version_no_stick ($$$) {
 		}
 		$self->_schedule_new_version_relations($version);
 
-		if ($o_syncronize_source_versions ne 'none') {
-			$self->_syncronize_related_packages($self->{_packages}, $version, 0, \&mydebug);
+		if ($o_synchronize_source_versions ne 'none') {
+			$self->_synchronize_related_packages($self->{_packages}, $version, 0, \&mydebug);
 		}
 	}
 	return 1;
@@ -648,10 +648,10 @@ sub _apply_action ($$$$$) {
 			push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
 		}
 	}
-	if ($self->config->var('cupt::resolver::syncronize-source-versions')) {
-		# dont' do syncronization for removals
+	if ($self->config->var('cupt::resolver::synchronize-source-versions')) {
+		# dont' do synchronization for removals
 		if (defined $supposed_version) {
-			$self->_syncronize_related_packages($ref_solution_entry->{'packages'},
+			$self->_synchronize_related_packages($ref_solution_entry->{'packages'},
 					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
@@ -1085,12 +1085,12 @@ sub _resolve ($$) {
 			}
 		}
 
-		# if we have to syncronize source versions, can related packages be updated too?
+		# if we have to synchronize source versions, can related packages be updated too?
 		# filter out actions that don't match this criteria
 		@possible_actions = grep { 
-			$self->config->var('cupt::resolver::syncronize-source-versions') ne 'hard' or
+			$self->config->var('cupt::resolver::synchronize-source-versions') ne 'hard' or
 			not defined $_->{'version'} or
-			$self->_related_packages_can_be_syncronized($ref_current_packages, $_->{'version'})
+			$self->_related_packages_can_be_synchronized($ref_current_packages, $_->{'version'})
 		} @possible_actions;
 
 		if (scalar @possible_actions) {

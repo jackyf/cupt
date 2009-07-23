@@ -100,7 +100,7 @@ sub new {
 			'cupt::resolver::keep-suggests' => 0,
 			'cupt::resolver::max-solution-count' => 256,
 			'cupt::resolver::no-remove' => 0,
-			'cupt::resolver::syncronize-source-versions' => 'none',
+			'cupt::resolver::synchronize-source-versions' => 'none',
 			'cupt::resolver::track-reasons' => 0,
 			'cupt::resolver::type' => 'fair',
 			'cupt::worker::defer-triggers' => 0,
