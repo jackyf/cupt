@@ -66,11 +66,11 @@ sub new {
 	$self->{_cache} = shift;
 	$self->{_system_state} = $self->{_cache}->get_system_state();
 	$self->{_desired_state} = undef;
-	$self->_syncronize_apt_compat_symlinks();
+	$self->_synchronize_apt_compat_symlinks();
 	return $self;
 }
 
-sub _syncronize_apt_compat_symlinks ($) {
+sub _synchronize_apt_compat_symlinks ($) {
 	my ($self) = @_;
 
 	return if $self->{_config}->var('cupt::worker::simulate');

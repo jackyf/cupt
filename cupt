@@ -894,7 +894,7 @@ sub generate_management_prompt ($$$) {
 								}
 								when ('sync') {
 									my ($package_name) = @reason_parts;
-									$sub_say_reason->(sprintf __("syncronized with package '%s'"), $package_name);
+									$sub_say_reason->(sprintf __("synchronized with package '%s'"), $package_name);
 								}
 								when ('user') {
 									$sub_say_reason->(__('user request'));
