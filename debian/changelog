@@ -1,4 +1,4 @@
-cupt (0.3.4) UNRELEASED; urgency=low
+cupt (0.3.4) UNRELEASED; urgency=medium
 
   * cupt
     - Allowed to purge packages with no installation candidates.
@@ -21,6 +21,10 @@ cupt (0.3.4) UNRELEASED; urgency=low
       - ArchitecturedRelation:
         - Fixed parsing of architectured relation expressions which contain
           relation sign.
+      - Package:
+        - Fixed error while parsing 'Architecture: any' source version,
+          introduced in version 0.3.2. Urgency is set to 'medium' because of
+          this fix.
       - New method 'get_download_entries_of_localized_descriptions'.
     - Core:
       - 'compare_hash_sums': fixed to return true for equal hash sums.
