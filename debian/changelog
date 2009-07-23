@@ -1,3 +1,9 @@
+cupt (0.4.0.1) unstable; urgency=low
+
+  * Typo fix: 'syncroniz*' -> 'synchroniz*'.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 23 Jul 2009 23:20:01 +0300
+
 cupt (0.4.0) unstable; urgency=medium
 
   * cupt
