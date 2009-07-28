@@ -1,3 +1,11 @@
+cupt (0.4.1) UNRELEASED; urgency=low
+
+  * cupt:
+    - Fixed a regression since 0.4.0 when trying to 'remove' non-installed
+      packages (for insuring that they won't be installed).
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 28 Jul 2009 15:14:30 +0300
+
 cupt (0.4.0.1) unstable; urgency=low
 
   * Typo fix: 'syncroniz*' -> 'synchroniz*'.

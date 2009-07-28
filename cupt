@@ -1244,7 +1244,7 @@ sub manage_packages ($) {
 			$resolver->satisfy_relation_expression(new Cupt::Cache::Relation("build-essential"));
 		} else {
 			my $action = $action;
-			if (!defined $cache->get_binary_package($package_expression)) {
+			if (not defined $cache->get_binary_package($package_expression)) {
 				# we have a funny situation with package names like 'g++',
 				# where one don't know is there simple package name or '+'/'-'
 				# modifier at the end of package name, so we enter here only if
@@ -1266,7 +1266,9 @@ sub manage_packages ($) {
 				$resolver->install_version($version);
 			} else { # 'remove'
 				check_package_name($package_expression);
-				if (not defined $cache->get_system_state()->get_installed_info($package_expression)) {
+				if (not defined $cache->get_system_state()->get_installed_info($package_expression) and
+					not defined $cache->get_binary_package($package_expression))
+				{
 					mydie("unable to find binary package '%s'", $package_expression);
 				}
 
