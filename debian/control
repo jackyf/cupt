@@ -54,6 +54,7 @@ Description: alternative front-end for dpkg -- console interface
   - pinning by package groups using shell-like patterns;
   - configurable 'depends' and 'rdepends' subcommands;
   - 'satisfy' subcommand;
-  - support of LZMA-compressed indexes.
+  - support of LZMA-compressed indexes;
+  - source versions synchronization.
  .
  Its interface is mostly like apt-get/aptitude console interface.
