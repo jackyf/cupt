@@ -8,6 +8,9 @@ cupt (0.4.1) UNRELEASED; urgency=low
       - Worker:
         - 'update_release_and_index_data': always delete possible partial
           chunks of Release files and their gpg signatures before downloads.
+    - Cache:
+      - 'verify_signature': don't error but only warn when gpg doesn't give
+        enough info for some reason. Thanks to Cyril Brulebois.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 28 Jul 2009 15:14:30 +0300
 

@@ -1422,7 +1422,8 @@ sub verify_signature ($$) {
 		}
 	} else {
 		# no info from gpg at all
-		mydie("error while verifying signature for file '%s'", $file);
+		mywarn("error while verifying signature for file '%s'", $file);
+		$verify_result = 0;
 	}
 
 	close(GPG_VERIFY) or $! == 0 or
