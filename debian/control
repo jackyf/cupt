@@ -8,6 +8,8 @@ Maintainer: Eugene V. Lyubimkin <jackyf.devel@gmail.com>
 DM-Upload-Allowed: yes
 Homepage: http://wiki.debian.org/Cupt
 Standards-Version: 3.8.2
+Vcs-Git: git://github.com/jackyf/cupt.git
+Vcs-Browser: http://github.com/jackyf/cupt/tree/master
 
 Package: libcupt-perl
 Architecture: all
