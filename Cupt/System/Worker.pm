@@ -1330,6 +1330,7 @@ sub update_release_and_index_data ($$) {
 						my $local_path = $release_local_path;
 						my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 						my $download_filename = $sub_get_download_filename->($local_path);
+						unlink $download_filename unless $simulate;
 
 						$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
 						$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
@@ -1350,6 +1351,7 @@ sub update_release_and_index_data ($$) {
 						my $signature_download_uri = "$download_uri.gpg";
 						my $signature_local_path = "$local_path.gpg";
 						my $signature_download_filename = "$download_filename.gpg";
+						unlink $signature_download_filename unless $simulate;
 
 						my $release_signature_alias = "$release_alias.gpg";
 						$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
