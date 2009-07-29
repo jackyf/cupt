@@ -1282,6 +1282,12 @@ sub update_release_and_index_data ($$) {
 		$self->_run_external_command('pre', $command, $command);
 	}
 
+	unless ($simulate) { # unconditional clearing of partial chunks of Release[.gpg] files
+		my $partial_indexes_location = $self->_get_indexes_location() . $_download_partial_suffix;
+		my @paths = glob("$partial_indexes_location/*Release*");
+		unlink $_ foreach @paths;
+	}
+
 	my $master_exit_code = 0;
 	do { # download manager involved part
 		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
@@ -1330,7 +1336,6 @@ sub update_release_and_index_data ($$) {
 						my $local_path = $release_local_path;
 						my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 						my $download_filename = $sub_get_download_filename->($local_path);
-						unlink $download_filename unless $simulate;
 
 						$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
 						$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
@@ -1351,7 +1356,6 @@ sub update_release_and_index_data ($$) {
 						my $signature_download_uri = "$download_uri.gpg";
 						my $signature_local_path = "$local_path.gpg";
 						my $signature_download_filename = "$download_filename.gpg";
-						unlink $signature_download_filename unless $simulate;
 
 						my $release_signature_alias = "$release_alias.gpg";
 						$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
