@@ -484,20 +484,26 @@ sub _fill_action_dependencies ($$$$) {
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
-					# adding relation to attributes
-					my $ref_attributes = $graph->get_edge_attributes($ref_slave_action, $ref_master_action);
-					if (exists $ref_attributes->{'relation_expressions'}) {
-						push @{$ref_attributes->{'relation_expressions'}}, $relation_expression;
-						$graph->set_edge_attributes($ref_slave_action, $ref_master_action, $ref_attributes);
-					} else {
-						$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
-								{ 'relation_expressions' => [ $relation_expression ] });
-					}
+					if (not ($action_name eq 'remove' and $direction eq 'before')) {
+						# passing the above if means that this edge was not originated from conflicts/breaks
+						# so it deserves a chance to be eaten in the end, the while the conflicts/breaks edges are
+						# definitely not a candidates
 
-					if ($self->{_config}->var('debug::worker')) {
-						my $slave_string = __stringify_inner_action($ref_slave_action);
-						my $master_string = __stringify_inner_action($ref_master_action);
-						mydebug("new action dependency: '$slave_string' -> '$master_string'");
+						# adding relation to attributes
+						my $ref_attributes = $graph->get_edge_attributes($ref_slave_action, $ref_master_action);
+						if (exists $ref_attributes->{'relation_expressions'}) {
+							push @{$ref_attributes->{'relation_expressions'}}, $relation_expression;
+							$graph->set_edge_attributes($ref_slave_action, $ref_master_action, $ref_attributes);
+						} else {
+							$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
+									{ 'relation_expressions' => [ $relation_expression ] });
+						}
+
+						if ($self->{_config}->var('debug::worker')) {
+							my $slave_string = __stringify_inner_action($ref_slave_action);
+							my $master_string = __stringify_inner_action($ref_master_action);
+							mydebug("new action dependency: '$slave_string' -> '$master_string'");
+						}
 					}
 
 					last SATISFYING_VERSIONS;

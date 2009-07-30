@@ -8,6 +8,9 @@ cupt (0.4.1) UNRELEASED; urgency=low
       - Worker:
         - 'update_release_and_index_data': always delete possible partial
           chunks of Release files and their gpg signatures before downloads.
+        - don't even attempt to "eat" the action dependencies
+          that were originated by Conflicts/Breaks, doing this could break
+          action sequence order.
     - Cache:
       - 'verify_signature': don't error but only warn when gpg doesn't give
         enough info for some reason. Thanks to Cyril Brulebois.
