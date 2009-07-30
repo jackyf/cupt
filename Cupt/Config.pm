@@ -61,6 +61,7 @@ sub new {
 			'acquire::ftp::timeout' => 120,
 			'acquire::file::timeout' => 20,
 			'acquire::retries' => 0,
+			'acquire::pdiffs' => 0,
 			'apt::acquire::max-default-age::debian-security' => 7,
 			'apt::acquire::translation' => 'environment',
 			'apt::architecture' => undef, # will be set a bit later

@@ -11,6 +11,8 @@ cupt (0.4.1) UNRELEASED; urgency=low
     - Cache:
       - 'verify_signature': don't error but only warn when gpg doesn't give
         enough info for some reason. Thanks to Cyril Brulebois.
+    - Config:
+      - Recognize 'acquire::pdiffs' option, though it's unsupported.
   * debian/control:
     - Added Vcs-* headers.
 
