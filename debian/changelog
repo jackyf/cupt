@@ -24,6 +24,8 @@ cupt (0.4.1) UNRELEASED; urgency=low
       - Recognize 'acquire::pdiffs' option, though it's unsupported.
   * debian/control:
     - Added Vcs-* headers.
+  * debian/rules:
+    - Simplified defining PERL variable. Patch by Cyril Brulebois.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 28 Jul 2009 15:14:30 +0300
 

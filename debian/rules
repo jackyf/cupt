@@ -1,8 +1,6 @@
 #!/usr/bin/make -f
 
-ifndef PERL
-	PERL=/usr/bin/perl
-endif
+PERL?=/usr/bin/perl
 
 build: build-stamp
 build-stamp:
