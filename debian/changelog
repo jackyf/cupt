@@ -17,6 +17,9 @@ cupt (0.4.1) UNRELEASED; urgency=low
       - don't hardcode archive 'experimental' for Releases that shouldn't be
         pinned as 'not for automatic upgrades', but use 'NotAutomatic' flag
         in the Release file instead.
+      - BinaryVersion:
+        - Fall back with a warning to priority 'extra' if the priority isn't
+          specified.
     - Config:
       - Recognize 'acquire::pdiffs' option, though it's unsupported.
   * debian/control:

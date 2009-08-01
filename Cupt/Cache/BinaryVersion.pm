@@ -251,6 +251,12 @@ sub new {
 		mydie("no hash sums specified");
 	}
 
+	if (not defined $self->{priority}) {
+		mywarn("package '%s', version '%s': no priority specified, falling back to 'extra'",
+				$package_name, $self->{version_string});
+		$self->{priority} = 'extra';
+	}
+
 	return $self;
 }
 
