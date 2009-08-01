@@ -60,63 +60,72 @@ process_options();
 
 $Cupt::Cache::Package::o_binary_architecture = $config->var('apt::architecture');
 
-if ($config->var('quiet')) {
-	close(STDOUT) or mydie("unable to close standard output");
-	open(STDOUT, '>>', '/dev/null') or mydie("unable to turn standard output to /dev/null");
-	$download_progress_class_name = 'Cupt::Download::Progress';
-}
-
 my $command;
-foreach my $idx (0..$#ARGV) {
-	if ($ARGV[$idx] !~ m/^-/) {
-		# this is not a option, then it's a command
-		$command = $ARGV[$idx];
-		splice @ARGV, $idx, 1;
-		last;
+sub main {
+	# for repeated invokes
+	undef $command;
+
+	if ($config->var('quiet')) {
+		close(STDOUT) or mydie("unable to close standard output");
+		open(STDOUT, '>>', '/dev/null') or mydie("unable to turn standard output to /dev/null");
+		$download_progress_class_name = 'Cupt::Download::Progress';
+	}
+
+	foreach my $idx (0..$#ARGV) {
+		if ($ARGV[$idx] !~ m/^-/) {
+			# this is not a option, then it's a command
+			$command = $ARGV[$idx];
+			splice @ARGV, $idx, 1;
+			last;
+		}
+	}
+
+	myerr("no command specified") and exit 2 if (!defined($command));
+
+	my %command_handlers = (
+		'config-dump' => \&config_dump,
+		'show' => \&show_binary_package_versions,
+		'showsrc' => \&show_source_package_versions,
+		'search' => \&search,
+		'depends' => sub { show_package_relations('normal') },
+		'rdepends' => sub { show_package_relations('reverse') },
+		'policy' => sub { policy('binary') },
+		'policysrc' => sub { policy('source') },
+		'pkgnames' => \&pkgnames,
+		'changelog' => sub { show_changelog_or_copyright('changelog') },
+		'copyright' => sub { show_changelog_or_copyright('copyright') },
+		'screenshots' => \&screenshots,
+		'update' => \&update_release_data,
+		'install' => sub { manage_packages('install') },
+		'remove' => sub { manage_packages('remove') },
+		'purge' => sub { manage_packages('purge') },
+		'satisfy' => sub { manage_packages('satisfy') },
+		'safe-upgrade' => sub { manage_packages('safe-upgrade') },
+		'full-upgrade' => sub { manage_packages('full-upgrade') },
+		'build-dep' => sub { manage_packages('build-depends') },
+		'source' => \&acquire_source_package,
+		'clean' => sub { clean_archives(0) },
+		'autoclean' => sub { clean_archives(1) },
+		'markauto' => sub { mark_autoinstalled('markauto') },
+		'unmarkauto' => sub { mark_autoinstalled('unmarkauto') },
+		'shell' => \&shell,
+	);
+
+	if (defined($command_handlers{$command})) {
+		eval {
+			exit ($command_handlers{$command}->() // 0);
+		};
+		if (mycatch()) {
+			myerr("error performing command '%s'", $command);
+			exit 3;
+		}
+	} else {
+		myerr("unrecognized command '%s'", $command) and exit 2;
 	}
 }
 
-myerr("no command specified") and exit 2 if (!defined($command));
-
-my %command_handlers = (
-	'config-dump' => \&config_dump,
-	'show' => \&show_binary_package_versions,
-	'showsrc' => \&show_source_package_versions,
-	'search' => \&search,
-	'depends' => sub { show_package_relations('normal') },
-	'rdepends' => sub { show_package_relations('reverse') },
-	'policy' => sub { policy('binary') },
-	'policysrc' => sub { policy('source') },
-	'pkgnames' => \&pkgnames,
-	'changelog' => sub { show_changelog_or_copyright('changelog') },
-	'copyright' => sub { show_changelog_or_copyright('copyright') },
-	'screenshots' => \&screenshots,
-	'update' => \&update_release_data,
-	'install' => sub { manage_packages('install') },
-	'remove' => sub { manage_packages('remove') },
-	'purge' => sub { manage_packages('purge') },
-	'satisfy' => sub { manage_packages('satisfy') },
-	'safe-upgrade' => sub { manage_packages('safe-upgrade') },
-	'full-upgrade' => sub { manage_packages('full-upgrade') },
-	'build-dep' => sub { manage_packages('build-depends') },
-	'source' => \&acquire_source_package,
-	'clean' => sub { clean_archives(0) },
-	'autoclean' => sub { clean_archives(1) },
-	'markauto' => sub { mark_autoinstalled('markauto') },
-	'unmarkauto' => sub { mark_autoinstalled('unmarkauto') },
-);
-
-if (defined($command_handlers{$command})) {
-	eval {
-		exit ($command_handlers{$command}->() // 0);
-	};
-	if (mycatch()) {
-		myerr("error performing command '%s'", $command);
-		exit 3;
-	}
-} else {
-	myerr("unrecognized command '%s'", $command) and exit 2;
-}
+# launch!
+main()
 
 sub build_cache {
 	eval {
@@ -1505,6 +1514,31 @@ sub process_options {
 	if (mycatch()) {
 		myerr("error while processing command-line options");
 		exit 2;
+	}
+}
+
+sub shell {
+	require Term::ReadLine;
+	my $term = new Term::ReadLine;
+	my $prompt = "cupt> ";
+	while ( defined ($line = $term->readline($prompt)) ) {
+		chomp($line);
+		last if $line =~ m/^(exit|quit|:q)$/;
+		# kind of hack to get arguments as it was real shell
+		# if you know easier way, let me know :)
+		open(my $args_fd, "(for word $line; do echo \$word; done) |");
+		@ARGV = ();
+		while (<$args_fd>) {
+			chomp;
+			push @ARGV;
+		}
+		close($argd_fd) or
+				do {
+					mywarn("bad shell syntax");
+					next;
+				}
+		main();
+		$term->addhistory($line);
 	}
 }
 
