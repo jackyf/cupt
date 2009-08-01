@@ -286,7 +286,7 @@ sub get_original_apt_pin {
 				last; # no sense to search further, this is maximum
 			}
 		}
-		if ($_->{release}->{archive} eq 'experimental') {
+		if ($_->{release}->{not_automatic}) {
 			$update_pin->(1);
 		} elsif ($_->{release}->{archive} eq 'installed') {
 			$update_pin->(100);
@@ -582,6 +582,7 @@ our %_empty_release_info = (
 	'valid-until' => undef,
 	'architectures' => [],
 	'base_uri' => undef,
+	'not_automatic' => 0,
 );
 
 sub _get_release_info {
@@ -603,6 +604,7 @@ sub _get_release_info {
 				when ('Codename') { $release_info{codename} = $field_value }
 				when ('Date') { $release_info{date} = $field_value }
 				when ('Valid-Until') { $release_info{valid_until} = $field_value }
+				when ('NotAutomatic') { $release_info{not_automatic} = 1 }
 				when ('Architectures') { $release_info{architectures} = [ split / /, $field_value ] }
 				when ('Description') {
 					$release_info{description} = $field_value;
@@ -1548,6 +1550,7 @@ This is a hash:
     'valid-until' => time string when to forget about this release
     'architectures' => reference to array of available architectures
     'base_uri' => base URI (origin), empty string in case of "installed" distribution
+	'not_automatic' => true if packages from this release shouldn't be considered for automatic upgrades
   }
 
 =head2 index_entry
