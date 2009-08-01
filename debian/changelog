@@ -26,6 +26,7 @@ cupt (0.4.1) UNRELEASED; urgency=low
     - Added Vcs-* headers.
   * debian/rules:
     - Simplified defining PERL variable. Patch by Cyril Brulebois.
+    - Use $(PERL) instead of 'perl' to install PODs. Patch by Cyril Brulebois.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 28 Jul 2009 15:14:30 +0300
 
