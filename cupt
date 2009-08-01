@@ -80,7 +80,7 @@ sub main {
 		}
 	}
 
-	myerr("no command specified") and exit 2 if (!defined($command));
+	myerr("no command specified") and return 2 if (!defined($command));
 
 	my %command_handlers = (
 		'config-dump' => \&config_dump,
@@ -113,19 +113,19 @@ sub main {
 
 	if (defined($command_handlers{$command})) {
 		eval {
-			exit ($command_handlers{$command}->() // 0);
+			return ($command_handlers{$command}->() // 0);
 		};
 		if (mycatch()) {
 			myerr("error performing command '%s'", $command);
-			exit 3;
+			return 3;
 		}
 	} else {
-		myerr("unrecognized command '%s'", $command) and exit 2;
+		myerr("unrecognized command '%s'", $command) and return 2;
 	}
 }
 
 # launch!
-main()
+main();
 
 sub build_cache {
 	eval {
@@ -1519,24 +1519,26 @@ sub process_options {
 
 sub shell {
 	require Term::ReadLine;
-	my $term = new Term::ReadLine;
-	my $prompt = "cupt> ";
-	while ( defined ($line = $term->readline($prompt)) ) {
+	my $term = new Term::ReadLine('cupt shell');
+	my $prompt = "cupt>";
+	while ( defined (my $line = $term->readline($prompt)) ) {
 		chomp($line);
 		last if $line =~ m/^(exit|quit|:q)$/;
 		# kind of hack to get arguments as it was real shell
 		# if you know easier way, let me know :)
-		open(my $args_fd, "(for word $line; do echo \$word; done) |");
+		open(my $args_fd, "(for word in $line; do echo \$word; done) |");
 		@ARGV = ();
 		while (<$args_fd>) {
 			chomp;
-			push @ARGV;
+			push @ARGV, $_;
 		}
-		close($argd_fd) or
+		close($args_fd) or
 				do {
 					mywarn("bad shell syntax");
 					next;
-				}
+				};
+
+		process_options();
 		main();
 		$term->addhistory($line);
 	}
