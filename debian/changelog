@@ -24,9 +24,12 @@ cupt (0.4.1) UNRELEASED; urgency=low
       - Recognize 'acquire::pdiffs' option, though it's unsupported.
   * debian/control:
     - Added Vcs-* headers.
+    - Bumped debhelper build-dependency to (>= 7.0.50) to use overrides.
   * debian/rules:
     - Simplified defining PERL variable. Patch by Cyril Brulebois.
     - Use $(PERL) instead of 'perl' to install PODs. Patch by Cyril Brulebois.
+    - Dramaically reduced size of the rules, thanks to dh7 override magic.
+      Patch by Cyril Brulebois.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 28 Jul 2009 15:14:30 +0300
 

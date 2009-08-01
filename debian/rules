@@ -1,29 +1,14 @@
 #!/usr/bin/make -f
 
-PERL?=/usr/bin/perl
+PERL ?= /usr/bin/perl
 
-build: build-stamp
-build-stamp:
+override_build:
 	$(PERL) Makefile.PL INSTALLDIRS=vendor
-	touch $@
 
-clean:
-	dh $@
-
-install: install-stamp
-install-stamp: build-stamp
-	dh install --before dh_auto_install
+override_dh_auto_install:
 	$(MAKE) install PREFIX=$(CURDIR)/debian/libcupt-perl/usr
 	# produce additional man pages for cupt
 	$(PERL) debian/install_pods
-	dh install --after dh_auto_install
-	touch $@
 
-binary-arch:
-
-binary-indep: install
+%:
 	dh $@
-
-binary: binary-arch binary-indep
-
-.PHONY: binary binary-arch binary-indep install clean build
