@@ -1556,7 +1556,7 @@ sub shell {
 		if (not grep { $_ eq $command } @safe_commands) {
 			# the system could be modified, need to rebuild all
 			$config = new Cupt::Config();
-			$cache = new Cupt::Cache();
+			$cache = new Cupt::Cache($config);
 		}
 	}
 }
