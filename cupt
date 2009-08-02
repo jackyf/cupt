@@ -1518,11 +1518,15 @@ sub process_options {
 }
 
 sub shell {
+	# building the cache with all flavors
+	$cache = new Cupt::Cache();
+
 	require Term::ReadLine;
 	my $term = new Term::ReadLine('cupt shell');
 	my $prompt = "cupt>";
 	while ( defined (my $line = $term->readline($prompt)) ) {
 		chomp($line);
+		$term->addhistory($line);
 		last if $line =~ m/^(exit|quit|:q)$/;
 		# kind of hack to get arguments as it was real shell
 		# if you know easier way, let me know :)
@@ -1538,9 +1542,22 @@ sub shell {
 					next;
 				};
 
-		process_options();
-		main();
-		$term->addhistory($line);
+		do {
+			local $config = $config->clone();
+			$cache->set_config($config);
+
+			process_options();
+			main();
+		}
+
+		my @safe_commands = qw(config-dump show showsrc search depends rdepends
+				policy policysrc pkgnames changelog copyright screenshots
+				source clean autoclean);
+		if (not grep { $_ eq $command } @safe_commands) {
+			# the system could be modified, need to rebuild all
+			$config = new Cupt::Config();
+			$cache = new Cupt::Cache();
+		}
 	}
 }
 
