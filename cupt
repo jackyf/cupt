@@ -47,14 +47,18 @@ our $config;
 our $cache;
 my $download_progress_class_name = 'Cupt::Download::Progresses::Console';
 
-# build config at start
-eval {
-	$config = new Cupt::Config;
-};
-if (mycatch()) {
-	myerr("error while loading config");
-	exit 1;
+sub build_config {
+	eval {
+		$config = new Cupt::Config;
+	};
+	if (mycatch()) {
+		myerr("error while loading config");
+		exit 1;
+	}
 }
+
+# build config at start
+build_config();
 
 process_options();
 
@@ -1568,7 +1572,7 @@ sub shell {
 				source clean autoclean);
 		if (defined $command and not grep { $_ eq $command } @safe_commands) {
 			# the system could be modified, need to rebuild all
-			$config = new Cupt::Config();
+			build_config();
 			$sub_rebuild_cache->();
 		}
 	}
