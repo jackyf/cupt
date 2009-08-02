@@ -120,7 +120,9 @@ sub main {
 			return 3;
 		}
 	} else {
-		myerr("unrecognized command '%s'", $command) and return 2;
+		myerr("unrecognized command '%s'", $command);
+		undef $command;
+		return 2;
 	}
 }
 
@@ -1535,7 +1537,7 @@ sub shell {
 	while ( defined (my $line = $term->readline($prompt)) ) {
 		chomp($line);
 		$term->addhistory($line);
-		last if $line =~ m/^(exit|quit|:q)$/;
+		last if $line =~ m/^(exit|quit|:q|q)$/;
 		# kind of hack to get arguments as it was real shell
 		# if you know easier way, let me know :)
 		open(my $args_fd, "(for word in $line; do echo \$word; done) |");
@@ -1561,7 +1563,7 @@ sub shell {
 		my @safe_commands = qw(config-dump show showsrc search depends rdepends
 				policy policysrc pkgnames changelog copyright screenshots
 				source clean autoclean);
-		if (not grep { $_ eq $command } @safe_commands) {
+		if (defined $command and not grep { $_ eq $command } @safe_commands) {
 			# the system could be modified, need to rebuild all
 			$config = new Cupt::Config();
 			$sub_rebuild_cache->();
