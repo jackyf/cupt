@@ -1518,8 +1518,16 @@ sub process_options {
 }
 
 sub shell {
-	# building the cache with all flavors
-	$cache = new Cupt::Cache();
+	say __("This is interactive shell of cupt package manager.");
+
+	my $sub_rebuild_cache = sub {
+		local $| = 1;
+		print __('Building the package cache... ');
+		$cache = new Cupt::Cache($config);
+		say __('[done]');
+	};
+
+	$sub_rebuild_cache->();
 
 	require Term::ReadLine;
 	my $term = new Term::ReadLine('cupt shell');
@@ -1556,7 +1564,7 @@ sub shell {
 		if (not grep { $_ eq $command } @safe_commands) {
 			# the system could be modified, need to rebuild all
 			$config = new Cupt::Config();
-			$cache = new Cupt::Cache($config);
+			$sub_rebuild_cache->();
 		}
 	}
 }
