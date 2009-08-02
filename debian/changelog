@@ -1,4 +1,4 @@
-cupt (0.5.0~) UNRELEASED; urgency=low
+cupt (0.5.0) unstable; urgency=low
 
   * cupt:
     - Fixed a regression since 0.4.0 when trying to 'remove' non-installed
@@ -34,7 +34,7 @@ cupt (0.5.0~) UNRELEASED; urgency=low
     - Dramatically reduced size of the rules, thanks to dh7 override magic.
       Patch by Cyril Brulebois.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 28 Jul 2009 15:14:30 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sun, 02 Aug 2009 22:13:31 +0300
 
 cupt (0.4.0.1) unstable; urgency=low
 
