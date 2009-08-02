@@ -43,8 +43,8 @@ use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_e
 		parse_relation_line);
 use Cupt::Cache::ArchitecturedRelation qw(unarchitecture_relation_expressions);
 
-my $config;
-my $cache;
+our $config;
+our $cache;
 my $download_progress_class_name = 'Cupt::Download::Progresses::Console';
 
 # build config at start
@@ -130,7 +130,7 @@ main();
 sub build_cache {
 	eval {
 		# propagate any parameters passed to Cupt::Cache::&new
-		$cache =// Cupt::Cache($config, @_);
+		$cache //= new Cupt::Cache($config, @_);
 	};
 	if (mycatch()) {
 		myerr("error while creating package cache");
@@ -1548,7 +1548,7 @@ sub shell {
 
 			process_options();
 			main();
-		}
+		};
 
 		my @safe_commands = qw(config-dump show showsrc search depends rdepends
 				policy policysrc pkgnames changelog copyright screenshots
