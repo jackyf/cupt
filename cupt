@@ -1520,6 +1520,9 @@ sub process_options {
 }
 
 sub shell {
+	check_no_more_options();
+	check_no_extra_args();
+
 	say __("This is interactive shell of cupt package manager.");
 
 	my $sub_rebuild_cache = sub {
