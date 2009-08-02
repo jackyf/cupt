@@ -69,6 +69,11 @@ two types of multi-case problem resolvers available (see L<--resolver in cupt(1)
 
 worker passes '--force-*' options to dpkg only when really needed, not always
 
+=item
+
+source versions of the same binary packages can be synchronized by resolver
+(see L<option cupt::resolver::synchronize-source-versions|cupt(1)/cupt::resolver::synchronize-source-versions>)
+
 =back
 
 =head2 Downloading
