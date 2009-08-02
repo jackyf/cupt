@@ -191,6 +191,21 @@ sub new {
 	return $self;
 }
 
+=head2 set_config
+
+method, sets new L<Cupt::Config|Cupt::Config> for the cache
+
+Parameters:
+
+I<config> - reference to L<Cupt::Config|Cupt::Config>
+
+=cut
+
+sub set_config ($$) {
+	my ($self, $config) = @_;
+	$self->{_config} = $config;
+}
+
 =head2 get_binary_packages
 
 method, returns all binary packages as hash reference in form { $package_name

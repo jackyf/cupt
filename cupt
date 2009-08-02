@@ -130,7 +130,7 @@ main();
 sub build_cache {
 	eval {
 		# propagate any parameters passed to Cupt::Cache::&new
-		$cache = new Cupt::Cache($config, @_);
+		$cache =// Cupt::Cache($config, @_);
 	};
 	if (mycatch()) {
 		myerr("error while creating package cache");
