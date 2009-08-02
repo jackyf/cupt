@@ -1545,7 +1545,7 @@ sub shell {
 	check_no_more_options();
 	check_no_extra_args();
 
-	say __("This is interactive shell of cupt package manager.");
+	say __("This is an interactive shell of the cupt package manager.");
 
 	my $sub_rebuild_cache = sub {
 		local $| = 1;
