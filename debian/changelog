@@ -17,11 +17,13 @@ cupt (0.4.1) UNRELEASED; urgency=low
       - don't hardcode archive 'experimental' for Releases that should be
         pinned as 'not for automatic upgrades', but use 'NotAutomatic' flag
         in the Release file instead.
+      - New method 'set_config'.
       - BinaryVersion:
         - Fall back with a warning to priority 'extra' if the priority isn't
           specified.
     - Config:
       - Recognize 'acquire::pdiffs' option, though it's unsupported.
+      - New method 'clone'.
   * debian/control:
     - Added Vcs-* headers.
     - Bumped debhelper build-dependency to (>= 7.0.50) to use overrides.
