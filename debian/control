@@ -57,7 +57,7 @@ Description: alternative front-end for dpkg -- console interface
   - 'satisfy' subcommand;
   - support of LZMA-compressed indexes;
   - source versions synchronization;
-  - 'shell' subcommand (to get command history working, install the package
-    libterm-readline-gnu-perl).
+  - 'shell' subcommand (to get command history, search etc. working, install
+    the package libterm-readline-gnu-perl).
  .
  Its interface is mostly like apt-get/aptitude console interface.
