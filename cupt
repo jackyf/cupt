@@ -1560,18 +1560,20 @@ sub shell {
 					next;
 				};
 
+		my $o_simulate;
 		do {
 			local $config = $config->clone();
 			$cache->set_config($config);
 
 			process_options();
+			$o_simulate = $config->var('cupt::worker::simulate');
 			main();
 		};
 
 		my @safe_commands = qw(config-dump show showsrc search depends rdepends
 				policy policysrc pkgnames changelog copyright screenshots
 				source clean autoclean);
-		if (defined $command and not grep { $_ eq $command } @safe_commands) {
+		if (defined $command and not $o_simulate and not grep { $_ eq $command } @safe_commands) {
 			# the system could be modified, need to rebuild all
 			build_config();
 			$sub_rebuild_cache->();
