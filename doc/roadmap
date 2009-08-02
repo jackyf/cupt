@@ -1,11 +1,7 @@
-For version 0.5:
+For version 0.6:
 
 cupt: implement 'why' command
 cupt: implement 'why-not' command
-
-For version 0.6:
-
-shell: implement
 
 For some future version:
 
