@@ -491,7 +491,7 @@ sub show_source_package_versions () {
 
 sub search () {
 	# turn off relations parsing, we don't need them
-	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
 	my $o_names_only = 0;
 	my $o_installed_only = 0;
@@ -570,7 +570,7 @@ sub show_package_relations ($) {
 	my ($mode) = @_;
 
 	# turn off info parsing, we don't need it, only relations :)
-	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
 	my $o_with_suggests = 0;
 	my $o_installed_only = 0;
@@ -685,10 +685,10 @@ sub show_package_relations ($) {
 sub policy ($) {
 	my ($flavour) = @_;
 	# turn off info and relations parsing, we don't need it
-	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
-	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
-	$Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
-	$Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+	local $Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
 
 	check_no_more_options();
 
@@ -1076,8 +1076,8 @@ sub generate_management_prompt ($$$) {
 sub acquire_source_package {
 	my @parts_to_download = ('tarball', 'diff', 'dsc');
 	# turn off info and relations parsing, we don't need it
-	$Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
-	$Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
+	local $Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
 
 	my $o_download_only = 0;
 	GetOptions(
@@ -1179,7 +1179,7 @@ sub manage_packages ($) {
 	my ($action) = @_;
 
 	# turn off info parsing, we don't need it
-	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 
 	check_no_more_options();
 
@@ -1332,8 +1332,8 @@ sub update_release_data () {
 sub show_changelog_or_copyright ($) {
 	my ($target) = @_;
 	# turn off info and relations parsing, we don't need it
-	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
-	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
 	my $o_installed_only = 0;
 	GetOptions(
@@ -1443,8 +1443,8 @@ sub show_changelog_or_copyright ($) {
 
 sub screenshots ($) {
 	# turn off info and relations parsing, we don't need it
-	$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
-	$Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	local $Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 
 	check_no_more_options();
 
