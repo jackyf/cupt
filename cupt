@@ -805,7 +805,7 @@ sub pkgnames () {
 
 	check_no_extra_args();
 
-	while ((my $package_name) = each %{$cache->get_binary_packages()}) {
+	foreach my $package_name (keys %{$cache->get_binary_packages()}) {
 		# check package name for pattern and output it
 		$package_name =~ m/^$prefix/o and say $package_name;
 	}
@@ -1545,6 +1545,7 @@ sub shell {
 		chomp($line);
 		$term->addhistory($line);
 		last if $line =~ m/^(exit|quit|:q|q)$/;
+
 		# kind of hack to get arguments as it was real shell
 		# if you know easier way, let me know :)
 		open(my $args_fd, "(for word in $line; do echo \$word; done) |");

@@ -537,7 +537,7 @@ sub _clean_automatically_installed ($) {
 				}
 			}
 		};
-		while (my $package_name = each %candidates_for_remove) {
+		foreach my $package_name (keys %candidates_for_remove) {
 			my $remove;
 			if ($candidates_for_remove{$package_name}) {
 				# package is in the graph, checking
