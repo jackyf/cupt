@@ -34,7 +34,7 @@ correctness of APT options is checked
 
 =back
 
-=head2 Show
+=head2 Interface
 
 =over
 
@@ -50,6 +50,10 @@ correctness of APT options is checked
 =item
 
 'policysrc' command
+
+=item
+
+'shell' command
 
 =back
 

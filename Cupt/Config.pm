@@ -29,6 +29,8 @@ Cupt::Config - store and retrieve APT-style config variables
 use strict;
 use warnings;
 
+use Storable;
+
 use Cupt::Config::ISCConfigParser;
 use Cupt::Core;
 
@@ -142,6 +144,16 @@ sub new {
 	$self->set_regular_var('apt::architecture', $self->_get_architecture());
 	$self->_read_configs();
 	return $self;
+}
+
+=head2 clone
+
+method, returns a copy of the object
+
+=cut
+
+sub clone ($) {
+	return Storable::dclone($_[0]);
 }
 
 # determines if the option matches some of the optional patterns

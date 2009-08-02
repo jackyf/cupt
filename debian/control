@@ -37,6 +37,7 @@ Description: alternative front-end for dpkg -- Perl modules
 Package: cupt
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, libcupt-perl (>= ${binary:Version})
+Suggests: libterm-readline-gnu-perl
 Description: alternative front-end for dpkg -- console interface
  This package provides a console interface to Cupt library, which is a
  re-implementation of libapt-pkg C++ library using Perl. The aim is to produce
@@ -55,6 +56,8 @@ Description: alternative front-end for dpkg -- console interface
   - configurable 'depends' and 'rdepends' subcommands;
   - 'satisfy' subcommand;
   - support of LZMA-compressed indexes;
-  - source versions synchronization.
+  - source versions synchronization;
+  - 'shell' subcommand (to get command history, search etc. working, install
+    the package libterm-readline-gnu-perl).
  .
  Its interface is mostly like apt-get/aptitude console interface.

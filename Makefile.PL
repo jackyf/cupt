@@ -12,6 +12,7 @@ WriteMakefile(
 		'File::Temp' => 0,
 		'File::Copy' => 0,
 		'Term::Size' => 0,
+		'Term::ReadLine' => 0,
 		'Parse::RecDescent' => 0,
 		'Digest::MD5' => 0,
 		'Digest::SHA' => 0,
