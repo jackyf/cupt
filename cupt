@@ -132,7 +132,8 @@ sub main {
 }
 
 # launch!
-main();
+my $main_result = main();
+exit $main_result;
 
 sub build_cache {
 	eval {
