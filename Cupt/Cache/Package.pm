@@ -104,10 +104,6 @@ sub get_versions {
 			}
 		}
 		@$self = @new_self;
-
-		if (!scalar @$self) {
-			mydie("no valid version entries available");
-		}
 	};
 	if (mycatch()) {
 		myerr("error while parsing package info");
