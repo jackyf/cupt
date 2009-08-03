@@ -7,6 +7,8 @@ cupt (0.5.1) UNRELEASED; urgency=medium
     - Cache:
       - 'policy_version': don't assume that package contains valid versions,
         pre-check it. Thanks to Didier 'OdyX' Raboud.
+      - 'get_original_apt_pin': consider only first successful pin match, as
+        declared in apt_preferences(5). Thanks to Didier 'OdyX' Raboud.
     - System:
       - Worker:
         - While building dependency graph, also count Conflicts/Breaks that

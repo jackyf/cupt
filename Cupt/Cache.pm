@@ -357,6 +357,7 @@ sub get_original_apt_pin {
 
 		# yeah, all conditions satisfied here, and we can set less pin too here
 		$result = $ref_pin->{'value'};
+		last PIN;
 	}
 
 	return $result;
