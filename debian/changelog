@@ -1,3 +1,12 @@
+cupt (0.5.1) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Config:
+      - 'set_regular_var': fixed recognizing the value 'false' as false.
+        Thanks to Michael Stapelberg. (Closes: #539730)
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 03 Aug 2009 12:26:47 +0300
+
 cupt (0.5.0) unstable; urgency=low
 
   * cupt:

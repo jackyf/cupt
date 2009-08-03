@@ -1030,6 +1030,7 @@ sub generate_management_prompt ($$$) {
 					my $package = $cache->get_binary_package($package_name);
 					next if not defined $package;
 					my $version = $package->get_installed_version();
+					next if not defined $version; # purge of config-files package when candidates available
 					push @essential_package_names, $version->{package_name} if $version->{essential};
 				}
 			}
