@@ -236,7 +236,7 @@ sub select_package_version ($$) {
 	} else {
 		my $result_version = $cache->get_policy_version($sub_package_getter->($package_expression));
 		defined $result_version or
-				mydie("no versions available for package '%s'", $package_name);
+				mydie("no versions available for package '%s'", $package_expression);
 		return $result_version;
 	}
 }
