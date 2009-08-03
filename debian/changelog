@@ -8,6 +8,9 @@ cupt (0.5.1) UNRELEASED; urgency=medium
       - 'set_regular_var': fixed recognizing the value 'false' as false.
         Thanks to Michael Stapelberg. (Closes: #539730)
     - Cache:
+      - Package:
+        - Fixed a crash when merging two source versions with equal version
+          strings. Thanks to Michael Stapelberg.
       - 'policy_version': don't assume that package contains valid versions,
         pre-check it. Thanks to Didier 'OdyX' Raboud.
       - 'get_original_apt_pin': consider only first successful pin match, as

@@ -214,7 +214,9 @@ sub _merge_version {
 		} else {
 			# there is such version string
 
-			if ($found_version->is_installed() or $found_version->is_hashes_equal($parsed_version)) {
+			if ((ref $found_version eq 'Cupt::Cache::BinaryVersion' and $found_version->is_installed())
+				or $found_version->is_hashes_equal($parsed_version))
+			{
 				# 1)
 				# this is installed version
 				# as dpkg now doesn't provide hash sums, let's assume that
