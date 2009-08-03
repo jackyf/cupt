@@ -104,6 +104,9 @@ sub get_versions {
 			}
 		}
 		@$self = @new_self;
+		if (not scalar @$self) {
+			mywarn("no valid versions available, discarding the package");
+		}
 	};
 	if (mycatch()) {
 		myerr("error while parsing package info");

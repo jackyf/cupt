@@ -328,7 +328,10 @@ sub upgrade ($) {
 		my $package_name = $_;
 		my $package = $self->cache->get_binary_package($package_name);
 		my $original_version = $self->{_packages}->{$package_name}->[PE_VERSION];
+		# if there is original version, then at least one policy version should exist
 		my $supposed_version = $self->cache->get_policy_version($package);
+		defined $supposed_version or
+				myinternaldie("supposed version doesn't exist");
 		# no need to install the same version
 		$original_version->{version_string} ne $supposed_version->{version_string} or next;
 		$self->_install_version_no_stick($supposed_version, [ 'user' ]);
