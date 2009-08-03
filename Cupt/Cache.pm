@@ -481,8 +481,10 @@ sub get_sorted_pinned_versions {
 
 =head2 get_policy_version
 
-method, returns reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>, this is the version
-of I<package>, which to be installed by cupt policy
+method, returns reference to
+L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersion>, this is the version
+of I<package>, which to be installed by cupt policy; or undef if there is no
+valid versions for this package
 
 Parameters:
 
@@ -493,12 +495,14 @@ I<package> - reference to L<Cupt::Cache::Package|Cupt::Cache::Package>, package 
 sub get_policy_version {
 	my ($self, $package) = @_;
 
-	# selecting by policy
-	# we assume that every existent package have at least one version
-	# this is how we add versions in 'Cupt::Cache::&_process_index_file'
-
-	# so, just return version with maximum "candidatness"
-	return $self->get_sorted_pinned_versions($package)->[0]->{'version'};
+	my $ref_sorted_pinned_versions = $self->get_sorted_pinned_versions($package);
+	# not assuming the package have at least valid version...
+	if (scalar @$ref_sorted_pinned_versions) {
+		# so, just return version with maximum "candidatness"
+		return $ref_sorted_pinned_versions->[0]->{'version'};
+	} else {
+		return undef;
+	}
 }
 
 sub _get_satisfying_versions_for_one_relation {
