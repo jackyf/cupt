@@ -834,6 +834,8 @@ sub generate_management_prompt ($$$) {
 
 		my $ref_actions_preview = $worker->get_actions_preview();
 		my $ref_unpacked_sizes_preview = $worker->get_unpacked_sizes_preview($ref_actions_preview);
+
+		my $action_count = 0;
 		# print planned actions
 		do {
 			my %action_names = (
@@ -857,6 +859,7 @@ sub generate_management_prompt ($$$) {
 				say sprintf __("The following %u packages will be %s:"), scalar @$ref_package_entries, $action_name;
 				say "";
 				foreach my $ref_package_entry (@$ref_package_entries) {
+					++$action_count;
 					my $package_name = $ref_package_entry->{'package_name'};
 					print "$package_name";
 					if ($show_versions) {
@@ -941,6 +944,12 @@ sub generate_management_prompt ($$$) {
 				say "";
 			}
 		};
+
+		# nothing to do maybe?
+		if ($action_count == 0) {
+			return undef;
+		}
+
 		# prepare list of soft dependencies that are not satisfied
 		do {
 			my @unsatisfied_soft_dependencies;
