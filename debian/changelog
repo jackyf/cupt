@@ -1,4 +1,4 @@
-cupt (0.5.1) UNRELEASED; urgency=low
+cupt (0.5.1) UNRELEASED; urgency=medium
 
   * Cupt:
     - Config:
@@ -7,6 +7,12 @@ cupt (0.5.1) UNRELEASED; urgency=low
     - Cache:
       - 'policy_version': don't assume that package contains valid versions,
         pre-check it. Thanks to Didier 'OdyX' Raboud.
+    - System:
+      - Worker:
+        - While building dependency graph, also count Conflicts/Breaks that
+          belong to packages going to be removed/purged. The urgency is set to
+          'medium' because of this fix. Thanks to Michael Stapelberg.
+          (Closes: #539729)
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 03 Aug 2009 12:26:47 +0300
 

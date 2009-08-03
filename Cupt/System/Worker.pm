@@ -484,7 +484,7 @@ sub _fill_action_dependencies ($$$$) {
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
-					if (not ($action_name eq 'remove' and $direction eq 'before')) {
+					if ($action_name eq 'remove' xor $direction eq 'before') {
 						# passing the above if means that this edge was not originated from conflicts/breaks
 						# so it deserves a chance to be eaten in the end, the while the conflicts/breaks edges are
 						# definitely not a candidates
@@ -638,6 +638,12 @@ sub _build_actions_graph ($$) {
 				# depends must be removed after
 				$self->_fill_action_dependencies(
 						$version->{depends}, 'remove', 'after', $ref_inner_action, $graph);
+				# conflicts may be satisfied only after
+				$self->_fill_action_dependencies(
+						$version->{conflicts}, 'unpack', 'after', $ref_inner_action, $graph);
+				# breaks may be satisfied only after
+				$self->_fill_action_dependencies(
+						$version->{breaks}, 'configure', 'after', $ref_inner_action, $graph);
 			}
 		}
 	}
