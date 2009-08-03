@@ -4,6 +4,9 @@ cupt (0.5.1) UNRELEASED; urgency=low
     - Config:
       - 'set_regular_var': fixed recognizing the value 'false' as false.
         Thanks to Michael Stapelberg. (Closes: #539730)
+    - Cache:
+      - 'policy_version': don't assume that package contains valid versions,
+        pre-check it. Thanks to Didier 'OdyX' Raboud.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 03 Aug 2009 12:26:47 +0300
 
