@@ -235,6 +235,8 @@ sub select_package_version ($$) {
 		mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
 	} else {
 		my $result_version = $cache->get_policy_version($sub_package_getter->($package_expression));
+		defined $result_version or
+				mydie("no versions available for package '%s'", $package_name);
 		return $result_version;
 	}
 }
@@ -712,6 +714,8 @@ sub policy ($) {
 			my $package = $flavour eq 'binary' ?
 					get_binary_package($package_name) : get_source_package($package_name);
 			my $policy_version = $cache->get_policy_version($package);
+			defined $policy_version or
+					mydie("no versions available for package '%s'", $package_name);
 
 			my $installed_version_string = $flavour eq 'source' ? undef :
 					$cache->get_system_state()->get_installed_version_string($package_name);
