@@ -3,6 +3,8 @@ cupt (0.5.1) UNRELEASED; urgency=medium
   * cupt:
     - Exit immediately when nothing to do (for management actions).
       Thanks to Didier 'OdyX' Raboud.
+    - Shell wildcars '*' and '?' are now supported in binary/source package
+      expressions. (Closes: #539704)
   * Cupt:
     - Config:
       - 'set_regular_var': fixed recognizing the value 'false' as false.
@@ -15,6 +17,7 @@ cupt (0.5.1) UNRELEASED; urgency=medium
         pre-check it. Thanks to Didier 'OdyX' Raboud.
       - 'get_original_apt_pin': consider only first successful pin match, as
         declared in apt_preferences(5). Thanks to Didier 'OdyX' Raboud.
+      - New method 'get_source_packages'.
     - System:
       - Worker:
         - While building dependency graph, also count Conflicts/Breaks that
@@ -26,6 +29,8 @@ cupt (0.5.1) UNRELEASED; urgency=medium
         - Support 'copy' scheme, and do full copying only for it. For 'file'
           scheme do only symlinking. Thanks to Michael Stapelberg.
           (Closes: #539733)
+    - Core:
+      - New free subroutine 'glob_to_regex'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 03 Aug 2009 12:26:47 +0300
 

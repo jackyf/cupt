@@ -670,6 +670,10 @@ Example: C<audacious/installed>
 
 =back
 
+Also, you may specify shell wildcars '*' and '?' in the package names.
+
+Examples: C<xfce4-*>, C<python2.5-*/unstable>, C<?aff*/installed>
+
 =head2 Source package version expression
 
 I<package_name>[I<modifier>]

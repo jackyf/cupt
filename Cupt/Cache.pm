@@ -219,6 +219,19 @@ sub get_binary_packages ($) {
 	return $self->{_binary_packages};
 }
 
+=head2 get_source_packages
+
+method, returns all source packages as hash reference in form { $package_name
+=> I<pkg> }, where I<pkg> is reference to L<Cupt::Cache::Package|Cupt::Cache::Package>
+
+=cut
+
+sub get_source_packages ($) {
+	my ($self) = @_;
+
+	return $self->{_source_packages};
+}
+
 =head2 get_system_state
 
 method, returns reference to L<Cupt::System::State|Cupt::System::State>
@@ -733,12 +746,6 @@ sub _parse_preferences {
 	# Source: unetbootin
 	# Pin: a=experimental
 	# Pin-Priority: 1100
-
-	sub glob_to_regex ($) {
-		$_[0] =~ s/\*/.*?/g;
-		$_[0] =~ s/^/.*?/g;
-		$_[0] =~ s/$/.*/g;
-	}
 
 	open(PREF, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
 	while (<PREF>) {

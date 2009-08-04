@@ -190,8 +190,8 @@ sub get_source_package ($) {
 	}
 }
 
-sub select_package_version ($$) {
-	my ($package_expression, $sub_package_getter) = @_;
+sub select_package_version ($$$) {
+	my ($package_expression, $sub_package_getter, $o_fatal) = @_;
 
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
 		# selecting by strict version string
@@ -206,7 +206,11 @@ sub select_package_version ($$) {
 		if (defined $version) {
 			return $version;
 		} else {
-			mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+			if ($o_fatal) {
+				mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+			} else {
+				return undef;
+			}
 		}
 	} elsif ($package_expression =~ m/^(.*?)\/(.*)/) {
 		# selecting by release distibution
@@ -214,7 +218,9 @@ sub select_package_version ($$) {
 		check_package_name($package_name);
 		my $distribution_expression = $2;
 		if ($distribution_expression !~ m/^[a-z-]+$/) {
-			mydie("bad distribution '%s' requested, use archive or codename", $distribution_expression);
+			if ($o_fatal) {
+				mydie("bad distribution '%s' requested, use archive or codename", $distribution_expression);
+			}
 		}
 		my $package = $sub_package_getter->($package_name);
 
@@ -232,32 +238,41 @@ sub select_package_version ($$) {
 			}
 		}
 		# not found
-		mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
+		if ($o_fatal) {
+			mydie("cannot find distribution '%s' for package '%s'", $distribution_expression, $package_name);
+		} else {
+			return undef;
+		}
 	} else {
 		my $result_version = $cache->get_policy_version($sub_package_getter->($package_expression));
-		defined $result_version or
-				mydie("no versions available for package '%s'", $package_expression);
-		return $result_version;
+		if (not defined $result_version and $o_fatal) {
+			mydie("no versions available for package '%s'", $package_expression);
+		} else {
+			return $result_version;
+		}
 	}
 }
 
 sub select_binary_package_version ($) {
-	my ($package_name) = @_;
-	return select_package_version($package_name, \&get_binary_package);
+	my ($package_name, $o_fatal) = @_;
+	return select_package_version($package_name, \&get_binary_package, $o_fatal);
 }
 
 sub select_source_package_version ($) {
-	my ($package_expression) = @_;
+	my ($package_expression, $o_fatal) = @_;
 
 	# there we should gracefully accept both source and binary packages names,
 	# let's try...
-	(my $chopped_package_name = $package_expression) =~ s{(=|/).*}{};
-	if (defined $cache->get_source_package($chopped_package_name)) {
-		# is there a source package with that name?
-		return select_package_version($package_expression, \&get_source_package);
-	} elsif (defined $cache->get_binary_package($chopped_package_name)) {
-		# try binary then...
-		my $binary_version = select_package_version($package_expression, \&get_binary_package);
+
+	my $version = select_package_version($package_expression, \&get_source_package, 0);
+	# is there a source package with that name?
+	return $version if (defined $version);
+
+	# try binary
+	$version = select_package_version($package_expression, \&get_binary_package, 0);
+
+	if (defined $version) {
+		my $binary_version = $version;
 		my $source_package = get_source_package($binary_version->{source_package_name});
 		my $source_version_string = $binary_version->{source_version_string};
 		my $source_version = $source_package->get_specific_version($source_version_string);
@@ -267,7 +282,52 @@ sub select_source_package_version ($) {
 		}
 		return $source_version;
 	} else {
-		mydie("cannot find source or binary package '%s'", $chopped_package_name);
+		if ($o_fatal) {
+			mydie("cannot find appropriate source or binary version for '%s'", $package_expression);
+		} else {
+			return undef;
+		}
+	}
+}
+
+# returns array of versions
+sub select_package_versions_wildcarded ($$;$) {
+	my ($expression, $source_or_binary, $o_fatal) = @_;
+	$o_fatal //= 1;
+
+	my ($package_name, $remainder) = ($expression =~ m{([^=/]+)((?:=|/).*)?});
+	$remainder //= "";
+
+	my $sub_selector = $source_or_binary eq 'source' ?
+			\&select_source_package_version : \&select_binary_package_version;
+
+	if ($package_name !~ m/(?:\*|\?)/) {
+		# there were no wildcards
+		my $version = $sub_selector->($expression, $o_fatal);
+		if (defined $version) {
+			return ( $version );
+		} else {
+			return ();
+		}
+	} else {
+		# handling wildcards
+		my @result;
+		glob_to_regex(my $package_regex = $package_name);
+
+		my $method_name = "get_${source_or_binary}_packages";
+		foreach my $package_name (keys %{$cache->$method_name()}) {
+			if ($package_name =~ m/^$package_regex$/) {
+				my $version = $sub_selector->("$package_name$remainder", 0);
+				if (defined $version) {
+					push @result, $version;
+				}
+			}
+		}
+
+		if (not scalar @result and $o_fatal) {
+			mydie("no appropriate versions available for wildcarded version expression '%s'", $expression);
+		}
+		return @result;
 	}
 }
 
@@ -342,13 +402,11 @@ sub show_binary_package_versions () {
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
 	foreach my $package_expression (@package_expressions) {
-		my $package_name;
 		my $ref_versions;
 		my $p = sub { print shift, ': ', shift, "\n" };
 
 		if ($config->var('apt::cache::allversions')) {
-			$package_name = $package_expression;
-			$ref_versions = get_binary_package($package_name)->get_versions();
+			$ref_versions = get_binary_package($package_expression)->get_versions();
 		} else {
 			if (!defined $cache->get_binary_package($package_expression)
 				&& $package_expression =~ /^$package_name_regex$/) {
@@ -360,13 +418,13 @@ sub show_binary_package_versions () {
 				}
 			}
 			if (!defined $ref_versions) {
-				my $version = select_binary_package_version($package_expression);
-				$package_name = $version->{package_name};
-				$ref_versions = [ $version ];
+				my @versions = select_package_versions_wildcarded($package_expression, 'binary');
+				$ref_versions = \@versions;
 			}
 		}
 
 		foreach my $version (@$ref_versions) {
+			my $package_name = $version->{package_name};
 			$p->(__('Package'), $package_name);
 			$p->(__('Version'), $version->{version_string});
 			my $installed_status = $cache->get_system_state()->get_status_for_version($version);
@@ -436,20 +494,18 @@ sub show_source_package_versions () {
 	build_cache(-source => 1, -binary => 1, -installed => 1);
 
 	foreach my $package_expression (@package_expressions) {
-		my $package_name;
 		my $ref_versions;
 		my $p = sub { print shift, ': ', shift, "\n" };
 
 		if ($config->var('apt::cache::allversions')) {
-			$package_name = $package_expression;
-			$ref_versions = get_source_package($package_name)->get_versions();
+			$ref_versions = get_source_package($package_expression)->get_versions();
 		} else {
-			my $version = select_source_package_version($package_expression);
-			$package_name = $version->{package_name};
-			$ref_versions = [ $version ];
+			my @versions = select_package_versions_wildcarded($package_expression, 'source');
+			$ref_versions = \@versions;
 		}
 
 		foreach my $version (@$ref_versions) {
+			my $package_name = $version->{package_name};
 			$p->(__('Package'), $package_name);
 			$p->(__('Binary'), join(', ', @{$version->{binary_package_names}}));
 			$p->(__('Version'), $version->{version_string});
@@ -595,7 +651,7 @@ sub show_package_relations ($) {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
-	my @versions = map { select_binary_package_version($_) } @ARGV;
+	my @versions = map { select_package_versions_wildcarded($_, 'binary') } @ARGV;
 
 	my @relation_groups = (
 		[ 'pre_depends', __('Pre-Depends') ],
@@ -1118,7 +1174,7 @@ sub acquire_source_package {
 
 	build_cache(-source => 1, -binary => 1, -installed => 1);
 
-	my @versions = map { select_source_package_version($_) } @ARGV;
+	my @versions = map { select_package_versions_wildcarded($_, 'source') } @ARGV;
 
 	my @download_entries;
 
@@ -1285,7 +1341,12 @@ sub manage_packages ($) {
 			$resolver->satisfy_relation_expression(new Cupt::Cache::Relation("build-essential"));
 		} else {
 			my $action = $action;
-			if (not defined $cache->get_binary_package($package_expression)) {
+			my $actual_package_expression = $package_expression;
+			if ($action eq 'remove') {
+				$actual_package_expression .= '/installed';
+			}
+			my @versions = select_package_versions_wildcarded($actual_package_expression, 'binary', 0);
+			if (not scalar @versions) {
 				# we have a funny situation with package names like 'g++',
 				# where one don't know is there simple package name or '+'/'-'
 				# modifier at the end of package name, so we enter here only if
@@ -1300,20 +1361,37 @@ sub manage_packages ($) {
 					$action = 'remove';
 					$package_expression = substr($package_expression, 0, length($package_expression)-1);
 				}
+				$actual_package_expression = $package_expression;
+				if ($action eq 'remove') {
+					$actual_package_expression .= '/installed';
+				}
 			}
 
 			if ($action eq 'install') {
-				my $version = select_binary_package_version($package_expression);
-				$resolver->install_version($version);
+				if (not scalar @versions) {
+					@versions = select_package_versions_wildcarded($actual_package_expression, 'binary');
+				}
+				$resolver->install_version($_) foreach @versions;
 			} else { # 'remove'
-				check_package_name($package_expression);
-				if (not defined $cache->get_system_state()->get_installed_info($package_expression) and
-					not defined $cache->get_binary_package($package_expression))
-				{
-					mydie("unable to find binary package '%s'", $package_expression);
+				if (not scalar @versions) {
+					# retry, still non-fatal, to deal with packages in 'config-files' state
+					@versions = select_package_versions_wildcarded($actual_package_expression, 'binary', 0);
 				}
 
-				$resolver->remove_package($package_expression);
+				if (scalar @versions) {
+					for my $version (@versions) {
+						$resolver->remove_package($version->{package_name});
+					}
+				} else {
+					check_package_name($package_expression);
+					if (not defined $cache->get_system_state()->get_installed_info($package_expression) and
+						not defined $cache->get_binary_package($package_expression))
+					{
+						mydie("unable to find binary package/expression '%s'", $package_expression);
+					}
+
+					$resolver->remove_package($package_expression);
+				}
 			}
 		}
 	}
@@ -1376,7 +1454,7 @@ sub show_changelog_or_copyright ($) {
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
-	my @versions = map { select_binary_package_version($_) } @ARGV;
+	my @versions = map { select_package_versions_wildcarded($_, 'binary') } @ARGV;
 
 	foreach my $version (@versions) {
 		my $local_target_path;

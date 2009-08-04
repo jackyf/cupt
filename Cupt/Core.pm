@@ -36,7 +36,8 @@ use Exporter qw(import);
 our @EXPORT = qw(
 	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
 	$package_name_regex $version_string_regex &human_readable_size_string &__
-	&is_version_string_native &are_hash_sums_present &compare_hash_sums);
+	&is_version_string_native &are_hash_sums_present &compare_hash_sums
+	&glob_to_regex);
 
 # configuring the translator
 eval {
@@ -345,6 +346,18 @@ sub compare_hash_sums ($$) {
 		}
 	}
 	return $sums_count;
+}
+
+=head2 glob_to_regex
+
+modifies the string parameter in-place
+
+=cut
+
+sub glob_to_regex ($) {
+	$_[0] = quotemeta($_[0]);
+	$_[0] =~ s/\\\?/\./g;
+	$_[0] =~ s/\\\*/.*?/g;
 }
 
 1;
