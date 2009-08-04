@@ -44,36 +44,51 @@ use Cupt::Core;
 sub perform ($$$$$) {
 	my ($self, $config, $uri, $filename, $sub_callback) = @_;
 
-	# preparing target
-	open(my $fd, '>>', $filename) or
-			return sprintf "unable to open file '%s' for appending: %s", $filename, $!;
-	my $total_bytes = tell($fd);
-	$sub_callback->('downloading', $total_bytes, 0);
-	
-	# checking and preparing target
 	my $source_filename = URI->new($uri)->file();
-	open(my $source_fd, '<', $source_filename) or
-			return sprintf "unable to open file '%s' for reading: %s", $source_filename, $!;
+	my $scheme = URI->new($uri)->scheme();
 
-	my $stat = stat($source_fd) or
-			return sprintf "unable to stat file '%s': %s", $source_filename, $!;
-	$sub_callback->('expected-size', $stat->size());
+	if ($scheme eq 'copy') {
+		# full copying
 
-	# writing
-	my $chunk;
-	my $block_size = 4096;
-	while (sysread $source_fd, $chunk, $block_size) {
-		# writing data to file
-		print $fd $chunk or
-				return sprintf "unable to write to file '%s': %s", $filename, $!;
+		# preparing target
+		open(my $fd, '>>', $filename) or
+				return sprintf "unable to open file '%s' for appending: %s", $filename, $!;
+		my $total_bytes = tell($fd);
+		$sub_callback->('downloading', $total_bytes, 0);
+	
+		open(my $source_fd, '<', $source_filename) or
+				return sprintf "unable to open file '%s' for reading: %s", $source_filename, $!;
 
-		my $written_bytes = length($chunk);
-		$total_bytes += $written_bytes;
-		$sub_callback->('downloading', $total_bytes, $written_bytes);
-	};
+		my $stat = stat($source_fd) or
+				return sprintf "unable to stat file '%s': %s", $source_filename, $!;
+		$sub_callback->('expected-size', $stat->size());
 
-	close($fd) or
-			mydie("unable to close file '%s': %s", $filename, $!);
+		# writing
+		my $chunk;
+		my $block_size = 4096;
+		while (sysread $source_fd, $chunk, $block_size) {
+			# writing data to file
+			print $fd $chunk or
+					return sprintf "unable to write to file '%s': %s", $filename, $!;
+
+			my $written_bytes = length($chunk);
+			$total_bytes += $written_bytes;
+			$sub_callback->('downloading', $total_bytes, $written_bytes);
+		};
+
+		close($fd) or
+				mydie("unable to close file '%s': %s", $filename, $!);
+	} elsif ($scheme eq 'file') {
+		# symlinking
+		unlink $filename;
+		my $result = symlink $source_filename, $filename;
+		if (!$result) {
+			mydie("unable to create symbolic link '%s' -> '%s': %s",
+					$filename, $source_filename, $!);
+		}
+	} else {
+		myinternaldie("wrong scheme for File method");
+	}
 
 	# all went ok
 	return '';

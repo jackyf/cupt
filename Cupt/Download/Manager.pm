@@ -547,6 +547,7 @@ sub _download ($$$) {
 		'ftp' => 'Curl',
 		'https' => 'Curl',
 		'file' => 'File',
+		'copy' => 'File',
 	);
 	my $protocol = URI->new($uri)->scheme();
 	my $handler_name = $protocol_handlers{$protocol} // 

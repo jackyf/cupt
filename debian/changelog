@@ -21,6 +21,11 @@ cupt (0.5.1) UNRELEASED; urgency=medium
           belong to packages going to be removed/purged. The urgency is set to
           'medium' because of this fix. Thanks to Michael Stapelberg.
           (Closes: #539729)
+    - Download:
+      - Methods/File:
+        - Support 'copy' scheme, and do full copying only for it. For 'file'
+          scheme do only symlinking. Thanks to Michael Stapelberg.
+          (Closes: #539733)
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 03 Aug 2009 12:26:47 +0300
 
