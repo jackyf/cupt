@@ -30,10 +30,20 @@ use Cupt::Config;
 use Cupt::Download::Progress;
 use Cupt::Download::Manager;
 
-my $target = 'cupt_copy';
 
 my $config = new Cupt::Config;
 my $dmanager = new Cupt::Download::Manager($config, new Cupt::Download::Progress);
 
-is($dmanager->download({ 'uris' => [ "file:cupt" ], 'filename' => $target }), 0, "download a file");
+my $source_file = 'cupt';
+my $target_file = 'cupt_copy';
+
+my $sub_post_check = sub { system("cmp $source_file $target_file") };
+
+is($dmanager->download(
+		{
+			'uris' => [ "file:$source_file" ],
+			'filename' => $target_file,
+			'post-action' => $sub_post_check
+		})
+		, 0, "download a file");
 
