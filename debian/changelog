@@ -4,7 +4,7 @@ cupt (0.5.1) unstable; urgency=medium
     - Exit immediately when nothing to do (for management actions).
       Thanks to Didier 'OdyX' Raboud.
     - Shell wildcars '*' and '?' are now supported in binary/source package
-      expressions. (Closes: #539704)
+      expressions. (Closes: #539732)
   * Cupt:
     - Config:
       - 'set_regular_var': fixed recognizing the value 'false' as false.
