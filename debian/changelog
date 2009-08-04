@@ -1,4 +1,4 @@
-cupt (0.5.1) UNRELEASED; urgency=medium
+cupt (0.5.1) unstable; urgency=medium
 
   * cupt:
     - Exit immediately when nothing to do (for management actions).
@@ -32,7 +32,7 @@ cupt (0.5.1) UNRELEASED; urgency=medium
     - Core:
       - New free subroutine 'glob_to_regex'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 03 Aug 2009 12:26:47 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 04 Aug 2009 20:58:34 +0300
 
 cupt (0.5.0) unstable; urgency=low
 
