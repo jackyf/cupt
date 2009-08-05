@@ -801,7 +801,12 @@ sub _build_actions_graph ($$) {
 			my $from = $ref_change_entry->{'unpack'};
 
 			my @potential_edge_moves;
-			my $some_dependencies_can_be_eaten = 0;
+			my $do_merge = 0;
+
+			if ($graph->has_edge($to, $from)) {
+				# cyclic ('remove/unpack' <-> 'configure') dependency, merge unconditionally
+				$do_merge = 1;
+			}
 
 			for my $successor_vertex ($graph->successors($from)) {
 				if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
@@ -812,7 +817,7 @@ sub _build_actions_graph ($$) {
 						my $master_action_string = __stringify_inner_action($successor_vertex);
 						mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
 					}
-					$some_dependencies_can_be_eaten = 1;
+					$do_merge = 1;
 				}
 			}
 			for my $predecessor_vertex ($graph->predecessors($from)) {
@@ -824,7 +829,7 @@ sub _build_actions_graph ($$) {
 						my $master_action_string = __stringify_inner_action($from);
 						mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
 					}
-					$some_dependencies_can_be_eaten = 1;
+					$do_merge = 1;
 				}
 			}
 
@@ -832,7 +837,7 @@ sub _build_actions_graph ($$) {
 			# when we don't merge unpack and configure, this leads to dependency loops
 			# when we merge unpack and configure always, this also leads to dependency loops
 			# then try to merge only if the merge can drop extraneous dependencies
-			if ($some_dependencies_can_be_eaten) {
+			if ($do_merge) {
 				foreach my $ref_edge_move (@potential_edge_moves) {
 					$sub_move_edge->(@$ref_edge_move);
 				}
@@ -841,7 +846,7 @@ sub _build_actions_graph ($$) {
 			}
 			if ($self->{_config}->var('debug::worker')) {
 				my $action_string = __stringify_inner_action($to);
-				my $yes_no = $some_dependencies_can_be_eaten ? '' : 'not ';
+				my $yes_no = $do_merge ? '' : 'not ';
 				mydebug("${yes_no}merging action '$action_string'");
 			}
 		}
