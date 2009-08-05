@@ -3,6 +3,13 @@ cupt (0.5.2) UNRELEASED; urgency=low
   * cupt:
     - Fixed a regression since 0.5.1 when using '+' and '-' expression
       suffixes.
+  * Cupt:
+    - System:
+      - Worker:
+        - While building action dependencies graph, deal properly with
+          'abc' depends on 'x | y | ...' cases when 'x' is going to be
+          removed and 'y' is going to be installed. Thanks to Daniel Moerner.
+          (Closes: #539953)
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 05 Aug 2009 11:41:06 +0300
 

@@ -456,10 +456,11 @@ sub _fill_actions ($$\@) {
 sub __stringify_inner_action ($) {
 	my ($ref_action) = @_;
 
+	my $prefix = exists $ref_action->{'fake'} ? '(fake) ' : '';
 	my $package_name = $ref_action->{'version'}->{package_name};
 	my $version_string = $ref_action->{'version'}->{version_string};
 	my $action_name = $ref_action->{'action_name'};
-	return "$action_name $package_name $version_string";
+	return "$prefix$action_name $package_name $version_string";
 }
 
 # fills ref_graph with dependencies specified in ref_relations_expressions
@@ -476,7 +477,9 @@ sub _fill_action_dependencies ($$$$) {
 				'action_name' => $action_name
 			);
 			# search for the appropriate action in action list
-			foreach my $ref_current_action ($graph->vertices()) {
+			my $ref_search_index = $graph->get_graph_attribute('vertexes_by_package_name');
+			foreach my $ref_current_action (@{$ref_search_index->{$other_version->{package_name}}}) {
+				next if exists $ref_inner_action->{'fake'} and exists $ref_current_action->{'fake'};
 				if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 					# it's it!
 					my $ref_master_action = $direction eq 'after' ? $ref_current_action : $ref_inner_action;
@@ -586,6 +589,52 @@ sub _build_actions_graph ($$) {
 	# maybe, we have nothing to do?
 	return undef if scalar $graph->vertices() == 0;
 
+	# here we also adding adding fake-antiupgrades for all packages in the system
+	# which stay unmodified for the sake of getting inter-dependencies between
+	# the optional dependecies like
+	#
+	# 'abc' depends 'x | y', abc stays unmodified, x goes away, y is going to be installed
+	#
+	# here, action 'remove x' are dependent on 'install y' one and it gets
+	# introduced by
+	#
+	# 'install y' -> 'install abc' <-> 'remove abc' -> 'remove x'
+	#                {----------------------------}
+	#                            <merge>
+	# which goes into
+	#
+	# 'install y' -> 'remove x'
+	my @virtual_edges_to_be_eliminated;
+	do {
+		my @blacklisted_package_names;
+		# the black list
+		foreach my $ref_inner_action ($graph->vertices()) {
+			push @blacklisted_package_names, $ref_inner_action->{'version'}->{package_name};
+		}
+		foreach my $version (@{$self->{_cache}->get_system_state()->export_installed_versions()}) {
+			my $package_name = $version->{package_name};
+			next if grep { $package_name eq $_ } @blacklisted_package_names;
+
+			my $from_vertex = { 'version' => $version, 'action_name' => 'configure', 'fake' => 1 };
+			my $to_vertex = { 'version' => $version, 'action_name' => 'remove', 'fake' => 1 };
+			# we don't add edge here, but add the vertexes to gain dependencies and
+			# save the vertexes order
+			$graph->add_vertex($from_vertex);
+			$graph->add_vertex($to_vertex);
+			push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
+		}
+	};
+
+	do { # building the action index for fast action search
+		# it will be used only for filling edges, when vertex content isn't changed
+		my %index;
+		foreach my $vertex ($graph->vertices()) {
+			my $package_name = $vertex->{'version'}->{package_name};
+			push @{$index{$package_name}}, $vertex;
+		}
+		$graph->set_graph_attribute('vertexes_by_package_name', \%index);
+	};
+
 	# fill the actions' dependencies
 	foreach my $ref_inner_action ($graph->vertices()) {
 		my $version = $ref_inner_action->{'version'};
@@ -647,6 +696,7 @@ sub _build_actions_graph ($$) {
 			}
 		}
 	}
+	$graph->delete_graph_attributes();
 
 	do { # unit all downgrades/upgrades
 		# list of packages affected
@@ -704,6 +754,30 @@ sub _build_actions_graph ($$) {
 			$graph->add_edge($to_predecessor, $to_successor);
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
 		};
+
+		# get rid of virtual edges
+		foreach (@virtual_edges_to_be_eliminated) {
+			my ($from_vertex, $to_vertex) = @$_;
+
+			# "multiplying" the dependencies
+			foreach my $predecessor_vertex ($graph->predecessors($from_vertex)) {
+				foreach my $successor_vertex ($graph->successors($to_vertex)) {
+					# no relation expressions here
+					$graph->add_edge($predecessor_vertex, $successor_vertex);
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_string = __stringify_inner_action($predecessor_vertex);
+						my $master_string = __stringify_inner_action($successor_vertex);
+						my $mediator_package_name = $from_vertex->{'version'}->{package_name};
+						mydebug(sprintf "multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
+								$slave_string, $master_string, $mediator_package_name);
+					}
+
+				}
+			}
+
+			$graph->delete_vertex($from_vertex);
+			$graph->delete_vertex($to_vertex);
+		}
 
 		# unit remove/unpack unconditionally
 		foreach my $ref_change_entry (values %vertex_changes) {
