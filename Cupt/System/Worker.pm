@@ -498,12 +498,12 @@ sub _fill_action_dependencies ($$$$) {
 							$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
 									{ 'relation_expressions' => [ $relation_expression ] });
 						}
+					}
 
-						if ($self->{_config}->var('debug::worker')) {
-							my $slave_string = __stringify_inner_action($ref_slave_action);
-							my $master_string = __stringify_inner_action($ref_master_action);
-							mydebug("new action dependency: '$slave_string' -> '$master_string'");
-						}
+					if ($self->{_config}->var('debug::worker')) {
+						my $slave_string = __stringify_inner_action($ref_slave_action);
+						my $master_string = __stringify_inner_action($ref_master_action);
+						mydebug("new action dependency: '$slave_string' -> '$master_string'");
 					}
 
 					last SATISFYING_VERSIONS;
