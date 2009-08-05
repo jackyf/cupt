@@ -625,14 +625,14 @@ sub _build_actions_graph ($$) {
 		}
 	};
 
+	my %vertexes_by_package_name;
 	do { # building the action index for fast action search
 		# it will be used only for filling edges, when vertex content isn't changed
-		my %index;
 		foreach my $vertex ($graph->vertices()) {
 			my $package_name = $vertex->{'version'}->{package_name};
-			push @{$index{$package_name}}, $vertex;
+			push @{$vertexes_by_package_name{$package_name}}, $vertex;
 		}
-		$graph->set_graph_attribute('vertexes_by_package_name', \%index);
+		$graph->set_graph_attribute('vertexes_by_package_name', \%vertexes_by_package_name);
 	};
 
 	# fill the actions' dependencies
@@ -662,7 +662,7 @@ sub _build_actions_graph ($$) {
 				my %candidate_action = %$ref_inner_action;
 				$candidate_action{'action_name'} = 'unpack';
 				my $is_unpack_action_found = 0;
-				foreach my $ref_current_action ($graph->vertices()) {
+				foreach my $ref_current_action (@{$vertexes_by_package_name{$version->{package_name}}}) {
 					if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 						# found...
 						$graph->add_edge($ref_current_action, $ref_inner_action);
