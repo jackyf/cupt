@@ -39,7 +39,7 @@ use Digest;
 
 use Cupt::Core;
 use Cupt::Cache;
-use Cupt::Cache::Relation qw(stringify_relation_expression);
+use Cupt::Cache::Relation qw(stringify_relation_expression stringify_relation_expressions);
 use Cupt::Download::Manager;
 
 my $_download_partial_suffix = '/partial';
@@ -753,6 +753,13 @@ sub _build_actions_graph ($$) {
 					return 0;
 				}
 				# all relation expressions are satisfying by some versions
+				if ($self->{_config}->var('debug::worker')) {
+					my $slave_action_string = __stringify_inner_action($slave_vertex);
+					my $master_action_string = __stringify_inner_action($master_vertex);
+					my $relation_expressions_string = stringify_relation_expressions($ref_relation_expressions);
+					mydebug(sprintf "ate action dependency: '%s' -> '%s' using '%s'",
+							$slave_action_string, $master_action_string, $relation_expressions_string);
+				}
 				return 1;
 			}
 			# no relation expressions info, cannot be eaten
@@ -830,11 +837,6 @@ sub _build_actions_graph ($$) {
 				if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
 					push @potential_edge_moves, [ $from, $successor_vertex, $to, $successor_vertex ];
 				} else {
-					if ($self->{_config}->var('debug::worker')) {
-						my $slave_action_string = __stringify_inner_action($from);
-						my $master_action_string = __stringify_inner_action($successor_vertex);
-						mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
-					}
 					$do_merge = 1;
 				}
 			}
@@ -842,11 +844,6 @@ sub _build_actions_graph ($$) {
 				if (!$sub_is_eaten_dependency->($predecessor_vertex, $from, $version)) {
 					push @potential_edge_moves, [ $predecessor_vertex, $from, $predecessor_vertex, $to ];
 				} else {
-					if ($self->{_config}->var('debug::worker')) {
-						my $slave_action_string = __stringify_inner_action($predecessor_vertex);
-						my $master_action_string = __stringify_inner_action($from);
-						mydebug("ate action dependency: '$slave_action_string' -> '$master_action_string'");
-					}
 					$do_merge = 1;
 				}
 			}
