@@ -39,6 +39,7 @@ use Digest;
 
 use Cupt::Core;
 use Cupt::Cache;
+use Cupt::Cache::Relation qw(stringify_relation_expression);
 use Cupt::Download::Manager;
 
 my $_download_partial_suffix = '/partial';
@@ -604,6 +605,11 @@ sub _build_actions_graph ($$) {
 	# which goes into
 	#
 	# 'install y' -> 'remove x'
+	#
+	# moreover, we split the installed version into virtual version by one
+	# relation expression, so different relation expressions of the same real
+	# version don't interact with each other, otherwise we'd get a full cyclic
+	# mess
 	my @virtual_edges_to_be_eliminated;
 	do {
 		my @blacklisted_package_names;
@@ -615,13 +621,25 @@ sub _build_actions_graph ($$) {
 			my $package_name = $version->{package_name};
 			next if grep { $package_name eq $_ } @blacklisted_package_names;
 
-			my $from_vertex = { 'version' => $version, 'action_name' => 'configure', 'fake' => 1 };
-			my $to_vertex = { 'version' => $version, 'action_name' => 'remove', 'fake' => 1 };
-			# we don't add edge here, but add the vertexes to gain dependencies and
-			# save the vertexes order
-			$graph->add_vertex($from_vertex);
-			$graph->add_vertex($to_vertex);
-			push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
+			# pre-depends is unlikely to fall into such category, but to be sure
+			foreach my $relation_expression (@{$version->{pre_depends}}, @{$version->{depends}}) {
+				my $virtual_version = {
+					'package_name' => "$package_name [" . stringify_relation_expression($relation_expression) . "]",
+					'version_string' => $version->{version_string},
+					'pre_depends' => [],
+					'depends' => [ $relation_expression ],
+					'conflicts' => [],
+					'breaks' => [],
+				};
+
+				my $from_vertex = { 'version' => $virtual_version, 'action_name' => 'configure', 'fake' => 1 };
+				my $to_vertex = { 'version' => $virtual_version, 'action_name' => 'remove', 'fake' => 1 };
+				# we don't add edge here, but add the vertexes to gain dependencies and
+				# save the vertexes order
+				$graph->add_vertex($from_vertex);
+				$graph->add_vertex($to_vertex);
+				push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
+			}
 		}
 	};
 
