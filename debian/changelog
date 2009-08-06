@@ -13,6 +13,8 @@ cupt (0.5.2) UNRELEASED; urgency=low
         - While building action dependencies graph, ensure that if the action
           dependency has even one "not eat" property it won't be lost even in
           complicated merge scenarios.
+        - While splitting heterogeneous actions, don't require additional dpkg
+          flags not for 'configure' action, but for last one, which may differ.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 05 Aug 2009 11:41:06 +0300
 
