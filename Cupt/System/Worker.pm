@@ -502,6 +502,9 @@ sub _fill_action_dependencies ($$$$) {
 							$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
 									{ 'relation_expressions' => [ $relation_expression ] });
 						}
+					} else {
+						# well, set this property to make sure that action dependency will never be eaten
+						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'poisoned', 1);
 					}
 
 					if ($self->{_config}->var('debug::worker')) {
@@ -737,7 +740,9 @@ sub _build_actions_graph ($$) {
 		my $sub_is_eaten_dependency = sub {
 			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
 
-			if ($graph->has_edge_attributes($slave_vertex, $master_vertex)) {
+			return 0 if $graph->has_edge_attribute($slave_vertex, $master_vertex, 'poisoned');
+
+			if ($graph->has_edge_attribute($slave_vertex, $master_vertex, 'relation_expressions')) {
 				my ($ref_relation_expressions) = $graph->get_edge_attribute_values($slave_vertex, $master_vertex);
 				RELATION_EXPRESSION:
 				foreach my $relation_expression (@$ref_relation_expressions) {
@@ -775,6 +780,9 @@ sub _build_actions_graph ($$) {
 			if (exists $ref_previous_attributes->{'relation_expressions'}) {
 				push @{$ref_attributes->{'relation_expressions'}},
 						@{$ref_previous_attributes->{'relation_expressions'}};
+			}
+			if (exists $ref_previous_attributes->{'poisoned'}) {
+				$ref_attributes->{'poisoned'} = 1;
 			}
 			$graph->add_edge($to_predecessor, $to_successor);
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
