@@ -24,6 +24,7 @@ package Cupt::Download::DebdeltaHelper;
 use fields qw(_sources);
 
 use Cupt::Core;
+use Cupt::Cache;
 use Cupt::Cache::BinaryVersion;
 
 sub new {
@@ -46,6 +47,57 @@ sub new {
 	return $self;
 }
 
+sub uris {
+	my ($self, $version, $cache) = @_;
+
+	my @result;
+
+	my $package_name = $version->{package_name};
+	my $installed_version_string = $cache->get_system_state()->
+			get_installed_version_string();
+
+	my $sub_mangle_version_string = sub {
+		# I hate http uris, hadn't I told this before, hm...
+		my $result = $_[0];
+		$result =~ s/:/%3a/;
+		return $result;
+	};
+
+	if (defined $installed_version_string) {
+		SOURCE:
+		foreach my $ref_source (values %{$self->{_sources}}) {
+			foreach my $key (keys %$ref_source) {
+				next if $key eq 'delta_uri';
+				my $found = 0;
+				foreach $release_info (map { $_->{release} } @{$version->{avail_as}}) {
+					if ($release_info->{$key} eq $ref_source->{$key}) {
+						$found = 1;
+						last;
+					}
+				}
+
+				if (not $found) {
+					next SOURCE;
+				}
+			}
+
+			# suitable
+
+			my $delta_uri = $ref_source->{delta_uri};
+
+			# not very reliable :(
+			my $appendage = $version->{avail_as}->[0]->{filename};
+			$appendage =~ s{[^/]*\K}{};
+			$appendage += join('_', $package_name, $installed_version_string,
+					$version->{version_string}, $version->{architecture});
+
+			push @result, "debdelta://$delta_uri/$appendage";
+		}
+	}
+
+	return @result;
+}
+
 sub _parse_sources {
 	my ($self, $file) = @_;
 
@@ -64,7 +116,10 @@ sub _parse_sources {
 
 	while (<$fd>) {
 		# skip empty lines and lines with comments
-		next if m/^\s*(#|$)/;
+		if (m/^\s*(#|$)/) {
+			undef $current_section;
+			next;
+		}
 
 		if (m/^[/) 
 			# new section
