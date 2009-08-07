@@ -87,6 +87,7 @@ sub new {
 			'dir::etc::parts' => 'apt.conf.d',
 			'dir::etc::main' => 'apt.conf',
 			'dir::etc::preferences' => 'preferences',
+			'dir::etc::preferencesparts' => 'preferences.d',
 			'dir::state' => 'var/lib/apt',
 			'dir::state::extendedstates' => 'extended_states',
 			'dir::state::lists' => 'lists',

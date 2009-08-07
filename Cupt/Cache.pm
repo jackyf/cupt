@@ -181,8 +181,7 @@ sub new {
 	$self->_process_provides_in_index_files(@index_files);
 
 	# reading pin settings
-	my $pin_settings_file = $self->_path_of_preferences();
-	$self->_parse_preferences($pin_settings_file) if -r $pin_settings_file;
+	$self->_parse_preferences();
 
 	# reading list of automatically installed packages
 	my $extended_states_file = $self->_path_of_extended_states();
@@ -734,7 +733,7 @@ sub __parse_source_list {
 	return @result;
 }
 
-sub _parse_preferences {
+sub _parse_preference_file {
 	my ($self, $file) = @_;
 
 	# we are parsing triads like:
@@ -1282,15 +1281,22 @@ sub get_download_entries_of_localized_descriptions {
 	return \@result;
 }
 
-sub _path_of_preferences {
+sub _parse_preferences {
 	my ($self) = @_;
 
 	my $root_prefix = $self->{_config}->var('dir');
 	my $etc_dir = $self->{_config}->var('dir::etc');
 
-	my $leaf = $self->{_config}->var('dir::etc::preferences');
+	my $parts_dir = $self->{_config}->var('dir::etc::preferencesparts');
+	my @preference_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
-	return "$root_prefix$etc_dir/$leaf";
+	my $main_file = $self->{_config}->var('dir::etc::preferences');
+	my $main_file_path = "$root_prefix$etc_dir/$main_file";
+	push @preference_files, $main_file_path if -r $main_file_path;
+
+	foreach (@preference_files) {
+		$self->_parse_preference_file($_);
+	}
 }
 
 sub _path_of_extended_states {

@@ -15,6 +15,10 @@ cupt (0.5.2) UNRELEASED; urgency=low
           complicated merge scenarios.
         - While splitting heterogeneous actions, don't require additional dpkg
           flags not for 'configure' action, but for last one, which may differ.
+    - Config:
+      - Added configuration option 'dir::etc::preferencesparts'.
+    - Cache:
+      - Honor 'dir::etc::preferencesparts' option.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 05 Aug 2009 11:41:06 +0300
 
