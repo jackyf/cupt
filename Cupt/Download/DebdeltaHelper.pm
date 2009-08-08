@@ -37,8 +37,8 @@ sub new {
 		if (-r $sources_file) {
 			eval {
 				$self->_parse_sources($sources_file);
-			}
-			if (mycatch() {
+			};
+			if (mycatch()) {
 				mywarn("failed to parse debdelta configuration file '%s'", $source_file);
 			}
 		}
@@ -121,7 +121,7 @@ sub _parse_sources {
 			next;
 		}
 
-		if (m/^[/) 
+		if (m/^\[/) { 
 			# new section
 			if (defined $current_section) {
 				mydie("new section before closing previous one in file '%s', line %u", $file, $.);
