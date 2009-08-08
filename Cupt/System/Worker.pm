@@ -41,6 +41,7 @@ use Cupt::Core;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expression stringify_relation_expressions);
 use Cupt::Download::Manager;
+use Cupt::Download::DebdeltaHelper;
 
 my $_download_partial_suffix = '/partial';
 
@@ -925,6 +926,8 @@ sub _prepare_downloads ($$) {
 
 	my @pending_downloads;
 
+	my $debdelta_helper = new Cupt::Download::DebdeltaHelper;
+
 	foreach my $user_action ('install', 'upgrade', 'downgrade') {
 		my $ref_package_entries = $ref_actions_preview->{$user_action};
 		foreach my $version (map { $_->{'version'} } @$ref_package_entries) {
@@ -937,6 +940,10 @@ sub _prepare_downloads ($$) {
 				# no real URI, just installed, skip it
 				shift @uris;
 			}
+
+			# try using debdelta if possible
+			unshift @uris, $debdelta_helper->uris($version, $self->{_cache});
+
 			# we need at least one real URI
 			scalar @uris or
 					mydie("no available download URIs for %s %s", $package_name, $version_string);
