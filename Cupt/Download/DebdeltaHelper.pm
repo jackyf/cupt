@@ -54,12 +54,12 @@ sub uris {
 
 	my $package_name = $version->{package_name};
 	my $installed_version_string = $cache->get_system_state()->
-			get_installed_version_string();
+			get_installed_version_string($package_name);
 
 	my $sub_mangle_version_string = sub {
 		# I hate http uris, hadn't I told this before, hm...
 		my $result = $_[0];
-		$result =~ s/:/%3a/;
+		$result =~ s/:/%3a/g;
 		return $result;
 	};
 
@@ -85,13 +85,22 @@ sub uris {
 
 			my $delta_uri = $ref_source->{delta_uri};
 
+			my $base_uri = "debdelta://$delta_uri";
+
 			# not very reliable :(
 			my $appendage = $version->{avail_as}->[0]->{filename};
-			$appendage =~ s{[^/]*\K}{};
-			$appendage += join('_', $package_name, $installed_version_string,
-					$version->{version_string}, $version->{architecture});
+			print "$appendage\n";
+			$appendage =~ s{(.*/).*}{$1};
+			$appendage .= join('_', $package_name,
+					$sub_mangle_version_string->($installed_version_string),
+					$sub_mangle_version_string->($version->{version_string}),
+					$version->{architecture});
+			$appendage .= '.debdelta';
 
-			push @result, "debdelta://$delta_uri/$appendage";
+			push @result, {
+				'base_uri' => $base_uri,
+				'download_uri' => "$base_uri/$appendage"
+			};
 		}
 	}
 
