@@ -57,17 +57,19 @@ sub perform ($$$$$) {
 	};
 
 	# download delta file
-	my $delta_uri = URI->new($uri)->file();
-	my $delta_download_method = new Cupt::Download::Method::choose($debdelta_uri);
+	my $delta_uri = URI->new($uri)->opaque();
 	my $delta_download_filename = "$filename.delta";
-	my $delta_download_result = $delta_file_download_method->new()->
+	my $delta_download_result = Cupt::Download::Method->new()->
 			perform($config, $delta_uri, $delta_download_filename, $sub_delta_callback);
-	if ($delta_download_result) {
+	if ($delta_download_result ne '') {
 		return sprintf "delta download failed: %s", $delta_download_result;
 	}
 
 	# invoking a deb patcher
 	my $patch_result = system("debpatch $delta_download_filename / $filename");
+	if ($patch_result != 0) {
+		return 'debpatch returned error code %u', $patch_result;
+	}
 
 	# all went ok
 	return '';
