@@ -92,6 +92,10 @@ LZMA-compressed index files are supported.
 
 HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|cupt(1)/acquire::http::allow-redirects>)
 
+=item
+
+downloading deb binary packages via debdelta(1) is supported
+
 =back
 
 =head1 DISADVANTAGES
