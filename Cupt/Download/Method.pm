@@ -28,7 +28,7 @@ use Exporter qw(import);
 
 our @EXPORT_OK = qw(&get_acquire_suboption_for_uri);
 
-use URI;
+use Cupt::Core;
 
 =head1 NAME
 
@@ -111,6 +111,7 @@ sub perform ($$$$$) {
 		'https' => 'Curl',
 		'file' => 'File',
 		'copy' => 'File',
+		'debdelta' => 'Debdelta',
 	);
 	my $protocol = URI->new($uri)->scheme();
 	my $handler_name = $protocol_handlers{$protocol} // 

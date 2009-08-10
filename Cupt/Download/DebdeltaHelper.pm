@@ -89,7 +89,6 @@ sub uris {
 
 			# not very reliable :(
 			my $appendage = $version->{avail_as}->[0]->{filename};
-			print "$appendage\n";
 			$appendage =~ s{(.*/).*}{$1};
 			$appendage .= join('_', $package_name,
 					$sub_mangle_version_string->($installed_version_string),
