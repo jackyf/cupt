@@ -19,6 +19,9 @@ cupt (0.5.2) UNRELEASED; urgency=low
       - Added configuration option 'dir::etc::preferencesparts'.
     - Cache:
       - Honor 'dir::etc::preferencesparts' option.
+    - Download:
+      - Manager,Method,Methods/Debdelta:
+        - Implemented debdelta integration.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 05 Aug 2009 11:41:06 +0300
 
