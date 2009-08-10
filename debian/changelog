@@ -22,6 +22,10 @@ cupt (0.5.2) UNRELEASED; urgency=low
     - Download:
       - Manager,Method,Methods/Debdelta:
         - Implemented debdelta integration.
+      - Progress:
+        - New method 'get_overall_downloaded_size'.
+      - Progresses/Console:
+        - Print also overall downloaded size on exit.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 05 Aug 2009 11:41:06 +0300
 

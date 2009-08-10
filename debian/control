@@ -58,7 +58,7 @@ Description: alternative front-end for dpkg -- console interface
   - support of LZMA-compressed indexes;
   - source versions synchronization;
   - 'shell' subcommand (to get command history, search etc. working, install
-    the package libterm-readline-gnu-perl).
+    the package 'libterm-readline-gnu-perl').
   - integration with debdelta (to get it, install the package 'debdelta')
  .
  Its interface is mostly like apt-get/aptitude console interface.
