@@ -61,8 +61,8 @@ sub uris {
 	my $sub_mangle_version_string = sub {
 		# I hate http uris, hadn't I told this before, hm...
 		my $result = $_[0];
-		$result =~ s/:/%3a/g;
-		$result = uri_escape($result);
+		my $colon_pattern = uri_escape("%3a");
+		$result =~ s/:/$colon_pattern/g;
 		return $result;
 	};
 
