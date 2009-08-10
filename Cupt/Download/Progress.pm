@@ -239,8 +239,11 @@ sub progress ($$$;@) {
 				$self->hook('ping', 1);
 			}
 			when ('done') {
-				$self->{_size_done} += $ref_entry->{'size'} // $ref_entry->{'downloaded'};
 				my $result = shift @params;
+				if ($result eq '') {
+					# only if download succeeded
+					$self->{_size_done} += $ref_entry->{'size'} // $ref_entry->{'downloaded'};
+				}
 				$self->hook('done', $uri, $result);
 				delete $self->{_now_downloading}->{$uri};
 				$self->hook('ping', 1);
