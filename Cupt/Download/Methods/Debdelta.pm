@@ -62,7 +62,7 @@ sub perform ($$$$$) {
 	my $delta_download_result = Cupt::Download::Method->new()->
 			perform($config, $delta_uri, $delta_download_filename, $sub_delta_callback);
 	if ($delta_download_result ne '') {
-		return sprintf "delta download failed: %s", $delta_download_result;
+		return sprintf __("delta download failed: %s"), $delta_download_result;
 	}
 
 	# invoking a deb patcher
@@ -72,7 +72,7 @@ sub perform ($$$$$) {
 	unlink $delta_download_filename;
 
 	if ($patch_result != 0) {
-		return 'debpatch returned error code %u', $patch_result;
+		return sprintf __('debpatch returned error code %u'), $patch_result;
 	}
 
 	# all went ok
