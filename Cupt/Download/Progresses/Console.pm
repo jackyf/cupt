@@ -89,7 +89,7 @@ sub hook {
 			my $error_string = shift @params;
 			if ($error_string) {
 				# some error occured, output it
-				myerr("downloading %s failed: %s", $uri, $error_string);
+				mywarn("downloading %s failed: %s", $uri, $error_string);
 			}
 		}
 		when ('ping') {
