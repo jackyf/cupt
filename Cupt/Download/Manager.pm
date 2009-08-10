@@ -30,7 +30,6 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use URI;
 use IO::Select;
 use IO::Pipe;
 use IO::Socket::UNIX;
@@ -541,24 +540,6 @@ sub set_long_alias_for_uri {
 
 sub _download ($$$) {
 	my ($self, $uri, $filename, $socket) = @_;
-
-	my %protocol_handlers = (
-		'http' => 'Curl',
-		'ftp' => 'Curl',
-		'https' => 'Curl',
-		'file' => 'File',
-		'copy' => 'File',
-	);
-	my $protocol = URI->new($uri)->scheme();
-	my $handler_name = $protocol_handlers{$protocol} // 
-			return sprintf __("no protocol download handler defined for %s"), $protocol;
-
-	my $handler;
-	{
-		no strict 'subs';
-		# create handler by name
-		$handler = "Cupt::Download::Methods::$handler_name"->new();
-	}
 
 	# download the file
 	my $sub_callback = sub {

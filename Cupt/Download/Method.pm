@@ -23,6 +23,7 @@ package Cupt::Download::Method;
 use warnings;
 use strict;
 
+use URI;
 use Exporter qw(import);
 
 our @EXPORT_OK = qw(&get_acquire_suboption_for_uri);
@@ -102,7 +103,27 @@ Returns: '' if all went smoothly, error string in case of error
 =cut
 
 sub perform ($$$$$) {
-	# stub
+	my ($self, $config, $uri, $filename, $sub_callback) = @_;
+
+	my %protocol_handlers = (
+		'http' => 'Curl',
+		'ftp' => 'Curl',
+		'https' => 'Curl',
+		'file' => 'File',
+		'copy' => 'File',
+	);
+	my $protocol = URI->new($uri)->scheme();
+	my $handler_name = $protocol_handlers{$protocol} // 
+			return sprintf __("no protocol download handler defined for %s"), $protocol;
+
+	my $handler;
+	{
+		no strict 'subs';
+		# create handler by name
+		$handler = "Cupt::Download::Methods::$handler_name"->new();
+	}
+
+	return $handler->perform($config, $uri, $filename, $sub_callback);
 }
 
 =head1 FREE SUBROUTINES
