@@ -39,8 +39,7 @@ use Time::HiRes qw(setitimer ITIMER_REAL);
 use fields qw(_config _progress _worker_pid _server_socket _parent_pipe _server_socket_path);
 
 use Cupt::Core;
-use Cupt::Download::Methods::Curl;
-use Cupt::Download::Methods::File;
+use Cupt::Download::Method;
 
 sub __my_write_socket ($@) {
 	my $socket = shift;

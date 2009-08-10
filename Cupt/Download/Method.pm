@@ -121,7 +121,10 @@ sub perform ($$$$$) {
 	{
 		no strict 'subs';
 		# create handler by name
-		$handler = "Cupt::Download::Methods::$handler_name"->new();
+		my $full_handler_name = "Cupt::Download::Methods::$handler_name";
+		eval "require $full_handler_name";
+		mydie($@) if $@;
+		$handler = $full_handler_name->new();
 	}
 
 	return $handler->perform($config, $uri, $filename, $sub_callback);
