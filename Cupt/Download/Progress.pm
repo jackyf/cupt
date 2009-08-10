@@ -240,7 +240,7 @@ sub progress ($$$;@) {
 			}
 			when ('done') {
 				my $result = shift @params;
-				if ($result eq '') {
+				if (!$result) {
 					# only if download succeeded
 					$self->{_size_done} += $ref_entry->{'size'} // $ref_entry->{'downloaded'};
 				}
