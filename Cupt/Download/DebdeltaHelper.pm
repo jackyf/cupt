@@ -85,7 +85,7 @@ sub uris {
 
 			my $delta_uri = $ref_source->{delta_uri};
 
-			my $base_uri = "debdelta://$delta_uri";
+			my $base_uri = "debdelta:$delta_uri";
 
 			# not very reliable :(
 			my $appendage = $version->{avail_as}->[0]->{filename};
