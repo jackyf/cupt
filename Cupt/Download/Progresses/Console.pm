@@ -161,7 +161,9 @@ sub __human_readable_difftime_string ($) {
 sub finish ($) {
 	my ($self) = @_;
 
-	$self->_termprint(sprintf __("Fetched in %s."), __human_readable_difftime_string(time() - $self->get_start_time()));
+	$self->_termprint(sprintf __("Fetched %s in %s."),
+			human_readable_size_string($self->get_overall_downloaded_size()),
+			__human_readable_difftime_string(time() - $self->get_start_time()));
 	print "\n";
 }
 

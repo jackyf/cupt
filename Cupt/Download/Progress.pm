@@ -315,6 +315,18 @@ sub get_overall_download_percent ($) {
 	}
 }
 
+=head2 get_overall_downloaded_size
+
+method, returns the number of bytes that were fetched
+
+=cut
+
+sub get_overall_downloaded_size ($) {
+	my ($self) = @_;
+
+	return $self->{_downloaded};
+}
+
 =head2 get_overall_estimated_time
 
 method, returns estimated time (in seconds) to complete the downloads
