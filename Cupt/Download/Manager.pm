@@ -541,11 +541,11 @@ sub set_long_alias_for_uri {
 sub _download ($$$) {
 	my ($self, $uri, $filename, $socket) = @_;
 
-	# download the file
 	my $sub_callback = sub {
 		__my_write_socket($socket, 'progress', $uri, @_);
 	};
-	my $result = $handler->perform($self->{_config}, $uri, $filename, $sub_callback);
+	my $download_method = new Cupt::Download::Method;
+	my $result = $download_method->perform($self->{_config}, $uri, $filename, $sub_callback);
 	return $result;
 }
 

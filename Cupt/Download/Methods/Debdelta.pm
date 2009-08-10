@@ -58,7 +58,7 @@ sub perform ($$$$$) {
 
 	# download delta file
 	my $delta_uri = URI->new($uri)->file();
-	my $delta_download_method = Cupt::Download::Method::choose($debdelta_uri);
+	my $delta_download_method = new Cupt::Download::Method::choose($debdelta_uri);
 	my $delta_download_filename = "$filename.delta";
 	my $delta_download_result = $delta_file_download_method->new()->
 			perform($config, $delta_uri, $delta_download_filename, $sub_delta_callback);
