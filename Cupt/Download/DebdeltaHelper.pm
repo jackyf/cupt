@@ -23,6 +23,8 @@ package Cupt::Download::DebdeltaHelper;
 
 use fields qw(_sources);
 
+use URI::Escape;
+
 use Cupt::Core;
 use Cupt::Cache;
 use Cupt::Cache::BinaryVersion;
@@ -60,6 +62,7 @@ sub uris {
 		# I hate http uris, hadn't I told this before, hm...
 		my $result = $_[0];
 		$result =~ s/:/%3a/g;
+		$result = uri_escape($result);
 		return $result;
 	};
 
