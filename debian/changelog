@@ -1,4 +1,4 @@
-cupt (0.5.2) UNRELEASED; urgency=low
+cupt (0.5.2) unstable; urgency=low
 
   * cupt:
     - Fixed a regression since 0.5.1 when using '+' and '-' expression
@@ -28,7 +28,7 @@ cupt (0.5.2) UNRELEASED; urgency=low
         - Print also overall downloaded size on exit.
         - Print 'failed to download' messages as warnings, not as errors.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 05 Aug 2009 11:41:06 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 12:26:18 +0300
 
 cupt (0.5.1) unstable; urgency=medium
 
