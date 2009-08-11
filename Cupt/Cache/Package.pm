@@ -227,7 +227,7 @@ sub _merge_version {
 				# so, adding new "avail_as" info
 				push @{$found_version->{avail_as}}, $parsed_version->{avail_as}->[0];
 
-				if ($found_version->is_installed()) {
+				if (ref $found_version eq 'Cupt::Cache::BinaryVersion' and $found_version->is_installed()) {
 					# merge hashsums that are not available from installed
 					# packages' info
 					$found_version->{md5sum} = $parsed_version->{md5sum};

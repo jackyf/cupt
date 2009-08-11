@@ -1,3 +1,13 @@
+cupt (0.5.3) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Cache:
+      - Package:
+        - Fixed another crash when merging two source versions with equal
+          version strings. Thanks to Cyril Brulebois.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
+
 cupt (0.5.2) unstable; urgency=low
 
   * cupt:
