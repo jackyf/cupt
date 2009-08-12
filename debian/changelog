@@ -7,6 +7,10 @@ cupt (0.5.3) UNRELEASED; urgency=low
           version strings. Thanks to Cyril Brulebois.
       - BinaryVersion:
         - Fixed reading 'Task' field.
+    - System:
+      - Resolvers/Native:
+        - Don't synchronize source packages if the option
+          'cupt::resolver::synchronize-source-versions' is set to 'none'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
 

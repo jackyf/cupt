@@ -651,7 +651,7 @@ sub _apply_action ($$$$$) {
 			push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
 		}
 	}
-	if ($self->config->var('cupt::resolver::synchronize-source-versions')) {
+	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
 		# dont' do synchronization for removals
 		if (defined $supposed_version) {
 			$self->_synchronize_related_packages($ref_solution_entry->{'packages'},
