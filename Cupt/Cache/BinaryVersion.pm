@@ -201,7 +201,7 @@ sub new {
 					when ('Pre-Depends') {
 						$self->{pre_depends} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
-					when ('Task') { $self->{homepage} = $field_value }
+					when ('Task') { $self->{task} = $field_value }
 					when ('Enhances') {
 						$self->{enhances} = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}

@@ -5,6 +5,8 @@ cupt (0.5.3) UNRELEASED; urgency=low
       - Package:
         - Fixed another crash when merging two source versions with equal
           version strings. Thanks to Cyril Brulebois.
+      - BinaryVersion:
+        - Fixed reading 'Task' field.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
 
