@@ -133,11 +133,11 @@ our $version_string_regex =
 		)
 		(?:
 			-
-			([a-zA-Z+0-9~.]+) # debian revision
+			([a-zA-Z+0-9~_.]+) # debian revision
 		)? # which is non-mandatory
 	/x;
 
-my $__version_symbol_sort_string = "~ abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.:";
+my $__version_symbol_sort_string = "~ _abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.:";
 
 sub __compare_letter_symbol ($$) {
 	my ($left, $right) = @_;

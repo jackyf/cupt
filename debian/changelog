@@ -13,6 +13,10 @@ cupt (0.5.3) UNRELEASED; urgency=low
           'cupt::resolver::synchronize-source-versions' is set to 'none'.
         - Fixed a minor regression since 0.3.0 in determining version weight,
           including "essentialness" of the version.
+    - Core:
+      - 'version_string_regex': allow debian part of the version contain '_',
+        however Cupt::Cache::Package will print a warning in this case.
+        (Closes: #541268)
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
 

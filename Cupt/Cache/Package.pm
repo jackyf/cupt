@@ -197,6 +197,11 @@ sub _merge_version {
 		mywarn("the upstream part of version string '%s' should start with a number",
 				$parsed_version->{version_string});
 	}
+	if ($parsed_version->{version_string} =~ m/_/) {
+		# underscores aren't allowed by Debian Policy
+		mywarn("the version string '%s' shouldn't contain underscores",
+				$parsed_version->{version_string});
+	}
 
 	# merging
 	eval {
