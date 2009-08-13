@@ -11,6 +11,8 @@ cupt (0.5.3) UNRELEASED; urgency=low
       - Resolvers/Native:
         - Don't synchronize source packages if the option
           'cupt::resolver::synchronize-source-versions' is set to 'none'.
+        - Fixed a minor regression since 0.3.0 in determining version weight,
+          including "essentialness" of the version.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
 

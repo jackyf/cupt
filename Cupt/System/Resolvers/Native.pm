@@ -372,7 +372,7 @@ sub _get_version_weight ($$) {
 		# automatically installed packages count nothing for user
 		$factor /= 20.0;
 	}
-	$factor *= 5.0 if defined($version->{essential});
+	$factor *= 5.0 if $version->{essential};
 
 	# omitting priority 'standard' here
 	if ($version->{priority} eq 'optional') {
