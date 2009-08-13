@@ -420,34 +420,6 @@ sub _is_package_can_be_removed ($$) {
 			|| !$self->{_packages}->{$package_name}->[SPE_INSTALLED];
 }
 
-sub _get_dependencies_groups ($$) {
-	my ($self, $version) = @_;
-
-	# action factor will determine the valuability of action
-	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
-	my @result;
-	push @result, { 'name' => 'pre-depends', 'relation_expressions' => $version->{pre_depends}, 'factor' => 2.0 };
-	push @result, { 'name' => 'depends', 'relation_expressions' => $version->{depends}, 'factor' => 1.0 };
-	if ($self->config->var('cupt::resolver::keep-recommends')) {
-		push @result, { 'name' => 'recommends', 'relation_expressions' => $version->{recommends}, 'factor' => 0.4 };
-	}
-	if ($self->config->var('cupt::resolver::keep-suggests')) {
-		push @result, { 'name' => 'suggests', 'relation_expressions' => $version->{suggests}, 'factor' => 0.1 };
-	}
-
-	return \@result;
-}
-
-sub _get_antidependencies_groups ($$) {
-	my ($self, $version) = @_;
-
-	# action factor will determine the valuability of action
-	my @result;
-	push @result, { 'name' => 'conflicts', 'relation_expressions' => $version->{conflicts}, 'factor' => 1.0 };
-	push @result, { 'name' => 'breaks', 'relation_expressions' => $version->{breaks}, 'factor' => 1.0 };
-	return \@result;
-}
-
 sub __clone_packages ($) {
 	my ($ref_packages) = @_;
 
@@ -785,6 +757,23 @@ sub _resolve ($$) {
 	}
 	$self->_require_strict_relation_expressions();
 
+	# action factor will determine the valuability of action
+	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
+	my @dependency_groups;
+	push @dependency_groups, { 'name' => 'pre_depends', 'factor' => 2.0 };
+	push @dependency_groups, { 'name' => 'depends', 'factor' => 1.0 };
+	if ($self->config->var('cupt::resolver::keep-recommends')) {
+		push @dependency_groups, { 'name' => 'recommends', 'factor' => 0.4 };
+	}
+	if ($self->config->var('cupt::resolver::keep-suggests')) {
+		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1 };
+	}
+
+	my @anti_dependency_groups;
+	push @anti_dependency_groups, { 'name' => 'conflicts', 'factor' => 1.0 };
+	push @anti_dependency_groups, { 'name' => 'breaks', 'factor' => 1.0 };
+
+
 	# [ 'packages' => {
 	#                   package_name... => {
 	#                                        PE_VERSION => version,
@@ -866,10 +855,10 @@ sub _resolve ($$) {
 				defined $version or next;
 
 				# checking that all dependencies are satisfied
-				foreach my $ref_dependency_group (@{$self->_get_dependencies_groups($version)}) {
+				foreach my $ref_dependency_group (@dependency_groups) {
 					my $dependency_group_factor = $ref_dependency_group->{'factor'};
 					my $dependency_group_name = $ref_dependency_group->{'name'};
-					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
+					foreach my $relation_expression (@{$version->{$dependency_group_name}}) {
 						# check if relation is already satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 						if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
@@ -927,10 +916,10 @@ sub _resolve ($$) {
 				}
 
 				# checking that all 'Conflicts' and 'Breaks' are not satisfied
-				foreach my $ref_dependency_group (@{$self->_get_antidependencies_groups($version)}) {
+				foreach my $ref_dependency_group (@anti_dependency_groups) {
 					my $dependency_group_factor = $ref_dependency_group->{'factor'};
 					my $dependency_group_name = $ref_dependency_group->{'name'};
-					foreach my $relation_expression (@{$ref_dependency_group->{relation_expressions}}) {
+					foreach my $relation_expression (@{$version->{$dependency_group_name}}) {
 						# check if relation is accidentally satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
