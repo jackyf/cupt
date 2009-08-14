@@ -599,9 +599,9 @@ sub show_source_package_versions () {
 					next if $part eq 'diff' && not defined $version->{diff};
 					$p->($part, "");
 					$p->('  ' . __('Size'), human_readable_size_string($version->{$part}->{size}));
-					$p->('  MD5', $version->{$part}->{md5sum});
-					$p->('  SHA1', $version->{$part}->{sha1sum}) unless $part eq 'dsc';
-					$p->('  SHA256', $version->{$part}->{sha256sum}) unless $part eq 'dsc';
+					$p->('  MD5', $version->{$part}->{'md5sum'}) if defined $version->{$part}->{'md5sum'};
+					$p->('  SHA1', $version->{$part}->{'sha1sum'}) if defined $version->{$part}->{'sha1sum'};
+					$p->('  SHA256', $version->{$part}->{'sha256sum'}) if defined $version->{$part}->{'sha256sum'};
 					foreach (map { $_->{'download_uri'} } @{$ref_uris->{$part}}) {
 						$p->('  URI', $_);
 					}

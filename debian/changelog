@@ -3,6 +3,9 @@ cupt (0.5.3) UNRELEASED; urgency=low
   * cupt:
     - New 'version' (aliases: '--version', '-v') subcommand.
     - New 'help' (aliases: '--help', '-h') subcommand. (Closes: #540790)
+    - 'showsrc':
+      - Don't assume any of hash sum of package to de defined, check it.
+        Thanks to Cyril Brulebois. (Closes: #541470)
   * Cupt:
     - Cache:
       - Package:
