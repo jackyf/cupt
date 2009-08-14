@@ -1,5 +1,7 @@
 cupt (0.5.3) UNRELEASED; urgency=low
 
+  * cupt:
+    - New 'version' (aliases: '--version', '-v') subcommand.
   * Cupt:
     - Cache:
       - Package:

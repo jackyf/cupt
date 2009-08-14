@@ -77,6 +77,12 @@ sub main {
 	}
 
 	foreach my $idx (0..$#ARGV) {
+		if ($ARGV[$idx] eq '-h' or $ARGV[$idx] eq '--help') {
+			$ARGV[$idx] = 'help';
+		}
+		if ($ARGV[$idx] eq '-v' or $ARGV[$idx] eq '--version') {
+			$ARGV[$idx] = 'version';
+		}
 		if ($ARGV[$idx] !~ m/^-/) {
 			# this is not a option, then it's a command
 			$command = $ARGV[$idx];
@@ -88,6 +94,7 @@ sub main {
 	myerr("no command specified") and return 2 if (!defined($command));
 
 	my %command_handlers = (
+		'version' => \&version,
 		'config-dump' => \&config_dump,
 		'show' => \&show_binary_package_versions,
 		'showsrc' => \&show_source_package_versions,
@@ -330,6 +337,16 @@ sub select_package_versions_wildcarded ($$;$) {
 			mydie("no appropriate versions available for wildcarded version expression '%s'", $expression);
 		}
 		return @result;
+	}
+}
+
+sub version () {
+	check_no_more_options();
+	check_no_extra_args();
+	build_cache(-source => 0, -binary => 0, -installed => 1);
+	my @packages = qw(cupt libcupt-perl);
+	foreach my $package (@packages) {
+		say "$package: ", $cache->get_system_state()->get_installed_version_string($package);
 	}
 }
 

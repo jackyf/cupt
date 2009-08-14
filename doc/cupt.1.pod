@@ -14,6 +14,10 @@ cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
 
 =over
 
+=item version,-v,--version
+
+prints versions of packages 'cupt' and 'libcupt-perl'
+
 =item config-dump
 
 If invoked without arguments, prints all configuration variables to standard
