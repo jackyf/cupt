@@ -2,6 +2,7 @@ cupt (0.5.3) UNRELEASED; urgency=low
 
   * cupt:
     - New 'version' (aliases: '--version', '-v') subcommand.
+    - New 'help' (aliases: '--help', '-h') subcommand. (Closes: #540790)
   * Cupt:
     - Cache:
       - Package:

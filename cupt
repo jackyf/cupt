@@ -95,6 +95,7 @@ sub main {
 
 	my %command_handlers = (
 		'version' => \&version,
+		'help' => \&help,
 		'config-dump' => \&config_dump,
 		'show' => \&show_binary_package_versions,
 		'showsrc' => \&show_source_package_versions,
@@ -347,6 +348,49 @@ sub version () {
 	my @packages = qw(cupt libcupt-perl);
 	foreach my $package (@packages) {
 		say "$package: ", $cache->get_system_state()->get_installed_version_string($package);
+	}
+}
+
+sub help () {
+	check_no_more_options();
+	check_no_extra_args();
+	# we don't need the cache :)
+	my %action_descriptions = (
+		'help' => __('prints a short help'),
+		'version' => __("prints versions of packages 'cupt' and 'libcupt-perl'"),
+		'config-dump' => __('prints values of configuration variables'),
+		'show' => __('prints info about binary package(s)'),
+		'showsrc' => __('prints info about source packages(s)'),
+		'search' => __('searches for packages using regular expression(s)'),
+		'depends' => __('prints dependencies of binary package(s)'),
+		'rdepends' => __('print reverse-dependencies of binary package(s)'),
+		'policy' => __('prints pin info for the binary package(s)'),
+		'policysrc' => __('prints pin info for the source package(s)'),
+		'pkgnames' => __('prints available package names'),
+		'changelog' => __('views Debian changelog(s) of binary package(s)'),
+		'copyright' => __('views Debian copyright info of binary package(s)'),
+		'screenshots' => __('views Debian screenshot web pages for the binary package(s)'),
+		'update' => __('updates repository metadata'),
+		'install' => __('installs/upgrades/downgrades binary package(s)'),
+		'remove' => __('removes binary package(s)'),
+		'purge' => __('removes binary package(s) along with their configuration files'),
+		'satisfy' => __('performs actions to make relation expressions satisfied'),
+		'safe-upgrade' => __('upgrades the system without removing packages'),
+		'full-upgrade' => __('upgrades the system with possible removal of some packages'),
+		'build-dep' => __('satisfies build dependencies for source package(s)'),
+		'source' => __('fetches and unpacks source package(s)'),
+		'clean' => __('cleans the whole binary package cache'),
+		'autoclean' => __('cleans unavailable from repositories archives from binary package cache'),
+		'markauto' => __('marks binary package(s) as automatically installed'),
+		'unmarkauto' => __('marks binary package(s) as manually installed'),
+		'shell' => __('starts an interactive package manager shell'),
+	);
+
+	say __('Usage: cupt <action> [<parameters>]');
+	say "";
+	say __('Actions:');
+	foreach my $action (sort keys %action_descriptions) {
+		say "  $action: ", $action_descriptions{$action};
 	}
 }
 

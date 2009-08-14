@@ -18,6 +18,10 @@ cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
 
 prints versions of packages 'cupt' and 'libcupt-perl'
 
+=item help,-h,--help
+
+prints the short help for available actions
+
 =item config-dump
 
 If invoked without arguments, prints all configuration variables to standard
