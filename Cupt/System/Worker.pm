@@ -901,7 +901,7 @@ sub __split_heterogeneous_actions (@) {
 				$subgroups{'unpack'}->[0]->{'dpkg_flags'} = ' --force-depends --force-conflicts';
 			}
 			if (@{$subgroups{'install'}}) {
-				$subgroups{'install'}->[0]->{'dpkg_flags'} = ' --force-depends --force-conflicts';
+				$subgroups{'install'}->[0]->{'dpkg_flags'} = ' --force-depends';
 			}
 
 			# pushing by one
