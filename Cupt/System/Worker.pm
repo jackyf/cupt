@@ -828,6 +828,8 @@ sub _build_actions_graph ($$) {
 			$graph->delete_vertex($from);
 		}
 
+		my $graph_transitive_closure = new Graph::TransitiveClosure($graph, 'path_length' => 0, 'path_vertices' => 0);
+
 		# unit unpack/configure using some intelligence
 		foreach my $ref_change_entry (values %vertex_changes) {
 			my $to = $ref_change_entry->{'configure'};
@@ -837,7 +839,7 @@ sub _build_actions_graph ($$) {
 			my @potential_edge_moves;
 			my $do_merge = 0;
 
-			if ($graph->has_edge($to, $from)) {
+			if ($graph_transitive_closure->is_reachable($to, $from)) {
 				# cyclic ('remove/unpack' <-> 'configure') dependency, merge unconditionally
 				$do_merge = 1;
 			}
