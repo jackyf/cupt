@@ -263,12 +263,12 @@ sub select_package_version ($$$) {
 	}
 }
 
-sub select_binary_package_version ($) {
+sub select_binary_package_version ($$) {
 	my ($package_name, $o_fatal) = @_;
 	return select_package_version($package_name, \&get_binary_package, $o_fatal);
 }
 
-sub select_source_package_version ($) {
+sub select_source_package_version ($$) {
 	my ($package_expression, $o_fatal) = @_;
 
 	# there we should gracefully accept both source and binary packages names,
@@ -1387,7 +1387,7 @@ sub manage_packages ($) {
 			my $ref_relation_expressions = parse_relation_line($package_expression);
 			$resolver->satisfy_relation_expression($_) for @$ref_relation_expressions;
 		} elsif ($action eq 'build-depends') {
-			my $version = select_source_package_version($package_expression);
+			my $version = select_source_package_version($package_expression, 1);
 			my @relation_expressions;
 
 			push @relation_expressions, @{unarchitecture_relation_expressions(
