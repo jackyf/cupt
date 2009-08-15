@@ -228,10 +228,10 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 
 sub get_status_for_version {
 	my ($self, $version) = @_;
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	if (exists $self->{_installed_info}->{$package_name}) {
 		my $ref_info = $self->{_installed_info}->{$package_name};
-		if ($ref_info->{'version_string'} eq $version->{version_string}) {
+		if ($ref_info->{'version_string'} eq $version->version_string) {
 			return $ref_info;
 		}
 	}

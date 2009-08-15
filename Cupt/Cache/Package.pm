@@ -135,7 +135,7 @@ sub get_specific_version ($$) {
 
 	foreach my $version (@{$self->get_versions()})
 	{
-		return $version if ($version->{version_string} eq $lookup_version_string);
+		return $version if ($version->version_string eq $lookup_version_string);
 	}
 	return undef;
 }
@@ -159,7 +159,7 @@ the same as L<Cupt::Core::compare_version_strings|Cupt::Core/compare_version_str
 =cut
 
 sub compare_versions ($$) {
-	return Cupt::Core::compare_version_strings($_[0]->{version_string}, $_[1]->{version_string});
+	return Cupt::Core::compare_version_strings($_[0]->version_string, $_[1]->version_string);
 }
 
 =head2 get_installed_version
@@ -183,8 +183,8 @@ sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
 	if (defined $o_binary_architecture and ref $parsed_version eq 'Cupt::Cache::BinaryVersion') {
-		if ($parsed_version->{architecture} ne 'all' and
-			$parsed_version->{architecture} ne $o_binary_architecture)
+		if ($parsed_version->architecture ne 'all' and
+			$parsed_version->architecture ne $o_binary_architecture)
 		{
 			# no need to keep it
 			return;
@@ -192,15 +192,15 @@ sub _merge_version {
 	}
 
 	# some sanity checks
-	if ($parsed_version->{version_string} !~ m/^\d/) {
+	if ($parsed_version->version_string !~ m/^\d/) {
 		# the main part doesn't starts with a number, violating Debian Policy
 		mywarn("the upstream part of version string '%s' should start with a number",
-				$parsed_version->{version_string});
+				$parsed_version->version_string);
 	}
-	if ($parsed_version->{version_string} =~ m/_/) {
+	if ($parsed_version->version_string =~ m/_/) {
 		# underscores aren't allowed by Debian Policy
 		mywarn("the version string '%s' shouldn't contain underscores",
-				$parsed_version->{version_string});
+				$parsed_version->version_string);
 	}
 
 	# merging
@@ -208,7 +208,7 @@ sub _merge_version {
 		my $found_version;
 		foreach my $version (@$ref_result)
 		{
-			if ($version->{version_string} eq $parsed_version->{version_string}) {
+			if ($version->version_string eq $parsed_version->version_string) {
 				$found_version = $version;
 				last;
 			}
@@ -230,28 +230,28 @@ sub _merge_version {
 				# ok, this is the same version;
 
 				# so, adding new "avail_as" info
-				push @{$found_version->{avail_as}}, $parsed_version->{avail_as}->[0];
+				push @{$found_version->avail_as}, $parsed_version->avail_as->[0];
 
 				if (ref $found_version eq 'Cupt::Cache::BinaryVersion' and $found_version->is_installed()) {
 					# merge hashsums that are not available from installed
 					# packages' info
-					$found_version->{md5sum} = $parsed_version->{md5sum};
-					$found_version->{sha1sum} = $parsed_version->{sha1sum};
-					$found_version->{sha256sum} = $parsed_version->{sha256sum};
+					$found_version->md5sum = $parsed_version->md5sum;
+					$found_version->sha1sum = $parsed_version->sha1sum;
+					$found_version->sha256sum = $parsed_version->sha256sum;
 				}
 			} else {
 				# err, no, this is different version :(
 				my $info = sprintf __("package name: '%s', version string: '%s', origin: '%s'"),
-						$parsed_version->{package_name},
-						$parsed_version->{version_string},
-						$parsed_version->{avail_as}->[0]->{release}->{base_uri};
+						$parsed_version->package_name,
+						$parsed_version->version_string,
+						$parsed_version->avail_as->[0]->{release}->{base_uri};
 				mywarn("throwing away duplicating version with different hash sums: %s", $info);
 			}
 		}
 	};
 	if (mycatch()) {
 		myerr("error while merging version '%s' for package '%s'",
-				$parsed_version->{version_string}, $parsed_version->{package_name});
+				$parsed_version->version_string, $parsed_version->package_name);
 		myredie();
 	};
 }

@@ -61,15 +61,15 @@ sub new {
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
 	foreach my $version (@$ref_versions) {
-		$self->{_is_installed}->{$version->{package_name}} = 1;
+		$self->{_is_installed}->{$version->package_name} = 1;
 	}
 }
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	$self->{_actions}->{$package_name}->{'action'} = 'install';
-	$self->{_actions}->{$package_name}->{'version_string'} = $version->{version_string};
+	$self->{_actions}->{$package_name}->{'version_string'} = $version->version_string;
 }
 
 sub satisfy_relation_expression ($$) {
@@ -137,16 +137,16 @@ sub _write_dudf_info ($$) {
 	# writing package info
 	foreach my $package (values %{$self->cache->get_binary_packages()}) {
 		foreach my $version (@{$package->get_versions()}) {
-			my $package_name = $version->{package_name};
+			my $package_name = $version->package_name;
 			say $fh "Package: " . $package_name;
-			say $fh "Version: " . $version->{version_string};
+			say $fh "Version: " . $version->version_string;
 			say $fh "Pin-Priority: " . $self->cache->get_original_apt_pin($version);
 
 			do { # print strict dependencies
 				my @depends_relation_expressions;
 
-				push @depends_relation_expressions, @{$version->{pre_depends}};
-				push @depends_relation_expressions, @{$version->{depends}};
+				push @depends_relation_expressions, @{$version->pre_depends};
+				push @depends_relation_expressions, @{$version->depends};
 
 				if (scalar @depends_relation_expressions) {
 					print $fh "Depends: ";
@@ -157,8 +157,8 @@ sub _write_dudf_info ($$) {
 			do { # print conflicting packages
 				my @conflicts_relation_expressions;
 
-				push @conflicts_relation_expressions, @{$version->{conflicts}};
-				push @conflicts_relation_expressions, @{$version->{breaks}};
+				push @conflicts_relation_expressions, @{$version->conflicts};
+				push @conflicts_relation_expressions, @{$version->breaks};
 
 				if (scalar @conflicts_relation_expressions) {
 					print $fh "Conflicts: ";
@@ -167,7 +167,7 @@ sub _write_dudf_info ($$) {
 			};
 
 			do { # print provides
-				my $ref_provides_package_names = $version->{provides};
+				my $ref_provides_package_names = $version->provides;
 				if (scalar @$ref_provides_package_names) {
 					say $fh "Provides: " . join(", ", @$ref_provides_package_names);
 				}

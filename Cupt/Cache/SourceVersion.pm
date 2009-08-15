@@ -20,6 +20,8 @@
 #***************************************************************************
 package Cupt::Cache::SourceVersion;
 
+=encoding utf8
+
 =head1 NAME
 
 Cupt::Cache::SourceVersion - store info about specific version of deb source package
@@ -29,6 +31,107 @@ Cupt::Cache::SourceVersion - store info about specific version of deb source pac
 use 5.10.0;
 use warnings;
 use strict;
+
+=head1 FIELDS
+
+=head2 avail_as
+
+  {
+    'release' => $release_info
+    'directory' => download URI appendage (directory part)
+  }
+
+See L<Release info in Cupt::Cache|Cupt::Cache/Release info>.
+
+=head2 package_name
+
+name of the package, string, defined in Debian Policy, §3.1
+
+=head2 binary_package_names
+
+reference to array of binary package names (strings) that build from this package
+
+=head2 architecture
+
+source architecture of the packge, string, defined in Debian Policy, §5.6.8
+
+=head2 priority
+
+priority, string, defined in Debian Policy, §5.6.6
+
+=head2 section
+
+section, string, defined in Debian Policy, §5.6.5
+
+=head2 standards_version
+
+version of the last Debian Policy the package conforms to
+
+=head2 maintainer
+
+maintainer of the package, string
+
+=head2 uploaders
+
+package uploaders list, string, defined in Debian Policy, §5.6.3
+
+=head2 version_string
+
+version string, defined in Debian Policy, §5.6.12
+
+=head2 build_depends
+
+[ L<relation_expression|Cupt::Cache::Relation/Relation expression>... ]
+
+Debian Policy, §7.1, 'Build-Depends'
+
+Note that relation expression in this in all other fields of this class is
+build upon
+L<Cupt::Cache::ArchitecturedRelation|Cupt::Cache::ArchitecturedRelation> which is subclass of
+L<Cupt::Cache::Relation|Cupt::Cache::Relation>.
+
+=head2 build_depends_indep
+
+[ L<relation_expression|Cupt::Cache::Relation/Relation expression>... ]
+
+Debian Policy, §7.1, 'Build-Depends-Indep'
+
+=head2 build_conflicts
+
+[ L<relation_expression|Cupt::Cache::Relation/Relation expression>... ]
+
+Debian Policy, §7.1, 'Build-Conflicts'
+
+=head2 build_conflicts_indep
+
+[ L<relation_expression|Cupt::Cache::Relation/Relation expression>... ]
+
+Debian Policy, §7.1, 'Build-Conflicts-Indep'
+
+=head2 tarball
+
+  {
+    'filename' => download URI appendage (file name ("leaf") part)
+    'size' => size
+    'md5sum' => MD5 hash sum of the file, can be undef
+    'sha1sum' => SHA1 hash sum of the file, can be undef
+    'sha256sum' => SHA256 hash sum of the file, can be undef
+  }
+
+=head2 diff
+
+same as L<tarball|/tarball>, can be whole undef in case of Debian native package
+
+=head2 dsc
+
+same as L<tarball|/tarball>
+
+=cut
+
+use Cupt::LValueFields qw(avail_as package_name binary_package_names architecture
+		priority section standards_version maintainer uploaders version_string
+		build_depends build_depends_indep build_conflicts build_conflicts_indep 
+		tarball diff dsc);
 
 use Cupt::Core;
 use Cupt::Cache::ArchitecturedRelation qw(parse_architectured_relation_line);
@@ -75,53 +178,37 @@ I<ref_release_info> - reference to L<release info|Cupt::Cache/Release info>
 
 sub new {
 	my ($class, $ref_arg) = @_;
-	my $self = {
-		avail_as => [],
-		# should contain array of hashes
-		#	release => {
-		#		...
-		#	},
-		#	directory
-
-		package_name => undef,
-		binary_package_names => [],
-
-		architecture => undef,
-		priority => undef,
-		section => undef,
-		standards_version => undef,
-		maintainer => undef,
-		uploaders => undef,
-		version_string => undef,
-		build_depends => [],
-		build_depends_indep => [],
-		build_conflicts => [],
-		build_conflicts_indep => [],
-		tarball => {
-			filename => undef,
-			size => undef,
-			md5sum => undef,
-			sha1sum => undef,
-			sha256sum => undef,
-		},
-		diff => {
-			filename => undef,
-			size => undef,
-			md5sum => undef,
-			sha1sum => undef,
-			sha256sum => undef,
-		},
-		dsc => {
-			filename => undef,
-			size => undef,
-			md5sum => undef,
-		},
+	my $self = (bless [] => $class);
+	$self->avail_as = [];
+	$self->build_depends = [];
+	$self->build_depends_indep = [];
+	$self->build_conflicts = [];
+	$self->build_conflicts_indep = [];
+	$self->binary_package_names = [];
+	$self->tarball = {
+		filename => undef,
+		size => undef,
+		md5sum => undef,
+		sha1sum => undef,
+		sha256sum => undef,
+	};
+	$self->diff = {
+		filename => undef,
+		size => undef,
+		md5sum => undef,
+		sha1sum => undef,
+		sha256sum => undef,
+	};
+	$self->dsc = {
+		filename => undef,
+		size => undef,
+		md5sum => undef,
 	};
 	# parsing fields
 	my ($package_name, $fh, $offset, $ref_release_info) = @$ref_arg;
 
-	$self->{avail_as}->[0]->{release} = $ref_release_info;
-	$self->{package_name} = $package_name;
+	$self->avail_as->[0]->{release} = $ref_release_info;
+	$self->package_name = $package_name;
 
 	my $field_name = undef;
 	eval {
@@ -140,9 +227,9 @@ sub new {
 						mydie("malformed line '%s'", $line);
 				local $_ = $name;
 				my $part = m/.dsc$/ ? 'dsc' : (m/.diff.gz$/ ? 'diff' : 'tarball');
-				$self->{$part}->{'filename'} = $name;
-				$self->{$part}->{'size'} = $size;
-				$self->{$part}->{$current_hash_sum_name} = $hash_sum;
+				$self->$part->{'filename'} = $name;
+				$self->$part->{'size'} = $size;
+				$self->$part->{$current_hash_sum_name} = $hash_sum;
 			} else {
 				if ($line =~ m/^Files:/) {
 					$current_hash_sum_name = 'md5sum';
@@ -158,24 +245,24 @@ sub new {
 
 					given ($field_name) {
 						when ('Build-Depends') {
-							$self->{build_depends} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+							$self->build_depends = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
 						when ('Build-Depends-Indep') {
-							$self->{build_depends_indep} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+							$self->build_depends_indep = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
-						when ('Binary') { @{$self->{binary_package_names}} = split(/, /, $field_value) }
-						when ('Priority') { $self->{priority} = $field_value }
-						when ('Section') { $self->{section} = $field_value unless $o_no_parse_info_onlys }
-						when ('Maintainer') { $self->{maintainer} = $field_value unless $o_no_parse_info_onlys }
-						when ('Uploaders') { $self->{uploaders} = $field_value unless $o_no_parse_info_onlys }
-						when ('Architecture') { $self->{architecture} = $field_value }
-						when ('Version') { $self->{version_string} = $field_value }
-						when ('Directory') { $self->{avail_as}->[0]->{directory} = $field_value }
+						when ('Binary') { @{$self->binary_package_names} = split(/, /, $field_value) }
+						when ('Priority') { $self->priority = $field_value }
+						when ('Section') { $self->section = $field_value unless $o_no_parse_info_onlys }
+						when ('Maintainer') { $self->maintainer = $field_value unless $o_no_parse_info_onlys }
+						when ('Uploaders') { $self->uploaders = $field_value unless $o_no_parse_info_onlys }
+						when ('Architecture') { $self->architecture = $field_value }
+						when ('Version') { $self->version_string = $field_value }
+						when ('Directory') { $self->avail_as->[0]->{directory} = $field_value }
 						when ('Build-Conflicts') {
-							$self->{build_conflicts} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+							$self->build_conflicts = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
 						when ('Build-Conflicts-Indep') {
-							$self->{build_conflicts_indep} = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
+							$self->build_conflicts_indep = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
 					}
 					undef $field_name;
@@ -191,21 +278,22 @@ sub new {
 	}
 	bless $self => $class;
 
+	# checking a presence of version string
+	defined $self->version_string or mydie("version string isn't defined");
+
 	# native Debian source packages don't contain Debian diff
-	if (Cupt::Core::is_version_string_native($self->{version_string})) {
-		undef $self->{diff};
+	if (Cupt::Core::is_version_string_native($self->version_string)) {
+		undef $self->diff;
 	}
 
-	# checking a presence of version string
-	defined $self->{version_string} or mydie("version string isn't defined");
 	# checking hash sums
-	if (!are_hash_sums_present($self->{tarball})) {
+	if (!are_hash_sums_present($self->tarball)) {
 		mydie("no hash sums specified for tarball");
 	}
-	if (defined $self->{diff} && !are_hash_sums_present($self->{diff})) {
+	if (defined $self->diff && !are_hash_sums_present($self->diff)) {
 		mydie("no hash sums specified for diff");
 	}
-	if (!are_hash_sums_present($self->{dsc})) {
+	if (!are_hash_sums_present($self->dsc)) {
 		mydie("no hash sums specified for dsc");
 	}
 
@@ -214,11 +302,11 @@ sub new {
 
 sub is_hashes_equal {
 	my ($self, $other) = @_;
-	compare_hash_sums($self->{tarball}, $other->{tarball}) or return 0;
-	if (defined $self->{diff}) {
-		compare_hash_sums($self->{diff}, $other->{diff}) or return 0;
+	compare_hash_sums($self->tarball, $other->tarball) or return 0;
+	if (defined $self->diff) {
+		compare_hash_sums($self->diff, $other->diff) or return 0;
 	}
-	return compare_hash_sums($self->{dsc}, $other->{dsc});
+	return compare_hash_sums($self->dsc, $other->dsc);
 }
 
 =head1 METHODS
@@ -251,18 +339,18 @@ contains 'Filename' property of package entries.
 sub uris {
 	my $self = shift;
 	my %result;
-	foreach (@{$self->{avail_as}}) {
+	foreach (@{$self->avail_as}) {
 		my $base_uri = $_->{release}->{base_uri};
 		if ($base_uri ne "") {
 			# real download path
 			my $new_uri = ( $base_uri . '/' . $_->{'directory'} );
 			foreach my $part ('tarball', 'diff', 'dsc') {
-				next if $part eq 'diff' and not defined $self->{diff};
-				my $download_uri = $new_uri . '/' . $self->{$part}->{filename};
+				next if $part eq 'diff' and not defined $self->diff;
+				my $download_uri = $new_uri . '/' . $self->$part->{filename};
 				push @{$result{$part}}, {
 					'download_uri' => $download_uri,
 					'base_uri' => $base_uri,
-					'appendage' => $_->{'directory'} . '/' . $self->{$part}->{filename},
+					'appendage' => $_->{'directory'} . '/' . $self->$part->{filename},
 				} unless grep { $_->{'download_uri'} eq $download_uri } @{$result{$part}};
 			}
 		}
@@ -279,7 +367,7 @@ method, returns whether this version has signed source or not
 sub is_signed ($$) {
 	my ($self) = @_;
 
-	foreach (@{$self->{avail_as}}) {
+	foreach (@{$self->avail_as}) {
 		if ($_->{release}->{signed}) {
 			return 1;
 		}

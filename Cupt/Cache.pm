@@ -300,7 +300,7 @@ sub get_original_apt_pin {
 		}
 	};
 
-	my @available_as = @{$version->{avail_as}};
+	my @available_as = @{$version->avail_as};
 
 	# release-dependent settings
 	my $default_release = $self->{_config}->var("apt::default-release");
@@ -327,16 +327,16 @@ sub get_original_apt_pin {
 	foreach my $ref_pin (@{$self->{_pin_settings}}) {
 		if (exists $ref_pin->{'package_name'}) {
 			my $value = $ref_pin->{'package_name'};
-			$version->{package_name} =~ m/$value/ or next PIN;
+			$version->package_name =~ m/$value/ or next PIN;
 		}
 		if (exists $ref_pin->{'source_package_name'}) {
 			$version->isa('Cupt::Cache::BinaryVersion') or next PIN;
 			my $value = $ref_pin->{'source_package_name'};
-			$version->{source_package_name} =~ m/$value/ or next PIN;
+			$version->source_package_name =~ m/$value/ or next PIN;
 		}
 		if (exists $ref_pin->{'version'}) {
 			my $value = $ref_pin->{'version'};
-			$version->{version_string} =~ m/$value/ or next PIN;
+			$version->version_string =~ m/$value/ or next PIN;
 		}
 		if (exists $ref_pin->{'base_uri'}) {
 			my $value = $ref_pin->{'base_uri'};
@@ -391,11 +391,11 @@ sub get_pin ($$) {
 
 	# discourage downgrading 
 	# downgradings will usually have pin <= 0
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	if (defined $self->{_system_state}) { # for example, for source versions will return false...
 		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
 		if (defined $installed_version_string
-			&& Cupt::Core::compare_version_strings($installed_version_string, $version->{version_string}) > 0)
+			&& Cupt::Core::compare_version_strings($installed_version_string, $version->version_string) > 0)
 		{
 			$result -= 2000;
 		}
@@ -549,7 +549,7 @@ sub _get_satisfying_versions_for_one_relation {
 		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
 		foreach (@$ref_sorted_versions) {
 			my $version = $_->{'version'};
-			push @result, $version if $relation->satisfied_by($version->{version_string});
+			push @result, $version if $relation->satisfied_by($version->version_string);
 		}
 	}
 
@@ -561,7 +561,7 @@ sub _get_satisfying_versions_for_one_relation {
 			defined $reverse_provide_package or next;
 			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
 				my $version = $_->{'version'};
-				foreach my $provides_package_name (@{$version->{provides}}) {
+				foreach my $provides_package_name (@{$version->provides}) {
 					if ($provides_package_name eq $package_name) {
 						# ok, this particular version does provide this virtual package
 						push @result, $version;
@@ -597,7 +597,7 @@ sub get_satisfying_versions ($$) {
 		my @result = map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression;
 		# get rid of duplicates
 		my %seen;
-		@result = grep { !$seen{ $_->{package_name}, $_->{version_string} } ++ } @result;
+		@result = grep { !$seen{ $_->package_name, $_->version_string } ++ } @result;
 		return \@result;
 	}
 }
@@ -1535,9 +1535,9 @@ sub get_path_of_debian_changelog ($) {
 
 	return undef if not $version->is_installed();
 
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	my $common_part = "/usr/share/doc/$package_name/";
-	if (is_version_string_native($version->{version_string})) {
+	if (is_version_string_native($version->version_string)) {
 		return $common_part . 'changelog.gz';
 	} else {
 		return $common_part . 'changelog.Debian.gz';
@@ -1561,7 +1561,7 @@ sub get_path_of_debian_copyright ($) {
 
 	return undef if not $version->is_installed();
 
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	return "/usr/share/doc/$package_name/copyright";
 }
 

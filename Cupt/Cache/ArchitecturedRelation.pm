@@ -30,13 +30,10 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Exporter qw(import);
 use base qw(Cupt::Cache::Relation);
 
-use constant {
-	REL_ARCHITECTURES => 3,
-};
-
-use Exporter qw(import);
+use Cupt::LValueFields qw(3 architectures);
 
 use Cupt::Core;
 
@@ -78,19 +75,9 @@ sub new {
 	}
 	my $self = new Cupt::Cache::Relation($unparsed);
 	bless $self => $class;
-	$self->[REL_ARCHITECTURES] = \@architectures;
+	$self->architectures = \@architectures;
 
 	return $self;
-}
-
-=head2 architectures
-
-method, architectures field accessor and mutator
-
-=cut
-
-sub architectures ($) {
-	return $_[0]->[REL_ARCHITECTURES];
 }
 
 =head2 stringify
@@ -102,8 +89,8 @@ method, returns canonical stringified form of the relation
 sub stringify {
 	my ($self) = @_;
 	my $result = $self->SUPER::stringify();
-	if (scalar @{$self->[REL_ARCHITECTURES]}) {
-		$result .= ' [' . join(', ', @{$self->[REL_ARCHITECTURES]}) . ']';
+	if (scalar @{$self->architectures}) {
+		$result .= ' [' . join(', ', @{$self->architectures}) . ']';
 	}
 	return $result;
 }

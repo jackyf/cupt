@@ -18,6 +18,22 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
+package Cupt::System::Resolvers::Native::PackageEntry;
+
+use Cupt::LValueFields qw(version stick fake_satisfied reasons manually_selected installed);
+
+sub new {
+	my $class = shift;
+	my $self = (bless [] => $class);
+	$self->version = undef;
+	$self->stick = 0;
+	$self->fake_satisfied = [];
+	$self->reasons = [];
+	$self->manually_selected = 0;
+	$self->installed = 0;
+	return $self;
+}
+
 package Cupt::System::Resolvers::Native;
 
 =head1 NAME
@@ -37,14 +53,6 @@ use Cupt::Cache::Relation qw(stringify_relation_expression);
 
 use Graph;
 use List::Util qw(reduce first);
-use constant {
-	PE_VERSION => 0,
-	PE_STICK => 1,
-	PE_FAKE_SATISFIED => 2,
-	PE_REASONS => 3,
-	SPE_MANUALLY_SELECTED => 4,
-	SPE_INSTALLED => 5,
-};
 
 our $_dummy_package_name = "<satisfy>";
 
@@ -75,16 +83,6 @@ sub new {
 	return $self;
 }
 
-sub __new_package_entry () {
-	my $ref_package_entry = [];
-	$ref_package_entry->[PE_VERSION] = undef;
-	$ref_package_entry->[PE_STICK] = 0;
-	$ref_package_entry->[PE_FAKE_SATISFIED] = [];
-	$ref_package_entry->[PE_REASONS] = [];
-	$ref_package_entry->[SPE_MANUALLY_SELECTED] = 0;
-	$ref_package_entry->[SPE_INSTALLED] = 0;
-	return $ref_package_entry;
-}
 
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
@@ -92,11 +90,12 @@ sub import_installed_versions ($$) {
 	foreach my $version (@$ref_versions) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		# '_packages' will be modified, leave '_old_packages' as original system state
-		my $package_name = $version->{package_name};
-		$self->{_packages}->{$package_name} = __new_package_entry();
-		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
-		$self->{_packages}->{$package_name}->[SPE_INSTALLED] = 1;
+		my $package_name = $version->package_name;
+		$self->{_packages}->{$package_name} = new Cupt::System::Resolvers::Native::PackageEntry;
+		$self->{_packages}->{$package_name}->version = $version;
+		$self->{_packages}->{$package_name}->installed = 1;
 		@{$self->{_old_packages}->{$package_name}} = @{$self->{_packages}->{$package_name}};
+		bless $self->{_old_packages}->{$package_name} => 'Cupt::System::Resolvers::Native::PackageEntry';
 	}
 }
 
@@ -104,22 +103,22 @@ sub _schedule_new_version_relations ($$) {
 	my ($self, $version) = @_;
 
 	# unconditionally adding pre-depends
-	foreach (@{$version->{pre_depends}}) {
+	foreach (@{$version->pre_depends}) {
 		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'pre-depends', $_ ]);
 	}
 	# unconditionally adding depends
-	foreach (@{$version->{depends}}) {
+	foreach (@{$version->depends}) {
 		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'depends', $_ ]);
 	}
 	if ($self->config->var('apt::install-recommends')) {
 		# ok, so adding recommends
-		foreach (@{$version->{recommends}}) {
+		foreach (@{$version->recommends}) {
 			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'recommends', $_ ]);
 		}
 	}
 	if ($self->config->var('apt::install-suggests')) {
 		# ok, so adding suggests
-		foreach (@{$version->{suggests}}) {
+		foreach (@{$version->suggests}) {
 			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'suggests', $_ ]);
 		}
 	}
@@ -130,13 +129,13 @@ sub __related_binary_package_names ($$) {
 
 	my @result;
 
-	my $package_name = $version->{package_name};
-	my $source_package_name = $version->{source_package_name};
+	my $package_name = $version->package_name;
+	my $source_package_name = $version->source_package_name;
 
 	foreach my $other_package_name (keys %$ref_packages) {
-		my $other_version = $ref_packages->{$other_package_name}->[PE_VERSION];
+		my $other_version = $ref_packages->{$other_package_name}->version;
 		next if not defined $other_version;
-		next if $other_version->{source_package_name} ne $source_package_name;
+		next if $other_version->source_package_name ne $source_package_name;
 		next if $other_package_name eq $package_name;
 		push @result, $other_package_name;
 	}
@@ -148,7 +147,7 @@ sub _get_package_version_by_source_version_string ($$) {
 	my ($self, $package_name, $source_version_string) = @_;
 
 	foreach my $version (@{$self->cache->get_binary_package($package_name)->get_versions()}) {
-		if ($version->{source_version_string} eq $source_version_string) {
+		if ($version->source_version_string eq $source_version_string) {
 			return $version;
 		}
 	}
@@ -159,12 +158,12 @@ sub _get_package_version_by_source_version_string ($$) {
 sub _related_packages_can_be_synchronized ($$) {
 	my ($self, $ref_packages, $version) = @_;
 
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	my @related_package_names = __related_binary_package_names($ref_packages, $version);
-	my $source_version_string = $version->{source_version_string};
+	my $source_version_string = $version->source_version_string;
 
 	foreach my $other_package_name (@related_package_names) {
-		if ($ref_packages->{$other_package_name}->[PE_STICK]) {
+		if ($ref_packages->{$other_package_name}->stick) {
 			# cannot update the package
 			return 0;
 		}
@@ -184,23 +183,23 @@ sub _synchronize_related_packages ($$$$$) {
 	my ($self, $ref_packages, $version, $stick, $sub_mydebug_wrapper) = @_;
 	
 	my @related_package_names = __related_binary_package_names($ref_packages, $version);
-	my $source_version_string = $version->{source_version_string};
-	my $package_name = $version->{package_name};
+	my $source_version_string = $version->source_version_string;
+	my $package_name = $version->package_name;
 
 	foreach my $other_package_name (@related_package_names) {
-		my $ref_package_entry = $ref_packages->{$other_package_name};
-		next if $ref_package_entry->[PE_STICK];
+		my $package_entry = $ref_packages->{$other_package_name};
+		next if $package_entry->stick;
 		my $version = $self->_get_package_version_by_source_version_string(
 				$other_package_name, $source_version_string);
 		next if not defined $version;
-		next if $version->{version_string} eq $ref_package_entry->[PE_VERSION]->{version_string};
-		$ref_package_entry->[PE_VERSION] = $version;
-		$ref_package_entry->[PE_STICK] = $stick;
+		next if $version->version_string eq $package_entry->version->version_string;
+		$package_entry->version = $version;
+		$package_entry->stick = $stick;
 		if ($self->config->var('debug::resolver')) {
 			$sub_mydebug_wrapper->("synchronizing package '$other_package_name' with package '$package_name");
 		}
 		if ($self->config->var('cupt::resolver::track-reasons')) {
-			push @{$ref_package_entry->[PE_REASONS]}, [ 'sync', $package_name ];
+			push @{$package_entry->reasons}, [ 'sync', $package_name ];
 		}
 	}
 
@@ -212,16 +211,16 @@ sub _synchronize_related_packages ($$$$$) {
 sub _install_version_no_stick ($$$) {
 	my ($self, $version, $reason) = @_;
 	
-	my $package_name = $version->{package_name};
-	$self->{_packages}->{$package_name} //= __new_package_entry();
-	if ($self->{_packages}->{$package_name}->[PE_STICK])
+	my $package_name = $version->package_name;
+	$self->{_packages}->{$package_name} //= new Cupt::System::Resolvers::Native::PackageEntry;
+	if ($self->{_packages}->{$package_name}->stick)
 	{
 		# package is restricted to be updated
 		return 0;
 	}
 
-	if ((not $self->{_packages}->{$package_name}->[PE_VERSION]) ||
-		($self->{_packages}->{$package_name}->[PE_VERSION] != $version))
+	if ((not $self->{_packages}->{$package_name}->version) ||
+		($self->{_packages}->{$package_name}->version != $version))
 	{
 		# binary package names from the same source that supplied package
 		my $o_synchronize_source_versions = $self->config->var('cupt::resolver::synchronize-source-versions');
@@ -235,12 +234,13 @@ sub _install_version_no_stick ($$$) {
 		}
 
 		# update the requested package
-		$self->{_packages}->{$package_name}->[PE_VERSION] = $version;
+		$self->{_packages}->{$package_name}->version = $version;
 		if ($self->config->var('cupt::resolver::track-reasons')) {
-			push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, $reason;
+			push @{$self->{_packages}->{$package_name}->reasons}, $reason;
 		}
 		if ($self->config->var('debug::resolver')) {
-			mydebug("install package '$package_name', version '$version->{version_string}'");
+			my $version_string = $version->version_string;
+			mydebug("install package '$package_name', version '$version_string'");
 		}
 		$self->_schedule_new_version_relations($version);
 
@@ -254,9 +254,9 @@ sub _install_version_no_stick ($$$) {
 sub install_version ($$) {
 	my ($self, $version) = @_;
 	$self->_install_version_no_stick($version, [ 'user' ]) or
-			mydie("unable to re-schedule package '%s'", $version->{package_name});
-	$self->{_packages}->{$version->{package_name}}->[PE_STICK] = 1;
-	$self->{_packages}->{$version->{package_name}}->[SPE_MANUALLY_SELECTED] = 1;
+			mydie("unable to re-schedule package '%s'", $version->package_name);
+	$self->{_packages}->{$version->package_name}->stick = 1;
+	$self->{_packages}->{$version->package_name}->manually_selected = 1;
 }
 
 sub satisfy_relation_expression ($$) {
@@ -307,15 +307,15 @@ sub _auto_satisfy_relation ($$) {
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{_packages}->{$package_name} //= __new_package_entry();
-	$self->{_packages}->{$package_name}->[PE_VERSION] = undef;
-	if ($self->{_packages}->{$package_name}->[PE_STICK]) {
+	$self->{_packages}->{$package_name} //= new Cupt::System::Resolvers::Native::PackageEntry;
+	$self->{_packages}->{$package_name}->version = undef;
+	if ($self->{_packages}->{$package_name}->stick) {
 		mydie("unable to re-schedule package '%s'", $package_name);
 	}
-	$self->{_packages}->{$package_name}->[PE_STICK] = 1;
-	$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] = 1;
+	$self->{_packages}->{$package_name}->stick = 1;
+	$self->{_packages}->{$package_name}->manually_selected = 1;
 	if ($self->config->var('cupt::resolver::track-reasons')) {
-		push @{$self->{_packages}->{$package_name}->[PE_REASONS]}, [ 'user' ];
+		push @{$self->{_packages}->{$package_name}->reasons}, [ 'user' ];
 	}
 	if ($self->config->var('debug::resolver')) {
 		mydebug("removing package $package_name");
@@ -327,13 +327,13 @@ sub upgrade ($) {
 	foreach (keys %{$self->{_packages}}) {
 		my $package_name = $_;
 		my $package = $self->cache->get_binary_package($package_name);
-		my $original_version = $self->{_packages}->{$package_name}->[PE_VERSION];
+		my $original_version = $self->{_packages}->{$package_name}->version;
 		# if there is original version, then at least one policy version should exist
 		my $supposed_version = $self->cache->get_policy_version($package);
 		defined $supposed_version or
 				myinternaldie("supposed version doesn't exist");
 		# no need to install the same version
-		$original_version->{version_string} ne $supposed_version->{version_string} or next;
+		$original_version->version_string ne $supposed_version->version_string or next;
 		$self->_install_version_no_stick($supposed_version, [ 'user' ]);
 	}
 }
@@ -367,21 +367,21 @@ sub _get_version_weight ($$) {
 	return 0 if not defined $version;
 
 	my $factor = 1.0;
-	my $package_name = $version->{package_name};
+	my $package_name = $version->package_name;
 	if ($version->is_installed() && $self->cache->is_automatically_installed($package_name)) {
 		# automatically installed packages count nothing for user
 		$factor /= 20.0;
 	}
-	$factor *= 5.0 if $version->{essential};
+	$factor *= 5.0 if $version->essential;
 
 	# omitting priority 'standard' here
-	if ($version->{priority} eq 'optional') {
+	if ($version->priority eq 'optional') {
 		$factor *= 0.9;
-	} elsif ($version->{priority} eq 'extra') {
+	} elsif ($version->priority eq 'extra') {
 		$factor *= 0.7;
-	} elsif ($version->{priority} eq 'important') {
+	} elsif ($version->priority eq 'important') {
 		$factor *= 1.4;
-	} elsif ($version->{priority} eq 'required') {
+	} elsif ($version->priority eq 'required') {
 		$factor *= 2.0;
 	}
 	return $self->cache->get_pin($version) * $factor;
@@ -404,12 +404,12 @@ sub __is_version_array_intersects_with_packages ($$) {
 	my ($ref_versions, $ref_packages) = @_;
 
 	foreach my $version (@$ref_versions) {
-		exists $ref_packages->{$version->{package_name}} or next;
+		exists $ref_packages->{$version->package_name} or next;
 
-		my $installed_version = $ref_packages->{$version->{package_name}}->[PE_VERSION];
+		my $installed_version = $ref_packages->{$version->package_name}->version;
 		defined $installed_version or next;
 		
-		return 1 if $version->{version_string} eq $installed_version->{version_string};
+		return 1 if $version->version_string eq $installed_version->version_string;
 	}
 	return 0;
 }
@@ -417,7 +417,7 @@ sub __is_version_array_intersects_with_packages ($$) {
 sub _is_package_can_be_removed ($$) {
 	my ($self, $package_name) = @_;
 	return !$self->config->var('cupt::resolver::no-remove')
-			|| !$self->{_packages}->{$package_name}->[SPE_INSTALLED];
+			|| !$self->{_packages}->{$package_name}->installed;
 }
 
 sub __clone_packages ($) {
@@ -425,11 +425,24 @@ sub __clone_packages ($) {
 
 	my %clone;
 	foreach (keys %$ref_packages) {
-		my $ref_new_package_entry = $ref_packages->{$_};
-		$clone{$_}->[PE_VERSION] = $ref_new_package_entry->[PE_VERSION];
-		$clone{$_}->[PE_STICK] = $ref_new_package_entry->[PE_STICK];
-		$clone{$_}->[PE_FAKE_SATISFIED] = [ @{$ref_new_package_entry->[PE_FAKE_SATISFIED]} ];
-		$clone{$_}->[PE_REASONS] = [ @{$ref_new_package_entry->[PE_REASONS]} ];
+		my $package_entry = $ref_packages->{$_};
+
+		my $new_package_entry = ($clone{$_} = []);
+		bless $new_package_entry => 'Cupt::System::Resolvers::Native::PackageEntry';
+
+		# $new_package_entry->version = $package_entry->version;
+		# $new_package_entry->stick = $package_entry->stick;
+		# $new_package_entry->fake_satisfied = [ @{$package_entry->fake_satisfied} ];
+		# $new_package_entry->reasons = [ @{$package_entry->reasons} ];
+		#
+		# see the above code? it's obviously right
+		# but it's so slow...
+		#
+		# keep the following in sync with package entry structure
+		$new_package_entry->[0] = $package_entry->[0];
+		$new_package_entry->[1] = $package_entry->[1];
+		$new_package_entry->[2] = [ @{$package_entry->[2]} ];
+		$new_package_entry->[3] = [ @{$package_entry->[3]} ];
 	}
 	return \%clone;
 }
@@ -442,12 +455,12 @@ sub _clean_automatically_installed ($) {
 	my %candidates_for_remove;
 	foreach my $package_name (keys %$ref_packages) {
 		$package_name ne $_dummy_package_name or next;
-		my $ref_package_entry = $ref_packages->{$package_name};
-		my $version = $ref_package_entry->[PE_VERSION];
+		my $package_entry = $ref_packages->{$package_name};
+		my $version = $package_entry->version;
 		defined $version or next;
-		!$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED] or next;
+		!$self->{_packages}->{$package_name}->manually_selected or next;
 		# don't consider Essential packages for removal
-		$version->{essential} and next;
+		$version->essential and next;
 
 		my $can_autoremove_this_package = $can_autoremove ?
 				$self->cache->is_automatically_installed($package_name) : 0;
@@ -463,25 +476,25 @@ sub _clean_automatically_installed ($) {
 	my $main_vertex_package_name = "main_vertex";
 	do { # building dependency graph
 		foreach my $package_name (keys %$ref_packages) {
-			my $version = $ref_packages->{$package_name}->[PE_VERSION];
+			my $version = $ref_packages->{$package_name}->version;
 			defined $version or next;
 			my @valuable_relation_expressions;
-			push @valuable_relation_expressions, @{$version->{pre_depends}};
-			push @valuable_relation_expressions, @{$version->{depends}};
+			push @valuable_relation_expressions, @{$version->pre_depends};
+			push @valuable_relation_expressions, @{$version->depends};
 			if ($self->config->var('cupt::resolver::keep-recommends')) {
-				push @valuable_relation_expressions, @{$version->{recommends}};
+				push @valuable_relation_expressions, @{$version->recommends};
 			}
 			if ($self->config->var('cupt::resolver::keep-suggests')) {
-				push @valuable_relation_expressions, @{$version->{suggests}};
+				push @valuable_relation_expressions, @{$version->suggests};
 			}
 
 			foreach (@valuable_relation_expressions) {
 				my $satisfying_versions = $self->cache->get_satisfying_versions($_);
 				foreach (@$satisfying_versions) {
-					my $candidate_package_name = $_->{package_name};
+					my $candidate_package_name = $_->package_name;
 					exists $candidates_for_remove{$candidate_package_name} or next;
-					my $candidate_version = $ref_packages->{$candidate_package_name}->[PE_VERSION];
-					$_->{version_string} eq $candidate_version->{version_string} or next;
+					my $candidate_version = $ref_packages->{$candidate_package_name}->version;
+					$_->version_string eq $candidate_version->version_string or next;
 					# well, this is what we need
 					if (exists $candidates_for_remove{$package_name}) {
 						# this is a relation between two weak packages
@@ -522,10 +535,10 @@ sub _clean_automatically_installed ($) {
 				$remove = 1;
 			}
 			if ($remove) {
-				$ref_packages->{$package_name}->[PE_VERSION] = undef;
+				$ref_packages->{$package_name}->version = undef;
 				# leave only one reason :)
 				if ($self->config->var('cupt::resolver::track-reasons')) {
-					@{$ref_packages->{$package_name}->[PE_REASONS]} = ([ 'auto-remove' ]);
+					@{$ref_packages->{$package_name}->reasons} = ([ 'auto-remove' ]);
 				}
 				if ($self->config->var('debug::resolver')) {
 					mydebug("auto-removed package '$package_name'");
@@ -558,23 +571,23 @@ sub _require_strict_relation_expressions ($) {
 	my ($self) = @_;
 
 	# "installing" virtual package, which will be used for strict 'satisfy' requests
-	my $version = {
-		package_name => $_dummy_package_name,
-		source_package_name => $_dummy_package_name,
-		version_string => '',
-		pre_depends => [],
-		depends => [],
-		recommends => [],
-		suggests => [],
-		breaks => [],
-		conflicts => [],
-	};
-	$self->{_packages}->{$_dummy_package_name} = __new_package_entry();
-	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION] = $version;
-	$self->{_packages}->{$_dummy_package_name}->[PE_STICK] = 1;
-	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{depends} =
+	my $version = bless [] => 'Cupt::Cache::BinaryVersion';
+	$version->package_name = $_dummy_package_name,
+	$version->source_package_name = $_dummy_package_name;
+	$version->version_string = '';
+	$version->pre_depends = [];
+	$version->depends = [];
+	$version->recommends = [];
+	$version->suggests = [];
+	$version->breaks = [];
+	$version->conflicts = [];
+
+	$self->{_packages}->{$_dummy_package_name} = new Cupt::System::Resolvers::Native::PackageEntry;
+	$self->{_packages}->{$_dummy_package_name}->version = $version;
+	$self->{_packages}->{$_dummy_package_name}->stick = 1;
+	$self->{_packages}->{$_dummy_package_name}->version->depends =
 			$self->{_strict_satisfy_relation_expressions};
-	$self->{_packages}->{$_dummy_package_name}->[PE_VERSION]->{breaks} =
+	$self->{_packages}->{$_dummy_package_name}->version->breaks =
 			$self->{_strict_unsatisfy_relation_expressions};
 }
 
@@ -586,12 +599,12 @@ sub _apply_action ($$$$$) {
 
 	# stick all requested package names
 	foreach my $package_name (@{$ref_action_to_apply->{'package_names_to_stick'}}) {
-		$ref_solution_entry->{packages}->{$package_name} //= __new_package_entry();
-		$ref_solution_entry->{packages}->{$package_name}->[PE_STICK] = 1;
+		$ref_solution_entry->{packages}->{$package_name} //= new Cupt::System::Resolvers::Native::PackageEntry;
+		$ref_solution_entry->{packages}->{$package_name}->stick = 1;
 	}
 
-	my $ref_package_entry_to_change = $ref_solution_entry->{'packages'}->{$package_name_to_change};
-	my $original_version = $ref_package_entry_to_change->[PE_VERSION];
+	my $package_entry_to_change = $ref_solution_entry->{'packages'}->{$package_name_to_change};
+	my $original_version = $package_entry_to_change->version;
 
 	my $profit = $ref_action_to_apply->{'profit'} //
 			$self->_get_action_profit($original_version, $supposed_version);
@@ -599,9 +612,9 @@ sub _apply_action ($$$$$) {
 
 	if ($self->config->var('debug::resolver')) {
 		my $old_version_string = defined($original_version) ?
-				$original_version->{version_string} : '<not installed>';
+				$original_version->version_string : '<not installed>';
 		my $new_version_string = defined($supposed_version) ?
-				$supposed_version->{version_string} : '<not installed>';
+				$supposed_version->version_string : '<not installed>';
 
 		my $profit_string = $profit;
 		$profit_string = "+$profit_string" if $profit > 0;
@@ -614,13 +627,13 @@ sub _apply_action ($$$$$) {
 	++$ref_solution_entry->{'level'};
 	$ref_solution_entry->{'score'} += $profit;
 
-	$ref_package_entry_to_change->[PE_VERSION] = $supposed_version;
+	$package_entry_to_change->version = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
-		push @{$ref_package_entry_to_change->[PE_FAKE_SATISFIED]}, $ref_action_to_apply->{'fakely_satisfies'};
+		push @{$package_entry_to_change->fake_satisfied}, $ref_action_to_apply->{'fakely_satisfies'};
 	}
 	if ($self->config->var('cupt::resolver::track-reasons')) {
 		if (defined $ref_action_to_apply->{'reason'}) {
-			push @{$ref_package_entry_to_change->[PE_REASONS]}, $ref_action_to_apply->{'reason'};
+			push @{$package_entry_to_change->reasons}, $ref_action_to_apply->{'reason'};
 		}
 	}
 	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
@@ -638,14 +651,14 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 
 	my @result;
 
-	my $version = $ref_packages->{$package_name}->[PE_VERSION];
+	my $version = $ref_packages->{$package_name}->version;
 
 	# install one of versions package needs
 	foreach my $satisfying_version (@$ref_satisfying_versions) {
-		my $satisfying_package_name = $satisfying_version->{package_name};
+		my $satisfying_package_name = $satisfying_version->package_name;
 		# can the package be updated?
 		if (!exists $ref_packages->{$satisfying_package_name} ||
-			!$ref_packages->{$satisfying_package_name}->[PE_STICK])
+			!$ref_packages->{$satisfying_package_name}->stick)
 		{
 			push @result, {
 				'package_name' => $satisfying_package_name,
@@ -657,17 +670,17 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 	}
 
 	# change this package
-	if (!$ref_packages->{$package_name}->[PE_STICK]) {
+	if (!$ref_packages->{$package_name}->stick) {
 		# change version of the package
 		my $other_package = $self->cache->get_binary_package($package_name);
 		foreach my $other_version (@{$other_package->get_versions()}) {
 			# don't try existing version
-			next if $other_version->{version_string} eq $version->{version_string};
+			next if $other_version->version_string eq $version->version_string;
 
 			# let's check if other version has the same relation
 			my $failed_relation_string = stringify_relation_expression($relation_expression);
 			my $found = 0;
-			foreach (@{$other_version->{$dependency_group_name}}) {
+			foreach (@{$other_version->$dependency_group_name}) {
 				if ($failed_relation_string eq stringify_relation_expression($_)) {
 					# yes, it has the same relation expression, so other version will
 					# also fail so it seems there is no sense trying it
@@ -677,7 +690,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 			}
 			if (!$found) {
 				# let's try harder to find if the other version is really appropriate for us
-				foreach (@{$other_version->{$dependency_group_name}}) {
+				foreach (@{$other_version->$dependency_group_name}) {
 					# we check only relations from dependency group that caused
 					# missing depends, it's not a full check, but pretty reasonable for
 					# most cases; in rare cases that some problematic dependency
@@ -691,12 +704,12 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 					my $has_resolution_outside = 0;
 					my $ref_candidate_satisfying_versions = $self->cache->get_satisfying_versions($_);
 					foreach (@$ref_candidate_satisfying_versions) {
-						my $candidate_package_name = $_->{package_name};
-						my $candidate_version_string = $_->{version_string};
+						my $candidate_package_name = $_->package_name;
+						my $candidate_version_string = $_->version_string;
 						my $is_candidate_appropriate = 1;
 						foreach (@$ref_satisfying_versions) {
-							next if $_->{package_name} ne $candidate_package_name;
-							next if $_->{version_string} ne $candidate_version_string;
+							next if $_->package_name ne $candidate_package_name;
+							next if $_->version_string ne $candidate_version_string;
 							# this candidate has fallen into dead-end
 							$is_candidate_appropriate = 0;
 							last;
@@ -851,14 +864,14 @@ sub _resolve ($$) {
 			MAIN_LOOP:
 			foreach my $package_name (@packages_in_order) {
 				$package_entry = $ref_current_packages->{$package_name};
-				my $version = $package_entry->[PE_VERSION];
+				my $version = $package_entry->version;
 				defined $version or next;
 
 				# checking that all dependencies are satisfied
 				foreach my $ref_dependency_group (@dependency_groups) {
 					my $dependency_group_factor = $ref_dependency_group->{'factor'};
 					my $dependency_group_name = $ref_dependency_group->{'name'};
-					foreach my $relation_expression (@{$version->{$dependency_group_name}}) {
+					foreach my $relation_expression (@{$version->$dependency_group_name}) {
 						# check if relation is already satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 						if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
@@ -869,7 +882,7 @@ sub _resolve ($$) {
 								{
 									# it wasn't satisfied in the past, don't touch it
 									next;
-								} elsif (grep { $_ == $relation_expression } @{$package_entry->[PE_FAKE_SATISFIED]}) {
+								} elsif (grep { $_ == $relation_expression } @{$package_entry->fake_satisfied}) {
 									# this soft relation expression was already fakely satisfied (score penalty)
 									next;
 								} else {
@@ -919,14 +932,14 @@ sub _resolve ($$) {
 				foreach my $ref_dependency_group (@anti_dependency_groups) {
 					my $dependency_group_factor = $ref_dependency_group->{'factor'};
 					my $dependency_group_name = $ref_dependency_group->{'name'};
-					foreach my $relation_expression (@{$version->{$dependency_group_name}}) {
+					foreach my $relation_expression (@{$version->$dependency_group_name}) {
 						# check if relation is accidentally satisfied
 						my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
 						if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 							# so, this can conflict... check it deeper on the fly
 							my $conflict_found = 0;
 							foreach my $satisfying_version (@$ref_satisfying_versions) {
-								my $other_package_name = $satisfying_version->{package_name};
+								my $other_package_name = $satisfying_version->package_name;
 
 								# package can't conflict (or break) with itself
 								$other_package_name ne $package_name or next;
@@ -937,21 +950,21 @@ sub _resolve ($$) {
 								my $other_package_entry = $ref_current_packages->{$other_package_name};
 
 								# does the package have an installed version?
-								defined($other_package_entry->[PE_VERSION]) or next;
+								defined($other_package_entry->version) or next;
 
 								# is this our version?
-								$other_package_entry->[PE_VERSION]->{version_string} eq $satisfying_version->{version_string} or next;
+								$other_package_entry->version->version_string eq $satisfying_version->version_string or next;
 
 								# :(
 								$conflict_found = 1;
 
 								# additionally, in case of absense of stick, also contribute to possible actions
-								if (!$other_package_entry->[PE_STICK]) {
+								if (!$other_package_entry->stick) {
 									# so change it
 									my $other_package = $self->cache->get_binary_package($other_package_name);
 									foreach my $other_version (@{$other_package->get_versions()}) {
 										# don't try existing version
-										next if $other_version->{version_string} eq $satisfying_version->{version_string};
+										next if $other_version->version_string eq $satisfying_version->version_string;
 
 										push @possible_actions, {
 											'package_name' => $other_package_name,
@@ -979,12 +992,12 @@ sub _resolve ($$) {
 								# mark package as failed one more time
 								++$failed_counts{$package_name};
 
-								if (!$package_entry->[PE_STICK]) {
+								if (!$package_entry->stick) {
 									# change version of the package
 									my $package = $self->cache->get_binary_package($package_name);
 									foreach my $other_version (@{$package->get_versions()}) {
 										# don't try existing version
-										next if $other_version->{version_string} eq $version->{version_string};
+										next if $other_version->version_string eq $version->version_string;
 
 										push @possible_actions, {
 											'package_name' => $package_name,
@@ -1044,11 +1057,11 @@ sub _resolve ($$) {
 			# build "user-frienly" version of solution
 			my %suggested_packages;
 			foreach my $package_name (keys %$ref_current_packages) {
-				my $ref_package_entry = $ref_current_packages->{$package_name};
-				$suggested_packages{$package_name}->{'version'} = $ref_package_entry->[PE_VERSION];
-				$suggested_packages{$package_name}->{'reasons'} = $ref_package_entry->[PE_REASONS];
+				my $package_entry = $ref_current_packages->{$package_name};
+				$suggested_packages{$package_name}->{'version'} = $package_entry->version;
+				$suggested_packages{$package_name}->{'reasons'} = $package_entry->reasons;
 				$suggested_packages{$package_name}->{'manually_selected'} =
-						$self->{_packages}->{$package_name}->[SPE_MANUALLY_SELECTED];
+						$self->{_packages}->{$package_name}->manually_selected;
 			}
 
 			# suggest found solution
@@ -1092,7 +1105,7 @@ sub _resolve ($$) {
 				my $package_name = $_->{'package_name'};
 				my $supposed_version = $_->{'version'};
 				my $original_version = exists $ref_current_packages->{$package_name} ?
-						$ref_current_packages->{$package_name}->[PE_VERSION] : undef;
+						$ref_current_packages->{$package_name}->version : undef;
 
 				$_->{'profit'} //= $self->_get_action_profit($original_version, $supposed_version);
 				$_->{'profit'} -= $position_penalty;
@@ -1173,8 +1186,8 @@ sub resolve ($$) {
 		my $version_to_install = $ref_satisfying_versions->[0];
 		if ($self->config->var('debug::resolver')) {
 			mydebug("selected package '%s', version '%s' for relation expression '%s'",
-					$version_to_install->{package_name},
-					$version_to_install->{version_string},
+					$version_to_install->package_name,
+					$version_to_install->version_string,
 					stringify_relation_expression($relation_expression)
 			);
 		}

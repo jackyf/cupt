@@ -234,7 +234,7 @@ sub select_package_version ($$$) {
 
 		# example: "nlkt/sid" or "nlkt/unstable"
 		foreach my $version (@{$package->get_versions()}) {
-			my @avail_as = @{$version->{avail_as}};
+			my @avail_as = @{$version->avail_as};
 
 			foreach (@avail_as) {
 				if ($_->{release}->{archive} eq $distribution_expression ||
@@ -283,12 +283,12 @@ sub select_source_package_version ($) {
 
 	if (defined $version) {
 		my $binary_version = $version;
-		my $source_package = get_source_package($binary_version->{source_package_name}, 1);
-		my $source_version_string = $binary_version->{source_version_string};
+		my $source_package = get_source_package($binary_version->source_package_name, 1);
+		my $source_version_string = $binary_version->source_version_string;
 		my $source_version = $source_package->get_specific_version($source_version_string);
 		if (not defined $source_version) {
 			mydie("cannot find version '%s' for package '%s'",
-					$source_version_string, $binary_version->{source_package_name});
+					$source_version_string, $binary_version->source_package_name);
 		}
 		return $source_version;
 	} else {
@@ -447,10 +447,10 @@ sub show_binary_package_versions () {
 		my @relations;
 		foreach (@$ref_satisfying_versions) {
 			# we don't need versions of the same package
-			my $new_package_name = $_->{package_name};
+			my $new_package_name = $_->package_name;
 			$new_package_name ne $package_name or next;
 
-			my $new_relation_version_string = $_->{version_string};
+			my $new_relation_version_string = $_->version_string;
 			my $new_relation = new Cupt::Cache::Relation("$new_package_name (= $new_relation_version_string)");
 			push @relations, $new_relation;
 		}
@@ -487,41 +487,41 @@ sub show_binary_package_versions () {
 		}
 
 		foreach my $version (@$ref_versions) {
-			my $package_name = $version->{package_name};
+			my $package_name = $version->package_name;
 			$p->(__('Package'), $package_name);
-			$p->(__('Version'), $version->{version_string});
+			$p->(__('Version'), $version->version_string);
 			my $installed_status = $cache->get_system_state()->get_status_for_version($version);
 			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : "not installed");
 			if ($version->is_installed()) {
 				my $is_auto_installed = $cache->is_automatically_installed($package_name);
 				$p->(__('Automatically installed'), $is_auto_installed ? __('yes') : __('no'));
 			}
-			$p->(__('Source'), $version->{source_package_name});
-			if ($version->{source_version_string} ne $version->{version_string}) {
-				$p->(__('Source version'), $version->{source_version_string});
+			$p->(__('Source'), $version->source_package_name);
+			if ($version->source_version_string ne $version->version_string) {
+				$p->(__('Source version'), $version->source_version_string);
 			}
-			$p->(__('Essential'), $version->{essential}) if $version->{essential};
-			$p->(__('Priority'), $version->{priority});
-			$p->(__('Section'), $version->{section});
-			$p->(__('Size'), human_readable_size_string($version->{size})) if defined($version->{size});
-			$p->(__('Uncompressed size'), human_readable_size_string($version->{installed_size}*1024));
-			$p->(__('Maintainer'), $version->{maintainer});
-			$p->(__('Architecture'), $version->{architecture});
+			$p->(__('Essential'), $version->essential) if $version->essential;
+			$p->(__('Priority'), $version->priority);
+			$p->(__('Section'), $version->section);
+			$p->(__('Size'), human_readable_size_string($version->size)) if defined $version->size;
+			$p->(__('Uncompressed size'), human_readable_size_string($version->installed_size*1024));
+			$p->(__('Maintainer'), $version->maintainer);
+			$p->(__('Architecture'), $version->architecture);
 			if ($o_with_release_info) {
-				foreach (@{$version->{avail_as}}) {
+				foreach (@{$version->avail_as}) {
 					next if !defined($_->{release}->{description}); # no release description available
 					$p->(__('Release'), $_->{release}->{description});
 				}
 			}
-			$p->(__('Pre-Depends'), stringify_relation_expressions($version->{pre_depends})) if @{$version->{pre_depends}};
-			$p->(__('Depends'), stringify_relation_expressions($version->{depends})) if @{$version->{depends}};
-			$p->(__('Recommends'), stringify_relation_expressions($version->{recommends})) if @{$version->{recommends}};
-			$p->(__('Suggests'), stringify_relation_expressions($version->{suggests})) if @{$version->{suggests}};
-			$p->(__('Conflicts'), stringify_relation_expressions($version->{conflicts})) if @{$version->{conflicts}};
-			$p->(__('Breaks'), stringify_relation_expressions($version->{breaks})) if @{$version->{breaks}};
-			$p->(__('Replaces'), stringify_relation_expressions($version->{replaces})) if @{$version->{replaces}};
-			$p->(__('Provides'), join(", ", @{$version->{provides}})) if @{$version->{provides}};
-			$p->(__('Enhances'), stringify_relation_expressions($version->{enhances})) if @{$version->{enhances}};
+			$p->(__('Pre-Depends'), stringify_relation_expressions($version->pre_depends)) if @{$version->pre_depends};
+			$p->(__('Depends'), stringify_relation_expressions($version->depends)) if @{$version->depends};
+			$p->(__('Recommends'), stringify_relation_expressions($version->recommends)) if @{$version->recommends};
+			$p->(__('Suggests'), stringify_relation_expressions($version->suggests)) if @{$version->suggests};
+			$p->(__('Conflicts'), stringify_relation_expressions($version->conflicts)) if @{$version->conflicts};
+			$p->(__('Breaks'), stringify_relation_expressions($version->breaks)) if @{$version->breaks};
+			$p->(__('Replaces'), stringify_relation_expressions($version->replaces)) if @{$version->replaces};
+			$p->(__('Provides'), join(", ", @{$version->provides})) if @{$version->provides};
+			$p->(__('Enhances'), stringify_relation_expressions($version->enhances)) if @{$version->enhances};
 			my $ref_reverse_provides = $sub_get_reverse_provides->($package_name);
 			if (scalar @$ref_reverse_provides) {
 				$p->(__('Provided by'), stringify_relation_expressions($ref_reverse_provides));
@@ -529,14 +529,14 @@ sub show_binary_package_versions () {
 			foreach (map { $_->{'download_uri'} } $version->uris()) {
 				$p->('URI', $_);
 			}
-			$p->('MD5', $version->{md5sum}) if defined($version->{md5sum});
-			$p->('SHA1', $version->{sha1sum}) if defined($version->{sha1sum});
-			$p->('SHA256', $version->{sha256sum}) if defined($version->{sha1sum});
-			$p->(__('Description'), $version->{short_description});
-			print $version->{long_description} if defined($version->{long_description});
-			$p->(__('Homepage'), $version->{homepage}) if defined($version->{homepage});
-			$p->(__('Task'), $version->{task}) if defined($version->{task});
-			$p->(__('Tags'), $version->{tags}) if defined($version->{tags});
+			$p->('MD5', $version->md5sum) if defined($version->md5sum);
+			$p->('SHA1', $version->sha1sum) if defined($version->sha1sum);
+			$p->('SHA256', $version->sha256sum) if defined($version->sha1sum);
+			$p->(__('Description'), $version->short_description);
+			print $version->long_description if defined($version->long_description);
+			$p->(__('Homepage'), $version->homepage) if defined($version->homepage);
+			$p->(__('Task'), $version->task) if defined($version->task);
+			$p->(__('Tags'), $version->tags) if defined($version->tags);
 			print "\n";
 		}
 	}
@@ -568,40 +568,40 @@ sub show_source_package_versions () {
 		}
 
 		foreach my $version (@$ref_versions) {
-			my $package_name = $version->{package_name};
+			my $package_name = $version->package_name;
 			$p->(__('Package'), $package_name);
-			$p->(__('Binary'), join(', ', @{$version->{binary_package_names}}));
-			$p->(__('Version'), $version->{version_string});
-			$p->(__('Priority'), $version->{priority});
-			$p->(__('Section'), $version->{section});
-			$p->(__('Maintainer'), $version->{maintainer});
-			$p->(__('Uploaders'), $version->{uploaders}) if defined $version->{uploaders};
-			$p->(__('Architecture'), $version->{architecture});
+			$p->(__('Binary'), join(', ', @{$version->binary_package_names}));
+			$p->(__('Version'), $version->version_string);
+			$p->(__('Priority'), $version->priority);
+			$p->(__('Section'), $version->section);
+			$p->(__('Maintainer'), $version->maintainer);
+			$p->(__('Uploaders'), $version->uploaders) if defined $version->uploaders;
+			$p->(__('Architecture'), $version->architecture);
 			if ($o_with_release_info) {
-				foreach (@{$version->{avail_as}}) {
+				foreach (@{$version->avail_as}) {
 					next if !defined($_->{release}->{description}); # no release description available
 					$p->(__('Release'), $_->{release}->{description});
 				}
 			}
-			$p->(__('Build-Depends'), stringify_relation_expressions($version->{build_depends}));
-			if (scalar @{$version->{build_depends_indep}}) {
-				$p->(__('Build-Depends-Indep'), stringify_relation_expressions($version->{build_depends_indep}));
+			$p->(__('Build-Depends'), stringify_relation_expressions($version->build_depends));
+			if (scalar @{$version->build_depends_indep}) {
+				$p->(__('Build-Depends-Indep'), stringify_relation_expressions($version->build_depends_indep));
 			}
-			if (scalar @{$version->{build_conflicts}}) {
-				$p->(__('Build-Conflicts'), stringify_relation_expressions($version->{build_conflicts}));
+			if (scalar @{$version->build_conflicts}) {
+				$p->(__('Build-Conflicts'), stringify_relation_expressions($version->build_conflicts));
 			}
-			if (scalar @{$version->{build_conflicts_indep}}) {
-				$p->(__('Build-Conflicts-Indep'), stringify_relation_expressions($version->{build_conflicts_indep}));
+			if (scalar @{$version->build_conflicts_indep}) {
+				$p->(__('Build-Conflicts-Indep'), stringify_relation_expressions($version->build_conflicts_indep));
 			}
 			{
 				my $ref_uris = $version->uris();
 				foreach my $part ('tarball', 'diff', 'dsc') {
-					next if $part eq 'diff' && not defined $version->{diff};
+					next if $part eq 'diff' && not defined $version->diff;
 					$p->($part, "");
-					$p->('  ' . __('Size'), human_readable_size_string($version->{$part}->{size}));
-					$p->('  MD5', $version->{$part}->{'md5sum'}) if defined $version->{$part}->{'md5sum'};
-					$p->('  SHA1', $version->{$part}->{'sha1sum'}) if defined $version->{$part}->{'sha1sum'};
-					$p->('  SHA256', $version->{$part}->{'sha256sum'}) if defined $version->{$part}->{'sha256sum'};
+					$p->('  ' . __('Size'), human_readable_size_string($version->$part->{'size'}));
+					$p->('  MD5', $version->$part->{'md5sum'}) if defined $version->$part->{'md5sum'};
+					$p->('  SHA1', $version->$part->{'sha1sum'}) if defined $version->$part->{'sha1sum'};
+					$p->('  SHA256', $version->$part->{'sha256sum'}) if defined $version->$part->{'sha256sum'};
 					foreach (map { $_->{'download_uri'} } @{$ref_uris->{$part}}) {
 						$p->('  URI', $_);
 					}
@@ -669,8 +669,8 @@ sub search () {
 					next REGEX;
 				} else {
 					foreach (@{$package->get_versions()}) {
-						if ($_->{short_description} =~ m/$regex/ or
-							defined($_->{long_description}) && $_->{long_description} =~ m/$regex/)
+						if ($_->short_description =~ m/$regex/ or
+							defined($_->long_description) && $_->long_description =~ m/$regex/)
 						{
 							$version = $_;
 							next REGEX;
@@ -683,7 +683,7 @@ sub search () {
 			next if !$matched;
 
 			if (defined $version) {
-				say $package_name . " - " . $version->{short_description} if $matched;
+				say $package_name . " - " . $version->short_description if $matched;
 			} else {
 				say $package_name;
 			}
@@ -736,8 +736,8 @@ sub show_package_relations ($) {
 	while (scalar @versions) {
 		my $version = shift @versions;
 
-		my $package_name = $version->{package_name};
-		my $version_string = $version->{version_string};
+		my $package_name = $version->package_name;
+		my $version_string = $version->version_string;
 
 		next if exists $processed_entries{$package_name,$version_string};
 		$processed_entries{$package_name,$version_string} = 1;
@@ -750,7 +750,7 @@ sub show_package_relations ($) {
 			# fill relations with actual relations
 			if ($mode eq 'normal') {
 				# just plain normal dependencies
-				foreach my $relation_expression (@{$version->{$relation_group_name}}) {
+				foreach my $relation_expression (@{$version->$relation_group_name}) {
 					say "  $caption: ", stringify_relation_expression($relation_expression);
 					if ($config->var('apt::cache::recursedepends')) {
 						# insert recursive depends into queue
@@ -763,7 +763,7 @@ sub show_package_relations ($) {
 					my @version_candidates = @{$package->get_versions()};
 					foreach my $reverse_version_candidate (@version_candidates) {
 						my $needed = 0;
-						foreach (@{$reverse_version_candidate->{$relation_group_name}}) {
+						foreach (@{$reverse_version_candidate->$relation_group_name}) {
 							# check each relation
 							if (ref $_ ne 'ARRAY' && $_->package_name eq $package_name) {
 								# don't worry about any virtual packages, just check the relation
@@ -781,8 +781,8 @@ sub show_package_relations ($) {
 								# ok, check as common
 								my $ref_relation_versions = $cache->get_satisfying_versions($_);
 								foreach my $version_candidate (@$ref_relation_versions) {
-									if ($version_candidate->{package_name} eq $package_name
-										&& $version_candidate->{version_string} eq $version_string)
+									if ($version_candidate->package_name eq $package_name
+										&& $version_candidate->version_string eq $version_string)
 									{
 										# ok, good
 										$needed = 1;
@@ -792,8 +792,8 @@ sub show_package_relations ($) {
 							}
 							if ($needed == 1) {
 								# positive result
-								my $label = $reverse_version_candidate->{package_name} .
-										' ' . $reverse_version_candidate->{version_string};
+								my $label = $reverse_version_candidate->package_name .
+										' ' . $reverse_version_candidate->version_string;
 								if ($config->var('apt::cache::recursedepends')) {
 									push @versions, $reverse_version_candidate;
 								}
@@ -844,7 +844,7 @@ sub policy ($) {
 						($installed_version_string // ('(' . __('none') . ')'));
 			}
 
-			say "  " . __('Candidate') . ": " . $policy_version->{version_string};
+			say "  " . __('Candidate') . ": " . $policy_version->version_string;
 			say "  " . __('Version table') . ":";
 
 			my $ref_versions = $cache->get_sorted_pinned_versions($package);
@@ -854,16 +854,16 @@ sub policy ($) {
 				my $pin = $entry->{'pin'};
 
 				if (defined($installed_version_string) && 
-					$version->{version_string} eq $installed_version_string)
+					$version->version_string eq $installed_version_string)
 				{
 					print " *** ";
 				} else {
 					print "     ";
 				}
 
-				say $version->{version_string} . ' ' . $pin;
+				say $version->version_string . ' ' . $pin;
 
-				my @avail_as = @{$version->{avail_as}};
+				my @avail_as = @{$version->avail_as};
 				foreach (@avail_as) {
 					print (' ' x 8);
 					my $origin = $_->{release}->{base_uri} || $config->var('dir::state::status');
@@ -986,7 +986,7 @@ sub generate_management_prompt ($$$) {
 								$cache->get_system_state()->get_installed_version_string($package_name);
 						my $new_version = $ref_package_entry->{'version'};
 						my $new_version_string = defined $new_version ?
-								$new_version->{version_string} : undef;
+								$new_version->version_string : undef;
 						if (defined $old_version_string and defined $new_version_string) {
 							print " [$old_version_string -> $new_version_string]";
 						} elsif (defined $old_version_string) {
@@ -1032,8 +1032,8 @@ sub generate_management_prompt ($$$) {
 									);
 									my ($reason_version, $reason_dependency_name, $reason_relation_expression) = @reason_parts;
 
-									my $reason_package_name = $reason_version->{package_name};
-									my $reason_version_string = $reason_version->{version_string};
+									my $reason_package_name = $reason_version->package_name;
+									my $reason_version_string = $reason_version->version_string;
 
 									$sub_say_reason->(sprintf("%s %s %s '%s'",
 											$reason_package_name, $reason_version_string,
@@ -1086,17 +1086,17 @@ sub generate_management_prompt ($$$) {
 			}
 			foreach my $package_name (keys %$ref_desired_packages) {
 				my $ref_package_entry = $ref_desired_packages->{$package_name};
-				next if !defined $ref_package_entry->{version};
+				next if not defined $ref_package_entry->{'version'};
 
-				foreach my $relation_expression (@{$ref_package_entry->{version}->{recommends}}) {
+				foreach my $relation_expression (@{$ref_package_entry->{'version'}->recommends}) {
 					my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
 					
 					my $soft_breakage_possible = 0;
 					RELATION_ENTRY:
 					foreach my $satisfying_version (@$ref_satisfying_versions) {
 						foreach my $version_to_remove (@versions_to_remove) {
-							next if $satisfying_version->{package_name} ne $version_to_remove->{package_name};
-							next if $satisfying_version->{version_string} ne $version_to_remove->{version_string};
+							next if $satisfying_version->package_name ne $version_to_remove->package_name;
+							next if $satisfying_version->version_string ne $version_to_remove->version_string;
 							$soft_breakage_possible = 1;
 							last RELATION_ENTRY;
 						}
@@ -1105,16 +1105,16 @@ sub generate_management_prompt ($$$) {
 					if ($soft_breakage_possible) {
 						my $is_broken = 1;
 						foreach my $satisfying_version (@$ref_satisfying_versions) {
-							my $satisfying_package_name = $satisfying_version->{package_name};
-							next if !defined $ref_desired_packages->{$satisfying_package_name};
-							my $desired_version = $ref_desired_packages->{$satisfying_package_name}->{version};
-							next if !defined $desired_version;
-							next if $desired_version->{version_string} ne $satisfying_version->{version_string};
+							my $satisfying_package_name = $satisfying_version->package_name;
+							next if not defined $ref_desired_packages->{$satisfying_package_name};
+							my $desired_version = $ref_desired_packages->{$satisfying_package_name}->{'version'};
+							next if not defined $desired_version;
+							next if $desired_version->version_string ne $satisfying_version->version_string;
 							$is_broken = 0;
 							last;
 						}
 						if ($is_broken) {
-							my $version_string = $ref_package_entry->{version}->{version_string};
+							my $version_string = $ref_package_entry->{version}->version_string;
 							push @unsatisfied_soft_dependencies, 
 									sprintf __("%s %s recommends %s"), $package_name, $version_string,
 									stringify_relation_expression($relation_expression);
@@ -1137,7 +1137,7 @@ sub generate_management_prompt ($$$) {
 			foreach my $action (qw(install upgrade downgrade)) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
 				foreach my $version (map { $_->{version} } @$ref_package_entries) {
-					push @untrusted_package_names, $version->{package_name} if !$version->is_signed();
+					push @untrusted_package_names, $version->package_name if !$version->is_signed();
 				}
 			}
 			if (scalar @untrusted_package_names) {
@@ -1159,7 +1159,7 @@ sub generate_management_prompt ($$$) {
 					next if not defined $package;
 					my $version = $package->get_installed_version();
 					next if not defined $version; # purge of config-files package when candidates available
-					push @essential_package_names, $version->{package_name} if $version->{essential};
+					push @essential_package_names, $version->package_name if $version->essential;
 				}
 			}
 			if (scalar @essential_package_names) {
@@ -1245,30 +1245,31 @@ sub acquire_source_package {
 	my $download_progress = $download_progress_class_name->new();
 
 	foreach my $version (@versions) {
-		my $package_name = $version->{package_name};
-		my $ref_release = $version->{avail_as}->[0]->{'release'};
+		my $package_name = $version->package_name;
+		my $version_string = $version->version_string;
+		my $ref_release = $version->avail_as->[0]->{'release'};
 		my $codename = $ref_release->{'codename'};
 		my $component = $ref_release->{'component'};
 
 		my $ref_uris = $version->uris();
 		foreach my $part (@parts_to_download) {
-			next if $part eq 'diff' and not defined $version->{diff};
+			next if $part eq 'diff' and not defined $version->diff;
 			my @download_uris;
-			my $filename = $version->{$part}->{filename};
+			my $filename = $version->$part->{filename};
 			foreach my $ref_uri_entry (@{$ref_uris->{$part}}) {
 				my $download_uri = $ref_uri_entry->{'download_uri'};
 				push @download_uris, $download_uri;
 				$download_progress->set_short_alias_for_uri($download_uri, "$package_name $part");
 				my $base_uri = $ref_uri_entry->{'base_uri'};
 				$download_progress->set_long_alias_for_uri($download_uri,
-						"$base_uri $codename/$component $package_name $version->{version_string} $part");
+						"$base_uri $codename/$component $package_name $version_string $part");
 			}
 			push @download_entries, {
 				'uris' => \@download_uris,
 				'filename' => $filename,
-				'size' => $version->{$part}->{size},
+				'size' => $version->$part->{'size'},
 				'post-action' => sub {
-					Cupt::Cache::verify_hash_sums($version->{$part}, $filename) or
+					Cupt::Cache::verify_hash_sums($version->$part, $filename) or
 							do { unlink $filename; return sprintf __("%s: hash sums mismatch"), $filename; };
 					return 0;
 				}
@@ -1290,7 +1291,8 @@ sub acquire_source_package {
 	unless ($o_download_only || scalar @parts_to_download < 3) {
 		# unpack downloaded sources
 		foreach my $version (@versions) {
-			system("dpkg-source -x $version->{dsc}->{filename}");
+			my $dsc_filename = $version->dsc->{'filename'};
+			system("dpkg-source -x $dsc_filename");
 		}
 	}
 
@@ -1389,16 +1391,16 @@ sub manage_packages ($) {
 			my @relation_expressions;
 
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->{build_depends}, $config->var('apt::architecture'))};
+					$version->build_depends, $config->var('apt::architecture'))};
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->{build_depends_indep}, $config->var('apt::architecture'))};
+					$version->build_depends_indep, $config->var('apt::architecture'))};
 			$resolver->satisfy_relation_expression($_) for @relation_expressions;
 
 			@relation_expressions = ();
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->{build_conflicts}, $config->var('apt::architecture'))};
+					$version->build_conflicts, $config->var('apt::architecture'))};
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->{build_conflicts_indep}, $config->var('apt::architecture'))};
+					$version->build_conflicts_indep, $config->var('apt::architecture'))};
 			$resolver->unsatisfy_relation_expression($_) for @relation_expressions;
 
 			$resolver->satisfy_relation_expression(new Cupt::Cache::Relation("build-essential"));
@@ -1443,7 +1445,7 @@ sub manage_packages ($) {
 
 				if (scalar @versions) {
 					for my $version (@versions) {
-						$resolver->remove_package($version->{package_name});
+						$resolver->remove_package($version->package_name);
 					}
 				} else {
 					check_package_name($package_expression);
@@ -1541,7 +1543,7 @@ sub show_changelog_or_copyright ($) {
 			);
 
 			my @matched_avail_entries;
-			foreach my $ref_avail_entry (@{$version->{avail_as}}) {
+			foreach my $ref_avail_entry (@{$version->avail_as}) {
 				if ($ref_avail_entry->{release}->{vendor} eq 'Debian') {
 					# this is probably a package from Debian archive
 					push @matched_avail_entries, $ref_avail_entry;
@@ -1557,8 +1559,8 @@ sub show_changelog_or_copyright ($) {
 			my @target_uris;
 			foreach my $ref_matched_avail_entry (@matched_avail_entries) {
 				# all of above are only good guessings
-				my $version_string = $version->{source_version_string};
-				my $source_package_name = $version->{source_package_name};
+				my $version_string = $version->source_version_string;
+				my $source_package_name = $version->source_package_name;
 				my $short_prefix = ($source_package_name =~ m/^lib/) ?
 						substr($source_package_name, 0, 4) : substr($source_package_name, 0, 1);
 
@@ -1604,7 +1606,7 @@ sub show_changelog_or_copyright ($) {
 				return $result if $result;
 			} else {
 				mydie("no info where to acquire %s for version '%s' of package '%s'",
-						$target, $version->{version_string}, $version->{package_name});
+						$target, $version->version_string, $version->package_name);
 			}
 		}
 	}

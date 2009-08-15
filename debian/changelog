@@ -13,6 +13,9 @@ cupt (0.5.3) UNRELEASED; urgency=low
           version strings. Thanks to Cyril Brulebois.
       - BinaryVersion:
         - Fixed reading 'Task' field.
+      - SourceVersion, BinaryVersion:
+        - [API break] Changed internal storage from hash to array, introduced
+          mutator methods (fields). Documented all fields.
     - System:
       - Resolvers/Native:
         - Don't synchronize source packages if the option

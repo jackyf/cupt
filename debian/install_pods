@@ -9,7 +9,7 @@ foreach my $pod_file (glob("doc/*.pod")) {
 			die "badly formatted POD name $pod_file";
 	my $man_page_name = "$name.$section";
 	my $uppercased_name = uc $name;
-	my $pod2man_command = "pod2man --name $uppercased_name --section $section $pod_file > $man_page_name";
+	my $pod2man_command = "pod2man --utf8 --name $uppercased_name --section $section $pod_file > $man_page_name";
 	my $dh_command = "dh_installman -pcupt $man_page_name";
 	my $command = "$pod2man_command && $dh_command && rm $man_page_name";
 	print "   $command\n";

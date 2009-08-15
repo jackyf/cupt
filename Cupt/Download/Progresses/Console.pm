@@ -77,10 +77,10 @@ sub hook {
 			my $ref_entry = $self->download_entries->{$uri};
 
 			my $alias = $self->get_long_alias_for_uri($uri) // $uri;
-			my $size_suffix = defined $ref_entry->{size} ?
-					" [" . human_readable_size_string($ref_entry->{size}) . "]" :
+			my $size_suffix = defined $ref_entry->{'size'} ?
+					" [" . human_readable_size_string($ref_entry->{'size'}) . "]" :
 					"";
-			$self->_termprint(sprintf "%s:%u %s%s", __("Get"), $ref_entry->{number}, $alias, $size_suffix);
+			$self->_termprint(sprintf "%s:%u %s%s", __("Get"), $ref_entry->{'number'}, $alias, $size_suffix);
 			print "\n";
 		}
 		when ('done') {

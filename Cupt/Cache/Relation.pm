@@ -30,11 +30,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use constant {
-	REL_PACKAGE_NAME => 0,
-	REL_RELATION_STRING => 1,
-	REL_VERSION_STRING => 2,
-};
+use Cupt::LValueFields qw(package_name relation_string version_string);
 
 use Exporter qw(import);
 
@@ -63,7 +59,7 @@ sub new {
 
 	if ($unparsed =~ m/^($package_name_regex)/g) {
 		# package name is here
-		$self->[REL_PACKAGE_NAME] = $1;
+		$self->package_name = $1;
 	} else {
 		# no package name, badly
 		mydie("failed to parse package name in relation '%s'", $unparsed);
@@ -86,7 +82,7 @@ sub new {
 	)
 	{
 		# versioned info is here, assigning
-		($self->[REL_RELATION_STRING], $self->[REL_VERSION_STRING]) = ($1, $2);
+		($self->relation_string, $self->version_string) = ($1, $2);
 	} else {
 		# no valid versioned info, maybe empty?
 		($unparsed =~ m/\G\s*$/g) # empty versioned info, this is also acceptable
@@ -94,36 +90,6 @@ sub new {
 	}
 
 	return $self;
-}
-
-=head2 package_name
-
-method, package_name field accessor and mutator
-
-=cut
-
-sub package_name ($) {
-	return $_[0]->[REL_PACKAGE_NAME];
-}
-
-=head2 relation_string
-
-method, relation_string field accessor and mutator
-
-=cut
-
-sub relation_string ($) {
-	return $_[0]->[REL_RELATION_STRING];
-}
-
-=head2 version_string
-
-method, version_string field accessor and mutator
-
-=cut
-
-sub version_string ($) {
-	return $_[0]->[REL_VERSION_STRING];
 }
 
 =head2 stringify
@@ -134,10 +100,10 @@ method, returns canonical stringified form of the relation
 
 sub stringify {
 	my ($self) = @_;
-	my $result = $self->[REL_PACKAGE_NAME];
-	if (defined $self->[REL_RELATION_STRING]) {
+	my $result = $self->package_name;
+	if (defined $self->relation_string) {
 		# there is versioned info
-		$result .= join('', " (", $self->[REL_RELATION_STRING], ' ', $self->[REL_VERSION_STRING], ')');
+		$result .= join('', " (", $self->relation_string, ' ', $self->version_string, ')');
 	}
 	return $result;
 }
@@ -193,10 +159,10 @@ I<version_string> - version string to check
 
 sub satisfied_by ($$) {
 	my ($self, $version_string) = @_;
-	if (defined $self->[REL_RELATION_STRING]) {
+	if (defined $self->relation_string) {
 		# relation is defined, checking
-		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->[REL_VERSION_STRING]);
-		given($self->[REL_RELATION_STRING]) {
+		my $comparison_result = Cupt::Core::compare_version_strings($version_string, $self->version_string);
+		given($self->relation_string) {
 			when('>=') { return ($comparison_result >= 0) }
 			when('<') { return ($comparison_result < 0) }
 			when('<<') { return ($comparison_result < 0) }

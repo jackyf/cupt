@@ -308,7 +308,7 @@ sub get_overall_download_percent ($) {
 		foreach my $ref_entry (values %{$self->{_now_downloading}}) {
 			# add or real estimated size, or downloaded size (for entries
 			# where download size hasn't been determined yet)
-			$total_estimated_size += $ref_entry->{size} // $ref_entry->{'downloaded'};
+			$total_estimated_size += $ref_entry->{'size'} // $ref_entry->{'downloaded'};
 		}
 	}
 	if ($total_estimated_size == 0) {

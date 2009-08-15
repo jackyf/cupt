@@ -319,9 +319,9 @@ present
 
 sub are_hash_sums_present ($) {
 	my ($ref_hash) = @_;
-	return (defined $ref_hash->{md5sum} ||
-		defined $ref_hash->{sha1sum} ||
-		defined $ref_hash->{sha256sum});
+	return (defined $ref_hash->{'md5sum'} ||
+		defined $ref_hash->{'sha1sum'} ||
+		defined $ref_hash->{'sha256sum'});
 }
 
 =head2 compare_hash_sums
