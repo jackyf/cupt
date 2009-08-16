@@ -40,6 +40,9 @@ cupt (0.5.3) UNRELEASED; urgency=low
       - 'version_string_regex': allow debian part of the version contain '_',
         however Cupt::Cache::Package will print a warning in this case.
         (Closes: #541268)
+  * debian/control:
+    - Made 'cupt' binary package depend on sensible-utils which is not
+      essential.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
 
