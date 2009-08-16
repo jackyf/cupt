@@ -458,7 +458,11 @@ sub _clean_automatically_installed ($) {
 		my $package_entry = $ref_packages->{$package_name};
 		my $version = $package_entry->version;
 		defined $version or next;
-		!$self->{_packages}->{$package_name}->manually_selected or next;
+		if (exists $self->{_packages}->{$package_name}
+			and $self->{_packages}->{$package_name}->manually_selected)
+		{
+			next;
+		}
 		# don't consider Essential packages for removal
 		$version->essential and next;
 
@@ -1061,6 +1065,7 @@ sub _resolve ($$) {
 				$suggested_packages{$package_name}->{'version'} = $package_entry->version;
 				$suggested_packages{$package_name}->{'reasons'} = $package_entry->reasons;
 				$suggested_packages{$package_name}->{'manually_selected'} =
+						exists $self->{_packages}->{$package_name} and
 						$self->{_packages}->{$package_name}->manually_selected;
 			}
 
