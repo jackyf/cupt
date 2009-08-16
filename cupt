@@ -102,6 +102,7 @@ sub main {
 		'search' => \&search,
 		'depends' => sub { show_package_relations('normal') },
 		'rdepends' => sub { show_package_relations('reverse') },
+		'why' => \&why,
 		'policy' => sub { policy('binary') },
 		'policysrc' => sub { policy('source') },
 		'pkgnames' => \&pkgnames,
@@ -364,6 +365,7 @@ sub help () {
 		'search' => __('searches for packages using regular expression(s)'),
 		'depends' => __('prints dependencies of binary package(s)'),
 		'rdepends' => __('print reverse-dependencies of binary package(s)'),
+		'why' => __('finds a dependency path between system/package(s) and package'),
 		'policy' => __('prints pin info for the binary package(s)'),
 		'policysrc' => __('prints pin info for the source package(s)'),
 		'pkgnames' => __('prints available package names'),
@@ -809,6 +811,110 @@ sub show_package_relations ($) {
 	}
 }
 
+sub why ($) {
+	# turn off info parsing, we don't need it, only relations :)
+	unless ($o_shell_mode) {
+		$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+	}
+
+	my $o_installed_only = 0;
+	GetOptions(
+		'installed-only' => \$o_installed_only,
+	);
+
+	check_no_more_options();
+
+	scalar @ARGV or
+			mydie("no binary packages specified");
+
+
+	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
+
+	my $leaf_package_expression = pop @ARGV;
+	my $leaf_version = select_binary_package_version($leaf_package_expression, 1);
+
+	my @versions;
+	if (scalar @ARGV) {
+		# selected packages
+		@versions = map { select_package_versions_wildcarded($_, 'binary') } @ARGV;
+	} else {
+		# the whole system
+		@versions = @{$cache->get_system_state()->export_installed_versions()};
+		@versions = grep { not $cache->is_automatically_installed($_->package_name) } @versions;
+	}
+
+	my @relation_groups = (
+		[ 'pre_depends', __('Pre-Depends') ],
+		[ 'depends', __('Depends') ],
+	);
+	if ($config->var('cupt::resolver::keep-recommends')) {
+		push @relation_groups,
+				[ 'recommends', __('Recommends') ];
+	}
+	if ($config->var('cupt::resolver::keep-suggests')) {
+		push @relation_groups,
+				[ 'suggests', __('Suggests') ];
+	}
+
+	# don't output the same version more than one time
+	my %processed_entries;
+
+	my %previouses;
+
+	$previouses{$_->package_name,$_->version_string} = undef foreach @versions;
+
+	while (scalar @versions) {
+		my $version = shift @versions;
+		my $package_name = $version->package_name;
+		my $version_string = $version->version_string;
+
+		next if $processed_entries{$package_name,$version_string}++;
+
+		if ($package_name eq $leaf_version->package_name and
+			$version_string eq $leaf_version->version_string)
+		{
+			# we found a path, re-walk it
+			my @path;
+			my $current_package_name = $package_name;
+			my $current_version_string = $version_string;
+
+			while (defined $previouses{$current_package_name,$current_version_string}) {
+				$_ = $previouses{$current_package_name,$current_version_string};
+				my $current_version = $_->[0];
+				$current_package_name = $current_version->package_name;
+				$current_version_string = $current_version->version_string;
+				unshift @path, $_;
+			}
+			foreach my $ref_path_entry (@path) {
+				my ($version, $caption, $relation_expression) = @$ref_path_entry;
+				say sprintf "%s %s: %s: %s",
+						$version->package_name,
+						$version->version_string,
+						$caption,
+						stringify_relation_expression($relation_expression);
+			}
+			last;
+		}
+
+		foreach my $item (@relation_groups) {
+			my $relation_group_name = $item->[0];
+			my $caption = $item->[1];
+
+			foreach my $relation_expression (@{$version->$relation_group_name}) {
+				# insert recursive depends into queue
+				foreach my $new_version (@{$cache->get_satisfying_versions($relation_expression)}) {
+					my $new_package_name = $new_version->package_name;
+					my $new_version_string = $new_version->version_string;
+					push @versions, $new_version;
+					if (not exists $previouses{$new_package_name,$new_version_string}) {
+						$previouses{$new_package_name,$new_version_string} =
+								[ $version, $caption, $relation_expression ];
+					}
+				}
+			}
+		}
+	}
+}
 sub policy ($) {
 	my ($flavour) = @_;
 	# turn off info and relations parsing, we don't need it

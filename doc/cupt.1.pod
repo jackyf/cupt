@@ -155,6 +155,34 @@ C<cupt depends --recurse xmlto>
 
 same as L<depends>, but prints reverse relations instead of forward ones
 
+=item why
+
+prints one of available dependency paths between package(s)/system and the
+package.
+
+This subcommand receives a list of binary package expressions (which can be
+empty), then one binary package expression without wildcards.
+
+If the list of binary package expressions is empty (i.e. subcommand received
+only one argument), then the list is build of manually installed packages in
+the system.
+
+If no dependency paths found, prints nothing.
+
+Uses configuration variables
+L<cupt::resolver::keep-recommends|/cupt::resolver::keep-recommends> and
+L<cupt::resolver::keep-suggests|/cupt::resolver::keep-suggests> to determine
+whether to honor Recommends and Suggests respectively when building dependency
+paths.
+
+Examples:
+
+C<cupt why kmail libgnutls26>
+
+C<cupt why libgnutls26>
+
+C<cupt why icedove kmail libgnutls26>
+
 =item policy
 
 prints available versions with pins and release info for each binary package name

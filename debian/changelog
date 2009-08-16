@@ -6,6 +6,7 @@ cupt (0.5.3) UNRELEASED; urgency=low
     - 'showsrc':
       - Don't assume any of hash sum of package to de defined, check it.
         Thanks to Cyril Brulebois. (Closes: #541470)
+    - New 'why' subcommand.
   * Cupt:
     - Cache:
       - Package:
