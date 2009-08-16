@@ -7,7 +7,7 @@ Build-Depends-Indep: perl (>= 5.10.0), liburi-perl, libparse-recdescent-perl,
 Maintainer: Eugene V. Lyubimkin <jackyf.devel@gmail.com>
 DM-Upload-Allowed: yes
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.8.2
+Standards-Version: 3.8.3
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: http://github.com/jackyf/cupt/tree/master
 

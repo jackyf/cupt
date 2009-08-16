@@ -43,6 +43,7 @@ cupt (0.5.3) UNRELEASED; urgency=low
   * debian/control:
     - Made 'cupt' binary package depend on sensible-utils which is not
       essential.
+    - Bumped 'Standards-Version' to 3.8.3, no changes needed.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
 
