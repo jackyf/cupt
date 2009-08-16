@@ -531,9 +531,9 @@ sub show_binary_package_versions () {
 			foreach (map { $_->{'download_uri'} } $version->uris()) {
 				$p->('URI', $_);
 			}
-			$p->('MD5', $version->md5sum) if defined($version->md5sum);
-			$p->('SHA1', $version->sha1sum) if defined($version->sha1sum);
-			$p->('SHA256', $version->sha256sum) if defined($version->sha1sum);
+			$p->('MD5', $version->md5sum) if defined $version->md5sum;
+			$p->('SHA1', $version->sha1sum) if defined $version->sha1sum;
+			$p->('SHA256', $version->sha256sum) if defined $version->sha256sum;
 			$p->(__('Description'), $version->short_description);
 			print $version->long_description if defined($version->long_description);
 			$p->(__('Homepage'), $version->homepage) if defined($version->homepage);

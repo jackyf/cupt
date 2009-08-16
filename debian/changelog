@@ -7,6 +7,8 @@ cupt (0.5.3) UNRELEASED; urgency=low
       - Don't assume any of hash sum of package to de defined, check it.
         Thanks to Cyril Brulebois. (Closes: #541470)
     - New 'why' subcommand.
+    - 'show':
+      - Fix typo in code determining which hash sums are present.
   * Cupt:
     - Cache:
       - Package:
