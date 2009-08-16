@@ -53,7 +53,7 @@ priority, string, defined in Debian Policy, §5.6.6
 
 =head2 section
 
-section, string, defined in Debian Policy, §5.6.5
+section, string, defined in Debian Policy, §5.6.5, can be undef
 
 =head2 installed_size
 

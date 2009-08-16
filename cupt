@@ -504,7 +504,7 @@ sub show_binary_package_versions () {
 			}
 			$p->(__('Essential'), $version->essential) if $version->essential;
 			$p->(__('Priority'), $version->priority);
-			$p->(__('Section'), $version->section);
+			$p->(__('Section'), $version->section) if defined $version->section;
 			$p->(__('Size'), human_readable_size_string($version->size)) if defined $version->size;
 			$p->(__('Uncompressed size'), human_readable_size_string($version->installed_size*1024));
 			$p->(__('Maintainer'), $version->maintainer);
@@ -575,7 +575,7 @@ sub show_source_package_versions () {
 			$p->(__('Binary'), join(', ', @{$version->binary_package_names}));
 			$p->(__('Version'), $version->version_string);
 			$p->(__('Priority'), $version->priority);
-			$p->(__('Section'), $version->section);
+			$p->(__('Section'), $version->section) if defined $version->section;
 			$p->(__('Maintainer'), $version->maintainer);
 			$p->(__('Uploaders'), $version->uploaders) if defined $version->uploaders;
 			$p->(__('Architecture'), $version->architecture);
