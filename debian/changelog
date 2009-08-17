@@ -31,6 +31,8 @@ cupt (0.5.3) UNRELEASED; urgency=low
         - Fixed a crash when performing a deep search for versions that have
           other than original version have, but still satisfiable
           pre-dependency relation expression.
+        - Check Recommends/Suggests only when all hard dependencies are
+          satisfied.
       - Worker:
         - Don't pass --force-conflicts to 'install' subaction of heterogeneous
           actions, all conflicts should be already resolved at that stage.
