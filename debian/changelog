@@ -1,4 +1,4 @@
-cupt (0.5.3) UNRELEASED; urgency=low
+cupt (0.6.0) UNRELEASED; urgency=low
 
   * cupt:
     - New 'version' (aliases: '--version', '-v') subcommand.
