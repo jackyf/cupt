@@ -37,8 +37,8 @@ cupt (0.5.3) UNRELEASED; urgency=low
       - Worker:
         - Don't pass --force-conflicts to 'install' subaction of heterogeneous
           actions, all conflicts should be already resolved at that stage.
-        - Perform unconditional merge if configure action is dependent
-          (directly or indirectly) on appropriate unpack one.
+        - Perform unconditional merge if 'unpack' action is dependent
+          (directly or indirectly) on appropriate 'configure' one.
     - Core:
       - 'version_string_regex': allow debian part of the version contain '_',
         however Cupt::Cache::Package will print a warning in this case.
