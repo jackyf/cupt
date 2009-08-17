@@ -235,9 +235,9 @@ sub select_package_version ($$$) {
 
 		# example: "nlkt/sid" or "nlkt/unstable"
 		foreach my $version (@{$package->get_versions()}) {
-			my @avail_as = @{$version->avail_as};
+			my @available_as = @{$version->available_as};
 
-			foreach (@avail_as) {
+			foreach (@available_as) {
 				if ($_->{release}->{archive} eq $distribution_expression ||
 					$_->{release}->{codename} eq $distribution_expression)
 				{
@@ -510,7 +510,7 @@ sub show_binary_package_versions () {
 			$p->(__('Maintainer'), $version->maintainer);
 			$p->(__('Architecture'), $version->architecture);
 			if ($o_with_release_info) {
-				foreach (@{$version->avail_as}) {
+				foreach (@{$version->available_as}) {
 					next if !defined($_->{release}->{description}); # no release description available
 					$p->(__('Release'), $_->{release}->{description});
 				}
@@ -580,7 +580,7 @@ sub show_source_package_versions () {
 			$p->(__('Uploaders'), $version->uploaders) if defined $version->uploaders;
 			$p->(__('Architecture'), $version->architecture);
 			if ($o_with_release_info) {
-				foreach (@{$version->avail_as}) {
+				foreach (@{$version->available_as}) {
 					next if !defined($_->{release}->{description}); # no release description available
 					$p->(__('Release'), $_->{release}->{description});
 				}
@@ -969,8 +969,8 @@ sub policy ($) {
 
 				say $version->version_string . ' ' . $pin;
 
-				my @avail_as = @{$version->avail_as};
-				foreach (@avail_as) {
+				my @available_as = @{$version->available_as};
+				foreach (@available_as) {
 					print (' ' x 8);
 					my $origin = $_->{release}->{base_uri} || $config->var('dir::state::status');
 					print $origin . ' ';
@@ -1353,7 +1353,7 @@ sub acquire_source_package {
 	foreach my $version (@versions) {
 		my $package_name = $version->package_name;
 		my $version_string = $version->version_string;
-		my $ref_release = $version->avail_as->[0]->{'release'};
+		my $ref_release = $version->available_as->[0]->{'release'};
 		my $codename = $ref_release->{'codename'};
 		my $component = $ref_release->{'component'};
 
@@ -1649,7 +1649,7 @@ sub show_changelog_or_copyright ($) {
 			);
 
 			my @matched_avail_entries;
-			foreach my $ref_avail_entry (@{$version->avail_as}) {
+			foreach my $ref_avail_entry (@{$version->available_as}) {
 				if ($ref_avail_entry->{release}->{vendor} eq 'Debian') {
 					# this is probably a package from Debian archive
 					push @matched_avail_entries, $ref_avail_entry;

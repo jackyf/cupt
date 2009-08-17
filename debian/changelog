@@ -22,6 +22,7 @@ cupt (0.5.3) UNRELEASED; urgency=low
         - [API break] Changed internal storage from hash to array, introduced
           mutator methods (fields). Documented all fields.
         - Don't choke if 'Section' field is not defined.
+        - [API break] The field 'avail_as' has been renamed to 'available_as'.
     - System:
       - Resolvers/Native:
         - Don't synchronize source packages if the option

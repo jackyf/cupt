@@ -229,8 +229,8 @@ sub _merge_version {
 				# 2)
 				# ok, this is the same version;
 
-				# so, adding new "avail_as" info
-				push @{$found_version->avail_as}, $parsed_version->avail_as->[0];
+				# so, adding new "available_as" info
+				push @{$found_version->available_as}, $parsed_version->available_as->[0];
 
 				if (ref $found_version eq 'Cupt::Cache::BinaryVersion' and $found_version->is_installed()) {
 					# merge hashsums that are not available from installed
@@ -244,7 +244,7 @@ sub _merge_version {
 				my $info = sprintf __("package name: '%s', version string: '%s', origin: '%s'"),
 						$parsed_version->package_name,
 						$parsed_version->version_string,
-						$parsed_version->avail_as->[0]->{release}->{base_uri};
+						$parsed_version->available_as->[0]->{release}->{base_uri};
 				mywarn("throwing away duplicating version with different hash sums: %s", $info);
 			}
 		}

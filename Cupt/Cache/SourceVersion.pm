@@ -34,7 +34,7 @@ use strict;
 
 =head1 FIELDS
 
-=head2 avail_as
+=head2 available_as
 
   {
     'release' => $release_info
@@ -128,7 +128,7 @@ same as L<tarball|/tarball>
 
 =cut
 
-use Cupt::LValueFields qw(avail_as package_name binary_package_names architecture
+use Cupt::LValueFields qw(available_as package_name binary_package_names architecture
 		priority section standards_version maintainer uploaders version_string
 		build_depends build_depends_indep build_conflicts build_conflicts_indep 
 		tarball diff dsc);
@@ -179,7 +179,7 @@ I<ref_release_info> - reference to L<release info|Cupt::Cache/Release info>
 sub new {
 	my ($class, $ref_arg) = @_;
 	my $self = (bless [] => $class);
-	$self->avail_as = [];
+	$self->available_as = [];
 	$self->build_depends = [];
 	$self->build_depends_indep = [];
 	$self->build_conflicts = [];
@@ -207,7 +207,7 @@ sub new {
 	# parsing fields
 	my ($package_name, $fh, $offset, $ref_release_info) = @$ref_arg;
 
-	$self->avail_as->[0]->{release} = $ref_release_info;
+	$self->available_as->[0]->{release} = $ref_release_info;
 	$self->package_name = $package_name;
 
 	my $field_name = undef;
@@ -257,7 +257,7 @@ sub new {
 						when ('Uploaders') { $self->uploaders = $field_value unless $o_no_parse_info_onlys }
 						when ('Architecture') { $self->architecture = $field_value }
 						when ('Version') { $self->version_string = $field_value }
-						when ('Directory') { $self->avail_as->[0]->{directory} = $field_value }
+						when ('Directory') { $self->available_as->[0]->{directory} = $field_value }
 						when ('Build-Conflicts') {
 							$self->build_conflicts = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
 						}
@@ -339,7 +339,7 @@ contains 'Filename' property of package entries.
 sub uris {
 	my $self = shift;
 	my %result;
-	foreach (@{$self->avail_as}) {
+	foreach (@{$self->available_as}) {
 		my $base_uri = $_->{release}->{base_uri};
 		if ($base_uri ne "") {
 			# real download path
@@ -367,7 +367,7 @@ method, returns whether this version has signed source or not
 sub is_signed ($$) {
 	my ($self) = @_;
 
-	foreach (@{$self->avail_as}) {
+	foreach (@{$self->available_as}) {
 		if ($_->{release}->{signed}) {
 			return 1;
 		}

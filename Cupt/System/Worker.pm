@@ -975,7 +975,7 @@ sub _prepare_downloads ($$) {
 				my $download_uri = $uri->{'download_uri'};
 
 				$download_progress->set_short_alias_for_uri($download_uri, $package_name);
-				my $ref_release = $version->avail_as->[0]->{'release'};
+				my $ref_release = $version->available_as->[0]->{'release'};
 				my $codename = $ref_release->{'codename'};
 				my $component = $ref_release->{'component'};
 				my $base_uri = $uri->{'base_uri'};

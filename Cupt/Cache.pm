@@ -300,7 +300,7 @@ sub get_original_apt_pin {
 		}
 	};
 
-	my @available_as = @{$version->avail_as};
+	my @available_as = @{$version->available_as};
 
 	# release-dependent settings
 	my $default_release = $self->{_config}->var("apt::default-release");

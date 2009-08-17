@@ -72,7 +72,7 @@ sub uris {
 			foreach my $key (keys %$ref_source) {
 				next if $key eq 'delta_uri';
 				my $found = 0;
-				foreach $release_info (map { $_->{release} } @{$version->avail_as}) {
+				foreach $release_info (map { $_->{release} } @{$version->available_as}) {
 					if ($release_info->{$key} eq $ref_source->{$key}) {
 						$found = 1;
 						last;
@@ -91,7 +91,7 @@ sub uris {
 			my $base_uri = "debdelta:$delta_uri";
 
 			# not very reliable :(
-			my $appendage = $version->avail_as->[0]->{filename};
+			my $appendage = $version->available_as->[0]->{filename};
 			$appendage =~ s{(.*/).*}{$1};
 			$appendage .= join('_', $package_name,
 					$sub_mangle_version_string->($installed_version_string),
