@@ -1490,9 +1490,13 @@ sub manage_packages ($) {
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
 		if ($action eq 'satisfy') {
+			$config->set_regular_var('apt::install-recommends' => 0);
+			$config->set_regular_var('apt::install-suggests' => 0);
 			my $ref_relation_expressions = parse_relation_line($package_expression);
 			$resolver->satisfy_relation_expression($_) for @$ref_relation_expressions;
 		} elsif ($action eq 'build-depends') {
+			$config->set_regular_var('apt::install-recommends' => 0);
+			$config->set_regular_var('apt::install-suggests' => 0);
 			my $version = select_source_package_version($package_expression, 1);
 			my @relation_expressions;
 
