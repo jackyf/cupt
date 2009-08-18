@@ -39,6 +39,8 @@ cupt (0.6.0) UNRELEASED; urgency=low
           actions, all conflicts should be already resolved at that stage.
         - Perform unconditional merge if 'unpack' action is dependent
           (directly or indirectly) on appropriate 'configure' one.
+        - Detect the packages that break Pre-Depends in inavoidable way, list
+          them and exit with an error.
     - Core:
       - 'version_string_regex': allow debian part of the version contain '_',
         however Cupt::Cache::Package will print a warning in this case.

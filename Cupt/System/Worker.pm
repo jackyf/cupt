@@ -467,9 +467,9 @@ sub __stringify_inner_action ($) {
 
 # fills ref_graph with dependencies specified in ref_relations_expressions
 sub _fill_action_dependencies ($$$$) {
-	my ($self, $ref_relation_expressions, $action_name, $direction, $ref_inner_action, $graph) = @_;
+	my ($self, $version, $dependency_name, $action_name, $direction, $ref_inner_action, $graph) = @_;
 
-	foreach my $relation_expression (@$ref_relation_expressions) {
+	foreach my $relation_expression (@{$version->$dependency_name}) {
 		my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
 
 		SATISFYING_VERSIONS:
@@ -489,7 +489,7 @@ sub _fill_action_dependencies ($$$$) {
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
-					if ($action_name eq 'remove' xor $direction eq 'before') {
+					if ($dependency_name ne 'conflicts' and $dependency_name ne 'breaks') {
 						# passing the above if means that this edge was not originated from conflicts/breaks
 						# so it deserves a chance to be eaten in the end, the while the conflicts/breaks edges are
 						# definitely not a candidates
@@ -505,7 +505,10 @@ sub _fill_action_dependencies ($$$$) {
 						}
 					} else {
 						# well, set this property to make sure that action dependency will never be eaten
-						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'poisoned', 1);
+						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'poisoned' => 1);
+					}
+					if ($dependency_name eq 'pre_depends') {
+						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'pre-dependency' => 1);
 					}
 
 					if ($self->{_config}->var('debug::worker')) {
@@ -625,23 +628,26 @@ sub _build_actions_graph ($$) {
 			my $package_name = $version->package_name;
 			next if grep { $package_name eq $_ } @blacklisted_package_names;
 
-			# pre-depends is unlikely to fall into such category, but to be sure
-			foreach my $relation_expression (@{$version->pre_depends}, @{$version->depends}) {
-				my $virtual_version = (bless [] => 'Cupt::Cache::BinaryVersion');
-				$virtual_version->package_name = "$package_name [" . stringify_relation_expression($relation_expression) . "]";
-				$virtual_version->version_string = $version->version_string;
-				$virtual_version->pre_depends = [];
-				$virtual_version->depends = [ $relation_expression ];
-				$virtual_version->conflicts = [];
-				$virtual_version->breaks = [];
+			foreach my $dependency_name (qw(pre_depends depends)) {
+				foreach my $relation_expression (@{$version->$dependency_name}) {
+					my $virtual_version = (bless [] => 'Cupt::Cache::BinaryVersion');
+					$virtual_version->package_name = "$package_name [" .
+							stringify_relation_expression($relation_expression) . "]";
+					$virtual_version->version_string = $version->version_string;
+					$virtual_version->pre_depends = [];
+					$virtual_version->depends = [];
+					$virtual_version->$dependency_name = [ $relation_expression ];
+					$virtual_version->conflicts = [];
+					$virtual_version->breaks = [];
 
-				my $from_vertex = { 'version' => $virtual_version, 'action_name' => 'configure', 'fake' => 1 };
-				my $to_vertex = { 'version' => $virtual_version, 'action_name' => 'remove', 'fake' => 1 };
-				# we don't add edge here, but add the vertexes to gain dependencies and
-				# save the vertexes order
-				$graph->add_vertex($from_vertex);
-				$graph->add_vertex($to_vertex);
-				push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
+					my $from_vertex = { 'version' => $virtual_version, 'action_name' => 'configure', 'fake' => 1 };
+					my $to_vertex = { 'version' => $virtual_version, 'action_name' => 'remove', 'fake' => 1 };
+					# we don't add edge here, but add the vertexes to gain dependencies and
+					# save the vertexes order
+					$graph->add_vertex($from_vertex);
+					$graph->add_vertex($to_vertex);
+					push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
+				}
 			}
 		}
 	};
@@ -665,18 +671,18 @@ sub _build_actions_graph ($$) {
 				# unpack (policy 7.2)
 				# pre-depends must be unpacked before
 				$self->_fill_action_dependencies(
-						$version->pre_depends, 'configure', 'before', $ref_inner_action, $graph);
+						$version, 'pre_depends', 'configure', 'before', $ref_inner_action, $graph);
 				# conflicts must be unsatisfied before
 				$self->_fill_action_dependencies(
-						$version->conflicts, 'remove', 'before', $ref_inner_action, $graph);
+						$version, 'conflicts', 'remove', 'before', $ref_inner_action, $graph);
 			}
 			when ('configure') {
 				# depends must be configured before
 				$self->_fill_action_dependencies(
-						$version->depends, 'configure', 'before', $ref_inner_action, $graph);
+						$version, 'depends', 'configure', 'before', $ref_inner_action, $graph);
 				# breaks must be unsatisfied before
 				$self->_fill_action_dependencies(
-						$version->breaks, 'remove', 'before', $ref_inner_action, $graph);
+						$version, 'breaks', 'remove', 'before', $ref_inner_action, $graph);
 
 				# it has also to be unpacked if the same version was not in state 'unpacked'
 				# search for the appropriate unpack action
@@ -695,25 +701,25 @@ sub _build_actions_graph ($$) {
 				if (!$is_unpack_action_found) {
 					# pre-depends must be configured before
 					$self->_fill_action_dependencies(
-							$version->pre_depends, 'configure', 'before', $ref_inner_action, $graph);
+							$version, 'pre_depends', 'configure', 'before', $ref_inner_action, $graph);
 					# conflicts must be unsatisfied before
 					$self->_fill_action_dependencies(
-							$version->conflicts, 'remove', 'before', $ref_inner_action, $graph);
+							$version, 'conflicts', 'remove', 'before', $ref_inner_action, $graph);
 				}
 			}
 			when ('remove') {
 				# pre-depends must be removed after
 				$self->_fill_action_dependencies(
-						$version->pre_depends, 'remove', 'after', $ref_inner_action, $graph);
+						$version, 'pre_depends', 'remove', 'after', $ref_inner_action, $graph);
 				# depends must be removed after
 				$self->_fill_action_dependencies(
-						$version->depends, 'remove', 'after', $ref_inner_action, $graph);
+						$version, 'depends', 'remove', 'after', $ref_inner_action, $graph);
 				# conflicts may be satisfied only after
 				$self->_fill_action_dependencies(
-						$version->conflicts, 'unpack', 'after', $ref_inner_action, $graph);
+						$version, 'conflicts', 'unpack', 'after', $ref_inner_action, $graph);
 				# breaks may be satisfied only after
 				$self->_fill_action_dependencies(
-						$version->breaks, 'configure', 'after', $ref_inner_action, $graph);
+						$version, 'breaks', 'configure', 'after', $ref_inner_action, $graph);
 			}
 		}
 	}
@@ -784,6 +790,9 @@ sub _build_actions_graph ($$) {
 			if (exists $ref_previous_attributes->{'poisoned'}) {
 				$ref_attributes->{'poisoned'} = 1;
 			}
+			if (exists $ref_previous_attributes->{'pre-dependency'}) {
+				$ref_attributes->{'pre-dependency'} = 1;
+			}
 			$graph->add_edge($to_predecessor, $to_successor);
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
 		};
@@ -795,8 +804,9 @@ sub _build_actions_graph ($$) {
 			# "multiplying" the dependencies
 			foreach my $predecessor_vertex ($graph->predecessors($from_vertex)) {
 				foreach my $successor_vertex ($graph->successors($to_vertex)) {
-					# no relation expressions here
-					$graph->add_edge($predecessor_vertex, $successor_vertex);
+					# moving edge attributes too
+					$sub_move_edge->($predecessor_vertex, $from_vertex, $predecessor_vertex, $successor_vertex);
+					$sub_move_edge->($to_vertex, $successor_vertex, $predecessor_vertex, $successor_vertex);
 					if ($self->{_config}->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($predecessor_vertex);
 						my $master_string = __stringify_inner_action($successor_vertex);
@@ -875,6 +885,37 @@ sub _build_actions_graph ($$) {
 				mydebug("${yes_no}merging action '$action_string'");
 			}
 		}
+
+		do { # check pre-depends
+			# re-compute transitive matrix, it might become invalid after the merges
+			# and with paths too for verbose reporting
+			$graph_transitive_closure = new Graph::TransitiveClosure($graph,
+					'path_length' => 0, 'path_vertices' => 1);
+
+			foreach my $edge ($graph->edges()) {
+				if ($graph->has_edge_attribute(@$edge, 'pre-dependency')) {
+					my ($from_vertex, $to_vertex) = @$edge;
+					if ($graph_transitive_closure->is_reachable($to_vertex, $from_vertex)) {
+						# bah! the pre-dependency cannot be overridden, it's a fatal error
+						# which is not worker's fail (at least, it shouldn't be)
+
+						# then, all pre-dependency edges should have at least one relation
+						# expression attribute
+						my $ref_attributes = $graph->get_edge_attributes($from_vertex, $to_vertex);
+						if (not exists $ref_attributes->{'relation_expressions'}) {
+							myinternaldie("pre-dependency edge has not relation expressions");
+						}
+
+						my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
+						my @package_names_in_path = keys %{{ map { $_->{'version'}->package_name => 1 } @path }};
+
+						mydie("unable to satisfy pre-dependency(ies) '%s', this is probably a fault of one of the packages: %s",
+								stringify_relation_expressions($ref_attributes->{'relation_expressions'}),
+								join(', ', map { qq/'$_'/ } @package_names_in_path));
+					}
+				}
+			}
+		};
 	};
 
 	return $graph->strongly_connected_graph();
