@@ -34,6 +34,18 @@ cupt (0.6.0) UNRELEASED; urgency=low
           pre-dependency relation expression.
         - Check Recommends/Suggests only when all hard dependencies are
           satisfied.
+        - Resolver doesn't unconditionally pre-install Recommends and/or
+          Suggests of manually installed/upgraded/downgraded packages
+          (if 'apt::install-recommends' and 'apt::install-suggests' turned on,
+          respectively) anymore. This change has two main consequences:
+          + The common pinning/resolver rules are now applied to
+            Recommends/Suggests of manually specified packages too. Besides of
+            grown inner flexibility, you can now pin out specific packages or
+            versions you don't like.
+          + If you upgrade/downgrade the package which has unsatisfied
+            Recommends/Suggests and the old and new version of the package
+            has the same relation expression, resolver won't try to change
+            anything.
       - Worker:
         - Don't pass --force-conflicts to 'install' subaction of heterogeneous
           actions, all conflicts should be already resolved at that stage.

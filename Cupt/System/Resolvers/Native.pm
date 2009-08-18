@@ -110,18 +110,6 @@ sub _schedule_new_version_relations ($$) {
 	foreach (@{$version->depends}) {
 		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'depends', $_ ]);
 	}
-	if ($self->config->var('apt::install-recommends')) {
-		# ok, so adding recommends
-		foreach (@{$version->recommends}) {
-			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'recommends', $_ ]);
-		}
-	}
-	if ($self->config->var('apt::install-suggests')) {
-		# ok, so adding suggests
-		foreach (@{$version->suggests}) {
-			$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'suggests', $_ ]);
-		}
-	}
 }
 
 sub __related_binary_package_names ($$) {
@@ -649,6 +637,18 @@ sub _apply_action ($$$$$) {
 	}
 }
 
+sub __version_has_relation_expression ($$$) {
+	my ($version, $dependency_group_name, $relation_expression) = @_;
+
+	my $relation_string = stringify_relation_expression($relation_expression);
+	foreach (@{$version->$dependency_group_name}) {
+		if ($relation_string eq stringify_relation_expression($_)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 sub _get_actions_to_fix_dependency ($$$$$$$) {
 	my ($self, $ref_packages, $package_name, $ref_satisfying_versions,
 			$relation_expression, $dependency_group_name, $dependency_group_factor) = @_;
@@ -682,16 +682,9 @@ sub _get_actions_to_fix_dependency ($$$$$$$) {
 			next if $other_version->version_string eq $version->version_string;
 
 			# let's check if other version has the same relation
-			my $failed_relation_string = stringify_relation_expression($relation_expression);
-			my $found = 0;
-			foreach (@{$other_version->$dependency_group_name}) {
-				if ($failed_relation_string eq stringify_relation_expression($_)) {
-					# yes, it has the same relation expression, so other version will
-					# also fail so it seems there is no sense trying it
-					$found = 1;
-					last;
-				}
-			}
+			# if it has, other version will also fail so it seems there is no sense trying it
+			my $found = __version_has_relation_expression($other_version,
+					$dependency_group_name, $relation_expression);
 			if (!$found) {
 				# let's try harder to find if the other version is really appropriate for us
 				foreach (@{$other_version->$dependency_group_name}) {
@@ -882,26 +875,39 @@ sub _resolve ($$) {
 							if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
 								if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 									# this is a soft dependency
-									if (!__is_version_array_intersects_with_packages(
-											$ref_satisfying_versions, $self->{_old_packages}))
-									{
-										# it wasn't satisfied in the past, don't touch it
-										next;
-									} elsif (grep { $_ == $relation_expression } @{$package_entry->fake_satisfied}) {
+									if (!$self->config->var("apt::install-$dependency_group_name")) {
+										if (!__is_version_array_intersects_with_packages(
+												$ref_satisfying_versions, $self->{_old_packages}))
+										{
+											# it wasn't satisfied in the past, don't touch it
+											next;
+										}
+									}
+									if (exists $self->{_old_packages}->{$version->package_name}) {
+										my $old_version = $self->{_old_packages}->{$version->package_name}->version;
+										if (defined $old_version and __version_has_relation_expression($old_version,
+											$dependency_group_name, $relation_expression))
+										{
+											# the fact that we are here means that the old version of this package
+											# had exactly the same relation expression, and it was unsatisfied
+											# so, upgrading the version doesn't bring anything new
+											next;
+										}
+									}
+									if (grep { $_ == $relation_expression } @{$package_entry->fake_satisfied}) {
 										# this soft relation expression was already fakely satisfied (score penalty)
 										next;
-									} else {
-										# ok, then we have one more possible solution - do nothing at all
-										push @possible_actions, {
-											'package_name' => $package_name,
-											'version' => $version,
-											'factor' => $dependency_group_factor,
-											# set profit manually, as we are inserting fake action here
-											'profit' => -50,
-											'fakely_satisfies' => $relation_expression,
-											'reason' => undef,
-										};
 									}
+									# ok, then we have one more possible solution - do nothing at all
+									push @possible_actions, {
+										'package_name' => $package_name,
+										'version' => $version,
+										'factor' => $dependency_group_factor,
+										# set profit manually, as we are inserting fake action here
+										'profit' => -50,
+										'fakely_satisfies' => $relation_expression,
+										'reason' => undef,
+									};
 								}
 								# mark package as failed one more time
 								++$failed_counts{$package_name};
