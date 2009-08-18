@@ -9,6 +9,9 @@ cupt (0.6.0) UNRELEASED; urgency=low
     - New 'why' subcommand.
     - 'show':
       - Fix typo in code determining which hash sums are present.
+    - 'satisfy':
+      - Implemented unsatisfying relation expressions (by appending the minus
+        sign) too.
   * Cupt:
     - Cache:
       - Package:
