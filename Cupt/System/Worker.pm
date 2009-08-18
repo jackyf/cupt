@@ -324,7 +324,8 @@ sub get_download_sizes_preview ($$) {
 		my $basename = __get_archive_basename($version);
 		my $path = $archives_location . '/' . $basename;
 		-e $path or next; # skip if the file is not present in the cache dir
-		Cupt::Cache::verify_hash_sums($version, $path) or next; # skip if the file is not what we want
+		# skip if the file is not what we want
+		Cupt::Cache::verify_hash_sums($version->export_hash_sums(), $path) or next;
 		# ok, no need to download the file
 		$need_bytes -= $size;
 	}
