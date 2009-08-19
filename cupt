@@ -762,46 +762,24 @@ sub show_package_relations ($) {
 			} else {
 				# we have to check all reverse dependencies for this version
 				foreach my $package (values %{$cache->get_binary_packages()}) {
-					my @version_candidates = @{$package->get_versions()};
-					foreach my $reverse_version_candidate (@version_candidates) {
-						my $needed = 0;
+					CANDIDATE:
+					foreach my $reverse_version_candidate (@{$package->get_versions()}) {
 						foreach (@{$reverse_version_candidate->$relation_group_name}) {
-							# check each relation
-							if (ref $_ ne 'ARRAY' && $_->package_name eq $package_name) {
-								# don't worry about any virtual packages, just check the relation
-								if (!defined $_->relation_string) {
-									# there is no versioned info in relation, all's ok
-									$needed = 1;
-								} elsif ($_->satisfied_by($version_string)) {
-									# versioned info is good
-									$needed = 1;
-								} else {
-									# bad, this is inappropriate relation, stop at this
-									last;
-								}
-							} else {
-								# ok, check as common
-								my $ref_relation_versions = $cache->get_satisfying_versions($_);
-								foreach my $version_candidate (@$ref_relation_versions) {
-									if ($version_candidate->package_name eq $package_name
-										&& $version_candidate->version_string eq $version_string)
-									{
-										# ok, good
-										$needed = 1;
-										last;
+							foreach my $version_candidate (@{$cache->get_satisfying_versions($_)}) {
+								if ($version_candidate->package_name eq $package_name
+									&& $version_candidate->version_string eq $version_string)
+								{
+									# positive result
+									my $label = $reverse_version_candidate->package_name .
+											' ' . $reverse_version_candidate->version_string;
+									if ($config->var('apt::cache::recursedepends')) {
+										push @versions, $reverse_version_candidate;
 									}
+									print "  " . __('Reverse-') . "$caption: $label: ";
+									say stringify_relation_expression($_);
+
+									next CANDIDATE;
 								}
-							}
-							if ($needed == 1) {
-								# positive result
-								my $label = $reverse_version_candidate->package_name .
-										' ' . $reverse_version_candidate->version_string;
-								if ($config->var('apt::cache::recursedepends')) {
-									push @versions, $reverse_version_candidate;
-								}
-								print "  " . __('Reverse-') . "$caption: $label: ";
-								say stringify_relation_expression($_);
-								last;
 							}
 						}
 					}
