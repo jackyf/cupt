@@ -735,6 +735,28 @@ sub show_package_relations ($) {
 	# don't output the same version more than one time
 	my %processed_entries;
 
+	# used only by rdepends
+	my %reverse_depends_index;
+	if ($mode eq 'reverse') {
+		foreach my $package_candidate (values %{$cache->get_binary_packages()}) {
+			CANDIDATE:
+			foreach my $reverse_version_candidate (@{$package_candidate->get_versions()}) {
+				foreach my $item (@relation_groups) {
+					my $relation_group_name = $item->[0];
+					foreach (@{$reverse_version_candidate->$relation_group_name}) {
+						foreach my $version_candidate (@{$cache->get_satisfying_versions($_)}) {
+							push @{$reverse_depends_index{$version_candidate->package_name}},
+									$reverse_version_candidate->package_name;
+						}
+					}
+				}
+			}
+		}
+		foreach my $ref_index_entry (values %reverse_depends_index) {
+			@$ref_index_entry = sort keys %{{ map { $_ => 1 } @$ref_index_entry}};
+		}
+	}
+
 	while (scalar @versions) {
 		my $version = shift @versions;
 
@@ -761,7 +783,7 @@ sub show_package_relations ($) {
 				}
 			} else {
 				# we have to check all reverse dependencies for this version
-				foreach my $package_candidate_name (sort keys %{$cache->get_binary_packages()}) {
+				foreach my $package_candidate_name (@{$reverse_depends_index{$package_name} // []}) {
 					my $package_candidate = $cache->get_binary_package($package_candidate_name);
 					CANDIDATE:
 					foreach my $reverse_version_candidate (@{$package_candidate->get_versions()}) {

@@ -12,6 +12,10 @@ cupt (0.6.0~) UNRELEASED; urgency=low
     - 'satisfy':
       - Implemented unsatisfying relation expressions (by appending the minus
         sign) too.
+    - 'rdepends':
+      - Pre-build reverse dependencies index at start. Reduces time of
+        one-shot rdepends call by ~2 times and dramatically reduces overall
+        time in case of recursive rdepends.
   * Cupt:
     - Cache:
       - Package:
