@@ -761,9 +761,10 @@ sub show_package_relations ($) {
 				}
 			} else {
 				# we have to check all reverse dependencies for this version
-				foreach my $package (values %{$cache->get_binary_packages()}) {
+				foreach my $package_candidate_name (sort keys %{$cache->get_binary_packages()}) {
+					my $package_candidate = $cache->get_binary_package($package_candidate_name);
 					CANDIDATE:
-					foreach my $reverse_version_candidate (@{$package->get_versions()}) {
+					foreach my $reverse_version_candidate (@{$package_candidate->get_versions()}) {
 						foreach (@{$reverse_version_candidate->$relation_group_name}) {
 							foreach my $version_candidate (@{$cache->get_satisfying_versions($_)}) {
 								if ($version_candidate->package_name eq $package_name
