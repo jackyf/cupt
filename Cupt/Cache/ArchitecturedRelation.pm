@@ -121,6 +121,7 @@ sub unarchitecture_relation_expressions ($$) {
 		if ($architectures[0] =~ m/^!/) {
 			# negative architecture specifications, see Debian Policy §7.1
 			foreach my $architecture (@architectures) {
+				$architecture =~ s/^!//;
 				if ($current_architecture eq $architecture) {
 					# not our case
 					return 0;

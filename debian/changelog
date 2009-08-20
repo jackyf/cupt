@@ -30,6 +30,9 @@ cupt (0.6.0~) UNRELEASED; urgency=low
           mutator methods (fields). Documented all fields.
         - Don't choke if 'Section' field is not defined.
         - [API break] The field 'avail_as' has been renamed to 'available_as'.
+      - ArchitecturedRelation:
+        - 'unarchitecture_relation_expressions': fixed skipping architectures
+          for [!a !b ... !z] cases.
     - System:
       - Resolvers/Native:
         - Don't synchronize source packages if the option
