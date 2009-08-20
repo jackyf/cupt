@@ -997,7 +997,9 @@ sub _prepare_downloads ($$) {
 			my $target_filename = $archives_location . '/' . $basename;
 
 			# exclude from downloading packages that are already present
-			next if (-e $target_filename && Cupt::Cache::verify_hash_sums($version, $target_filename));
+			if (-e $target_filename && Cupt::Cache::verify_hash_sums($version->export_hash_sums(), $target_filename)) {
+				next;
+			}
 
 			push @pending_downloads, {
 				'uris' => [ map { $_->{'download_uri' } } @uris ],

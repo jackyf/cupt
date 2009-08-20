@@ -60,6 +60,9 @@ cupt (0.6.0~) UNRELEASED; urgency=low
           (directly or indirectly) on appropriate 'configure' one.
         - Detect the packages that break Pre-Depends in inavoidable way, list
           them and exit with an error.
+        - Fixed a crash while re-checking hash sums of existing archives
+          (introduced after 0.5.2). Thanks to Cyril Brulebois.
+          (Closes: #542612)
     - Core:
       - 'version_string_regex': allow debian part of the version contain '_',
         however Cupt::Cache::Package will print a warning in this case.
