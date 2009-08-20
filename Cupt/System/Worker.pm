@@ -1006,7 +1006,7 @@ sub _prepare_downloads ($$) {
 				'filename' => $download_filename,
 				'size' => $version->size,
 				'post-action' => sub {
-					Cupt::Cache::verify_hash_sums($version, $download_filename) or
+					Cupt::Cache::verify_hash_sums($version->export_hash_sums(), $download_filename) or
 							do { unlink $download_filename; return sprintf __("%s: hash sums mismatch"), $download_filename; };
 					move($download_filename, $target_filename) or
 							return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
