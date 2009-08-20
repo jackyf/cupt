@@ -32,7 +32,8 @@ cupt (0.6.0~) UNRELEASED; urgency=low
         - [API break] The field 'avail_as' has been renamed to 'available_as'.
       - ArchitecturedRelation:
         - 'unarchitecture_relation_expressions': fixed skipping architectures
-          for [!a !b ... !z] cases.
+          for [!a !b ... !z] cases. Thanks to Cyril Brulebois.
+          (Closes: #542609)
     - System:
       - Resolvers/Native:
         - Don't synchronize source packages if the option
