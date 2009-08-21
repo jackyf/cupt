@@ -717,7 +717,10 @@ sub __parse_source_list {
 
 		if (scalar @sections) {
 			# this is normal entry
-			map { $entry{'component'} = $_; push @result, { %entry }; } @sections;
+			foreach my $section (@sections) {
+				$entry{'component'} = $section;
+				push @result, { %entry };
+			};
 		} else {
 			# this a candidate for easy entry
 
