@@ -655,6 +655,8 @@ sub _get_release_info {
 		myerr("error parsing release file '%s', line %u", $file, $.);
 		myredie();
 	}
+	close(RELEASE) or mydie("unable to close release file '%s'", $file);
+
 	if (!defined($release_info{vendor})) {
 		mydie("no vendor specified in release file '%s'", $file);
 	}
@@ -662,7 +664,6 @@ sub _get_release_info {
 		mydie("no archive specified in release file '%s'", $file);
 	}
 
-	close(RELEASE) or mydie("unable to close release file '%s'", $file);
 
 	$release_info{signed} = verify_signature($self->{_config}, $file);
 
