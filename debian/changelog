@@ -1,4 +1,4 @@
-cupt (0.6.0~) UNRELEASED; urgency=low
+cupt (0.6.0) unstable; urgency=low
 
   * cupt:
     - New 'version' (aliases: '--version', '-v') subcommand.
@@ -76,7 +76,7 @@ cupt (0.6.0~) UNRELEASED; urgency=low
       essential.
     - Bumped 'Standards-Version' to 3.8.3, no changes needed.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 11 Aug 2009 19:40:52 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 21 Aug 2009 21:25:43 +0300
 
 cupt (0.5.2) unstable; urgency=low
 
