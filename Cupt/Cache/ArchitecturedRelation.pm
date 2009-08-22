@@ -90,7 +90,7 @@ sub stringify {
 	my ($self) = @_;
 	my $result = $self->SUPER::stringify();
 	if (scalar @{$self->architectures}) {
-		$result .= ' [' . join(', ', @{$self->architectures}) . ']';
+		$result .= ' [' . join(' ', @{$self->architectures}) . ']';
 	}
 	return $result;
 }

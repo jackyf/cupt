@@ -1,5 +1,10 @@
 cupt (0.6.1~) UNRELEASED; urgency=low
 
+  * Cupt:
+    - Cache:
+      - ArchitecturedRelation:
+        - 'stringify': the architectures separator is the space, not the
+          comma.
   * debian/control:
     - The package 'libcupt-perl' now depends on 'liblist-moreutils-perl'.
 
