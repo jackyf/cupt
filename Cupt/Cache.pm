@@ -33,6 +33,7 @@ use warnings;
 use Digest;
 use Fcntl qw(:seek :DEFAULT);
 use POSIX qw(locale_h);
+use List::MoreUtils qw(none);
 
 use Memoize;
 memoize('verify_signature');
@@ -123,7 +124,7 @@ sub new {
 		$self->_parse_sources_lists();
 	};
 	if (mycatch()) {
-		myerr("error while parsing sources list");
+		myerr('error while parsing sources list');
 		myredie();
 	}
 	my $ref_index_entries = $self->get_index_entries();
@@ -133,7 +134,7 @@ sub new {
 		'-source' => 1,
 		'-binary' => 1,
 		'-installed' => 1,
-		@_ # applying passed parameters
+		@_, # applying passed parameters
 	);
 
 	if ($build_config{'-installed'}) {
@@ -203,6 +204,7 @@ I<config> - reference to L<Cupt::Config|Cupt::Config>
 sub set_config ($$) {
 	my ($self, $config) = @_;
 	$self->{_config} = $config;
+	return;
 }
 
 =head2 get_binary_packages
@@ -303,7 +305,7 @@ sub get_original_apt_pin {
 	my @available_as = @{$version->available_as};
 
 	# release-dependent settings
-	my $default_release = $self->{_config}->var("apt::default-release");
+	my $default_release = $self->{_config}->var('apt::default-release');
 	foreach (@available_as) {
 		if (defined $default_release) {
 			if ($_->{release}->{archive} eq $default_release ||
@@ -466,7 +468,7 @@ sub get_sorted_pinned_versions {
 
 	# caching results
 	if ($o_memoize) {
-		my $key = join(",", $self, $package);
+		my $key = join(',', $self, $package);
 		if (exists $cache{$key}) {
 			return $cache{$key};
 		} else {
@@ -484,7 +486,7 @@ sub get_sorted_pinned_versions {
 		use sort 'stable';
 		# sort in descending order, first key is pin, second is version string
 		@result = sort {
-			$b->{'pin'} <=> $a->{'pin'} or 
+			$b->{'pin'} <=> $a->{'pin'} or
 			compare_versions($b->{'version'}, $a->{'version'})
 		} @result;
 	};
@@ -527,11 +529,11 @@ sub _get_satisfying_versions_for_one_relation {
 
 	# caching results
 	if ($o_memoize) {
-		my $key = join(",",
+		my $key = join(',',
 				$self,
 				$package_name,
-				$relation->relation_string // "",
-				$relation->version_string // ""
+				$relation->relation_string // '',
+				$relation->version_string // ''
 		);
 		if (exists $cache{$key}) {
 			return @{$cache{$key}};
@@ -554,7 +556,7 @@ sub _get_satisfying_versions_for_one_relation {
 	}
 
 	# virtual package can only be considered if no relation sign is specified
-	if (not defined $relation->relation_string && exists $self->{_can_provide}->{$package_name}) {
+	if (not defined $relation->relation_string and exists $self->{_can_provide}->{$package_name}) {
 		# looking for reverse-provides
 		foreach (@{$self->{_can_provide}->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
@@ -686,6 +688,7 @@ sub _parse_sources_lists {
 	foreach (@source_files) {
 		push @{$self->{_index_entries}}, __parse_source_list($_);
 	}
+	return;
 }
 
 =head2 get_index_entries
@@ -729,7 +732,7 @@ sub __parse_source_list {
 					mydie("distribution doesn't end with a slash at file '%s', line %u", $file, $.);
 
 			# ok, so adding single entry
-			$entry{'component'} = "";
+			$entry{'component'} = '';
 			push @result, { %entry };
 		}
 	}
@@ -802,7 +805,7 @@ sub _parse_preference_file {
 							when ('o') { $pin_result{'release'}->{'vendor'} = $condition_value; }
 							when ('l') { $pin_result{'release'}->{'label'} = $condition_value; }
 							default {
-								mydie("bad condition type (should be one of 'a', 'v', 'c', 'n', 'o', 'l') " . 
+								mydie("bad condition type (should be one of 'a', 'v', 'c', 'n', 'o', 'l') " .
 										"in release expression at file '%s' line %u", $file, $.);
 							}
 						}
@@ -816,7 +819,7 @@ sub _parse_preference_file {
 					$pin_result{'base_uri'} = $pin_expression;
 				}
 				default {
-					mydie("bad pin type (should be one of 'release', 'version', 'origin') " . 
+					mydie("bad pin type (should be one of 'release', 'version', 'origin') " .
 							"at file '%s' line %u", $file, $.);
 				}
 			}
@@ -839,6 +842,7 @@ sub _parse_preference_file {
 	}
 
 	close(PREF) or mydie("unable to close file '%s': %s", $file, $!);
+	return;
 }
 
 sub _parse_extended_states {
@@ -858,7 +862,7 @@ sub _parse_extended_states {
 			chomp;
 
 			# skipping newlines
-			next if $_ eq "";
+			next if $_ eq '';
 
 			do { # processing first line
 				m/^Package: (.*)/ or
@@ -887,9 +891,10 @@ sub _parse_extended_states {
 		close(STATES) or mydie("unable to close file '%s': %s", $file, $!);
 	};
 	if (mycatch()) {
-		myerr("error while parsing extended states");
+		myerr('error while parsing extended states');
 		myredie();
 	}
+	return;
 }
 
 sub _process_provides_in_index_files {
@@ -902,7 +907,7 @@ sub _process_provides_in_index_files {
 
 			my $package_line = '';
 			while(<FILE>) {
-				next if !m/^Package: / and !m/^Provides: /;
+				next if not m/^Package: / and not m/^Provides: /;
 				chomp;
 				if (m/^Pa/) {
 					$package_line = $_;
@@ -914,7 +919,7 @@ sub _process_provides_in_index_files {
 
 					foreach (@provides) {
 						# if this entry is new one?
-						if (!grep { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
+						if (none { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
 							push @{$self->{_can_provide}->{$_}}, $package_name ;
 						}
 					}
@@ -925,10 +930,10 @@ sub _process_provides_in_index_files {
 		}
 	};
 	if (mycatch()) {
-		myerr("error parsing provides");
+		myerr('error parsing provides');
 		myredie();
 	}
-
+	return;
 }
 
 sub _process_index_file {
@@ -953,14 +958,15 @@ sub _process_index_file {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open index file '%s': %s", $file, $!);
-	open(OFFSETS, "/bin/grep -b '^Package: ' $file |"); 
+	open(OFFSETS, "/bin/grep -b '^Package: ' $file |") or
+			mydie('unable to open grep pipe: %s', $!);
 
 	eval {
 		while (<OFFSETS>) {
 			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
 
 			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
-			$offset += length("Package: ") + length($package_name) + 1;
+			$offset += length('Package: ') + length($package_name) + 1;
 
 			# check it for correctness
 			($package_name =~ m/^$package_name_regex$/)
@@ -983,7 +989,8 @@ sub _process_index_file {
 		myredie();
 	}
 
-	close(OFFSETS) or $! == 0 or mydie("unable to close grep pipe: %s", $!);
+	close(OFFSETS) or $! == 0 or mydie('unable to close grep pipe: %s', $!);
+	return;
 }
 
 sub __process_translation_file {
@@ -993,14 +1000,15 @@ sub __process_translation_file {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open translation file '%s': %s", $file, $!);
-	open(OFFSETS, "/bin/grep -b '^Package: ' $file |");
+	open(OFFSETS, "/bin/grep -b '^Package: ' $file |") or
+			mydie('unable to open grep pipe: %s', $!);
 
 	eval {
 		while (<OFFSETS>) {
 			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
 
 			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
-			$offset += length("Package: ") + length($package_name) + 1;
+			$offset += length('Package: ') + length($package_name) + 1;
 
 			# check it for correctness
 			($package_name =~ m/^$package_name_regex$/)
@@ -1014,7 +1022,7 @@ sub __process_translation_file {
 		myredie();
 	}
 
-	close(OFFSETS) or $! == 0 or mydie("unable to close grep pipe: %s", $!);
+	close(OFFSETS) or $! == 0 or mydie('unable to close grep pipe: %s', $!);
 
 	return \%result;
 }
@@ -1024,11 +1032,11 @@ sub _path_of_base_uri {
 
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
 	# "file:/home/jackyf" -> "/home/jackyf"
-	(my $uri_prefix = $index_entry->{'uri'}) =~ s[^\w+:(?://)?][];
+	(my $uri_prefix = $index_entry->{'uri'}) =~ s{^\w+:(?://)?}{};
 
 	# stripping last '/' from uri if present
 	$uri_prefix =~ s{/$}{};
-	
+
 	# "escaping" tilde, following APT practice :(
 	$uri_prefix =~ s/~/%7e/g;
 
@@ -1044,7 +1052,7 @@ sub _path_of_base_uri {
 
 	(my $distribution_part = $index_entry->{'distribution'}) =~ tr[/][_];
 	my $base_uri_part;
-    if ($index_entry->{'component'} eq "") {
+    if ($index_entry->{'component'} eq '') {
 		# easy source type
 		$base_uri_part = join('_', $uri_prefix, $distribution_part);
 	} else {
@@ -1058,7 +1066,7 @@ sub _path_of_base_uri {
 sub _base_download_uri {
 	my ($self, $index_entry) = @_;
 
-    if ($index_entry->{'component'} eq "") {
+    if ($index_entry->{'component'} eq '') {
 		# easy source type
 		return join('/', $index_entry->{'uri'}, $index_entry->{'distribution'});
 	} else {
@@ -1072,9 +1080,9 @@ sub _index_list_suffix {
 
 	my $arch = $self->{_config}->var('apt::architecture');
 
-	if ($index_entry->{'component'} eq "") {
+	if ($index_entry->{'component'} eq '') {
 		# easy source type
-		return ($index_entry->{'type'} eq 'deb') ? "Packages" : 'Sources';
+		return ($index_entry->{'type'} eq 'deb') ? 'Packages' : 'Sources';
 	} else {
 		# normal source type
 		return ($index_entry->{'type'} eq 'deb') ?
@@ -1301,6 +1309,7 @@ sub _parse_preferences {
 	foreach (@preference_files) {
 		$self->_parse_preference_file($_);
 	}
+	return;
 }
 
 sub _path_of_extended_states {
@@ -1386,9 +1395,9 @@ sub verify_signature ($$) {
 				return 0;
 			};
 
-	open(GPG_VERIFY, "gpg --verify --status-fd 1 --no-default-keyring " .
+	open(GPG_VERIFY, 'gpg --verify --status-fd 1 --no-default-keyring ' .
 			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
-			mydie("unable to open gpg pipe: %s", $!);
+			mydie('unable to open gpg pipe: %s', $!);
 	my $sub_gpg_readline = sub {
 		my $result;
 		do {
@@ -1397,7 +1406,7 @@ sub verify_signature ($$) {
 				chomp $result;
 				mydebug("fetched '%s' from gpg pipe", $result) if $debug;
 			}
-		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or !($result =~ m/^\[GNUPG:\]/)));
+		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or ($result !~ m/^\[GNUPG:\]/)));
 
 		if (!defined $result) {
 			return undef;
@@ -1466,9 +1475,9 @@ sub verify_signature ($$) {
 	}
 
 	close(GPG_VERIFY) or $! == 0 or
-			mydie("unable to close gpg pipe: %s", $!);
+			mydie('unable to close gpg pipe: %s', $!);
 
-	mydebug("the verify result is %u", $verify_result) if $debug;
+	mydebug('the verify result is %u', $verify_result) if $debug;
 	return $verify_result;
 }
 
@@ -1491,11 +1500,11 @@ Returns: zero on failure, non-zero on success
 sub verify_hash_sums ($$) {
 	my ($ref_hash_sums, $path) = @_;
 
-	my @checks = 	(
-					[ $ref_hash_sums->{'md5sum'}, 'MD5' ],
-					[ $ref_hash_sums->{'sha1sum'}, 'SHA-1' ],
-					[ $ref_hash_sums->{'sha256sum'}, 'SHA-256' ],
-					);
+	my @checks = (
+		[ $ref_hash_sums->{'md5sum'}, 'MD5' ],
+		[ $ref_hash_sums->{'sha1sum'}, 'SHA-1' ],
+		[ $ref_hash_sums->{'sha256sum'}, 'SHA-256' ],
+	);
 
 	open(FILE, '<', $path) or
 			mydie("unable to open file '%s': %s", $path, $!);
@@ -1518,7 +1527,7 @@ sub verify_hash_sums ($$) {
 	close(FILE) or
 			mydie("unable to close file '%s': %s", $path, $!);
 
-	$sums_count or mydie("no hash sums specified");
+	$sums_count or mydie('no hash sums specified');
 	return 1;
 }
 

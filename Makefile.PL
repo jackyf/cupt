@@ -19,6 +19,7 @@ WriteMakefile(
 		'Getopt::Long' => 0,
 		'Test::More' => 0,
 		'Time::HiRes' => 0,
+		'List::MoreUtils' => 0,
 	},
 );
 
