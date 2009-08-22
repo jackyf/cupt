@@ -31,6 +31,7 @@ use warnings;
 use strict;
 
 use List::Util qw(sum);
+use List::MoreUtils qw(uniq);
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev', 'no_ignore_case');
 use File::Temp qw(tempfile);
@@ -753,7 +754,7 @@ sub show_package_relations ($) {
 			}
 		}
 		foreach my $ref_index_entry (values %reverse_depends_index) {
-			@$ref_index_entry = sort keys %{{ map { $_ => 1 } @$ref_index_entry}};
+			@$ref_index_entry = sort(uniq(@$ref_index_entry));
 		}
 	}
 
