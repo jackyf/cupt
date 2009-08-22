@@ -22,7 +22,7 @@ package Cupt::Cache::ArchitecturedRelation;
 
 =head1 NAME
 
-Cupt::Cache::ArchirecturedRelation - store info about the relation with architecture specifier
+Cupt::Cache::ArchitecturedRelation - store info about the relation with architecture specifier
 
 =cut
 
@@ -55,7 +55,7 @@ I<relation_string> - bare relation string (examples: C<nlkt [amd64]>, C<nlkt (E<
 sub new {
 	my ($class, $unparsed) = @_;
 	my @architectures;
-	if ($unparsed =~ m/
+	if ($unparsed =~ m{
 		\[ # opening square brace, arch info starter
 			( # catch block start
 				(?:
@@ -66,7 +66,7 @@ sub new {
 		\] # closing square brace, arch info finisher
 		\s* # possible spaces
 		$
-		/x
+		}x
 	)
 	{
 		@architectures = split(/ /, $1);
