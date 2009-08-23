@@ -32,6 +32,8 @@ use 5.10.0;
 use warnings;
 use strict;
 
+use List::MoreUtils qw(any);
+
 =head1 FIELDS
 
 =head2 available_as
@@ -351,7 +353,7 @@ sub new {
 		# read localized descriptions if available
 		if (defined $translation_fh) {
 			seek $translation_fh, $translation_offset, 0;
-			$self->long_description = "";
+			$self->long_description = '';
 			while (($line = <$translation_fh>) ne "\n") {
 				next if $line =~ m/^Description-md5:/;
 				if ($line =~ m/^Description/) {
@@ -378,7 +380,7 @@ sub new {
 	defined $self->version_string or mydie("version string isn't defined");
 	# checking hash sums
 	if (!$self->is_installed() && !are_hash_sums_present($self->export_hash_sums())) {
-		mydie("no hash sums specified");
+		mydie('no hash sums specified');
 	}
 
 	$self->priority //= 'extra';
@@ -427,7 +429,7 @@ sub uris {
 	my @result;
     foreach (@{$self->available_as}) {
 		my $base_uri = $_->{release}->{base_uri};
-		if ($base_uri ne "") {
+		if ($base_uri ne '') {
 			# real download path
 			my $new_uri = ( $base_uri . '/' . $_->{'filename'} );
 
@@ -435,7 +437,7 @@ sub uris {
 				'download_uri' => $new_uri,
 				'base_uri' => $base_uri,
 				'appendage' => $_->{'filename'},
-			} unless grep { $_->{'download_uri'} eq $new_uri } @result;
+			} unless any { $_->{'download_uri'} eq $new_uri } @result;
 		}
 	}
 	return @result;
@@ -467,7 +469,7 @@ method, returns whether this version is installed in the system or not
 
 sub is_installed {
 	(my $self) = @_;
-	return ($self->available_as->[0]->{release}->{base_uri} eq "");
+	return ($self->available_as->[0]->{release}->{base_uri} eq '');
 }
 
 1;
