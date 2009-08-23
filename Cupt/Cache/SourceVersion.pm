@@ -32,6 +32,8 @@ use 5.10.0;
 use warnings;
 use strict;
 
+use List::MoreUtils qw(any);
+
 =head1 FIELDS
 
 =head2 available_as
@@ -288,13 +290,13 @@ sub new {
 
 	# checking hash sums
 	if (!are_hash_sums_present($self->tarball)) {
-		mydie("no hash sums specified for tarball");
+		mydie('no hash sums specified for tarball');
 	}
 	if (defined $self->diff && !are_hash_sums_present($self->diff)) {
-		mydie("no hash sums specified for diff");
+		mydie('no hash sums specified for diff');
 	}
 	if (!are_hash_sums_present($self->dsc)) {
-		mydie("no hash sums specified for dsc");
+		mydie('no hash sums specified for dsc');
 	}
 
 	return $self;
@@ -341,7 +343,7 @@ sub uris {
 	my %result;
 	foreach (@{$self->available_as}) {
 		my $base_uri = $_->{release}->{base_uri};
-		if ($base_uri ne "") {
+		if ($base_uri ne '') {
 			# real download path
 			my $new_uri = ( $base_uri . '/' . $_->{'directory'} );
 			foreach my $part ('tarball', 'diff', 'dsc') {
@@ -351,7 +353,7 @@ sub uris {
 					'download_uri' => $download_uri,
 					'base_uri' => $base_uri,
 					'appendage' => $_->{'directory'} . '/' . $self->$part->{filename},
-				} unless grep { $_->{'download_uri'} eq $download_uri } @{$result{$part}};
+				} unless any { $_->{'download_uri'} eq $download_uri } @{$result{$part}};
 			}
 		}
 	}
