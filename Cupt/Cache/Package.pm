@@ -70,6 +70,7 @@ method, adds unparsed entry to package. Usually should't be called by hand.
 sub add_entry {
 	my $self = shift;
 	push @$self, \@_;
+	return;
 }
 
 =head2 get_versions
@@ -105,11 +106,11 @@ sub get_versions {
 		}
 		@$self = @new_self;
 		if (not scalar @$self) {
-			mywarn("no valid versions available, discarding the package");
+			mywarn('no valid versions available, discarding the package');
 		}
 	};
 	if (mycatch()) {
-		myerr("error while parsing package info");
+		myerr('error while parsing package info');
 		myredie();
 	};
 
@@ -245,7 +246,7 @@ sub _merge_version {
 						$parsed_version->package_name,
 						$parsed_version->version_string,
 						$parsed_version->available_as->[0]->{release}->{base_uri};
-				mywarn("throwing away duplicating version with different hash sums: %s", $info);
+				mywarn('throwing away duplicating version with different hash sums: %s', $info);
 			}
 		}
 	};
@@ -254,6 +255,7 @@ sub _merge_version {
 				$parsed_version->version_string, $parsed_version->package_name);
 		myredie();
 	};
+	return;
 }
 
 1;
