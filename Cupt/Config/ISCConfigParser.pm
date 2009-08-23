@@ -35,6 +35,8 @@ use Parse::RecDescent;
 
 use Cupt::Core;
 
+## no critic (RequireInterpolationOfMetachars)
+## no critic (ProhibitImplicitNewlines)
 my $grammar = q{
 
 	<autotree>
@@ -75,7 +77,7 @@ sub new {
 	};
 
 	$self->{'_parser'} = new Parse::RecDescent($grammar)
-		or myinternaldie("bad grammar");
+		or myinternaldie('bad grammar');
 
 	bless $self, $class;
 	return $self;
@@ -85,23 +87,30 @@ sub parse_file {
 	my ($self, $file) = @_;
 
 	open(my $file_handle, $file) or mydie("unable to open file '%s': %s", $file, $!);
-	my $text = join("", <$file_handle>);
+	my $text;
+	do {
+		local $/ = undef;
+		$text = <$file_handle>;
+	};
 	close($file_handle) or mydie("unable to close file '%s': %s", $file, $!);
 
 	defined( my $ref_tree = $self->{'_parser'}->program($text) )
 		or mydie("bad config in file '%s'", $file);
 
-	$self->_recurse($ref_tree, "");
+	$self->_recurse($ref_tree, '');
+	return;
 }
 
 sub set_regular_handler {
-	my $self = shift;
-	$self->{'_regular_handler'} = shift;
+	my ($self, $value) = @_;
+	$self->{'_regular_handler'} = $value;
+	return;
 }
 
 sub set_list_handler {
-	my $self = shift;
-	$self->{'_list_handler'} = shift;
+	my ($self, $value) = @_;
+	$self->{'_list_handler'} = $value;
+	return;
 }
 
 sub _recurse {
@@ -129,6 +138,7 @@ sub _recurse {
 			$self->_recurse($ref_item->{'statement(s?)'}, $name_prefix);
 		}
 	}
+	return;
 }
 
 1;
