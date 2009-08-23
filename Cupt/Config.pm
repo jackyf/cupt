@@ -178,7 +178,7 @@ I<option_name> - string name of option
 
 =cut
 
-sub var {
+sub var { ## no critic (RequireFinalReturn)
 	my ($self, $var_name) = @_;
 	if (exists ($self->{regular_vars}->{$var_name})) {
 		return $self->{regular_vars}->{$var_name};
@@ -189,6 +189,7 @@ sub var {
 	} else {
 		mydie("attempt to get wrong option '%s'", $var_name);
 	}
+	# we shouldn't ever reach it
 }
 
 =head2 set_regular_var
@@ -242,6 +243,7 @@ sub set_list_var {
 	} else {
 		mywarn("attempt to set wrong option '%s'", $var_name);
 	}
+	return;
 }
 
 sub _read_configs {
@@ -256,7 +258,10 @@ sub _read_configs {
 
 	my $list_option_sub = sub {
 		my ($option_name, @values) = @_;
-		map { s/"(.*)"/$1/; $self->set_list_var($option_name, $_); } @values;
+		foreach my $value (@values) {
+			$value =~ s/"(.*)"/$1/;
+			$self->set_list_var($option_name, $value);
+		}
 	};
 
 	$parser->set_regular_handler($regular_option_sub);
@@ -283,6 +288,7 @@ sub _read_configs {
 			mywarn("skipped configuration file '%s'", $config_file);
 		}
 	}
+	return;
 }
 
 sub _get_architecture ($) {
