@@ -65,21 +65,20 @@ sub new {
 		mydie("failed to parse package name in relation '%s'", $unparsed);
 	}
 
-	if ($unparsed =~ m/
-			\G # start at end of previous regex
+	if ($unparsed =~ m{
+		\G # start at end of previous regex
+		\s* # possible spaces
+		\( # open relation brace
+			(
+				>=|=|<=|<<|>>|<|> # relation
+			)
 			\s* # possible spaces
-			\( # open relation brace
-				(
-					>=|=|<=|<<|>>|<|> # relation
-				)
-				\s* # possible spaces
-				(
-					 $version_string_regex# version
-				)
-			\) # close relation brace
-			$
-		/xgc
-	)
+			(
+				$version_string_regex# version
+			)
+		\) # close relation brace
+		$
+		}xgc)
 	{
 		# versioned info is here, assigning
 		($self->relation_string, $self->version_string) = ($1, $2);
@@ -103,7 +102,7 @@ sub stringify {
 	my $result = $self->package_name;
 	if (defined $self->relation_string) {
 		# there is versioned info
-		$result .= join('', " (", $self->relation_string, ' ', $self->version_string, ')');
+		$result .= join('', ' (', $self->relation_string, ' ', $self->version_string, ')');
 	}
 	return $result;
 }
@@ -125,7 +124,7 @@ sub stringify_relation_expression ($) {
 		return $arg->stringify();
 	} else {
 		# it have be an 'OR' group of relations
-		return join(" | ", map { $_->stringify() } @$arg);
+		return join(' | ', map { $_->stringify() } @$arg);
 	}
 }
 
@@ -144,7 +143,7 @@ sub stringify_relation_expressions {
 	foreach my $object (@{$_[0]}) {
 		push @relation_strings, stringify_relation_expression($object);
 	}
-	return join(", ", @relation_strings);
+	return join(', ', @relation_strings);
 }
 
 =head2 satisfied_by
