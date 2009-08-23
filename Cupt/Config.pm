@@ -250,13 +250,13 @@ sub _read_configs {
 	my ($self) = @_;
 	my $parser = new Cupt::Config::ISCConfigParser;
 
-	my $regular_option_sub = sub {
+	my $sub_regular_option = sub {
 		my ($option_name, $value) = @_;
 		$value =~ s/"(.*)"/$1/;
 		$self->set_regular_var($option_name, $value);
 	};
 
-	my $list_option_sub = sub {
+	my $sub_list_option = sub {
 		my ($option_name, @values) = @_;
 		foreach my $value (@values) {
 			$value =~ s/"(.*)"/$1/;
@@ -264,8 +264,8 @@ sub _read_configs {
 		}
 	};
 
-	$parser->set_regular_handler($regular_option_sub);
-	$parser->set_list_handler($list_option_sub);
+	$parser->set_regular_handler($sub_regular_option);
+	$parser->set_list_handler($sub_list_option);
 
 	my $root_prefix = $self->var('dir');
 	my $etc_dir = $self->var('dir::etc');
