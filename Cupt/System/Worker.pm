@@ -911,7 +911,7 @@ sub _build_actions_graph ($$) {
 						my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
 						my @package_names_in_path = uniq map { $_->{'version'}->package_name } @path;
 
-						mydie("unable to satisfy pre-dependency(ies) '%s', this is probably a fault of one of the packages: %s",
+						mywarn("the pre-dependency(ies) '%s' will be broken during the actions, the packages involved: %s",
 								stringify_relation_expressions($ref_attributes->{'relation_expressions'}),
 								join(', ', map { qq/'$_'/ } @package_names_in_path));
 					}

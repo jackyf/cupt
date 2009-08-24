@@ -5,6 +5,11 @@ cupt (0.6.1~) UNRELEASED; urgency=low
       - ArchitecturedRelation:
         - 'stringify': the architectures separator is the space, not the
           comma.
+    - System:
+      - Worker:
+        - Turned the run-time pre-dependency check into a warning. One cannot
+          surely say whether it's an error or not. Thanks to James Vega.
+          (Closes: #543365)
   * debian/control:
     - The package 'libcupt-perl' now depends on 'liblist-moreutils-perl'.
 
