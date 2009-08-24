@@ -1,4 +1,4 @@
-cupt (0.6.1~) UNRELEASED; urgency=low
+cupt (0.6.1) unstable; urgency=low
 
   * Cupt:
     - Cache:
@@ -13,7 +13,7 @@ cupt (0.6.1~) UNRELEASED; urgency=low
   * debian/control:
     - The package 'libcupt-perl' now depends on 'liblist-moreutils-perl'.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Sat, 22 Aug 2009 20:00:35 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 24 Aug 2009 23:22:32 +0300
 
 cupt (0.6.0) unstable; urgency=low
 
