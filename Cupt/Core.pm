@@ -63,6 +63,7 @@ if ($@) {
 
 sub _myprinterror {
 	say STDERR shift;
+	return;
 }
 
 sub _myformat {
@@ -70,11 +71,13 @@ sub _myformat {
 }
 
 sub mywarn {
-	_myprinterror("W: " . _myformat(@_));
+	_myprinterror('W: ' . _myformat(@_));
+	return;
 }
 
 sub myerr {
-	_myprinterror("E: " . _myformat(@_));
+	_myprinterror('E: ' . _myformat(@_));
+	return;
 }
 
 sub myredie() {
@@ -84,10 +87,11 @@ sub myredie() {
 sub mydie {
 	myerr @_;
 	myredie();
+	return;
 }
 
 sub myinternaldie {
-	_myprinterror("E: " . __("internal error: ") . _myformat(@_));
+	_myprinterror('E: ' . __('internal error: ') . _myformat(@_));
 	die;
 }
 
@@ -96,7 +100,7 @@ sub mycatch() {
     my $err = $@;
     if ($err =~ m/^Cupt::Error/) {
         return 1;
-	} elsif ($err ne "") {
+	} elsif ($err ne '') {
 		# some other error received, propagate it
 		die $err;
     } else {
@@ -105,8 +109,8 @@ sub mycatch() {
 }
 
 sub mydebug {
-	print STDERR "D: ";
-	say STDERR sprintf(shift, @_);
+	say {*STDERR} 'D: ', sprintf(shift, @_);
+	return;
 }
 
 =head1 REGEXES
@@ -126,7 +130,7 @@ regular expression to check version string
 =cut
 
 our $version_string_regex =
-	qr/ (?<EPOCH> # name of this match is 'EPOCH'
+	qr{ (?<EPOCH> # name of this match is 'EPOCH'
 			\d+: # epoch
 		)? # which is non-mandatory
 		(
@@ -141,16 +145,18 @@ our $version_string_regex =
 			-
 			([a-zA-Z+0-9~_.]+) # debian revision
 		)? # which is non-mandatory
-	/x;
+	}x;
 
-my $__version_symbol_sort_string = "~ _abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.:";
+my $__version_symbol_sort_string = '~ _abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-.:';
 
 sub __compare_letter_symbol ($$) {
+	## no critic (AmbiguousNames)
 	my ($left, $right) = @_;
 	return index($__version_symbol_sort_string, $left) <=> index($__version_symbol_sort_string, $right);
 }
 
 sub __compare_version_part ($$) {
+	## no critic (AmbiguousNames)
 	my ($left, $right) = @_;
 
 	# take into account that preceding zeroes in numbers must be stripped
@@ -259,6 +265,7 @@ Returns:
 sub compare_version_strings($$) {
 	# version part can be epoch, version and debian revision
 
+	## no critic (AmbiguousNames)
 	my ($left, $right) = @_;
 	my ($left_epoch, $left_upstream, $left_revision) = ($left =~ /^$version_string_regex$/);
 	my ($right_epoch, $right_upstream, $right_revision) = ($right =~ /^$version_string_regex$/);
@@ -296,12 +303,12 @@ sub compare_version_strings($$) {
 sub human_readable_size_string ($) {
 	my ($bytes) = @_;
 
-	return sprintf("%.0fB", $bytes) if ($bytes < 10*1024);
-	return sprintf("%.1fKiB", ($bytes / 1024)) if ($bytes < 100*1024);
-	return sprintf("%.0fKiB", ($bytes / 1024)) if ($bytes < 10*1024*1024);
-	return sprintf("%.1fMiB", ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);
-	return sprintf("%.0fMiB", ($bytes / (1024*1024))) if ($bytes < 10*1024*1024*1024);
-	return sprintf("%.1fGiB", ($bytes / (1024*1024*1024)));
+	return sprintf('%.0fB', $bytes) if ($bytes < 10*1024);
+	return sprintf('%.1fKiB', ($bytes / 1024)) if ($bytes < 100*1024);
+	return sprintf('%.0fKiB', ($bytes / 1024)) if ($bytes < 10*1024*1024);
+	return sprintf('%.1fMiB', ($bytes / (1024*1024))) if ($bytes < 100*1024*1024);
+	return sprintf('%.0fMiB', ($bytes / (1024*1024))) if ($bytes < 10*1024*1024*1024);
+	return sprintf('%.1fGiB', ($bytes / (1024*1024*1024)));
 }
 
 =head2 is_version_string_native
@@ -343,6 +350,7 @@ I<right> - hash
 =cut
 
 sub compare_hash_sums ($$) {
+	## no critic (AmbiguousNames)
 	my ($left, $right) = @_;
 	my $sums_count = 0;
 	foreach my $hash_sum_name (qw(md5sum sha1sum sha256sum)) {
@@ -364,6 +372,7 @@ sub glob_to_regex ($) {
 	$_[0] = quotemeta($_[0]);
 	$_[0] =~ s/\\\?/\./g;
 	$_[0] =~ s/\\\*/.*?/g;
+	return;
 }
 
 1;
