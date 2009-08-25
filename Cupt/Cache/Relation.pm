@@ -188,10 +188,10 @@ sub parse_relation_expression ($) {
 	my @relations = split / ?\| ?/, $relation_expression_string;
 	if (scalar @relations == 1) {
 		# ordinary relation
-		return new Cupt::Cache::Relation($relations[0]);
+		return Cupt::Cache::Relation->new($relations[0]);
 	} else {
 		# 'OR' group of relations
-		return [ map { new Cupt::Cache::Relation($_) } @relations ];
+		return [ map { Cupt::Cache::Relation->new($_) } @relations ];
 	}
 }
 
