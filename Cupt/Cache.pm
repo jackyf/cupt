@@ -1118,15 +1118,16 @@ sub _get_chunks_of_localized_descriptions {
 
 	return @result if $index_entry->{'type'} ne 'deb';
 
+	my $translation_variable = $self->{_config}->var('apt::acquire::translation');
+	my $locale = $translation_variable eq 'environment' ?
+			POSIX::setlocale(LC_MESSAGES) : $translation_variable;
+	return @result if $locale eq 'none';
+
 	my @chunks;
 	if ($index_entry->{'component'} ne '') {
 		push @chunks, $index_entry->{'component'};
 	}
 	push @chunks, 'i18n';
-
-	my $translation_variable = $self->{_config}->var('apt::acquire::translation');
-	my $locale = $translation_variable eq 'environment' ?
-			POSIX::setlocale(LC_MESSAGES) : $translation_variable;
 
 	# cutting out an encoding
 	$locale =~ s/\..*//;

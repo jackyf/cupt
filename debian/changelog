@@ -5,6 +5,8 @@ cupt (0.6.2~) UNRELEASED; urgency=low
       - Worker:
         - Significant speed-up of run-time pre-dependency check.
         - Significant speed-up of processing the virtual action dependencies.
+    - Cache:
+      - Support 'none' value of the 'apt::acquire::translation' option.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 25 Aug 2009 12:01:11 +0300
 
