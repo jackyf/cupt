@@ -1,5 +1,7 @@
 cupt (0.6.2~) UNRELEASED; urgency=low
 
+  * cupt:
+    - New 'dist-upgrade' subcommand.
   * Cupt:
     - System:
       - Worker:

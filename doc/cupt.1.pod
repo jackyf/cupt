@@ -338,9 +338,16 @@ currently installed version.
 
 =item safe-upgrade
 
-the same as L<full-upgrade>, but with the change that problem resolver won't
+the same as L</full-upgrade>, but with the change that problem resolver won't
 try to remove non-automatically installed packages in order to upgrade more
 packages, equivalent of 'full-upgrade --no-remove'.
+
+=item dist-upgrade
+
+the same as L</full-upgrade>, but firstly upgrades the package management tools,
+then upgrades the whole system.
+
+Recommended over L</full-upgrade> for major upgrades.
 
 =item markauto
 

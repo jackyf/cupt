@@ -117,6 +117,7 @@ sub main {
 		'satisfy' => sub { manage_packages('satisfy') },
 		'safe-upgrade' => sub { manage_packages('safe-upgrade') },
 		'full-upgrade' => sub { manage_packages('full-upgrade') },
+		'dist-upgrade' => \&dist_upgrade,
 		'build-dep' => sub { manage_packages('build-depends') },
 		'source' => \&acquire_source_package,
 		'clean' => sub { clean_archives(0) },
@@ -380,6 +381,7 @@ sub help () {
 		'satisfy' => __('performs actions to make relation expressions satisfied'),
 		'safe-upgrade' => __('upgrades the system without removing packages'),
 		'full-upgrade' => __('upgrades the system with possible removal of some packages'),
+		'dist-upgrade' => __('does a two-stage full upgrade'),
 		'build-dep' => __('satisfies build dependencies for source package(s)'),
 		'source' => __('fetches and unpacks source package(s)'),
 		'clean' => __('cleans the whole binary package cache'),
@@ -1601,6 +1603,28 @@ sub manage_packages ($) {
 	} else {
 		say __("no more solutions.");
 	}
+}
+
+sub dist_upgrade {
+	do { # 1st stage: upgrading of package management tools
+		say "[ upgrading package management tools ]";
+		say "";
+		local @ARGV = @ARGV;
+		unshift @ARGV, 'dpkg', 'libcupt-perl', 'cupt';
+		manage_packages('install') or
+				mydie("upgrading of the package management tools failed");
+	};
+
+	# cache should be rebuild
+	undef $cache;
+
+	do { # 2nd stage: full upgrade
+		say "";
+		say "[ upgrading the system ]";
+		say "";
+		local @ARGV = @ARGV;
+		return manage_packages('full-upgrade');
+	};
 }
 
 sub update_release_data () {
