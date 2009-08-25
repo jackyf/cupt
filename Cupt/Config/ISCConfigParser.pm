@@ -76,7 +76,7 @@ sub new {
 		'_list_handler' => undef,
 	};
 
-	$self->{'_parser'} = new Parse::RecDescent($grammar)
+	$self->{'_parser'} = Parse::RecDescent->new($grammar)
 		or myinternaldie('bad grammar');
 
 	bless $self, $class;
