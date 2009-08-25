@@ -55,7 +55,7 @@ if ($@) {
 	# require succeeded
 	Locale::gettext::textdomain('cupt');
 	do {
-		# no critic (NoWarnings)
+		## no critic (NoWarnings)
 		no warnings;
 		*__ = *Locale::gettext::gettext;
 	};
