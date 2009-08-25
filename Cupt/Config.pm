@@ -248,7 +248,7 @@ sub set_list_var {
 
 sub _read_configs {
 	my ($self) = @_;
-	my $parser = new Cupt::Config::ISCConfigParser;
+	my $parser = Cupt::Config::ISCConfigParser->new();
 
 	my $sub_regular_option = sub {
 		my ($option_name, $value) = @_;
