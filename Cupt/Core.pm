@@ -54,7 +54,11 @@ if ($@) {
 } else {
 	# require succeeded
 	Locale::gettext::textdomain('cupt');
-	*__ = *Locale::gettext::gettext;
+	do {
+		# no critic (NoWarnings)
+		no warnings;
+		*__ = *Locale::gettext::gettext;
+	};
 }
 
 sub _myprinterror {
