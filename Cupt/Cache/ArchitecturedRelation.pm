@@ -73,7 +73,7 @@ sub new {
 		# cleaning square braces info
 		$unparsed =~ s/\s*\[.*//;
 	}
-	my $self = new Cupt::Cache::Relation($unparsed);
+	my $self = Cupt::Cache::Relation->new($unparsed);
 	bless $self => $class;
 	$self->architectures = \@architectures;
 
@@ -180,10 +180,10 @@ sub parse_architectured_relation_expression ($) {
 	my @architectured_relations = split / ?\| ?/, $architectured_relation_expression_string;
 	if (scalar @architectured_relations == 1) {
 		# ordinary relation
-		return new Cupt::Cache::ArchitecturedRelation($architectured_relations[0]);
+		return Cupt::Cache::ArchitecturedRelation->new($architectured_relations[0]);
 	} else {
 		# 'OR' group of relations
-		return [ map { new Cupt::Cache::ArchitecturedRelation($_) } @architectured_relations ];
+		return [ map { Cupt::Cache::ArchitecturedRelation->new($_) } @architectured_relations ];
 	}
 }
 
