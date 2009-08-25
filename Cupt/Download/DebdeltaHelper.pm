@@ -21,6 +21,9 @@
 
 package Cupt::Download::DebdeltaHelper;
 
+use strict;
+use warnings;
+
 use fields qw(_sources);
 
 use URI::Escape;
@@ -41,7 +44,7 @@ sub new {
 				$self->_parse_sources($sources_file);
 			};
 			if (mycatch()) {
-				mywarn("failed to parse debdelta configuration file '%s'", $source_file);
+				mywarn("failed to parse debdelta configuration file '%s'", $sources_file);
 			}
 		}
 	}
@@ -61,7 +64,7 @@ sub uris {
 	my $sub_mangle_version_string = sub {
 		# I hate http uris, hadn't I told this before, hm...
 		my $result = $_[0];
-		my $colon_pattern = uri_escape("%3a");
+		my $colon_pattern = uri_escape('%3a');
 		$result =~ s/:/$colon_pattern/g;
 		return $result;
 	};
@@ -72,7 +75,7 @@ sub uris {
 			foreach my $key (keys %$ref_source) {
 				next if $key eq 'delta_uri';
 				my $found = 0;
-				foreach $release_info (map { $_->{release} } @{$version->available_as}) {
+				foreach my $release_info (map { $_->{release} } @{$version->available_as}) {
 					if ($release_info->{$key} eq $ref_source->{$key}) {
 						$found = 1;
 						last;
