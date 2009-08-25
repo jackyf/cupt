@@ -139,7 +139,7 @@ sub new {
 
 	if ($build_config{'-installed'}) {
 		# read system settings
-		$self->{_system_state} = new Cupt::System::State($self->{_config}, $self);
+		$self->{_system_state} = Cupt::System::State->new($self->{_config}, $self);
 	}
 
 	my @index_files;
