@@ -135,7 +135,7 @@ sub _parse_sources {
 			next;
 		}
 
-		if (m/^\[/) { 
+		if (m/^\[/) {
 			# new section
 			if (defined $current_section) {
 				mydie("new section before closing previous one in file '%s', line %u", $file, $.);
@@ -165,6 +165,8 @@ sub _parse_sources {
 
 	close($fd) or
 			mydie("unable to close file '%s'", $file);
+
+	return;
 }
 
 1;
