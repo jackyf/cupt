@@ -31,7 +31,7 @@ use warnings;
 use strict;
 
 INIT {
-	## no critic (RequireLocalizePunctuationVars)
+	## no critic (RequireLocalizedPunctuationVars)
 	require Carp;
 	$SIG{__WARN__} = \&Carp::confess;
 	$SIG{__DIE__} = \&Carp::confess;
@@ -53,11 +53,8 @@ if ($@) {
 	*__ = sub { $_[0] };
 } else {
 	# require succeeded
-	Locale::gettext::textdomain("cupt");
-	do {
-		no warnings;
-		*__ = *Locale::gettext::gettext;
-	};
+	Locale::gettext::textdomain('cupt');
+	*__ = *Locale::gettext::gettext;
 }
 
 sub _myprinterror {
