@@ -890,9 +890,8 @@ sub _build_actions_graph ($$) {
 
 		do { # check pre-depends
 			# re-compute transitive matrix, it might become invalid after the merges
-			# and with paths too for verbose reporting
 			$graph_transitive_closure = new Graph::TransitiveClosure($graph,
-					'path_length' => 0, 'path_vertices' => 1);
+					'path_length' => 0, 'path_vertices' => 0);
 
 			foreach my $edge ($graph->edges()) {
 				if ($graph->has_edge_attribute(@$edge, 'pre-dependency')) {

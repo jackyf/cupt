@@ -1,3 +1,12 @@
+cupt (0.6.2~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - System:
+      - Worker:
+        - Significant speed-up of run-time pre-dependency check.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 25 Aug 2009 12:01:11 +0300
+
 cupt (0.6.1) unstable; urgency=low
 
   * Cupt:
