@@ -4,6 +4,7 @@ cupt (0.6.2~) UNRELEASED; urgency=low
     - System:
       - Worker:
         - Significant speed-up of run-time pre-dependency check.
+        - Significant speed-up of processing the virtual action dependencies.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 25 Aug 2009 12:01:11 +0300
 

@@ -799,30 +799,40 @@ sub _build_actions_graph ($$) {
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
 		};
 
-		# get rid of virtual edges
-		foreach (@virtual_edges_to_be_eliminated) {
-			my ($from_vertex, $to_vertex) = @$_;
-
-			# "multiplying" the dependencies
-			foreach my $predecessor_vertex ($graph->predecessors($from_vertex)) {
-				foreach my $successor_vertex ($graph->successors($to_vertex)) {
-					# moving edge attributes too
-					$sub_move_edge->($predecessor_vertex, $from_vertex, $predecessor_vertex, $successor_vertex);
-					$sub_move_edge->($to_vertex, $successor_vertex, $predecessor_vertex, $successor_vertex);
-					if ($self->{_config}->var('debug::worker')) {
-						my $slave_string = __stringify_inner_action($predecessor_vertex);
-						my $master_string = __stringify_inner_action($successor_vertex);
-						my $mediator_package_name = $from_vertex->{'version'}->package_name;
-						mydebug(sprintf "multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
-								$slave_string, $master_string, $mediator_package_name);
-					}
-
-				}
+		do { # get rid of virtual edges
+			# pre-build predecessors/successors, because calling
+			# Graph::{prede,suc}cessors at each vertex is too slow
+			my %predecessors;
+			my %successors;
+			foreach my $edge ($graph->edges()) {
+				my ($from_vertex, $to_vertex) = @$edge;
+				push @{$predecessors{$to_vertex}}, $from_vertex;
+				push @{$successors{$from_vertex}}, $to_vertex;
 			}
+			foreach (@virtual_edges_to_be_eliminated) {
+				my ($from_vertex, $to_vertex) = @$_;
 
-			$graph->delete_vertex($from_vertex);
-			$graph->delete_vertex($to_vertex);
-		}
+				# "multiplying" the dependencies
+				foreach my $predecessor_vertex (@{$predecessors{$from_vertex}}) {
+					foreach my $successor_vertex (@{$successors{$to_vertex}}) {
+						# moving edge attributes too
+						$sub_move_edge->($predecessor_vertex, $from_vertex, $predecessor_vertex, $successor_vertex);
+						$sub_move_edge->($to_vertex, $successor_vertex, $predecessor_vertex, $successor_vertex);
+						if ($self->{_config}->var('debug::worker')) {
+							my $slave_string = __stringify_inner_action($predecessor_vertex);
+							my $master_string = __stringify_inner_action($successor_vertex);
+							my $mediator_package_name = $from_vertex->{'version'}->package_name;
+							mydebug(sprintf "multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
+									$slave_string, $master_string, $mediator_package_name);
+						}
+
+					}
+				}
+
+				$graph->delete_vertex($from_vertex);
+				$graph->delete_vertex($to_vertex);
+			}
+		};
 
 		# unit remove/unpack unconditionally
 		foreach my $ref_change_entry (values %vertex_changes) {
