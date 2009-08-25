@@ -1174,7 +1174,7 @@ sub generate_management_prompt ($$$) {
 
 		# nothing to do maybe?
 		if ($action_count == 0) {
-			return undef;
+			return 1;
 		}
 
 		# prepare list of soft dependencies that are not satisfied
