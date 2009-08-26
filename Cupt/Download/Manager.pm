@@ -241,18 +241,19 @@ sub _worker ($) {
 						my @new_pending_downloads;
 
 						foreach my $ref_pending_download (@pending_downloads) {
-							(my $uri, $waiter_socket) = @$ref_pending_download;
-							if (exists $done_downloads{$uri}) {
-								mydebug("final download result for duplicated request: '$uri': $result") if $debug;
-								__my_write_socket($waiter_socket, $uri, $result, $is_duplicated_download);
-								close($waiter_socket);
+							(my $pending_uri, $waiter_socket) = @$ref_pending_download;
+							if (exists $done_downloads{$pending_uri}) {
+								mydebug("final download result for duplicated request: '$pending_uri': $result") if $debug;
+								__my_write_socket($waiter_socket, $pending_uri, $result, $is_duplicated_download);
+								close($waiter_socket) or
+										mydie("unable to close waiter socket for uri '%s'", $pending_uri);
 							} else {
 								push @new_pending_downloads, $ref_pending_download;
 							}
 						}
 						@pending_downloads = @new_pending_downloads;
 					};
-					mydebug("finished checking pending queue") if $debug;
+					mydebug('finished checking pending queue') if $debug;
 
 					# update progress
 					__my_write_socket($worker_writer, 'progress', $uri, 'done', $result);
@@ -297,7 +298,7 @@ sub _worker ($) {
 				when ('set-short-alias') {
 					$self->{_progress}->set_short_alias_for_uri(@params);
 				}
-				default { myinternaldie("download manager: invalid worker command"); }
+				default { myinternaldie('download manager: invalid worker command'); }
 			}
 
 			$proceed_next_download or next;
@@ -332,11 +333,11 @@ sub _worker ($) {
 			# filling the active downloads hash
 			$active_downloads{$uri}->{waiter_socket} = $waiter_socket;
 
-			my $performer_pipe = new IO::Pipe() //
+			my $performer_pipe = IO::Pipe->new() //
 					mydie("unable to open performer's pair of sockets: %s", $!);
 
 			my $download_pid = fork();
-			$download_pid // mydie("unable to fork: %s", $!);
+			$download_pid // mydie('unable to fork: %s', $!);
 			$active_downloads{$uri}->{pid} = $download_pid;
 
 			if ($download_pid) {
@@ -345,7 +346,7 @@ sub _worker ($) {
 				$active_downloads{$uri}->{performer_reader} = $performer_pipe;
 			} else {
 				# background downloader process
-				$SIG{TERM} = sub { POSIX::_exit(0) };
+				local $SIG{TERM} = sub { POSIX::_exit(0) };
 
 				$performer_pipe->writer();
 				$performer_pipe->autoflush(1);
@@ -358,7 +359,7 @@ sub _worker ($) {
 				__my_write_socket($performer_pipe, @progress_message);
 
 				my $result = $self->_download($uri, $filename, $performer_pipe);
-				myinternaldie("a download method returned undefined result") if not defined $result;
+				myinternaldie('a download method returned undefined result') if not defined $result;
 
 				__my_write_socket($performer_pipe, 'done', $uri, $result);
 
@@ -367,14 +368,14 @@ sub _worker ($) {
 		}
 	}
 	# disabling timer
-	$SIG{ALRM} = sub {};
+	local $SIG{ALRM} = sub {};
 	setitimer(ITIMER_REAL, 0, 0);
 	# finishing progress
 	$self->{_progress}->finish();
 
 	close($worker_reader) or mydie("unable to close worker's own reader socket: %s", $!);
 	close($worker_writer) or mydie("unable to close worker's own writer socket: %s", $!);
-	mydebug("download worker process finished") if $debug;
+	mydebug('download worker process finished') if $debug;
 	POSIX::_exit(0);
 	return;
 }
@@ -386,13 +387,14 @@ sub DESTROY {
 	waitpid($self->{_worker_pid}, 0);
 
 	# cleaning parent sockets
-	close($self->{_parent_pipe}) or mydie("unable to close parent writer socket: %s", $!);
+	close($self->{_parent_pipe}) or mydie('unable to close parent writer socket: %s', $!);
 
 	# cleaning server socket
 	close($self->{_server_socket}) or
 			mydie("unable to close server socket on file '%s': %s", $self->{_server_socket_path}, $!);
 	unlink($self->{_server_socket_path}) or
 			mydie("unable to delete server socket file '%s': %s", $self->{_server_socket_path}, $!);
+	return;
 }
 
 =head2 download
@@ -443,7 +445,7 @@ sub download ($@) {
 	# { $uri => $filename }
 	my %waiters;
 
-	my $socket = new IO::Socket::UNIX($self->{_server_socket_path});
+	my $socket = IO::Socket::UNIX->new($self->{_server_socket_path});
 	defined $socket or mydie("unable to open download socket: %s", $!);
 
 	my $sub_schedule_download = sub {
