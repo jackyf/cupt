@@ -66,7 +66,7 @@ sub perform ($$$$$) {
 	}
 
 	# invoking a deb patcher
-	my $patch_result = system("debpatch $delta_download_filename / $filename");
+	my $patch_result = system("debpatch --accept-unsigned $delta_download_filename / $filename");
 	
 	# remove delta anyway
 	unlink $delta_download_filename;
