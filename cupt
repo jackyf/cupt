@@ -674,8 +674,8 @@ sub search () {
 					next REGEX;
 				} else {
 					foreach (@{$package->get_versions()}) {
-						if ($_->short_description =~ m/$regex/ or
-							defined($_->long_description) && $_->long_description =~ m/$regex/)
+						if ((defined $_->short_description and $_->short_description =~ m/$regex/) or
+							(defined $_->long_description and $_->long_description =~ m/$regex/))
 						{
 							$version = $_;
 							next REGEX;
