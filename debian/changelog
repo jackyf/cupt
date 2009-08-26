@@ -1,4 +1,4 @@
-cupt (0.6.2~) UNRELEASED; urgency=low
+cupt (0.6.2) unstable; urgency=low
 
   * cupt:
     - New 'dist-upgrade' subcommand.
@@ -26,7 +26,7 @@ cupt (0.6.2~) UNRELEASED; urgency=low
     - libcupt-perl don't support debdelta (<< 0.31) anymore because of new
       debdelta signatures. Set Breaks accordinly.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Tue, 25 Aug 2009 12:01:11 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 26 Aug 2009 20:13:30 +0300
 
 cupt (0.6.1) unstable; urgency=low
 
