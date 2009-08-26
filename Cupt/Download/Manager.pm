@@ -43,19 +43,20 @@ use Cupt::Download::Method;
 
 sub __my_write_socket ($@) {
 	my $socket = shift;
-	defined $socket or myinternaldie("bad socket parameter");
+	defined $socket or myinternaldie('bad socket parameter');
 
 	my $string = join(chr(1), @_);
 	my $len = length($string);
-	my $packed_len = pack("S", $len);
+	my $packed_len = pack('S', $len);
 
 	syswrite($socket, ($packed_len . $string)) or
 			myinternaldie("write to socket failed: $!")
+	return;
 }
 
 sub __my_read_socket ($) {
 	my $socket = shift;
-	defined $socket or myinternaldie("bad socket parameter");
+	defined $socket or myinternaldie('bad socket parameter');
 
 	my $string;
 
@@ -65,7 +66,7 @@ sub __my_read_socket ($) {
 	if ($read_result == 0) {
 		$string = 'eof';
 	} else {
-		my ($len) = unpack("S", $packed_len);
+		my ($len) = unpack('S', $packed_len);
 		# don't use anything but sysread here, as we use select() on sockets
 		sysread $socket, $string, $len;
 	}
@@ -120,6 +121,7 @@ sub new ($$$) {
 		$self->{_parent_pipe}->reader();
 		$self->_worker();
 	}
+	return;
 }
 
 sub _worker ($) {
