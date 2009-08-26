@@ -159,11 +159,11 @@ SHA256 hash sum of the binary archive, can be undef
 
 =head2 short_description
 
-short description of the version, string
+short description of the version, string, can be undef
 
 =head2 long_description
 
-long description of the version, multi-line string
+long description of the version, multi-line string, can be undef
 
 =head2 homepage
 
