@@ -50,7 +50,7 @@ sub __my_write_socket ($@) {
 	my $packed_len = pack('S', $len);
 
 	syswrite($socket, ($packed_len . $string)) or
-			myinternaldie("write to socket failed: $!")
+			myinternaldie("write to socket failed: $!");
 	return;
 }
 
@@ -98,17 +98,17 @@ sub new ($$$) {
 	# main socket
 	$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
 	unlink($self->{_server_socket_path}); # intentionally ignore errors
-	$self->{_server_socket} = new IO::Socket::UNIX(
+	$self->{_server_socket} = IO::Socket::UNIX->new(
 			Local => $self->{_server_socket_path}, Listen => SOMAXCONN, Type => SOCK_STREAM);
 	defined $self->{_server_socket} or
 			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
-	
-	$self->{_parent_pipe} = new IO::Pipe() //
-			mydie("unable to open parent pipe: %s", $!);
+
+	$self->{_parent_pipe} = IO::Pipe->new() //
+			mydie('unable to open parent pipe: %s', $!);
 
 	my $pid = fork();
 	defined $pid or
-			mydie("unable to create download worker process: %s", $!);
+			mydie('unable to create download worker process: %s', $!);
 
 	if ($pid) {
 		# this is a main process
@@ -129,7 +129,7 @@ sub _worker ($) {
 
 	my $debug = $self->{_config}->var('debug::downloader');
 
-	mydebug("download worker process started") if $debug;
+	mydebug('download worker process started') if $debug;
 
 	# { $uri => $result }
 	my %done_downloads;
@@ -153,7 +153,7 @@ sub _worker ($) {
 	my $exit_flag = 0;
 
 	# setting progress ping timer
-	$SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
+	local $SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
 	my @persistent_sockets = ($worker_reader, $self->{_parent_pipe}, $self->{_server_socket});
@@ -174,8 +174,8 @@ sub _worker ($) {
 				# a new connection appeared
 				$socket = $socket->accept();
 				defined $socket or
-						mydie("unable to accept new socket connection: %s", $!);
-				mydebug("accepted new connection") if $debug;
+						mydie('unable to accept new socket connection: %s', $!);
+				mydebug('accepted new connection') if $debug;
 				push @runtime_sockets, $socket;
 			}
 			my @params = __my_read_socket($socket);
@@ -187,13 +187,13 @@ sub _worker ($) {
 			my $proceed_next_download = 0;
 			given ($command) {
 				when ('exit') {
-					mydebug("exit scheduled") if $debug;
+					mydebug('exit scheduled') if $debug;
 					$exit_flag = 1;
 				}
 				when ('eof') {
 					# the current socket reported EOF
-					mydebug("eof has been reported") if $debug;
-					close($socket) or mydie("unable to close socket: %s", $!);
+					mydebug('eof has been reported') if $debug;
+					close($socket) or mydie('unable to close socket: %s', $!);
 				}
 				when ('download') {
 					# new query appeared
@@ -218,7 +218,7 @@ sub _worker ($) {
 
 					# clean after child
 					close($active_downloads{$uri}->{performer_reader}) or
-							mydie("unable to close performer socket: %s", $!);
+							mydie('unable to close performer socket: %s', $!);
 
 					waitpid($active_downloads{$uri}->{pid}, 0);
 				}
@@ -235,7 +235,7 @@ sub _worker ($) {
 					delete $active_downloads{$uri};
 					$done_downloads{$uri} = $result;
 
-					mydebug("started checking pending queue") if $debug;
+					mydebug('started checking pending queue') if $debug;
 					do { # answering on duplicated requests if any
 						my $is_duplicated_download = 1;
 						my @new_pending_downloads;
@@ -376,6 +376,7 @@ sub _worker ($) {
 	close($worker_writer) or mydie("unable to close worker's own writer socket: %s", $!);
 	mydebug("download worker process finished") if $debug;
 	POSIX::_exit(0);
+	return;
 }
 
 sub DESTROY {
