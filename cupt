@@ -537,8 +537,10 @@ sub show_binary_package_versions () {
 			$p->('MD5', $version->md5sum) if defined $version->md5sum;
 			$p->('SHA1', $version->sha1sum) if defined $version->sha1sum;
 			$p->('SHA256', $version->sha256sum) if defined $version->sha256sum;
-			$p->(__('Description'), $version->short_description);
-			print $version->long_description if defined($version->long_description);
+			if (defined $version->short_description) {
+				$p->(__('Description'), $version->short_description);
+				print $version->long_description if defined $version->long_description;
+			}
 			$p->(__('Homepage'), $version->homepage) if defined($version->homepage);
 			$p->(__('Task'), $version->task) if defined($version->task);
 			$p->(__('Tags'), $version->tags) if defined($version->tags);

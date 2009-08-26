@@ -5,6 +5,8 @@ cupt (0.6.2~) UNRELEASED; urgency=low
     - 'search':
       - Fixed the crash when some short description is not present.
         Thanks to James Vega. (Closes: #543598)
+    - 'show':
+      - Fixed the crash when some short description is not present.
   * Cupt:
     - System:
       - Worker:
