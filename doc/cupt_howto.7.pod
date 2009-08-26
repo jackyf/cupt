@@ -1,5 +1,7 @@
 =pod
 
+=encoding utf8
+
 =head1 NAME
 
 cupt_howto - how to use L<cupt(1)> package manager

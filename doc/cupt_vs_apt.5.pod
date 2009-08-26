@@ -1,5 +1,7 @@
 =pod
 
+=encoding utf8
+
 =head1 NAME
 
 cupt_vs_apt - overview of things Cupt and APT differ in

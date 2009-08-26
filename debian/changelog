@@ -19,6 +19,9 @@ cupt (0.6.2~) UNRELEASED; urgency=low
         - Explicitly pass new '--accept-unsigned' option to debdelta. We don't
           need debdelta signatures as resulted package is still checked using
           hash sums.
+  * doc/*.pod:
+    - Explicitly specified UTF-8 encoding. Patch by James Vega.
+      (Closes: #543706)
   * debian/control:
     - libcupt-perl don't support debdelta (<< 0.31) anymore because of new
       debdelta signatures. Set Breaks accordinly.
