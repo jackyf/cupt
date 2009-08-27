@@ -1,4 +1,4 @@
-cupt (0.6.3~) UNRELEASED; urgency=low
+cupt (0.6.3~) UNRELEASED; urgency=medium
 
   * cupt:
     - Don't crash on actions confirmation when the user answer is not
@@ -8,6 +8,15 @@ cupt (0.6.3~) UNRELEASED; urgency=low
       - Methods/Curl:
         - Enable sharing cookies database and DNS cache for multiple
           downloads.
+    - System:
+      - Resolvers/Native:
+        - Fixed a very tricky regression since 0.6.0 with passing status of
+          packages to worker that causes the situation that some of
+          automatically installed packages are not marked as such. If you
+          installed something big with 0.6.{0-2} libcupt-perl versions, you
+          will need to go and mark needed packages as automatically installed
+          manually (e.g. using 'cupt markauto'). Sorry for the inconvenience.
+          The urgency is set to 'medium' because of this fix.
   * doc/cupt_vs_apt:
     - Renewed to reflect changes in apt 0.7.23.
 

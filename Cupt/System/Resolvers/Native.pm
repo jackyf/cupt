@@ -1066,8 +1066,8 @@ sub _resolve ($$) {
 				$suggested_packages{$package_name}->{'version'} = $package_entry->version;
 				$suggested_packages{$package_name}->{'reasons'} = $package_entry->reasons;
 				$suggested_packages{$package_name}->{'manually_selected'} =
-						exists $self->{_packages}->{$package_name} and
-						$self->{_packages}->{$package_name}->manually_selected;
+						(exists $self->{_packages}->{$package_name} and
+						$self->{_packages}->{$package_name}->manually_selected);
 			}
 
 			# suggest found solution
