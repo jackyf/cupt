@@ -98,6 +98,7 @@ I<alias> - long alias string
 sub set_long_alias_for_uri ($$$) {
 	my ($self, $uri, $alias) = @_;
 	$self->{_long_aliases}->{$uri} = $alias;
+	return;
 }
 
 =head2 get_long_alias_for_uri
@@ -134,6 +135,7 @@ I<alias> - short alias
 sub set_short_alias_for_uri ($$$) {
 	my ($self, $uri, $alias) = @_;
 	$self->{_short_aliases}->{$uri} = $alias;
+	return;
 }
 
 =head2 get_short_alias_for_uri
@@ -168,6 +170,7 @@ I<total_size> - total estimated size in bytes
 sub set_total_estimated_size ($$) {
 	my ($self, $size) = @_;
 	$self->{_total_estimated_size} = $size;
+	return;
 }
 
 =head2 progress
@@ -253,6 +256,7 @@ sub progress ($$$;@) {
 			}
 		}
 	}
+	return;
 }
 
 =head2 hook
@@ -386,6 +390,7 @@ sub _update_size_changes ($) {
 			$self->{_uncounted_float_seconds} = $interval - $float_time_accuracy;
 		}
 	}
+	return;
 }
 
 =head2 get_download_speed
