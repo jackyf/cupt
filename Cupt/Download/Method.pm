@@ -114,11 +114,14 @@ sub perform ($$$$$) {
 		'debdelta' => 'Debdelta',
 	);
 	my $protocol = URI->new($uri)->scheme();
-	my $handler_name = $protocol_handlers{$protocol} // 
-			return sprintf __("no protocol download handler defined for %s"), $protocol;
+	my $handler_name = $protocol_handlers{$protocol} //
+			return sprintf __('no protocol download handler defined for %s'), $protocol;
 
 	my $handler;
 	{
+		## no critic (NoStrict)
+		## no critic (ProlongedStrictureOverride)
+		## no critic (StringyEval)
 		no strict 'subs';
 		# create handler by name
 		my $full_handler_name = "Cupt::Download::Methods::$handler_name";
@@ -154,7 +157,7 @@ C<get_acquire_param_for_uri($config, $uri, 'proxy')>
 sub get_acquire_suboption_for_uri ($$$) {
 	my ($config, $uri, $suboption_name) = @_;
 
-	my $uri_object = new URI($uri);
+	my $uri_object = URI->new($uri);
 	my $protocol = $uri_object->scheme();
 	my $host = $uri_object->host();
 	# this "zoo" of per-host variants is given by APT...
