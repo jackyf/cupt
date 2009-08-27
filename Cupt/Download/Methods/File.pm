@@ -55,7 +55,7 @@ sub perform ($$$$$) {
 				return sprintf "unable to open file '%s' for appending: %s", $filename, $!;
 		my $total_bytes = tell($fd);
 		$sub_callback->('downloading', $total_bytes, 0);
-	
+
 		open(my $source_fd, '<', $source_filename) or
 				return sprintf "unable to open file '%s' for reading: %s", $source_filename, $!;
 
@@ -68,7 +68,7 @@ sub perform ($$$$$) {
 		my $block_size = 4096;
 		while (sysread $source_fd, $chunk, $block_size) {
 			# writing data to file
-			print $fd $chunk or
+			print { $fd } $chunk or
 					return sprintf "unable to write to file '%s': %s", $filename, $!;
 
 			my $written_bytes = length($chunk);
@@ -87,7 +87,7 @@ sub perform ($$$$$) {
 					$filename, $source_filename, $!);
 		}
 	} else {
-		myinternaldie("wrong scheme for File method");
+		myinternaldie('wrong scheme for File method');
 	}
 
 	# all went ok
