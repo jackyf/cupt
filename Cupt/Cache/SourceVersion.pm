@@ -217,7 +217,8 @@ sub new {
 		my $line;
 		my $current_hash_sum_name;
 		# go to starting byte of the entry
-		seek $fh, $offset, 0;
+		seek($fh, $offset, 0) or
+				mydie('unable to seek on Sources file: %s', $!);
 
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
