@@ -69,7 +69,8 @@ sub perform ($$$$$) {
 	my $patch_result = system("debpatch --accept-unsigned $delta_download_filename / $filename");
 
 	# remove delta anyway
-	unlink $delta_download_filename;
+	unlink $delta_download_filename or
+			mydie("unable to remove file '%s': %s", $delta_download_filename, $!);
 
 	if ($patch_result != 0) {
 		return sprintf __('debpatch returned error code %u'), $patch_result;
