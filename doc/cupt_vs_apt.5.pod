@@ -88,10 +88,6 @@ source versions of the same binary packages can be synchronized by resolver
 
 =item
 
-LZMA-compressed index files are supported.
-
-=item
-
 HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|cupt(1)/acquire::http::allow-redirects>)
 
 =item
@@ -127,10 +123,6 @@ PDiffs are not supported
 =item
 
 to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "", not to "DIRECT"
-
-=item
-
-'acquire::<protocol>::[<host>::]proxy' options take precedence over "<protocol>_proxy" shell variables
 
 =item
 

@@ -5,6 +5,8 @@ cupt (0.6.3~) UNRELEASED; urgency=low
       - Methods/Curl:
         - Enable sharing cookies database and DNS cache for multiple
           downloads.
+  * doc/cupt_vs_apt:
+    - Renewed to reflect changes in apt 0.7.23.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 27 Aug 2009 14:39:40 +0300
 
