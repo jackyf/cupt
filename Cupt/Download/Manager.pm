@@ -50,7 +50,7 @@ sub __my_write_socket ($@) {
 	my $packed_len = pack('S', $len);
 
 	syswrite($socket, ($packed_len . $string)) or
-			myinternaldie("write to socket failed: $!");
+			mydie('write to socket failed: %s', $!);
 	return;
 }
 
@@ -61,14 +61,15 @@ sub __my_read_socket ($) {
 	my $string;
 
 	my $read_result = sysread($socket, my $packed_len, 2);
-	defined $read_result or myinternaldie("read from socket failed: $!");
+	defined $read_result or mydie('read from socket failed: %s', $!);
 
 	if ($read_result == 0) {
 		$string = 'eof';
 	} else {
 		my ($len) = unpack('S', $packed_len);
 		# don't use anything but sysread here, as we use select() on sockets
-		sysread $socket, $string, $len;
+		sysread($socket, $string, $len) or
+				mydie('read from socket failed: %s', ($! // 'end of file'));
 	}
 
 	return split(chr(1), $string, -1);
@@ -97,7 +98,7 @@ sub new ($$$) {
 
 	# main socket
 	$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
-	unlink($self->{_server_socket_path}); # intentionally ignore errors
+	unlink($self->{_server_socket_path}); ## no critic (RequireCheckedSyscalls)
 	$self->{_server_socket} = IO::Socket::UNIX->new(
 			Local => $self->{_server_socket_path}, Listen => SOMAXCONN, Type => SOCK_STREAM);
 	defined $self->{_server_socket} or
@@ -220,7 +221,7 @@ sub _worker ($) {
 					close($active_downloads{$uri}->{performer_reader}) or
 							mydie('unable to close performer socket: %s', $!);
 
-					waitpid($active_downloads{$uri}->{pid}, 0);
+					waitpid($active_downloads{$uri}->{pid}, 0) ## no critic (RequireCheckedSyscalls);
 				}
 				when ('done-ack') {
 					# this is final ACK from download with final result
@@ -272,12 +273,14 @@ sub _worker ($) {
 							# so, this download don't make sense
 							$filename = $target_filenames{$uri};
 							# rest in peace, young process
-							kill SIGTERM, $active_downloads{$uri}->{pid};
+							kill(SIGTERM, $active_downloads{$uri}->{'pid'}) or
+									mywarn('unable to kill process %u: %s', $active_downloads{$uri}->{'pid'}, $!);
 							# process it as failed
 							my $error_string = sprintf __("invalid size: expected '%u', got '%u'"),
 									$download_sizes{$uri}, $expected_size;
 							__my_write_socket($worker_writer, 'done', $uri, $error_string);
-							unlink $filename;
+							unlink $filename or
+									mywarn("unable to delete file '%s': %s", $filename, $!);
 						}
 					} else {
 						# update progress
@@ -384,7 +387,7 @@ sub DESTROY {
 	my ($self) = @_;
 	# shutdowning worker thread
 	__my_write_socket($self->{_parent_pipe}, 'exit');
-	waitpid($self->{_worker_pid}, 0);
+	waitpid($self->{_worker_pid}, 0); ## no critic (RequireCheckedSyscalls)
 
 	# cleaning parent sockets
 	close($self->{_parent_pipe}) or mydie('unable to close parent writer socket: %s', $!);
