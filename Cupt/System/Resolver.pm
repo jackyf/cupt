@@ -96,8 +96,8 @@ I<ref_versions> - reference to array of L<Cupt::Cache::BinaryVersion|Cupt::Cache
 =cut
 
 sub import_installed_versions ($$) {
-	my ($self, $ref_versions) = @_;
 	# stub
+	return;
 }
 
 =head2 install_version
@@ -113,8 +113,8 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 =cut
 
 sub install_version ($$) {
-	my ($self, $version) = @_;
 	# stub
+	return;
 }
 
 =head2 satisfy_relation_expression
@@ -130,8 +130,8 @@ I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
 =cut
 
 sub satisfy_relation_expression ($$) {
-	my ($self, $relation_expression) = @_;
 	# stub
+	return;
 }
 
 =head2 unsatisfy_relation_expression
@@ -148,8 +148,8 @@ I<relation_expression> - see L<Cupt::Cache::Relation/Relation expression>
 =cut
 
 sub unsatisfy_relation_expression ($$) {
-	my ($self, $relation_expression) = @_;
 	# stub
+	return;
 }
 
 =head2 remove_package
@@ -165,8 +165,8 @@ I<package_name> - string, name of package to remove
 =cut
 
 sub remove_package ($$) {
-	my ($self, $package_name) = @_;
 	# stub
+	return;
 }
 
 =head2 upgrade
@@ -178,8 +178,8 @@ Should be re-implemented by derived classes.
 =cut
 
 sub upgrade ($) {
-	my ($self) = @_;
 	# stub
+	return;
 }
 
 =head2 resolve
@@ -196,8 +196,8 @@ accepted, false if solution is rejected, undef if user abandoned further searche
 =cut
 
 sub resolve ($$) {
-	my ($self, $sub_accept) = @_;
 	# stub
+	return;
 }
 
 1;
