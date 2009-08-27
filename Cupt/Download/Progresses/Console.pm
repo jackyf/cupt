@@ -50,7 +50,7 @@ sub _termprint ($$$) {
 	# enable flushing STDOUT
 	local $| = 1;
 
-	$right_appendage //= "";
+	$right_appendage //= '';
 	my $allowed_width = $self->{_termwidth} - length($right_appendage);
 	print "\r";
 	if (length($string) > $allowed_width) {
@@ -60,6 +60,7 @@ sub _termprint ($$$) {
 		print $string_to_print;
 	}
 	print $right_appendage;
+	return;
 }
 
 sub __human_readable_speed ($) {
