@@ -1308,6 +1308,7 @@ sub generate_management_prompt ($$$) {
 
 		print $question;
 		my $answer = <STDIN>;
+		return undef if not defined $answer;
 		chomp $answer;
 		$answer = lc($answer) if !$is_dangerous_action;
 		if ($answer eq $positive_answer) {

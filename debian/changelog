@@ -1,5 +1,8 @@
 cupt (0.6.3~) UNRELEASED; urgency=low
 
+  * cupt:
+    - Don't crash on actions confirmation when the user answer is not
+      available (end of file, read error etc.)
   * Cupt:
     - Download:
       - Methods/Curl:
