@@ -1509,7 +1509,8 @@ sub verify_hash_sums ($$) {
 
 	open(FILE, '<', $path) or
 			mydie("unable to open file '%s': %s", $path, $!);
-	binmode(FILE);
+	binmode(FILE) or
+			mydie("unable to set binary mode for file '%s': %s", $path, $!);
 
 	my $sums_count = 0;
 
@@ -1519,7 +1520,8 @@ sub verify_hash_sums ($$) {
 		++$sums_count;
 		my $hash_type = $_->[1];
 		my $hasher = Digest->new($hash_type);
-		seek(FILE, 0, SEEK_SET);
+		seek(FILE, 0, SEEK_SET) or
+				mydie("unable to seek on file '%s': %s", $path, $!);
 		$hasher->addfile(*FILE);
 		my $computed_sum = $hasher->hexdigest();
 		return 0 if ($computed_sum ne $expected_result);
