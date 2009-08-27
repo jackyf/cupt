@@ -40,9 +40,11 @@ sub import {
 	}
 
 	foreach my $field_name (@field_names) {
+		## no critic (StringyEval)
 		eval "package $caller; sub $field_name (\$) : lvalue { \$_[0]->[$field_offset] }";
 		++$field_offset;
 	}
+	return;
 }
 
 1;
