@@ -80,7 +80,7 @@ sub perform ($$$$$) {
 				mydie("unable to close file '%s': %s", $filename, $!);
 	} elsif ($scheme eq 'file') {
 		# symlinking
-		unlink $filename;
+		unlink $filename; ## no critic (RequireCheckedSyscalls)
 		my $result = symlink $source_filename, $filename;
 		if (!$result) {
 			mydie("unable to create symbolic link '%s' -> '%s': %s",
