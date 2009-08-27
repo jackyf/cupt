@@ -79,9 +79,9 @@ sub hook {
 
 			my $alias = $self->get_long_alias_for_uri($uri) // $uri;
 			my $size_suffix = defined $ref_entry->{'size'} ?
-					" [" . human_readable_size_string($ref_entry->{'size'}) . "]" :
-					"";
-			$self->_termprint(sprintf "%s:%u %s%s", __("Get"), $ref_entry->{'number'}, $alias, $size_suffix);
+					' [' . human_readable_size_string($ref_entry->{'size'}) . ']' :
+					'';
+			$self->_termprint(sprintf '%s:%u %s%s', __('Get'), $ref_entry->{'number'}, $alias, $size_suffix);
 			print "\n";
 		}
 		when ('done') {
@@ -90,7 +90,7 @@ sub hook {
 			my $error_string = shift @params;
 			if ($error_string) {
 				# some error occured, output it
-				mywarn("downloading %s failed: %s", $uri, $error_string);
+				mywarn('downloading %s failed: %s', $uri, $error_string);
 			}
 		}
 		when ('ping') {
@@ -119,34 +119,34 @@ sub hook {
 			# sort by download numbers
 			@ref_entries_to_print = sort { $a->{'number'} <=> $b->{'number'} } @ref_entries_to_print;
 
-			my $whole_string .= sprintf "%.0f%% ", $self->get_overall_download_percent();
+			my $whole_string .= sprintf '%.0f%% ', $self->get_overall_download_percent();
 
 			foreach my $ref_entry (@ref_entries_to_print) {
 				my $uri = $ref_entry->{'uri'};
 				my $alias = $self->get_short_alias_for_uri($uri) // $uri;
-				my $size_substring = "";
+				my $size_substring = '';
 				if (defined $ref_entry->{'size'}) {
 					# filling size substring
-					$size_substring = sprintf "/%s %.0f%%", human_readable_size_string($ref_entry->{'size'}),
+					$size_substring = sprintf '/%s %.0f%%', human_readable_size_string($ref_entry->{'size'}),
 							$ref_entry->{'downloaded'} / $ref_entry->{'size'} * 100;
 				}
-				$whole_string .= (sprintf "[%u %s %s%s]",
-						$ref_entry->{'number'}, $alias,
+				$whole_string .= sprintf('[%u %s %s%s]', $ref_entry->{'number'}, $alias,
 						human_readable_size_string($ref_entry->{'downloaded'}), $size_substring);
 			}
-			my $speed_and_time_appendage = sprintf "| %s | ETA: %s",
+			my $speed_and_time_appendage = sprintf '| %s | ETA: %s',
 					__human_readable_speed($self->get_download_speed()),
 					__human_readable_difftime_string($self->get_overall_estimated_time());
 			$self->_termprint($whole_string, $speed_and_time_appendage);
 		}
 	}
+	return;
 }
 
 sub __human_readable_difftime_string ($) {
 	my ($time) = @_;
 
-	my $days = int($time / 86400);
-	$time -= ($days * 86400);
+	my $days = int($time / 86_400);
+	$time -= ($days * 86_400);
 	my $hours = int($time / 3600);
 	$time -= ($hours * 3600);
 	my $minutes = int($time / 60);
@@ -162,10 +162,11 @@ sub __human_readable_difftime_string ($) {
 sub finish ($) {
 	my ($self) = @_;
 
-	$self->_termprint(sprintf __("Fetched %s in %s."),
+	$self->_termprint(sprintf __('Fetched %s in %s.'),
 			human_readable_size_string($self->get_overall_downloaded_size()),
 			__human_readable_difftime_string(time() - $self->get_start_time()));
 	print "\n";
+	return;
 }
 
 1;
