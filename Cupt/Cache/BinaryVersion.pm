@@ -260,7 +260,8 @@ sub new {
 
 		my $line;
 		# go to starting byte of the entry
-		seek $fh, $offset, 0;
+		seek($fh, $offset, 0) or
+				mydie('unable to seek on Packages file: %s', $!);
 
 		# we have already opened file handle and offset for reading the entry
 		while (($line = <$fh>) ne "\n") {
@@ -352,7 +353,8 @@ sub new {
 
 		# read localized descriptions if available
 		if (defined $translation_fh) {
-			seek $translation_fh, $translation_offset, 0;
+			seek($translation_fh, $translation_offset, 0) or
+					mydie('unable to seek on Translations file: %s', $!);
 			$self->long_description = '';
 			while (($line = <$translation_fh>) ne "\n") {
 				next if $line =~ m/^Description-md5:/;
