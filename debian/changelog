@@ -1,4 +1,4 @@
-cupt (0.6.3~) UNRELEASED; urgency=medium
+cupt (0.6.3) unstable; urgency=medium
 
   * cupt:
     - Don't crash on actions confirmation when the user answer is not
@@ -20,7 +20,7 @@ cupt (0.6.3~) UNRELEASED; urgency=medium
   * doc/cupt_vs_apt:
     - Renewed to reflect changes in apt 0.7.23.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 27 Aug 2009 14:39:40 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 27 Aug 2009 22:11:20 +0300
 
 cupt (0.6.2) unstable; urgency=low
 
