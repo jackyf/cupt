@@ -22,7 +22,7 @@ package Cupt::Download::Methods::Debdelta;
 
 =head1 NAME
 
-Cupt::Download::Methods::File - download through debdelta method for Cupt
+Cupt::Download::Methods::Debdelta - download through debdelta method for Cupt
 
 =head1 ABSTRACT
 
@@ -62,12 +62,12 @@ sub perform ($$$$$) {
 	my $delta_download_result = Cupt::Download::Method->new()->
 			perform($config, $delta_uri, $delta_download_filename, $sub_delta_callback);
 	if ($delta_download_result ne '') {
-		return sprintf __("delta download failed: %s"), $delta_download_result;
+		return sprintf __('delta download failed: %s'), $delta_download_result;
 	}
 
 	# invoking a deb patcher
 	my $patch_result = system("debpatch --accept-unsigned $delta_download_filename / $filename");
-	
+
 	# remove delta anyway
 	unlink $delta_download_filename;
 
