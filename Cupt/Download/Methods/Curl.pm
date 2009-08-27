@@ -87,6 +87,7 @@ sub perform ($$$$$) {
 
 	my $protocol = URI->new($uri)->scheme();
 
+	$curl->setopt(CURLOPT_SHARE, $_curl_share_handle);
 	$curl->setopt(CURLOPT_FAILONERROR, 1);
 	$curl->setopt(CURLOPT_URL, $uri);
 	my $download_limit = get_acquire_suboption_for_uri($config, $uri, 'dl-limit');

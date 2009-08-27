@@ -1,3 +1,13 @@
+cupt (0.6.3~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Download:
+      - Methods/Curl:
+        - Enable sharing cookies database and DNS cache for multiple
+          downloads.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Thu, 27 Aug 2009 14:39:40 +0300
+
 cupt (0.6.2) unstable; urgency=low
 
   * cupt:
