@@ -446,7 +446,7 @@ sub download ($@) {
 	my %waiters;
 
 	my $socket = IO::Socket::UNIX->new($self->{_server_socket_path});
-	defined $socket or mydie("unable to open download socket: %s", $!);
+	defined $socket or mydie('unable to open download socket: %s', $!);
 
 	my $sub_schedule_download = sub {
 		my ($filename) = @_;
@@ -490,7 +490,7 @@ sub download ($@) {
 		# delete entry from list
 		delete $waiters{$uri};
 
-		if (!$error_string && defined $sub_post_action && not $is_duplicated_download) {
+		if (not $error_string and defined $sub_post_action and not $is_duplicated_download) {
 			# download seems to be done well, but we also have external checker specified
 			# but do this only if this file wasn't post-processed before
 			$error_string = $sub_post_action->();
@@ -514,7 +514,7 @@ sub download ($@) {
 		}
 	}
 
-	close($socket) or mydie("unable to close download socket: %s", $!);
+	close($socket) or mydie('unable to close download socket: %s', $!);
 
 	# finish
 	return $result;
@@ -529,6 +529,7 @@ method, forwards params to underlying download progress
 sub set_short_alias_for_uri {
 	my ($self, @params) = @_;
 	__my_write_socket($self->{_parent_pipe}, 'set-short-alias', @params);
+	return;
 }
 
 =head2 set_long_alias_for_uri
@@ -540,6 +541,7 @@ method, forwards params to underlying download progress
 sub set_long_alias_for_uri {
 	my ($self, @params) = @_;
 	__my_write_socket($self->{_parent_pipe}, 'set-long-alias', @params);
+	return;
 }
 
 sub _download ($$$) {
@@ -548,7 +550,7 @@ sub _download ($$$) {
 	my $sub_callback = sub {
 		__my_write_socket($socket, 'progress', $uri, @_);
 	};
-	my $download_method = new Cupt::Download::Method;
+	my $download_method = Cupt::Download::Method->new();
 	my $result = $download_method->perform($self->{_config}, $uri, $filename, $sub_callback);
 	return $result;
 }
