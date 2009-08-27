@@ -43,7 +43,7 @@ use URI;
 use Cupt::Core;
 use Cupt::Download::Method qw(get_acquire_suboption_for_uri);
 
-our $_curl_share_handle = new WWW::Curl::Share;
+our $_curl_share_handle = WWW::Curl::Share->new();
 $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_COOKIE);
 $_curl_share_handle->setopt(CURLOPT_SHARE, CURL_LOCK_DATA_DNS);
 # those two are undocumented somewhy, but potentially useful ones
@@ -57,7 +57,7 @@ sub perform ($$$$$) {
 	# occasionally, give them several tries to finish the download
 	my $transitive_errors_left = $config->var('acquire::retries');
 
-	my $curl = new WWW::Curl::Easy;
+	my $curl = WWW::Curl::Easy->new();
 	my $is_expected_size_reported = 0;
 
 	START:
@@ -70,7 +70,7 @@ sub perform ($$$$$) {
 	my $write_error;
 	my $sub_writefunction = sub {
 		# writing data to file
-		print $fd $_[0] or
+		print { $fd } $_[0] or
 				do { $write_error = $!; return 0; };
 
 		if (!$is_expected_size_reported) {
@@ -137,7 +137,7 @@ sub perform ($$$$$) {
 		my $result = $curl->strerror($curl_result);
 		# some http/https/ftp error, provide an error code
 		if ($curl_result == 22) {
-			$result .= sprintf ": %u", $curl->getinfo(CURLINFO_RESPONSE_CODE);
+			$result .= sprintf ': %u', $curl->getinfo(CURLINFO_RESPONSE_CODE);
 		}
 		return $result;
 	}
