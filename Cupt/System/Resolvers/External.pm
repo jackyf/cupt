@@ -42,7 +42,7 @@ use Cupt::Cache::Relation qw(stringify_relation_expressions);
 use fields qw(_is_installed _upgrade_all_flag _actions
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
-my $_dummy_package_name = "dummy-package-name";
+my $_dummy_package_name = 'dummy-package-name';
 
 sub new {
 	my $class = shift;
@@ -63,6 +63,7 @@ sub import_installed_versions ($$) {
 	foreach my $version (@$ref_versions) {
 		$self->{_is_installed}->{$version->package_name} = 1;
 	}
+	return;
 }
 
 sub install_version ($$) {
@@ -70,48 +71,53 @@ sub install_version ($$) {
 	my $package_name = $version->package_name;
 	$self->{_actions}->{$package_name}->{'action'} = 'install';
 	$self->{_actions}->{$package_name}->{'version_string'} = $version->version_string;
+	return;
 }
 
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 	push @{$self->{_strict_satisfy_relation_expressions}}, $relation_expression;
+	return;
 }
 
 sub unsatisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
 	push @{$self->{_strict_unsatisfy_relation_expressions}}, $relation_expression;
+	return;
 }
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
 	$self->{_actions}->{$package_name}->{'action'} = 'remove';
+	return;
 }
 
 sub upgrade ($) {
 	my ($self) = @_;
 	$self->{_upgrade_all_flag} = 1;
+	return;
 }
 
 sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
-	
-	eval { 
+
+	eval {
 		my $external_command = $self->config->var('cupt::resolver::external-command');
 		defined $external_command or
-				myinternaldie("undefined external command");
+				myinternaldie('undefined external command');
 
-		$SIG{PIPE} = sub { mydie("external command unexpectedly closed the pipe"); };
+		local $SIG{PIPE} = sub { mydie('external command unexpectedly closed the pipe'); };
 
 		open2(\*READ, \*WRITE, $external_command) or
-				mydie("unable to create bidirectional pipe for external command '%s'", $external_command);
+				mydie("unable to create bidirectional pipe for external command '%s': %s", $external_command, $!);
 
 		$self->_write_dudf_info(\*WRITE);
 		close(WRITE) or
-				mydie("unable to close pipe write channel");
+				mydie('unable to close pipe write channel: %s', $!);
 
 		my $resolve_result = $self->_read_dudf_result(\*READ);
 		close(READ) or
-				mydie("unable to close pipe read channel");
+				mydie('unable to close pipe read channel', $!);
 
 		my $user_answer = $sub_accept->($resolve_result);
 		if (defined $user_answer && $user_answer) {
@@ -121,9 +127,10 @@ sub resolve ($$) {
 		}
 	};
 	if (mycatch()) {
-		myerr("external resolver error");
+		myerr('external resolver error');
 		myredie();
 	}
+	return;
 }
 
 sub _write_dudf_info ($$) {
@@ -138,9 +145,9 @@ sub _write_dudf_info ($$) {
 	foreach my $package (values %{$self->cache->get_binary_packages()}) {
 		foreach my $version (@{$package->get_versions()}) {
 			my $package_name = $version->package_name;
-			say $fh "Package: " . $package_name;
-			say $fh "Version: " . $version->version_string;
-			say $fh "Pin-Priority: " . $self->cache->get_original_apt_pin($version);
+			say { $fh } 'Package: ' . $package_name;
+			say { $fh } 'Version: ' . $version->version_string;
+			say { $fh } 'Pin-Priority: ' . $self->cache->get_original_apt_pin($version);
 
 			do { # print strict dependencies
 				my @depends_relation_expressions;
@@ -149,8 +156,8 @@ sub _write_dudf_info ($$) {
 				push @depends_relation_expressions, @{$version->depends};
 
 				if (scalar @depends_relation_expressions) {
-					print $fh "Depends: ";
-					say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@depends_relation_expressions));
+					print { $fh } 'Depends: ';
+					say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(\@depends_relation_expressions));
 				}
 			};
 
@@ -161,55 +168,55 @@ sub _write_dudf_info ($$) {
 				push @conflicts_relation_expressions, @{$version->breaks};
 
 				if (scalar @conflicts_relation_expressions) {
-					print $fh "Conflicts: ";
-					say $fh $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
+					print { $fh } 'Conflicts: ';
+					say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
 				}
 			};
 
 			do { # print provides
 				my $ref_provides_package_names = $version->provides;
 				if (scalar @$ref_provides_package_names) {
-					say $fh "Provides: " . join(", ", @$ref_provides_package_names);
+					say { $fh } 'Provides: ' . join(', ', @$ref_provides_package_names);
 				}
 			};
 
 			if ($version->is_installed()) {
-				say $fh "Installed: true";
-				if ($self->config->var('cupt::resolver::no-remove') &&
+				say { $fh } 'Installed: true';
+				if ($self->config->var('cupt::resolver::no-remove') and
 						not $self->cache->is_automatically_installed($package_name))
 				{
-					say $fh "Keep: package";
+					say { $fh } 'Keep: package';
 				}
 			}
 
 			# end of entry
-			say $fh "";
+			say { $fh } '';
 		}
 	}
 	if (scalar @{$self->{_strict_satisfy_relation_expressions}} ||
 		scalar @{$self->{_strict_unsatisfy_relation_expressions}})
 	{
 		# writing dummy package entry
-		say $fh "Package: $_dummy_package_name";
-		say $fh "Version: 1";
+		say { $fh } "Package: $_dummy_package_name";
+		say { $fh } 'Version: 1';
 		if (scalar @{$self->{_strict_satisfy_relation_expressions}}) {
-			print $fh "Depends: ";
+			print { $fh } 'Depends: ';
 			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
 					$self->{_strict_satisfy_relation_expressions}));
 		}
 		if (scalar @{$self->{_strict_unsatisfy_relation_expressions}}) {
-			print $fh "Conflicts: ";
-			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
+			print { $fh } 'Conflicts: ';
+			say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(
 					$self->{_strict_unsatisfy_relation_expressions}));
 		}
-		say $fh "";
+		say { $fh } '';
 	}
 
 	# writing problems
-	say $fh "Problem: source: Debian/DUDF";
+	say { $fh } 'Problem: source: Debian/DUDF';
 
 	if ($self->{_upgrade_all_flag}) {
-		say $fh "Upgrade: " . join(" ", keys %{$self->{_is_installed}});
+		say { $fh } 'Upgrade: ' . join(' ', keys %{$self->{_is_installed}});
 	}
 
 	my @package_names_to_remove;
@@ -222,7 +229,7 @@ sub _write_dudf_info ($$) {
 			push @strings_to_install, "$package_name = $package_entry->{'version_string'}";
 		}
 	}
-	
+
 	if (scalar @{$self->{_strict_satisfy_relation_expressions}} ||
 		scalar @{$self->{_strict_unsatisfy_relation_expressions}})
 	{
@@ -230,14 +237,15 @@ sub _write_dudf_info ($$) {
 	}
 
 	if (scalar @package_names_to_remove) {
-		say $fh "Remove: " . join(", ", @package_names_to_remove);
+		say { $fh } 'Remove: ' . join(', ', @package_names_to_remove);
 	}
 	if (scalar @strings_to_install) {
-		say $fh "Install: " . join(", ", @strings_to_install);
+		say { $fh } 'Install: ' . join(', ', @strings_to_install);
 	}
 
 	# at last!
-	say $fh "";
+	say { $fh } '';
+	return;
 }
 
 sub _read_dudf_result ($$) {
