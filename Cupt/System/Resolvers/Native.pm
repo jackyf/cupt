@@ -18,7 +18,10 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-package Cupt::System::Resolvers::Native::PackageEntry;
+package Cupt::System::Resolvers::Native::PackageEntry; ## no critic (RequireFilenameMatchesPackage)
+
+use strict;
+use warnings;
 
 use Cupt::LValueFields qw(version stick fake_satisfied reasons manually_selected installed);
 
@@ -36,7 +39,7 @@ sub new {
 
 package Cupt::System::Resolvers::Native;
 
-=head1 NAME
+=head1 NAME ## no critic (MatchesPodName)
 
 Cupt::System::Resolvers::Native - native (built-in) dependency problem resolver for Cupt
 
@@ -53,8 +56,9 @@ use Cupt::Cache::Relation qw(stringify_relation_expression);
 
 use Graph;
 use List::Util qw(reduce first);
+use List::MoreUtils qw(any);
 
-our $_dummy_package_name = "<satisfy>";
+our $_dummy_package_name = '<satisfy>';
 
 =begin internal
 
@@ -91,12 +95,13 @@ sub import_installed_versions ($$) {
 		# just moving versions to packages, don't try install or remove some dependencies
 		# '_packages' will be modified, leave '_old_packages' as original system state
 		my $package_name = $version->package_name;
-		$self->{_packages}->{$package_name} = new Cupt::System::Resolvers::Native::PackageEntry;
+		$self->{_packages}->{$package_name} = Cupt::System::Resolvers::Native::PackageEntry->new();
 		$self->{_packages}->{$package_name}->version = $version;
 		$self->{_packages}->{$package_name}->installed = 1;
 		@{$self->{_old_packages}->{$package_name}} = @{$self->{_packages}->{$package_name}};
 		bless $self->{_old_packages}->{$package_name} => 'Cupt::System::Resolvers::Native::PackageEntry';
 	}
+	return;
 }
 
 sub _schedule_new_version_relations ($$) {
@@ -110,6 +115,7 @@ sub _schedule_new_version_relations ($$) {
 	foreach (@{$version->depends}) {
 		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'depends', $_ ]);
 	}
+	return;
 }
 
 sub __related_binary_package_names ($$) {
@@ -169,7 +175,7 @@ sub _related_packages_can_be_synchronized ($$) {
 sub _synchronize_related_packages ($$$$$) {
 	# $stick - boolean
 	my ($self, $ref_packages, $version, $stick, $sub_mydebug_wrapper) = @_;
-	
+
 	my @related_package_names = __related_binary_package_names($ref_packages, $version);
 	my $source_version_string = $version->source_version_string;
 	my $package_name = $version->package_name;
@@ -177,11 +183,11 @@ sub _synchronize_related_packages ($$$$$) {
 	foreach my $other_package_name (@related_package_names) {
 		my $package_entry = $ref_packages->{$other_package_name};
 		next if $package_entry->stick;
-		my $version = $self->_get_package_version_by_source_version_string(
+		my $candidate_version = $self->_get_package_version_by_source_version_string(
 				$other_package_name, $source_version_string);
-		next if not defined $version;
-		next if $version->version_string eq $package_entry->version->version_string;
-		$package_entry->version = $version;
+		next if not defined $candidate_version;
+		next if $candidate_version->version_string eq $package_entry->version->version_string;
+		$package_entry->version = $candidate_version;
 		$package_entry->stick = $stick;
 		if ($self->config->var('debug::resolver')) {
 			$sub_mydebug_wrapper->("synchronizing package '$other_package_name' with package '$package_name");
@@ -198,9 +204,9 @@ sub _synchronize_related_packages ($$$$$) {
 # installs new version, schedules new dependencies, but not sticks it
 sub _install_version_no_stick ($$$) {
 	my ($self, $version, $reason) = @_;
-	
+
 	my $package_name = $version->package_name;
-	$self->{_packages}->{$package_name} //= new Cupt::System::Resolvers::Native::PackageEntry;
+	$self->{_packages}->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
 	if ($self->{_packages}->{$package_name}->stick)
 	{
 		# package is restricted to be updated
@@ -245,6 +251,7 @@ sub install_version ($$) {
 			mydie("unable to re-schedule package '%s'", $version->package_name);
 	$self->{_packages}->{$version->package_name}->stick = 1;
 	$self->{_packages}->{$version->package_name}->manually_selected = 1;
+	return;
 }
 
 sub satisfy_relation_expression ($$) {
@@ -258,6 +265,7 @@ sub satisfy_relation_expression ($$) {
 		$message .= "'";
 		mydebug($message);
 	}
+	return;
 }
 
 sub unsatisfy_relation_expression ($$) {
@@ -271,6 +279,7 @@ sub unsatisfy_relation_expression ($$) {
 		$message .= "'";
 		mydebug($message);
 	}
+	return;
 }
 
 sub _auto_satisfy_relation ($$) {
@@ -291,11 +300,12 @@ sub _auto_satisfy_relation ($$) {
 		);
 		push @{$self->{_pending_relations}}, \%pending_relation;
 	}
+	return;
 }
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{_packages}->{$package_name} //= new Cupt::System::Resolvers::Native::PackageEntry;
+	$self->{_packages}->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
 	$self->{_packages}->{$package_name}->version = undef;
 	if ($self->{_packages}->{$package_name}->stick) {
 		mydie("unable to re-schedule package '%s'", $package_name);
@@ -308,6 +318,7 @@ sub remove_package ($$) {
 	if ($self->config->var('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
+	return;
 }
 
 sub upgrade ($) {
@@ -324,6 +335,7 @@ sub upgrade ($) {
 		$original_version->version_string ne $supposed_version->version_string or next;
 		$self->_install_version_no_stick($supposed_version, [ 'user' ]);
 	}
+	return;
 }
 
 sub __fair_chooser {
@@ -396,7 +408,7 @@ sub __is_version_array_intersects_with_packages ($$) {
 
 		my $installed_version = $ref_packages->{$version->package_name}->version;
 		defined $installed_version or next;
-		
+
 		return 1 if $version->version_string eq $installed_version->version_string;
 	}
 	return 0;
@@ -457,9 +469,11 @@ sub _clean_automatically_installed ($) {
 		my $can_autoremove_this_package = $can_autoremove ?
 				$self->cache->is_automatically_installed($package_name) : 0;
 		my $package_was_installed = exists $self->{_old_packages}->{$package_name};
-		(!$package_was_installed or $can_autoremove_this_package) or next;
+		(not $package_was_installed or $can_autoremove_this_package) or next;
 
-		grep { $package_name =~ m/$_/ } $self->config->var('apt::neverautoremove') and next;
+		if (any { $package_name =~ m/$_/ } $self->config->var('apt::neverautoremove')) {
+			next;
+		}
 		# ok, candidate for removing
 		$candidates_for_remove{$package_name} = 0;
 	}
@@ -541,6 +555,8 @@ sub _clean_automatically_installed ($) {
 
 	# also remove dummy package
 	delete $ref_packages->{$_dummy_package_name};
+
+	return;
 }
 
 sub _select_solution_chooser ($) {
