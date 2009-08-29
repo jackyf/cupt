@@ -7,6 +7,11 @@ cupt (0.6.4~) UNRELEASED; urgency=low
       - Methods/Curl:
         - Delete partially downloaded file and restart download if the server
           don't support resuming. Thanks to Bernd Zeimetz. (Closes: #544186)
+    - System:
+      - Resolvers/Native:
+        - Display descriptive error message when manually selected version of
+          package cannot be updated because of the option
+          'cupt::resolver::synchronize-source-versions' set to 'hard'.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 28 Aug 2009 23:28:23 +0300
 

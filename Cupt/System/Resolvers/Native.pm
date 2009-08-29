@@ -210,7 +210,16 @@ sub _install_version_no_stick ($$$) {
 	if ($self->{_packages}->{$package_name}->stick)
 	{
 		# package is restricted to be updated
-		return 0;
+
+		# but maybe nothing changed?
+		my $existent_version = $self->{_packages}->{$package_name}->version;
+		if (defined $existent_version &&
+			$existent_version->version_string eq $version->version_string)
+		{
+			return '';
+		} else {
+			return sprintf __("unable to re-schedule package '%s'"), $package_name;
+		}
 	}
 
 	if ((not $self->{_packages}->{$package_name}->version) ||
@@ -223,7 +232,8 @@ sub _install_version_no_stick ($$$) {
 			# need to check is the whole operation doable
 			if (!$self->_related_packages_can_be_synchronized($self->{_packages}, $version)) {
 				# we cannot do it, do nothing
-				return 0;
+				return sprintf __("unable to synchronize related binary packages for %s %s"),
+						$package_name, $version->version_string;
 			}
 		}
 
@@ -242,13 +252,15 @@ sub _install_version_no_stick ($$$) {
 			$self->_synchronize_related_packages($self->{_packages}, $version, 0, \&mydebug);
 		}
 	}
-	return 1;
+	return '';
 }
 
 sub install_version ($$) {
 	my ($self, $version) = @_;
-	$self->_install_version_no_stick($version, [ 'user' ]) or
-			mydie("unable to re-schedule package '%s'", $version->package_name);
+	my $install_error = $self->_install_version_no_stick($version, [ 'user' ]);
+	if ($install_error ne '') {
+		mydie($install_error);
+	}
 	$self->{_packages}->{$version->package_name}->stick = 1;
 	$self->{_packages}->{$version->package_name}->manually_selected = 1;
 	return;
