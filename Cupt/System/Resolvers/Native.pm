@@ -478,8 +478,8 @@ sub _clean_automatically_installed ($) {
 		$candidates_for_remove{$package_name} = 0;
 	}
 
-	my $dependency_graph = new Graph('directed' => 1);
-	my $main_vertex_package_name = "main_vertex";
+	my $dependency_graph = Graph->new('directed' => 1);
+	my $main_vertex_package_name = 'main_vertex';
 	do { # building dependency graph
 		foreach my $package_name (keys %$ref_packages) {
 			my $version = $ref_packages->{$package_name}->version;
@@ -590,13 +590,14 @@ sub _require_strict_relation_expressions ($) {
 	$version->breaks = [];
 	$version->conflicts = [];
 
-	$self->{_packages}->{$_dummy_package_name} = new Cupt::System::Resolvers::Native::PackageEntry;
+	$self->{_packages}->{$_dummy_package_name} = Cupt::System::Resolvers::Native::PackageEntry->new();
 	$self->{_packages}->{$_dummy_package_name}->version = $version;
 	$self->{_packages}->{$_dummy_package_name}->stick = 1;
 	$self->{_packages}->{$_dummy_package_name}->version->depends =
 			$self->{_strict_satisfy_relation_expressions};
 	$self->{_packages}->{$_dummy_package_name}->version->breaks =
 			$self->{_strict_unsatisfy_relation_expressions};
+	return;
 }
 
 sub _apply_action ($$$$$) {
@@ -607,7 +608,7 @@ sub _apply_action ($$$$$) {
 
 	# stick all requested package names
 	foreach my $package_name (@{$ref_action_to_apply->{'package_names_to_stick'}}) {
-		$ref_solution_entry->{packages}->{$package_name} //= new Cupt::System::Resolvers::Native::PackageEntry;
+		$ref_solution_entry->{packages}->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
 		$ref_solution_entry->{packages}->{$package_name}->stick = 1;
 	}
 
@@ -651,6 +652,7 @@ sub _apply_action ($$$$$) {
 					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
+	return;
 }
 
 sub __version_has_relation_expression ($$$) {
@@ -665,7 +667,7 @@ sub __version_has_relation_expression ($$$) {
 	return 0;
 }
 
-sub _get_actions_to_fix_dependency ($$$$$$$) {
+sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 	my ($self, $ref_packages, $package_name, $ref_satisfying_versions,
 			$relation_expression, $dependency_group_name, $dependency_group_factor) = @_;
 
@@ -772,6 +774,7 @@ sub __prepare_stick_requests ($) {
 		push @package_names, $ref_action->{'package_name'};
 		$ref_action->{'package_names_to_stick'} = [ @package_names ];
 	}
+	return;
 }
 
 sub _resolve ($$) {
@@ -779,7 +782,7 @@ sub _resolve ($$) {
 
 	my $sub_solution_chooser = $self->_select_solution_chooser();
 	if ($self->config->var('debug::resolver')) {
-		mydebug("started resolving");
+		mydebug('started resolving');
 	}
 	$self->_require_strict_relation_expressions();
 
@@ -827,15 +830,11 @@ sub _resolve ($$) {
 
 	my $check_failed;
 
-	# will be filled in MAIN_LOOP
-	my $package_entry;
-	my $package_name;
-
 	my $sub_mydebug_wrapper = sub {
 		my $level = $ref_current_solution->{'level'};
 		my $identifier = $ref_current_solution->{'identifier'};
-		my $score_string = sprintf "%.1f", $ref_current_solution->{'score'};
-		mydebug(" " x $level . "($identifier:$score_string) @_");
+		my $score_string = sprintf '%.1f', $ref_current_solution->{'score'};
+		mydebug(' ' x $level . "($identifier:$score_string) @_");
 	};
 
 	my $sub_apply_action = sub {
@@ -846,6 +845,9 @@ sub _resolve ($$) {
 	my $return_code;
 
 	do {{
+		# will be filled in MAIN_LOOP
+		my $package_entry;
+
 		# continue only if we have at least one solution pending, otherwise we have a great fail
 		scalar @solutions or do { $return_code = 0; goto EXIT };
 
@@ -910,7 +912,7 @@ sub _resolve ($$) {
 											next;
 										}
 									}
-									if (grep { $_ == $relation_expression } @{$package_entry->fake_satisfied}) {
+									if (any { $_ == $relation_expression } @{$package_entry->fake_satisfied}) {
 										# this soft relation expression was already fakely satisfied (score penalty)
 										next;
 									}
@@ -937,7 +939,7 @@ sub _resolve ($$) {
 
 								if ($self->config->var('debug::resolver')) {
 									my $stringified_relation = stringify_relation_expression($relation_expression);
-									$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+									$sub_mydebug_wrapper->("problem: package '$package_name': " .
 											"unsatisfied $dependency_group_name '$stringified_relation'");
 								}
 								$check_failed = 1;
@@ -1026,7 +1028,7 @@ sub _resolve ($$) {
 												'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
-										
+
 										if ($self->_is_package_can_be_removed($package_name)) {
 											# remove the package
 											push @possible_actions, {
@@ -1042,7 +1044,7 @@ sub _resolve ($$) {
 
 									if ($self->config->var('debug::resolver')) {
 										my $stringified_relation = stringify_relation_expression($relation_expression);
-										$sub_mydebug_wrapper->("problem: package '$package_name': " . 
+										$sub_mydebug_wrapper->("problem: package '$package_name': " .
 												"satisfied $dependency_group_name '$stringified_relation'");
 									}
 									$recheck_needed = 0;
@@ -1061,7 +1063,7 @@ sub _resolve ($$) {
 
 			# if the solution was only just finished
 			if ($self->config->var('debug::resolver') && !$ref_current_solution->{'finished'}) {
-				$sub_mydebug_wrapper->("finished");
+				$sub_mydebug_wrapper->('finished');
 				$ref_current_solution->{'finished'} = 1;
 			}
 			# resolver can refuse the solution
@@ -1078,9 +1080,9 @@ sub _resolve ($$) {
 			# build "user-frienly" version of solution
 			my %suggested_packages;
 			foreach my $package_name (keys %$ref_current_packages) {
-				my $package_entry = $ref_current_packages->{$package_name};
-				$suggested_packages{$package_name}->{'version'} = $package_entry->version;
-				$suggested_packages{$package_name}->{'reasons'} = $package_entry->reasons;
+				my $other_package_entry = $ref_current_packages->{$package_name};
+				$suggested_packages{$package_name}->{'version'} = $other_package_entry->version;
+				$suggested_packages{$package_name}->{'reasons'} = $other_package_entry->reasons;
 				$suggested_packages{$package_name}->{'manually_selected'} =
 						(exists $self->{_packages}->{$package_name} and
 						$self->{_packages}->{$package_name}->manually_selected);
@@ -1088,7 +1090,7 @@ sub _resolve ($$) {
 
 			# suggest found solution
 			if ($self->config->var('debug::resolver')) {
-				$sub_mydebug_wrapper->("proposing this solution");
+				$sub_mydebug_wrapper->('proposing this solution');
 			}
 			my $user_answer = $sub_accept->(\%suggested_packages);
 			if (!defined $user_answer) {
@@ -1097,14 +1099,14 @@ sub _resolve ($$) {
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
 				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->("accepted");
+					$sub_mydebug_wrapper->('accepted');
 				}
 				$return_code = 1;
 				goto EXIT;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
 				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->("declined");
+					$sub_mydebug_wrapper->('declined');
 				}
 				# purge current solution
 				@solutions = grep { $_ ne $ref_current_solution } @solutions;
@@ -1114,7 +1116,7 @@ sub _resolve ($$) {
 
 		# if we have to synchronize source versions, can related packages be updated too?
 		# filter out actions that don't match this criteria
-		@possible_actions = grep { 
+		@possible_actions = grep {
 			$self->config->var('cupt::resolver::synchronize-source-versions') ne 'hard' or
 			not defined $_->{'version'} or
 			$self->_related_packages_can_be_synchronized($ref_current_packages, $_->{'version'})
@@ -1173,13 +1175,13 @@ sub _resolve ($$) {
 				# temporary setting current solution to worst
 				$ref_current_solution = $ref_worst_solution;
 				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->("dropping this solution");
+					$sub_mydebug_wrapper->('dropping this solution');
 				}
 				@solutions = grep { $_ ne $ref_current_solution } @solutions;
 			}
 		} else {
 			if ($self->config->var('debug::resolver')) {
-				$sub_mydebug_wrapper->("no solutions");
+				$sub_mydebug_wrapper->('no solutions');
 			}
 			# purge current solution
 			@solutions = grep { $_ ne $ref_current_solution } @solutions;
@@ -1199,7 +1201,7 @@ sub resolve ($$) {
 		my $ref_pending_relation = shift @{$self->{_pending_relations}};
 		my $relation_expression = $ref_pending_relation->{'relation_expression'};
 		my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
-		
+
 		# if we have no candidates, skip the relation
 		scalar @$ref_satisfying_versions or next;
 
