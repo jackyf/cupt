@@ -1,3 +1,11 @@
+cupt (0.6.4~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Config:
+      - Recognize new APT 'acquire::compressiontypes::*' variables.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 28 Aug 2009 23:28:23 +0300
+
 cupt (0.6.3) unstable; urgency=medium
 
   * cupt:

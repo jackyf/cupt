@@ -124,6 +124,7 @@ sub new {
 			'acquire::*::dl-limit',
 			'acquire::*::*::timeout',
 			'acquire::*::timeout',
+			'acquire::compressiontypes::*',
 			'dpkg::tools::options::*',
 			'dpkg::tools::options::*::*',
 		],
