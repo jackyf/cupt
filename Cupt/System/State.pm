@@ -85,7 +85,7 @@ sub _parse_dpkg_status {
 	my ($self, $file) = @_;
 
 	# filling release info
-	my %release_info = %Cupt::Cache::_empty_release_info;
+	my %release_info = %Cupt::Cache::_empty_release_info; ## no critic (PrivateVars)
 	$release_info{archive} = 'installed';
 	$release_info{codename} = 'now';
 	$release_info{label} = '';
@@ -99,14 +99,15 @@ sub _parse_dpkg_status {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
-	open(PACKAGES, "/bin/grep -bE '^(Package|Status|Version): ' $file |"); 
+	open(PACKAGES, "/bin/grep -bE '^(Package|Status|Version): ' $file |") or
+			mydie('unable to open grep pipe: %s', $!);
 
 	# algorithm: loop through the strings, searching the 'Version' line, once
 	# found, look at first and second previous strings, they have to contain
 	# 'Package' and 'Status' strings
 	eval {
-		my $prev_line = "";
-		my $prev_prev_line = "";
+		my $prev_line = '';
+		my $prev_prev_line = '';
 		while (<PACKAGES>) {
 			chomp;
 
@@ -199,13 +200,13 @@ sub _parse_dpkg_status {
 
 	if (!close(PACKAGES)) {
 		if ($! != 0) {
-			mydie("unable to close grep pipe: %s", $!);
+			mydie('unable to close grep pipe: %s', $!);
 		} else {
 			# see 'perldoc -f system' for explanations for following lines
 			if ($? > 256) {
-				mydie("grep returned failure-indicating exit status: %s", $? >> 8);
+				mydie('grep returned failure-indicating exit status: %s', $? >> 8);
 			} elsif ($? & 127) {
-				mydie("grep died with signal %d", $? & 127);
+				mydie('grep died with signal %d', $? & 127);
 			}
 			# all else (0, 256) is fine
 		}
@@ -213,6 +214,7 @@ sub _parse_dpkg_status {
 
 	# additionally, preparse Provides fields for status file
 	$self->{_cache}->_process_provides_in_index_files($file);
+	return;
 }
 
 =head2 get_status_for_version
