@@ -135,6 +135,16 @@ sub perform ($$$$$) {
 			goto START;
 		}
 
+		# FIXME: replace 33 with CURLE_RANGE_ERROR after Debian Squeeze release
+		if ($curl_result == 33) {
+			if ($config->var('debug::downloader')) {
+				mydebug("range command failed, need to restart from beginning while downloading '$uri'");
+			}
+			unlink($filename) or
+					return sprintf "unable to delete file '%s': %s", $filename, $!;
+			goto START;
+		}
+
 		my $result = $curl->strerror($curl_result);
 		# some http/https/ftp error, provide an error code
 		if ($curl_result == 22) {

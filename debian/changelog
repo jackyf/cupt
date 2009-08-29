@@ -3,6 +3,10 @@ cupt (0.6.4~) UNRELEASED; urgency=low
   * Cupt:
     - Config:
       - Recognize new APT 'acquire::compressiontypes::*' variables.
+    - Download:
+      - Methods/Curl:
+        - Delete partially downloaded file and restart download if the server
+          don't support resuming. Thanks to Bernd Zeimetz. (Closes: #544186)
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 28 Aug 2009 23:28:23 +0300
 
