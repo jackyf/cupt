@@ -32,7 +32,7 @@ use strict;
 
 use Graph;
 use List::Util qw(sum);
-use List::MoreUtils qw(uniq);
+use List::MoreUtils qw(uniq apply any);
 use File::Copy;
 use File::Basename;
 use POSIX;
@@ -107,6 +107,7 @@ sub _synchronize_apt_compat_symlinks ($) {
 			}
 		}
 	}
+	return;
 }
 
 =head2 set_desired_state
@@ -136,6 +137,7 @@ TODO: reason description
 sub set_desired_state ($$) {
 	my ($self, $ref_desired_state) = @_;
 	$self->{_desired_state} = $ref_desired_state;
+	return;
 }
 
 sub _get_archives_location ($) {
@@ -207,7 +209,7 @@ sub get_actions_preview ($) {
 	);
 
 	if (!defined $self->{_desired_state}) {
-		myinternaldie("worker desired state is not given");
+		myinternaldie('worker desired state is not given');
 	}
 	foreach my $package_name (keys %{$self->{_desired_state}}) {
 		my $action;
@@ -247,7 +249,7 @@ sub get_actions_preview ($) {
 					}
 				}
 			}
-		} else { 
+		} else {
 			# package is to be removed
 			if (defined $ref_installed_info) {
 				# there is some installed info about package
@@ -316,7 +318,7 @@ sub get_download_sizes_preview ($$) {
 	my $archives_location = $self->_get_archives_location();
 	my $total_bytes = 0;
 	my $need_bytes = 0;
-	my @ref_package_entries = map { @{$ref_actions_preview->{$_}} } ('install', 'upgrade', 'downgrade');
+	my @ref_package_entries = map { @{$ref_actions_preview->{$_}} } qw(install upgrade downgrade);
 	foreach my $ref_package_entry (@ref_package_entries) {
 		my $version = $ref_package_entry->{'version'};
 		my $size = $version->size;
@@ -397,7 +399,7 @@ sub get_unpacked_sizes_preview ($$) {
 	}
 
 	# installed sizes are specified in kibibytes, convert them to bytes
-	map { $_ *= 1024 } values %result;
+	apply { $_ *= 1024 } values %result;
 
 	return \%result;
 }
@@ -455,6 +457,7 @@ sub _fill_actions ($$\@) {
 			}
 		}
 	}
+	return;
 }
 
 sub __stringify_inner_action ($) {
@@ -524,6 +527,7 @@ sub _fill_action_dependencies ($$$$) {
 			}
 		}
 	}
+	return;
 }
 
 =head2 mark_as_automatically_installed
@@ -547,7 +551,7 @@ sub mark_as_automatically_installed ($$;@) {
 		foreach my $package_name (@package_names) {
 			my $prefix = $markauto ?
 					__('marking as automatically installed') : __('marking as manually installed');
-			say __("simulating") . ": $prefix: $package_name";
+			say __('simulating') . ": $prefix: $package_name";
 		}
 	} else {
 		my $ref_extended_info = $self->{_cache}->get_extended_info();
@@ -563,28 +567,29 @@ sub mark_as_automatically_installed ($$;@) {
 		my $extended_info_file = $self->{_cache}->_path_of_extended_states();
 		my $temp_file = $extended_info_file . '.cupt.tmp';
 
-		sysopen(TEMP, $temp_file, O_WRONLY | O_EXCL | O_CREAT) or
+		sysopen(my $temp_fh, $temp_file, O_WRONLY | O_EXCL | O_CREAT) or
 				mydie("unable to open temporary file '%s': %s", $temp_file, $!);
 
 		# filling new info
 		foreach my $package_name (@refreshed_autoinstalled_packages) {
-			print TEMP "Package: $package_name\nAuto-Installed: 1\n\n" or
+			print { $temp_fh } "Package: $package_name\nAuto-Installed: 1\n\n" or
 					mydie("unable to write to file '%s': %s", $temp_file, $!);
 		}
 
-		close(TEMP) or
+		close($temp_fh) or
 				mydie("unable to close temporary file '%s': %s", $temp_file, $!);
 		move($temp_file, $extended_info_file) or
 				mydie("unable to rename temporary file '%s' to extended states file '%s': %s",
 						$temp_file, $extended_info_file, $!);
 	}
+	return;
 }
 
 sub _build_actions_graph ($$) {
 	my ($self, $ref_actions_preview) = @_;
 
 	if (!defined $self->{_desired_state}) {
-		myinternaldie("worker desired state is not given");
+		myinternaldie('worker desired state is not given');
 	}
 
 	# action = {
@@ -592,7 +597,7 @@ sub _build_actions_graph ($$) {
 	# 	'version_string' => version_string,
 	# 	'action_name' => ('unpack' | 'configure' | 'remove')
 	# }
-	my $graph = new Graph('directed' => 1, 'refvertexed' => 1);
+	my $graph = Graph->new('directed' => 1, 'refvertexed' => 1);
 
 	$self->_fill_actions($ref_actions_preview, $graph);
 
@@ -628,13 +633,13 @@ sub _build_actions_graph ($$) {
 		}
 		foreach my $version (@{$self->{_cache}->get_system_state()->export_installed_versions()}) {
 			my $package_name = $version->package_name;
-			next if grep { $package_name eq $_ } @blacklisted_package_names;
+			next if any { $package_name eq $_ } @blacklisted_package_names;
 
 			foreach my $dependency_name (qw(pre_depends depends)) {
 				foreach my $relation_expression (@{$version->$dependency_name}) {
 					my $virtual_version = (bless [] => 'Cupt::Cache::BinaryVersion');
 					$virtual_version->package_name = "$package_name [" .
-							stringify_relation_expression($relation_expression) . "]";
+							stringify_relation_expression($relation_expression) . ']';
 					$virtual_version->version_string = $version->version_string;
 					$virtual_version->pre_depends = [];
 					$virtual_version->depends = [];
@@ -849,7 +854,7 @@ sub _build_actions_graph ($$) {
 			$graph->delete_vertex($from);
 		}
 
-		my $graph_transitive_closure = new Graph::TransitiveClosure($graph, 'path_length' => 0, 'path_vertices' => 0);
+		my $graph_transitive_closure = Graph::TransitiveClosure->new($graph, 'path_length' => 0, 'path_vertices' => 0);
 
 		# unit unpack/configure using some intelligence
 		foreach my $ref_change_entry (values %vertex_changes) {
@@ -900,7 +905,7 @@ sub _build_actions_graph ($$) {
 
 		do { # check pre-depends
 			# re-compute transitive matrix, it might become invalid after the merges
-			$graph_transitive_closure = new Graph::TransitiveClosure($graph,
+			$graph_transitive_closure = Graph::TransitiveClosure->new($graph,
 					'path_length' => 0, 'path_vertices' => 0);
 
 			foreach my $edge ($graph->edges()) {
@@ -914,7 +919,7 @@ sub _build_actions_graph ($$) {
 						# expression attribute
 						my $ref_attributes = $graph->get_edge_attributes($from_vertex, $to_vertex);
 						if (not exists $ref_attributes->{'relation_expressions'}) {
-							myinternaldie("pre-dependency edge has not relation expressions");
+							myinternaldie('pre-dependency edge has not relation expressions');
 						}
 
 						my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
@@ -939,12 +944,14 @@ sub __split_heterogeneous_actions (@) {
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
-		if (grep { $_->{'action_name'} ne $action_name } @$ref_action_group) {
+		if (any { $_->{'action_name'} ne $action_name } @$ref_action_group) {
 			# heterogeneous actions
 			my %subgroups = ('remove' => [], 'unpack' => [], 'install' => [], 'configure' => []);
 
 			# split by action names
-			map { push @{$subgroups{$_->{'action_name'}}}, $_ } @$ref_action_group;
+			foreach my $ref_action (@$ref_action_group) {
+				push @{$subgroups{$ref_action->{'action_name'}}}, $ref_action;
+			}
 
 			# set needed dpkg flags to first action in action group
 			if (@{$subgroups{'remove'}}) {
@@ -979,7 +986,7 @@ sub _prepare_downloads ($$) {
 
 	my @pending_downloads;
 
-	my $debdelta_helper = new Cupt::Download::DebdeltaHelper;
+	my $debdelta_helper = Cupt::Download::DebdeltaHelper->new();
 
 	foreach my $user_action ('install', 'upgrade', 'downgrade') {
 		my $ref_package_entries = $ref_actions_preview->{$user_action};
@@ -989,7 +996,7 @@ sub _prepare_downloads ($$) {
 
 			# for now, take just first URI
 			my @uris = $version->uris();
-			while ($uris[0] eq "") {
+			while ($uris[0] eq '') {
 				# no real URI, just installed, skip it
 				shift @uris;
 			}
@@ -999,7 +1006,7 @@ sub _prepare_downloads ($$) {
 
 			# we need at least one real URI
 			scalar @uris or
-					mydie("no available download URIs for %s %s", $package_name, $version_string);
+					mydie('no available download URIs for %s %s', $package_name, $version_string);
 
 			# target path
 			my $basename = __get_archive_basename($version);
@@ -1017,9 +1024,12 @@ sub _prepare_downloads ($$) {
 				'size' => $version->size,
 				'post-action' => sub {
 					Cupt::Cache::verify_hash_sums($version->export_hash_sums(), $download_filename) or
-							do { unlink $download_filename; return sprintf __("%s: hash sums mismatch"), $download_filename; };
+							do {
+								unlink $download_filename; ## no critic (RequireCheckedSyscalls)
+								return sprintf __('%s: hash sums mismatch'), $download_filename;
+							};
 					move($download_filename, $target_filename) or
-							return sprintf __("%s: unable to move target file: %s"), $download_filename, $!;
+							return sprintf __('%s: unable to move target file: %s'), $download_filename, $!;
 
 					# return success
 					return 0;
@@ -1047,34 +1057,33 @@ sub _do_downloads ($$$) {
 
 	if ($self->{_config}->var('cupt::worker::simulate')) {
 		foreach (@$ref_pending_downloads) {
-			say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
+			say __('downloading') . ': ' . join(' | ', @{$_->{'uris'}});
 		}
 	} else {
 		# don't bother ourselves with download preparings if nothing to download
 		if (scalar @$ref_pending_downloads) {
-			my @download_list;
-
 			my $archives_location = $self->_get_archives_location();
 
 			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
-					mydie("unable to open archives lock file: %s", $!);
+					mydie('unable to open archives lock file: %s', $!);
 
 			my $download_size = sum map { $_->{'size'} } @$ref_pending_downloads;
 			$download_progress->set_total_estimated_size($download_size);
 
 			my $download_result;
 			do {
-				my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+				my $download_manager = Cupt::Download::Manager->new($self->{_config}, $download_progress);
 				$download_result = $download_manager->download(@$ref_pending_downloads);
 			}; # make sure that download manager is already destroyed at this point
 
 			close(LOCK) or
-					mydie("unable to close archives lock file: %s", $!);
+					mydie('unable to close archives lock file: %s', $!);
 
 			# fail and exit if it was something bad with downloading
-			mydie("there were download errors") if $download_result;
+			mydie('there were download errors') if $download_result;
 		}
 	}
+	return;
 }
 
 sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
@@ -1134,10 +1143,10 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 			my $filename;
 			if ($action_name eq 'configure') {
 				# special case for that
-				$filename = "**CONFIGURE**";
+				$filename = '**CONFIGURE**';
 			} elsif ($action_name eq 'remove') {
 				# and for this...
-				$filename = "**REMOVE**";
+				$filename = '**REMOVE**';
 			} else { # unpack or install
 				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($action_version);
 			}
@@ -1158,12 +1167,14 @@ sub _run_external_command ($$$) {
 	my ($self, $flavor, $command, $alias) = @_;
 
 	if ($self->{_config}->var('cupt::worker::simulate')) {
-		say __("simulating"), ": $command";
+		say __('simulating'), ": $command";
 	} else {
 		# invoking command
 		system($command) == 0 or
 				mydie("dpkg '%s' action '%s' returned non-zero status: %s", $flavor, $alias, $?);
 	}
+
+	return;
 }
 
 sub _do_dpkg_pre_actions ($$$) {
@@ -1196,6 +1207,7 @@ sub _do_dpkg_pre_actions ($$$) {
 		$command = "echo '$stdin' | $command";
 		$self->_run_external_command('pre', $command, $alias);
 	}
+	return;
 }
 
 sub _do_dpkg_post_actions ($) {
@@ -1203,6 +1215,7 @@ sub _do_dpkg_post_actions ($) {
 	foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
 		$self->_run_external_command('post', $command, $command);
 	}
+	return;
 }
 
 =head2 change_system
@@ -1226,7 +1239,7 @@ sub change_system ($$) {
 	my $dpkg_lock_fh;
 	if (!$simulate && !$download_only) {
 		sysopen($dpkg_lock_fh, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
-				mydie("unable to open dpkg lock file: %s", $!);
+				mydie('unable to open dpkg lock file: %s', $!);
 	}
 
 	my $ref_actions_preview = $self->get_actions_preview();
@@ -1296,7 +1309,7 @@ sub change_system ($$) {
 			my $dpkg_command = "$dpkg_binary --$action_name";
 			$dpkg_command .= ' --no-triggers' if $defer_triggers;
 			# add necessary options if requested
-			$dpkg_command .= $ref_action_group->[0]->{'dpkg_flags'} // "";
+			$dpkg_command .= $ref_action_group->[0]->{'dpkg_flags'} // '';
 
 			foreach my $ref_action (@$ref_action_group) {
 				my $action_expression;
@@ -1310,11 +1323,11 @@ sub change_system ($$) {
 				$dpkg_command .= " $action_expression";
 			}
 			if ($simulate) {
-				say __("simulating"), ": $dpkg_command";
+				say __('simulating'), ": $dpkg_command";
 			} else {
 				# invoking command
 				system($dpkg_command) == 0 or
-						mydie("dpkg returned non-zero status: %s", $?);
+						mydie('dpkg returned non-zero status: %s', $?);
 			}
 		};
 	}
@@ -1323,14 +1336,14 @@ sub change_system ($$) {
 		if ($defer_triggers) {
 			# triggers were not processed during actions perfomed before, do it now at once
 			system($dpkg_pending_triggers_command) == 0 or
-					mydie("error processing triggers");
+					mydie('error processing triggers');
 		}
 
 		close($dpkg_lock_fh) or
-				mydie("unable to close dpkg lock file: %s", $!);
+				mydie('unable to close dpkg lock file: %s', $!);
 	} else {
 		if ($defer_triggers) {
-			say __("simulating"), ": $dpkg_pending_triggers_command";
+			say __('simulating'), ": $dpkg_pending_triggers_command";
 		}
 	}
 
@@ -1346,18 +1359,21 @@ sub __generate_hash_sums ($$) {
 
 	open(FILE, '<', $path) or
 			mydie("unable to open file '%s': %s", $path, $!);
-	binmode(FILE);
+	binmode(FILE) or
+			mydie("unable to set binary mode on file '%s': %s", $path, $!);
 
 	foreach my $hash_key (keys %digests) {
 		my $digest = $digests{$hash_key};
 		my $hasher = Digest->new($digest);
-		seek(FILE, 0, SEEK_SET);
+		seek(FILE, 0, SEEK_SET) or
+				mydie("unable to seek on file '%s': %s", $path, $!);
 		$hasher->addfile(*FILE);
 		$ref_hash_sums->{$hash_key} = $hasher->hexdigest();
 	}
 
 	close(FILE) or
 			mydie("unable to close file '%s': %s", $path, $!);
+	return;
 }
 
 =head2 update_release_and_index_data
@@ -1403,7 +1419,7 @@ sub update_release_and_index_data ($$) {
 		my ($download_path, $target_path) = @_;
 		return sub {
 			move($download_path, $target_path) or
-					return sprintf __("%s: unable to move target file: %s"), $download_path, $!;
+					return sprintf __('%s: unable to move target file: %s'), $download_path, $!;
 			return ''; # success
 		};
 	};
@@ -1427,7 +1443,7 @@ sub update_release_and_index_data ($$) {
 			return sub {
 				my $uncompressing_result = system("$uncompressor_name $download_path -c > $local_path");
 				# anyway, remove the compressed file
-				unlink $download_path; # ignore errors...
+				unlink $download_path; ## no critic (RequireCheckedSyscalls)
 				if ($uncompressing_result) {
 					return sprintf "failed to uncompress '%s', '%s' returned error %s",
 							$download_path, $uncompressor_name, $uncompressing_result;
@@ -1450,7 +1466,7 @@ sub update_release_and_index_data ($$) {
 	my $lock;
 	if (!$simulate) {
 		sysopen($lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
-				mydie("unable to open indexes lock file: %s", $!);
+				mydie('unable to open indexes lock file: %s', $!);
 	}
 
 	my $cache = $self->{_cache};
@@ -1464,17 +1480,17 @@ sub update_release_and_index_data ($$) {
 	unless ($simulate) { # unconditional clearing of partial chunks of Release[.gpg] files
 		my $partial_indexes_location = $self->_get_indexes_location() . $_download_partial_suffix;
 		my @paths = glob("$partial_indexes_location/*Release*");
-		unlink $_ foreach @paths;
+		unlink $_ foreach @paths; ## no critic (RequireCheckedSyscalls)
 	}
 
 	my $master_exit_code = 0;
 	do { # download manager involved part
-		my $download_manager = new Cupt::Download::Manager($self->{_config}, $download_progress);
+		my $download_manager = Cupt::Download::Manager->new($self->{_config}, $download_progress);
 
 		my $sub_download_wrapper = sub {
 			if ($simulate) {
 				foreach (@_) {
-					say __("downloading") . ": " . join(' | ', @{$_->{'uris'}});
+					say __('downloading') . ': ' . join(' | ', @{$_->{'uris'}});
 				}
 				return 0;
 			} else {
@@ -1485,7 +1501,7 @@ sub update_release_and_index_data ($$) {
 		my @pids;
 		foreach my $index_entry (@index_entries) {
 			my $pid = fork() //
-					mydie("unable to fork: $!");
+					mydie('unable to fork: %s', $!);
 
 			if ($pid) {
 				# master process
@@ -1561,7 +1577,8 @@ sub update_release_and_index_data ($$) {
 							if (!$config->var('cupt::update::keep-bad-signatures') &&
 								!Cupt::Cache::verify_signature($config, $local_path))
 							{
-								unlink $signature_local_path;
+								unlink $signature_local_path or
+										mydie("unable to delete file '%s': %s", $signature_local_path, $!);
 								mywarn("signature verification for '%s' failed", $release_alias);
 							}
 						}
@@ -1600,7 +1617,7 @@ sub update_release_and_index_data ($$) {
 									$download_uri, $download_filename, $local_path);
 							next if not defined $sub_main_post_action;
 
-							my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
+							my $index_alias = sprintf '%s/%s %s', $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
 
 							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
@@ -1611,7 +1628,8 @@ sub update_release_and_index_data ($$) {
 								# here we check for outdated dangling indexes in partial directory
 								if (!Cupt::Cache::verify_hash_sums($ref_release_hash_sums, $release_local_path)) {
 									# Release file has been changed during phase #1
-									unlink $download_filename; # if it's present
+									# delete it if present
+									unlink $download_filename; ## no critic (RequireCheckedSyscalls)
 								}
 							}
 
@@ -1623,8 +1641,8 @@ sub update_release_and_index_data ($$) {
 										'post-action' => sub {
 											Cupt::Cache::verify_hash_sums($ref_download_entries->{$download_uri}, $download_filename) or
 													do {
-														unlink $download_filename;
-														return sprintf __("%s: hash sums mismatch"), $download_filename;
+														unlink $download_filename; ## no critic (RequireCheckedSyscalls)
+														return sprintf __('%s: hash sums mismatch'), $download_filename;
 													};
 											return $sub_main_post_action->();
 										}
@@ -1662,7 +1680,7 @@ sub update_release_and_index_data ($$) {
 									$download_uri, $download_filename, $local_path);
 							next if not defined $sub_post_action;
 
-							my $index_alias = sprintf "%s/%s %s", $index_entry->{'distribution'},
+							my $index_alias = sprintf '%s/%s %s', $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
 
 							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
@@ -1692,7 +1710,7 @@ sub update_release_and_index_data ($$) {
 			}
 		}
 		foreach my $pid (@pids) {
-			waitpid $pid, 0;
+			waitpid $pid, 0; ## no critic (RequireCheckedSyscalls)
 			# if something went bad in child, the parent won't return non-zero code too
 			$master_exit_code += $?;
 		}
@@ -1700,7 +1718,7 @@ sub update_release_and_index_data ($$) {
 
 	if (!$simulate) {
 		close($lock) or
-				mydie("unable to close indexes lock file: %s", $!);
+				mydie('unable to close indexes lock file: %s', $!);
 	}
 
 	# run post-actions
@@ -1751,7 +1769,7 @@ sub clean_archives ($$) {
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 	if ($simulate) {
-		say "simulating deletions:";
+		say __('simulating deletions:');
 	}
 	foreach my $path (@paths_to_delete) {
 		not exists $white_list{$path} or next;
@@ -1760,6 +1778,7 @@ sub clean_archives ($$) {
 			unlink $path or mydie("unable to delete file '%s'", $path);
 		}
 	}
+	return;
 }
 
 1;
