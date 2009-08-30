@@ -567,7 +567,7 @@ sub show_source_package_versions () {
 
 	my @package_expressions = @ARGV;
 	scalar @package_expressions or
-			mydie("no package expressions specified");
+			mydie('no package expressions specified');
 
 	build_cache(-source => 1, -binary => 1, -installed => 1);
 
@@ -611,8 +611,8 @@ sub show_source_package_versions () {
 			{
 				my $ref_uris = $version->uris();
 				foreach my $part ('tarball', 'diff', 'dsc') {
-					next if $part eq 'diff' && not defined $version->diff;
-					$p->($part, "");
+					next if ($part eq 'diff' and not defined $version->diff);
+					$p->($part, '');
 					$p->('  ' . __('Size'), human_readable_size_string($version->$part->{'size'}));
 					$p->('  MD5', $version->$part->{'md5sum'}) if defined $version->$part->{'md5sum'};
 					$p->('  SHA1', $version->$part->{'sha1sum'}) if defined $version->$part->{'sha1sum'};
@@ -625,6 +625,7 @@ sub show_source_package_versions () {
 			print "\n";
 		}
 	}
+	return 1;
 }
 
 sub search () {
@@ -645,7 +646,7 @@ sub search () {
 	check_no_more_options();
 	my @patterns = @ARGV;
 	scalar @patterns or
-			mydie("no search patterns specified");
+			mydie('no search patterns specified');
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
@@ -698,12 +699,13 @@ sub search () {
 			next if !$matched;
 
 			if (defined $version) {
-				say $package_name . " - " . $version->short_description if $matched;
+				say $package_name . ' - ' . $version->short_description if $matched;
 			} else {
 				say $package_name;
 			}
 		}
 	}
+	return;
 }
 
 sub show_package_relations ($) {
@@ -724,7 +726,7 @@ sub show_package_relations ($) {
 	check_no_more_options();
 
 	scalar @ARGV or
-			mydie("no binary package expressions specified");
+			mydie('no binary package expressions specified');
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
@@ -736,12 +738,10 @@ sub show_package_relations ($) {
 		[ 'depends', __('Depends') ],
 	);
 	if (!$config->var('apt::cache::important')) {
-		push @relation_groups, 
-				[ 'recommends', __('Recommends') ];
+		push @relation_groups, [ 'recommends', __('Recommends') ];
 
 		if ($o_with_suggests) {
-			push @relation_groups,
-					[ 'suggests', __('Suggests') ];
+			push @relation_groups, [ 'suggests', __('Suggests') ];
 		}
 	}
 
@@ -811,7 +811,7 @@ sub show_package_relations ($) {
 									if ($config->var('apt::cache::recursedepends')) {
 										push @versions, $reverse_version_candidate;
 									}
-									print "  " . __('Reverse-') . "$caption: $label: ";
+									print '  ' . __('Reverse-') . "$caption: $label: ";
 									say stringify_relation_expression($_);
 
 									next CANDIDATE;
@@ -823,6 +823,7 @@ sub show_package_relations ($) {
 			}
 		}
 	}
+	return 1;
 }
 
 sub why ($) {
@@ -839,7 +840,7 @@ sub why ($) {
 	check_no_more_options();
 
 	scalar @ARGV or
-			mydie("no binary packages specified");
+			mydie('no binary packages specified');
 
 
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
@@ -900,10 +901,10 @@ sub why ($) {
 				unshift @path, $_;
 			}
 			foreach my $ref_path_entry (@path) {
-				my ($version, $caption, $relation_expression) = @$ref_path_entry;
-				say sprintf "%s %s: %s: %s",
-						$version->package_name,
-						$version->version_string,
+				my ($path_version, $caption, $relation_expression) = @$ref_path_entry;
+				say sprintf '%s %s: %s: %s',
+						$path_version->package_name,
+						$path_version->version_string,
 						$caption,
 						stringify_relation_expression($relation_expression);
 			}
@@ -928,7 +929,9 @@ sub why ($) {
 			}
 		}
 	}
+	return 1;
 }
+
 sub policy ($) {
 	my ($flavour) = @_;
 	# turn off info and relations parsing, we don't need it
@@ -960,12 +963,12 @@ sub policy ($) {
 					$cache->get_system_state()->get_installed_version_string($package_name);
 			say "$package_name:";
 			if ($flavour eq 'binary') {
-				say "  " . __('Installed') . ": " .
+				say '  ' . __('Installed') . ': ' .
 						($installed_version_string // ('(' . __('none') . ')'));
 			}
 
-			say "  " . __('Candidate') . ": " . $policy_version->version_string;
-			say "  " . __('Version table') . ":";
+			say '  ' . __('Candidate') . ': ' . $policy_version->version_string;
+			say '  ' . __('Version table') . ':';
 
 			my $ref_versions = $cache->get_sorted_pinned_versions($package);
 
@@ -976,9 +979,9 @@ sub policy ($) {
 				if (defined($installed_version_string) && 
 					$version->version_string eq $installed_version_string)
 				{
-					print " *** ";
+					print ' *** ';
 				} else {
-					print "     ";
+					print '     ';
 				}
 
 				say $version->version_string . ' ' . $pin;
@@ -1024,6 +1027,7 @@ sub policy ($) {
 			$sub_say_release_info->($ref_release_info);
 		}
 	}
+	return;
 }
 
 sub mark_autoinstalled ($) {
