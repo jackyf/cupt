@@ -976,7 +976,7 @@ sub policy ($) {
 				my $version = $entry->{'version'};
 				my $pin = $entry->{'pin'};
 
-				if (defined($installed_version_string) && 
+				if (defined $installed_version_string &&
 					$version->version_string eq $installed_version_string)
 				{
 					print ' *** ';
@@ -1006,22 +1006,22 @@ sub policy ($) {
 			my $archive = $ref_release_info->{archive};
 			my $component = $ref_release_info->{component};
 			print "  $origin $archive/$component: ";
-			print "o=", $ref_release_info->{vendor};
-			print ",a=", $archive;
-			print ",l=", $ref_release_info->{label};
-			print ",c=", $component;
-			print ",v=", $ref_release_info->{version};
-			print ",n=", $ref_release_info->{codename};
-			say "";
+			print 'o=', $ref_release_info->{vendor};
+			print ',a=', $archive;
+			print ',l=', $ref_release_info->{label};
+			print ',c=', $component;
+			print ',v=', $ref_release_info->{version};
+			print ',n=', $ref_release_info->{codename};
+			say '';
 		};
 
-		say "Package files:";
+		say 'Package files:';
 		my $ref_binary_release_data = $cache->get_binary_release_data();
 		foreach my $ref_release_info (@$ref_binary_release_data) {
 			$sub_say_release_info->($ref_release_info);
 		}
 
-		say "Source files:";
+		say 'Source files:';
 		my $ref_source_release_data = $cache->get_source_release_data();
 		foreach my $ref_release_info (@$ref_source_release_data) {
 			$sub_say_release_info->($ref_release_info);
@@ -1038,9 +1038,11 @@ sub mark_autoinstalled ($) {
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
-	my $worker = new Cupt::System::Worker($config, $cache);
+	my $worker = Cupt::System::Worker->new($config, $cache);
 	my $markauto = $mark_action eq 'markauto' ? 1 : 0;
 	$worker->mark_as_automatically_installed($markauto, @ARGV);
+
+	return;
 }
 
 sub pkgnames () {
@@ -1053,7 +1055,7 @@ sub pkgnames () {
 
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
-	my $prefix = "";
+	my $prefix = '';
 	if (scalar @ARGV) {
 		$prefix = quotemeta(shift @ARGV);
 	}
@@ -1064,6 +1066,8 @@ sub pkgnames () {
 		# check package name for pattern and output it
 		$package_name =~ m/^$prefix/o and say $package_name;
 	}
+
+	return;
 }
 
 sub generate_management_prompt ($$$) {
@@ -1090,7 +1094,7 @@ sub generate_management_prompt ($$$) {
 				'configure' => __('CONFIGURED'),
 				'deconfigure' => __('DECONFIGURED'),
 			);
-			say "";
+			say '';
 			foreach my $action (qw(install upgrade remove purge downgrade configure deconfigure)) {
 				my $ref_package_entries = $ref_actions_preview->{$action};
 
@@ -1099,8 +1103,8 @@ sub generate_management_prompt ($$$) {
 
 				scalar @$ref_package_entries or next; # don't print empty lists
 				my $action_name = $action_names{$action};
-				say sprintf __("The following %u packages will be %s:"), scalar @$ref_package_entries, $action_name;
-				say "";
+				say sprintf __('The following %u packages will be %s:'), scalar @$ref_package_entries, $action_name;
+				say '';
 				foreach my $ref_package_entry (@$ref_package_entries) {
 					++$action_count;
 					my $package_name = $ref_package_entry->{'package_name'};
@@ -1131,7 +1135,7 @@ sub generate_management_prompt ($$$) {
 
 					if ($show_versions || $show_size_changes || $show_reasons) {
 						# put newline
-						say "";
+						say '';
 					} else {
 						# put a space between package names
 						print ' ';
@@ -1139,7 +1143,7 @@ sub generate_management_prompt ($$$) {
 
 					if ($show_reasons) {
 						my $sub_say_reason = sub {
-							say "  " . __("reason: ") . $_[0];
+							say '  ' . __('reason: ') . $_[0];
 						};
 						foreach my $ref_reason (@{$ref_package_entry->{'reasons'}}) {
 							my @reason_parts = @$ref_reason;
@@ -1166,8 +1170,8 @@ sub generate_management_prompt ($$$) {
 											));
 								}
 								when ('sync') {
-									my ($package_name) = @reason_parts;
-									$sub_say_reason->(sprintf __("synchronized with package '%s'"), $package_name);
+									my ($reason_package_name) = @reason_parts;
+									$sub_say_reason->(sprintf __("synchronized with package '%s'"), $reason_package_name);
 								}
 								when ('user') {
 									$sub_say_reason->(__('user request'));
@@ -1180,11 +1184,11 @@ sub generate_management_prompt ($$$) {
 								}
 							}
 						}
-						say "";
+						say '';
 					}
 				}
-				say "" if !$show_versions && !$show_size_changes && !$show_reasons;
-				say "";
+				say '' if !$show_versions && !$show_size_changes && !$show_reasons;
+				say '';
 			}
 		};
 
@@ -1214,7 +1218,7 @@ sub generate_management_prompt ($$$) {
 
 				foreach my $relation_expression (@{$ref_package_entry->{'version'}->recommends}) {
 					my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
-					
+
 					my $soft_breakage_possible = 0;
 					RELATION_ENTRY:
 					foreach my $satisfying_version (@$ref_satisfying_versions) {
@@ -1239,19 +1243,18 @@ sub generate_management_prompt ($$$) {
 						}
 						if ($is_broken) {
 							my $version_string = $ref_package_entry->{version}->version_string;
-							push @unsatisfied_soft_dependencies, 
-									sprintf __("%s %s recommends %s"), $package_name, $version_string,
+							push @unsatisfied_soft_dependencies,
+									sprintf __('%s %s recommends %s'), $package_name, $version_string,
 									stringify_relation_expression($relation_expression);
-									
 						}
 					}
 				}
 			}
 			if (scalar @unsatisfied_soft_dependencies) {
-				say sprintf __("Leave the following dependencies unresolved:");
-				say "";
+				say sprintf __('Leave the following dependencies unresolved:');
+				say '';
 				say $_ for @unsatisfied_soft_dependencies;
-				say "";
+				say '';
 			}
 		};
 
@@ -1265,10 +1268,10 @@ sub generate_management_prompt ($$$) {
 				}
 			}
 			if (scalar @untrusted_package_names) {
-				say sprintf __("WARNING! The untrusted versions of the following packages will be INSTALLED:");
-				say "";
+				say sprintf __('WARNING! The untrusted versions of the following packages will be INSTALLED:');
+				say '';
 				say $_ for @untrusted_package_names;
-				say "";
+				say '';
 			}
 		}
 
@@ -1288,38 +1291,38 @@ sub generate_management_prompt ($$$) {
 			}
 			if (scalar @essential_package_names) {
 				$is_dangerous_action = 1;
-				say sprintf __("WARNING! The following essential packages will be REMOVED:");
-				say "";
+				say sprintf __('WARNING! The following essential packages will be REMOVED:');
+				say '';
 				say $_ for @essential_package_names;
-				say "";
+				say '';
 			}
 		};
 
 		do { # print size estimations
 			my ($total_bytes, $need_bytes) = $worker->get_download_sizes_preview($ref_actions_preview);
-			print sprintf __("Need to get %s/%s of archives. "),
+			print sprintf __('Need to get %s/%s of archives. '),
 					human_readable_size_string($need_bytes),
 					human_readable_size_string($total_bytes);
 
 			my $total_unpacked_size_change =
 					sum(values %$ref_unpacked_sizes_preview) // 0;
 			if ($total_unpacked_size_change >= 0) {
-				say sprintf __("After unpacking %s will be used."),
+				say sprintf __('After unpacking %s will be used.'),
 						human_readable_size_string($total_unpacked_size_change);
 			} else {
-				say sprintf __("After unpacking %s will be freed."),
+				say sprintf __('After unpacking %s will be freed.'),
 						human_readable_size_string(-$total_unpacked_size_change);
 			}
 		};
 
-		my $confirmation_for_dangerous_action = __("Yes, do as I say!");
+		my $confirmation_for_dangerous_action = __('Yes, do as I say!');
 		my $question = $is_dangerous_action ?
 				sprintf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, anything else to discard this solution:\n"), $confirmation_for_dangerous_action) :
-				__("Do you want to continue? [y/N/q] ");
+				__('Do you want to continue? [y/N/q] ');
 		my $positive_answer = $is_dangerous_action ? $confirmation_for_dangerous_action : 'y';
 
 		print $question;
-		my $answer = <STDIN>;
+		my $answer = <STDIN>; ## no critic (ExplicitStdin)
 		return undef if not defined $answer;
 		chomp $answer;
 		$answer = lc($answer) if !$is_dangerous_action;
@@ -1331,7 +1334,7 @@ sub generate_management_prompt ($$$) {
 			return undef;
 		} else {
 			# user haven't chosen this solution, try next one
-			print __("Resolving further... ");
+			print __('Resolving further... ');
 			return 0;
 		}
 	};
@@ -1340,7 +1343,7 @@ sub generate_management_prompt ($$$) {
 }
 
 sub acquire_source_package {
-	my @parts_to_download = ('tarball', 'diff', 'dsc');
+	my @parts_to_download = qw(tarball diff dsc);
 	# turn off info and relations parsing, we don't need it
 	unless ($o_shell_mode) {
 		$Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
@@ -1366,7 +1369,7 @@ sub acquire_source_package {
 
 	my @download_entries;
 
-	eval "require $download_progress_class_name"; die $@ if $@;
+	eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
 	my $download_progress = $download_progress_class_name->new();
 
 	foreach my $version (@versions) {
@@ -1395,7 +1398,11 @@ sub acquire_source_package {
 				'size' => $version->$part->{'size'},
 				'post-action' => sub {
 					Cupt::Cache::verify_hash_sums($version->$part, $filename) or
-							do { unlink $filename; return sprintf __("%s: hash sums mismatch"), $filename; };
+							do {
+								unlink $filename or
+										mywarn("unable to delete file '%s': %s", $filename, $!);
+								return sprintf __("%s: hash sums mismatch"), $filename;
+							};
 					return 0;
 				}
 			}
