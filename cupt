@@ -20,15 +20,15 @@
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
 
-BEGIN {
-	unshift @INC, ".";
-}
-
 package main;
 
 use 5.10.0;
 use warnings;
 use strict;
+
+BEGIN {
+	unshift @INC, '.';
+}
 
 use List::Util qw(sum);
 use List::MoreUtils qw(uniq);
@@ -50,10 +50,10 @@ my $download_progress_class_name = 'Cupt::Download::Progresses::Console';
 
 sub build_config {
 	eval {
-		$config = new Cupt::Config;
+		$config = Cupt::Config->new();
 	};
 	if (mycatch()) {
-		myerr("error while loading config");
+		myerr('error while loading config');
 		exit 1;
 	}
 }
@@ -72,17 +72,17 @@ sub main {
 	undef $command;
 
 	if ($config->var('quiet')) {
-		close(STDOUT) or mydie("unable to close standard output");
-		open(STDOUT, '>>', '/dev/null') or mydie("unable to turn standard output to /dev/null");
+		close(STDOUT) or mydie('unable to close standard output: %s', $!);
+		open(STDOUT, '>>', '/dev/null') or mydie('unable to turn standard output to /dev/null: %s', $!);
 		$download_progress_class_name = 'Cupt::Download::Progress';
 	}
 
 	foreach my $idx (0..$#ARGV) {
 		if ($ARGV[$idx] eq '-h' or $ARGV[$idx] eq '--help') {
-			$ARGV[$idx] = 'help';
+			$ARGV[$idx] = 'help'; ## no critic (LocalizedPunctuationVars)
 		}
 		if ($ARGV[$idx] eq '-v' or $ARGV[$idx] eq '--version') {
-			$ARGV[$idx] = 'version';
+			$ARGV[$idx] = 'version'; ## no critic (LocalizedPunctuationVars)
 		}
 		if ($ARGV[$idx] !~ m/^-/) {
 			# this is not a option, then it's a command
@@ -92,7 +92,7 @@ sub main {
 		}
 	}
 
-	myerr("no command specified") and return 2 if (!defined($command));
+	myerr('no command specified') and return 2 if not defined $command;
 
 	my %command_handlers = (
 		'version' => \&version,
@@ -149,10 +149,10 @@ exit $main_result;
 sub build_cache {
 	eval {
 		# propagate any parameters passed to Cupt::Cache::&new
-		$cache //= new Cupt::Cache($config, @_);
+		$cache //= Cupt::Cache->new($config, @_);
 	};
 	if (mycatch()) {
-		myerr("error while creating package cache");
+		myerr('error while creating package cache');
 		exit 1;
 	}
 }
@@ -161,24 +161,28 @@ sub check_package_name ($) {
 	if (! ($_[0] =~ m/^$package_name_regex$/)) {
 		mydie("bad package name '%s'", $_[0]);
 	}
+	return;
 }
 
 sub check_version_string ($) {
 	if (! ($_[0] =~ m/^$version_string_regex$/)) {
 		mydie("bad version string '%s'", $_[0]);
 	}
+	return;
 }
 
 sub check_no_extra_args () {
 	if (scalar @ARGV > 0) {
 		mywarn("extra arguments '%s' are not processed", "@ARGV");
 	}
+	return;
 }
 
 sub check_no_more_options () {
 	foreach (@ARGV) {
 		m/^-/ and mydie("unknown option '%s'", $_);
 	}
+	return;
 }
 
 sub get_binary_package ($$) {
@@ -199,7 +203,7 @@ sub get_source_package ($$) {
 	return $package;
 }
 
-sub select_package_version ($$$) {
+sub select_package_version ($$$) { ## no critic (RequireFinalReturn)
 	my ($package_expression, $sub_package_getter, $o_fatal) = @_;
 
 	if ($package_expression =~ m/^(.*?)=(.*)/) {
@@ -271,7 +275,7 @@ sub select_binary_package_version ($$) {
 	return select_package_version($package_name, \&get_binary_package, $o_fatal);
 }
 
-sub select_source_package_version ($$) {
+sub select_source_package_version ($$) { ## no critic (RequireFinalReturn)
 	my ($package_expression, $o_fatal) = @_;
 
 	# there we should gracefully accept both source and binary packages names,
@@ -309,7 +313,7 @@ sub select_package_versions_wildcarded ($$;$) {
 	$o_fatal //= 1;
 
 	my ($package_name, $remainder) = ($expression =~ m{([^=/]+)((?:=|/).*)?});
-	$remainder //= "";
+	$remainder //= '';
 
 	my $sub_selector = $source_or_binary eq 'source' ?
 			\&select_source_package_version : \&select_binary_package_version;
@@ -352,6 +356,7 @@ sub version () {
 	foreach my $package (@packages) {
 		say "$package: ", $cache->get_system_state()->get_installed_version_string($package);
 	}
+	return 1;
 }
 
 sub help () {
@@ -392,11 +397,12 @@ sub help () {
 	);
 
 	say __('Usage: cupt <action> [<parameters>]');
-	say "";
+	say '';
 	say __('Actions:');
 	foreach my $action (sort keys %action_descriptions) {
 		say "  $action: ", $action_descriptions{$action};
 	}
+	return 1;
 }
 
 sub config_dump () {
@@ -416,7 +422,7 @@ sub config_dump () {
 	if (defined $particular_key) {
 		my $value;
 		$value = $config->var($particular_key);
-		$value //= "";
+		$value //= '';
 		say $value;
 	} else {
 		my @regular_keys = sort keys %{$config->{regular_vars}};
@@ -432,6 +438,7 @@ sub config_dump () {
 			}
 		}
 	}
+	return 1;
 }
 
 sub show_binary_package_versions () {
@@ -447,7 +454,7 @@ sub show_binary_package_versions () {
 	my $sub_get_reverse_provides = sub {
 		my ($package_name) = @_;
 
-		my $virtual_relation = new Cupt::Cache::Relation("$package_name");
+		my $virtual_relation = Cupt::Cache::Relation->new("$package_name");
 		my $ref_satisfying_versions = $cache->get_satisfying_versions($virtual_relation);
 		my @relations;
 		foreach (@$ref_satisfying_versions) {
@@ -456,7 +463,7 @@ sub show_binary_package_versions () {
 			$new_package_name ne $package_name or next;
 
 			my $new_relation_version_string = $_->version_string;
-			my $new_relation = new Cupt::Cache::Relation("$new_package_name (= $new_relation_version_string)");
+			my $new_relation = Cupt::Cache::Relation->new("$new_package_name (= $new_relation_version_string)");
 			push @relations, $new_relation;
 		}
 		return \@relations;
@@ -464,7 +471,7 @@ sub show_binary_package_versions () {
 
 	my @package_expressions = @ARGV;
 	scalar @package_expressions or
-			mydie("no package expressions specified");
+			mydie('no package expressions specified');
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
@@ -496,7 +503,7 @@ sub show_binary_package_versions () {
 			$p->(__('Package'), $package_name);
 			$p->(__('Version'), $version->version_string);
 			my $installed_status = $cache->get_system_state()->get_status_for_version($version);
-			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : "not installed");
+			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : 'not installed');
 			if ($version->is_installed()) {
 				my $is_auto_installed = $cache->is_automatically_installed($package_name);
 				$p->(__('Automatically installed'), $is_auto_installed ? __('yes') : __('no'));
@@ -525,7 +532,7 @@ sub show_binary_package_versions () {
 			$p->(__('Conflicts'), stringify_relation_expressions($version->conflicts)) if @{$version->conflicts};
 			$p->(__('Breaks'), stringify_relation_expressions($version->breaks)) if @{$version->breaks};
 			$p->(__('Replaces'), stringify_relation_expressions($version->replaces)) if @{$version->replaces};
-			$p->(__('Provides'), join(", ", @{$version->provides})) if @{$version->provides};
+			$p->(__('Provides'), join(', ', @{$version->provides})) if @{$version->provides};
 			$p->(__('Enhances'), stringify_relation_expressions($version->enhances)) if @{$version->enhances};
 			my $ref_reverse_provides = $sub_get_reverse_provides->($package_name);
 			if (scalar @$ref_reverse_provides) {
@@ -547,6 +554,7 @@ sub show_binary_package_versions () {
 			print "\n";
 		}
 	}
+	return 1;
 }
 
 sub show_source_package_versions () {
