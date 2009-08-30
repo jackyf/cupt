@@ -240,7 +240,7 @@ sub _install_version_no_stick ($$$) {
 			# need to check is the whole operation doable
 			if (!$self->_related_packages_can_be_synchronized($self->{_packages}, $version)) {
 				# we cannot do it, do nothing
-				return sprintf __("unable to synchronize related binary packages for %s %s"),
+				return sprintf __('unable to synchronize related binary packages for %s %s'),
 						$package_name, $version->version_string;
 			}
 		}
