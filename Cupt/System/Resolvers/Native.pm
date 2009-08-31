@@ -18,28 +18,9 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-package Cupt::System::Resolvers::Native::PackageEntry; ## no critic (RequireFilenameMatchesPackage)
-
-use strict;
-use warnings;
-
-use Cupt::LValueFields qw(version stick fake_satisfied reasons manually_selected installed);
-
-sub new {
-	my $class = shift;
-	my $self = (bless [] => $class);
-	$self->version = undef;
-	$self->stick = 0;
-	$self->fake_satisfied = [];
-	$self->reasons = [];
-	$self->manually_selected = 0;
-	$self->installed = 0;
-	return $self;
-}
-
 package Cupt::System::Resolvers::Native;
 
-=head1 NAME ## no critic (MatchesPodName)
+=head1 NAME
 
 Cupt::System::Resolvers::Native - native (built-in) dependency problem resolver for Cupt
 
@@ -53,6 +34,7 @@ use base qw(Cupt::System::Resolver);
 
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
+use Cupt::System::Resolvers::Native::PackageEntry;
 
 use Graph;
 use List::Util qw(reduce first);
