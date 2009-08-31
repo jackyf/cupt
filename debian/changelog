@@ -1,4 +1,4 @@
-cupt (0.6.4~) UNRELEASED; urgency=low
+cupt (0.6.4) unstable; urgency=low
 
   * Cupt:
     - Config:
@@ -15,7 +15,7 @@ cupt (0.6.4~) UNRELEASED; urgency=low
         - Don't fail to synchronize already sticked binary package with the
           same source version.
 
- -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 28 Aug 2009 23:28:23 +0300
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Mon, 31 Aug 2009 23:59:45 +0300
 
 cupt (0.6.3) unstable; urgency=medium
 
