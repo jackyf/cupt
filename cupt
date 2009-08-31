@@ -356,7 +356,7 @@ sub version () {
 	foreach my $package (@packages) {
 		say "$package: ", $cache->get_system_state()->get_installed_version_string($package);
 	}
-	return 1;
+	return 0;
 }
 
 sub help () {
@@ -402,7 +402,7 @@ sub help () {
 	foreach my $action (sort keys %action_descriptions) {
 		say "  $action: ", $action_descriptions{$action};
 	}
-	return 1;
+	return 0;
 }
 
 sub config_dump () {
@@ -438,7 +438,7 @@ sub config_dump () {
 			}
 		}
 	}
-	return 1;
+	return 0;
 }
 
 sub show_binary_package_versions () {
@@ -554,7 +554,7 @@ sub show_binary_package_versions () {
 			print "\n";
 		}
 	}
-	return 1;
+	return 0;
 }
 
 sub show_source_package_versions () {
@@ -625,7 +625,7 @@ sub show_source_package_versions () {
 			print "\n";
 		}
 	}
-	return 1;
+	return 0;
 }
 
 sub search () {
@@ -823,7 +823,7 @@ sub show_package_relations ($) {
 			}
 		}
 	}
-	return 1;
+	return 0;
 }
 
 sub why ($) {
@@ -929,7 +929,7 @@ sub why ($) {
 			}
 		}
 	}
-	return 1;
+	return 0;
 }
 
 sub policy ($) {
@@ -1361,7 +1361,7 @@ sub acquire_source_package {
 	check_no_more_options();
 
 	scalar @ARGV or
-			mydie("no package expressions specified");
+			mydie('no package expressions specified');
 
 	build_cache(-source => 1, -binary => 1, -installed => 1);
 
@@ -1401,7 +1401,7 @@ sub acquire_source_package {
 							do {
 								unlink $filename or
 										mywarn("unable to delete file '%s': %s", $filename, $!);
-								return sprintf __("%s: hash sums mismatch"), $filename;
+								return sprintf __('%s: hash sums mismatch'), $filename;
 							};
 					return 0;
 				}
@@ -1413,18 +1413,19 @@ sub acquire_source_package {
 
 	my $download_result;
 	do {
-		my $download_manager = new Cupt::Download::Manager($config, $download_progress);
+		my $download_manager = Cupt::Download::Manager->new($config, $download_progress);
 		$download_result = $download_manager->download(@download_entries);
 	}; # make sure that download manager is already destroyed at this point
 
 	# fail and exit if it was something bad with downloading
 	mydie($download_result) if $download_result;
 
-	unless ($o_download_only || scalar @parts_to_download < 3) {
+	if (not $o_download_only and scalar @parts_to_download == 3) {
 		# unpack downloaded sources
 		foreach my $version (@versions) {
 			my $dsc_filename = $version->dsc->{'filename'};
-			system("dpkg-source -x $dsc_filename");
+			system("dpkg-source -x $dsc_filename") == 0 or
+					mydie('dpkg-source failed: %s', $?);
 		}
 	}
 
@@ -1472,11 +1473,11 @@ sub manage_packages ($) {
 	do {
 		my $resolver_module_name = defined $config->var('cupt::resolver::external-command') ?
 				'Cupt::System::Resolvers::External' : 'Cupt::System::Resolvers::Native';
-		eval "require $resolver_module_name;"; die $@ if $@;
+		eval "require $resolver_module_name;"; die $@ if $@; ## no critic (StringyEval)
 		$resolver = $resolver_module_name->new($config, $cache);
 	};
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
-	my $worker = new Cupt::System::Worker($config, $cache);
+	my $worker = Cupt::System::Worker->new($config, $cache);
 	say __('[done]');
 
 	print __('Scheduling requested actions... ');
@@ -1547,9 +1548,9 @@ sub manage_packages ($) {
 					$version->build_conflicts_indep, $config->var('apt::architecture'))};
 			$resolver->unsatisfy_relation_expression($_) for @relation_expressions;
 
-			$resolver->satisfy_relation_expression(new Cupt::Cache::Relation("build-essential"));
+			$resolver->satisfy_relation_expression(Cupt::Cache::Relation->new('build-essential'));
 		} else {
-			my $action = $action;
+			my $action = $action; ## no critic (ReusedNames)
 			my $actual_package_expression = $package_expression;
 			if ($action eq 'remove') {
 				$actual_package_expression .= '/installed';
@@ -1611,20 +1612,25 @@ sub manage_packages ($) {
 	my $resolve_result = $resolver->resolve(
 			generate_management_prompt($worker, $o_show_versions, $o_show_size_changes)
 	);
-	say "";
+	say '';
 
 	if (!defined $resolve_result) {
 		# tryings were abandoned
+		return 1;
 	} elsif ($resolve_result) {
 		# if some solution was found and user has accepted it
-		eval "require $download_progress_class_name"; die $@ if $@;
+		eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
 		my $download_progress = $download_progress_class_name->new();
-		say __("Performing requested actions:");
+		say __('Performing requested actions:');
 		my $overall_result = $worker->change_system($download_progress);
-		mydie("unable to do requested actions") unless $overall_result;
+		mydie('unable to do requested actions') unless $overall_result;
+
+		return 0;
 	} else {
-		say __("no more solutions.");
+		say __('no more solutions.');
+		return 1;
 	}
+	return;
 }
 
 sub dist_upgrade {
