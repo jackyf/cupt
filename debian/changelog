@@ -12,6 +12,8 @@ cupt (0.6.4~) UNRELEASED; urgency=low
         - Display descriptive error message when manually selected version of
           package cannot be updated because of the option
           'cupt::resolver::synchronize-source-versions' set to 'hard'.
+        - Don't fail to synchronize already sticked binary package with the
+          same source version.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 28 Aug 2009 23:28:23 +0300
 
