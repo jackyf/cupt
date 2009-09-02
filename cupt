@@ -58,6 +58,11 @@ sub build_config {
 	}
 }
 
+sub new_download_progress {
+	eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
+	return $download_progress_class_name->new();
+}
+
 # build config at start
 build_config();
 
@@ -1369,8 +1374,7 @@ sub acquire_source_package {
 
 	my @download_entries;
 
-	eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
-	my $download_progress = $download_progress_class_name->new();
+	my $download_progress = new_download_progress();
 
 	foreach my $version (@versions) {
 		my $package_name = $version->package_name;
@@ -1621,8 +1625,7 @@ sub manage_packages ($) {
 		return 1;
 	} elsif ($resolve_result) {
 		# if some solution was found and user has accepted it
-		eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
-		my $download_progress = $download_progress_class_name->new();
+		my $download_progress = new_download_progress();
 		say __('Performing requested actions:');
 		my $overall_result = $worker->change_system($download_progress);
 		mydie('unable to do requested actions') unless $overall_result;
@@ -1667,8 +1670,7 @@ sub update_release_data () {
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
-	eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
-	my $download_progress = $download_progress_class_name->new();
+	my $download_progress = new_download_progress();
 	my $worker = Cupt::System::Worker->new($config, $cache);
 
 	return $worker->update_release_and_index_data($download_progress);
@@ -1762,8 +1764,7 @@ sub show_changelog_or_copyright ($) {
 
 				my (undef, $temp_target_path) = tempfile();
 
-				eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
-				my $download_progress = $download_progress_class_name->new();
+				my $download_progress = new_download_progress();
 
 				my $download_result;
 				do {
