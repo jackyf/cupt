@@ -1641,7 +1641,7 @@ sub dist_upgrade {
 		say '';
 		local @ARGV = @ARGV;
 		unshift @ARGV, 'dpkg', 'libcupt-perl', 'cupt';
-		manage_packages('install') or
+		manage_packages('install') == 0 or
 				mydie('upgrading of the package management tools failed');
 	};
 

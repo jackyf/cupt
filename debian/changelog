@@ -1,5 +1,8 @@
 cupt (0.6.5) UNRELEASED; urgency=low
 
+  * cupt:
+    - 'dist-upgrade': fixed the regression since 0.6.4 being not able to
+      proceed package management tools upgrade successfully.
   * Cupt:
     - Download:
       - Manager:
