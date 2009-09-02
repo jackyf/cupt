@@ -96,31 +96,35 @@ sub new ($$$) {
 	$self->{_config} = shift;
 	$self->{_progress} = shift;
 
-	# main socket
-	$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
-	unlink($self->{_server_socket_path}); ## no critic (RequireCheckedSyscalls)
-	$self->{_server_socket} = IO::Socket::UNIX->new(
-			Local => $self->{_server_socket_path}, Listen => SOMAXCONN, Type => SOCK_STREAM);
-	defined $self->{_server_socket} or
-			mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
-
-	$self->{_parent_pipe} = IO::Pipe->new() //
-			mydie('unable to open parent pipe: %s', $!);
-
-	my $pid = fork();
-	defined $pid or
-			mydie('unable to create download worker process: %s', $!);
-
-	if ($pid) {
-		# this is a main process
-		$self->{_worker_pid} = $pid;
-		$self->{_parent_pipe}->writer();
-		$self->{_parent_pipe}->autoflush(1);
+	if ($self->{_config}->var('cupt::worker::simulate')) {
 		return $self;
 	} else {
-		# this is background worker process
-		$self->{_parent_pipe}->reader();
-		$self->_worker();
+		# main socket
+		$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
+		unlink($self->{_server_socket_path}); ## no critic (RequireCheckedSyscalls)
+		$self->{_server_socket} = IO::Socket::UNIX->new(
+				Local => $self->{_server_socket_path}, Listen => SOMAXCONN, Type => SOCK_STREAM);
+		defined $self->{_server_socket} or
+				mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
+
+		$self->{_parent_pipe} = IO::Pipe->new() //
+				mydie('unable to open parent pipe: %s', $!);
+
+		my $pid = fork();
+		defined $pid or
+				mydie('unable to create download worker process: %s', $!);
+
+		if ($pid) {
+			# this is a main process
+			$self->{_worker_pid} = $pid;
+			$self->{_parent_pipe}->writer();
+			$self->{_parent_pipe}->autoflush(1);
+			return $self;
+		} else {
+			# this is background worker process
+			$self->{_parent_pipe}->reader();
+			$self->_worker();
+		}
 	}
 	return;
 }
@@ -385,18 +389,21 @@ sub _worker ($) {
 
 sub DESTROY {
 	my ($self) = @_;
-	# shutdowning worker thread
-	__my_write_socket($self->{_parent_pipe}, 'exit');
-	waitpid($self->{_worker_pid}, 0); ## no critic (RequireCheckedSyscalls)
 
-	# cleaning parent sockets
-	close($self->{_parent_pipe}) or mydie('unable to close parent writer socket: %s', $!);
+	unless ($self->{_config}->var('cupt::worker::simulate')) {
+		# shutdowning worker thread
+		__my_write_socket($self->{_parent_pipe}, 'exit');
+		waitpid($self->{_worker_pid}, 0); ## no critic (RequireCheckedSyscalls)
 
-	# cleaning server socket
-	close($self->{_server_socket}) or
-			mydie("unable to close server socket on file '%s': %s", $self->{_server_socket_path}, $!);
-	unlink($self->{_server_socket_path}) or
-			mydie("unable to delete server socket file '%s': %s", $self->{_server_socket_path}, $!);
+		# cleaning parent sockets
+		close($self->{_parent_pipe}) or mydie('unable to close parent writer socket: %s', $!);
+
+		# cleaning server socket
+		close($self->{_server_socket}) or
+				mydie("unable to close server socket on file '%s': %s", $self->{_server_socket_path}, $!);
+		unlink($self->{_server_socket_path}) or
+				mydie("unable to delete server socket file '%s': %s", $self->{_server_socket_path}, $!);
+	}
 	return;
 }
 
@@ -441,6 +448,14 @@ Example:
 
 sub download ($@) {
 	my $self = shift;
+
+	if ($self->{_config}->var('cupt::worker::simulate')) {
+		foreach my $ref_download_entry (@_) {
+			my @uris = @{$ref_download_entry->{'uris'}};
+			say __('simulating: downloading') . ': ' . join(' | ', @uris);
+		}
+		return 0;
+	}
 
 	# { $filename => { 'uris' => [ $uri... ], 'size' => $size, 'checker' => $checker }... }
 	my %download_entries;
@@ -531,7 +546,9 @@ method, forwards params to underlying download progress
 
 sub set_short_alias_for_uri {
 	my ($self, @params) = @_;
-	__my_write_socket($self->{_parent_pipe}, 'set-short-alias', @params);
+	unless ($self->{_config}->var('cupt::worker::simulate')) {
+		__my_write_socket($self->{_parent_pipe}, 'set-short-alias', @params);
+	}
 	return;
 }
 
@@ -543,7 +560,9 @@ method, forwards params to underlying download progress
 
 sub set_long_alias_for_uri {
 	my ($self, @params) = @_;
-	__my_write_socket($self->{_parent_pipe}, 'set-long-alias', @params);
+	unless ($self->{_config}->var('cupt::worker::simulate')) {
+		__my_write_socket($self->{_parent_pipe}, 'set-long-alias', @params);
+	}
 	return;
 }
 

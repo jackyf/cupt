@@ -1055,33 +1055,31 @@ sub _prepare_downloads ($$) {
 sub _do_downloads ($$$) {
 	my ($self, $ref_pending_downloads, $download_progress) = @_;
 
-	if ($self->{_config}->var('cupt::worker::simulate')) {
-		foreach (@$ref_pending_downloads) {
-			say __('downloading') . ': ' . join(' | ', @{$_->{'uris'}});
-		}
-	} else {
-		# don't bother ourselves with download preparings if nothing to download
-		if (scalar @$ref_pending_downloads) {
-			my $archives_location = $self->_get_archives_location();
+	# don't bother ourselves with download preparings if nothing to download
+	if (scalar @$ref_pending_downloads) {
+		my $archives_location = $self->_get_archives_location();
 
+		unless ($self->{_config}->var('cupt::worker::simulate')) {
 			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 					mydie('unable to open archives lock file: %s', $!);
+		}
 
-			my $download_size = sum map { $_->{'size'} } @$ref_pending_downloads;
-			$download_progress->set_total_estimated_size($download_size);
+		my $download_size = sum map { $_->{'size'} } @$ref_pending_downloads;
+		$download_progress->set_total_estimated_size($download_size);
 
-			my $download_result;
-			do {
-				my $download_manager = Cupt::Download::Manager->new($self->{_config}, $download_progress);
-				$download_result = $download_manager->download(@$ref_pending_downloads);
-			}; # make sure that download manager is already destroyed at this point
+		my $download_result;
+		do {
+			my $download_manager = Cupt::Download::Manager->new($self->{_config}, $download_progress);
+			$download_result = $download_manager->download(@$ref_pending_downloads);
+		}; # make sure that download manager is already destroyed at this point
 
+		unless ($self->{_config}->var('cupt::worker::simulate')) {
 			close(LOCK) or
 					mydie('unable to close archives lock file: %s', $!);
-
-			# fail and exit if it was something bad with downloading
-			mydie('there were download errors') if $download_result;
 		}
+
+		# fail and exit if it was something bad with downloading
+		mydie('there were download errors') if $download_result;
 	}
 	return;
 }
@@ -1487,17 +1485,6 @@ sub update_release_and_index_data ($$) {
 	do { # download manager involved part
 		my $download_manager = Cupt::Download::Manager->new($self->{_config}, $download_progress);
 
-		my $sub_download_wrapper = sub {
-			if ($simulate) {
-				foreach (@_) {
-					say __('downloading') . ': ' . join(' | ', @{$_->{'uris'}});
-				}
-				return 0;
-			} else {
-				return $download_manager->download(@_);
-			}
-		};
-
 		my @pids;
 		foreach my $index_entry (@index_entries) {
 			my $pid = fork() //
@@ -1534,7 +1521,7 @@ sub update_release_and_index_data ($$) {
 
 						$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
 						$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
-						my $download_result = $sub_download_wrapper->(
+						my $download_result = $download_manager->download(
 								{
 									'uris' => [ $download_uri ],
 									'filename' => $download_filename,
@@ -1556,7 +1543,7 @@ sub update_release_and_index_data ($$) {
 						$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
 						$download_manager->set_long_alias_for_uri($signature_download_uri,
 								"$index_entry->{'uri'} $release_signature_alias");
-						$download_result = $sub_download_wrapper->(
+						$download_result = $download_manager->download(
 								{
 									'uris' => [ $signature_download_uri ],
 									'filename' => $signature_download_filename,
@@ -1633,7 +1620,7 @@ sub update_release_and_index_data ($$) {
 								}
 							}
 
-							$download_result = $sub_download_wrapper->(
+							$download_result = $download_manager->download(
 									{
 										'uris' => [ $download_uri ],
 										'filename' => $download_filename,
@@ -1687,7 +1674,7 @@ sub update_release_and_index_data ($$) {
 							$download_manager->set_long_alias_for_uri($download_uri,
 									"$index_entry->{'uri'} $index_alias");
 
-							my $download_result = $sub_download_wrapper->(
+							my $download_result = $download_manager->download(
 									{
 										'uris' => [ $download_uri ],
 										'filename' => $download_filename,
