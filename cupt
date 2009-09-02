@@ -1382,18 +1382,20 @@ sub acquire_source_package {
 		my $ref_uris = $version->uris();
 		foreach my $part (@parts_to_download) {
 			next if $part eq 'diff' and not defined $version->diff;
-			my @download_uris;
 			my $filename = $version->$part->{filename};
+			my @download_uri_entries;
 			foreach my $ref_uri_entry (@{$ref_uris->{$part}}) {
 				my $download_uri = $ref_uri_entry->{'download_uri'};
-				push @download_uris, $download_uri;
-				$download_progress->set_short_alias_for_uri($download_uri, "$package_name $part");
 				my $base_uri = $ref_uri_entry->{'base_uri'};
-				$download_progress->set_long_alias_for_uri($download_uri,
-						"$base_uri $codename/$component $package_name $version_string $part");
+				my $long_alias = "$base_uri $codename/$component $package_name $version_string $part";
+				push @download_uri_entries, {
+					'uri' => $download_uri,
+					'short-alias' => "$package_name $part",
+					'long-alias' => $long_alias,
+				};
 			}
 			push @download_entries, {
-				'uris' => \@download_uris,
+				'uri-entries' => \@download_uri_entries,
 				'filename' => $filename,
 				'size' => $version->$part->{'size'},
 				'post-action' => sub {
@@ -1765,7 +1767,11 @@ sub show_changelog_or_copyright ($) {
 				do {
 					my $download_manager = new Cupt::Download::Manager($config, $download_progress);
 					$download_result = $download_manager->download(
-							{ 'uris' => \@target_uris, 'filename' => $temp_target_path });
+							{
+								'uri-entries' => [ map { { 'uri' => $_ } } @target_uris ],
+								'filename' => $temp_target_path,
+							}
+					);
 				}; # make sure that download manager is already destroyed at this point
 
 				# fail and exit if it was something bad with downloading

@@ -1018,8 +1018,25 @@ sub _prepare_downloads ($$) {
 				next;
 			}
 
+			my @download_uri_entries;
+			foreach my $uri (@uris) {
+				my $download_uri = $uri->{'download_uri'};
+
+				my $ref_release = $version->available_as->[0]->{'release'};
+				my $codename = $ref_release->{'codename'};
+				my $component = $ref_release->{'component'};
+				my $base_uri = $uri->{'base_uri'};
+				my $long_alias = "$base_uri $codename/$component $package_name $version_string";
+
+				push @download_uri_entries, {
+					'uri' => $download_uri,
+					'short-alias' => $package_name,
+					'long-alias' => $long_alias,
+				};
+			}
+
 			push @pending_downloads, {
-				'uris' => [ map { $_->{'download_uri' } } @uris ],
+				'uri-entries' => \@download_uri_entries,
 				'filename' => $download_filename,
 				'size' => $version->size,
 				'post-action' => sub {
@@ -1035,17 +1052,6 @@ sub _prepare_downloads ($$) {
 					return 0;
 				},
 			};
-			foreach my $uri (@uris) {
-				my $download_uri = $uri->{'download_uri'};
-
-				$download_progress->set_short_alias_for_uri($download_uri, $package_name);
-				my $ref_release = $version->available_as->[0]->{'release'};
-				my $codename = $ref_release->{'codename'};
-				my $component = $ref_release->{'component'};
-				my $base_uri = $uri->{'base_uri'};
-				$download_progress->set_long_alias_for_uri($download_uri,
-						"$base_uri $codename/$component $package_name $version_string");
-			}
 		}
 	}
 
@@ -1519,11 +1525,13 @@ sub update_release_and_index_data ($$) {
 						my $download_uri = $cache->get_download_uri_of_release_list($index_entry);
 						my $download_filename = $sub_get_download_filename->($local_path);
 
-						$download_manager->set_short_alias_for_uri($download_uri, $release_alias);
-						$download_manager->set_long_alias_for_uri($download_uri, "$index_entry->{'uri'} $release_alias");
 						my $download_result = $download_manager->download(
 								{
-									'uris' => [ $download_uri ],
+									'uri-entries' => [ {
+										'uri' => $download_uri,
+										'short-alias' => $release_alias,
+										'long-alias' => "$index_entry->{'uri'} $release_alias",
+									} ],
 									'filename' => $download_filename,
 									'post-action' => $sub_generate_moving_sub->($download_filename => $local_path),
 								}
@@ -1540,12 +1548,14 @@ sub update_release_and_index_data ($$) {
 						my $signature_download_filename = "$download_filename.gpg";
 
 						my $release_signature_alias = "$release_alias.gpg";
-						$download_manager->set_short_alias_for_uri($signature_download_uri, $release_signature_alias);
-						$download_manager->set_long_alias_for_uri($signature_download_uri,
-								"$index_entry->{'uri'} $release_signature_alias");
+
 						$download_result = $download_manager->download(
 								{
-									'uris' => [ $signature_download_uri ],
+									'uri-entries' => [ {
+										'uri' => $signature_download_uri,
+										'short-alias' => $release_signature_alias,
+										'long-alias' => "$index_entry->{'uri'} $release_signature_alias",
+									} ],
 									'filename' => $signature_download_filename,
 									'post-action' => $sub_generate_moving_sub->(
 										$signature_download_filename => $signature_local_path),
@@ -1607,10 +1617,6 @@ sub update_release_and_index_data ($$) {
 							my $index_alias = sprintf '%s/%s %s', $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
 
-							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
-							$download_manager->set_long_alias_for_uri($download_uri,
-									"$index_entry->{'uri'} $index_alias");
-
 							if (not $simulate) {
 								# here we check for outdated dangling indexes in partial directory
 								if (!Cupt::Cache::verify_hash_sums($ref_release_hash_sums, $release_local_path)) {
@@ -1622,7 +1628,11 @@ sub update_release_and_index_data ($$) {
 
 							$download_result = $download_manager->download(
 									{
-										'uris' => [ $download_uri ],
+										'uri-entries' => [ {
+											'uri' => $download_uri,
+											'short-alias' => $index_alias,
+											'long-alias' => "$index_entry->{'uri'} $index_alias",
+										} ],
 										'filename' => $download_filename,
 										'size' => $ref_download_entries->{$download_uri}->{'size'},
 										'post-action' => sub {
@@ -1670,13 +1680,13 @@ sub update_release_and_index_data ($$) {
 							my $index_alias = sprintf '%s/%s %s', $index_entry->{'distribution'},
 									$index_entry->{'component'}, $download_filename_basename;
 
-							$download_manager->set_short_alias_for_uri($download_uri, $index_alias);
-							$download_manager->set_long_alias_for_uri($download_uri,
-									"$index_entry->{'uri'} $index_alias");
-
 							my $download_result = $download_manager->download(
 									{
-										'uris' => [ $download_uri ],
+										'uri-entries' => [ {
+											'uri' => $download_uri,
+											'short-alias' => $index_alias,
+											'long-alias' => "$index_entry->{'uri'} $index_alias",
+										} ],
 										'filename' => $download_filename,
 										'post-action' => $sub_post_action,
 									}

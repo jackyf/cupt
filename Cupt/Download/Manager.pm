@@ -418,14 +418,34 @@ Parameters:
 
 Sequence of hash entries with the following fields:
 
-I<uris> - array of mirror URIs to download, mandatory
+=over
 
-I<filename> - target filename, mandatory
+=item uri-entries
 
-I<post-action> - reference to subroutine that will be called in case of
+array of I<URI entry>s, mandatory
+
+I<URI entry> - hash entry with keys:
+
+uri - mirror URIs to download, mandatory
+
+short-alias - short alias for this URI, optional
+
+long-alias - long alias for this URI, optional
+
+=item filename
+
+target filename, mandatory
+
+=item post-action
+
+reference to subroutine that will be called in case of
 successful download, optional
 
-I<size> - fixed size for target, will be used in sanity checks, optional
+=item size
+
+fixed size for target, will be used in sanity checks, optional
+
+=back
 
 Returns:
 
@@ -435,12 +455,20 @@ Example:
 
   my $download_manager = new Cupt::Download::Manager;
   $download_manager->download(
-    { 'uris' => [ 'http://www.en.debian.org' ], 'filename' => '/tmp/en.html' },
-    { 'uris' => [ 'http://www.ru.debian.org' ], 'filename' => '/tmp/ru.html', 'post-action' => \&checker },
-    { 'uris' => [ 'http://www.ua.debian.org' ], 'filename' => '/tmp/ua.html', 'size' => 10254 }
-    { 'uris' => [
-        'http://ftp.de.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
-        'http://ftp.es.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb'
+    { 'uri-entries' => [ { 'uri' => 'http://www.en.debian.org' } ], 'filename' => '/tmp/en.html' },
+    { 'uri-entries' => [ { 'uri' => 'http://www.ru.debian.org' } ], 'filename' => '/tmp/ru.html', 'post-action' => \&checker },
+    { 'uri-entries' => [ { 'uri' => 'http://www.ua.debian.org' } ], 'filename' => '/tmp/ua.html', 'size' => 10254 }
+    { 'uri-entries' => [
+        {
+          'uri' => 'http://ftp.de.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
+          'long-alias' => 'ftp.de.debian.org/debian sid/main nlkt 0.3.2.1-2',
+          'short-alias' => 'nlkt',
+        },
+        {
+          'uri' => 'http://ftp.ua.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
+          'long-alias' => 'ftp.ua.debian.org/debian sid/main nlkt 0.3.2.1-2',
+          'short-alias' => 'nlkt',
+        },
       ], 'filename' => '/var/cache/apt/archives/nlkt_0.3.2.1-2_amd64.deb' }
   );
 
@@ -451,7 +479,7 @@ sub download ($@) {
 
 	if ($self->{_config}->var('cupt::worker::simulate')) {
 		foreach my $ref_download_entry (@_) {
-			my @uris = @{$ref_download_entry->{'uris'}};
+			my @uris = map { $_->{'uri'} } @{$ref_download_entry->{'uri-entries'}};
 			say __('simulating: downloading') . ': ' . join(' | ', @uris);
 		}
 		return 0;
@@ -469,13 +497,22 @@ sub download ($@) {
 	my $sub_schedule_download = sub {
 		my ($filename) = @_;
 
-		$download_entries{$filename}->{'current_uri'} = shift @{$download_entries{$filename}->{'uris'}};
+		my $current_uri_entry = shift @{$download_entries{$filename}->{'uris'}};
+		$download_entries{$filename}->{'current_uri'} = $current_uri_entry->{'uri'};
 		my $uri = $download_entries{$filename}->{'current_uri'};
 		my $size = $download_entries{$filename}->{'size'};
 		my $checker = $download_entries{$filename}->{'checker'};
+		my $short_alias = $current_uri_entry->{'short-alias'};
+		my $long_alias = $current_uri_entry->{'long-alias'};
 
 		if (defined $size) {
 			__my_write_socket($socket, 'set-download-size', $uri, $size);
+		}
+		if (defined $short_alias) {
+			__my_write_socket($socket, 'set-short-alias', $uri, $short_alias);
+		}
+		if (defined $long_alias) {
+			__my_write_socket($socket, 'set-long-alias', $uri, $long_alias);
 		}
 		__my_write_socket($socket, 'download', $uri, $filename);
 
@@ -486,10 +523,9 @@ sub download ($@) {
 	while (scalar @_) {
 		# extract next entry
 		my $ref_entry = shift;
-		my $ref_uris= $ref_entry->{'uris'};
 		my $filename = $ref_entry->{'filename'};
 
-		$download_entries{$filename}->{'uris'} = $ref_uris;
+		$download_entries{$filename}->{'uris'} = $ref_entry->{'uri-entries'};
 		# may be undef
 		$download_entries{$filename}->{'size'} = $ref_entry->{'size'};
 		# may be undef
@@ -536,34 +572,6 @@ sub download ($@) {
 
 	# finish
 	return $result;
-}
-
-=head2 set_short_alias_for_uri
-
-method, forwards params to underlying download progress
-
-=cut
-
-sub set_short_alias_for_uri {
-	my ($self, @params) = @_;
-	unless ($self->{_config}->var('cupt::worker::simulate')) {
-		__my_write_socket($self->{_parent_pipe}, 'set-short-alias', @params);
-	}
-	return;
-}
-
-=head2 set_long_alias_for_uri
-
-method, forwards params to underlying download progress
-
-=cut
-
-sub set_long_alias_for_uri {
-	my ($self, @params) = @_;
-	unless ($self->{_config}->var('cupt::worker::simulate')) {
-		__my_write_socket($self->{_parent_pipe}, 'set-long-alias', @params);
-	}
-	return;
 }
 
 sub _download ($$$) {
