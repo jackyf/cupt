@@ -31,7 +31,7 @@ BEGIN {
 }
 
 use List::Util qw(sum);
-use List::MoreUtils qw(uniq);
+use List::MoreUtils qw(uniq none);
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev', 'no_ignore_case');
 use File::Temp qw(tempfile);
@@ -1637,24 +1637,26 @@ sub manage_packages ($) {
 
 sub dist_upgrade {
 	do { # 1st stage: upgrading of package management tools
-		say "[ upgrading package management tools ]";
-		say "";
+		say '[ upgrading package management tools ]';
+		say '';
 		local @ARGV = @ARGV;
 		unshift @ARGV, 'dpkg', 'libcupt-perl', 'cupt';
 		manage_packages('install') or
-				mydie("upgrading of the package management tools failed");
+				mydie('upgrading of the package management tools failed');
 	};
 
 	# cache should be rebuild
 	undef $cache;
 
 	do { # 2nd stage: full upgrade
-		say "";
-		say "[ upgrading the system ]";
-		say "";
+		say '';
+		say '[ upgrading the system ]';
+		say '';
 		local @ARGV = @ARGV;
 		return manage_packages('full-upgrade');
 	};
+
+	return 0;
 }
 
 sub update_release_data () {
@@ -1665,9 +1667,9 @@ sub update_release_data () {
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
-	eval "require $download_progress_class_name"; die $@ if $@;
+	eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
 	my $download_progress = $download_progress_class_name->new();
-	my $worker = new Cupt::System::Worker($config, $cache);
+	my $worker = Cupt::System::Worker->new($config, $cache);
 
 	return $worker->update_release_and_index_data($download_progress);
 }
@@ -1688,7 +1690,7 @@ sub show_changelog_or_copyright ($) {
 	check_no_more_options();
 
 	scalar @ARGV or
-			mydie("no package expressions specified");
+			mydie('no package expressions specified');
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
@@ -1711,8 +1713,8 @@ sub show_changelog_or_copyright ($) {
 			return $result if $result;
 		} else {
 			my %base_uris_by_vendor = (
-				'Debian' => "http://packages.debian.org/changelogs/pool",
-				'Ubuntu' => "http://changelogs.ubuntu.com/changelogs/pool",
+				'Debian' => 'http://packages.debian.org/changelogs/pool',
+				'Ubuntu' => 'http://changelogs.ubuntu.com/changelogs/pool',
 				# yes, 'changelogs' even for copyrights :)
 			);
 
@@ -1760,12 +1762,12 @@ sub show_changelog_or_copyright ($) {
 
 				my (undef, $temp_target_path) = tempfile();
 
-				eval "require $download_progress_class_name"; die $@ if $@;
+				eval "require $download_progress_class_name"; die $@ if $@; ## no critic (StringyEval)
 				my $download_progress = $download_progress_class_name->new();
 
 				my $download_result;
 				do {
-					my $download_manager = new Cupt::Download::Manager($config, $download_progress);
+					my $download_manager = Cupt::Download::Manager->new($config, $download_progress);
 					$download_result = $download_manager->download(
 							{
 								'uri-entries' => [ map { { 'uri' => $_ } } @target_uris ],
@@ -1779,7 +1781,8 @@ sub show_changelog_or_copyright ($) {
 
 				my $result = system("sensible-pager $temp_target_path");
 				# remove the file
-				unlink $temp_target_path;
+				unlink $temp_target_path or
+						mydie("unable to delete file '%s': %s", $temp_target_path, $!);
 				# return non-zero code in case of some error
 				return $result if $result;
 			} else {
@@ -1788,6 +1791,8 @@ sub show_changelog_or_copyright ($) {
 			}
 		}
 	}
+
+	return 0;
 }
 
 sub screenshots ($) {
@@ -1801,7 +1806,7 @@ sub screenshots ($) {
 
 	my @package_names = @ARGV;
 	scalar @package_names or
-			mydie("no package expressions specified");
+			mydie('no package expressions specified');
 
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => 1, -installed => 1);
@@ -1814,6 +1819,8 @@ sub screenshots ($) {
 			return $result;
 		}
 	}
+
+	return 0;
 }
 
 sub clean_archives ($) {
@@ -1825,7 +1832,7 @@ sub clean_archives ($) {
 
 	build_cache(-source => 0, -binary => 1, -installed => 0);
 
-	my $worker = new Cupt::System::Worker($config, $cache);
+	my $worker = Cupt::System::Worker->new($config, $cache);
 	my $size_deleted = 0;
 
 	my $sub_callback = sub {
@@ -1835,7 +1842,9 @@ sub clean_archives ($) {
 		say sprintf __("Deleting '%s' <%s>."), $path, human_readable_size_string($size);
 	};
 	$worker->clean_archives($sub_callback, $leave_available);
-	say sprintf __("Freed %s of disk space."), human_readable_size_string($size_deleted);
+	say sprintf __('Freed %s of disk space.'), human_readable_size_string($size_deleted);
+
+	return 0;
 }
 
 sub process_options {
@@ -1869,7 +1878,7 @@ sub process_options {
 		}
 	};
 	if (mycatch()) {
-		myerr("error while processing command-line options");
+		myerr('error while processing command-line options');
 		exit 2;
 	}
 }
@@ -1880,42 +1889,43 @@ sub shell {
 	check_no_more_options();
 	check_no_extra_args();
 
-	say __("This is an interactive shell of the cupt package manager.");
+	say __('This is an interactive shell of the cupt package manager.');
 
 	my $sub_rebuild_cache = sub {
 		local $| = 1;
 		print __('Building the package cache... ');
-		$cache = new Cupt::Cache($config);
+		$cache = Cupt::Cache->new($config);
 		say __('[done]');
 	};
 
 	$sub_rebuild_cache->();
 
 	require Term::ReadLine;
-	my $term = new Term::ReadLine('cupt shell');
-	my $prompt = "cupt>";
+	my $term = Term::ReadLine->new('cupt shell');
+	my $prompt = 'cupt>';
 	while ( defined (my $line = $term->readline($prompt)) ) {
 		chomp($line);
 		$term->addhistory($line);
-		last if $line =~ m/^(exit|quit|:q|q)$/;
+		last if $line =~ m/^(exit|quit|:q|q)$/; ## no critic (FixedStringMatches)
 
 		# kind of hack to get arguments as it was real shell
 		# if you know easier way, let me know :)
-		open(my $args_fd, "(for word in $line; do echo \$word; done) |");
-		@ARGV = ();
+		open(my $args_fd, "(for word in $line; do echo \$word; done) |") or
+				mydie('unable to execute shell pattern: %s', $!);
+		local @ARGV = ();
 		while (<$args_fd>) {
 			chomp;
 			push @ARGV, $_;
 		}
 		close($args_fd) or
 				do {
-					mywarn("bad shell syntax");
+					mywarn('bad shell syntax');
 					next;
 				};
 
 		my $o_simulate;
 		do {
-			local $config = $config->clone();
+			local $config = $config->clone(); ## no critic (LocalVars)
 			$cache->set_config($config);
 
 			process_options();
@@ -1926,11 +1936,13 @@ sub shell {
 		my @safe_commands = qw(config-dump show showsrc search depends rdepends
 				policy policysrc pkgnames changelog copyright screenshots
 				source clean autoclean);
-		if (defined $command and not $o_simulate and not grep { $_ eq $command } @safe_commands) {
+		if (defined $command and not $o_simulate and none { $_ eq $command } @safe_commands) {
 			# the system could be modified, need to rebuild all
 			build_config();
 			$sub_rebuild_cache->();
 		}
 	}
+
+	return 0;
 }
 
