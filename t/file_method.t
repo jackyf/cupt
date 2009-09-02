@@ -19,7 +19,7 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { unshift @INC, q(./) }
+BEGIN { unshift @INC, q(.) }
 
 use strict;
 use warnings;
@@ -41,7 +41,7 @@ my $sub_post_check = sub { system("cmp $source_file $target_file") };
 
 is($dmanager->download(
 		{
-			'uris' => [ "file:$source_file" ],
+			'uri-entries' => [ { 'uri' => "file:$source_file" } ],
 			'filename' => $target_file,
 			'post-action' => $sub_post_check
 		})
