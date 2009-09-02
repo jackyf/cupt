@@ -175,9 +175,10 @@ sub _parse_dpkg_status {
 
 			if ($installed_info{'flag'} eq 'ok')
 			{
-				if ($installed_info{'status'} eq 'installed') {
-					# this conditions mean that package is properly installed
-					# and have full entry info, so add it (info) to cache
+				if ($installed_info{'status'} eq 'installed' or $installed_info{'status'} eq 'half-configured') {
+					# this conditions mean that package is installed or
+					# semi-installed, but for sure it has full entry info, so
+					# add it (info) to cache
 
 					# adding new version to cache
 					$self->{_cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Package->new();
@@ -309,7 +310,10 @@ sub export_installed_versions ($) {
 	my @result;
 
 	while (my ($package_name, $ref_installed_info) = each %{$self->{_installed_info}}) {
-		$ref_installed_info->{'status'} eq 'installed' or next;
+		my $status = $ref_installed_info->{'status'};
+		if ($status ne 'installed' and $status ne 'half-configured') {
+			next;
+		}
 		my $version_string = $ref_installed_info->{'version_string'};
 		my $package = $self->{_cache}->get_binary_package($package_name);
 		my $version = $package->get_specific_version($version_string);
