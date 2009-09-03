@@ -19,10 +19,10 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { unshift @INC, q(.) }
-
 use strict;
 use warnings;
+
+BEGIN { unshift @INC, q(.) }
 
 use Test::More tests => 1;
 
@@ -31,13 +31,13 @@ use Cupt::Download::Progress;
 use Cupt::Download::Manager;
 
 
-my $config = new Cupt::Config;
-my $dmanager = new Cupt::Download::Manager($config, new Cupt::Download::Progress);
+my $config = Cupt::Config->new();
+my $dmanager = Cupt::Download::Manager->new($config, Cupt::Download::Progress->new());
 
 my $source_file = 'cupt';
 my $target_file = 'cupt_copy';
 
-my $sub_post_check = sub { system("cmp $source_file $target_file") };
+my $sub_post_check = sub { return system("cmp $source_file $target_file") };
 
 is($dmanager->download(
 		{
@@ -45,5 +45,5 @@ is($dmanager->download(
 			'filename' => $target_file,
 			'post-action' => $sub_post_check
 		})
-		, 0, "download a file");
+		, 0, 'download a file');
 
