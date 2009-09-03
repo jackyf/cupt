@@ -19,10 +19,10 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { unshift @INC, q(./) }
-
 use strict;
 use warnings;
+
+BEGIN { unshift @INC, q(.) }
 
 use Test::More;
 
@@ -46,8 +46,8 @@ $test_count += scalar @nonnative_version_strings;
 plan tests => $test_count;
 
 foreach my $item (@native_version_strings) {
-	ok(Cupt::Core::is_version_string_native($item));
+	ok(Cupt::Core::is_version_string_native($item), "native $item");
 }
 foreach my $item (@nonnative_version_strings) {
-	ok(not Cupt::Core::is_version_string_native($item));
+	ok(!Cupt::Core::is_version_string_native($item), "non-native $item");
 }
