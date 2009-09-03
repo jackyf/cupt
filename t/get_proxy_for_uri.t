@@ -19,20 +19,20 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { unshift @INC, q(./) }
-
 use strict;
 use warnings;
+
+BEGIN { unshift @INC, q(.) }
 
 use Test::More tests => 2;
 
 use Cupt::Config;
 use Cupt::Download::Method qw(get_acquire_suboption_for_uri);
 
-my $config = new Cupt::Config;
+my $config = Cupt::Config->new();
 $config->set_regular_var('acquire::http::proxy' => 'http://host1.com');
 $config->set_regular_var('acquire::http::proxy::debian.org.ua' => 'http://otherhost.com');
 
-is(get_acquire_suboption_for_uri($config, 'http://ftp.ua.debian.org', 'proxy'), 'http://host1.com');
-is(get_acquire_suboption_for_uri($config, 'http://debian.org.ua', 'proxy'), 'http://otherhost.com');
+is(get_acquire_suboption_for_uri($config, 'http://ftp.ua.debian.org', 'proxy'), 'http://host1.com', 'general proxy');
+is(get_acquire_suboption_for_uri($config, 'http://debian.org.ua', 'proxy'), 'http://otherhost.com', 'host-specific proxy');
 
