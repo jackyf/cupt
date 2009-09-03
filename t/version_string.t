@@ -19,10 +19,10 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { unshift @INC, q(.) }
-
 use strict;
 use warnings;
+
+BEGIN { unshift @INC, q(.) }
 
 use Test::More;
 
