@@ -19,10 +19,10 @@
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the Artistic License, which comes with Perl     *
 #***************************************************************************
-BEGIN { unshift @INC, q(./) }
-
 use strict;
 use warnings;
+
+BEGIN { unshift @INC, q(.) }
 
 use Test::More;
 
@@ -37,6 +37,8 @@ my $sums3 = { 'sha1sum' => 'bbb', 'sha256sum' => 'ccc' };
 my $sums_another = { 'md5sum' => 'aaa', 'sha256sum' => 'ddd' };
 
 plan tests => 6;
+
+## no critic (TestLabels)
 
 ok(compare_hash_sums($sums1, $sums2));
 ok(compare_hash_sums($sums1, $sums3));
