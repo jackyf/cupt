@@ -3,6 +3,10 @@ cupt (0.6.5) UNRELEASED; urgency=low
   * cupt:
     - 'dist-upgrade': fixed the regression since 0.6.4 being not able to
       proceed package management tools upgrade successfully.
+    - The option '--no-install-unpacked' went away. Now the all the packages
+      within some interim state are scheduled for installation, but with no
+      stick, so one can easily install other versions or delete them
+      explicitly.
   * Cupt:
     - Download:
       - Manager:
@@ -13,8 +17,9 @@ cupt (0.6.5) UNRELEASED; urgency=low
         - [API break] Removed 'set_long_alias_for_uri' subroutine.
     - System:
       - State:
-        - Consider 'half-configured' packages as installed too, since they are
-          full-right participants of dependency and worker management.
+        - Consider all packages except in states 'not-installed' and
+          'config-files' as installed. They are full-right participants of
+          dependency and worker management.
 
  -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Wed, 02 Sep 2009 14:13:54 +0300
 

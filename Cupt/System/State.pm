@@ -175,9 +175,9 @@ sub _parse_dpkg_status {
 
 			if ($installed_info{'flag'} eq 'ok')
 			{
-				if ($installed_info{'status'} eq 'installed' or $installed_info{'status'} eq 'half-configured') {
+				if ($installed_info{'status'} ne 'not-installed' and $installed_info{'status'} ne 'config-files') {
 					# this conditions mean that package is installed or
-					# semi-installed, but for sure it has full entry info, so
+					# semi-installed, regardless it has full entry info, so
 					# add it (info) to cache
 
 					# adding new version to cache
@@ -311,7 +311,7 @@ sub export_installed_versions ($) {
 
 	while (my ($package_name, $ref_installed_info) = each %{$self->{_installed_info}}) {
 		my $status = $ref_installed_info->{'status'};
-		if ($status ne 'installed' and $status ne 'half-configured') {
+		if ($status eq 'not-installed' or $status eq 'config-files') {
 			next;
 		}
 		my $version_string = $ref_installed_info->{'version_string'};

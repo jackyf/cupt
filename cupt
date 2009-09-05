@@ -1457,7 +1457,6 @@ sub manage_packages ($) {
 		'download-only|d' => sub { $config->set_regular_var('cupt::worker::download-only', 1) },
 		'show-versions|V' => \$o_show_versions,
 		'show-size-changes|Z' => \$o_show_size_changes,
-		'no-install-unpacked' => \$o_no_install_unpacked,
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
@@ -1502,22 +1501,6 @@ sub manage_packages ($) {
 	if ($action eq 'purge') {
 		$action = 'remove';
 		$config->set_regular_var('cupt::worker::purge', 1)
-	}
-
-	if (not defined $o_no_install_unpacked) {
-		# find all unpacked packages and install them if the appropriate
-		# version exist
-
-		my $system_state = $cache->get_system_state();
-		foreach my $package_name (keys %{$cache->get_binary_packages()}) {
-			my $ref_install_info = $system_state->get_installed_info($package_name);
-			next unless defined $ref_install_info;
-			next if $ref_install_info->{'status'} ne 'unpacked';
-			my $version_string = $ref_install_info->{'version_string'};
-			my $version = get_binary_package($package_name, 1)->get_specific_version($version_string);
-			next unless defined $version;
-			$resolver->install_version($version);
-		}
 	}
 
 	my @package_expressions = @ARGV;
