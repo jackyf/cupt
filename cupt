@@ -1160,7 +1160,7 @@ sub generate_management_prompt ($$$) {
 										'depends' => __('depends on'),
 										'recommends' => __('recommends'),
 										'suggests' => __('suggests'),
-										'conflicts' => __('conflicts with '),
+										'conflicts' => __('conflicts with'),
 										'breaks' => __('breaks'),
 									);
 									my ($reason_version, $reason_dependency_name, $reason_relation_expression) = @reason_parts;
