@@ -830,6 +830,13 @@ see L<--no-auto-remove/|--no-auto-remove>
 
 see L<--max-solution-count|/--max-solution-count>
 
+=item cupt::resolver::quality-bar
+
+integer number, the "quality bar" for the native resolver. For the situations
+when a lot of solutions available, increasing this value slows down choosing the
+solution to propose, but may increase its quality. Defaults to -400. The sane
+value borders: from -1000 to 1000.
+
 =item cupt::resolver::external-command
 
 a preview-only, experimental option to use external resolver using CUDF protocol
