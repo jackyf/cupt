@@ -976,6 +976,23 @@ sub __split_heterogeneous_actions (@) {
 			push @new_action_group_list, $ref_action_group;
 		}
 	}
+
+	# dpkg cannot handle multiple-actions-by-one request gracefully, caring
+	# about all depends and only then dealing with packages, the only known
+	# working case is installing packages depending on each other together.
+	#
+	# is it bug or not, but we should leave with it
+	foreach my $ref_action_group (@new_action_group_list) {
+		if (scalar @$ref_action_group > 1) {
+			if (!exists $ref_action_group->[0]->{'dpkg_flags'}) {
+				$ref_action_group->[0]->{'dpkg_flags'} = '';
+			}
+			if ($ref_action_group->[0]->{'dpkg_flags'} !~ m/force-depends/) {
+				$ref_action_group->[0]->{'dpkg_flags'} .= ' --force-depends';
+			}
+		}
+	}
+
 	return @new_action_group_list;
 }
 
