@@ -984,6 +984,14 @@ sub _prepare_downloads ($$) {
 
 	my $archives_location = $self->_get_archives_location();
 
+	do { # prepare partial directory if it doesn't exist
+		my $partial_directory = "$archives_location$_download_partial_suffix";
+		if (! -e $partial_directory) {
+			mkdir($partial_directory) or
+					mydie("unable to create partial directory '%s'", $partial_directory);
+		}
+	};
+
 	my @pending_downloads;
 
 	my $debdelta_helper = Cupt::Download::DebdeltaHelper->new();
@@ -1482,9 +1490,15 @@ sub update_release_and_index_data ($$) {
 	}
 
 	unless ($simulate) { # unconditional clearing of partial chunks of Release[.gpg] files
-		my $partial_indexes_location = $self->_get_indexes_location() . $_download_partial_suffix;
+		my $partial_indexes_location = $indexes_location . $_download_partial_suffix;
 		my @paths = glob("$partial_indexes_location/*Release*");
 		unlink $_ foreach @paths; ## no critic (RequireCheckedSyscalls)
+
+		# also create directory if it doesn't exist
+		if (! -e $partial_indexes_location) {
+			mkdir($partial_indexes_location) or
+					mydie("unable to create partial directory '%s'", $partial_indexes_location);
+		}
 	}
 
 	my $master_exit_code = 0;

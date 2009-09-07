@@ -20,6 +20,9 @@ cupt (0.6.5) UNRELEASED; urgency=low
         - Consider all packages except in states 'not-installed' and
           'config-files' as installed. They are full-right participants of
           dependency and worker management.
+      - Worker:
+        - Create partial directory for downloads when it doesn't exist.
+          Thanks to Cyril Brulebois.
     - Config:
       - New option 'cupt::resolver::quality-bar'.
 
