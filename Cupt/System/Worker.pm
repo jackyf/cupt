@@ -1602,7 +1602,7 @@ sub update_release_and_index_data ($$) {
 						# checking maybe there is no difference between the local and the remote?
 						if (not $simulate) {
 							foreach (values %$ref_download_entries) {
-								if (Cupt::Cache::verify_hash_sums($_, $local_path)) {
+								if (-e $local_path && Cupt::Cache::verify_hash_sums($_, $local_path)) {
 									# yeah, really
 									$exit_code = 0;
 									goto CHILD_EXIT;

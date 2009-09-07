@@ -23,6 +23,9 @@ cupt (0.6.5) UNRELEASED; urgency=low
       - Worker:
         - Create partial directory for downloads when it doesn't exist.
           Thanks to Cyril Brulebois.
+        - Don't try to check hash sums of Packages/Sources when no local file
+          exists while deciding should we download Packages/Sources or not.
+          Thanks to Cyril Brulebois.
     - Config:
       - New option 'cupt::resolver::quality-bar'.
 
