@@ -120,7 +120,7 @@ sub new {
 	};
 
 	$self->_regular_compatibility_vars = {
-		'apt::get::automatic-remove' => 'cupt::resolver::auto-remove',
+		'apt::get::automaticremove' => 'cupt::resolver::auto-remove',
 	};
 
 	$self->_optional_patterns = [

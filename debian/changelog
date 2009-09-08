@@ -32,7 +32,7 @@ cupt (0.6.5) UNRELEASED; urgency=low
           in some cases. Thanks to James Vega. (Closes: #545496)
     - Config:
       - New option 'cupt::resolver::quality-bar'.
-      - Added option 'apt::get::automatic-remove'.
+      - Added option 'apt::get::automaticremove'.
   * debian/control:
     - Updated my mail address.
     - Inserted versioned dependency on liblist-moreutils-perl (>= 0.23).
