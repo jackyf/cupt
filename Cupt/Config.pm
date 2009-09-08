@@ -219,6 +219,9 @@ sub set_regular_var {
 
 	# translation to cupt variable names
 	if (exists $self->_regular_compatibility_vars->{$var_name}) {
+		# setting the value for old variable
+		$self->regular_vars->{$var_name} = $new_value;
+
 		$var_name = $self->_regular_compatibility_vars->{$var_name};
 		return 1 if not defined $var_name;
 	}
