@@ -121,6 +121,7 @@ sub new {
 
 	$self->_regular_compatibility_vars = {
 		'apt::get::automaticremove' => 'cupt::resolver::auto-remove',
+		'apt::get::purge' => 'cupt::worker::purge',
 	};
 
 	$self->_optional_patterns = [
