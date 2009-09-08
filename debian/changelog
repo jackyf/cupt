@@ -34,6 +34,9 @@ cupt (0.6.5) UNRELEASED; urgency=low
       - New option 'cupt::resolver::quality-bar'.
   * debian/control:
     - Updated my mail address.
+    - Inserted versioned dependency on liblist-moreutils-perl (>= 0.23).
+      Earlier versions had tricky bug in 'none' subroutine. Thanks to
+      Cyril Brulebois.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 02 Sep 2009 14:13:54 +0300
 
