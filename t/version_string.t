@@ -74,6 +74,7 @@ my @correct_version_strings = (
 	[ '1.4+OOo3.0.0~', '1.4+OOo3.0.0-4', -1 ], # another tilde check
 	[ '2.4.7-1', '2.4.7-z', -1 ], # revision comparing
 	[ '1.002-1+b2', '1.00', 1 ], # whatever...
+	[ '2.2.4-47978_Debian_lenny', '2.2.4-47978_Debian_lenny', 0 ], # and underscore...
 );
 # each array has to be
 # 1) check v1 for correctness
