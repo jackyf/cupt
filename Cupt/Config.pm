@@ -118,6 +118,10 @@ sub new {
 			'debug::gpgv' => 0,
 		},
 
+		regular_compatibility_vars => {
+			'apt::get::automatic-remove' => 'cupt::resolver::auto-remove',
+		},
+
 		_optional_patterns => [
 			'acquire::*::*::proxy',
 			'acquire::*::proxy',
@@ -211,6 +215,12 @@ Returns: true on success, false on fail.
 sub set_regular_var {
 	my $self = shift;
 	my $var_name = lc(shift);
+
+	# translation to cupt variable names
+	if (exists $self->{regular_compatibility_vars}->{$var_name}) {
+		$var_name = $self->{regular_compatibility_vars}->{$var_name};
+	}
+
 	if (exists $self->{regular_vars}->{$var_name} || $self->_is_optional_option($var_name)) {
 		my $new_value = shift;
 		$new_value = 0 if $new_value eq 'false';
