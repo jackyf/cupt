@@ -790,8 +790,8 @@ See L<apt.conf(5)> for their meanings.
 
 Secondly, Cupt recognizes (but doesn't use) following configuration variables:
 
-acquire::pdiffs, apt::cache-limit, acquire::compressiontypes, rpm::pre-invoke,
-rpm::post-invoke
+acquire::pdiffs, apt::cache-limit, acquire::compressiontypes,
+apt::get::show-upgraded, rpm::pre-invoke, rpm::post-invoke
 
 Thirdly, Cupt introduces following cupt-specific configuration variables:
 

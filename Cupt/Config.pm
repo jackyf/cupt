@@ -122,6 +122,7 @@ sub new {
 	$self->_regular_compatibility_vars = {
 		'apt::get::automaticremove' => 'cupt::resolver::auto-remove',
 		'apt::get::purge' => 'cupt::worker::purge',
+		'apt::get::show-upgraded' => undef,
 	};
 
 	$self->_optional_patterns = [
@@ -219,6 +220,7 @@ sub set_regular_var {
 	# translation to cupt variable names
 	if (exists $self->_regular_compatibility_vars->{$var_name}) {
 		$var_name = $self->_regular_compatibility_vars->{$var_name};
+		return 1 if not defined $var_name;
 	}
 
 	if (exists $self->regular_vars->{$var_name} || $self->_is_optional_option($var_name)) {

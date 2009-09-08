@@ -34,6 +34,7 @@ cupt (0.6.5) UNRELEASED; urgency=low
       - New option 'cupt::resolver::quality-bar'.
       - Added option 'apt::get::automaticremove'.
       - Added option 'apt::get::purge'.
+      - Recognize option 'apt::get::show-upgraded'.
   * debian/control:
     - Updated my mail address.
     - Inserted versioned dependency on liblist-moreutils-perl (>= 0.23).
