@@ -25,7 +25,8 @@ cupt (0.6.5) UNRELEASED; urgency=low
           Thanks to Cyril Brulebois.
         - Don't try to check hash sums of Packages/Sources when no local file
           exists while deciding should we download Packages/Sources or not.
-          Thanks to Cyril Brulebois.
+          Thanks to Cyril Brulebois. Thanks to James Vega.
+          (Closes: #545685)
         - While splitting heterogeneous actions, set '--force-depends' dpkg
           option for commands with more than one package as argument even for
           safe-as-a-whole operations. Dpkg cannot handle gracefully them now
