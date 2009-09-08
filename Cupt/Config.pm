@@ -31,6 +31,7 @@ use warnings;
 
 use Storable;
 
+use Cupt::LValueFields qw(regular_vars list_vars _regular_compatibility_vars _optional_patterns);
 use Cupt::Config::ISCConfigParser;
 use Cupt::Core;
 
@@ -44,6 +45,7 @@ creates a new Cupt::Config object
 
 sub new {
 	my $class = shift;
+	my $self = bless [] => $class;
 	# APT::Build-Essential "";
 	# APT::Build-Essential:: "build-essential";
 	# APT::Acquire "";
@@ -56,98 +58,95 @@ sub new {
 	# Dir::Log "var/log/apt";
 	# Dir::Log::Terminal "term.log";
 	#
-	my $self = {
-		regular_vars => {
-			'acquire::http::timeout' => 120,
-			'acquire::https::timeout' => 120,
-			'acquire::ftp::timeout' => 120,
-			'acquire::file::timeout' => 20,
-			'acquire::retries' => 0,
-			'acquire::pdiffs' => 0,
-			'apt::acquire::max-default-age::debian-security' => 7,
-			'apt::acquire::translation' => 'environment',
-			'apt::architecture' => undef, # will be set a bit later
-			'apt::authentication::trustcdrom' => 0,
-			'apt::cache::allversions' => 0,
-			'apt::cache::important' => 0,
-			'apt::cache::namesonly' => 0,
-			'apt::cache::recursedepends' => 0,
-			'apt::cache-limit' => undef,
-			'apt::default-release' => undef,
-			'apt::install-recommends' => 1,
-			'apt::install-suggests' => 0,
-			'apt::get::allowunauthenticated' => 0,
-			'dir' => '/',
-			'dir::bin::dpkg' => '/usr/bin/dpkg',
-			'dir::cache' => 'var/cache/apt',
-			'dir::cache::archives' => 'archives',
-			'dir::etc' => 'etc/apt',
-			'dir::etc::sourcelist' => 'sources.list',
-			'dir::etc::sourceparts' => 'sources.list.d',
-			'dir::etc::parts' => 'apt.conf.d',
-			'dir::etc::main' => 'apt.conf',
-			'dir::etc::preferences' => 'preferences',
-			'dir::etc::preferencesparts' => 'preferences.d',
-			'dir::state' => 'var/lib/apt',
-			'dir::state::extendedstates' => 'extended_states',
-			'dir::state::lists' => 'lists',
-			'dir::state::status' => '/var/lib/dpkg/status',
-			'gpgv::trustedkeyring' => '/var/lib/cupt/trusted.gpg',
-			'quiet' => 0,
-
-			'acquire::http::allow-redirects' => 1,
-			'cupt::downloader::max-simultaneous-downloads' => 2,
-			'cupt::update::keep-bad-signatures' => 0,
-			'cupt::resolver::auto-remove' => 1,
-			'cupt::resolver::external-command' => undef,
-			'cupt::resolver::keep-recommends' => 1,
-			'cupt::resolver::keep-suggests' => 0,
-			'cupt::resolver::max-solution-count' => 256,
-			'cupt::resolver::no-remove' => 0,
-			'cupt::resolver::quality-bar' => -400,
-			'cupt::resolver::synchronize-source-versions' => 'none',
-			'cupt::resolver::track-reasons' => 0,
-			'cupt::resolver::type' => 'fair',
-			'cupt::worker::defer-triggers' => 0,
-			'cupt::worker::download-only' => 0,
-			'cupt::worker::purge' => 0,
-			'cupt::worker::simulate' => 0,
-			'debug::downloader' => 0,
-			'debug::resolver' => 0,
-			'debug::worker' => 0,
-			'debug::gpgv' => 0,
-		},
-
-		regular_compatibility_vars => {
-			'apt::get::automatic-remove' => 'cupt::resolver::auto-remove',
-		},
-
-		_optional_patterns => [
-			'acquire::*::*::proxy',
-			'acquire::*::proxy',
-			'acquire::*::*::dl-limit',
-			'acquire::*::dl-limit',
-			'acquire::*::*::timeout',
-			'acquire::*::timeout',
-			'acquire::compressiontypes::*',
-			'dpkg::tools::options::*',
-			'dpkg::tools::options::*::*',
-		],
-
-		list_vars => {
-			'apt::neverautoremove' => [],
-			'apt::update::pre-invoke' => [],
-			'apt::update::post-invoke' => [],
-			'dpkg::options' => [],
-			'dpkg::pre-install-pkgs' => [],
-			'dpkg::pre-invoke' => [],
-			'dpkg::post-invoke' => [],
-			'rpm::pre-invoke' => [],
-			'rpm::post-invoke' => [],
-		},
-
+	$self->regular_vars = {
+		'acquire::http::timeout' => 120,
+		'acquire::https::timeout' => 120,
+		'acquire::ftp::timeout' => 120,
+		'acquire::file::timeout' => 20,
+		'acquire::retries' => 0,
+		'acquire::pdiffs' => 0,
+		'apt::acquire::max-default-age::debian-security' => 7,
+		'apt::acquire::translation' => 'environment',
+		'apt::architecture' => undef, # will be set a bit later
+		'apt::authentication::trustcdrom' => 0,
+		'apt::cache::allversions' => 0,
+		'apt::cache::important' => 0,
+		'apt::cache::namesonly' => 0,
+		'apt::cache::recursedepends' => 0,
+		'apt::cache-limit' => undef,
+		'apt::default-release' => undef,
+		'apt::install-recommends' => 1,
+		'apt::install-suggests' => 0,
+		'apt::get::allowunauthenticated' => 0,
+		'dir' => '/',
+		'dir::bin::dpkg' => '/usr/bin/dpkg',
+		'dir::cache' => 'var/cache/apt',
+		'dir::cache::archives' => 'archives',
+		'dir::etc' => 'etc/apt',
+		'dir::etc::sourcelist' => 'sources.list',
+		'dir::etc::sourceparts' => 'sources.list.d',
+		'dir::etc::parts' => 'apt.conf.d',
+		'dir::etc::main' => 'apt.conf',
+		'dir::etc::preferences' => 'preferences',
+		'dir::etc::preferencesparts' => 'preferences.d',
+		'dir::state' => 'var/lib/apt',
+		'dir::state::extendedstates' => 'extended_states',
+		'dir::state::lists' => 'lists',
+		'dir::state::status' => '/var/lib/dpkg/status',
+		'gpgv::trustedkeyring' => '/var/lib/cupt/trusted.gpg',
+		'quiet' => 0,
+		
+		'acquire::http::allow-redirects' => 1,
+		'cupt::downloader::max-simultaneous-downloads' => 2,
+		'cupt::update::keep-bad-signatures' => 0,
+		'cupt::resolver::auto-remove' => 1,
+		'cupt::resolver::external-command' => undef,
+		'cupt::resolver::keep-recommends' => 1,
+		'cupt::resolver::keep-suggests' => 0,
+		'cupt::resolver::max-solution-count' => 256,
+		'cupt::resolver::no-remove' => 0,
+		'cupt::resolver::quality-bar' => -400,
+		'cupt::resolver::synchronize-source-versions' => 'none',
+		'cupt::resolver::track-reasons' => 0,
+		'cupt::resolver::type' => 'fair',
+		'cupt::worker::defer-triggers' => 0,
+		'cupt::worker::download-only' => 0,
+		'cupt::worker::purge' => 0,
+		'cupt::worker::simulate' => 0,
+		'debug::downloader' => 0,
+		'debug::resolver' => 0,
+		'debug::worker' => 0,
+		'debug::gpgv' => 0,
 	};
-	bless $self, $class;
+
+	$self->_regular_compatibility_vars = {
+		'apt::get::automatic-remove' => 'cupt::resolver::auto-remove',
+	};
+
+	$self->_optional_patterns = [
+		'acquire::*::*::proxy',
+		'acquire::*::proxy',
+		'acquire::*::*::dl-limit',
+		'acquire::*::dl-limit',
+		'acquire::*::*::timeout',
+		'acquire::*::timeout',
+		'acquire::compressiontypes::*',
+		'dpkg::tools::options::*',
+		'dpkg::tools::options::*::*',
+	];
+
+	$self->list_vars = {
+		'apt::neverautoremove' => [],
+		'apt::update::pre-invoke' => [],
+		'apt::update::post-invoke' => [],
+		'dpkg::options' => [],
+		'dpkg::pre-install-pkgs' => [],
+		'dpkg::pre-invoke' => [],
+		'dpkg::post-invoke' => [],
+		'rpm::pre-invoke' => [],
+		'rpm::post-invoke' => [],
+	};
+
 	$self->set_regular_var('apt::architecture', $self->_get_architecture());
 	$self->_read_configs();
 	return $self;
@@ -166,7 +165,7 @@ sub clone ($) {
 # determines if the option matches some of the optional patterns
 sub _is_optional_option ($$) {
 	my ($self, $var_name) = @_;
-	foreach my $pattern (@{$self->{_optional_patterns}}) {
+	foreach my $pattern (@{$self->_optional_patterns}) {
 		(my $regex = $pattern) =~ s/\*/[^:]*?/g;
 		return 1 if ($var_name =~ m/$regex/);
 	}
@@ -186,10 +185,10 @@ I<option_name> - string name of option
 
 sub var { ## no critic (RequireFinalReturn)
 	my ($self, $var_name) = @_;
-	if (exists ($self->{regular_vars}->{$var_name})) {
-		return $self->{regular_vars}->{$var_name};
-	} elsif (defined ($self->{list_vars}->{$var_name})) {
-		return @{$self->{list_vars}->{$var_name}};
+	if (exists ($self->regular_vars->{$var_name})) {
+		return $self->regular_vars->{$var_name};
+	} elsif (defined $self->list_vars->{$var_name}) {
+		return @{$self->list_vars->{$var_name}};
 	} elsif ($self->_is_optional_option($var_name)) {
 		return undef;
 	} else {
@@ -213,18 +212,17 @@ Returns: true on success, false on fail.
 =cut
 
 sub set_regular_var {
-	my $self = shift;
-	my $var_name = lc(shift);
+	my ($self, $var_name, $new_value) = @_;
+	$var_name = lc($var_name);
 
 	# translation to cupt variable names
-	if (exists $self->{regular_compatibility_vars}->{$var_name}) {
-		$var_name = $self->{regular_compatibility_vars}->{$var_name};
+	if (exists $self->_regular_compatibility_vars->{$var_name}) {
+		$var_name = $self->_regular_compatibility_vars->{$var_name};
 	}
 
-	if (exists $self->{regular_vars}->{$var_name} || $self->_is_optional_option($var_name)) {
-		my $new_value = shift;
+	if (exists $self->regular_vars->{$var_name} || $self->_is_optional_option($var_name)) {
 		$new_value = 0 if $new_value eq 'false';
-		$self->{regular_vars}->{$var_name} = $new_value;
+		$self->regular_vars->{$var_name} = $new_value;
 		return 1;
 	} else {
 		mywarn("attempt to set wrong option '%s'", $var_name);
@@ -247,11 +245,10 @@ Returns: true on success, false on fail.
 =cut
 
 sub set_list_var {
-	my $self = shift;
-	my $var_name = lc(shift);
-	if (defined ($self->{list_vars}->{$var_name})) {
-		my $new_value = shift;
-		push @{$self->{list_vars}->{$var_name}}, $new_value;
+	my ($self, $var_name, $new_value) = @_;
+	$var_name = lc($var_name);
+	if (defined ($self->list_vars->{$var_name})) {
+		push @{$self->list_vars->{$var_name}}, $new_value;
 	} else {
 		mywarn("attempt to set wrong option '%s'", $var_name);
 	}

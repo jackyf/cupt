@@ -1130,14 +1130,14 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 			$result .= qq/$key=$value\n/;
 		};
 
-		my @regular_keys = sort keys %{$config->{regular_vars}};
+		my @regular_keys = sort keys %{$config->regular_vars};
 		foreach my $key (@regular_keys) {
-			$print_key_value->($key, $config->{regular_vars}->{$key});
+			$print_key_value->($key, $config->regular_vars->{$key});
 		}
 
-		my @list_keys = sort keys %{$config->{list_vars}};
+		my @list_keys = sort keys %{$config->list_vars};
 		foreach my $key (@list_keys) {
-			my @values = @{$config->{list_vars}->{$key}};
+			my @values = @{$config->list_vars->{$key}};
 			foreach (@values) {
 				$print_key_value->("${key}::", $_);
 			}
