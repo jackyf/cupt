@@ -1779,7 +1779,7 @@ sub clean_archives ($$) {
 		foreach my $package (values %{$self->{_cache}->get_binary_packages()}) {
 			foreach my $version (@{$package->get_versions()}) {
 				my $path = $archives_location . '/' . __get_archive_basename($version);
-				$white_list{$archives_location . '/' . __get_archive_basename($version)} = 1;
+				$white_list{$path} = 1;
 
 				# checking for symlinks
 				if (-l $path) {
