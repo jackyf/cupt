@@ -1,3 +1,10 @@
+cupt (0.6.6~) UNRELEASED; urgency=low
+
+  * debian/rules:
+    - Fixed building with Perl 5.10.1.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 17 Sep 2009 13:18:22 +0300
+
 cupt (0.6.5) unstable; urgency=low
 
   * cupt:

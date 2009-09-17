@@ -6,7 +6,7 @@ override_build:
 	$(PERL) Makefile.PL INSTALLDIRS=vendor
 
 override_dh_auto_install:
-	$(MAKE) install PREFIX=$(CURDIR)/debian/libcupt-perl/usr
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/libcupt-perl
 	# produce additional man pages for cupt
 	$(PERL) debian/install_pods
 
