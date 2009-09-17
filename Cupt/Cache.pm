@@ -33,7 +33,7 @@ use warnings;
 use Digest;
 use Fcntl qw(:seek :DEFAULT);
 use POSIX qw(locale_h);
-use List::MoreUtils qw(none);
+use List::MoreUtils 0.23 qw(none);
 
 use Memoize;
 memoize('verify_signature');

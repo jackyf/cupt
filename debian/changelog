@@ -1,5 +1,9 @@
 cupt (0.6.6~) UNRELEASED; urgency=low
 
+  * Cupt
+    - Cache:
+      - Require List::MoreUtils >= 0.23 directly in code too. Thanks to
+        Michael Stapelberg for the suggestion.
   * debian/rules:
     - Fixed building with Perl 5.10.1.
 
