@@ -1156,7 +1156,7 @@ sub generate_management_prompt ($$$) {
 							given ($reason_type) {
 								when ('relation expression') {
 									my %reason_dependency_name_translations = (
-										'pre-depends' => __('pre-depends on'),
+										'pre_depends' => __('pre-depends on'),
 										'depends' => __('depends on'),
 										'recommends' => __('recommends'),
 										'suggests' => __('suggests'),

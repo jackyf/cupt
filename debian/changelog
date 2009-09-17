@@ -1,5 +1,9 @@
 cupt (0.6.6~) UNRELEASED; urgency=low
 
+  * cupt:
+    - Fixed the regression since 0.6.0 when reasons are selected to display
+      and some reason is an unsatisfied pre-dependency. Thanks to
+      Michael Stapelberg.
   * Cupt
     - Cache:
       - Require List::MoreUtils >= 0.23 directly in code too. Thanks to
