@@ -1080,6 +1080,9 @@ sub _prepare_downloads ($$) {
 		}
 	}
 
+	# sort alphabetically, just for easy
+	@pending_downloads = sort { $a->{'filename'} cmp $b->{'filename'} } @pending_downloads;
+
 	return @pending_downloads;
 }
 
