@@ -1756,6 +1756,11 @@ sub update_release_and_index_data ($$) {
 	foreach my $command ($self->{_config}->var('apt::update::post-invoke')) {
 		$self->_run_external_command('post', $command, $command);
 	}
+	if ($master_exit_code == 0) {
+		foreach my $command ($self->{_config}->var('apt::update::post-invoke-success')) {
+			$self->_run_external_command('post', $command, $command);
+		}
+	}
 
 	return !$master_exit_code;
 }
