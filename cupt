@@ -1656,7 +1656,7 @@ sub update_release_data () {
 	my $download_progress = new_download_progress();
 	my $worker = Cupt::System::Worker->new($config, $cache);
 
-	return $worker->update_release_and_index_data($download_progress);
+	return !$worker->update_release_and_index_data($download_progress);
 }
 
 sub show_changelog_or_copyright ($) {

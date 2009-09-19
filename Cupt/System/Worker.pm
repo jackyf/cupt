@@ -1757,7 +1757,7 @@ sub update_release_and_index_data ($$) {
 		$self->_run_external_command('post', $command, $command);
 	}
 
-	return $master_exit_code;
+	return !$master_exit_code;
 }
 
 =head2 clean_archives

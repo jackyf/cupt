@@ -11,6 +11,8 @@ cupt (0.6.6~) UNRELEASED; urgency=low
     - System:
       - Worker:
         - Sort downloads alphabetically.
+        - 'update_release_and_index_data': flip the return result to match the
+          documentation.
   * debian/rules:
     - Fixed building with Perl 5.10.1.
 
