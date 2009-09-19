@@ -1601,16 +1601,18 @@ sub update_release_and_index_data ($$) {
 						} else {
 							# download successful, but need to do signature check
 
-							# if we have to check signature prior to moving to canonical place
-							# (for compatibility with APT tools) and signature check failed,
-							# delete the downloaded file
-							my $config = $self->{_config};
-							if (!$config->var('cupt::update::keep-bad-signatures') &&
-								!Cupt::Cache::verify_signature($config, $local_path))
-							{
-								unlink $signature_local_path or
-										mydie("unable to delete file '%s': %s", $signature_local_path, $!);
-								mywarn("signature verification for '%s' failed", $release_alias);
+							unless ($simulate) {
+								# if we have to check signature prior to moving to canonical place
+								# (for compatibility with APT tools) and signature check failed,
+								# delete the downloaded file
+								my $config = $self->{_config};
+								if (!$config->var('cupt::update::keep-bad-signatures') &&
+									!Cupt::Cache::verify_signature($config, $local_path))
+								{
+									unlink $signature_local_path or
+											mydie("unable to delete file '%s': %s", $signature_local_path, $!);
+									mywarn("signature verification for '%s' failed", $release_alias);
+								}
 							}
 						}
 					};
