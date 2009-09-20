@@ -1446,7 +1446,6 @@ sub manage_packages ($) {
 	my $o_show_versions = 0;
 	my $o_show_size_changes = 0;
 	my $o_simulate;
-	my $o_no_install_unpacked;
 	GetOptions(
 		'resolver=s' => sub { $config->set_regular_var('cupt::resolver::type', $_[1]) },
 		'show-deps|show-reasons|D' => sub { $config->set_regular_var('cupt::resolver::track-reasons', 1) },
