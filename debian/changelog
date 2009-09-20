@@ -19,6 +19,9 @@ cupt (0.6.6~) UNRELEASED; urgency=low
           simulate mode.
     - Config:
       - Added configuration variable 'apt::update::post-invoke-success'.
+  * doc:
+    - cupt_howto:
+      - Added a paragraph with debug options to use when reporting problems.
   * debian/rules:
     - Fixed building with Perl 5.10.1.
 

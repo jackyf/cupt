@@ -63,6 +63,24 @@ cupt rdepends <package name>
 
 cupt search <keyword 1> <keyword2> .. <keyword N>
 
+=head1 REPORTING PROBLEMS
+
+=head2 with package dependency resolver
+
+add '-o debug::resolver=1'
+
+=head2 with scheduling dpkg actions
+
+add '-o debug::worker=1'
+
+=head2 with downloader
+
+add '-o debug::downloader=1'
+
+=head2 with gpg signatures
+
+add '-o debug::gpgv=1'
+
 =head1 ADVANCED USAGE
 
 How do I:
