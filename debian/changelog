@@ -19,6 +19,9 @@ cupt (0.6.6~) UNRELEASED; urgency=low
           simulate mode.
       - Worker:
         - 'change_system': produce more debug info when calling dpkg.
+        - While splitting heterogeneous actions, set '--force-conflicts' dpkg
+          option for unpack/install commands with more than one package as
+          an argument even for safe-as-a-whole operations.
     - Config:
       - Added configuration variable 'apt::update::post-invoke-success'.
   * doc:
