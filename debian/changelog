@@ -17,6 +17,8 @@ cupt (0.6.6~) UNRELEASED; urgency=low
           'apt::update::post-invoke-success' option.
         - 'update_release_and_index_data': don't try to check signatures in
           simulate mode.
+      - Worker:
+        - 'change_system': produce more debug info when calling dpkg.
     - Config:
       - Added configuration variable 'apt::update::post-invoke-success'.
   * doc:

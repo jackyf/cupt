@@ -1354,6 +1354,15 @@ sub change_system ($$) {
 				}
 				$dpkg_command .= " $action_expression";
 			}
+			if ($self->{_config}->var('debug::worker')) {
+				my @stringified_versions;
+				my $dpkg_flags = $ref_action_group->[0]->{'dpkg_flags'} // '';
+				foreach my $ref_action (@$ref_action_group) {
+					my $version = $ref_action->{'version'};
+					push @stringified_versions, $version->package_name . '_' . $version->version_string;
+				}
+				mydebug("$action_name $dpkg_flags " . join(' ', @stringified_versions));
+			}
 			if ($simulate) {
 				say __('simulating'), ": $dpkg_command";
 			} else {
