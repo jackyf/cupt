@@ -1,4 +1,5 @@
 For some future version:
 
 cupt, worker: snapshots to save/load
+worker: mode to use as less archives cache space as possible
 
