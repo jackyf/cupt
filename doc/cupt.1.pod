@@ -841,8 +841,8 @@ value borders: from -1000 to 1000.
 
 =item cupt::resolver::external-command
 
-a preview-only, experimental option to use external resolver using CUDF protocol
-Don't use it unless you know what you are doing.
+a preview-only, experimental option to use external resolver using CUDF
+protocol. Don't use it unless you know what you are doing.
 
 Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cudfout.txt" >>
 
