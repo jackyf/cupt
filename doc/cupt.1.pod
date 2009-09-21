@@ -962,10 +962,6 @@ boolean (0/1), if true, the downloader manager will print some debug messages
 
 =back
 
-=head1 DEFINITIONS
-
-TODO
-
 =head1 REPORTING
 
 Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
