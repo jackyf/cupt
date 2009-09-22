@@ -97,7 +97,10 @@ sub main {
 		}
 	}
 
-	myerr('no command specified') and return 2 if not defined $command;
+	if (not defined $command) {
+		myerr('no command specified');
+		return 2;
+	}
 
 	my %command_handlers = (
 		'version' => \&version,
