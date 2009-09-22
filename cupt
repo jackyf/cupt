@@ -377,7 +377,7 @@ sub help () {
 		'search' => __('searches for packages using regular expression(s)'),
 		'depends' => __('prints dependencies of binary package(s)'),
 		'rdepends' => __('print reverse-dependencies of binary package(s)'),
-		'why' => __('finds a dependency path between system/package(s) and package'),
+		'why' => __('finds a dependency path between system/package(s) and a package'),
 		'policy' => __('prints pin info for the binary package(s)'),
 		'policysrc' => __('prints pin info for the source package(s)'),
 		'pkgnames' => __('prints available package names'),
