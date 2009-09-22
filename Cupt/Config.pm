@@ -64,7 +64,6 @@ sub new {
 		'acquire::ftp::timeout' => 120,
 		'acquire::file::timeout' => 20,
 		'acquire::retries' => 0,
-		'acquire::pdiffs' => 0,
 		'apt::acquire::max-default-age::debian-security' => 7,
 		'apt::acquire::translation' => 'environment',
 		'apt::architecture' => undef, # will be set a bit later
@@ -73,7 +72,6 @@ sub new {
 		'apt::cache::important' => 0,
 		'apt::cache::namesonly' => 0,
 		'apt::cache::recursedepends' => 0,
-		'apt::cache-limit' => undef,
 		'apt::default-release' => undef,
 		'apt::install-recommends' => 1,
 		'apt::install-suggests' => 0,
@@ -95,6 +93,10 @@ sub new {
 		'dir::state::status' => '/var/lib/dpkg/status',
 		'gpgv::trustedkeyring' => '/var/lib/cupt/trusted.gpg',
 		'quiet' => 0,
+
+		'apt::cache-limit' => undef,
+		'apt::get::show-upgraded' => 0,
+		'acquire::pdiffs' => 1,
 
 		'acquire::http::allow-redirects' => 1,
 		'cupt::downloader::max-simultaneous-downloads' => 2,
@@ -122,7 +124,6 @@ sub new {
 	$self->_regular_compatibility_vars = {
 		'apt::get::automaticremove' => 'cupt::resolver::auto-remove',
 		'apt::get::purge' => 'cupt::worker::purge',
-		'apt::get::show-upgraded' => undef,
 	};
 
 	$self->_optional_patterns = [
@@ -224,7 +225,6 @@ sub set_regular_var {
 		$self->regular_vars->{$var_name} = $new_value;
 
 		$var_name = $self->_regular_compatibility_vars->{$var_name};
-		return 1 if not defined $var_name;
 	}
 
 	if (exists $self->regular_vars->{$var_name} || $self->_is_optional_option($var_name)) {
