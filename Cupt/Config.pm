@@ -142,6 +142,7 @@ sub new {
 
 		# unused APT vars
 		'acquire::compressiontypes::*',
+		'apt::archives::*',
 		'apt::periodic::*',
 		'ununattended-upgrade::*',
 	];
