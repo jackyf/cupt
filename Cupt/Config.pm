@@ -143,6 +143,7 @@ sub new {
 		# unused APT vars
 		'acquire::compressiontypes::*',
 		'apt::periodic::*',
+		'ununattended-upgrade::*',
 	];
 
 	$self->list_vars = {
