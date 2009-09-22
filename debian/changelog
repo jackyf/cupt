@@ -10,6 +10,7 @@ cupt (1.0.0~beta2) UNRELEASED; urgency=low
       - Recognize 'apt::periodic::*' variables.
       - Recognize 'unattended-upgrade::*' variables.
       - Recognize 'apt::archives::*' variables.
+      - Three above accidentally (Closes: #547951).
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Sep 2009 19:12:54 +0300
 
