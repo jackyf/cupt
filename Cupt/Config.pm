@@ -130,15 +130,19 @@ sub new {
 	};
 
 	$self->_optional_patterns = [
+		# used APT vars
 		'acquire::*::*::proxy',
 		'acquire::*::proxy',
 		'acquire::*::*::dl-limit',
 		'acquire::*::dl-limit',
 		'acquire::*::*::timeout',
 		'acquire::*::timeout',
-		'acquire::compressiontypes::*',
 		'dpkg::tools::options::*',
 		'dpkg::tools::options::*::*',
+
+		# unused APT vars
+		'acquire::compressiontypes::*',
+		'apt::periodic::*',
 	];
 
 	$self->list_vars = {
