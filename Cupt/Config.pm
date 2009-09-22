@@ -59,6 +59,7 @@ sub new {
 	# Dir::Log::Terminal "term.log";
 	#
 	$self->regular_vars = {
+		# used APT vars
 		'acquire::http::timeout' => 120,
 		'acquire::https::timeout' => 120,
 		'acquire::ftp::timeout' => 120,
@@ -94,10 +95,12 @@ sub new {
 		'gpgv::trustedkeyring' => '/var/lib/cupt/trusted.gpg',
 		'quiet' => 0,
 
+		# unused APT vars
 		'apt::cache-limit' => undef,
 		'apt::get::show-upgraded' => 0,
 		'acquire::pdiffs' => 1,
 
+		# Cupt vars
 		'acquire::http::allow-redirects' => 1,
 		'cupt::downloader::max-simultaneous-downloads' => 2,
 		'cupt::update::keep-bad-signatures' => 0,
