@@ -788,7 +788,7 @@ sub _parse_preference_file {
 			my $pin_expression = $2;
 			given ($pin_type) {
 				when ('release') {
-					my @conditions = split /,/, $pin_expression;
+					my @conditions = split /\s*,\s*/, $pin_expression;
 					scalar @conditions or
 							mydie("bad release expression at file '%s' line %u", $file, $.);
 
