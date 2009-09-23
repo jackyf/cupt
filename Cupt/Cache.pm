@@ -714,6 +714,7 @@ sub __parse_source_list {
 
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split ' ';
+		$entry{'uri'} =~ s{/$}{}; # strip last '/' if present
 
 		mydie("incorrect source type at file '%s', line %u", $file, $.)
 				if ($entry{'type'} ne 'deb' && $entry{'type'} ne 'deb-src');
@@ -1033,9 +1034,6 @@ sub _path_of_base_uri {
 	# "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
 	# "file:/home/jackyf" -> "/home/jackyf"
 	(my $uri_prefix = $index_entry->{'uri'}) =~ s{^\w+:(?://)?}{};
-
-	# stripping last '/' from uri if present
-	$uri_prefix =~ s{/$}{};
 
 	# "escaping" tilde, following APT practice :(
 	$uri_prefix =~ s/~/%7e/g;
