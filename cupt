@@ -1891,6 +1891,9 @@ sub shell {
 		$term->addhistory($line);
 		last if $line =~ m/^(exit|quit|:q|q)$/; ## no critic (FixedStringMatches)
 
+		if ($line =~ m/^\?+$/) { # if line consists only of '?' chars, shell behaves wierd...
+			$line = 'help';
+		}
 		# kind of hack to get arguments as it was real shell
 		# if you know easier way, let me know :)
 		open(my $args_fd, "(for word in $line; do echo \$word; done) |") or
