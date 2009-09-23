@@ -1132,8 +1132,9 @@ sub _get_chunks_of_localized_descriptions {
 	push @result, [ @chunks, "Translation-$locale" ];
 
 	# cutting out an country specificator
-	$locale =~ s/_.*//;
-	push @result, [ @chunks, "Translation-$locale" ];
+	if ($locale =~ s/_.*//) {;
+		push @result, [ @chunks, "Translation-$locale" ];
+	}
 
 	return @result;
 }
