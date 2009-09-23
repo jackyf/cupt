@@ -76,6 +76,11 @@ sub main {
 	# for repeated invokes
 	undef $command;
 
+	if ($ARGV[0] eq 'get' && $ARGV[1] eq 'ride') {
+		say __("You've got ride.");
+		return 0;
+	}
+
 	if ($config->var('quiet')) {
 		close(STDOUT) or mydie('unable to close standard output: %s', $!);
 		open(STDOUT, '>>', '/dev/null') or mydie('unable to turn standard output to /dev/null: %s', $!);
