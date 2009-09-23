@@ -1885,7 +1885,7 @@ sub shell {
 
 	require Term::ReadLine;
 	my $term = Term::ReadLine->new('cupt shell');
-	my $prompt = 'cupt>';
+	my $prompt = 'cupt> ';
 	while ( defined (my $line = $term->readline($prompt)) ) {
 		chomp($line);
 		$term->addhistory($line);
