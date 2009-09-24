@@ -908,33 +908,6 @@ sub _process_provides_subline {
 	}
 }
 
-sub _process_provides_in_index_files {
-	my ($self, @files) = @_;
-
-	eval {
-		foreach my $file (@files) {
-			open(FILE, '<', $file) or
-					mydie("unable to open file '%s': %s", $file, $!);
-
-			local $/ = "\n\n"; # version entries separator
-			while(<FILE>) {
-				m'^Package: (.+?)$.*?^Provides: (.+?)$'smo or next;
-
-				my $package_name = $1;
-				my $provides_subline = $2;
-				$self->_process_provides_subline($package_name, $provides_subline);
-			}
-			close(FILE) or
-					mydie("unable to close file '%s': %s", $file, $!);
-		}
-	};
-	if (mycatch()) {
-		myerr('error parsing provides');
-		myredie();
-	}
-	return;
-}
-
 sub _process_index_file {
 	my ($self, $file, $translation_file, $type, $ref_release_info) = @_;
 

@@ -99,49 +99,27 @@ sub _parse_dpkg_status {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
-	open(PACKAGES, "/bin/grep -bE '^(Package|Status|Version): ' $file |") or
-			mydie('unable to open grep pipe: %s', $!);
 
-	# algorithm: loop through the strings, searching the 'Version' line, once
-	# found, look at first and second previous strings, they have to contain
-	# 'Package' and 'Status' strings
 	eval {
-		my $prev_line = '';
-		my $prev_prev_line = '';
-		while (<PACKAGES>) {
-			chomp;
+		local $/ = "\n\n";
+		while (<$fh>) {
+			m'^Package: (.*?)$.*?^Status: (.*?)$.*?Version: (.*?)$'sm;
 
-			# extract info from 'Version' line, primary correctness was already checked by grep
-			m/^(?:\d+):Version: (.*)/ or
-					# save two previous lines then and loop next
-					do { $prev_prev_line = $prev_line; $prev_line = $_; next; };
+			my %installed_info;
 
-			# at this place, we ought to have needed triad here
-			my $version_string = $1;
+			# don't check package name for correctness, dpkg has to check this already
+			my $package_name = $1;
+
+			my $version_string = $3;
+			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
+					split / /, $2 or
+					mydie("malformed 'Status' line (for package '%s')", $package_name);
 
 			$version_string =~ m/^$version_string_regex$/ or
 					mydie("bad version '%s'", $version_string);
 
-			my %installed_info;
 			$installed_info{'version_string'} = $version_string;
 
-			# firstly, make sure that this is 'Package' line
-			# "12345:" is prefix by grep
-			$prev_prev_line =~ m/^(\d+):Package: (.*)/ or
-					mydie("expected 'Package' line, but haven't got it, got '%s' instead", $prev_prev_line);
-
-			# don't check package name for correctness, dpkg has to check this already
-			my $package_name = $2;
-
-			my $offset = $1 + length("Package: $package_name\n");
-
-			# extract info from 'Status' line, ignore number prefix from grep
-			$prev_line =~ m/^(?:\d+):Status: (.*)/ or
-					mydie("expected 'Status' line, but haven't got it, got '%s' instead", $prev_line);
-
-			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
-					split / /, $1 or
-					mydie("malformed 'Status' line (for package '%s')", $package_name);
 
 			do { # check 'want'
 				local $_ = $installed_info{'want'};
@@ -183,10 +161,15 @@ sub _parse_dpkg_status {
 					# adding new version to cache
 					$self->{_cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Package->new();
 
+					my $offset = tell($fh) - length($_);
+
 					Cupt::Cache::Package::add_entry(
 							$self->{_cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
 							$package_name, $fh, $offset, \%release_info);
 
+					if (m/^Provides: (.*?)$/m) {
+						$self->{_cache}->_process_provides_subline($package_name, $1);
+					}
 				}
 
 				# add parsed info to installed_info
@@ -199,22 +182,6 @@ sub _parse_dpkg_status {
 		myredie();
 	}
 
-	if (!close(PACKAGES)) {
-		if ($! != 0) {
-			mydie('unable to close grep pipe: %s', $!);
-		} else {
-			# see 'perldoc -f system' for explanations for following lines
-			if ($? > 256) {
-				mydie('grep returned failure-indicating exit status: %s', $? >> 8);
-			} elsif ($? & 127) {
-				mydie('grep died with signal %d', $? & 127);
-			}
-			# all else (0, 256) is fine
-		}
-	}
-
-	# additionally, preparse Provides fields for status file
-	$self->{_cache}->_process_provides_in_index_files($file);
 	return;
 }
 
