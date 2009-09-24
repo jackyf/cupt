@@ -906,23 +906,18 @@ sub _process_provides_in_index_files {
 			open(FILE, '<', $file) or
 					mydie("unable to open file '%s': %s", $file, $!);
 
-			my $package_line = '';
+			local $/ = "\n\n"; # version entries separator
 			while(<FILE>) {
-				next if not m/^Package: / and not m/^Provides: /;
-				chomp;
-				if (m/^Pa/) {
-					$package_line = $_;
-					next;
-				} else {
-					my ($package_name) = ($package_line =~ m/^Package: (.*)/);
-					my ($provides_subline) = m/^Provides: (.*)/;
-					my @provides = split /\s*,\s*/, $provides_subline;
+				m'^Package: (.+?)$.*?^Provides: (.+?)$'smo or next;
 
-					foreach (@provides) {
-						# if this entry is new one?
-						if (none { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
-							push @{$self->{_can_provide}->{$_}}, $package_name ;
-						}
+				my $package_name = $1;
+				my $provides_subline = $2;
+				my @provides = split /\s*,\s*/, $provides_subline;
+
+				foreach (@provides) {
+					# if this entry is new one?
+					if (none { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
+						push @{$self->{_can_provide}->{$_}}, $package_name ;
 					}
 				}
 			}

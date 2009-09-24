@@ -21,6 +21,8 @@ cupt (1.0.0~beta2) UNRELEASED; urgency=low
         Schoenfeld. (Closes: #547953)
       - Parsing preferences: allow spaces between release expressions.
         Thanks to Julian Andres Klode. (Closes: #548051)
+      - Speeded up 'Provides' pre-parsing. Reduced 15-25% of overall cache
+        build time.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Sep 2009 19:12:54 +0300
 
