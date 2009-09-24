@@ -179,8 +179,6 @@ sub new {
 		}
 	}
 
-	$self->_process_provides_in_index_files(@index_files);
-
 	# reading pin settings
 	$self->_parse_preferences();
 
@@ -898,6 +896,18 @@ sub _parse_extended_states {
 	return;
 }
 
+sub _process_provides_subline {
+	my ($self, $package_name, $provides_subline) = @_;
+
+	my @provides = split /\s*,\s*/, $provides_subline;
+	foreach (@provides) {
+		# if this entry is new one?
+		if (none { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
+			push @{$self->{_can_provide}->{$_}}, $package_name ;
+		}
+	}
+}
+
 sub _process_provides_in_index_files {
 	my ($self, @files) = @_;
 
@@ -912,14 +922,7 @@ sub _process_provides_in_index_files {
 
 				my $package_name = $1;
 				my $provides_subline = $2;
-				my @provides = split /\s*,\s*/, $provides_subline;
-
-				foreach (@provides) {
-					# if this entry is new one?
-					if (none { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
-						push @{$self->{_can_provide}->{$_}}, $package_name ;
-					}
-				}
+				$self->_process_provides_subline($package_name, $provides_subline);
 			}
 			close(FILE) or
 					mydie("unable to close file '%s': %s", $file, $!);
@@ -954,12 +957,12 @@ sub _process_index_file {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open index file '%s': %s", $file, $!);
-	open(OFFSETS, "/bin/grep -b '^Package: ' $file |") or
-			mydie('unable to open grep pipe: %s', $!);
 
 	eval {
-		while (<OFFSETS>) {
-			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
+		local $/ = "\n\n";
+		while (<$fh>) {
+			my $offset = tell($fh) - length($_);
+			my ($package_name) = m/^Package: (.*?)$/m;
 
 			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
 			$offset += length('Package: ') + length($package_name) + 1;
@@ -978,6 +981,10 @@ sub _process_index_file {
 			Cupt::Cache::Package::add_entry(
 					$$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
 					@version_params);
+
+			if (m/^Provides: (.+?)$/m) {
+				$self->_process_provides_subline($package_name, $1);
+			}
 		}
 	};
 	if (mycatch()) {
@@ -985,7 +992,6 @@ sub _process_index_file {
 		myredie();
 	}
 
-	close(OFFSETS) or $! == 0 or mydie('unable to close grep pipe: %s', $!);
 	return;
 }
 
