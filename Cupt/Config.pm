@@ -226,6 +226,7 @@ Returns: true on success, false on fail.
 
 sub set_regular_var {
 	my ($self, $var_name, $new_value) = @_;
+	my $original_var_name = $var_name;
 	$var_name = lc($var_name);
 
 	# translation to cupt variable names
@@ -241,7 +242,7 @@ sub set_regular_var {
 		$self->regular_vars->{$var_name} = $new_value;
 		return 1;
 	} else {
-		mywarn("attempt to set wrong option '%s'", $var_name);
+		mywarn("attempt to set wrong option '%s'", $original_var_name);
 		return 0;
 	}
 }
@@ -262,11 +263,12 @@ Returns: true on success, false on fail.
 
 sub set_list_var {
 	my ($self, $var_name, $new_value) = @_;
+	my $original_var_name = $var_name;
 	$var_name = lc($var_name);
 	if (defined ($self->list_vars->{$var_name})) {
 		push @{$self->list_vars->{$var_name}}, $new_value;
 	} else {
-		mywarn("attempt to set wrong option '%s'", $var_name);
+		mywarn("attempt to set wrong option '%s'", $original_var_name);
 	}
 	return;
 }
