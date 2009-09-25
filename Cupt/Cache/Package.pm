@@ -57,8 +57,7 @@ returns a new Cupt::Cache::Package object. Usually shouldn't be called by hand.
 
 sub new {
 	my ($class) = @_;
-	my $self = []; # only unparsed versions
-	return bless $self => $class;
+	return bless [] => $class;
 }
 
 =head2 add_entry
