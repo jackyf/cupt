@@ -59,7 +59,7 @@ section, string, defined in Debian Policy, §5.6.5, can be undef
 
 =head2 installed_size
 
-size of unpacked archive in kibibytes
+size of unpacked archive in bytes
 
 =head2 maintainer
 
@@ -284,7 +284,7 @@ sub new {
 					# mandatory fields
 					when ('Priority') { $self->priority = $field_value }
 					when ('Section') { $self->section = $field_value unless $o_no_parse_info_onlys }
-					when ('Installed-Size') { $self->installed_size = $field_value }
+					when ('Installed-Size') { $self->installed_size = $field_value * 1024 }
 					when ('Maintainer') { $self->maintainer = $field_value unless $o_no_parse_info_onlys }
 					when ('Architecture') { $self->architecture = $field_value }
 					when ('Version') { $self->version_string = $field_value }
