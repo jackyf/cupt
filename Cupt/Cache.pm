@@ -937,7 +937,7 @@ sub _process_index_file {
 			my $offset = tell($fh) - length($_);
 			my ($package_name) = m/^Package: (.*?)$/m;
 
-			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
+			# we skips 'Package: <...>' line additionally
 			$offset += length('Package: ') + length($package_name) + 1;
 
 			# check it for correctness
