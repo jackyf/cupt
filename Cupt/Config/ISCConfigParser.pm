@@ -116,7 +116,6 @@ sub set_list_handler {
 sub __filter_value {
 	my ($value) = @_;
 
-	print "value: $value\n";
 	(my $result = $value) =~ s'\\"'"'g;
 	return $result;
 }
