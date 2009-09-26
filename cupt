@@ -422,12 +422,6 @@ sub config_dump () {
 
 	check_no_extra_args();
 
-	my $print_key_value = sub {
-		my ($key, $value) = @_;
-		defined $value or return;
-		say qq/$key $value;/;
-	};
-
 	if (defined $particular_key) {
 		my $value;
 		$value = $config->var($particular_key);
