@@ -303,7 +303,7 @@ sub new {
 					when ('Depends') {
 						$self->[$_depends_offset] = parse_relation_line($field_value) unless $o_no_parse_relations;
 					}
-					when ('Tag') { $self->tags = $field_value unless $o_no_parse_info_onlys }
+					when ('Tag') { $self->[$_tags_offset] = $field_value unless $o_no_parse_info_onlys }
 					when ('Source') {
 						$self->[$_source_package_name_offset] = $field_value;
 						if ($self->[$_source_package_name_offset] =~ s/ \((.*)\)$//) {
