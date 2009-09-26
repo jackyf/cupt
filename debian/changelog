@@ -10,6 +10,8 @@ cupt (1.0.0~beta2) UNRELEASED; urgency=low
         Schoenfeld for the suggestion. (Closes: #548008)
       - Print help output if user typed only '?' as a command in a shell
         session. Thanks to to Patrick Schoenfeld. (Closes: #548010)
+    - 'config-dump':
+      - Print a semicolon after each option value.
   * Cupt:
     - Config:
       - Recognize 'apt::periodic::*' variables.
