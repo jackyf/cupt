@@ -471,7 +471,7 @@ method, returns whether this version is installed in the system or not
 
 sub is_installed {
 	(my $self) = @_;
-	return ($self->available_as->[0]->{release}->{base_uri} eq '');
+	return ($self->[$_available_as_offset]->[0]->{release}->{base_uri} eq '');
 }
 
 1;
