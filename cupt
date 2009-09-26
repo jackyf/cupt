@@ -423,10 +423,9 @@ sub config_dump () {
 	check_no_extra_args();
 
 	my $print_key_value = sub {
-		my $key = shift;
-		my $value = shift;
+		my ($key, $value) = @_;
 		defined $value or return;
-		print qq/$key "$value";\n/;
+		say qq/$key $value;/;
 	};
 
 	if (defined $particular_key) {
@@ -437,14 +436,16 @@ sub config_dump () {
 	} else {
 		my @regular_keys = sort keys %{$config->regular_vars};
 		foreach my $key (@regular_keys) {
-			$print_key_value->($key, $config->regular_vars->{$key});
+			my $value = $config->regular_vars->{$key};
+			defined $value or next;
+			say sprintf qq/%s "%s";/, $key, $value;
 		}
 
 		my @list_keys = sort keys %{$config->list_vars};
 		foreach my $key (@list_keys) {
 			my @values = @{$config->list_vars->{$key}};
 			foreach (@values) {
-				$print_key_value->("${key}::", $_);
+				say qq/$key { "$_"; };/;
 			}
 		}
 	}
