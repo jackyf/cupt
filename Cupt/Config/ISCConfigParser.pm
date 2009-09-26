@@ -113,21 +113,33 @@ sub set_list_handler {
 	return;
 }
 
+sub __filter_value {
+	my ($value) = @_;
+
+	print "value: $value\n";
+	(my $result = $value) =~ s'\\"'"'g;
+	return $result;
+}
+
 sub _recurse {
 	my ($self, $ref_tree, $name_prefix) = @_;
 
 	foreach my $ref_node (@{$ref_tree}) {
 		if (exists $ref_node->{'simple'}) {
 			my $ref_item = $ref_node->{'simple'};
-			$self->{'_regular_handler'}->( $name_prefix . $ref_item->{'name'}->{'__VALUE__'}, $ref_item->{'value'}->{'__VALUE__'} );
+			my $key = $name_prefix . $ref_item->{'name'}->{'__VALUE__'};
+			my $value = __filter_value($ref_item->{'value'}->{'__VALUE__'});
+			$self->{'_regular_handler'}->($key, $value);
 		} elsif (exists $ref_node->{'list'}) {
 			my $ref_item = $ref_node->{'list'};
 			my $name = $ref_item->{'name'}->{'__VALUE__'};
+			my $key = $name_prefix . $name;
 			foreach my $ref_value (values %$ref_item) {
 				if (ref $ref_value eq 'ARRAY') {
 					# list items here
 					foreach my $ref_list_item (@$ref_value) {
-						$self->{'_list_handler'}->( $name_prefix . $name, $ref_list_item->{'value'}->{'__VALUE__'} );
+						my $value = __filter_value($ref_list_item->{'value'}->{'__VALUE__'});
+						$self->{'_list_handler'}->($key, $value);
 					}
 					last; # should be only one array of list items
 				}
