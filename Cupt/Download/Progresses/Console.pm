@@ -33,6 +33,7 @@ use strict;
 use base qw(Cupt::Download::Progress);
 
 use Term::Size;
+use List::Util qw(max);
 
 use Cupt::Core;
 
@@ -41,6 +42,7 @@ sub new {
 	my $self = $class->SUPER::new();
 	$self->{_previous_report_time} = 0;
 	($self->{_termwidth}, undef) = Term::Size::chars();
+	$self->{_termwidth} = max($self->{_termwidth}, 80);
 	return $self;
 }
 
