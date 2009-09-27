@@ -41,7 +41,7 @@ sub import {
 
 	foreach my $field_name (@field_names) {
 		## no critic (StringyEval)
-		my $offset_sub_name = "_${field_name}_offset";
+		my $offset_sub_name = "${field_name}_offset";
 		my $eval_string = "package $caller;" .
 			"sub $field_name (\$) : lvalue { \$_[0]->[$field_offset] } " .
 			"use constant $offset_sub_name => $field_offset;";
