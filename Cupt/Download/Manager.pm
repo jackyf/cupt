@@ -548,6 +548,9 @@ sub download ($@) {
 			# download seems to be done well, but we also have external checker specified
 			# but do this only if this file wasn't post-processed before
 			$error_string = $sub_post_action->();
+			if (not defined $error_string) {
+				myinternaldie("received undefined post-action result for $uri");
+			}
 		}
 
 		if (not $is_duplicated_download) {
