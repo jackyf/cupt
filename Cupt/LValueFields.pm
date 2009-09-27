@@ -44,7 +44,7 @@ sub import {
 		my $offset_sub_name = "_${field_name}_offset";
 		my $eval_string = "package $caller;" .
 			"sub $field_name (\$) : lvalue { \$_[0]->[$field_offset] } " .
-			"sub $offset_sub_name { $field_offset }";
+			"use constant $offset_sub_name => $field_offset;";
 		eval $eval_string;
 		++$field_offset;
 	}
