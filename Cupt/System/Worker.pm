@@ -1599,6 +1599,28 @@ sub update_release_and_index_data ($$) {
 
 						my $release_signature_alias = "$release_alias.gpg";
 
+						my $sub_post_action = $sub_generate_moving_sub->(
+								$signature_download_filename => $signature_local_path);
+
+						my $config = $self->{_config};
+						if (not $simulate and not $config->var('cupt::update::keep-bad-signatures')) {
+							# if we have to check signature prior to moving to canonical place
+							# (for compatibility with APT tools) and signature check failed,
+							# delete the downloaded file
+							my $old_sub_post_action = $sub_post_action;
+							$sub_post_action = sub {
+								my $move_error = $old_sub_post_action->();
+								return $move_error if $move_error;
+
+								if (!Cupt::Cache::verify_signature($config, $local_path)) {
+									unlink $signature_local_path or
+											mywarn("unable to delete file '%s': %s", $signature_local_path, $!);
+									mywarn("signature verification for '%s' failed", $release_alias);
+								}
+								return '';
+							};
+						}
+
 						$download_result = $download_manager->download(
 								{
 									'uri-entries' => [ {
@@ -1607,29 +1629,12 @@ sub update_release_and_index_data ($$) {
 										'long-alias' => "$index_entry->{'uri'} $release_signature_alias",
 									} ],
 									'filename' => $signature_download_filename,
-									'post-action' => $sub_generate_moving_sub->(
-										$signature_download_filename => $signature_local_path),
+									'post-action' => $sub_post_action,
 								}
 						);
 						if ($download_result) {
 							# failed to download
 							mywarn("failed to download '%s'", $release_signature_alias);
-						} else {
-							# download successful, but need to do signature check
-
-							unless ($simulate) {
-								# if we have to check signature prior to moving to canonical place
-								# (for compatibility with APT tools) and signature check failed,
-								# delete the downloaded file
-								my $config = $self->{_config};
-								if (!$config->var('cupt::update::keep-bad-signatures') &&
-									!Cupt::Cache::verify_signature($config, $local_path))
-								{
-									unlink $signature_local_path or
-											mydie("unable to delete file '%s': %s", $signature_local_path, $!);
-									mywarn("signature verification for '%s' failed", $release_alias);
-								}
-							}
 						}
 					};
 
