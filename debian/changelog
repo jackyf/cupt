@@ -25,6 +25,7 @@ cupt (1.0.0~beta2~) UNRELEASED; urgency=low
         - Parse \" as " in values. Thanks to Julian Andres Klode.
         - Fixed parsing non-first nested structures. Thanks to
           Oleg Tsybulskyi <alogic0@gmail.com>.
+        - Implemented '#clear' directive.
     - Cache:
       - Strip last '/' character from base URI if present. Thanks to Patrick
         Schoenfeld. (Closes: #547953)

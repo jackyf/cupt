@@ -43,11 +43,11 @@ my $grammar = q{
 
 	program:
 		  <skip: qr{\s*
-		            (?:(?://|\#)[^\n]*\n\s*|/\*(?:[^*]+|\*(?!/))*\*/\s*)*
+		            (?:(?://|\#\s)[^\n]*\n\s*|/\*(?:[^*]+|\*(?!/))*\*/\s*)*
 		           }x> statement(s?) eofile { $item[2] }
 
 	statement:
-		  simple | nested | list
+		  simple | nested | list | clear
 
 	simple:
 		  name value ';'
@@ -57,6 +57,9 @@ my $grammar = q{
 
 	list:
 		  name '{' (value ';')(s?) '}' ';'
+
+	clear:
+	      '#clear' name ';'
 
 	name:
 		  /([\w\/-]+::)*([\w\/-]+)/
@@ -113,6 +116,12 @@ sub set_list_handler {
 	return;
 }
 
+sub set_clear_handler {
+	my ($self, $value) = @_;
+	$self->{'_clear_handler'} = $value;
+	return;
+}
+
 sub __filter_value {
 	my ($value) = @_;
 
@@ -147,6 +156,10 @@ sub _recurse {
 			my $ref_item = $ref_node->{'nested'};
 			my $new_name_prefix = $name_prefix . $ref_item->{'name'}->{'__VALUE__'} . '::';
 			$self->_recurse($ref_item->{'statement(s?)'}, $new_name_prefix);
+		} elsif (exists $ref_node->{'clear'}) {
+			my $ref_item = $ref_node->{'clear'};
+			my $name = $ref_item->{'name'}->{'__VALUE__'};
+			$self->{'_clear_handler'}->($name_prefix . $name);
 		}
 	}
 	return;

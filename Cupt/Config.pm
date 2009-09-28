@@ -291,8 +291,24 @@ sub _read_configs {
 		}
 	};
 
+	my $sub_clear_directive = sub {
+		my ($option_name_to_clear) = @_;
+
+		foreach my $regular_option_name (keys %{$self->regular_vars}) {
+			if ($regular_option_name =~ m/^$option_name_to_clear/) {
+				$self->regular_vars->{$regular_option_name} = undef;
+			}
+		}
+		foreach my $list_option_name (keys %{$self->list_vars}) {
+			if ($list_option_name =~ m/^$option_name_to_clear/) {
+				$self->list_vars->{$list_option_name} = [];
+			}
+		}
+	};
+
 	$parser->set_regular_handler($sub_regular_option);
 	$parser->set_list_handler($sub_list_option);
+	$parser->set_clear_handler($sub_clear_directive);
 
 	my $root_prefix = $self->var('dir');
 	my $etc_dir = $self->var('dir::etc');
