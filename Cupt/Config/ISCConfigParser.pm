@@ -145,8 +145,8 @@ sub _recurse {
 			}
 		} elsif (exists $ref_node->{'nested'}) {
 			my $ref_item = $ref_node->{'nested'};
-			$name_prefix .= $ref_item->{'name'}->{'__VALUE__'} . '::';
-			$self->_recurse($ref_item->{'statement(s?)'}, $name_prefix);
+			my $new_name_prefix = $name_prefix . $ref_item->{'name'}->{'__VALUE__'} . '::';
+			$self->_recurse($ref_item->{'statement(s?)'}, $new_name_prefix);
 		}
 	}
 	return;
