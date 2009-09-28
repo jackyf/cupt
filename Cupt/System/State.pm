@@ -103,7 +103,7 @@ sub _parse_dpkg_status {
 	eval {
 		local $/ = "\n\n";
 		while (<$fh>) {
-			m'^Package: (.*?)$.*?^Status: (.*?)$.*?Version: (.*?)$'sm;
+			m'^Package: (.*?)$.*?^Status: (.*?)$.*?Version: (.*?)$'sm or next;
 
 			my %installed_info;
 
