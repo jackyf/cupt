@@ -1602,6 +1602,9 @@ sub manage_packages ($) {
 	);
 	say '';
 
+	# at this stage resolver has done its work, so to does not consume the RAM
+	undef $resolver;
+
 	if (!defined $resolve_result) {
 		# tryings were abandoned
 		return 1;
