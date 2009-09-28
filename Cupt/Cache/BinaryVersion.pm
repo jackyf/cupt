@@ -378,8 +378,8 @@ sub new {
 		myredie();
 	}
 
-	# checking a presence of version string
 	defined $self->[version_string_offset()] or mydie("version string isn't defined");
+	defined $self->[architecture_offset()] or mydie("architecture isn't defined");
 	# checking hash sums
 	if (!$self->is_installed() && !are_hash_sums_present($self->export_hash_sums())) {
 		mydie('no hash sums specified');
