@@ -1658,9 +1658,23 @@ sub update_release_and_index_data ($$) {
 						my $base_download_filename = $sub_get_download_filename->($local_path);
 
 						# try to download files of less size first
-						my @download_uris_in_order = sort {
-							$ref_download_entries->{$a}->{'size'} <=> $ref_download_entries->{$b}->{'size'}
-						} keys %$ref_download_entries;
+						my @download_uris_in_order;
+						do {
+							my $sub_get_uri_priority = sub {
+								my ($uri) = @_;
+								my $extension = $sub_get_download_filename_extension->($uri);
+								if ($extension eq '') {
+									$extension = 'uncompressed';
+								}
+								$extension =~ s/^\.//; # remove starting '.' if exist
+								my $result = $self->{_config}->var("cupt::update::compression-types::${extension}::priority");
+								return $result;
+							};
+							@download_uris_in_order = sort {
+								$sub_get_uri_priority->($b) <=> $sub_get_uri_priority->($a) or
+								$ref_download_entries->{$a}->{'size'} <=> $ref_download_entries->{$b}->{'size'}
+							} keys %$ref_download_entries;
+						};
 
 						my $download_result;
 						foreach my $download_uri (@download_uris_in_order) {

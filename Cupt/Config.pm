@@ -103,6 +103,10 @@ sub new {
 		# Cupt vars
 		'acquire::http::allow-redirects' => 1,
 		'cupt::downloader::max-simultaneous-downloads' => 2,
+		'cupt::update::compression-types::gz::priority' => 100,
+		'cupt::update::compression-types::bz2::priority' => 100,
+		'cupt::update::compression-types::lzma::priority' => 100,
+		'cupt::update::compression-types::uncompressed::priority' => 100,
 		'cupt::update::keep-bad-signatures' => 0,
 		'cupt::resolver::auto-remove' => 1,
 		'cupt::resolver::external-command' => undef,

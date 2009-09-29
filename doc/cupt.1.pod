@@ -809,6 +809,34 @@ True by default.
 
 positive number, specifies maximum number of simultaneous downloads
 
+=item cupt::update::compression-types::*::priority
+
+defines preference to download compressed files with higher priority first. 100 by default.
+
+'*' can be 'gz', 'bz2', 'lzma' and 'uncompressed'.
+
+Set some option to <100 value to make it low-precedence than default, and >100
+to make it high-precedence than default.
+
+If some methods have the equal priority (which is the default setting), then
+files with smaller size with be chosen over the files with bigger size.
+
+Example:
+
+You have a low-speed CPU but rather high-speed internet connection and want to
+prefer gzip over lzma and lzma over bzip2. Then you have to set options like:
+
+  cupt::update::compression-types
+  {
+    gz::priority "200";
+    lzma::priority "150";
+  }
+
+Also, if you have a local mirror, which may store uncompressed indexes too
+(an official Debian archive doesn't store them), you may set also
+
+cupt::update::compression-types::uncompressed::priority "300";
+
 =item cupt::update::keep-bad-signatures
 
 boolean (0/1), specifies whether to keep signature files that failed GPG check
