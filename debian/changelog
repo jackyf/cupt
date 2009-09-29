@@ -58,6 +58,10 @@ cupt (1.0.0~beta2~) UNRELEASED; urgency=low
           'cupt::update::keep-bad-signatures' is set to false, some release
           signature failed gpg check, and more than one index file is attached
           to corresponding Release.
+      - Resolvers/Native:
+        - Print debug information when some solution path cannot be taken
+          because of 'cupt::resolver::synchronize-source-versions' option set
+          to 'hard'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Sep 2009 19:12:54 +0300
 

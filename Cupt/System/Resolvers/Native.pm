@@ -1116,13 +1116,27 @@ sub _resolve ($$) {
 			}
 		}
 
-		# if we have to synchronize source versions, can related packages be updated too?
-		# filter out actions that don't match this criteria
-		@possible_actions = grep {
-			$self->config->var('cupt::resolver::synchronize-source-versions') ne 'hard' or
-			not defined $_->{'version'} or
-			$self->_related_packages_can_be_synchronized($ref_current_packages, $_->{'version'})
-		} @possible_actions;
+		if ($self->config->var('cupt::resolver::synchronize-source-versions') eq 'hard') {
+			# if we have to synchronize source versions, can related packages be updated too?
+			# filter out actions that don't match this criteria
+			my @new_possible_actions;
+			foreach my $possible_action (@possible_actions) {
+				my $version = $possible_action->{'version'};
+				if (not defined $version or
+					$self->_related_packages_can_be_synchronized($ref_current_packages, $version))
+				{
+					push @new_possible_actions, $possible_action;
+				} else {
+					# we cannot proceed with it
+					if ($self->config->var('debug::resolver')) {
+						$sub_mydebug_wrapper->(sprintf(
+								'cannot consider installing %s %s: unable to synchronize related binary packages',
+								$version->package_name, $version->version_string));
+					}
+				}
+			}
+			@possible_actions = @new_possible_actions;
+		}
 
 		if (scalar @possible_actions) {
 			# firstly rank all solutions
