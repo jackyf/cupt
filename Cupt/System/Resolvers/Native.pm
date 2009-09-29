@@ -948,7 +948,7 @@ sub _resolve ($$) {
 
 								if (scalar @possible_actions == 1) {
 									$sub_apply_action->($ref_current_solution,
-											$possible_actions[0], $ref_current_solution->{identifier});
+											$possible_actions[0], $ref_current_solution->{'identifier'});
 									@possible_actions = ();
 									$recheck_needed = 1;
 									next MAIN_LOOP;
