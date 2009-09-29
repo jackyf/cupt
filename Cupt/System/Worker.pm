@@ -1283,8 +1283,10 @@ sub change_system ($$) {
 
 	my $ref_actions_preview = $self->get_actions_preview();
 
-	my @pending_downloads = $self->_prepare_downloads($ref_actions_preview, $download_progress);
-	$self->_do_downloads(\@pending_downloads, $download_progress);
+	do {
+		my @pending_downloads = $self->_prepare_downloads($ref_actions_preview, $download_progress);
+		$self->_do_downloads(\@pending_downloads, $download_progress);
+	};
 	return 1 if $download_only;
 
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
