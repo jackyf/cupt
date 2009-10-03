@@ -1,4 +1,4 @@
-cupt (1.0.0~rc1~) UNRELEASED; urgency=low
+cupt (1.0.0~rc1) unstable; urgency=low
 
   * cupt:
     - Don't crash when run with no parameters (again). Thanks to Patrick
@@ -66,7 +66,7 @@ cupt (1.0.0~rc1~) UNRELEASED; urgency=low
           because of 'cupt::resolver::synchronize-source-versions' option set
           to 'hard'.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Sep 2009 19:12:54 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 03 Oct 2009 11:03:47 +0300
 
 cupt (1.0.0~beta1) unstable; urgency=low
 
