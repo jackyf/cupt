@@ -327,23 +327,23 @@ sub get_original_apt_pin {
 	foreach my $ref_pin (@{$self->{_pin_settings}}) {
 		if (exists $ref_pin->{'package_name'}) {
 			my $value = $ref_pin->{'package_name'};
-			$version->package_name =~ m/$value/ or next PIN;
+			$version->package_name =~ m/^$value$/ or next PIN;
 		}
 		if (exists $ref_pin->{'source_package_name'}) {
 			$version->isa('Cupt::Cache::BinaryVersion') or next PIN;
 			my $value = $ref_pin->{'source_package_name'};
-			$version->source_package_name =~ m/$value/ or next PIN;
+			$version->source_package_name =~ m/^$value$/ or next PIN;
 		}
 		if (exists $ref_pin->{'version'}) {
 			my $value = $ref_pin->{'version'};
-			$version->version_string =~ m/$value/ or next PIN;
+			$version->version_string =~ m/^$value$/ or next PIN;
 		}
 		if (exists $ref_pin->{'base_uri'}) {
 			my $value = $ref_pin->{'base_uri'};
 
 			my $found = 0;
 			foreach (@available_as) {
-				if ($_->{release}->{base_uri} =~ m/$value/) {
+				if ($_->{release}->{base_uri} =~ m/^$value$/) {
 					$found = 1;
 					last;
 				}
