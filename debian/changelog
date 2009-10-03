@@ -1,3 +1,13 @@
+cupt (1.0.0~rc2) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Cache:
+      - 'get_original_apt_pin': fixed clashing release values which are
+        substrings of other pin settings. Thanks to Jameson Graef Rollins
+        <jrollins@finestructure.net>. (Closes: #549423)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 03 Oct 2009 12:37:04 +0300
+
 cupt (1.0.0~rc1) unstable; urgency=low
 
   * cupt:

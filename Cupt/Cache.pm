@@ -358,7 +358,7 @@ sub get_original_apt_pin {
 				foreach (@available_as) {
 					defined $_->{release}->{$key} or
 							myinternaldie("unexistent key '%s' in the release entry", $key);
-					if ($_->{release}->{$key} =~ m/$value/) {
+					if ($_->{release}->{$key} =~ m/^$value$/) {
 						$found = 1;
 						last;
 					}
