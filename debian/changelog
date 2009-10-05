@@ -4,6 +4,8 @@ cupt (1.0.0~rc2) UNRELEASED; urgency=low
     - Action preview prompt:
       - Output also 'Suggests' relation expressions in 'leave unresolved'
         check.
+      - Output unresolved dependencies for a dependency group <dep> only if
+        the option 'cupt::resolver::keep-<dep>' is set to true.
   * Cupt:
     - Cache:
       - 'get_original_apt_pin': fixed clashing values which are

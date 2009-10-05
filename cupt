@@ -1222,6 +1222,7 @@ sub generate_management_prompt ($$$) {
 				next if not defined $ref_package_entry->{'version'};
 
 				foreach my $dependency_name (qw(recommends suggests)) {
+					next if not $config->var("cupt::resolver::keep-$dependency_name");
 					foreach my $relation_expression (@{$ref_package_entry->{'version'}->$dependency_name}) {
 						my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
 
