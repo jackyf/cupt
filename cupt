@@ -1221,36 +1221,39 @@ sub generate_management_prompt ($$$) {
 				my $ref_package_entry = $ref_desired_packages->{$package_name};
 				next if not defined $ref_package_entry->{'version'};
 
-				foreach my $relation_expression (@{$ref_package_entry->{'version'}->recommends}) {
-					my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
+				foreach my $dependency_name (qw(recommends suggests)) {
+					foreach my $relation_expression (@{$ref_package_entry->{'version'}->$dependency_name}) {
+						my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
 
-					my $soft_breakage_possible = 0;
-					RELATION_ENTRY:
-					foreach my $satisfying_version (@$ref_satisfying_versions) {
-						foreach my $version_to_remove (@versions_to_remove) {
-							next if $satisfying_version->package_name ne $version_to_remove->package_name;
-							next if $satisfying_version->version_string ne $version_to_remove->version_string;
-							$soft_breakage_possible = 1;
-							last RELATION_ENTRY;
-						}
-					}
-
-					if ($soft_breakage_possible) {
-						my $is_broken = 1;
+						my $soft_breakage_possible = 0;
+						RELATION_ENTRY:
 						foreach my $satisfying_version (@$ref_satisfying_versions) {
-							my $satisfying_package_name = $satisfying_version->package_name;
-							next if not defined $ref_desired_packages->{$satisfying_package_name};
-							my $desired_version = $ref_desired_packages->{$satisfying_package_name}->{'version'};
-							next if not defined $desired_version;
-							next if $desired_version->version_string ne $satisfying_version->version_string;
-							$is_broken = 0;
-							last;
+							foreach my $version_to_remove (@versions_to_remove) {
+								next if $satisfying_version->package_name ne $version_to_remove->package_name;
+								next if $satisfying_version->version_string ne $version_to_remove->version_string;
+								$soft_breakage_possible = 1;
+								last RELATION_ENTRY;
+							}
 						}
-						if ($is_broken) {
-							my $version_string = $ref_package_entry->{version}->version_string;
-							push @unsatisfied_soft_dependencies,
-									sprintf __('%s %s recommends %s'), $package_name, $version_string,
-									stringify_relation_expression($relation_expression);
+
+						if ($soft_breakage_possible) {
+							my $is_broken = 1;
+							foreach my $satisfying_version (@$ref_satisfying_versions) {
+								my $satisfying_package_name = $satisfying_version->package_name;
+								next if not defined $ref_desired_packages->{$satisfying_package_name};
+								my $desired_version = $ref_desired_packages->{$satisfying_package_name}->{'version'};
+								next if not defined $desired_version;
+								next if $desired_version->version_string ne $satisfying_version->version_string;
+								$is_broken = 0;
+								last;
+							}
+							if ($is_broken) {
+								my $version_string = $ref_package_entry->{version}->version_string;
+								push @unsatisfied_soft_dependencies,
+										sprintf __('%s %s %s %s'), $package_name, $version_string,
+										$dependency_name eq 'recommends' ? __('recommends') : __('suggests'),
+										stringify_relation_expression($relation_expression);
+							}
 						}
 					}
 				}
