@@ -6,6 +6,9 @@ cupt (1.0.0~rc2) UNRELEASED; urgency=low
         check.
       - Output unresolved dependencies for a dependency group <dep> only if
         the option 'cupt::resolver::keep-<dep>' is set to true.
+    - Managing packages:
+      - Fixed shell wildcards when scheduling removal of packages which
+        are not installed.
   * Cupt:
     - Cache:
       - 'get_original_apt_pin': fixed clashing values which are

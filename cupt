@@ -1544,9 +1544,6 @@ sub manage_packages ($) {
 		} else {
 			my $action = $action; ## no critic (ReusedNames)
 			my $actual_package_expression = $package_expression;
-			if ($action eq 'remove') {
-				$actual_package_expression .= '/installed';
-			}
 			my @versions = select_package_versions_wildcarded($actual_package_expression, 'binary', 0);
 			if (not scalar @versions) {
 				# we have a funny situation with package names like 'g++',
@@ -1564,9 +1561,6 @@ sub manage_packages ($) {
 					$package_expression = substr($package_expression, 0, length($package_expression)-1);
 				}
 				$actual_package_expression = $package_expression;
-				if ($action eq 'remove') {
-					$actual_package_expression .= '/installed';
-				}
 			}
 
 			if ($action eq 'install') {
