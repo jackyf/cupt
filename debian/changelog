@@ -14,6 +14,9 @@ cupt (1.0.0~rc2) UNRELEASED; urgency=low
       - 'get_original_apt_pin': fixed clashing values which are
         substrings of other pin settings. Thanks to Jameson Graef Rollins
         <jrollins@finestructure.net>. (Closes: #549423)
+  * doc:
+    - cupt_vs_apt:
+      - Mentioned 'cupt::update::compression-types' in differences.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 03 Oct 2009 12:37:04 +0300
 

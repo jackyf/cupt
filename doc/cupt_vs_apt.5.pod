@@ -122,10 +122,16 @@ PDiffs are not supported
 
 =item
 
-to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "", not to "DIRECT"
+to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "",
+not to "DIRECT"
 
 =item
 
 'gpgv::trustedkeyring' defaults to '/var/lib/cupt/trusted.gpg'
+
+=item
+
+to prioritize compression types, use option 'cupt::update::compression-types',
+not 'acquire::compression-types'
 
 =back
