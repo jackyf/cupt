@@ -1008,7 +1008,8 @@ sub _prepare_downloads ($$) {
 
 	my $archives_location = $self->_get_archives_location();
 
-	do { # prepare partial directory if it doesn't exist
+	unless ($self->{_config}->var('cupt::worker::simulate')) {
+		# prepare partial directory if it doesn't exist
 		my $partial_directory = "$archives_location$_download_partial_suffix";
 		if (! -e $partial_directory) {
 			mkdir($partial_directory) or
