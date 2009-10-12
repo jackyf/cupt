@@ -1277,7 +1277,7 @@ sub generate_management_prompt ($$$) {
 				}
 			}
 			if (scalar @untrusted_package_names) {
-				say sprintf __('WARNING! The untrusted versions of the following packages will be INSTALLED:');
+				say sprintf __('WARNING! The untrusted versions of the following packages will be used:');
 				say '';
 				say $_ for @untrusted_package_names;
 				say '';
