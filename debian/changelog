@@ -8,6 +8,7 @@ cupt (1.1.0~) UNRELEASED; urgency=low
       - Worker:
         - Changed to work with Cupt::Graph module instead of CPAN Graph.
           Dramatically reduced time needed to generate dpkg call sequence in
+          'change_system' subroutine. Significantly reduced peak RAM usage in
           'change_system' subroutine.
       - Resolvers/Native:
         - Changed to work with Cupt::Graph module instead of CPAN Graph.
