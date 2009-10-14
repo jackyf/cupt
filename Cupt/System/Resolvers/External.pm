@@ -142,9 +142,9 @@ sub _write_dudf_info ($$) {
 	};
 
 	# writing package info
-	foreach my $package (values %{$self->cache->get_binary_packages()}) {
+	foreach my $package_name ($self->cache->get_binary_package_names()) {
+		my $package = $self->cache->get_binary_package($package_name);
 		foreach my $version (@{$package->get_versions()}) {
-			my $package_name = $version->package_name;
 			say { $fh } 'Package: ' . $package_name;
 			say { $fh } 'Version: ' . $version->version_string;
 			say { $fh } 'Pin-Priority: ' . $self->cache->get_original_apt_pin($version);

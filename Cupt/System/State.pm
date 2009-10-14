@@ -158,14 +158,10 @@ sub _parse_dpkg_status {
 					# semi-installed, regardless it has full entry info, so
 					# add it (info) to cache
 
-					# adding new version to cache
-					$self->{_cache}->{_binary_packages}->{$package_name} //= Cupt::Cache::Package->new();
-
 					my $offset = tell($fh) - length($_);
 
-					Cupt::Cache::Package::add_entry(
-							$self->{_cache}->{_binary_packages}->{$package_name}, 'Cupt::Cache::BinaryVersion',
-							$package_name, $fh, $offset, \%release_info);
+					push @{$self->{_cache}->{_binary_packages}->{$package_name}},
+							[ 'Cupt::Cache::BinaryVersion', $package_name, $fh, $offset, \%release_info ];
 
 					if (m/^Provides: (.*?)$/m) {
 						$self->{_cache}->_process_provides_subline($package_name, $1);

@@ -61,7 +61,8 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 =cut
 
 use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
-		_can_provide _extended_info _index_entries _release_data);
+		_can_provide _extended_info _index_entries _release_data
+		_binary_architecture);
 
 =head1 FLAGS
 
@@ -186,6 +187,9 @@ sub new {
 	my $extended_states_file = $self->_path_of_extended_states();
 	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
+	# for speeding up _prepare_package calls
+	$self->{_binary_architecture} = $self->{_config}->var('apt::architecture');
+
 	return $self;
 }
 
@@ -205,30 +209,27 @@ sub set_config ($$) {
 	return;
 }
 
-=head2 get_binary_packages
+=head2 get_binary_package_names
 
-method, returns all binary packages as hash reference in form { $package_name
-=> I<pkg> }, where I<pkg> is reference to L<Cupt::Cache::Package|Cupt::Cache::Package>
-
+method, returns an array of binary package names
 =cut
 
-sub get_binary_packages ($) {
+sub get_binary_package_names ($) {
 	my ($self) = @_;
 
-	return $self->{_binary_packages};
+	return keys %{$self->{_binary_packages}};
 }
 
-=head2 get_source_packages
+=head2 get_source_package_names
 
-method, returns all source packages as hash reference in form { $package_name
-=> I<pkg> }, where I<pkg> is reference to L<Cupt::Cache::Package|Cupt::Cache::Package>
+method, returns an array of source package names
 
 =cut
 
-sub get_source_packages ($) {
+sub get_source_package_names ($) {
 	my ($self) = @_;
 
-	return $self->{_source_packages};
+	return keys %{$self->{_source_packages}};
 }
 
 =head2 get_system_state
@@ -406,6 +407,21 @@ sub get_pin ($$) {
 	return $result;
 }
 
+sub _prepare_package {
+	my ($self, $type, $package_name) = @_;
+
+	my $ref_storage = \$self->{"_${type}_packages"};
+
+	if (ref $$ref_storage->{$package_name} eq 'ARRAY') {
+		# existent package and not blessed package
+
+		# there are some version entries for this package, create it
+		my @unparsed_versions = @{$$ref_storage->{$package_name}};
+		$$ref_storage->{$package_name} = Cupt::Cache::Package->new($self->{_binary_architecture});
+		$$ref_storage->{$package_name}->add_entry(@$_) for @unparsed_versions;
+	}
+}
+
 =head2 get_binary_package
 
 method, returns reference to appropriate L<Cupt::Cache::Package|Cupt::Cache::Package> for package name.
@@ -420,6 +436,8 @@ I<package_name> - package name to find
 sub get_binary_package {
 	my ($self, $package_name) = @_;
 	# will transparently return undef if there is no such package
+
+	$self->_prepare_package('binary', $package_name);
 	return $self->{_binary_packages}->{$package_name};
 };
 
@@ -437,6 +455,8 @@ I<package_name> - package name to find
 sub get_source_package {
 	my ($self, $package_name) = @_;
 	# will transparently return undef if there is no such package
+
+	$self->_prepare_package('source', $package_name);
 	return $self->{_source_packages}->{$package_name};
 };
 
@@ -921,6 +941,7 @@ sub _process_index_file {
 		$ref_packages_storage = \$self->{_source_packages};
 	}
 
+
 	my $ref_translations;
 	if (defined $translation_file) {
 		$ref_translations = __process_translation_file($translation_file);
@@ -950,10 +971,7 @@ sub _process_index_file {
 				push @version_params, $ref_translations->{$package_name}->{'offset'};
 			}
 
-			# adding new entry (and possible creating new package if absend)
-			Cupt::Cache::Package::add_entry(
-					$$ref_packages_storage->{$package_name} //= Cupt::Cache::Package->new(),
-					@version_params);
+			push @{$$ref_packages_storage->{$package_name}}, \@version_params;
 
 			if (m/^Provides: (.+?)$/m) {
 				$self->_process_provides_subline($package_name, $1);

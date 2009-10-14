@@ -33,19 +33,22 @@ use Exporter qw(import);
 
 our @EXPORT = qw(&compare_versions);
 
+use Cupt::LValueFields qw(_unparsed_versions _parsed_versions _binary_architecture);
+
 use Cupt::Core;
 
 =head1 FLAGS
 
-=head2 o_binary_architecture
+=head2 o_memoize
 
-string to filter out package versions with unwanted architectures
-
-Has to be set manually.
+This flag determines whether it worth cacheing parsed versions.  Off by
+default. If it's on, it stores references, so don't modify results of these
+functions, use them in read-only mode. If it's on, these functions are not
+thread-safe.
 
 =cut
 
-our $o_binary_architecture;
+our $o_memoize = 0;
 
 =head1 METHODS
 
@@ -56,8 +59,11 @@ returns a new Cupt::Cache::Package object. Usually shouldn't be called by hand.
 =cut
 
 sub new {
-	my ($class) = @_;
-	return bless [] => $class;
+	my ($class, $binary_architecture) = @_;
+	my $self = bless [] => $class;
+	$self->[_unparsed_versions_offset()] = [];
+	$self->[_binary_architecture_offset()] = $binary_architecture;
+	return $self;
 }
 
 =head2 add_entry
@@ -68,7 +74,7 @@ method, adds unparsed entry to package. Usually should't be called by hand.
 
 sub add_entry {
 	my $self = shift;
-	push @$self, \@_;
+	push @{$self->[_unparsed_versions_offset()]}, \@_;
 	return;
 }
 
@@ -84,36 +90,48 @@ contains
 sub get_versions {
 	my ($self) = @_;
 
-	my @result;
-	# parsing of versions is delayed, we parse them now (on-demand)
-	eval {
-		my @new_self;
-		foreach my $ref_params (@$self) {
-			my $parsed_version;
-			eval {
-				my $version_class = shift @$ref_params;
-				$parsed_version = $version_class->new($ref_params);
-				unshift @$ref_params, $version_class;
-			};
-			if (mycatch()) {
-				# broken entry will be deleted
-				mywarn("error while parsing new version entry for package '%s'", shift @$ref_params);
-			} else {
-				$self->_merge_version($parsed_version, \@result);
-				push @new_self, $ref_params;
+	if (not defined $self->[_parsed_versions_offset()]) {
+		my @result;
+		# parsing of versions is delayed, we parse them now (on-demand)
+		eval {
+			my @new_unparsed_versions;
+			foreach my $ref_params (@{$self->[_unparsed_versions_offset()]}) {
+				my $parsed_version;
+				eval {
+					my $version_class = shift @$ref_params;
+					$parsed_version = $version_class->new($ref_params);
+					unshift @$ref_params, $version_class;
+				};
+				if (mycatch()) {
+					mywarn("error while parsing new version entry for package '%s'", shift @$ref_params);
+				} else {
+					$self->_merge_version($parsed_version, \@result);
+					unless ($o_memoize) {
+						push @new_unparsed_versions, $ref_params;
+					}
+				}
 			}
-		}
-		@$self = @new_self;
-		if (not scalar @$self) {
-			mywarn('no valid versions available, discarding the package');
-		}
-	};
-	if (mycatch()) {
-		myerr('error while parsing package info');
-		myredie();
-	};
+			if (not scalar @result) {
+				mywarn('no valid versions available, discarding the package');
+			}
+			unless ($o_memoize) {
+				$self->[_unparsed_versions_offset()] = \@new_unparsed_versions;
+			}
+		};
+		if (mycatch()) {
+			myerr('error while parsing package info');
+			myredie();
+		};
 
-	return \@result;
+		if ($o_memoize) {
+			$self->[_parsed_versions_offset()] = \@result;
+			undef $self->[_unparsed_versions_offset()];
+			undef $self->[_binary_architecture_offset()];
+		} else {
+			return \@result;
+		}
+	}
+	return $self->[_parsed_versions_offset()];
 }
 
 =head2 get_specific_version
@@ -182,9 +200,9 @@ sub get_installed_version ($) {
 sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
-	if (defined $o_binary_architecture and ref $parsed_version eq 'Cupt::Cache::BinaryVersion') {
+	if (defined $self->[_binary_architecture_offset()] and ref $parsed_version eq 'Cupt::Cache::BinaryVersion') {
 		if ($parsed_version->architecture ne 'all' and
-			$parsed_version->architecture ne $o_binary_architecture)
+			$parsed_version->architecture ne $self->[_binary_architecture_offset()])
 		{
 			# no need to keep it
 			return;

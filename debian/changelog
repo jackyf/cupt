@@ -1,5 +1,9 @@
 cupt (1.1.0~) UNRELEASED; urgency=low
 
+  * cupt:
+    - Memoize parsed versions when managing packages and in shell mode.
+      Reduced peak RAM usage by resolver. Reduced time spent in native
+      resolver for non-trivial solutions.
   * Cupt:
     - Graph:
       - Introduced as reduced and optimized for Cupt re-implementation
@@ -12,6 +16,17 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           'change_system' subroutine.
       - Resolvers/Native:
         - Changed to work with Cupt::Graph module instead of CPAN Graph.
+    - Cache:
+      - [API break] 'get_binary_packages': superseded by new
+        'get_binary_package_names' method.
+      - [API break] 'get_source_packages': superseded by new
+        'get_source_package_names' method.
+      - Create Cupt::Cache::Package objects only by demand. Reduced time to
+        build a cache by 5-10%.
+      - Package:
+        - Changed internal structure to hold additonal parameters.
+        - [API break] 'o_binary_architecture': removed, not needed anymore.
+        - New module option 'o_memoize' to memoize parsed versions.
   * Makefile.PL, debian/control:
     - Dropped dependency on libgraph-perl.
 

@@ -1809,7 +1809,9 @@ sub clean_archives ($$) {
 	my $archives_location = $self->_get_archives_location();
 	my %white_list;
 	if ($leave_available) {
-		foreach my $package (values %{$self->{_cache}->get_binary_packages()}) {
+		my $cache = $self->{_cache};
+		my @packages = map { $cache->get_binary_package($_) } $cache->get_binary_package_names();
+		foreach my $package (@packages) {
 			foreach my $version (@{$package->get_versions()}) {
 				my $path = $archives_location . '/' . __get_archive_basename($version);
 				$white_list{$path} = 1;

@@ -68,8 +68,6 @@ build_config();
 
 process_options();
 
-$Cupt::Cache::Package::o_binary_architecture = $config->var('apt::architecture');
-
 my $command;
 my $o_shell_mode = 0;
 sub main {
@@ -341,8 +339,8 @@ sub select_package_versions_wildcarded ($$;$) {
 		my @result;
 		glob_to_regex(my $package_regex = $package_name);
 
-		my $method_name = "get_${source_or_binary}_packages";
-		foreach my $package_name (keys %{$cache->$method_name()}) {
+		my $method_name = "get_${source_or_binary}_package_names";
+		foreach my $package_name ($cache->$method_name()) {
 			if ($package_name =~ m/^$package_regex$/) {
 				my $version = $sub_selector->("$package_name$remainder", 0);
 				if (defined $version) {
@@ -669,7 +667,7 @@ sub search () {
 
 	if ($config->var('apt::cache::namesonly')) {
 		# search only in package names
-		foreach my $package_name (keys %{$cache->get_binary_packages()}) {
+		foreach my $package_name ($cache->get_binary_packages_list()) {
 			my $matched = 1;
 			foreach my $regex (@regexes) {
 				if ($package_name !~ m/$regex/) {
@@ -681,7 +679,8 @@ sub search () {
 			say $package_name if $matched;
 		}
 	} else {
-		while (my ($package_name, $package) = each %{$cache->get_binary_packages()}) {
+		foreach my $package_name ($cache->get_binary_package_names()) {
+			my $package = $cache->get_binary_package($package_name);
 			my $matched = 1;
 			my $version;
 			REGEX:
@@ -756,7 +755,8 @@ sub show_package_relations ($) {
 	# used only by rdepends
 	my %reverse_depends_index;
 	if ($mode eq 'reverse') {
-		foreach my $package_candidate (values %{$cache->get_binary_packages()}) {
+		my @packages = map { $cache->get_binary_package($_) } $cache->get_binary_package_names();
+		foreach my $package_candidate (@packages) {
 			CANDIDATE:
 			foreach my $reverse_version_candidate (@{$package_candidate->get_versions()}) {
 				foreach my $item (@relation_groups) {
@@ -1067,7 +1067,7 @@ sub pkgnames () {
 
 	check_no_extra_args();
 
-	foreach my $package_name (keys %{$cache->get_binary_packages()}) {
+	foreach my $package_name ($cache->get_binary_package_names()) {
 		# check package name for pattern and output it
 		$package_name =~ m/^$prefix/o and say $package_name;
 	}
@@ -1469,6 +1469,8 @@ sub manage_packages ($) {
 		$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
 	}
 
+	$Cupt::Cache::Package::o_memoize = 1;
+
 	check_no_more_options();
 
 	local $| = 1;
@@ -1869,6 +1871,7 @@ sub process_options {
 
 sub shell {
 	$o_shell_mode = 1;
+	$Cupt::Cache::Package::o_memoize = 1;
 
 	check_no_more_options();
 	check_no_extra_args();
