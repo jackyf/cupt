@@ -30,7 +30,6 @@ use 5.10.0;
 use warnings;
 use strict;
 
-use Graph;
 use List::Util qw(sum);
 use List::MoreUtils qw(uniq apply any);
 use File::Copy;
@@ -43,6 +42,8 @@ use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expression stringify_relation_expressions);
 use Cupt::Download::Manager;
 use Cupt::Download::DebdeltaHelper;
+use Cupt::Graph;
+use Cupt::Graph::TransitiveClosure;
 
 my $_download_partial_suffix = '/partial';
 
@@ -500,14 +501,11 @@ sub _fill_action_dependencies ($$$$) {
 						# definitely not a candidates
 
 						# adding relation to attributes
-						my $ref_attributes = $graph->get_edge_attributes($ref_slave_action, $ref_master_action);
-						if (exists $ref_attributes->{'relation_expressions'}) {
-							push @{$ref_attributes->{'relation_expressions'}}, $relation_expression;
-							$graph->set_edge_attributes($ref_slave_action, $ref_master_action, $ref_attributes);
-						} else {
-							$graph->set_edge_attributes($ref_slave_action, $ref_master_action,
-									{ 'relation_expressions' => [ $relation_expression ] });
-						}
+						my $ref_relation_expressions = $graph->get_edge_attribute($ref_slave_action, $ref_master_action,
+								'relation_expressions') // [];
+						push @{$ref_relation_expressions}, $relation_expression;
+						$graph->set_edge_attribute($ref_slave_action, $ref_master_action,
+								'relation_expressions' => $ref_relation_expressions);
 					} else {
 						# well, set this property to make sure that action dependency will never be eaten
 						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'poisoned' => 1);
@@ -597,7 +595,7 @@ sub _build_actions_graph ($$) {
 	# 	'version_string' => version_string,
 	# 	'action_name' => ('unpack' | 'configure' | 'remove')
 	# }
-	my $graph = Graph->new('directed' => 1, 'refvertexed' => 1);
+	my $graph = Cupt::Graph->new();
 
 	$self->_fill_actions($ref_actions_preview, $graph);
 
@@ -753,10 +751,10 @@ sub _build_actions_graph ($$) {
 		my $sub_is_eaten_dependency = sub {
 			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
 
-			return 0 if $graph->has_edge_attribute($slave_vertex, $master_vertex, 'poisoned');
+			return 0 if defined $graph->get_edge_attribute($slave_vertex, $master_vertex, 'poisoned');
 
-			if ($graph->has_edge_attribute($slave_vertex, $master_vertex, 'relation_expressions')) {
-				my ($ref_relation_expressions) = $graph->get_edge_attribute_values($slave_vertex, $master_vertex);
+			my $ref_relation_expressions = $graph->get_edge_attribute($slave_vertex, $master_vertex, 'relation_expressions');
+			if (defined $ref_relation_expressions) {
 				RELATION_EXPRESSION:
 				foreach my $relation_expression (@$ref_relation_expressions) {
 					my $ref_satisfying_versions = $self->{_cache}->get_satisfying_versions($relation_expression);
@@ -805,21 +803,12 @@ sub _build_actions_graph ($$) {
 		};
 
 		do { # get rid of virtual edges
-			# pre-build predecessors/successors, because calling
-			# Graph::{prede,suc}cessors at each vertex is too slow
-			my %predecessors;
-			my %successors;
-			foreach my $edge ($graph->edges()) {
-				my ($from_vertex, $to_vertex) = @$edge;
-				push @{$predecessors{$to_vertex}}, $from_vertex;
-				push @{$successors{$from_vertex}}, $to_vertex;
-			}
 			foreach (@virtual_edges_to_be_eliminated) {
 				my ($from_vertex, $to_vertex) = @$_;
 
 				# "multiplying" the dependencies
-				foreach my $predecessor_vertex (@{$predecessors{$from_vertex}}) {
-					foreach my $successor_vertex (@{$successors{$to_vertex}}) {
+				foreach my $predecessor_vertex ($graph->predecessors($from_vertex)) {
+					foreach my $successor_vertex ($graph->successors($to_vertex)) {
 						# moving edge attributes too
 						$sub_move_edge->($predecessor_vertex, $from_vertex, $predecessor_vertex, $successor_vertex);
 						$sub_move_edge->($to_vertex, $successor_vertex, $predecessor_vertex, $successor_vertex);
@@ -854,7 +843,7 @@ sub _build_actions_graph ($$) {
 			$graph->delete_vertex($from);
 		}
 
-		my $graph_transitive_closure = Graph::TransitiveClosure->new($graph, 'path_length' => 0, 'path_vertices' => 0);
+		my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
 
 		# unit unpack/configure using some intelligence
 		foreach my $ref_change_entry (values %vertex_changes) {
@@ -905,11 +894,10 @@ sub _build_actions_graph ($$) {
 
 		do { # check pre-depends
 			# re-compute transitive matrix, it might become invalid after the merges
-			$graph_transitive_closure = Graph::TransitiveClosure->new($graph,
-					'path_length' => 0, 'path_vertices' => 0);
+			$graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
 
 			foreach my $edge ($graph->edges()) {
-				if ($graph->has_edge_attribute(@$edge, 'pre-dependency')) {
+				if (defined $graph->get_edge_attribute(@$edge, 'pre-dependency')) {
 					my ($from_vertex, $to_vertex) = @$edge;
 					if ($graph_transitive_closure->is_reachable($to_vertex, $from_vertex)) {
 						# bah! the pre-dependency cannot be overridden, it's a fatal error
@@ -934,7 +922,7 @@ sub _build_actions_graph ($$) {
 		};
 	};
 
-	return $graph->strongly_connected_graph();
+	return $graph;
 }
 
 sub __split_heterogeneous_actions (@) {
@@ -1294,11 +1282,8 @@ sub change_system ($$) {
 	# exit when nothing to do
 	defined $action_graph or return 1;
 	# topologically sorted actions
-	my @sorted_graph_vertices = $action_graph->topological_sort();
-	my @action_group_list;
-	foreach my $action_vertice (@sorted_graph_vertices) {
-		push @action_group_list, $action_graph->get_vertex_attribute($action_vertice, 'subvertices');
-	}
+	my @action_group_list = $action_graph->topological_sort_of_strongly_connected_components();
+	undef $action_graph;
 	@action_group_list = __split_heterogeneous_actions(@action_group_list);
 
 	# doing or simulating the actions

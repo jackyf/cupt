@@ -6,7 +6,6 @@ WriteMakefile(
 	NAME => 'Cupt',
 	VERSION => '0.0.1',
 	PREREQ_PM => {
-		'Graph'	=> 0,
 		'WWW::Curl' => 4.05,
 		'URI' => 0,
 		'File::Temp' => 0,

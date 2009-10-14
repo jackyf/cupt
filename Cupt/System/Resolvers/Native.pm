@@ -32,13 +32,13 @@ use warnings;
 
 use base qw(Cupt::System::Resolver);
 
+use List::Util qw(reduce first);
+use List::MoreUtils qw(any);
+
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
 use Cupt::System::Resolvers::Native::PackageEntry;
-
-use Graph;
-use List::Util qw(reduce first);
-use List::MoreUtils qw(any);
+use Cupt::Graph;
 
 our $_dummy_package_name = '<satisfy>';
 
@@ -480,7 +480,7 @@ sub _clean_automatically_installed ($) {
 		$candidates_for_remove{$package_name} = 0;
 	}
 
-	my $dependency_graph = Graph->new('directed' => 1);
+	my $dependency_graph = Cupt::Graph->new();
 	my $main_vertex_package_name = 'main_vertex';
 	do { # building dependency graph
 		foreach my $package_name (keys %$ref_packages) {

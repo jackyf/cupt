@@ -1,3 +1,21 @@
+cupt (1.1.0~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Graph:
+      - Introduced as reduced and optimized for Cupt re-implementation
+        of some methods of Graph class.
+    - System:
+      - Worker:
+        - Changed to work with Cupt::Graph module instead of CPAN Graph.
+          Dramatically reduced time needed to generate dpkg call sequence in
+          'change_system' subroutine.
+      - Resolvers/Native:
+        - Changed to work with Cupt::Graph module instead of CPAN Graph.
+  * Makefile.PL, debian/control:
+    - Dropped dependency on libgraph-perl.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 14 Oct 2009 20:10:26 +0300
+
 cupt (1.0.0) unstable; urgency=low
 
   * cupt:
