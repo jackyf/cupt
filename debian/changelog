@@ -1,4 +1,4 @@
-cupt (1.0.0~rc2) UNRELEASED; urgency=low
+cupt (1.0.0) unstable; urgency=low
 
   * cupt:
     - Action preview prompt:
@@ -22,7 +22,7 @@ cupt (1.0.0~rc2) UNRELEASED; urgency=low
     - cupt_vs_apt:
       - Mentioned 'cupt::update::compression-types' in differences.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 03 Oct 2009 12:37:04 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 14 Oct 2009 18:25:27 +0300
 
 cupt (1.0.0~rc1) unstable; urgency=low
 
