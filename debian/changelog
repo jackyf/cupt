@@ -16,6 +16,9 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           'change_system' subroutine.
       - Resolvers/Native:
         - Changed to work with Cupt::Graph module instead of CPAN Graph.
+      - State:
+        - Don't store version strings of installed packages, but request them
+          from cache when needed.
     - Cache:
       - [API break] 'get_binary_packages': superseded by new
         'get_binary_package_names' method.

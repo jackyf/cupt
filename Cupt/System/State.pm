@@ -103,23 +103,16 @@ sub _parse_dpkg_status {
 	eval {
 		local $/ = "\n\n";
 		while (<$fh>) {
-			m'^Package: (.*?)$.*?^Status: (.*?)$.*?^Version: (.*?)$'sm or next;
+			m'^Package: (.*?)$.*?^Status: (.*?)$.*?^Version:'sm or next;
 
 			my %installed_info;
 
 			# don't check package name for correctness, dpkg has to check this already
 			my $package_name = $1;
 
-			my $version_string = $3;
 			($installed_info{'want'}, $installed_info{'flag'}, $installed_info{'status'}) =
 					split / /, $2 or
 					mydie("malformed 'Status' line (for package '%s')", $package_name);
-
-			$version_string =~ m/^$version_string_regex$/ or
-					mydie("bad version '%s'", $version_string);
-
-			$installed_info{'version_string'} = $version_string;
-
 
 			do { # check 'want'
 				local $_ = $installed_info{'want'};
@@ -181,6 +174,16 @@ sub _parse_dpkg_status {
 	return;
 }
 
+sub _get_installed_version_for_package_name {
+	my ($self, $package_name) = @_;
+
+	my $package = $self->{_cache}->get_binary_package($package_name);
+	return undef if not defined $package;
+
+	my $installed_version = $package->get_installed_version();
+	return $installed_version;
+}
+
 =head2 get_status_for_version
 
 method, return undef if the version isn't installed, installed info otherwise
@@ -195,13 +198,17 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 sub get_status_for_version {
 	my ($self, $version) = @_;
 	my $package_name = $version->package_name;
-	if (exists $self->{_installed_info}->{$package_name}) {
-		my $ref_info = $self->{_installed_info}->{$package_name};
-		if ($ref_info->{'version_string'} eq $version->version_string) {
-			return $ref_info;
+	my $ref_info = $self->{_installed_info}->{$package_name};
+	if (defined $ref_info ) {
+		my $installed_version = $self->_get_installed_version_for_package_name($package_name);
+		if (defined $installed_version and $installed_version->version_string eq $version->version_string) {
+			return $self->{_installed_info}->{$package_name};
+		} else {
+			return undef;
 		}
+	} else {
+		return undef;
 	}
-	return undef;
 }
 
 =head2 get_installed_info
@@ -227,7 +234,11 @@ if info is present, undef otherwise
 sub get_installed_info ($$) {
 	my ($self, $package_name) = @_;
 	if (exists $self->{_installed_info}->{$package_name}) {
-		return $self->{_installed_info}->{$package_name};
+		my %info = %{$self->{_installed_info}->{$package_name}};
+		my $installed_version = $self->_get_installed_version_for_package_name($package_name);
+		$info{'version_string'} = defined $installed_version ?
+				$installed_version->version_string : undef;
+		return \%info;
 	} else {
 		return undef;
 	}
@@ -249,7 +260,8 @@ package is installed
 sub get_installed_version_string ($$) {
 	my ($self, $package_name) = @_;
 	my $ref_installed_info = $self->get_installed_info($package_name);
-	$ref_installed_info // return undef;
+	return undef if not defined $ref_installed_info;
+
 	if ($ref_installed_info->{'status'} eq 'installed') {
 		return $ref_installed_info->{'version_string'};
 	} else {
@@ -277,11 +289,10 @@ sub export_installed_versions ($) {
 		if ($status eq 'not-installed' or $status eq 'config-files') {
 			next;
 		}
-		my $version_string = $ref_installed_info->{'version_string'};
 		my $package = $self->{_cache}->get_binary_package($package_name);
-		my $version = $package->get_specific_version($version_string);
+		my $version = $package->get_installed_version();
 		defined $version or
-				mydie("cannot find version '%s' for package '%s'", $version_string, $package_name);
+				mydie("the package '%s' does not have installed version", $package_name);
 		push @result, $version;
 		next;
 	}
