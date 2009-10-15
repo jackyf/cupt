@@ -1005,14 +1005,14 @@ sub __process_translation_file {
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open translation file '%s': %s", $file, $!);
-	open(OFFSETS, "/bin/grep -b '^Package: ' $file |") or
-			mydie('unable to open grep pipe: %s', $!);
 
 	eval {
-		while (<OFFSETS>) {
-			my ($offset, $package_name) = /^(\d+):Package: (.*)/;
+		local $/ = "\n\n";
+		while (<$fh>) {
+			my $offset = tell($fh) - length($_);
+			my ($package_name) = m/^Package: (.*?)$/m;
 
-			# offset is returned by grep -b, and we skips 'Package: <...>' line additionally
+			# we skips 'Package: <...>' line additionally
 			$offset += length('Package: ') + length($package_name) + 1;
 
 			# check it for correctness
@@ -1026,8 +1026,6 @@ sub __process_translation_file {
 		myerr("error parsing translation file '%s'", $file);
 		myredie();
 	}
-
-	close(OFFSETS) or $! == 0 or mydie('unable to close grep pipe: %s', $!);
 
 	return \%result;
 }
