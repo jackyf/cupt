@@ -432,7 +432,7 @@ sub config_dump () {
 		foreach my $key (@regular_keys) {
 			my $value = $config->regular_vars->{$key};
 			defined $value or next;
-			say sprintf qq/%s "%s";/, $key, $value;
+			say sprintf q/%s "%s";/, $key, $value;
 		}
 
 		my @list_keys = sort keys %{$config->list_vars};
