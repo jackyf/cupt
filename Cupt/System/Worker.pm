@@ -79,8 +79,8 @@ sub _synchronize_apt_compat_symlinks ($) {
 
 	return if $self->{_config}->var('cupt::worker::simulate');
 
-	my $archives_location = $self->_get_archives_location();
-	my @debs = glob("$archives_location/*.deb");
+	my $archives_directory = $self->_get_archives_directory();
+	my @debs = glob("$archives_directory/*.deb");
 	foreach my $deb (@debs) {
 		if (-l $deb) {
 			# this is a symlink
@@ -97,7 +97,7 @@ sub _synchronize_apt_compat_symlinks ($) {
 			my $basename = basename($deb);
 			(my $corrected_basename = $basename) =~ s/%3a/:/;
 
-			my $corrected_deb = "$archives_location/$corrected_basename";
+			my $corrected_deb = "$archives_directory/$corrected_basename";
 
 			next if -e $corrected_deb;
 
@@ -141,14 +141,14 @@ sub set_desired_state ($$) {
 	return;
 }
 
-sub _get_archives_location ($) {
+sub _get_archives_directory ($) {
 	my ($self) = @_;
 	return $self->{_config}->var('dir') .
 			$self->{_config}->var('dir::cache') . '/' .
 			$self->{_config}->var('dir::cache::archives');
 }
 
-sub _get_indexes_location ($) {
+sub _get_indexes_directory ($) {
 	my ($self) = @_;
 	return $self->{_config}->var('dir') .
 			$self->{_config}->var('dir::state') . '/' .
@@ -316,7 +316,7 @@ I<need_bytes> - byte count, needed to download, <= I<total_bytes>
 sub get_download_sizes_preview ($$) {
 	my ($self, $ref_actions_preview) = @_;
 
-	my $archives_location = $self->_get_archives_location();
+	my $archives_directory = $self->_get_archives_directory();
 	my $total_bytes = 0;
 	my $need_bytes = 0;
 	my @ref_package_entries = map { @{$ref_actions_preview->{$_}} } qw(install upgrade downgrade);
@@ -326,7 +326,7 @@ sub get_download_sizes_preview ($$) {
 		$total_bytes += $size;
 		$need_bytes += $size; # for start
 		my $basename = __get_archive_basename($version);
-		my $path = $archives_location . '/' . $basename;
+		my $path = $archives_directory . '/' . $basename;
 		-e $path or next; # skip if the file is not present in the cache dir
 		# skip if the file is not what we want
 		Cupt::Cache::verify_hash_sums($version->export_hash_sums(), $path) or next;
@@ -994,11 +994,11 @@ sub __split_heterogeneous_actions (@) {
 sub _prepare_downloads ($$) {
 	my ($self, $ref_actions_preview, $download_progress) = @_;
 
-	my $archives_location = $self->_get_archives_location();
+	my $archives_directory = $self->_get_archives_directory();
 
 	unless ($self->{_config}->var('cupt::worker::simulate')) {
 		# prepare partial directory if it doesn't exist
-		my $partial_directory = "$archives_location$_download_partial_suffix";
+		my $partial_directory = "$archives_directory$_download_partial_suffix";
 		if (! -e $partial_directory) {
 			mkdir($partial_directory) or
 					mydie("unable to create partial directory '%s'", $partial_directory);
@@ -1031,8 +1031,8 @@ sub _prepare_downloads ($$) {
 
 			# target path
 			my $basename = __get_archive_basename($version);
-			my $download_filename = $archives_location . $_download_partial_suffix . '/' . $basename;
-			my $target_filename = $archives_location . '/' . $basename;
+			my $download_filename = $archives_directory . $_download_partial_suffix . '/' . $basename;
+			my $target_filename = $archives_directory . '/' . $basename;
 
 			# exclude from downloading packages that are already present
 			if (-e $target_filename && Cupt::Cache::verify_hash_sums($version->export_hash_sums(), $target_filename)) {
@@ -1087,10 +1087,10 @@ sub _do_downloads ($$$) {
 
 	# don't bother ourselves with download preparings if nothing to download
 	if (scalar @$ref_pending_downloads) {
-		my $archives_location = $self->_get_archives_location();
+		my $archives_directory = $self->_get_archives_directory();
 
 		unless ($self->{_config}->var('cupt::worker::simulate')) {
-			sysopen(LOCK, $archives_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+			sysopen(LOCK, $archives_directory . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 					mydie('unable to open archives lock file: %s', $!);
 		}
 
@@ -1176,7 +1176,7 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 				# and for this...
 				$filename = '**REMOVE**';
 			} else { # unpack or install
-				$filename = $self->_get_archives_location() . '/' . __get_archive_basename($action_version);
+				$filename = $self->_get_archives_directory() . '/' . __get_archive_basename($action_version);
 			}
 			$result .= "$package_name $old_version_string < $new_version_string $filename\n";
 			if ($action_name eq 'install') {
@@ -1208,7 +1208,7 @@ sub _run_external_command ($$$) {
 sub _do_dpkg_pre_actions ($$$) {
 	my ($self, $ref_actions_preview, $ref_action_group_list) = @_;
 
-	my $archives_location = $self->_get_archives_location();
+	my $archives_directory = $self->_get_archives_directory();
 
 	foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
 		$self->_run_external_command('pre', $command, $command);
@@ -1227,8 +1227,8 @@ sub _do_dpkg_pre_actions ($$$) {
 			foreach my $action ('install', 'upgrade', 'downgrade') {
 				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
 					my $version = $ref_entry->{'version'};
-					my $deb_location = $archives_location . '/' .  __get_archive_basename($version);
-					$stdin .= "$deb_location\n";
+					my $deb_directory = $archives_directory . '/' .  __get_archive_basename($version);
+					$stdin .= "$deb_directory\n";
 				}
 			}
 		}
@@ -1296,7 +1296,7 @@ sub change_system ($$) {
 
 	$self->_do_dpkg_pre_actions($ref_actions_preview, \@action_group_list);
 
-	my $archives_location = $self->_get_archives_location();
+	my $archives_directory = $self->_get_archives_directory();
 	foreach my $ref_action_group (@action_group_list) {
 		# all the actions will have the same action name by algorithm
 		my $action_name = $ref_action_group->[0]->{'action_name'};
@@ -1342,7 +1342,7 @@ sub change_system ($$) {
 				my $action_expression;
 				if ($action_name eq 'install' || $action_name eq 'unpack') {
 					my $version = $ref_action->{'version'};
-					$action_expression = $archives_location . '/' .  __get_archive_basename($version);
+					$action_expression = $archives_directory . '/' .  __get_archive_basename($version);
 				} else {
 					my $package_name = $ref_action->{'version'}->package_name;
 					$action_expression = $package_name;
@@ -1496,12 +1496,12 @@ sub update_release_and_index_data ($$) {
 		}
 	};
 
-	my $indexes_location = $self->_get_indexes_location();
+	my $indexes_directory = $self->_get_indexes_directory();
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 
 	my $lock;
 	if (!$simulate) {
-		sysopen($lock, $indexes_location . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
+		sysopen($lock, $indexes_directory . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
 				mydie('unable to open indexes lock file: %s', $!);
 	}
 
@@ -1514,14 +1514,14 @@ sub update_release_and_index_data ($$) {
 	}
 
 	unless ($simulate) { # unconditional clearing of partial chunks of Release[.gpg] files
-		my $partial_indexes_location = $indexes_location . $_download_partial_suffix;
-		my @paths = glob("$partial_indexes_location/*Release*");
+		my $partial_indexes_directory = $indexes_directory . $_download_partial_suffix;
+		my @paths = glob("$partial_indexes_directory/*Release*");
 		unlink $_ foreach @paths; ## no critic (RequireCheckedSyscalls)
 
 		# also create directory if it doesn't exist
-		if (! -e $partial_indexes_location) {
-			mkdir($partial_indexes_location) or
-					mydie("unable to create partial directory '%s'", $partial_indexes_location);
+		if (! -e $partial_indexes_directory) {
+			mkdir($partial_indexes_directory) or
+					mydie("unable to create partial directory '%s'", $partial_indexes_directory);
 		}
 	}
 
@@ -1806,14 +1806,14 @@ indexes or not
 sub clean_archives ($$) {
 	my ($self, $sub_callback, $leave_available) = @_;
 
-	my $archives_location = $self->_get_archives_location();
+	my $archives_directory = $self->_get_archives_directory();
 	my %white_list;
 	if ($leave_available) {
 		my $cache = $self->{_cache};
 		my @packages = map { $cache->get_binary_package($_) } $cache->get_binary_package_names();
 		foreach my $package (@packages) {
 			foreach my $version (@{$package->get_versions()}) {
-				my $path = $archives_location . '/' . __get_archive_basename($version);
+				my $path = $archives_directory . '/' . __get_archive_basename($version);
 				$white_list{$path} = 1;
 
 				# checking for symlinks
@@ -1828,7 +1828,7 @@ sub clean_archives ($$) {
 		}
 	}
 
-	my @paths_to_delete = glob("$archives_location/*.deb");
+	my @paths_to_delete = glob("$archives_directory/*.deb");
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 	if ($simulate) {
