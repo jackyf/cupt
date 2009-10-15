@@ -430,6 +430,7 @@ sub _prepare_package {
 				Cupt::Cache::Package->new($self->{_binary_architecture}, $allow_reinstall);
 		$$ref_storage->{$package_name}->add_entry(@$_) for @unparsed_versions;
 	}
+	return;
 }
 
 =head2 get_binary_package
@@ -936,6 +937,7 @@ sub _process_provides_subline {
 			push @{$self->{_can_provide}->{$_}}, $package_name ;
 		}
 	}
+	return;
 }
 
 sub _process_index_file {
