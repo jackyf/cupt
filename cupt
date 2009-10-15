@@ -187,7 +187,7 @@ sub check_no_extra_args () {
 	return;
 }
 
-sub check_no_more_options () {
+sub check_no_extra_options () {
 	foreach (@ARGV) {
 		m/^-/ and mydie("unknown option '%s'", $_);
 	}
@@ -358,7 +358,7 @@ sub select_package_versions_wildcarded ($$;$) {
 }
 
 sub version () {
-	check_no_more_options();
+	check_no_extra_options();
 	check_no_extra_args();
 	build_cache(-source => 0, -binary => 0, -installed => 1);
 	my @packages = qw(cupt libcupt-perl);
@@ -369,7 +369,7 @@ sub version () {
 }
 
 sub help () {
-	check_no_more_options();
+	check_no_extra_options();
 	check_no_extra_args();
 	# we don't need the cache :)
 	my %action_descriptions = (
@@ -416,7 +416,7 @@ sub help () {
 }
 
 sub config_dump () {
-	check_no_more_options();
+	check_no_extra_options();
 
 	my $particular_key = shift @ARGV;
 
@@ -454,7 +454,7 @@ sub show_binary_package_versions () {
 		'installed-only' => \$o_installed_only,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	my $sub_get_reverse_provides = sub {
 		my ($package_name) = @_;
@@ -568,7 +568,7 @@ sub show_source_package_versions () {
 		'with-release-info' => \$o_with_release_info,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	my @package_expressions = @ARGV;
 	scalar @package_expressions or
@@ -648,7 +648,7 @@ sub search () {
 		'installed-only' => \$o_installed_only,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 	my @patterns = @ARGV;
 	scalar @patterns or
 			mydie('no search patterns specified');
@@ -729,7 +729,7 @@ sub show_package_relations ($) {
 		'installed-only' => \$o_installed_only,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	scalar @ARGV or
 			mydie('no binary package expressions specified');
@@ -844,7 +844,7 @@ sub why ($) {
 		'installed-only' => \$o_installed_only,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	scalar @ARGV or
 			mydie('no binary packages specified');
@@ -949,7 +949,7 @@ sub policy ($) {
 		$Cupt::Cache::SourceVersion::o_no_parse_relations = 1;
 	}
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	my @packages = @ARGV;
 
@@ -1041,7 +1041,7 @@ sub mark_autoinstalled ($) {
 	require Cupt::System::Worker;
 	my ($mark_action) = @_;
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
@@ -1058,7 +1058,7 @@ sub pkgnames () {
 		'installed-only' => \$o_installed_only,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
@@ -1369,7 +1369,7 @@ sub acquire_source_package {
 		'dsc-only' => sub { @parts_to_download = ('dsc') },
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	scalar @ARGV or
 			mydie('no package expressions specified');
@@ -1473,7 +1473,7 @@ sub manage_packages ($) {
 
 	$Cupt::Cache::Package::o_memoize = 1;
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	local $| = 1;
 	do {
@@ -1665,7 +1665,7 @@ sub update_release_data () {
 	require Cupt::System::Worker;
 
 	check_no_extra_args();
-	check_no_more_options();
+	check_no_extra_options();
 
 	build_cache(-source => 0, -binary => 0, -installed => 0);
 
@@ -1688,7 +1688,7 @@ sub show_changelog_or_copyright ($) {
 		'installed-only' => \$o_installed_only,
 	);
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	scalar @ARGV or
 			mydie('no package expressions specified');
@@ -1802,7 +1802,7 @@ sub screenshots ($) {
 		local $Cupt::Cache::BinaryVersion::o_no_parse_relations = 1;
 	}
 
-	check_no_more_options();
+	check_no_extra_options();
 
 	my @package_names = @ARGV;
 	scalar @package_names or
@@ -1827,7 +1827,7 @@ sub clean_archives ($) {
 	require Cupt::System::Worker;
 	my ($leave_available) = @_;
 
-	check_no_more_options();
+	check_no_extra_options();
 	check_no_extra_args();
 
 	build_cache(-source => 0, -binary => 1, -installed => 0);
@@ -1889,7 +1889,7 @@ sub shell {
 	$o_shell_mode = 1;
 	$Cupt::Cache::Package::o_memoize = 1;
 
-	check_no_more_options();
+	check_no_extra_options();
 	check_no_extra_args();
 
 	say __('This is an interactive shell of the cupt package manager.');
