@@ -33,7 +33,8 @@ use Exporter qw(import);
 
 our @EXPORT = qw(&compare_versions);
 
-use Cupt::LValueFields qw(_unparsed_versions _parsed_versions _binary_architecture);
+use Cupt::LValueFields qw(_unparsed_versions _parsed_versions
+		_binary_architecture _allow_reinstall);
 
 use Cupt::Core;
 
@@ -59,10 +60,11 @@ returns a new Cupt::Cache::Package object. Usually shouldn't be called by hand.
 =cut
 
 sub new {
-	my ($class, $binary_architecture) = @_;
+	my ($class, $binary_architecture, $allow_reinstall) = @_;
 	my $self = bless [] => $class;
 	$self->[_unparsed_versions_offset()] = [];
 	$self->[_binary_architecture_offset()] = $binary_architecture;
+	$self->[_allow_reinstall_offset()] = $allow_reinstall;
 	return $self;
 }
 
@@ -100,6 +102,9 @@ sub get_versions {
 				eval {
 					my $version_class = shift @$ref_params;
 					$parsed_version = $version_class->new($ref_params);
+					if ($parsed_version->is_installed() and $self->[_allow_reinstall_offset()]) {
+						$parsed_version->version_string .= '~installed';
+					}
 					unshift @$ref_params, $version_class;
 				};
 				if (mycatch()) {

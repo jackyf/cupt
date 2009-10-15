@@ -26,6 +26,7 @@ cupt (1.1.0~) UNRELEASED; urgency=low
         'get_source_package_names' method.
       - Create Cupt::Cache::Package objects only by demand. Reduced time to
         build a cache by 5-10%.
+      - 'new': added the switch '-allow-reinstall'. 
       - Package:
         - Changed internal structure to hold additonal parameters.
         - [API break] 'o_binary_architecture': removed, not needed anymore.

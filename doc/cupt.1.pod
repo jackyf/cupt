@@ -351,6 +351,16 @@ then upgrades the whole system.
 
 Recommended over L</full-upgrade> for major upgrades.
 
+=item reinstall
+
+reinstalls specified binary packages
+
+This subcommand receives list of binary package names.
+
+Examples:
+
+C<cupt reinstall libc6>
+
 =item markauto
 
 marks specified packages as automatically installed

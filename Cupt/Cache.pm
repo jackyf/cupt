@@ -33,7 +33,7 @@ use warnings;
 use Digest;
 use Fcntl qw(:seek :DEFAULT);
 use POSIX qw(locale_h);
-use List::MoreUtils 0.23 qw(none);
+use List::MoreUtils 0.23 qw(none any);
 
 use Memoize;
 memoize('verify_signature');
@@ -62,7 +62,7 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 
 use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
 		_can_provide _extended_info _index_entries _release_data
-		_binary_architecture);
+		_binary_architecture _allow_reinstall);
 
 =head1 FLAGS
 
@@ -96,6 +96,8 @@ Next params are treated as hash-style param list:
 '-binary': read Packages
 
 '-installed': read dpkg status file
+
+'-allow-reinstall': list of globs of package names which are allowed to reinstall
 
 Example:
 
@@ -135,8 +137,14 @@ sub new {
 		'-source' => 1,
 		'-binary' => 1,
 		'-installed' => 1,
+		'-allow-reinstall' => [],
 		@_, # applying passed parameters
 	);
+
+	foreach my $allow_reinstall_glob (@{$build_config{'-allow-reinstall'}}) {
+		glob_to_regex(my $allow_reinstall_regex = $allow_reinstall_glob);
+		push @{$self->{_allow_reinstall}}, $allow_reinstall_regex;
+	}
 
 	if ($build_config{'-installed'}) {
 		# read system settings
@@ -417,7 +425,9 @@ sub _prepare_package {
 
 		# there are some version entries for this package, create it
 		my @unparsed_versions = @{$$ref_storage->{$package_name}};
-		$$ref_storage->{$package_name} = Cupt::Cache::Package->new($self->{_binary_architecture});
+		my $allow_reinstall = (any { $package_name =~ m/^$_$/ } @{$self->{_allow_reinstall}}) // 0;
+		$$ref_storage->{$package_name} =
+				Cupt::Cache::Package->new($self->{_binary_architecture}, $allow_reinstall);
 		$$ref_storage->{$package_name}->add_entry(@$_) for @unparsed_versions;
 	}
 }

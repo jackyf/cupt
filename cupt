@@ -120,6 +120,7 @@ sub main {
 		'screenshots' => \&screenshots,
 		'update' => \&update_release_data,
 		'install' => sub { manage_packages('install') },
+		'reinstall' => sub { manage_packages('reinstall') },
 		'remove' => sub { manage_packages('remove') },
 		'purge' => sub { manage_packages('purge') },
 		'satisfy' => sub { manage_packages('satisfy') },
@@ -389,6 +390,7 @@ sub help () {
 		'screenshots' => __('views Debian screenshot web pages for the binary package(s)'),
 		'update' => __('updates repository metadata'),
 		'install' => __('installs/upgrades/downgrades binary package(s)'),
+		'reinstall' => __('reinstalls binary packages(s)'),
 		'remove' => __('removes binary package(s)'),
 		'purge' => __('removes binary package(s) along with their configuration files'),
 		'satisfy' => __('performs actions to make relation expressions satisfied'),
@@ -1474,9 +1476,21 @@ sub manage_packages ($) {
 	check_no_more_options();
 
 	local $| = 1;
-	print __('Building the package cache... ');
-	build_cache(-source => ($action eq 'build-depends'), -binary => 1, -installed => 1);
-	say __('[done]');
+	do {
+		my @package_expressions_to_reinstall;
+		if ($action eq 'reinstall') {
+			$action = 'install';
+			@package_expressions_to_reinstall = @ARGV;
+		}
+		print __('Building the package cache... ');
+		build_cache(
+				'-source' => ($action eq 'build-depends'),
+				'-binary' => 1,
+				'-installed' => 1,
+				'-allow-reinstall' => \@package_expressions_to_reinstall
+		);
+		say __('[done]');
+	};
 
 	print __('Initializing package resolver and worker... ');
 	my $resolver;
