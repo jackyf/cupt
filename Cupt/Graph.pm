@@ -60,6 +60,7 @@ sub add_vertex {
 	my ($self, $vertex) = @_;
 
 	$self->_vertices->{$vertex} = $vertex;
+	return;
 }
 
 sub delete_vertex {
@@ -77,6 +78,7 @@ sub delete_vertex {
 		@{$self->_predecessors->{$successor}} = grep { $_ ne $vertex } @{$self->_predecessors->{$successor}};
 	}
 	delete $self->_successors->{$vertex};
+	return;
 }
 
 sub has_edge {
@@ -94,16 +96,18 @@ sub add_edge {
 		push @{$self->_predecessors->{$to_vertex}}, $from_vertex;
 		push @{$self->_successors->{$from_vertex}}, $to_vertex;
 	}
+	return;
 }
 
 sub delete_edge {
 	my ($self, $from_vertex, $to_vertex) = @_;
 
-	$self->_predecessors->{$to_vertex} = 
+	$self->_predecessors->{$to_vertex} =
 			[ grep { $_ ne $from_vertex } @{$self->_predecessors->{$to_vertex}} ];
-	$self->_successors->{$from_vertex} = 
+	$self->_successors->{$from_vertex} =
 			[ grep { $_ ne $to_vertex } @{$self->_successors->{$from_vertex}} ];
 	delete $self->_edge_attributes->{$from_vertex,$to_vertex};
+	return;
 }
 
 sub predecessors {
@@ -124,6 +128,7 @@ sub set_graph_attribute {
 	my ($self, $attribute_name, $attribute_value) = @_;
 
 	$self->_graph_attributes->{$attribute_name} = $attribute_value;
+	return;
 }
 
 sub get_graph_attribute {
@@ -136,12 +141,14 @@ sub delete_graph_attributes {
 	my ($self) = @_;
 
 	$self->_graph_attributes = {};
+	return;
 }
 
 sub set_edge_attribute {
 	my ($self, $from_vertex, $to_vertex, $attribute_name, $attribute_value) = @_;
 
 	$self->_edge_attributes->{$from_vertex,$to_vertex}->{$attribute_name} = $attribute_value;
+	return;
 }
 
 sub get_edge_attribute {
@@ -154,6 +161,7 @@ sub set_edge_attributes {
 	my ($self, $from_vertex, $to_vertex, $ref_attributes) = @_;
 
 	$self->_edge_attributes->{$from_vertex,$to_vertex} = $ref_attributes;
+	return;
 }
 
 sub get_edge_attributes {
@@ -175,6 +183,7 @@ sub _dfs_visit {
 	$ref_stages->{$vertex} = 2;
 	++$$ref_time;
 	push @$ref_finish_times, [ $vertex, $$ref_time ];
+	return;
 }
 
 sub _dfs {
@@ -187,7 +196,6 @@ sub _dfs {
 	}
 
 	my %stages;
-	my %predecessors;
 	my @finish_times;
 
 	my @topologically_sorted_components; # for 2nd mode
