@@ -1884,6 +1884,8 @@ sub process_options {
 }
 
 sub shell {
+	require Text::ParseWords;
+	Text::ParseWords->import('shellwords');
 	$o_shell_mode = 1;
 	$Cupt::Cache::Package::o_memoize = 1;
 
@@ -1912,16 +1914,7 @@ sub shell {
 		if ($line =~ m/^\?+$/) { # if line consists only of '?' chars, shell behaves wierd...
 			$line = 'help';
 		}
-		# kind of hack to get arguments as it was real shell
-		# if you know easier way, let me know :)
-		open(my $args_fd, "(for word in $line; do echo \$word; done) |") or
-				mydie('unable to execute shell pattern: %s', $!);
-		local @ARGV = ();
-		while (<$args_fd>) {
-			chomp;
-			push @ARGV, $_;
-		}
-		close($args_fd) or
+		local @ARGV = shellwords($line) or
 				do {
 					mywarn('bad shell syntax');
 					next;
