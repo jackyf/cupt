@@ -6,6 +6,7 @@ cupt (1.1.0~) UNRELEASED; urgency=low
       resolver for non-trivial solutions.
     - Managing packages:
       - New option '--assume-yes|--yes|-y'.
+    - New 'reinstall' subcommand.
   * Cupt:
     - Graph:
       - Introduced as reduced and optimized for Cupt re-implementation
