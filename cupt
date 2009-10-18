@@ -1269,6 +1269,7 @@ sub generate_management_prompt ($$$) {
 			}
 		};
 
+		my $is_dangerous_action = 0;
 
 		if (!$config->var('apt::get::allowunauthenticated')) {
 			my @untrusted_package_names;
@@ -1280,6 +1281,7 @@ sub generate_management_prompt ($$$) {
 				}
 			}
 			if (scalar @untrusted_package_names) {
+				$is_dangerous_action = 1;
 				say sprintf __('WARNING! The untrusted versions of the following packages will be used:');
 				say '';
 				say $_ for @untrusted_package_names;
@@ -1287,7 +1289,6 @@ sub generate_management_prompt ($$$) {
 			}
 		}
 
-		my $is_dangerous_action = 0;
 		do { # generate loud warnings for removing essential packages
 			my @essential_package_names;
 			# generate loud warning for unsigned versions
