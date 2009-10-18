@@ -822,6 +822,10 @@ Thirdly, Cupt introduces following cupt-specific configuration variables:
 boolean (0/1), specifies whether should downloader follow HTTP redirects.
 True by default.
 
+=item cupt::console::allow-untrusted
+
+don't treat using untrusted packages as dangerous action
+
 =item cupt::console::assume-yes
 
 see L<--assume-yes|/--assume-yes>

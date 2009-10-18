@@ -1271,7 +1271,7 @@ sub generate_management_prompt ($$$) {
 
 		my $is_dangerous_action = 0;
 
-		if (!$config->var('apt::get::allowunauthenticated')) {
+		if (!$config->var('cupt::console::allow-untrusted')) {
 			my @untrusted_package_names;
 			# generate loud warning for unsigned versions
 			foreach my $action (qw(install upgrade downgrade)) {

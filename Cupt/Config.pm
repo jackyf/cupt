@@ -102,6 +102,7 @@ sub new {
 
 		# Cupt vars
 		'acquire::http::allow-redirects' => 1,
+		'cupt::console::allow-untrusted' => 0,
 		'cupt::console::assume-yes' => 0,
 		'cupt::downloader::max-simultaneous-downloads' => 2,
 		'cupt::update::compression-types::gz::priority' => 100,
@@ -130,9 +131,10 @@ sub new {
 	};
 
 	$self->_regular_compatibility_vars = {
+		'apt::get::allowunauthenticated' => 'cupt::console::allow-untrusted',
+		'apt::get::assume-yes' => 'cupt::console::assume-yes',
 		'apt::get::automaticremove' => 'cupt::resolver::auto-remove',
 		'apt::get::purge' => 'cupt::worker::purge',
-		'apt::get::assume-yes' => 'cupt::console::assume-yes',
 	};
 
 	$self->_optional_patterns = [
