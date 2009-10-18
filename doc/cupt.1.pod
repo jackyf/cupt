@@ -1028,7 +1028,7 @@ L<cupt_vs_apt(5)>, L<cupt_howto(7)>
 
 =head1 AUTHOR
 
-Eugene V. Lyubimkin <jackyf.devel@gmail.com>
+Eugene V. Lyubimkin <jackyf@debian.org>
 
 =cut
 
