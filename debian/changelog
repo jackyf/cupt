@@ -4,6 +4,8 @@ cupt (1.1.0~) UNRELEASED; urgency=low
     - Memoize parsed versions when managing packages and in shell mode.
       Reduced peak RAM usage by resolver. Reduced time spent in native
       resolver for non-trivial solutions.
+    - Managing packages:
+      - New option '--assume-yes|--yes|-y'.
   * Cupt:
     - Graph:
       - Introduced as reduced and optimized for Cupt re-implementation
@@ -31,6 +33,9 @@ cupt (1.1.0~) UNRELEASED; urgency=low
         - Changed internal structure to hold additonal parameters.
         - [API break] 'o_binary_architecture': removed, not needed anymore.
         - New module option 'o_memoize' to memoize parsed versions.
+    - Config:
+      - Added the configuration variable 'apt::get::assume-yes'.
+      - New configuration variable 'cupt::console::assume-yes'.
   * Makefile.PL, debian/control:
     - Dropped dependency on libgraph-perl.
 

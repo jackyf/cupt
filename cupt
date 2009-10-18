@@ -1269,6 +1269,7 @@ sub generate_management_prompt ($$$) {
 			}
 		};
 
+
 		if (!$config->var('apt::get::allowunauthenticated')) {
 			my @untrusted_package_names;
 			# generate loud warning for unsigned versions
@@ -1333,7 +1334,16 @@ sub generate_management_prompt ($$$) {
 		my $positive_answer = $is_dangerous_action ? $confirmation_for_dangerous_action : 'y';
 
 		print $question;
-		my $answer = <STDIN>; ## no critic (ExplicitStdin)
+		my $answer;
+		my $interactive;
+
+		if ($config->var('cupt::console::assume-yes')) {
+			$interactive = 0;
+			$answer = 'y';
+		} else {
+			$interactive = 1;
+			$answer = <STDIN>; ## no critic (ExplicitStdin)
+		}
 		return undef if not defined $answer;
 		chomp $answer;
 		$answer = lc($answer) if !$is_dangerous_action;
@@ -1343,10 +1353,13 @@ sub generate_management_prompt ($$$) {
 		} elsif ($answer eq 'q') {
 			# user is willing to abandon all further tryings
 			return undef;
-		} else {
+		} elsif ($interactive) {
 			# user haven't chosen this solution, try next one
 			print __('Resolving further... ');
 			return 0;
+		} else {
+			# non-interactive, abandon immediately
+			return undef;
 		}
 	};
 
@@ -1462,6 +1475,7 @@ sub manage_packages ($) {
 		'download-only|d' => sub { $config->set_regular_var('cupt::worker::download-only', 1) },
 		'show-versions|V' => \$o_show_versions,
 		'show-size-changes|Z' => \$o_show_size_changes,
+		'yes|assume-yes|y' => sub { $config->set_regular_var('cupt::console::assume-yes' => 1) },
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
