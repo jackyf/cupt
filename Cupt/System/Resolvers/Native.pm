@@ -613,11 +613,13 @@ sub _apply_action ($$$$$) {
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
 
-	# stick all requested package names
-	foreach my $package_name (@{$ref_action_to_apply->{'package_names_to_stick'}}) {
-		$ref_solution_entry->{packages}->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
-		$ref_solution_entry->{packages}->{$package_name}->stick = 1;
-	}
+	do { # stick all requested package names
+		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
+		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
+			$ref_solution_entry->{packages}->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
+			$ref_solution_entry->{packages}->{$package_name}->stick = 1;
+		}
+	};
 
 	my $package_entry_to_change = $ref_solution_entry->{'packages'}->{$package_name_to_change};
 	my $original_version = $package_entry_to_change->version;
@@ -774,12 +776,12 @@ sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 sub __prepare_stick_requests ($) {
 	my ($ref_possible_actions) = @_;
 
-	# the each next action receives one more stick request to not interfere with
-	# all previous solutions
+	# the each next action receives one more additional stick request to not
+	# interfere with all previous solutions
 	my @package_names;
 	foreach my $ref_action (@$ref_possible_actions) {
-		push @package_names, $ref_action->{'package_name'};
 		$ref_action->{'package_names_to_stick'} = [ @package_names ];
+		push @package_names, $ref_action->{'package_name'};
 	}
 	return;
 }
@@ -942,8 +944,6 @@ sub _resolve ($$) {
 										$ref_current_packages, $package_name, $ref_satisfying_versions,
 										$relation_expression, $dependency_group_name, $dependency_group_factor);
 
-								__prepare_stick_requests(\@possible_actions);
-
 								if ($self->config->var('debug::resolver')) {
 									my $stringified_relation = stringify_relation_expression($relation_expression);
 									$sub_mydebug_wrapper->("problem: package '$package_name': " .
@@ -1047,8 +1047,6 @@ sub _resolve ($$) {
 										}
 									}
 
-									__prepare_stick_requests(\@possible_actions);
-
 									if ($self->config->var('debug::resolver')) {
 										my $stringified_relation = stringify_relation_expression($relation_expression);
 										$sub_mydebug_wrapper->("problem: package '$package_name': " .
@@ -1120,6 +1118,8 @@ sub _resolve ($$) {
 				next;
 			}
 		}
+
+		__prepare_stick_requests(\@possible_actions);
 
 		if ($self->config->var('cupt::resolver::synchronize-source-versions') eq 'hard') {
 			# if we have to synchronize source versions, can related packages be updated too?
