@@ -24,6 +24,9 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           possibly incorrect positive answer when there are at least 2 related
           binary packages and some of them have the same source version as
           the original binary package.
+        - Prepare stick requests after possible dropping solutions due to
+          'cupt::resolver::synchronize-source-version' set to hard. Gives more
+          room for upgrades in some cases.
       - State:
         - Don't store version strings of installed packages, but request them
           from cache when needed.

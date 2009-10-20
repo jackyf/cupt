@@ -1119,8 +1119,6 @@ sub _resolve ($$) {
 			}
 		}
 
-		__prepare_stick_requests(\@possible_actions);
-
 		if ($self->config->var('cupt::resolver::synchronize-source-versions') eq 'hard') {
 			# if we have to synchronize source versions, can related packages be updated too?
 			# filter out actions that don't match this criteria
@@ -1143,6 +1141,8 @@ sub _resolve ($$) {
 			}
 			@possible_actions = @new_possible_actions;
 		}
+
+		__prepare_stick_requests(\@possible_actions);
 
 		if (scalar @possible_actions) {
 			# firstly rank all solutions
