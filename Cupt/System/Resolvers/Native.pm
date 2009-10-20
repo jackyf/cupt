@@ -131,12 +131,14 @@ sub _get_package_version_by_source_version_string ($$) {
 	return undef;
 }
 
-sub _related_packages_can_be_synchronized ($$) {
+sub _get_unsynchronizeable_related_packages {
 	my ($self, $ref_packages, $version) = @_;
 
 	my $package_name = $version->package_name;
 	my @related_package_names = __related_binary_package_names($ref_packages, $version);
 	my $source_version_string = $version->source_version_string;
+
+	my @result;
 
 	foreach my $other_package_name (@related_package_names) {
 		my $other_version = $ref_packages->{$other_package_name}->version;
@@ -147,19 +149,22 @@ sub _related_packages_can_be_synchronized ($$) {
 			next;
 		}
 
-		if ($ref_packages->{$other_package_name}->stick) {
-			# cannot update the package
-			return 0;
-		}
-		if (not defined $self->_get_package_version_by_source_version_string(
-				$other_package_name, $source_version_string))
+		if ($ref_packages->{$other_package_name}->stick or
+			not defined $self->_get_package_version_by_source_version_string(
+					$other_package_name, $source_version_string))
 		{
-			return 0;
+			# cannot update the package
+			push @result, $other_package_name;
 		}
 	}
 
-	# ok, no errors
-	return 1;
+	return @result;
+}
+
+sub _related_packages_can_be_synchronized ($$) {
+	my ($self, $ref_packages, $version) = @_;
+
+	return (scalar $self->_get_unsynchronizeable_related_packages($ref_packages, $version) == 0);
 }
 
 sub _synchronize_related_packages ($$$$$) {
@@ -1130,8 +1135,9 @@ sub _resolve ($$) {
 					# we cannot proceed with it
 					if ($self->config->var('debug::resolver')) {
 						$sub_mydebug_wrapper->(sprintf(
-								'cannot consider installing %s %s: unable to synchronize related binary packages',
-								$version->package_name, $version->version_string));
+								'cannot consider installing %s %s: unable to synchronize related packages (%s)',
+								$version->package_name, $version->version_string,
+								join(', ', $self->_get_unsynchronizeable_related_packages($ref_current_packages, $version))));
 					}
 				}
 			}
