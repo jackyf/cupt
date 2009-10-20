@@ -627,7 +627,7 @@ sub _apply_action ($$$$$) {
 		my $new_version_string = defined($supposed_version) ?
 				$supposed_version->version_string : '<not installed>';
 
-		my $profit_string = $profit;
+		my $profit_string = sprintf "%.1f", $profit;
 		$profit_string = "+$profit_string" if $profit > 0;
 
 		my $message = "-> ($new_solution_identifier,$profit_string) " .
