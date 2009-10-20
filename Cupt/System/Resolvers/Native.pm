@@ -144,7 +144,7 @@ sub _related_packages_can_be_synchronized ($$) {
 			$other_version->source_version_string eq $source_version_string)
 		{
 			# no update needed
-			return 1;
+			next;
 		}
 
 		if ($ref_packages->{$other_package_name}->stick) {

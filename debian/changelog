@@ -19,6 +19,11 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           'change_system' subroutine.
       - Resolvers/Native:
         - Changed to work with Cupt::Graph module instead of CPAN Graph.
+        - When determining whether related binary packages may be synchronized
+          for 'cupt::resolver::synchronize-source-versions' option, fix
+          possibly incorrect positive answer when there are at least 2 related
+          binary packages and some of them have the same source version as
+          the original binary package.
       - State:
         - Don't store version strings of installed packages, but request them
           from cache when needed.
