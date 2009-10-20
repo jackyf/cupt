@@ -102,7 +102,10 @@ sub get_versions {
 				eval {
 					my $version_class = shift @$ref_params;
 					$parsed_version = $version_class->new($ref_params);
-					if ($parsed_version->is_installed() and $self->[_allow_reinstall_offset()]) {
+					if (ref $parsed_version eq 'Cupt::Cache::BinaryVersion' and
+						$parsed_version->is_installed() and
+						$self->[_allow_reinstall_offset()])
+					{
 						$parsed_version->version_string .= '~installed';
 					}
 					unshift @$ref_params, $version_class;
