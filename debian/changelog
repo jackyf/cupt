@@ -44,7 +44,7 @@ cupt (1.1.0~) UNRELEASED; urgency=low
       - New configuration variable 'cupt::console::assume-yes'.
       - New configuration variable 'cupt::console::allow-untrusted'.
   * Makefile.PL, debian/control:
-    - Dropped dependency on libgraph-perl.
+    - Dropped the dependency on libgraph-perl.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 14 Oct 2009 20:10:26 +0300
 
