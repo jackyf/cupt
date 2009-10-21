@@ -134,6 +134,14 @@ sub _get_package_version_by_source_version_string ($$) {
 sub _get_unsynchronizeable_related_packages {
 	my ($self, $ref_packages, $version) = @_;
 
+	my $source_package_name = $version->source_package_name;
+	if (any { $source_package_name =~ m/^$_$/ }
+		$self->config->var('cupt::resolver::synchronize-source-versions::exceptions'))
+	{
+		say "haha: $source_package_name";
+		return ();
+	}
+
 	my $package_name = $version->package_name;
 	my @related_package_names = __related_binary_package_names($ref_packages, $version);
 	my $source_version_string = $version->source_version_string;
@@ -163,7 +171,9 @@ sub _get_unsynchronizeable_related_packages {
 sub _related_packages_can_be_synchronized ($$) {
 	my ($self, $ref_packages, $version) = @_;
 
-	return (scalar $self->_get_unsynchronizeable_related_packages($ref_packages, $version) == 0);
+	my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_packages(
+			$ref_packages, $version);
+	return (scalar @unsynchronizeable_package_names == 0);
 }
 
 sub _synchronize_related_packages ($$$$$) {

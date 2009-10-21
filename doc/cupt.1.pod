@@ -965,6 +965,10 @@ Situation 2: prohibit to install new version of foo
 
 =back
 
+=item cupt::resolver::synchronize-source-versions::exceptions
+
+lists source package names (Perl regular expressions) of known exceptions.
+
 =item cupt::resolver::track-reasons
 
 see L<--show-reasons|/--show-reasons,--show-deps,-D>

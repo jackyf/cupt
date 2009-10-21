@@ -156,6 +156,7 @@ sub new {
 	];
 
 	$self->list_vars = {
+		# used APT vars
 		'apt::neverautoremove' => [],
 		'apt::update::pre-invoke' => [],
 		'apt::update::post-invoke' => [],
@@ -164,8 +165,13 @@ sub new {
 		'dpkg::pre-install-pkgs' => [],
 		'dpkg::pre-invoke' => [],
 		'dpkg::post-invoke' => [],
+
+		# unused APT vars
 		'rpm::pre-invoke' => [],
 		'rpm::post-invoke' => [],
+
+		# Cupt vars
+		'cupt::resolver::synchronize-source-versions::exceptions' => ['db', 'linux-\d.\d'],
 	};
 
 	$self->set_regular_var('apt::architecture', $self->_get_architecture());

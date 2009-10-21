@@ -27,6 +27,8 @@ cupt (1.1.0~) UNRELEASED; urgency=low
         - Prepare stick requests after possible dropping solutions due to
           'cupt::resolver::synchronize-source-version' set to hard. Gives more
           room for upgrades in some cases.
+        - Honor the 'cupt::resolver::synchronize-source-versions::exceptions'
+          configuration option.
       - State:
         - Don't store version strings of installed packages, but request them
           from cache when needed.
@@ -46,6 +48,8 @@ cupt (1.1.0~) UNRELEASED; urgency=low
       - Added the configuration variable 'apt::get::assume-yes'.
       - New configuration variable 'cupt::console::assume-yes'.
       - New configuration variable 'cupt::console::allow-untrusted'.
+      - New configuration variable
+        'cupt::resolver::synchronize-source-versions::exceptions'.
   * Makefile.PL, debian/control:
     - Dropped the dependency on libgraph-perl.
 
