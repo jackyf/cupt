@@ -25,7 +25,7 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           binary packages and some of them have the same source version as
           the original binary package.
         - Prepare stick requests after possible dropping solutions due to
-          'cupt::resolver::synchronize-source-version' set to hard. Gives more
+          'cupt::resolver::synchronize-source-versions' set to hard. Gives more
           room for upgrades in some cases.
         - Honor the 'cupt::resolver::synchronize-source-versions::exceptions'
           configuration option.
