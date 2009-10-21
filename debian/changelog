@@ -53,9 +53,9 @@ cupt (1.1.0~) UNRELEASED; urgency=high
         - New module option 'o_memoize' to memoize parsed versions.
     - Config:
       - Added the configuration variable 'apt::get::assume-yes'.
-      - New configuration variable 'cupt::console::assume-yes'.
-      - New configuration variable 'cupt::console::allow-untrusted'.
-      - New configuration variable
+      - New configuration option 'cupt::console::assume-yes'.
+      - New configuration option 'cupt::console::allow-untrusted'.
+      - New configuration option
         'cupt::resolver::synchronize-source-versions::exceptions'.
       - New configuration option 'cupt::worker::allow-indirect-upgrade'.
   * Makefile.PL, debian/control:
