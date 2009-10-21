@@ -142,8 +142,7 @@ sub _get_unsynchronizeable_related_packages {
 
 	foreach my $other_package_name (@related_package_names) {
 		my $other_version = $ref_packages->{$other_package_name}->version;
-		if (defined $other_version &&
-			$other_version->source_version_string eq $source_version_string)
+		if ($other_version->source_version_string eq $source_version_string)
 		{
 			# no update needed
 			next;
