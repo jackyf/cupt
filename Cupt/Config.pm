@@ -172,6 +172,9 @@ sub new {
 
 		# Cupt vars
 		'cupt::resolver::synchronize-source-versions::exceptions' => ['db', 'linux-\d.\d'],
+		'cupt::worker::allow-indirect-upgrade' => [ 'libc6-i686' ], # hack to
+				# work around packages with strict unkeepable Pre-Depends and ability to
+				# damage the system when dependencies is not satisfied
 	};
 
 	$self->set_regular_var('apt::architecture', $self->_get_architecture());

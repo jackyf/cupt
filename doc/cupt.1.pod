@@ -977,6 +977,13 @@ see L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 see L<--resolver|/--resolver>
 
+=item cupt::worker::allow-indirect-upgrade
+
+list of package names which will be upgraded indirectly
+
+There are some packages with dependencies that make unable to upgrade the
+package properly. List them here. See also Debian BTS #551831.
+
 =item cupt::worker::defer-triggers
 
 boolean (0/1), specifies whether should worker defer dpkg trigger processing to

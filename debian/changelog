@@ -1,4 +1,4 @@
-cupt (1.1.0~) UNRELEASED; urgency=low
+cupt (1.1.0~) UNRELEASED; urgency=high
 
   * cupt:
     - Memoize parsed versions when managing packages and in shell mode.
@@ -17,6 +17,11 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           Dramatically reduced time needed to generate dpkg call sequence in
           'change_system' method. Significantly reduced peak RAM usage in
           'change_system' method.
+        - Honor the configuration option
+          'cupt::worker::allow-indirect-upgrade' to work around packages with
+          broken-by-design dependencies that make the package unupgradeable.
+          Thanks to James Vega. Upload priority is set to 'high' due to this
+          fix. (Closes: #551831)
       - Resolvers/Native:
         - Changed to work with Cupt::Graph module instead of CPAN Graph.
         - When determining whether related binary packages may be synchronized
@@ -52,6 +57,7 @@ cupt (1.1.0~) UNRELEASED; urgency=low
       - New configuration variable 'cupt::console::allow-untrusted'.
       - New configuration variable
         'cupt::resolver::synchronize-source-versions::exceptions'.
+      - New configuration option 'cupt::worker::allow-indirect-upgrade'.
   * Makefile.PL, debian/control:
     - Dropped the dependency on libgraph-perl.
 

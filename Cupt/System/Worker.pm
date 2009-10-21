@@ -743,10 +743,26 @@ sub _build_actions_graph ($$) {
 		# pre-fill the list of downgrades/upgrades vertices
 		foreach my $ref_inner_action ($graph->vertices()) {
 			my $package_name = $ref_inner_action->{'version'}->package_name;
+
 			if (exists $vertex_changes{$package_name}) {
 					$vertex_changes{$package_name}->{$ref_inner_action->{'action_name'}} = $ref_inner_action;
 			}
 		}
+
+		do { # process indirect upgrades
+			my @merge_exception_package_names = $self->{_config}->var('cupt::worker::allow-indirect-upgrade');
+			foreach my $merge_exception_package_name (@merge_exception_package_names) {
+				my $ref_vertex_change = $vertex_changes{$merge_exception_package_name};
+				if (defined $ref_vertex_change) {
+					# there is some action with this package name
+					if (defined $ref_vertex_change->{'remove'}) {
+						# set a dependency before remove and unpack
+						$graph->add_edge($ref_vertex_change->{'remove'}, $ref_vertex_change->{'unpack'});
+					}
+					delete $vertex_changes{$merge_exception_package_name};
+				}
+			}
+		};
 
 		my $sub_is_eaten_dependency = sub {
 			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
