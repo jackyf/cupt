@@ -29,6 +29,8 @@ cupt (1.1.0~) UNRELEASED; urgency=low
           room for upgrades in some cases.
         - Honor the 'cupt::resolver::synchronize-source-versions::exceptions'
           configuration option.
+        - When 'cupt::resolver::synchronize-source-versions' set to 'hard',
+          allow removal of unsynchronizeable packages.
       - State:
         - Don't store version strings of installed packages, but request them
           from cache when needed.

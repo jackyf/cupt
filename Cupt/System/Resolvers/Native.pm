@@ -131,7 +131,7 @@ sub _get_package_version_by_source_version_string ($$) {
 	return undef;
 }
 
-sub _get_unsynchronizeable_related_packages {
+sub _get_unsynchronizeable_related_package_names {
 	my ($self, $ref_packages, $version) = @_;
 
 	my $source_package_name = $version->source_package_name;
@@ -171,7 +171,7 @@ sub _get_unsynchronizeable_related_packages {
 sub _related_packages_can_be_synchronized ($$) {
 	my ($self, $ref_packages, $version) = @_;
 
-	my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_packages(
+	my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
 			$ref_packages, $version);
 	return (scalar @unsynchronizeable_package_names == 0);
 }
@@ -1139,12 +1139,22 @@ sub _resolve ($$) {
 				{
 					push @new_possible_actions, $possible_action;
 				} else {
-					# we cannot proceed with it
+					# we cannot proceed with it, so try deleting related packages
+					my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
+							$ref_current_packages, $version);
+					foreach my $unsynchronizeable_package_name (@unsynchronizeable_package_names) {
+						unshift @new_possible_actions, {
+							'package_name' => $unsynchronizeable_package_name,
+							'version' => undef,
+							'factor' => 5,
+							'reason' => [ 'sync', $version->package_name ],
+						};
+					}
 					if ($self->config->var('debug::resolver')) {
 						$sub_mydebug_wrapper->(sprintf(
 								'cannot consider installing %s %s: unable to synchronize related packages (%s)',
 								$version->package_name, $version->version_string,
-								join(', ', $self->_get_unsynchronizeable_related_packages($ref_current_packages, $version))));
+								join(', ', @unsynchronizeable_package_names)));
 					}
 				}
 			}
