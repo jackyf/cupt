@@ -669,7 +669,7 @@ sub search () {
 
 	if ($config->var('apt::cache::namesonly')) {
 		# search only in package names
-		foreach my $package_name ($cache->get_binary_packages_list()) {
+		foreach my $package_name ($cache->get_binary_package_names()) {
 			my $matched = 1;
 			foreach my $regex (@regexes) {
 				if ($package_name !~ m/$regex/) {
