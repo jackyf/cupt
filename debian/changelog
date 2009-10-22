@@ -1,4 +1,4 @@
-cupt (1.1.0~) UNRELEASED; urgency=high
+cupt (1.1.0) unstable; urgency=high
 
   * cupt:
     - Memoize parsed versions when managing packages and in shell mode.
@@ -61,7 +61,7 @@ cupt (1.1.0~) UNRELEASED; urgency=high
   * Makefile.PL, debian/control:
     - Dropped the dependency on libgraph-perl.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 14 Oct 2009 20:10:26 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Oct 2009 11:42:58 +0300
 
 cupt (1.0.0) unstable; urgency=low
 
