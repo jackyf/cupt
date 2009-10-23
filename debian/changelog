@@ -1,10 +1,10 @@
-cupt (1.1.1~) unstable; urgency=low
+cupt (1.1.1) unstable; urgency=low
 
   * cupt:
     - 'search':
       - Fixed crash with '-n' option introduced in 1.1.0.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Oct 2009 14:47:24 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 23 Oct 2009 17:40:30 +0300
 
 cupt (1.1.0) unstable; urgency=high
 
