@@ -105,6 +105,7 @@ sub new {
 		'cupt::console::allow-untrusted' => 0,
 		'cupt::console::assume-yes' => 0,
 		'cupt::downloader::max-simultaneous-downloads' => 2,
+		'cupt::directory::state' => 'var/lib/cupt',
 		'cupt::update::compression-types::gz::priority' => 100,
 		'cupt::update::compression-types::bz2::priority' => 100,
 		'cupt::update::compression-types::lzma::priority' => 100,

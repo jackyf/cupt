@@ -830,6 +830,10 @@ don't treat using untrusted packages as dangerous action
 
 see L<--assume-yes|/--assume-yes>
 
+=item cupt::directory::state
+
+directory which contains Cupt state info
+
 =item cupt::downloader::max-simultaneous-downloads
 
 positive number, specifies maximum number of simultaneous downloads

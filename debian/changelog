@@ -1,3 +1,15 @@
+cupt (1.1.2~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Config:
+      - New configuration option 'cupt::directory::state'.
+    - System:
+      - Worker:
+        - Removed "locking" /var/lib/dpkg/lock, it's useless (noop).
+        - Implemented Cupt lock.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 24 Oct 2009 18:17:45 +0300
+
 cupt (1.1.1) unstable; urgency=low
 
   * cupt:

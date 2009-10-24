@@ -44,10 +44,11 @@ use Cupt::Download::Manager;
 use Cupt::Download::DebdeltaHelper;
 use Cupt::Graph;
 use Cupt::Graph::TransitiveClosure;
+use Cupt::System::Worker::Lock;
 
 my $_download_partial_suffix = '/partial';
 
-use fields qw(_config _cache _system_state _desired_state);
+use fields qw(_config _cache _system_state _desired_state _lock);
 
 =head1 METHODS
 
@@ -71,7 +72,17 @@ sub new {
 	$self->{_system_state} = $self->{_cache}->get_system_state();
 	$self->{_desired_state} = undef;
 	$self->_synchronize_apt_compat_symlinks();
+	$self->{_lock} = Cupt::System::Worker::Lock->new(
+			$self->{_config}->var('dir') . $self->{_config}->var('cupt::directory::state') . '/lock',
+			$self->{_config}->var('cupt::worker::simulate'));
+	$self->{_lock}->obtain();
 	return $self;
+}
+
+sub DESTROY {
+	my ($self) = @_;
+
+	$self->{_lock}->release();
 }
 
 sub _synchronize_apt_compat_symlinks ($) {
@@ -1105,10 +1116,9 @@ sub _do_downloads ($$$) {
 	if (scalar @$ref_pending_downloads) {
 		my $archives_directory = $self->_get_archives_directory();
 
-		unless ($self->{_config}->var('cupt::worker::simulate')) {
-			sysopen(LOCK, $archives_directory . '/lock', O_WRONLY | O_CREAT, O_EXCL) or
-					mydie('unable to open archives lock file: %s', $!);
-		}
+		my $archives_lock = Cupt::System::Worker::Lock->new("$archives_directory/lock",
+				$self->{_config}->var('cupt::worker::simulate'));
+		$archives_lock->obtain();
 
 		my $download_size = sum map { $_->{'size'} } @$ref_pending_downloads;
 		$download_progress->set_total_estimated_size($download_size);
@@ -1119,10 +1129,7 @@ sub _do_downloads ($$$) {
 			$download_result = $download_manager->download(@$ref_pending_downloads);
 		}; # make sure that download manager is already destroyed at this point
 
-		unless ($self->{_config}->var('cupt::worker::simulate')) {
-			close(LOCK) or
-					mydie('unable to close archives lock file: %s', $!);
-		}
+		$archives_lock->release();
 
 		# fail and exit if it was something bad with downloading
 		mydie('there were download errors') if $download_result;
@@ -1280,12 +1287,6 @@ sub change_system ($$) {
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 	my $download_only = $self->{_config}->var('cupt::worker::download-only');
 
-	my $dpkg_lock_fh;
-	if (!$simulate && !$download_only) {
-		sysopen($dpkg_lock_fh, '/var/lib/dpkg/lock', O_WRONLY | O_EXCL) or
-				mydie('unable to open dpkg lock file: %s', $!);
-	}
-
 	my $ref_actions_preview = $self->get_actions_preview();
 
 	do {
@@ -1383,18 +1384,13 @@ sub change_system ($$) {
 			}
 		};
 	}
-	my $dpkg_pending_triggers_command = "$dpkg_binary --triggers-only --pending";
-	if (!$simulate) {
-		if ($defer_triggers) {
-			# triggers were not processed during actions perfomed before, do it now at once
+	if ($defer_triggers) {
+		# triggers were not processed during actions perfomed before, do it now at once
+		my $dpkg_pending_triggers_command = "$dpkg_binary --triggers-only --pending";
+		if (!$simulate) {
 			system($dpkg_pending_triggers_command) == 0 or
 					mydie('error processing triggers');
-		}
-
-		close($dpkg_lock_fh) or
-				mydie('unable to close dpkg lock file: %s', $!);
-	} else {
-		if ($defer_triggers) {
+		} else {
 			say __('simulating'), ": $dpkg_pending_triggers_command";
 		}
 	}
