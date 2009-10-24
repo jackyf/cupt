@@ -138,7 +138,6 @@ sub _get_unsynchronizeable_related_package_names {
 	if (any { $source_package_name =~ m/^$_$/ }
 		$self->config->var('cupt::resolver::synchronize-source-versions::exceptions'))
 	{
-		say "haha: $source_package_name";
 		return ();
 	}
 
