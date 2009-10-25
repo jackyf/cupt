@@ -74,9 +74,8 @@ sub new {
 	$self->{_system_state} = $self->{_cache}->get_system_state();
 	$self->{_desired_state} = undef;
 	$self->_synchronize_apt_compat_symlinks();
-	$self->{_lock} = Cupt::System::Worker::Lock->new(
-			$self->{_config}->var('dir') . $self->{_config}->var('cupt::directory::state') . '/lock',
-			$self->{_config}->var('cupt::worker::simulate'));
+	$self->{_lock} = Cupt::System::Worker::Lock->new($self->{_config},
+			$self->{_config}->var('dir') . $self->{_config}->var('cupt::directory::state') . '/lock');
 	$self->{_lock}->obtain();
 	return $self;
 }
@@ -1118,8 +1117,7 @@ sub _do_downloads ($$$) {
 	if (scalar @$ref_pending_downloads) {
 		my $archives_directory = $self->_get_archives_directory();
 
-		my $archives_lock = Cupt::System::Worker::Lock->new("$archives_directory/lock",
-				$self->{_config}->var('cupt::worker::simulate'));
+		my $archives_lock = Cupt::System::Worker::Lock->new($self->{_config}, "$archives_directory/lock");
 		$archives_lock->obtain();
 
 		my $download_size = sum map { $_->{'size'} } @$ref_pending_downloads;

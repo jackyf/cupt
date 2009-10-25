@@ -28,14 +28,15 @@ use warnings;
 use Fcntl qw(:flock);
 
 use Cupt::Core;
-use Cupt::LValueFields qw(_path _simulate _lock_fh);
+use Cupt::LValueFields qw(_path _simulate _debug _lock_fh);
 
 sub new {
-	my ($class, $path, $simulate) = @_;
+	my ($class, $config, $path) = @_;
 
 	my $self = bless [] => $class;
 	$self->_path = $path;
-	$self->_simulate = $simulate;
+	$self->_simulate = $config->var('cupt::worker::simulate');
+	$self->_debug = $config->var('debug::worker');
 	$self->_lock_fh = undef;
 
 	return $self;
@@ -44,9 +45,10 @@ sub new {
 sub obtain {
 	my ($self) = @_;
 
-	if ($self->_simulate) {
-		mysimulate("obtaining lock '%s'", $self->_path);
-	} else {
+	if ($self->_debug) {
+		mydebug("obtaining lock '%s'", $self->_path);
+	}
+	if (not $self->_simulate) {
 		open(my $fh, '>', $self->_path) or
 				mydie("unable to open file '%s': %s", $self->_path, $!);
 		flock($fh, LOCK_EX | LOCK_NB) or
@@ -58,9 +60,10 @@ sub obtain {
 sub release {
 	my ($self) = @_;
 
-	if ($self->_simulate) {
-		mysimulate("releasing lock '%s'", $self->_path);
-	} else {
+	if ($self->_debug) {
+		mydebug("releasing lock '%s'", $self->_path);
+	}
+	if (not $self->_simulate) {
 		flock($self->_lock_fh, LOCK_UN) or
 				mydie("unable to release lock on file '%s': %s", $self->_path, $!);
 		close($self->_lock_fh) or
