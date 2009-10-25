@@ -33,8 +33,7 @@ use warnings;
 use Cupt::Core;
 use Cupt::Cache::Package;
 use Cupt::Cache::BinaryVersion;
-
-use fields qw(_config _cache _installed_info);
+use Cupt::LValueFields qw(_config _cache _installed_info);
 
 =head1 METHODS
 
@@ -52,14 +51,14 @@ I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
+	my $self = bless [] => $class;
 
-	$self->{_config} = shift;
-	$self->{_cache} = shift;
+	$self->_config = shift;
+	$self->_cache = shift;
 
 	# in next line we don't use 'dir' and 'dir::state' variables as we do
 	# in all others path builder functions, that's apt decision
-	my $dpkg_status_path = $self->{_config}->var('dir::state::status');
+	my $dpkg_status_path = $self->_config->var('dir::state::status');
 	if (! -r $dpkg_status_path) {
 		mydie("unable to open dpkg status file '%s': %s", $dpkg_status_path, $!);
 	}
@@ -95,7 +94,11 @@ sub _parse_dpkg_status {
 	$release_info{base_uri} = '';
 	$release_info{signed} = 0;
 
-	push @{$self->{_cache}->_release_data->{binary}}, \%release_info;
+	my $cache = $self->_cache;
+
+	push @{$cache->_release_data->{binary}}, \%release_info;
+
+	my $ref_cache_binary_packages = $cache->_binary_packages;
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
@@ -153,16 +156,16 @@ sub _parse_dpkg_status {
 
 					my $offset = tell($fh) - length($_);
 
-					push @{$self->{_cache}->_binary_packages->{$package_name}},
+					push @{$ref_cache_binary_packages->{$package_name}},
 							[ 'Cupt::Cache::BinaryVersion', $package_name, $fh, $offset, \%release_info ];
 
 					if (m/^Provides: (.*?)$/m) {
-						$self->{_cache}->_process_provides_subline($package_name, $1);
+						$cache->_process_provides_subline($package_name, $1);
 					}
 				}
 
 				# add parsed info to installed_info
-				$self->{_installed_info}->{$package_name} = \%installed_info;
+				$self->[_installed_info_offset()]->{$package_name} = \%installed_info;
 			}
 		}
 	};
@@ -177,7 +180,7 @@ sub _parse_dpkg_status {
 sub _get_installed_version_for_package_name {
 	my ($self, $package_name) = @_;
 
-	my $package = $self->{_cache}->get_binary_package($package_name);
+	my $package = $self->_cache->get_binary_package($package_name);
 	return undef if not defined $package;
 
 	my $installed_version = $package->get_installed_version();
@@ -198,11 +201,11 @@ I<version> - reference to L<Cupt::Cache::BinaryVersion|Cupt::Cache::BinaryVersio
 sub get_status_for_version {
 	my ($self, $version) = @_;
 	my $package_name = $version->package_name;
-	my $ref_info = $self->{_installed_info}->{$package_name};
+	my $ref_info = $self->_installed_info->{$package_name};
 	if (defined $ref_info ) {
 		my $installed_version = $self->_get_installed_version_for_package_name($package_name);
 		if (defined $installed_version and $installed_version->version_string eq $version->version_string) {
-			return $self->{_installed_info}->{$package_name};
+			return $self->_installed_info->{$package_name};
 		} else {
 			return undef;
 		}
@@ -233,8 +236,8 @@ if info is present, undef otherwise
 
 sub get_installed_info ($$) {
 	my ($self, $package_name) = @_;
-	if (exists $self->{_installed_info}->{$package_name}) {
-		my %info = %{$self->{_installed_info}->{$package_name}};
+	if (exists $self->_installed_info->{$package_name}) {
+		my %info = %{$self->_installed_info->{$package_name}};
 		my $installed_version = $self->_get_installed_version_for_package_name($package_name);
 		$info{'version_string'} = defined $installed_version ?
 				$installed_version->version_string : undef;
@@ -284,12 +287,13 @@ sub export_installed_versions ($) {
 	my ($self) = @_;
 	my @result;
 
-	while (my ($package_name, $ref_installed_info) = each %{$self->{_installed_info}}) {
+	my $cache = $self->_cache;
+	while (my ($package_name, $ref_installed_info) = each %{$self->_installed_info}) {
 		my $status = $ref_installed_info->{'status'};
 		if ($status eq 'not-installed' or $status eq 'config-files') {
 			next;
 		}
-		my $package = $self->{_cache}->get_binary_package($package_name);
+		my $package = $cache->get_binary_package($package_name);
 		my $version = $package->get_installed_version();
 		defined $version or
 				mydie("the package '%s' does not have installed version", $package_name);
