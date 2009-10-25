@@ -24,17 +24,17 @@ package Cupt::Download::DebdeltaHelper;
 use strict;
 use warnings;
 
-use fields qw(_sources);
-
 use URI::Escape;
 
 use Cupt::Core;
 use Cupt::Cache;
 use Cupt::Cache::BinaryVersion;
+use Cupt::LValueFields qw(_sources);
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
+	my $self = bless [] => $class;
+	$self->_sources = {};
 
 	if (-e '/usr/bin/debpatch') {
 		# fill debdelta sources only if patches is available
@@ -71,7 +71,7 @@ sub uris {
 
 	if (defined $installed_version_string) {
 		SOURCE:
-		foreach my $ref_source (values %{$self->{_sources}}) {
+		foreach my $ref_source (values %{$self->_sources}) {
 			foreach my $key (keys %$ref_source) {
 				next if $key eq 'delta_uri';
 				my $found = 0;
@@ -159,7 +159,7 @@ sub _parse_sources {
 			} else {
 				mydie("unknown key to parse section name in file '%s', line %u", $file, $.);
 			}
-			$self->{_sources}->{$current_section}->{$key} = $value;
+			$self->_sources->{$current_section}->{$key} = $value;
 		}
 	}
 
