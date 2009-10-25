@@ -95,7 +95,7 @@ sub _parse_dpkg_status {
 	$release_info{base_uri} = '';
 	$release_info{signed} = 0;
 
-	push @{$self->{_cache}->{_release_data}->{binary}}, \%release_info;
+	push @{$self->{_cache}->_release_data->{binary}}, \%release_info;
 
 	my $fh;
 	open($fh, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
@@ -153,7 +153,7 @@ sub _parse_dpkg_status {
 
 					my $offset = tell($fh) - length($_);
 
-					push @{$self->{_cache}->{_binary_packages}->{$package_name}},
+					push @{$self->{_cache}->_binary_packages->{$package_name}},
 							[ 'Cupt::Cache::BinaryVersion', $package_name, $fh, $offset, \%release_info ];
 
 					if (m/^Provides: (.*?)$/m) {

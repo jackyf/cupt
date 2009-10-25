@@ -60,8 +60,8 @@ I<get_satisfying_versions> subroutine for rapid lookup.
 
 =cut
 
-use fields qw(_source_packages _binary_packages _config _pin_settings _system_state
-		_can_provide _extended_info _index_entries _release_data
+use Cupt::LValueFields qw(_source_packages _binary_packages _config _pin_settings
+		_system_state _can_provide _extended_info _index_entries _release_data
 		_binary_architecture _allow_reinstall);
 
 =head1 FLAGS
@@ -107,17 +107,19 @@ Example:
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
+	my $self = bless [] => $class;
 
-	$self->{_config} = shift;
-	$self->{_pin_settings} = [];
-	$self->{_source_packages} = {};
-	$self->{_binary_packages} = {};
-	$self->{_release_data}->{source} = [];
-	$self->{_release_data}->{binary} = [];
+	$self->_config = shift;
+	$self->_pin_settings = [];
+	$self->_source_packages = {};
+	$self->_binary_packages = {};
+	$self->_release_data = {};
+	$self->_release_data->{source} = [];
+	$self->_release_data->{binary} = [];
+	$self->_allow_reinstall = [];
 
 	do { # ugly hack to copy trusted keyring from APT whenever possible
-		my $cupt_keyring_file = $self->{_config}->var('gpgv::trustedkeyring');
+		my $cupt_keyring_file = $self->_config->var('gpgv::trustedkeyring');
 		my $apt_keyring_file = '/etc/apt/trusted.gpg';
 		# ignore all errors, let install do its best
 		qx#install -m644 $apt_keyring_file $cupt_keyring_file >/dev/null 2>/dev/null#;
@@ -143,12 +145,12 @@ sub new {
 
 	foreach my $allow_reinstall_glob (@{$build_config{'-allow-reinstall'}}) {
 		glob_to_regex(my $allow_reinstall_regex = $allow_reinstall_glob);
-		push @{$self->{_allow_reinstall}}, $allow_reinstall_regex;
+		push @{$self->_allow_reinstall}, $allow_reinstall_regex;
 	}
 
 	if ($build_config{'-installed'}) {
 		# read system settings
-		$self->{_system_state} = Cupt::System::State->new($self->{_config}, $self);
+		$self->_system_state = Cupt::System::State->new($self->_config, $self);
 	}
 
 	my @index_files;
@@ -164,9 +166,9 @@ sub new {
 				$ref_release_info->{component} = $ref_index_entry->{'component'};
 				$ref_release_info->{base_uri} = $ref_index_entry->{'uri'};
 				if ($source_type eq 'deb') {
-					push @{$self->{_release_data}->{binary}}, $ref_release_info;
+					push @{$self->_release_data->{binary}}, $ref_release_info;
 				} else {
-					push @{$self->{_release_data}->{source}}, $ref_release_info;
+					push @{$self->_release_data->{source}}, $ref_release_info;
 				}
 
 				my @description_translations_files = $self->_get_paths_of_localized_descriptions($ref_index_entry);
@@ -196,7 +198,7 @@ sub new {
 	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
 	# for speeding up _prepare_package calls
-	$self->{_binary_architecture} = $self->{_config}->var('apt::architecture');
+	$self->_binary_architecture = $self->_config->var('apt::architecture');
 
 	return $self;
 }
@@ -213,7 +215,7 @@ I<config> - reference to L<Cupt::Config|Cupt::Config>
 
 sub set_config ($$) {
 	my ($self, $config) = @_;
-	$self->{_config} = $config;
+	$self->_config = $config;
 	return;
 }
 
@@ -225,7 +227,7 @@ method, returns an array of binary package names
 sub get_binary_package_names ($) {
 	my ($self) = @_;
 
-	return keys %{$self->{_binary_packages}};
+	return keys %{$self->_binary_packages};
 }
 
 =head2 get_source_package_names
@@ -237,7 +239,7 @@ method, returns an array of source package names
 sub get_source_package_names ($) {
 	my ($self) = @_;
 
-	return keys %{$self->{_source_packages}};
+	return keys %{$self->_source_packages};
 }
 
 =head2 get_system_state
@@ -249,7 +251,7 @@ method, returns reference to L<Cupt::System::State|Cupt::System::State>
 sub get_system_state ($) {
 	my ($self) = @_;
 
-	return $self->{_system_state};
+	return $self->_system_state;
 }
 
 =head2 get_extended_info
@@ -265,7 +267,7 @@ method, returns info about extended package statuses in format:
 sub get_extended_info ($) {
 	my ($self) = @_;
 
-	return $self->{_extended_info};
+	return $self->_extended_info;
 }
 
 =head2 is_automatically_installed
@@ -282,7 +284,7 @@ I<package_name> - package name
 sub is_automatically_installed ($$) {
 	my ($self, $package_name) = @_;
 
-	my $ref_auto_installed = $self->{_extended_info}->{'automatically_installed'};
+	my $ref_auto_installed = $self->[_extended_info_offset()]->{'automatically_installed'};
 	return (exists $ref_auto_installed->{$package_name} &&
 			$ref_auto_installed->{$package_name});
 }
@@ -312,7 +314,7 @@ sub get_original_apt_pin {
 	my @available_as = @{$version->available_as};
 
 	# release-dependent settings
-	my $default_release = $self->{_config}->var('apt::default-release');
+	my $default_release = $self->_config->var('apt::default-release');
 	foreach (@available_as) {
 		if (defined $default_release) {
 			if ($_->{release}->{archive} eq $default_release ||
@@ -333,7 +335,7 @@ sub get_original_apt_pin {
 
 	# looking in pin settings
 	PIN:
-	foreach my $ref_pin (@{$self->{_pin_settings}}) {
+	foreach my $ref_pin (@{$self->[_pin_settings_offset()]}) {
 		if (exists $ref_pin->{'package_name'}) {
 			my $value = $ref_pin->{'package_name'};
 			$version->package_name =~ m/^$value$/ or next PIN;
@@ -401,8 +403,8 @@ sub get_pin ($$) {
 	# discourage downgrading 
 	# downgradings will usually have pin <= 0
 	my $package_name = $version->package_name;
-	if (defined $self->{_system_state}) { # for example, for source versions will return false...
-		my $installed_version_string = $self->{_system_state}->get_installed_version_string($package_name);
+	if (defined $self->_system_state) { # for example, for source versions will return false...
+		my $installed_version_string = $self->_system_state->get_installed_version_string($package_name);
 		if (defined $installed_version_string
 			&& Cupt::Core::compare_version_strings($installed_version_string, $version->version_string) > 0)
 		{
@@ -418,16 +420,17 @@ sub get_pin ($$) {
 sub _prepare_package {
 	my ($self, $type, $package_name) = @_;
 
-	my $ref_storage = \$self->{"_${type}_packages"};
+	my $storage_method_name = "_${type}_packages";
+	my $ref_storage = \$self->$storage_method_name;
 
 	if (ref $$ref_storage->{$package_name} eq 'ARRAY') {
 		# existent package and not blessed package
 
 		# there are some version entries for this package, create it
 		my @unparsed_versions = @{$$ref_storage->{$package_name}};
-		my $allow_reinstall = (any { $package_name =~ m/^$_$/ } @{$self->{_allow_reinstall}}) // 0;
-		$$ref_storage->{$package_name} =
-				Cupt::Cache::Package->new($self->{_binary_architecture}, $allow_reinstall);
+		my $allow_reinstall = (any { $package_name =~ m/^$_$/ } @{$self->[_allow_reinstall_offset()]}) // 0;
+		$$ref_storage->{$package_name} = Cupt::Cache::Package->new(
+				$self->[_binary_architecture_offset()], $allow_reinstall);
 		$$ref_storage->{$package_name}->add_entry(@$_) for @unparsed_versions;
 	}
 	return;
@@ -449,7 +452,7 @@ sub get_binary_package {
 	# will transparently return undef if there is no such package
 
 	$self->_prepare_package('binary', $package_name);
-	return $self->{_binary_packages}->{$package_name};
+	return $self->[_binary_packages_offset()]->{$package_name};
 };
 
 =head2 get_source_package
@@ -468,7 +471,7 @@ sub get_source_package {
 	# will transparently return undef if there is no such package
 
 	$self->_prepare_package('source', $package_name);
-	return $self->{_source_packages}->{$package_name};
+	return $self->[_source_packages_offset()]->{$package_name};
 };
 
 =head2 get_sorted_pinned_versions
@@ -585,9 +588,9 @@ sub _get_satisfying_versions_for_one_relation {
 	}
 
 	# virtual package can only be considered if no relation sign is specified
-	if (not defined $relation->relation_string and exists $self->{_can_provide}->{$package_name}) {
+	if (not defined $relation->relation_string and exists $self->[_can_provide_offset()]->{$package_name}) {
 		# looking for reverse-provides
-		foreach (@{$self->{_can_provide}->{$package_name}}) {
+		foreach (@{$self->[_can_provide_offset()]->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
 			defined $reverse_provide_package or next;
 			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
@@ -696,26 +699,26 @@ sub _get_release_info {
 	}
 
 
-	$release_info{signed} = verify_signature($self->{_config}, $file);
+	$release_info{signed} = verify_signature($self->_config, $file);
 
 	return \%release_info;
 }
 
 sub _parse_sources_lists {
 	my ($self) = @_;
-	my $root_prefix = $self->{_config}->var('dir');
-	my $etc_dir = $self->{_config}->var('dir::etc');
+	my $root_prefix = $self->_config->var('dir');
+	my $etc_dir = $self->_config->var('dir::etc');
 
-	my $parts_dir = $self->{_config}->var('dir::etc::sourceparts');
+	my $parts_dir = $self->_config->var('dir::etc::sourceparts');
 	my @source_files = glob("$root_prefix$etc_dir/$parts_dir/*.list");
 
-	my $main_file = $self->{_config}->var('dir::etc::sourcelist');
+	my $main_file = $self->_config->var('dir::etc::sourcelist');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	push @source_files, $main_file_path if -r $main_file_path;
 
-	@{$self->{_index_entries}} = ();
+	$self->_index_entries = [];
 	foreach (@source_files) {
-		push @{$self->{_index_entries}}, __parse_source_list($_);
+		push @{$self->_index_entries}, __parse_source_list($_);
 	}
 	return;
 }
@@ -729,7 +732,7 @@ method, returns reference to list of L</index_entry>'s
 sub get_index_entries {
 	my ($self) = @_;
 
-	return $self->{_index_entries};
+	return $self->_index_entries;
 }
 
 sub __parse_source_list {
@@ -868,7 +871,7 @@ sub _parse_preference_file {
 		};
 
 		# adding to storage
-		push @{$self->{'_pin_settings'}}, \%pin_result;
+		push @{$self->_pin_settings}, \%pin_result;
 	}
 
 	close(PREF) or mydie("unable to close file '%s': %s", $file, $!);
@@ -914,7 +917,7 @@ sub _parse_extended_states {
 
 			if ($value) {
 				# adding to storage
-				$self->{_extended_info}->{'automatically_installed'}->{$package_name} = $value;
+				$self->[_extended_info_offset()]->{'automatically_installed'}->{$package_name} = $value;
 			}
 		}
 
@@ -933,8 +936,8 @@ sub _process_provides_subline {
 	my @provides = split /\s*,\s*/, $provides_subline;
 	foreach (@provides) {
 		# if this entry is new one?
-		if (none { $_ eq $package_name } @{$self->{_can_provide}->{$_}}) {
-			push @{$self->{_can_provide}->{$_}}, $package_name ;
+		if (none { $_ eq $package_name } @{$self->[_can_provide_offset()]->{$_}}) {
+			push @{$self->[_can_provide_offset()]->{$_}}, $package_name ;
 		}
 	}
 	return;
@@ -947,10 +950,10 @@ sub _process_index_file {
 	my $ref_packages_storage;
 	if ($type eq 'deb') {
 		$version_class = 'Cupt::Cache::BinaryVersion';
-		$ref_packages_storage = \$self->{_binary_packages};
+		$ref_packages_storage = \$self->_binary_packages;
 	} elsif ($type eq 'deb-src') {
 		$version_class = 'Cupt::Cache::SourceVersion';
-		$ref_packages_storage = \$self->{_source_packages};
+		$ref_packages_storage = \$self->_source_packages;
 	}
 
 
@@ -1044,10 +1047,10 @@ sub _path_of_base_uri {
 	$uri_prefix =~ tr[/][_];
 
 	my $dirname = join('',
-		$self->{_config}->var('dir'),
-		$self->{_config}->var('dir::state'),
+		$self->_config->var('dir'),
+		$self->_config->var('dir::state'),
 		'/',
-		$self->{_config}->var('dir::state::lists')
+		$self->_config->var('dir::state::lists')
 	);
 
 	(my $distribution_part = $index_entry->{'distribution'}) =~ tr[/][_];
@@ -1078,7 +1081,7 @@ sub _base_download_uri {
 sub _index_list_suffix {
 	my ($self, $index_entry, $delimiter) = @_;
 
-	my $arch = $self->{_config}->var('apt::architecture');
+	my $arch = $self->_config->var('apt::architecture');
 
 	if ($index_entry->{'component'} eq '') {
 		# easy source type
@@ -1118,7 +1121,7 @@ sub _get_chunks_of_localized_descriptions {
 
 	return @result if $index_entry->{'type'} ne 'deb';
 
-	my $translation_variable = $self->{_config}->var('apt::acquire::translation');
+	my $translation_variable = $self->_config->var('apt::acquire::translation');
 	my $locale = $translation_variable eq 'environment' ?
 			POSIX::setlocale(LC_MESSAGES) : $translation_variable;
 	return @result if $locale eq 'none';
@@ -1298,13 +1301,13 @@ sub get_download_entries_of_localized_descriptions {
 sub _parse_preferences {
 	my ($self) = @_;
 
-	my $root_prefix = $self->{_config}->var('dir');
-	my $etc_dir = $self->{_config}->var('dir::etc');
+	my $root_prefix = $self->_config->var('dir');
+	my $etc_dir = $self->_config->var('dir::etc');
 
-	my $parts_dir = $self->{_config}->var('dir::etc::preferencesparts');
+	my $parts_dir = $self->_config->var('dir::etc::preferencesparts');
 	my @preference_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
-	my $main_file = $self->{_config}->var('dir::etc::preferences');
+	my $main_file = $self->_config->var('dir::etc::preferences');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	push @preference_files, $main_file_path if -r $main_file_path;
 
@@ -1317,10 +1320,10 @@ sub _parse_preferences {
 sub _path_of_extended_states {
 	my ($self) = @_;
 
-	my $root_prefix = $self->{_config}->var('dir');
-	my $etc_dir = $self->{_config}->var('dir::state');
+	my $root_prefix = $self->_config->var('dir');
+	my $etc_dir = $self->_config->var('dir::state');
 
-	my $leaf = $self->{_config}->var('dir::state::extendedstates');
+	my $leaf = $self->_config->var('dir::state::extendedstates');
 
 	return "$root_prefix$etc_dir/$leaf";
 }
@@ -1334,7 +1337,7 @@ form [ L</release_info> ... ]
 
 sub get_binary_release_data ($) {
 	my ($self) = @_;
-	return $self->{_release_data}->{binary};
+	return $self->_release_data->{binary};
 }
 
 =head2 get_source_release_data
@@ -1346,7 +1349,7 @@ form [ L</release_info> ... ]
 
 sub get_source_release_data ($) {
 	my ($self) = @_;
-	return $self->{_release_data}->{source};
+	return $self->_release_data->{source};
 }
 
 =head1 FREE SUBROUTINES
