@@ -36,7 +36,8 @@ use IO::Socket::UNIX;
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
 
-use fields qw(_config _progress _worker_pid _server_socket _parent_pipe _server_socket_path);
+use Cupt::LValueFields qw(_config _progress _worker_pid _server_socket
+		_parent_pipe _server_socket_path);
 
 use Cupt::Core;
 use Cupt::Download::Method;
@@ -92,22 +93,22 @@ I<progress> - reference to object of subclass of L<Cupt::Download::Progress|Cupt
 sub new ($$$) {
 	my $class = shift;
 	my $self;
-	$self = fields::new($class);
-	$self->{_config} = shift;
-	$self->{_progress} = shift;
+	$self = bless [] => $class;
+	$self->_config = shift;
+	$self->_progress = shift;
 
-	if ($self->{_config}->var('cupt::worker::simulate')) {
+	if ($self->_config->var('cupt::worker::simulate')) {
 		return $self;
 	} else {
 		# main socket
-		$self->{_server_socket_path} = "/tmp/cupt-downloader-$$";
-		unlink($self->{_server_socket_path}); ## no critic (RequireCheckedSyscalls)
-		$self->{_server_socket} = IO::Socket::UNIX->new(
-				Local => $self->{_server_socket_path}, Listen => SOMAXCONN, Type => SOCK_STREAM);
-		defined $self->{_server_socket} or
-				mydie("unable to open server socket on file '%s': %s", $self->{_server_socket_path}, $!);
+		$self->_server_socket_path = "/tmp/cupt-downloader-$$";
+		unlink($self->_server_socket_path); ## no critic (RequireCheckedSyscalls)
+		$self->_server_socket = IO::Socket::UNIX->new(
+				Local => $self->_server_socket_path, Listen => SOMAXCONN, Type => SOCK_STREAM);
+		defined $self->_server_socket or
+				mydie("unable to open server socket on file '%s': %s", $self->_server_socket_path, $!);
 
-		$self->{_parent_pipe} = IO::Pipe->new() //
+		$self->_parent_pipe = IO::Pipe->new() //
 				mydie('unable to open parent pipe: %s', $!);
 
 		my $pid = fork();
@@ -116,13 +117,13 @@ sub new ($$$) {
 
 		if ($pid) {
 			# this is a main process
-			$self->{_worker_pid} = $pid;
-			$self->{_parent_pipe}->writer();
-			$self->{_parent_pipe}->autoflush(1);
+			$self->_worker_pid = $pid;
+			$self->_parent_pipe->writer();
+			$self->_parent_pipe->autoflush(1);
 			return $self;
 		} else {
 			# this is background worker process
-			$self->{_parent_pipe}->reader();
+			$self->_parent_pipe->reader();
 			$self->_worker();
 		}
 	}
@@ -132,7 +133,7 @@ sub new ($$$) {
 sub _worker ($) {
 	my ($self) = @_;
 
-	my $debug = $self->{_config}->var('debug::downloader');
+	my $debug = $self->_config->var('debug::downloader');
 
 	mydebug('download worker process started') if $debug;
 
@@ -150,7 +151,7 @@ sub _worker ($) {
 	# { $uri => $filename }
 	my %target_filenames;
 
-	my $max_simultaneous_downloads_allowed = $self->{_config}->var('cupt::downloader::max-simultaneous-downloads');
+	my $max_simultaneous_downloads_allowed = $self->_config->var('cupt::downloader::max-simultaneous-downloads');
 	pipe(my $worker_reader, my $worker_writer) or
 			mydie("unable to open worker's own pair of sockets: %s", $!);
 	$worker_writer->autoflush(1);
@@ -161,7 +162,7 @@ sub _worker ($) {
 	local $SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
 	setitimer(ITIMER_REAL, 0.25, 0.25);
 
-	my @persistent_sockets = ($worker_reader, $self->{_parent_pipe}, $self->{_server_socket});
+	my @persistent_sockets = ($worker_reader, $self->_parent_pipe, $self->_server_socket);
 	my @runtime_sockets;
 
 	# while caller may set exit flag, we should continue processing as long as
@@ -175,7 +176,7 @@ sub _worker ($) {
 
 		foreach my $socket (@ready) {
 			next if not $socket->opened;
-			if ($socket eq $self->{_server_socket}) {
+			if ($socket eq $self->_server_socket) {
 				# a new connection appeared
 				$socket = $socket->accept();
 				defined $socket or
@@ -288,7 +289,7 @@ sub _worker ($) {
 						}
 					} else {
 						# update progress
-						$self->{_progress}->progress($uri, $action, @params);
+						$self->_progress->progress($uri, $action, @params);
 					}
 				}
 				when ('pop-download') {
@@ -300,10 +301,10 @@ sub _worker ($) {
 					}
 				}
 				when ('set-long-alias') {
-					$self->{_progress}->set_long_alias_for_uri(@params);
+					$self->_progress->set_long_alias_for_uri(@params);
 				}
 				when ('set-short-alias') {
-					$self->{_progress}->set_short_alias_for_uri(@params);
+					$self->_progress->set_short_alias_for_uri(@params);
 				}
 				default { myinternaldie('download manager: invalid worker command'); }
 			}
@@ -378,7 +379,7 @@ sub _worker ($) {
 	local $SIG{ALRM} = sub {};
 	setitimer(ITIMER_REAL, 0, 0);
 	# finishing progress
-	$self->{_progress}->finish();
+	$self->_progress->finish();
 
 	close($worker_reader) or mydie("unable to close worker's own reader socket: %s", $!);
 	close($worker_writer) or mydie("unable to close worker's own writer socket: %s", $!);
@@ -390,19 +391,19 @@ sub _worker ($) {
 sub DESTROY {
 	my ($self) = @_;
 
-	unless ($self->{_config}->var('cupt::worker::simulate')) {
+	unless ($self->_config->var('cupt::worker::simulate')) {
 		# shutdowning worker thread
-		__my_write_socket($self->{_parent_pipe}, 'exit');
-		waitpid($self->{_worker_pid}, 0); ## no critic (RequireCheckedSyscalls)
+		__my_write_socket($self->_parent_pipe, 'exit');
+		waitpid($self->_worker_pid, 0); ## no critic (RequireCheckedSyscalls)
 
 		# cleaning parent sockets
-		close($self->{_parent_pipe}) or mydie('unable to close parent writer socket: %s', $!);
+		close($self->_parent_pipe) or mydie('unable to close parent writer socket: %s', $!);
 
 		# cleaning server socket
-		close($self->{_server_socket}) or
-				mydie("unable to close server socket on file '%s': %s", $self->{_server_socket_path}, $!);
-		unlink($self->{_server_socket_path}) or
-				mydie("unable to delete server socket file '%s': %s", $self->{_server_socket_path}, $!);
+		close($self->_server_socket) or
+				mydie("unable to close server socket on file '%s': %s", $self->_server_socket_path, $!);
+		unlink($self->_server_socket_path) or
+				mydie("unable to delete server socket file '%s': %s", $self->_server_socket_path, $!);
 	}
 	return;
 }
@@ -477,7 +478,7 @@ Example:
 sub download ($@) {
 	my $self = shift;
 
-	if ($self->{_config}->var('cupt::worker::simulate')) {
+	if ($self->_config->var('cupt::worker::simulate')) {
 		foreach my $ref_download_entry (@_) {
 			my @uris = map { $_->{'uri'} } @{$ref_download_entry->{'uri-entries'}};
 			mysimulate('downloading: %s', join(' | ', @uris));
@@ -491,7 +492,7 @@ sub download ($@) {
 	# { $uri => $filename }
 	my %waiters;
 
-	my $socket = IO::Socket::UNIX->new($self->{_server_socket_path});
+	my $socket = IO::Socket::UNIX->new($self->_server_socket_path);
 	defined $socket or mydie('unable to open download socket: %s', $!);
 
 	my $sub_schedule_download = sub {
@@ -584,7 +585,7 @@ sub _download ($$$) {
 		__my_write_socket($socket, 'progress', $uri, @_);
 	};
 	my $download_method = Cupt::Download::Method->new();
-	my $result = $download_method->perform($self->{_config}, $uri, $filename, $sub_callback);
+	my $result = $download_method->perform($self->_config, $uri, $filename, $sub_callback);
 	return $result;
 }
 
