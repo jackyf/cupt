@@ -418,10 +418,7 @@ sub get_pin ($$) {
 }
 
 sub _prepare_package {
-	my ($self, $type, $package_name) = @_;
-
-	my $storage_method_name = "_${type}_packages";
-	my $ref_storage = \$self->$storage_method_name;
+	my ($self, $ref_storage, $package_name) = @_;
 
 	if (ref $$ref_storage->{$package_name} eq 'ARRAY') {
 		# existent package and not blessed package
@@ -451,7 +448,8 @@ sub get_binary_package {
 	my ($self, $package_name) = @_;
 	# will transparently return undef if there is no such package
 
-	$self->_prepare_package('binary', $package_name);
+	$self->_prepare_package(\$self->[_binary_packages_offset()], $package_name);
+
 	return $self->[_binary_packages_offset()]->{$package_name};
 };
 
@@ -470,7 +468,7 @@ sub get_source_package {
 	my ($self, $package_name) = @_;
 	# will transparently return undef if there is no such package
 
-	$self->_prepare_package('source', $package_name);
+	$self->_prepare_package(\$self->[_source_packages_offset()], $package_name);
 	return $self->[_source_packages_offset()]->{$package_name};
 };
 
