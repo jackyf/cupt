@@ -38,22 +38,21 @@ use Cupt::Core;
 use Cupt::Cache;
 use Cupt::Cache::Package;
 use Cupt::Cache::Relation qw(stringify_relation_expressions);
-
-use fields qw(_is_installed _upgrade_all_flag _actions
+use Cupt::LValueFields qw(2 _is_installed _upgrade_all_flag _actions
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 my $_dummy_package_name = 'dummy-package-name';
 
 sub new {
 	my $class = shift;
-	my $self = fields::new($class);
+	my $self = bless [] => $class;
 	$self->SUPER::new(@_);
 
-	$self->{_is_installed} = {};
-	$self->{_actions} = {};
-	$self->{_strict_satisfy_relation_expressions} = [];
-	$self->{_strict_unsatisfy_relation_expressions} = [];
-	$self->{_upgrade_all_flag} = 0;
+	$self->_is_installed = {};
+	$self->_actions = {};
+	$self->_strict_satisfy_relation_expressions = [];
+	$self->_strict_unsatisfy_relation_expressions = [];
+	$self->_upgrade_all_flag = 0;
 
 	return $self;
 }
@@ -61,7 +60,7 @@ sub new {
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
 	foreach my $version (@$ref_versions) {
-		$self->{_is_installed}->{$version->package_name} = 1;
+		$self->_is_installed->{$version->package_name} = 1;
 	}
 	return;
 }
@@ -69,32 +68,32 @@ sub import_installed_versions ($$) {
 sub install_version ($$) {
 	my ($self, $version) = @_;
 	my $package_name = $version->package_name;
-	$self->{_actions}->{$package_name}->{'action'} = 'install';
-	$self->{_actions}->{$package_name}->{'version_string'} = $version->version_string;
+	$self->_actions->{$package_name}->{'action'} = 'install';
+	$self->_actions->{$package_name}->{'version_string'} = $version->version_string;
 	return;
 }
 
 sub satisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
-	push @{$self->{_strict_satisfy_relation_expressions}}, $relation_expression;
+	push @{$self->_strict_satisfy_relation_expressions}, $relation_expression;
 	return;
 }
 
 sub unsatisfy_relation_expression ($$) {
 	my ($self, $relation_expression) = @_;
-	push @{$self->{_strict_unsatisfy_relation_expressions}}, $relation_expression;
+	push @{$self->_strict_unsatisfy_relation_expressions}, $relation_expression;
 	return;
 }
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->{_actions}->{$package_name}->{'action'} = 'remove';
+	$self->_actions->{$package_name}->{'action'} = 'remove';
 	return;
 }
 
 sub upgrade ($) {
 	my ($self) = @_;
-	$self->{_upgrade_all_flag} = 1;
+	$self->_upgrade_all_flag = 1;
 	return;
 }
 
@@ -193,21 +192,21 @@ sub _write_dudf_info ($$) {
 			say { $fh } '';
 		}
 	}
-	if (scalar @{$self->{_strict_satisfy_relation_expressions}} ||
-		scalar @{$self->{_strict_unsatisfy_relation_expressions}})
+	if (scalar @{$self->_strict_satisfy_relation_expressions} ||
+		scalar @{$self->_strict_unsatisfy_relation_expressions})
 	{
 		# writing dummy package entry
 		say { $fh } "Package: $_dummy_package_name";
 		say { $fh } 'Version: 1';
-		if (scalar @{$self->{_strict_satisfy_relation_expressions}}) {
+		if (scalar @{$self->_strict_satisfy_relation_expressions}) {
 			print { $fh } 'Depends: ';
 			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
-					$self->{_strict_satisfy_relation_expressions}));
+					$self->_strict_satisfy_relation_expressions));
 		}
-		if (scalar @{$self->{_strict_unsatisfy_relation_expressions}}) {
+		if (scalar @{$self->_strict_unsatisfy_relation_expressions}) {
 			print { $fh } 'Conflicts: ';
 			say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(
-					$self->{_strict_unsatisfy_relation_expressions}));
+					$self->_strict_unsatisfy_relation_expressions));
 		}
 		say { $fh } '';
 	}
@@ -215,14 +214,14 @@ sub _write_dudf_info ($$) {
 	# writing problems
 	say { $fh } 'Problem: source: Debian/DUDF';
 
-	if ($self->{_upgrade_all_flag}) {
-		say { $fh } 'Upgrade: ' . join(' ', keys %{$self->{_is_installed}});
+	if ($self->_upgrade_all_flag) {
+		say { $fh } 'Upgrade: ' . join(' ', keys %{$self->_is_installed});
 	}
 
 	my @package_names_to_remove;
 	my @strings_to_install;
-	foreach my $package_name (keys %{$self->{_actions}}) {
-		my $package_entry = $self->{_actions}->{$package_name};
+	foreach my $package_name (keys %{$self->_actions}) {
+		my $package_entry = $self->_actions->{$package_name};
 		if ($package_entry->{'action'} eq 'remove') {
 			push @package_names_to_remove, $package_name;
 		} elsif ($package_entry->{'action'} eq 'install') {
@@ -230,8 +229,8 @@ sub _write_dudf_info ($$) {
 		}
 	}
 
-	if (scalar @{$self->{_strict_satisfy_relation_expressions}} ||
-		scalar @{$self->{_strict_unsatisfy_relation_expressions}})
+	if (scalar @{$self->_strict_satisfy_relation_expressions} ||
+		scalar @{$self->_strict_unsatisfy_relation_expressions})
 	{
 		push @strings_to_install, $_dummy_package_name;
 	}
@@ -252,7 +251,7 @@ sub _read_dudf_result ($$) {
 	my ($self, $fh) = @_;
 
 	my %result;
-	foreach my $installed_package_name (keys %{$self->{_is_installed}}) {
+	foreach my $installed_package_name (keys %{$self->_is_installed}) {
 		$result{$installed_package_name}->{'version'} = undef;
 		$result{$installed_package_name}->{'manually_installed'} = 0;
 		$result{$installed_package_name}->{'reasons'} = [];
@@ -275,7 +274,7 @@ sub _read_dudf_result ($$) {
 					mydie("wrong resolve result version string '%s' for package '%s'", $version_string, $package_name);
 
 			$result{$package_name}->{'version'} = $version;
-			$result{$package_name}->{'manually_installed'} = (exists $self->{_actions}->{$package_name});
+			$result{$package_name}->{'manually_installed'} = (exists $self->_actions->{$package_name});
 			$result{$package_name}->{'reasons'} = []; # no defined yet
 		}
 	};

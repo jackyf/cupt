@@ -31,8 +31,7 @@ use strict;
 use warnings;
 
 use Cupt::Core;
-
-use fields qw(_config _cache);
+use Cupt::LValueFields qw(_config _cache);
 
 =head1 METHODS
 
@@ -51,11 +50,11 @@ I<cache> - reference to L<Cupt::Cache|Cupt::Cache>
 sub new {
 	my $self = shift;
 	unless (ref $self) {
-		$self = fields::new($self);
+		$self = bless [] => $self;
 	}
 
-	$self->{_config} = shift;
-	$self->{_cache} = shift;
+	$self->_config = shift;
+	$self->_cache = shift;
 
 	return $self;
 }
@@ -68,7 +67,7 @@ returns reference to L<Cupt::Cache|Cupt::Cache>
 
 sub cache {
 	my ($self) = @_;
-	return $self->{_cache};
+	return $self->_cache;
 }
 
 =head2 config
@@ -79,7 +78,7 @@ returns reference to L<Cupt::Config|Cupt::Config>
 
 sub config {
 	my ($self) = @_;
-	return $self->{_config};
+	return $self->_config;
 }
 
 =head2 import_installed_versions
