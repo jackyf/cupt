@@ -263,6 +263,14 @@ Example:
 
 C<cupt screenshots arora>
 
+=item snapshot list
+
+list names of the available system snapshots, one per line
+
+This subcommand receives no arguments.
+
+Example: C<cupt snapshot list>
+
 =back
 
 =head3 query-specific options
@@ -470,6 +478,40 @@ on disk
 This subcommand receives no arguments.
 
 Example: C<cupt autoclean>
+
+=item snapshot save
+
+saves a snapshot of the current packages state
+
+This subcommand receives one argument - desired snapshot name.
+
+Example: C<cupt snapshot save old-udev>
+
+=item snapshot load
+
+returns the system (as set of installed packages) to the previously saved
+state
+
+This subcommand receives one argument - snapshot name to load.
+
+Example: C<cupt snapshot load old-udev>
+
+=item snapshot remove
+
+removes the system snapshot
+
+This subcommand receives one argument - snapshot name to remove.
+
+Example: C<cupt snapshot remove old-libgtk>
+
+=item snapshot rename
+
+renames the system snapshot
+
+This subcommand receives two arguments - old snapshot name and new snapshot
+name.
+
+Example: C<cupt snapshot rename old-libgtk 20091005>
 
 =item shell
 

@@ -134,6 +134,7 @@ sub main {
 		'markauto' => sub { mark_autoinstalled('markauto') },
 		'unmarkauto' => sub { mark_autoinstalled('unmarkauto') },
 		'shell' => \&shell,
+		'snapshot' => \&snapshot,
 	);
 
 	if (defined($command_handlers{$command})) {
@@ -404,6 +405,7 @@ sub help () {
 		'markauto' => __('marks binary package(s) as automatically installed'),
 		'unmarkauto' => __('marks binary package(s) as manually installed'),
 		'shell' => __('starts an interactive package manager shell'),
+		'snapshot' => __('works with system snapshots'),
 	);
 
 	say __('Usage: cupt <action> [<parameters>]');
@@ -1490,6 +1492,16 @@ sub manage_packages ($) {
 
 	check_no_extra_options();
 
+	my $snapshot_name;
+	if ($action eq 'load-snapshot') {
+		require Cupt::System::Snapshots;
+		scalar @ARGV == 1 or
+				mydie("exactly one argument (the snapshot name) should be specified");
+		$snapshot_name = shift @ARGV;
+		Cupt::System::Snapshots->new($config)->setup_config_for_snapshot($snapshot_name);
+		$action = 'install';
+	}
+
 	local $| = 1;
 	do {
 		my @package_expressions_to_reinstall;
@@ -1516,6 +1528,9 @@ sub manage_packages ($) {
 		$resolver = $resolver_module_name->new($config, $cache);
 	};
 	$resolver->import_installed_versions($cache->get_system_state()->export_installed_versions());
+	if (defined $snapshot_name) {
+		Cupt::System::Snapshots->new($config)->setup_resolver_for_snapshot($snapshot_name, $resolver);
+	}
 	my $worker = Cupt::System::Worker->new($config, $cache);
 	say __('[done]');
 
@@ -1860,6 +1875,59 @@ sub clean_archives ($) {
 	say sprintf __('Freed %s of disk space.'), human_readable_size_string($size_deleted);
 
 	return 0;
+}
+
+sub snapshot {
+	my $action = shift @ARGV or
+			mydie("the action is not specified");
+
+	if ($action eq 'load') {
+		return manage_packages('load-snapshot');
+	} else {
+		check_no_extra_options();
+		require Cupt::System::Snapshots;
+		my $snapshots = Cupt::System::Snapshots->new($config);
+		
+		given ($action) {
+			when ('list') {
+				check_no_extra_args();
+				say join("\n", $snapshots->get_snapshot_names());
+			}
+			when ('remove') {
+				my $snapshot_name = shift @ARGV or
+						mydie("no snapshot name specified");
+				check_no_extra_args();
+				require Cupt::System::Worker;
+				build_cache('-source' => 0, '-binary' => 0, '-installed' => 0);
+				my $worker = Cupt::System::Worker->new($config, $cache);
+				$worker->remove_system_snapshot($snapshots, $snapshot_name);
+			}
+			when ('rename') {
+				my $previous_snapshot_name = shift @ARGV or
+						mydie("no previous snapshot name specified");
+				my $new_snapshot_name = shift @ARGV or
+						mydie("no new snapshot name specified");
+				check_no_extra_args();
+				require Cupt::System::Worker;
+				build_cache('-source' => 0, '-binary' => 0, '-installed' => 0);
+				my $worker = Cupt::System::Worker->new($config, $cache);
+				$worker->rename_system_snapshot($snapshots, $previous_snapshot_name => $new_snapshot_name);
+			}
+			when ('save') {
+				my $snapshot_name = shift @ARGV or
+						mydie("no snapshot name specified");
+				check_no_extra_args();
+				require Cupt::System::Worker;
+				build_cache('-source' => 0, '-binary' => 0, '-installed' => 1);
+				my $worker = Cupt::System::Worker->new($config, $cache);
+				$worker->save_system_snapshot($snapshots, $snapshot_name);
+			}
+			default {
+				mydie("unknown action for the 'snapshot' subcommand");
+			}
+		}
+		return 0;
+	}
 }
 
 sub process_options {

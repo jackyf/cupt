@@ -31,9 +31,11 @@ use warnings;
 use strict;
 
 use List::Util qw(sum);
-use List::MoreUtils qw(uniq apply any);
+use List::MoreUtils qw(uniq apply any none);
 use File::Copy;
 use File::Basename;
+use File::Path qw(remove_tree);
+use File::stat ();
 use POSIX;
 use Digest;
 
@@ -1215,15 +1217,25 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 }
 
 sub _run_external_command ($$$) {
-	my ($self, $flavor, $command, $alias) = @_;
+	my ($self, $command, $error_identifier) = @_;
+	$error_identifier //= $command;
 
 	if ($self->{_config}->var('cupt::worker::simulate')) {
 		say __('simulating'), ": $command";
 	} else {
 		# invoking command
 		system($command) == 0 or
-				mydie("dpkg '%s' action '%s' returned non-zero status: %s", $flavor, $alias, $?);
+				mydie("%s returned non-zero status: %s", $error_identifier, $?);
 	}
+
+	return;
+}
+
+sub _run_dpkg_command {
+	my ($self, $flavor, $command, $alias) = @_;
+
+	my $error_identifier = sprintf __("dpkg '%s' action '%s'"), $flavor, $alias;
+	$self->_run_external_command($command, $error_identifier);
 
 	return;
 }
@@ -1234,7 +1246,7 @@ sub _do_dpkg_pre_actions ($$$) {
 	my $archives_directory = $self->_get_archives_directory();
 
 	foreach my $command ($self->{_config}->var('dpkg::pre-invoke')) {
-		$self->_run_external_command('pre', $command, $command);
+		$self->_run_dpkg_command('pre', $command, $command);
 	}
 	foreach my $command ($self->{_config}->var('dpkg::pre-install-pkgs')) {
 		my ($command_binary) = ($command =~ m/^(.*?)(?: |$)/);
@@ -1256,7 +1268,7 @@ sub _do_dpkg_pre_actions ($$$) {
 			}
 		}
 		$command = "echo '$stdin' | $command";
-		$self->_run_external_command('pre', $command, $alias);
+		$self->_run_dpkg_command('pre', $command, $alias);
 	}
 	return;
 }
@@ -1264,7 +1276,7 @@ sub _do_dpkg_pre_actions ($$$) {
 sub _do_dpkg_post_actions ($) {
 	my ($self) = @_;
 	foreach my $command ($self->{_config}->var('dpkg::post-invoke')) {
-		$self->_run_external_command('post', $command, $command);
+		$self->_run_dpkg_command('post', $command, $command);
 	}
 	return;
 }
@@ -1522,7 +1534,7 @@ sub update_release_and_index_data ($$) {
 
 	# run pre-actions
 	foreach my $command ($self->{_config}->var('apt::update::pre-invoke')) {
-		$self->_run_external_command('pre', $command, $command);
+		$self->_run_dpkg_command('pre', $command, $command);
 	}
 
 	unless ($simulate) { # unconditional clearing of partial chunks of Release[.gpg] files
@@ -1791,11 +1803,11 @@ sub update_release_and_index_data ($$) {
 
 	# run post-actions
 	foreach my $command ($self->{_config}->var('apt::update::post-invoke')) {
-		$self->_run_external_command('post', $command, $command);
+		$self->_run_dpkg_command('post', $command, $command);
 	}
 	if ($master_exit_code == 0) {
 		foreach my $command ($self->{_config}->var('apt::update::post-invoke-success')) {
-			$self->_run_external_command('post', $command, $command);
+			$self->_run_dpkg_command('post', $command, $command);
 		}
 	}
 
@@ -1854,6 +1866,246 @@ sub clean_archives ($$) {
 		}
 	}
 	return;
+}
+
+=head2 save_system_snapshot
+
+method, saves system snapthot under specified name
+
+Parameters:
+
+I<snapshots> - L<Cupt::System::Snapshots|Cupt::System::Snapshots>
+
+I<name> - name of the snapshot
+
+=cut
+
+sub save_system_snapshot {
+	require Cwd;
+
+	my ($self, $snapshots, $name) = @_;
+
+	if ($name =~ m/^\./) {
+		mydie("the system snapshot name cannot start with a '.'");
+	}
+
+	if (any { $_ eq $name } $snapshots->get_snapshot_names()) {
+		mydie("the system snapshot named '%s' already exists", $name);
+	}
+
+	# ensuring dpkg-repack is available
+	if (system("which dpkg-repack >/dev/null 2>/dev/null")) {
+		mydie("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'");
+	}
+
+	my $ref_installed_versions = $self->{_cache}->get_system_state()->export_installed_versions();
+	my @installed_package_names = map { $_->package_name } @$ref_installed_versions;
+
+	my $snapshots_directory = $snapshots->get_snapshots_directory();
+	my $snapshot_directory = $snapshots->get_snapshot_directory($name);
+	my $temporary_snapshot_directory = $snapshots->get_snapshot_directory(".partial-$name");
+
+	my $simulate = $self->{_config}->var('cupt::worker::simulate');
+
+	unless ($simulate) { # creating snapshot directory
+		if (! (-e $snapshots_directory and -d _)) {
+			mkdir($snapshots_directory) or
+					mydie("unable to create snapshots directory '%s': %s", $snapshots_directory, $!);
+		}
+		mkdir($temporary_snapshot_directory) or
+				mydie("unable to create snapshot directory '%s': %s", $snapshot_directory, $!);
+	}
+
+	eval {
+		my $sub_create_file = sub {
+			my ($file, $content) = @_;
+
+			if ($simulate) {
+				say sprintf __("simulating: writing file '%s'"), $file;
+			} else {
+				open(my $fd, '>', $file) or
+						mydie("unable to open '%s' for writing: %s", $file, $!);
+				(print { $fd } $content) or
+						mydie("unable to write to '%s': %s", $file, $!);
+				close($fd) or
+						mydie("unable to close '%s': %s", $file, $!);
+			}
+		};
+
+		# saving list of package names
+		$sub_create_file->("$temporary_snapshot_directory/installed_package_names",
+				join("\n", @installed_package_names) . "\n");
+
+		# building source line
+		$sub_create_file->("$temporary_snapshot_directory/source",
+				"deb file:$snapshots_directory $name/\n");
+
+		do { # backing up the installed packages
+			my $current_directory = getcwd();
+
+			unless ($simulate) {
+				# this is for dfsg-repack
+				chdir($temporary_snapshot_directory) or
+						mydie("unable to set current directory to '%s': %s", $temporary_snapshot_directory, $!);
+			}
+
+			foreach my $package_name (sort @installed_package_names) {
+				my $version = $self->{_cache}->get_binary_package($package_name)->get_installed_version();
+				my $architecture = $version->architecture;
+
+				$self->_run_external_command("dpkg-repack --arch=$architecture $package_name");
+
+				# dpkg-repack uses dpkg-deb -b, which produces file in format
+				#
+				# <package_name>_<stripped_version_string>_<arch>.deb
+				#
+				# I can't say why the hell someone decided to strip version here,
+				# so I have to rename the file properly.
+				unless ($simulate) {
+					# finding a file
+					my @files = glob("${package_name}_*.deb");
+					if (scalar @files != 1) {
+						mydie("dpkg-repack produced either no or more than one Debian archive for the package '%s'",
+								$package_name);
+					}
+					my $bad_filename = $files[0];
+					my $good_filename = sprintf '%s_%s_%s.deb', $package_name,
+							$version->version_string, $architecture;
+
+					move($bad_filename, $good_filename) or
+							mydie("unable to move '%s' to '%s': %s", $bad_filename, $good_filename, $!);
+				}
+			}
+
+			(my $local_path_base = $snapshot_directory) =~ tr{/}{_};
+			my $packages_file_name = "${local_path_base}_Packages";
+
+			# building a release file for them
+			$self->_run_external_command("dpkg-scanpackages . > $packages_file_name");
+
+			unless ($simulate) {
+				do { # create Release file
+					my $release_content;
+					# I don't use heredoc because of indenting.
+					$release_content .= "Origin: Cupt\n";
+					$release_content .= "Label: snapshot\n";
+					$release_content .= "Suite: snapshot\n";
+					$release_content .= "Codename: snapshot\n";
+
+					my $previous_lc_time = setlocale(LC_TIME, 'C');
+					$release_content .= 'Date: ' . strftime('%a, %d %b %Y %H:%M:%S UTC', gmtime()) . "\n";
+					setlocale(LC_TIME, $previous_lc_time);
+
+					$release_content .= 'Architectures: all ' . $self->{_config}->var('apt::architecture') . "\n";
+					$release_content .= "Description: Cupt-made system snapshot\n";
+
+					my $ref_hash_sums = { 'md5sum' => '1', 'sha1sum' => '2', 'sha256sum' => '3' };
+					__generate_hash_sums($ref_hash_sums, "./$packages_file_name");
+
+					my $size = File::stat::stat("./$packages_file_name")->size();
+					defined $size or
+							myinternaldie("undefined size for Packages");
+
+					$release_content .= "MD5Sum:\n " . $ref_hash_sums->{'md5sum'} . " $size Packages\n";
+					$release_content .= "SHA1:\n " . $ref_hash_sums->{'sha1sum'} . " $size Packages\n";
+					$release_content .= "SHA256:\n " . $ref_hash_sums->{'sha256sum'} . " $size Packages\n";
+
+					my $file = "$temporary_snapshot_directory/${local_path_base}_Release";
+					open(my $fd, '>', $file) or
+							mydie("unable to open '%s' for writing: %s", $file, $!);
+					print { $fd } $release_content or
+							mydie("unable to write to '%s': %s", $file, $!);
+					close($fd) or
+							mydie("unable to close '%s': %s", $file, $!);
+				};
+
+				chdir($current_directory) or
+						mydie("unable to set current directory to '%s': %s", $current_directory, $!);
+			}
+		};
+
+		unless ($simulate) {
+			# all done, do final move
+			move($temporary_snapshot_directory, $snapshot_directory) or
+					mydie("unable to move directory '%s' to '%s': %s",
+							$temporary_snapshot_directory, $snapshot_directory, $!);
+		}
+	};
+
+	if (mycatch()) {
+		# deleting partially constructed snapshot (try)
+		chdir('/') or
+				mywarn("unable to set current directory to '/': %s", $!);
+		remove_tree($temporary_snapshot_directory, { 'error' => \my $ref_remove_errors });
+		if (@$ref_remove_errors) {
+			for my $ref_remove_error (@$ref_remove_errors) {
+				my ($file, $message) = %$ref_remove_error;
+				if ($file eq '') {
+					mywarn("general removal error: '%s'", $message);
+				} else {
+					mywarn("unable to unlink file '%s': %s", $file, $message);
+				}
+			}
+			mywarn("unable to delete partial snapshot directory '%s'", $temporary_snapshot_directory);
+		}
+
+		myerr("error constructing system snapshot named '%s'", $name);
+		myredie();
+	}
+}
+
+=head2 remove_system_snapshot
+
+method, removes the system snapshot, identified by name
+
+Parameters:
+
+I<snapshots> - L<Cupt::System::Snapshots|Cupt::System::Snapshots>
+
+I<name> - a name of the snapshot
+
+=cut
+
+sub remove_system_snapshot {
+	my ($self, $snapshots, $name) = @_;
+
+	if (none { $_ eq $name } $snapshots->get_snapshot_names()) {
+		mydie("unable to find snapshot named '%s'", $name);
+	}
+
+	my $snapshot_directory = $snapshots->get_snapshot_directory($name);
+
+	$self->_run_external_command("rm -r $snapshot_directory");
+}
+
+=head2 rename_system_snapshot
+
+method, renames the system snapshot
+
+Parameters:
+
+I<snapshots> - L<Cupt::System::Snapshots|Cupt::System::Snapshots>
+
+I<previous_name> - previous name of the snapshot
+
+I<new_name> - new name of the snapshot
+
+=cut
+
+sub rename_system_snapshot {
+	my ($self, $snapshots, $previous_name, $new_name) = @_;
+
+	if (none { $_ eq $previous_name } $snapshots->get_snapshot_names()) {
+		mydie("unable to find snapshot named '%s'", $previous_name);
+	}
+	if (any { $_ eq $new_name } $snapshots->get_snapshot_names()) {
+		mydie("the system snapshot named '%s' already exists", $new_name);
+	}
+
+	my $previous_snapshot_directory = $snapshots->get_snapshot_directory($previous_name);
+	my $new_snapshot_directory = $snapshots->get_snapshot_directory($new_name);
+
+	$self->_run_external_command("mv $previous_snapshot_directory $new_snapshot_directory");
 }
 
 1;

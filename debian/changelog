@@ -1,12 +1,22 @@
-cupt (1.1.2~) UNRELEASED; urgency=low
+cupt (1.2.0~) UNRELEASED; urgency=low
 
+  * cupt:
+    - New 'snapshot' subcommand.
   * Cupt:
     - Config:
       - New configuration option 'cupt::directory::state'.
+      - New configuration option 'cupt::directory::state::snapshots'.
     - System:
       - Worker:
         - Removed "locking" /var/lib/dpkg/lock, it's useless (noop).
         - Implemented Cupt lock.
+        - New method 'save_system_snapshot'.
+        - New method 'remove_system_snapshot'.
+        - New method 'rename_system_snapshot'.
+      - Snapshots:
+        - Introduced.
+  * debian/control:
+    - Added 'dpkg-dev' and 'dpkg-repack' to Suggests.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 24 Oct 2009 18:17:45 +0300
 

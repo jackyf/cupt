@@ -18,7 +18,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl (>= 5.10.0), liburi-perl,
   liblist-moreutils-perl (>= 0.23)
 Breaks: debdelta (<< 0.31)
 Recommends: liblocale-gettext-perl, bzip2
-Suggests: cupt, lzma, debdelta (>= 0.31)
+Suggests: cupt, lzma, debdelta (>= 0.31), dpkg-dev, dpkg-repack
 Description: alternative front-end for dpkg -- Perl modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
  .
@@ -59,7 +59,8 @@ Description: alternative front-end for dpkg -- console interface
   - support of LZMA-compressed indexes;
   - source versions synchronization;
   - 'shell' subcommand (to get command history, search etc. working, install
-    the package 'libterm-readline-gnu-perl').
-  - integration with debdelta (to get it, install the package 'debdelta')
+    the package 'libterm-readline-gnu-perl');
+  - integration with debdelta (to get it, install the package 'debdelta');
+  - system snapshots (needs packages 'dpkg-dev' and 'dpkg-repack').
  .
  Its interface is mostly like apt-get/aptitude console interface.
