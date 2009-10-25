@@ -39,7 +39,7 @@ INIT {
 
 use Exporter qw(import);
 our @EXPORT = qw(
-	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug
+	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug &mysimulate
 	$package_name_regex $version_string_regex &human_readable_size_string &__
 	&is_version_string_native &are_hash_sums_present &compare_hash_sums
 	&glob_to_regex);
@@ -68,6 +68,10 @@ sub _myprinterror {
 
 sub _myformat {
 	return sprintf(__(shift), @_);
+}
+
+sub mysimulate {
+	say('S: ' . _myformat(@_));
 }
 
 sub mywarn {

@@ -45,7 +45,7 @@ sub obtain {
 	my ($self) = @_;
 
 	if ($self->_simulate) {
-		say sprintf __("simulating obtaining lock '%s'"), $self->_path;
+		mysimulate("obtaining lock '%s'", $self->_path);
 	} else {
 		open(my $fh, '>', $self->_path) or
 				mydie("unable to open file '%s': %s", $self->_path, $!);
@@ -59,7 +59,7 @@ sub release {
 	my ($self) = @_;
 
 	if ($self->_simulate) {
-		say sprintf __("simulating releasing lock '%s'"), $self->_path;
+		mysimulate("releasing lock '%s'", $self->_path);
 	} else {
 		flock($self->_lock_fh, LOCK_UN) or
 				mydie("unable to release lock on file '%s': %s", $self->_path, $!);

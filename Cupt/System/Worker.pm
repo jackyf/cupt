@@ -562,7 +562,7 @@ sub mark_as_automatically_installed ($$;@) {
 		foreach my $package_name (@package_names) {
 			my $prefix = $markauto ?
 					__('marking as automatically installed') : __('marking as manually installed');
-			say __('simulating') . ": $prefix: $package_name";
+			mysimulate('%s: %s', $prefix, $package_name);
 		}
 	} else {
 		my $ref_extended_info = $self->{_cache}->get_extended_info();
@@ -1221,7 +1221,7 @@ sub _run_external_command ($$$) {
 	$error_identifier //= $command;
 
 	if ($self->{_config}->var('cupt::worker::simulate')) {
-		say __('simulating'), ": $command";
+		mysimulate("running command '%s'", $command);
 	} else {
 		# invoking command
 		system($command) == 0 or
@@ -1387,24 +1387,13 @@ sub change_system ($$) {
 				}
 				mydebug("$action_name $dpkg_flags " . join(' ', @stringified_versions));
 			}
-			if ($simulate) {
-				say __('simulating'), ": $dpkg_command";
-			} else {
-				# invoking command
-				system($dpkg_command) == 0 or
-						mydie('dpkg returned non-zero status: %s', $?);
-			}
+			$self->_run_external_command($dpkg_command);
 		};
 	}
 	if ($defer_triggers) {
 		# triggers were not processed during actions perfomed before, do it now at once
-		my $dpkg_pending_triggers_command = "$dpkg_binary --triggers-only --pending";
-		if (!$simulate) {
-			system($dpkg_pending_triggers_command) == 0 or
-					mydie('error processing triggers');
-		} else {
-			say __('simulating'), ": $dpkg_pending_triggers_command";
-		}
+		my $command = "$dpkg_binary --triggers-only --pending";
+		$self->_run_dpkg_command('triggers', $command, $command);
 	}
 
 	$self->_do_dpkg_post_actions();
@@ -1856,7 +1845,7 @@ sub clean_archives ($$) {
 
 	my $simulate = $self->{_config}->var('cupt::worker::simulate');
 	if ($simulate) {
-		say __('simulating deletions:');
+		mysimulate('deletions:');
 	}
 	foreach my $path (@paths_to_delete) {
 		not exists $white_list{$path} or next;
@@ -1921,7 +1910,7 @@ sub save_system_snapshot {
 			my ($file, $content) = @_;
 
 			if ($simulate) {
-				say sprintf __("simulating: writing file '%s'"), $file;
+				mysimulate("writing file '%s'", $file);
 			} else {
 				open(my $fd, '>', $file) or
 						mydie("unable to open '%s' for writing: %s", $file, $!);

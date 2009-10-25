@@ -480,7 +480,7 @@ sub download ($@) {
 	if ($self->{_config}->var('cupt::worker::simulate')) {
 		foreach my $ref_download_entry (@_) {
 			my @uris = map { $_->{'uri'} } @{$ref_download_entry->{'uri-entries'}};
-			say __('simulating: downloading') . ': ' . join(' | ', @uris);
+			mysimulate('downloading: %s', join(' | ', @uris));
 		}
 		return 0;
 	}
