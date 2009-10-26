@@ -1023,6 +1023,46 @@ sub __split_heterogeneous_actions (@) {
 	return @new_action_group_list;
 }
 
+sub __move_configures_left (@) {
+	my ($ref_action_group_list, $action_graph) = @_;
+
+	my @new_action_group_list = @$ref_action_group_list;
+
+	foreach my $index (0..$#new_action_group_list) {
+		my $ref_action_group = $new_action_group_list[$index];
+		# all the actions will have the same action name by algorithm
+		my $action_name = $ref_action_group->[0]->{'action_name'};
+		next if $action_name ne 'configure';
+		if (any { $_->{'action_name'} ne $action_name } @$ref_action_group) {
+			# heterogeneous actions, don't touch it
+			next;
+		}
+
+		# ok, try to move it as left as possible
+		my $target_index = $index;
+		TRY_INDEX:
+		while ((my $try_index = $target_index - 1) >= 0) {
+			foreach my $ref_right_action (@$ref_action_group) {
+				foreach my $ref_left_action (@{$new_action_group_list[$try_index]}) {
+					if ($action_graph->has_edge($ref_left_action, $ref_right_action)) {
+						# cannot move
+						last TRY_INDEX;
+					}
+				}
+			}
+			# move one next
+			$target_index = $try_index;
+		}
+
+		if ($target_index != $index) {
+			# can move!
+			@new_action_group_list[$target_index, $index] = @new_action_group_list[$index, $target_index];
+		}
+	}
+
+	return @new_action_group_list;
+}
+
 sub _prepare_downloads ($$) {
 	my ($self, $ref_actions_preview, $download_progress) = @_;
 
@@ -1314,6 +1354,7 @@ sub change_system ($$) {
 	defined $action_graph or return 1;
 	# topologically sorted actions
 	my @action_group_list = $action_graph->topological_sort_of_strongly_connected_components();
+	@action_group_list = __move_configures_left(\@action_group_list, $action_graph);
 	undef $action_graph;
 	@action_group_list = __split_heterogeneous_actions(@action_group_list);
 

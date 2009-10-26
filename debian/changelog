@@ -13,6 +13,8 @@ cupt (1.2.0~) UNRELEASED; urgency=low
         - New method 'save_system_snapshot'.
         - New method 'remove_system_snapshot'.
         - New method 'rename_system_snapshot'.
+        - Do some reordering of generated dpkg call sequence to make
+          'configure' actions appear as early as possible.
       - Snapshots:
         - Introduced.
     - Cache:
