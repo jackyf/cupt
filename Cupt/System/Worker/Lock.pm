@@ -55,6 +55,8 @@ sub obtain {
 				mydie("unable to obtain lock on file '%s': %s", $self->_path, $!);
 		$self->_lock_fh = $fh;
 	}
+
+	return;
 }
 
 sub release {
@@ -69,6 +71,8 @@ sub release {
 		close($self->_lock_fh) or
 				mydie("unable to close file '%s': %s", $self->_path, $!);
 	}
+
+	return;
 }
 
 1;
