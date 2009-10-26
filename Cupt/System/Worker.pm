@@ -86,6 +86,8 @@ sub DESTROY {
 	my ($self) = @_;
 
 	$self->_lock->release();
+
+	return;
 }
 
 sub _synchronize_apt_compat_symlinks ($) {
