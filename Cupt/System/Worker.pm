@@ -1227,7 +1227,7 @@ sub _run_external_command ($$$) {
 	} else {
 		# invoking command
 		system($command) == 0 or
-				mydie("%s returned non-zero status: %s", $error_identifier, $?);
+				mydie('%s returned non-zero status: %s', $error_identifier, $?);
 	}
 
 	return;
@@ -1885,7 +1885,7 @@ sub save_system_snapshot {
 	}
 
 	# ensuring dpkg-repack is available
-	if (system("which dpkg-repack >/dev/null 2>/dev/null")) {
+	if (system('which dpkg-repack >/dev/null 2>/dev/null')) {
 		mydie("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'");
 	}
 
@@ -1995,7 +1995,7 @@ sub save_system_snapshot {
 
 					my $size = File::stat::stat("./$packages_file_name")->size();
 					defined $size or
-							myinternaldie("undefined size for Packages");
+							myinternaldie('undefined size for Packages');
 
 					$release_content .= "MD5Sum:\n " . $ref_hash_sums->{'md5sum'} . " $size Packages\n";
 					$release_content .= "SHA1:\n " . $ref_hash_sums->{'sha1sum'} . " $size Packages\n";
@@ -2043,6 +2043,8 @@ sub save_system_snapshot {
 		myerr("error constructing system snapshot named '%s'", $name);
 		myredie();
 	}
+
+	return;
 }
 
 =head2 remove_system_snapshot
@@ -2067,6 +2069,8 @@ sub remove_system_snapshot {
 	my $snapshot_directory = $snapshots->get_snapshot_directory($name);
 
 	$self->_run_external_command("rm -r $snapshot_directory");
+
+	return;
 }
 
 =head2 rename_system_snapshot
@@ -2097,6 +2101,8 @@ sub rename_system_snapshot {
 	my $new_snapshot_directory = $snapshots->get_snapshot_directory($new_name);
 
 	$self->_run_external_command("mv $previous_snapshot_directory $new_snapshot_directory");
+
+	return;
 }
 
 1;
