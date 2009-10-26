@@ -1496,7 +1496,7 @@ sub manage_packages ($) {
 	if ($action eq 'load-snapshot') {
 		require Cupt::System::Snapshots;
 		scalar @ARGV == 1 or
-				mydie("exactly one argument (the snapshot name) should be specified");
+				mydie('exactly one argument (the snapshot name) should be specified');
 		$snapshot_name = shift @ARGV;
 		Cupt::System::Snapshots->new($config)->setup_config_for_snapshot($snapshot_name);
 		$action = 'install';
@@ -1879,7 +1879,7 @@ sub clean_archives ($) {
 
 sub snapshot {
 	my $action = shift @ARGV or
-			mydie("the action is not specified");
+			mydie('the action is not specified');
 
 	if ($action eq 'load') {
 		return manage_packages('load-snapshot');
@@ -1887,7 +1887,7 @@ sub snapshot {
 		check_no_extra_options();
 		require Cupt::System::Snapshots;
 		my $snapshots = Cupt::System::Snapshots->new($config);
-		
+
 		given ($action) {
 			when ('list') {
 				check_no_extra_args();
@@ -1895,7 +1895,7 @@ sub snapshot {
 			}
 			when ('remove') {
 				my $snapshot_name = shift @ARGV or
-						mydie("no snapshot name specified");
+						mydie('no snapshot name specified');
 				check_no_extra_args();
 				require Cupt::System::Worker;
 				build_cache('-source' => 0, '-binary' => 0, '-installed' => 0);
@@ -1904,9 +1904,9 @@ sub snapshot {
 			}
 			when ('rename') {
 				my $previous_snapshot_name = shift @ARGV or
-						mydie("no previous snapshot name specified");
+						mydie('no previous snapshot name specified');
 				my $new_snapshot_name = shift @ARGV or
-						mydie("no new snapshot name specified");
+						mydie('no new snapshot name specified');
 				check_no_extra_args();
 				require Cupt::System::Worker;
 				build_cache('-source' => 0, '-binary' => 0, '-installed' => 0);
@@ -1915,7 +1915,7 @@ sub snapshot {
 			}
 			when ('save') {
 				my $snapshot_name = shift @ARGV or
-						mydie("no snapshot name specified");
+						mydie('no snapshot name specified');
 				check_no_extra_args();
 				require Cupt::System::Worker;
 				build_cache('-source' => 0, '-binary' => 0, '-installed' => 1);
