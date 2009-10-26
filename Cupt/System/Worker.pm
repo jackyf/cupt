@@ -578,7 +578,7 @@ sub mark_as_automatically_installed ($$;@) {
 		my @refreshed_autoinstalled_packages = grep { $ref_autoinstalled_packages->{$_} }
 				keys %$ref_autoinstalled_packages;
 
-		my $extended_info_file = $self->_cache->_path_of_extended_states();
+		my $extended_info_file = $self->_cache->get_path_of_extended_states();
 		my $temp_file = $extended_info_file . '.cupt.tmp';
 
 		sysopen(my $temp_fh, $temp_file, O_WRONLY | O_EXCL | O_CREAT) or

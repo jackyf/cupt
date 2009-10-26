@@ -194,7 +194,7 @@ sub new {
 	$self->_parse_preferences();
 
 	# reading list of automatically installed packages
-	my $extended_states_file = $self->_path_of_extended_states();
+	my $extended_states_file = $self->get_path_of_extended_states();
 	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
 	# for speeding up _prepare_package calls
@@ -1315,7 +1315,13 @@ sub _parse_preferences {
 	return;
 }
 
-sub _path_of_extended_states {
+=head2 get_path_of_extended_states
+
+returns path of file containing extended states for packages
+
+=cut
+
+sub get_path_of_extended_states {
 	my ($self) = @_;
 
 	my $root_prefix = $self->_config->var('dir');
