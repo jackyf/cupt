@@ -72,6 +72,7 @@ sub _myformat {
 
 sub mysimulate {
 	say('S: ' . _myformat(@_));
+	return;
 }
 
 sub mywarn {
