@@ -1039,9 +1039,9 @@ sub __move_configures_left (@) {
 		}
 
 		# ok, try to move it as left as possible
-		my $target_index = $index;
+		my $try_index = $index - 1;
 		TRY_INDEX:
-		while ((my $try_index = $target_index - 1) >= 0) {
+		while ($try_index >= 0) {
 			foreach my $ref_right_action (@$ref_action_group) {
 				foreach my $ref_left_action (@{$new_action_group_list[$try_index]}) {
 					if ($action_graph->has_edge($ref_left_action, $ref_right_action)) {
@@ -1050,13 +1050,9 @@ sub __move_configures_left (@) {
 					}
 				}
 			}
-			# move one next
-			$target_index = $try_index;
-		}
-
-		if ($target_index != $index) {
-			# can move!
-			@new_action_group_list[$target_index, $index] = @new_action_group_list[$index, $target_index];
+			# move!
+			@new_action_group_list[$try_index, $try_index+1] = @new_action_group_list[$try_index+1, $try_index];
+			--$try_index;
 		}
 	}
 
