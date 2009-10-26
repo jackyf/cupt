@@ -152,7 +152,7 @@ sub setup_resolver_for_snapshot {
 	my $cache = $resolver->cache();
 
 	my @all_package_names = $cache->get_binary_package_names();
-	
+
 	my $snapshot_packages_file = "$snapshot_directory/installed_package_names";
 	open(my $fd, '<', $snapshot_packages_file) or
 			mydie("unable to open '%s': %s", $snapshot_packages_file, $!);
@@ -161,7 +161,7 @@ sub setup_resolver_for_snapshot {
 	chomp($_) foreach @snapshot_package_names;
 	close($fd) or
 			mydie("unable to close '%s': %s", $snapshot_packages_file, $!);
-	
+
 	my %scheduled_package_names;
 	foreach my $snapshot_package_name (@snapshot_package_names) {
 		my $package = $cache->get_binary_package($snapshot_package_name);
