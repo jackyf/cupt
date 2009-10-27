@@ -2,6 +2,9 @@ cupt (1.2.0~) UNRELEASED; urgency=low
 
   * cupt:
     - New 'snapshot' subcommand.
+    - 'satisfy':
+      - Fixed taking architecture specifiers from the command-line into
+        account.
   * Cupt:
     - Config:
       - New configuration option 'cupt::directory::state'.

@@ -42,7 +42,8 @@ use Cupt::Config;
 use Cupt::Cache;
 use Cupt::Cache::Relation qw(stringify_relation_expressions stringify_relation_expression
 		parse_relation_line);
-use Cupt::Cache::ArchitecturedRelation qw(unarchitecture_relation_expressions);
+use Cupt::Cache::ArchitecturedRelation qw(unarchitecture_relation_expressions
+		parse_architectured_relation_line);
 
 our $config;
 our $cache;
@@ -1565,7 +1566,9 @@ sub manage_packages ($) {
 				$package_expression =~ s/-$//;
 			}
 
-			my $ref_relation_expressions = parse_relation_line($package_expression);
+			my $ref_relation_expressions = parse_architectured_relation_line($package_expression);
+			$ref_relation_expressions = unarchitecture_relation_expressions(
+					$ref_relation_expressions, $config->var('apt::architecture'));
 			$resolver->$method_name($_) for @$ref_relation_expressions;
 		} elsif ($action eq 'build-depends') {
 			$config->set_regular_var('apt::install-recommends' => 0);
