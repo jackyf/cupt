@@ -30,7 +30,7 @@ use 5.10.0;
 use warnings;
 use strict;
 
-use List::Util qw(sum);
+use List::Util qw(sum max min);
 use List::MoreUtils qw(uniq apply any none);
 use File::Copy;
 use File::Basename;
@@ -1023,40 +1023,49 @@ sub __split_heterogeneous_actions (@) {
 	return @new_action_group_list;
 }
 
-sub __move_unpacks_right (@) {
+sub __move_unpacks_to_configures (@) {
 	my ($ref_action_group_list, $action_graph) = @_;
 
 	my @new_action_group_list = @$ref_action_group_list;
 
-	foreach my $index (0..$#new_action_group_list) {
-		$index = $#new_action_group_list - $index; # moving backwards
+	my $sub_move = sub {
+		my ($move_action_name) = @_;
+		foreach my $index (0..$#new_action_group_list) {
+			my $ref_action_group = $new_action_group_list[$index];
+			# all the actions will have the same action name by algorithm
+			my $action_name = $ref_action_group->[0]->{'action_name'};
+			next if $action_name ne $move_action_name;
+			if (any { $_->{'action_name'} ne $action_name } @$ref_action_group) {
+				# heterogeneous actions, don't touch it
+				next;
+			}
 
-		my $ref_action_group = $new_action_group_list[$index];
-		# all the actions will have the same action name by algorithm
-		my $action_name = $ref_action_group->[0]->{'action_name'};
-		next if $action_name ne 'unpack';
-		if (any { $_->{'action_name'} ne $action_name } @$ref_action_group) {
-			# heterogeneous actions, don't touch it
-			next;
-		}
-
-		# ok, try to move it as left as possible
-		my $try_index = $index + 1;
-		TRY_INDEX:
-		while ($try_index <= $#new_action_group_list) {
-			foreach my $ref_left_action (@$ref_action_group) {
-				foreach my $ref_right_action (@{$new_action_group_list[$try_index]}) {
-					if ($action_graph->has_edge($ref_left_action, $ref_right_action)) {
-						# cannot move
-						last TRY_INDEX;
+			# ok, try to move it as left as possible
+			my $try_index = $index - 1;
+			TRY_INDEX:
+			while ($try_index >= 0) {
+				foreach my $ref_right_action (@$ref_action_group) {
+					foreach my $ref_left_action (@{$new_action_group_list[$try_index]}) {
+						my @edge = ($move_action_name eq 'configure') ?
+								($ref_left_action, $ref_right_action) :
+								($ref_right_action, $ref_left_action);
+						if ($action_graph->has_edge(@edge)) {
+							# cannot move
+							last TRY_INDEX;
+						}
 					}
 				}
+				# move!
+				@new_action_group_list[$try_index, $try_index+1] = @new_action_group_list[$try_index+1, $try_index];
+				--$try_index;
 			}
-			# move!
-			@new_action_group_list[$try_index, $try_index-1] = @new_action_group_list[$try_index-1, $try_index];
-			++$try_index;
 		}
-	}
+	};
+
+	@new_action_group_list = reverse @new_action_group_list;
+	$sub_move->('unpack');
+	@new_action_group_list = reverse @new_action_group_list;
+	$sub_move->('configure');
 
 	return @new_action_group_list;
 }
@@ -1142,12 +1151,15 @@ sub _prepare_downloads ($$) {
 					# return success
 					return 0;
 				},
+				# auxiliary
+				'package_name' => $version->package_name,
+				'target_filename' => $target_filename,
 			};
 		}
 	}
 
 	# sort alphabetically, just for easy
-	@pending_downloads = sort { $a->{'filename'} cmp $b->{'filename'} } @pending_downloads;
+	@pending_downloads = sort { $a->{'package_name'} cmp $b->{'package_name'} } @pending_downloads;
 
 	return @pending_downloads;
 }
@@ -1176,6 +1188,26 @@ sub _do_downloads ($$$) {
 		# fail and exit if it was something bad with downloading
 		mydie('there were download errors') if $download_result;
 	}
+	return;
+}
+
+sub _clean_downloads ($$) {
+	my ($self, $ref_downloads) = @_;
+
+	my $archives_directory = $self->_get_archives_directory();
+	my $archives_lock = Cupt::System::Worker::Lock->new($self->_config, "$archives_directory/lock");
+	$archives_lock->obtain();
+
+	foreach my $filename (map { $_->{'target_filename'} } @$ref_downloads) {
+		if ($self->_config->var('cupt::worker::simulate')) {
+			mysimulate("removing the archive '%s'", $filename);
+		} else {
+			unlink($filename) or
+					mydie("unable to remove file '%s': %s", $filename, $!);
+		}
+	}
+
+	$archives_lock->release();
 	return;
 }
 
@@ -1282,12 +1314,16 @@ sub _run_dpkg_command {
 
 sub _do_dpkg_pre_actions ($$$) {
 	my ($self, $ref_actions_preview, $ref_action_group_list) = @_;
-
-	my $archives_directory = $self->_get_archives_directory();
-
 	foreach my $command ($self->_config->var('dpkg::pre-invoke')) {
 		$self->_run_dpkg_command('pre', $command, $command);
 	}
+	return;
+}
+
+sub _do_dpkg_pre_packages_actions {
+	my ($self, $ref_action_group_list) = @_;
+
+	my $archives_directory = $self->_get_archives_directory();
 	foreach my $command ($self->_config->var('dpkg::pre-install-pkgs')) {
 		my ($command_binary) = ($command =~ m/^(.*?)(?: |$)/);
 		my $stdin;
@@ -1299,11 +1335,13 @@ sub _do_dpkg_pre_actions ($$$) {
 		} else {
 			$stdin = '';
 			# new debs are pulled to command through STDIN, one by line
-			foreach my $action ('install', 'upgrade', 'downgrade') {
-				foreach my $ref_entry (@{$ref_actions_preview->{$action}}) {
-					my $version = $ref_entry->{'version'};
-					my $deb_directory = $archives_directory . '/' .  __get_archive_basename($version);
-					$stdin .= "$deb_directory\n";
+			foreach my $ref_action_group (@$ref_action_group_list) {
+				foreach my $ref_action (@$ref_action_group) {
+					my $action_name = $ref_action->{'action_name'};
+					next if $action_name ne 'install' and $action_name ne 'unpack';
+					my $version = $ref_action->{'version'};
+					my $deb_file = $archives_directory . '/' .  __get_archive_basename($version);
+					$stdin .= "$deb_file\n";
 				}
 			}
 		}
@@ -1319,6 +1357,142 @@ sub _do_dpkg_post_actions ($) {
 		$self->_run_dpkg_command('post', $command, $command);
 	}
 	return;
+}
+
+sub _split_action_group_list_into_changesets {
+	my ($self, $ref_action_group_list, $ref_pending_downloads) = @_;
+
+	# ok, need to produce several changesets
+	my @result;
+	my %unpacked_package_names;
+
+	my @current_changeset;
+	my @current_downloads;
+	foreach my $ref_action_group (@$ref_action_group_list) {
+		my $action_name = $ref_action_group->[0]->{'action_name'};
+		my @package_names = map { $_->{'version'}->package_name } @$ref_action_group;
+
+		given ($action_name) {
+			when ('unpack') {
+				$unpacked_package_names{$_} = 1 foreach @package_names;
+			}
+			when ('configure') {
+				delete $unpacked_package_names{$_} foreach @package_names;
+			}
+		}
+
+		push @current_changeset, $ref_action_group;
+
+		if ($action_name eq 'unpack' or $action_name eq 'install') {
+			foreach my $package_name (@package_names) {
+				foreach my $ref_download_entry (@$ref_pending_downloads) {
+					if ($ref_download_entry->{'package_name'} eq $package_name) {
+						# need to download that package
+						push @current_downloads, $ref_download_entry;
+						last; # download entry
+					}
+				}
+			}
+		}
+
+		if (not %unpacked_package_names) {
+			# all are configured, end of changeset
+			push @result, {
+				'action_group_list' => [ @current_changeset ],
+				'downloads' => [ @current_downloads ],
+			};
+
+			@current_changeset = ();
+			@current_downloads = ();
+		}
+	}
+
+	if (%unpacked_package_names) {
+		myinternaldie("packages stay unconfigured: " . join(' ', keys %unpacked_package_names)); 
+	}
+
+	return @result;
+}
+
+sub _get_changesets {
+	my ($self, $action_graph, $ref_pending_downloads, $archives_space_limit) = @_;
+	my $debug = $self->_config->var('debug::worker');
+
+	my $sub_get_download_amount = sub {
+		my ($ref_download_pack) = @_;
+
+		return (sum map { $_->{'size'} } @$ref_download_pack) // 0;
+	};
+
+	my $ok = 0;
+	my @max_download_amounts;
+	my @changesets;
+	for (1..$self->_config->var('cupt::worker::archives-space-limit::tries')) {
+		my @action_group_list = $action_graph->topological_sort_of_strongly_connected_components();
+		@action_group_list = __move_unpacks_to_configures(\@action_group_list, $action_graph);
+		@action_group_list = __split_heterogeneous_actions(@action_group_list);
+		@changesets = $self->_split_action_group_list_into_changesets(
+				\@action_group_list, $ref_pending_downloads);
+		if (not defined $archives_space_limit) {
+			$ok = 1;
+			last;
+		}
+
+		my @download_amounts;
+		foreach my $ref_download_pack (map { $_->{'downloads'} } @changesets) {
+			push @download_amounts, $sub_get_download_amount->($ref_download_pack);
+		}
+
+		my $max_download_amount = max @download_amounts;
+		push @max_download_amounts, $max_download_amount;
+		if ($debug) {
+			mydebug('changeset maximum download amount: %s',
+					human_readable_size_string($max_download_amount));
+		}
+		if ($max_download_amount < $archives_space_limit) {
+			$ok = 1;
+			last;
+		}
+	}
+
+	if ($ok) {
+		# optimize changesets by uniting when possible into larger parts
+		my $sub_does_download_amount_fit = sub {
+			my ($amount) = @_;
+			if (defined $archives_space_limit) {
+				return $amount < $archives_space_limit;
+			} else {
+				return 1;
+			}
+		};
+
+		my @new_changesets;
+		my $ref_current_changeset = shift @changesets;
+		while (my $ref_next_changeset = shift @changesets) {
+			my $current_download_amount =
+					$sub_get_download_amount->($ref_current_changeset->{'downloads'});
+			my $next_download_amount =
+					$sub_get_download_amount->($ref_next_changeset->{'downloads'});
+			if ($sub_does_download_amount_fit->($current_download_amount + $next_download_amount)) {
+				# merge!
+				push @{$ref_current_changeset->{'action_group_list'}},
+						@{$ref_next_changeset->{'action_group_list'}};
+				push @{$ref_current_changeset->{'downloads'}},
+						@{$ref_next_changeset->{'downloads'}};
+			} else {
+				push @new_changesets, $ref_current_changeset;
+				$ref_current_changeset = $ref_next_changeset;
+			}
+		}
+		push @new_changesets, $ref_current_changeset;
+		@changesets = @new_changesets;
+	} else {
+		# we failed to fit in limit
+		mydie("unable to fit in archives space limit '%s', best try is '%s'",
+				$archives_space_limit, min @max_download_amounts);
+	}
+
+	return @changesets;
 }
 
 =head2 change_system
@@ -1337,24 +1511,28 @@ sub change_system ($$) {
 	my ($self, $download_progress) = @_;
 
 	my $simulate = $self->_config->var('cupt::worker::simulate');
+	my $debug = $self->_config->var('debug::worker');
 	my $download_only = $self->_config->var('cupt::worker::download-only');
+	my $archives_space_limit = $self->_config->var('cupt::worker::archives-space-limit');
 
 	my $ref_actions_preview = $self->get_actions_preview();
 
-	do {
-		my @pending_downloads = $self->_prepare_downloads($ref_actions_preview, $download_progress);
+	my @pending_downloads = $self->_prepare_downloads($ref_actions_preview, $download_progress);
+	if ($download_only or not defined $archives_space_limit) {
+		# download all now
 		$self->_do_downloads(\@pending_downloads, $download_progress);
+		@pending_downloads = ();
 	};
 	return 1 if $download_only;
 
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
 	# exit when nothing to do
 	defined $action_graph or return 1;
-	# topologically sorted actions
-	my @action_group_list = $action_graph->topological_sort_of_strongly_connected_components();
-	@action_group_list = __move_unpacks_right(\@action_group_list, $action_graph);
+
+	my @changesets = $self->_get_changesets($action_graph,
+			\@pending_downloads, $archives_space_limit);
 	undef $action_graph;
-	@action_group_list = __split_heterogeneous_actions(@action_group_list);
+	undef @pending_downloads;
 
 	# doing or simulating the actions
 	my $dpkg_binary = $self->_config->var('dir::bin::dpkg');
@@ -1364,77 +1542,97 @@ sub change_system ($$) {
 
 	my $defer_triggers = $self->_config->var('cupt::worker::defer-triggers');
 
-	$self->_do_dpkg_pre_actions($ref_actions_preview, \@action_group_list);
+	$self->_do_dpkg_pre_actions();
 
 	my $archives_directory = $self->_get_archives_directory();
-	foreach my $ref_action_group (@action_group_list) {
-		# all the actions will have the same action name by algorithm
-		my $action_name = $ref_action_group->[0]->{'action_name'};
-
-		if ($action_name eq 'remove' && $self->_config->var('cupt::worker::purge')) {
-			$action_name = 'purge';
+	foreach my $ref_changeset (@changesets) {
+		if ($debug) {
+			mydebug('started changeset');
 		}
+		# usually, all downloads are done before any install actions
+		# however, if 'cupt::worker::archives-space-limit' is turned on
+		# this is no longer the case, and we will do downloads/installs by portions
+		# ("changesets")
+		$self->_do_downloads($ref_changeset->{'downloads'}, $download_progress);
 
-		do { # do auto status info manipulations
-			my %packages_changed = map { $_->{'version'}->package_name => 1 } @$ref_action_group;
-			my $auto_action; # 'markauto' or 'unmarkauto'
-			if ($action_name eq 'install' || $action_name eq 'unpack') {
-				$auto_action = 'markauto';
-			} elsif ($action_name eq 'remove' || $action_name eq 'purge') {
-				$auto_action = 'unmarkauto';
+		$self->_do_dpkg_pre_packages_actions($ref_changeset->{'action_group_list'});
+
+		foreach my $ref_action_group (@{$ref_changeset->{'action_group_list'}}) {
+			# all the actions will have the same action name by algorithm
+			my $action_name = $ref_action_group->[0]->{'action_name'};
+
+			if ($action_name eq 'remove' && $self->_config->var('cupt::worker::purge')) {
+				$action_name = 'purge';
 			}
-			if (defined $auto_action) {
-				my @package_names_to_mark;
-				foreach my $package_name (@{$ref_actions_preview->{$auto_action}}) {
-					if (exists $packages_changed{$package_name}) {
-						push @package_names_to_mark, $package_name;
+
+			do { # do auto status info manipulations
+				my %packages_changed = map { $_->{'version'}->package_name => 1 } @$ref_action_group;
+				my $auto_action; # 'markauto' or 'unmarkauto'
+				if ($action_name eq 'install' || $action_name eq 'unpack') {
+					$auto_action = 'markauto';
+				} elsif ($action_name eq 'remove' || $action_name eq 'purge') {
+					$auto_action = 'unmarkauto';
+				}
+				if (defined $auto_action) {
+					my @package_names_to_mark;
+					foreach my $package_name (@{$ref_actions_preview->{$auto_action}}) {
+						if (exists $packages_changed{$package_name}) {
+							push @package_names_to_mark, $package_name;
+						}
+					}
+
+					if (scalar @package_names_to_mark) {
+						# mark on unmark as autoinstalled
+						$self->mark_as_automatically_installed($auto_action eq 'markauto', @package_names_to_mark);
 					}
 				}
+			};
 
-				if (scalar @package_names_to_mark) {
-					# mark on unmark as autoinstalled
-					$self->mark_as_automatically_installed($auto_action eq 'markauto', @package_names_to_mark);
-				}
+			if ($action_name eq 'purge-config-files') {
+				$action_name = 'purge';
 			}
-		};
 
-		if ($action_name eq 'purge-config-files') {
-			$action_name = 'purge';
+			do { # dpkg actions
+				my $dpkg_command = "$dpkg_binary --$action_name";
+				$dpkg_command .= ' --no-triggers' if $defer_triggers;
+				# add necessary options if requested
+				$dpkg_command .= $ref_action_group->[0]->{'dpkg_flags'} // '';
+
+				foreach my $ref_action (@$ref_action_group) {
+					my $action_expression;
+					if ($action_name eq 'install' || $action_name eq 'unpack') {
+						my $version = $ref_action->{'version'};
+						$action_expression = $archives_directory . '/' .  __get_archive_basename($version);
+					} else {
+						my $package_name = $ref_action->{'version'}->package_name;
+						$action_expression = $package_name;
+					}
+					$dpkg_command .= " $action_expression";
+				}
+				if ($debug) {
+					my @stringified_versions;
+					my $dpkg_flags = $ref_action_group->[0]->{'dpkg_flags'} // '';
+					foreach my $ref_action (@$ref_action_group) {
+						my $version = $ref_action->{'version'};
+						push @stringified_versions, $version->package_name . '_' . $version->version_string;
+					}
+					mydebug("$action_name $dpkg_flags " . join(' ', @stringified_versions));
+				}
+				$self->_run_external_command($dpkg_command);
+			};
+		}
+		if ($defer_triggers) {
+			# triggers were not processed during actions perfomed before, do it now at once
+			my $command = "$dpkg_binary --triggers-only --pending";
+			$self->_run_dpkg_command('triggers', $command, $command);
 		}
 
-		do { # dpkg actions
-			my $dpkg_command = "$dpkg_binary --$action_name";
-			$dpkg_command .= ' --no-triggers' if $defer_triggers;
-			# add necessary options if requested
-			$dpkg_command .= $ref_action_group->[0]->{'dpkg_flags'} // '';
-
-			foreach my $ref_action (@$ref_action_group) {
-				my $action_expression;
-				if ($action_name eq 'install' || $action_name eq 'unpack') {
-					my $version = $ref_action->{'version'};
-					$action_expression = $archives_directory . '/' .  __get_archive_basename($version);
-				} else {
-					my $package_name = $ref_action->{'version'}->package_name;
-					$action_expression = $package_name;
-				}
-				$dpkg_command .= " $action_expression";
-			}
-			if ($self->_config->var('debug::worker')) {
-				my @stringified_versions;
-				my $dpkg_flags = $ref_action_group->[0]->{'dpkg_flags'} // '';
-				foreach my $ref_action (@$ref_action_group) {
-					my $version = $ref_action->{'version'};
-					push @stringified_versions, $version->package_name . '_' . $version->version_string;
-				}
-				mydebug("$action_name $dpkg_flags " . join(' ', @stringified_versions));
-			}
-			$self->_run_external_command($dpkg_command);
-		};
-	}
-	if ($defer_triggers) {
-		# triggers were not processed during actions perfomed before, do it now at once
-		my $command = "$dpkg_binary --triggers-only --pending";
-		$self->_run_dpkg_command('triggers', $command, $command);
+		if (defined $archives_space_limit) {
+			$self->_clean_downloads($ref_changeset->{'downloads'});
+		}
+		if ($debug) {
+			mydebug('ended changeset');
+		}
 	}
 
 	$self->_do_dpkg_post_actions();

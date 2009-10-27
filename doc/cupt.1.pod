@@ -1030,6 +1030,23 @@ list of package names which will be upgraded indirectly
 There are some packages with dependencies that make unable to upgrade the
 package properly. List them here. See also Debian BTS #551831.
 
+=item cupt::worker::archives-space-limit
+
+integer, bytes, if set, limits the worker to not download more than specified
+amount for archives, and use download-install-clean algorithm (download
+archives, install packages, clean just downloaded archives).  Worker will try
+to split all actions into unrelated changesets so each changeset require only
+limited download space. Any system changes will be started only if changesets
+are generated successfully.
+
+=item cupt::worker::archive-space-limit::tries
+
+integer, specifies how many times will worker try to generate unrelated
+changesets if
+L<cupt::worker::archives-space-limit|/cupt::worker::archives-space-limit> is
+set. As genearting algorithm uses randomization, increasing this option
+increases the changes to generate. 20 by default.
+
 =item cupt::worker::defer-triggers
 
 boolean (0/1), specifies whether should worker defer dpkg trigger processing to

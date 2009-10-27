@@ -9,6 +9,8 @@ cupt (1.2.0~) UNRELEASED; urgency=low
     - Config:
       - New configuration option 'cupt::directory::state'.
       - New configuration option 'cupt::directory::state::snapshots'.
+      - New configuration option 'cupt::worker::archives-space-limit'.
+      - New configuration option 'cupt::worker::archives-space-limit::tries'.
     - System:
       - Worker:
         - Removed "locking" /var/lib/dpkg/lock, it's useless (noop).
@@ -18,6 +20,7 @@ cupt (1.2.0~) UNRELEASED; urgency=low
         - New method 'rename_system_snapshot'.
         - Do some reordering of generated dpkg call sequence to make
           'unpack' actions appear as late as possible.
+        - 'change-system': honor 'cupt::worker::archives-space-limit' option.
       - Snapshots:
         - Introduced.
     - Cache:

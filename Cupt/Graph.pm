@@ -24,6 +24,7 @@ package Cupt::Graph;
 use strict;
 use warnings;
 
+use List::Util qw(shuffle);
 use List::MoreUtils qw(any all);
 
 use Cupt::LValueFields qw(_vertices _predecessors _successors
@@ -192,7 +193,7 @@ sub _dfs {
 	my $mode = (scalar @vertices == 0) ? 'first' : 'second';
 	if ($mode eq 'first') {
 		# undefined order then
-		@vertices = $self->vertices();
+		@vertices = shuffle $self->vertices();
 	}
 
 	my %stages;

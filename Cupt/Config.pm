@@ -122,6 +122,8 @@ sub new {
 		'cupt::resolver::synchronize-source-versions' => 'none',
 		'cupt::resolver::track-reasons' => 0,
 		'cupt::resolver::type' => 'fair',
+		'cupt::worker::archives-space-limit' => undef,
+		'cupt::worker::archives-space-limit::tries' => 20,
 		'cupt::worker::defer-triggers' => 0,
 		'cupt::worker::download-only' => 0,
 		'cupt::worker::purge' => 0,
