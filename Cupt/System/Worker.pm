@@ -2121,9 +2121,12 @@ sub save_system_snapshot {
 		mydie("the system snapshot named '%s' already exists", $name);
 	}
 
-	# ensuring dpkg-repack is available
+	# ensuring needed tools is available
 	if (system('which dpkg-repack >/dev/null 2>/dev/null')) {
 		mydie("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'");
+	}
+	if (system('which dpkg-scanpackages >/dev/null 2>/dev/null')) {
+		mydie("'dpkg-scanpackages' binary is not available, install the package 'dpkg-dev'");
 	}
 
 	my $ref_installed_versions = $self->_cache->get_system_state()->export_installed_versions();
