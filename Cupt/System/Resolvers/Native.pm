@@ -195,7 +195,7 @@ sub _synchronize_related_packages ($$$$$) {
 		$package_entry->version = $candidate_version;
 		$package_entry->stick = $stick;
 		if ($self->config->var('debug::resolver')) {
-			$sub_mydebug_wrapper->("synchronizing package '$other_package_name' with package '$package_name");
+			$sub_mydebug_wrapper->("synchronizing package '$other_package_name' with package '$package_name'");
 		}
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$package_entry->reasons}, [ 'sync', $package_name ];
