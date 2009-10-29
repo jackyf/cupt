@@ -1,5 +1,9 @@
-cupt (1.2.0.1) UNRELEASED; urgency=low
+cupt (1.2.1) UNRELEASED; urgency=low
 
+  * cupt:
+    - 'screenshots':
+      - Launch a browser in "background" to display more than two packages
+        simultaneously. Thanks to Pavel Chernyshev.
   * debian/control:
     - Added liblist-moreutils-perl to build-depends. Fixes FTBFS.
       Thanks to Lucas Nussbaum. (Closes: #552948)
