@@ -3,7 +3,7 @@ Section: perl
 Priority: optional
 Build-Depends: debhelper (>= 7.0.50)
 Build-Depends-Indep: perl (>= 5.10.0), liburi-perl, libparse-recdescent-perl,
-  libwww-curl-perl (>= 4.05)
+  libwww-curl-perl (>= 4.05), liblist-moreutils-perl (>= 0.23)
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
 Standards-Version: 3.8.3
