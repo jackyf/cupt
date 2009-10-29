@@ -900,6 +900,7 @@ sub _resolve ($$) {
 				my $dependency_group_name = $ref_dependency_group->{'name'};
 				my $dependency_group_target = $ref_dependency_group->{'target'};
 
+				PACKAGE:
 				foreach my $package_name (@packages_in_order) {
 					$package_entry = $ref_current_packages->{$package_name};
 					my $version = $package_entry->version;
@@ -966,7 +967,7 @@ sub _resolve ($$) {
 											$possible_actions[0], $ref_current_solution->{'identifier'});
 									@possible_actions = ();
 									$recheck_needed = 1;
-									next MAIN_LOOP;
+									next PACKAGE;
 								}
 								$recheck_needed = 0;
 								last MAIN_LOOP;

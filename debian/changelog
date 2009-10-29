@@ -4,6 +4,11 @@ cupt (1.2.1) UNRELEASED; urgency=low
     - 'screenshots':
       - Launch a browser in "background" to display more than two packages
         simultaneously. Thanks to Pavel Chernyshev.
+  * Cupt:
+    - System:
+      - Resolvers/Native:
+        - Speeded up applying changes when only one resolution (in the
+          solution thread) available.
   * debian/control:
     - Added liblist-moreutils-perl to build-depends. Fixes FTBFS.
       Thanks to Lucas Nussbaum. (Closes: #552948)
