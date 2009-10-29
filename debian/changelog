@@ -9,6 +9,10 @@ cupt (1.2.1) UNRELEASED; urgency=low
       - Resolvers/Native:
         - Speeded up applying changes when only one resolution (in the
           solution thread) available.
+    - Config:
+      - Changed the default value of the 'cupt::resolver::quality-bar' option
+        from -400 to -250 to prevent producing somewhat bad solutions under
+        rare circumstances.
   * debian/control:
     - Added liblist-moreutils-perl to build-depends. Fixes FTBFS.
       Thanks to Lucas Nussbaum. (Closes: #552948)
