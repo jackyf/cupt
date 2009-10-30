@@ -203,11 +203,11 @@ L</Relation expression>s and returns reference to it
 =cut
 
 sub parse_relation_line {
-	# my $relation_line = $_[0] 
+	my $relation_line = $_[0];
 	# or myinternaldie("relation line is not defined");
 
 	my @result;
-	while ($_[0] =~ m/(.+?)(?:,\s*|$)/g) {
+	while ($relation_line =~ m/(.+?)(?:,\s*|$)/g) {
 		push @result, parse_relation_expression($1);
 	}
 	return \@result;

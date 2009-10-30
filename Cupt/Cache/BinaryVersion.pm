@@ -253,99 +253,62 @@ sub new {
 	$self->[available_as_offset()]->[0]->{release} = $ref_release_info;
 	$self->[package_name_offset()] = $package_name;
 
-	my $field_name = undef;
-	eval {
-		# next boolean variable determines whether we are in long description
-		my $in_long_description = 0;
-
-		my $line;
+	do { # actual parsing
 		# go to starting byte of the entry
 		seek($fh, $offset, 0) or
 				mydie('unable to seek on Packages file: %s', $!);
 
-		# we have already opened file handle and offset for reading the entry
-		while (($line = <$fh>) ne "\n") {
-			# skip all fields that haven't a value on the same line and aren't a part of multi-line fields
-			next if $line =~ m/^\S.*:\n$/;
+		local $_;
+		do {
+			local $/ = "\n\n";
+			# read all version entry entirely
+			$_ = <$fh>;
+		};
 
-			if (($line =~ m/^ / or $line =~ m/^\t/)) {
-				if ($in_long_description) {
-					# TODO: remove this bogus '\t' after libobject-declare-perl is fixed
-					# part of long description
-					$self->[long_description_offset()] .= $line unless $o_no_parse_info_onlys;
-				}
-			} else {
-				$in_long_description = 0;
-				chomp($line);
-				(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
-					or mydie("cannot parse line '%s'", $line);
-
-				given ($field_name) {
-					# mandatory fields
-					when ('Priority') { $self->[priority_offset()] = $field_value }
-					when ('Section') { $self->[section_offset()] = $field_value unless $o_no_parse_info_onlys }
-					when ('Installed-Size') { $self->[installed_size_offset()] = $field_value * 1024 }
-					when ('Maintainer') { $self->[maintainer_offset()] = $field_value unless $o_no_parse_info_onlys }
-					when ('Architecture') { $self->[architecture_offset()] = $field_value }
-					when ('Version') { $self->[version_string_offset()] = $field_value }
-					when ('Filename') { $self->[available_as_offset()]->[0]->{filename} = $field_value }
-					when ('Size') { $self->[size_offset()] = $field_value }
-					when ('MD5sum') { $self->[md5sum_offset()] = $field_value }
-					when ('SHA1') { $self->[sha1sum_offset()] = $field_value }
-					when ('SHA256') { $self->[sha256sum_offset()] = $field_value }
-					when ('Description') {
-						if (!$o_no_parse_info_onlys) {
-							$self->[short_description_offset()] = $field_value;
-							$in_long_description = 1;
-						}
-					}
-					# often fields
-					when ('Depends') {
-						$self->[depends_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Tag') { $self->[tags_offset()] = $field_value unless $o_no_parse_info_onlys }
-					when ('Source') {
-						$self->[source_package_name_offset()] = $field_value;
-						if ($self->[source_package_name_offset()] =~ s/ \((.*)\)$//) {
-							# there is a source version, most probably
-							# indicating that it was some binary-only rebuild, and
-							# the source version is different with binary one
-							$self->[source_version_string_offset()] = $1;
-							$self->[source_version_string_offset()] =~ m/^$version_string_regex$/ or
-									mydie("bad source version '%s'", $1);
-						}
-					}
-					when ('Homepage') { $self->[homepage_offset()] = $field_value unless $o_no_parse_info_onlys }
-					when ('Recommends') {
-						$self->[recommends_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Suggests') {
-						$self->[suggests_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Conflicts') {
-						$self->[conflicts_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Replaces') {
-						$self->[replaces_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Provides') {
-						$self->[provides_offset()] = [ split /\s*,\s*/, $field_value ] unless $o_no_parse_relations;
-					}
-					# rare fields
-					when ('Pre-Depends') {
-						$self->[pre_depends_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Task') { $self->[task_offset()] = $field_value }
-					when ('Enhances') {
-						$self->[enhances_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-					when ('Essential') { $self->[essential_offset()] = $field_value }
-					when ('Breaks') {
-						$self->[breaks_offset()] = parse_relation_line($field_value) unless $o_no_parse_relations;
-					}
-				}
-				undef $field_name;
+		s/^Version: (.*)$//m and do { $self->[version_string_offset()] = $1 };
+		s/^Essential: (.*)$//m and do { $self->[essential_offset()] = $1 };
+		s/^Priority: (.*)$//m and do { $self->[priority_offset()] = $1 };
+		s/^Size: (.*)$//m and do { $self->[size_offset()] = $1 };
+		s/^Installed-Size: (.*)$//m and do { $self->[installed_size_offset()] = $1 * 1024 };
+		s/^Architecture: (.*)$//m and do { $self->[architecture_offset()] = $1 };
+		s/^Filename: (.*)$//m and do { $self->[available_as_offset()]->[0]->{filename} = $1 };
+		s/^MD5sum: (.*)$//m and do { $self->[md5sum_offset()] = $1 };
+		s/^SHA1: (.*)$//m and do { $self->[sha1sum_offset()] = $1 };
+		s/^SHA256: (.*)$//m and do { $self->[sha256sum_offset()] = $1 };
+		s/^Task: (.*)$//m and do { $self->[task_offset()] = $1 };
+		s/^Source: (.*)$//m and do {
+			$self->[source_package_name_offset()] = $1;
+			if ($self->[source_package_name_offset()] =~ s/ \((.*)\)$//) {
+				# there is a source version, most probably
+				# indicating that it was some binary-only rebuild, and
+				# the source version is different with binary one
+				$self->[source_version_string_offset()] = $1;
+				$self->[source_version_string_offset()] =~ m/^$version_string_regex$/ or
+						mydie("bad source version '%s'", $1);
 			}
+		};
+
+		unless ($o_no_parse_info_onlys) {
+			s/^Section: (.*)$//m and do { $self->[section_offset()] = $1 };
+			s/^Maintainer: (.*)$//m and do { $self->[maintainer_offset()] = $1 };
+			s/^Description: (.*)$(?:\n)((?:^(?: |\t).*$(?:\n))*)//m and do {
+				$self->[short_description_offset()] = $1;
+				$self->[long_description_offset()] = $2;
+			};
+			s/^Tag: (.*)$//m and do { $self->[tags_offset()] = $1 };
+			s/^Homepage: (.*)$//m and do { $self->[homepage_offset()] = $1 };
+		}
+
+		unless ($o_no_parse_relations) {
+			s/^Pre-Depends: (.*)$//m and do { $self->[pre_depends_offset()] = parse_relation_line($1) };
+			s/^Depends: (.*)$//m and do { $self->[depends_offset()] = parse_relation_line($1) };
+			s/^Recommends: (.*)$//m and do { $self->[recommends_offset()] = parse_relation_line($1) };
+			s/^Suggests: (.*)$//m and do { $self->[suggests_offset()] = parse_relation_line($1) };
+			s/^Conflicts: (.*)$//m and do { $self->[conflicts_offset()] = parse_relation_line($1) };
+			s/^Breaks: (.*)$//m and do { $self->[breaks_offset()] = parse_relation_line($1) };
+			s/^Replaces: (.*)$//m and do { $self->[replaces_offset()] = parse_relation_line($1) };
+			s/^Enhances: (.*)$//m and do { $self->[enhances_offset()] = parse_relation_line($1) };
+			s/^Provides: (.*)$//m and do { @{$self->[provides_offset()]} = split(/\s*,\s*/, $1) };
 		}
 
 		$self->[source_version_string_offset()] //= $self->[version_string_offset()];
@@ -356,7 +319,7 @@ sub new {
 			seek($translation_fh, $translation_offset, 0) or
 					mydie('unable to seek on Translations file: %s', $!);
 			$self->[long_description_offset()] = '';
-			while (($line = <$translation_fh>) ne "\n") {
+			while ((my $line = <$translation_fh>) ne "\n") {
 				next if $line =~ m/^Description-md5:/;
 				if ($line =~ m/^Description/) {
 					# it's localized short description
@@ -371,12 +334,6 @@ sub new {
 			}
 		}
 	};
-	if (mycatch()) {
-		if (defined($field_name)) {
-			myerr("error while parsing field '%s'", $field_name);
-		}
-		myredie();
-	}
 
 	defined $self->[version_string_offset()] or mydie("version string isn't defined");
 	defined $self->[architecture_offset()] or mydie("architecture isn't defined");
