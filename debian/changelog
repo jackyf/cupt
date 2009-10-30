@@ -1,4 +1,4 @@
-cupt (1.2.1) UNRELEASED; urgency=low
+cupt (1.2.1) UNRELEASED; urgency=medium
 
   * cupt:
     - 'screenshots':
@@ -15,7 +15,7 @@ cupt (1.2.1) UNRELEASED; urgency=low
         rare circumstances.
   * debian/control:
     - Added liblist-moreutils-perl to build-depends. Fixes FTBFS.
-      Thanks to Lucas Nussbaum. (Closes: #552948)
+      Thanks to Lucas Nussbaum. Urgency is set to medium. (Closes: #552948)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 29 Oct 2009 12:31:08 +0200
 
