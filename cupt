@@ -737,6 +737,10 @@ sub show_package_relations ($) {
 	scalar @ARGV or
 			mydie('no binary package expressions specified');
 
+	if ($mode eq 'reverse') {
+		$Cupt::Cache::Package::o_memoize = 1;
+	}
+
 	# we need to build binary-only cache for this operation
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
