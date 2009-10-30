@@ -578,9 +578,7 @@ sub _get_satisfying_versions_for_one_relation {
 
 	if (defined $package) {
 		# if such binary package exists
-		my $ref_sorted_versions = $self->get_sorted_pinned_versions($package);
-		foreach (@$ref_sorted_versions) {
-			my $version = $_->{'version'};
+		foreach my $version (@{$package->get_versions()}) {
 			push @result, $version if $relation->satisfied_by($version->version_string);
 		}
 	}
@@ -591,8 +589,7 @@ sub _get_satisfying_versions_for_one_relation {
 		foreach (@{$self->[_can_provide_offset()]->{$package_name}}) {
 			my $reverse_provide_package = $self->get_binary_package($_);
 			defined $reverse_provide_package or next;
-			foreach (@{$self->get_sorted_pinned_versions($reverse_provide_package)}) {
-				my $version = $_->{'version'};
+			foreach my $version (@{$reverse_provide_package->get_versions()}) {
 				foreach my $provides_package_name (@{$version->provides}) {
 					if ($provides_package_name eq $package_name) {
 						# ok, this particular version does provide this virtual package
