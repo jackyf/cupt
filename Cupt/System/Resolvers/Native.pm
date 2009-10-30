@@ -42,19 +42,7 @@ use Cupt::Graph;
 
 our $_dummy_package_name = '<satisfy>';
 
-=begin internal
-
-=head2 _pending_relations
-
-array of relations which are to be satisfied by final resolver, used for
-filling depends, recommends (optionally), suggests (optionally) of requested
-packages, or for satisfying some requested relations
-
-=end internal
-
-=cut
-
-use Cupt::LValueFields qw(2 _old_packages _packages _pending_relations
+use Cupt::LValueFields qw(2 _old_packages _packages
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 sub new {
@@ -64,7 +52,6 @@ sub new {
 
 	$self->_old_packages = {};
 	$self->_packages = {};
-	$self->_pending_relations = [];
 	$self->_strict_satisfy_relation_expressions = [];
 	$self->_strict_unsatisfy_relation_expressions = [];
 
@@ -84,20 +71,6 @@ sub import_installed_versions ($$) {
 		$self->_packages->{$package_name}->installed = 1;
 		@{$self->_old_packages->{$package_name}} = @{$self->_packages->{$package_name}};
 		bless $self->_old_packages->{$package_name} => 'Cupt::System::Resolvers::Native::PackageEntry';
-	}
-	return;
-}
-
-sub _schedule_new_version_relations ($$) {
-	my ($self, $version) = @_;
-
-	# unconditionally adding pre-depends
-	foreach (@{$version->pre_depends}) {
-		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'pre-depends', $_ ]);
-	}
-	# unconditionally adding depends
-	foreach (@{$version->depends}) {
-		$self->_auto_satisfy_relation($_, [ 'relation expression', $version, 'depends', $_ ]);
 	}
 	return;
 }
@@ -251,7 +224,6 @@ sub _install_version_no_stick ($$$) {
 			my $version_string = $version->version_string;
 			mydebug("install package '$package_name', version '$version_string'");
 		}
-		$self->_schedule_new_version_relations($version);
 
 		if ($o_synchronize_source_versions ne 'none') {
 			$self->_synchronize_related_packages($self->_packages, $version, 0, \&mydebug);
@@ -295,27 +267,6 @@ sub unsatisfy_relation_expression ($$) {
 		$message .= stringify_relation_expression($relation_expression);
 		$message .= "'";
 		mydebug($message);
-	}
-	return;
-}
-
-sub _auto_satisfy_relation ($$) {
-	my ($self, $relation_expression, $reason) = @_;
-
-	my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
-	if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $self->_packages)) {
-		# if relation is not satisfied
-		if ($self->config->var('debug::resolver')) {
-			my $message = "auto-installing relation '";
-			$message .= stringify_relation_expression($relation_expression);
-			$message .= "'";
-			mydebug($message);
-		}
-		my %pending_relation = (
-			'relation_expression' => $relation_expression,
-			'reason' => $reason,
-		);
-		push @{$self->_pending_relations}, \%pending_relation;
 	}
 	return;
 }
@@ -1238,30 +1189,6 @@ sub _resolve ($$) {
 
 sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
-
-	# unwinding relations
-	while (scalar @{$self->_pending_relations}) {
-		my $ref_pending_relation = shift @{$self->_pending_relations};
-		my $relation_expression = $ref_pending_relation->{'relation_expression'};
-		my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
-
-		# if we have no candidates, skip the relation
-		scalar @$ref_satisfying_versions or next;
-
-		# installing most preferrable version
-
-		my $version_to_install = $ref_satisfying_versions->[0];
-		if ($self->config->var('debug::resolver')) {
-			mydebug("selected package '%s', version '%s' for relation expression '%s'",
-					$version_to_install->package_name,
-					$version_to_install->version_string,
-					stringify_relation_expression($relation_expression)
-			);
-		}
-		my $reason = $ref_pending_relation->{'reason'};
-		$self->_install_version_no_stick($version_to_install, $reason);
-		# note that _install_version_no_stick can add some pending relations
-	}
 
 	# throw away all obsoleted packages at this stage to avoid resolver from
 	# ever bothering of them
