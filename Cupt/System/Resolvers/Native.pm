@@ -33,7 +33,7 @@ use warnings;
 use base qw(Cupt::System::Resolver);
 
 use List::Util qw(reduce first);
-use List::MoreUtils qw(any);
+use List::MoreUtils 0.23 qw(any none);
 
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
@@ -1096,12 +1096,18 @@ sub _resolve ($$) {
 					my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
 							$ref_current_packages, $version);
 					foreach my $unsynchronizeable_package_name (@unsynchronizeable_package_names) {
-						unshift @new_possible_actions, {
-							'package_name' => $unsynchronizeable_package_name,
-							'version' => undef,
-							'factor' => 5,
-							'reason' => [ 'sync', $version->package_name ],
-						};
+						if (none {
+								$_->{'package_name'} eq $unsynchronizeable_package_name and
+								not defined $_->{'version'}
+							} @new_possible_actions)
+						{
+							unshift @new_possible_actions, {
+								'package_name' => $unsynchronizeable_package_name,
+								'version' => undef,
+								'factor' => 5,
+								'reason' => [ 'sync', $version->package_name ],
+							};
+						}
 					}
 					if ($self->config->var('debug::resolver')) {
 						$sub_mydebug_wrapper->(sprintf(
