@@ -83,12 +83,12 @@ sub __related_binary_package_names ($$) {
 	my $package_name = $version->package_name;
 	my $source_package_name = $version->source_package_name;
 
-	foreach my $other_package_name (keys %$ref_packages) {
-		my $other_version = $ref_packages->{$other_package_name}->version;
+	foreach my $other_package_entry (values %$ref_packages) {
+		my $other_version = $other_package_entry->version;
 		next if not defined $other_version;
 		next if $other_version->source_package_name ne $source_package_name;
-		next if $other_package_name eq $package_name;
-		push @result, $other_package_name;
+		next if $other_version->package_name eq $package_name;
+		push @result, $other_version->package_name;
 	}
 
 	return @result;
