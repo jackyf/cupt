@@ -291,8 +291,7 @@ sub remove_package ($$) {
 
 sub upgrade ($) {
 	my ($self) = @_;
-	foreach (keys %{$self->_packages}) {
-		my $package_name = $_;
+	foreach my $package_name (keys %{$self->_packages}) {
 		my $package = $self->cache->get_binary_package($package_name);
 		my $original_version = $self->_packages->{$package_name}->version;
 		# if there is original version, then at least one policy version should exist
