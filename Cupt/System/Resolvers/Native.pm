@@ -984,8 +984,10 @@ sub _resolve ($$) {
 			$check_failed = 1;
 
 			# if the solution was only just finished
-			if ($self->config->var('debug::resolver') && !$ref_current_solution->finished) {
-				$sub_mydebug_wrapper->('finished');
+			if (not $ref_current_solution->finished) {
+				if ($self->config->var('debug::resolver')) {
+					$sub_mydebug_wrapper->('finished');
+				}
 				$ref_current_solution->finished = 1;
 			}
 			# resolver can refuse the solution
