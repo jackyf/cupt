@@ -69,9 +69,8 @@ use Cupt::LValueFields qw(_source_packages _binary_packages _config _pin_setting
 =head2 o_memoize
 
 This flag determines whether it worth trade space for time in time-consuming
-functions. On by default. By now, it affects
-L</get_satisfying_versions> and L</get_sorted_pinned_versions>
-methods. If it's on, it stores references, so B<don't> modify results of these
+functions. On by default. By now, it affects L</get_satisfying_versions>
+method. If it's on, it stores references, so B<don't> modify results of these
 functions, use them in read-only mode. It it's on, these functions are not
 thread-safe.
 
@@ -494,19 +493,6 @@ sub get_sorted_pinned_versions {
 	my ($self, $package) = @_;
 
 	my @result;
-	state %cache;
-
-	# caching results
-	if ($o_memoize) {
-		my $key = join(',', $self, $package);
-		if (exists $cache{$key}) {
-			return $cache{$key};
-		} else {
-			$cache{$key} = \@result;
-			# the @result itself will be filled by under lines of code so at
-			# next run moment cache will contain the correct result
-		}
-	}
 
 	foreach my $version (@{$package->get_versions()}) {
 		push @result, { 'version' => $version, 'pin' => $self->get_pin($version) };
