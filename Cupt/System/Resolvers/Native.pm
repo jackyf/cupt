@@ -38,6 +38,7 @@ use List::MoreUtils 0.23 qw(any none);
 use Cupt::Core;
 use Cupt::Cache::Relation qw(stringify_relation_expression);
 use Cupt::System::Resolvers::Native::PackageEntry;
+use Cupt::System::Resolvers::Native::Solution;
 use Cupt::Graph;
 
 our $_dummy_package_name = '<satisfy>';
@@ -309,14 +310,14 @@ sub __fair_chooser {
 	my ($ref_solution_entries) = @_;
 
 	# choose the solution with maximum score
-	return reduce { $a->{'score'} > $b->{'score'} ? $a : $b } @$ref_solution_entries;
+	return reduce { $a->score > $b->score ? $a : $b } @$ref_solution_entries;
 }
 
 sub __full_chooser {
 	my ($ref_solution_entries) = @_;
 	# defer the decision until all solutions are built
 
-	my $ref_unfinished_solution = first { ! $_->{'finished'} } @$ref_solution_entries;
+	my $ref_unfinished_solution = first { ! $_->finished } @$ref_solution_entries;
 
 	if (defined $ref_unfinished_solution) {
 		return $ref_unfinished_solution;
@@ -385,33 +386,6 @@ sub _is_package_can_be_removed ($$) {
 	my ($self, $package_name) = @_;
 	return !$self->config->var('cupt::resolver::no-remove')
 			|| !$self->_packages->{$package_name}->installed;
-}
-
-sub __clone_packages ($) {
-	my ($ref_packages) = @_;
-
-	my %clone;
-	foreach (keys %$ref_packages) {
-		my $package_entry = $ref_packages->{$_};
-
-		my $new_package_entry = ($clone{$_} = []);
-		bless $new_package_entry => 'Cupt::System::Resolvers::Native::PackageEntry';
-
-		# $new_package_entry->version = $package_entry->version;
-		# $new_package_entry->stick = $package_entry->stick;
-		# $new_package_entry->fake_satisfied = [ @{$package_entry->fake_satisfied} ];
-		# $new_package_entry->reasons = [ @{$package_entry->reasons} ];
-		#
-		# see the above code? it's obviously right
-		# but it's so slow...
-		#
-		# keep the following in sync with package entry structure
-		$new_package_entry->[0] = $package_entry->[0];
-		$new_package_entry->[1] = $package_entry->[1];
-		$new_package_entry->[2] = [ @{$package_entry->[2]} ];
-		$new_package_entry->[3] = [ @{$package_entry->[3]} ];
-	}
-	return \%clone;
 }
 
 sub _clean_automatically_installed ($) {
@@ -576,12 +550,12 @@ sub _apply_action ($$$$$) {
 	do { # stick all requested package names
 		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
 		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
-			$ref_solution_entry->{packages}->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
-			$ref_solution_entry->{packages}->{$package_name}->stick = 1;
+			$ref_solution_entry->packages->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
+			$ref_solution_entry->packages->{$package_name}->stick = 1;
 		}
 	};
 
-	my $package_entry_to_change = $ref_solution_entry->{'packages'}->{$package_name_to_change};
+	my $package_entry_to_change = $ref_solution_entry->packages->{$package_name_to_change};
 	my $original_version = $package_entry_to_change->version;
 
 	my $profit = $ref_action_to_apply->{'profit'} //
@@ -602,8 +576,8 @@ sub _apply_action ($$$$$) {
 		$sub_mydebug_wrapper->($message);
 	}
 
-	++$ref_solution_entry->{'level'};
-	$ref_solution_entry->{'score'} += $profit;
+	++$ref_solution_entry->level;
+	$ref_solution_entry->score += $profit;
 
 	$package_entry_to_change->version = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
@@ -617,7 +591,7 @@ sub _apply_action ($$$$$) {
 	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
 		# dont' do synchronization for removals
 		if (defined $supposed_version) {
-			$self->_synchronize_related_packages($ref_solution_entry->{'packages'},
+			$self->_synchronize_related_packages($ref_solution_entry->packages,
 					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
@@ -769,25 +743,7 @@ sub _resolve ($$) {
 		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1, 'target' => 'normal' };
 	}
 
-
-
-	# [ 'packages' => {
-	#                   package_name... => {
-	#                                        PE_VERSION => version,
-	#                                        PE_STICK => boolean
-	#                                        PE_FAKE_SATISFIED => [ relation_expression... ]
-	#                                        PE_REASONS => [ reason... ]
-	#                                        SPE_MANUALLY_SELECTED => boolean
-	#                                        SPE_INSTALLED => boolean
-	#                                      }
-	#                 }
-	#   'score' => score
-	#   'level' => level
-	#   'identifier' => identifier
-	#   'finished' => finished (1 | 0)
-	# ]...
-	my @solutions = ({ packages => __clone_packages($self->_packages),
-			score => 0, level => 0, identifier => 0, finished => 0 });
+	my @solutions = (Cupt::System::Resolvers::Native::Solution->new($self->_packages));
 
 	my $next_free_solution_identifier = 1;
 	my $ref_current_solution;
@@ -800,9 +756,9 @@ sub _resolve ($$) {
 	my $check_failed;
 
 	my $sub_mydebug_wrapper = sub {
-		my $level = $ref_current_solution->{'level'};
-		my $identifier = $ref_current_solution->{'identifier'};
-		my $score_string = sprintf '%.1f', $ref_current_solution->{'score'};
+		my $level = $ref_current_solution->level;
+		my $identifier = $ref_current_solution->identifier;
+		my $score_string = sprintf '%.1f', $ref_current_solution->score;
 		mydebug(' ' x $level . "($identifier:$score_string) @_");
 	};
 
@@ -824,7 +780,7 @@ sub _resolve ($$) {
 
 		# choosing the solution to process
 		$ref_current_solution = $sub_solution_chooser->(\@solutions);
-		my $ref_current_packages = $ref_current_solution->{'packages'};
+		my $ref_current_packages = $ref_current_solution->packages;
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
 		# so, when an intermediate problem was solved, maybe it breaks packages
@@ -914,7 +870,7 @@ sub _resolve ($$) {
 
 								if (scalar @possible_actions == 1) {
 									$sub_apply_action->($ref_current_solution,
-											$possible_actions[0], $ref_current_solution->{'identifier'});
+											$possible_actions[0], $ref_current_solution->identifier);
 									@possible_actions = ();
 									$recheck_needed = 1;
 									next PACKAGE;
@@ -1028,9 +984,9 @@ sub _resolve ($$) {
 			$check_failed = 1;
 
 			# if the solution was only just finished
-			if ($self->config->var('debug::resolver') && !$ref_current_solution->{'finished'}) {
+			if ($self->config->var('debug::resolver') && !$ref_current_solution->finished) {
 				$sub_mydebug_wrapper->('finished');
-				$ref_current_solution->{'finished'} = 1;
+				$ref_current_solution->finished = 1;
 			}
 			# resolver can refuse the solution
 			my $ref_new_selected_solution = $sub_solution_chooser->(\@solutions);
@@ -1147,13 +1103,7 @@ sub _resolve ($$) {
 					$ref_cloned_solution = $ref_current_solution;
 				} else {
 					# clone the current stack to form a new one
-					# we can obviously use Storable::dclone, or Clone::Clone here, but speed...
-					$ref_cloned_solution = {
-						packages => __clone_packages($ref_current_solution->{'packages'}),
-						level => $ref_current_solution->{'level'},
-						score => $ref_current_solution->{'score'},
-						finished => 0,
-					};
+					$ref_cloned_solution = $ref_current_solution->clone();
 					push @forked_solutions, $ref_cloned_solution;
 				}
 
@@ -1161,7 +1111,7 @@ sub _resolve ($$) {
 				my $ref_action_to_apply = $possible_actions[$idx];
 				my $new_solution_identifier = $next_free_solution_identifier++;
 				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply, $new_solution_identifier);
-				$ref_cloned_solution->{identifier} = $new_solution_identifier;
+				$ref_cloned_solution->identifier = $new_solution_identifier;
 			}
 
 			# adding forked solutions to main solution storage
@@ -1170,7 +1120,7 @@ sub _resolve ($$) {
 			# don't allow solution tree to grow unstoppably
 			while (scalar @solutions > $self->config->var('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
-				my $ref_worst_solution = reduce { $a->{'score'} < $b->{'score'} ? $a : $b } @solutions;
+				my $ref_worst_solution = reduce { $a->score < $b->score ? $a : $b } @solutions;
 				# temporary setting current solution to worst
 				$ref_current_solution = $ref_worst_solution;
 				if ($self->config->var('debug::resolver')) {
