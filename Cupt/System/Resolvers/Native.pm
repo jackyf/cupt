@@ -1096,7 +1096,6 @@ sub _resolve ($$) {
 			# sort them by "rank", from more good to more bad
 			@possible_actions = sort { $b->{profit} <=> $a->{profit} } @possible_actions;
 
-			my @forked_solutions;
 			# fork the solution entry and apply all the solutions by one
 			foreach my $idx (0..$#possible_actions) {
 				my $ref_cloned_solution;
@@ -1106,7 +1105,7 @@ sub _resolve ($$) {
 				} else {
 					# clone the current stack to form a new one
 					$ref_cloned_solution = $ref_current_solution->clone();
-					push @forked_solutions, $ref_cloned_solution;
+					push @solutions, $ref_cloned_solution;
 				}
 
 				# apply the solution
@@ -1115,9 +1114,6 @@ sub _resolve ($$) {
 				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply, $new_solution_identifier);
 				$ref_cloned_solution->identifier = $new_solution_identifier;
 			}
-
-			# adding forked solutions to main solution storage
-			push @solutions, @forked_solutions;
 
 			# don't allow solution tree to grow unstoppably
 			while (scalar @solutions > $self->config->var('cupt::resolver::max-solution-count')) {
