@@ -34,7 +34,6 @@ use List::Util qw(sum max min);
 use List::MoreUtils qw(uniq apply any none);
 use File::Copy;
 use File::Basename;
-use File::Path qw(remove_tree);
 use File::stat ();
 use POSIX;
 use Digest;
@@ -2267,16 +2266,10 @@ sub save_system_snapshot {
 		# deleting partially constructed snapshot (try)
 		chdir('/') or
 				mywarn("unable to set current directory to '/': %s", $!);
-		remove_tree($temporary_snapshot_directory, { 'error' => \my $ref_remove_errors });
-		if (@$ref_remove_errors) {
-			for my $ref_remove_error (@$ref_remove_errors) {
-				my ($file, $message) = %$ref_remove_error;
-				if ($file eq '') {
-					mywarn("general removal error: '%s'", $message);
-				} else {
-					mywarn("unable to unlink file '%s': %s", $file, $message);
-				}
-			}
+		eval {
+			$self->_run_external_command("rm -r $temporary_snapshot_directory");
+		};
+		if (mycatch()) {
 			mywarn("unable to delete partial snapshot directory '%s'", $temporary_snapshot_directory);
 		}
 
