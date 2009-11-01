@@ -1073,6 +1073,8 @@ sub _resolve ($$) {
 					my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
 							$current_solution, $version);
 					foreach my $unsynchronizeable_package_name (@unsynchronizeable_package_names) {
+						next if $current_solution->get_package_entry($unsynchronizeable_package_name)->stick;
+
 						if (none {
 								$_->{'package_name'} eq $unsynchronizeable_package_name and
 								not defined $_->{'version'}
