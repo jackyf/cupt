@@ -1138,7 +1138,7 @@ sub _resolve ($$) {
 				# temporary setting current solution to worst
 				$current_solution = $ref_worst_solution;
 				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->('dropping this solution');
+					$sub_mydebug_wrapper->('dropped');
 				}
 				@solutions = grep { $_ ne $current_solution } @solutions;
 			}
