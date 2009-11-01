@@ -32,9 +32,22 @@ sub new {
 	$self->stick = 0;
 	$self->fake_satisfied = [];
 	$self->reasons = [];
+	# next are not cloned intentionally
 	$self->manually_selected = 0;
 	$self->installed = 0;
 	return $self;
+}
+
+sub clone {
+	my ($self) = @_;
+
+	my $cloned = bless [] => 'Cupt::System::Resolvers::Native::PackageEntry';
+	$cloned->version = $self->version;
+	$cloned->stick = $self->stick;
+	$cloned->fake_satisfied = [ @{$self->fake_satisfied} ];
+	$cloned->reasons = [ @{$self->reasons} ];
+
+	return $cloned;
 }
 
 1;

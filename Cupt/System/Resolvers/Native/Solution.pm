@@ -23,36 +23,24 @@ package Cupt::System::Resolvers::Native::Solution;
 use strict;
 use warnings;
 
+use List::MoreUtils qw(uniq);
+
 # packages => PackageEntry
 # score' => score
 # level' => level
 # identifier' => identifier
 # finished' => finished (1 | 0)
-use Cupt::LValueFields qw(packages score level identifier finished);
+use Cupt::LValueFields qw(score level identifier
+		finished _packages _master_packages _divert_level);
+
+my $_max_divert_level = 16;
 
 sub __clone_packages ($) {
 	my ($ref_packages) = @_;
 
 	my %clone;
 	foreach (keys %$ref_packages) {
-		my $package_entry = $ref_packages->{$_};
-
-		my $new_package_entry = ($clone{$_} = []);
-		bless $new_package_entry => 'Cupt::System::Resolvers::Native::PackageEntry';
-
-		# $new_package_entry->version = $package_entry->version;
-		# $new_package_entry->stick = $package_entry->stick;
-		# $new_package_entry->fake_satisfied = [ @{$package_entry->fake_satisfied} ];
-		# $new_package_entry->reasons = [ @{$package_entry->reasons} ];
-		#
-		# see the above code? it's obviously right
-		# but it's so slow...
-		#
-		# keep the following in sync with package entry structure
-		$new_package_entry->[0] = $package_entry->[0];
-		$new_package_entry->[1] = $package_entry->[1];
-		$new_package_entry->[2] = [ @{$package_entry->[2]} ];
-		$new_package_entry->[3] = [ @{$package_entry->[3]} ];
+		$clone{$_} = $ref_packages->{$_}->clone();
 	}
 	return \%clone;
 }
@@ -60,24 +48,72 @@ sub __clone_packages ($) {
 sub new {
 	my ($class, $ref_packages) = @_;
 	my $self = bless [] => $class;
-	$self->packages = __clone_packages($ref_packages);
+	$self->_packages = __clone_packages($ref_packages);
 	$self->score = 0;
 	$self->level = 0;
 	$self->identifier = 0;
 	$self->finished = 0;
+	$self->_master_packages = undef;
+	$self->_divert_level = 0;
 	return $self;
 }
 
 sub clone {
 	my ($self) = @_;
 
-	my $cloned = Cupt::System::Resolvers::Native::Solution->new($self->packages);
+	my $cloned = Cupt::System::Resolvers::Native::Solution->new({});
 	$cloned->score = $self->score;
 	$cloned->level = $self->level;
 	$cloned->identifier = undef; # will be set later :(
 	$cloned->finished = 0;
 
+	if ($self->_divert_level == $_max_divert_level) {
+		$cloned->_divert_level = 0;
+		$cloned->_master_packages = undef;
+		$cloned->_packages = __clone_packages($self->_master_packages);
+		foreach my $key (keys %{$self->_packages}) {
+			$cloned->_packages->{$key} = $self->_packages->{$key};
+		}
+	} else {
+		$cloned->_divert_level = $self->_divert_level + 1;
+		if (defined $self->_master_packages) {
+			$cloned->_master_packages = $self->_master_packages;
+		   	$cloned->_packages = __clone_packages($self->_packages);
+		} else {
+			$cloned->_master_packages = $self->_packages;
+			$cloned->_packages = {};
+		}
+	}
 	return $cloned;
+}
+
+sub get_package_names {
+	my ($self) = @_;
+
+	my @result = keys %{$self->_packages};
+	if (defined $self->_master_packages) {
+		push @result, keys %{$self->_master_packages};
+		@result = uniq @result;
+	}
+	return @result;
+}
+
+sub get_package_entry {
+	my ($self, $package_name) = @_;
+
+	if (exists $self->[_packages_offset()]->{$package_name}) {
+		return $self->[_packages_offset()]->{$package_name};
+	} elsif (defined $self->[_master_packages_offset()]) {
+		return $self->[_master_packages_offset()]->{$package_name};
+	} else {
+		return undef;
+	}
+}
+
+sub set_package_entry {
+	my ($self, $package_name, $new_package_entry) = @_;
+	$self->_packages->{$package_name} = $new_package_entry;
+	return;
 }
 
 1;

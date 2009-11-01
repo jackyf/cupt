@@ -43,7 +43,7 @@ use Cupt::Graph;
 
 our $_dummy_package_name = '<satisfy>';
 
-use Cupt::LValueFields qw(2 _old_packages _packages
+use Cupt::LValueFields qw(2 _old_packages _initial_solution
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 sub new {
@@ -52,7 +52,6 @@ sub new {
 	$self->SUPER::new(@_);
 
 	$self->_old_packages = {};
-	$self->_packages = {};
 	$self->_strict_satisfy_relation_expressions = [];
 	$self->_strict_unsatisfy_relation_expressions = [];
 
@@ -63,29 +62,28 @@ sub new {
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
 
+	# '_initial_solution' will be modified, leave '_old_packages' as original system state
 	foreach my $version (@$ref_versions) {
-		# just moving versions to packages, don't try install or remove some dependencies
-		# '_packages' will be modified, leave '_old_packages' as original system state
+		# just moving versions, don't try to install or remove some dependencies
 		my $package_name = $version->package_name;
-		$self->_packages->{$package_name} = Cupt::System::Resolvers::Native::PackageEntry->new();
-		$self->_packages->{$package_name}->version = $version;
-		$self->_packages->{$package_name}->installed = 1;
-		@{$self->_old_packages->{$package_name}} = @{$self->_packages->{$package_name}};
-		bless $self->_old_packages->{$package_name} => 'Cupt::System::Resolvers::Native::PackageEntry';
+		$self->_old_packages->{$package_name} = Cupt::System::Resolvers::Native::PackageEntry->new();
+		$self->_old_packages->{$package_name}->version = $version;
+		$self->_old_packages->{$package_name}->installed = 1;
 	}
+	$self->_initial_solution = Cupt::System::Resolvers::Native::Solution->new($self->_old_packages);
 	return;
 }
 
 sub __related_binary_package_names ($$) {
-	my ($ref_packages, $version) = @_;
+	my ($solution, $version) = @_;
 
 	my @result;
 
 	my $package_name = $version->package_name;
 	my $source_package_name = $version->source_package_name;
 
-	foreach my $other_package_entry (values %$ref_packages) {
-		my $other_version = $other_package_entry->version;
+	foreach my $other_package_name ($solution->get_package_names()) {
+		my $other_version = $solution->get_package_entry($other_package_name)->version;
 		next if not defined $other_version;
 		next if $other_version->source_package_name ne $source_package_name;
 		next if $other_version->package_name eq $package_name;
@@ -108,7 +106,7 @@ sub _get_package_version_by_source_version_string ($$) {
 }
 
 sub _get_unsynchronizeable_related_package_names {
-	my ($self, $ref_packages, $version) = @_;
+	my ($self, $solution, $version) = @_;
 
 	my $source_package_name = $version->source_package_name;
 	if (any { $source_package_name =~ m/^$_$/ }
@@ -118,20 +116,21 @@ sub _get_unsynchronizeable_related_package_names {
 	}
 
 	my $package_name = $version->package_name;
-	my @related_package_names = __related_binary_package_names($ref_packages, $version);
+	my @related_package_names = __related_binary_package_names($solution, $version);
 	my $source_version_string = $version->source_version_string;
 
 	my @result;
 
 	foreach my $other_package_name (@related_package_names) {
-		my $other_version = $ref_packages->{$other_package_name}->version;
+		my $other_package_entry = $solution->get_package_entry($other_package_name);
+		my $other_version = $other_package_entry->version;
 		if ($other_version->source_version_string eq $source_version_string)
 		{
 			# no update needed
 			next;
 		}
 
-		if ($ref_packages->{$other_package_name}->stick or
+		if ($other_package_entry->stick or
 			not defined $self->_get_package_version_by_source_version_string(
 					$other_package_name, $source_version_string))
 		{
@@ -144,28 +143,32 @@ sub _get_unsynchronizeable_related_package_names {
 }
 
 sub _related_packages_can_be_synchronized ($$) {
-	my ($self, $ref_packages, $version) = @_;
+	my ($self, $solution, $version) = @_;
 
 	my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
-			$ref_packages, $version);
+			$solution, $version);
 	return (scalar @unsynchronizeable_package_names == 0);
 }
 
 sub _synchronize_related_packages ($$$$$) {
 	# $stick - boolean
-	my ($self, $ref_packages, $version, $stick, $sub_mydebug_wrapper) = @_;
+	my ($self, $solution, $version, $stick, $sub_mydebug_wrapper) = @_;
 
-	my @related_package_names = __related_binary_package_names($ref_packages, $version);
+	my @related_package_names = __related_binary_package_names($solution, $version);
 	my $source_version_string = $version->source_version_string;
 	my $package_name = $version->package_name;
 
 	foreach my $other_package_name (@related_package_names) {
-		my $package_entry = $ref_packages->{$other_package_name};
+		my $package_entry = $solution->get_package_entry($other_package_name);
 		next if $package_entry->stick;
 		my $candidate_version = $self->_get_package_version_by_source_version_string(
 				$other_package_name, $source_version_string);
 		next if not defined $candidate_version;
 		next if $candidate_version->version_string eq $package_entry->version->version_string;
+
+		$package_entry = $package_entry->clone();
+		$solution->set_package_entry($other_package_name => $package_entry);
+
 		$package_entry->version = $candidate_version;
 		$package_entry->stick = $stick;
 		if ($self->config->var('debug::resolver')) {
@@ -185,13 +188,16 @@ sub _install_version_no_stick ($$$) {
 	my ($self, $version, $reason) = @_;
 
 	my $package_name = $version->package_name;
-	$self->_packages->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
-	if ($self->_packages->{$package_name}->stick)
-	{
+	my $package_entry = $self->_initial_solution->get_package_entry($package_name);
+	if (not defined $package_entry) {
+		$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
+		$self->_initial_solution->set_package_entry($package_name => $package_entry);
+	}
+	if ($package_entry->stick) {
 		# package is restricted to be updated
 
 		# but maybe nothing changed?
-		my $existent_version = $self->_packages->{$package_name}->version;
+		my $existent_version = $package_entry->version;
 		if (defined $existent_version &&
 			$existent_version->version_string eq $version->version_string)
 		{
@@ -201,15 +207,14 @@ sub _install_version_no_stick ($$$) {
 		}
 	}
 
-	if ((not $self->_packages->{$package_name}->version) ||
-		($self->_packages->{$package_name}->version != $version))
+	if ((not $package_entry->version) or ($package_entry->version != $version))
 	{
 		# binary package names from the same source that supplied package
 		my $o_synchronize_source_versions = $self->config->var('cupt::resolver::synchronize-source-versions');
 
 		if ($o_synchronize_source_versions eq 'hard') {
 			# need to check is the whole operation doable
-			if (!$self->_related_packages_can_be_synchronized($self->_packages, $version)) {
+			if (!$self->_related_packages_can_be_synchronized($self->_initial_solution, $version)) {
 				# we cannot do it, do nothing
 				return sprintf __('unable to synchronize related binary packages for %s %s'),
 						$package_name, $version->version_string;
@@ -217,9 +222,9 @@ sub _install_version_no_stick ($$$) {
 		}
 
 		# update the requested package
-		$self->_packages->{$package_name}->version = $version;
+		$package_entry->version = $version;
 		if ($self->config->var('cupt::resolver::track-reasons')) {
-			push @{$self->_packages->{$package_name}->reasons}, $reason;
+			push @{$package_entry->reasons}, $reason;
 		}
 		if ($self->config->var('debug::resolver')) {
 			my $version_string = $version->version_string;
@@ -227,7 +232,7 @@ sub _install_version_no_stick ($$$) {
 		}
 
 		if ($o_synchronize_source_versions ne 'none') {
-			$self->_synchronize_related_packages($self->_packages, $version, 0, \&mydebug);
+			$self->_synchronize_related_packages($self->_initial_solution, $version, 0, \&mydebug);
 		}
 	}
 	return '';
@@ -239,8 +244,9 @@ sub install_version ($$) {
 	if ($install_error ne '') {
 		mydie($install_error);
 	}
-	$self->_packages->{$version->package_name}->stick = 1;
-	$self->_packages->{$version->package_name}->manually_selected = 1;
+	my $package_entry = $self->_initial_solution->get_package_entry($version->package_name);
+	$package_entry->stick = 1;
+	$package_entry->manually_selected = 1;
 	return;
 }
 
@@ -274,15 +280,21 @@ sub unsatisfy_relation_expression ($$) {
 
 sub remove_package ($$) {
 	my ($self, $package_name) = @_;
-	$self->_packages->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
-	$self->_packages->{$package_name}->version = undef;
-	if ($self->_packages->{$package_name}->stick) {
+
+	my $package_entry = $self->_initial_solution->get_package_entry($package_name);
+	if (not defined $package_entry) {
+		$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
+		$self->_initial_solution->set_package_entry($package_name => $package_entry);
+	}
+
+	if ($package_entry->stick) {
 		mydie("unable to re-schedule package '%s'", $package_name);
 	}
-	$self->_packages->{$package_name}->stick = 1;
-	$self->_packages->{$package_name}->manually_selected = 1;
+	$package_entry->version = undef;
+	$package_entry->stick = 1;
+	$package_entry->manually_selected = 1;
 	if ($self->config->var('cupt::resolver::track-reasons')) {
-		push @{$self->_packages->{$package_name}->reasons}, [ 'user' ];
+		push @{$package_entry->reasons}, [ 'user' ];
 	}
 	if ($self->config->var('debug::resolver')) {
 		mydebug("removing package $package_name");
@@ -292,9 +304,9 @@ sub remove_package ($$) {
 
 sub upgrade ($) {
 	my ($self) = @_;
-	foreach my $package_name (keys %{$self->_packages}) {
+	foreach my $package_name ($self->_initial_solution->get_package_names()) {
 		my $package = $self->cache->get_binary_package($package_name);
-		my $original_version = $self->_packages->{$package_name}->version;
+		my $original_version = $self->_initial_solution->get_package_entry($package_name)->version;
 		# if there is original version, then at least one policy version should exist
 		my $supposed_version = $self->cache->get_policy_version($package);
 		defined $supposed_version or
@@ -369,12 +381,13 @@ sub _get_action_profit ($$$) {
 }
 
 sub __is_version_array_intersects_with_packages ($$) {
-	my ($ref_versions, $ref_packages) = @_;
+	my ($ref_versions, $solution) = @_;
 
 	foreach my $version (@$ref_versions) {
-		exists $ref_packages->{$version->package_name} or next;
+		my $package_entry = $solution->get_package_entry($version->package_name);
+		defined $package_entry or next;
 
-		my $installed_version = $ref_packages->{$version->package_name}->version;
+		my $installed_version = $package_entry->version;
 		defined $installed_version or next;
 
 		return 1 if $version->version_string eq $installed_version->version_string;
@@ -385,23 +398,22 @@ sub __is_version_array_intersects_with_packages ($$) {
 sub _is_package_can_be_removed ($$) {
 	my ($self, $package_name) = @_;
 	return !$self->config->var('cupt::resolver::no-remove')
-			|| !$self->_packages->{$package_name}->installed;
+			|| !$self->_initial_solution->get_package_entry($package_name)->installed;
 }
 
 sub _clean_automatically_installed ($) {
-	my ($self, $ref_packages) = @_;
+	my ($self, $solution) = @_;
 
 	# firstly, prepare all package names that can be potentially removed
 	my $can_autoremove = $self->config->var('cupt::resolver::auto-remove');
 	my %candidates_for_remove;
-	foreach my $package_name (keys %$ref_packages) {
+	foreach my $package_name ($solution->get_package_names()) {
 		$package_name ne $_dummy_package_name or next;
-		my $package_entry = $ref_packages->{$package_name};
+		my $package_entry = $solution->get_package_entry($package_name);
 		my $version = $package_entry->version;
 		defined $version or next;
-		if (exists $self->_packages->{$package_name}
-			and $self->_packages->{$package_name}->manually_selected)
-		{
+		my $original_package_entry = $self->_initial_solution->get_package_entry($package_name);
+		if (defined $original_package_entry and $original_package_entry->manually_selected) {
 			next;
 		}
 		# don't consider Essential packages for removal
@@ -409,7 +421,7 @@ sub _clean_automatically_installed ($) {
 
 		my $can_autoremove_this_package = $can_autoremove ?
 				$self->cache->is_automatically_installed($package_name) : 0;
-		my $package_was_installed = exists $self->_old_packages->{$package_name};
+		my $package_was_installed = defined $self->_old_packages->{$package_name};
 		(not $package_was_installed or $can_autoremove_this_package) or next;
 
 		if (any { $package_name =~ m/$_/ } $self->config->var('apt::neverautoremove')) {
@@ -422,8 +434,8 @@ sub _clean_automatically_installed ($) {
 	my $dependency_graph = Cupt::Graph->new();
 	my $main_vertex_package_name = 'main_vertex';
 	do { # building dependency graph
-		foreach my $package_name (keys %$ref_packages) {
-			my $version = $ref_packages->{$package_name}->version;
+		foreach my $package_name ($solution->get_package_names()) {
+			my $version = $solution->get_package_entry($package_name)->version;
 			defined $version or next;
 			my @valuable_relation_expressions;
 			push @valuable_relation_expressions, @{$version->pre_depends};
@@ -440,7 +452,7 @@ sub _clean_automatically_installed ($) {
 				foreach (@$satisfying_versions) {
 					my $candidate_package_name = $_->package_name;
 					exists $candidates_for_remove{$candidate_package_name} or next;
-					my $candidate_version = $ref_packages->{$candidate_package_name}->version;
+					my $candidate_version = $solution->get_package_entry($candidate_package_name)->version;
 					$_->version_string eq $candidate_version->version_string or next;
 					# well, this is what we need
 					if (exists $candidates_for_remove{$package_name}) {
@@ -482,10 +494,14 @@ sub _clean_automatically_installed ($) {
 				$remove = 1;
 			}
 			if ($remove) {
-				$ref_packages->{$package_name}->version = undef;
+				my $package_entry = $solution->get_package_entry($package_name);
+				$package_entry = $package_entry->clone();
+				$solution->set_package_entry($package_name => $package_entry);
+
+				$package_entry->version = undef;
 				# leave only one reason :)
 				if ($self->config->var('cupt::resolver::track-reasons')) {
-					@{$ref_packages->{$package_name}->reasons} = ([ 'auto-remove' ]);
+					@{$package_entry->reasons} = ([ 'auto-remove' ]);
 				}
 				if ($self->config->var('debug::resolver')) {
 					mydebug("auto-removed package '$package_name'");
@@ -493,9 +509,6 @@ sub _clean_automatically_installed ($) {
 			}
 		}
 	};
-
-	# also remove dummy package
-	delete $ref_packages->{$_dummy_package_name};
 
 	return;
 }
@@ -531,18 +544,18 @@ sub _require_strict_relation_expressions ($) {
 	$version->breaks = [];
 	$version->conflicts = [];
 
-	$self->_packages->{$_dummy_package_name} = Cupt::System::Resolvers::Native::PackageEntry->new();
-	$self->_packages->{$_dummy_package_name}->version = $version;
-	$self->_packages->{$_dummy_package_name}->stick = 1;
-	$self->_packages->{$_dummy_package_name}->version->depends =
-			$self->_strict_satisfy_relation_expressions;
-	$self->_packages->{$_dummy_package_name}->version->breaks =
-			$self->_strict_unsatisfy_relation_expressions;
+	my $package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
+	$self->_initial_solution->set_package_entry($_dummy_package_name => $package_entry);
+	$package_entry->version = $version;
+	$package_entry->stick = 1;
+	$package_entry->version->depends = $self->_strict_satisfy_relation_expressions;
+	$package_entry->version->breaks = $self->_strict_unsatisfy_relation_expressions;
+
 	return;
 }
 
 sub _apply_action ($$$$$) {
-	my ($self, $ref_solution_entry, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper) = @_;
+	my ($self, $ref_solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper) = @_;
 
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
@@ -550,12 +563,18 @@ sub _apply_action ($$$$$) {
 	do { # stick all requested package names
 		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
 		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
-			$ref_solution_entry->packages->{$package_name} //= Cupt::System::Resolvers::Native::PackageEntry->new();
-			$ref_solution_entry->packages->{$package_name}->stick = 1;
+			my $package_entry = $ref_solution->get_package_entry($package_name);
+			if (defined $package_entry) {
+				$package_entry = $package_entry->clone();
+			} else {
+				$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
+			}
+			$package_entry->stick = 1;
+			$ref_solution->set_package_entry($package_name => $package_entry);
 		}
 	};
 
-	my $package_entry_to_change = $ref_solution_entry->packages->{$package_name_to_change};
+	my $package_entry_to_change = $ref_solution->get_package_entry($package_name_to_change);
 	my $original_version = $package_entry_to_change->version;
 
 	my $profit = $ref_action_to_apply->{'profit'} //
@@ -576,8 +595,8 @@ sub _apply_action ($$$$$) {
 		$sub_mydebug_wrapper->($message);
 	}
 
-	++$ref_solution_entry->level;
-	$ref_solution_entry->score += $profit;
+	++$ref_solution->level;
+	$ref_solution->score += $profit;
 
 	$package_entry_to_change->version = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
@@ -591,7 +610,7 @@ sub _apply_action ($$$$$) {
 	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
 		# dont' do synchronization for removals
 		if (defined $supposed_version) {
-			$self->_synchronize_related_packages($ref_solution_entry->packages,
+			$self->_synchronize_related_packages($ref_solution,
 					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
@@ -611,20 +630,20 @@ sub __version_has_relation_expression ($$$) {
 }
 
 sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
-	my ($self, $ref_packages, $package_name, $ref_satisfying_versions,
+	my ($self, $solution, $package_name, $ref_satisfying_versions,
 			$relation_expression, $dependency_group_name, $dependency_group_factor) = @_;
 
 	my @result;
 
-	my $version = $ref_packages->{$package_name}->version;
+	my $package_entry = $solution->get_package_entry($package_name);
+	my $version = $package_entry->version;
 
 	# install one of versions package needs
 	foreach my $satisfying_version (@$ref_satisfying_versions) {
 		my $satisfying_package_name = $satisfying_version->package_name;
 		# can the package be updated?
-		if (!exists $ref_packages->{$satisfying_package_name} ||
-			!$ref_packages->{$satisfying_package_name}->stick)
-		{
+		my $satisfying_package_entry = $solution->get_package_entry($satisfying_package_name);
+		if (!defined $satisfying_package_entry || !$satisfying_package_entry->stick) {
 			push @result, {
 				'package_name' => $satisfying_package_name,
 				'version' => $satisfying_version,
@@ -635,7 +654,7 @@ sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 	}
 
 	# change this package
-	if (!$ref_packages->{$package_name}->stick) {
+	if (!$package_entry->stick) {
 		# change version of the package
 		my $other_package = $self->cache->get_binary_package($package_name);
 		foreach my $other_version (@{$other_package->get_versions()}) {
@@ -743,10 +762,11 @@ sub _resolve ($$) {
 		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1, 'target' => 'normal' };
 	}
 
-	my @solutions = (Cupt::System::Resolvers::Native::Solution->new($self->_packages));
+	my @solutions = ($self->_initial_solution->clone());
+	$solutions[0]->identifier = 0;
 
 	my $next_free_solution_identifier = 1;
-	my $ref_current_solution;
+	my $current_solution;
 
 	# for each package entry 'count' will contain the number of failures
 	# during processing these package
@@ -756,9 +776,9 @@ sub _resolve ($$) {
 	my $check_failed;
 
 	my $sub_mydebug_wrapper = sub {
-		my $level = $ref_current_solution->level;
-		my $identifier = $ref_current_solution->identifier;
-		my $score_string = sprintf '%.1f', $ref_current_solution->score;
+		my $level = $current_solution->level;
+		my $identifier = $current_solution->identifier;
+		my $score_string = sprintf '%.1f', $current_solution->score;
 		mydebug(' ' x $level . "($identifier:$score_string) @_");
 	};
 
@@ -779,8 +799,7 @@ sub _resolve ($$) {
 		my @possible_actions;
 
 		# choosing the solution to process
-		$ref_current_solution = $sub_solution_chooser->(\@solutions);
-		my $ref_current_packages = $ref_current_solution->packages;
+		$current_solution = $sub_solution_chooser->(\@solutions);
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
 		# so, when an intermediate problem was solved, maybe it breaks packages
@@ -799,7 +818,7 @@ sub _resolve ($$) {
 			# empty, firstly check the packages that had a problem
 			my @packages_in_order = sort {
 				($failed_counts{$b} // 0) <=> ($failed_counts{$a} // 0)
-			} keys %$ref_current_packages;
+			} $current_solution->get_package_names();
 
 			foreach my $ref_dependency_group (@dependency_groups) {
 				my $dependency_group_factor = $ref_dependency_group->{'factor'};
@@ -808,7 +827,7 @@ sub _resolve ($$) {
 
 				PACKAGE:
 				foreach my $package_name (@packages_in_order) {
-					$package_entry = $ref_current_packages->{$package_name};
+					$package_entry = $current_solution->get_package_entry($package_name);
 					my $version = $package_entry->version;
 					defined $version or next;
 
@@ -816,7 +835,7 @@ sub _resolve ($$) {
 						if ($dependency_group_target eq 'normal') {
 							# check if relation is already satisfied
 							my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
-							if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
+							if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $current_solution)) {
 								if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 									# this is a soft dependency
 									if (!$self->config->var("apt::install-$dependency_group_name")) {
@@ -827,7 +846,7 @@ sub _resolve ($$) {
 											next;
 										}
 									}
-									if (exists $self->_old_packages->{$version->package_name}) {
+									if (defined $self->_old_packages->{$version->package_name}) {
 										my $old_version = $self->_old_packages->{$version->package_name}->version;
 										if (defined $old_version and __version_has_relation_expression($old_version,
 											$dependency_group_name, $relation_expression))
@@ -858,7 +877,7 @@ sub _resolve ($$) {
 
 								# for resolving we can do:
 								push @possible_actions, $self->_get_actions_to_fix_dependency(
-										$ref_current_packages, $package_name, $ref_satisfying_versions,
+										$current_solution, $package_name, $ref_satisfying_versions,
 										$relation_expression, $dependency_group_name, $dependency_group_factor);
 
 								if ($self->config->var('debug::resolver')) {
@@ -869,8 +888,8 @@ sub _resolve ($$) {
 								$check_failed = 1;
 
 								if (scalar @possible_actions == 1) {
-									$sub_apply_action->($ref_current_solution,
-											$possible_actions[0], $ref_current_solution->identifier);
+									$sub_apply_action->($current_solution,
+											$possible_actions[0], $current_solution->identifier);
 									@possible_actions = ();
 									$recheck_needed = 1;
 									next PACKAGE;
@@ -881,7 +900,7 @@ sub _resolve ($$) {
 						} else {
 							# check if relation is accidentally satisfied
 							my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
-							if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $ref_current_packages)) {
+							if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $current_solution)) {
 								# so, this can conflict... check it deeper on the fly
 								my $conflict_found = 0;
 								foreach my $satisfying_version (@$ref_satisfying_versions) {
@@ -890,10 +909,10 @@ sub _resolve ($$) {
 									# package can't conflict (or break) with itself
 									$other_package_name ne $package_name or next;
 
-									# is the package installed?
-									exists $ref_current_packages->{$other_package_name} or next;
+									my $other_package_entry = $current_solution->get_package_entry($other_package_name);
 
-									my $other_package_entry = $ref_current_packages->{$other_package_name};
+									# is the package installed?
+									defined $other_package_entry or next;
 
 									# does the package have an installed version?
 									defined($other_package_entry->version) or next;
@@ -984,32 +1003,33 @@ sub _resolve ($$) {
 			$check_failed = 1;
 
 			# if the solution was only just finished
-			if (not $ref_current_solution->finished) {
+			if (not $current_solution->finished) {
 				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->('finished');
 				}
-				$ref_current_solution->finished = 1;
+				$current_solution->finished = 1;
 			}
 			# resolver can refuse the solution
 			my $ref_new_selected_solution = $sub_solution_chooser->(\@solutions);
 
-			if ($ref_new_selected_solution ne $ref_current_solution) {
+			if ($ref_new_selected_solution ne $current_solution) {
 				# ok, process other solution
 				next;
 			}
 
 			# clean up automatically installed by resolver and now unneeded packages
-			$self->_clean_automatically_installed($ref_current_packages);
+			$self->_clean_automatically_installed($current_solution);
 
 			# build "user-frienly" version of solution
 			my %suggested_packages;
-			foreach my $package_name (keys %$ref_current_packages) {
-				my $other_package_entry = $ref_current_packages->{$package_name};
+			foreach my $package_name ($current_solution->get_package_names()) {
+				next if $package_name eq $_dummy_package_name;
+				my $other_package_entry = $current_solution->get_package_entry($package_name);
 				$suggested_packages{$package_name}->{'version'} = $other_package_entry->version;
 				$suggested_packages{$package_name}->{'reasons'} = $other_package_entry->reasons;
+				my $original_package_entry = $self->_initial_solution->get_package_entry($package_name);
 				$suggested_packages{$package_name}->{'manually_selected'} =
-						(exists $self->_packages->{$package_name} and
-						$self->_packages->{$package_name}->manually_selected);
+						(defined $original_package_entry and $original_package_entry->manually_selected);
 			}
 
 			# suggest found solution
@@ -1033,7 +1053,7 @@ sub _resolve ($$) {
 					$sub_mydebug_wrapper->('declined');
 				}
 				# purge current solution
-				@solutions = grep { $_ ne $ref_current_solution } @solutions;
+				@solutions = grep { $_ ne $current_solution } @solutions;
 				next;
 			}
 		}
@@ -1045,13 +1065,13 @@ sub _resolve ($$) {
 			foreach my $possible_action (@possible_actions) {
 				my $version = $possible_action->{'version'};
 				if (not defined $version or
-					$self->_related_packages_can_be_synchronized($ref_current_packages, $version))
+					$self->_related_packages_can_be_synchronized($current_solution, $version))
 				{
 					push @new_possible_actions, $possible_action;
 				} else {
 					# we cannot proceed with it, so try deleting related packages
 					my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
-							$ref_current_packages, $version);
+							$current_solution, $version);
 					foreach my $unsynchronizeable_package_name (@unsynchronizeable_package_names) {
 						if (none {
 								$_->{'package_name'} eq $unsynchronizeable_package_name and
@@ -1085,8 +1105,9 @@ sub _resolve ($$) {
 			foreach (@possible_actions) {
 				my $package_name = $_->{'package_name'};
 				my $supposed_version = $_->{'version'};
-				my $original_version = exists $ref_current_packages->{$package_name} ?
-						$ref_current_packages->{$package_name}->version : undef;
+				my $package_entry = $current_solution->get_package_entry($package_name);
+				my $original_version = defined $package_entry ?
+						$package_entry->version : undef;
 
 				$_->{'profit'} //= $self->_get_action_profit($original_version, $supposed_version);
 				$_->{'profit'} -= $position_penalty;
@@ -1097,16 +1118,11 @@ sub _resolve ($$) {
 			@possible_actions = sort { $b->{profit} <=> $a->{profit} } @possible_actions;
 
 			# fork the solution entry and apply all the solutions by one
+			@solutions = grep { $_ ne $current_solution } @solutions;
 			foreach my $idx (0..$#possible_actions) {
-				my $ref_cloned_solution;
-				if ($idx == $#possible_actions) {
-					# use existing solution entry
-					$ref_cloned_solution = $ref_current_solution;
-				} else {
-					# clone the current stack to form a new one
-					$ref_cloned_solution = $ref_current_solution->clone();
-					push @solutions, $ref_cloned_solution;
-				}
+				# clone the current stack to form a new one
+				my $ref_cloned_solution = $current_solution->clone();
+				push @solutions, $ref_cloned_solution;
 
 				# apply the solution
 				my $ref_action_to_apply = $possible_actions[$idx];
@@ -1120,23 +1136,22 @@ sub _resolve ($$) {
 				# find the worst solution and drop it
 				my $ref_worst_solution = reduce { $a->score < $b->score ? $a : $b } @solutions;
 				# temporary setting current solution to worst
-				$ref_current_solution = $ref_worst_solution;
+				$current_solution = $ref_worst_solution;
 				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->('dropping this solution');
 				}
-				@solutions = grep { $_ ne $ref_current_solution } @solutions;
+				@solutions = grep { $_ ne $current_solution } @solutions;
 			}
 		} else {
 			if ($self->config->var('debug::resolver')) {
 				$sub_mydebug_wrapper->('no solutions');
 			}
 			# purge current solution
-			@solutions = grep { $_ ne $ref_current_solution } @solutions;
+			@solutions = grep { $_ ne $current_solution } @solutions;
 		}
 	}} while $check_failed;
 
 	EXIT:
-	delete $self->_packages->{$_dummy_package_name};
 	return $return_code;
 }
 
@@ -1145,9 +1160,8 @@ sub resolve ($$) {
 
 	# throw away all obsoleted packages at this stage to avoid resolver from
 	# ever bothering of them
-	$self->_clean_automatically_installed($self->_packages);
+	$self->_clean_automatically_installed($self->_initial_solution);
 
-	# at this stage we have all extraneous dependencies installed, now we should check inter-depends
 	return $self->_resolve($sub_accept);
 }
 
