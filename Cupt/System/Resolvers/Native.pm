@@ -423,7 +423,7 @@ sub _clean_automatically_installed ($) {
 			next;
 		}
 		# ok, candidate for removing
-		$candidates_for_remove{$package_name} = 0;
+		$candidates_for_remove{$package_name} = 1;
 	}
 
 	my $dependency_graph = Cupt::Graph->new();
@@ -457,8 +457,6 @@ sub _clean_automatically_installed ($) {
 						# this is a relation between installed system and a weak package
 						$dependency_graph->add_edge($main_vertex_package_name, $candidate_package_name);
 					}
-					# counting that candidate package was referenced
-					++$candidates_for_remove{$candidate_package_name};
 				}
 			}
 		}
@@ -480,15 +478,7 @@ sub _clean_automatically_installed ($) {
 			}
 		};
 		foreach my $package_name (keys %candidates_for_remove) {
-			my $remove;
-			if ($candidates_for_remove{$package_name}) {
-				# package is in the graph, checking
-				$remove = !exists $reachable_vertexes{$package_name};
-			} else {
-				# remove non-referenced candidates at all
-				$remove = 1;
-			}
-			if ($remove) {
+			if (!exists $reachable_vertexes{$package_name}) {
 				my $package_entry = $solution->get_package_entry($package_name);
 				$package_entry = $package_entry->clone();
 				$solution->set_package_entry($package_name => $package_entry);
