@@ -193,48 +193,43 @@ sub _install_version_no_stick ($$$) {
 		$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
 		$self->_initial_solution->set_package_entry($package_name => $package_entry);
 	}
+
+	# maybe nothing changed?
+	my $current_version = $package_entry->version;
+	if (defined $current_version && $current_version->version_string eq $version->version_string)
+	{
+		return '';
+	}
+
 	if ($package_entry->stick) {
 		# package is restricted to be updated
+		return sprintf __("unable to re-schedule package '%s'"), $package_name;
+	}
 
-		# but maybe nothing changed?
-		my $existent_version = $package_entry->version;
-		if (defined $existent_version &&
-			$existent_version->version_string eq $version->version_string)
-		{
-			return '';
-		} else {
-			return sprintf __("unable to re-schedule package '%s'"), $package_name;
+	my $o_synchronize_source_versions = $self->config->var('cupt::resolver::synchronize-source-versions');
+	if ($o_synchronize_source_versions eq 'hard') {
+		# need to check is the whole operation doable
+		if (!$self->_related_packages_can_be_synchronized($self->_initial_solution, $version)) {
+			# we cannot do it, do nothing
+			return sprintf __('unable to synchronize related binary packages for %s %s'),
+					$package_name, $version->version_string;
 		}
 	}
 
-	if ((not $package_entry->version) or ($package_entry->version != $version))
-	{
-		# binary package names from the same source that supplied package
-		my $o_synchronize_source_versions = $self->config->var('cupt::resolver::synchronize-source-versions');
-
-		if ($o_synchronize_source_versions eq 'hard') {
-			# need to check is the whole operation doable
-			if (!$self->_related_packages_can_be_synchronized($self->_initial_solution, $version)) {
-				# we cannot do it, do nothing
-				return sprintf __('unable to synchronize related binary packages for %s %s'),
-						$package_name, $version->version_string;
-			}
-		}
-
-		# update the requested package
-		$package_entry->version = $version;
-		if ($self->config->var('cupt::resolver::track-reasons')) {
-			push @{$package_entry->reasons}, $reason;
-		}
-		if ($self->config->var('debug::resolver')) {
-			my $version_string = $version->version_string;
-			mydebug("install package '$package_name', version '$version_string'");
-		}
-
-		if ($o_synchronize_source_versions ne 'none') {
-			$self->_synchronize_related_packages($self->_initial_solution, $version, 0, \&mydebug);
-		}
+	# update the requested package
+	$package_entry->version = $version;
+	if ($self->config->var('cupt::resolver::track-reasons')) {
+		push @{$package_entry->reasons}, $reason;
 	}
+	if ($self->config->var('debug::resolver')) {
+		my $version_string = $version->version_string;
+		mydebug("install package '$package_name', version '$version_string'");
+	}
+
+	if ($o_synchronize_source_versions ne 'none') {
+		$self->_synchronize_related_packages($self->_initial_solution, $version, 0, \&mydebug);
+	}
+
 	return '';
 }
 
