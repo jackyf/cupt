@@ -1061,7 +1061,7 @@ sub _resolve ($$) {
 							unshift @new_possible_actions, {
 								'package_name' => $unsynchronizeable_package_name,
 								'version' => undef,
-								'factor' => 5,
+								'factor' => 1,
 								'reason' => [ 'sync', $version->package_name ],
 							};
 						}
