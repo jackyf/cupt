@@ -819,10 +819,12 @@ sub _resolve ($$) {
 					defined $version or next;
 
 					foreach my $relation_expression (@{$version->$dependency_group_name}) {
+						my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
+						my $intersects = __is_version_array_intersects_with_packages(
+								$ref_satisfying_versions, $current_solution);
 						if ($dependency_group_target eq 'normal') {
 							# check if relation is already satisfied
-							my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
-							if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $current_solution)) {
+							if (not $intersects) {
 								if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 									# this is a soft dependency
 									if (!$self->config->var("apt::install-$dependency_group_name")) {
@@ -886,8 +888,7 @@ sub _resolve ($$) {
 							}
 						} else {
 							# check if relation is accidentally satisfied
-							my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
-							if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $current_solution)) {
+							if ($intersects) {
 								# so, this can conflict... check it deeper on the fly
 								my $conflict_found = 0;
 								foreach my $satisfying_version (@$ref_satisfying_versions) {
