@@ -774,6 +774,8 @@ sub _resolve ($$) {
 
 	my $return_code;
 
+	my $cache = $self->cache;
+
 	do {{
 		# will be filled in MAIN_LOOP
 		my $package_entry;
@@ -819,7 +821,7 @@ sub _resolve ($$) {
 					foreach my $relation_expression (@{$version->$dependency_group_name}) {
 						if ($dependency_group_target eq 'normal') {
 							# check if relation is already satisfied
-							my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
+							my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
 							if (!__is_version_array_intersects_with_packages($ref_satisfying_versions, $current_solution)) {
 								if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 									# this is a soft dependency
@@ -884,7 +886,7 @@ sub _resolve ($$) {
 							}
 						} else {
 							# check if relation is accidentally satisfied
-							my $ref_satisfying_versions = $self->cache->get_satisfying_versions($relation_expression);
+							my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
 							if (__is_version_array_intersects_with_packages($ref_satisfying_versions, $current_solution)) {
 								# so, this can conflict... check it deeper on the fly
 								my $conflict_found = 0;
@@ -911,7 +913,7 @@ sub _resolve ($$) {
 									# additionally, in case of absense of stick, also contribute to possible actions
 									if (!$other_package_entry->stick) {
 										# so change it
-										my $other_package = $self->cache->get_binary_package($other_package_name);
+										my $other_package = $cache->get_binary_package($other_package_name);
 										foreach my $other_version (@{$other_package->get_versions()}) {
 											# don't try existing version
 											next if $other_version->version_string eq $satisfying_version->version_string;
@@ -944,7 +946,7 @@ sub _resolve ($$) {
 
 									if (!$package_entry->stick) {
 										# change version of the package
-										my $package = $self->cache->get_binary_package($package_name);
+										my $package = $cache->get_binary_package($package_name);
 										foreach my $other_version (@{$package->get_versions()}) {
 											# don't try existing version
 											next if $other_version->version_string eq $version->version_string;
