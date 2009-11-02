@@ -365,8 +365,15 @@ sub _get_version_weight ($$) {
 sub _get_action_profit ($$$) {
 	my ($self, $original_version, $supposed_version) = @_;
 
-	my $result = $self->_get_version_weight($supposed_version) -
-   			$self->_get_version_weight($original_version);
+	my $supposed_version_weight = $self->_get_version_weight($supposed_version);
+	my $original_version_weight = $self->_get_version_weight($original_version);
+
+	if (not defined $original_version) {
+		# installing the version itself gains nothing
+		$supposed_version_weight /= 20;
+	}
+
+	my $result = $supposed_version_weight - $original_version_weight;
 	# installing new package
 	$result -= 10 if !defined $original_version;
 	# remove a package
