@@ -314,24 +314,24 @@ sub upgrade ($) {
 }
 
 sub __fair_chooser {
-	my ($ref_solution_entries) = @_;
+	my ($ref_solutions) = @_;
 
 	# choose the solution with maximum score
-	return reduce { $a->score > $b->score ? $a : $b } @$ref_solution_entries;
+	return reduce { $a->score > $b->score ? $a : $b } @$ref_solutions;
 }
 
 sub __full_chooser {
-	my ($ref_solution_entries) = @_;
+	my ($ref_solutions) = @_;
 	# defer the decision until all solutions are built
 
-	my $ref_unfinished_solution = first { ! $_->finished } @$ref_solution_entries;
+	my $ref_unfinished_solution = first { ! $_->finished } @$ref_solutions;
 
 	if (defined $ref_unfinished_solution) {
 		return $ref_unfinished_solution;
 	} else {
 		# heh, whole solution tree has been already built?.. ok, let's choose
 		# the best solution
-		return __fair_chooser($ref_solution_entries);
+		return __fair_chooser($ref_solutions);
 	}
 }
 
@@ -547,7 +547,7 @@ sub _require_strict_relation_expressions ($) {
 }
 
 sub _apply_action ($$$$$) {
-	my ($self, $ref_solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper) = @_;
+	my ($self, $solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper) = @_;
 
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
@@ -555,18 +555,18 @@ sub _apply_action ($$$$$) {
 	do { # stick all requested package names
 		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
 		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
-			my $package_entry = $ref_solution->get_package_entry($package_name);
+			my $package_entry = $solution->get_package_entry($package_name);
 			if (defined $package_entry) {
 				$package_entry = $package_entry->clone();
 			} else {
 				$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
 			}
 			$package_entry->stick = 1;
-			$ref_solution->set_package_entry($package_name => $package_entry);
+			$solution->set_package_entry($package_name => $package_entry);
 		}
 	};
 
-	my $package_entry_to_change = $ref_solution->get_package_entry($package_name_to_change);
+	my $package_entry_to_change = $solution->get_package_entry($package_name_to_change);
 	my $original_version = $package_entry_to_change->version;
 
 	my $profit = $ref_action_to_apply->{'profit'} //
@@ -587,8 +587,8 @@ sub _apply_action ($$$$$) {
 		$sub_mydebug_wrapper->($message);
 	}
 
-	++$ref_solution->level;
-	$ref_solution->score += $profit;
+	++$solution->level;
+	$solution->score += $profit;
 
 	$package_entry_to_change->version = $supposed_version;
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
@@ -602,7 +602,7 @@ sub _apply_action ($$$$$) {
 	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
 		# dont' do synchronization for removals
 		if (defined $supposed_version) {
-			$self->_synchronize_related_packages($ref_solution,
+			$self->_synchronize_related_packages($solution,
 					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
@@ -775,8 +775,8 @@ sub _resolve ($$) {
 	};
 
 	my $sub_apply_action = sub {
-		my ($ref_solution, $ref_action_to_apply, $new_solution_identifier) = @_;
-		$self->_apply_action($ref_solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper);
+		my ($solution, $ref_action_to_apply, $new_solution_identifier) = @_;
+		$self->_apply_action($solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper);
 	};
 
 	my $return_code;
