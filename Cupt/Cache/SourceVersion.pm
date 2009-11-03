@@ -280,7 +280,9 @@ sub new {
 		mydie('no hash sums specified for tarball');
 	}
 	if (defined $self->diff && !are_hash_sums_present($self->diff)) {
-		mydie('no hash sums specified for diff');
+		undef $self->diff;
+		mywarn("source package '%s', version '%s': no diff entries but a dashed version, assuming it's a native package",
+				$self->package_name, $self->version_string);
 	}
 	if (!are_hash_sums_present($self->dsc)) {
 		mydie('no hash sums specified for dsc');

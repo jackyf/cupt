@@ -12,6 +12,7 @@ cupt (1.3.0) UNRELEASED; urgency=low
       - SourceVersion:
         - Rewritten parsing the version entry using different approach.
         - Support 'Binary' field span to multiple lines.
+        - Support native packages with dashed version strings with a warning.
     - System:
       - Resolvers/Native:
         - Don't pre-schedule any relations for newly-installed versions, leave
