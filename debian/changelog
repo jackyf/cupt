@@ -27,6 +27,8 @@ cupt (1.3.0) UNRELEASED; urgency=low
           set.
         - Adjusted calculating action weights so installing an extra package
           gains almost nothing.
+        - When 'cupt::resolver::synchronize-source-versions' is set, try use
+          source versions if available to speed-up processing.
       - Worker:
         - Don't use File::Path module. Thanks to Bernd Zeimetz.
           (Closes: #553629)
