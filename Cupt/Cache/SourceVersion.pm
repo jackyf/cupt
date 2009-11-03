@@ -212,74 +212,57 @@ sub new {
 	$self->available_as->[0]->{release} = $ref_release_info;
 	$self->package_name = $package_name;
 
-	my $field_name = undef;
-	eval {
-		my $line;
-		my $current_hash_sum_name;
+	do { # actual parsing
 		# go to starting byte of the entry
 		seek($fh, $offset, 0) or
 				mydie('unable to seek on Sources file: %s', $!);
 
-		# we have already opened file handle and offset for reading the entry
-		while (($line = <$fh>) ne "\n") {
-			chomp($line);
-			if ($line =~ m/^ /) {
-				defined $current_hash_sum_name or
-						mydie("line '%s' without previous hash sum declaration", $line);
+		local $_;
+		do {
+			local $/ = "\n\n";
+			$_ = <$fh>;
+		};
+
+		while (s/^(Files|Checksums-Sha1|Checksums-Sha256): *$(?:\n)((?:^ .*$(?:\n))*)//m) {
+			my $hash_sum_name = ($1 eq 'Files' ? 'md5sum' : ($1 eq 'Checksums-Sha1' ? 'sha1sum' : 'sha256sum'));
+			foreach my $line (split("\n", $2)) {
 				my ($hash_sum, $size, $name) = ($line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
 						mydie("malformed line '%s'", $line);
 				local $_ = $name;
 				my $part = m/.dsc$/ ? 'dsc' : (m/.diff.gz$/ ? 'diff' : 'tarball');
 				$self->$part->{'filename'} = $name;
 				$self->$part->{'size'} = $size;
-				$self->$part->{$current_hash_sum_name} = $hash_sum;
-			} else {
-				if ($line =~ m/^Files:/) {
-					$current_hash_sum_name = 'md5sum';
-				} elsif ($line =~ m/^Checksums-Sha1:/) {
-					$current_hash_sum_name = 'sha1sum';
-				} elsif ($line =~ m/^Checksums-Sha256:/) {
-					$current_hash_sum_name = 'sha256sum';
-				} else {
-					undef $current_hash_sum_name;
-
-					(($field_name, my $field_value) = ($line =~ m/^((?:\w|-)+?): (.*)/)) # '$' implied in regexp
-						or mydie("cannot parse line '%s'", $line);
-
-					given ($field_name) {
-						when ('Build-Depends') {
-							$self->build_depends = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
-						}
-						when ('Build-Depends-Indep') {
-							$self->build_depends_indep = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
-						}
-						when ('Binary') { @{$self->binary_package_names} = split(/, /, $field_value) }
-						when ('Priority') { $self->priority = $field_value }
-						when ('Section') { $self->section = $field_value unless $o_no_parse_info_onlys }
-						when ('Maintainer') { $self->maintainer = $field_value unless $o_no_parse_info_onlys }
-						when ('Uploaders') { $self->uploaders = $field_value unless $o_no_parse_info_onlys }
-						when ('Architecture') { $self->architecture = $field_value }
-						when ('Version') { $self->version_string = $field_value }
-						when ('Directory') { $self->available_as->[0]->{directory} = $field_value }
-						when ('Build-Conflicts') {
-							$self->build_conflicts = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
-						}
-						when ('Build-Conflicts-Indep') {
-							$self->build_conflicts_indep = parse_architectured_relation_line($field_value) unless $o_no_parse_relations;
-						}
-					}
-					undef $field_name;
-				}
+				$self->$part->{$hash_sum_name} = $hash_sum;
 			}
 		}
-	};
-	if (mycatch()) {
-		if (defined($field_name)) {
-			myerr("error while parsing field '%s'", $field_name);
+
+		s/^Priority: (.*)$//m and do { $self->priority = $1 };
+		s/^Architecture: (.*)$//m and do { $self->architecture = $1 };
+		s/^Version: (.*)$//m and do { $self->version_string = $1 };
+		s/^Binary: (.*)$//m and do { @{$self->binary_package_names} = split(/, /, $1) };
+		s/^Directory: (.*)$//m and do { $self->available_as->[0]->{directory} = $1 };
+
+		unless ($o_no_parse_info_onlys) {
+			s/^Section: (.*)$//m and do { $self->section = $1 };
+			s/^Maintainer: (.*)$//m and do { $self->maintainer = $1 };
+			s/^Uploaders: (.*)$//m and do { $self->uploaders = $1 };
 		}
-		myredie();
-	}
-	bless $self => $class;
+
+		unless ($o_no_parse_relations) {
+			s/^Build-Depends: (.*)$//m and do {
+				$self->build_depends = parse_architectured_relation_line($1);
+			};
+			s/^Build-Depends-Indep: (.*)$//m and do {
+				$self->build_depends_indep = parse_architectured_relation_line($1);
+			};
+			s/^Build-Conflicts: (.*)$//m and do {
+				$self->build_conflicts = parse_architectured_relation_line($1);
+			};
+			s/^Build-Conflicts-Indep: (.*)$//m and do {
+				$self->build_conflicts_indep = parse_architectured_relation_line($1);
+			};
+		}
+	};
 
 	# checking a presence of version string
 	defined $self->version_string or mydie("version string isn't defined");
