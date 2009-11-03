@@ -239,7 +239,10 @@ sub new {
 		s/^Priority: (.*)$//m and do { $self->priority = $1 };
 		s/^Architecture: (.*)$//m and do { $self->architecture = $1 };
 		s/^Version: (.*)$//m and do { $self->version_string = $1 };
-		s/^Binary: (.*)$//m and do { @{$self->binary_package_names} = split(/, /, $1) };
+		s/^Binary: (.*\n(?:^ .*$(?:\n))*)//m and do {
+			(my $full_line = $1) =~ s/\n//g; # delete linebreaks
+			@{$self->binary_package_names} = split(/,\s*/, $full_line);
+		};
 		s/^Directory: (.*)$//m and do { $self->available_as->[0]->{directory} = $1 };
 
 		unless ($o_no_parse_info_onlys) {
