@@ -82,7 +82,7 @@ sub _related_binary_package_names ($$$) {
 	my $package_name = $version->package_name;
 	my $source_package_name = $version->source_package_name;
 
-	my @possible_related_package_names = $solution->get_package_names();
+	my @possible_related_package_names;
 
 	my $source_package = $self->cache->get_source_package($source_package_name);
 	if (defined $source_package) {
@@ -91,6 +91,9 @@ sub _related_binary_package_names ($$$) {
 			@possible_related_package_names = grep { defined $solution->get_package_entry($_) }
 					@{$source_version->binary_package_names};
 		}
+	}
+	if (not scalar @possible_related_package_names) {
+		@possible_related_package_names = $solution->get_package_names();
 	}
 
 	foreach my $other_package_name (@possible_related_package_names) {
