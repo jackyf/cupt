@@ -88,13 +88,8 @@ sub _related_binary_package_names ($$$) {
 	if (defined $source_package) {
 		my $source_version = $source_package->get_specific_version($version->source_version_string);
 		if (defined $source_version) {
-			my @new_possible_related_package_names;
-			foreach my $candidate_package_name (@{$source_version->binary_package_names}) {
-				if (any { $_ eq $candidate_package_name } @possible_related_package_names) {
-					push @new_possible_related_package_names, $candidate_package_name;
-				}
-			}
-			@possible_related_package_names = @new_possible_related_package_names;
+			@possible_related_package_names = grep { defined $solution->get_package_entry($_) }
+					@{$source_version->binary_package_names};
 		}
 	}
 
