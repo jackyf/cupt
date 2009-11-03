@@ -1514,9 +1514,14 @@ sub manage_packages ($) {
 			$action = 'install';
 			@package_expressions_to_reinstall = @ARGV;
 		}
+
+		# source packages give dramatic speed-up for synchronizing source versions
+		my $o_build_source = ($action eq 'build-depends' or
+				$config->var('cupt::resolver::synchronize-source-versions') ne 'none');
+
 		print __('Building the package cache... ');
 		build_cache(
-				'-source' => ($action eq 'build-depends'),
+				'-source' => $o_build_source,
 				'-binary' => 1,
 				'-installed' => 1,
 				'-allow-reinstall' => \@package_expressions_to_reinstall

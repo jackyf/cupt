@@ -74,15 +74,31 @@ sub import_installed_versions ($$) {
 	return;
 }
 
-sub __related_binary_package_names ($$) {
-	my ($solution, $version) = @_;
+sub _related_binary_package_names ($$$) {
+	my ($self, $solution, $version) = @_;
 
 	my @result;
 
 	my $package_name = $version->package_name;
 	my $source_package_name = $version->source_package_name;
 
-	foreach my $other_package_name ($solution->get_package_names()) {
+	my @possible_related_package_names = $solution->get_package_names();
+
+	my $source_package = $self->cache->get_source_package($source_package_name);
+	if (defined $source_package) {
+		my $source_version = $source_package->get_specific_version($version->source_version_string);
+		if (defined $source_version) {
+			my @new_possible_related_package_names;
+			foreach my $candidate_package_name (@{$source_version->binary_package_names}) {
+				if (any { $_ eq $candidate_package_name } @possible_related_package_names) {
+					push @new_possible_related_package_names, $candidate_package_name;
+				}
+			}
+			@possible_related_package_names = @new_possible_related_package_names;
+		}
+	}
+
+	foreach my $other_package_name (@possible_related_package_names) {
 		my $other_version = $solution->get_package_entry($other_package_name)->version;
 		next if not defined $other_version;
 		next if $other_version->source_package_name ne $source_package_name;
@@ -116,7 +132,7 @@ sub _get_unsynchronizeable_related_package_names {
 	}
 
 	my $package_name = $version->package_name;
-	my @related_package_names = __related_binary_package_names($solution, $version);
+	my @related_package_names = $self->_related_binary_package_names($solution, $version);
 	my $source_version_string = $version->source_version_string;
 
 	my @result;
@@ -154,7 +170,7 @@ sub _synchronize_related_packages ($$$$$) {
 	# $stick - boolean
 	my ($self, $solution, $version, $stick, $sub_mydebug_wrapper) = @_;
 
-	my @related_package_names = __related_binary_package_names($solution, $version);
+	my @related_package_names = $self->_related_binary_package_names($solution, $version);
 	my $source_version_string = $version->source_version_string;
 	my $package_name = $version->package_name;
 
