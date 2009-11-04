@@ -286,6 +286,9 @@ sub set_list_var {
 	my ($self, $var_name, $new_value) = @_;
 	my $original_var_name = $var_name;
 	$var_name = lc($var_name);
+	if (not defined $self->list_vars->{$var_name} and $self->_is_optional_option($var_name)) {
+		$self->list_vars->{$var_name} = [];
+	}
 	if (defined ($self->list_vars->{$var_name})) {
 		push @{$self->list_vars->{$var_name}}, $new_value;
 	} else {
