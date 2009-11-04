@@ -75,7 +75,7 @@ sub main {
 	# for repeated invokes
 	undef $command;
 
-	if ($ARGV[0] eq 'get' && $ARGV[1] eq 'ride') {
+	if (scalar @ARGV == 2 and $ARGV[0] eq 'get' && $ARGV[1] eq 'ride') {
 		say __("You've got ride.");
 		return 0;
 	}
