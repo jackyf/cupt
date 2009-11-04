@@ -23,8 +23,6 @@ package Cupt::System::Resolvers::Native::Solution;
 use strict;
 use warnings;
 
-use List::MoreUtils qw(uniq);
-
 # packages => PackageEntry
 # score' => score
 # level' => level
@@ -90,12 +88,12 @@ sub clone {
 sub get_package_names {
 	my ($self) = @_;
 
-	my @result = keys %{$self->_packages};
-	if (defined $self->_master_packages) {
-		push @result, keys %{$self->_master_packages};
-		@result = uniq @result;
+	if (not defined $self->_master_packages) {
+		return keys %{$self->_packages};
+	} else {
+		return ((grep { not exists $self->_master_packages->{$_} } keys %{$self->_packages}),
+				keys %{$self->_master_packages});
 	}
-	return @result;
 }
 
 sub get_package_entry {
