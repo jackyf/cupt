@@ -30,7 +30,8 @@ use 5.10.0;
 use strict;
 use warnings;
 
-use Digest;
+use Digest::MD5;
+use Digest::SHA;
 use Fcntl qw(:seek :DEFAULT);
 use POSIX qw(locale_h);
 use List::MoreUtils 0.23 qw(none any);
