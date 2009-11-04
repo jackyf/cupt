@@ -156,7 +156,7 @@ sub new {
 		'acquire::compressiontypes::*',
 		'apt::archives::*',
 		'apt::periodic::*',
-		'ununattended-upgrade::*',
+		'unattended-upgrade::*',
 	];
 
 	$self->list_vars = {
