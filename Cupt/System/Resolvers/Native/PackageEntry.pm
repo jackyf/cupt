@@ -42,10 +42,10 @@ sub clone {
 	my ($self) = @_;
 
 	my $cloned = bless [] => 'Cupt::System::Resolvers::Native::PackageEntry';
-	$cloned->version = $self->version;
-	$cloned->stick = $self->stick;
-	$cloned->fake_satisfied = [ @{$self->fake_satisfied} ];
-	$cloned->reasons = [ @{$self->reasons} ];
+	$cloned->[version_offset()] = $self->[version_offset()];
+	$cloned->[stick_offset()] = $self->[stick_offset()];
+	$cloned->[fake_satisfied_offset()] = [ @{$self->[fake_satisfied_offset()]} ];
+	$cloned->[reasons_offset()] = [ @{$self->[reasons_offset()]} ];
 
 	return $cloned;
 }
