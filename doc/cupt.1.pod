@@ -783,6 +783,10 @@ Also, you may specify shell wildcars '*' and '?' in the package names.
 
 Examples: C<xfce4-*>, C<python2.5-*/unstable>, C<?aff*/installed>
 
+For all management subcommands, there is also '@<path-to-file>' syntax. In this
+case this construction will be substituted by binary package expressions listed
+in the specified file one by line.
+
 =head2 Source package version expression
 
 I<package_name>[I<modifier>]

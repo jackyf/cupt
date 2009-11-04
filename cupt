@@ -1497,6 +1497,24 @@ sub manage_packages ($) {
 
 	check_no_extra_options();
 
+	@ARGV = map {
+		if (m/^@/) {
+			my $file = $_;
+			$file =~ s/^@//;
+			# reading package expressions from file
+			open(my $fd, '<', $file) or
+					mydie("unable to open file '%s': %s", $file, $!);
+			my @expression_list = <$fd>;
+			chomp foreach @expression_list;
+			close($fd) or
+					mydie("unable to close file '%s': %s", $file, $!);
+			@expression_list;
+		} else {
+			# straight package expression
+			$_;
+		}
+	} @ARGV;
+
 	my $snapshot_name;
 	if ($action eq 'load-snapshot') {
 		require Cupt::System::Snapshots;
