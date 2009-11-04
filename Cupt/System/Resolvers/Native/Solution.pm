@@ -70,7 +70,7 @@ sub clone {
 		$cloned->_master_packages = undef;
 		$cloned->_packages = __clone_packages($self->_master_packages);
 		foreach my $key (keys %{$self->_packages}) {
-			$cloned->_packages->{$key} = $self->_packages->{$key};
+			$cloned->_packages->{$key} = $self->_packages->{$key}->clone();
 		}
 	} else {
 		$cloned->_divert_level = $self->_divert_level + 1;
