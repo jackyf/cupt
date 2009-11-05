@@ -554,8 +554,8 @@ sub _require_strict_relation_expressions ($) {
 	return;
 }
 
-sub _apply_action ($$$$$) {
-	my ($self, $solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper) = @_;
+sub _apply_action ($$$$) {
+	my ($self, $solution, $ref_action_to_apply, $sub_mydebug_wrapper) = @_;
 
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
@@ -584,6 +584,7 @@ sub _apply_action ($$$$$) {
 		my $profit_string = sprintf '%.1f', $profit;
 		$profit_string = "+$profit_string" if $profit > 0;
 
+		my $new_solution_identifier = $solution->identifier;
 		my $message = "-> ($new_solution_identifier,$profit_string) " .
 				"trying: package '$package_name_to_change': '$old_version_string' -> '$new_version_string'";
 		$sub_mydebug_wrapper->($message);
@@ -777,8 +778,8 @@ sub _resolve ($$) {
 	};
 
 	my $sub_apply_action = sub {
-		my ($solution, $ref_action_to_apply, $new_solution_identifier) = @_;
-		$self->_apply_action($solution, $ref_action_to_apply, $new_solution_identifier, $sub_mydebug_wrapper);
+		my ($solution, $ref_action_to_apply) = @_;
+		$self->_apply_action($solution, $ref_action_to_apply, $sub_mydebug_wrapper);
 	};
 
 	my $return_code;
@@ -1121,12 +1122,14 @@ sub _resolve ($$) {
 			foreach my $ref_action_to_apply (@possible_actions) {
 				# clone the current stack to form a new one
 				my $ref_cloned_solution = $current_solution->clone();
+
+				my $new_solution_identifier = $next_free_solution_identifier++;
+				$ref_cloned_solution->identifier = $new_solution_identifier;
+
 				push @solutions, $ref_cloned_solution;
 
 				# apply the solution
-				my $new_solution_identifier = $next_free_solution_identifier++;
-				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply, $new_solution_identifier);
-				$ref_cloned_solution->identifier = $new_solution_identifier;
+				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply);
 			}
 
 			# don't allow solution tree to grow unstoppably
