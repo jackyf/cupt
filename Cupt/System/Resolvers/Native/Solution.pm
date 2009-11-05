@@ -101,10 +101,8 @@ sub get_package_entry {
 
 	if (exists $self->[_packages_offset()]->{$package_name}) {
 		return $self->[_packages_offset()]->{$package_name};
-	} elsif (defined $self->[_master_packages_offset()]) {
-		return $self->[_master_packages_offset()]->{$package_name};
 	} else {
-		return undef;
+		return $self->[_master_packages_offset()]->{$package_name};
 	}
 }
 
