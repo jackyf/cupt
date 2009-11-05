@@ -1118,13 +1118,12 @@ sub _resolve ($$) {
 
 			# fork the solution entry and apply all the solutions by one
 			@solutions = grep { $_ ne $current_solution } @solutions;
-			foreach my $idx (0..$#possible_actions) {
+			foreach my $ref_action_to_apply (@possible_actions) {
 				# clone the current stack to form a new one
 				my $ref_cloned_solution = $current_solution->clone();
 				push @solutions, $ref_cloned_solution;
 
 				# apply the solution
-				my $ref_action_to_apply = $possible_actions[$idx];
 				my $new_solution_identifier = $next_free_solution_identifier++;
 				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply, $new_solution_identifier);
 				$ref_cloned_solution->identifier = $new_solution_identifier;
