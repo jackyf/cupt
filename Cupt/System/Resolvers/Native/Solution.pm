@@ -109,9 +109,14 @@ sub get_package_entry {
 }
 
 sub set_package_entry {
-	my ($self, $package_name, $new_package_entry) = @_;
-	$self->_packages->{$package_name} = $new_package_entry;
-	return;
+	my ($self, $package_name) = @_;
+	my $package_entry = $self->get_package_entry($package_name);
+	if (defined $package_entry) {
+		$package_entry = $package_entry->clone();
+	} else {
+		$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
+	}
+	$self->_packages->{$package_name} = $package_entry;
 }
 
 1;

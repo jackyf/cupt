@@ -180,8 +180,7 @@ sub _synchronize_related_packages ($$$$$) {
 		next if not defined $candidate_version;
 		next if $candidate_version->version_string eq $package_entry->version->version_string;
 
-		$package_entry = $package_entry->clone();
-		$solution->set_package_entry($other_package_name => $package_entry);
+		$package_entry = $solution->set_package_entry($other_package_name);
 
 		$package_entry->version = $candidate_version;
 		$package_entry->stick = $stick;
@@ -204,8 +203,7 @@ sub _install_version_no_stick ($$$) {
 	my $package_name = $version->package_name;
 	my $package_entry = $self->_initial_solution->get_package_entry($package_name);
 	if (not defined $package_entry) {
-		$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
-		$self->_initial_solution->set_package_entry($package_name => $package_entry);
+		$package_entry = $self->_initial_solution->set_package_entry($package_name);
 	}
 
 	# maybe nothing changed?
@@ -292,8 +290,7 @@ sub remove_package ($$) {
 
 	my $package_entry = $self->_initial_solution->get_package_entry($package_name);
 	if (not defined $package_entry) {
-		$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
-		$self->_initial_solution->set_package_entry($package_name => $package_entry);
+		$package_entry = $self->_initial_solution->set_package_entry($package_name);
 	}
 
 	if ($package_entry->stick) {
@@ -500,9 +497,7 @@ sub _clean_automatically_installed ($) {
 		};
 		foreach my $package_name (keys %candidates_for_remove) {
 			if (!exists $reachable_vertexes{$package_name}) {
-				my $package_entry = $solution->get_package_entry($package_name);
-				$package_entry = $package_entry->clone();
-				$solution->set_package_entry($package_name => $package_entry);
+				my $package_entry = $solution->set_package_entry($package_name);
 
 				$package_entry->version = undef;
 				# leave only one reason :)
@@ -550,8 +545,7 @@ sub _require_strict_relation_expressions ($) {
 	$version->breaks = [];
 	$version->conflicts = [];
 
-	my $package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
-	$self->_initial_solution->set_package_entry($_dummy_package_name => $package_entry);
+	my $package_entry = $self->_initial_solution->set_package_entry($_dummy_package_name);
 	$package_entry->version = $version;
 	$package_entry->stick = 1;
 	$package_entry->version->depends = $self->_strict_satisfy_relation_expressions;
@@ -569,14 +563,8 @@ sub _apply_action ($$$$$) {
 	do { # stick all requested package names
 		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
 		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
-			my $package_entry = $solution->get_package_entry($package_name);
-			if (defined $package_entry) {
-				$package_entry = $package_entry->clone();
-			} else {
-				$package_entry = Cupt::System::Resolvers::Native::PackageEntry->new();
-			}
+			my $package_entry = $solution->set_package_entry($package_name);
 			$package_entry->stick = 1;
-			$solution->set_package_entry($package_name => $package_entry);
 		}
 	};
 
