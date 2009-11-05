@@ -539,7 +539,9 @@ sub download ($@) {
 	my $result = 0;
 	while (scalar keys %waiters) {
 		my ($uri, $error_string, $is_duplicated_download) = __my_read_socket($socket);
+		defined $uri or myinternaldie('received undefined uri');
 		my $filename = $waiters{$uri};
+		defined $filename or myinternaldie("received wrong uri $uri");
 		my $sub_post_action = $download_entries{$filename}->{'checker'};
 
 		# delete entry from list
