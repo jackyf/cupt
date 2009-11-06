@@ -554,22 +554,20 @@ sub _require_strict_relation_expressions ($) {
 	return;
 }
 
-sub _apply_action ($$$$) {
-	my ($self, $solution, $ref_action_to_apply, $sub_mydebug_wrapper) = @_;
+# _pre_apply_action only prints debug info and changes level/score of the
+# solution, not modifying packages in it, economing RAM and CPU,
+# _post_apply_action will perform actual changes when the solution is picked up
+# by resolver
+
+sub _pre_apply_action ($$$$) {
+	my ($self, $original_solution, $solution, $ref_action_to_apply, $sub_mydebug_wrapper) = @_;
 
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
 
-	do { # stick all requested package names
-		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
-		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
-			my $package_entry = $solution->set_package_entry($package_name);
-			$package_entry->stick = 1;
-		}
-	};
-
-	my $package_entry_to_change = $solution->get_package_entry($package_name_to_change);
-	my $original_version = $package_entry_to_change->version;
+	my $original_package_entry = $original_solution->get_package_entry($package_name_to_change);
+	my $original_version = defined $original_package_entry ?
+			$original_package_entry->version : undef;
 
 	my $profit = $ref_action_to_apply->{'profit'} //
 			$self->_get_action_profit($original_version, $supposed_version);
@@ -593,7 +591,31 @@ sub _apply_action ($$$$) {
 	++$solution->level;
 	$solution->score += $profit;
 
+	$solution->pending_action = $ref_action_to_apply;
+
+	return;
+}
+
+sub _post_apply_action {
+	my ($self, $solution, $sub_mydebug_wrapper) = @_;
+
+	my $ref_action_to_apply = $solution->pending_action;
+	defined $ref_action_to_apply or return;
+
+	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
+	my $supposed_version = $ref_action_to_apply->{'version'};
+
+	do { # stick all requested package names
+		my @additionally_requested_package_names = @{$ref_action_to_apply->{'package_names_to_stick'} // []};
+		foreach my $package_name ($package_name_to_change, @additionally_requested_package_names) {
+			my $package_entry = $solution->set_package_entry($package_name);
+			$package_entry->stick = 1;
+		}
+	};
+
+	my $package_entry_to_change = $solution->get_package_entry($package_name_to_change);
 	$package_entry_to_change->version = $supposed_version;
+
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
 		push @{$package_entry_to_change->fake_satisfied}, $ref_action_to_apply->{'fakely_satisfies'};
 	}
@@ -609,6 +631,9 @@ sub _apply_action ($$$$) {
 					$supposed_version, 1, $sub_mydebug_wrapper);
 		}
 	}
+
+	$solution->pending_action = undef;
+
 	return;
 }
 
@@ -759,6 +784,7 @@ sub _resolve ($$) {
 
 	my @solutions = ($self->_initial_solution->clone());
 	$solutions[0]->identifier = 0;
+	$solutions[0]->prepare();
 
 	my $next_free_solution_identifier = 1;
 	my $current_solution;
@@ -777,9 +803,13 @@ sub _resolve ($$) {
 		mydebug(' ' x $level . "($identifier:$score_string) @_");
 	};
 
-	my $sub_apply_action = sub {
+	my $sub_pre_apply_action = sub {
 		my ($solution, $ref_action_to_apply) = @_;
-		$self->_apply_action($solution, $ref_action_to_apply, $sub_mydebug_wrapper);
+		$self->_pre_apply_action($current_solution, $solution, $ref_action_to_apply, $sub_mydebug_wrapper);
+	};
+
+	my $sub_post_apply_action = sub {
+		$self->_post_apply_action($current_solution, $sub_mydebug_wrapper);
 	};
 
 	my $return_code;
@@ -797,6 +827,10 @@ sub _resolve ($$) {
 
 		# choosing the solution to process
 		$current_solution = $sub_solution_chooser->(\@solutions);
+		if (defined $current_solution->pending_action) {
+			$current_solution->prepare();
+			$sub_post_apply_action->();
+		}
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
 		# so, when an intermediate problem was solved, maybe it breaks packages
@@ -888,8 +922,9 @@ sub _resolve ($$) {
 								$check_failed = 1;
 
 								if (scalar @possible_actions == 1) {
-									$sub_apply_action->($current_solution,
+									$sub_pre_apply_action->($current_solution,
 											$possible_actions[0], $current_solution->identifier);
+									$sub_post_apply_action->();
 									@possible_actions = ();
 									$recheck_needed = 1;
 									next PACKAGE;
@@ -1130,7 +1165,7 @@ sub _resolve ($$) {
 				push @solutions, $ref_cloned_solution;
 
 				# apply the solution
-				$sub_apply_action->($ref_cloned_solution, $ref_action_to_apply);
+				$sub_pre_apply_action->($ref_cloned_solution, $ref_action_to_apply);
 			}
 
 			# don't allow solution tree to grow unstoppably

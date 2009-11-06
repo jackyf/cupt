@@ -28,8 +28,8 @@ use warnings;
 # level' => level
 # identifier' => identifier
 # finished' => finished (1 | 0)
-use Cupt::LValueFields qw(score level identifier
-		finished _packages _master_packages _divert_level);
+use Cupt::LValueFields qw(score level identifier pending_action
+		finished _packages _master_packages _master_solution _divert_level);
 
 my $_max_divert_level = 16;
 
@@ -51,6 +51,7 @@ sub new {
 	$self->level = 0;
 	$self->identifier = 0;
 	$self->finished = 0;
+	$self->pending_action = undef;
 	$self->_master_packages = undef;
 	$self->_divert_level = 0;
 	return $self;
@@ -64,25 +65,40 @@ sub clone {
 	$cloned->level = $self->level;
 	$cloned->identifier = undef; # will be set later :(
 	$cloned->finished = 0;
+	$cloned->pending_action = $self->pending_action;
 
-	if ($self->_divert_level == $_max_divert_level) {
-		$cloned->_divert_level = 0;
-		$cloned->_master_packages = undef;
-		$cloned->_packages = __clone_packages($self->_master_packages);
-		foreach my $key (keys %{$self->_packages}) {
-			$cloned->_packages->{$key} = $self->_packages->{$key}->clone();
+	$cloned->_master_solution = $self;
+
+	# other part should be done by calling prepare outside
+
+	return $cloned;
+}
+
+sub prepare {
+	my ($self) = @_;
+
+	my $master_solution = $self->_master_solution;
+	defined $master_solution or myinternaldie("undefined master solution");
+
+	if ($master_solution->_divert_level == $_max_divert_level) {
+		$self->_divert_level = 0;
+		$self->_master_packages = undef;
+		$self->_packages = __clone_packages($master_solution->_master_packages);
+		foreach my $key (keys %{$master_solution->_packages}) {
+			$self->_packages->{$key} = $master_solution->_packages->{$key}->clone();
 		}
 	} else {
-		$cloned->_divert_level = $self->_divert_level + 1;
-		if (defined $self->_master_packages) {
-			$cloned->_master_packages = $self->_master_packages;
-		   	$cloned->_packages = __clone_packages($self->_packages);
+		$self->_divert_level = $master_solution->_divert_level + 1;
+		if (defined $master_solution->_master_packages) {
+			$self->_master_packages = $master_solution->_master_packages;
+			$self->_packages = __clone_packages($master_solution->_packages);
 		} else {
-			$cloned->_master_packages = $self->_packages;
-			$cloned->_packages = {};
+			$self->_master_packages = $master_solution->_packages;
+			$self->_packages = {};
 		}
 	}
-	return $cloned;
+
+	$self->_master_solution = undef;
 }
 
 sub get_package_names {
