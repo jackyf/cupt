@@ -99,11 +99,8 @@ sub get_package_names {
 sub get_package_entry {
 	my ($self, $package_name) = @_;
 
-	if (exists $self->[_packages_offset()]->{$package_name}) {
-		return $self->[_packages_offset()]->{$package_name};
-	} else {
-		return $self->[_master_packages_offset()]->{$package_name};
-	}
+	return $self->[_packages_offset()]->{$package_name} //
+			$self->[_master_packages_offset()]->{$package_name};
 }
 
 sub set_package_entry {
