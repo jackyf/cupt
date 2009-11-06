@@ -814,7 +814,8 @@ sub _resolve ($$) {
 			# to speed up the complex decision steps, if solution stack is not
 			# empty, firstly check the packages that had a problem
 			my @packages_in_order = sort {
-				($failed_counts{$b} // 0) <=> ($failed_counts{$a} // 0)
+				($failed_counts{$b} // 0) <=> ($failed_counts{$a} // 0) or
+				$a cmp $b
 			} $current_solution->get_package_names();
 
 			foreach my $ref_dependency_group (@dependency_groups) {
