@@ -1491,6 +1491,7 @@ sub manage_packages ($) {
 	# turn off info parsing, we don't need it
 	unless ($o_shell_mode) {
 		$Cupt::Cache::BinaryVersion::o_no_parse_info_onlys = 1;
+		$Cupt::Cache::SourceVersion::o_no_parse_info_onlys = 1;
 	}
 
 	$Cupt::Cache::Package::o_memoize = 1;
