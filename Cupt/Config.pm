@@ -118,7 +118,7 @@ sub new {
 		'cupt::resolver::keep-suggests' => 0,
 		'cupt::resolver::max-solution-count' => 256,
 		'cupt::resolver::no-remove' => 0,
-		'cupt::resolver::quality-bar' => -50,
+		'cupt::resolver::quality-bar' => 0,
 		'cupt::resolver::synchronize-source-versions' => 'none',
 		'cupt::resolver::track-reasons' => 0,
 		'cupt::resolver::type' => 'fair',

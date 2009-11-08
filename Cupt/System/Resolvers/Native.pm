@@ -382,15 +382,14 @@ sub _get_action_profit ($$$) {
 	if (not defined $original_version) {
 		# installing the version itself gains nothing
 		$supposed_version_weight /= 20;
+		$supposed_version_weight -= 60;
 	}
 
 	my $result = $supposed_version_weight - $original_version_weight;
-	# installing new package
-	$result -= 10 if !defined $original_version;
 	# remove a package
 	$result -= 50 if !defined $supposed_version;
 
-	return $result - $self->config->var('cupt::resolver::quality-bar');
+	return $result;
 }
 
 sub __is_version_array_intersects_with_packages ($$) {
@@ -517,17 +516,12 @@ sub _clean_automatically_installed ($) {
 sub _select_solution_chooser ($) {
 	my ($self) = @_;
 
-	my %solution_choosers = (
-		'fair' => \&__fair_chooser,
-		'full' => \&__full_chooser,
-	);
-
 	my $resolver_type = $self->config->var('cupt::resolver::type');
-	my $sub_solution_chooser = $solution_choosers{$resolver_type};
-	defined $sub_solution_chooser or
+	my $sub_name = "__${resolver_type}_chooser";
+	__PACKAGE__->can($sub_name) or
 			mydie("wrong resolver type '%s'", $resolver_type);
-
-	return $sub_solution_chooser;
+	my $sub = \&$sub_name;
+	return $sub;
 }
 
 sub _require_strict_relation_expressions ($) {
@@ -573,6 +567,11 @@ sub _pre_apply_action ($$$$) {
 			$self->_get_action_profit($original_version, $supposed_version);
 	$profit *= $ref_action_to_apply->{'factor'};
 
+	# temporarily lower the score of the current solution to implement back-tracking
+	# the bigger quality bar, the bigger chance for other solutions
+	my $quality_correction = - $self->config->var('cupt::resolver::quality-bar') /
+			($original_solution->level + 1)**0.1;
+
 	if ($self->config->var('debug::resolver')) {
 		my $old_version_string = defined($original_version) ?
 				$original_version->version_string : '<not installed>';
@@ -581,15 +580,18 @@ sub _pre_apply_action ($$$$) {
 
 		my $profit_string = sprintf '%.1f', $profit;
 		$profit_string = "+$profit_string" if $profit > 0;
+		my $quality_correction_string = sprintf '%.1f', $quality_correction;
+		$quality_correction_string = "+$quality_correction_string" if $quality_correction > 0;
 
 		my $new_solution_identifier = $solution->identifier;
-		my $message = "-> ($new_solution_identifier,$profit_string) " .
+		my $message = "-> ($new_solution_identifier,Δ:$profit_string,qΔ:$quality_correction_string) " .
 				"trying: package '$package_name_to_change': '$old_version_string' -> '$new_version_string'";
 		$sub_mydebug_wrapper->($message);
 	}
 
 	++$solution->level;
 	$solution->score += $profit;
+	$solution->score += $quality_correction;
 
 	$solution->pending_action = $ref_action_to_apply;
 
