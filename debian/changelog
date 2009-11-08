@@ -34,6 +34,8 @@ cupt (1.3.0) UNRELEASED; urgency=low
           gains almost nothing.
         - When 'cupt::resolver::synchronize-source-versions' is set, try use
           source versions if available to speed-up processing.
+        - Don't perform re-synchronization if the source version has several
+          appropriate binary versions.
       - Worker:
         - Don't use File::Path module. Thanks to Bernd Zeimetz.
           (Closes: #553629)

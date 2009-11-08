@@ -175,10 +175,10 @@ sub _synchronize_related_packages ($$$$$) {
 	foreach my $other_package_name (@related_package_names) {
 		my $package_entry = $solution->get_package_entry($other_package_name);
 		next if $package_entry->stick;
+		next if $package_entry->version->source_version_string eq $source_version_string;
 		my $candidate_version = $self->_get_package_version_by_source_version_string(
 				$other_package_name, $source_version_string);
 		next if not defined $candidate_version;
-		next if $candidate_version->version_string eq $package_entry->version->version_string;
 
 		$package_entry = $solution->set_package_entry($other_package_name);
 
