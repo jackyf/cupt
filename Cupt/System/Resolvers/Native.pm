@@ -761,6 +761,35 @@ sub __prepare_stick_requests ($) {
 	return;
 }
 
+sub _propose_solution {
+	my ($self, $solution, $sub_callback, $sub_mydebug_wrapper) = @_;
+
+	# build "user-frienly" version of solution
+	my %suggested_packages;
+	foreach my $package_name ($solution->get_package_names()) {
+		next if $package_name eq $_dummy_package_name;
+		my $other_package_entry = $solution->get_package_entry($package_name);
+		$suggested_packages{$package_name}->{'version'} = $other_package_entry->version;
+		$suggested_packages{$package_name}->{'reasons'} = $other_package_entry->reasons;
+		my $original_package_entry = $self->_initial_solution->get_package_entry($package_name);
+		$suggested_packages{$package_name}->{'manually_selected'} =
+				(defined $original_package_entry and $original_package_entry->manually_selected);
+	}
+
+	# suggest found solution
+	if ($self->config->var('debug::resolver')) {
+		$sub_mydebug_wrapper->('proposing this solution');
+	}
+	my $user_answer = $sub_callback->(\%suggested_packages);
+	if ($self->config->var('debug::resolver') and defined $user_answer) {
+		if ($user_answer) {
+			$sub_mydebug_wrapper->($user_answer ? 'accepted' : 'declined');
+		}
+	}
+
+	return $user_answer;
+}
+
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
@@ -1043,6 +1072,10 @@ sub _resolve ($$) {
 				if ($self->config->var('debug::resolver')) {
 					$sub_mydebug_wrapper->('finished');
 				}
+
+				# clean up automatically installed by resolver and now unneeded packages
+				$self->_clean_automatically_installed($current_solution);
+
 				$current_solution->finished = 1;
 			}
 			# resolver can refuse the solution
@@ -1053,41 +1086,18 @@ sub _resolve ($$) {
 				next;
 			}
 
-			# clean up automatically installed by resolver and now unneeded packages
-			$self->_clean_automatically_installed($current_solution);
+			my $user_answer = $self->_propose_solution($current_solution, $sub_accept, $sub_mydebug_wrapper);
 
-			# build "user-frienly" version of solution
-			my %suggested_packages;
-			foreach my $package_name ($current_solution->get_package_names()) {
-				next if $package_name eq $_dummy_package_name;
-				my $other_package_entry = $current_solution->get_package_entry($package_name);
-				$suggested_packages{$package_name}->{'version'} = $other_package_entry->version;
-				$suggested_packages{$package_name}->{'reasons'} = $other_package_entry->reasons;
-				my $original_package_entry = $self->_initial_solution->get_package_entry($package_name);
-				$suggested_packages{$package_name}->{'manually_selected'} =
-						(defined $original_package_entry and $original_package_entry->manually_selected);
-			}
-
-			# suggest found solution
-			if ($self->config->var('debug::resolver')) {
-				$sub_mydebug_wrapper->('proposing this solution');
-			}
-			my $user_answer = $sub_accept->(\%suggested_packages);
 			if (!defined $user_answer) {
 				# user has selected abandoning all further efforts
 				goto EXIT;
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
-				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->('accepted');
-				}
 				$return_code = 1;
 				goto EXIT;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
-				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->('declined');
-				}
+
 				# purge current solution
 				@solutions = grep { $_ ne $current_solution } @solutions;
 				next;
