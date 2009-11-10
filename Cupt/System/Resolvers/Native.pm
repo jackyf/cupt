@@ -843,8 +843,6 @@ sub _resolve ($$) {
 		$self->_post_apply_action($current_solution, $sub_mydebug_wrapper);
 	};
 
-	my $return_code;
-
 	my $cache = $self->cache;
 
 	do {{
@@ -852,7 +850,7 @@ sub _resolve ($$) {
 		my $package_entry;
 
 		# continue only if we have at least one solution pending, otherwise we have a great fail
-		scalar @solutions or do { $return_code = 0; goto EXIT };
+		scalar @solutions or return 0;
 
 		my @possible_actions;
 
@@ -1090,11 +1088,10 @@ sub _resolve ($$) {
 
 			if (!defined $user_answer) {
 				# user has selected abandoning all further efforts
-				goto EXIT;
+				return undef;
 			} elsif ($user_answer) {
 				# yeah, this is end of our tortures
-				$return_code = 1;
-				goto EXIT;
+				return 1;
 			} else {
 				# caller hasn't accepted this solution, well, go next...
 
@@ -1199,9 +1196,6 @@ sub _resolve ($$) {
 			@solutions = grep { $_ ne $current_solution } @solutions;
 		}
 	}} while $check_failed;
-
-	EXIT:
-	return $return_code;
 }
 
 sub resolve ($$) {
