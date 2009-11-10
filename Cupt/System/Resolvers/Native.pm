@@ -952,7 +952,7 @@ sub _resolve ($$) {
 
 								if (scalar @possible_actions == 1) {
 									$sub_pre_apply_action->($current_solution,
-											$possible_actions[0], $current_solution->identifier);
+											$possible_actions[0]);
 									$sub_post_apply_action->();
 									@possible_actions = ();
 									$recheck_needed = 1;
