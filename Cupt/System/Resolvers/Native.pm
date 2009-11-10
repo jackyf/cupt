@@ -799,6 +799,47 @@ sub _propose_solution {
 	return $user_answer;
 }
 
+sub _filter_unsynchronizeable_actions {
+	my ($self, $solution, $ref_actions) = @_;
+
+	my @new_possible_actions;
+	foreach my $possible_action (@$ref_actions) {
+		my $version = $possible_action->{'version'};
+		if (not defined $version or
+			$self->_related_packages_can_be_synchronized($solution, $version))
+		{
+			push @new_possible_actions, $possible_action;
+		} else {
+			# we cannot proceed with it, so try deleting related packages
+			my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
+					$solution, $version);
+			foreach my $unsynchronizeable_package_name (@unsynchronizeable_package_names) {
+				next if $solution->get_package_entry($unsynchronizeable_package_name)->stick;
+
+				if (none {
+						$_->{'package_name'} eq $unsynchronizeable_package_name and
+						not defined $_->{'version'}
+					} @new_possible_actions)
+				{
+					unshift @new_possible_actions, {
+						'package_name' => $unsynchronizeable_package_name,
+						'version' => undef,
+						'factor' => 1,
+						'reason' => [ 'sync', $version->package_name ],
+					};
+				}
+			}
+			if ($self->config->var('debug::resolver')) {
+				__mydebug_wrapper($solution, sprintf(
+						'cannot consider installing %s %s: unable to synchronize related packages (%s)',
+						$version->package_name, $version->version_string,
+						join(', ', @unsynchronizeable_package_names)));
+			}
+		}
+	}
+	return @new_possible_actions;
+}
+
 sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
@@ -1102,42 +1143,8 @@ sub _resolve ($$) {
 		if ($self->config->var('cupt::resolver::synchronize-source-versions') eq 'hard') {
 			# if we have to synchronize source versions, can related packages be updated too?
 			# filter out actions that don't match this criteria
-			my @new_possible_actions;
-			foreach my $possible_action (@possible_actions) {
-				my $version = $possible_action->{'version'};
-				if (not defined $version or
-					$self->_related_packages_can_be_synchronized($current_solution, $version))
-				{
-					push @new_possible_actions, $possible_action;
-				} else {
-					# we cannot proceed with it, so try deleting related packages
-					my @unsynchronizeable_package_names = $self->_get_unsynchronizeable_related_package_names(
-							$current_solution, $version);
-					foreach my $unsynchronizeable_package_name (@unsynchronizeable_package_names) {
-						next if $current_solution->get_package_entry($unsynchronizeable_package_name)->stick;
-
-						if (none {
-								$_->{'package_name'} eq $unsynchronizeable_package_name and
-								not defined $_->{'version'}
-							} @new_possible_actions)
-						{
-							unshift @new_possible_actions, {
-								'package_name' => $unsynchronizeable_package_name,
-								'version' => undef,
-								'factor' => 1,
-								'reason' => [ 'sync', $version->package_name ],
-							};
-						}
-					}
-					if ($self->config->var('debug::resolver')) {
-						__mydebug_wrapper($current_solution, sprintf(
-								'cannot consider installing %s %s: unable to synchronize related packages (%s)',
-								$version->package_name, $version->version_string,
-								join(', ', @unsynchronizeable_package_names)));
-					}
-				}
-			}
-			@possible_actions = @new_possible_actions;
+			@possible_actions = $self->_filter_unsynchronizeable_actions(
+					$current_solution, \@possible_actions);
 		}
 
 		__prepare_stick_requests(\@possible_actions);
