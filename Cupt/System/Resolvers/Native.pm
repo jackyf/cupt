@@ -58,6 +58,16 @@ sub new {
 	return $self;
 }
 
+sub __mydebug_wrapper {
+	my ($solution, @rest) = @_;
+
+	my $level = $solution->level;
+	my $identifier = $solution->identifier;
+	my $score_string = sprintf '%.1f', $solution->score;
+	mydebug(' ' x $level . "($identifier:$score_string) @rest");
+
+	return;
+}
 
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
@@ -166,7 +176,7 @@ sub _related_packages_can_be_synchronized ($$) {
 
 sub _synchronize_related_packages ($$$$$) {
 	# $stick - boolean
-	my ($self, $solution, $version, $stick, $sub_mydebug_wrapper) = @_;
+	my ($self, $solution, $version, $stick) = @_;
 
 	my @related_package_names = $self->_related_binary_package_names($solution, $version);
 	my $source_version_string = $version->source_version_string;
@@ -185,7 +195,7 @@ sub _synchronize_related_packages ($$$$$) {
 		$package_entry->version = $candidate_version;
 		$package_entry->stick = $stick;
 		if ($self->config->var('debug::resolver')) {
-			$sub_mydebug_wrapper->("synchronizing package '$other_package_name' with package '$package_name'");
+			__mydebug_wrapper($solution, "synchronizing package '$other_package_name' with package '$package_name'");
 		}
 		if ($self->config->var('cupt::resolver::track-reasons')) {
 			push @{$package_entry->reasons}, [ 'sync', $package_name ];
@@ -554,7 +564,7 @@ sub _require_strict_relation_expressions ($) {
 # by resolver
 
 sub _pre_apply_action ($$$$) {
-	my ($self, $original_solution, $solution, $ref_action_to_apply, $sub_mydebug_wrapper) = @_;
+	my ($self, $original_solution, $solution, $ref_action_to_apply) = @_;
 
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
@@ -586,7 +596,7 @@ sub _pre_apply_action ($$$$) {
 		my $new_solution_identifier = $solution->identifier;
 		my $message = "-> ($new_solution_identifier,Δ:$profit_string,qΔ:$quality_correction_string) " .
 				"trying: package '$package_name_to_change': '$old_version_string' -> '$new_version_string'";
-		$sub_mydebug_wrapper->($message);
+		__mydebug_wrapper($original_solution, $message);
 	}
 
 	++$solution->level;
@@ -599,7 +609,7 @@ sub _pre_apply_action ($$$$) {
 }
 
 sub _post_apply_action {
-	my ($self, $solution, $sub_mydebug_wrapper) = @_;
+	my ($self, $solution) = @_;
 
 	my $ref_action_to_apply = $solution->pending_action;
 	defined $ref_action_to_apply or return;
@@ -629,8 +639,7 @@ sub _post_apply_action {
 	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
 		# dont' do synchronization for removals
 		if (defined $supposed_version) {
-			$self->_synchronize_related_packages($solution,
-					$supposed_version, 1, $sub_mydebug_wrapper);
+			$self->_synchronize_related_packages($solution, $supposed_version, 1);
 		}
 	}
 
@@ -762,7 +771,7 @@ sub __prepare_stick_requests ($) {
 }
 
 sub _propose_solution {
-	my ($self, $solution, $sub_callback, $sub_mydebug_wrapper) = @_;
+	my ($self, $solution, $sub_callback) = @_;
 
 	# build "user-frienly" version of solution
 	my %suggested_packages;
@@ -778,12 +787,12 @@ sub _propose_solution {
 
 	# suggest found solution
 	if ($self->config->var('debug::resolver')) {
-		$sub_mydebug_wrapper->('proposing this solution');
+		__mydebug_wrapper($solution, 'proposing this solution');
 	}
 	my $user_answer = $sub_callback->(\%suggested_packages);
 	if ($self->config->var('debug::resolver') and defined $user_answer) {
 		if ($user_answer) {
-			$sub_mydebug_wrapper->($user_answer ? 'accepted' : 'declined');
+			__mydebug_wrapper($solution, $user_answer ? 'accepted' : 'declined');
 		}
 	}
 
@@ -827,20 +836,9 @@ sub _resolve ($$) {
 
 	my $check_failed;
 
-	my $sub_mydebug_wrapper = sub {
-		my $level = $current_solution->level;
-		my $identifier = $current_solution->identifier;
-		my $score_string = sprintf '%.1f', $current_solution->score;
-		mydebug(' ' x $level . "($identifier:$score_string) @_");
-	};
-
 	my $sub_pre_apply_action = sub {
 		my ($solution, $ref_action_to_apply) = @_;
-		$self->_pre_apply_action($current_solution, $solution, $ref_action_to_apply, $sub_mydebug_wrapper);
-	};
-
-	my $sub_post_apply_action = sub {
-		$self->_post_apply_action($current_solution, $sub_mydebug_wrapper);
+		$self->_pre_apply_action($current_solution, $solution, $ref_action_to_apply);
 	};
 
 	my $cache = $self->cache;
@@ -858,7 +856,7 @@ sub _resolve ($$) {
 		$current_solution = $sub_solution_chooser->(\@solutions);
 		if (defined $current_solution->pending_action) {
 			$current_solution->prepare();
-			$sub_post_apply_action->();
+			$self->_post_apply_action($current_solution);
 		}
 
 		# for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
@@ -945,7 +943,7 @@ sub _resolve ($$) {
 
 								if ($self->config->var('debug::resolver')) {
 									my $stringified_relation = stringify_relation_expression($relation_expression);
-									$sub_mydebug_wrapper->("problem: package '$package_name': " .
+									__mydebug_wrapper($current_solution, "problem: package '$package_name': " .
 											"unsatisfied $dependency_group_name '$stringified_relation'");
 								}
 								$check_failed = 1;
@@ -953,7 +951,7 @@ sub _resolve ($$) {
 								if (scalar @possible_actions == 1) {
 									$sub_pre_apply_action->($current_solution,
 											$possible_actions[0]);
-									$sub_post_apply_action->();
+									$self->_post_apply_action($current_solution);
 									@possible_actions = ();
 									$recheck_needed = 1;
 									next PACKAGE;
@@ -1048,7 +1046,7 @@ sub _resolve ($$) {
 
 									if ($self->config->var('debug::resolver')) {
 										my $stringified_relation = stringify_relation_expression($relation_expression);
-										$sub_mydebug_wrapper->("problem: package '$package_name': " .
+										__mydebug_wrapper($current_solution, "problem: package '$package_name': " .
 												"satisfied $dependency_group_name '$stringified_relation'");
 									}
 									$recheck_needed = 0;
@@ -1068,7 +1066,7 @@ sub _resolve ($$) {
 			# if the solution was only just finished
 			if (not $current_solution->finished) {
 				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->('finished');
+					__mydebug_wrapper($current_solution, 'finished');
 				}
 
 				# clean up automatically installed by resolver and now unneeded packages
@@ -1084,7 +1082,7 @@ sub _resolve ($$) {
 				next;
 			}
 
-			my $user_answer = $self->_propose_solution($current_solution, $sub_accept, $sub_mydebug_wrapper);
+			my $user_answer = $self->_propose_solution($current_solution, $sub_accept);
 
 			if (!defined $user_answer) {
 				# user has selected abandoning all further efforts
@@ -1132,7 +1130,7 @@ sub _resolve ($$) {
 						}
 					}
 					if ($self->config->var('debug::resolver')) {
-						$sub_mydebug_wrapper->(sprintf(
+						__mydebug_wrapper($current_solution, sprintf(
 								'cannot consider installing %s %s: unable to synchronize related packages (%s)',
 								$version->package_name, $version->version_string,
 								join(', ', @unsynchronizeable_package_names)));
@@ -1184,13 +1182,13 @@ sub _resolve ($$) {
 				# temporary setting current solution to worst
 				$current_solution = $ref_worst_solution;
 				if ($self->config->var('debug::resolver')) {
-					$sub_mydebug_wrapper->('dropped');
+					__mydebug_wrapper($current_solution, 'dropped');
 				}
 				@solutions = grep { $_ ne $current_solution } @solutions;
 			}
 		} else {
 			if ($self->config->var('debug::resolver')) {
-				$sub_mydebug_wrapper->('no solutions');
+				__mydebug_wrapper($current_solution, 'no solutions');
 			}
 			# purge current solution
 			@solutions = grep { $_ ne $current_solution } @solutions;
