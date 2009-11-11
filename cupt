@@ -773,7 +773,6 @@ sub show_package_relations ($) {
 		my @relation_group_names = map { $_->[0] } @relation_groups;
 		foreach my $package_name ($cache->get_binary_package_names()) {
 			my $package_candidate = $cache->get_binary_package($package_name);
-			CANDIDATE:
 			foreach my $reverse_version_candidate (@{$package_candidate->get_versions()}) {
 				foreach my $relation_group_name (@relation_group_names) {
 					foreach (@{$reverse_version_candidate->$relation_group_name}) {
