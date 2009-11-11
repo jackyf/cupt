@@ -37,7 +37,10 @@ Description: alternative front-end for dpkg -- Perl modules
 
 Package: cupt
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}, libcupt-perl (>= ${binary:Version}), sensible-utils
+Depends: ${misc:Depends}, ${perl:Depends},
+ libcupt-perl (>= ${libcupt-perl:current}),
+ libcupt-perl (<< ${libcupt-perl:next}),
+ sensible-utils
 Suggests: libterm-readline-gnu-perl
 Description: alternative front-end for dpkg -- console interface
  This package provides a console interface to Cupt library, which is a

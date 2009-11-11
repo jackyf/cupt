@@ -2,6 +2,11 @@
 
 PERL ?= /usr/bin/perl
 
+VERSION := $(shell dpkg-parsechangelog | sed -ne 's/Version: *\(.*\) *$$/\1/p')
+MAJOR_VERSION = $(shell echo $(VERSION) | cut -f 1 -d .)
+MINOR_VERSION = $(shell echo $(VERSION) | cut -f 2 -d .)
+NEXT_MINOR_VERSION = $(shell expr $(MINOR_VERSION) + 1 2>/dev/null)
+
 override_build:
 	$(PERL) Makefile.PL INSTALLDIRS=vendor
 
@@ -9,6 +14,11 @@ override_dh_auto_install:
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/libcupt-perl
 	# produce additional man pages for cupt
 	$(PERL) debian/install_pods
+
+override_dh_gencontrol:
+	dh_gencontrol -- \
+		-Vlibcupt-perl:current="$(MAJOR_VERSION).$(MINOR_VERSION)" \
+		-Vlibcupt-perl:next="$(MAJOR_VERSION).$(NEXT_MINOR_VERSION)"
 
 %:
 	dh $@
