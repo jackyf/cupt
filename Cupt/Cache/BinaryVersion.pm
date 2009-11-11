@@ -165,10 +165,6 @@ short description of the version, string, can be undef
 
 long description of the version, multi-line string, can be undef
 
-=head2 homepage
-
-program home page URI, string, can be undef
-
 =head2 task
 
 task which the package belongs to, string, can be undef
@@ -187,7 +183,7 @@ use Cupt::LValueFields qw(available_as package_name priority section installed_s
 		maintainer architecture source_package_name version_string source_version_string 
 		essential depends recommends suggests conflicts breaks enhances provides 
 		replaces pre_depends size md5sum sha1sum sha256sum short_description 
-		long_description homepage task tags others);
+		long_description task tags others);
 
 use Cupt::Core;
 use Cupt::Cache::Relation qw(parse_relation_line);
@@ -313,7 +309,6 @@ sub new {
 				$self->[long_description_offset()] = $2;
 			};
 			s/^Tag: (.*)$//m and do { $self->[tags_offset()] = $1 };
-			s/^Homepage: (.*)$//m and do { $self->[homepage_offset()] = $1 };
 			while (s/^([A-Za-z-]+): (.*)$//m) {
 				next if $1 eq 'Package' || $1 eq 'Status';
 				$self->others->{$1} = $2;

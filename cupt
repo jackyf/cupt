@@ -556,7 +556,6 @@ sub show_binary_package_versions () {
 				$p->(__('Description'), $version->short_description);
 				print $version->long_description if defined $version->long_description;
 			}
-			$p->(__('Homepage'), $version->homepage) if defined($version->homepage);
 			$p->(__('Task'), $version->task) if defined($version->task);
 			$p->(__('Tags'), $version->tags) if defined($version->tags);
 			foreach my $other_field (keys %{$version->others}) {
