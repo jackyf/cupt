@@ -19,6 +19,7 @@ cupt (1.3.0) UNRELEASED; urgency=low
         - Support 'Binary' field span to multiple lines.
         - Support native packages with dashed version strings with a warning.
         - Recognize ".debian.tar.<ext>" files as diffs.
+        - New field 'others'.
     - System:
       - Resolvers/Native:
         - Don't pre-schedule any relations for newly-installed versions, leave

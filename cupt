@@ -630,6 +630,9 @@ sub show_source_package_versions () {
 					}
 				}
 			}
+			foreach my $other_field (keys %{$version->others}) {
+				$p->($other_field, $version->others->{$other_field});
+			}
 			print "\n";
 		}
 	}

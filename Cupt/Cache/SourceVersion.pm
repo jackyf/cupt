@@ -128,12 +128,16 @@ same as L<tarball|/tarball>, can be whole undef in case of Debian native package
 
 same as L<tarball|/tarball>
 
+=head2 others
+
+hash entry that contains other fields found in the version entry in form { $name => $value }.
+
 =cut
 
 use Cupt::LValueFields qw(available_as package_name binary_package_names architecture
 		priority section standards_version maintainer uploaders version_string
 		build_depends build_depends_indep build_conflicts build_conflicts_indep 
-		tarball diff dsc);
+		tarball diff dsc others);
 
 use Cupt::Core;
 use Cupt::Cache::ArchitecturedRelation qw(parse_architectured_relation_line);
@@ -151,8 +155,9 @@ our $o_no_parse_relations = 0;
 
 =head2 o_no_parse_info_onlys
 
-Option to don't parse 'Maintainer', 'Uploaders', 'Section', can
-speed-up parsing the version if this info isn't needed. Off by default.
+Option to don't parse 'Maintainer', 'Uploaders', 'Section' and unknown fields
+(those which are put to L<others|/others>), can speed-up parsing the version if
+this info isn't needed. Off by default.
 
 =cut
 
@@ -206,6 +211,8 @@ sub new {
 		size => undef,
 		md5sum => undef,
 	};
+	$self->others = {};
+
 	# parsing fields
 	my ($package_name, $fh, $offset, $ref_release_info) = @$ref_arg;
 
@@ -245,12 +252,6 @@ sub new {
 		};
 		s/^Directory: (.*)$//m and do { $self->available_as->[0]->{directory} = $1 };
 
-		unless ($o_no_parse_info_onlys) {
-			s/^Section: (.*)$//m and do { $self->section = $1 };
-			s/^Maintainer: (.*)$//m and do { $self->maintainer = $1 };
-			s/^Uploaders: (.*)$//m and do { $self->uploaders = $1 };
-		}
-
 		unless ($o_no_parse_relations) {
 			s/^Build-Depends: (.*)$//m and do {
 				$self->build_depends = parse_architectured_relation_line($1);
@@ -264,6 +265,15 @@ sub new {
 			s/^Build-Conflicts-Indep: (.*)$//m and do {
 				$self->build_conflicts_indep = parse_architectured_relation_line($1);
 			};
+		}
+
+		unless ($o_no_parse_info_onlys) {
+			s/^Section: (.*)$//m and do { $self->section = $1 };
+			s/^Maintainer: (.*)$//m and do { $self->maintainer = $1 };
+			s/^Uploaders: (.*)$//m and do { $self->uploaders = $1 };
+			while (s/^([A-Za-z-]+): (.*)$//m) {
+				$self->others->{$1} = $2;
+			}
 		}
 	};
 
