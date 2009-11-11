@@ -770,8 +770,8 @@ sub show_package_relations ($) {
 	# used only by rdepends
 	my %reverse_depends_index;
 	if ($mode eq 'reverse') {
-		my @packages = map { $cache->get_binary_package($_) } $cache->get_binary_package_names();
-		foreach my $package_candidate (@packages) {
+		foreach my $package_name ($cache->get_binary_package_names()) {
+			my $package_candidate = $cache->get_binary_package($package_name);
 			CANDIDATE:
 			foreach my $reverse_version_candidate (@{$package_candidate->get_versions()}) {
 				foreach my $item (@relation_groups) {
@@ -779,7 +779,7 @@ sub show_package_relations ($) {
 					foreach (@{$reverse_version_candidate->$relation_group_name}) {
 						foreach my $version_candidate (@{$cache->get_satisfying_versions($_)}) {
 							push @{$reverse_depends_index{$version_candidate->package_name}},
-									$reverse_version_candidate->package_name;
+									$package_name;
 						}
 					}
 				}
