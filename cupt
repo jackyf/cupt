@@ -598,7 +598,7 @@ sub show_source_package_versions () {
 			$p->(__('Priority'), $version->priority);
 			$p->(__('Section'), $version->section) if defined $version->section;
 			$p->(__('Maintainer'), $version->maintainer);
-			$p->(__('Uploaders'), $version->uploaders) if defined $version->uploaders;
+			$p->(__('Uploaders'), join(', ', @{$version->uploaders})) if scalar @{$version->uploaders};
 			$p->(__('Architecture'), $version->architecture);
 			if ($o_with_release_info) {
 				foreach (@{$version->available_as}) {

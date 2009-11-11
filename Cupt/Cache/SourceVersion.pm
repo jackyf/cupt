@@ -75,7 +75,7 @@ maintainer of the package, string
 
 =head2 uploaders
 
-package uploaders list, string, defined in Debian Policy, §5.6.3
+package uploaders list, reference to array of strings, defined in Debian Policy, §5.6.3
 
 =head2 version_string
 
@@ -192,6 +192,7 @@ sub new {
 	$self->build_conflicts = [];
 	$self->build_conflicts_indep = [];
 	$self->binary_package_names = [];
+	$self->uploaders = [];
 	$self->tarball = {
 		filename => undef,
 		size => undef,
@@ -270,7 +271,7 @@ sub new {
 		unless ($o_no_parse_info_onlys) {
 			s/^Section: (.*)$//m and do { $self->section = $1 };
 			s/^Maintainer: (.*)$//m and do { $self->maintainer = $1 };
-			s/^Uploaders: (.*)$//m and do { $self->uploaders = $1 };
+			s/^Uploaders: (.*)$//m and do { $self->uploaders = [ split(/\s*,\s*/, $1) ] };
 			while (s/^([A-Za-z-]+): (.*)$//m) {
 				$self->others->{$1} = $2;
 			}
