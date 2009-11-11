@@ -14,6 +14,7 @@ cupt (1.3.0) UNRELEASED; urgency=low
       - BinaryVersion:
         - Rewritten parsing the version entry using different approach.
           Speeded up parsing significantly.
+        - New field 'others'.
       - SourceVersion:
         - Rewritten parsing the version entry using different approach.
         - Support 'Binary' field span to multiple lines.

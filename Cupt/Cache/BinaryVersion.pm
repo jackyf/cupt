@@ -177,13 +177,17 @@ task which the package belongs to, string, can be undef
 
 tags list, string, can be undef
 
+=head2 others
+
+hash entry that contains other fields found in the version entry in form { $name => $value }.
+
 =cut
 
 use Cupt::LValueFields qw(available_as package_name priority section installed_size 
 		maintainer architecture source_package_name version_string source_version_string 
 		essential depends recommends suggests conflicts breaks enhances provides 
 		replaces pre_depends size md5sum sha1sum sha256sum short_description 
-		long_description homepage task tags);
+		long_description homepage task tags others);
 
 use Cupt::Core;
 use Cupt::Cache::Relation qw(parse_relation_line);
@@ -246,6 +250,7 @@ sub new {
 	$self->[replaces_offset()] = [];
 	$self->[breaks_offset()] = [];
 	$self->[provides_offset()] = [];
+	$self->[others_offset()] = {};
 
 	# parsing fields
 	my ($package_name, $fh, $offset, $ref_release_info, $translation_fh, $translation_offset) = @$ref_arg;
@@ -288,17 +293,6 @@ sub new {
 			}
 		};
 
-		unless ($o_no_parse_info_onlys) {
-			s/^Section: (.*)$//m and do { $self->[section_offset()] = $1 };
-			s/^Maintainer: (.*)$//m and do { $self->[maintainer_offset()] = $1 };
-			s/^Description: (.*)$(?:\n)((?:^(?: |\t).*$(?:\n))*)//m and do {
-				$self->[short_description_offset()] = $1;
-				$self->[long_description_offset()] = $2;
-			};
-			s/^Tag: (.*)$//m and do { $self->[tags_offset()] = $1 };
-			s/^Homepage: (.*)$//m and do { $self->[homepage_offset()] = $1 };
-		}
-
 		unless ($o_no_parse_relations) {
 			s/^Pre-Depends: (.*)$//m and do { $self->[pre_depends_offset()] = parse_relation_line($1) };
 			s/^Depends: (.*)$//m and do { $self->[depends_offset()] = parse_relation_line($1) };
@@ -309,6 +303,21 @@ sub new {
 			s/^Replaces: (.*)$//m and do { $self->[replaces_offset()] = parse_relation_line($1) };
 			s/^Enhances: (.*)$//m and do { $self->[enhances_offset()] = parse_relation_line($1) };
 			s/^Provides: (.*)$//m and do { @{$self->[provides_offset()]} = split(/\s*,\s*/, $1) };
+		}
+
+		unless ($o_no_parse_info_onlys) {
+			s/^Section: (.*)$//m and do { $self->[section_offset()] = $1 };
+			s/^Maintainer: (.*)$//m and do { $self->[maintainer_offset()] = $1 };
+			s/^Description: (.*)$(?:\n)((?:^(?: |\t).*$(?:\n))*)//m and do {
+				$self->[short_description_offset()] = $1;
+				$self->[long_description_offset()] = $2;
+			};
+			s/^Tag: (.*)$//m and do { $self->[tags_offset()] = $1 };
+			s/^Homepage: (.*)$//m and do { $self->[homepage_offset()] = $1 };
+			while (s/^([A-Za-z-]+): (.*)$//m) {
+				next if $1 eq 'Package' || $1 eq 'Status';
+				$self->others->{$1} = $2;
+			}
 		}
 
 		$self->[source_version_string_offset()] //= $self->[version_string_offset()];
