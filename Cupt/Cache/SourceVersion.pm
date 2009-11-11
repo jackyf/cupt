@@ -229,7 +229,7 @@ sub new {
 				my ($hash_sum, $size, $name) = ($line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
 						mydie("malformed line '%s'", $line);
 				local $_ = $name;
-				my $part = m/.dsc$/ ? 'dsc' : (m/.diff.gz$/ ? 'diff' : 'tarball');
+				my $part = m/.dsc$/ ? 'dsc' : ((m/.diff.gz$/ or m/.debian.tar.\w+/) ? 'diff' : 'tarball');
 				$self->$part->{'filename'} = $name;
 				$self->$part->{'size'} = $size;
 				$self->$part->{$hash_sum_name} = $hash_sum;
