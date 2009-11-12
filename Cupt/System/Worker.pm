@@ -1513,6 +1513,9 @@ sub change_system ($$) {
 	my $debug = $self->_config->var('debug::worker');
 	my $download_only = $self->_config->var('cupt::worker::download-only');
 	my $archives_space_limit = $self->_config->var('cupt::worker::archives-space-limit');
+	if ($archives_space_limit !~ m/^\d+$/) {
+		mydie("the option 'cupt::worker::archives-space-limit' should be numeric-only");
+	}
 
 	my $ref_actions_preview = $self->get_actions_preview();
 

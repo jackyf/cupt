@@ -47,6 +47,8 @@ cupt (1.3.0) UNRELEASED; urgency=low
       - Worker:
         - Don't use File::Path module. Thanks to Bernd Zeimetz.
           (Closes: #553629)
+        - Check that 'cupt::worker::archives-space-limit' is numeric. Thanks
+          to Cyril Brulebois.
     - Config:
       - Fixed the typo to properly don't check option names for all
         'unattended-upgrade::*' options. Thanks to Jean-Christophe Dubacq.
