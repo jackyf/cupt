@@ -27,7 +27,7 @@ cupt (1.3.0) UNRELEASED; urgency=low
     - System:
       - Resolvers/Native:
         - Don't pre-schedule any relations for newly-installed versions, leave
-          all work to main resolver.
+          all work to main resolver. Also (Closes: #555209)
         - Don't try to remove the same unsynchronizeable package multiple
           times.
         - Fixed 'full' flavor of the resolver in non-debug mode.
