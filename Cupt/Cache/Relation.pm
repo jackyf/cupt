@@ -99,10 +99,10 @@ method, returns canonical stringified form of the relation
 
 sub stringify {
 	my ($self) = @_;
-	my $result = $self->package_name;
-	if (defined $self->relation_string) {
+	my $result = $self->[package_name_offset()];
+	if (defined $self->[relation_string_offset()]) {
 		# there is versioned info
-		$result .= join('', ' (', $self->relation_string, ' ', $self->version_string, ')');
+		$result .= join('', ' (', $self->[relation_string_offset()], ' ', $self->[version_string_offset()], ')');
 	}
 	return $result;
 }

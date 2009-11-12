@@ -44,6 +44,7 @@ use Cupt::Cache::Package;
 use Cupt::Cache::BinaryVersion;
 use Cupt::Cache::SourceVersion;
 use Cupt::System::State;
+use Cupt::Cache::Relation qw(stringify_relation_expression);
 
 =begin internal
 
@@ -542,25 +543,6 @@ sub _get_satisfying_versions_for_one_relation {
 	my $package_name = $relation->package_name;
 
 	my @result;
-	state %cache;
-
-	# caching results
-	if ($o_memoize) {
-		my $key = join(',',
-				$self,
-				$package_name,
-				$relation->relation_string // '',
-				$relation->version_string // ''
-		);
-		if (exists $cache{$key}) {
-			return @{$cache{$key}};
-		} else {
-			$cache{$key} = \@result;
-			# the @result itself will be filled by under lines of code so at
-			# next run moment cache will contain the correct result
-		}
-	}
-
 	my $package = $self->get_binary_package($package_name);
 
 	if (defined $package) {
@@ -605,17 +587,33 @@ I<relation_expression> - see L<Relation expression in Cupt::Cache::Relation|Cupt
 sub get_satisfying_versions ($$) {
 	my ($self, $relation_expression) = @_;
 
+	my @result;
+	state %cache;
+
+	# caching results
+	if ($o_memoize) {
+		my $key = join(',', $self, stringify_relation_expression($relation_expression));
+		if (exists $cache{$key}) {
+			return $cache{$key};
+		} else {
+			$cache{$key} = \@result;
+			# the @result itself will be filled by under lines of code so at
+			# next run moment cache will contain the correct result
+		}
+	}
+
 	if (ref $relation_expression ne 'ARRAY') {
 		# relation expression is just one relation
-		return [ $self->_get_satisfying_versions_for_one_relation($relation_expression) ];
+		@result = ($self->_get_satisfying_versions_for_one_relation($relation_expression));
 	} else {
 		# othersise it's OR group of expressions
-		my @result = map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression;
+		@result = map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression;
 		# get rid of duplicates
 		my %seen;
 		@result = grep { !$seen{ $_->package_name, $_->version_string } ++ } @result;
-		return \@result;
 	}
+
+	return \@result;
 }
 
 our %_empty_release_info = (
