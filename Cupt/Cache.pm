@@ -606,7 +606,7 @@ sub get_satisfying_versions ($$) {
 		# relation expression is just one relation
 		@result = ($self->_get_satisfying_versions_for_one_relation($relation_expression));
 	} else {
-		# othersise it's OR group of expressions
+		# otherwise it's OR group of expressions
 		@result = map { $self->_get_satisfying_versions_for_one_relation($_) } @$relation_expression;
 		# get rid of duplicates
 		my %seen;
