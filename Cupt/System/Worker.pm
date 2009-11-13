@@ -972,21 +972,24 @@ sub __split_heterogeneous_actions (@) {
 				push @{$subgroups{$ref_action->{'action_name'}}}, $ref_action;
 			}
 
-			# set needed dpkg flags to first action in action group
-			if (@{$subgroups{'remove'}}) {
-				$subgroups{'remove'}->[0]->{'dpkg_flags'} = ' --force-depends';
-			}
-			if (@{$subgroups{'unpack'}}) {
-				$subgroups{'unpack'}->[0]->{'dpkg_flags'} = ' --force-depends --force-conflicts';
-			}
-			if (@{$subgroups{'install'}}) {
-				$subgroups{'install'}->[0]->{'dpkg_flags'} = ' --force-depends';
-			}
+			# set needed dpkg flags to first action in action group and push to list
+			# need to add them in a strict order
+			foreach my $subgroup_name (qw(remove unpack install configure)) {
+				my $ref_subgroup = $subgroups{$subgroup_name};
+				if (@$ref_subgroup) {
+					# always set forcing all dependencies
+					# dpkg requires to pass both --force-depends and --force-breaks to achieve it
+					$ref_subgroup->[0]->{'dpkg_flags'} = ' --force-depends --force-breaks';
 
-			# pushing by one
-			foreach my $subgroup (@subgroups{'remove','unpack','install','configure'}) {
-				# push if there are some actions in group
-				push @new_action_group_list, $subgroup if @$subgroup;
+					if ($subgroup_name eq 'unpack') {
+						# ooh, for unpack we should specify also --force-conflicts, though it's dangerous
+						# but I had an action where without --force-conflicts dpkg refused to proceed
+						#
+						# but maybe (TODO) we need to do some reordering here to get rid of it
+						$ref_subgroup->[0]->{'dpkg_flags'} .= ' --force-conflicts';
+					}
+					push @new_action_group_list, $ref_subgroup;
+				}
 			}
 
 			# last subgroup definitely don't need an additional dpkg flags
