@@ -1012,6 +1012,9 @@ sub __split_heterogeneous_actions (@) {
 			if ($ref_action_group->[0]->{'dpkg_flags'} !~ m/force-depends/) {
 				$ref_action_group->[0]->{'dpkg_flags'} .= ' --force-depends';
 			}
+			if ($ref_action_group->[0]->{'dpkg_flags'} !~ m/force-breaks/) {
+				$ref_action_group->[0]->{'dpkg_flags'} .= ' --force-breaks';
+			}
 			if ($ref_action_group->[0]->{'action_name'} eq 'unpack' ||
 				$ref_action_group->[0]->{'action_name'} eq 'install')
 			{
