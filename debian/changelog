@@ -52,6 +52,8 @@ cupt (1.3.0) UNRELEASED; urgency=low
         - While splitting heterogeneous actions, set '--force-breaks' to all
           non-trivial actions in addition to '--force-depends'.
           Thanks to James Vega. (Closes: #556014)
+        - Pass '--force-conflicts' to 'install' subaction of heterogeneous
+          actions, the intermediate conflicts can still exist.
     - Config:
       - Fixed the typo to properly don't check option names for all
         'unattended-upgrade::*' options. Thanks to Jean-Christophe Dubacq.

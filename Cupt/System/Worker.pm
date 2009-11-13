@@ -981,7 +981,7 @@ sub __split_heterogeneous_actions (@) {
 					# dpkg requires to pass both --force-depends and --force-breaks to achieve it
 					$ref_subgroup->[0]->{'dpkg_flags'} = ' --force-depends --force-breaks';
 
-					if ($subgroup_name eq 'unpack') {
+					if ($subgroup_name eq 'unpack' || $subgroup_name eq 'install') {
 						# ooh, for unpack we should specify also --force-conflicts, though it's dangerous
 						# but I had an action where without --force-conflicts dpkg refused to proceed
 						#
