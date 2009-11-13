@@ -43,7 +43,7 @@ use Cupt::Graph;
 
 our $_dummy_package_name = '<satisfy>';
 
-use Cupt::LValueFields qw(2 _old_packages _initial_solution
+use Cupt::LValueFields qw(2 _old_solution _initial_solution
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 sub new {
@@ -51,7 +51,7 @@ sub new {
 	my $self = bless [] => $class;
 	$self->SUPER::new(@_);
 
-	$self->_old_packages = {};
+	$self->_old_solution = Cupt::System::Resolvers::Native::Solution->new({});
 	$self->_strict_satisfy_relation_expressions = [];
 	$self->_strict_unsatisfy_relation_expressions = [];
 
@@ -72,15 +72,17 @@ sub __mydebug_wrapper {
 sub import_installed_versions ($$) {
 	my ($self, $ref_versions) = @_;
 
-	# '_initial_solution' will be modified, leave '_old_packages' as original system state
+	# '_initial_solution' will be modified, leave '_old_solution' as original system state
 	foreach my $version (@$ref_versions) {
 		# just moving versions, don't try to install or remove some dependencies
 		my $package_name = $version->package_name;
-		$self->_old_packages->{$package_name} = Cupt::System::Resolvers::Native::PackageEntry->new();
-		$self->_old_packages->{$package_name}->version = $version;
-		$self->_old_packages->{$package_name}->installed = 1;
+		my $package_entry = $self->_old_solution->set_package_entry($package_name);
+		$package_entry->version = $version;
+		$package_entry->installed = 1;
 	}
-	$self->_initial_solution = Cupt::System::Resolvers::Native::Solution->new($self->_old_packages);
+	$self->_initial_solution = $self->_old_solution->clone();
+	$self->_initial_solution->prepare();
+
 	return;
 }
 
@@ -443,7 +445,7 @@ sub _clean_automatically_installed ($) {
 
 		my $can_autoremove_this_package = $can_autoremove ?
 				$self->cache->is_automatically_installed($package_name) : 0;
-		my $package_was_installed = defined $self->_old_packages->{$package_name};
+		my $package_was_installed = defined $self->_old_solution->get_package_entry($package_name);
 		(not $package_was_installed or $can_autoremove_this_package) or next;
 
 		if (any { $package_name =~ m/$_/ } $self->config->var('apt::neverautoremove')) {
@@ -942,14 +944,15 @@ sub _resolve ($$) {
 									# this is a soft dependency
 									if (!$self->config->var("apt::install-$dependency_group_name")) {
 										if (!__is_version_array_intersects_with_packages(
-												$ref_satisfying_versions, $self->_old_packages))
+												$ref_satisfying_versions, $self->_old_solution))
 										{
 											# it wasn't satisfied in the past, don't touch it
 											next;
 										}
 									}
-									if (defined $self->_old_packages->{$version->package_name}) {
-										my $old_version = $self->_old_packages->{$version->package_name}->version;
+									my $old_package_entry = $self->_old_solution->get_package_entry($version->package_name);
+									if (defined $old_package_entry) {
+										my $old_version = $old_package_entry->version;
 										if (defined $old_version and __version_has_relation_expression($old_version,
 											$dependency_group_name, $relation_expression))
 										{
