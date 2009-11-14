@@ -973,7 +973,7 @@ sub _resolve ($$) {
 										'version' => $version,
 										'factor' => $dependency_group_factor,
 										# set profit manually, as we are inserting fake action here
-										'profit' => -50,
+										'profit' => -500,
 										'fakely_satisfies' => $relation_expression,
 										'reason' => undef,
 									};
