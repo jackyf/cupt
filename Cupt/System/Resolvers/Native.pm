@@ -81,6 +81,7 @@ sub import_installed_versions ($$) {
 		$package_entry->installed = 1;
 	}
 	$self->_initial_solution = $self->_old_solution->clone();
+	$self->_initial_solution->identifier = -1;
 	$self->_initial_solution->prepare();
 
 	return;
