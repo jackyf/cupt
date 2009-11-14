@@ -23,7 +23,8 @@ package Cupt::System::Resolvers::Native::PackageEntry;
 use strict;
 use warnings;
 
-use Cupt::LValueFields qw(version stick fake_satisfied reasons manually_selected installed);
+use Cupt::LValueFields qw(version stick fake_satisfied reasons checked_bits
+		manually_selected installed);
 
 sub new {
 	my $class = shift;
@@ -32,6 +33,7 @@ sub new {
 	$self->stick = 0;
 	$self->fake_satisfied = [];
 	$self->reasons = [];
+	$self->checked_bits = 0;
 	# next are not cloned intentionally
 	$self->manually_selected = 0;
 	$self->installed = 0;
@@ -46,6 +48,7 @@ sub clone {
 	$cloned->[stick_offset()] = $self->[stick_offset()];
 	$cloned->[fake_satisfied_offset()] = [ @{$self->[fake_satisfied_offset()]} ];
 	$cloned->[reasons_offset()] = [ @{$self->[reasons_offset()]} ];
+	$cloned->[checked_bits_offset()] = $self->[checked_bits_offset()];
 
 	return $cloned;
 }

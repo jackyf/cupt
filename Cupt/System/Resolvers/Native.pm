@@ -41,7 +41,7 @@ use Cupt::System::Resolvers::Native::PackageEntry;
 use Cupt::System::Resolvers::Native::Solution;
 use Cupt::Graph;
 
-our $_dummy_package_name = '<satisfy>';
+our $dummy_package_name = '<satisfy>';
 
 use Cupt::LValueFields qw(2 _old_solution _initial_solution
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
@@ -51,11 +51,32 @@ sub new {
 	my $self = bless [] => $class;
 	$self->SUPER::new(@_);
 
-	$self->_old_solution = Cupt::System::Resolvers::Native::Solution->new({});
+	$self->_old_solution = Cupt::System::Resolvers::Native::Solution->new(
+			$self->cache, $self->_get_dependency_groups(), {});
 	$self->_strict_satisfy_relation_expressions = [];
 	$self->_strict_unsatisfy_relation_expressions = [];
 
 	return $self;
+}
+
+sub _get_dependency_groups {
+	my ($self) = @_;
+
+	# action factor will determine the valuability of action
+	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
+	my @dependency_groups;
+	push @dependency_groups, { 'name' => 'pre_depends', 'factor' => 2.0, 'target' => 'normal', 'index' => 0 };
+	push @dependency_groups, { 'name' => 'depends', 'factor' => 1.0, 'target' => 'normal', 'index' => 1 };
+	push @dependency_groups, { 'name' => 'conflicts', 'factor' => 1.0, 'target' => 'anti', 'index' => 2 };
+	push @dependency_groups, { 'name' => 'breaks', 'factor' => 1.0, 'target' => 'anti', 'index' => 3 };
+	if ($self->config->var('cupt::resolver::keep-recommends')) {
+		push @dependency_groups, { 'name' => 'recommends', 'factor' => 0.4, 'target' => 'normal', 'index' => 4 };
+	}
+	if ($self->config->var('cupt::resolver::keep-suggests')) {
+		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1, 'target' => 'normal', 'index' => 5 };
+	}
+
+	return \@dependency_groups;
 }
 
 sub __mydebug_wrapper {
@@ -433,7 +454,7 @@ sub _clean_automatically_installed ($) {
 	my $can_autoremove = $self->config->var('cupt::resolver::auto-remove');
 	my %candidates_for_remove;
 	foreach my $package_name ($solution->get_package_names()) {
-		$package_name ne $_dummy_package_name or next;
+		$package_name ne $dummy_package_name or next;
 		my $package_entry = $solution->get_package_entry($package_name);
 		my $version = $package_entry->version;
 		defined $version or next;
@@ -542,8 +563,8 @@ sub _require_strict_relation_expressions ($) {
 
 	# "installing" virtual package, which will be used for strict 'satisfy' requests
 	my $version = bless [] => 'Cupt::Cache::BinaryVersion';
-	$version->package_name = $_dummy_package_name,
-	$version->source_package_name = $_dummy_package_name;
+	$version->package_name = $dummy_package_name,
+	$version->source_package_name = $dummy_package_name;
 	$version->version_string = '';
 	$version->pre_depends = [];
 	$version->depends = [];
@@ -552,11 +573,12 @@ sub _require_strict_relation_expressions ($) {
 	$version->breaks = [];
 	$version->conflicts = [];
 
-	my $package_entry = $self->_initial_solution->set_package_entry($_dummy_package_name);
+	my $package_entry = $self->_initial_solution->set_package_entry($dummy_package_name);
 	$package_entry->version = $version;
 	$package_entry->stick = 1;
 	$package_entry->version->depends = $self->_strict_satisfy_relation_expressions;
 	$package_entry->version->breaks = $self->_strict_unsatisfy_relation_expressions;
+	$self->_initial_solution->add_version_dependencies($version);
 
 	return;
 }
@@ -568,6 +590,9 @@ sub _require_strict_relation_expressions ($) {
 
 sub _pre_apply_action ($$$$) {
 	my ($self, $original_solution, $solution, $ref_action_to_apply) = @_;
+
+	$original_solution->finished and
+			myinternaldie('attempt to make changes to already finished solution');
 
 	my $package_name_to_change = $ref_action_to_apply->{'package_name'};
 	my $supposed_version = $ref_action_to_apply->{'version'};
@@ -779,7 +804,7 @@ sub _propose_solution {
 	# build "user-frienly" version of solution
 	my %suggested_packages;
 	foreach my $package_name ($solution->get_package_names()) {
-		next if $package_name eq $_dummy_package_name;
+		next if $package_name eq $dummy_package_name;
 		my $other_package_entry = $solution->get_package_entry($package_name);
 		$suggested_packages{$package_name}->{'version'} = $other_package_entry->version;
 		$suggested_packages{$package_name}->{'reasons'} = $other_package_entry->reasons;
@@ -852,19 +877,7 @@ sub _resolve ($$) {
 	}
 	$self->_require_strict_relation_expressions();
 
-	# action factor will determine the valuability of action
-	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
-	my @dependency_groups;
-	push @dependency_groups, { 'name' => 'pre_depends', 'factor' => 2.0, 'target' => 'normal' };
-	push @dependency_groups, { 'name' => 'depends', 'factor' => 1.0, 'target' => 'normal' };
-	push @dependency_groups, { 'name' => 'conflicts', 'factor' => 1.0, 'target' => 'anti' };
-	push @dependency_groups, { 'name' => 'breaks', 'factor' => 1.0, 'target' => 'anti' };
-	if ($self->config->var('cupt::resolver::keep-recommends')) {
-		push @dependency_groups, { 'name' => 'recommends', 'factor' => 0.4, 'target' => 'normal' };
-	}
-	if ($self->config->var('cupt::resolver::keep-suggests')) {
-		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1, 'target' => 'normal' };
-	}
+	my @dependency_groups = @{$self->_get_dependency_groups()};
 
 	my @solutions = ($self->_initial_solution->clone());
 	$solutions[0]->identifier = 0;
@@ -927,10 +940,15 @@ sub _resolve ($$) {
 				my $dependency_group_factor = $ref_dependency_group->{'factor'};
 				my $dependency_group_name = $ref_dependency_group->{'name'};
 				my $dependency_group_target = $ref_dependency_group->{'target'};
+				my $dependency_group_index = $ref_dependency_group->{'index'};
 
 				PACKAGE:
 				foreach my $package_name (@packages_in_order) {
 					$package_entry = $current_solution->get_package_entry($package_name);
+
+					# skip check if already marked as checked
+					vec($package_entry->checked_bits, $dependency_group_index, 1) and next;
+
 					my $version = $package_entry->version;
 					defined $version or next;
 
@@ -978,6 +996,7 @@ sub _resolve ($$) {
 										'reason' => undef,
 									};
 								}
+
 								# mark package as failed one more time
 								++$failed_counts{$package_name};
 
@@ -999,7 +1018,7 @@ sub _resolve ($$) {
 									$self->_post_apply_action($current_solution);
 									@possible_actions = ();
 									$recheck_needed = 1;
-									next PACKAGE;
+									redo PACKAGE;
 								}
 								$recheck_needed = 0;
 								last MAIN_LOOP;
@@ -1100,6 +1119,7 @@ sub _resolve ($$) {
 							}
 						}
 					}
+					$current_solution->validate($package_name, $dependency_group_index);
 				}
 			}
 		}
@@ -1118,7 +1138,22 @@ sub _resolve ($$) {
 				$self->_clean_automatically_installed($current_solution);
 
 				$current_solution->finished = 1;
+
+				# now, as we use partial checks (using set_package_entry/validate), before
+				# we present a solution it's a good idea to validate it from scratch finally:
+				# if it ever turns that partial checks pass a wrong solution, we must
+				# catch it
+				#
+				# so, we schedule a last check round for a solution, but as it already has
+				# 'finished' property set, if the problem will appear, _pre_apply_action will
+				# die loudly
+				foreach my $package_name ($current_solution->get_package_names()) {
+					# invalidating all solution
+					$current_solution->set_package_entry($package_name);
+				}
+				next;
 			}
+
 			# resolver can refuse the solution
 			my $ref_new_selected_solution = $sub_solution_chooser->(\@solutions);
 
@@ -1128,7 +1163,6 @@ sub _resolve ($$) {
 			}
 
 			my $user_answer = $self->_propose_solution($current_solution, $sub_accept);
-
 			if (!defined $user_answer) {
 				# user has selected abandoning all further efforts
 				return undef;

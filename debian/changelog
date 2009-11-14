@@ -46,6 +46,8 @@ cupt (1.3.0) UNRELEASED; urgency=low
           it affects the less the longer solution is.
         - Significatly increased the penalty for non-installing the requested
           soft dependencies.
+        - Implemented internal dependency graph to speed up processing
+          solutions.
       - Worker:
         - Don't use File::Path module. Thanks to Bernd Zeimetz.
           (Closes: #553629)
