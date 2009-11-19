@@ -157,6 +157,7 @@ sub new {
 		'apt::archives::*',
 		'apt::periodic::*',
 		'unattended-upgrade::*',
+		'apt::never-markauto-sections::*',
 	];
 
 	$self->list_vars = {
