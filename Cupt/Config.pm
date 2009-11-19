@@ -157,6 +157,7 @@ sub new {
 		'apt::archives::*',
 		'apt::periodic::*',
 		'unattended-upgrade::*',
+		'aptitude::*',
 	];
 
 	$self->list_vars = {
