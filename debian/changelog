@@ -4,6 +4,9 @@ cupt (1.3.1) UNRELEASED; urgency=low
     - Config:
       - Added the option 'APT::Never-MarkAuto-Sections'.
       - Added the option family 'Aptitude::*'.
+    - Cache:
+      - 'verify_hash_sums': fixed the crash regression since 1.3.0. Thanks to
+        Cyril Brulebois. (Closes: #557177)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 19 Nov 2009 18:34:05 +0200
 
