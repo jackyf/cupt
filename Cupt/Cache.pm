@@ -30,6 +30,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Digest;
 use Digest::MD5;
 use Digest::SHA;
 use Fcntl qw(:seek :DEFAULT);
