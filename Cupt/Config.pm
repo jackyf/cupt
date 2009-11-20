@@ -174,7 +174,7 @@ sub new {
 		# unused APT vars
 		'rpm::pre-invoke' => [],
 		'rpm::post-invoke' => [],
-		'apt::never-markauto-sections::*',
+		'apt::never-markauto-sections::*' => [],
 
 		# Cupt vars
 		'cupt::resolver::synchronize-source-versions::exceptions' => ['db', 'linux-\d.\d'],
