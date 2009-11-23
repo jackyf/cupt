@@ -127,7 +127,7 @@ sub hook {
 				my $uri = $ref_entry->{'uri'};
 				my $alias = $self->get_short_alias_for_uri($uri) // $uri;
 				my $size_substring = '';
-				if (defined $ref_entry->{'size'}) {
+				if (defined $ref_entry->{'size'} and $ref_entry->{'size'} > 0) {
 					# filling size substring
 					$size_substring = sprintf '/%s %.0f%%', human_readable_size_string($ref_entry->{'size'}),
 							$ref_entry->{'downloaded'} / $ref_entry->{'size'} * 100;
