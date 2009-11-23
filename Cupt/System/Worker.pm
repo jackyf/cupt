@@ -966,71 +966,53 @@ sub _build_actions_graph ($$) {
 }
 
 sub __split_heterogeneous_actions (@) {
-	my @action_group_list = @_;
+	my ($ref_action_group_list, $action_graph) = @_;
 
 	my @new_action_group_list;
-	foreach my $ref_action_group (@action_group_list) {
+	foreach my $ref_action_group (@$ref_action_group_list) {
 		# all the actions will have the same action name by algorithm
-		my $action_name = $ref_action_group->[0]->{'action_name'};
-		if (any { $_->{'action_name'} ne $action_name } @$ref_action_group) {
-			# heterogeneous actions
-			my %subgroups = ('remove' => [], 'unpack' => [], 'install' => [], 'configure' => []);
+		if (scalar @$ref_action_group > 1) {
+			# multiple actions at once
 
-			# split by action names
-			foreach my $ref_action (@$ref_action_group) {
-				push @{$subgroups{$ref_action->{'action_name'}}}, $ref_action;
-			}
+			# firstly, we need to cope with conflicts at early stage, so we build a mini-graph
+			my $conflicts_action_graph = Cupt::Graph->new();
+			foreach my $edge ($action_graph->edges()) {
+				# we are interested only in those edges that contain both vertices from the current group
+				next if none { $edge->[0] eq $_ } @$ref_action_group;
+				next if none { $edge->[1] eq $_ } @$ref_action_group;
 
-			# set needed dpkg flags to first action in action group and push to list
-			# need to add them in a strict order
-			foreach my $subgroup_name (qw(remove unpack install configure)) {
-				my $ref_subgroup = $subgroups{$subgroup_name};
-				if (@$ref_subgroup) {
-					# always set forcing all dependencies
-					# dpkg requires to pass both --force-depends and --force-breaks to achieve it
-					$ref_subgroup->[0]->{'dpkg_flags'} = ' --force-depends --force-breaks';
-
-					if ($subgroup_name eq 'unpack' || $subgroup_name eq 'install') {
-						# ooh, for unpack we should specify also --force-conflicts, though it's dangerous
-						# but I had an action where without --force-conflicts dpkg refused to proceed
-						#
-						# but maybe (TODO) we need to do some reordering here to get rid of it
-						$ref_subgroup->[0]->{'dpkg_flags'} .= ' --force-conflicts';
+				my $ref_dependency_expressions = $action_graph->get_edge_attribute(@$edge, 'dependency_expressions');
+				if (not defined $ref_dependency_expressions) {
+					# the dependency came from non-relation, e.g. unpack -> configure
+					$conflicts_action_graph->add_edge(@$edge);
+				} else {
+					next if none { $_->{'name'} eq 'conflicts' } @$ref_dependency_expressions;
+					foreach my $ref_dependency_expression (@$ref_dependency_expressions) {
+						if ($ref_dependency_expression->{'name'} eq 'conflicts') {
+							$conflicts_action_graph->add_edge(@$edge);
+						}
 					}
-					push @new_action_group_list, $ref_subgroup;
 				}
 			}
+			# ok, there may be some vertices without edges
+			$conflicts_action_graph->add_vertex($_) foreach @$ref_action_group;
 
-			# last subgroup definitely don't need an additional dpkg flags
-			delete $new_action_group_list[-1]->[0]->{'dpkg_flags'};
+			my @action_groups_sorted_by_conflicts =
+					$conflicts_action_graph->topological_sort_of_strongly_connected_components();
+
+			foreach my $ref_action_subgroup (@action_groups_sorted_by_conflicts) {
+				if (scalar @$ref_action_subgroup > 1) {
+					# ooh, circular dependency caused by conflicts? no-go
+					mydie("encountered circular conflicts, unable to schedule actions '%s'",
+							join(', ', map { __stringify_inner_action($_) } $ref_action_subgroup));
+				}
+				# always set forcing all dependencies
+				# dpkg requires to pass both --force-depends and --force-breaks to achieve it
+				$ref_action_subgroup->[0]->{'dpkg_flags'} = ' --force-depends --force-breaks';
+				push @new_action_group_list, $ref_action_subgroup;
+			}
 		} else {
 			push @new_action_group_list, $ref_action_group;
-		}
-	}
-
-	# dpkg cannot handle multiple-actions-by-one request gracefully, caring
-	# about all depends and only then dealing with packages, the only known
-	# working case is installing packages depending on each other together.
-	#
-	# is it bug or not, but we should leave with it
-	foreach my $ref_action_group (@new_action_group_list) {
-		if (scalar @$ref_action_group > 1) {
-			if (!exists $ref_action_group->[0]->{'dpkg_flags'}) {
-				$ref_action_group->[0]->{'dpkg_flags'} = '';
-			}
-			if ($ref_action_group->[0]->{'dpkg_flags'} !~ m/force-depends/) {
-				$ref_action_group->[0]->{'dpkg_flags'} .= ' --force-depends';
-			}
-			if ($ref_action_group->[0]->{'dpkg_flags'} !~ m/force-breaks/) {
-				$ref_action_group->[0]->{'dpkg_flags'} .= ' --force-breaks';
-			}
-			if ($ref_action_group->[0]->{'action_name'} eq 'unpack' ||
-				$ref_action_group->[0]->{'action_name'} eq 'install')
-			{
-				if ($ref_action_group->[0]->{'dpkg_flags'} !~ m/force-conflicts/) {
-					$ref_action_group->[0]->{'dpkg_flags'} .= ' --force-conflicts';
-				}
-			}
 		}
 	}
 
@@ -1444,7 +1426,7 @@ sub _get_changesets {
 	for (1..$self->_config->var('cupt::worker::archives-space-limit::tries')) {
 		my @action_group_list = $action_graph->topological_sort_of_strongly_connected_components();
 		@action_group_list = __move_unpacks_to_configures(\@action_group_list, $action_graph);
-		@action_group_list = __split_heterogeneous_actions(@action_group_list);
+		@action_group_list = __split_heterogeneous_actions(\@action_group_list, $action_graph);
 		@changesets = $self->_split_action_group_list_into_changesets(
 				\@action_group_list, $ref_pending_downloads);
 		if (not defined $archives_space_limit) {

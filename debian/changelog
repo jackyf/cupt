@@ -10,6 +10,11 @@ cupt (1.3.1) UNRELEASED; urgency=low
     - Graph/TransitiveClosure:
       - Fixed calculating vertexes reachability for paths with length more
         than 2.
+    - Worker:
+      - While splitting heterogeneous actions, pay the first attention to
+        action dependencies which are originated from 'Conflicts'. No longer
+        pass '--force-conflicts' to dpkg. Thanks to James Vega.
+        (Closes: #556650)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 19 Nov 2009 18:34:05 +0200
 
