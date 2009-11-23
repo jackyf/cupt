@@ -874,6 +874,14 @@ sub _build_actions_graph ($$) {
 
 		my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
 
+		if ($self->_config->var('debug::worker')) {
+			foreach my $edge ($graph->edges()) {
+				my $slave_string = __stringify_inner_action($edge->[0]);
+				my $master_string = __stringify_inner_action($edge->[1]);
+				mydebug("the present action dependency: '$slave_string' -> '$master_string'");
+			}
+		}
+
 		# unit unpack/configure using some intelligence
 		foreach my $ref_change_entry (values %vertex_changes) {
 			my $to = $ref_change_entry->{'configure'};
