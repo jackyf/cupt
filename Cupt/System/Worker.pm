@@ -518,7 +518,7 @@ sub _fill_action_dependencies ($$$$) {
 						# adding relation to attributes
 						my $ref_relation_expressions = $graph->get_edge_attribute($ref_slave_action, $ref_master_action,
 								'relation_expressions') // [];
-						push @{$ref_relation_expressions}, $relation_expression;
+						push @$ref_relation_expressions, $relation_expression;
 						$graph->set_edge_attribute($ref_slave_action, $ref_master_action,
 								'relation_expressions' => $ref_relation_expressions);
 					} else {
