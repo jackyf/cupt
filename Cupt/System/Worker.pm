@@ -510,24 +510,15 @@ sub _fill_action_dependencies ($$$$) {
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
-					if ($dependency_name ne 'conflicts' and $dependency_name ne 'breaks') {
-						# passing the above if means that this edge was not originated from conflicts/breaks
-						# so it deserves a chance to be eaten in the end, the while the conflicts/breaks edges are
-						# definitely not a candidates
-
-						# adding relation to attributes
-						my $ref_relation_expressions = $graph->get_edge_attribute($ref_slave_action, $ref_master_action,
-								'relation_expressions') // [];
-						push @$ref_relation_expressions, $relation_expression;
-						$graph->set_edge_attribute($ref_slave_action, $ref_master_action,
-								'relation_expressions' => $ref_relation_expressions);
-					} else {
-						# well, set this property to make sure that action dependency will never be eaten
-						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'poisoned' => 1);
-					}
-					if ($dependency_name eq 'pre_depends') {
-						$graph->set_edge_attribute($ref_slave_action, $ref_master_action, 'pre-dependency' => 1);
-					}
+					# adding relation to attributes
+					my $ref_dependency_expressions = $graph->get_edge_attribute($ref_slave_action, $ref_master_action,
+							'dependency_expressions') // [];
+					push @$ref_dependency_expressions, {
+						'name' => $dependency_name,
+						'relation_expression' => $relation_expression,
+					};
+					$graph->set_edge_attribute($ref_slave_action, $ref_master_action,
+							'dependency_expressions' => $ref_dependency_expressions);
 
 					if ($self->_config->var('debug::worker')) {
 						my $slave_string = __stringify_inner_action($ref_slave_action);
@@ -782,30 +773,43 @@ sub _build_actions_graph ($$) {
 		my $sub_is_eaten_dependency = sub {
 			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
 
-			return 0 if defined $graph->get_edge_attribute($slave_vertex, $master_vertex, 'poisoned');
+			my $ref_dependency_expressions = $graph->get_edge_attribute($slave_vertex, $master_vertex, 'dependency_expressions');
+			if (defined $ref_dependency_expressions) {
+				DEPENDENCY_EXPRESSION:
+				foreach my $ref_dependency_expression (@$ref_dependency_expressions) {
+					my $dependency_name = $ref_dependency_expression->{'name'};
+					if ($dependency_name eq 'conflicts' or $dependency_name eq 'breaks') {
+						# getting here means that this edge was originated from conflicts/breaks
+						# so it doesn't deserve a chance to be eaten in the end
+						return 0;
+					}
 
-			my $ref_relation_expressions = $graph->get_edge_attribute($slave_vertex, $master_vertex, 'relation_expressions');
-			if (defined $ref_relation_expressions) {
-				RELATION_EXPRESSION:
-				foreach my $relation_expression (@$ref_relation_expressions) {
+					my $relation_expression = $ref_dependency_expression->{'relation_expression'};
 					my $ref_satisfying_versions = $self->_cache->get_satisfying_versions($relation_expression);
 					foreach my $version (@$ref_satisfying_versions) {
 						if ($version->package_name eq $version_to_install->package_name &&
 							$version->version_string eq $version_to_install->version_string)
 						{
-							next RELATION_EXPRESSION;
+							next DEPENDENCY_EXPRESSION;
 						}
 					}
 					# no version can satisfy this relation expression
 					return 0;
 				}
-				# all relation expressions are satisfying by some versions
+
+				# ok, so all relation expressions are satisfied by some versions
 				if ($self->_config->var('debug::worker')) {
 					my $slave_action_string = __stringify_inner_action($slave_vertex);
 					my $master_action_string = __stringify_inner_action($master_vertex);
-					my $relation_expressions_string = stringify_relation_expressions($ref_relation_expressions);
+					my $dependency_expressions_string;
+					do {
+						my @dependency_expressions_strings = map {
+									$_->{'name'} . ': ' . stringify_relation_expression($_->{'relation_expression'})
+								} @$ref_dependency_expressions;
+						$dependency_expressions_string = join(', ', sort(uniq(@dependency_expressions_strings)));
+					};
 					mydebug(sprintf "ate action dependency: '%s' -> '%s' using '%s'",
-							$slave_action_string, $master_action_string, $relation_expressions_string);
+							$slave_action_string, $master_action_string, $dependency_expressions_string);
 				}
 				return 1;
 			}
@@ -819,15 +823,9 @@ sub _build_actions_graph ($$) {
 			my $ref_attributes = $graph->get_edge_attributes($from_predecessor, $from_successor);
 			$graph->delete_edge($from_predecessor, $from_successor);
 			my $ref_previous_attributes = $graph->get_edge_attributes($to_predecessor, $to_successor);
-			if (exists $ref_previous_attributes->{'relation_expressions'}) {
-				push @{$ref_attributes->{'relation_expressions'}},
-						@{$ref_previous_attributes->{'relation_expressions'}};
-			}
-			if (exists $ref_previous_attributes->{'poisoned'}) {
-				$ref_attributes->{'poisoned'} = 1;
-			}
-			if (exists $ref_previous_attributes->{'pre-dependency'}) {
-				$ref_attributes->{'pre-dependency'} = 1;
+			if (exists $ref_previous_attributes->{'dependency_expressions'}) {
+				push @{$ref_attributes->{'dependency_expressions'}},
+						@{$ref_previous_attributes->{'dependency_expressions'}};
 			}
 			$graph->add_edge($to_predecessor, $to_successor);
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
@@ -928,26 +926,24 @@ sub _build_actions_graph ($$) {
 			$graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
 
 			foreach my $edge ($graph->edges()) {
-				if (defined $graph->get_edge_attribute(@$edge, 'pre-dependency')) {
-					my ($from_vertex, $to_vertex) = @$edge;
-					if ($graph_transitive_closure->is_reachable($to_vertex, $from_vertex)) {
-						# bah! the pre-dependency cannot be overridden, it's a fatal error
-						# which is not worker's fail (at least, it shouldn't be)
+				my $ref_dependency_expressions = $graph->get_edge_attribute(@$edge, 'dependency_expressions');
+				next if not defined $ref_dependency_expressions;
 
-						# then, all pre-dependency edges should have at least one relation
-						# expression attribute
-						my $ref_attributes = $graph->get_edge_attributes($from_vertex, $to_vertex);
-						if (not exists $ref_attributes->{'relation_expressions'}) {
-							myinternaldie('pre-dependency edge has not relation expressions');
-						}
+				my @pre_dependency_relation_expressions = map { $_->{'relation_expression'} }
+						(grep { $_->{'name'} eq 'pre_depends' } @$ref_dependency_expressions);
+				next unless scalar @pre_dependency_relation_expressions;
 
-						my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
-						my @package_names_in_path = uniq map { $_->{'version'}->package_name } @path;
+				my ($from_vertex, $to_vertex) = @$edge;
+				if ($graph_transitive_closure->is_reachable($to_vertex, $from_vertex)) {
+					# bah! the pre-dependency cannot be overridden, it's a fatal error
+					# which is not worker's fail (at least, it shouldn't be)
 
-						mywarn("the pre-dependency(ies) '%s' will be broken during the actions, the packages involved: %s",
-								stringify_relation_expressions($ref_attributes->{'relation_expressions'}),
-								join(', ', map { qq/'$_'/ } @package_names_in_path));
-					}
+					my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
+					my @package_names_in_path = uniq map { $_->{'version'}->package_name } @path;
+
+					mywarn("the pre-dependency(ies) '%s' will be broken during the actions, the packages involved: %s",
+							stringify_relation_expressions(\@pre_dependency_relation_expressions),
+							join(', ', map { qq/'$_'/ } @package_names_in_path));
 				}
 			}
 		};
