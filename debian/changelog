@@ -7,6 +7,9 @@ cupt (1.3.1) UNRELEASED; urgency=low
     - Cache:
       - 'verify_hash_sums': fixed the crash regression since 1.3.0. Thanks to
         Cyril Brulebois. (Closes: #557177)
+    - Graph/TransitiveClosure:
+      - Fixed calculating vertexes reachability for paths with length more
+        than 2.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 19 Nov 2009 18:34:05 +0200
 

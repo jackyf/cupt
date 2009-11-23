@@ -47,7 +47,7 @@ sub is_reachable {
 			return 1;
 		}
 		if (not $seen_vertices{$current_vertex}++) {
-			push @current_vertices, $self->_graph->successors($from_vertex);
+			push @current_vertices, $self->_graph->successors($current_vertex);
 		}
 	}
 	return 0;
@@ -65,7 +65,7 @@ sub path_vertices {
 			return (@$ref_current_path, $to_vertex);
 		}
 		if (not $seen_vertices{$current_vertex}++) {
-			foreach my $successor_vertex ($self->_graph->successors($from_vertex)) {
+			foreach my $successor_vertex ($self->_graph->successors($current_vertex)) {
 				my @new_path = (@$ref_current_path, $successor_vertex);
 				push @current_vertices_and_paths, [ $successor_vertex, \@new_path ];
 			}
