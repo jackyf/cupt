@@ -885,6 +885,11 @@ sub _build_actions_graph ($$) {
 
 			if ($graph_transitive_closure->is_reachable($to, $from)) {
 				# cyclic ('remove/unpack' <-> 'configure') dependency, merge unconditionally
+				if ($self->_config->var('debug::worker')) {
+					mydebug("detected 'remove/unpack' <-> 'configure' dependency at the package '%s'",
+							$version->package_name);
+				}
+
 				$do_merge = 1;
 			}
 
