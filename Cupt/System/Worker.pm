@@ -420,6 +420,61 @@ sub get_unpacked_sizes_preview ($$) {
 	return \%result;
 }
 
+=head2 mark_as_automatically_installed
+
+method, marks group of packages as automatically/manually installed
+
+Parameters:
+
+I<value> - boolean value: true - mark as automatically installed, false - mark
+as manually installed
+
+I<package_name>... - array of of package names to mark
+
+=cut
+
+sub mark_as_automatically_installed ($$;@) {
+	my ($self, $markauto, @package_names) = @_;
+	my $simulate = $self->_config->var('cupt::worker::simulate');
+
+	if ($simulate) {
+		foreach my $package_name (@package_names) {
+			my $prefix = $markauto ?
+					__('marking as automatically installed') : __('marking as manually installed');
+			mysimulate('%s: %s', $prefix, $package_name);
+		}
+	} else {
+		my $ref_extended_info = $self->_cache->get_extended_info();
+
+		my $ref_autoinstalled_packages = $ref_extended_info->{'automatically_installed'};
+		foreach my $package_name (@package_names) {
+			$ref_autoinstalled_packages->{$package_name} = $markauto;
+		}
+
+		my @refreshed_autoinstalled_packages = grep { $ref_autoinstalled_packages->{$_} }
+				keys %$ref_autoinstalled_packages;
+
+		my $extended_info_file = $self->_cache->get_path_of_extended_states();
+		my $temp_file = $extended_info_file . '.cupt.tmp';
+
+		sysopen(my $temp_fh, $temp_file, O_WRONLY | O_EXCL | O_CREAT) or
+				mydie("unable to open temporary file '%s': %s", $temp_file, $!);
+
+		# filling new info
+		foreach my $package_name (@refreshed_autoinstalled_packages) {
+			print { $temp_fh } "Package: $package_name\nAuto-Installed: 1\n\n" or
+					mydie("unable to write to file '%s': %s", $temp_file, $!);
+		}
+
+		close($temp_fh) or
+				mydie("unable to close temporary file '%s': %s", $temp_file, $!);
+		move($temp_file, $extended_info_file) or
+				mydie("unable to rename temporary file '%s' to extended states file '%s': %s",
+						$temp_file, $extended_info_file, $!);
+	}
+	return;
+}
+
 sub __is_inner_actions_equal ($$) {
 	my ($ref_left_action, $ref_right_action) = @_;
 	my $left_version = $ref_left_action->{'version'};
@@ -530,61 +585,6 @@ sub _fill_action_dependencies ($$$$) {
 				}
 			}
 		}
-	}
-	return;
-}
-
-=head2 mark_as_automatically_installed
-
-method, marks group of packages as automatically/manually installed
-
-Parameters:
-
-I<value> - boolean value: true - mark as automatically installed, false - mark
-as manually installed
-
-I<package_name>... - array of of package names to mark
-
-=cut
-
-sub mark_as_automatically_installed ($$;@) {
-	my ($self, $markauto, @package_names) = @_;
-	my $simulate = $self->_config->var('cupt::worker::simulate');
-
-	if ($simulate) {
-		foreach my $package_name (@package_names) {
-			my $prefix = $markauto ?
-					__('marking as automatically installed') : __('marking as manually installed');
-			mysimulate('%s: %s', $prefix, $package_name);
-		}
-	} else {
-		my $ref_extended_info = $self->_cache->get_extended_info();
-
-		my $ref_autoinstalled_packages = $ref_extended_info->{'automatically_installed'};
-		foreach my $package_name (@package_names) {
-			$ref_autoinstalled_packages->{$package_name} = $markauto;
-		}
-
-		my @refreshed_autoinstalled_packages = grep { $ref_autoinstalled_packages->{$_} }
-				keys %$ref_autoinstalled_packages;
-
-		my $extended_info_file = $self->_cache->get_path_of_extended_states();
-		my $temp_file = $extended_info_file . '.cupt.tmp';
-
-		sysopen(my $temp_fh, $temp_file, O_WRONLY | O_EXCL | O_CREAT) or
-				mydie("unable to open temporary file '%s': %s", $temp_file, $!);
-
-		# filling new info
-		foreach my $package_name (@refreshed_autoinstalled_packages) {
-			print { $temp_fh } "Package: $package_name\nAuto-Installed: 1\n\n" or
-					mydie("unable to write to file '%s': %s", $temp_file, $!);
-		}
-
-		close($temp_fh) or
-				mydie("unable to close temporary file '%s': %s", $temp_file, $!);
-		move($temp_file, $extended_info_file) or
-				mydie("unable to rename temporary file '%s' to extended states file '%s': %s",
-						$temp_file, $extended_info_file, $!);
 	}
 	return;
 }
