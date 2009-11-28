@@ -15,6 +15,15 @@ cupt (1.3.1) UNRELEASED; urgency=low
         action dependencies which are originated from 'Conflicts'. No longer
         pass '--force-conflicts' to dpkg. Thanks to James Vega.
         (Closes: #556650)
+      - Mark the 'remove' subactions of upgrade/downgrade actions as fake.
+      - Subsequently, don't try to "eat" some action dependencies anymore.
+      - Don't merge unpack and configure subactions.
+      - While splitting heterogeneous actions, ignore (after setting up
+        '--force-breaks' and '--force-depends') reverse dependencies'
+        breakages.
+      - Allow circular dependencies between only 'configure' subactions, give
+        up with an error on other ones.
+      - Pass '--force-bad-path' to work around dpkg bug #558151.
     - Download:
       - Progresses/Console:
         - Fixed a divide-by-zero crash with zero-sized files. Thanks to

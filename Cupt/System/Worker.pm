@@ -31,7 +31,7 @@ use warnings;
 use strict;
 
 use List::Util qw(sum max min);
-use List::MoreUtils qw(uniq apply any none);
+use List::MoreUtils qw(uniq apply any none all);
 use File::Copy;
 use File::Basename;
 use File::stat ();
@@ -518,13 +518,20 @@ sub _fill_actions ($$\@) {
 				} else {
 					$version = $ref_package_entry->{'version'};
 				}
-				$graph->add_vertex({
+				my $ref_action = {
 					'version' => $version // {
 						package_name => $ref_package_entry->{'package_name'},
 						version_string => '<dummy>',
 					},
 					'action_name' => defined $version ? $inner_action : 'purge-config-files',
-				});
+				};
+				if ($inner_action eq 'remove' and scalar @$ref_actions_to_be_performed > 1) {
+					# this is fake 'remove' action which will be merged
+					# with 'unpack' unconditionally later
+					$ref_action->{'fake'} = 1;
+				}
+
+				$graph->add_vertex($ref_action);
 			}
 		}
 	}
@@ -571,6 +578,7 @@ sub _fill_action_dependencies ($$$$) {
 					push @$ref_dependency_expressions, {
 						'name' => $dependency_name,
 						'relation_expression' => $relation_expression,
+						'is_reverse' => ($ref_master_action ne $ref_inner_action),
 					};
 					$graph->set_edge_attribute($ref_slave_action, $ref_master_action,
 							'dependency_expressions' => $ref_dependency_expressions);
@@ -686,14 +694,14 @@ sub _build_actions_graph ($$) {
 				# conflicts must be unsatisfied before
 				$self->_fill_action_dependencies(
 						$version, 'conflicts', 'remove', 'before', $ref_inner_action, $graph);
+				# breaks must be unsatisfied before (yes, before the unpack)
+				$self->_fill_action_dependencies(
+						$version, 'breaks', 'remove', 'before', $ref_inner_action, $graph);
 			}
 			when ('configure') {
 				# depends must be configured before
 				$self->_fill_action_dependencies(
 						$version, 'depends', 'configure', 'before', $ref_inner_action, $graph);
-				# breaks must be unsatisfied before
-				$self->_fill_action_dependencies(
-						$version, 'breaks', 'remove', 'before', $ref_inner_action, $graph);
 
 				# it has also to be unpacked if the same version was not in state 'unpacked'
 				# search for the appropriate unpack action
@@ -716,6 +724,9 @@ sub _build_actions_graph ($$) {
 					# conflicts must be unsatisfied before
 					$self->_fill_action_dependencies(
 							$version, 'conflicts', 'remove', 'before', $ref_inner_action, $graph);
+					# breaks must be unsatisfied before (yes, before the unpack)
+					$self->_fill_action_dependencies(
+							$version, 'breaks', 'remove', 'before', $ref_inner_action, $graph);
 				}
 			}
 			when ('remove') {
@@ -729,6 +740,11 @@ sub _build_actions_graph ($$) {
 				$self->_fill_action_dependencies(
 						$version, 'conflicts', 'unpack', 'after', $ref_inner_action, $graph);
 				# breaks may be satisfied only after
+				$self->_fill_action_dependencies(
+						$version, 'breaks', 'unpack', 'after', $ref_inner_action, $graph);
+				# in the previous case it may happen that package was already unpacked
+				# with breaking dependencies already, so there won't be 'unpack' action but just
+				# 'configure' one, so set dependency to 'configure' too just in case
 				$self->_fill_action_dependencies(
 						$version, 'breaks', 'configure', 'after', $ref_inner_action, $graph);
 			}
@@ -770,53 +786,6 @@ sub _build_actions_graph ($$) {
 			}
 		};
 
-		my $sub_is_eaten_dependency = sub {
-			my ($slave_vertex, $master_vertex, $version_to_install) = @_;
-
-			my $ref_dependency_expressions = $graph->get_edge_attribute($slave_vertex, $master_vertex, 'dependency_expressions');
-			if (defined $ref_dependency_expressions) {
-				DEPENDENCY_EXPRESSION:
-				foreach my $ref_dependency_expression (@$ref_dependency_expressions) {
-					my $dependency_name = $ref_dependency_expression->{'name'};
-					if ($dependency_name eq 'conflicts' or $dependency_name eq 'breaks') {
-						# getting here means that this edge was originated from conflicts/breaks
-						# so it doesn't deserve a chance to be eaten in the end
-						return 0;
-					}
-
-					my $relation_expression = $ref_dependency_expression->{'relation_expression'};
-					my $ref_satisfying_versions = $self->_cache->get_satisfying_versions($relation_expression);
-					foreach my $version (@$ref_satisfying_versions) {
-						if ($version->package_name eq $version_to_install->package_name &&
-							$version->version_string eq $version_to_install->version_string)
-						{
-							next DEPENDENCY_EXPRESSION;
-						}
-					}
-					# no version can satisfy this relation expression
-					return 0;
-				}
-
-				# ok, so all relation expressions are satisfied by some versions
-				if ($self->_config->var('debug::worker')) {
-					my $slave_action_string = __stringify_inner_action($slave_vertex);
-					my $master_action_string = __stringify_inner_action($master_vertex);
-					my $dependency_expressions_string;
-					do {
-						my @dependency_expressions_strings = map {
-									$_->{'name'} . ': ' . stringify_relation_expression($_->{'relation_expression'})
-								} @$ref_dependency_expressions;
-						$dependency_expressions_string = join(', ', sort(uniq(@dependency_expressions_strings)));
-					};
-					mydebug(sprintf "ate action dependency: '%s' -> '%s' using '%s'",
-							$slave_action_string, $master_action_string, $dependency_expressions_string);
-				}
-				return 1;
-			}
-			# no relation expressions info, cannot be eaten
-			return 0;
-		};
-
 		my $sub_move_edge = sub {
 			my ($from_predecessor, $from_successor, $to_predecessor, $to_successor) = @_;
 
@@ -826,6 +795,9 @@ sub _build_actions_graph ($$) {
 			if (exists $ref_previous_attributes->{'dependency_expressions'}) {
 				push @{$ref_attributes->{'dependency_expressions'}},
 						@{$ref_previous_attributes->{'dependency_expressions'}};
+			}
+			if (exists $ref_previous_attributes->{'is_multiplied'}) {
+				$ref_attributes->{'is_multiplied'} = 1;
 			}
 			$graph->add_edge($to_predecessor, $to_successor);
 			$graph->set_edge_attributes($to_predecessor, $to_successor, $ref_attributes);
@@ -841,6 +813,7 @@ sub _build_actions_graph ($$) {
 						# moving edge attributes too
 						$sub_move_edge->($predecessor_vertex, $from_vertex, $predecessor_vertex, $successor_vertex);
 						$sub_move_edge->($to_vertex, $successor_vertex, $predecessor_vertex, $successor_vertex);
+						$graph->set_edge_attribute($predecessor_vertex, $successor_vertex, 'is_multiplied' => 1);
 						if ($self->_config->var('debug::worker')) {
 							my $slave_string = __stringify_inner_action($predecessor_vertex);
 							my $master_string = __stringify_inner_action($successor_vertex);
@@ -879,58 +852,6 @@ sub _build_actions_graph ($$) {
 				my $slave_string = __stringify_inner_action($edge->[0]);
 				my $master_string = __stringify_inner_action($edge->[1]);
 				mydebug("the present action dependency: '$slave_string' -> '$master_string'");
-			}
-		}
-
-		# unit unpack/configure using some intelligence
-		foreach my $ref_change_entry (values %vertex_changes) {
-			my $to = $ref_change_entry->{'configure'};
-			my $version = $to->{'version'};
-			my $from = $ref_change_entry->{'unpack'};
-
-			my @potential_edge_moves;
-			my $do_merge = 0;
-
-			if ($graph_transitive_closure->is_reachable($to, $from)) {
-				# cyclic ('remove/unpack' <-> 'configure') dependency, merge unconditionally
-				if ($self->_config->var('debug::worker')) {
-					mydebug("detected 'remove/unpack' <-> 'configure' dependency at the package '%s'",
-							$version->package_name);
-				}
-
-				$do_merge = 1;
-			}
-
-			for my $successor_vertex ($graph->successors($from)) {
-				if (!$sub_is_eaten_dependency->($from, $successor_vertex, $version)) {
-					push @potential_edge_moves, [ $from, $successor_vertex, $to, $successor_vertex ];
-				} else {
-					$do_merge = 1;
-				}
-			}
-			for my $predecessor_vertex ($graph->predecessors($from)) {
-				if (!$sub_is_eaten_dependency->($predecessor_vertex, $from, $version)) {
-					push @potential_edge_moves, [ $predecessor_vertex, $from, $predecessor_vertex, $to ];
-				} else {
-					$do_merge = 1;
-				}
-			}
-
-			# now, finally...
-			# when we don't merge unpack and configure, this leads to dependency loops
-			# when we merge unpack and configure always, this also leads to dependency loops
-			# then try to merge only if the merge can drop extraneous dependencies
-			if ($do_merge) {
-				foreach my $ref_edge_move (@potential_edge_moves) {
-					$sub_move_edge->(@$ref_edge_move);
-				}
-				$graph->delete_vertex($from);
-				$to->{'action_name'} = 'install';
-			}
-			if ($self->_config->var('debug::worker')) {
-				my $action_string = __stringify_inner_action($to);
-				my $yes_no = $do_merge ? '' : 'not ';
-				mydebug("${yes_no}merging action '$action_string'");
 			}
 		}
 
@@ -975,40 +896,48 @@ sub __split_heterogeneous_actions (@) {
 			# multiple actions at once
 
 			# firstly, we need to cope with conflicts at early stage, so we build a mini-graph
-			my $conflicts_action_graph = Cupt::Graph->new();
+			my $mini_action_graph = Cupt::Graph->new();
 			foreach my $edge ($action_graph->edges()) {
+				next if defined $action_graph->get_edge_attribute(@$edge, 'is_multiplied');
+
+				my $ref_dependency_expressions = $action_graph->get_edge_attribute(@$edge, 'dependency_expressions');
+				if (defined $ref_dependency_expressions) {
+					next if all {
+								($_->{'name'} eq 'breaks')
+									or
+								($_->{'is_reverse'} and not $_->{'name'} eq 'conflicts')
+							} @$ref_dependency_expressions;
+				}
+
 				# we are interested only in those edges that contain both vertices from the current group
 				next if none { $edge->[0] eq $_ } @$ref_action_group;
 				next if none { $edge->[1] eq $_ } @$ref_action_group;
 
-				my $ref_dependency_expressions = $action_graph->get_edge_attribute(@$edge, 'dependency_expressions');
-				if (not defined $ref_dependency_expressions) {
-					# the dependency came from non-relation, e.g. unpack -> configure
-					$conflicts_action_graph->add_edge(@$edge);
-				} else {
-					next if none { $_->{'name'} eq 'conflicts' } @$ref_dependency_expressions;
-					foreach my $ref_dependency_expression (@$ref_dependency_expressions) {
-						if ($ref_dependency_expression->{'name'} eq 'conflicts') {
-							$conflicts_action_graph->add_edge(@$edge);
-						}
-					}
-				}
+				$mini_action_graph->add_edge(@$edge);
 			}
 			# ok, there may be some vertices without edges
-			$conflicts_action_graph->add_vertex($_) foreach @$ref_action_group;
+			$mini_action_graph->add_vertex($_) foreach @$ref_action_group;
 
-			my @action_groups_sorted_by_conflicts =
-					$conflicts_action_graph->topological_sort_of_strongly_connected_components();
+			my @action_subgroups_sorted =
+					$mini_action_graph->topological_sort_of_strongly_connected_components();
 
-			foreach my $ref_action_subgroup (@action_groups_sorted_by_conflicts) {
+			foreach my $ref_action_subgroup (@action_subgroups_sorted) {
 				if (scalar @$ref_action_subgroup > 1) {
-					# ooh, circular dependency caused by conflicts? no-go
-					mydie("encountered circular conflicts, unable to schedule actions '%s'",
-							join(', ', map { __stringify_inner_action($_) } $ref_action_subgroup));
+					# only circular configures allowed
+					my $first_action_name = $ref_action_subgroup->[0]->{'action_name'};
+					if ($first_action_name ne 'configure' or 
+						any { $_->{'action_name'} ne $first_action_name } @$ref_action_subgroup)
+					{
+						# ooh, mixed circular dependency? no-go
+						mydie("unable to schedule circular actions '%s'",
+								join(', ', map { __stringify_inner_action($_) } @$ref_action_subgroup));
+					}
 				}
+
 				# always set forcing all dependencies
 				# dpkg requires to pass both --force-depends and --force-breaks to achieve it
 				$ref_action_subgroup->[0]->{'dpkg_flags'} = ' --force-depends --force-breaks';
+
 				push @new_action_group_list, $ref_action_subgroup;
 			}
 		} else {
@@ -1596,6 +1525,12 @@ sub change_system ($$) {
 				$dpkg_command .= ' --no-triggers' if $defer_triggers;
 				# add necessary options if requested
 				$dpkg_command .= $ref_action_group->[0]->{'dpkg_flags'} // '';
+
+				# the workaround for a dpkg bug #558151
+				#
+				# dpkg performs some IMHO useless checks for programs in PATH
+				# which breaks some upgrades of packages that contains important programs
+				$dpkg_command .= ' --force-bad-path';
 
 				foreach my $ref_action (@$ref_action_group) {
 					my $action_expression;
