@@ -1,4 +1,4 @@
-cupt (1.3.1) UNRELEASED; urgency=low
+cupt (1.3.1) unstable; urgency=low
 
   * Cupt:
     - Config:
@@ -29,7 +29,7 @@ cupt (1.3.1) UNRELEASED; urgency=low
         - Fixed a divide-by-zero crash with zero-sized files. Thanks to
           James Vega. (Closes: #557661)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 19 Nov 2009 18:34:05 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 30 Nov 2009 15:23:28 +0200
 
 cupt (1.3.0) unstable; urgency=low
 
