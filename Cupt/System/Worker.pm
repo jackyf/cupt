@@ -381,8 +381,12 @@ sub get_unpacked_sizes_preview ($$) {
 		my $package = $self->_cache->get_binary_package($package_name);
 		if (defined $package) {
 			my $old_version = $package->get_installed_version();
-			# config-files entries won't have installed size
-			$result{$package_name} = - ($old_version->installed_size // 0);
+			if (defined $old_version) {
+				$result{$package_name} = - $old_version->installed_size;
+			} else {
+				# config-files entries won't have installed size
+				$result{$package_name} = 0;
+			}
 		} else {
 			# probably, it's purge of already non-existent package
 			$result{$package_name} = 0;
