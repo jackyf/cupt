@@ -522,11 +522,17 @@ sub _fill_actions ($$\@) {
 				} else {
 					$version = $ref_package_entry->{'version'};
 				}
+				if (not defined $version) {
+					$version = (bless [] => 'Cupt::Cache::BinaryVersion');
+					$version->package_name = $ref_package_entry->{'package_name'};
+					$version->version_string = '<dummy>';
+					$version->pre_depends = [];
+					$version->depends = [];
+					$version->conflicts = [];
+					$version->breaks = [];
+				}
 				my $ref_action = {
-					'version' => $version // {
-						package_name => $ref_package_entry->{'package_name'},
-						version_string => '<dummy>',
-					},
+					'version' => $version,
 					'action_name' => defined $version ? $inner_action : 'purge-config-files',
 				};
 				if ($inner_action eq 'remove' and scalar @$ref_actions_to_be_performed > 1) {
