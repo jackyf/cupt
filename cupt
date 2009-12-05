@@ -80,7 +80,7 @@ sub main {
 		return 0;
 	}
 
-	if ($config->var('quiet')) {
+	if ($config->get_string('quiet')) {
 		close(STDOUT) or mydie('unable to close standard output: %s', $!);
 		open(STDOUT, '>>', '/dev/null') or mydie('unable to turn standard output to /dev/null: %s', $!);
 		$download_progress_class_name = 'Cupt::Download::Progress';
@@ -427,22 +427,20 @@ sub config_dump () {
 
 	if (defined $particular_key) {
 		my $value;
-		$value = $config->var($particular_key);
+		$value = $config->get_string($particular_key);
+		$value //= $config->get_list($particular_key); # if it's the list option
 		$value //= '';
 		say $value;
 	} else {
-		my @regular_keys = sort keys %{$config->regular_vars};
-		foreach my $key (@regular_keys) {
-			my $value = $config->regular_vars->{$key};
+		foreach my $key (sort $config->get_scalar_option_names()) {
+			my $value = $config->get_string($key);
 			defined $value or next;
 			say sprintf q/%s "%s";/, $key, $value;
 		}
 
-		my @list_keys = sort keys %{$config->list_vars};
-		foreach my $key (@list_keys) {
-			my @values = @{$config->list_vars->{$key}};
-			foreach (@values) {
-				say qq/$key { "$_"; };/;
+		foreach my $key (sort $config->get_list_option_names()) {
+			foreach my $element ($config->get_list($key)) {
+				say qq/$key { "$element"; };/;
 			}
 		}
 	}
@@ -488,7 +486,7 @@ sub show_binary_package_versions () {
 		my $ref_versions;
 		my $p = sub { print shift, ': ', shift, "\n" };
 
-		if ($config->var('apt::cache::allversions')) {
+		if ($config->get_bool('apt::cache::allversions')) {
 			$ref_versions = get_binary_package($package_expression, 1)->get_versions();
 		} else {
 			if (not defined get_binary_package($package_expression, 0)
@@ -585,7 +583,7 @@ sub show_source_package_versions () {
 		my $ref_versions;
 		my $p = sub { print shift, ': ', shift, "\n" };
 
-		if ($config->var('apt::cache::allversions')) {
+		if ($config->get_bool('apt::cache::allversions')) {
 			$ref_versions = get_source_package($package_expression, 1)->get_versions();
 		} else {
 			my @versions = select_package_versions_wildcarded($package_expression, 'source');
@@ -651,7 +649,7 @@ sub search () {
 	my $o_installed_only = 0;
 	my $o_case_sensitive = 0;
 	GetOptions(
-		'names-only|n' => sub { $config->set_regular_var('apt::cache::namesonly', 1) },
+		'names-only|n' => sub { $config->set_scalar('apt::cache::namesonly', 1) },
 		'case-sensitive' => \$o_case_sensitive,
 		'installed-only' => \$o_installed_only,
 	);
@@ -675,7 +673,7 @@ sub search () {
 		}
 	}
 
-	if ($config->var('apt::cache::namesonly')) {
+	if ($config->get_bool('apt::cache::namesonly')) {
 		# search only in package names
 		foreach my $package_name ($cache->get_binary_package_names()) {
 			my $matched = 1;
@@ -755,7 +753,7 @@ sub show_package_relations ($) {
 		[ 'pre_depends', __('Pre-Depends') ],
 		[ 'depends', __('Depends') ],
 	);
-	if (!$config->var('apt::cache::important')) {
+	if (!$config->get_bool('apt::cache::important')) {
 		push @relation_groups, [ 'recommends', __('Recommends') ];
 
 		if ($o_with_suggests) {
@@ -807,7 +805,7 @@ sub show_package_relations ($) {
 				# just plain normal dependencies
 				foreach my $relation_expression (@{$version->$relation_group_name}) {
 					say "  $caption: ", stringify_relation_expression($relation_expression);
-					if ($config->var('apt::cache::recursedepends')) {
+					if ($config->get_bool('apt::cache::recursedepends')) {
 						# insert recursive depends into queue
 						push @versions, @{$cache->get_satisfying_versions($relation_expression)};
 					}
@@ -826,7 +824,7 @@ sub show_package_relations ($) {
 									# positive result
 									my $label = $reverse_version_candidate->package_name .
 											' ' . $reverse_version_candidate->version_string;
-									if ($config->var('apt::cache::recursedepends')) {
+									if ($config->get_bool('apt::cache::recursedepends')) {
 										push @versions, $reverse_version_candidate;
 									}
 									print '  ' . __('Reverse-') . "$caption: $label: ";
@@ -880,11 +878,11 @@ sub why ($) {
 		[ 'pre_depends', __('Pre-Depends') ],
 		[ 'depends', __('Depends') ],
 	);
-	if ($config->var('cupt::resolver::keep-recommends')) {
+	if ($config->get_bool('cupt::resolver::keep-recommends')) {
 		push @relation_groups,
 				[ 'recommends', __('Recommends') ];
 	}
-	if ($config->var('cupt::resolver::keep-suggests')) {
+	if ($config->get_bool('cupt::resolver::keep-suggests')) {
 		push @relation_groups,
 				[ 'suggests', __('Suggests') ];
 	}
@@ -1007,7 +1005,7 @@ sub policy ($) {
 				my @available_as = @{$version->available_as};
 				foreach (@available_as) {
 					print (' ' x 8);
-					my $origin = $_->{release}->{base_uri} || $config->var('dir::state::status');
+					my $origin = $_->{release}->{base_uri} || $config->get_string('dir::state::status');
 					print $origin . ' ';
 					print $_->{release}->{archive} . '/'. $_->{release}->{component} . ' ';
 					say '(' . ($_->{release}->{signed} ? __('signed') : __('unsigned')) . ')';
@@ -1020,7 +1018,7 @@ sub policy ($) {
 
 		my $sub_say_release_info = sub {
 			my ($ref_release_info) = @_;
-			my $origin = $ref_release_info->{base_uri} || $config->var('dir::state::status');
+			my $origin = $ref_release_info->{base_uri} || $config->get_string('dir::state::status');
 			my $archive = $ref_release_info->{archive};
 			my $component = $ref_release_info->{component};
 			print "  $origin $archive/$component: ";
@@ -1091,7 +1089,7 @@ sub pkgnames () {
 sub generate_management_prompt ($$$) {
 	my ($worker, $show_versions, $show_size_changes) = @_;
 
-	my $show_reasons = $config->var('cupt::resolver::track-reasons');
+	my $show_reasons = $config->get_bool('cupt::resolver::track-reasons');
 
 	my $sub_prompt = sub {
 		my $ref_desired_packages = $_[0];
@@ -1235,7 +1233,7 @@ sub generate_management_prompt ($$$) {
 				next if not defined $ref_package_entry->{'version'};
 
 				foreach my $dependency_name (qw(recommends suggests)) {
-					next if not $config->var("cupt::resolver::keep-$dependency_name");
+					next if not $config->get_bool("cupt::resolver::keep-$dependency_name");
 					foreach my $relation_expression (@{$ref_package_entry->{'version'}->$dependency_name}) {
 						my $ref_satisfying_versions = $cache->get_satisfying_versions($relation_expression);
 
@@ -1282,7 +1280,7 @@ sub generate_management_prompt ($$$) {
 
 		my $is_dangerous_action = 0;
 
-		if (!$config->var('cupt::console::allow-untrusted')) {
+		if (!$config->get_bool('cupt::console::allow-untrusted')) {
 			my @untrusted_package_names;
 			# generate loud warning for unsigned versions
 			foreach my $action (qw(install upgrade downgrade)) {
@@ -1349,7 +1347,7 @@ sub generate_management_prompt ($$$) {
 		my $answer;
 		my $interactive;
 
-		if ($config->var('cupt::console::assume-yes')) {
+		if ($config->get_bool('cupt::console::assume-yes')) {
 			$interactive = 0;
 			$answer = 'y';
 		} else {
@@ -1478,16 +1476,16 @@ sub manage_packages ($) {
 	my $o_show_size_changes = 0;
 	my $o_simulate;
 	GetOptions(
-		'resolver=s' => sub { $config->set_regular_var('cupt::resolver::type', $_[1]) },
-		'show-deps|show-reasons|D' => sub { $config->set_regular_var('cupt::resolver::track-reasons', 1) },
-		'max-solution-count=s' => sub { $config->set_regular_var('cupt::resolver::max-solution-count', $_[1]) },
-		'no-install-recommends|R' => sub { $config->set_regular_var('apt::install-recommends' => 0) },
-		'no-remove' => sub { $config->set_regular_var('cupt::resolver::no-remove' => 1) },
-		'no-auto-remove' => sub { $config->set_regular_var('cupt::resolver::auto-remove', 0) },
-		'download-only|d' => sub { $config->set_regular_var('cupt::worker::download-only', 1) },
+		'resolver=s' => sub { $config->set_scalar('cupt::resolver::type', $_[1]) },
+		'show-deps|show-reasons|D' => sub { $config->set_scalar('cupt::resolver::track-reasons', 1) },
+		'max-solution-count=s' => sub { $config->set_scalar('cupt::resolver::max-solution-count', $_[1]) },
+		'no-install-recommends|R' => sub { $config->set_scalar('apt::install-recommends' => 0) },
+		'no-remove' => sub { $config->set_scalar('cupt::resolver::no-remove' => 1) },
+		'no-auto-remove' => sub { $config->set_scalar('cupt::resolver::auto-remove', 0) },
+		'download-only|d' => sub { $config->set_scalar('cupt::worker::download-only', 1) },
 		'show-versions|V' => \$o_show_versions,
 		'show-size-changes|Z' => \$o_show_size_changes,
-		'yes|assume-yes|y' => sub { $config->set_regular_var('cupt::console::assume-yes' => 1) },
+		'yes|assume-yes|y' => sub { $config->set_scalar('cupt::console::assume-yes' => 1) },
 	);
 	# action can be 'install', 'remove', 'purge', 'safe-upgrade', 'full-upgrade'
 	my ($action) = @_;
@@ -1540,7 +1538,7 @@ sub manage_packages ($) {
 
 		# source packages give dramatic speed-up for synchronizing source versions
 		my $o_build_source = ($action eq 'build-depends' or
-				$config->var('cupt::resolver::synchronize-source-versions') ne 'none');
+				$config->get_string('cupt::resolver::synchronize-source-versions') ne 'none');
 
 		print __('Building the package cache... ');
 		build_cache(
@@ -1555,7 +1553,7 @@ sub manage_packages ($) {
 	print __('Initializing package resolver and worker... ');
 	my $resolver;
 	do {
-		my $resolver_module_name = defined $config->var('cupt::resolver::external-command') ?
+		my $resolver_module_name = defined $config->get_string('cupt::resolver::external-command') ?
 				'Cupt::System::Resolvers::External' : 'Cupt::System::Resolvers::Native';
 		eval "require $resolver_module_name;"; die $@ if $@; ## no critic (StringyEval)
 		$resolver = $resolver_module_name->new($config, $cache);
@@ -1570,7 +1568,7 @@ sub manage_packages ($) {
 	print __('Scheduling requested actions... ');
 	if ($action eq 'safe-upgrade' || $action eq 'full-upgrade') {
 		if ($action eq 'safe-upgrade') {
-			$config->set_regular_var('cupt::resolver::no-remove' => 1);
+			$config->set_scalar('cupt::resolver::no-remove' => 1);
 		}
 		$resolver->upgrade();
 
@@ -1582,14 +1580,14 @@ sub manage_packages ($) {
 	my $o_purge = 0;
 	if ($action eq 'purge') {
 		$action = 'remove';
-		$config->set_regular_var('cupt::worker::purge', 1)
+		$config->set_scalar('cupt::worker::purge', 1)
 	}
 
 	my @package_expressions = @ARGV;
 	foreach my $package_expression (@package_expressions) {
 		if ($action eq 'satisfy') {
-			$config->set_regular_var('apt::install-recommends' => 0);
-			$config->set_regular_var('apt::install-suggests' => 0);
+			$config->set_scalar('apt::install-recommends' => 0);
+			$config->set_scalar('apt::install-suggests' => 0);
 
 			my $method_name = 'satisfy_relation_expression';
 
@@ -1600,25 +1598,27 @@ sub manage_packages ($) {
 
 			my $ref_relation_expressions = parse_architectured_relation_line($package_expression);
 			$ref_relation_expressions = unarchitecture_relation_expressions(
-					$ref_relation_expressions, $config->var('apt::architecture'));
+					$ref_relation_expressions, $config->get_string('apt::architecture'));
 			$resolver->$method_name($_) for @$ref_relation_expressions;
 		} elsif ($action eq 'build-depends') {
-			$config->set_regular_var('apt::install-recommends' => 0);
-			$config->set_regular_var('apt::install-suggests' => 0);
+			my $architecture = $config->get_string('apt::architecture');
+
+			$config->set_scalar('apt::install-recommends' => 0);
+			$config->set_scalar('apt::install-suggests' => 0);
 			my $version = select_source_package_version($package_expression, 1);
 			my @relation_expressions;
 
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->build_depends, $config->var('apt::architecture'))};
+					$version->build_depends, $architecture)};
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->build_depends_indep, $config->var('apt::architecture'))};
+					$version->build_depends_indep, $architecture)};
 			$resolver->satisfy_relation_expression($_) for @relation_expressions;
 
 			@relation_expressions = ();
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->build_conflicts, $config->var('apt::architecture'))};
+					$version->build_conflicts, $architecture)};
 			push @relation_expressions, @{unarchitecture_relation_expressions(
-					$version->build_conflicts_indep, $config->var('apt::architecture'))};
+					$version->build_conflicts_indep, $architecture)};
 			$resolver->unsatisfy_relation_expression($_) for @relation_expressions;
 
 			$resolver->satisfy_relation_expression(Cupt::Cache::Relation->new('build-essential'));
@@ -1971,24 +1971,24 @@ sub process_options {
 	eval {
 		GetOptions(
 			'option|o=s@' => \@direct_options,
-			'important|i' => sub { $config->set_regular_var('apt::cache::important', 1) },
-			'all-versions|a' => sub { $config->set_regular_var('apt::cache::allversions', 1) },
-			'no-all-versions' => sub { $config->set_regular_var('apt::cache::allversions', 0) },
-			'target-release|default-release|t=s' => sub { $config->set_regular_var('apt::default-release', $_[1]) },
-			'recurse' => sub { $config->set_regular_var('apt::cache::recursedepends', 1) },
-			'simulate|s' => sub { $config->set_regular_var('cupt::worker::simulate' => 1) },
-			'purge' => sub { $config->set_regular_var('cupt::worker::purge' => 1) },
-			'quiet|q' => sub { $config->set_regular_var('quiet' => 1) },
+			'important|i' => sub { $config->set_scalar('apt::cache::important', 1) },
+			'all-versions|a' => sub { $config->set_scalar('apt::cache::allversions', 1) },
+			'no-all-versions' => sub { $config->set_scalar('apt::cache::allversions', 0) },
+			'target-release|default-release|t=s' => sub { $config->set_scalar('apt::default-release', $_[1]) },
+			'recurse' => sub { $config->set_scalar('apt::cache::recursedepends', 1) },
+			'simulate|s' => sub { $config->set_scalar('cupt::worker::simulate' => 1) },
+			'purge' => sub { $config->set_scalar('cupt::worker::purge' => 1) },
+			'quiet|q' => sub { $config->set_scalar('quiet' => 1) },
 		);
 		foreach (@direct_options) {
 			if (m/(.*?)=(.*)/) {
 				my ($key, $value) = ($1, $2);
 				if ($key =~ m/^(.*?)::$/) {
 					# this is list option
-					$config->set_list_var($1, $value);
+					$config->set_list($1, $value);
 				} else {
 					# regular option
-					$config->set_regular_var($key, $value);
+					$config->set_scalar($key, $value);
 				}
 			} else {
 				mydie("incorrect option syntax (right is '<option>=<value>')");
@@ -2044,7 +2044,7 @@ sub shell {
 			$cache->set_config($config);
 
 			process_options();
-			$o_simulate = $config->var('cupt::worker::simulate');
+			$o_simulate = $config->get_bool('cupt::worker::simulate');
 			main();
 		};
 

@@ -55,7 +55,7 @@ sub perform ($$$$$) {
 
 	# bad connections can return 'receive failure' transitional error
 	# occasionally, give them several tries to finish the download
-	my $transitive_errors_left = $config->var('acquire::retries');
+	my $transitive_errors_left = $config->get_number('acquire::retries');
 
 	my $curl = WWW::Curl::Easy->new();
 	my $is_expected_size_reported = 0;
@@ -95,7 +95,7 @@ sub perform ($$$$$) {
 	my $proxy = get_acquire_suboption_for_uri($config, $uri, 'proxy');
 	$curl->setopt(CURLOPT_PROXY, $proxy) if defined $proxy;
 	if ($protocol eq 'http') {
-		$curl->setopt(CURLOPT_FOLLOWLOCATION, 1) if $config->var('acquire::http::allow-redirects');
+		$curl->setopt(CURLOPT_FOLLOWLOCATION, 1) if $config->get_bool('acquire::http::allow-redirects');
 	}
 	my $timeout = get_acquire_suboption_for_uri($config, $uri, 'timeout');
 	if (defined $timeout) {
@@ -128,7 +128,7 @@ sub perform ($$$$$) {
 		# transitive errors handling
 		# FIXME: replace 56 with CURLE_RECV_ERROR after Debian Squeeze release
 		if ($curl_result == 56 && $transitive_errors_left) {
-			if ($config->var('debug::downloader')) {
+			if ($config->get_bool('debug::downloader')) {
 				mydebug("transitive error while downloading '$uri'");
 			}
 			--$transitive_errors_left;
@@ -137,7 +137,7 @@ sub perform ($$$$$) {
 
 		# FIXME: replace 33 with CURLE_RANGE_ERROR after Debian Squeeze release
 		if ($curl_result == 33) {
-			if ($config->var('debug::downloader')) {
+			if ($config->get_bool('debug::downloader')) {
 				mydebug("range command failed, need to restart from beginning while downloading '$uri'");
 			}
 			unlink($filename) or

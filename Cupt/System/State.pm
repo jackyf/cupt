@@ -58,7 +58,7 @@ sub new {
 
 	# in next line we don't use 'dir' and 'dir::state' variables as we do
 	# in all others path builder functions, that's apt decision
-	my $dpkg_status_path = $self->_config->var('dir::state::status');
+	my $dpkg_status_path = $self->_config->get_string('dir::state::status');
 	if (! -r $dpkg_status_path) {
 		mydie("unable to open dpkg status file '%s': %s", $dpkg_status_path, $!);
 	}

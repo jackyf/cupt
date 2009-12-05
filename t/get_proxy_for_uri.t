@@ -30,8 +30,8 @@ use Cupt::Config;
 use Cupt::Download::Method qw(get_acquire_suboption_for_uri);
 
 my $config = Cupt::Config->new();
-$config->set_regular_var('acquire::http::proxy' => 'http://host1.com');
-$config->set_regular_var('acquire::http::proxy::debian.org.ua' => 'http://otherhost.com');
+$config->set_scalar('acquire::http::proxy' => 'http://host1.com');
+$config->set_scalar('acquire::http::proxy::debian.org.ua' => 'http://otherhost.com');
 
 is(get_acquire_suboption_for_uri($config, 'http://ftp.ua.debian.org', 'proxy'), 'http://host1.com', 'general proxy');
 is(get_acquire_suboption_for_uri($config, 'http://debian.org.ua', 'proxy'), 'http://otherhost.com', 'host-specific proxy');

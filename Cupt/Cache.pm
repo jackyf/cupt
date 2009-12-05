@@ -121,7 +121,7 @@ sub new {
 	$self->_allow_reinstall = [];
 
 	do { # ugly hack to copy trusted keyring from APT whenever possible
-		my $cupt_keyring_file = $self->_config->var('gpgv::trustedkeyring');
+		my $cupt_keyring_file = $self->_config->get_string('gpgv::trustedkeyring');
 		my $apt_keyring_file = '/etc/apt/trusted.gpg';
 		# ignore all errors, let install do its best
 		qx#install -m644 $apt_keyring_file $cupt_keyring_file >/dev/null 2>/dev/null#;
@@ -200,7 +200,7 @@ sub new {
 	$self->_parse_extended_states($extended_states_file) if -r $extended_states_file;
 
 	# for speeding up _prepare_package calls
-	$self->_binary_architecture = $self->_config->var('apt::architecture');
+	$self->_binary_architecture = $self->_config->get_string('apt::architecture');
 
 	return $self;
 }
@@ -316,7 +316,7 @@ sub get_original_apt_pin {
 	my @available_as = @{$version->available_as};
 
 	# release-dependent settings
-	my $default_release = $self->_config->var('apt::default-release');
+	my $default_release = $self->_config->get_string('apt::default-release');
 	foreach (@available_as) {
 		if (defined $default_release) {
 			if ($_->{release}->{archive} eq $default_release ||
@@ -687,13 +687,13 @@ sub _get_release_info {
 
 sub _parse_sources_lists {
 	my ($self) = @_;
-	my $root_prefix = $self->_config->var('dir');
-	my $etc_dir = $self->_config->var('dir::etc');
+	my $root_prefix = $self->_config->get_string('dir');
+	my $etc_dir = $self->_config->get_string('dir::etc');
 
-	my $parts_dir = $self->_config->var('dir::etc::sourceparts');
+	my $parts_dir = $self->_config->get_string('dir::etc::sourceparts');
 	my @source_files = glob("$root_prefix$etc_dir/$parts_dir/*.list");
 
-	my $main_file = $self->_config->var('dir::etc::sourcelist');
+	my $main_file = $self->_config->get_string('dir::etc::sourcelist');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	push @source_files, $main_file_path if -r $main_file_path;
 
@@ -1028,10 +1028,10 @@ sub _path_of_base_uri {
 	$uri_prefix =~ tr[/][_];
 
 	my $dirname = join('',
-		$self->_config->var('dir'),
-		$self->_config->var('dir::state'),
+		$self->_config->get_string('dir'),
+		$self->_config->get_string('dir::state'),
 		'/',
-		$self->_config->var('dir::state::lists')
+		$self->_config->get_string('dir::state::lists')
 	);
 
 	(my $distribution_part = $index_entry->{'distribution'}) =~ tr[/][_];
@@ -1062,7 +1062,7 @@ sub _base_download_uri {
 sub _index_list_suffix {
 	my ($self, $index_entry, $delimiter) = @_;
 
-	my $arch = $self->_config->var('apt::architecture');
+	my $arch = $self->_config->get_string('apt::architecture');
 
 	if ($index_entry->{'component'} eq '') {
 		# easy source type
@@ -1102,7 +1102,7 @@ sub _get_chunks_of_localized_descriptions {
 
 	return @result if $index_entry->{'type'} ne 'deb';
 
-	my $translation_variable = $self->_config->var('apt::acquire::translation');
+	my $translation_variable = $self->_config->get_string('apt::acquire::translation');
 	my $locale = $translation_variable eq 'environment' ?
 			POSIX::setlocale(LC_MESSAGES) : $translation_variable;
 	return @result if $locale eq 'none';
@@ -1282,13 +1282,13 @@ sub get_download_entries_of_localized_descriptions {
 sub _parse_preferences {
 	my ($self) = @_;
 
-	my $root_prefix = $self->_config->var('dir');
-	my $etc_dir = $self->_config->var('dir::etc');
+	my $root_prefix = $self->_config->get_string('dir');
+	my $etc_dir = $self->_config->get_string('dir::etc');
 
-	my $parts_dir = $self->_config->var('dir::etc::preferencesparts');
+	my $parts_dir = $self->_config->get_string('dir::etc::preferencesparts');
 	my @preference_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
-	my $main_file = $self->_config->var('dir::etc::preferences');
+	my $main_file = $self->_config->get_string('dir::etc::preferences');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	push @preference_files, $main_file_path if -r $main_file_path;
 
@@ -1307,10 +1307,10 @@ returns path of file containing extended states for packages
 sub get_path_of_extended_states {
 	my ($self) = @_;
 
-	my $root_prefix = $self->_config->var('dir');
-	my $etc_dir = $self->_config->var('dir::state');
+	my $root_prefix = $self->_config->get_string('dir');
+	my $etc_dir = $self->_config->get_string('dir::state');
 
-	my $leaf = $self->_config->var('dir::state::extendedstates');
+	my $leaf = $self->_config->get_string('dir::state::extendedstates');
 
 	return "$root_prefix$etc_dir/$leaf";
 }
@@ -1360,11 +1360,11 @@ non-zero on success, zero on fail
 sub verify_signature ($$) {
 	my ($config, $file) = @_;
 
-	my $debug = $config->var('debug::gpgv');
+	my $debug = $config->get_bool('debug::gpgv');
 
 	mydebug("verifying file '%s'", $file) if $debug;
 
-	my $keyring_file = $config->var('gpgv::trustedkeyring');
+	my $keyring_file = $config->get_string('gpgv::trustedkeyring');
 	mydebug("keyring file is '%s'", $keyring_file) if $debug;
 
 	my $signature_file = "$file.gpg";

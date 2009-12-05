@@ -31,7 +31,7 @@ use warnings;
 
 use Storable;
 
-use Cupt::LValueFields qw(regular_vars list_vars _regular_compatibility_vars _optional_patterns);
+use Cupt::LValueFields qw(_regular_vars _list_vars _regular_compatibility_vars _optional_patterns);
 use Cupt::Config::ISCConfigParser;
 use Cupt::Core;
 
@@ -58,7 +58,7 @@ sub new {
 	# Dir::Log "var/log/apt";
 	# Dir::Log::Terminal "term.log";
 	#
-	$self->regular_vars = {
+	$self->_regular_vars = {
 		# used APT vars
 		'acquire::http::timeout' => 120,
 		'acquire::https::timeout' => 120,
@@ -160,7 +160,7 @@ sub new {
 		'aptitude::*',
 	];
 
-	$self->list_vars = {
+	$self->_list_vars = {
 		# used APT vars
 		'apt::neverautoremove' => [],
 		'apt::update::pre-invoke' => [],
@@ -183,7 +183,7 @@ sub new {
 				# damage the system when dependencies is not satisfied
 	};
 
-	$self->set_regular_var('apt::architecture', $self->_get_architecture());
+	$self->set_scalar('apt::architecture', $self->_get_architecture());
 	$self->_read_configs();
 	return $self;
 }
@@ -208,32 +208,123 @@ sub _is_optional_option ($$) {
 	return 0;
 }
 
-=head2 var
+=head2 get_scalar_option_names
 
-method, returns value of config option - scalar in case of scalar option and
-list in case of list option
-
-Parameters:
-
-I<option_name> - string name of option
+method, returns the array of the scalar options' names
 
 =cut
 
-sub var { ## no critic (RequireFinalReturn)
-	my ($self, $var_name) = @_;
-	if (exists ($self->regular_vars->{$var_name})) {
-		return $self->regular_vars->{$var_name};
-	} elsif (defined $self->list_vars->{$var_name}) {
-		return @{$self->list_vars->{$var_name}};
-	} elsif ($self->_is_optional_option($var_name)) {
+sub get_scalar_option_names {
+	my ($self) = @_;
+
+	return keys %{$self->_regular_vars};
+}
+
+=head2 get_list_option_names
+
+method, returns the array of the list options' names
+
+=cut
+
+sub get_list_option_names {
+	my ($self) = @_;
+
+	return keys %{$self->_list_vars};
+}
+
+=head2 get_string
+
+method, returns the value of the string config option, may be undef if the
+option is not set
+
+Parameters:
+
+I<option_name> - the name of the option, string
+
+=cut
+
+sub get_string { ## no critic (RequireFinalReturn)
+	my ($self, $option_name) = @_;
+
+	if (exists ($self->_regular_vars->{$option_name})) {
+		return $self->_regular_vars->{$option_name};
+	} elsif ($self->_is_optional_option($option_name)) {
 		return undef;
 	} else {
-		mydie("attempt to get wrong option '%s'", $var_name);
+		mydie("an attempt to get wrong scalar option '%s'", $option_name);
 	}
 	# we shouldn't ever reach it
 }
 
-=head2 set_regular_var
+=head2 get_number
+
+method, returns the value of the number config option, may be undef if the
+option is not set
+
+Parameters:
+
+I<option_name> - the name of the option, string
+
+=cut
+
+sub get_number {
+	my ($self, $option_name) = @_;
+	my $result = $self->get_string($option_name);
+	if (defined $result) {
+		if ($result !~ m/^(?:\+|-)?\d+$/) {
+			mydie("the value '%s' of the number option '%s' contains non-digit characters",
+					$result, $option_name);
+		}
+	}
+	return $result;
+}
+
+=head2 get_bool
+
+method, returns the value of the boolean config option, may be undef if the
+option is not set
+
+Parameters:
+
+I<option_name> - the name of the option, string
+
+=cut
+
+sub get_bool {
+	my ($self, $option_name) = @_;
+	my $result = $self->get_string($option_name);
+	if (defined $result) {
+		if ($result eq 'false' or $result eq 'no') {
+			$result = 0;
+		}
+	}
+	return $result;
+}
+
+=head2 get_list
+
+method, returns the array of the values of the list config option
+
+Parameters:
+
+I<option_name> - the name of the option, string
+
+=cut
+
+sub get_list { ## no critic (RequireFinalReturn)
+	my ($self, $option_name) = @_;
+
+	if (defined $self->_list_vars->{$option_name}) {
+		return @{$self->_list_vars->{$option_name}};
+	} elsif ($self->_is_optional_option($option_name)) {
+		return undef;
+	} else {
+		mydie("an attempt to get wrong list option '%s'", $option_name);
+	}
+	# we shouldn't ever reach it
+}
+
+=head2 set_scalar
 
 method, sets scalar option I<option_name> to I<option_value>
 
@@ -247,7 +338,7 @@ Returns: true on success, false on fail.
 
 =cut
 
-sub set_regular_var {
+sub set_scalar {
 	my ($self, $var_name, $new_value) = @_;
 	my $original_var_name = $var_name;
 	$var_name = lc($var_name);
@@ -255,14 +346,13 @@ sub set_regular_var {
 	# translation to cupt variable names
 	if (exists $self->_regular_compatibility_vars->{$var_name}) {
 		# setting the value for old variable
-		$self->regular_vars->{$var_name} = $new_value;
+		$self->_regular_vars->{$var_name} = $new_value;
 
 		$var_name = $self->_regular_compatibility_vars->{$var_name};
 	}
 
-	if (exists $self->regular_vars->{$var_name} || $self->_is_optional_option($var_name)) {
-		$new_value = 0 if $new_value eq 'false';
-		$self->regular_vars->{$var_name} = $new_value;
+	if (exists $self->_regular_vars->{$var_name} || $self->_is_optional_option($var_name)) {
+		$self->_regular_vars->{$var_name} = $new_value;
 		return 1;
 	} else {
 		mywarn("attempt to set wrong option '%s'", $original_var_name);
@@ -270,7 +360,7 @@ sub set_regular_var {
 	}
 }
 
-=head2 set_list_var
+=head2 set_list
 
 method, adds a I<option_value> to a list option I<option_name>
 
@@ -284,15 +374,15 @@ Returns: true on success, false on fail.
 
 =cut
 
-sub set_list_var {
+sub set_list {
 	my ($self, $var_name, $new_value) = @_;
 	my $original_var_name = $var_name;
 	$var_name = lc($var_name);
-	if (not defined $self->list_vars->{$var_name} and $self->_is_optional_option($var_name)) {
-		$self->list_vars->{$var_name} = [];
+	if (not defined $self->_list_vars->{$var_name} and $self->_is_optional_option($var_name)) {
+		$self->_list_vars->{$var_name} = [];
 	}
-	if (defined ($self->list_vars->{$var_name})) {
-		push @{$self->list_vars->{$var_name}}, $new_value;
+	if (defined ($self->_list_vars->{$var_name})) {
+		push @{$self->_list_vars->{$var_name}}, $new_value;
 	} else {
 		mywarn("attempt to set wrong option '%s'", $original_var_name);
 	}
@@ -306,28 +396,28 @@ sub _read_configs {
 	my $sub_regular_option = sub {
 		my ($option_name, $value) = @_;
 		$value =~ s/"(.*)"/$1/;
-		$self->set_regular_var($option_name, $value);
+		$self->set_scalar($option_name, $value);
 	};
 
 	my $sub_list_option = sub {
 		my ($option_name, @values) = @_;
 		foreach my $value (@values) {
 			$value =~ s/"(.*)"/$1/;
-			$self->set_list_var($option_name, $value);
+			$self->set_list($option_name, $value);
 		}
 	};
 
 	my $sub_clear_directive = sub {
 		my ($option_name_to_clear) = @_;
 
-		foreach my $regular_option_name (keys %{$self->regular_vars}) {
+		foreach my $regular_option_name (keys %{$self->_regular_vars}) {
 			if ($regular_option_name =~ m/^$option_name_to_clear/) {
-				$self->regular_vars->{$regular_option_name} = undef;
+				$self->_regular_vars->{$regular_option_name} = undef;
 			}
 		}
-		foreach my $list_option_name (keys %{$self->list_vars}) {
+		foreach my $list_option_name (keys %{$self->_list_vars}) {
 			if ($list_option_name =~ m/^$option_name_to_clear/) {
-				$self->list_vars->{$list_option_name} = [];
+				$self->_list_vars->{$list_option_name} = [];
 			}
 		}
 	};
@@ -336,13 +426,13 @@ sub _read_configs {
 	$parser->set_list_handler($sub_list_option);
 	$parser->set_clear_handler($sub_clear_directive);
 
-	my $root_prefix = $self->var('dir');
-	my $etc_dir = $self->var('dir::etc');
+	my $root_prefix = $self->get_string('dir');
+	my $etc_dir = $self->get_string('dir::etc');
 
-	my $parts_dir = $self->var('dir::etc::parts');
+	my $parts_dir = $self->get_string('dir::etc::parts');
 	my @config_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
-	my $main_file = $self->var('dir::etc::main');
+	my $main_file = $self->get_string('dir::etc::main');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	if(defined $ENV{APT_CONFIG}) {
 		$main_file_path = $ENV{APT_CONFIG};
@@ -362,7 +452,7 @@ sub _read_configs {
 
 sub _get_architecture ($) {
 	my ($self) = @_;
-	my $dpkg_binary = $self->var('dir::bin::dpkg');
+	my $dpkg_binary = $self->get_string('dir::bin::dpkg');
 	my $answer = qx/$dpkg_binary --print-architecture/;
 	chomp($answer);
 	return $answer;

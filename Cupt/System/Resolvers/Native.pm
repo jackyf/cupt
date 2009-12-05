@@ -69,10 +69,10 @@ sub _get_dependency_groups {
 	push @dependency_groups, { 'name' => 'depends', 'factor' => 1.0, 'target' => 'normal', 'index' => 1 };
 	push @dependency_groups, { 'name' => 'conflicts', 'factor' => 1.0, 'target' => 'anti', 'index' => 2 };
 	push @dependency_groups, { 'name' => 'breaks', 'factor' => 1.0, 'target' => 'anti', 'index' => 3 };
-	if ($self->config->var('cupt::resolver::keep-recommends')) {
+	if ($self->config->get_bool('cupt::resolver::keep-recommends')) {
 		push @dependency_groups, { 'name' => 'recommends', 'factor' => 0.4, 'target' => 'normal', 'index' => 4 };
 	}
-	if ($self->config->var('cupt::resolver::keep-suggests')) {
+	if ($self->config->get_bool('cupt::resolver::keep-suggests')) {
 		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1, 'target' => 'normal', 'index' => 5 };
 	}
 
@@ -158,7 +158,7 @@ sub _get_unsynchronizeable_related_package_names {
 
 	my $source_package_name = $version->source_package_name;
 	if (any { $source_package_name =~ m/^$_$/ }
-		$self->config->var('cupt::resolver::synchronize-source-versions::exceptions'))
+		$self->config->get_list('cupt::resolver::synchronize-source-versions::exceptions'))
 	{
 		return ();
 	}
@@ -218,10 +218,10 @@ sub _synchronize_related_packages ($$$$$) {
 
 		$package_entry->version = $candidate_version;
 		$package_entry->stick = $stick;
-		if ($self->config->var('debug::resolver')) {
+		if ($self->config->get_bool('debug::resolver')) {
 			__mydebug_wrapper($solution, "synchronizing package '$other_package_name' with package '$package_name'");
 		}
-		if ($self->config->var('cupt::resolver::track-reasons')) {
+		if ($self->config->get_bool('cupt::resolver::track-reasons')) {
 			push @{$package_entry->reasons}, [ 'sync', $package_name ];
 		}
 	}
@@ -252,7 +252,7 @@ sub _install_version_no_stick ($$$) {
 		return sprintf __("unable to re-schedule package '%s'"), $package_name;
 	}
 
-	my $o_synchronize_source_versions = $self->config->var('cupt::resolver::synchronize-source-versions');
+	my $o_synchronize_source_versions = $self->config->get_bool('cupt::resolver::synchronize-source-versions');
 	if ($o_synchronize_source_versions eq 'hard') {
 		# need to check is the whole operation doable
 		if (!$self->_related_packages_can_be_synchronized($self->_initial_solution, $version)) {
@@ -264,10 +264,10 @@ sub _install_version_no_stick ($$$) {
 
 	# update the requested package
 	$package_entry->version = $version;
-	if ($self->config->var('cupt::resolver::track-reasons')) {
+	if ($self->config->get_bool('cupt::resolver::track-reasons')) {
 		push @{$package_entry->reasons}, $reason;
 	}
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		my $version_string = $version->version_string;
 		mydebug("install package '$package_name', version '$version_string'");
 	}
@@ -296,7 +296,7 @@ sub satisfy_relation_expression ($$) {
 
 	# schedule checking strict relation expression, it will be checked later
 	push @{$self->_strict_satisfy_relation_expressions}, $relation_expression;
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		my $message = "strictly satisfying relation '";
 		$message .= stringify_relation_expression($relation_expression);
 		$message .= "'";
@@ -310,7 +310,7 @@ sub unsatisfy_relation_expression ($$) {
 
 	# schedule checking strict relation expression, it will be checked later
 	push @{$self->_strict_unsatisfy_relation_expressions}, $relation_expression;
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		my $message = "strictly unsatisfying relation '";
 		$message .= stringify_relation_expression($relation_expression);
 		$message .= "'";
@@ -333,10 +333,10 @@ sub remove_package ($$) {
 	$package_entry->version = undef;
 	$package_entry->stick = 1;
 	$package_entry->manually_selected = 1;
-	if ($self->config->var('cupt::resolver::track-reasons')) {
+	if ($self->config->get_bool('cupt::resolver::track-reasons')) {
 		push @{$package_entry->reasons}, [ 'user' ];
 	}
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		mydebug("removing package $package_name");
 	}
 	return;
@@ -443,7 +443,7 @@ sub __is_version_array_intersects_with_packages ($$) {
 
 sub _is_package_can_be_removed ($$) {
 	my ($self, $package_name) = @_;
-	return !$self->config->var('cupt::resolver::no-remove')
+	return !$self->config->get_bool('cupt::resolver::no-remove')
 			|| !$self->_initial_solution->get_package_entry($package_name)->installed;
 }
 
@@ -451,7 +451,7 @@ sub _clean_automatically_installed ($) {
 	my ($self, $solution) = @_;
 
 	# firstly, prepare all package names that can be potentially removed
-	my $can_autoremove = $self->config->var('cupt::resolver::auto-remove');
+	my $can_autoremove = $self->config->get_bool('cupt::resolver::auto-remove');
 	my %candidates_for_remove;
 	foreach my $package_name ($solution->get_package_names()) {
 		$package_name ne $dummy_package_name or next;
@@ -470,7 +470,7 @@ sub _clean_automatically_installed ($) {
 		my $package_was_installed = defined $self->_old_solution->get_package_entry($package_name);
 		(not $package_was_installed or $can_autoremove_this_package) or next;
 
-		if (any { $package_name =~ m/$_/ } $self->config->var('apt::neverautoremove')) {
+		if (any { $package_name =~ m/$_/ } $self->config->get_list('apt::neverautoremove')) {
 			next;
 		}
 		# ok, candidate for removing
@@ -486,10 +486,10 @@ sub _clean_automatically_installed ($) {
 			my @valuable_relation_expressions;
 			push @valuable_relation_expressions, @{$version->pre_depends};
 			push @valuable_relation_expressions, @{$version->depends};
-			if ($self->config->var('cupt::resolver::keep-recommends')) {
+			if ($self->config->get_bool('cupt::resolver::keep-recommends')) {
 				push @valuable_relation_expressions, @{$version->recommends};
 			}
-			if ($self->config->var('cupt::resolver::keep-suggests')) {
+			if ($self->config->get_bool('cupt::resolver::keep-suggests')) {
 				push @valuable_relation_expressions, @{$version->suggests};
 			}
 
@@ -534,10 +534,10 @@ sub _clean_automatically_installed ($) {
 
 				$package_entry->version = undef;
 				# leave only one reason :)
-				if ($self->config->var('cupt::resolver::track-reasons')) {
+				if ($self->config->get_bool('cupt::resolver::track-reasons')) {
 					@{$package_entry->reasons} = ([ 'auto-remove' ]);
 				}
-				if ($self->config->var('debug::resolver')) {
+				if ($self->config->get_bool('debug::resolver')) {
 					mydebug("auto-removed package '$package_name'");
 				}
 			}
@@ -550,7 +550,7 @@ sub _clean_automatically_installed ($) {
 sub _select_solution_chooser ($) {
 	my ($self) = @_;
 
-	my $resolver_type = $self->config->var('cupt::resolver::type');
+	my $resolver_type = $self->config->get_string('cupt::resolver::type');
 	my $sub_name = "__${resolver_type}_chooser";
 	__PACKAGE__->can($sub_name) or
 			mydie("wrong resolver type '%s'", $resolver_type);
@@ -607,10 +607,10 @@ sub _pre_apply_action ($$$$) {
 
 	# temporarily lower the score of the current solution to implement back-tracking
 	# the bigger quality bar, the bigger chance for other solutions
-	my $quality_correction = - $self->config->var('cupt::resolver::quality-bar') /
+	my $quality_correction = - $self->config->get_number('cupt::resolver::quality-bar') /
 			($original_solution->level + 1)**0.1;
 
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		my $old_version_string = defined($original_version) ?
 				$original_version->version_string : '<not installed>';
 		my $new_version_string = defined($supposed_version) ?
@@ -659,12 +659,12 @@ sub _post_apply_action {
 	if (defined $ref_action_to_apply->{'fakely_satisfies'}) {
 		push @{$package_entry_to_change->fake_satisfied}, $ref_action_to_apply->{'fakely_satisfies'};
 	}
-	if ($self->config->var('cupt::resolver::track-reasons')) {
+	if ($self->config->get_bool('cupt::resolver::track-reasons')) {
 		if (defined $ref_action_to_apply->{'reason'}) {
 			push @{$package_entry_to_change->reasons}, $ref_action_to_apply->{'reason'};
 		}
 	}
-	if ($self->config->var('cupt::resolver::synchronize-source-versions') ne 'none') {
+	if ($self->config->get_string('cupt::resolver::synchronize-source-versions') ne 'none') {
 		# dont' do synchronization for removals
 		if (defined $supposed_version) {
 			$self->_synchronize_related_packages($solution, $supposed_version, 1);
@@ -814,11 +814,11 @@ sub _propose_solution {
 	}
 
 	# suggest found solution
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		__mydebug_wrapper($solution, 'proposing this solution');
 	}
 	my $user_answer = $sub_callback->(\%suggested_packages);
-	if ($self->config->var('debug::resolver') and defined $user_answer) {
+	if ($self->config->get_bool('debug::resolver') and defined $user_answer) {
 		if ($user_answer) {
 			__mydebug_wrapper($solution, $user_answer ? 'accepted' : 'declined');
 		}
@@ -857,7 +857,7 @@ sub _filter_unsynchronizeable_actions {
 					};
 				}
 			}
-			if ($self->config->var('debug::resolver')) {
+			if ($self->config->get_bool('debug::resolver')) {
 				__mydebug_wrapper($solution, sprintf(
 						'cannot consider installing %s %s: unable to synchronize related packages (%s)',
 						$version->package_name, $version->version_string,
@@ -872,7 +872,7 @@ sub _resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
 	my $sub_solution_chooser = $self->_select_solution_chooser();
-	if ($self->config->var('debug::resolver')) {
+	if ($self->config->get_bool('debug::resolver')) {
 		mydebug('started resolving');
 	}
 	$self->_require_strict_relation_expressions();
@@ -961,7 +961,7 @@ sub _resolve ($$) {
 							if (not $intersects) {
 								if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 									# this is a soft dependency
-									if (!$self->config->var("apt::install-$dependency_group_name")) {
+									if (!$self->config->get_bool("apt::install-$dependency_group_name")) {
 										if (!__is_version_array_intersects_with_packages(
 												$ref_satisfying_versions, $self->_old_solution))
 										{
@@ -1005,7 +1005,7 @@ sub _resolve ($$) {
 										$current_solution, $package_name, $ref_satisfying_versions,
 										$relation_expression, $dependency_group_name, $dependency_group_factor);
 
-								if ($self->config->var('debug::resolver')) {
+								if ($self->config->get_bool('debug::resolver')) {
 									my $stringified_relation = stringify_relation_expression($relation_expression);
 									__mydebug_wrapper($current_solution, "problem: package '$package_name': " .
 											"unsatisfied $dependency_group_name '$stringified_relation'");
@@ -1108,7 +1108,7 @@ sub _resolve ($$) {
 										}
 									}
 
-									if ($self->config->var('debug::resolver')) {
+									if ($self->config->get_bool('debug::resolver')) {
 										my $stringified_relation = stringify_relation_expression($relation_expression);
 										__mydebug_wrapper($current_solution, "problem: package '$package_name': " .
 												"satisfied $dependency_group_name '$stringified_relation'");
@@ -1130,7 +1130,7 @@ sub _resolve ($$) {
 
 			# if the solution was only just finished
 			if (not $current_solution->finished) {
-				if ($self->config->var('debug::resolver')) {
+				if ($self->config->get_bool('debug::resolver')) {
 					__mydebug_wrapper($current_solution, 'finished');
 				}
 
@@ -1178,7 +1178,7 @@ sub _resolve ($$) {
 			}
 		}
 
-		if ($self->config->var('cupt::resolver::synchronize-source-versions') eq 'hard') {
+		if ($self->config->get_string('cupt::resolver::synchronize-source-versions') eq 'hard') {
 			# if we have to synchronize source versions, can related packages be updated too?
 			# filter out actions that don't match this criteria
 			@possible_actions = $self->_filter_unsynchronizeable_actions(
@@ -1221,18 +1221,18 @@ sub _resolve ($$) {
 			}
 
 			# don't allow solution tree to grow unstoppably
-			while (scalar @solutions > $self->config->var('cupt::resolver::max-solution-count')) {
+			while (scalar @solutions > $self->config->get_number('cupt::resolver::max-solution-count')) {
 				# find the worst solution and drop it
 				my $ref_worst_solution = reduce { $a->score < $b->score ? $a : $b } @solutions;
 				# temporary setting current solution to worst
 				$current_solution = $ref_worst_solution;
-				if ($self->config->var('debug::resolver')) {
+				if ($self->config->get_bool('debug::resolver')) {
 					__mydebug_wrapper($current_solution, 'dropped');
 				}
 				@solutions = grep { $_ ne $current_solution } @solutions;
 			}
 		} else {
-			if ($self->config->var('debug::resolver')) {
+			if ($self->config->get_bool('debug::resolver')) {
 				__mydebug_wrapper($current_solution, 'no solutions');
 			}
 			# purge current solution

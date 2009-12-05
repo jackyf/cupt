@@ -97,7 +97,7 @@ sub new ($$$) {
 	$self->_config = shift;
 	$self->_progress = shift;
 
-	if ($self->_config->var('cupt::worker::simulate')) {
+	if ($self->_config->get_bool('cupt::worker::simulate')) {
 		return $self;
 	} else {
 		# main socket
@@ -133,7 +133,7 @@ sub new ($$$) {
 sub _worker ($) {
 	my ($self) = @_;
 
-	my $debug = $self->_config->var('debug::downloader');
+	my $debug = $self->_config->get_bool('debug::downloader');
 
 	mydebug('download worker process started') if $debug;
 
@@ -151,7 +151,7 @@ sub _worker ($) {
 	# { $uri => $filename }
 	my %target_filenames;
 
-	my $max_simultaneous_downloads_allowed = $self->_config->var('cupt::downloader::max-simultaneous-downloads');
+	my $max_simultaneous_downloads_allowed = $self->_config->get_number('cupt::downloader::max-simultaneous-downloads');
 	pipe(my $worker_reader, my $worker_writer) or
 			mydie("unable to open worker's own pair of sockets: %s", $!);
 	$worker_writer->autoflush(1);
@@ -391,7 +391,7 @@ sub _worker ($) {
 sub DESTROY {
 	my ($self) = @_;
 
-	unless ($self->_config->var('cupt::worker::simulate')) {
+	unless ($self->_config->get_bool('cupt::worker::simulate')) {
 		# shutdowning worker thread
 		__my_write_socket($self->_parent_pipe, 'exit');
 		waitpid($self->_worker_pid, 0); ## no critic (RequireCheckedSyscalls)
@@ -478,7 +478,7 @@ Example:
 sub download ($@) {
 	my $self = shift;
 
-	if ($self->_config->var('cupt::worker::simulate')) {
+	if ($self->_config->get_bool('cupt::worker::simulate')) {
 		foreach my $ref_download_entry (@_) {
 			my @uris = map { $_->{'uri'} } @{$ref_download_entry->{'uri-entries'}};
 			mysimulate('downloading: %s', join(' | ', @uris));

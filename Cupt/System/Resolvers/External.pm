@@ -101,7 +101,7 @@ sub resolve ($$) {
 	my ($self, $sub_accept) = @_;
 
 	eval {
-		my $external_command = $self->config->var('cupt::resolver::external-command');
+		my $external_command = $self->config->get_string('cupt::resolver::external-command');
 		defined $external_command or
 				myinternaldie('undefined external command');
 
@@ -181,7 +181,7 @@ sub _write_dudf_info ($$) {
 
 			if ($version->is_installed()) {
 				say { $fh } 'Installed: true';
-				if ($self->config->var('cupt::resolver::no-remove') and
+				if ($self->config->get_bool('cupt::resolver::no-remove') and
 						not $self->cache->is_automatically_installed($package_name))
 				{
 					say { $fh } 'Keep: package';

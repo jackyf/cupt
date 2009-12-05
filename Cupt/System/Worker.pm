@@ -73,7 +73,7 @@ sub new {
 	$self->_system_state = $self->_cache->get_system_state();
 	$self->_desired_state = undef;
 	$self->_lock = Cupt::System::Worker::Lock->new($self->_config,
-			$self->_config->var('dir') . $self->_config->var('cupt::directory::state') . '/lock');
+			$self->_config->get_string('dir') . $self->_config->get_string('cupt::directory::state') . '/lock');
 	$self->_lock->obtain();
 
 	$self->_synchronize_apt_compat_symlinks();
@@ -92,7 +92,7 @@ sub DESTROY {
 sub _synchronize_apt_compat_symlinks ($) {
 	my ($self) = @_;
 
-	return if $self->_config->var('cupt::worker::simulate');
+	return if $self->_config->get_bool('cupt::worker::simulate');
 
 	my $archives_directory = $self->_get_archives_directory();
 	my @debs = glob("$archives_directory/*.deb");
@@ -158,16 +158,16 @@ sub set_desired_state ($$) {
 
 sub _get_archives_directory ($) {
 	my ($self) = @_;
-	return $self->_config->var('dir') .
-			$self->_config->var('dir::cache') . '/' .
-			$self->_config->var('dir::cache::archives');
+	return $self->_config->get_string('dir') .
+			$self->_config->get_string('dir::cache') . '/' .
+			$self->_config->get_string('dir::cache::archives');
 }
 
 sub _get_indexes_directory ($) {
 	my ($self) = @_;
-	return $self->_config->var('dir') .
-			$self->_config->var('dir::state') . '/' .
-			$self->_config->var('dir::state::lists');
+	return $self->_config->get_string('dir') .
+			$self->_config->get_string('dir::state') . '/' .
+			$self->_config->get_string('dir::state::lists');
 }
 
 sub __get_archive_basename ($) {
@@ -276,7 +276,7 @@ sub get_actions_preview ($) {
 					# package was in some interim state
 					$action = 'deconfigure';
 				} else {
-					if ($self->_config->var('cupt::worker::purge')) {
+					if ($self->_config->get_bool('cupt::worker::purge')) {
 						# package is requested to be purged
 						# do it only if we can
 						if ($ref_installed_info->{'status'} eq 'config-files' ||
@@ -404,11 +404,11 @@ sub get_unpacked_sizes_preview ($$) {
 	# deconfigure
 	foreach my $ref_package_entry (@{$ref_actions_preview->{'deconfigure'}}) {
 		my $package_name = $ref_package_entry->{'package_name'};
-		if ($self->_config->var('dir::state::status') !~ m{/status$}) {
+		if ($self->_config->get_string('dir::state::status') !~ m{/status$}) {
 			mywarn("unable to determine installed size for package '%s'", $package_name);
 			$result{$package_name} = 0;
 		} else {
-			(my $admindir = $self->_config->var('dir::state::status')) =~ s{/status$}{};
+			(my $admindir = $self->_config->get_string('dir::state::status')) =~ s{/status$}{};
 			$result{$package_name} = - qx/dpkg-query --admindir=$admindir -f '\${Installed-Size}' --show $package_name/;
 		}
 	}
@@ -439,7 +439,7 @@ I<package_name>... - array of of package names to mark
 
 sub mark_as_automatically_installed ($$;@) {
 	my ($self, $markauto, @package_names) = @_;
-	my $simulate = $self->_config->var('cupt::worker::simulate');
+	my $simulate = $self->_config->get_bool('cupt::worker::simulate');
 
 	if ($simulate) {
 		foreach my $package_name (@package_names) {
@@ -593,7 +593,7 @@ sub _fill_action_dependencies ($$$$) {
 					$graph->set_edge_attribute($ref_slave_action, $ref_master_action,
 							'dependency_expressions' => $ref_dependency_expressions);
 
-					if ($self->_config->var('debug::worker')) {
+					if ($self->_config->get_bool('debug::worker')) {
 						my $slave_string = __stringify_inner_action($ref_slave_action);
 						my $master_string = __stringify_inner_action($ref_master_action);
 						mydebug("new action dependency: '$slave_string' -> '$master_string'");
@@ -782,7 +782,7 @@ sub _build_actions_graph ($$) {
 		}
 
 		do { # process indirect upgrades
-			my @merge_exception_package_names = $self->_config->var('cupt::worker::allow-indirect-upgrade');
+			my @merge_exception_package_names = $self->_config->get_list('cupt::worker::allow-indirect-upgrade');
 			foreach my $merge_exception_package_name (@merge_exception_package_names) {
 				my $ref_vertex_change = $vertex_changes{$merge_exception_package_name};
 				if (defined $ref_vertex_change) {
@@ -824,7 +824,7 @@ sub _build_actions_graph ($$) {
 						$sub_move_edge->($predecessor_vertex, $from_vertex, $predecessor_vertex, $successor_vertex);
 						$sub_move_edge->($to_vertex, $successor_vertex, $predecessor_vertex, $successor_vertex);
 						$graph->set_edge_attribute($predecessor_vertex, $successor_vertex, 'is_multiplied' => 1);
-						if ($self->_config->var('debug::worker')) {
+						if ($self->_config->get_bool('debug::worker')) {
 							my $slave_string = __stringify_inner_action($predecessor_vertex);
 							my $master_string = __stringify_inner_action($successor_vertex);
 							my $mediator_package_name = $from_vertex->{'version'}->package_name;
@@ -857,7 +857,7 @@ sub _build_actions_graph ($$) {
 
 		my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
 
-		if ($self->_config->var('debug::worker')) {
+		if ($self->_config->get_bool('debug::worker')) {
 			foreach my $edge ($graph->edges()) {
 				my $slave_string = __stringify_inner_action($edge->[0]);
 				my $master_string = __stringify_inner_action($edge->[1]);
@@ -1010,7 +1010,7 @@ sub _prepare_downloads ($$) {
 
 	my $archives_directory = $self->_get_archives_directory();
 
-	unless ($self->_config->var('cupt::worker::simulate')) {
+	unless ($self->_config->get_bool('cupt::worker::simulate')) {
 		# prepare partial directory if it doesn't exist
 		my $partial_directory = "$archives_directory$_download_partial_suffix";
 		if (! -e $partial_directory) {
@@ -1134,7 +1134,7 @@ sub _clean_downloads ($$) {
 	$archives_lock->obtain();
 
 	foreach my $filename (map { $_->{'target_filename'} } @$ref_downloads) {
-		if ($self->_config->var('cupt::worker::simulate')) {
+		if ($self->_config->get_bool('cupt::worker::simulate')) {
 			mysimulate("removing the archive '%s'", $filename);
 		} else {
 			unlink($filename) or
@@ -1161,15 +1161,14 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 			$result .= qq/$key=$value\n/;
 		};
 
-		my @regular_keys = sort keys %{$config->regular_vars};
+		my @regular_keys = sort $config->get_scalar_option_names();
 		foreach my $key (@regular_keys) {
-			$print_key_value->($key, $config->regular_vars->{$key});
+			$print_key_value->($key, $config->get_string($key));
 		}
 
-		my @list_keys = sort keys %{$config->list_vars};
+		my @list_keys = sort $config->get_list_option_names();
 		foreach my $key (@list_keys) {
-			my @values = @{$config->list_vars->{$key}};
-			foreach (@values) {
+			foreach ($config->get_list($key)) {
 				$print_key_value->("${key}::", $_);
 			}
 		}
@@ -1227,7 +1226,7 @@ sub _run_external_command ($$$) {
 	my ($self, $command, $error_identifier) = @_;
 	$error_identifier //= $command;
 
-	if ($self->_config->var('cupt::worker::simulate')) {
+	if ($self->_config->get_bool('cupt::worker::simulate')) {
 		mysimulate("running command '%s'", $command);
 	} else {
 		# invoking command
@@ -1249,7 +1248,7 @@ sub _run_dpkg_command {
 
 sub _do_dpkg_pre_actions ($$$) {
 	my ($self, $ref_actions_preview, $ref_action_group_list) = @_;
-	foreach my $command ($self->_config->var('dpkg::pre-invoke')) {
+	foreach my $command ($self->_config->get_list('dpkg::pre-invoke')) {
 		$self->_run_dpkg_command('pre', $command, $command);
 	}
 	return;
@@ -1259,13 +1258,13 @@ sub _do_dpkg_pre_packages_actions {
 	my ($self, $ref_action_group_list) = @_;
 
 	my $archives_directory = $self->_get_archives_directory();
-	foreach my $command ($self->_config->var('dpkg::pre-install-pkgs')) {
+	foreach my $command ($self->_config->get_list('dpkg::pre-install-pkgs')) {
 		my ($command_binary) = ($command =~ m/^(.*?)(?: |$)/);
 		my $stdin;
 
-		my $version_of_stdin = $self->_config->var("dpkg::tools::options::${command_binary}::version");
+		my $version_of_stdin = $self->_config->get_number("dpkg::tools::options::${command_binary}::version");
 		my $alias = $command;
-		if (defined $version_of_stdin and $version_of_stdin eq '2') {
+		if (defined $version_of_stdin and $version_of_stdin == 2) {
 			$stdin = $self->_generate_stdin_for_preinstall_hooks_version2($ref_action_group_list);
 		} else {
 			$stdin = '';
@@ -1288,7 +1287,7 @@ sub _do_dpkg_pre_packages_actions {
 
 sub _do_dpkg_post_actions ($) {
 	my ($self) = @_;
-	foreach my $command ($self->_config->var('dpkg::post-invoke')) {
+	foreach my $command ($self->_config->get_list('dpkg::post-invoke')) {
 		$self->_run_dpkg_command('post', $command, $command);
 	}
 	return;
@@ -1351,7 +1350,7 @@ sub _split_action_group_list_into_changesets {
 
 sub _get_changesets {
 	my ($self, $action_graph, $ref_pending_downloads, $archives_space_limit) = @_;
-	my $debug = $self->_config->var('debug::worker');
+	my $debug = $self->_config->get_bool('debug::worker');
 
 	my $sub_get_download_amount = sub {
 		my ($ref_download_pack) = @_;
@@ -1362,7 +1361,7 @@ sub _get_changesets {
 	my $ok = 0;
 	my @max_download_amounts;
 	my @changesets;
-	for (1..$self->_config->var('cupt::worker::archives-space-limit::tries')) {
+	for (1..$self->_config->get_number('cupt::worker::archives-space-limit::tries')) {
 		my @action_group_list = $action_graph->topological_sort_of_strongly_connected_components();
 		@action_group_list = __move_unpacks_to_configures(\@action_group_list, $action_graph);
 		@action_group_list = __split_heterogeneous_actions(\@action_group_list, $action_graph);
@@ -1445,13 +1444,10 @@ I<download_progress> - reference to subclass of Cupt::Download::Progress
 sub change_system ($$) {
 	my ($self, $download_progress) = @_;
 
-	my $simulate = $self->_config->var('cupt::worker::simulate');
-	my $debug = $self->_config->var('debug::worker');
-	my $download_only = $self->_config->var('cupt::worker::download-only');
-	my $archives_space_limit = $self->_config->var('cupt::worker::archives-space-limit');
-	if (defined $archives_space_limit and $archives_space_limit !~ m/^\d+$/) {
-		mydie("the option 'cupt::worker::archives-space-limit' should be numeric-only");
-	}
+	my $simulate = $self->_config->get_bool('cupt::worker::simulate');
+	my $debug = $self->_config->get_bool('debug::worker');
+	my $download_only = $self->_config->get_bool('cupt::worker::download-only');
+	my $archives_space_limit = $self->_config->get_number('cupt::worker::archives-space-limit');
 
 	my $ref_actions_preview = $self->get_actions_preview();
 
@@ -1473,12 +1469,12 @@ sub change_system ($$) {
 	undef @pending_downloads;
 
 	# doing or simulating the actions
-	my $dpkg_binary = $self->_config->var('dir::bin::dpkg');
-	foreach my $option ($self->_config->var('dpkg::options')) {
+	my $dpkg_binary = $self->_config->get_string('dir::bin::dpkg');
+	foreach my $option ($self->_config->get_list('dpkg::options')) {
 		$dpkg_binary .= " $option";
 	}
 
-	my $defer_triggers = $self->_config->var('cupt::worker::defer-triggers');
+	my $defer_triggers = $self->_config->get_bool('cupt::worker::defer-triggers');
 
 	$self->_do_dpkg_pre_actions();
 
@@ -1499,7 +1495,7 @@ sub change_system ($$) {
 			# all the actions will have the same action name by algorithm
 			my $action_name = $ref_action_group->[0]->{'action_name'};
 
-			if ($action_name eq 'remove' && $self->_config->var('cupt::worker::purge')) {
+			if ($action_name eq 'remove' && $self->_config->get_bool('cupt::worker::purge')) {
 				$action_name = 'purge';
 			}
 
@@ -1693,7 +1689,7 @@ sub update_release_and_index_data ($$) {
 	};
 
 	my $indexes_directory = $self->_get_indexes_directory();
-	my $simulate = $self->_config->var('cupt::worker::simulate');
+	my $simulate = $self->_config->get_bool('cupt::worker::simulate');
 
 	my $lock;
 	if (!$simulate) {
@@ -1705,7 +1701,7 @@ sub update_release_and_index_data ($$) {
 	my @index_entries = @{$cache->get_index_entries()};
 
 	# run pre-actions
-	foreach my $command ($self->_config->var('apt::update::pre-invoke')) {
+	foreach my $command ($self->_config->get_list('apt::update::pre-invoke')) {
 		$self->_run_dpkg_command('pre', $command, $command);
 	}
 
@@ -1787,7 +1783,7 @@ sub update_release_and_index_data ($$) {
 								$signature_download_filename => $signature_local_path);
 
 						my $config = $self->_config;
-						if (not $simulate and not $config->var('cupt::update::keep-bad-signatures')) {
+						if (not $simulate and not $config->get_bool('cupt::update::keep-bad-signatures')) {
 							# if we have to check signature prior to moving to canonical place
 							# (for compatibility with APT tools) and signature check failed,
 							# delete the downloaded file
@@ -1849,7 +1845,7 @@ sub update_release_and_index_data ($$) {
 									$extension = 'uncompressed';
 								}
 								$extension =~ s/^\.//; # remove starting '.' if exist
-								my $result = $self->_config->var("cupt::update::compression-types::${extension}::priority");
+								my $result = $self->_config->get_number("cupt::update::compression-types::${extension}::priority");
 								return $result;
 							};
 							@download_uris_in_order = sort {
@@ -1974,11 +1970,11 @@ sub update_release_and_index_data ($$) {
 	}
 
 	# run post-actions
-	foreach my $command ($self->_config->var('apt::update::post-invoke')) {
+	foreach my $command ($self->_config->get_list('apt::update::post-invoke')) {
 		$self->_run_dpkg_command('post', $command, $command);
 	}
 	if ($master_exit_code == 0) {
-		foreach my $command ($self->_config->var('apt::update::post-invoke-success')) {
+		foreach my $command ($self->_config->get_list('apt::update::post-invoke-success')) {
 			$self->_run_dpkg_command('post', $command, $command);
 		}
 	}
@@ -2026,7 +2022,7 @@ sub clean_archives ($$) {
 
 	my @paths_to_delete = glob("$archives_directory/*.deb");
 
-	my $simulate = $self->_config->var('cupt::worker::simulate');
+	my $simulate = $self->_config->get_bool('cupt::worker::simulate');
 	if ($simulate) {
 		mysimulate('deletions:');
 	}
@@ -2080,7 +2076,7 @@ sub save_system_snapshot {
 	my $snapshot_directory = $snapshots->get_snapshot_directory($name);
 	my $temporary_snapshot_directory = $snapshots->get_snapshot_directory(".partial-$name");
 
-	my $simulate = $self->_config->var('cupt::worker::simulate');
+	my $simulate = $self->_config->get_bool('cupt::worker::simulate');
 
 	unless ($simulate) { # creating snapshot directory
 		if (! (-e $snapshots_directory and -d _)) {
@@ -2171,7 +2167,7 @@ sub save_system_snapshot {
 					$release_content .= 'Date: ' . strftime('%a, %d %b %Y %H:%M:%S UTC', gmtime()) . "\n";
 					setlocale(LC_TIME, $previous_lc_time);
 
-					$release_content .= 'Architectures: all ' . $self->_config->var('apt::architecture') . "\n";
+					$release_content .= 'Architectures: all ' . $self->_config->get_string('apt::architecture') . "\n";
 					$release_content .= "Description: Cupt-made system snapshot\n";
 
 					my $ref_hash_sums = { 'md5sum' => '1', 'sha1sum' => '2', 'sha256sum' => '3' };

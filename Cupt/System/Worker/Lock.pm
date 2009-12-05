@@ -35,8 +35,8 @@ sub new {
 
 	my $self = bless [] => $class;
 	$self->_path = $path;
-	$self->_simulate = $config->var('cupt::worker::simulate');
-	$self->_debug = $config->var('debug::worker');
+	$self->_simulate = $config->get_bool('cupt::worker::simulate');
+	$self->_debug = $config->get_bool('debug::worker');
 	$self->_lock_fh = undef;
 
 	return $self;

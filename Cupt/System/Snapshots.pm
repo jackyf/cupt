@@ -63,9 +63,9 @@ method, returns directory path which contains all available snapshots
 
 sub get_snapshots_directory {
 	my ($self) = @_;
-	return $self->_config->var('dir') .
-			$self->_config->var('cupt::directory::state') . '/' .
-			$self->_config->var('cupt::directory::state::snapshots');
+	return $self->_config->get_string('dir') .
+			$self->_config->get_string('cupt::directory::state') . '/' .
+			$self->_config->get_string('cupt::directory::state::snapshots');
 }
 
 =head2 get_snapshot_directory
@@ -113,18 +113,18 @@ sub setup_config_for_snapshot {
 	my $new_base_dir = $self->get_snapshot_directory($snapshot_name);
 	$new_base_dir =~ s{^/}{};
 
-	$config->set_regular_var('dir::state' => $new_base_dir);
-	$config->set_regular_var('dir::state::lists' => '.');
-	$config->set_regular_var('dir::cache' => $new_base_dir);
-	$config->set_regular_var('dir::cache::archives' => '.');
+	$config->set_scalar('dir::state' => $new_base_dir);
+	$config->set_scalar('dir::state::lists' => '.');
+	$config->set_scalar('dir::cache' => $new_base_dir);
+	$config->set_scalar('dir::cache::archives' => '.');
 
 	foreach my $sub_option (qw(main parts preferences preferencesparts)) {
-		$config->set_regular_var("dir::etc::$sub_option" => $config->var('dir::etc') . '/' .
-				$config->var("dir::etc::$sub_option"));
+		$config->set_scalar("dir::etc::$sub_option" => $config->get_string('dir::etc') . '/' .
+				$config->get_string("dir::etc::$sub_option"));
 	}
-	$config->set_regular_var('dir::etc' => $new_base_dir);
-	$config->set_regular_var('dir::etc::sourcelist' => 'source');
-	$config->set_regular_var('dir::etc::sourceparts' => 'non-existent');
+	$config->set_scalar('dir::etc' => $new_base_dir);
+	$config->set_scalar('dir::etc::sourcelist' => 'source');
+	$config->set_scalar('dir::etc::sourceparts' => 'non-existent');
 
 	return;
 }

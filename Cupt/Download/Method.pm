@@ -161,9 +161,9 @@ sub get_acquire_suboption_for_uri ($$$) {
 	my $protocol = $uri_object->scheme();
 	my $host = $uri_object->host();
 	# this "zoo" of per-host variants is given by APT...
-	my $proxy = $config->var("acquire::${protocol}::${suboption_name}::${host}") //
-			$config->var("acquire::${protocol}::${host}::${suboption_name}") //
-			$config->var("acquire::${protocol}::${suboption_name}");
+	my $proxy = $config->get_string("acquire::${protocol}::${suboption_name}::${host}") //
+			$config->get_string("acquire::${protocol}::${host}::${suboption_name}") //
+			$config->get_string("acquire::${protocol}::${suboption_name}");
 	return $proxy;
 }
 
