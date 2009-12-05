@@ -935,7 +935,7 @@ sub __split_heterogeneous_actions (@) {
 				if (scalar @$ref_action_subgroup > 1) {
 					# only circular configures allowed
 					my $first_action_name = $ref_action_subgroup->[0]->{'action_name'};
-					if ($first_action_name ne 'configure' or 
+					if ($first_action_name ne 'configure' or
 						any { $_->{'action_name'} ne $first_action_name } @$ref_action_subgroup)
 					{
 						# ooh, mixed circular dependency? no-go
@@ -1342,7 +1342,7 @@ sub _split_action_group_list_into_changesets {
 	}
 
 	if (%unpacked_package_names) {
-		myinternaldie("packages stay unconfigured: " . join(' ', keys %unpacked_package_names)); 
+		myinternaldie('packages stay unconfigured: ' . join(' ', keys %unpacked_package_names));
 	}
 
 	return @result;
