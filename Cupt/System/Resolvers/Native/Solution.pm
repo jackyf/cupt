@@ -72,6 +72,8 @@ sub _initialize_dependency_graph {
 	foreach my $package_name ($self->get_package_names()) {
 		$self->_add_package_dependencies($package_name);
 	}
+
+	return;
 }
 
 sub clone {
@@ -99,7 +101,7 @@ sub prepare {
 	my ($self) = @_;
 
 	my $master_solution = $self->_master_solution;
-	defined $master_solution or myinternaldie("undefined master solution");
+	defined $master_solution or myinternaldie('undefined master solution');
 
 	if (not defined $master_solution->_master_packages) {
 		# this solution is a master solution, build a slave on top of it
@@ -122,6 +124,8 @@ sub prepare {
 	}
 
 	$self->_master_solution = undef;
+
+	return;
 }
 
 sub get_package_names {
@@ -154,7 +158,7 @@ sub set_package_entry {
 	}
 
 	$self->_invalidate($package_name, $package_entry);
-	$self->_packages->{$package_name} = $package_entry;
+	return ($self->_packages->{$package_name} = $package_entry);
 }
 
 sub add_version_dependencies {
@@ -178,6 +182,8 @@ sub add_version_dependencies {
 			}
 		}
 	}
+
+	return;
 }
 
 sub _add_package_dependencies {
@@ -193,6 +199,8 @@ sub _add_package_dependencies {
 	foreach my $version (@versions) {
 		$self->add_version_dependencies($version);
 	}
+
+	return;
 }
 
 sub _invalidate {
@@ -210,6 +218,8 @@ sub _invalidate {
 		}
 		$successor_package_entry->checked_bits = '';
 	}
+
+	return;
 }
 
 sub validate {
@@ -224,6 +234,8 @@ sub validate {
 				$package_entry = $package_entry->clone();
 	}
 	vec($package_entry->checked_bits, $dependency_group_index, 1) = 1;
+
+	return;
 }
 
 1;
