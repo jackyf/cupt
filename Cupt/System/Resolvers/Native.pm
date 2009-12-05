@@ -901,9 +901,6 @@ sub _resolve ($$) { ## no critic (RequireFinalReturn)
 	my $cache = $self->cache;
 
 	do {{
-		# will be filled in MAIN_LOOP
-		my $package_entry;
-
 		# continue only if we have at least one solution pending, otherwise we have a great fail
 		scalar @solutions or return 0;
 
@@ -924,6 +921,8 @@ sub _resolve ($$) { ## no critic (RequireFinalReturn)
 		my $recheck_needed = 1;
 		MAIN_LOOP:
 		while ($recheck_needed) {
+			my $package_entry;
+
 			$recheck_needed = 0;
 
 			# clearing check_failed
