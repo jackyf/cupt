@@ -868,7 +868,7 @@ sub _filter_unsynchronizeable_actions {
 	return @new_possible_actions;
 }
 
-sub _resolve ($$) {
+sub _resolve ($$) { ## no critic (RequireFinalReturn)
 	my ($self, $sub_accept) = @_;
 
 	my $sub_solution_chooser = $self->_select_solution_chooser();
