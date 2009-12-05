@@ -259,7 +259,7 @@ sub new {
 		seek($fh, $offset, 0) or
 				mydie('unable to seek on Packages file: %s', $!);
 
-		local $_;
+		local $_ = undef;
 		do {
 			local $/ = "\n\n";
 			# read all version entry entirely
