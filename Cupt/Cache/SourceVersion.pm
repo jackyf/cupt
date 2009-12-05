@@ -225,7 +225,7 @@ sub new {
 		seek($fh, $offset, 0) or
 				mydie('unable to seek on Sources file: %s', $!);
 
-		local $_;
+		local $_ = undef;
 		do {
 			local $/ = "\n\n";
 			$_ = <$fh>;
@@ -233,7 +233,7 @@ sub new {
 
 		while (s/^(Files|Checksums-Sha1|Checksums-Sha256): *$(?:\n)((?:^ .*$(?:\n))*)//m) {
 			my $hash_sum_name = ($1 eq 'Files' ? 'md5sum' : ($1 eq 'Checksums-Sha1' ? 'sha1sum' : 'sha256sum'));
-			foreach my $line (split("\n", $2)) {
+			foreach my $line (split(m/\n/, $2)) {
 				my ($hash_sum, $size, $name) = ($line =~ m/^ ([[:xdigit:]]+) +(\d+) +(.*)$/) or
 						mydie("malformed line '%s'", $line);
 				local $_ = $name;
