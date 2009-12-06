@@ -871,14 +871,15 @@ sub _filter_unsynchronizeable_actions {
 sub _is_soft_dependency_ignored {
 	my ($self, $version, $dependency_group_name, $relation_expression, $ref_satisfying_versions) = @_;
 
-	if (!$self->config->get_bool("apt::install-$dependency_group_name")) {
-		if (!__is_version_array_intersects_with_packages(
-				$ref_satisfying_versions, $self->_old_solution))
-		{
-			# it wasn't satisfied in the past, don't touch it
-			return 1;
-		}
+	my $was_satisfied_in_the_past = __is_version_array_intersects_with_packages(
+				$ref_satisfying_versions, $self->_old_solution);
+
+	return 0 if $was_satisfied_in_the_past;
+
+	if (not $self->config->get_bool("apt::install-$dependency_group_name")) {
+		return 1;
 	}
+
 	my $old_package_entry = $self->_old_solution->get_package_entry($version->package_name);
 	if (defined $old_package_entry) {
 		my $old_version = $old_package_entry->version;
