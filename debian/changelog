@@ -11,6 +11,9 @@ cupt (1.4.0~) UNRELEASED; urgency=low
           the start of resolving because of disappear of the parent packages
           and then weren't considered to keeping when other parent packages
           hierarchy declared a soft dependency on the package.
+    - Download:
+      - Methods/Debdelta:
+        - Suppress standard output from debpatch.
     - Config:
       - [API break] 'set_regular_var': renamed to 'set_scalar'.
       - [API break] 'set_list_var': renamed to 'set_list'.
