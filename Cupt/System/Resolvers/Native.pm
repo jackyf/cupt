@@ -388,7 +388,7 @@ sub _get_version_weight ($$) {
 
 	my $factor = 1.0;
 	my $package_name = $version->package_name;
-	if ($version->is_installed() && $self->cache->is_automatically_installed($package_name)) {
+	if ($self->cache->is_automatically_installed($package_name)) {
 		# automatically installed packages count nothing for user
 		$factor /= 20.0;
 	}
