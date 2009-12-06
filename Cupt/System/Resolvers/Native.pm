@@ -868,6 +868,33 @@ sub _filter_unsynchronizeable_actions {
 	return @new_possible_actions;
 }
 
+sub _is_soft_dependency_ignored {
+	my ($self, $version, $dependency_group_name, $relation_expression, $ref_satisfying_versions) = @_;
+
+	if (!$self->config->get_bool("apt::install-$dependency_group_name")) {
+		if (!__is_version_array_intersects_with_packages(
+				$ref_satisfying_versions, $self->_old_solution))
+		{
+			# it wasn't satisfied in the past, don't touch it
+			return 1;
+		}
+	}
+	my $old_package_entry = $self->_old_solution->get_package_entry($version->package_name);
+	if (defined $old_package_entry) {
+		my $old_version = $old_package_entry->version;
+		if (defined $old_version and __version_has_relation_expression($old_version,
+			$dependency_group_name, $relation_expression))
+		{
+			# the fact that we are here means that the old version of this package
+			# had exactly the same relation expression, and it was unsatisfied
+			# so, upgrading the version doesn't bring anything new
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 sub _resolve ($$) { ## no critic (RequireFinalReturn)
 	my ($self, $sub_accept) = @_;
 
@@ -960,30 +987,18 @@ sub _resolve ($$) { ## no critic (RequireFinalReturn)
 							if (not $intersects) {
 								if ($dependency_group_name eq 'recommends' or $dependency_group_name eq 'suggests') {
 									# this is a soft dependency
-									if (!$self->config->get_bool("apt::install-$dependency_group_name")) {
-										if (!__is_version_array_intersects_with_packages(
-												$ref_satisfying_versions, $self->_old_solution))
-										{
-											# it wasn't satisfied in the past, don't touch it
-											next;
-										}
-									}
-									my $old_package_entry = $self->_old_solution->get_package_entry($version->package_name);
-									if (defined $old_package_entry) {
-										my $old_version = $old_package_entry->version;
-										if (defined $old_version and __version_has_relation_expression($old_version,
-											$dependency_group_name, $relation_expression))
-										{
-											# the fact that we are here means that the old version of this package
-											# had exactly the same relation expression, and it was unsatisfied
-											# so, upgrading the version doesn't bring anything new
-											next;
-										}
-									}
+
 									if (any { $_ == $relation_expression } @{$package_entry->fake_satisfied}) {
 										# this soft relation expression was already fakely satisfied (score penalty)
 										next;
 									}
+
+									if ($self->_is_soft_dependency_ignored($version, $dependency_group_name,
+											$relation_expression, $ref_satisfying_versions))
+									{
+										next;
+									}
+
 									# ok, then we have one more possible solution - do nothing at all
 									push @possible_actions, {
 										'package_name' => $package_name,

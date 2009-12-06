@@ -75,7 +75,7 @@ sub main {
 	# for repeated invokes
 	undef $command;
 
-	if (scalar @ARGV == 2 and $ARGV[0] eq 'get' && $ARGV[1] eq 'ride') {
+	if (scalar @ARGV == 2 and $ARGV[0] eq 'get' and $ARGV[1] eq 'ride') {
 		say __("You've got ride.");
 		return 0;
 	}
@@ -1500,7 +1500,7 @@ sub manage_packages ($) {
 
 	check_no_extra_options();
 
-	@ARGV = map {
+	local @ARGV = map { ## no critic (ProhibitComplexMappings)
 		if (m/^@/) {
 			my $file = $_;
 			$file =~ s/^@//;
