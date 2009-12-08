@@ -21,6 +21,8 @@ cupt (1.4.0~) UNRELEASED; urgency=low
       - [API break] 'set_list_var': renamed to 'set_list'.
       - [API break] 'var': replaced by new methods 'get_string', 'get_number'
         and 'get_bool'.
+    - Core:
+      - Moved INIT block out to 'cupt' front-end.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 03 Dec 2009 21:49:41 +0200
 

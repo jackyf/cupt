@@ -30,6 +30,13 @@ BEGIN {
 	unshift @INC, '.';
 }
 
+INIT {
+	## no critic (RequireLocalizedPunctuationVars)
+	require Carp;
+	$SIG{__WARN__} = \&Carp::confess;
+	$SIG{__DIE__} = \&Carp::confess;
+}
+
 use List::Util qw(sum);
 use List::MoreUtils qw(uniq none);
 use Getopt::Long;

@@ -30,13 +30,6 @@ use 5.10.0;
 use warnings;
 use strict;
 
-INIT {
-	## no critic (RequireLocalizedPunctuationVars)
-	require Carp;
-	$SIG{__WARN__} = \&Carp::confess;
-	$SIG{__DIE__} = \&Carp::confess;
-}
-
 use Exporter qw(import);
 our @EXPORT = qw(
 	&mywarn &myerr &myredie &mydie &myinternaldie &mycatch &mydebug &mysimulate
