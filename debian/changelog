@@ -23,6 +23,10 @@ cupt (1.4.0~) UNRELEASED; urgency=low
         and 'get_bool'.
     - Core:
       - Moved INIT block out to 'cupt' front-end.
+    - Cache:
+      - BinaryVersion:
+        - Fallback to 0 if the installed size is not defined. Thanks to
+          Jean-Christophe Dubacq <jcdubacq1@free.fr>. (Closes: #560160)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 03 Dec 2009 21:49:41 +0200
 

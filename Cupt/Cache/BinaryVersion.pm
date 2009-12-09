@@ -341,6 +341,11 @@ sub new {
 
 	defined $self->[version_string_offset()] or mydie("version string isn't defined");
 	defined $self->[architecture_offset()] or mydie("architecture isn't defined");
+	if (not defined $self->[installed_size_offset()]) {
+		mywarn("package '%s', version '%s': installed size is not defined, setting 0",
+				$package_name, $self->[version_string_offset()]);
+		$self->[installed_size_offset()] = 0;
+	}
 	# checking hash sums
 	if (!$self->is_installed() && !are_hash_sums_present($self->export_hash_sums())) {
 		mydie('no hash sums specified');
