@@ -896,7 +896,7 @@ sub _is_soft_dependency_ignored {
 	return 0;
 }
 
-sub _resolve ($$) { ## no critic (RequireFinalReturn)
+sub resolve ($$) { ## no critic (RequireFinalReturn)
 	my ($self, $sub_accept) = @_;
 
 	my $sub_solution_chooser = $self->_select_solution_chooser();
@@ -1254,16 +1254,6 @@ sub _resolve ($$) { ## no critic (RequireFinalReturn)
 			@solutions = grep { $_ ne $current_solution } @solutions;
 		}
 	}} while $check_failed;
-}
-
-sub resolve ($$) {
-	my ($self, $sub_accept) = @_;
-
-	# throw away all obsoleted packages at this stage to avoid resolver from
-	# ever bothering of them
-	$self->_clean_automatically_installed($self->_initial_solution);
-
-	return $self->_resolve($sub_accept);
 }
 
 1;
