@@ -19,6 +19,7 @@ cupt (1.4.0~) UNRELEASED; urgency=low
         - Request: pass '>>' as '>' and '<<' as '<' in relation expressions.
         - Request: added the preable with a 'pin-priority' property
           declaration.
+        - Request: 'problem' stanza is renamed to 'request'.
     - Download:
       - Methods/Debdelta:
         - Suppress standard output from debpatch.

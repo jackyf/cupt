@@ -220,7 +220,7 @@ sub _write_dudf_info ($$) {
 	}
 
 	# writing problems
-	say { $fh } 'problem: source: Debian/DUDF';
+	say { $fh } 'request: source: Debian/DUDF';
 
 	if ($self->_upgrade_all_flag) {
 		say { $fh } 'upgrade: ' . join(' ', keys %{$self->_is_installed});
