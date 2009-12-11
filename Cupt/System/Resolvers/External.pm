@@ -146,6 +146,10 @@ sub __relation_expressions_to_string {
 sub _write_dudf_info ($$) {
 	my ($self, $fh) = @_;
 
+	say { $fh } 'preamble:';
+	say { $fh } 'property: pin-priority: int';
+	say { $fh } '';
+
 	# writing package info
 	foreach my $package_name ($self->cache->get_binary_package_names()) {
 		my $package = $self->cache->get_binary_package($package_name);

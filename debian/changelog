@@ -17,6 +17,8 @@ cupt (1.4.0~) UNRELEASED; urgency=low
       - Resolvers/External:
         - Request: lowercased all fields.
         - Request: pass '>>' as '>' and '<<' as '<' in relation expressions.
+        - Request: added the preable with a 'pin-priority' property
+          declaration.
     - Download:
       - Methods/Debdelta:
         - Suppress standard output from debpatch.
