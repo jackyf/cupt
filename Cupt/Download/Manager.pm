@@ -281,7 +281,7 @@ sub _worker ($) {
 							kill(SIGTERM, $active_downloads{$uri}->{'pid'}) or
 									mywarn('unable to kill process %u: %s', $active_downloads{$uri}->{'pid'}, $!);
 							# process it as failed
-							my $error_string = sprintf __("invalid size: expected '%u', got '%u'"),
+							my $error_string = sprintf __("invalid size: expected '%u', got '%d'"),
 									$download_sizes{$uri}, $expected_size;
 							__my_write_socket($worker_writer, 'done', $uri, $error_string);
 							unlink $filename or
