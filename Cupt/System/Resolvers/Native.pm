@@ -679,7 +679,8 @@ sub _pre_apply_actions_to_solution_tree {
 	}
 
 	# don't allow solution tree to grow unstoppably
-	while (scalar @$ref_solutions > $self->config->get_number('cupt::resolver::max-solution-count')) {
+	my $max_solution_count = $self->config->get_number('cupt::resolver::max-solution-count');
+	while (scalar @$ref_solutions > $max_solution_count) {
 		# find the worst solution and drop it
 		my $ref_worst_solution = reduce { $a->score < $b->score ? $a : $b } @$ref_solutions;
 		# temporary setting current solution to worst
