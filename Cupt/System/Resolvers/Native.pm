@@ -43,7 +43,7 @@ use Cupt::Graph;
 
 our $dummy_package_name = '<satisfy>';
 
-use Cupt::LValueFields qw(2 _old_solution _initial_solution
+use Cupt::LValueFields qw(2 _old_solution _initial_solution _next_free_solution_identifier
 		_strict_satisfy_relation_expressions _strict_unsatisfy_relation_expressions);
 
 sub new {
@@ -53,6 +53,7 @@ sub new {
 
 	$self->_old_solution = Cupt::System::Resolvers::Native::Solution->new(
 			$self->cache, $self->_get_dependency_groups(), {});
+	$self->_next_free_solution_identifier = 1;
 	$self->_strict_satisfy_relation_expressions = [];
 	$self->_strict_unsatisfy_relation_expressions = [];
 
@@ -636,6 +637,60 @@ sub _pre_apply_action ($$$$) {
 	return;
 }
 
+sub _get_free_solution_identifier {
+	my ($self) = @_;
+
+	return $self->_next_free_solution_identifier++;
+}
+
+sub _pre_apply_actions_to_solution_tree {
+	my ($self, $ref_solutions, $current_solution, $ref_possible_actions) = @_;
+
+	# firstly rank all solutions
+	my $position_penalty = 0;
+	foreach (@$ref_possible_actions) {
+		my $package_name = $_->{'package_name'};
+		my $supposed_version = $_->{'version'};
+		my $package_entry = $current_solution->get_package_entry($package_name);
+		my $original_version = defined $package_entry ?
+				$package_entry->version : undef;
+
+		$_->{'profit'} //= $self->_get_action_profit($original_version, $supposed_version);
+		$_->{'profit'} -= $position_penalty;
+		++$position_penalty;
+	}
+
+	# sort them by "rank", from more good to more bad
+	@$ref_possible_actions = sort { $b->{profit} <=> $a->{profit} } @$ref_possible_actions;
+
+	# fork the solution entry and apply all the solutions by one
+	@$ref_solutions = grep { $_ ne $current_solution } @$ref_solutions;
+	foreach my $ref_action_to_apply (@$ref_possible_actions) {
+		# clone the current stack to form a new one
+		my $ref_cloned_solution = $current_solution->clone();
+
+		my $new_solution_identifier = $self->_get_free_solution_identifier();
+		$ref_cloned_solution->identifier = $new_solution_identifier;
+
+		push @$ref_solutions, $ref_cloned_solution;
+
+		# apply the solution
+		$self->_pre_apply_action($current_solution, $ref_cloned_solution, $ref_action_to_apply);
+	}
+
+	# don't allow solution tree to grow unstoppably
+	while (scalar @$ref_solutions > $self->config->get_number('cupt::resolver::max-solution-count')) {
+		# find the worst solution and drop it
+		my $ref_worst_solution = reduce { $a->score < $b->score ? $a : $b } @$ref_solutions;
+		# temporary setting current solution to worst
+		$current_solution = $ref_worst_solution;
+		if ($self->config->get_bool('debug::resolver')) {
+			__mydebug_wrapper($current_solution, 'dropped');
+		}
+		@$ref_solutions = grep { $_ ne $current_solution } @$ref_solutions;
+	}
+}
+
 sub _post_apply_action {
 	my ($self, $solution) = @_;
 
@@ -911,7 +966,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 	$solutions[0]->identifier = 0;
 	$solutions[0]->prepare();
 
-	my $next_free_solution_identifier = 1;
 	my $current_solution;
 
 	# for each package entry 'count' will contain the number of failures
@@ -920,11 +974,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 	my %failed_counts;
 
 	my $check_failed;
-
-	my $sub_pre_apply_action = sub {
-		my ($solution, $ref_action_to_apply) = @_;
-		$self->_pre_apply_action($current_solution, $solution, $ref_action_to_apply);
-	};
 
 	my $cache = $self->cache;
 
@@ -1028,8 +1077,7 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 								$check_failed = 1;
 
 								if (scalar @possible_actions == 1) {
-									$sub_pre_apply_action->($current_solution,
-											$possible_actions[0]);
+									$self->_pre_apply_action($current_solution, $current_solution, $possible_actions[0]);
 									$self->_post_apply_action($current_solution);
 									@possible_actions = ();
 									$recheck_needed = 1;
@@ -1203,49 +1251,7 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 		__prepare_stick_requests(\@possible_actions);
 
 		if (scalar @possible_actions) {
-			# firstly rank all solutions
-			my $position_penalty = 0;
-			foreach (@possible_actions) {
-				my $package_name = $_->{'package_name'};
-				my $supposed_version = $_->{'version'};
-				my $package_entry = $current_solution->get_package_entry($package_name);
-				my $original_version = defined $package_entry ?
-						$package_entry->version : undef;
-
-				$_->{'profit'} //= $self->_get_action_profit($original_version, $supposed_version);
-				$_->{'profit'} -= $position_penalty;
-				++$position_penalty;
-			}
-
-			# sort them by "rank", from more good to more bad
-			@possible_actions = sort { $b->{profit} <=> $a->{profit} } @possible_actions;
-
-			# fork the solution entry and apply all the solutions by one
-			@solutions = grep { $_ ne $current_solution } @solutions;
-			foreach my $ref_action_to_apply (@possible_actions) {
-				# clone the current stack to form a new one
-				my $ref_cloned_solution = $current_solution->clone();
-
-				my $new_solution_identifier = $next_free_solution_identifier++;
-				$ref_cloned_solution->identifier = $new_solution_identifier;
-
-				push @solutions, $ref_cloned_solution;
-
-				# apply the solution
-				$sub_pre_apply_action->($ref_cloned_solution, $ref_action_to_apply);
-			}
-
-			# don't allow solution tree to grow unstoppably
-			while (scalar @solutions > $self->config->get_number('cupt::resolver::max-solution-count')) {
-				# find the worst solution and drop it
-				my $ref_worst_solution = reduce { $a->score < $b->score ? $a : $b } @solutions;
-				# temporary setting current solution to worst
-				$current_solution = $ref_worst_solution;
-				if ($self->config->get_bool('debug::resolver')) {
-					__mydebug_wrapper($current_solution, 'dropped');
-				}
-				@solutions = grep { $_ ne $current_solution } @solutions;
-			}
+			$self->_pre_apply_actions_to_solution_tree(\@solutions, $current_solution, \@possible_actions);
 		} else {
 			if ($self->config->get_bool('debug::resolver')) {
 				__mydebug_wrapper($current_solution, 'no solutions');
