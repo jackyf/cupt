@@ -977,7 +977,7 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 
 	my $cache = $self->cache;
 
-	do {{
+	while (1) {
 		# continue only if we have at least one solution pending, otherwise we have a great fail
 		scalar @solutions or return 0;
 
@@ -1188,9 +1188,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 		}
 
 		if (!$check_failed) {
-			# in case we go next
-			$check_failed = 1;
-
 			# if the solution was only just finished
 			if (not $current_solution->finished) {
 				if ($self->config->get_bool('debug::resolver')) {
@@ -1237,30 +1234,29 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 
 				# purge current solution
 				@solutions = grep { $_ ne $current_solution } @solutions;
-				next;
 			}
-		}
-
-		if ($self->config->get_string('cupt::resolver::synchronize-source-versions') eq 'hard') {
-			# if we have to synchronize source versions, can related packages be updated too?
-			# filter out actions that don't match this criteria
-			@possible_actions = $self->_filter_unsynchronizeable_actions(
-					$current_solution, \@possible_actions);
-		}
-
-		__prepare_stick_requests(\@possible_actions);
-
-		# purge current solution
-		@solutions = grep { $_ ne $current_solution } @solutions;
-
-		if (scalar @possible_actions) {
-			$self->_pre_apply_actions_to_solution_tree(\@solutions, $current_solution, \@possible_actions);
 		} else {
-			if ($self->config->get_bool('debug::resolver')) {
-				__mydebug_wrapper($current_solution, 'no solutions');
+			if ($self->config->get_string('cupt::resolver::synchronize-source-versions') eq 'hard') {
+				# if we have to synchronize source versions, can related packages be updated too?
+				# filter out actions that don't match this criteria
+				@possible_actions = $self->_filter_unsynchronizeable_actions(
+						$current_solution, \@possible_actions);
+			}
+
+			__prepare_stick_requests(\@possible_actions);
+
+			# purge current solution
+			@solutions = grep { $_ ne $current_solution } @solutions;
+
+			if (scalar @possible_actions) {
+				$self->_pre_apply_actions_to_solution_tree(\@solutions, $current_solution, \@possible_actions);
+			} else {
+				if ($self->config->get_bool('debug::resolver')) {
+					__mydebug_wrapper($current_solution, 'no solutions');
+				}
 			}
 		}
-	}} while $check_failed;
+	}
 }
 
 1;
