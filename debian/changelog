@@ -14,6 +14,8 @@ cupt (1.4.0~) UNRELEASED; urgency=low
         - Apply 'automatically installed' penalty score to all versions of
           automatically installed packages, not only installed one.
         - Don't perform inner auto-removal before of main resolver cycles.
+      - Resolvers/External:
+        - Request: lowercased all fields.
     - Download:
       - Methods/Debdelta:
         - Suppress standard output from debpatch.

@@ -144,9 +144,9 @@ sub _write_dudf_info ($$) {
 	foreach my $package_name ($self->cache->get_binary_package_names()) {
 		my $package = $self->cache->get_binary_package($package_name);
 		foreach my $version (@{$package->get_versions()}) {
-			say { $fh } 'Package: ' . $package_name;
-			say { $fh } 'Version: ' . $version->version_string;
-			say { $fh } 'Pin-Priority: ' . $self->cache->get_original_apt_pin($version);
+			say { $fh } 'package: ' . $package_name;
+			say { $fh } 'version: ' . $version->version_string;
+			say { $fh } 'pin-priority: ' . $self->cache->get_original_apt_pin($version);
 
 			do { # print strict dependencies
 				my @depends_relation_expressions;
@@ -155,7 +155,7 @@ sub _write_dudf_info ($$) {
 				push @depends_relation_expressions, @{$version->depends};
 
 				if (scalar @depends_relation_expressions) {
-					print { $fh } 'Depends: ';
+					print { $fh } 'depends: ';
 					say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(\@depends_relation_expressions));
 				}
 			};
@@ -167,7 +167,7 @@ sub _write_dudf_info ($$) {
 				push @conflicts_relation_expressions, @{$version->breaks};
 
 				if (scalar @conflicts_relation_expressions) {
-					print { $fh } 'Conflicts: ';
+					print { $fh } 'conflicts: ';
 					say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
 				}
 			};
@@ -175,16 +175,16 @@ sub _write_dudf_info ($$) {
 			do { # print provides
 				my $ref_provides_package_names = $version->provides;
 				if (scalar @$ref_provides_package_names) {
-					say { $fh } 'Provides: ' . join(', ', @$ref_provides_package_names);
+					say { $fh } 'provides: ' . join(', ', @$ref_provides_package_names);
 				}
 			};
 
 			if ($version->is_installed()) {
-				say { $fh } 'Installed: true';
+				say { $fh } 'installed: true';
 				if ($self->config->get_bool('cupt::resolver::no-remove') and
 						not $self->cache->is_automatically_installed($package_name))
 				{
-					say { $fh } 'Keep: package';
+					say { $fh } 'keep: package';
 				}
 			}
 
@@ -196,15 +196,15 @@ sub _write_dudf_info ($$) {
 		scalar @{$self->_strict_unsatisfy_relation_expressions})
 	{
 		# writing dummy package entry
-		say { $fh } "Package: $_dummy_package_name";
-		say { $fh } 'Version: 1';
+		say { $fh } "package: $_dummy_package_name";
+		say { $fh } 'version: 1';
 		if (scalar @{$self->_strict_satisfy_relation_expressions}) {
-			print { $fh } 'Depends: ';
+			print { $fh } 'depends: ';
 			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
 					$self->_strict_satisfy_relation_expressions));
 		}
 		if (scalar @{$self->_strict_unsatisfy_relation_expressions}) {
-			print { $fh } 'Conflicts: ';
+			print { $fh } 'conflicts: ';
 			say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(
 					$self->_strict_unsatisfy_relation_expressions));
 		}
@@ -212,10 +212,10 @@ sub _write_dudf_info ($$) {
 	}
 
 	# writing problems
-	say { $fh } 'Problem: source: Debian/DUDF';
+	say { $fh } 'problem: source: Debian/DUDF';
 
 	if ($self->_upgrade_all_flag) {
-		say { $fh } 'Upgrade: ' . join(' ', keys %{$self->_is_installed});
+		say { $fh } 'upgrade: ' . join(' ', keys %{$self->_is_installed});
 	}
 
 	my @package_names_to_remove;
@@ -236,10 +236,10 @@ sub _write_dudf_info ($$) {
 	}
 
 	if (scalar @package_names_to_remove) {
-		say { $fh } 'Remove: ' . join(', ', @package_names_to_remove);
+		say { $fh } 'remove: ' . join(', ', @package_names_to_remove);
 	}
 	if (scalar @strings_to_install) {
-		say { $fh } 'Install: ' . join(', ', @strings_to_install);
+		say { $fh } 'install: ' . join(', ', @strings_to_install);
 	}
 
 	# at last!
