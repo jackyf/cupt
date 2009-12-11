@@ -664,7 +664,6 @@ sub _pre_apply_actions_to_solution_tree {
 	@$ref_possible_actions = sort { $b->{profit} <=> $a->{profit} } @$ref_possible_actions;
 
 	# fork the solution entry and apply all the solutions by one
-	@$ref_solutions = grep { $_ ne $current_solution } @$ref_solutions;
 	foreach my $ref_action_to_apply (@$ref_possible_actions) {
 		# clone the current stack to form a new one
 		my $ref_cloned_solution = $current_solution->clone();
@@ -1251,14 +1250,15 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 
 		__prepare_stick_requests(\@possible_actions);
 
+		# purge current solution
+		@solutions = grep { $_ ne $current_solution } @solutions;
+
 		if (scalar @possible_actions) {
 			$self->_pre_apply_actions_to_solution_tree(\@solutions, $current_solution, \@possible_actions);
 		} else {
 			if ($self->config->get_bool('debug::resolver')) {
 				__mydebug_wrapper($current_solution, 'no solutions');
 			}
-			# purge current solution
-			@solutions = grep { $_ ne $current_solution } @solutions;
 		}
 	}} while $check_failed;
 }
