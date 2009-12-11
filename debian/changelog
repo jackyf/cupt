@@ -16,6 +16,7 @@ cupt (1.4.0~) UNRELEASED; urgency=low
         - Don't perform inner auto-removal before of main resolver cycles.
       - Resolvers/External:
         - Request: lowercased all fields.
+        - Request: pass '>>' as '>' and '<<' as '<' in relation expressions.
     - Download:
       - Methods/Debdelta:
         - Suppress standard output from debpatch.

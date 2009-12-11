@@ -132,13 +132,19 @@ sub resolve ($$) {
 	return;
 }
 
+sub __relation_expressions_to_string {
+	my ($ref_relation_expressions) = @_;
+
+	my $string = stringify_relation_expressions($ref_relation_expressions);
+	$string =~ tr/()//d;
+	$string =~ s/>>/>/g;
+	$string =~ s/<</</g;
+
+	return $string;
+}
+
 sub _write_dudf_info ($$) {
 	my ($self, $fh) = @_;
-
-	my $sub_strip_circle_braces = sub {
-		$_[0] =~ tr/()//d;
-		return $_[0];
-	};
 
 	# writing package info
 	foreach my $package_name ($self->cache->get_binary_package_names()) {
@@ -156,7 +162,7 @@ sub _write_dudf_info ($$) {
 
 				if (scalar @depends_relation_expressions) {
 					print { $fh } 'depends: ';
-					say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(\@depends_relation_expressions));
+					say { $fh } __relation_expressions_to_string(\@depends_relation_expressions);
 				}
 			};
 
@@ -168,7 +174,7 @@ sub _write_dudf_info ($$) {
 
 				if (scalar @conflicts_relation_expressions) {
 					print { $fh } 'conflicts: ';
-					say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(\@conflicts_relation_expressions));
+					say { $fh } __relation_expressions_to_string(\@conflicts_relation_expressions);
 				}
 			};
 
@@ -200,13 +206,11 @@ sub _write_dudf_info ($$) {
 		say { $fh } 'version: 1';
 		if (scalar @{$self->_strict_satisfy_relation_expressions}) {
 			print { $fh } 'depends: ';
-			say $fh $sub_strip_circle_braces->(stringify_relation_expressions(
-					$self->_strict_satisfy_relation_expressions));
+			say { $fh } __relation_expressions_to_string($self->_strict_satisfy_relation_expressions);
 		}
 		if (scalar @{$self->_strict_unsatisfy_relation_expressions}) {
 			print { $fh } 'conflicts: ';
-			say { $fh } $sub_strip_circle_braces->(stringify_relation_expressions(
-					$self->_strict_unsatisfy_relation_expressions));
+			say { $fh } __relation_expressions_to_string($self->_strict_unsatisfy_relation_expressions);
 		}
 		say { $fh } '';
 	}
