@@ -1387,7 +1387,7 @@ sub verify_signature ($$) {
 				return 0;
 			};
 
-	open(GPG_VERIFY, 'gpg --verify --status-fd 1 --no-default-keyring ' .
+	open(GPG_VERIFY, 'gpgv --status-fd 1 ' .
 			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
 			mydie('unable to open gpg pipe: %s', $!);
 	my $sub_gpg_readline = sub {

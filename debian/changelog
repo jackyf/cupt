@@ -31,9 +31,12 @@ cupt (1.4.0~) UNRELEASED; urgency=low
     - Core:
       - Moved INIT block out to 'cupt' front-end.
     - Cache:
+      - 'verify_signature': use gpgv, not gpg for checking.
       - BinaryVersion:
         - Fallback to 0 if the installed size is not defined. Thanks to
           Jean-Christophe Dubacq <jcdubacq1@free.fr>. (Closes: #560160)
+  * debian/control:
+    - Added the package 'gpgv' to Recommends of the 'libcupt-perl' package.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 03 Dec 2009 21:49:41 +0200
 

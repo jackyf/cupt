@@ -17,7 +17,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl (>= 5.10.0), liburi-perl,
   libparse-recdescent-perl, libdigest-sha-perl,
   liblist-moreutils-perl (>= 0.23)
 Breaks: debdelta (<< 0.31)
-Recommends: liblocale-gettext-perl, bzip2
+Recommends: liblocale-gettext-perl, bzip2, gpgv
 Suggests: cupt, lzma, debdelta (>= 0.31), dpkg-dev, dpkg-repack
 Description: alternative front-end for dpkg -- Perl modules
  This is a set of Cupt Perl modules implementing front-end to dpkg.
