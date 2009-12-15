@@ -1,4 +1,4 @@
-cupt (1.4.0~) UNRELEASED; urgency=low
+cupt (1.4.0) unstable; urgency=low
 
   * Cupt:
     - System:
@@ -38,7 +38,7 @@ cupt (1.4.0~) UNRELEASED; urgency=low
   * debian/control:
     - Added the package 'gpgv' to Recommends of the 'libcupt-perl' package.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 03 Dec 2009 21:49:41 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 15 Dec 2009 13:58:38 +0200
 
 cupt (1.3.1) unstable; urgency=low
 
