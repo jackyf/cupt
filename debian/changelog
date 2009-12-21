@@ -1,3 +1,12 @@
+cupt (1.4.1~) UNRELEASED; urgency=low
+
+  * cupt:
+    - 'dist-upgrade': start completely new process in the second stage to fix
+      the possible undefined behavior when libcupt-perl got upgrade in the
+      first stage with the API changes.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 21 Dec 2009 19:29:35 +0200
+
 cupt (1.4.0) unstable; urgency=low
 
   * Cupt:

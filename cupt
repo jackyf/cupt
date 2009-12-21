@@ -71,6 +71,8 @@ sub new_download_progress {
 	return $download_progress_class_name->new();
 }
 
+my @original_arguments = @ARGV;
+
 # build config at start
 build_config();
 
@@ -1719,18 +1721,12 @@ sub dist_upgrade {
 				mydie('upgrading of the package management tools failed');
 	};
 
-	# cache should be rebuild
-	undef $cache;
-
 	do { # 2nd stage: full upgrade
 		say '';
 		say '[ upgrading the system ]';
 		say '';
-		local @ARGV = @ARGV;
-		return manage_packages('full-upgrade');
+		exec($0, 'full-upgrade', grep { $_ ne 'dist-upgrade' } @original_arguments);
 	};
-
-	return 0;
 }
 
 sub update_release_data () {
