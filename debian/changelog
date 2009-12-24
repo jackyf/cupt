@@ -4,6 +4,8 @@ cupt (1.5.0~) UNRELEASED; urgency=low
     - 'dist-upgrade': start completely new process in the second stage to fix
       the possible undefined behavior when libcupt-perl got upgrade in the
       first stage with the API changes.
+    - 'depends': in recurse mode pick up only one new version for the relation
+      expression by default, specify '--all-versions' to override.
   * Cupt:
     - Config:
       - New option family 'cupt::downloader::protocols::*::priority'.

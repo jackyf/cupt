@@ -143,6 +143,13 @@ process the dependencies recursively
 
 Corresponding configuration variable: L<apt::cache::recursedepends>
 
+=item --all-versions,-a
+
+when L<--recurse|/--recurse> is specified, pick up all versions for the
+relation expression, not the "best" one
+
+Corresponding configuration variable: L<apt::cache::allversions>
+
 =back
 
 Examples:

@@ -37,7 +37,7 @@ INIT {
 	$SIG{__DIE__} = \&Carp::confess;
 }
 
-use List::Util qw(sum);
+use List::Util qw(sum reduce);
 use List::MoreUtils qw(uniq none);
 use Getopt::Long;
 Getopt::Long::Configure('pass_through', 'no_auto_abbrev', 'no_ignore_case');
@@ -816,7 +816,15 @@ sub show_package_relations ($) {
 					say "  $caption: ", stringify_relation_expression($relation_expression);
 					if ($config->get_bool('apt::cache::recursedepends')) {
 						# insert recursive depends into queue
-						push @versions, @{$cache->get_satisfying_versions($relation_expression)};
+						my @satisfying_versions = @{$cache->get_satisfying_versions($relation_expression)};
+						if ($config->get_bool('apt::cache::allversions')) {
+							push @versions, @satisfying_versions;
+						} else {
+							# push the version with the maximum pin
+							push @versions, reduce {
+										$cache->get_pin($a) >= $cache->get_pin($b) ? $a : $b
+									} @satisfying_versions;
+						}
 					}
 				}
 			} else {
