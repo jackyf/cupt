@@ -107,6 +107,18 @@ sub new {
 		'cupt::directory::state' => 'var/lib/cupt',
 		'cupt::directory::state::snapshots' => 'snapshots',
 		'cupt::downloader::max-simultaneous-downloads' => 2,
+		'cupt::downloader::protocols::file::priority' => 300,
+		'cupt::downloader::protocols::copy::priority' => 250,
+		'cupt::downloader::protocols::debdelta::priority' => 150,
+		'cupt::downloader::protocols::https::priority' => 125,
+		'cupt::downloader::protocols::http::priority' => 100,
+		'cupt::downloader::protocols::ftp::priority' => 80,
+		'cupt::downloader::protocols::file::methods::file::priority' => 100,
+		'cupt::downloader::protocols::copy::methods::file::priority' => 100,
+		'cupt::downloader::protocols::debdelta::methods::debdelta::priority' => 100,
+		'cupt::downloader::protocols::https::methods::curl::priority' => 100,
+		'cupt::downloader::protocols::http::methods::curl::priority' => 100,
+		'cupt::downloader::protocols::ftp::methods::curl::priority' => 100,
 		'cupt::update::compression-types::gz::priority' => 100,
 		'cupt::update::compression-types::bz2::priority' => 100,
 		'cupt::update::compression-types::lzma::priority' => 100,
@@ -144,10 +156,13 @@ sub new {
 	$self->_optional_patterns = [
 		# used APT vars
 		'acquire::*::*::proxy',
+		'acquire::*::proxy::*',
 		'acquire::*::proxy',
 		'acquire::*::*::dl-limit',
+		'acquire::*::dl-limit::*',
 		'acquire::*::dl-limit',
 		'acquire::*::*::timeout',
+		'acquire::*::timeout::*',
 		'acquire::*::timeout',
 		'dpkg::tools::options::*',
 		'dpkg::tools::options::*::*',
@@ -158,6 +173,11 @@ sub new {
 		'apt::periodic::*',
 		'unattended-upgrade::*',
 		'aptitude::*',
+
+		# used Cupt vars
+		'cupt::downloader::protocols::*::priority',
+		'cupt::downloader::protocols::*::methods',
+		'cupt::downloader::protocols::*::methods::*::priority',
 	];
 
 	$self->_list_vars = {
@@ -177,6 +197,12 @@ sub new {
 		'apt::never-markauto-sections::*' => [],
 
 		# Cupt vars
+		'cupt::downloader::protocols::file::methods' => [ 'file' ],
+		'cupt::downloader::protocols::copy::methods' => [ 'file' ],
+		'cupt::downloader::protocols::debdelta::methods' => [ 'debdelta' ],
+		'cupt::downloader::protocols::https::methods' => [ 'curl' ],
+		'cupt::downloader::protocols::http::methods' => [ 'curl' ],
+		'cupt::downloader::protocols::ftp::methods' => [ 'curl' ],
 		'cupt::resolver::synchronize-source-versions::exceptions' => ['db', 'linux-\d.\d'],
 		'cupt::worker::allow-indirect-upgrade' => [ 'libc6-i686' ], # hack to
 				# work around packages with strict unkeepable Pre-Depends and ability to
@@ -203,7 +229,7 @@ sub _is_optional_option ($$) {
 	my ($self, $var_name) = @_;
 	foreach my $pattern (@{$self->_optional_patterns}) {
 		(my $regex = $pattern) =~ s/\*/[^:]*?/g;
-		return 1 if ($var_name =~ m/$regex/);
+		return 1 if ($var_name =~ m/^$regex$/);
 	}
 	return 0;
 }

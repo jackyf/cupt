@@ -884,6 +884,22 @@ directory which contains Cupt state info
 
 positive number, specifies maximum number of simultaneous downloads
 
+=item cupt::downloader::protocols::I<protocol>::priority
+
+positive number, defines the priority of download protocol I<protocol>, determines an order in which
+different URIs for the same file will be tried. Defaults to 100.
+
+=item cupt::downloader::protocols::I<protocol>::methods::I<method>::priority
+
+positive number, defines the priority of download method I<method>, the method
+with maximum priority will be used for downloading the URI of protocol
+I<protocol>.
+Defaults to 100.
+
+=item cupt::downloader::protocols::I<protocol>::methods
+
+list of names of the methods available to download protocol I<protocol>
+
 =item cupt::update::compression-types::*::priority
 
 defines preference to download compressed files with higher priority first. 100 by default.

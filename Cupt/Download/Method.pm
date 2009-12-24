@@ -25,6 +25,8 @@ use strict;
 
 use URI;
 use Exporter qw(import);
+use Module::Load;
+use List::Util qw(reduce);
 
 our @EXPORT_OK = qw(&get_acquire_suboption_for_uri);
 
@@ -51,6 +53,13 @@ creates new Cupt::Download::Method object
 sub new {
 	my $class = shift;
 	return bless {} => $class;
+}
+
+sub __get_protocol_priority {
+	my ($config, $protocol, $handler_name) = @_;
+
+	my $option_name = "cupt::downloader::protocols::${protocol}::methods::${handler_name}::priority";
+	return $config->get_string($option_name) // 100;
 }
 
 =head2 perform
@@ -105,32 +114,38 @@ Returns: '' if all went smoothly, error string in case of error
 sub perform ($$$$$) {
 	my ($self, $config, $uri, $filename, $sub_callback) = @_;
 
-	my %protocol_handlers = (
-		'http' => 'Curl',
-		'ftp' => 'Curl',
-		'https' => 'Curl',
-		'file' => 'File',
-		'copy' => 'File',
-		'debdelta' => 'Debdelta',
-	);
 	my $protocol = URI->new($uri)->scheme();
-	my $handler_name = $protocol_handlers{$protocol} //
-			return sprintf __('no protocol download handler defined for %s'), $protocol;
 
-	my $handler;
-	{
-		## no critic (NoStrict)
-		## no critic (ProlongedStrictureOverride)
-		## no critic (StringyEval)
-		no strict 'subs';
-		# create handler by name
+	my @available_handler_names = $config->get_list("cupt::downloader::protocols::${protocol}::methods") or
+			return sprintf __("no download handlers defined for '%s' protocol"), $protocol;
+
+	my $handler_name = reduce {
+				__get_protocol_priority($config, $protocol, $a) >
+				__get_protocol_priority($config, $protocol, $b) ?
+				$a : $b
+			} @available_handler_names;
+
+	my $result;
+	do {
+		# real module file starts with a capital letter
+		$handler_name =~ s/^(.)/uc($1)/e;
+
 		my $full_handler_name = "Cupt::Download::Methods::$handler_name";
-		eval "require $full_handler_name";
-		mydie($@) if $@;
-		$handler = $full_handler_name->new();
-	}
+		eval {
+			load $full_handler_name;
+			my $handler = $full_handler_name->new();
+			$result = $handler->perform($config, $uri, $filename, $sub_callback);
+		};
+		if ($@) {
+			if ($@ =~ m/^Can't locate/) {
+				$result = sprintf __("unable to locate the module '%s'"), $full_handler_name;
+			} else {
+				$result = $@;
+			}
+		}
+	};
 
-	return $handler->perform($config, $uri, $filename, $sub_callback);
+	return $result;
 }
 
 =head1 FREE SUBROUTINES

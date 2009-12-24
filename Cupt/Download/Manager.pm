@@ -35,6 +35,7 @@ use IO::Pipe;
 use IO::Socket::UNIX;
 use POSIX;
 use Time::HiRes qw(setitimer ITIMER_REAL);
+use URI;
 
 use Cupt::LValueFields qw(_config _progress _worker_pid _server_socket
 		_parent_pipe _server_socket_path);
@@ -408,6 +409,13 @@ sub DESTROY {
 	return;
 }
 
+sub _get_uri_priority {
+	my ($self, $uri) = @_;
+
+	my $protocol = URI->new($uri)->scheme();
+	return $self->_config->get_number("cupt::downloader::protocols::${protocol}::priority") // 100;
+}
+
 =head2 download
 
 method, adds group of download queries to queue. Blocks execution of program until
@@ -486,7 +494,6 @@ sub download ($@) {
 		return 0;
 	}
 
-	# { $filename => { 'uris' => [ $uri... ], 'size' => $size, 'checker' => $checker }... }
 	my %download_entries;
 
 	# { $uri => $filename }
@@ -526,7 +533,10 @@ sub download ($@) {
 		my $ref_entry = shift;
 		my $filename = $ref_entry->{'filename'};
 
-		$download_entries{$filename}->{'uris'} = $ref_entry->{'uri-entries'};
+		# sorting by protocols' priorities
+		$download_entries{$filename}->{'uris'} = [ sort {
+					$self->_get_uri_priority($b->{'uri'}) <=> $self->_get_uri_priority($a->{'uri'})
+				} @{$ref_entry->{'uri-entries'}} ];
 		# may be undef
 		$download_entries{$filename}->{'size'} = $ref_entry->{'size'};
 		# may be undef

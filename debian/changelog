@@ -1,9 +1,21 @@
-cupt (1.4.1~) UNRELEASED; urgency=low
+cupt (1.5.0~) UNRELEASED; urgency=low
 
   * cupt:
     - 'dist-upgrade': start completely new process in the second stage to fix
       the possible undefined behavior when libcupt-perl got upgrade in the
       first stage with the API changes.
+  * Cupt:
+    - Config:
+      - New option family 'cupt::downloader::protocols::*::priority'.
+      - New option family 'cupt::downloader::protocols::*::methods'.
+      - New option family
+        'cupt::downloader::protocols::*::methods::*::priority'.
+    - Download:
+      - Manager:
+        - Sort URIs for the file by priorities.
+      - Method:
+        - Implemented choosing a method with maximum priority between several
+          available ones.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 21 Dec 2009 19:29:35 +0200
 
