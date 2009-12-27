@@ -212,9 +212,9 @@ This subcommand receives the list of package names.
 
 Examples:
 
-C<cupt policy dpkg>
+C<cupt policysrc dpkg>
 
-C<cupt policy libpqxx libpqxx3>
+C<cupt policysrc libpqxx libpqxx3>
 
 =item pkgnames
 
