@@ -387,25 +387,34 @@ sub _get_version_weight ($$) {
 
 	return 0 if not defined $version;
 
-	my $factor = 1.0;
-	my $package_name = $version->package_name;
-	if ($self->cache->is_automatically_installed($package_name)) {
-		# automatically installed packages count nothing for user
-		$factor /= 20.0;
-	}
-	$factor *= 5.0 if $version->essential;
+	my $result = $self->cache->get_pin($version);
+
+	$result *= 5.0 if $version->essential;
 
 	# omitting priority 'standard' here
 	if ($version->priority eq 'optional') {
-		$factor *= 0.9;
+		$result *= 0.9;
 	} elsif ($version->priority eq 'extra') {
-		$factor *= 0.7;
+		$result *= 0.7;
 	} elsif ($version->priority eq 'important') {
-		$factor *= 1.4;
+		$result *= 1.4;
 	} elsif ($version->priority eq 'required') {
-		$factor *= 2.0;
+		$result *= 2.0;
 	}
-	return $self->cache->get_pin($version) * $factor;
+
+	if ($result > 0) {
+		# apply the rules only to positive results so negative ones save their
+		# negative effect
+		my $package_name = $version->package_name;
+		if ($self->cache->is_automatically_installed($package_name)) {
+			$result /= 12.0;
+		} elsif (not defined $self->_old_solution->get_package_entry($package_name)) {
+			# new package
+			$result /= 100.0;
+		}
+	}
+
+	return $result;
 }
 
 sub _get_action_profit ($$$) {
@@ -416,8 +425,7 @@ sub _get_action_profit ($$$) {
 
 	if (not defined $original_version) {
 		# installing the version itself gains nothing
-		$supposed_version_weight /= 20;
-		$supposed_version_weight -= 60;
+		$supposed_version_weight -= 15;
 	}
 
 	my $result = $supposed_version_weight - $original_version_weight;

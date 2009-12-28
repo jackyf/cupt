@@ -18,6 +18,11 @@ cupt (1.5.0~) UNRELEASED; urgency=low
       - Method:
         - Implemented choosing a method with maximum priority between several
           available ones.
+    - System:
+      - Resolvers/Native:
+        - Adjusted calculating action weights so installing new version
+          outweights non-upgrading an other package in most cases, even
+          automatically installed one. Thanks to James Vega. (Closes: #562797)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 21 Dec 2009 19:29:35 +0200
 
