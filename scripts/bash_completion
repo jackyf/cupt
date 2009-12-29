@@ -1,0 +1,97 @@
+_cupt()
+{
+	local cur subcommands subcommand command arguments common_options
+
+	subcommands='-h --help help \
+			-v --version version \
+			config-dump show showsrc search \
+			depends rdepends why policy policysrc \
+			pkgnames changelog copyright screenshots \
+			snapshot update \
+			install remove full-upgrade safe-upgrade dist-upgrade reinstall \
+			build-dep satisfy source \
+			clean autoclean shell \
+			markauto unmarkauto'
+
+	COMPREPLY=()
+
+	command="${COMP_WORDS[0]}"
+	cur="${COMP_WORDS[COMP_CWORD]}"
+
+	# determining subcommand
+	for word_number in `seq 1 $((COMP_CWORD-1))`; do
+		if [[ "${COMP_WORDS[word_number]}" != -* ]]; then
+			# ok, that should be subcommand
+			subcommand="${COMP_WORDS[word_number]}"
+			break
+		fi
+	done
+
+	if [ "${subcommand}" == "" ]; then
+		# there's no main subcommand yet
+		arguments=${subcommands}
+	else
+		# found subcommand, go case by case then
+		local subcommand_type
+		case "${subcommand}" in
+			install|remove|full-upgrade|safe-upgrade|dist-upgrade|reinstall|build-dep)
+				subcommand_type='manage'
+				;;
+			source)
+				subcommand_type='query'
+				arguments='--tar-only --diff-only --dsc-only --download-only'
+				;;
+			config-dump)
+				arguments=$(${command} config-dump | sed 's/ .*//')
+				;;
+			show|showsrc)
+				subcommand_type='query'
+				arguments='--all-versions -a --no-all-versions --with-release-info'
+				;;
+			why|policy|policysrc|pkgnames|changelog|copyright|screenshots)
+				subcommand_type='query'
+				;;
+			search)
+				arguments='--case-sensitive --names-only -n'
+				;;
+			depends|rdepends)
+				subcommand_type='query'
+				arguments='--with-suggests --recurse'
+				;;
+			snapshot)
+				arguments='list save load remove rename'
+				;;
+			markauto|unmarkauto)
+				arguments="$(${command} pkgnames --installed-only)"
+				;;
+		esac
+
+		if ([ "${subcommand_type}" == "query" ] || [ "${subcommand_type}" == "manage" ]) && [[ "${cur}" != -* ]]; then
+			# package list
+			arguments="${arguments} $(${command} pkgnames)"
+		fi
+
+		if [ "${subcommand_type}" == "query" ]; then
+			# query-specific options
+			arguments="${arguments} --important --installed-only"
+		fi
+
+		if [ "${subcommand_type}" == "manage" ]; then
+			# manage-specific options
+			arguments="${arguments} --no-remove --no-auto-remove --simulate -s \
+					--resolver=fair --resolver=full --max-solution-count= \
+					--no-install-recommends -R --show-versions -V
+					--show-size-changes -Z --show-reasons --show-deps -D \
+					--no-install-unpacked --download-only -d \
+					--assume-yes --yes -y"
+		fi
+	fi
+
+	common_options="-o --option --target-release --default-release -t --purge --quiet -q"
+	arguments="${arguments} ${common_options}"
+
+	COMPREPLY=($(compgen -W "${arguments}" -- ${cur}))
+	return 0
+}
+
+complete -F _cupt cupt
