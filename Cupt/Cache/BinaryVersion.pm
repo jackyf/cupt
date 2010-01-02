@@ -67,7 +67,7 @@ maintainer of the package, string
 
 =head2 architecture
 
-binary architecture of the packge, string, defined in Debian Policy, §5.6.8
+binary architecture of the package, string, defined in Debian Policy, §5.6.8
 
 =head2 source_package_name
 

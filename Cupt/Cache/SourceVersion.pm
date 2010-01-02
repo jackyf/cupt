@@ -55,7 +55,7 @@ reference to array of binary package names (strings) that build from this packag
 
 =head2 architecture
 
-source architecture of the packge, string, defined in Debian Policy, §5.6.8
+source architecture of the package, string, defined in Debian Policy, §5.6.8
 
 =head2 priority
 
