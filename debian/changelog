@@ -1,4 +1,4 @@
-cupt (1.5.0~) UNRELEASED; urgency=low
+cupt (1.5.0) unstable; urgency=low
 
   * cupt:
     - 'dist-upgrade': start completely new process in the second stage to fix
@@ -26,7 +26,7 @@ cupt (1.5.0~) UNRELEASED; urgency=low
   * scripts/bash_completion:
     - Implemented bash completion for cupt program.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 21 Dec 2009 19:29:35 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 02 Jan 2010 18:03:45 +0200
 
 cupt (1.4.0) unstable; urgency=low
 
