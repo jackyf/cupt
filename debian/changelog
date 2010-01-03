@@ -1,3 +1,13 @@
+cupt (1.5.1~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - System:
+      - Worker:
+        - 'change_system': perform download stage after determining dpkg call
+          sequence.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 03 Jan 2010 20:10:35 +0200
+
 cupt (1.5.0) unstable; urgency=low
 
   * cupt:

@@ -1452,12 +1452,11 @@ sub change_system ($$) {
 	my $ref_actions_preview = $self->get_actions_preview();
 
 	my @pending_downloads = $self->_prepare_downloads($ref_actions_preview, $download_progress);
-	if ($download_only or not defined $archives_space_limit) {
+	if ($download_only) {
 		# download all now
 		$self->_do_downloads(\@pending_downloads, $download_progress);
-		@pending_downloads = ();
+		return 1;
 	};
-	return 1 if $download_only;
 
 	my $action_graph = $self->_build_actions_graph($ref_actions_preview);
 	# exit when nothing to do
