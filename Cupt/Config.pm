@@ -171,6 +171,7 @@ sub new {
 		'acquire::compressiontypes::*',
 		'apt::archives::*',
 		'apt::periodic::*',
+		'aptlistbugs::*',
 		'unattended-upgrade::*',
 		'aptitude::*',
 
