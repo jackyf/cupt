@@ -430,7 +430,12 @@ sub _get_action_profit ($$$) {
 
 	my $result = $supposed_version_weight - $original_version_weight;
 	# remove a package
-	$result -= 50 if !defined $supposed_version;
+	if (not defined $supposed_version) {
+		$result -= 50;
+		if ($result < 0) {
+			$result *= 8;
+		}
+	}
 
 	return $result;
 }

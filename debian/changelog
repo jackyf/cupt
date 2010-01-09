@@ -5,6 +5,8 @@ cupt (1.5.1~) UNRELEASED; urgency=low
       - Worker:
         - 'change_system': perform download stage after determining dpkg call
           sequence.
+      - Resolvers/Native:
+        - Significantly increased the penalty for removing installed packages.
     - Config:
       - Added the 'aptlistbugs::*' option family. Thanks to Ryan Niebur.
 
