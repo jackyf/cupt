@@ -431,7 +431,7 @@ sub _get_action_profit ($$$) {
 	if (not defined $supposed_version) {
 		$result -= 50;
 		if ($result < 0) {
-			$result *= 8;
+			$result *= 4;
 		}
 	}
 
