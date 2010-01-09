@@ -63,18 +63,16 @@ sub new {
 sub _get_dependency_groups {
 	my ($self) = @_;
 
-	# action factor will determine the valuability of action
-	# usually it will be 1.0 for strong dependencies and < 1.0 for soft dependencies
 	my @dependency_groups;
-	push @dependency_groups, { 'name' => 'pre_depends', 'factor' => 2.0, 'target' => 'normal', 'index' => 0 };
-	push @dependency_groups, { 'name' => 'depends', 'factor' => 1.0, 'target' => 'normal', 'index' => 1 };
-	push @dependency_groups, { 'name' => 'conflicts', 'factor' => 1.0, 'target' => 'anti', 'index' => 2 };
-	push @dependency_groups, { 'name' => 'breaks', 'factor' => 1.0, 'target' => 'anti', 'index' => 3 };
+	push @dependency_groups, { 'name' => 'pre_depends', 'target' => 'normal', 'index' => 0 };
+	push @dependency_groups, { 'name' => 'depends', 'target' => 'normal', 'index' => 1 };
+	push @dependency_groups, { 'name' => 'conflicts', 'target' => 'anti', 'index' => 2 };
+	push @dependency_groups, { 'name' => 'breaks', 'target' => 'anti', 'index' => 3 };
 	if ($self->config->get_bool('cupt::resolver::keep-recommends')) {
-		push @dependency_groups, { 'name' => 'recommends', 'factor' => 0.4, 'target' => 'normal', 'index' => 4 };
+		push @dependency_groups, { 'name' => 'recommends', 'target' => 'normal', 'index' => 4 };
 	}
 	if ($self->config->get_bool('cupt::resolver::keep-suggests')) {
-		push @dependency_groups, { 'name' => 'suggests', 'factor' => 0.1, 'target' => 'normal', 'index' => 5 };
+		push @dependency_groups, { 'name' => 'suggests', 'target' => 'normal', 'index' => 5 };
 	}
 
 	return \@dependency_groups;
@@ -617,7 +615,6 @@ sub _pre_apply_action ($$$$) {
 
 	my $profit = $ref_action_to_apply->{'profit'} //
 			$self->_get_action_profit($original_version, $supposed_version);
-	$profit *= $ref_action_to_apply->{'factor'};
 
 	# temporarily lower the score of the current solution to implement back-tracking
 	# the bigger quality bar, the bigger chance for other solutions
@@ -758,7 +755,7 @@ sub __version_has_relation_expression ($$$) {
 
 sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 	my ($self, $solution, $package_name, $ref_satisfying_versions,
-			$relation_expression, $dependency_group_name, $dependency_group_factor) = @_;
+			$relation_expression, $dependency_group_name) = @_;
 
 	my @result;
 
@@ -774,7 +771,6 @@ sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 			push @result, {
 				'package_name' => $satisfying_package_name,
 				'version' => $satisfying_version,
-				'factor' => $dependency_group_factor,
 				'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 			};
 		}
@@ -832,7 +828,6 @@ sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 					push @result, {
 						'package_name' => $package_name,
 						'version' => $other_version,
-						'factor' => $dependency_group_factor,
 						'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 					};
 				}
@@ -844,7 +839,6 @@ sub _get_actions_to_fix_dependency ($$$$$$$) { ## no critic (ManyArgs)
 			push @result, {
 				'package_name' => $package_name,
 				'version' => undef,
-				'factor' => $dependency_group_factor,
 				'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 			};
 		}
@@ -920,7 +914,6 @@ sub _filter_unsynchronizeable_actions {
 					unshift @new_possible_actions, {
 						'package_name' => $unsynchronizeable_package_name,
 						'version' => undef,
-						'factor' => 1,
 						'reason' => [ 'sync', $version->package_name ],
 					};
 				}
@@ -1026,7 +1019,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 			} $current_solution->get_package_names();
 
 			foreach my $ref_dependency_group (@dependency_groups) {
-				my $dependency_group_factor = $ref_dependency_group->{'factor'};
 				my $dependency_group_name = $ref_dependency_group->{'name'};
 				my $dependency_group_target = $ref_dependency_group->{'target'};
 				my $dependency_group_index = $ref_dependency_group->{'index'};
@@ -1066,9 +1058,8 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 									push @possible_actions, {
 										'package_name' => $package_name,
 										'version' => $version,
-										'factor' => $dependency_group_factor,
 										# set profit manually, as we are inserting fake action here
-										'profit' => -500,
+										'profit' => ($dependency_group_name eq 'recommends' ? -200 : -50),
 										'fakely_satisfies' => $relation_expression,
 										'reason' => undef,
 									};
@@ -1080,7 +1071,7 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 								# for resolving we can do:
 								push @possible_actions, $self->_get_actions_to_fix_dependency(
 										$current_solution, $package_name, $ref_satisfying_versions,
-										$relation_expression, $dependency_group_name, $dependency_group_factor);
+										$relation_expression, $dependency_group_name);
 
 								if ($self->config->get_bool('debug::resolver')) {
 									my $stringified_relation = stringify_relation_expression($relation_expression);
@@ -1135,7 +1126,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 											push @possible_actions, {
 												'package_name' => $other_package_name,
 												'version' => $other_version,
-												'factor' => $dependency_group_factor,
 												'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
@@ -1145,7 +1135,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 											push @possible_actions, {
 												'package_name' => $other_package_name,
 												'version' => undef,
-												'factor' => $dependency_group_factor,
 												'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
@@ -1168,7 +1157,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 											push @possible_actions, {
 												'package_name' => $package_name,
 												'version' => $other_version,
-												'factor' => $dependency_group_factor,
 												'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
@@ -1178,7 +1166,6 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 											push @possible_actions, {
 												'package_name' => $package_name,
 												'version' => undef,
-												'factor' => $dependency_group_factor,
 												'reason' => [ 'relation expression', $version, $dependency_group_name, $relation_expression ],
 											};
 										}
