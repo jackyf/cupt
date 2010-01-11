@@ -5,6 +5,9 @@ cupt (1.5.1~) UNRELEASED; urgency=low
       - Worker:
         - 'change_system': perform download stage after determining dpkg call
           sequence.
+        - Fixed the stupid long-standing bug with forgetting some action
+          dependencies for relation expressions which involve several binary
+          packages. Thanks to James Vega for spotting it. (Closes: #564724)
       - Resolvers/Native:
         - Significantly increased the penalty for removing installed packages.
         - Optimize building solution tree in case of actions that resolve

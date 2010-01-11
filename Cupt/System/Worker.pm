@@ -599,7 +599,7 @@ sub _fill_action_dependencies ($$$$) {
 						mydebug("new action dependency: '$slave_string' -> '$master_string'");
 					}
 
-					last SATISFYING_VERSIONS;
+					next SATISFYING_VERSIONS;
 				}
 			}
 		}
