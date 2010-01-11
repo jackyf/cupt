@@ -1139,6 +1139,10 @@ sub resolve ($$) { ## no critic (RequireFinalReturn)
 											};
 										}
 									}
+
+									# if we reached here it means that at least one conflicting version of another
+									# package was found, leave others as they are for a while
+									last;
 								}
 
 								if ($conflict_found) {

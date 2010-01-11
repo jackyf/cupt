@@ -7,6 +7,9 @@ cupt (1.5.1~) UNRELEASED; urgency=low
           sequence.
       - Resolvers/Native:
         - Significantly increased the penalty for removing installed packages.
+        - Optimize building solution tree in case of actions that resolve
+          conflicts with multiple packages that provide the same virtual
+          package.
     - Config:
       - Added the 'aptlistbugs::*' option family. Thanks to Ryan Niebur.
 
