@@ -18,6 +18,10 @@ pins can be specified also by source package
 
 =item
 
+negative pin values don't strictly prevent version to be installed
+
+=item
+
 correctness of APT options is checked
 
 =back
