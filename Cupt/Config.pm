@@ -205,9 +205,15 @@ sub new {
 		'cupt::downloader::protocols::http::methods' => [ 'curl' ],
 		'cupt::downloader::protocols::ftp::methods' => [ 'curl' ],
 		'cupt::resolver::synchronize-source-versions::exceptions' => ['db', 'linux-\d.\d'],
-		'cupt::worker::allow-indirect-upgrade' => [ 'libc6-i686' ], # hack to
-				# work around packages with strict unkeepable Pre-Depends and ability to
-				# damage the system when dependencies is not satisfied
+		# hack to work around packages with strict unkeepable
+		# Pre-Depends and ability to damage the system when
+		# dependencies is not satisfied
+		'cupt::worker::allow-indirect-upgrade' => [
+			'libc6-i686',
+			'openjdk-6-jre',
+			'openjdk-6-jre-lib',
+			'openjdk-6-jre-headless',
+		],
 	};
 
 	$self->set_scalar('apt::architecture', $self->_get_architecture());

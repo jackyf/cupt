@@ -1,3 +1,13 @@
+cupt (1.5.2~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Config:
+      - Added packages 'openjdk-6-jre', 'openjdk-6-jre-lib' and
+        'openjdk-6-jre-headless' to the list of broken packages which are to
+        be upgraded indirectly. (Closes: #567436)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 29 Jan 2010 08:19:59 +0200
+
 cupt (1.5.1) unstable; urgency=low
 
   * Cupt:
