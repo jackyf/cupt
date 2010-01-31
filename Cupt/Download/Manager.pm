@@ -206,7 +206,7 @@ sub _worker ($) {
 					# new query appeared
 					($uri, $filename) = @params;
 					$waiter_socket = $socket;
-					mydebug("download request: '$uri'") if $debug;
+					mydebug("download request: '%s'", $uri) if $debug;
 					$proceed_next_download = 1;
 				}
 				when ('set-download-size') {
@@ -219,7 +219,7 @@ sub _worker ($) {
 							myinternaldie("bad argument count for 'done' message");
 
 					($uri, my $result) = @params;
-					mydebug("preliminary download result: '$uri': $result") if $debug;
+					mydebug("preliminary download result: '%s': $result", $uri) if $debug;
 					my $is_duplicated_download = 0;
 					__my_write_socket($active_downloads{$uri}->{waiter_socket}, $uri, $result, $is_duplicated_download);
 
@@ -235,7 +235,7 @@ sub _worker ($) {
 							myinternaldie("bad argument count for 'done-ack' message");
 
 					($uri, my $result) = @params;
-					mydebug("final download result: '$uri': $result") if $debug;
+					mydebug("final download result: '%s': $result", $uri) if $debug;
 
 					# removing the query from active download list and put it to
 					# the list of ended ones
@@ -250,7 +250,7 @@ sub _worker ($) {
 						foreach my $ref_pending_download (@pending_downloads) {
 							(my $pending_uri, $waiter_socket) = @$ref_pending_download;
 							if (exists $done_downloads{$pending_uri}) {
-								mydebug("final download result for duplicated request: '$pending_uri': $result") if $debug;
+								mydebug("final download result for duplicated request: '%s': $result", $pending_uri) if $debug;
 								__my_write_socket($waiter_socket, $pending_uri, $result, $is_duplicated_download);
 								close($waiter_socket) or
 										mydie("unable to close waiter socket for uri '%s'", $pending_uri);
@@ -297,7 +297,7 @@ sub _worker ($) {
 					if (scalar @download_queue) {
 						# put next of waiting queries
 						($uri, $filename, $waiter_socket) = @{shift @download_queue};
-						mydebug("enqueue '$uri' from hold") if $debug;
+						mydebug("enqueue '%s' from hold", $uri) if $debug;
 						$proceed_next_download = 1;
 					}
 				}
@@ -311,12 +311,12 @@ sub _worker ($) {
 			}
 
 			$proceed_next_download or next;
-			mydebug("processing download '$uri'") if $debug;
+			mydebug("processing download '%s'", $uri) if $debug;
 
 			# check if this download was already done
 			if (exists $done_downloads{$uri}) {
 				my $result = $done_downloads{$uri};
-				mydebug("final result for duplicated download '$uri': $result") if $debug;
+				mydebug("final result for duplicated download '%s': $result", $uri) if $debug;
 				# just immediately end it
 				my $is_duplicated_download = 1;
 				__my_write_socket($waiter_socket, $uri, $result, $is_duplicated_download);
@@ -325,19 +325,19 @@ sub _worker ($) {
 				__my_write_socket($worker_writer, 'pop-download');
 				next;
 			} elsif (exists $active_downloads{$uri}) {
-				mydebug("pushed '$uri' to pending queue") if $debug;
+				mydebug("pushed '%s' to pending queue", $uri) if $debug;
 				push @pending_downloads, [ $uri, $waiter_socket ];
 				next;
 			} elsif (scalar keys %active_downloads >= $max_simultaneous_downloads_allowed) {
 				# put the query on hold
-				mydebug("put '$uri' on hold") if $debug;
+				mydebug("put '%s' on hold", $uri) if $debug;
 				push @download_queue, [ $uri, $filename, $waiter_socket ];
 				next;
 			}
 
 			# there is a space for new download, start it
 
-			mydebug("starting download '$uri'") if $debug;
+			mydebug("starting download '%s'", $uri) if $debug;
 			$target_filenames{$uri} = $filename;
 			# filling the active downloads hash
 			$active_downloads{$uri}->{waiter_socket} = $waiter_socket;
