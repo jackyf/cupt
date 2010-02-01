@@ -5,6 +5,9 @@ cupt (1.5.3~) UNRELEASED; urgency=low
       - Manager:
         - Fixed crash when downloading URIs containing mangled symbols in
           debug mode.
+    - Cache:
+      - When parsing source lists, don't crash if a source line contains only
+        one or two words.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 31 Jan 2010 14:39:37 +0200
 

@@ -728,6 +728,14 @@ sub __parse_source_list {
 
 		my %entry;
 		($entry{'type'}, $entry{'uri'}, $entry{'distribution'}, my @sections) = split ' ';
+
+		defined $entry{'type'} or
+				mydie("undefined source type at file '%s', line %u", $file, $.);
+		defined $entry{'uri'} or
+				mydie("undefined source URI at file '%s', line %u", $file, $.);
+		defined $entry{'distribution'} or
+				mydie("undefined source distribution at file '%s', line %u", $file, $.);
+
 		$entry{'uri'} =~ s{/$}{}; # strip last '/' if present
 
 		mydie("incorrect source type at file '%s', line %u", $file, $.)
