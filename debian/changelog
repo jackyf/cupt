@@ -1,4 +1,4 @@
-cupt (1.5.3~) UNRELEASED; urgency=low
+cupt (1.5.3) unstable; urgency=low
 
   * Cupt:
     - Download:
@@ -15,7 +15,7 @@ cupt (1.5.3~) UNRELEASED; urgency=low
       - Fixed calculating dependencies for 'remove' subactions of upgrade
         actions of indirectly upgradeable packages.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 31 Jan 2010 14:39:37 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 01 Feb 2010 20:47:06 +0200
 
 cupt (1.5.2) unstable; urgency=low
 
