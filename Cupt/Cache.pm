@@ -718,9 +718,10 @@ sub get_index_entries {
 
 sub __parse_source_list {
 	my ($file) = @_;
+
 	my @result;
-	open(HFILE, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
-	while (<HFILE>) {
+	open(my $fd, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
+	while (<$fd>) {
 		chomp;
 		# skip all empty lines and lines with comments
 		next if m/^\s*(?:#.*)?$/;
@@ -750,7 +751,8 @@ sub __parse_source_list {
 			push @result, { %entry };
 		}
 	}
-	close(HFILE) or mydie("unable to close file '%s': %s", $file, $!);
+	close($fd) or mydie("unable to close file '%s': %s", $file, $!);
+
 	return @result;
 }
 
