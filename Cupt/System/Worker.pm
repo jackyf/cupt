@@ -502,6 +502,10 @@ sub _fill_actions ($$\@) {
 		'purge' => [ 'remove' ],
 	);
 
+	# packages with indirect upgrades have explicit 'remove' action, so
+	# their 'remove' subactions are not fake
+	my @fake_exception_package_names = $self->_config->get_list('cupt::worker::allow-indirect-upgrade');
+
 	# convert all actions into inner ones
 	foreach my $user_action (keys %$ref_actions_preview) {
 		my $ref_actions_to_be_performed = $user_action_to_inner_actions{$user_action};
@@ -536,9 +540,12 @@ sub _fill_actions ($$\@) {
 					'action_name' => defined $version ? $inner_action : 'purge-config-files',
 				};
 				if ($inner_action eq 'remove' and scalar @$ref_actions_to_be_performed > 1) {
-					# this is fake 'remove' action which will be merged
-					# with 'unpack' unconditionally later
-					$ref_action->{'fake'} = 1;
+					my $package_name = $ref_package_entry->{'package_name'};
+					if (none { $_ eq $package_name } @fake_exception_package_names) {
+						# this is fake 'remove' action which will be merged
+						# with 'unpack' unconditionally later
+						$ref_action->{'fake'} = 1;
+					}
 				}
 
 				$graph->add_vertex($ref_action);

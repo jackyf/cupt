@@ -11,6 +11,9 @@ cupt (1.5.3~) UNRELEASED; urgency=low
     - Config:
       - get_list: return an empty list, not a list of one undefined entry in
         case of non-defined optional option.
+    - Worker:
+      - Fixed calculating dependencies for 'remove' subactions of upgrade
+        actions of indirectly upgradeable packages.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 31 Jan 2010 14:39:37 +0200
 
