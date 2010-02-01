@@ -350,7 +350,7 @@ sub get_list { ## no critic (RequireFinalReturn)
 	if (defined $self->_list_vars->{$option_name}) {
 		return @{$self->_list_vars->{$option_name}};
 	} elsif ($self->_is_optional_option($option_name)) {
-		return undef;
+		return ();
 	} else {
 		mydie("an attempt to get wrong list option '%s'", $option_name);
 	}

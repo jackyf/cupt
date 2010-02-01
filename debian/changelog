@@ -8,6 +8,9 @@ cupt (1.5.3~) UNRELEASED; urgency=low
     - Cache:
       - When parsing source lists, don't crash if a source line contains only
         one or two words.
+    - Config:
+      - get_list: return an empty list, not a list of one undefined entry in
+        case of non-defined optional option.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 31 Jan 2010 14:39:37 +0200
 
