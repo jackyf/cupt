@@ -614,79 +614,8 @@ sub _fill_action_dependencies ($$$$) {
 	return;
 }
 
-sub _build_actions_graph ($$) {
-	my ($self, $ref_actions_preview) = @_;
-
-	if (!defined $self->_desired_state) {
-		myinternaldie('worker desired state is not given');
-	}
-
-	# action = {
-	# 	'package_name' => package
-	# 	'version_string' => version_string,
-	# 	'action_name' => ('unpack' | 'configure' | 'remove')
-	# }
-	my $graph = Cupt::Graph->new();
-
-	$self->_fill_actions($ref_actions_preview, $graph);
-
-	# maybe, we have nothing to do?
-	return undef if scalar $graph->vertices() == 0;
-
-	# here we also adding adding fake-antiupgrades for all packages in the system
-	# which stay unmodified for the sake of getting inter-dependencies between
-	# the optional dependecies like
-	#
-	# 'abc' depends 'x | y', abc stays unmodified, x goes away, y is going to be installed
-	#
-	# here, action 'remove x' are dependent on 'install y' one and it gets
-	# introduced by
-	#
-	# 'install y' -> 'install abc' <-> 'remove abc' -> 'remove x'
-	#                {----------------------------}
-	#                            <merge>
-	# which goes into
-	#
-	# 'install y' -> 'remove x'
-	#
-	# moreover, we split the installed version into virtual version by one
-	# relation expression, so different relation expressions of the same real
-	# version don't interact with each other, otherwise we'd get a full cyclic
-	# mess
-	my @virtual_edges_to_be_eliminated;
-	do {
-		my @blacklisted_package_names;
-		# the black list
-		foreach my $ref_inner_action ($graph->vertices()) {
-			push @blacklisted_package_names, $ref_inner_action->{'version'}->package_name;
-		}
-		foreach my $version (@{$self->_cache->get_system_state()->export_installed_versions()}) {
-			my $package_name = $version->package_name;
-			next if any { $package_name eq $_ } @blacklisted_package_names;
-
-			foreach my $dependency_name (qw(pre_depends depends)) {
-				foreach my $relation_expression (@{$version->$dependency_name}) {
-					my $virtual_version = (bless [] => 'Cupt::Cache::BinaryVersion');
-					$virtual_version->package_name = "$package_name [" .
-							stringify_relation_expression($relation_expression) . ']';
-					$virtual_version->version_string = $version->version_string;
-					$virtual_version->pre_depends = [];
-					$virtual_version->depends = [];
-					$virtual_version->$dependency_name = [ $relation_expression ];
-					$virtual_version->conflicts = [];
-					$virtual_version->breaks = [];
-
-					my $from_vertex = { 'version' => $virtual_version, 'action_name' => 'configure', 'fake' => 1 };
-					my $to_vertex = { 'version' => $virtual_version, 'action_name' => 'remove', 'fake' => 1 };
-					# we don't add edge here, but add the vertexes to gain dependencies and
-					# save the vertexes order
-					$graph->add_vertex($from_vertex);
-					$graph->add_vertex($to_vertex);
-					push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
-				}
-			}
-		}
-	};
+sub _fill_graph_dependencies {
+	my ($self, $graph) = @_;
 
 	my %vertexes_by_package_name;
 	do { # building the action index for fast action search
@@ -768,6 +697,83 @@ sub _build_actions_graph ($$) {
 		}
 	}
 	$graph->delete_graph_attributes();
+}
+
+sub _build_actions_graph ($$) {
+	my ($self, $ref_actions_preview) = @_;
+
+	if (!defined $self->_desired_state) {
+		myinternaldie('worker desired state is not given');
+	}
+
+	# action = {
+	# 	'package_name' => package
+	# 	'version_string' => version_string,
+	# 	'action_name' => ('unpack' | 'configure' | 'remove')
+	# }
+	my $graph = Cupt::Graph->new();
+
+	$self->_fill_actions($ref_actions_preview, $graph);
+
+	# maybe, we have nothing to do?
+	return undef if scalar $graph->vertices() == 0;
+
+	# here we also adding adding fake-antiupgrades for all packages in the system
+	# which stay unmodified for the sake of getting inter-dependencies between
+	# the optional dependecies like
+	#
+	# 'abc' depends 'x | y', abc stays unmodified, x goes away, y is going to be installed
+	#
+	# here, action 'remove x' are dependent on 'install y' one and it gets
+	# introduced by
+	#
+	# 'install y' -> 'install abc' <-> 'remove abc' -> 'remove x'
+	#                {----------------------------}
+	#                            <merge>
+	# which goes into
+	#
+	# 'install y' -> 'remove x'
+	#
+	# moreover, we split the installed version into virtual version by one
+	# relation expression, so different relation expressions of the same real
+	# version don't interact with each other, otherwise we'd get a full cyclic
+	# mess
+	my @virtual_edges_to_be_eliminated;
+	do {
+		my @blacklisted_package_names;
+		# the black list
+		foreach my $ref_inner_action ($graph->vertices()) {
+			push @blacklisted_package_names, $ref_inner_action->{'version'}->package_name;
+		}
+		foreach my $version (@{$self->_cache->get_system_state()->export_installed_versions()}) {
+			my $package_name = $version->package_name;
+			next if any { $package_name eq $_ } @blacklisted_package_names;
+
+			foreach my $dependency_name (qw(pre_depends depends)) {
+				foreach my $relation_expression (@{$version->$dependency_name}) {
+					my $virtual_version = (bless [] => 'Cupt::Cache::BinaryVersion');
+					$virtual_version->package_name = "$package_name [" .
+							stringify_relation_expression($relation_expression) . ']';
+					$virtual_version->version_string = $version->version_string;
+					$virtual_version->pre_depends = [];
+					$virtual_version->depends = [];
+					$virtual_version->$dependency_name = [ $relation_expression ];
+					$virtual_version->conflicts = [];
+					$virtual_version->breaks = [];
+
+					my $from_vertex = { 'version' => $virtual_version, 'action_name' => 'configure', 'fake' => 1 };
+					my $to_vertex = { 'version' => $virtual_version, 'action_name' => 'remove', 'fake' => 1 };
+					# we don't add edge here, but add the vertexes to gain dependencies and
+					# save the vertexes order
+					$graph->add_vertex($from_vertex);
+					$graph->add_vertex($to_vertex);
+					push @virtual_edges_to_be_eliminated, [ $from_vertex, $to_vertex ];
+				}
+			}
+		}
+	};
+
+	$self->_fill_graph_dependencies($graph);
 
 	do { # unit all downgrades/upgrades
 		# list of packages affected
