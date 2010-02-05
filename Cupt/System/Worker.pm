@@ -699,6 +699,37 @@ sub _fill_graph_dependencies {
 	$graph->delete_graph_attributes();
 }
 
+sub __check_graph_pre_depends {
+	my ($graph) = @_;
+
+	# re-compute transitive matrix, it might become invalid after the merges
+	my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
+
+	foreach my $edge ($graph->edges()) {
+		my $ref_dependency_expressions = $graph->get_edge_attribute(@$edge, 'dependency_expressions');
+		next if not defined $ref_dependency_expressions;
+
+		my @pre_dependency_relation_expressions = map { $_->{'relation_expression'} }
+				(grep { $_->{'name'} eq 'pre_depends' } @$ref_dependency_expressions);
+		next unless scalar @pre_dependency_relation_expressions;
+
+		my ($from_vertex, $to_vertex) = @$edge;
+		if ($graph_transitive_closure->is_reachable($to_vertex, $from_vertex)) {
+			# bah! the pre-dependency cannot be overridden, it's a fatal error
+			# which is not worker's fail (at least, it shouldn't be)
+
+			my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
+			my @package_names_in_path = uniq map { $_->{'version'}->package_name } @path;
+
+			mywarn("the pre-dependency(ies) '%s' will be broken during the actions, the packages involved: %s",
+					stringify_relation_expressions(\@pre_dependency_relation_expressions),
+					join(', ', map { qq/'$_'/ } @package_names_in_path));
+		}
+	}
+
+	return undef;
+}
+
 sub _build_actions_graph ($$) {
 	my ($self, $ref_actions_preview) = @_;
 
@@ -876,32 +907,7 @@ sub _build_actions_graph ($$) {
 			}
 		}
 
-		do { # check pre-depends
-			# re-compute transitive matrix, it might become invalid after the merges
-			my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
-
-			foreach my $edge ($graph->edges()) {
-				my $ref_dependency_expressions = $graph->get_edge_attribute(@$edge, 'dependency_expressions');
-				next if not defined $ref_dependency_expressions;
-
-				my @pre_dependency_relation_expressions = map { $_->{'relation_expression'} }
-						(grep { $_->{'name'} eq 'pre_depends' } @$ref_dependency_expressions);
-				next unless scalar @pre_dependency_relation_expressions;
-
-				my ($from_vertex, $to_vertex) = @$edge;
-				if ($graph_transitive_closure->is_reachable($to_vertex, $from_vertex)) {
-					# bah! the pre-dependency cannot be overridden, it's a fatal error
-					# which is not worker's fail (at least, it shouldn't be)
-
-					my @path = $graph_transitive_closure->path_vertices($to_vertex, $from_vertex);
-					my @package_names_in_path = uniq map { $_->{'version'}->package_name } @path;
-
-					mywarn("the pre-dependency(ies) '%s' will be broken during the actions, the packages involved: %s",
-							stringify_relation_expressions(\@pre_dependency_relation_expressions),
-							join(', ', map { qq/'$_'/ } @package_names_in_path));
-				}
-			}
-		};
+		__check_graph_pre_depends($graph);
 	};
 
 	return $graph;
