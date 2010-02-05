@@ -877,42 +877,34 @@ sub _parse_extended_states {
 	# Package: perl
 	# Auto-Installed: 1
 
+	# but, rarely another fields may be present, we need to ignore them
+
 	eval {
 		my $package_name;
 		my $value;
 
-		open(STATES, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
-		while (<STATES>) {
+		local $/ = "\n\n";
+
+		open(my $fd, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
+		while (<$fd>) {
+			m'^Package: (.*?)$.*?^Auto-Installed: (.*?)$'sm or
+					mydie("bad chunk '%s' at file '%s'", $_, $file);
 			chomp;
 
-			# skipping newlines
-			next if $_ eq '';
+			$package_name = $1;
+			$value = $2;
 
-			do { # processing first line
-				m/^Package: (.*)/ or
-						mydie("bad package line at file '%s', line %u", $file, $.);
-
-				$package_name = $1;
-			};
-
-			do { # processing second line
-				my $value_line = <STATES>;
-				defined($value_line) or
-						mydie("no value line at file '%s' line %u", $file, $.);
-
-				$value_line =~ m/^Auto-Installed: (0|1)/ or
-						mydie("bad value line at file '%s' line %u", $file, $.);
-
-				$value = $1;
-			};
+			if ($value ne '0' and $value ne '1') {
+				mydie("bad value '%s' (should be 0 or 1) in chunk '%s' at file '%s'",
+						$value, $_, $file);
+			}
 
 			if ($value) {
 				# adding to storage
 				$self->[_extended_info_offset()]->{'automatically_installed'}->{$package_name} = $value;
 			}
 		}
-
-		close(STATES) or mydie("unable to close file '%s': %s", $file, $!);
+		close($fd) or mydie("unable to close file '%s': %s", $file, $!);
 	};
 	if (mycatch()) {
 		myerr('error while parsing extended states');
