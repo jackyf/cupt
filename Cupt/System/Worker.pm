@@ -603,7 +603,9 @@ sub _fill_action_dependencies ($$$$) {
 					if ($self->_config->get_bool('debug::worker')) {
 						my $slave_string = __stringify_inner_action($ref_slave_action);
 						my $master_string = __stringify_inner_action($ref_master_action);
-						mydebug("new action dependency: '$slave_string' -> '$master_string'");
+						my $reason = $dependency_name . ': ' .
+								stringify_relation_expression($relation_expression);
+						mydebug("new action dependency: '$slave_string' -> '$master_string', reason: '$reason'");
 					}
 
 					next SATISFYING_VERSIONS;
