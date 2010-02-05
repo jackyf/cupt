@@ -868,8 +868,6 @@ sub _build_actions_graph ($$) {
 			$graph->delete_vertex($from);
 		}
 
-		my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
-
 		if ($self->_config->get_bool('debug::worker')) {
 			foreach my $edge ($graph->edges()) {
 				my $slave_string = __stringify_inner_action($edge->[0]);
@@ -880,7 +878,7 @@ sub _build_actions_graph ($$) {
 
 		do { # check pre-depends
 			# re-compute transitive matrix, it might become invalid after the merges
-			$graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
+			my $graph_transitive_closure = Cupt::Graph::TransitiveClosure->new($graph);
 
 			foreach my $edge ($graph->edges()) {
 				my $ref_dependency_expressions = $graph->get_edge_attribute(@$edge, 'dependency_expressions');
