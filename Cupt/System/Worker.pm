@@ -580,12 +580,33 @@ sub _fill_action_dependencies ($$$$) {
 			);
 			# search for the appropriate action in action list
 			my $ref_search_index = $graph->get_graph_attribute('vertexes_by_package_name');
+			CURRENT_ACTION:
 			foreach my $ref_current_action (@{$ref_search_index->{$other_version->package_name}}) {
 				next if exists $ref_inner_action->{'fake'} and exists $ref_current_action->{'fake'};
 				if (__is_inner_actions_equal(\%candidate_action, $ref_current_action)) {
 					# it's it!
 					my $ref_master_action = $direction eq 'after' ? $ref_current_action : $ref_inner_action;
 					my $ref_slave_action = $direction eq 'after' ? $ref_inner_action : $ref_current_action;
+
+					if ($dependency_name eq 'conflicts') {
+						# this is Conflicts, in the case there are appropriate
+						# Replaces, the 'remove before' action dependency should not be created
+						my $master_version = $ref_master_action->{'version'};
+						my $slave_version = $ref_slave_action->{'version'};
+						foreach my $replaces_relation_expression (@{$master_version->replaces}) {
+							my $ref_replaces_satisfying_versions =
+									$self->_cache->get_satisfying_versions($replaces_relation_expression);
+
+							foreach my $replaces_version (@$ref_replaces_satisfying_versions) {
+								if ($replaces_version->package_name eq $slave_version->package_name and
+									$replaces_version->version_string eq $slave_version->version_string)
+								{
+									# yes, found Replaces, skip this action
+									next CURRENT_ACTION;
+								}
+							}
+						}
+					}
 
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 

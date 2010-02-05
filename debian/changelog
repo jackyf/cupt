@@ -3,6 +3,12 @@ cupt (1.5.4~) UNRELEASED; urgency=low
   * Cupt:
     - Cache:
       - Parsing extended states: don't choke on unexpected fields.
+    - System:
+      - Worker:
+        - Scheduling dpkg call sequence: fixed the false positive of
+          'unable to schedule circular actions: unpack ..., unpack...' error
+          in cases when specified Replaces are enough to "beat" mutual
+          conflicts problem.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 05 Feb 2010 19:00:03 +0200
 
