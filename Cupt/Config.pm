@@ -213,6 +213,7 @@ sub new {
 			'openjdk-6-jre',
 			'openjdk-6-jre-lib',
 			'openjdk-6-jre-headless',
+			'openoffice.org-core',
 		],
 	};
 
