@@ -174,6 +174,7 @@ sub new {
 		'aptlistbugs::*',
 		'unattended-upgrade::*',
 		'aptitude::*',
+		'dselect::*',
 
 		# used Cupt vars
 		'cupt::downloader::protocols::*::priority',
