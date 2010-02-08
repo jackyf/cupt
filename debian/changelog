@@ -1,4 +1,4 @@
-cupt (1.5.4~) UNRELEASED; urgency=low
+cupt (1.5.4) unstable; urgency=low
 
   * Cupt:
     - Cache:
@@ -14,7 +14,7 @@ cupt (1.5.4~) UNRELEASED; urgency=low
         are to be upgraded indirectly.
       - Added the option family 'DSelect::*'. (Closes: #568706)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 05 Feb 2010 19:00:03 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 08 Feb 2010 20:36:18 +0200
 
 cupt (1.5.3) unstable; urgency=low
 
