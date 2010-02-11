@@ -1,4 +1,4 @@
-cupt (1.5.5~) UNRELEASED; urgency=medium
+cupt (1.5.5) unstable; urgency=medium
 
   * Cupt:
     - Cache:
@@ -6,7 +6,7 @@ cupt (1.5.5~) UNRELEASED; urgency=medium
         (a regression since 1.5.4). Fixes FTBFS. (Closes: #569387).
         Urgency is set to 'medium' because of this fix.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 11 Feb 2010 21:58:00 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 11 Feb 2010 22:04:16 +0200
 
 cupt (1.5.4) unstable; urgency=low
 
