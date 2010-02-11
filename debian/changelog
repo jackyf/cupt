@@ -1,3 +1,13 @@
+cupt (1.5.5~) UNRELEASED; urgency=medium
+
+  * Cupt:
+    - Cache:
+      - Parsing extended states: fixed exiting with error on empty file
+        (a regression since 1.5.4). Fixes FTBFS. (Closes: #569387).
+        Urgency is set to 'medium' because of this fix.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 11 Feb 2010 21:58:00 +0200
+
 cupt (1.5.4) unstable; urgency=low
 
   * Cupt:

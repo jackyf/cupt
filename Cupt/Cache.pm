@@ -887,6 +887,8 @@ sub _parse_extended_states {
 
 		open(my $fd, '<', $file) or mydie("unable to open file '%s': %s", $file, $!);
 		while (<$fd>) {
+			m/^\s*(?:#.*|)$/ and next; # skip empty/comment lines
+
 			m'^Package: (.*?)$.*?^Auto-Installed: (.*?)$'sm or
 					mydie("bad chunk '%s' at file '%s'", $_, $file);
 			chomp;
