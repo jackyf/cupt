@@ -1452,8 +1452,39 @@ sub verify_signature ($$) {
 			}
 			when ('ERRSIG') {
 				# gpg was not able to verify signature
-				mywarn("gpg: '%s': could not verify signature: %s", $file, $message);
 				$verify_result = 0;
+
+				# maybe, public key was not found?
+				my $public_key_was_not_found = 0;
+				my $detail_string = $sub_gpg_readline->();
+				if (defined $detail_string) {
+					my ($detail_type, $detail_message) = ($detail_string =~ m/(\w+) (.*)/);
+					if ($detail_type eq 'NO_PUBKEY') {
+						$public_key_was_not_found = 1;
+
+						# the message looks like
+						#
+						# NO_PUBKEY D4F5CE00FA0E9B9D
+						#
+						# the best guess for getting the public key is second 8 hex digits within this string
+						my $public_key_number_detected = 0;
+						if (length($detail_message) == 16) {
+							my $public_key_number = substr($detail_message, 8, 8);
+							if ($public_key_number =~ m/^[0-9A-Z]{8}$/) {
+								$public_key_number_detected = 1;
+								mywarn("gpg: '%s': public key '%s' not found", $file, $public_key_number);
+							}
+						}
+
+						if (not $public_key_number_detected) {
+							mywarn("gpg: '%s': public key not found", $file);
+						}
+					}
+				}
+
+				if (not $public_key_was_not_found) {
+					mywarn("gpg: '%s': could not verify signature: %s", $file, $message);
+				}
 			}
 			when ('NODATA') {
 				# no signature
