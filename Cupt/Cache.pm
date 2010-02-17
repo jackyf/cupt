@@ -1491,6 +1491,10 @@ sub verify_signature ($$) {
 				mywarn("gpg: '%s': empty signature", $file);
 				$verify_result = 0;
 			}
+			when ('KEYEXPIRED') {
+				$verify_result = 0;
+				mywarn("gpg: '%s': expired key: %s", $file, $message);
+			}
 			default {
 				mywarn("gpg: '%s': unknown message received: %s %s", $file, $message_type, $message);
 				$verify_result = 0;
