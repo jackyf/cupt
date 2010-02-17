@@ -1492,7 +1492,8 @@ sub verify_signature ($$) {
 				$verify_result = 0;
 			}
 			default {
-				mydie("gpg: '%s': unknown message received: %s %s", $file, $message_type, $message);
+				mywarn("gpg: '%s': unknown message received: %s %s", $file, $message_type, $message);
+				$verify_result = 0;
 			}
 		}
 	} else {

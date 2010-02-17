@@ -2,8 +2,11 @@ cupt (1.5.6~) UNRELEASED; urgency=low
 
   * Cupt:
     - Cache:
-      - 'verify_signature': detect 'no public key' error from gpg and display
+      - 'verify_signature': detect 'no public key' error from gpgv and display
         better error message in this case.
+      - 'verify_signature': don't throw fatal error on unexpected messages
+        from gpgv. Thanks to Jean-Christophe Dubacq for the report.
+        (Closes: #570196)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 17 Feb 2010 20:10:35 +0200
 
