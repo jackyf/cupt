@@ -1421,7 +1421,7 @@ sub verify_signature ($$) {
 			when ('GOODSIG') {
 				my $further_info = $sub_gpg_readline->();
 				defined $further_info or
-						mydie("gpg: '%s': unfinished status");
+						mywarn("gpg: '%s': error: unfinished status");
 
 				my ($check_result_type, $check_message) = ($further_info =~ m/(\w+) (.*)/);
 				given ($check_result_type) {
@@ -1442,7 +1442,7 @@ sub verify_signature ($$) {
 						mywarn("gpg: '%s': revoked key: %s", $file, $check_message);
 					}
 					default {
-						mydie("gpg: '%s': unknown error: %s %s", $file, $check_result_type, $check_message);
+						mywarn("gpg: '%s': unknown error: %s %s", $file, $check_result_type, $check_message);
 					}
 				}
 			}
