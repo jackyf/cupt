@@ -1,4 +1,4 @@
-cupt (1.5.6~) UNRELEASED; urgency=low
+cupt (1.5.6) unstable; urgency=low
 
   * Cupt:
     - Cache:
@@ -10,7 +10,7 @@ cupt (1.5.6~) UNRELEASED; urgency=low
       - 'verify_signature': recognize 'KEYEXPIRED' gpgv message in addition to
         'EXPSIG' and 'EXPKEYSIG' ones.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 17 Feb 2010 20:10:35 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 20 Feb 2010 15:17:10 +0200
 
 cupt (1.5.5) unstable; urgency=medium
 
