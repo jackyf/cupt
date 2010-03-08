@@ -1,3 +1,13 @@
+cupt (1.5.7) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Config:
+      - Added packages 'openoffice.org-common', 'openoffice.org-java-common',
+        'openoffice.org-writer2latex' to the list of packages which are to be
+        upgraded indirectly. Thanks to Michael Stapelberg. (Closes: #573038)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 08 Mar 2010 19:03:18 +0200
+
 cupt (1.5.6) unstable; urgency=low
 
   * Cupt:

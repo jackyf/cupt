@@ -215,6 +215,9 @@ sub new {
 			'openjdk-6-jre-lib',
 			'openjdk-6-jre-headless',
 			'openoffice.org-core',
+			'openoffice.org-common',
+			'openoffice.org-writer2latex',
+			'openoffice.org-java-common',
 		],
 	};
 
