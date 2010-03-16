@@ -155,7 +155,6 @@ sub new {
 		$self->_system_state = Cupt::System::State->new($self->_config, $self);
 	}
 
-	my @index_files;
 	foreach my $ref_index_entry (@$ref_index_entries) {
 		my $index_file_to_parse = $self->get_path_of_index_list($ref_index_entry);
 		my $source_type = $ref_index_entry->{'type'};
@@ -184,7 +183,6 @@ sub new {
 
 				$self->_process_index_file($index_file_to_parse, $chosen_translation_file,
 						$source_type, $ref_release_info);
-				push @index_files, $index_file_to_parse;
 			};
 			if (mycatch()) {
 				mywarn("skipped index file '%s'", $index_file_to_parse);
