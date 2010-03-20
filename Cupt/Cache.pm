@@ -956,6 +956,9 @@ sub _process_index_file {
 			my $offset = tell($fh) - length($_);
 			my ($package_name) = m/^Package: (.*?)$/m;
 
+			defined $package_name or
+					mydie("unable to find package name");
+
 			# we skips 'Package: <...>' line additionally
 			$offset += length('Package: ') + length($package_name) + 1;
 
