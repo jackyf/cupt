@@ -97,6 +97,7 @@ sub new {
 
 		# unused APT vars
 		'apt::cache-limit' => undef,
+		'apt::get::build-dep-automatic' => 1,
 		'apt::get::show-upgraded' => 0,
 		'acquire::pdiffs' => 1,
 
