@@ -209,11 +209,13 @@ sub _merge_version {
 	my ($self, $parsed_version, $ref_result) = @_;
 
 	if (defined $self->[_binary_architecture_offset()] and ref $parsed_version eq 'Cupt::Cache::BinaryVersion') {
-		if ($parsed_version->architecture ne 'all' and
-			$parsed_version->architecture ne $self->[_binary_architecture_offset()])
-		{
-			# no need to keep it
-			return;
+		if (not $parsed_version->is_installed()) {
+			if ($parsed_version->architecture ne 'all' and
+				$parsed_version->architecture ne $self->[_binary_architecture_offset()])
+			{
+				# no need to keep it
+				return;
+			}
 		}
 	}
 

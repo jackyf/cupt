@@ -1,3 +1,13 @@
+cupt (1.5.9) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Cache:
+      - Package:
+        - Don't check binary architecture for installed packages. Thanks to
+          Julian Andres Klode for the report. (Closes: #574819)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 21 Mar 2010 15:56:50 +0200
+
 cupt (1.5.8) unstable; urgency=low
 
   * Cupt:
