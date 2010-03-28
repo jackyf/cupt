@@ -1337,6 +1337,31 @@ sub generate_management_prompt ($$$) {
 			}
 		};
 
+		do { # check for ignored holds
+			my @ignored_holds_package_names;
+			foreach my $action (qw(install upgrade downgrade remove purge)) {
+				my $ref_package_entries = $ref_actions_preview->{$action};
+				foreach my $ref_package_entry (@$ref_package_entries) {
+					my $package_name = $ref_package_entry->{'package_name'};
+					my $ref_installed_info =
+							$cache->get_system_state()->get_installed_info($package_name);
+					defined $ref_installed_info or next;
+					my $installed_version_string = $ref_installed_info->{'version_string'};
+					defined $installed_version_string or next;
+					if ($ref_installed_info->{'want'} eq 'hold') {
+						push @ignored_holds_package_names, $package_name;
+					}
+				}
+			}
+			if (scalar @ignored_holds_package_names) {
+				$is_dangerous_action = 1;
+				say sprintf __('WARNING! The following packages ON HOLD will change their state:');
+				say '';
+				say $_ for @ignored_holds_package_names;
+				say '';
+			}
+		};
+
 		do { # print size estimations
 			my ($total_bytes, $need_bytes) = $worker->get_download_sizes_preview($ref_actions_preview);
 			print sprintf __('Need to get %s/%s of archives. '),

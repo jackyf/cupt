@@ -4,6 +4,8 @@ cupt (1.5.9) UNRELEASED; urgency=low
     - help:
       - Clarified that 'safe-upgrade' command can remove automatically
         installed packages. Thanks to intrigeri@boum.org. (Closes: #575702)
+    - Action preview prompt:
+      - Display a warning in case of packages on hold to be modified.
   * Cupt:
     - Cache:
       - 'get_pin': obey version holds by default by honoring new
