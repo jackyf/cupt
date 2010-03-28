@@ -1,5 +1,9 @@
 cupt (1.5.9) UNRELEASED; urgency=low
 
+  * cupt:
+    - help:
+      - Clarified that 'safe-upgrade' command can remove automatically
+        installed packages. Thanks to intrigeri@boum.org. (Closes: #575702)
   * Cupt:
     - Cache:
       - Package:
