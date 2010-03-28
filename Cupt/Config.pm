@@ -103,6 +103,7 @@ sub new {
 
 		# Cupt vars
 		'acquire::http::allow-redirects' => 1,
+		'cupt::cache::obey-hold' => 1000000,
 		'cupt::console::allow-untrusted' => 0,
 		'cupt::console::assume-yes' => 0,
 		'cupt::directory::state' => 'var/lib/cupt',

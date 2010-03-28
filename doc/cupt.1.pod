@@ -875,6 +875,15 @@ Thirdly, Cupt introduces following cupt-specific configuration variables:
 boolean (0/1), specifies whether should downloader follow HTTP redirects.
 True by default.
 
+=item cupt::cache::obey-hold
+
+integer, specifies priority increase for versions that are put on hold.
+Defaults to 1000000. Set this option to 0 if you do not want to obey holds.
+You may want to increase this option in (very unlikely to happen) situations:
+when you have thousands of manually installed packages and very large query;
+when you have a manually crafted pin priorities system with very large pin
+values.
+
 =item cupt::console::allow-untrusted
 
 don't treat using untrusted packages as dangerous action

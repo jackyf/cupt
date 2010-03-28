@@ -6,11 +6,15 @@ cupt (1.5.9) UNRELEASED; urgency=low
         installed packages. Thanks to intrigeri@boum.org. (Closes: #575702)
   * Cupt:
     - Cache:
+      - 'get_pin': obey version holds by default by honoring new
+        'cupt::cache::obey-hold' option. Thanks to intrigeri@boum.org.
+        (Closes: #575704)
       - Package:
         - Don't check binary architecture for installed packages. Thanks to
           Julian Andres Klode for the report. (Closes: #574819)
     - Config:
       - Recognize 'apt::get::build-dep-automatic' option.
+      - New 'cupt::cache::obey-hold' option.
     - System:
       - Worker:
         - Set the process umask to 022. Thanks to intrigeri@boum.org.
