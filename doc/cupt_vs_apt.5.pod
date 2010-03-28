@@ -126,8 +126,8 @@ PDiffs are not supported
 
 =item
 
-to explicitly disable proxy, set 'acquire::<protocol>::[<host::]proxy' to "",
-not to "DIRECT"
+setting 'acquire::<protocol>::[<host::]proxy' to "" is equivalent to setting it
+to "DIRECT"
 
 =item
 

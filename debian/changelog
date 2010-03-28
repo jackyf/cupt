@@ -24,6 +24,11 @@ cupt (1.5.9) UNRELEASED; urgency=low
       - Worker:
         - Set the process umask to 022. Thanks to intrigeri@boum.org.
           (Closes: #575700)
+    - Download:
+      - Method:
+        - 'get_acquire_suboption_for_uri': setting
+          'acquire::<protocol>::[<host::]proxy' to "DIRECT" to disable it
+          is now supported too.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 21 Mar 2010 15:56:50 +0200
 
