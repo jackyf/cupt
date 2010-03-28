@@ -49,7 +49,7 @@ use Cupt::System::Worker::Lock;
 
 my $_download_partial_suffix = '/partial';
 
-use Cupt::LValueFields qw(_config _cache _system_state _desired_state _lock);
+use Cupt::LValueFields qw(_config _cache _system_state _desired_state _lock _umask);
 
 =head1 METHODS
 
@@ -72,6 +72,8 @@ sub new {
 	$self->_cache = shift;
 	$self->_system_state = $self->_cache->get_system_state();
 	$self->_desired_state = undef;
+
+	$self->_umask = umask(0022);
 	$self->_lock = Cupt::System::Worker::Lock->new($self->_config,
 			$self->_config->get_string('dir') . $self->_config->get_string('cupt::directory::state') . '/lock');
 	$self->_lock->obtain();
@@ -85,6 +87,7 @@ sub DESTROY {
 	my ($self) = @_;
 
 	$self->_lock->release();
+	umask($self->_umask);
 
 	return;
 }

@@ -11,6 +11,10 @@ cupt (1.5.9) UNRELEASED; urgency=low
           Julian Andres Klode for the report. (Closes: #574819)
     - Config:
       - Recognize 'apt::get::build-dep-automatic' option.
+    - System:
+      - Worker:
+        - Set the process umask to 022. Thanks to intrigeri@boum.org.
+          (Closes: #575700)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 21 Mar 2010 15:56:50 +0200
 
