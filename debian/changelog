@@ -15,6 +15,9 @@ cupt (1.5.9) UNRELEASED; urgency=low
         - Don't check binary architecture for installed packages. Thanks to
           Julian Andres Klode for the report. (Closes: #574819)
     - Config:
+      - ISCConfigParser:
+        - Allow '.' character in option names. Thanks to intrigeri@boum.org.
+          (Closes: #575715)
       - Recognize 'apt::get::build-dep-automatic' option.
       - New 'cupt::cache::obey-hold' option.
     - System:
