@@ -126,7 +126,7 @@ PDiffs are not supported
 
 =item
 
-setting 'acquire::<protocol>::[<host::]proxy' to "" is equivalent to setting it
+setting 'acquire::<protocol>::[<host>::]proxy' to "" is equivalent to setting it
 to "DIRECT"
 
 =item
