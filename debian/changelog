@@ -1,4 +1,4 @@
-cupt (1.5.9) UNRELEASED; urgency=low
+cupt (1.5.9) unstable; urgency=low
 
   * cupt:
     - help:
@@ -30,7 +30,7 @@ cupt (1.5.9) UNRELEASED; urgency=low
           'acquire::<protocol>::[<host::]proxy' to "DIRECT" to disable it
           is now supported too.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 21 Mar 2010 15:56:50 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 03 Apr 2010 17:56:29 +0300
 
 cupt (1.5.8) unstable; urgency=low
 
