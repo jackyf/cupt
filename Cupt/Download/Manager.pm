@@ -34,7 +34,7 @@ use IO::Select;
 use IO::Pipe;
 use IO::Socket::UNIX;
 use POSIX;
-use Time::HiRes qw(setitimer ITIMER_REAL);
+use Time::HiRes qw(setitimer ITIMER_VIRTUAL);
 use URI;
 
 use Cupt::LValueFields qw(_config _progress _worker_pid _server_socket
@@ -160,10 +160,18 @@ sub _worker ($) {
 	my $exit_flag = 0;
 
 	# setting progress ping timer
-	local $SIG{ALRM} = sub { __my_write_socket($worker_writer, 'progress', '', 'ping') };
-	setitimer(ITIMER_REAL, 0.25, 0.25);
+	#
+	# unfortunately, Perl has no signalfd() wrapper so we can use it in IO::Select dispatcher
+	# so, to avoid potential clash with simulateneously writing to $worker_writer in a signal
+	# and in the processing thread, create another pair of sockets
+	pipe(my $worker_ping_reader, my $worker_ping_writer);
+	$worker_ping_writer->autoflush(1);
+	local $SIG{VTALRM} = sub {
+		__my_write_socket($worker_ping_writer, 'progress', '', 'ping')
+	};
+	setitimer(ITIMER_VIRTUAL, 0.03, 0.03);
 
-	my @persistent_sockets = ($worker_reader, $self->_parent_pipe, $self->_server_socket);
+	my @persistent_sockets = ($worker_reader, $worker_ping_reader, $self->_parent_pipe, $self->_server_socket);
 	my @runtime_sockets;
 
 	# while caller may set exit flag, we should continue processing as long as
@@ -377,13 +385,15 @@ sub _worker ($) {
 		}
 	}
 	# disabling timer
-	local $SIG{ALRM} = sub {};
-	setitimer(ITIMER_REAL, 0, 0);
+	local $SIG{VTALRM} = sub {};
+	setitimer(ITIMER_VIRTUAL, 0, 0);
 	# finishing progress
 	$self->_progress->finish();
 
 	close($worker_reader) or mydie("unable to close worker's own reader socket: %s", $!);
 	close($worker_writer) or mydie("unable to close worker's own writer socket: %s", $!);
+	close($worker_ping_reader) or mydie("unable to close worker's ping reader socket: %s", $!);
+	close($worker_ping_writer) or mydie("unable to close worker's ping writer socket: %s", $!);
 	mydebug('download worker process finished') if $debug;
 	POSIX::_exit(0);
 	return;

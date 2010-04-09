@@ -1,3 +1,14 @@
+cupt (1.5.10) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Download:
+      - Manager:
+        - Use ITIMER_VIRTUAL instead of ITIMER_REAL for ping signals.
+        - Use dedicated pipe in ping signal handler. I believe, it
+          Closes: #554620. Many thanks to James Vega.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 09 Apr 2010 23:03:21 +0300
+
 cupt (1.5.9) unstable; urgency=low
 
   * cupt:
