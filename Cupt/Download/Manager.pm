@@ -169,7 +169,7 @@ sub _worker ($) {
 	local $SIG{VTALRM} = sub {
 		__my_write_socket($worker_ping_writer, 'progress', '', 'ping')
 	};
-	setitimer(ITIMER_VIRTUAL, 0.03, 0.03);
+	setitimer(ITIMER_VIRTUAL, 0.25, 0.25);
 
 	my @persistent_sockets = ($worker_reader, $worker_ping_reader, $self->_parent_pipe, $self->_server_socket);
 	my @runtime_sockets;
