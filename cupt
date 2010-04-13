@@ -876,6 +876,10 @@ sub why ($) {
 			mydie('no binary packages specified');
 
 
+	if (scalar @ARGV == 1) {
+		$o_installed_only = 1;
+	}
+
 	build_cache(-source => 0, -binary => !$o_installed_only, -installed => 1);
 
 	my $leaf_package_expression = pop @ARGV;

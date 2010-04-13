@@ -1,5 +1,8 @@
 cupt (1.5.10) UNRELEASED; urgency=low
 
+  * cupt
+    - 'why': if received only one argument, assume --installed-only.
+      Thanks to James Vega for spotting. (Closes: #577646)
   * Cupt:
     - Download:
       - Manager:
