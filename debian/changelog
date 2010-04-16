@@ -9,6 +9,9 @@ cupt (1.5.10) UNRELEASED; urgency=low
         - Use ITIMER_VIRTUAL instead of ITIMER_REAL for ping signals.
         - Use dedicated pipe in ping signal handler. I believe, it
           Closes: #554620. Many thanks to James Vega.
+    - Cache:
+      - 'verify_signature': rewrote error handling, added missing input
+        checks.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 09 Apr 2010 23:03:21 +0300
 

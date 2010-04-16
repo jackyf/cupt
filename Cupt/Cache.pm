@@ -1381,57 +1381,64 @@ sub verify_signature ($$) {
 
 	my $signature_file = "$file.gpg";
 	mydebug("signature file is '%s'", $signature_file) if $debug;
+
 	-r $signature_file or
 			do {
 				mydebug("unable to read signature file '%s'", $signature_file) if $debug;
 				return 0;
 			};
 
-	-e $keyring_file or
-			do {
-				mywarn("keyring file '%s' doesn't exist", $keyring_file);
-				return 0;
-			};
-	-r $keyring_file or
-			do {
-				mywarn("no read rights on keyring file '%s', please do 'chmod +r %s' with root rights",
-						$keyring_file, $keyring_file);
-				return 0;
-			};
-
-	open(GPG_VERIFY, 'gpgv --status-fd 1 ' .
-			"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
-			mydie('unable to open gpg pipe: %s', $!);
-	my $sub_gpg_readline = sub {
-		my $result;
-		do {
-			$result = readline(GPG_VERIFY);
-			if (defined $result) {
-				chomp $result;
-				mydebug("fetched '%s' from gpg pipe", $result) if $debug;
-			}
-		} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or ($result !~ m/^\[GNUPG:\]/)));
-
-		if (!defined $result) {
-			return undef;
-		} else {
-			$result =~ s/^\[GNUPG:\] //;
-			return $result;
-		}
-	};
 	my $verify_result;
+	eval {
+		-e $keyring_file or
+				mydie("keyring file '%s' doesn't exist", $keyring_file);
+		-r $keyring_file or
+				mydie("no read rights on keyring file '%s', please do 'chmod +r %s' with root rights",
+							$keyring_file, $keyring_file);
 
-	my $status_string = $sub_gpg_readline->();
-	if (defined $status_string) {
+		open(GPG_VERIFY, 'gpgv --status-fd 1 ' .
+				"--keyring $keyring_file $signature_file $file 2>/dev/null |") or
+				mydie('unable to open gpg pipe: %s', $!);
+		my $sub_gpg_readline = sub {
+			my $result;
+			do {
+				$result = readline(GPG_VERIFY);
+				if (defined $result) {
+					chomp $result;
+					mydebug("fetched '%s' from gpg pipe", $result) if $debug;
+				}
+			} while (defined $result and (($result =~ m/^\[GNUPG:\] SIG_ID/) or ($result !~ m/^\[GNUPG:\]/)));
+
+			if (!defined $result) {
+				return undef;
+			} else {
+				$result =~ s/^\[GNUPG:\] //;
+				return $result;
+			}
+		};
+
+		my $status_string = $sub_gpg_readline->();
+		if (not defined $status_string) {
+			# no info from gpg at all
+			mydie("gpg: '%s': no info received", $file);
+		}
+
 		# first line ought to be validness indicator
 		my ($message_type, $message) = ($status_string =~ m/(\w+) (.*)/);
+		if (not defined $message_type or not defined $message) {
+			mydie("gpg: '%s': invalid status string '%s'", $file, $status_string);
+		}
+
 		given ($message_type) {
 			when ('GOODSIG') {
 				my $further_info = $sub_gpg_readline->();
 				defined $further_info or
-						mywarn("gpg: '%s': error: unfinished status");
+						mydie("gpg: '%s': error: unfinished status");
 
 				my ($check_result_type, $check_message) = ($further_info =~ m/(\w+) (.*)/);
+				if (not defined $check_result_type or not defined $check_message) {
+					mydie("gpg: '%s': invalid further info string '%s'", $file, $further_info);
+				}
 				given ($check_result_type) {
 					when ('VALIDSIG') {
 						# no comments :)
@@ -1467,6 +1474,9 @@ sub verify_signature ($$) {
 				my $detail_string = $sub_gpg_readline->();
 				if (defined $detail_string) {
 					my ($detail_type, $detail_message) = ($detail_string =~ m/(\w+) (.*)/);
+					if (not defined $detail_type or not defined $detail_message) {
+						mydie("gpg: '%s': invalid detailed info string '%s'", $file, $detail_string);
+					}
 					if ($detail_type eq 'NO_PUBKEY') {
 						$public_key_was_not_found = 1;
 
@@ -1508,14 +1518,14 @@ sub verify_signature ($$) {
 				$verify_result = 0;
 			}
 		}
-	} else {
-		# no info from gpg at all
+
+		close(GPG_VERIFY) or $! == 0 or
+				mydie('unable to close gpg pipe: %s', $!);
+	};
+	if (mycatch()) {
 		mywarn("error while verifying signature for file '%s'", $file);
 		$verify_result = 0;
 	}
-
-	close(GPG_VERIFY) or $! == 0 or
-			mydie('unable to close gpg pipe: %s', $!);
 
 	mydebug('the verify result is %u', $verify_result) if $debug;
 	return $verify_result;
