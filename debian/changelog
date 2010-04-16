@@ -3,6 +3,7 @@ cupt (1.5.10) UNRELEASED; urgency=low
   * cupt
     - 'why': if received only one argument, assume --installed-only.
       Thanks to James Vega for spotting. (Closes: #577646)
+    - 'show': add '(on hold)' to the 'Status' line if the package is on hold.
   * Cupt:
     - Download:
       - Manager:

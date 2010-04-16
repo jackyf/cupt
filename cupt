@@ -517,8 +517,20 @@ sub show_binary_package_versions () {
 			my $package_name = $version->package_name;
 			$p->(__('Package'), $package_name);
 			$p->(__('Version'), $version->version_string);
-			my $installed_status = $cache->get_system_state()->get_status_for_version($version);
-			$p->(__('Status'), defined($installed_status) ? $installed_status->{'status'} : 'not installed');
+			do {
+				my $installed_status = $cache->get_system_state()->get_status_for_version($version);
+				my $status;
+				if (defined $installed_status) {
+					$status = $installed_status->{'status'};
+					if ($installed_status->{'want'} eq 'hold')
+					{
+						$status .= ' (' . __('on hold') . ')';
+					}
+				} else {
+					$status = 'not installed';
+				}
+				$p->(__('Status'), $status);
+			};
 			if ($version->is_installed()) {
 				my $is_auto_installed = $cache->is_automatically_installed($package_name);
 				$p->(__('Automatically installed'), $is_auto_installed ? __('yes') : __('no'));
