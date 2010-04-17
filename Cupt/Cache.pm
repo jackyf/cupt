@@ -1433,7 +1433,7 @@ sub verify_signature ($$) {
 			when ('GOODSIG') {
 				my $further_info = $sub_gpg_readline->();
 				defined $further_info or
-						mydie("gpg: '%s': error: unfinished status");
+						mydie("gpg: '%s': error: unfinished status", $file);
 
 				my ($check_result_type, $check_message) = ($further_info =~ m/(\w+) (.*)/);
 				if (not defined $check_result_type or not defined $check_message) {
