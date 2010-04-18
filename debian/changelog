@@ -1,4 +1,4 @@
-cupt (1.5.10) UNRELEASED; urgency=low
+cupt (1.5.10) unstable; urgency=low
 
   * cupt
     - 'why': if received only one argument, assume --installed-only.
@@ -14,7 +14,7 @@ cupt (1.5.10) UNRELEASED; urgency=low
       - 'verify_signature': rewrote error handling, added missing input
         checks.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 09 Apr 2010 23:03:21 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 18 Apr 2010 11:02:47 +0300
 
 cupt (1.5.9) unstable; urgency=low
 
