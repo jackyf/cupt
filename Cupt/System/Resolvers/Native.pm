@@ -251,7 +251,7 @@ sub _install_version_no_stick ($$$) {
 		return sprintf __("unable to re-schedule package '%s'"), $package_name;
 	}
 
-	my $o_synchronize_source_versions = $self->config->get_bool('cupt::resolver::synchronize-source-versions');
+	my $o_synchronize_source_versions = $self->config->get_string('cupt::resolver::synchronize-source-versions');
 	if ($o_synchronize_source_versions eq 'hard') {
 		# need to check is the whole operation doable
 		if (!$self->_related_packages_can_be_synchronized($self->_initial_solution, $version)) {
