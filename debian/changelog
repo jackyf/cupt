@@ -1,3 +1,13 @@
+cupt (1.5.11) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Cache:
+      - Parsing preferences: silently ignore files in preferences directory
+        that don't conform to apt_preferences(5). Thanks to Eduard Bloch.
+        (Closes: #578681)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 21 Apr 2010 22:28:47 +0300
+
 cupt (1.5.10) unstable; urgency=low
 
   * cupt

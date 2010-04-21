@@ -1300,6 +1300,13 @@ sub _parse_preferences {
 	my $parts_dir = $self->_config->get_string('dir::etc::preferencesparts');
 	my @preference_files = glob("$root_prefix$etc_dir/$parts_dir/*");
 
+	@preference_files = grep {
+		(my $name = $_) =~ s{.*/}{}; # cutting directory name
+		$name =~ m/^[A-Za-z0-9_.-]+$/
+			and
+		($name !~ m/\./ or $name =~ m/.pref$/) # an extension, if exist, should be 'pref'
+	} @preference_files;
+
 	my $main_file = $self->_config->get_string('dir::etc::preferences');
 	my $main_file_path = "$root_prefix$etc_dir/$main_file";
 	push @preference_files, $main_file_path if -r $main_file_path;
