@@ -1304,7 +1304,7 @@ sub _parse_preferences {
 		(my $name = $_) =~ s{.*/}{}; # cutting directory name
 		$name =~ m/^[A-Za-z0-9_.-]+$/
 			and
-		($name !~ m/\./ or $name =~ m/.pref$/) # an extension, if exist, should be 'pref'
+		($name !~ m/\./ or $name =~ m/\.pref$/) # an extension, if exist, should be 'pref'
 	} @preference_files;
 
 	my $main_file = $self->_config->get_string('dir::etc::preferences');
