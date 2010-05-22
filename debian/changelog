@@ -1,3 +1,13 @@
+cupt (1.5.12~) UNRELEASED; urgency=low
+
+  * Cupt:
+    - System:
+      - Worker:
+        - Ignore Replaces when building new dependency edge because of
+          Conlifcts. Dpkg purposedly violates the §7.6.2 of Debian policy.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 22 May 2010 15:18:27 +0300
+
 cupt (1.5.11) unstable; urgency=low
 
   * Cupt:

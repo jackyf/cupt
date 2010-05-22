@@ -591,26 +591,6 @@ sub _fill_action_dependencies ($$$$) {
 					my $ref_master_action = $direction eq 'after' ? $ref_current_action : $ref_inner_action;
 					my $ref_slave_action = $direction eq 'after' ? $ref_inner_action : $ref_current_action;
 
-					if ($dependency_name eq 'conflicts') {
-						# this is Conflicts, in the case there are appropriate
-						# Replaces, the 'remove before' action dependency should not be created
-						my $master_version = $ref_master_action->{'version'};
-						my $slave_version = $ref_slave_action->{'version'};
-						foreach my $replaces_relation_expression (@{$master_version->replaces}) {
-							my $ref_replaces_satisfying_versions =
-									$self->_cache->get_satisfying_versions($replaces_relation_expression);
-
-							foreach my $replaces_version (@$ref_replaces_satisfying_versions) {
-								if ($replaces_version->package_name eq $slave_version->package_name and
-									$replaces_version->version_string eq $slave_version->version_string)
-								{
-									# yes, found Replaces, skip this action
-									next CURRENT_ACTION;
-								}
-							}
-						}
-					}
-
 					$graph->add_edge($ref_slave_action, $ref_master_action);
 
 					# adding relation to attributes
