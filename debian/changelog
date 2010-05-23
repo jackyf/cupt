@@ -1,4 +1,4 @@
-cupt (1.5.12~) UNRELEASED; urgency=low
+cupt (1.5.12) unstable; urgency=low
 
   * Cupt:
     - System:
@@ -6,7 +6,7 @@ cupt (1.5.12~) UNRELEASED; urgency=low
         - Ignore Replaces when building new dependency edge because of
           Conlifcts. Dpkg purposedly violates the §7.6.2 of Debian policy.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 22 May 2010 15:18:27 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 23 May 2010 16:43:41 +0300
 
 cupt (1.5.11) unstable; urgency=low
 
