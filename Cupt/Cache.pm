@@ -774,7 +774,7 @@ sub _parse_preference_file {
 
 	# we are parsing triads like:
 
-	# Package: perl
+	# Package: perl perl-modules
 	# Pin: o=debian,a=unstable
 	# Pin-Priority: 800
 
@@ -800,6 +800,7 @@ sub _parse_preference_file {
 			my $name_type = ($1 eq 'Package' ? 'package_name' : 'source_package_name');
 			my $name_value = $2;
 			glob_to_regex($name_value);
+			$name_value =~ s'\\ '|'g; # converting space separators into regex's OR
 
 			$pin_result{$name_type} = $name_value;
 		};

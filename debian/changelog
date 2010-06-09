@@ -1,3 +1,13 @@
+cupt (1.5.13) UNRELEASED; urgency=low
+
+  * Cupt:
+    - Cache:
+      - Reading APT preferences: handle multiple package names, separated by
+        spaces, correctly. Thanks to Julian Andres Klode for the report.
+        (Closes: #585017)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 09 Jun 2010 17:30:51 +0300
+
 cupt (1.5.12) unstable; urgency=low
 
   * Cupt:
