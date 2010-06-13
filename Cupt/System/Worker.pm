@@ -1229,13 +1229,10 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 			} elsif ($action_name eq 'remove') {
 				# and for this...
 				$filename = '**REMOVE**';
-			} else { # unpack or install
+			} else { # unpack
 				$filename = $self->_get_archives_directory() . '/' . __get_archive_basename($action_version);
 			}
 			$result .= "$package_name $old_version_string < $new_version_string $filename\n";
-			if ($action_name eq 'install') {
-				$result .= "$package_name $old_version_string < $new_version_string **CONFIGURE**\n";
-			}
 		}
 	}
 
