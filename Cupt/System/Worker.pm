@@ -1232,7 +1232,7 @@ sub _generate_stdin_for_preinstall_hooks_version2 ($$) {
 			} else { # unpack
 				$filename = $self->_get_archives_directory() . '/' . __get_archive_basename($action_version);
 			}
-			$result .= "$package_name $old_version_string < $new_version_string $filename\n";
+			$result .= "$package_name $old_version_string $compare_version_strings_sign $new_version_string $filename\n";
 		}
 	}
 

@@ -5,6 +5,10 @@ cupt (1.5.13) UNRELEASED; urgency=low
       - Reading APT preferences: handle multiple package names, separated by
         spaces, correctly. Thanks to Julian Andres Klode for the report.
         (Closes: #585017)
+    - System:
+      - Worker:
+        - Fixed passing version comparison result for pre-install hooks of
+          version 2 in case of removals, re-installs and downgrades.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 09 Jun 2010 17:30:51 +0300
 
