@@ -9,6 +9,8 @@ cupt (1.5.13) UNRELEASED; urgency=low
       - Worker:
         - Fixed passing version comparison result for pre-install hooks of
           version 2 in case of removals, re-installs and downgrades.
+        - In case of circular actions error, suggest to add failed packages
+          to 'cupt::worker::allow-indirect-upgrade' option.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 09 Jun 2010 17:30:51 +0300
 

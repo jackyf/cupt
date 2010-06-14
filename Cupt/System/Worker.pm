@@ -962,8 +962,9 @@ sub __split_heterogeneous_actions (@) {
 						any { $_->{'action_name'} ne $first_action_name } @$ref_action_subgroup)
 					{
 						# ooh, mixed circular dependency? no-go
-						mydie("unable to schedule circular actions '%s'",
+						myerr("unable to schedule circular actions '%s'",
 								join(', ', map { __stringify_inner_action($_) } @$ref_action_subgroup));
+						mydie("you may try to work around by adding one or more affected packages to the 'cupt::worker::allow-indirect-upgrade' configuration variable");
 					}
 				}
 
