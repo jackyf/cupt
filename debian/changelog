@@ -1,4 +1,4 @@
-cupt (1.5.13) UNRELEASED; urgency=low
+cupt (1.5.13) unstable; urgency=low
 
   * Cupt:
     - Cache:
@@ -12,7 +12,7 @@ cupt (1.5.13) UNRELEASED; urgency=low
         - In case of circular actions error, suggest to add failed packages
           to 'cupt::worker::allow-indirect-upgrade' option.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 09 Jun 2010 17:30:51 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 14 Jun 2010 21:45:29 +0300
 
 cupt (1.5.12) unstable; urgency=low
 
