@@ -139,3 +139,13 @@ to prioritize compression types, use option 'cupt::update::compression-types',
 not 'acquire::compression-types'
 
 =back
+
+=head2 Pinning
+
+=over
+
+=item
+
+the difference between 'specific' and 'general' pin types is not supported
+
+=back

@@ -1,3 +1,12 @@
+cupt (1.5.14) UNRELEASED; urgency=low
+
+  * doc:
+    - cupt_vs_apt:
+      - Documented not handling the difference between 'specific' and
+        'general' APT pin types. (Closes: #586347)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 07 Jul 2010 10:09:36 +0300
+
 cupt (1.5.13) unstable; urgency=low
 
   * Cupt:
