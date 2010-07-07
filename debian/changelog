@@ -4,6 +4,10 @@ cupt (1.5.14) UNRELEASED; urgency=low
     - cupt_vs_apt:
       - Documented not handling the difference between 'specific' and
         'general' APT pin types. (Closes: #586347)
+  * Cupt:
+    - Cache:
+      - ArchitecturedRelation:
+        - Implemented architecture wildcards support. (Closes: #587354)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 07 Jul 2010 10:09:36 +0300
 

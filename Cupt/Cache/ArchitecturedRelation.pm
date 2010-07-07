@@ -97,6 +97,21 @@ sub stringify {
 
 =head1 FREE SUBROUTINES
 
+=cut
+
+sub match_architecture_wildcard {
+	my ($architecture, $wildcard) = @_;
+	state %cache;
+
+	if (defined $cache{$architecture,$wildcard}) {
+		return $cache{$architecture,$wildcard};
+	} else {
+		my $result = !system("dpkg-architecture -a$architecture -i$wildcard");
+		$cache{$architecture,$wildcard} = $result;
+		return $result;
+	}
+}
+
 =head2 unarchitecture_relation_expressions
 
 free subroutine, converts array of architectured relation expressions to array
@@ -122,7 +137,9 @@ sub unarchitecture_relation_expressions ($$) {
 			# negative architecture specifications, see Debian Policy §7.1
 			foreach my $architecture (@architectures) {
 				$architecture =~ s/^!//;
-				if ($current_architecture eq $architecture) {
+				if ($current_architecture eq $architecture or
+				    match_architecture_wildcard($current_architecture, $architecture))
+				{
 					# not our case
 					return 0;
 				}
@@ -131,7 +148,11 @@ sub unarchitecture_relation_expressions ($$) {
 		} else {
 			# positive architecture specifications, see Debian Policy §7.1
 			foreach my $architecture (@architectures) {
-				if ($current_architecture eq $architecture) {
+				my $wildcard = $architecture;
+				$wildcard =~ s/^any$/.*/g;
+				if ($current_architecture eq $architecture or
+				    match_architecture_wildcard($current_architecture, $architecture))
+				{
 					# our case
 					return 1;
 				}
