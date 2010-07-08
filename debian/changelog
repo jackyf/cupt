@@ -8,6 +8,8 @@ cupt (1.5.14) UNRELEASED; urgency=low
     - Cache:
       - ArchitecturedRelation:
         - Implemented architecture wildcards support. (Closes: #587354)
+  * debian/control:
+    - Bumped Standards-Version to 3.9.0, no changes needed.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 07 Jul 2010 10:09:36 +0300
 
