@@ -1,4 +1,4 @@
-cupt (1.5.14) UNRELEASED; urgency=low
+cupt (1.5.14) unstable; urgency=low
 
   * doc:
     - cupt_vs_apt:
@@ -11,7 +11,7 @@ cupt (1.5.14) UNRELEASED; urgency=low
   * debian/control:
     - Bumped Standards-Version to 3.9.0, no changes needed.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 07 Jul 2010 10:09:36 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 08 Jul 2010 21:20:35 +0300
 
 cupt (1.5.13) unstable; urgency=low
 
