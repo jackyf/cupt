@@ -1,10 +1,10 @@
-cupt (1.5.14.1) UNRELEASED; urgency=low
+cupt (1.5.14.1) unstable; urgency=low
 
   * Cupt:
     - Config:
       - Fixed ignoring 'APT::Never-MarkAuto-Sections' option.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 25 Sep 2010 21:24:53 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 25 Sep 2010 22:17:33 +0300
 
 cupt (1.5.14) unstable; urgency=low
 
