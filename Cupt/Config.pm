@@ -198,7 +198,7 @@ sub new {
 		# unused APT vars
 		'rpm::pre-invoke' => [],
 		'rpm::post-invoke' => [],
-		'apt::never-markauto-sections::*' => [],
+		'apt::never-markauto-sections' => [],
 
 		# Cupt vars
 		'cupt::downloader::protocols::file::methods' => [ 'file' ],
