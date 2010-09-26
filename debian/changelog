@@ -1,4 +1,4 @@
-cupt2 (2.0.0~alpha1~) UNRELEASED; urgency=low
+cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
 
   * Re-implemented in C++ (and subset of C++0x).
 
@@ -17,7 +17,7 @@ cupt2 (2.0.0~alpha1~) UNRELEASED; urgency=low
     - wget:
       - Implemented.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 23 Jul 2010 21:59:42 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 12:31:09 +0300
 
 cupt (1.5.14) unstable; urgency=low
 
