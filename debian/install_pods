@@ -5,12 +5,12 @@ use strict;
 
 foreach my $pod_file (glob("doc/*.pod")) {
 	# example: doc/cupt.1.pod
-	my ($name, $section) = ($pod_file =~ m{.*/((?:\w|_)+)\.(\d)\.pod}) or
+	my ($name, $section) = ($pod_file =~ m{.*/((?:\w|_|-)+)\.(\d)\.pod}) or
 			die "badly formatted POD name $pod_file";
 	my $man_page_name = "$name.$section";
 	my $uppercased_name = uc $name;
 	my $pod2man_command = "pod2man --utf8 --name $uppercased_name --section $section $pod_file > $man_page_name";
-	my $dh_command = "dh_installman -pcupt $man_page_name";
+	my $dh_command = "dh_installman -pcupt-experimental $man_page_name";
 	my $command = "$pod2man_command && $dh_command && rm $man_page_name";
 	print "   $command\n";
 	system($command) == 0 or

@@ -1,3 +1,24 @@
+cupt2 (2.0.0~alpha1~) UNRELEASED; urgency=low
+
+  * Re-implemented in C++ (and subset of C++0x).
+
+  * console:
+    - The '--installed-only' option now works under 'shell' command.
+    - The 'config-dump' subcommand no longer accepts arguments.
+  * lib:
+    - cache/sourceversion:
+      - Support multiple tarballs.
+    - config:
+      - Implemented issuing detailed error messages when facing syntax errors
+        in configuration files.
+    - cache:
+      - Implemented refusing expired Release files.
+  * downloadmethods:
+    - wget:
+      - Implemented.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 23 Jul 2010 21:59:42 +0300
+
 cupt (1.5.14) unstable; urgency=low
 
   * doc:

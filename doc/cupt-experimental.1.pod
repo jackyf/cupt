@@ -1,0 +1,1181 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+cupt - console package management tool
+
+=head1 SYNOPSIS
+
+cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
+
+=head1 ACTIONS
+
+=head2 Query actions
+
+=over
+
+=item version,-v,--version
+
+prints versions of packages 'cupt' and 'libcupt-perl'
+
+=item help,-h,--help
+
+prints the short help for available actions
+
+=item config-dump
+
+prints all configuration variables to standard output
+
+Example:
+
+C<cupt config-dump>
+
+=item show
+
+prints version info of specified binary packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Specific options:
+
+=over
+
+=item --all-versions,-a
+
+print all versions of the package, not selected one
+
+Corresponding configuration variable: L<apt::cache::allversions>
+
+=item --no-all-versions
+
+don't print all versions of the package, use only selected one
+
+Corresponding configuration variable: L<apt::cache::allversions>
+
+=item --with-release-info
+
+also print information about release info where the version of the package live
+
+=back
+
+Examples:
+
+C<cupt show qmmp>
+
+C<cupt show --all-versions qmmp debianutils>
+
+C<cupt show --with-release-info audacious/testing apt debianutils=2.3.38>
+
+=item showsrc
+
+The same as L<show>, only for source packages.
+
+Examples:
+
+C<cupt showsrc --all-versions qmmp>
+
+C<cupt showsrc --with-release-info audacious/testing apt>
+
+C<cupt showsrc libxine1>
+
+=item search
+
+searches for packages that contains some string within package names and package descriptions
+
+This subcommand receives a list a Perl-compatible Regular Expressions (PCRE) to
+search. Only those packages will be printed that contain all of specified
+patterns.
+
+Specific options:
+
+=over
+
+=item --case-sensitive
+
+search case-sensitively
+
+=item --names-only,-n
+
+search only in package names
+
+Corresponding configuration variable: L<apt::cache::namesonly>
+
+=back
+
+Examples:
+
+C<cupt search nvidia driver>
+
+C<cupt search --case-sensitive Vim>
+
+C<cupt search -n vim>
+
+C<cupt search "package manager">
+
+=item depends
+
+prints dependency relation expressions for given version of package
+
+By default prints 'Pre-Depends', 'Depends' and 'Recommends' for the version.
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Specific options:
+
+=over
+
+=item --with-suggests
+
+take also 'Suggests' dependencies into account
+
+=item --recurse
+
+process the dependencies recursively
+
+Corresponding configuration variable: L<apt::cache::recursedepends>
+
+=item --all-versions,-a
+
+when L<--recurse|/--recurse> is specified, pick up all versions for the
+relation expression, not the "best" one
+
+Corresponding configuration variable: L<apt::cache::allversions>
+
+=back
+
+Examples:
+
+C<cupt depends nlkt perl/stable>
+
+C<cupt depends --important xserver-xorg-core>
+
+C<cupt depends --recurse xmlto>
+
+=item rdepends
+
+same as L<depends>, but prints reverse relations instead of forward ones
+
+=item why
+
+prints one of available dependency paths between package(s)/system and the
+package.
+
+This subcommand receives a list of binary package expressions (which can be
+empty), then one binary package expression without wildcards.
+
+If the list of binary package expressions is empty (i.e. subcommand received
+only one argument), then the list is build of manually installed packages in
+the system.
+
+If no dependency paths found, prints nothing.
+
+Uses configuration variables
+L<cupt::resolver::keep-recommends|/cupt::resolver::keep-recommends> and
+L<cupt::resolver::keep-suggests|/cupt::resolver::keep-suggests> to determine
+whether to honor Recommends and Suggests respectively when building dependency
+paths.
+
+Examples:
+
+C<cupt why kmail libgnutls26>
+
+C<cupt why libgnutls26>
+
+C<cupt why icedove kmail libgnutls26>
+
+=item policy
+
+Given arguments, prints available versions with pins and release info for each binary package
+
+Arguments: list of binary package names.
+
+Given no arguments, prints available Release info for binary packages.
+
+Examples:
+
+C<cupt policy>
+
+C<cupt policy dpkg>
+
+C<cupt policy libpqxx-2.6.9ldbl libpqxx-3.0>
+
+=item policysrc
+
+Given arguments, prints available versions with pins and release info for each source package.
+
+Arguments: list of source package names.
+
+Given no arguments, prints available Release info for source packages.
+
+Examples:
+
+C<cupt policysrc>
+
+C<cupt policysrc dpkg>
+
+C<cupt policysrc libpqxx libpqxx3>
+
+=item pkgnames
+
+prints package names that start with a supplied suffix
+
+If no suffix is given, prints all package names
+
+Examples:
+
+C<cupt pkgnames>
+
+C<cupt pkgnames liba>
+
+=item changelog
+
+displays changelog for given versions of packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Works only with installed packages and official Debian and Ubuntu repositories.
+
+Examples:
+
+C<cupt changelog dpkg/installed>
+
+C<cupt changelog --installed-only dpkg nlkt lintian>
+
+C<cupt changelog libqtcore4>
+
+=item copyright
+
+displays copyright for given versions of packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+Works only with installed packages and official Debian and Ubuntu repositories.
+
+Examples:
+
+C<cupt copyright dpkg/installed>
+
+C<cupt copyright --installed-only dpkg nlkt lintian>
+
+C<cupt copyright libqtcore4>
+
+=item screenshots
+
+open a browser window/tab with screenshots of given packages.
+
+This subcommand receives list of package names.
+
+Example:
+
+C<cupt screenshots arora>
+
+=item snapshot list
+
+list names of the available system snapshots, one per line
+
+This subcommand receives no arguments.
+
+Example: C<cupt snapshot list>
+
+=back
+
+=head3 query-specific options
+
+=over
+
+=item --important,-i
+
+don't take 'Recommends' dependencies into account
+
+Corresponding configuration variable: L<apt::cache::important>
+
+=item --installed-only
+
+work only with installed versions of packages; valuable only for L</show>,
+L</depends>, L</rdepends>, L</search>, L</pkgnames>, L</changelog> actions
+
+=back
+
+=head2 Management actions
+
+=over
+
+=item update
+
+updates package indexes
+
+This subcommand receives no arguments.
+
+Example:
+
+C<cupt update>
+
+=item install
+
+installs, upgrades or downgrades specified packages
+
+This subcommand receives list of L</"Binary package version expression">'s, see below.
+
+If some version of package was already installed, this command will
+upgrade/downgrade it; otherwise, the package will be freshly installed.
+
+Examples:
+
+C<cupt install nlkt>
+
+C<cupt install devscripts xserver-xorg/experimental xfce4-mixer=4.6.0-2>
+
+=item remove
+
+removes specified packages
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt remove nlkt>
+
+C<cupt remove devscripts kde4-minimal>
+
+=item full-upgrade
+
+performs as more upgrades of the installed packages as possible, the
+recommended way to do upgrades
+
+This subcommand is usually invoked without any further parameters:
+
+C<cupt full-upgrade>
+
+List of L</"Binary package version expression">'s can be however specified as additional parameters.
+
+Example: the command C<cupt full-upgrade xserver-xorg/installed> will try to upgrade
+your system, however preserving package 'xserver-xorg' to be sticked with
+currently installed version.
+
+=item safe-upgrade
+
+the same as L</full-upgrade>, but with the change that problem resolver won't
+try to remove non-automatically installed packages in order to upgrade more
+packages, equivalent of 'full-upgrade --no-remove'.
+
+=item dist-upgrade
+
+the same as L</full-upgrade>, but firstly upgrades the package management tools,
+then upgrades the whole system.
+
+Recommended over L</full-upgrade> for major upgrades.
+
+=item reinstall
+
+reinstalls specified binary packages
+
+This subcommand receives list of binary package names.
+
+Examples:
+
+C<cupt reinstall libc6>
+
+=item markauto
+
+marks specified packages as automatically installed
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt markauto libstreamanalyzer0>
+
+C<cupt markauto lsof gimp-data>
+
+=item unmarkauto
+
+marks specified packages as manually installed
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt unmarkauto kpogre>
+
+C<cupt unmarkauto dpkg-dev>
+
+=item satisfy
+
+performs all needed operations to satisfy list of specified relations
+
+This subcommand receives the list of relations or relation lines. Relation and
+relation lines has the same syntax as defined in Debian Policy §7.1.
+
+The minus sign can be appended to some of relation expression lines to make
+relation expressions unsatisfied instead.
+
+Examples:
+
+C<< cupt satisfy "kmail (>= 4:4.2)" >>
+
+C<< cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)" >>
+
+C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget (>= 1.10.0)" >>
+
+C<< cupt satisfy "gettext (= 0.17-7)" "mail-transport-agent-" >>
+
+=item build-dep
+
+performs all needed operations to satisfy list of build-dependencies of
+specified source packages
+
+This subcommand receives the list of L</Source package version expression>'s.
+
+Examples:
+
+C<< cupt build-dep qt4-x11 >>
+
+C<< cupt build-dep unetbootin/unstable libcdio/experimental >>
+
+=item source
+
+fetches Debian source files needed to build a Debian binary package
+
+This subcommand receives the list of L</Source package version expression>'s.
+
+Parameters:
+
+=over
+
+=item --tar-only
+
+download only original tarball
+
+=item --diff-only
+
+download only Debian diff
+
+=item --dsc-only
+
+download only Debian dsc
+
+=item --download-only
+
+don't unpack downloaded source files
+
+=back
+
+Examples:
+
+C<< cupt source libsort-fields-perl >>
+
+C<< cupt source --diff-only libpqxx cupt/unstable >>
+
+C<< cupt source libxine1 >>
+
+=item clean
+
+removes all deb archives from cache on disk
+
+This subcommand receives no arguments.
+
+Example: C<cupt clean>
+
+=item autoclean
+
+removes deb archives which are not available in package indexes from cache
+on disk
+
+This subcommand receives no arguments.
+
+Example: C<cupt autoclean>
+
+=item snapshot save
+
+saves a snapshot of the current packages state
+
+This subcommand receives one argument - desired snapshot name.
+
+Example: C<cupt snapshot save old-udev>
+
+=item snapshot load
+
+returns the system (as set of installed packages) to the previously saved
+state
+
+This subcommand receives one argument - snapshot name to load.
+
+Example: C<cupt snapshot load old-udev>
+
+=item snapshot remove
+
+removes the system snapshot
+
+This subcommand receives one argument - snapshot name to remove.
+
+Example: C<cupt snapshot remove old-libgtk>
+
+=item snapshot rename
+
+renames the system snapshot
+
+This subcommand receives two arguments - old snapshot name and new snapshot
+name.
+
+Example: C<cupt snapshot rename old-libgtk 20091005>
+
+=item shell
+
+starts interactive shell-like environment
+
+This subcommand receives no arguments.
+
+This subcommand can receive all common options which will be preserved
+across all session. You can override them for any subcommand in a usual way.
+
+On every shell prompt you can supply any valid subcommand from this manual
+page, using all allowed parameters, just if it was command line. Simple shell
+quotes around arguments are also allowed.
+
+Example:
+
+	$ cupt shell
+	This is interactive shell of cupt package manager.
+	Building the package cache... [done]
+	cupt>policy libsoprano4
+	libsoprano4:
+	  Installed: 2.2.2+dfsg.1-1
+	  Candidate: 2.3.0+dfsg.1-2
+	  Version table:
+		 2.3.0+dfsg.1-2 501
+			http://debian.org.ua/debian unstable/main (signed)
+	 *** 2.2.2+dfsg.1-1 100
+			/var/lib/dpkg/status installed/ (unsigned)
+		 2.3.0+dfsg.1-1 2
+			http://debian.org.ua/debian experimental/main (signed)
+	cupt>depends libsoprano4/experimental
+	libsoprano4 2.3.0+dfsg.1-1:
+	  Depends: libc6 (>= 2.2.5)
+	  Depends: libclucene0ldbl (>= 0.9.20-1)
+	  Depends: libgcc1 (>= 1:4.1.1)
+	  Depends: libqt4-dbus (>= 4:4.5.2)
+	  Depends: libqt4-network (>= 4:4.5.2)
+	  Depends: libqt4-xml (>= 4:4.5.2)
+	  Depends: libqtcore4 (>= 4:4.5.2)
+	  Depends: libstdc++6 (>= 4.1.1)
+	  Depends: soprano-daemon (= 2.3.0+dfsg.1-1)
+	cupt>rdepends soprano-daemon
+	soprano-daemon 2.3.0+dfsg.1-2:
+	  Reverse-Depends: libsoprano4 2.3.0+dfsg.1-2: soprano-daemon (= 2.3.0+dfsg.1-2)
+	cupt>show soprano-daemon
+	Package: soprano-daemon
+	Version: 2.3.0+dfsg.1-2
+	Status: not installed
+	Source: soprano
+	Priority: optional
+	Section: utils
+	Size: 153KiB
+	Uncompressed size: 536KiB
+	Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
+	Architecture: amd64
+	Depends: libc6 (>= 2.2.5), libgcc1 (>= 1:4.1.1), libqt4-dbus (>= 4:4.5.2), libqt4-network (>= 4:4.5.2),
+	libqtcore4 (>= 4:4.5.2), libraptor1 (>= 1.4.18), librdf0 (>= 1.0.9), libsoprano4 (>= 2.3.0), libstdc++6 (>= 4.1.1)
+	Conflicts: libsoprano-dev (<< 2.3.0+dfsg.1-1), libsoprano4 (<< 2.3.0+dfsg.1-1)
+	Replaces: libsoprano-dev (<< 2.3.0+dfsg.1-1), libsoprano4 (<< 2.3.0+dfsg.1-1)
+	URI: http://debian.org.ua/debian/pool/main/s/soprano/soprano-daemon_2.3.0+dfsg.1-2_amd64.deb
+	MD5: af29b39a741d9a52de91c8e5562e0609
+	SHA1: 1dfebe27b79f10911358949e56f89c64b43265eb
+	SHA256: d5b290a60de56f6a7e0af44f5265c6668bb4689204556b9022a5233a808349fc
+	Description: daemon for the Soprano RDF framework
+	 Soprano is a pluggable RDF storage, parsing, and serialization framework based
+	 on Qt 4. Soprano is targeted at desktop applications that need to store RDF
+	 data. Its API has been optimized for simplicity and ease of use, while its
+	 modular structure allows it to use various different RDF storage
+	 implementations as its backend.
+	 .
+	 This package contains the Soprano daemon, D-Bus service, parser
+	 plugins, and a storage plugin for the Redland RDF Application Framework.
+	Homepage: http://soprano.sourceforge.net
+
+	cupt>--simulate install libsoprano4
+	Building the package cache... [done]
+	Initializing package resolver and worker... [done]
+	Scheduling requested actions... [done]
+	Resolving possible unmet dependencies... 
+	The following 1 packages will be INSTALLED:
+
+	soprano-daemon 
+
+	The following 1 packages will be UPGRADED:
+
+	libsoprano4 
+
+	Need to get 700KiB/700KiB of archives. After unpacking 196KiB will be used.
+	Do you want to continue? [y/N/q] q
+
+	cupt>exit
+
+You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
+
+One caveat exists, though: --installed-only option won't work under 'shell'
+subcommand.
+
+=back
+
+=head3 query-specific options
+
+=over
+
+=item --no-remove
+
+disallow problem resolver to remove manually installed packages. Packages that are marked to remove/purge in the command line will be remove/purged as usual.
+
+Corresponding configuration option: L<cupt::resolver::no-remove>
+
+=item --no-auto-remove
+
+don't try to remove automatically installed packages after doing requested
+actions
+
+Corresponding configuration option: L<cupt::resolver::auto-remove>
+
+=item --simulate,-s
+
+don't modify anything in the system, just print supposed actions
+
+Doesn't require root privileges.
+
+Corresponding configuration option: L<cupt::worker::simulate>
+
+=item --resolver=
+
+string, determines type of resolver: can be
+
+=over
+
+=item fair
+
+medium-class resolver. It chooses best possible solution (by overall score)
+each time. This is a default resolver.
+
+=item full
+
+full resolver. Guaranteed to suggest solution in precise order from the best to
+the worst result score (by the resolver's opinion). Latter means that resolver
+builds full resolve tree before suggesting the solutions, which means large RAM
+and speed penalties. Use it with caution.
+
+=back
+
+Corresponding configuration option: L<cupt::resolver::type>
+
+=item --max-solution-count=
+
+number, determines how many maximum solutions will resolver store in memory. This
+option prevents large memory grows by purging away solutions with worst scores.
+Defaults to 256.  Note that very complex requests or requests on
+multi-repository system will increase size of solution tree dramatically, so
+prepare to play with increasing this option accordingly.
+
+Corresponding configuration option: L<cupt::resolver::max-solution-count>
+
+=item --no-install-recommends,-R
+
+cupt installs recommended packages by default, this option cancels described behavior
+
+Corresponding configuration option: L<apt::install-recommends>
+
+=item --show-versions,-V
+
+when displaying actions preview prompt, display also versions of packages
+
+=item --show-size-changes,-Z
+
+when displaying actions preview prompt, display also changes in disk space
+usage for each package
+
+=item --show-reasons,--show-deps,-D
+
+when displaying actions preview prompt, display also reasons why this action was
+considered to perform
+
+Corresponding configuration option: L<cupt::resolver::track-reasons>
+
+=item --no-install-unpacked
+
+By default cupt will implicitly install all already unpacked packages, this is
+needed, for example, for proper continue of interrupted upgrades. This option
+cancels behavior described.
+
+=item --download-only,-d
+
+stop after download stage, don't modify the system; not applicable for
+L</markauto> and L</markauto> actions
+
+Corresponding configuration option: L<cupt::worker::download-only>
+
+=item --assume-yes,--yes,-y
+
+don't ask for solution confirmation, assume the answer is 'y' ("yes"), except
+for dangerous actions, where assume 'q' ("decline and exit")
+
+Corresponding configuration options: L<apt::get::assume-yes>, L<cupt::console::assume-yes>
+
+=back
+
+=head3 management modifiers
+
+=over
+
+=item -
+
+remove the package, can be used in non-remove actions
+
+Examples:
+
+C<cupt install kde4 icewm-> - install the package
+'kde4' and remove the package 'icewm' simultaneously.
+
+C<cupt full-upgrade iceweasel- icedove-> - upgrade the system, deleting iceweasel and icedove
+
+=item +
+
+install the package, can be used in remove actions
+
+Examples:
+
+C<cupt remove kde konqueror+> - remove kde, but install/upgrade konqueror
+
+C<cupt remove kde konqueror/installed+> - remove kde, but leave konqueror
+
+=back
+
+=head1 EXPRESSIONS
+
+This section documents some common expressions used by actions.
+
+=head2 Binary package version expression
+
+I<package_name>[I<modifier>]
+
+selects one version of given binary package.
+
+Possible modifiers:
+
+=over
+
+=item <none>
+
+selects L<policy version|/"Policy version"> of the package
+
+Example: C<audacious>.
+
+=item =<version string>
+
+selects specified version of the package
+
+Example: C<audacious=1.5.1-2>
+
+=item /<distribution>
+
+selects a version from specified distribution (archive name or codename)
+
+Examples: C<audacious/lenny> (by codename), C<audacious/stable> (by archive name)
+
+=item /installed
+
+selects installed version of the package
+
+Example: C<audacious/installed>
+
+=back
+
+Also, you may specify shell wildcars '*' and '?' in the package names.
+
+Examples: C<xfce4-*>, C<python2.5-*/unstable>, C<?aff*/installed>
+
+For all management subcommands, there is also '@<path-to-file>' syntax. In this
+case this construction will be substituted by binary package expressions listed
+in the specified file one by line.
+
+=head2 Source package version expression
+
+I<package_name>[I<modifier>]
+
+selects one version of given source package.
+
+Possible modifiers are identical to those defined in L</Binary package version
+expression>, except for '/installed'.
+
+Also, you can specify L</Binary package version expression> as
+L</Source package version expression>, then binary-to-source mapping
+will be performed.
+
+=head1 COMMON OPTIONS
+
+=over
+
+=item --option=,-o
+
+sets specified configuration option, syntax: "<name>=<value>"
+
+Examples:
+
+C<cupt remove nlkt -o 'cupt::resolver::keep-recommends=0'> (regular option)
+
+C<cupt remove nlkt -o 'apt::neverautoremove::=libcanberra0> (list option)
+
+=item --target-release=,--default-release=,-t
+
+sets preferred release to pick up packages from, you can specify codename or archive name
+
+Corresponding configuration option: L<apt::default-release>
+
+Examples: C<cupt install -t unstable xserver-xorg>, C<cupt -t squeeze full-upgrade>
+
+=item --purge
+
+when removing packages, also delete their configuration files
+
+Corresponding configuration option: L<cupt::worker::purge>
+
+=item --quiet,-q
+
+don't output anything to standard output
+
+=back
+
+=head1 CONFIGURATION VARIABLES
+
+Firstly, Cupt uses following APT configuration variables:
+
+acquire::*::timeout, acquire::*::proxy, acquire::retries,
+apt::acquire::translation, apt::cache::allversions, apt::cache::important,
+apt::cache::namesonly, apt::cache::recursedepends, apt::default-release,
+apt::install-recommends, apt::install-suggests, apt::neverautoremove,
+apt::get::assume-yes, apt::get::allowunauthenticated,
+apt::get::automaticremove, apt::get::purge, apt::update::pre-invoke,
+apt::update::post-invoke, apt::update::post-invoke-success, dir,
+dir::bin::dpkg, dir::cache, dir::cache::archives, dir::etc,
+dir::etc::sourcelist, dir::etc::sourceparts, dir::etc::parts, dir::etc::main,
+dir::etc::preferences, dir::state, dir::state::extendedstates,
+dir::state::lists, dir::state::status, dpkg::options, dpkg::pre-invoke,
+dpkg::post-invoke, dpkg::pre-install-pkgs, gpgv::trustedkeyring, quiet
+
+See L<apt.conf(5)> for their meanings.
+
+Secondly, Cupt recognizes (but doesn't use) following configuration variables:
+
+apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
+unattended-upgrade::*, acquire::compressiontypes, apt::get::show-upgraded,
+apt::get::build-dep-automatic, rpm::pre-invoke, rpm::post-invoke
+
+Thirdly, Cupt introduces cupt-specific configuration variables.
+
+=head2 variable types
+
+=over
+
+=item boolean
+
+false may be specified as "0" or "false" or "no", everything else interpretes as true
+
+if undefined, interpretes as false
+
+=item integer
+
+signed 32-bit integer on 32-bit systems, signed 64-bit integer on 64-bit systems
+
+if undefined, interpretes as 0
+
+=item string
+
+interpreted as is
+
+if undefined, interpretes as empty string
+
+=item list
+
+list of strings
+
+if undefined, intepretes as empty list
+
+=back
+
+=head2 variables
+
+=over
+
+=item acquire::http::allow-redirects
+
+boolean, specifies whether should downloader follow HTTP redirects.
+True by default.
+
+=item cupt::cache::obey-hold
+
+integer, specifies priority increase for versions that are put on hold.
+Defaults to 1000000. Set this option to 0 if you do not want to obey holds.
+You may want to increase this option in (very unlikely to happen) situations:
+when you have thousands of manually installed packages and very large query;
+when you have a manually crafted pin priorities system with very large pin
+values.
+
+=item cupt::console::allow-untrusted
+
+boolean, don't treat using untrusted packages as dangerous action
+
+=item cupt::console::assume-yes
+
+boolean, see L<--assume-yes|/--assume-yes>
+
+=item cupt::directory::state
+
+string, directory which contains Cupt state info
+
+=item cupt::downloader::max-simultaneous-downloads
+
+integer, positive, specifies maximum number of simultaneous downloads. Defaults to 2.
+
+=item cupt::downloader::protocols::I<protocol>::priority
+
+integer, positive, defines the priority of download protocol I<protocol>, determines an order in which
+different URIs for the same file will be tried. Defaults to 100.
+
+=item cupt::downloader::protocols::I<protocol>::methods::I<method>::priority
+
+positive number, defines the priority of download method I<method>, the method
+with maximum priority will be used for downloading the URI of protocol
+I<protocol>.
+Defaults to 100.
+
+=item cupt::downloader::protocols::I<protocol>::methods
+
+list, names of the methods available to download protocol I<protocol>
+
+=item cupt::update::compression-types::*::priority
+
+integer, defines preference to download compressed files with higher priority first. 100 by default.
+
+'*' can be 'gz', 'bz2', 'lzma' and 'uncompressed'.
+
+Set some option to <100 value to make it low-precedence than default, and >100
+to make it high-precedence than default.
+
+If some methods have the equal priority (which is the default setting), then
+files with smaller size with be chosen over the files with bigger size.
+
+Example:
+
+You have a low-speed CPU but rather high-speed internet connection and want to
+prefer gzip over lzma and lzma over bzip2. Then you have to set options like:
+
+  cupt::update::compression-types
+  {
+    gz::priority "200";
+    lzma::priority "150";
+  }
+
+Also, if you have a local mirror, which may store uncompressed indexes too
+(an official Debian archive doesn't store them), you may set also
+
+cupt::update::compression-types::uncompressed::priority "300";
+
+=item cupt::update::keep-bad-signatures
+
+boolean, specifies whether to keep signature files that failed GPG check
+when doing update. False by default. Setting this option to true will break
+compatibility with APT in area of signature checking.
+
+=item cupt::resolver::keep-recommends
+
+boolean, specifies whether should resolver try to keep already installed
+recommended packages or not. True by default.
+
+=item cupt::resolver::keep-suggests
+
+boolean, specifies whether should resolver try to keep already installed
+suggested packages or not. False by default.
+
+=item cupt::resolver::auto-remove
+
+boolean, see L<--no-auto-remove/|--no-auto-remove>
+
+=item cupt::resolver::max-solution-count
+
+integer, positive, see L<--max-solution-count|/--max-solution-count>
+
+=item cupt::resolver::quality-bar
+
+integer, the "quality bar" for the native resolver. For the situations
+when a lot of solutions available, increasing this value slows down choosing the
+solution to propose, but may increase its quality. Defaults to -50. The sane
+value borders: from -1000 to 1000.
+
+=item cupt::resolver::external-command
+
+string, a preview-only, experimental option to use external resolver using CUDF
+protocol. Don't use it unless you know what you are doing.
+
+Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cudfout.txt" >>
+
+=item cupt::resolver::no-remove
+
+boolean, see L<--no-remove|/--no-remove>
+
+=item cupt::resolver::synchronize-source-versions
+
+string, this option controls whether and how the native resolver will attempt to keep
+all binary packages from the same source package at the same source version
+
+Possible values:
+
+=over
+
+=item none
+
+Don't attempt to synchronize source versions. This is the default value.
+
+=item soft
+
+Don't forbid any modifications to the packages and attempt to synchronize
+related binary packages when possible upon the modifications of certain binary
+package.
+
+=item hard
+
+Forbid any modifications to the packages when at least one related binary
+package cannot be synchronized with the modified one.
+
+=back
+
+It's highly recommended to have source entries for as more as possible
+available binary packages for more fast and accurate results.
+
+Example:
+
+Suppose we have 'libfoo1' and 'foo' binary packages which came from the same
+source package. We have libfoo1 '1.2-1' and foo '1.2-1' installed.
+
+Situation 1: libfoo1 has new '1.3-1' version and foo has new '1.3-1' version.
+
+Situation 2: libfoo1 has new '1.3-1' version and foo has new '1.3-2' version.
+
+We called: C<cupt install foo>.
+
+What would be done by resolver:
+
+=over
+
+=item none
+
+Situation 1: install new foo, leave libfoo1 as of installed version
+
+Situation 2: install new foo, leave libfoo1 as of installed version
+
+=item soft
+
+Situation 1: install new foo and libfoo1
+
+Situation 2: install new foo, leave libfoo1 as of installed version
+
+=item hard
+
+Situation 1: install new foo and libfoo1
+
+Situation 2: prohibit to install new version of foo
+
+=back
+
+=item cupt::resolver::synchronize-source-versions::exceptions
+
+list, source package names (Perl regular expressions) of known exceptions.
+
+=item cupt::resolver::track-reasons
+
+boolean, see L<--show-reasons|/--show-reasons,--show-deps,-D>
+
+=item cupt::resolver::type
+
+string, see L<--resolver|/--resolver>
+
+=item cupt::worker::allow-indirect-upgrade
+
+list, package names which will be upgraded indirectly
+
+There are some packages with dependencies that make unable to upgrade the
+package properly. List them here. See also Debian BTS #551831.
+
+=item cupt::worker::archives-space-limit
+
+integer, bytes, positive, if set, limits the worker to not download more than specified
+amount of archives, and use download-install-clean algorithm (download
+archives, install packages, clean just downloaded archives).  Worker will try
+to split all actions into unrelated changesets so each changeset require only
+limited download space. Any system changes will be started only if changesets
+are generated successfully.
+
+=item cupt::worker::archives-space-limit::tries
+
+integer, positive, specifies how many times will worker try to generate unrelated
+changesets if
+L<cupt::worker::archives-space-limit|/cupt::worker::archives-space-limit> is
+set. As genearting algorithm uses randomization, increasing this option
+increases the chances to generate. 20 by default.
+
+=item cupt::worker::defer-triggers
+
+boolean, specifies whether should worker defer dpkg trigger processing to
+the end of the whole operation or not. Being set to true, speeds up
+large-amount actions, but if the operation will somewhy be interrupted, leaves
+system in the interim trigger state, which can be fixed by manual run of 'dpkg
+--triggers-only --pending' command. False by default due to tiresome dpkg bug
+(Debian BTS #526774).
+
+=item cupt::worker::download-only
+
+boolean, see L<--download-only|/--download-only,-d>
+
+=item cupt::worker::purge
+
+boolean, specifies whether purge packages in addition to removing or not.
+False by default.
+
+=item cupt::worker::simulate
+
+boolean, see L<--simulate|/--simulate,-s>
+
+=item debug::resolver
+
+boolean, if true, resolver will print a lot of debug information to the
+standard error. False by default.
+
+=item debug::worker
+
+boolean, if true, worker will print some debug information to the
+standard error. False by default.
+
+=item debug::gpgv
+
+boolean, if true, cache will print some debug information while verifying
+signatures to the standard error. False by default.
+
+=item debug::downloader
+
+boolean, if true, the downloader manager will print some debug messages. False
+by default.
+
+=back
+
+=head1 REPORTING
+
+Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
+
+The discussion channel about Cupt is irc://irc.debian.org#cupt.
+
+=head1 SEE ALSO
+
+L<cupt_vs_apt(5)>, L<cupt_howto(7)>
+
+=head1 AUTHOR
+
+Eugene V. Lyubimkin <jackyf@debian.org>
+
+=cut
+
