@@ -1,3 +1,9 @@
+cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
+
 cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
 
   * Re-implemented in C++ (and subset of C++0x).
