@@ -154,7 +154,7 @@ string HashSums::getStringHash(const Type& type, const string& pattern)
 	{
 		unsigned int c = *charIt;
 		sprintf(hexBuffer+2, "%02x", c);
-		printfString += hexBuffer;
+		printfString.append(hexBuffer, 4);
 	}
 	return __get_hash(type, sf("/usr/bin/printf '%s' | ", printfString.c_str()), "", description);
 }
