@@ -642,6 +642,8 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			catch (exception&)
 			{
 				warn("discarding this package version from index file '%s'", path.c_str());
+				while (file->rawGetLine(buf, size), size > 1) {}
+				continue;
 			}
 
 			prePackageRecord.offset += size;
