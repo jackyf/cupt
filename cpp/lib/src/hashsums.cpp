@@ -149,10 +149,12 @@ string HashSums::getStringHash(const Type& type, const string& pattern)
 {
 	string description = sf("string '%s'", pattern.c_str());
 	string printfString;
+	char hexBuffer[3] = {0};
 	FORIT(charIt, pattern)
 	{
 		unsigned int c = *charIt;
-		printfString += string("\\x") + sf("%02x", c);
+		sprintf(hexBuffer, "%02x", c);
+		printfString += string("\\x") + hexBuffer;
 	}
 	return __get_hash(type, sf("/usr/bin/printf '%s' | ", printfString.c_str()), "", description);
 }
