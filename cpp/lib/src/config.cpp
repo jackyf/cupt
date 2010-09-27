@@ -324,7 +324,7 @@ static string qx(const string& shellCommand)
 	}
 	string result;
 	string block;
-	while (! file.getBlock(block).eof())
+	while (! file.getRecord(block).eof())
 	{
 		result += block;
 	}

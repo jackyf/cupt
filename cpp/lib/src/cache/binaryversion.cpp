@@ -57,7 +57,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 		static auto acceptAll = [](const char*, size_t) -> bool { return true; };
 
 		// read all version entry entirely
-		initParams.file->getBlock(block, parseInfoOnly ? acceptAll : rejectSpaceStarted);
+		initParams.file->getRecord(block, parseInfoOnly ? acceptAll : rejectSpaceStarted);
 
 		TAG(Version, v->versionString = tagValue;)
 		checkVersionString(v->versionString);

@@ -6,6 +6,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - cache:
       - Pre-parsing index files: really discard packages with broken package
         names.
+    - file:
+      - 'getBlock': renamed to 'getRecord'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
 

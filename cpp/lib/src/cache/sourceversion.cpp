@@ -49,7 +49,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		TagValue tagValue; // used in TAG() macro
 
 		// read all version entry entirely
-		initParams.file->getBlock(block);
+		initParams.file->getRecord(block);
 		{ // parsing checksums and file names
 			smatch lineMatch;
 #define PARSE_CHECKSUM_RECORD(TagName, HashSumName) \

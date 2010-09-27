@@ -38,7 +38,7 @@ class File
 	virtual ~File();
 	File& rawGetLine(const char*& buffer, size_t& size);
 	File& getLine(string&);
-	File& getBlock(string& block, const std::function<bool (const char*, size_t)>& accepter =
+	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
 			[](const char*, size_t) -> bool { return true; });
 	void getFile(string&);
 	void put(const string&);

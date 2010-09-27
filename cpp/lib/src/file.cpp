@@ -147,24 +147,24 @@ File& File::rawGetLine(const char*& buffer, size_t& size)
 	return *this;
 }
 
-File& File::getBlock(string& block, const std::function<bool (const char*, size_t)>& accepter)
+File& File::getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter)
 {
 	__impl->assertFileOpened();
 
-	block.clear();
+	record.clear();
 
 	int readLength;
-	// readLength of 0 means end of file, of 1 - end of block
+	// readLength of 0 means end of file, of 1 - end of record
 	while (readLength = __impl->getLineImpl(), readLength > 1)
 	{
 		if (accepter(__impl->buf, readLength))
 		{
-			block.append(__impl->buf, readLength);
+			record.append(__impl->buf, readLength);
 		}
 	}
-	if (!block.empty())
+	if (!record.empty())
 	{
-		// there was some info read, clear eof flag before the next getBlock/getLine call
+		// there was some info read, clear eof flag before the next getRecord/getLine call
 		clearerr(__impl->handle);
 	}
 	return *this;

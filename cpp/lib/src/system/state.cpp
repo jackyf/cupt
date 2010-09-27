@@ -98,7 +98,7 @@ void StateData::parseDpkgStatus()
 			return false;
 #undef TAG_ACCEPT
 		};
-		while ((prePackageRecord.offset = file->tell()), ! file->getBlock(block, lineAccepter).eof())
+		while ((prePackageRecord.offset = file->tell()), ! file->getRecord(block, lineAccepter).eof())
 		{
 			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
 

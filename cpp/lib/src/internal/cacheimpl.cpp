@@ -720,7 +720,7 @@ void CacheImpl::processTranslationFile(const string& path)
 
 		string block;
 		size_t currentPosition;
-		while ((currentPosition = file->tell()), !file->getBlock(block).eof())
+		while ((currentPosition = file->tell()), !file->getRecord(block).eof())
 		{
 			auto searchPosition = block.find(md5pattern);
 			if (searchPosition == string::npos)
@@ -906,7 +906,7 @@ pair< string, string > CacheImpl::getLocalizedDescriptions(const shared_ptr< con
 		const TranslationPosition& position = it->second;
 		string combinedDescription;
 		position.file->seek(position.offset);
-		position.file->getBlock(combinedDescription);
+		position.file->getRecord(combinedDescription);
 
 		auto firstNewLinePosition = combinedDescription.find('\n');
 
@@ -940,7 +940,7 @@ void CacheImpl::parseExtendedStates()
 		string block;
 		string packageName;
 		string value;
-		while (!file.getBlock(block).eof())
+		while (!file.getRecord(block).eof())
 		{
 			static const sregex commentRegex = sregex::compile("\\s*(?:#.*|)");
 			if (regex_match(block, m, commentRegex))
