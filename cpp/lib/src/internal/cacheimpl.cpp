@@ -652,14 +652,14 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			auto it = prePackagesStorage->insert(pairForInsertion).first;
 			it->second.push_back(prePackageRecord);
 
-			do
+			while (file->rawGetLine(buf, size), size > 1)
 			{
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
 				if (size > providesAnchorLength && !memcmp("Provides: ", buf, providesAnchorLength))
 				{
 					processProvides(it->first, buf + providesAnchorLength, buf + size - 1);
 				}
-			} while (file->rawGetLine(buf, size), size > 1);
+			}
 		}
 	}
 	catch (exception&)
