@@ -18,6 +18,8 @@
 #ifndef CUPT_COMMON_SEEN
 #define CUPT_COMMON_SEEN
 
+/*! @file */
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -27,13 +29,18 @@
 #define FORIT(variableName, storage) for (auto variableName = (storage).begin(); variableName != (storage).end(); ++variableName)
 #endif
 
+/** @namespace cupt */
 namespace cupt {
 
-extern const char* const libraryVersion;
+extern const char* const libraryVersion; ///< the version of Cupt library
 
 using std::vector;
 using std::string;
 
+/// general library exception class
+/**
+ * Any library function may throw this exception.
+ */
 class exception: public std::runtime_error
 {
  public:
@@ -51,6 +58,11 @@ using std::shared_ptr;
 using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
 
+/// message file descriptor
+/**
+ * All library error, warning, debug and simulate messages will be pointed here.
+ * Points to standard error stream by default.
+ */
 extern int messageFd;
 void fatal(const char* format, ...);
 void warn(const char* format, ...);
