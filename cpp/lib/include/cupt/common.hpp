@@ -106,6 +106,11 @@ void warn(const char* format, ...);
  * Equal to @ref warn, only sends @c "D:" instead of @c "W:"
  */
 void debug(const char* format, ...);
+
+/// sends a simulate message
+/**
+ * Equal to @ref warn, only sends @c "S:" instead of @c "W:"
+ */
 void simulate(const char* format, ...);
 string sf(const string& format, ...);
 vector< string > split(char, const string&, bool allowEmpty = false);
