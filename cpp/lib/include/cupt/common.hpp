@@ -25,10 +25,6 @@
 #include <memory>
 #include <stdexcept>
 
-#ifndef FORIT
-#define FORIT(variableName, storage) for (auto variableName = (storage).begin(); variableName != (storage).end(); ++variableName)
-#endif
-
 /** @namespace cupt */
 namespace cupt {
 
