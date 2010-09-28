@@ -87,6 +87,7 @@ extern int messageFd;
  * file 'abcd.dat': Permission denied"
  */
 void fatal(const char* format, ...);
+
 /// sends a warning message
 /**
  * This function:
