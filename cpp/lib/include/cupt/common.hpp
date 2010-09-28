@@ -64,6 +64,28 @@ using std::dynamic_pointer_cast;
  * Points to standard error stream by default.
  */
 extern int messageFd;
+
+/// sends an error message and throws exception
+/**
+ * This function:
+ *  -# substitutes all @c "EEE" substrings in format
+ *  -# perform printf against computed string with variable arguments
+ *  -# writes string @c "E:" + computed string + @c "\n" to messageFd
+ *  -# throws Exception with computed string as message
+ *  .
+ * @param [in] format printf format string (see printf(3))
+ *
+ * Example:
+ * @code
+ * if (!fopen("abcd.dat", "r"))
+ * {
+ *   fatal("unable to open file '%s': EEE", "abcd.dat");
+ * }
+ * @endcode
+ * may send @c "E: unable to open file 'abcd.dat': Permission denied\n" to
+ * @ref messageFd and throw Exception with message @c "unable to open
+ * file 'abcd.dat': Permission denied"
+ */
 void fatal(const char* format, ...);
 void warn(const char* format, ...);
 void debug(const char* format, ...);
