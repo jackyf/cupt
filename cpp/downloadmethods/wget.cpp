@@ -250,7 +250,7 @@ class WgetMethod: public cupt::download::Method
 					fatal("unable to launch wget process: EEE");
 				}
 			}
-			catch (exception& e)
+			catch (Exception& e)
 			{
 				char nonWgetError[] = "download method error: ";
 				write(wgetErrorStream.getWriterFd(), nonWgetError, sizeof(nonWgetError) - 1);

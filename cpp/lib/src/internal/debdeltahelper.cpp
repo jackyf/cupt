@@ -40,7 +40,7 @@ DebdeltaHelper::DebdeltaHelper()
 			{
 				__parse_sources(sourcesPath);
 			}
-			catch (exception& e)
+			catch (Exception& e)
 			{
 				warn("failed to parse debdelta configuration file '%s'", sourcesPath.c_str());
 			}

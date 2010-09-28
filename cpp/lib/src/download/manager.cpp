@@ -252,7 +252,7 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 		{
 			worker();
 		}
-		catch (exception&)
+		catch (Exception&)
 		{
 			// try our best to close all sockets available
 			parentPipe.reset();
@@ -1186,7 +1186,7 @@ string ManagerImpl::perform(const string& uri, const string& targetPath, int soc
 		result = downloadMethod->perform(config, uri, targetPath, callback);
 		delete downloadMethod;
 	}
-	catch (exception& e)
+	catch (Exception& e)
 	{
 		result = e.what();
 	}

@@ -304,7 +304,7 @@ void ConfigImpl::readConfigs(Config* config)
 			{
 				parser.parse(*configFileIt);
 			}
-			catch (exception&)
+			catch (Exception&)
 			{
 				warn("skipped configuration file '%s'", configFileIt->c_str());
 			}

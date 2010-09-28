@@ -145,7 +145,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	{
 		fatal("failed to parse command-line options: %s", e.what());
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error while processing command-line options");
 	}
@@ -263,7 +263,7 @@ shared_ptr< Config > Context::getConfig()
 		{
 			__config.reset(new Config);
 		}
-		catch (exception&)
+		catch (Exception&)
 		{
 			fatal("error while loading config");
 		}
@@ -287,7 +287,7 @@ shared_ptr< const Cache > Context::getCache(
 		{
 			__cache.reset(new Cache(__config, useSource, useBinary, useInstalled, packageNameGlobsToReinstall));
 		}
-		catch (exception&)
+		catch (Exception&)
 		{
 			fatal("error while creating package cache");
 		}

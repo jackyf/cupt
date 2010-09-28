@@ -59,7 +59,7 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 						newUnparsedVersions.push_back(initParams);
 					}
 				}
-				catch (exception& e)
+				catch (Exception& e)
 				{
 					warn("error while parsing new version entry for package '%s'", initParams.packageName.c_str());
 				}
@@ -70,7 +70,7 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 			}
 			__unparsed_versions.swap(newUnparsedVersions);
 		}
-		catch (exception&)
+		catch (Exception&)
 		{
 			fatal("error while parsing package info");
 		}
@@ -158,7 +158,7 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 			}
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error while merging version '%s' for package '%s'",
 				parsedVersion->versionString.c_str(), parsedVersion->packageName.c_str());

@@ -77,12 +77,12 @@ int mainEx(int argc, char* argv[], Context& context, string& command)
 		{
 			return handler(context);
 		}
-		catch (exception&)
+		catch (Exception&)
 		{
 			fatal("error performing command '%s'", command.c_str());
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		return 1;
 	}

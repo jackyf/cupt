@@ -924,7 +924,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		{
 			worker->changeSystem(downloadProgress);
 		}
-		catch (exception&)
+		catch (Exception&)
 		{
 			fatal("unable to do requested actions");
 		}

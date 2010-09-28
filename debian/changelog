@@ -8,6 +8,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
         names.
     - file:
       - 'getBlock': renamed to 'getRecord'.
+    - common:
+      - 'exception': renamed to 'Exception'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
 

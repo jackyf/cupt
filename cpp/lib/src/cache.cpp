@@ -493,7 +493,7 @@ bool Cache::verifySignature(const shared_ptr< const Config >& config, const stri
 					path.c_str(), messageType.c_str(), message.c_str());
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		warn("error while verifying signature for file '%s'", path.c_str());
 	}

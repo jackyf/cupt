@@ -95,7 +95,7 @@ void fatal(const char* format, ...)
 
 	__mwrite(string("E: ") + errorString + "\n");
 
-	throw exception(errorString);
+	throw Exception(errorString);
 }
 
 void warn(const char* format, ...)

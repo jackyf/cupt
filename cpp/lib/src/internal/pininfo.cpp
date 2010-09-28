@@ -397,7 +397,7 @@ void PinInfo::init()
 			loadData(*pathIt);
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error while parsing preferences");
 	}

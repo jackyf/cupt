@@ -128,7 +128,7 @@ extern "C"
 		{
 			filePtr->put((const char*)data, size);
 		}
-		catch (exception& e)
+		catch (Exception& e)
 		{
 			*fileWriteErrorPtr = e.what();
 			return 0;
@@ -266,7 +266,7 @@ class CurlMethod: public cupt::download::Method
 				return curl.getError();
 			}
 		}
-		catch (exception& e)
+		catch (Exception& e)
 		{
 			return sf(__("download method error: %s"), e.what());
 		}

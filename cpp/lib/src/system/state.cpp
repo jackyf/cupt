@@ -197,7 +197,7 @@ void StateData::parseDpkgStatus()
 			}
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error parsing system status file '%s'", path.c_str());
 	}

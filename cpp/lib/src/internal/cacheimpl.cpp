@@ -211,7 +211,7 @@ void CacheImpl::parseSourcesLists()
 			parseSourceList(*pathIt);
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error while parsing sources list");
 	}
@@ -338,7 +338,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 
 		processIndexFile(indexFileToParse, indexEntry.category, releaseInfo);
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		warn("skipped the index file '%s'", indexFileToParse.c_str());
 	}
@@ -357,7 +357,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 			}
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		warn("skipped translations of the index file '%s'", indexFileToParse.c_str());
 	}
@@ -548,7 +548,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 		}
 		++lineNumber;
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error parsing release file '%s', line %u", path.c_str(), lineNumber);
 	}
@@ -639,7 +639,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			{
 				checkPackageName(packageName);
 			}
-			catch (exception&)
+			catch (Exception&)
 			{
 				warn("discarding this package version from index file '%s'", path.c_str());
 				while (file->rawGetLine(buf, size), size > 1) {}
@@ -662,7 +662,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			}
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error parsing index file '%s'", path.c_str());
 	}
@@ -747,7 +747,7 @@ void CacheImpl::processTranslationFile(const string& path)
 			translations.insert(make_pair(std::move(md5), translationPosition));
 		}
 	}
-	catch(exception&)
+	catch(Exception&)
 	{
 		fatal("error parsing translation file '%s'", path.c_str());
 	}
@@ -970,7 +970,7 @@ void CacheImpl::parseExtendedStates()
 			}
 		}
 	}
-	catch (exception&)
+	catch (Exception&)
 	{
 		fatal("error while parsing extended states");
 	}

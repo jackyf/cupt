@@ -41,13 +41,13 @@ using std::string;
 /**
  * Any library function may throw this exception.
  */
-class exception: public std::runtime_error
+class Exception: public std::runtime_error
 {
  public:
-	exception(const char* message)
+	Exception(const char* message)
 		: std::runtime_error(message)
 	{}
-	exception(const string& message)
+	Exception(const string& message)
 		: std::runtime_error(message)
 	{}
 };
