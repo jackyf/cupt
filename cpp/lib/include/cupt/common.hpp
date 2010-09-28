@@ -100,6 +100,11 @@ void fatal(const char* format, ...);
  * @see fatal
  */
 void warn(const char* format, ...);
+
+/// sends a debug message
+/**
+ * Equal to @ref warn, only sends @c "D:" instead of @c "W:"
+ */
 void debug(const char* format, ...);
 void simulate(const char* format, ...);
 string sf(const string& format, ...);
