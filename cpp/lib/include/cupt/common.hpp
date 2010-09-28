@@ -87,6 +87,17 @@ extern int messageFd;
  * file 'abcd.dat': Permission denied"
  */
 void fatal(const char* format, ...);
+/// sends a warning message
+/**
+ * This function:
+ *  -# substitutes all @c "EEE" substrings in format
+ *  -# perform printf against computed string with variable arguments
+ *  -# writes string @c "W:" + computed string + @c "\n" to messageFd
+ *  .
+ * @param [in] format printf format string (see printf(3))
+ *
+ * @see fatal
+ */
 void warn(const char* format, ...);
 void debug(const char* format, ...);
 void simulate(const char* format, ...);
