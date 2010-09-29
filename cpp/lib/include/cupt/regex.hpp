@@ -18,6 +18,8 @@
 #ifndef CUPT_REGEX_SEEN
 #define CUPT_REGEX_SEEN
 
+/// @cond
+
 #include <boost/xpressive/xpressive_dynamic.hpp>
 
 #include <cupt/common.hpp>
@@ -38,6 +40,8 @@ shared_ptr< sregex > stringToRegex(const string& input);
 shared_ptr< sregex > globToRegex(const string& glob);
 
 }
+
+/// @endcode
 
 #endif
 
