@@ -64,12 +64,12 @@ extern int messageFd;
 /// sends an error message and throws exception
 /**
  * This function:
- *  -# substitutes all @c "EEE" substrings in format
- *  -# perform printf against computed string with variable arguments
- *  -# writes string @c "E:" + computed string + @c "\n" to messageFd
+ *  -# substitutes all @c "EEE" substrings in @a format
+ *  -# perform @c printf against computed string with variable arguments
+ *  -# writes string @c "E:" + computed string + @c "\n" to @ref messageFd
  *  -# throws Exception with computed string as message
  *  .
- * @param [in] format printf format string (see printf(3))
+ * @param [in] format @c printf format string (see @c printf(3))
  *
  * Example:
  * @code
@@ -87,11 +87,11 @@ void fatal(const char* format, ...);
 /// sends a warning message
 /**
  * This function:
- *  -# substitutes all @c "EEE" substrings in format
- *  -# perform printf against computed string with variable arguments
- *  -# writes string @c "W:" + computed string + @c "\n" to messageFd
+ *  -# substitutes all @c "EEE" substrings in @a format
+ *  -# perform @c printf against computed string with variable arguments
+ *  -# writes string @c "W:" + computed string + @c "\n" to @ref messageFd
  *  .
- * @param [in] format printf format string (see printf(3))
+ * @param [in] format @c printf format string
  *
  * @see fatal
  */
