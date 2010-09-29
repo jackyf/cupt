@@ -954,13 +954,14 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 	{
 		packageEntry->fakelySatisfied.push_back(*(action.fakelySatisfies));
 	}
-	if (__config->getBool("cupt::resolver::track-reasons"))
+	else if (__config->getBool("cupt::resolver::track-reasons"))
 	{
 		if (action.reason)
 		{
 			packageEntry->reasons.push_back(*(action.reason));
 		}
 	}
+
 	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
 	{
 		// don't do synchronization for removals
