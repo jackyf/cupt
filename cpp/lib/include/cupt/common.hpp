@@ -121,6 +121,24 @@ string globToRegexString(const string&);
  */
 string __(const char* message);
 
+/// reads package name in range
+/**
+ * Tries to read as more characters as possible from the @a begin, which form a
+ * valid package name, until @a end.
+ *
+ * @param [in] begin range begin iterator
+ * @param [in] end range end iterator
+ * @param [in,out] resultEnd consumed range end iterator
+ *
+ * @par Example:
+ * @code
+ * string input = "zzuf (>= 1.2)";
+ * string::const_iterator resultEnd;
+ * consumePackageName(input.begin(), input.end(), resultEnd);
+ * cout << string(input.begin(), resultEnd) << endl;
+ * @endcode
+ * @c "zzuf" will be printed
+ */
 void consumePackageName(string::const_iterator begin, string::const_iterator end,
 		string::const_iterator& resultEnd);
 bool checkPackageName(const string& packageName, bool throwOnError = true);
