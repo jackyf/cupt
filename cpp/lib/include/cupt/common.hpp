@@ -114,7 +114,12 @@ string join(const string& joiner, const vector< string >& parts);
 string humanReadableSizeString(uint64_t bytes);
 string globToRegexString(const string&);
 
-string __(const char*);
+/// localizes message
+/**
+ * @param [in] message input string
+ * @return localized message
+ */
+string __(const char* message);
 
 void consumePackageName(string::const_iterator begin, string::const_iterator end,
 		string::const_iterator& resultEnd);
