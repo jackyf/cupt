@@ -71,7 +71,7 @@ extern int messageFd;
  *  .
  * @param [in] format @c printf format string (see @c printf(3))
  *
- * Example:
+ * @par Example:
  * @code
  * if (!fopen("abcd.dat", "r"))
  * {
