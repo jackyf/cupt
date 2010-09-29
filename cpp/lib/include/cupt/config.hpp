@@ -48,7 +48,9 @@ class Config
 	/// assignment operator
 	Config& operator=(const Config& other);
 
+	/// returns scalar option names
 	vector< string > getScalarOptionNames() const;
+	/// returns list option names
 	vector< string > getListOptionNames() const;
 
 	void setScalar(const string& optionName, const string& value);
