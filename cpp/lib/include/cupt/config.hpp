@@ -18,6 +18,8 @@
 #ifndef CUPT_CONFIG_SEEN
 #define CUPT_CONFIG_SEEN
 
+/// @file
+
 #include <cupt/common.hpp>
 
 namespace cupt {
@@ -28,14 +30,22 @@ struct ConfigImpl;
 
 }
 
+/// stores library's configuration variables
 class Config
 {
 	internal::ConfigImpl* __impl;
  public:
+	/// constructor
+	/**
+	 * Reads configuration variables from configuration files.
+	 */
 	Config();
+	/// destructor
 	virtual ~Config();
 
+	/// copy constructor
 	Config(const Config& other);
+	/// assignment operator
 	Config& operator=(const Config& other);
 
 	vector< string > getScalarOptionNames() const;
