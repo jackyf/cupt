@@ -158,7 +158,17 @@ bool checkPackageName(const string& packageName, bool throwOnError = true);
  */
 bool checkVersionString(const string& versionString, bool throwOnError = true);
 
-int compareVersionStrings(const string&, const string&);
+/// compares two version strings
+/**
+ * @param left left version string
+ * @param right right version string
+ * @return @c -1, if @a left @c < @a right, @c 0 if @a left @c == @a right, @c 1 if @a left @c > @a right
+ * @note
+ * The version strings may be logically equal even if they are not physically
+ * equal. Unless you are comparing version strings that belong to the same
+ * cache::Package, you should use this function to test their equality.
+ */
+int compareVersionStrings(const string& left, const string& right);
 
 } // namespace
 
