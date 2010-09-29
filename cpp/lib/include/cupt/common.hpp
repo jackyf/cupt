@@ -141,7 +141,18 @@ string __(const char* message);
  */
 void consumePackageName(string::const_iterator begin, string::const_iterator end,
 		string::const_iterator& resultEnd);
+
+/// checks package name for correctness
+/**
+ * @param throwOnError if set to true, function will throw exception if @a packageName is not correct
+ * @return @c true if the @a packageName is correct, @c false if @a packageName is not correct and @a throwOnError is @c false
+ */
 bool checkPackageName(const string& packageName, bool throwOnError = true);
+
+/// checks version string for correctness
+/**
+ * Equal to @ref checkPackageName, only checks version string instead of package name
+ */
 bool checkVersionString(const string& versionString, bool throwOnError = true);
 
 int compareVersionStrings(const string&, const string&);
