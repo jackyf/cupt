@@ -148,15 +148,20 @@ bool HashSums::match(const HashSums& other) const
 string HashSums::getStringHash(const Type& type, const string& pattern)
 {
 	string description = sf("string '%s'", pattern.c_str());
-	string printfString;
-	char hexBuffer[5] = {'\\', 'x', '\0', '\0', '\0'};
-	static const char hexSymbolTable[] = "0123456789abcdef";
-	FORIT(charIt, pattern)
+
+	string printfString(pattern.size() * 4, '\0');
 	{
-		unsigned int c = *charIt;
-		hexBuffer[2] = hexSymbolTable[c >> 4];
-		hexBuffer[3] = hexSymbolTable[c & 0xF];
-		printfString.append(hexBuffer, 4);
+		static const char hexSymbolTable[] = "0123456789abcdef";
+		size_t i = 0;
+		FORIT(charIt, pattern)
+		{
+			unsigned int c = *charIt;
+			printfString[i] = '\\';
+			printfString[i+1] = 'x';
+			printfString[i+2] = hexSymbolTable[c >> 4];
+			printfString[i+3] = hexSymbolTable[c & 0xF];
+			i += 4;
+		}
 	}
 	return __get_hash(type, sf("/usr/bin/printf '%s' | ", printfString.c_str()), "", description);
 }
