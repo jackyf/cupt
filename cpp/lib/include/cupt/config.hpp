@@ -53,7 +53,17 @@ class Config
 	/// returns list option names
 	vector< string > getListOptionNames() const;
 
+	/// sets new value for the scalar option
+	/**
+	 * @param optionName name of the option to modify
+	 * @param value new value for the option
+	 */
 	void setScalar(const string& optionName, const string& value);
+	/// appends new element to the value of the list option
+	/**
+	 * @param optionName the name of the option to modify
+	 * @param value new value element for the option
+	 */
 	void setList(const string& optionName, const string& value);
 
 	vector< string > getList(const string& optionName) const;
