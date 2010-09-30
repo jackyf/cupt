@@ -164,7 +164,7 @@ class CurlMethod: public cupt::download::Method
 			CurlWrapper curl;
 			// bad connections can return 'receive failure' transient error
 			// occasionally, give them several tries to finish the download
-			auto transientErrorsLeft = config->getNumber("acquire::retries");
+			auto transientErrorsLeft = config->getInteger("acquire::retries");
 
 			{ // setting options
 				curl.setOption(CURLOPT_URL, string(uri), "uri");

@@ -13,6 +13,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - system/resolvers/native:
       - Don't add new reason to an action which received unsatisfied soft
         dependency penalty.
+    - config:
+      - 'getNumber': renamed to 'getInteger'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
 

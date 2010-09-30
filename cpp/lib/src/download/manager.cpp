@@ -577,7 +577,7 @@ void ManagerImpl::proceedDownload(Pipe& workerPipe, const vector< string >& para
 
 	const int waiterSocket = lexical_cast< int >(params[2]);
 	{ // pre-checks
-		auto maxSimultaneousDownloadsAllowed = config->getNumber("cupt::downloader::max-simultaneous-downloads");
+		auto maxSimultaneousDownloadsAllowed = config->getInteger("cupt::downloader::max-simultaneous-downloads");
 
 		auto doneIt = done.find(uri);
 		if (doneIt != done.end())
@@ -976,7 +976,7 @@ int ManagerImpl::getUriPriority(const Uri& uri)
 {
 	auto protocol = uri.getProtocol();
 	auto optionName = string("cupt::downloader::protocols::") + protocol + "::priority";
-	auto result = config->getNumber(optionName);
+	auto result = config->getInteger(optionName);
 	return result ? result : 100;
 }
 

@@ -826,7 +826,7 @@ void NativeResolverImpl::__pre_apply_action(const shared_ptr< Solution >& origin
 
 	// temporarily lower the score of the current solution to implement back-tracking
 	// the bigger quality bar, the bigger chance for other solutions
-	float qualityCorrection = - float(__config->getNumber("cupt::resolver::quality-bar")) /
+	float qualityCorrection = - float(__config->getInteger("cupt::resolver::quality-bar")) /
 			pow((originalSolution->level + 1), 0.1);
 
 	if (__config->getBool("debug::resolver"))
@@ -903,7 +903,7 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 void NativeResolverImpl::__erase_worst_solutions(list< shared_ptr< Solution > >& solutions)
 {
 	// don't allow solution tree to grow unstoppably
-	size_t maxSolutionCount = __config->getNumber("cupt::resolver::max-solution-count");
+	size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
 	auto debugging = __config->getBool("debug::resolver");
 	while (solutions.size() > maxSolutionCount)
 	{

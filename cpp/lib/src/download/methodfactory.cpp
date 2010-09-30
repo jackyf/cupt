@@ -180,7 +180,7 @@ int MethodFactoryImpl::__get_method_priority(const string& protocol, const strin
 {
 	string optionName = string("cupt::downloader::protocols::") + protocol +
 			"::methods::" + methodName + "::priority";
-	auto result = __config->getNumber(optionName);
+	auto result = __config->getInteger(optionName);
 	return result ? result : 100;
 }
 

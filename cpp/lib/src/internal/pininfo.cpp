@@ -110,7 +110,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 		}
 		if (installedInfo->want == system::State::InstalledRecord::Want::Hold && binaryVersion->isInstalled())
 		{
-			result += config->getNumber("cupt::cache::obey-hold");
+			result += config->getInteger("cupt::cache::obey-hold");
 		}
 	}
 

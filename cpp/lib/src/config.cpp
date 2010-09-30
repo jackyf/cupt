@@ -419,7 +419,7 @@ bool Config::getBool(const string& optionName) const
 	}
 }
 
-ssize_t Config::getNumber(const string& optionName) const
+ssize_t Config::getInteger(const string& optionName) const
 {
 	auto source = getString(optionName);
 	if (source.empty())

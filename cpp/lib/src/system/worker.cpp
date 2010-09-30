@@ -1401,8 +1401,8 @@ vector< Changeset > WorkerImpl::__get_changesets(GraphAndAttributes& gaa,
 		const map< string, pair< download::Manager::DownloadEntity, string > >& downloads)
 {
 	auto debugging = __config->getBool("debug::worker");
-	size_t archivesSpaceLimit = __config->getNumber("cupt::worker::archives-space-limit");
-	size_t archivesSpaceLimitTries = __config->getNumber("cupt::worker::archives-space-limit::tries");
+	size_t archivesSpaceLimit = __config->getInteger("cupt::worker::archives-space-limit");
+	size_t archivesSpaceLimitTries = __config->getInteger("cupt::worker::archives-space-limit::tries");
 
 	bool ok = false;
 	size_t minMaxDownloadAmount = -1;
@@ -1676,7 +1676,7 @@ void WorkerImpl::__do_dpkg_pre_packages_actions(const vector< vector< InnerActio
 		}
 
 		string commandInput;
-		auto versionOfInput = __config->getNumber(
+		auto versionOfInput = __config->getInteger(
 				string("dpkg::tools::options::") + commandBinary + "::version");
 		if (versionOfInput == 2)
 		{
@@ -1824,7 +1824,7 @@ void WorkerImpl::__do_downloads(const vector< pair< download::Manager::DownloadE
 void WorkerImpl::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = __config->getBool("debug::worker");
-	auto archivesSpaceLimit = __config->getNumber("cupt::worker::archives-space-limit");
+	auto archivesSpaceLimit = __config->getInteger("cupt::worker::archives-space-limit");
 	auto downloadOnly = __config->getBool("cupt::worker::download-only");
 
 	auto preDownloads = __prepare_downloads();
@@ -2191,7 +2191,7 @@ ssize_t WorkerImpl::__get_uri_priority(const string& uri)
 	}
 	auto variableName = string("cupt::update::compression-types::") +
 			extension + "::priority";
-	return __config->getNumber(variableName);
+	return __config->getInteger(variableName);
 }
 
 bool WorkerImpl::__update_index(download::Manager& downloadManager,

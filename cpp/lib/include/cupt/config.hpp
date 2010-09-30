@@ -85,8 +85,7 @@ class Config
 	/**
 	 * @param optionName name of the option
 	 */
-	// TODO: rename to getInteger
-	ssize_t getNumber(const string& optionName) const;
+	ssize_t getInteger(const string& optionName) const;
 };
 
 } // namespace
