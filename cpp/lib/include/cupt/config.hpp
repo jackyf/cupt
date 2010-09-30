@@ -71,8 +71,21 @@ class Config
 	 * @param optionName name of the option
 	 */
 	vector< string > getList(const string& optionName) const;
+	/// gets value of the scalar option
+	/**
+	 * @param optionName name of the option
+	 */
 	string getString(const string& optionName) const;
+	/// gets converted to boolean value of the scalar option
+	/**
+	 * @param optionName name of the option
+	 */
 	bool getBool(const string& optionName) const;
+	/// gets converted to integer value of the scalar option
+	/**
+	 * @param optionName name of the option
+	 */
+	// TODO: rename to getInteger
 	ssize_t getNumber(const string& optionName) const;
 };
 
