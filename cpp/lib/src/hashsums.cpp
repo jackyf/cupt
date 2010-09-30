@@ -149,11 +149,13 @@ string HashSums::getStringHash(const Type& type, const string& pattern)
 {
 	string description = sf("string '%s'", pattern.c_str());
 	string printfString;
-	char hexBuffer[5] = {'\\', 'x', '\0'};
+	char hexBuffer[5] = {'\\', 'x', '\0', '\0', '\0'};
+	static const char hexSymbolTable[] = "0123456789abcdef";
 	FORIT(charIt, pattern)
 	{
 		unsigned int c = *charIt;
-		sprintf(hexBuffer+2, "%02x", c);
+		hexBuffer[2] = hexSymbolTable[c >> 4];
+		hexBuffer[3] = hexSymbolTable[c & 0xF];
 		printfString.append(hexBuffer, 4);
 	}
 	return __get_hash(type, sf("/usr/bin/printf '%s' | ", printfString.c_str()), "", description);
