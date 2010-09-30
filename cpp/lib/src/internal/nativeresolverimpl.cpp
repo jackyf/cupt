@@ -954,12 +954,9 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 	{
 		packageEntry->fakelySatisfied.push_back(*(action.fakelySatisfies));
 	}
-	else if (__config->getBool("cupt::resolver::track-reasons"))
+	else if (action.reason)
 	{
-		if (action.reason)
-		{
-			packageEntry->reasons.push_back(*(action.reason));
-		}
+		packageEntry->reasons.push_back(*(action.reason));
 	}
 
 	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
@@ -1177,6 +1174,7 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 	vector< Action > result;
 
 	bool debugging = __config->getBool("debug::resolver");
+	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	FORIT(actionIt, actions)
 	{
 		const shared_ptr< const BinaryVersion >& version = actionIt->version;
@@ -1212,7 +1210,10 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 				{
 					Action action;
 					action.packageName = unsynchronizeablePackageName;
-					action.reason.reset(new Reason(version->packageName));
+					if (trackReasons)
+					{
+						action.reason.reset(new Reason(version->packageName));
+					}
 					result.push_back(action);
 				}
 			}
@@ -1314,6 +1315,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		debug("started resolving");
 	}
 	__require_strict_relation_expressions();
+
+	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 
 	auto dependencyGroups = __get_dependency_groups();
 
@@ -1484,11 +1487,14 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 								goto next_package;
 							}
 
-							// setting a reason
-							shared_ptr< const Reason > reason(new Reason(version, dependencyType, relationExpression));
-							FORIT(possibleActionIt, possibleActions)
+							if (trackReasons)
 							{
-								possibleActionIt->reason = reason;
+								// setting a reason
+								shared_ptr< const Reason > reason(new Reason(version, dependencyType, relationExpression));
+								FORIT(possibleActionIt, possibleActions)
+								{
+									possibleActionIt->reason = reason;
+								}
 							}
 
 							// mark package as failed one more time
