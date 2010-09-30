@@ -64,7 +64,7 @@ extern int messageFd;
 /// sends an error message and throws exception
 /**
  * This function:
- *  -# substitutes all @c "EEE" substrings in @a format
+ *  -# substitutes at most one @c "EEE" substring (leftest one) in @a format
  *  -# perform @c printf against computed string with variable arguments
  *  -# writes string @c "E:" + computed string + @c "\n" to @ref messageFd
  *  -# throws Exception with computed string as message
@@ -87,7 +87,7 @@ void fatal(const char* format, ...);
 /// sends a warning message
 /**
  * This function:
- *  -# substitutes all @c "EEE" substrings in @a format
+ *  -# substitutes at most one @c "EEE" substring (leftest one) in @a format
  *  -# perform @c printf against computed string with variable arguments
  *  -# writes string @c "W:" + computed string + @c "\n" to @ref messageFd
  *  .
