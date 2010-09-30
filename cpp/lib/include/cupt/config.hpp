@@ -66,6 +66,10 @@ class Config
 	 */
 	void setList(const string& optionName, const string& value);
 
+	/// gets contents of the list variable
+	/**
+	 * @param optionName name of the option
+	 */
 	vector< string > getList(const string& optionName) const;
 	string getString(const string& optionName) const;
 	bool getBool(const string& optionName) const;
