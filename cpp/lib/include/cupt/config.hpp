@@ -61,7 +61,7 @@ class Config
 	void setScalar(const string& optionName, const string& value);
 	/// appends new element to the value of the list option
 	/**
-	 * @param optionName the name of the option to modify
+	 * @param optionName name the of the option to modify
 	 * @param value new value element for the option
 	 */
 	void setList(const string& optionName, const string& value);
