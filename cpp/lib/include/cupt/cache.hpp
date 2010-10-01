@@ -21,7 +21,6 @@
 #include <boost/xpressive/xpressive_fwd.hpp>
 
 #include <set>
-#include <map>
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
@@ -36,7 +35,6 @@ struct CacheImpl;
 }
 
 using std::set;
-using std::map;
 
 using namespace cache;
 
