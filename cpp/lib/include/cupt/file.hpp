@@ -50,6 +50,17 @@ class File
 	File(const string& path, const char* mode, string& error);
 	/// destructor
 	virtual ~File();
+	/// reads new line
+	/**
+	 * Reads new line (that is, a sequence of characters which ends with newline
+	 * character (@c "\n")).
+	 *
+	 * If the end of file was encountered when reading, newline character will be
+	 * not added.
+	 *
+	 * @param [in, out] buffer will contain a pointer to read data
+	 * @param [out] size the size (in bytes) of the buffer, a value @c 0 means end of file
+	 */
 	File& rawGetLine(const char*& buffer, size_t& size);
 	File& getLine(string&);
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
