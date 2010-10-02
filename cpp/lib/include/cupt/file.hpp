@@ -18,6 +18,8 @@
 #ifndef CUPT_FILE_SEEN
 #define CUPT_FILE_SEEN
 
+/// @file
+
 #include <functional>
 
 #include <cupt/common.hpp>
@@ -30,10 +32,21 @@ struct FileImpl;
 
 }
 
+/// high-level interface to file routines
 class File
 {
 	internal::FileImpl* __impl;
  public:
+	/// constructor
+	/**
+	 * Constructs new object for a regular file or reading shell pipe.
+	 *
+	 * @warning You must not use constructed object if @a error is not empty.
+	 *
+	 * @param path path to file or shell command, see @a mode
+	 * @param mode any value, accepted as @a mode in @c fopen(3), or @c "pr" - special value to treat @a path as shell pipe
+	 * @param [out] error if open fails, human readable error will be placed here
+	 */
 	File(const string& path, const char* mode, string& error);
 	virtual ~File();
 	File& rawGetLine(const char*& buffer, size_t& size);
