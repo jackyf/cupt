@@ -48,6 +48,7 @@ class File
 	 * @param [out] error if open fails, human readable error will be placed here
 	 */
 	File(const string& path, const char* mode, string& error);
+	/// destructor
 	virtual ~File();
 	File& rawGetLine(const char*& buffer, size_t& size);
 	File& getLine(string&);
