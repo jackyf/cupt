@@ -57,7 +57,7 @@ using std::dynamic_pointer_cast;
 /// message file descriptor
 /**
  * All library error, warning, debug and simulate messages will be pointed here.
- * Points to standard error stream by default.
+ * If @a messageFd @c == @c -1, messages will be suppressed. Defaults to @c -1.
  */
 extern int messageFd;
 
