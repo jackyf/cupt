@@ -124,7 +124,15 @@ class File
 
 	/// checks for the end of file condition
 	bool eof() const;
+	/// seeks to a new position
+	/**
+	 * Sets new position of the file to write/read.
+	 * Will throw Exception if called against File opened as pipe.
+	 *
+	 * @param newPosition new file position
+	 */
 	void seek(size_t newPosition);
+	/// gets current file position
 	size_t tell() const;
 
 	void lock(int flags);
