@@ -60,6 +60,7 @@ class File
 	 *
 	 * @param [in, out] buffer will contain a pointer to read data
 	 * @param [out] size the size (in bytes) of the buffer, a value @c 0 means end of file
+	 * @return reference to self
 	 */
 	File& rawGetLine(const char*& buffer, size_t& size);
 	/// reads new line
@@ -70,6 +71,7 @@ class File
 	 * @a line only if @ref eof returned false.
 	 *
 	 * @param [out] line container for read data
+	 * @return reference to self
 	 */
 	File& getLine(string& line);
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
