@@ -135,6 +135,10 @@ class File
 	/// gets current file position
 	size_t tell() const;
 
+	/// perform @c flock(2) on file
+	/**
+	 * @param flags flags passed to @c flock
+	 */
 	void lock(int flags);
 };
 
