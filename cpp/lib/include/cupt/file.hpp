@@ -110,7 +110,16 @@ class File
 	 * @param block container for read data
 	 */
 	void getFile(string& block);
-	void put(const string&);
+	/// writes data
+	/**
+	 * @param data - data to write
+	 */
+	void put(const string& data);
+	/// writes data
+	/**
+	 * @param data - pointer to the data buffer
+	 * @param size - size of the buffer
+	 */
 	void put(const char* data, size_t size);
 
 	bool eof() const;
