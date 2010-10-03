@@ -18,6 +18,8 @@
 #ifndef CUPT_PIPE_SEEN
 #define CUPT_PIPE_SEEN
 
+/// @cond
+
 #include <unistd.h>
 
 #include <cupt/common.hpp>
@@ -44,6 +46,8 @@ class Pipe
 };
 
 }
+
+/// @endcond
 
 #endif
 
