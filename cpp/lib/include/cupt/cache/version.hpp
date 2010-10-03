@@ -18,6 +18,8 @@
 #ifndef CUPT_CACHE_VERSION_SEEN
 #define CUPT_CACHE_VERSION_SEEN
 
+/// @file
+
 #include <cstdint>
 #include <map>
 
@@ -30,6 +32,10 @@ namespace cache {
 
 using std::map;
 
+/// common version information
+/**
+ * @see SourceVersion and BinaryVersion
+ */
 struct Version
 {
 	struct AvailableAsEntry
