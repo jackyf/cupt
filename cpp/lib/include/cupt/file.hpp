@@ -72,6 +72,16 @@ class File
 	 *
 	 * @param [out] line container for read data
 	 * @return reference to self
+	 *
+	 * @par Example:
+	 * Reading file line by line.
+	 * @code
+	 * string line;
+	 * while (!file.getLine(line).eof())
+	 * {
+	 *   // process line
+	 * }
+	 * @endcode
 	 */
 	File& getLine(string& line);
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
