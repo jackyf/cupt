@@ -122,6 +122,7 @@ class File
 	 */
 	void put(const char* data, size_t size);
 
+	/// checks for the end of file condition
 	bool eof() const;
 	void seek(size_t newPosition);
 	size_t tell() const;
