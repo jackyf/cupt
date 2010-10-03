@@ -62,7 +62,16 @@ class File
 	 * @param [out] size the size (in bytes) of the buffer, a value @c 0 means end of file
 	 */
 	File& rawGetLine(const char*& buffer, size_t& size);
-	File& getLine(string&);
+	/// reads new line
+	/**
+	 * Reads new line. Newline character from the end is strip if present.
+	 *
+	 * End of file must be checked by querying @ref eof right after @ref getLine. You can use
+	 * @a line only if @ref eof returned false.
+	 *
+	 * @param [out] line container for read data
+	 */
+	File& getLine(string& line);
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
 			[](const char*, size_t) -> bool { return true; });
 	void getFile(string&);
