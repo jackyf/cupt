@@ -33,10 +33,10 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 {
 	auto v = new SourceVersion;
 
-	AvailableAsEntry availableAsEntry;
+	Source source;
 
 	v->packageName = initParams.packageName;
-	availableAsEntry.release = initParams.releaseInfo;
+	source.release = initParams.releaseInfo;
 
 	v->priority = Version::Priorities::Extra; // default value if not specified
 
@@ -104,8 +104,8 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 			static const sregex commaAndNewlineSeparatedRegex = sregex::compile("\\s*\\n?\\s*,\\s*\\n?\\s*", regex_constants::optimize);
 			v->binaryPackageNames = split(commaAndNewlineSeparatedRegex, m[1]);
 		})
-		v->availableAs.push_back(availableAsEntry);
-		TAG(Directory, v->availableAs[0].directory = tagValue;)
+		v->sources.push_back(source);
+		TAG(Directory, v->sources[0].directory = tagValue;)
 		TAG(Version, v->versionString = tagValue;)
 		checkVersionString(v->versionString);
 		PARSE_PRIORITY

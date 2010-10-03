@@ -166,9 +166,9 @@ int showBinaryVersions(Context& context)
 			p(__("Architecture"), version->architecture);
 			if (variables.count("with-release-info"))
 			{
-				for (size_t i = 0; i < version->availableAs.size(); ++i)
+				for (size_t i = 0; i < version->sources.size(); ++i)
 				{
-					const Version::AvailableAsEntry& entry = version->availableAs[i];
+					const Version::Source& entry = version->sources[i];
 					p(__("Release"), entry.release->description);
 				}
 			}
@@ -276,9 +276,9 @@ int showSourceVersions(Context& context)
 			p(__("Architectures"), join(" ", version->architectures));
 			if (variables.count("with-release-info"))
 			{
-				for (size_t i = 0; i < version->availableAs.size(); ++i)
+				for (size_t i = 0; i < version->sources.size(); ++i)
 				{
-					const Version::AvailableAsEntry& entry = version->availableAs[i];
+					const Version::Source& entry = version->sources[i];
 					p(__("Release"), entry.release->description);
 				}
 			}
@@ -637,9 +637,9 @@ int policy(Context& context, bool source)
 
 				cout << version->versionString << ' ' << pin << endl;
 
-				FORIT(availableAsRecordIt, version->availableAs)
+				FORIT(sourceIt, version->sources)
 				{
-					const shared_ptr< const ReleaseInfo > release = availableAsRecordIt->release;
+					const shared_ptr< const ReleaseInfo > release = sourceIt->release;
 					static const string spaces(8, ' ');
 					cout << spaces;
 					auto origin = release->baseUri;

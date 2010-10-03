@@ -53,10 +53,10 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 
 	auto defaultRelease = config->getString("apt::default-release");
 
-	size_t availableAsCount = version->availableAs.size();
-	for (size_t i = 0; i < availableAsCount; ++i)
+	size_t sourceCount = version->sources.size();
+	for (size_t i = 0; i < sourceCount; ++i)
 	{
-		const Version::AvailableAsEntry& entry = version->availableAs[i];
+		const Version::Source& entry = version->sources[i];
 		auto currentPriority = defaultPriority;
 		if (!defaultRelease.empty() &&
 			(entry.release->archive == defaultRelease || entry.release->codename == defaultRelease))
@@ -313,9 +313,9 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 #define RELEASE_CASE(constant, member) \
 				case PinEntry::Condition::constant: \
 					matched = false; \
-					FORIT(availableAsRecordIt, version->availableAs) \
+					FORIT(sourceIt, version->sources) \
 					{ \
-						const shared_ptr< const ReleaseInfo >& release = availableAsRecordIt->release; \
+						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
 						if (regex_match(release->member, m, *regex)) \
 						{ \
 							matched = true; \

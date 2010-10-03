@@ -33,11 +33,11 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 {
 	auto v = new BinaryVersion;
 
-	AvailableAsEntry availableAsEntry;
+	Source source;
 
 	v->essential = false;
 	v->packageName = initParams.packageName;
-	availableAsEntry.release = initParams.releaseInfo;
+	source.release = initParams.releaseInfo;
 
 	v->installedSize = 0;
 	v->priority = Version::Priorities::Extra; // default value if not specified
@@ -72,12 +72,12 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 			auto lastSlashPosition = filename.find_last_of('/');
 			if (lastSlashPosition == string::npos)
 			{
-				// availableAsEntry.directory remains empty
+				// source.directory remains empty
 				v->file.name = filename;
 			}
 			else
 			{
-				availableAsEntry.directory = filename.substr(0, lastSlashPosition);
+				source.directory = filename.substr(0, lastSlashPosition);
 				v->file.name = filename.substr(lastSlashPosition + 1);
 			}
 		})
@@ -164,7 +164,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 				v->packageName.c_str(), v->versionString.c_str());
 		v->architecture = "all";
 	}
-	v->availableAs.push_back(availableAsEntry);
+	v->sources.push_back(source);
 	if (!v->isInstalled() && v->file.hashSums.empty())
 	{
 		fatal("no hash sums specified");
@@ -175,7 +175,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 
 bool BinaryVersion::isInstalled() const
 {
-	return availableAs[0].release->baseUri.empty();
+	return sources[0].release->baseUri.empty();
 }
 
 bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) const

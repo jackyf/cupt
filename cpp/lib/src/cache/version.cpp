@@ -36,10 +36,10 @@ Version::Version()
 
 bool Version::isVerified() const
 {
-	size_t availableAsCount = availableAs.size();
-	for (size_t i = 0; i < availableAsCount; ++i)
+	size_t sourceCount = sources.size();
+	for (size_t i = 0; i < sourceCount; ++i)
 	{
-		if (availableAs[i].release->verified)
+		if (sources[i].release->verified)
 		{
 			return true;
 		}
@@ -73,13 +73,13 @@ vector< Version::DownloadRecord > Version::getDownloadInfo() const
 
 	vector< DownloadRecord > result;
 
-	FORIT(availableAsRecordIt, availableAs)
+	FORIT(sourceIt, sources)
 	{
-		const string& baseUri = availableAsRecordIt->release->baseUri;
+		const string& baseUri = sourceIt->release->baseUri;
 		if (!baseUri.empty())
 		{
 			DownloadRecord record;
-			record.directory = availableAsRecordIt->directory;
+			record.directory = sourceIt->directory;
 			record.baseUri = baseUri;
 
 			string fullDir = baseUri + "/" + record.directory;

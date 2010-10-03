@@ -1249,7 +1249,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > WorkerImpl::__p
 
 			download::Manager::DownloadEntity downloadEntity;
 
-			const shared_ptr< const ReleaseInfo > release = version->availableAs[0].release;
+			const shared_ptr< const ReleaseInfo > release = version->sources[0].release;
 			string longAliasTail = sf("%s/%s %s %s", release->codename.c_str(),
 						release->component.c_str(), packageName.c_str(), versionString.c_str());
 			FORIT(it, downloadInfo)

@@ -115,10 +115,10 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		auto versions = package->getVersions();
 		FORIT(versionIt, versions)
 		{
-			FORIT(availableAsRecordIt, (*versionIt)->availableAs)
+			FORIT(sourceIt, (*versionIt)->sources)
 			{
-				if (availableAsRecordIt->release->archive == distributionExpression ||
-					availableAsRecordIt->release->codename == distributionExpression)
+				if (sourceIt->release->archive == distributionExpression ||
+					sourceIt->release->codename == distributionExpression)
 				{
 					// found such a version
 					return *versionIt;

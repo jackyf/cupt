@@ -94,7 +94,7 @@ int downloadSourcePackage(Context& context)
 			const string& packageName = version->packageName;
 			const string& versionString = version->versionString;
 
-			auto releaseInfo = version->availableAs[0].release;
+			auto releaseInfo = version->sources[0].release;
 			// TODO: maybe, pass releaseInfo in downloadInfo?
 			const string& codename = releaseInfo->codename;
 			const string& component = releaseInfo->component;
@@ -262,7 +262,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 			else
 			{
 				Manager::DownloadEntity downloadEntity;
-				FORIT(it, version->availableAs)
+				FORIT(it, version->sources)
 				{
 					if (it->release->vendor != "Debian" && it->release->vendor != "Ubuntu")
 					{

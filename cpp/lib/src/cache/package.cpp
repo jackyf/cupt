@@ -138,8 +138,8 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 				ok, this is the same version
 				*/
 
-				// so, adding new "available_as" info
-				foundVersion->availableAs.push_back(parsedVersion->availableAs[0]);
+				// so, adding new Version::Source info
+				foundVersion->sources.push_back(parsedVersion->sources[0]);
 
 				if (binaryVersion && binaryVersion->isInstalled())
 				{
@@ -153,7 +153,7 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 				// err, no, this is different version :(
 				string info = __("package name") + ": '" + parsedVersion->packageName + "', " +
 						__("version string") + ": '" + parsedVersion->versionString + "', " +
-						__("origin") + ": '" + parsedVersion->availableAs[0].release->baseUri + "'";
+						__("origin") + ": '" + parsedVersion->sources[0].release->baseUri + "'";
 				warn("throwing away duplicating version with different hash sums: %s", info.c_str());
 			}
 		}

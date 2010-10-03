@@ -110,9 +110,9 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			const string& value = keyValueIt->second;
 
 			bool found = false;
-			FORIT(availableAsRecordIt, version->availableAs)
+			FORIT(sourceIt, version->sources)
 			{
-				const shared_ptr< const ReleaseInfo >& releaseInfo = availableAsRecordIt->release;
+				const shared_ptr< const ReleaseInfo >& releaseInfo = sourceIt->release;
 				string releaseValue;
 				if (key == "Origin")
 				{
@@ -149,7 +149,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			string baseUri = "debdelta:" + deltaUriIt->second;
 
 			// not very reliable :(
-			string appendage = version->availableAs[0].directory + '/';
+			string appendage = version->sources[0].directory + '/';
 			appendage += join("_", vector< string >{ packageName,
 					mangleVersionString(installedVersion->versionString),
 					mangleVersionString(version->versionString),

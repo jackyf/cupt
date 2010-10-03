@@ -38,7 +38,7 @@ using std::map;
  */
 struct Version
 {
-	struct AvailableAsEntry
+	struct Source
 	{
 		shared_ptr< const ReleaseInfo > release;
 		string directory;
@@ -66,7 +66,7 @@ struct Version
 		uint32_t size;
 		HashSums hashSums;
 	};
-	vector< AvailableAsEntry > availableAs;
+	vector< Source > sources;
 	string packageName;
 	Priorities::Type priority;
 	string section;
