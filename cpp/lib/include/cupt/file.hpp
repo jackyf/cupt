@@ -103,7 +103,13 @@ class File
 	 */
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
 			[](const char*, size_t) -> bool { return true; });
-	void getFile(string&);
+	/// reads all available data from current position
+	/**
+	 * It's usually used just after opening the file and for small files.
+	 *
+	 * @param block container for read data
+	 */
+	void getFile(string& block);
 	void put(const string&);
 	void put(const char* data, size_t size);
 
