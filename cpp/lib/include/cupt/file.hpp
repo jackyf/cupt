@@ -84,6 +84,23 @@ class File
 	 * @endcode
 	 */
 	File& getLine(string& line);
+	/// reads new record
+	/**
+	 * Reads new record, that is, a sequence of characters which ends with
+	 * double newline character (@c "\n\n").
+	 *
+	 * If the end of file was encountered when reading, newline character(s)
+	 * will be not added.
+	 *
+	 * End of file must be checked by querying @ref eof right after @ref getRecord. You can use
+	 * @a record only if @ref eof returned false.
+	 *
+	 * @param [out] record container for read data
+	 * @param accepter an instrument to skip some lines you don't want to be in
+	 * a record, to speed up reading. By default accepts all lines. Function
+	 * parameters, in the order, are pointer to raw data buffer and its size.
+	 * @return reference to self.
+	 */
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
 			[](const char*, size_t) -> bool { return true; });
 	void getFile(string&);
