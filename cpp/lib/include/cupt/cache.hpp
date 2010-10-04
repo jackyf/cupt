@@ -18,6 +18,8 @@
 #ifndef CUPT_CACHE_CACHE_SEEN
 #define CUPT_CACHE_CACHE_SEEN
 
+/// @file
+
 #include <boost/xpressive/xpressive_fwd.hpp>
 
 #include <set>
@@ -38,15 +40,21 @@ using std::set;
 
 using namespace cache;
 
+/// brief the source of package and version information
 class Cache
 {
  public:
+	/// describes smallest index source piece
+	/**
+	 * When Cache reads source entries from configuration files, it breaks them
+	 * into these logical pieces.
+	 */
 	struct IndexEntry
 	{
-		enum Type { Source, Binary } category;
-		string uri;
-		string distribution;
-		string component;
+		enum Type { Source, Binary } category; ///< does this index entry contains source or binary packages
+		string uri; ///< base index URI, as specified in source list
+		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
+		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
 	};
 	struct IndexDownloadRecord
 	{
