@@ -95,7 +95,9 @@ class Cache
 	/// destructor
 	virtual ~Cache();
 
+	/// gets release data list of indexed metadata for binary packages
 	vector< shared_ptr< const ReleaseInfo > > getBinaryReleaseData() const;
+	/// gets release data list of indexed metadata for source packages
 	vector< shared_ptr< const ReleaseInfo > > getSourceReleaseData() const;
 
 	vector< string > getBinaryPackageNames() const;
