@@ -56,11 +56,12 @@ class Cache
 		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
 		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
 	};
+	/// download record for cache index files
 	struct IndexDownloadRecord
 	{
-		string uri;
-		uint32_t size;
-		HashSums hashSums;
+		string uri; ///< download URI
+		uint32_t size; ///< size in bytes
+		HashSums hashSums; ///< hash sums
 	};
 	struct LocalizationDownloadRecord
 	{
