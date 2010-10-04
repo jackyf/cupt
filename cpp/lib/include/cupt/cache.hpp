@@ -80,8 +80,19 @@ class Cache
 	Cache(const Cache&);
 	Cache& operator=(const Cache&);
  public:
-	Cache(shared_ptr< const Config >, bool useSource, bool useInstalled, bool useBinary,
+	/// constructor
+	/**
+	 * Reads package metadata and builds index on it.
+	 *
+	 * @param config configuration
+	 * @param useSource whether to read source package metadata
+	 * @param useBinary whether to read binary package metadata
+	 * @param useInstalled whether to read dpkg metadata (installed binary packages)
+	 * @param packageNameGlobsToReinstall array of glob expressions, allow these packages to be re-installed
+	 */
+	Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled,
 			const vector< string >& packageNameGlobsToReinstall = vector< string >());
+	/// destructor
 	virtual ~Cache();
 
 	vector< shared_ptr< const ReleaseInfo > > getBinaryReleaseData() const;
