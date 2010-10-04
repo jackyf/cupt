@@ -100,9 +100,19 @@ class Cache
 	/// gets release data list of indexed metadata for source packages
 	vector< shared_ptr< const ReleaseInfo > > getSourceReleaseData() const;
 
+	/// gets the list of names of available binary packages
 	vector< string > getBinaryPackageNames() const;
+	/// gets BinaryPackage by name
+	/**
+	 * @param packageName name of the binary package
+	 */
 	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;
+	/// gets the list of names of available source packages
 	vector< string > getSourcePackageNames() const;
+	/// gets SourcePackage by name
+	/**
+	 * @param packageName name of the source package
+	 */
 	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
 
 	vector< shared_ptr< const BinaryVersion > > getInstalledVersions() const;
