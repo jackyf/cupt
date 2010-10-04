@@ -69,9 +69,10 @@ class Cache
 		string uri; ///< download URI
 		string localPath; ///< path, where download to
 	};
+	/// extended package information
 	struct ExtendedInfo
 	{
-		set< string > automaticallyInstalled;
+		set< string > automaticallyInstalled; ///< names of automatically installed packages
 	};
 
  private:
