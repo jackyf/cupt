@@ -63,10 +63,11 @@ class Cache
 		uint32_t size; ///< size in bytes
 		HashSums hashSums; ///< hash sums
 	};
+	/// download record for localization files
 	struct LocalizationDownloadRecord
 	{
-		string uri;
-		string localPath;
+		string uri; ///< download URI
+		string localPath; ///< path, where download to
 	};
 	struct ExtendedInfo
 	{
