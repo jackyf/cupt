@@ -40,7 +40,7 @@ using std::set;
 
 using namespace cache;
 
-/// brief the source of package and version information
+/// the source of package and version information
 class Cache
 {
  public:
