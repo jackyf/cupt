@@ -6,6 +6,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - cache:
       - Pre-parsing index files: really discard packages with broken package
         names.
+      - 'operator=': forbidden now.
     - file:
       - 'getBlock': renamed to 'getRecord'.
     - common:

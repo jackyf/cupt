@@ -78,6 +78,7 @@ class Cache
  private:
 	internal::CacheImpl* __impl;
 	Cache(const Cache&);
+	Cache& operator=(const Cache&);
  public:
 	Cache(shared_ptr< const Config >, bool useSource, bool useInstalled, bool useBinary,
 			const vector< string >& packageNameGlobsToReinstall = vector< string >());
