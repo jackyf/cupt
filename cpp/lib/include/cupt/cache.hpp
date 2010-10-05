@@ -118,6 +118,10 @@ class Cache
 	/// gets all installed versions
 	vector< shared_ptr< const BinaryVersion > > getInstalledVersions() const;
 
+	/// is binary package automatically installed?
+	/**
+	 * @param packageName name of the binary package
+	 */
 	bool isAutomaticallyInstalled(const string& packageName) const;
 
 	vector< IndexEntry > getIndexEntries() const;
