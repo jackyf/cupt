@@ -115,6 +115,7 @@ class Cache
 	 */
 	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
 
+	/// gets all installed versions
 	vector< shared_ptr< const BinaryVersion > > getInstalledVersions() const;
 
 	bool isAutomaticallyInstalled(const string& packageName) const;
