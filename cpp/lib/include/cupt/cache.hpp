@@ -127,8 +127,20 @@ class Cache
 	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;
 
+	/// gets the path of Release file corresponding to certain IndexEntry
+	/**
+	 * @param entry index entry
+	 */
 	string getPathOfReleaseList(const IndexEntry& entry) const;
+	/// gets the path of index file (Packages or Sources) corresponding to certain IndexEntry
+	/**
+	 * @param entry index entry
+	 */
 	string getPathOfIndexList(const IndexEntry& entry) const;
+	/// gets the path of extended states file
+	/**
+	 * @param entry index entry
+	 */
 	string getPathOfExtendedStates() const;
 
 	string getDownloadUriOfReleaseList(const IndexEntry& entry) const;
