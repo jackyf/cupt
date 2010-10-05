@@ -124,6 +124,7 @@ class Cache
 	 */
 	bool isAutomaticallyInstalled(const string& packageName) const;
 
+	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;
 
 	string getPathOfReleaseList(const IndexEntry& entry) const;
