@@ -143,8 +143,11 @@ class Cache
 	 */
 	string getPathOfExtendedStates() const;
 
-	string getDownloadUriOfReleaseList(const IndexEntry& entry) const;
+	/// gets download URI of Release file corresponding to certain IndexEntry
+	string getDownloadUriOfReleaseList(const IndexEntry&) const;
+	/// gets download records of index file corresponding to certain IndexEntry
 	vector< IndexDownloadRecord > getDownloadInfoOfIndexList(const IndexEntry&) const;
+	/// gets download records of possible localization files corresponding to certain IndexEntry
 	vector< LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(const IndexEntry&) const;
 
 	shared_ptr< const system::State > getSystemState() const;
