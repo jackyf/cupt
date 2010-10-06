@@ -556,7 +556,7 @@ const shared_ptr< const BinaryVersion >* __is_version_array_intersects_with_pack
 			continue;
 		}
 
-		auto solutionVersion = packageEntry->version;
+		const shared_ptr< const BinaryVersion >& solutionVersion = packageEntry->version;
 		if (!solutionVersion)
 		{
 			continue;
