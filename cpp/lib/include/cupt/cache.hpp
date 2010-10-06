@@ -153,6 +153,7 @@ class Cache
 	/// gets system state
 	shared_ptr< const system::State > getSystemState() const;
 
+	/// gets pin value for a version
 	ssize_t getPin(const shared_ptr< const Version >&) const;
 
 	struct PinnedVersion
