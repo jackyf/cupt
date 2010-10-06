@@ -150,6 +150,7 @@ class Cache
 	/// gets download records of possible localization files corresponding to certain IndexEntry
 	vector< LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(const IndexEntry&) const;
 
+	/// gets system state
 	shared_ptr< const system::State > getSystemState() const;
 
 	ssize_t getPin(const shared_ptr< const Version >&) const;
