@@ -1284,6 +1284,7 @@ void __get_sorted_package_names(const vector< const string* >& source,
 	};
 
 	vector< ForSort > aux;
+	aux.reserve(source.size());
 	FORIT(packageNamePtrIt, source)
 	{
 		const string& packageName = **packageNamePtrIt;
