@@ -156,14 +156,17 @@ class Cache
 	/// gets pin value for a version
 	ssize_t getPin(const shared_ptr< const Version >&) const;
 
+	/// contains version and a corresponding pin value
 	struct PinnedVersion
 	{
-		shared_ptr< const Version > version;
-		ssize_t pin;
+		shared_ptr< const Version > version; ///< version
+		ssize_t pin; ///< pin value
 
+		/// trivial constructor
 		PinnedVersion(shared_ptr< const Version > _version, ssize_t _pin)
 			: version(_version), pin(_pin) {}
 	};
+	/// gets list of versions with pins of certain package
 	vector< PinnedVersion > getSortedPinnedVersions(const shared_ptr< const Package >&) const;
 	shared_ptr< const Version > getPolicyVersion(const shared_ptr< const Package >&) const;
 
