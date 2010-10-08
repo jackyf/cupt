@@ -171,6 +171,7 @@ class Cache
 	/// gets version of highest pin from package
 	shared_ptr< const Version > getPolicyVersion(const shared_ptr< const Package >&) const;
 
+	/// gets list of binary versions which satisfy given relation expression
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const RelationExpression&) const;
 
 	const ExtendedInfo& getExtendedInfo() const;
