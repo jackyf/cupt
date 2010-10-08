@@ -177,6 +177,11 @@ class Cache
 	/// gets extended info
 	const ExtendedInfo& getExtendedInfo() const;
 
+	/// gets localized short and long descriptions for the binary version
+	/**
+	 * @return first pair element - short description, long pair element - long description;
+	 * if localized descriptions are not available, short description will be empty
+	 */
 	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
 
 	static bool verifySignature(const shared_ptr< const Config >&, const string& path);
