@@ -207,6 +207,11 @@ class Cache
 	 */
 	static string getPathOfChangelog(const shared_ptr< const BinaryVersion >&);
 
+	/// controls internal caching
+	/**
+	 * If set to @c true, enables internal caching in methods @ref getPin and
+	 * @ref getSatisfyingVersions. Defaults to @c false.
+	 */
 	static bool memoize;
 };
 
