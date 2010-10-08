@@ -184,6 +184,15 @@ class Cache
 	 */
 	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
 
+	/// verifies file signature
+	/**
+	 * Verifies a GPG signature of a file. Signature file path is assumed to be
+	 * <tt> @a path + ".gpg" </tt>.
+	 *
+	 * Usually supposed to verify the signature of Release file.
+	 *
+	 * @param path path to the file to verify
+	 */
 	static bool verifySignature(const shared_ptr< const Config >&, const string& path);
 	static string getPathOfCopyright(const shared_ptr< const BinaryVersion >&);
 	static string getPathOfChangelog(const shared_ptr< const BinaryVersion >&);
