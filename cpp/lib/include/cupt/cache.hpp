@@ -174,6 +174,7 @@ class Cache
 	/// gets list of binary versions which satisfy given relation expression
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const RelationExpression&) const;
 
+	/// gets extended info
 	const ExtendedInfo& getExtendedInfo() const;
 
 	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
