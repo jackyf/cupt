@@ -194,7 +194,17 @@ class Cache
 	 * @param path path to the file to verify
 	 */
 	static bool verifySignature(const shared_ptr< const Config >&, const string& path);
+	/// gets a supposed system path of package copyright file for certain binary version
+	/**
+	 * You must not assume that the file actually exists even if installed
+	 * version is passed as parameter.
+	 */
 	static string getPathOfCopyright(const shared_ptr< const BinaryVersion >&);
+	/// gets a supposed system path of package changelog file for certain binary version
+	/**
+	 * You must not assume that the file actually exists even if installed
+	 * version is passed as parameter.
+	 */
 	static string getPathOfChangelog(const shared_ptr< const BinaryVersion >&);
 
 	static bool memoize;
