@@ -52,10 +52,11 @@ struct Version
 		uint32_t offset; ///< version record offset in @ref file
 		shared_ptr< const ReleaseInfo > releaseInfo; ///< release info
 	};
+	/// download place record
 	struct DownloadRecord
 	{
-		string baseUri;
-		string directory;
+		string baseUri; ///< base URI
+		string directory; ///< directory on the @ref baseUri
 	};
 	struct Priorities
 	{
