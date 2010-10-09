@@ -44,12 +44,13 @@ struct Version
 		shared_ptr< const ReleaseInfo > release; ///< release info
 		string directory; ///< remote directory containing files
 	};
+	/// standard initialization parameters
 	struct InitializationParameters
 	{
-		string packageName;
-		shared_ptr< File > file;
-		uint32_t offset;
-		shared_ptr< const ReleaseInfo > releaseInfo;
+		string packageName; ///< package name
+		shared_ptr< File > file; ///< file to read from
+		uint32_t offset; ///< version record offset in @ref file
+		shared_ptr< const ReleaseInfo > releaseInfo; ///< release info
 	};
 	struct DownloadRecord
 	{
