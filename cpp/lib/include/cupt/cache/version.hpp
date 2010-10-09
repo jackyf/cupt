@@ -38,10 +38,11 @@ using std::map;
  */
 struct Version
 {
+	/// where version comes from
 	struct Source
 	{
-		shared_ptr< const ReleaseInfo > release;
-		string directory;
+		shared_ptr< const ReleaseInfo > release; ///< release info
+		string directory; ///< remote directory containing files
 	};
 	struct InitializationParameters
 	{
