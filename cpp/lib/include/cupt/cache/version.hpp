@@ -98,8 +98,16 @@ struct Version
 	/// gets list of available download records for version
 	vector< DownloadRecord > getDownloadInfo() const;
 
-	bool operator<(const Version& other) const;
-	bool operator==(const Version& other) const;
+	/// less-than operator
+	/**
+	 * Uses pair @ref packageName, @ref versionString for comparison
+	 */
+	bool operator<(const Version&) const;
+	/// equality operator
+	/**
+	 * Uses pair @ref packageName, @ref versionString for comparison
+	 */
+	bool operator==(const Version&) const;
 
 	static bool parseRelations;
 	static bool parseInfoOnly;
