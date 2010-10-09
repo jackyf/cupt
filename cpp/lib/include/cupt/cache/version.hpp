@@ -95,7 +95,7 @@ struct Version
 
 	/// does version have at least one verified Source?
 	bool isVerified() const;
-	/// gets list of available download records for this version
+	/// gets list of available download records for version
 	vector< DownloadRecord > getDownloadInfo() const;
 
 	bool operator<(const Version& other) const;
