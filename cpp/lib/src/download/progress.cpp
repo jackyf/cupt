@@ -266,7 +266,7 @@ void Progress::progress(const vector< string >& params)
 		{
 			if (params.size() != 3)
 			{
-				fatal("download progress: received submessage 'expected-size' with more than 1 parameter");
+				fatal("download progress: received submessage 'done' with more than 1 parameter");
 			}
 			const string& result = params[2];
 			if (result.empty()) // only if download succeeded
