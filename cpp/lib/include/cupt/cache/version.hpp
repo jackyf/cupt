@@ -73,13 +73,13 @@ struct Version
 		uint32_t size; ///< file size
 		HashSums hashSums; ///< hash sums
 	};
-	vector< Source > sources;
-	string packageName;
-	Priorities::Type priority;
-	string section;
-	string maintainer;
-	string versionString;
-	map< string, string >* others;
+	vector< Source > sources; ///< list of sources
+	string packageName; ///< package name
+	Priorities::Type priority; ///< priority
+	string section; ///< section
+	string maintainer; ///< maintainer (usually name and mail address)
+	string versionString; ///< version
+	map< string, string >* others; ///< unknown fields in the form 'name' -> 'value', can be @c NULL
 
 	Version();
 	virtual ~Version();
