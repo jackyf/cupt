@@ -66,11 +66,12 @@ struct Version
 		/// string values of corresponding priority types
 		static const string strings[];
 	};
+	/// file information
 	struct FileRecord
 	{
-		string name;
-		uint32_t size;
-		HashSums hashSums;
+		string name; ///< file name
+		uint32_t size; ///< file size
+		HashSums hashSums; ///< hash sums
 	};
 	vector< Source > sources;
 	string packageName;
