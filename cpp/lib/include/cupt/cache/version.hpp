@@ -79,9 +79,11 @@ struct Version
 	string section; ///< section
 	string maintainer; ///< maintainer (usually name and mail address)
 	string versionString; ///< version
-	map< string, string >* others; ///< unknown fields in the form 'name' -> 'value', can be @c NULL
+	map< string, string >* others; ///< unknown fields in the form 'name' -> 'value', @c NULL by default
 
+	/// constructor
 	Version();
+	/// destructor
 	virtual ~Version();
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const = 0;
 
