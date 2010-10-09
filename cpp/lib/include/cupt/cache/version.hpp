@@ -85,6 +85,12 @@ struct Version
 	Version();
 	/// destructor
 	virtual ~Version();
+	/// determines file equality between two versions
+	/**
+	 * @param other version to compare with
+	 * @return @c true if hash sums of all files in the version match hash sums
+	 * of all files in the @a other version, @c false otherwise
+	 */
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const = 0;
 
 	bool isVerified() const;
