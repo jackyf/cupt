@@ -93,6 +93,7 @@ struct Version
 	 */
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const = 0;
 
+	/// does version have at least one verified Source?
 	bool isVerified() const;
 	vector< DownloadRecord > getDownloadInfo() const;
 
