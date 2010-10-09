@@ -58,9 +58,12 @@ struct Version
 		string baseUri; ///< base URI
 		string directory; ///< directory on the @ref baseUri
 	};
+	/// priority
 	struct Priorities
 	{
+		/// priority types
 		enum Type { Required, Important, Standard, Optional, Extra };
+		/// string values of corresponding priority types
 		static const string strings[];
 	};
 	struct FileRecord
