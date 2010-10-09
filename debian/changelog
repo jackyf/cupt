@@ -19,6 +19,9 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - cache/version:
       - 'AvailableAsEntry': renamed to 'Source'.
       - 'availableAs': renamed to 'sources'.
+    - download/progress:
+      - 'progress': fixed nasty bug with wrong computing total download
+        size when at least one download has an unknown size.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
 

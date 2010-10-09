@@ -271,7 +271,7 @@ void Progress::progress(const vector< string >& params)
 			const string& result = params[2];
 			if (result.empty()) // only if download succeeded
 			{
-				auto value = (record.size == (size_t)-1 ? record.size : record.downloadedSize);
+				auto value = (record.size != (size_t)-1 ? record.size : record.downloadedSize);
 				__impl->doneDownloadsSize += value;
 			}
 			finishedDownloadHook(uri, result);
