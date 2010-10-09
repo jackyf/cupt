@@ -109,8 +109,11 @@ struct Version
 	 */
 	bool operator==(const Version&) const;
 
+	/// enables parsing relation fields in versions, @c true by default
 	static bool parseRelations;
+	/// enables parsing info-only fields in versions, @c true by default
 	static bool parseInfoOnly;
+	/// enables parsing unknown fields in versions, @c false by default
 	static bool parseOthers;
 };
 
