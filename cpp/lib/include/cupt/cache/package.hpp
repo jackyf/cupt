@@ -57,6 +57,7 @@ class Package
 	Package(const shared_ptr< const string >& binaryArchitecture);
 	/// destructor
 	virtual ~Package();
+	/// adds new element (version initialization parameters) to the container
 	void addEntry(const Version::InitializationParameters&);
 	vector< shared_ptr< const Version > > getVersions() const;
 	shared_ptr< const Version > getSpecificVersion(const string& versionString) const;
