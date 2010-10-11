@@ -61,6 +61,10 @@ class Package
 	void addEntry(const Version::InitializationParameters&);
 	/// gets list of versions
 	vector< shared_ptr< const Version > > getVersions() const;
+	/// gets version with a certain Version::versionString
+	/**
+	 * @return version if found, empty pointer if not found
+	 */
 	shared_ptr< const Version > getSpecificVersion(const string& versionString) const;
 
 	static bool memoize;
