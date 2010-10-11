@@ -50,7 +50,12 @@ class Package
 	virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const = 0;
 
  public:
+	/// constructor
+	/**
+	 * @param binaryArchitecture binary architecture of the system
+	 */
 	Package(const shared_ptr< const string >& binaryArchitecture);
+	/// destructor
 	virtual ~Package();
 	void addEntry(const Version::InitializationParameters&);
 	vector< shared_ptr< const Version > > getVersions() const;
