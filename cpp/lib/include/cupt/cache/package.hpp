@@ -67,6 +67,7 @@ class Package
 	 */
 	shared_ptr< const Version > getSpecificVersion(const string& versionString) const;
 
+	/// memoize parsed versions
 	static bool memoize;
 };
 
