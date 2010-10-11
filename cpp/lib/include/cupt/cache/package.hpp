@@ -18,11 +18,14 @@
 #ifndef CUPT_CACHE_PACKAGE_SEEN
 #define CUPT_CACHE_PACKAGE_SEEN
 
+/// @file
+
 #include <cupt/cache/version.hpp>
 
 namespace cupt {
 namespace cache {
 
+/// a container for all versions of the same package name
 class Package
 {
 	mutable vector< Version::InitializationParameters > __unparsed_versions;
