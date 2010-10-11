@@ -33,10 +33,20 @@ class Package
 
 	void __merge_version(const shared_ptr< Version >&, vector< shared_ptr< Version > >& result) const;
  protected:
-	shared_ptr< const string > _binary_architecture;
+	shared_ptr< const string > _binary_architecture; ///< binary architecture
 
+	/// gets list of versions
 	vector< shared_ptr< Version > > _get_versions() const;
+	/// builds a new version out of InitializationParameters
+	/**
+	 * Should be re-implemented in subclasses.
+	 * @return built Version
+	 */
 	virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters&) const = 0;
+	/// is architecture of the version appropriate for the container?
+	/**
+	 * Should be re-implemented in subclasses.
+	 */
 	virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const = 0;
 
  public:
