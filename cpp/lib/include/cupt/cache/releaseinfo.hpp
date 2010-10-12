@@ -15,30 +15,32 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-
 #ifndef CUPT_CACHE_RELEASE_INFO_SEEN
 #define CUPT_CACHE_RELEASE_INFO_SEEN
+
+/// @file
 
 #include <cupt/common.hpp>
 
 namespace cupt {
 namespace cache {
 
+/// release information
 struct ReleaseInfo
 {
-	bool verified;
-	string version;
-	string description;
-	string vendor;
-	string label;
-	string archive;
-	string codename;
-	string component;
-	string date;
-	string validUntilDate;
-	vector< string> architectures;
-	string baseUri;
-	bool notAutomatic;
+	bool verified; ///< @c true, if information is signed and a signature is verified
+	string version; ///< distribution version, may be empty
+	string description; ///< distribution description, may be empty
+	string vendor; ///< vendor name, may be empty
+	string label; ///< human-readable label, may be empty
+	string archive; ///< archive name, may be empty
+	string codename; ///< release code name, may be empty
+	string component; ///< component name, may be empty
+	string date; ///< creation date, may be empty
+	string validUntilDate; ///< date of Release file expiry, may be empty
+	vector< string> architectures; ///< list of architectures applicable
+	string baseUri; ///< source base URI
+	bool notAutomatic; ///< @c true, if @c NotAutomatic flag is specified in Release file
 };
 
 }
