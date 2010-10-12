@@ -124,8 +124,8 @@ static void processSatisfyExpression(const shared_ptr< Config >& config,
 		packageExpression.erase(packageExpression.end() - 1);
 	}
 
-	auto relationLine = unarchitectureRelationLine(
-			ArchitecturedRelationLine(packageExpression), config->getString("apt::architecture"));
+	auto relationLine = ArchitecturedRelationLine(packageExpression)
+			.toRelationLine(config->getString("apt::architecture"));
 
 	__satisfy_or_unsatisfy(resolver, relationLine, negative);
 }
@@ -141,14 +141,14 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 	FORIT(versionIt, versions)
 	{
 		const shared_ptr< const SourceVersion >& version = *versionIt;
-		__satisfy_or_unsatisfy(resolver, unarchitectureRelationLine(
-				version->relations[SourceVersion::RelationTypes::BuildDepends], architecture), false);
-		__satisfy_or_unsatisfy(resolver, unarchitectureRelationLine(
-				version->relations[SourceVersion::RelationTypes::BuildDependsIndep], architecture), false);
-		__satisfy_or_unsatisfy(resolver, unarchitectureRelationLine(
-				version->relations[SourceVersion::RelationTypes::BuildConflicts], architecture), true);
-		__satisfy_or_unsatisfy(resolver, unarchitectureRelationLine(
-				version->relations[SourceVersion::RelationTypes::BuildConflictsIndep], architecture), true);
+		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
+				.toRelationLine(architecture), false);
+		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
+				.toRelationLine(architecture), false);
+		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
+				.toRelationLine(architecture), true);
+		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
+				.toRelationLine(architecture), true);
 	}
 }
 

@@ -299,12 +299,11 @@ bool __is_architectured_relation_eligible(
 	}
 }
 
-RelationLine unarchitectureRelationLine(const ArchitecturedRelationLine& source,
-		const string& currentArchitecture)
+RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArchitecture) const
 {
 	RelationLine result;
 
-	FORIT(architecturedRelationExpressionIt, source)
+	FORIT(architecturedRelationExpressionIt, *this)
 	{
 		RelationExpression newRelationExpression;
 

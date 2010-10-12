@@ -105,11 +105,9 @@ struct ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression
 	ArchitecturedRelationLine();
 	ArchitecturedRelationLine(const string&);
 	ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator >);
+	RelationLine toRelationLine(const string& currentArchitecture) const;
 	virtual ~ArchitecturedRelationLine();
 };
-
-RelationLine unarchitectureRelationLine(const ArchitecturedRelationLine& source,
-		const string& currentArchitecture);
 
 }
 }
