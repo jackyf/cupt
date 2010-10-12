@@ -23,6 +23,7 @@
 #include <cupt/common.hpp>
 
 namespace cupt {
+/** @namespace cupt::cache */
 namespace cache {
 
 /// release information
