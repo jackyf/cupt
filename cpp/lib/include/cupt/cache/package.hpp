@@ -32,6 +32,9 @@ class Package
 	mutable vector< shared_ptr< Version > >* __parsed_versions;
 
 	void __merge_version(const shared_ptr< Version >&, vector< shared_ptr< Version > >& result) const;
+
+	Package(const Package&);
+	Package& operator=(const Package&);
  protected:
 	shared_ptr< const string > _binary_architecture; ///< binary architecture
 
