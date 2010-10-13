@@ -40,9 +40,9 @@ struct Relation
 		/// string values of corresponding types
 		static const string strings[];
 	};
-	string packageName;
-	Types::Type relationType;
-	string versionString;
+	string packageName; ///< package name
+	Types::Type relationType; ///< relation type
+	string versionString; ///< version string
 
 	Relation(const string&);
 	Relation(pair< string::const_iterator, string::const_iterator >);
