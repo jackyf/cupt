@@ -32,9 +32,12 @@ struct Relation
 	bool __parse_versioned_info(string::const_iterator, string::const_iterator);
 	void __init(string::const_iterator, string::const_iterator);
  public:
+	/// %relation type
 	struct Types
 	{
+		/// type
 		enum Type { Less, Equal, More, LessOrEqual, MoreOrEqual, None };
+		/// string values of corresponding types
 		static const string strings[];
 	};
 	string packageName;
