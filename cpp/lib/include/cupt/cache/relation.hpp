@@ -58,6 +58,7 @@ struct Relation
 	Relation(pair< string::const_iterator, string::const_iterator > input);
 	/// destructor
 	virtual ~Relation();
+	/// gets string reprentation of Relation
 	string toString() const;
 	bool isSatisfiedBy(const string& otherVersionString) const;
 	bool operator==(const Relation& other) const;
