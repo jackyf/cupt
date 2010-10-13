@@ -18,11 +18,14 @@
 #ifndef CUPT_CACHE_RELATION_SEEN
 #define CUPT_CACHE_RELATION_SEEN
 
+/// @file
+
 #include <cupt/common.hpp>
 
 namespace cupt {
 namespace cache {
 
+/// %relation against certain binary package
 struct Relation
 {
  private:
