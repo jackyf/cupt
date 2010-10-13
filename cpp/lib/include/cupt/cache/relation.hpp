@@ -44,8 +44,18 @@ struct Relation
 	Types::Type relationType; ///< relation type
 	string versionString; ///< version string
 
-	Relation(const string&);
-	Relation(pair< string::const_iterator, string::const_iterator >);
+	/// constructor
+	/**
+	 * Parses @a input and constructs Relation from it.
+	 * @param input stringified relation
+	 */
+	Relation(const string& input);
+	/// constructor
+	/**
+	 * Parses @a input and constructs Relation from it.
+	 * @param input pair of begin iterator and end iterator of stringified relation
+	 */
+	Relation(pair< string::const_iterator, string::const_iterator > input);
 	virtual ~Relation();
 	string toString() const;
 	bool isSatisfiedBy(const string& otherVersionString) const;
