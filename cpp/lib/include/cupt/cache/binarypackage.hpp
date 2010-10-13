@@ -18,21 +18,37 @@
 #ifndef CUPT_CACHE_BINARYPACKAGE_SEEN
 #define CUPT_CACHE_BINARYPACKAGE_SEEN
 
+/// @file
+
 #include <cupt/fwd.hpp>
 #include <cupt/cache/package.hpp>
 
 namespace cupt {
 namespace cache {
 
+/// Package for binary versions
 class BinaryPackage: public Package
 {
 	const bool __allow_reinstall;
  protected:
+	/// @cond
 	virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
 	virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const;
+	/// @endcond
  public:
+	/// constructor
+	/**
+	 * @param binaryArchitecture system binary architecture
+	 * @param allowReinstall allow reinstalling installed version of this package,
+	 * i.e. mangle the version string of installed version
+	 */
 	BinaryPackage(const shared_ptr< const string >& binaryArchitecture, bool allowReinstall);
+	/// gets list of versions
 	vector< shared_ptr< const BinaryVersion > > getVersions() const;
+	/// gets installed version
+	/**
+	 * @return installed version if exists, empty pointer if not
+	 */
 	shared_ptr< const BinaryVersion > getInstalledVersion() const;
 };
 
