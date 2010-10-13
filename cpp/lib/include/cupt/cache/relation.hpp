@@ -56,6 +56,7 @@ struct Relation
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
 	Relation(pair< string::const_iterator, string::const_iterator > input);
+	/// destructor
 	virtual ~Relation();
 	string toString() const;
 	bool isSatisfiedBy(const string& otherVersionString) const;
