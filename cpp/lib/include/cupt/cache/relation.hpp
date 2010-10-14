@@ -102,12 +102,15 @@ struct ArchitecturedRelation: public Relation
 	string toString() const;
 };
 
+/// group of alternative relations
 struct RelationExpression: public vector< Relation >
 {
  private:
 	void __init(string::const_iterator, string::const_iterator);
  public:
+	/// gets the string representation
 	string toString() const;
+	/// fast function to get unique, not human-readable identifier
 	string getHashString() const;
 	RelationExpression();
 	RelationExpression(const string&);
