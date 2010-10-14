@@ -138,9 +138,6 @@ class Cache
 	 */
 	string getPathOfIndexList(const IndexEntry& entry) const;
 	/// gets the path of extended states file
-	/**
-	 * @param entry index entry
-	 */
 	string getPathOfExtendedStates() const;
 
 	/// gets download URI of Release file corresponding to certain IndexEntry
