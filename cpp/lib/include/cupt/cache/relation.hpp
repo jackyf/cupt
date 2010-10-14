@@ -60,6 +60,14 @@ struct Relation
 	virtual ~Relation();
 	/// gets string reprentation of Relation
 	string toString() const;
+	/// is relation satisfied by @a otherVersionString
+	/**
+	 * This method checks @ref relationType and @ref versionString against @a
+	 * otherVersionString.
+	 *
+	 * @param otherVersionString version string to compare
+	 * @return @c true if satisfied, @c false if not
+	 */
 	bool isSatisfiedBy(const string& otherVersionString) const;
 	bool operator==(const Relation& other) const;
 };
