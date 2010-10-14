@@ -83,6 +83,7 @@ struct ArchitecturedRelation: public Relation
  private:
 	void __init(string::const_iterator, string::const_iterator);
  public:
+	/// architecture filters
 	vector< string > architectureFilters;
 
 	ArchitecturedRelation(const string&);
