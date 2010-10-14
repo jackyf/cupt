@@ -58,7 +58,7 @@ struct Relation
 	Relation(pair< string::const_iterator, string::const_iterator > input);
 	/// destructor
 	virtual ~Relation();
-	/// gets string reprentation of Relation
+	/// gets the string reprentation
 	string toString() const;
 	/// is relation satisfied by @a otherVersionString
 	/**
