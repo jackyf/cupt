@@ -69,6 +69,11 @@ struct Relation
 	 * @return @c true if satisfied, @c false if not
 	 */
 	bool isSatisfiedBy(const string& otherVersionString) const;
+	/// operator ==
+	/**
+	 * @param other relation to compare with
+	 * @return @c true if this relation is equal to @a other, @c false otherwise
+	 */
 	bool operator==(const Relation& other) const;
 };
 
