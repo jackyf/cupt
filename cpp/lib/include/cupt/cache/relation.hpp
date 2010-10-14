@@ -86,8 +86,19 @@ struct ArchitecturedRelation: public Relation
 	/// architecture filters
 	vector< string > architectureFilters;
 
-	ArchitecturedRelation(const string&);
-	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator >);
+	/// constructor
+	/**
+	 * Parses @a input and constructs ArchitecturedRelation from it.
+	 * @param input stringified architectured relation
+	 */
+	ArchitecturedRelation(const string& input);
+	/// constructor
+	/**
+	 * Parses @a input and constructs ArchitecturedRelation from it.
+	 * @param input pair of begin iterator and end iterator of stringified
+	 * architectured relation
+	 */
+	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
 	string toString() const;
 };
 
