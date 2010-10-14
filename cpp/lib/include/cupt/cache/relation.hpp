@@ -77,6 +77,7 @@ struct Relation
 	bool operator==(const Relation& other) const;
 };
 
+/// relation with optional architecture filters
 struct ArchitecturedRelation: public Relation
 {
  private:
