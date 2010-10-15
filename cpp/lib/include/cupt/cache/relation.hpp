@@ -112,9 +112,23 @@ struct RelationExpression: public vector< Relation >
 	string toString() const;
 	/// fast function to get unique, not human-readable identifier
 	string getHashString() const;
+	/// default constructor
+	/**
+	 * Builds RelationExpression containing no relations.
+	 */
 	RelationExpression();
-	RelationExpression(const string&);
-	RelationExpression(pair< string::const_iterator, string::const_iterator >);
+	/// constructor
+	/**
+	 * @param input string representation
+	 */
+	RelationExpression(const string& input);
+	/// constructor
+	/**
+	 * @param input pair of begin iterator and end iterator of string
+	 * representation
+	 */
+	RelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	/// destructor
 	virtual ~RelationExpression();
 };
 
