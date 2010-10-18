@@ -188,16 +188,42 @@ struct RelationLine: public vector< RelationExpression >
 	virtual ~RelationLine();
 };
 
+/// array of architectured relation expressions
 struct ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression >
 {
  private:
 	void __init(string::const_iterator, string::const_iterator);
  public:
+	/// gets the string representation
 	string toString() const;
+	/// default constructor
+	/**
+	 * Builds RelationLine containing no architectured relation expressions.
+	 */
 	ArchitecturedRelationLine();
-	ArchitecturedRelationLine(const string&);
+	/// constructor
+	/**
+	 * @param input string representation
+	 */
+	ArchitecturedRelationLine(const string& input);
+	/// constructor
+	/**
+	 * @param input pair of begin iterator and end iterator of string
+	 * representation
+	 */
 	ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator >);
+	/// converts to RelationLine given system architecture
+	/**
+	 * Filters ArchitecturedRelationLine using binary system architecture.
+	 * Throws out architectured relation expressions, where @ref
+	 * ArchitecturedRelation::architectureFilters do not match system architecture. Matching
+	 * architectured relation expressions are converted to relation
+	 * expressions.
+	 * @param currentArchitecture system binary architetecture
+	 * @return relation line
+	 */
 	RelationLine toRelationLine(const string& currentArchitecture) const;
+	/// destructor
 	virtual ~ArchitecturedRelationLine();
 };
 
