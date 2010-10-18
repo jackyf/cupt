@@ -140,7 +140,6 @@ struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
  public:
 	/// gets the string representation
 	string toString() const;
-	string getHashString() const;
 	ArchitecturedRelationExpression();
 	ArchitecturedRelationExpression(const string&);
 	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator >);

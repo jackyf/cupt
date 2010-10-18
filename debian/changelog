@@ -26,6 +26,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - cache/relation:
       - 'unarchitectureRelationLine': moved to ArchitecturedRelationLine class
         and renamed to 'toRelationLine'.
+      - 'ArchitecturedRelationExpression::getHashString': doesn't exist,
+        removed its declaration.
     - cache/package:
       - 'operator=': forbidden now.
       - copy constructor: forbidden now.
