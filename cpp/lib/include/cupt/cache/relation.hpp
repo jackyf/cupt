@@ -160,15 +160,31 @@ struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
 	virtual ~ArchitecturedRelationExpression();
 };
 
+/// array of relation expressions
 struct RelationLine: public vector< RelationExpression >
 {
  private:
 	void __init(string::const_iterator, string::const_iterator);
  public:
+	/// gets the string representation
 	string toString() const;
+	/// default constructor
+	/**
+	 * Builds RelationLine containing no relation expressions.
+	 */
 	RelationLine();
-	RelationLine(const string&);
-	RelationLine(pair< string::const_iterator, string::const_iterator >);
+	/// constructor
+	/**
+	 * @param input string representation
+	 */
+	RelationLine(const string& input);
+	/// constructor
+	/**
+	 * @param input pair of begin iterator and end iterator of string
+	 * representation
+	 */
+	RelationLine(pair< string::const_iterator, string::const_iterator > input);
+	/// destructor
 	virtual ~RelationLine();
 };
 
