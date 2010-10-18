@@ -132,11 +132,13 @@ struct RelationExpression: public vector< Relation >
 	virtual ~RelationExpression();
 };
 
+/// group of alternative architectured relation expressions
 struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
 {
  private:
 	void __init(string::const_iterator, string::const_iterator);
  public:
+	/// gets the string representation
 	string toString() const;
 	string getHashString() const;
 	ArchitecturedRelationExpression();
