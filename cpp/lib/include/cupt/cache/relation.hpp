@@ -140,9 +140,23 @@ struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
  public:
 	/// gets the string representation
 	string toString() const;
+	/// default constructor
+	/**
+	 * Builds ArchitecturedRelationExpression containing no relations.
+	 */
 	ArchitecturedRelationExpression();
-	ArchitecturedRelationExpression(const string&);
-	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator >);
+	/// constructor
+	/**
+	 * @param input string representation
+	 */
+	ArchitecturedRelationExpression(const string& input);
+	/// constructor
+	/**
+	 * @param input pair of begin iterator and end iterator of string
+	 * representation
+	 */
+	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	/// destructor
 	virtual ~ArchitecturedRelationExpression();
 };
 
