@@ -51,7 +51,7 @@ struct BinaryVersion: public Version
 	string tags; ///< tags
 	FileRecord file; ///< Version::FileRecord
 
-	bool isInstalled() const;
+	bool isInstalled() const; ///< is version installed?
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
 
 	static shared_ptr< BinaryVersion > parseFromFile(const Version::InitializationParameters&);
