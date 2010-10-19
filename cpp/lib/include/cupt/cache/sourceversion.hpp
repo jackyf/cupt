@@ -18,6 +18,8 @@
 #ifndef CUPT_CACHE_SOURCEVERSION_SEEN
 #define CUPT_CACHE_SOURCEVERSION_SEEN
 
+/// @file
+
 #include <cupt/hashsums.hpp>
 #include <cupt/cache/version.hpp>
 #include <cupt/cache/relation.hpp>
@@ -25,6 +27,7 @@
 namespace cupt {
 namespace cache {
 
+/// source version info
 struct SourceVersion: public Version
 {
 	struct RelationTypes
