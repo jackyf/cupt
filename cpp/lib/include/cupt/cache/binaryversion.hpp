@@ -49,7 +49,7 @@ struct BinaryVersion: public Version
 	string longDescription; ///< long description
 	string task; ///< task
 	string tags; ///< tags
-	FileRecord file; ///< file record
+	FileRecord file; ///< Version::FileRecord
 
 	bool isInstalled() const;
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
