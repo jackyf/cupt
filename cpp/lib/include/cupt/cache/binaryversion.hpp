@@ -30,11 +30,13 @@ namespace cache {
 /// binary version info
 struct BinaryVersion: public Version
 {
+	/// relation types between binary versions
 	struct RelationTypes
 	{
+		/// type
 		enum Type { PreDepends, Depends, Recommends, Suggests, Enhances, Conflicts, Breaks, Replaces, Count };
-		static const string strings[];
-		static const char* rawStrings[];
+		static const string strings[]; ///< string values of corresponding types
+		static const char* rawStrings[]; ///< lower-case, unlocalized string values of corresponding types
 	};
 	string architecture;
 	uint32_t installedSize;
