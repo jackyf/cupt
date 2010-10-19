@@ -66,7 +66,7 @@ struct Version
 		/// string values of corresponding priority types
 		static const string strings[];
 	};
-	/// file information
+	/// %file information
 	struct FileRecord
 	{
 		string name; ///< file name
