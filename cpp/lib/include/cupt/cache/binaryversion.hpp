@@ -38,18 +38,18 @@ struct BinaryVersion: public Version
 		static const string strings[]; ///< string values of corresponding types
 		static const char* rawStrings[]; ///< lower-case, unlocalized string values of corresponding types
 	};
-	string architecture;
-	uint32_t installedSize;
-	string sourcePackageName;
-	string sourceVersionString;
-	bool essential;
-	RelationLine relations[RelationTypes::Count];
-	vector< string > provides;
-	string shortDescription;
-	string longDescription;
-	string task; // do we need a special field for it?
-	string tags;
-	FileRecord file;
+	string architecture; ///< binary architecture
+	uint32_t installedSize; ///< approximate size of unpacked file content in bytes
+	string sourcePackageName; ///< source package name
+	string sourceVersionString; ///< source version string
+	bool essential; ///< has version 'essential' flag?
+	RelationLine relations[RelationTypes::Count]; ///< relations with other binary versions
+	vector< string > provides; ///< array of virtual package names
+	string shortDescription; ///< short description
+	string longDescription; ///< long description
+	string task; ///< task
+	string tags; ///< tags
+	FileRecord file; ///< file record
 
 	bool isInstalled() const;
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
