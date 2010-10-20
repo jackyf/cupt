@@ -30,11 +30,13 @@ namespace cache {
 /// source version info
 struct SourceVersion: public Version
 {
+	/// build-time relation types between source version and binary versions
 	struct RelationTypes
 	{
+		/// type
 		enum Type { BuildDepends, BuildDependsIndep, BuildConflicts, BuildConflictsIndep, Count };
-		static const string strings[];
-		static const char* rawStrings[];
+		static const string strings[]; ///< @copydoc BinaryVersion::RelationTypes::strings
+		static const char* rawStrings[]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings
 	};
 	struct FileParts
 	{
