@@ -38,10 +38,15 @@ struct SourceVersion: public Version
 		static const string strings[]; ///< @copydoc BinaryVersion::RelationTypes::strings
 		static const char* rawStrings[]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings
 	};
+	/// file parts
+	/**
+	 * Each source version may contain several files as physical parts.
+	 */
 	struct FileParts
 	{
+		/// type
 		enum Type { Tarball, Diff, Dsc, Count };
-		static const string strings[];
+		static const string strings[]; ///< string values of corresponding types
 	};
 	ArchitecturedRelationLine relations[RelationTypes::Count];
 	vector< FileRecord > files[FileParts::Count];
