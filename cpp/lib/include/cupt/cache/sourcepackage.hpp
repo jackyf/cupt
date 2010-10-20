@@ -18,12 +18,15 @@
 #ifndef CUPT_CACHE_SOURCEPACKAGE_SEEN
 #define CUPT_CACHE_SOURCEPACKAGE_SEEN
 
+/// @file
+
 #include <cupt/fwd.hpp>
 #include <cupt/cache/package.hpp>
 
 namespace cupt {
 namespace cache {
 
+/// package for source versions
 class SourcePackage: public Package
 {
  protected:
