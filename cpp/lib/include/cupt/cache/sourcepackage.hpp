@@ -33,6 +33,10 @@ class SourcePackage: public Package
 	virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
 	virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const;
  public:
+	/// constructor
+	/**
+	 * @param binaryArchitecture system binary architecture
+	 */
 	SourcePackage(const shared_ptr< const string >& binaryArchitecture);
 	vector< shared_ptr< const SourceVersion > > getVersions() const;
 };
