@@ -48,11 +48,11 @@ struct SourceVersion: public Version
 		enum Type { Tarball, Diff, Dsc, Count };
 		static const string strings[]; ///< string values of corresponding types
 	};
-	ArchitecturedRelationLine relations[RelationTypes::Count];
-	vector< FileRecord > files[FileParts::Count];
-	vector< string > uploaders;
-	vector< string > binaryPackageNames;
-	vector< string > architectures;
+	ArchitecturedRelationLine relations[RelationTypes::Count]; ///< relations
+	vector< FileRecord > files[FileParts::Count]; ///< Version::FileRecord s
+	vector< string > uploaders; ///< array of uploaders
+	vector< string > binaryPackageNames; ///< array of binary package names, which are built out of
+	vector< string > architectures; ///< array of binary architectures on which this source version may be built
 
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
 
