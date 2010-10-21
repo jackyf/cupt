@@ -38,6 +38,11 @@ class HashSums
 	string& operator[](const Type& type);
 	/// shortcut to values[type]
 	const string& operator[](const Type& type) const;
+	/// does file content match hash sums?
+	/**
+	 * @param path path to a file
+	 * @return @c true if yes, @c false if no
+	 */
 	bool verify(const string& path) const;
 	bool match(const HashSums& other) const;
 	bool empty() const;
