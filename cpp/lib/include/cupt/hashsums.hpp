@@ -28,8 +28,10 @@ namespace cupt {
 class HashSums
 {
  public:
+	/// hash sum type
 	enum Type { MD5, SHA1, SHA256, Count };
 
+	/// array of hash sums
 	string values[Count];
 
 	string& operator[](const Type& type);
