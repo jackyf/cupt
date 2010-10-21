@@ -15,14 +15,16 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-
 #ifndef CUPT_HASHSUMS_SEEN
 #define CUPT_HASHSUMS_SEEN
+
+/// @file
 
 #include <cupt/common.hpp>
 
 namespace cupt {
 
+/// hash sums
 class HashSums
 {
  public:
