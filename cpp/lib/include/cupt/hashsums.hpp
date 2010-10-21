@@ -59,6 +59,10 @@ class HashSums
 	 */
 	bool empty() const;
 
+	/// fills the object with the hash sums of the file content
+	/**
+	 * @param path path to a file
+	 */
 	void fill(const string& path);
 
 	static string getHashOfString(const Type& type, const string& pattern);
