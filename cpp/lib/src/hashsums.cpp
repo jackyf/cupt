@@ -145,7 +145,7 @@ bool HashSums::match(const HashSums& other) const
 	return comparesCount;
 }
 
-string HashSums::getStringHash(const Type& type, const string& pattern)
+string HashSums::getHashOfString(const Type& type, const string& pattern)
 {
 	string description = sf("string '%s'", pattern.c_str());
 

@@ -38,7 +38,7 @@ class HashSums
 
 	void fill(const string& path);
 
-	static string getStringHash(const Type& type, const string& pattern);
+	static string getHashOfString(const Type& type, const string& pattern);
 };
 
 }
