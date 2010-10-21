@@ -34,7 +34,9 @@ class HashSums
 	/// array of hash sums
 	string values[Count];
 
+	/// shortcut to values[type]
 	string& operator[](const Type& type);
+	/// shortcut to values[type]
 	const string& operator[](const Type& type) const;
 	bool verify(const string& path) const;
 	bool match(const HashSums& other) const;
