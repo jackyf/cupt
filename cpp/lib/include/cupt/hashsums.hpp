@@ -42,6 +42,7 @@ class HashSums
 	/**
 	 * @param path path to a file
 	 * @return @c true if yes, @c false if no
+	 * @exception Exception if @ref empty
 	 */
 	bool verify(const string& path) const;
 	/// compares with other HashSums object
@@ -49,6 +50,7 @@ class HashSums
 	 * @return If there are no hash sums, defined in both objects, returns @c false.
 	 * If there are any, returns @c true if all matched and @c false otherwise
 	 * @param other object to compare with
+	 * @exception Exception if @ref empty or @a other is @ref empty
 	 */
 	bool match(const HashSums& other) const;
 	/// does object contain no hash sums?
