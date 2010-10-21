@@ -51,6 +51,10 @@ class HashSums
 	 * @param other object to compare with
 	 */
 	bool match(const HashSums& other) const;
+	/// does object contain no hash sums?
+	/**
+	 * @return @c true if yes, @c false if no
+	 */
 	bool empty() const;
 
 	void fill(const string& path);
