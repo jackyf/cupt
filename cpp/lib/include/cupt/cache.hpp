@@ -51,7 +51,8 @@ class Cache
 	 */
 	struct IndexEntry
 	{
-		enum Type { Source, Binary } category; ///< does this index entry contains source or binary packages
+		/// does this index entry contains source or binary packages
+		enum Type { Source, Binary } category;
 		string uri; ///< base index URI, as specified in source list
 		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
 		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
