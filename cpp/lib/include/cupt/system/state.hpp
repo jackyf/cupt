@@ -68,7 +68,9 @@ class State
 		Status::Type status;
 	};
 
+	/// constructor, not for public use
 	State(shared_ptr< const Config >, internal::CacheImpl*);
+	/// destructor
 	~State();
 
 	shared_ptr< const InstalledRecord > getInstalledInfo(const string& packageName) const;
