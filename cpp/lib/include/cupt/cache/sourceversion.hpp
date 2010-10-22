@@ -56,7 +56,7 @@ struct SourceVersion: public Version
 
 	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
 
-	/// @copydoc BinaryVersion::parseFromFile
+	/// parse version
 	static shared_ptr< SourceVersion > parseFromFile(const Version::InitializationParameters&);
 };
 
