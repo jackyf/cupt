@@ -73,6 +73,11 @@ class State
 	/// destructor
 	~State();
 
+	/// gets installed record for a package
+	/**
+	 * @param packageName package name
+	 * @return pointer to InstalledRecord if found, empty pointer if not
+	 */
 	shared_ptr< const InstalledRecord > getInstalledInfo(const string& packageName) const;
 	vector< string > getInstalledPackageNames() const;
 };
