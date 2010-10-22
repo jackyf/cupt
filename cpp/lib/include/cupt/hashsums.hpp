@@ -69,6 +69,7 @@ class HashSums
 	/**
 	 * @param type hash type
 	 * @param pattern data to hash
+	 * @return hash
 	 */
 	static string getHashOfString(const Type& type, const string& pattern);
 };
