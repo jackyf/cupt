@@ -148,7 +148,7 @@ void consumePackageName(string::const_iterator begin, string::const_iterator end
 /// checks package name for correctness
 /**
  * @param packageName package name
- * @param throwOnError if set to true, function will throw exception if @a packageName is not correct
+ * @param throwOnError if set to @c true, function will throw exception if @a packageName is not correct
  * @return @c true if the @a packageName is correct, @c false if @a packageName is not correct and @a throwOnError is @c false
  */
 bool checkPackageName(const string& packageName, bool throwOnError = true);
