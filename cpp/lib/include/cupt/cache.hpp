@@ -123,6 +123,7 @@ class Cache
 	/// is binary package automatically installed?
 	/**
 	 * @param packageName name of the binary package
+	 * @return @c true if yes, @c false if no
 	 */
 	bool isAutomaticallyInstalled(const string& packageName) const;
 
