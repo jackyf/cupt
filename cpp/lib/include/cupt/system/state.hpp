@@ -18,6 +18,8 @@
 #ifndef CUPT_SYSTEM_STATE_SEEN
 #define CUPT_SYSTEM_STATE_SEEN
 
+/// @file
+
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
 
@@ -32,6 +34,7 @@ class StateData;
 
 namespace system {
 
+/// stores an additional information for installed packages
 class State
 {
 	internal::StateData* __data;
