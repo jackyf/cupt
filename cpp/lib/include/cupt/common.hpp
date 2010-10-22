@@ -40,9 +40,19 @@ using std::string;
 class Exception: public std::runtime_error
 {
  public:
+	/// constructor
+	/**
+	 * Creates Exception object with a message @a message.
+	 *
+	 * @param message human-readable exception description
+	 */
 	Exception(const char* message)
 		: std::runtime_error(message)
 	{}
+	/// constructor
+	/**
+	 * @copydoc Exception(const char*)
+	 */
 	Exception(const string& message)
 		: std::runtime_error(message)
 	{}
