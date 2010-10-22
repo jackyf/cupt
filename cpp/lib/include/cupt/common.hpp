@@ -69,7 +69,7 @@ extern int messageFd;
  *  -# writes string @c "E:" + computed string + @c "\n" to @ref messageFd
  *  -# throws Exception with computed string as message
  *  .
- * @param [in] format @c printf format string (see @c printf(3))
+ * @param format @c printf format string (see @c printf(3))
  *
  * @par Example:
  * @code
@@ -91,7 +91,7 @@ void fatal(const char* format, ...);
  *  -# perform @c printf against computed string with variable arguments
  *  -# writes string @c "W:" + computed string + @c "\n" to @ref messageFd
  *  .
- * @param [in] format @c printf format string
+ * @param format @c printf format string
  *
  * @see fatal
  */
@@ -119,7 +119,7 @@ string globToRegexString(const string&);
 
 /// localizes message
 /**
- * @param [in] message input string
+ * @param message input string
  * @return localized message
  */
 string __(const char* message);
@@ -129,8 +129,8 @@ string __(const char* message);
  * Tries to read as more characters as possible from the @a begin, which form a
  * valid package name, until @a end.
  *
- * @param [in] begin range begin iterator
- * @param [in] end range end iterator
+ * @param begin range begin iterator
+ * @param end range end iterator
  * @param [in,out] resultEnd consumed range end iterator
  *
  * @par Example:
