@@ -40,21 +40,28 @@ class State
 	internal::StateData* __data;
 	State(const State&);
  public:
+	/// installed package's information
 	struct InstalledRecord
 	{
+		/// wanted package state
 		struct Want
 		{
+			/// type
 			enum Type { Unknown, Install, Hold, Deinstall, Purge, Count };
 		};
+		/// package state flag
 		struct Flag
 		{
+			/// type
 			enum Type { Ok, Reinstreq, Hold, HoldAndReinstreq, Count };
 		};
+		/// package installation status
 		struct Status
 		{
+			/// type
 			enum Type { NotInstalled, Unpacked, HalfConfigured, HalfInstalled, ConfigFiles,
 				PostInstFailed, RemovalFailed, Installed, TriggersPending, TriggersAwaited, Count };
-			static const string strings[];
+			static const string strings[]; ///< string values of correspoding types
 		};
 		Want::Type want;
 		Flag::Type flag;
