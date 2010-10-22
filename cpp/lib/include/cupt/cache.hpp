@@ -105,6 +105,7 @@ class Cache
 	/// gets BinaryPackage by name
 	/**
 	 * @param packageName name of the binary package
+	 * @return pointer to binary package if found, empty pointer if not
 	 */
 	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;
 	/// gets the list of names of available source packages
@@ -112,6 +113,7 @@ class Cache
 	/// gets SourcePackage by name
 	/**
 	 * @param packageName name of the source package
+	 * @return pointer to source package if found, empty pointer if not
 	 */
 	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
 
