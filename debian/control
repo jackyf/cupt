@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 7.0.50), g++-4.5, libboost-program-options1.42-dev,
   libboost1.42-dev, libreadline6-dev, chrpath, libcurl4-gnutls-dev (>= 7.19.4),
-  cmake (>= 2.6)
+  cmake (>= 2.6), doxygen
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
 Standards-Version: 3.9.1
@@ -35,8 +35,16 @@ Description: alternative front-end for dpkg -- runtime library
 Package: libcupt2-dev-experimental
 Architecture: any
 Depends: ${misc:Depends}, libcupt2-0-experimental (= ${binary:Version})
+Suggests: libcupt2-doc-experimental
 Description: arternative front-end for dpkg -- development files
  This package provides headers for Cupt library.
+ .
+ See also description of libcupt2-0-experimental package.
+
+Package: libcupt2-doc-experimental
+Architecture: all
+Description: alternative front-end for dpkg -- library documentation
+ This package provides documentation for Cupt library.
  .
  See also description of libcupt2-0-experimental package.
 

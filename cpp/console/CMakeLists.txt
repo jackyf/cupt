@@ -1,4 +1,4 @@
-include_directories(${Cupt_SOURCE_DIR}/lib/include)
+include_directories(../lib/include)
 add_executable(cupt.bin
 	cupt.cpp
 	misc.cpp

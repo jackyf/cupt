@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 2.6)
-project(Cupt)
-
 IF(EXISTS /usr/bin/g++-4.5)
 	set(CMAKE_CXX_COMPILER /usr/bin/g++-4.5)
 ELSE(EXISTS /usr/bin/g++-4.5)
@@ -60,7 +57,6 @@ MACRO(ADD_PRECOMPILED_HEADER Target)
 	SET_SOURCE_FILES_PROPERTIES(${Sources}
 		PROPERTIES
 		COMPILE_FLAGS "-include ../precompiled/precompiled.hpp -Winvalid-pch"
-		OBJECT_DEPENDS "precompiled"
 	)
 	add_dependencies(${Target} precompiled)
 ENDMACRO(ADD_PRECOMPILED_HEADER)
@@ -69,7 +65,7 @@ set(CUPT_SOVERSION 0)
 
 # detect version from debian/changelog
 execute_process(
-	COMMAND "dpkg-parsechangelog" "-l../debian/changelog"
+	COMMAND "dpkg-parsechangelog" "-l${PROJECT_SOURCE_DIR}/debian/changelog"
 	COMMAND "grep" "^Version"
 	COMMAND "cut" "-d " "-f" "2"
 	OUTPUT_VARIABLE CUPT_VERSION

@@ -37,6 +37,15 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - Added 'show-upgradeable' example.
     - reference:
       - Documented static part of the library.
+      - Added a build infrastructure.
+  * debian:
+    - rules:
+      - Moved starting buildpoint to top directory (from 'cpp').
+    - control:
+      - Added build-dependency on doxygen.
+      - Added new binary package 'libcupt2-doc-experimental'.
+      - The package libcupt2-dev-experimental now suggests
+        libcupt2-doc-experimental.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
 

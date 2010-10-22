@@ -3,13 +3,10 @@
 PERL ?= /usr/bin/perl
 
 override_dh_auto_configure:
-	cd cpp && cmake -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/tmp/usr -DOPTIMIZE=2 ./
-
-override_dh_auto_build:
-	$(MAKE) -C cpp
+	cmake -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/tmp/usr -DOPTIMIZE=2 ./
 
 override_dh_auto_install:
-	$(MAKE) -C cpp install
+	$(MAKE) install
 	chrpath --delete $(CURDIR)/debian/tmp/usr/bin/cupt-experimental
 	# produce additional man pages for cupt
 	$(PERL) debian/install_pods

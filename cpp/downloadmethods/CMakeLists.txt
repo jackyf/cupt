@@ -1,4 +1,4 @@
-include_directories(${Cupt_SOURCE_DIR}/lib/include)
+include_directories(../lib/include)
 
 add_library(wget MODULE wget.cpp)
 add_precompiled_header(wget)
