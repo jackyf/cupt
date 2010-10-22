@@ -65,6 +65,11 @@ class HashSums
 	 */
 	void fill(const string& path);
 
+	/// gets hash of the string
+	/**
+	 * @param type hash type
+	 * @param pattern data to hash
+	 */
 	static string getHashOfString(const Type& type, const string& pattern);
 };
 
