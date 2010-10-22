@@ -43,6 +43,7 @@ Description: arternative front-end for dpkg -- development files
 
 Package: libcupt2-doc-experimental
 Architecture: all
+Depends: ${misc:Depends}
 Description: alternative front-end for dpkg -- library documentation
  This package provides documentation for Cupt library.
  .
