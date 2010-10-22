@@ -14,4 +14,5 @@ add_custom_command(
 add_custom_target(doc ALL DEPENDS doc-stamp)
 
 install(DIRECTORY examples DESTINATION doc)
-install(DIRECTORY reference DESTINATION doc)
+install(DIRECTORY reference/html DESTINATION doc)
+install(DIRECTORY reference/man DESTINATION share FILES_MATCHING PATTERN cupt*)
