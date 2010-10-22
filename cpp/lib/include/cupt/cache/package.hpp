@@ -67,6 +67,7 @@ class Package
 	/// gets version with a certain Version::versionString
 	/**
 	 * @return version if found, empty pointer if not found
+	 * @param versionString version string
 	 */
 	shared_ptr< const Version > getSpecificVersion(const string& versionString) const;
 
