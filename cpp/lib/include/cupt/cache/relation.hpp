@@ -211,7 +211,7 @@ struct ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator >);
+	ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
 	/// converts to RelationLine given system architecture
 	/**
 	 * Filters ArchitecturedRelationLine using binary system architecture.
