@@ -888,9 +888,17 @@ void __unite_needed(const shared_ptr< const Config >& config, GraphAndAttributes
 		}
 	}
 
-	auto moveEdge = [&gaa](const InnerAction& fromPredecessor, const InnerAction& fromSuccessor,
+	bool debugging = config->getBool("debug::worker");
+
+	auto moveEdge = [&gaa, debugging](const InnerAction& fromPredecessor, const InnerAction& fromSuccessor,
 			const InnerAction& toPredecessor, const InnerAction& toSuccessor)
 	{
+		if (debugging)
+		{
+			debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
+					fromPredecessor.toString().c_str(), fromSuccessor.toString().c_str(),
+					toPredecessor.toString().c_str(), toSuccessor.toString().c_str());
+		}
 		if (toPredecessor == toSuccessor)
 		{
 			return;
@@ -913,8 +921,6 @@ void __unite_needed(const shared_ptr< const Config >& config, GraphAndAttributes
 		gaa.graph.deleteEdge(fromPredecessor, fromSuccessor);
 		gaa.graph.addEdge(toPredecessor, toSuccessor);
 	};
-
-	bool debugging = config->getBool("debug::worker");
 
 	{ // get rid of virtual edges
 		FORIT(edgeIt, virtualEdges)
