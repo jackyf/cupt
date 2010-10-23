@@ -967,7 +967,7 @@ void __unite_needed(const shared_ptr< const Config >& config, GraphAndAttributes
 						packageName) == mergeExceptionPackageNames.end())
 			{
 				const list< const InnerAction* > successors = gaa.graph.getSuccessorsFromPointer(&from);
-				const list< const InnerAction* > predecessors = gaa.graph.getPredecessorsFromPointer(&to);
+				const list< const InnerAction* > predecessors = gaa.graph.getPredecessorsFromPointer(&from);
 				FORIT(successorPtrIt, successors)
 				{
 					moveEdge(from, **successorPtrIt, to, **successorPtrIt);
