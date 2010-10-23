@@ -155,7 +155,7 @@ string HashSums::getHashOfString(const Type& type, const string& pattern)
 		size_t i = 0;
 		FORIT(charIt, pattern)
 		{
-			unsigned int c = *charIt;
+			unsigned char c = *charIt;
 			printfString[i] = '\\';
 			printfString[i+1] = 'x';
 			printfString[i+2] = hexSymbolTable[c >> 4];
