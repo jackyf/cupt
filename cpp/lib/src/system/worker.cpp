@@ -155,7 +155,7 @@ class WorkerImpl
 			Direction::Type, const InnerAction&, GraphAndAttributes&, bool);
 	void __do_downloads(const vector< pair< download::Manager::DownloadEntity, string > >&,
 			const shared_ptr< download::Progress >&);
-	static void __check_graph_pre_depends(GraphAndAttributes& gaa);
+	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
 
 	// updating release and index data
 	bool __update_release_and_index_data(download::Manager&, const Cache::IndexEntry&);
@@ -744,7 +744,7 @@ void WorkerImpl::__fill_graph_dependencies(GraphAndAttributes& gaa)
 	}
 }
 
-void WorkerImpl::__check_graph_pre_depends(GraphAndAttributes& gaa)
+void WorkerImpl::__check_graph_pre_depends(GraphAndAttributes& gaa, bool debugging)
 {
 	auto edges = gaa.graph.getEdges();
 	FORIT(edgeIt, edges)
@@ -767,6 +767,11 @@ void WorkerImpl::__check_graph_pre_depends(GraphAndAttributes& gaa)
 			continue;
 		}
 
+		if (debugging)
+		{
+			debug("checking edge '%s' -> '%s' for pre-dependency cycle",
+					from.toString().c_str(), to.toString().c_str());
+		}
 		if (gaa.graph.getReachable(to).count(from))
 		{
 			// bah! the pre-dependency cannot be overridden
@@ -1002,7 +1007,8 @@ bool WorkerImpl::__build_actions_graph(GraphAndAttributes& gaa)
 	__fill_graph_dependencies(gaa);
 	__unite_needed(__config, gaa, virtualEdges);
 
-	if (__config->getBool("debug::worker"))
+	bool debugging = __config->getBool("debug::worker");
+	if (debugging)
 	{
 		auto edges = gaa.graph.getEdges();
 		FORIT(edgeIt, edges)
@@ -1012,7 +1018,7 @@ bool WorkerImpl::__build_actions_graph(GraphAndAttributes& gaa)
 		}
 	}
 
-	__check_graph_pre_depends(gaa);
+	__check_graph_pre_depends(gaa, debugging);
 
 	return true;
 }
