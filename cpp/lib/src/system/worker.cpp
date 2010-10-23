@@ -749,10 +749,10 @@ void WorkerImpl::__check_graph_pre_depends(GraphAndAttributes& gaa, bool debuggi
 	auto edges = gaa.graph.getEdges();
 	FORIT(edgeIt, edges)
 	{
-		const InnerAction& to = *(edgeIt->first);
-		const InnerAction& from = *(edgeIt->second);
+		const InnerAction& from = *(edgeIt->first);
+		const InnerAction& to = *(edgeIt->second);
 		const vector< GraphAndAttributes::RelationInfoRecord >& records =
-				gaa.attributes[to][from].relationInfo;
+				gaa.attributes[from][to].relationInfo;
 
 		RelationLine preDependencyRelationExpressions;
 		FORIT(recordIt, records)

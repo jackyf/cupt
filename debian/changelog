@@ -36,6 +36,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - system/worker:
       - Fixed typo which resulted in some action dependencies being lost while
         merging remove and unpack actions.
+      - Fixed typos which resuled in many false positives when checking for
+        temporary broken pre-depends.
   * doc:
     - examples:
       - Added 'show-upgradeable' example.
