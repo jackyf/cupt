@@ -82,12 +82,12 @@ vector< pair< const T*, const T* > > Graph< T >::getEdges() const
 	vector< pair< const T*, const T* > > result;
 	FORIT(vertexIt, __vertices)
 	{
-		const T& vertex = *vertexIt;
+		const T* vertexPtr = &*vertexIt;
 
-		const list< const T* >& predecessors = getPredecessors(vertex);
+		const list< const T* >& predecessors = getPredecessorsFromPointer(vertexPtr);
 		FORIT(predecessorPtrIt, predecessors)
 		{
-			result.push_back(std::make_pair(*predecessorPtrIt, &vertex));
+			result.push_back(std::make_pair(*predecessorPtrIt, vertexPtr));
 		}
 	}
 
