@@ -40,6 +40,8 @@
 #include <cupt/download/methodfactory.hpp>
 #include <cupt/pipe.hpp>
 
+#include <internal/common.hpp>
+
 namespace cupt {
 namespace internal {
 
@@ -288,9 +290,10 @@ ManagerImpl::~ManagerImpl()
 			{
 				warn("unable to shutdown download worker process: waitpid failed: EEE");
 			}
-			else if (!WIFEXITED(childExitStatus) || WEXITSTATUS(childExitStatus) != 0)
+			else if (childExitStatus != 0)
 			{
-				warn("download worker process exited with error");
+				warn("download worker process exited abnormally: %s",
+						getWaitStatusDescription(childExitStatus).c_str());
 			}
 		}
 		else
