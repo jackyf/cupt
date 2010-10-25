@@ -24,6 +24,34 @@
 namespace cupt {
 namespace internal {
 
+string getWaitStatusDescription(int status)
+{
+	if (status == 0)
+	{
+		return sf("success");
+	}
+	else if (WIFSIGNALED(status))
+	{
+		return sf("terminated by signal '%s'", strsignal(WTERMSIG(status)));
+	}
+	else if (WIFSTOPPED(status))
+	{
+		return sf("stopped by signal '%s'", strsignal(WSTOPSIG(status)));
+	}
+	else if (WIFCONTINUED(status))
+	{
+		return sf("continued");
+	}
+	else if (WIFEXITED(status))
+	{
+		return sf("exit code '%d'", WEXITSTATUS(status));
+	}
+	else
+	{
+		return sf("unknown status");
+	}
+}
+
 bool architectureMatch(const string& architecture, const string& pattern)
 {
 	static std::map< pair< string, string >, bool > cache;

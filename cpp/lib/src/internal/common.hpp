@@ -18,10 +18,14 @@
 #ifndef CUPT_INTERNAL_COMMON_SEEN
 #define CUPT_INTERNAL_COMMON_SEEN
 
+#include <sys/wait.h>
+
 #include <cupt/common.hpp>
 
 namespace cupt {
 namespace internal {
+
+string getWaitStatusDescription(int status);
 
 // we may use following instead of boost::lexical_cast<> because of speed
 uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input);

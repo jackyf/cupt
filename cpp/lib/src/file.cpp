@@ -18,7 +18,6 @@
 #include <cstdio>
 
 #include <sys/file.h>
-#include <sys/wait.h>
 
 #include <cupt/file.hpp>
 
@@ -76,19 +75,7 @@ FileImpl::~FileImpl()
 			}
 			else if (pcloseResult)
 			{
-				// TODO: move to common function
-				if (WIFSIGNALED(pcloseResult))
-				{
-					fatal("pipe '%s' execution failed: got signal %d", path.c_str(), WTERMSIG(pcloseResult));
-				}
-				else if (WIFEXITED(pcloseResult))
-				{
-					fatal("pipe '%s' execution failed: exit status %d", path.c_str(), WEXITSTATUS(pcloseResult));
-				}
-				else
-				{
-					fatal("pipe '%s' execution failed: unknown error", path.c_str());
-				}
+				fatal("pipe '%s' execution failed: %s", path.c_str(), getWaitStatusDescription(pcloseResult).c_str());
 			}
 		}
 		else
