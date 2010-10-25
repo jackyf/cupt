@@ -1507,21 +1507,9 @@ void WorkerImpl::__run_external_command(const string& command, const string& err
 		{
 			fatal("'%s': system() failed: EEE", id);
 		}
-		if (WIFEXITED(result))
+		else if (result)
 		{
-			auto exitCode = WEXITSTATUS(result);
-			if (exitCode != 0)
-			{
-				fatal("'%s' returned non-zero status: %u", id, exitCode);
-			}
-		}
-		else if (WIFSIGNALED(result))
-		{
-			fatal("'%s' was stopped by signal %u'", id, WTERMSIG(result));
-		}
-		else
-		{
-			fatal("'%s' was terminated due to unknown reason", id);
+			fatal("'%s' failed: %s", id, getWaitStatusDescription(result).c_str());
 		}
 	}
 }
