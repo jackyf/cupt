@@ -18,6 +18,7 @@
 #include <cstdio>
 
 #include <sys/file.h>
+#include <sys/wait.h>
 
 #include <cupt/file.hpp>
 
@@ -68,9 +69,26 @@ FileImpl::~FileImpl()
 	{
 		if (isPipe)
 		{
-			if (pclose(handle) == -1)
+			auto pcloseResult = pclose(handle);
+			if (pcloseResult == -1)
 			{
 				fatal("unable to close pipe '%s': EEE", path.c_str());
+			}
+			else if (pcloseResult)
+			{
+				// TODO: move to common function
+				if (WIFSIGNALED(pcloseResult))
+				{
+					fatal("pipe '%s' execution failed: got signal %d", path.c_str(), WTERMSIG(pcloseResult));
+				}
+				else if (WIFEXITED(pcloseResult))
+				{
+					fatal("pipe '%s' execution failed: exit status %d", path.c_str(), WEXITSTATUS(pcloseResult));
+				}
+				else
+				{
+					fatal("pipe '%s' execution failed: unknown error", path.c_str());
+				}
 			}
 		}
 		else

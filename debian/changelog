@@ -11,6 +11,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - 'operator=': forbidden now.
     - file:
       - 'getBlock': renamed to 'getRecord'.
+      - destructor: check child exit status in a pipe mode.
     - common:
       - 'exception': renamed to 'Exception'.
     - system/resolvers/native:
