@@ -5,6 +5,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - 'getStringHash': speed-up.
       - 'getStringHash': renamed to 'getHashOfString'.
       - 'getHashOfString': fixed crash on non-ASCII strings.
+      - Use libgcrypt for hash computations.
     - cache:
       - Pre-parsing index files: really discard packages with broken package
         names.
@@ -53,6 +54,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - Added new binary package 'libcupt2-doc-experimental'.
       - The package libcupt2-dev-experimental now suggests
         libcupt2-doc-experimental.
+      - Added build-dependency on libgcrypt11-dev.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
 

@@ -152,6 +152,23 @@ File& File::rawGetLine(const char*& buffer, size_t& size)
 	return *this;
 }
 
+File& File::getBlock(char* buffer, size_t& size)
+{
+	__impl->assertFileOpened();
+
+	size = ::fread(buffer, 1, size, __impl->handle);
+	if (!size)
+	{
+		// an error occured
+		if (!feof(__impl->handle))
+		{
+			// real error
+			fatal("unable to read from file '%s': EEE", __impl->path.c_str());
+		}
+	}
+	return *this;
+}
+
 File& File::getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter)
 {
 	__impl->assertFileOpened();

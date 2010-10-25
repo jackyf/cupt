@@ -15,6 +15,7 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <gcrypt.h>
 
 #include <cupt/hashsums.hpp>
 #include <cupt/file.hpp>
@@ -23,32 +24,119 @@ namespace cupt {
 
 namespace {
 
-string __get_hash(const HashSums::Type& type, const string& prefix, const string& postfix,
-		const string& description)
+struct Source
 {
-	static const char* verifiers[] = { "md5sum", "sha1sum", "sha256sum" };
+	enum Type { File, Buffer };
+};
 
-	string errorString;
-	File pipe(sf("%s%s -b %s", prefix.c_str(), verifiers[type], postfix.c_str()), "pr", errorString);
-	if (!errorString.empty())
+class GcryptHasher
+{
+	gcry_md_hd_t __gcrypt_handle;
+	size_t __digest_size;
+ public:
+	GcryptHasher(int gcryptAlgorithm)
 	{
-		warn("failed open hashsummer ('%s') pipe on %s: %s", verifiers[type],
-				description.c_str(), errorString.c_str());
-		return "";
+		gcry_error_t gcryptError;
+		if ((gcryptError = gcry_md_open(&__gcrypt_handle, gcryptAlgorithm, 0)))
+		{
+			fatal("unable to open gcrypt hash handle: %s", gcry_strerror(gcryptError));
+		}
+		__digest_size = gcry_md_get_algo_dlen(gcryptAlgorithm);
+	}
+	void process(const char* buffer, size_t size)
+	{
+		gcry_md_write(__gcrypt_handle, buffer, size);
+	}
+	string getResult() const
+	{
+		auto binaryResult = gcry_md_read(__gcrypt_handle, 0);
+		string result;
+
+		// converting to hexadecimal string
+		for (size_t i = 0; i < __digest_size; ++i)
+		{
+			unsigned int c = binaryResult[i];
+			result += sf("%02x", c);
+		}
+
+		return result;
+	}
+	~GcryptHasher()
+	{
+		gcry_md_close(__gcrypt_handle);
+	}
+};
+
+string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string& source)
+{
+	static bool initialized = false;
+	if (!initialized)
+	{
+		try
+		{
+			if (!gcry_check_version (GCRYPT_VERSION))
+			{
+				fatal("libgcrypt version mismatch");
+			}
+			gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+			gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+		}
+		catch (Exception& e)
+		{
+			fatal("unable to initialize hash sums computing");
+		}
 	}
 
-	string line;
-	pipe.getLine(line);
-
-	auto firstSpacePosition = line.find(' ');
-	if (firstSpacePosition == string::npos)
+	int gcryptAlgorithm;
+	switch (hashType)
 	{
-		warn("unexpected result while fetching %s hash sum from result '%s' on %s",
-				verifiers[type], line.c_str(), description.c_str());
-		return "";
+		case HashSums::MD5: gcryptAlgorithm = GCRY_MD_MD5; break;
+		case HashSums::SHA1: gcryptAlgorithm = GCRY_MD_SHA1; break;
+		case HashSums::SHA256: gcryptAlgorithm = GCRY_MD_SHA256; break;
+		default:
+			gcryptAlgorithm = 0; // to not see 'maybe used uninitialized' warning
+			fatal("unsupported hash type '%zu'", size_t(hashType));
 	}
 
-	return line.substr(0, firstSpacePosition); // trimming
+	string result;
+	try
+	{
+		GcryptHasher gcryptHasher(gcryptAlgorithm);
+
+		if (sourceType == Source::File)
+		{
+			string openError;
+			File file(source, "r", openError);
+			if (!openError.empty())
+			{
+				fatal("unable to open file '%s': %s",
+						source.c_str(), openError.c_str());
+			}
+
+			char buffer[8192];
+			size_t size = sizeof(buffer);
+			while (file.getBlock(buffer, size), size)
+			{
+				gcryptHasher.process(buffer, size);
+			}
+		}
+		else // string
+		{
+			gcryptHasher.process(source.c_str(), source.size());
+		}
+
+		result = gcryptHasher.getResult();
+	}
+	catch (Exception& e)
+	{
+		static string strings[HashSums::Count] = { "md5", "sha1", "sha256" };
+		string description = string(sourceType == Source::File ? "file" : "string") +
+				" '" + source + "'";
+		fatal("unable to compute hash sums '%s' on '%s':",
+				strings[hashType].c_str(), description.c_str());
+	}
+
+	return result;
 }
 
 void __assert_not_empty(const HashSums* hashSums)
@@ -99,8 +187,7 @@ bool HashSums::verify(const string& path) const
 
 		++sumsCount;
 
-		string fileHashSum = __get_hash(static_cast<Type>(type), "",
-				path.c_str(), sf("file '%s'", path.c_str()));
+		string fileHashSum = __get_hash(static_cast<Type>(type), Source::File, path);
 
 		if (fileHashSum != values[type])
 		{
@@ -116,8 +203,7 @@ void HashSums::fill(const string& path)
 {
 	for (size_t type = 0; type < Count; ++type)
 	{
-		values[type]= __get_hash(static_cast<Type>(type), "",
-				path.c_str(), sf("file '%s'", path.c_str()));
+		values[type]= __get_hash(static_cast<Type>(type), Source::File, path);
 	}
 }
 
@@ -147,23 +233,7 @@ bool HashSums::match(const HashSums& other) const
 
 string HashSums::getHashOfString(const Type& type, const string& pattern)
 {
-	string description = sf("string '%s'", pattern.c_str());
-
-	string printfString(pattern.size() * 4, '\0');
-	{
-		static const char hexSymbolTable[] = "0123456789abcdef";
-		size_t i = 0;
-		FORIT(charIt, pattern)
-		{
-			unsigned char c = *charIt;
-			printfString[i] = '\\';
-			printfString[i+1] = 'x';
-			printfString[i+2] = hexSymbolTable[c >> 4];
-			printfString[i+3] = hexSymbolTable[c & 0xF];
-			i += 4;
-		}
-	}
-	return __get_hash(type, sf("/usr/bin/printf '%s' | ", printfString.c_str()), "", description);
+	return __get_hash(type, Source::Buffer, pattern);
 }
 
 }

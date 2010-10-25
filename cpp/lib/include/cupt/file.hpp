@@ -103,6 +103,14 @@ class File
 	 */
 	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
 			[](const char*, size_t) -> bool { return true; });
+	/// reads new block
+	/**
+	 * Reads up to @a size characters from current position to @a buffer.
+	 * @param buffer buffer to read in
+	 * @param size up limit on character count
+	 * @return reference to self
+	 */
+	File& getBlock(char* buffer, size_t& size);
 	/// reads all available data from current position
 	/**
 	 * It's usually used just after opening the file and for small files.
