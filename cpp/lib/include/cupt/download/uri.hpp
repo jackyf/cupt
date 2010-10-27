@@ -47,7 +47,12 @@ class Uri
 	 * @param other object to copy from
 	 */
 	Uri(const Uri& other);
-	Uri& operator=(const Uri&);
+	/// assignment operator
+	/**
+	 * @param other object to assign from
+	 * @return reference to self
+	 */
+	Uri& operator=(const Uri& other);
 	virtual ~Uri();
 
 	string getProtocol() const;
