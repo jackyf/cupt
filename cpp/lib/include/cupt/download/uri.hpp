@@ -56,7 +56,9 @@ class Uri
 	/// destructor
 	virtual ~Uri();
 
+	/// gets protocol name
 	string getProtocol() const;
+	/// gets host name
 	string getHost() const;
 	string getOpaque() const;
 	operator string() const;
