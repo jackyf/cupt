@@ -37,8 +37,16 @@ class Uri
 {
 	internal::UriData* __data;
  public:
+	/// constructor
+	/**
+	 * @param uri string representation of URI
+	 */
 	Uri(const string& uri);
-	Uri(const Uri&);
+	/// copy constructor
+	/**
+	 * @param other object to copy from
+	 */
+	Uri(const Uri& other);
 	Uri& operator=(const Uri&);
 	virtual ~Uri();
 
