@@ -18,6 +18,8 @@
 #ifndef CUPT_DOWNLOAD_URI_SEEN
 #define CUPT_DOWNLOAD_URI_SEEN
 
+/// @file
+
 #include <cupt/common.hpp>
 
 namespace cupt {
@@ -30,6 +32,7 @@ struct UriData;
 
 namespace download {
 
+/// uniform resource indentifier, "download path"
 class Uri
 {
 	internal::UriData* __data;
