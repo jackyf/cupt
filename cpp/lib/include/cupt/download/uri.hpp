@@ -53,6 +53,7 @@ class Uri
 	 * @return reference to self
 	 */
 	Uri& operator=(const Uri& other);
+	/// destructor
 	virtual ~Uri();
 
 	string getProtocol() const;
