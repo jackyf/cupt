@@ -30,6 +30,7 @@ struct UriData;
 
 }
 
+/** @namespace cupt::download */
 namespace download {
 
 /// uniform resource indentifier, "download path"
