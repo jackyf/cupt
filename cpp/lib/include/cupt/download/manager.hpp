@@ -15,6 +15,9 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#ifndef CUPT_DOWNLOAD_MANAGER_SEEN
+#define CUPT_DOWNLOAD_MANAGER_SEEN
+
 #include <functional>
 
 #include <cupt/common.hpp>
@@ -61,4 +64,6 @@ class Manager
 
 }
 }
+
+#endif
 

@@ -40,6 +40,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
         merging remove and unpack actions.
       - Fixed typos which resulted in many false positives when checking for
         temporary broken pre-depends.
+    - download/manager:
+      - Added multiple inclusion guards to the header.
   * doc:
     - examples:
       - Added 'show-upgradeable' example.
