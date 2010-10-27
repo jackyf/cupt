@@ -62,6 +62,7 @@ class Uri
 	string getHost() const;
 	/// gets the path without protocol specification
 	string getOpaque() const;
+	/// gets string representation
 	operator string() const;
 };
 
