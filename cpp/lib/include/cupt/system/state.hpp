@@ -32,6 +32,7 @@ class StateData;
 
 }
 
+/** @namespace cupt::system */
 namespace system {
 
 /// stores an additional information for installed packages
