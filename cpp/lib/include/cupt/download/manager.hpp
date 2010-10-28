@@ -41,11 +41,12 @@ class Manager
 {
 	internal::ManagerImpl* __impl;
  public:
+	/// uri with aliases
 	struct ExtendedUri
 	{
-		Uri uri;
-		string shortAlias;
-		string longAlias;
+		Uri uri; ///< uri
+		string shortAlias; ///< short alias
+		string longAlias; ///< long alias (full description)
 
 		ExtendedUri(const Uri& uri_, const string& shortAlias_, const string& longAlias_)
 			: uri(uri_), shortAlias(shortAlias_), longAlias(longAlias_)
