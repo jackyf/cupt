@@ -82,7 +82,13 @@ class Manager
 	/// destructor
 	~Manager();
 
-	string download(const vector< DownloadEntity >&);
+	/// downloads entities in parallel
+	/**
+	 * @param entities list of entities to download
+	 * @return empty string when everything went ok, human readable download
+	 * error from arbitrary failed entity if some entities failed to download
+	 */
+	string download(const vector< DownloadEntity >& entities);
 };
 
 }
