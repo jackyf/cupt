@@ -18,6 +18,8 @@
 #ifndef CUPT_DOWNLOAD_MANAGER_SEEN
 #define CUPT_DOWNLOAD_MANAGER_SEEN
 
+/// @file
+
 #include <functional>
 
 #include <cupt/common.hpp>
@@ -34,6 +36,7 @@ class ManagerImpl;
 
 namespace download {
 
+/// performs downloads
 class Manager
 {
 	internal::ManagerImpl* __impl;
