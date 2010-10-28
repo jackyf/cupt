@@ -73,7 +73,13 @@ class Manager
 		std::function< string () > postAction;
 	};
 
-	Manager(const shared_ptr< const Config >&, const shared_ptr< Progress >&);
+	/// constructor
+	/**
+	 * @param config configuration
+	 * @param progress progress meter
+	 */
+	Manager(const shared_ptr< const Config >& config, const shared_ptr< Progress >& progress);
+	/// destructor
 	~Manager();
 
 	string download(const vector< DownloadEntity >&);
