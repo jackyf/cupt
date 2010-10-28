@@ -58,11 +58,18 @@ class Manager
 			: uri(uri_), shortAlias(shortAlias_), longAlias(longAlias_)
 		{}
 	};
+	/// downloadable element
 	struct DownloadEntity
 	{
-		vector< ExtendedUri > extendedUris;
-		string targetPath;
-		size_t size;
+		vector< ExtendedUri > extendedUris; ///< list of alternative uris
+		string targetPath; ///< path where to place downloaded file
+		size_t size; ///< file size, in bytes; set @c -1 if unknown
+		/// post-download callback
+		/**
+		 * Returned empty string means no errors.
+		 * Returned non-empty string marks a download as failed and sets this
+		 * string as download result.
+		 */
 		std::function< string () > postAction;
 	};
 
