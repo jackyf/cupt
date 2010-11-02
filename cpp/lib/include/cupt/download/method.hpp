@@ -18,6 +18,8 @@
 #ifndef CUPT_DOWNLOAD_METHOD_SEEN
 #define CUPT_DOWNLOAD_METHOD_SEEN
 
+/// @file
+
 #include <functional>
 
 #include <cupt/common.hpp>
@@ -26,6 +28,7 @@
 namespace cupt {
 namespace download {
 
+/// base class of download methods
 class Method
 {
  protected:
