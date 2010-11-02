@@ -201,7 +201,7 @@ class WgetMethod: public cupt::download::Method
 						p.push_back("wget"); // passed as a binary name, not parameter
 						p.push_back("--continue");
 						p.push_back(string("--tries=") + lexical_cast< string >(config->getInteger("acquire::retries")+1));
-						auto maxSpeedLimit = getNumericAcquireSuboptionForUri(config, uri, "dl-limit");
+						auto maxSpeedLimit = getIntegerAcquireSuboptionForUri(config, uri, "dl-limit");
 						if (maxSpeedLimit)
 						{
 							p.push_back(string("--limit-rate=") + lexical_cast< string >(maxSpeedLimit) + "k");
@@ -220,7 +220,7 @@ class WgetMethod: public cupt::download::Method
 						{
 							p.push_back("--max-redirect=0");
 						}
-						auto timeout = getNumericAcquireSuboptionForUri(config, uri, "timeout");
+						auto timeout = getIntegerAcquireSuboptionForUri(config, uri, "timeout");
 						if (timeout)
 						{
 							p.push_back(string("--timeout=") + lexical_cast< string >(timeout));

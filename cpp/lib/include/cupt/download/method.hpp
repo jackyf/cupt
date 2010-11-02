@@ -50,7 +50,7 @@ class Method
 	 */
 	static string getAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 			const Uri& uri, const string& suboptionName);
-	static ssize_t getNumericAcquireSuboptionForUri(const shared_ptr< const Config >&,
+	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >&,
 			const Uri& uri, const string& suboptionName);
  public:
 	virtual string perform(const shared_ptr< const Config >&, const Uri& uri,

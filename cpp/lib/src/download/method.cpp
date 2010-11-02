@@ -45,7 +45,7 @@ string Method::getAcquireSuboptionForUri(const shared_ptr< const Config >& confi
 	return result;
 }
 
-ssize_t Method::getNumericAcquireSuboptionForUri(const shared_ptr< const Config >& config,
+ssize_t Method::getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 		const Uri& uri, const string& suboptionName)
 {
 	auto result = getAcquireSuboptionForUri(config, uri, suboptionName);

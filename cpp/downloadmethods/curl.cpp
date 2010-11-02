@@ -168,7 +168,7 @@ class CurlMethod: public cupt::download::Method
 
 			{ // setting options
 				curl.setOption(CURLOPT_URL, string(uri), "uri");
-				auto downloadLimit = getNumericAcquireSuboptionForUri(config, uri, "dl-limit");
+				auto downloadLimit = getIntegerAcquireSuboptionForUri(config, uri, "dl-limit");
 				if (downloadLimit)
 				{
 					curl.setLargeOption(CURLOPT_MAX_RECV_SPEED_LARGE, downloadLimit*1024, "upper speed limit");
@@ -186,7 +186,7 @@ class CurlMethod: public cupt::download::Method
 				{
 					curl.setOption(CURLOPT_FOLLOWLOCATION, 1, "follow-location");
 				}
-				auto timeout = getNumericAcquireSuboptionForUri(config, uri, "timeout");
+				auto timeout = getIntegerAcquireSuboptionForUri(config, uri, "timeout");
 				if (timeout)
 				{
 					curl.setOption(CURLOPT_CONNECTTIMEOUT, timeout, "connect timeout");
