@@ -33,11 +33,11 @@ class Method
 {
  protected:
 	Method();
-	/// gets URI-specific value of some 'acquire::*' option
+	/// gets URI-specific value of some @c 'acquire::*' option
 	/**
-	 * Options of 'Acquire' group can be overridden for specific host.  This
+	 * Options of @c Acquire group can be overridden for specific host.  This
 	 * function hides the details and provides the convenient way get the value
-	 * of the option in 'Acquire' group for certain URI.
+	 * of the option in @c Acquire group for certain URI.
 	 *
 	 * @param config configuration
 	 * @param uri uri
@@ -50,7 +50,7 @@ class Method
 	 */
 	static string getAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 			const Uri& uri, const string& suboptionName);
-	/// gets URI-specific value of some integer 'acquire::*' option
+	/// gets URI-specific value of some integer @c 'acquire::*' option
 	/**
 	 * Same as @ref getAcquireSuboptionForUri, but for integer options.
 	 *
