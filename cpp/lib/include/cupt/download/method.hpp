@@ -50,6 +50,14 @@ class Method
 	 */
 	static string getAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 			const Uri& uri, const string& suboptionName);
+	/// gets URI-specific value of some integer 'acquire::*' option
+	/**
+	 * Same as @ref getAcquireSuboptionForUri, but for integer options.
+	 *
+	 * @param config configuration
+	 * @param uri uri
+	 * @param suboptionName suboption name
+	 */
 	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >&,
 			const Uri& uri, const string& suboptionName);
  public:
