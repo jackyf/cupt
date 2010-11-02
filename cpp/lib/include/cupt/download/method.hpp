@@ -33,7 +33,22 @@ class Method
 {
  protected:
 	Method();
-	static string getAcquireSuboptionForUri(const shared_ptr< const Config >&,
+	/// gets URI-specific value of some 'acquire::*' option
+	/**
+	 * Options of 'Acquire' group can be overridden for specific host.  This
+	 * function hides the details and provides the convenient way get the value
+	 * of the option in 'Acquire' group for certain URI.
+	 *
+	 * @param config configuration
+	 * @param uri uri
+	 * @param suboptionName suboption name
+	 *
+	 * @par Example:
+	 * @code
+	 * auto proxy = getAcquireSuboptionForUri(config, uri, "proxy");
+	 * @endcode
+	 */
+	static string getAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 			const Uri& uri, const string& suboptionName);
 	static ssize_t getNumericAcquireSuboptionForUri(const shared_ptr< const Config >&,
 			const Uri& uri, const string& suboptionName);
