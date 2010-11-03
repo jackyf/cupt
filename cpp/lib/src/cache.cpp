@@ -351,7 +351,7 @@ bool Cache::verifySignature(const shared_ptr< const Config >& config, const stri
 	try
 	{
 		string gpgCommand = string("gpgv --status-fd 1 --keyring ") + keyringPath +
-				' ' + signaturePath + ' ' + path + " 2>/dev/null";
+				' ' + signaturePath + ' ' + path + " 2>/dev/null || true";
 		string openError;
 		File gpgPipe(gpgCommand, "pr", openError);
 		if (!openError.empty())
