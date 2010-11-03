@@ -61,7 +61,18 @@ class Method
 	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >&,
 			const Uri& uri, const string& suboptionName);
  public:
-	virtual string perform(const shared_ptr< const Config >&, const Uri& uri,
+	/// downloads @a uri to @a targetPath
+	/**
+	 * @param config configuration
+	 * @param uri uri
+	 * @param targetPath path to download to
+	 * @param callback callback function
+	 *
+	 * @par Allowed callback sequences:
+	 * @c downloading @a total_downloaded_bytes @a size_of_last_fetched_piece @n
+	 * @c expected-size @a expected_file_size
+	 */
+	virtual string perform(const shared_ptr< const Config >& config, const Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback) = 0;
 };
 
