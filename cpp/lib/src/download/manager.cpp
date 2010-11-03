@@ -523,24 +523,21 @@ void ManagerImpl::processProgressMessage(Pipe& workerPipe, const vector< string 
 	const string& actionName = params[1];
 
 	auto downloadSizeIt = sizes.find(uri);
-	if (actionName == "expected-size")
+	if (actionName == "expected-size" && downloadSizeIt != sizes.end())
 	{
-		if (downloadSizeIt != sizes.end())
+		// ok, we knew what size we should get, and the method has reported its variant
+		// now compare them strictly
+		if (params.size() != 3)
 		{
-			// ok, we knew what size we should get, and the method has reported its variant
-			// now compare them strictly
-			if (params.size() != 3)
-			{
-				fatal("internal error: download manager: wrong parameter count for 'progress' message, 'expected-size' submessage");
-			}
+			fatal("internal error: download manager: wrong parameter count for 'progress' message, 'expected-size' submessage");
+		}
 
-			auto expectedSize = lexical_cast< size_t >(params[2]);
-			if (expectedSize != downloadSizeIt->second)
-			{
-				auto errorString = sf(__("invalid expected size: expected '%zu', got '%zu'"),
-						downloadSizeIt->second, expectedSize);
-				killPerformerBecauseOfWrongSize(workerPipe, uri, actionName, errorString);
-			}
+		auto expectedSize = lexical_cast< size_t >(params[2]);
+		if (expectedSize != downloadSizeIt->second)
+		{
+			auto errorString = sf(__("invalid expected size: expected '%zu', got '%zu'"),
+					downloadSizeIt->second, expectedSize);
+			killPerformerBecauseOfWrongSize(workerPipe, uri, actionName, errorString);
 		}
 	}
 	else

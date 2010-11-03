@@ -42,6 +42,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
         temporary broken pre-depends.
     - download/manager:
       - Added multiple inclusion guards to the header.
+      - If download method reported expected download file size after a
+        download was started, pass it to download progress object.
     - download/method:
       - 'getNumericAcquireSuboptionForUri': renamed to
         'getIntegerAcquireSuboptionForUri'.
