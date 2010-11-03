@@ -761,6 +761,20 @@ int findDependencyChain(Context& context)
 	auto leafVersion = selectBinaryVersion(cache, leafPackageExpression, true);
 
 	queue< shared_ptr< const BinaryVersion > > versions;
+	struct PathEntry
+	{
+		shared_ptr< const BinaryVersion > version;
+		BinaryVersion::RelationTypes::Type dependencyType;
+		RelationExpression relationExpression;
+	};
+	map< shared_ptr< const BinaryVersion >, PathEntry, PointerLess< const BinaryVersion > > links;
+
+	auto addStartingVersion = [&versions, &links](const shared_ptr< const BinaryVersion >& version)
+	{
+		versions.push(version);
+		links[version]; // create empty PathEntry for version
+	};
+
 	if (!arguments.empty())
 	{
 		// selected packages
@@ -769,7 +783,7 @@ int findDependencyChain(Context& context)
 			auto selectedVersions = selectBinaryVersionsWildcarded(cache, *argumentIt);
 			FORIT(it, selectedVersions)
 			{
-				versions.push(*it);
+				addStartingVersion(*it);
 			}
 		}
 	}
@@ -782,7 +796,7 @@ int findDependencyChain(Context& context)
 			const shared_ptr< const BinaryVersion >& installedVersion = *installedVersionIt;
 			if (!cache->isAutomaticallyInstalled(installedVersion->packageName))
 			{
-				versions.push(installedVersion);
+				addStartingVersion(installedVersion);
 			}
 		}
 	}
@@ -801,27 +815,10 @@ int findDependencyChain(Context& context)
 		relationGroups.push_back(BinaryVersion::RelationTypes::Suggests);
 	}
 
-	// don't output the same version more than one time
-	set< shared_ptr< const BinaryVersion >, PointerLess< const BinaryVersion > > processedVersions;
-
-
-	struct PathEntry
-	{
-		shared_ptr< const BinaryVersion > version;
-		BinaryVersion::RelationTypes::Type dependencyType;
-		RelationExpression relationExpression;
-	};
-	map< shared_ptr< const BinaryVersion >, PathEntry, PointerLess< const BinaryVersion > > links;
-
 	while (!versions.empty())
 	{
 		auto version = versions.front();
 		versions.pop();
-
-		if (!processedVersions.insert(version).second)
-		{
-			continue;
-		}
 
 		if (*version == *leafVersion)
 		{
@@ -830,7 +827,7 @@ int findDependencyChain(Context& context)
 			shared_ptr< const BinaryVersion > currentVersion = version;
 
 			decltype(links.find(currentVersion)) it;
-			while ((it = links.find(currentVersion)), it != links.end())
+			while ((it = links.find(currentVersion)), it->second.version)
 			{
 				const PathEntry& pathEntry = it->second;
 				path.push(pathEntry);
@@ -860,7 +857,6 @@ int findDependencyChain(Context& context)
 				FORIT(newVersionIt, satisfyingVersions)
 				{
 					const shared_ptr< const BinaryVersion >& newVersion = *newVersionIt;
-					versions.push(newVersion);
 
 					static const PathEntry dummyPathEntry;
 					auto insertResult = links.insert(make_pair(newVersion, dummyPathEntry));
@@ -871,6 +867,8 @@ int findDependencyChain(Context& context)
 						newPathEntry.version = version;
 						newPathEntry.dependencyType = dependencyType;
 						newPathEntry.relationExpression = *relationExpressionIt;
+
+						versions.push(newVersion);
 					}
 				}
 			}
