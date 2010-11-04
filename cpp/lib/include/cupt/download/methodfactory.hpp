@@ -47,6 +47,10 @@ class MethodFactory
 	MethodFactory(const shared_ptr< const Config >& config);
 	/// destructor
 	~MethodFactory();
+	/// gets download method for @a uri
+	/**
+	 * @param uri uri
+	 */
 	Method* getDownloadMethodForUri(const Uri& uri) const;
 };
 
