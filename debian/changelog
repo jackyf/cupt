@@ -50,6 +50,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - download/method:
       - 'getNumericAcquireSuboptionForUri': renamed to
         'getIntegerAcquireSuboptionForUri'.
+    - download/methodfactory:
+      - 'operator=': forbidden now.
   * doc:
     - examples:
       - Added 'show-upgradeable' example.

@@ -35,6 +35,7 @@ class MethodFactory
 {
 	internal::MethodFactoryImpl* __impl;
 	MethodFactory(const MethodFactory&);
+	MethodFactory& operator=(const MethodFactory);
  public:
 	MethodFactory(const shared_ptr< const Config >&);
 	~MethodFactory();
