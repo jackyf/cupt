@@ -18,6 +18,8 @@
 #ifndef CUPT_DOWNLOAD_METHODFACTORY_SEEN
 #define CUPT_DOWNLOAD_METHODFACTORY_SEEN
 
+/// @file
+
 #include <cupt/fwd.hpp>
 #include <cupt/common.hpp>
 
@@ -31,13 +33,19 @@ class MethodFactoryImpl;
 
 namespace download {
 
+/// class to get a download method for URIs
 class MethodFactory
 {
 	internal::MethodFactoryImpl* __impl;
 	MethodFactory(const MethodFactory&);
 	MethodFactory& operator=(const MethodFactory);
  public:
-	MethodFactory(const shared_ptr< const Config >&);
+	/// constructor
+	/**
+	 * @param config configuration
+	 */
+	MethodFactory(const shared_ptr< const Config >& config);
+	/// destructor
 	~MethodFactory();
 	Method* getDownloadMethodForUri(const Uri& uri) const;
 };
