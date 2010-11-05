@@ -18,6 +18,8 @@
 #ifndef CUPT_DOWNLOAD_PROGRESS_SEEN
 #define CUPT_DOWNLOAD_PROGRESS_SEEN
 
+/// @file
+
 #include <ctime>
 #include <map>
 
@@ -33,6 +35,7 @@ class ProgressImpl;
 
 namespace download {
 
+/// download progress meter
 class Progress
 {
 	internal::ProgressImpl* __impl;
