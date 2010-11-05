@@ -63,6 +63,7 @@ class Progress
 	virtual void updateHook(bool immediate);
 
  public:
+	/// constructor
 	Progress();
 
 	static float speedCalculatingAccuracy;
@@ -74,6 +75,7 @@ class Progress
 	void progress(const vector< string >& params);
 	virtual void finish();
 
+	/// destructor
 	virtual ~Progress();
 };
 
