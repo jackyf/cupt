@@ -52,6 +52,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
         'getIntegerAcquireSuboptionForUri'.
     - download/methodfactory:
       - 'operator=': forbidden now.
+    - cache/binaryversion:
+      - 'task': removed the field.
   * doc:
     - examples:
       - Added 'show-upgradeable' example.

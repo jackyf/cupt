@@ -210,7 +210,6 @@ int showBinaryVersions(Context& context)
 					cout << longDescription;
 				}
 			}
-			p(__("Task"), version->task);
 			p(__("Tags"), version->tags);
 			if (version->others)
 			{

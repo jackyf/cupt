@@ -84,7 +84,6 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 		TAG(MD5sum, v->file.hashSums[HashSums::MD5] = tagValue;)
 		TAG(SHA1, v->file.hashSums[HashSums::SHA1] = tagValue;)
 		TAG(SHA256, v->file.hashSums[HashSums::SHA256] = tagValue;)
-		TAG(Task, v->task = tagValue;)
 		TAG(Source,
 		{
 			v->sourcePackageName = tagValue;

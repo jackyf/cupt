@@ -47,7 +47,6 @@ struct BinaryVersion: public Version
 	vector< string > provides; ///< array of virtual package names
 	string shortDescription; ///< short description
 	string longDescription; ///< long description
-	string task; ///< task
 	string tags; ///< tags
 	FileRecord file; ///< Version::FileRecord
 
