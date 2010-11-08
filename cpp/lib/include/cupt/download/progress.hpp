@@ -73,7 +73,17 @@ class Progress
 	 */
 	static float speedCalculatingAccuracy;
 
+	/// sets a short alias for URI
+	/**
+	 * @param uri uri
+	 * @param alias short alias
+	 */
 	void setShortAliasForUri(const string& uri, const string& alias);
+	/// sets a long alias for URI
+	/**
+	 * @param uri uri
+	 * @param alias long alias
+	 */
 	void setLongAliasForUri(const string& uri, const string& alias);
 	void setTotalEstimatedSize(uint64_t size);
 
