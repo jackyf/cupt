@@ -40,12 +40,13 @@ class Progress
 {
 	internal::ProgressImpl* __impl;
  public:
+	/// download element
 	struct DownloadRecord
 	{
-		size_t number;
-		size_t downloadedSize;
-		size_t size;
-		bool beingPostprocessed;
+		size_t number; ///< unique number
+		size_t downloadedSize; ///< already downloaded amount of bytes
+		size_t size; ///< expected file size, @c -1 if unknown
+		bool beingPostprocessed; ///< is download being postprocessed
 	};
  protected:
 	string getLongAliasForUri(const string& uri) const;
