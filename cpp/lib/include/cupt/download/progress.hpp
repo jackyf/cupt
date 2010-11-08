@@ -67,6 +67,10 @@ class Progress
 	/// constructor
 	Progress();
 
+	/// amount of seconds considered while calculating a download speed
+	/**
+	 * Default: 16
+	 */
 	static float speedCalculatingAccuracy;
 
 	void setShortAliasForUri(const string& uri, const string& alias);
