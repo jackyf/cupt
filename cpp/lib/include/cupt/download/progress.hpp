@@ -92,7 +92,9 @@ class Progress
 	 */
 	void setTotalEstimatedSize(uint64_t size);
 
+	/// @cond
 	void progress(const vector< string >& params);
+	/// @endcond
 	virtual void finish();
 
 	/// destructor
