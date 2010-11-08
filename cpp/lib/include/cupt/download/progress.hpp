@@ -85,6 +85,11 @@ class Progress
 	 * @param alias long alias
 	 */
 	void setLongAliasForUri(const string& uri, const string& alias);
+	/// sets total download size for the all download progress lifetime
+	/**
+	 * This method should be called if this amount is known beforehand to get
+	 * better overall progress indication.
+	 */
 	void setTotalEstimatedSize(uint64_t size);
 
 	void progress(const vector< string >& params);
