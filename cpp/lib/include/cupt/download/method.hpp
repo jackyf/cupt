@@ -58,7 +58,7 @@ class Method
 	 * @param uri uri
 	 * @param suboptionName suboption name
 	 */
-	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >&,
+	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 			const Uri& uri, const string& suboptionName);
  public:
 	/// downloads @a uri to @a targetPath
