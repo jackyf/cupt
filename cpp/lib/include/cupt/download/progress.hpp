@@ -80,13 +80,13 @@ class Progress
 
 	/// sets a short alias for URI
 	/**
-	 * @param uri uri
+	 * @param uri
 	 * @param alias short alias
 	 */
 	void setShortAliasForUri(const string& uri, const string& alias);
 	/// sets a long alias for URI
 	/**
-	 * @param uri uri
+	 * @param uri
 	 * @param alias long alias
 	 */
 	void setLongAliasForUri(const string& uri, const string& alias);
