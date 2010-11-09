@@ -41,7 +41,7 @@ class Method
 	 *
 	 * @param config
 	 * @param uri
-	 * @param suboptionName suboption name
+	 * @param suboptionName
 	 *
 	 * @par Example:
 	 * @code
@@ -56,7 +56,7 @@ class Method
 	 *
 	 * @param config
 	 * @param uri
-	 * @param suboptionName suboption name
+	 * @param suboptionName
 	 */
 	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >& config,
 			const Uri& uri, const string& suboptionName);
