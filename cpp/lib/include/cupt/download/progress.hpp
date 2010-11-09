@@ -49,6 +49,10 @@ class Progress
 		bool beingPostprocessed; ///< is download being postprocessed
 	};
  protected:
+	/**
+	 * @param uri
+	 * @return long alias for @a uri if it was specified, @a uri otherwise
+	 */
 	string getLongAliasForUri(const string& uri) const;
 	string getShortAliasForUri(const string& uri) const;
 	const std::map< string, DownloadRecord >& getDownloadRecords() const;
