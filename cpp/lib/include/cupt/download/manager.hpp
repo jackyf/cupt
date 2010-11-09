@@ -50,9 +50,9 @@ class Manager
 
 		/// trivial constructor
 		/**
-		 * @param uri_ uri
-		 * @param shortAlias_ short alias
-		 * @param longAlias_ long alias
+		 * @param uri_
+		 * @param shortAlias_
+		 * @param longAlias_
 		 */
 		ExtendedUri(const Uri& uri_, const string& shortAlias_, const string& longAlias_)
 			: uri(uri_), shortAlias(shortAlias_), longAlias(longAlias_)
