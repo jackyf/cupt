@@ -85,7 +85,7 @@ class Cache
 	/**
 	 * Reads package metadata and builds index on it.
 	 *
-	 * @param config configuration
+	 * @param config
 	 * @param useSource whether to read source package metadata
 	 * @param useBinary whether to read binary package metadata
 	 * @param useInstalled whether to read dpkg metadata (installed binary packages)

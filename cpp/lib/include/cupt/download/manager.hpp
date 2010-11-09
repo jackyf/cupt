@@ -75,7 +75,7 @@ class Manager
 
 	/// constructor
 	/**
-	 * @param config configuration
+	 * @param config
 	 * @param progress progress meter
 	 */
 	Manager(const shared_ptr< const Config >& config, const shared_ptr< Progress >& progress);

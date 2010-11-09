@@ -42,7 +42,7 @@ class MethodFactory
  public:
 	/// constructor
 	/**
-	 * @param config configuration
+	 * @param config
 	 */
 	MethodFactory(const shared_ptr< const Config >& config);
 	/// destructor
