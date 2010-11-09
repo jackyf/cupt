@@ -49,7 +49,7 @@ class MethodFactory
 	~MethodFactory();
 	/// gets download method for @a uri
 	/**
-	 * @param uri uri
+	 * @param uri
 	 */
 	Method* getDownloadMethodForUri(const Uri& uri) const;
 };
