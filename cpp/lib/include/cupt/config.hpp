@@ -55,35 +55,35 @@ class Config
 
 	/// sets new value for the scalar option
 	/**
-	 * @param optionName name of the option to modify
+	 * @param optionName
 	 * @param value new value for the option
 	 */
 	void setScalar(const string& optionName, const string& value);
 	/// appends new element to the value of the list option
 	/**
-	 * @param optionName name the of the option to modify
+	 * @param optionName
 	 * @param value new value element for the option
 	 */
 	void setList(const string& optionName, const string& value);
 
 	/// gets contents of the list variable
 	/**
-	 * @param optionName name of the option
+	 * @param optionName
 	 */
 	vector< string > getList(const string& optionName) const;
 	/// gets value of the scalar option
 	/**
-	 * @param optionName name of the option
+	 * @param optionName
 	 */
 	string getString(const string& optionName) const;
 	/// gets converted to boolean value of the scalar option
 	/**
-	 * @param optionName name of the option
+	 * @param optionName
 	 */
 	bool getBool(const string& optionName) const;
 	/// gets converted to integer value of the scalar option
 	/**
-	 * @param optionName name of the option
+	 * @param optionName
 	 */
 	ssize_t getInteger(const string& optionName) const;
 };
