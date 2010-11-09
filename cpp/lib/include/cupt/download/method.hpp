@@ -40,7 +40,7 @@ class Method
 	 * of the option in @c Acquire group for certain URI.
 	 *
 	 * @param config configuration
-	 * @param uri uri
+	 * @param uri
 	 * @param suboptionName suboption name
 	 *
 	 * @par Example:
@@ -55,7 +55,7 @@ class Method
 	 * Same as @ref getAcquireSuboptionForUri, but for integer options.
 	 *
 	 * @param config configuration
-	 * @param uri uri
+	 * @param uri
 	 * @param suboptionName suboption name
 	 */
 	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >& config,
@@ -64,7 +64,7 @@ class Method
 	/// downloads @a uri to @a targetPath
 	/**
 	 * @param config configuration
-	 * @param uri uri
+	 * @param uri
 	 * @param targetPath path to download to
 	 * @param callback callback function
 	 *
