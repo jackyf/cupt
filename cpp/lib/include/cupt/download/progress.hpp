@@ -62,6 +62,7 @@ class Progress
 	virtual void newDownloadHook(const string& uri, const DownloadRecord&);
 	virtual void finishedDownloadHook(const string& uri, const string& result);
 	virtual void updateHook(bool immediate);
+	virtual void finishHook();
 
  public:
 	/// constructor
@@ -95,7 +96,6 @@ class Progress
 	/// @cond
 	void progress(const vector< string >& params);
 	/// @endcond
-	virtual void finish();
 
 	/// destructor
 	virtual ~Progress();

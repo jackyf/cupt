@@ -282,7 +282,7 @@ void ConsoleProgress::finishedDownloadHook(const string& uri, const string& resu
 	__impl->finishedDownload(uri, result, getLongAliasForUri(uri));
 }
 
-void ConsoleProgress::finish()
+void ConsoleProgress::finishHook()
 {
 	__impl->finish(getOverallFetchedSize(), getOverallDownloadTime());
 }

@@ -147,9 +147,6 @@ void Progress::setLongAliasForUri(const string& uri, const string& alias)
 	__impl->aliases[uri].longAlias = alias;
 }
 
-void Progress::finish()
-{}
-
 Progress::~Progress()
 {
 	delete __impl;
@@ -188,6 +185,11 @@ void Progress::setTotalEstimatedSize(uint64_t size)
 
 void Progress::progress(const vector< string >& params)
 {
+	if (params.size() == 1 && params[0] == "finish")
+	{
+		finishHook();
+		return;
+	}
 	if (params.size() < 2)
 	{
 		fatal("download progress: received progress message with less than 2 parameters");
@@ -363,6 +365,9 @@ void Progress::newDownloadHook(const string&, const DownloadRecord&)
 {}
 
 void Progress::finishedDownloadHook(const string&, const string&)
+{}
+
+void Progress::finishHook()
 {}
 
 }

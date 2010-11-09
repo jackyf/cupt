@@ -37,7 +37,7 @@ class ConsoleProgress: public Progress
 	virtual void newDownloadHook(const string& uri, const DownloadRecord&);
 	virtual void finishedDownloadHook(const string& uri, const string& result);
 	virtual void updateHook(bool immediate);
-	virtual void finish();
+	virtual void finishHook();
  public:
 	ConsoleProgress();
 	~ConsoleProgress();

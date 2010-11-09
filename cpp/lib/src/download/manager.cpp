@@ -962,7 +962,7 @@ void ManagerImpl::worker()
 	}
 	disablePingTimer();
 	// finishing progress
-	progress->finish();
+	progress->progress(vector< string >{ "finish" });
 
 	if (debugging)
 	{

@@ -54,6 +54,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - 'operator=': forbidden now.
     - cache/binaryversion:
       - 'task': removed the field.
+    - download/progress:
+      - 'finish': renamed to 'finishHook' and moved to protected section.
   * doc:
     - examples:
       - Added 'show-upgradeable' example.
