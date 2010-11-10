@@ -83,6 +83,9 @@ class Progress
 	 * its equivalent)
 	 */
 	uint64_t getOverallFetchedSize() const;
+	/**
+	 * @return number of seconds since the start of the download session
+	 */
 	size_t getOverallDownloadTime() const;
 	size_t getOverallEstimatedTime() const;
 	size_t getDownloadSpeed() const;
