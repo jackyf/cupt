@@ -59,6 +59,11 @@ class Progress
 	 * @return short alias for @a uri if it was specified, @a uri otherwise
 	 */
 	string getShortAliasForUri(const string& uri) const;
+	/**
+	 * Gets current downloads.
+	 *
+	 * @return map of uris to download records.
+	 */
 	const std::map< string, DownloadRecord >& getDownloadRecords() const;
 	uint64_t getOverallDownloadedSize() const;
 	uint64_t getOverallEstimatedSize() const;
