@@ -78,6 +78,10 @@ class Progress
 	 * and predefined size if it was set by @ref setTotalEstimatedSize before
 	 */
 	uint64_t getOverallEstimatedSize() const;
+	/**
+	 * @return total byte count of all data chunks fetched from the network (or
+	 * its equivalent)
+	 */
 	uint64_t getOverallFetchedSize() const;
 	size_t getOverallDownloadTime() const;
 	size_t getOverallEstimatedTime() const;
