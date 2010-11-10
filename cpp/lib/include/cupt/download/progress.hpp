@@ -65,6 +65,10 @@ class Progress
 	 * @return map of uris to download records.
 	 */
 	const std::map< string, DownloadRecord >& getDownloadRecords() const;
+	/**
+	 * @return the sum of already done downloads in the current session plus
+	 * the sum of downloaded parts of running downloads
+	 */
 	uint64_t getOverallDownloadedSize() const;
 	uint64_t getOverallEstimatedSize() const;
 	uint64_t getOverallFetchedSize() const;
