@@ -70,6 +70,13 @@ class Progress
 	 * the sum of downloaded parts of running downloads
 	 */
 	uint64_t getOverallDownloadedSize() const;
+	/**
+	 * Overall estimated size is guaranteed to be not less than @ref
+	 * getOverallDownloadedSize.
+	 *
+	 * @return total estimated size counting both done and running downloads,
+	 * and predefined size if it was set by @ref setTotalEstimatedSize before
+	 */
 	uint64_t getOverallEstimatedSize() const;
 	uint64_t getOverallFetchedSize() const;
 	size_t getOverallDownloadTime() const;
