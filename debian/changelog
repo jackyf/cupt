@@ -29,6 +29,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - download/progress:
       - 'progress': fixed nasty bug with wrong computing total download
         size when at least one download has an unknown size.
+      - 'finish': renamed to 'finishHook' and moved to protected section.
       - 'getOverallEstimatedTime': now returns time since the start of the
         download session, not from the current moment.
     - Link with 'rt'.
@@ -56,8 +57,6 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - 'operator=': forbidden now.
     - cache/binaryversion:
       - 'task': removed the field.
-    - download/progress:
-      - 'finish': renamed to 'finishHook' and moved to protected section.
   * doc:
     - examples:
       - Added 'show-upgradeable' example.
