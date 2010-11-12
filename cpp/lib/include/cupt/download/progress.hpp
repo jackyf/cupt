@@ -92,6 +92,9 @@ class Progress
 	 * the download session
 	 */
 	size_t getOverallEstimatedTime() const;
+	/**
+	 * @return current download speed in bytes/second
+	 */
 	size_t getDownloadSpeed() const;
 
 	virtual void newDownloadHook(const string& uri, const DownloadRecord&);
