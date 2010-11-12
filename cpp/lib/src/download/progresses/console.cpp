@@ -274,7 +274,8 @@ void ConsoleProgress::updateHook(bool immediate)
 
 	auto estimatedSize = getOverallEstimatedSize();
 	uint8_t overallPercent = estimatedSize ? (getOverallDownloadedSize() * 100 / estimatedSize) : 0;
-	__impl->updateView(printRecords, overallPercent, getOverallEstimatedTime(), getDownloadSpeed());
+	auto estimatedRemainingTime = getOverallEstimatedTime() - getOverallDownloadTime();
+	__impl->updateView(printRecords, overallPercent, estimatedRemainingTime, getDownloadSpeed());
 }
 
 void ConsoleProgress::finishedDownloadHook(const string& uri, const string& result)

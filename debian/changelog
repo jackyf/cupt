@@ -29,6 +29,8 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - download/progress:
       - 'progress': fixed nasty bug with wrong computing total download
         size when at least one download has an unknown size.
+      - 'getOverallEstimatedTime': now returns time since the start of the
+        download session, not from the current moment.
     - Link with 'rt'.
     - cache/relation:
       - 'unarchitectureRelationLine': moved to ArchitecturedRelationLine class

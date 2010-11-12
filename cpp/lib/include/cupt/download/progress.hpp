@@ -87,6 +87,10 @@ class Progress
 	 * @return number of seconds since the start of the download session
 	 */
 	size_t getOverallDownloadTime() const;
+	/**
+	 * @return number of seconds, estimated time to finish since the start of
+	 * the download session
+	 */
 	size_t getOverallEstimatedTime() const;
 	size_t getDownloadSpeed() const;
 

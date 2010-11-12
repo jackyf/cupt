@@ -345,7 +345,7 @@ size_t Progress::getOverallEstimatedTime() const
 		overallPart = 0.001;
 	}
 	auto currentTimestamp = time(NULL);
-	return (currentTimestamp - __impl->startTimestamp) / overallPart * (1 - overallPart);
+	return (currentTimestamp - __impl->startTimestamp) / overallPart;
 }
 
 size_t Progress::getOverallDownloadTime() const
