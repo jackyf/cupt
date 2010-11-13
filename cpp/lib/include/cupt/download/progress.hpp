@@ -97,9 +97,35 @@ class Progress
 	 */
 	size_t getDownloadSpeed() const;
 
-	virtual void newDownloadHook(const string& uri, const DownloadRecord&);
+	/**
+	 * This hook is called when new download starts.
+	 *
+	 * @param uri
+	 * @param downloadRecord
+	 */
+	virtual void newDownloadHook(const string& uri, const DownloadRecord& downloadRecord);
+	/**
+	 * This hook is called when some download is finished.
+	 *
+	 * @param uri
+	 * @param result download exit code, empty string is success, non-empty
+	 * string is human-readable download error message
+	 */
 	virtual void finishedDownloadHook(const string& uri, const string& result);
+	/**
+	 * This hook is called whenever some download information is updated
+	 * (including being called after @ref newDownloadHook and @ref
+	 * finishedDownloadHook).
+	 *
+	 * @param immediate is update important or not; examples of important
+	 * updates: new download, finished download, changes of a download state;
+	 * examples of unimportant updates: number of download bytes changes for
+	 * some download
+	 */
 	virtual void updateHook(bool immediate);
+	/**
+	 * This hook is called before the end of the download session.
+	 */
 	virtual void finishHook();
 
  public:
