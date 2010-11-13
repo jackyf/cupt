@@ -18,6 +18,8 @@
 #ifndef CUPT_DOWNLOAD_PROGRESSES_CONSOLE_SEEN
 #define CUPT_DOWNLOAD_PROGRESSES_CONSOLE_SEEN
 
+/// @file
+
 #include <cupt/download/progress.hpp>
 
 namespace cupt {
@@ -30,6 +32,7 @@ class ConsoleProgressImpl;
 
 namespace download {
 
+/// console-based download progress meter
 class ConsoleProgress: public Progress
 {
 	internal::ConsoleProgressImpl* __impl;
@@ -39,7 +42,9 @@ class ConsoleProgress: public Progress
 	virtual void updateHook(bool immediate);
 	virtual void finishHook();
  public:
+	/// constructor
 	ConsoleProgress();
+	/// desctuctor
 	~ConsoleProgress();
 };
 
