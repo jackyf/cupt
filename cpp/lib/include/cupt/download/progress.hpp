@@ -153,6 +153,8 @@ class Progress
 	/**
 	 * This method should be called if this amount is known beforehand to get
 	 * better overall progress indication.
+	 *
+	 * @param size number of bytes
 	 */
 	void setTotalEstimatedSize(uint64_t size);
 
