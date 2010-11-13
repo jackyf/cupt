@@ -64,6 +64,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
     - reference:
       - Documented static part of the library.
       - Added a build infrastructure.
+      - Documented library's download subsystem (namespace 'cupt::download').
   * debian:
     - rules:
       - Moved starting buildpoint to top directory (from 'cpp').
