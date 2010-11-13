@@ -32,6 +32,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
       - 'finish': renamed to 'finishHook' and moved to protected section.
       - 'getOverallEstimatedTime': now returns time since the start of the
         download session, not from the current moment.
+      - don't include '<ctime>' header anymore.
     - Link with 'rt'.
     - cache/relation:
       - 'unarchitectureRelationLine': moved to ArchitecturedRelationLine class

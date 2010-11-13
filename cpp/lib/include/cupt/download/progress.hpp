@@ -20,7 +20,6 @@
 
 /// @file
 
-#include <ctime>
 #include <map>
 
 #include <cupt/common.hpp>
