@@ -1,4 +1,4 @@
-cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
+cupt2 (2.0.0~alpha2) UNRELEASED; urgency=low
 
   * console:
     - 'why': fixed infinite CPU and RAM usage when some of starting versions
@@ -75,7 +75,7 @@ cupt2 (2.0.0~alpha2~) UNRELEASED; urgency=low
         libcupt2-doc-experimental.
       - Added build-dependency on libgcrypt11-dev.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 13:20:47 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 14 Nov 2010 10:39:41 +0200
 
 cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
 
