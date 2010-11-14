@@ -24,7 +24,6 @@
 #include <cupt/cache/version.hpp>
 #include <cupt/cache/package.hpp>
 #include <cupt/config.hpp>
-#include <cupt/regex.hpp>
 
 #include <internal/tagparser.hpp>
 #include <internal/cacheimpl.hpp>
@@ -162,9 +161,7 @@ void StateData::parseDpkgStatus()
 				CHECK_STATUS("post-inst-failed", PostInstFailed)
 				CHECK_STATUS("removal-failed", RemovalFailed)
 				{ // else
-					smatch m;
-					static sregex triggerRegex(sregex::compile("^trigger", regex_constants::optimize));
-					if (regex_search(status, m, triggerRegex))
+					if (!status.compare(0, sizeof("trigger") - 1, "trigger"))
 					{
 						fatal("some dpkg triggers are not processed, please run 'dpkg --triggers-only -a' as root");
 					}
