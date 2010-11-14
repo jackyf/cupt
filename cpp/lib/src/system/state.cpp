@@ -26,6 +26,7 @@
 #include <cupt/config.hpp>
 #include <cupt/regex.hpp>
 
+#include <internal/tagparser.hpp>
 #include <internal/cacheimpl.hpp>
 
 namespace cupt {
@@ -79,41 +80,44 @@ void StateData::parseDpkgStatus()
 
 	try
 	{
-		string block;
-		smatch m;
+		internal::TagParser parser(file);
+		internal::TagParser::StringRange tagName, tagValue;
 
-		auto lineAccepter = [](const char* buf, size_t size) -> bool
+		while ((prePackageRecord.offset = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
 		{
-#define TAG_ACCEPT(str) \
-			if (size > sizeof(str) - 1 && !memcmp(str, buf, sizeof(str) - 1)) \
-			{ \
-				return true; \
-			} \
-			else
+			string packageName;
+			string status;
+			string provides;
+			bool versionIsPresent = false;
+			do
+			{
+#define TAG(str, code) \
+				if ((size_t)(tagName.second - tagName.first) == sizeof(str) - 1 && \
+					!memcmp(str, &*tagName.first, sizeof(str) - 1)) \
+				{ \
+					code; \
+				} \
 
-			TAG_ACCEPT("Package: ")
-			TAG_ACCEPT("Status: ")
-			TAG_ACCEPT("Version: ")
-			TAG_ACCEPT("Provides: ")
-			return false;
-#undef TAG_ACCEPT
-		};
-		while ((prePackageRecord.offset = file->tell()), ! file->getRecord(block, lineAccepter).eof())
-		{
-			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
+				TAG("Package", packageName = tagValue)
+				TAG("Status", status = tagValue)
+				TAG("Version", versionIsPresent = true)
+				TAG("Provides", provides = tagValue)
+#undef TAG
+			} while (parser.parseNextLine(tagName, tagValue));
 
-			static sregex installedRegex(sregex::compile("^Package: (.*?)$.*?^Status: (.*?)$.*?^Version: .*?$(?:.*?^Provides: (.*?)$)?",
-						regex_constants::optimize));
-
-			// we don't check package name for correctness - even if it's incorrent, we can't decline installed packages :(
-
-			if (!regex_search(block, m, installedRegex))
+			if (!versionIsPresent)
 			{
 				continue;
 			}
-			string packageName = m[1];
+			// we don't check package name for correctness - even if it's incorrent, we can't decline installed packages :(
 
-			vector< string > statusStrings = split(' ', m[2]);
+			if (packageName.empty())
+			{
+				fatal("no package name in the record");
+			}
+			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
+
+			vector< string > statusStrings = split(' ', status);
 			if (statusStrings.size() != 3)
 			{
 				fatal("malformed 'Status' line (for package '%s')", packageName.c_str());
@@ -158,6 +162,7 @@ void StateData::parseDpkgStatus()
 				CHECK_STATUS("post-inst-failed", PostInstFailed)
 				CHECK_STATUS("removal-failed", RemovalFailed)
 				{ // else
+					smatch m;
 					static sregex triggerRegex(sregex::compile("^trigger", regex_constants::optimize));
 					if (regex_search(status, m, triggerRegex))
 					{
@@ -184,11 +189,10 @@ void StateData::parseDpkgStatus()
 							make_pair(packageName, emptyPrePackageRecords)).first;
 					it->second.push_back(prePackageRecord);
 
-					if (m[3].matched)
+					if (!provides.empty())
 					{
-						const char* blockData = block.c_str();
-						cacheImpl->processProvides(it->first,
-								blockData + (m[3].first - block.begin()), blockData + (m[3].second - block.begin()));
+						cacheImpl->processProvides(packageName,
+								&*(provides.begin()), &*(provides.end()));
 					}
 				}
 
