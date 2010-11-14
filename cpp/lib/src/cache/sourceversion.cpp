@@ -15,15 +15,13 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-
-#include <cstdlib>
-
 #include <cupt/file.hpp>
 #include <cupt/regex.hpp>
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 
-#include <internal/tagparsemacro.hpp>
+#include <internal/tagparser.hpp>
+#include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
 
 namespace cupt {
@@ -44,18 +42,21 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		// go to starting byte of the entry
 		initParams.file->seek(initParams.offset);
 
-		string block;
-		smatch m;
-		TagValue tagValue; // used in TAG() macro
+		internal::TagParser parser(initParams.file);
+		internal::TagParser::StringRange tagName, tagValue;
 
-		// read all version entry entirely
-		initParams.file->getRecord(block);
-		{ // parsing checksums and file names
-			smatch lineMatch;
+		smatch lineMatch;
+
+		while (parser.parseNextLine(tagName, tagValue))
+		{
+			// parsing checksums and file names
+			// TODO: check tagValue == ""
 #define PARSE_CHECKSUM_RECORD(TagName, HashSumName) \
-			TAG_CUSTOM( TagName , "*$(?:\\n)((?:^ .*$(?:\\n))*)", \
+			TAG( TagName , \
 			{ \
-				auto lines = split('\n', m[1]); \
+				string block; \
+				parser.parseAdditionalLines(block); \
+				auto lines = split('\n', block); \
 				FORIT(lineIt, lines) \
 				{ \
 					const string& line = *lineIt; \
@@ -97,37 +98,60 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 			PARSE_CHECKSUM_RECORD(Checksums-Sha1, SHA1)
 			PARSE_CHECKSUM_RECORD(Checksums-Sha256, SHA256)
 #undef PARSE_CHECKSUM_RECORD
-		}
 
-		TAG_CUSTOM(Binary, "(.*(?:\\n^ .*$)*)",
-		{
-			static const sregex commaAndNewlineSeparatedRegex = sregex::compile("\\s*\\n?\\s*,\\s*\\n?\\s*", regex_constants::optimize);
-			v->binaryPackageNames = split(commaAndNewlineSeparatedRegex, m[1]);
-		})
-		v->sources.push_back(source);
-		TAG(Directory, v->sources[0].directory = tagValue;)
-		TAG(Version, v->versionString = tagValue;)
-		checkVersionString(v->versionString);
-		PARSE_PRIORITY
-		TAG(Architecture, v->architectures = split(' ', tagValue);)
+			TAG(Binary,
+			{
+				auto block = string(tagValue);
+				string additionalLines;
+				parser.parseAdditionalLines(additionalLines);
+				if (!additionalLines.empty())
+				{
+					auto lastCharacterIt = additionalLines.end() - 1;
+					if (*lastCharacterIt == '\n')
+					{
+						additionalLines.erase(lastCharacterIt);
+					}
+					FORIT(charIt, additionalLines)
+					{
+						if (*charIt == '\n')
+						{
+							*charIt = ' ';
+						}
+					}
+					block.append(additionalLines);
+				}
 
-		if (Version::parseRelations)
-		{
-			TAG(Build-Depends, v->relations[RelationTypes::BuildDepends] = ArchitecturedRelationLine(tagValue);)
-			TAG(Build-Depends-Indep, v->relations[RelationTypes::BuildDependsIndep] = ArchitecturedRelationLine(tagValue);)
-			TAG(Build-Conflicts, v->relations[RelationTypes::BuildConflicts] = ArchitecturedRelationLine(tagValue);)
-			TAG(Build-Conflicts-Indep, v->relations[RelationTypes::BuildConflictsIndep] = ArchitecturedRelationLine(tagValue);)
-		}
+				internal::processSpaceCommaSpaceDelimitedStrings(block.begin(), block.end(),
+						[&v](string::const_iterator a, string::const_iterator b)
+						{
+							v->binaryPackageNames.push_back(string(a, b));
+						});
+			})
+			TAG(Directory, source.directory = tagValue;)
+			TAG(Version, v->versionString = tagValue;)
+			PARSE_PRIORITY
+			TAG(Architecture, v->architectures = split(' ', tagValue);)
 
-		if (Version::parseInfoOnly)
-		{
-			TAG(Section, v->section = tagValue;)
-			TAG(Maintainer, v->maintainer = tagValue;)
-			static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*", regex_constants::optimize);
-			TAG(Uploaders, v->uploaders = split(commaSeparatedRegex, tagValue);)
-			PARSE_OTHERS
+			if (Version::parseRelations)
+			{
+				TAG(Build-Depends, v->relations[RelationTypes::BuildDepends] = ArchitecturedRelationLine(tagValue);)
+				TAG(Build-Depends-Indep, v->relations[RelationTypes::BuildDependsIndep] = ArchitecturedRelationLine(tagValue);)
+				TAG(Build-Conflicts, v->relations[RelationTypes::BuildConflicts] = ArchitecturedRelationLine(tagValue);)
+				TAG(Build-Conflicts-Indep, v->relations[RelationTypes::BuildConflictsIndep] = ArchitecturedRelationLine(tagValue);)
+			}
+
+			if (Version::parseInfoOnly)
+			{
+				TAG(Section, v->section = tagValue;)
+				TAG(Maintainer, v->maintainer = tagValue;)
+				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*", regex_constants::optimize);
+				TAG(Uploaders, v->uploaders = split(commaSeparatedRegex, tagValue);)
+				PARSE_OTHERS
+			}
 		}
 	}
+	checkVersionString(v->versionString);
+	v->sources.push_back(source);
 
 	if (v->versionString.empty())
 	{

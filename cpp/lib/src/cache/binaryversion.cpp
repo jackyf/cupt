@@ -15,15 +15,12 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-
-#include <cstdlib>
-
 #include <cupt/file.hpp>
-#include <cupt/regex.hpp>
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 
-#include <internal/tagparsemacro.hpp>
+#include <internal/tagparser.hpp>
+#include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
 
 namespace cupt {
@@ -47,102 +44,96 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 		// go to starting byte of the entry
 		initParams.file->seek(initParams.offset);
 
-		string block;
-		TagValue tagValue; // used in TAG() macro
+		internal::TagParser parser(initParams.file);
+		internal::TagParser::StringRange tagName, tagValue;
 
-		static auto rejectSpaceStarted = [](const char* buf, size_t) -> bool
+		while (parser.parseNextLine(tagName, tagValue))
 		{
-			return !isspace(buf[0]);
-		};
-		static auto acceptAll = [](const char*, size_t) -> bool { return true; };
-
-		// read all version entry entirely
-		initParams.file->getRecord(block, parseInfoOnly ? acceptAll : rejectSpaceStarted);
-
-		TAG(Version, v->versionString = tagValue;)
-		checkVersionString(v->versionString);
-		TAG(Essential, v->essential = (string(tagValue) == "yes");)
-		PARSE_PRIORITY
-		TAG(Size, v->file.size = internal::string2uint32(tagValue);)
-		TAG(Installed-Size, v->installedSize = internal::string2uint32(tagValue) * 1024;)
-		TAG(Architecture, v->architecture = tagValue;)
-		TAG(Filename,
-		{
-			string filename = tagValue;
-			auto lastSlashPosition = filename.find_last_of('/');
-			if (lastSlashPosition == string::npos)
+			TAG(Version, v->versionString = tagValue;)
+			TAG(Essential, v->essential = (string(tagValue) == "yes");)
+			PARSE_PRIORITY
+			TAG(Size, v->file.size = internal::string2uint32(tagValue);)
+			TAG(Installed-Size, v->installedSize = internal::string2uint32(tagValue) * 1024;)
+			TAG(Architecture, v->architecture = tagValue;)
+			TAG(Filename,
 			{
-				// source.directory remains empty
-				v->file.name = filename;
-			}
-			else
-			{
-				source.directory = filename.substr(0, lastSlashPosition);
-				v->file.name = filename.substr(lastSlashPosition + 1);
-			}
-		})
-		TAG(MD5sum, v->file.hashSums[HashSums::MD5] = tagValue;)
-		TAG(SHA1, v->file.hashSums[HashSums::SHA1] = tagValue;)
-		TAG(SHA256, v->file.hashSums[HashSums::SHA256] = tagValue;)
-		TAG(Source,
-		{
-			v->sourcePackageName = tagValue;
-			string& value = v->sourcePackageName;
-			// determing do we have source version appended or not?
-			// example: "abcd (1.2-5)"
-			auto size = value.size();
-			if (size > 2 && value[size-1] == ')')
-			{
-				auto delimiterPosition = value.rfind('(', size-2);
-				if (delimiterPosition != string::npos)
+				string filename = tagValue;
+				auto lastSlashPosition = filename.find_last_of('/');
+				if (lastSlashPosition == string::npos)
 				{
-					// found! there is a source version, most probably
-					// indicating that it was some binary-only rebuild, and
-					// the source version is different with binary one
-					v->sourceVersionString = value.substr(delimiterPosition+1, size-delimiterPosition-2);
-					checkVersionString(v->sourceVersionString);
-					if (delimiterPosition != 0 && value[delimiterPosition-1] == ' ')
-					{
-						--delimiterPosition;
-					}
-					v->sourcePackageName.erase(delimiterPosition);
+					// source.directory remains empty
+					v->file.name = filename;
 				}
-			}
-		};)
-
-		if (Version::parseRelations)
-		{
-			TAG(Pre-Depends, v->relations[RelationTypes::PreDepends] = RelationLine(tagValue);)
-			TAG(Depends, v->relations[RelationTypes::Depends] = RelationLine(tagValue);)
-			TAG(Recommends, v->relations[RelationTypes::Recommends] = RelationLine(tagValue);)
-			TAG(Suggests, v->relations[RelationTypes::Suggests] = RelationLine(tagValue);)
-			TAG(Conflicts, v->relations[RelationTypes::Conflicts] = RelationLine(tagValue);)
-			TAG(Breaks, v->relations[RelationTypes::Breaks] = RelationLine(tagValue);)
-			TAG(Replaces, v->relations[RelationTypes::Replaces] = RelationLine(tagValue);)
-			TAG(Enhances, v->relations[RelationTypes::Enhances] = RelationLine(tagValue);)
-			TAG(Provides,
-			{
-				auto callback = [&v](string::const_iterator begin, string::const_iterator end)
+				else
 				{
-					v->provides.push_back(string(begin, end));
-				};
-				internal::processSpaceCommaSpaceDelimitedStrings(tagValue.first, tagValue.second, callback);
+					source.directory = filename.substr(0, lastSlashPosition);
+					v->file.name = filename.substr(lastSlashPosition + 1);
+				}
 			})
-		}
-
-		if (Version::parseInfoOnly)
-		{
-			TAG(Section, v->section = tagValue;)
-			TAG(Maintainer, v->maintainer = tagValue;)
-			TAG_MULTILINE(Description,
+			TAG(MD5sum, v->file.hashSums[HashSums::MD5] = tagValue;)
+			TAG(SHA1, v->file.hashSums[HashSums::SHA1] = tagValue;)
+			TAG(SHA256, v->file.hashSums[HashSums::SHA256] = tagValue;)
+			TAG(Source,
 			{
-				v->shortDescription = tagValue;
-				v->longDescription = remainder;
+				v->sourcePackageName = tagValue;
+				string& value = v->sourcePackageName;
+				// determing do we have source version appended or not?
+				// example: "abcd (1.2-5)"
+				auto size = value.size();
+				if (size > 2 && value[size-1] == ')')
+				{
+					auto delimiterPosition = value.rfind('(', size-2);
+					if (delimiterPosition != string::npos)
+					{
+						// found! there is a source version, most probably
+						// indicating that it was some binary-only rebuild, and
+						// the source version is different with binary one
+						v->sourceVersionString = value.substr(delimiterPosition+1, size-delimiterPosition-2);
+						checkVersionString(v->sourceVersionString);
+						if (delimiterPosition != 0 && value[delimiterPosition-1] == ' ')
+						{
+							--delimiterPosition;
+						}
+						v->sourcePackageName.erase(delimiterPosition);
+					}
+				}
 			};)
-			TAG(Tag, v->tags = tagValue;)
-			PARSE_OTHERS
+
+			if (Version::parseRelations)
+			{
+				TAG(Pre-Depends, v->relations[RelationTypes::PreDepends] = RelationLine(tagValue);)
+				TAG(Depends, v->relations[RelationTypes::Depends] = RelationLine(tagValue);)
+				TAG(Recommends, v->relations[RelationTypes::Recommends] = RelationLine(tagValue);)
+				TAG(Suggests, v->relations[RelationTypes::Suggests] = RelationLine(tagValue);)
+				TAG(Conflicts, v->relations[RelationTypes::Conflicts] = RelationLine(tagValue);)
+				TAG(Breaks, v->relations[RelationTypes::Breaks] = RelationLine(tagValue);)
+				TAG(Replaces, v->relations[RelationTypes::Replaces] = RelationLine(tagValue);)
+				TAG(Enhances, v->relations[RelationTypes::Enhances] = RelationLine(tagValue);)
+				TAG(Provides,
+				{
+					auto callback = [&v](string::const_iterator begin, string::const_iterator end)
+					{
+						v->provides.push_back(string(begin, end));
+					};
+					internal::processSpaceCommaSpaceDelimitedStrings(tagValue.first, tagValue.second, callback);
+				})
+			}
+
+			if (Version::parseInfoOnly)
+			{
+				TAG(Section, v->section = tagValue;)
+				TAG(Maintainer, v->maintainer = tagValue;)
+				TAG(Description,
+				{
+					v->shortDescription = tagValue;
+					parser.parseAdditionalLines(v->longDescription);
+				};)
+				TAG(Tag, v->tags = tagValue;)
+				PARSE_OTHERS
+			}
 		}
 
+		checkVersionString(v->versionString);
 		if (v->sourceVersionString.empty())
 		{
 			v->sourceVersionString = v->versionString;
