@@ -169,7 +169,7 @@ File& File::getBlock(char* buffer, size_t& size)
 	return *this;
 }
 
-File& File::getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter)
+File& File::getRecord(string& record)
 {
 	__impl->assertFileOpened();
 
@@ -179,10 +179,7 @@ File& File::getRecord(string& record, const std::function<bool (const char*, siz
 	// readLength of 0 means end of file, of 1 - end of record
 	while (readLength = __impl->getLineImpl(), readLength > 1)
 	{
-		if (accepter(__impl->buf, readLength))
-		{
-			record.append(__impl->buf, readLength);
-		}
+		record.append(__impl->buf, readLength);
 	}
 	if (!record.empty())
 	{

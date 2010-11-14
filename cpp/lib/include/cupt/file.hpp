@@ -96,13 +96,9 @@ class File
 	 * @a record only if @ref eof returned false.
 	 *
 	 * @param [out] record container for read data
-	 * @param accepter an instrument to skip some lines you don't want to be in
-	 * a record, to speed up reading. By default accepts all lines. Function
-	 * parameters, in the order, are pointer to raw data buffer and its size.
 	 * @return reference to self.
 	 */
-	File& getRecord(string& record, const std::function<bool (const char*, size_t)>& accepter =
-			[](const char*, size_t) -> bool { return true; });
+	File& getRecord(string& record);
 	/// reads new block
 	/**
 	 * Reads up to @a size characters from current position to @a buffer.
