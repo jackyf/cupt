@@ -1,4 +1,4 @@
-cupt2 (2.0.0~alpha3) UNRELEASED; urgency=low
+cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
 
   * lib:
     - cache/binaryversion:
