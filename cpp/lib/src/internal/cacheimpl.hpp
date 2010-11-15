@@ -107,7 +107,7 @@ class CacheImpl
 	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
 	ssize_t getPin(const shared_ptr< const Version >&, const string& installedVersionString) const;
 	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
-	void processProvides(const string&, const char*, const char*);
+	void processProvides(const string*, const char*, const char*);
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const RelationExpression&) const;
 };
 

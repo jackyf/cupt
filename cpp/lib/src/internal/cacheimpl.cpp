@@ -37,12 +37,12 @@
 namespace cupt {
 namespace internal {
 
-void CacheImpl::processProvides(const string& packageName,
+void CacheImpl::processProvides(const string* packageNamePtr,
 		const char* providesStringStart, const char* providesStringEnd)
 {
-	auto callback = [this, &packageName](const char* tokenBeginIt, const char* tokenEndIt)
+	auto callback = [this, &packageNamePtr](const char* tokenBeginIt, const char* tokenEndIt)
 	{
-		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(&packageName);
+		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(packageNamePtr);
 	};
 	processSpaceCommaSpaceDelimitedStrings(
 			providesStringStart, providesStringEnd, callback);
@@ -657,7 +657,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
 				if (size > providesAnchorLength && !memcmp("Provides: ", buf, providesAnchorLength))
 				{
-					processProvides(it->first, buf + providesAnchorLength, buf + size - 1);
+					processProvides(&it->first, buf + providesAnchorLength, buf + size - 1);
 				}
 			}
 		}

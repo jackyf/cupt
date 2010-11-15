@@ -188,7 +188,7 @@ void StateData::parseDpkgStatus()
 
 					if (!provides.empty())
 					{
-						cacheImpl->processProvides(it->first,
+						cacheImpl->processProvides(&it->first,
 								&*(provides.begin()), &*(provides.end()));
 					}
 				}
