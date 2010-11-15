@@ -18,6 +18,8 @@
 #ifndef CUPT_COMMON_RESOLVER_SEEN
 #define CUPT_COMMON_RESOLVER_SEEN
 
+/// @file
+
 #include <functional>
 
 #include <cupt/common.hpp>
@@ -28,6 +30,15 @@ namespace system {
 
 using namespace cache;
 
+/// dependency problems resolver
+/**
+ * This class provides the dependency problems resolver interface for system state
+ * modifications.
+ *
+ * First, you call class methods to specify how would you want to modify the
+ * system, and then you finally call @ref resolve to get a consistent package
+ * set(s) for specified modifications.
+ */
 class Resolver
 {
 	Resolver(const Resolver&);
