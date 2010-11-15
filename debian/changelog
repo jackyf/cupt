@@ -5,6 +5,8 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
       - 'parseFromFile': 10-25% speed-up.
     - file:
       - 'getRecord': removed parameter 'accepter'.
+    - system/resolver:
+      - 'operator=': forbidden now.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 14 Nov 2010 15:59:32 +0200
 

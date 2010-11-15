@@ -42,6 +42,7 @@ using namespace cache;
 class Resolver
 {
 	Resolver(const Resolver&);
+	Resolver& operator=(const Resolver&);
  public:
 	struct Reason
 	{
