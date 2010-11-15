@@ -46,34 +46,40 @@ class Resolver
  public:
 	struct Reason
 	{
-		enum Type { User, AutoRemoval, RelationExpression, Synchronization };
-
-		Type type;
-
-		// relation expression part
+	 protected:
+		Reason() {};
+	 public:
+		virtual ~Reason() {}; // polymorphic
+	};
+	struct UserReason: public Reason
+	{};
+	struct AutoRemovalReason: public Reason
+	{};
+	struct RelationExpressionReason: public Reason
+	{
 		shared_ptr< const BinaryVersion > version;
 		BinaryVersion::RelationTypes::Type dependencyType;
 		cache::RelationExpression relationExpression;
-		// synchronization part
-		string packageName;
 
-		Reason(Type type_)
-			: type(type_), relationExpression("fake") {}
-		Reason(const shared_ptr< const BinaryVersion >& version_,
+		RelationExpressionReason(const shared_ptr< const BinaryVersion >& version_,
 				BinaryVersion::RelationTypes::Type dependencyType_,
 				const cache::RelationExpression& relationExpression_)
-			: type(RelationExpression), version(version_),
-			dependencyType(dependencyType_),
+			: version(version_), dependencyType(dependencyType_),
 			relationExpression(relationExpression_) {}
-		Reason(const string& packageName_)
-			: type(Synchronization), relationExpression("fake"), packageName(packageName_) {}
+	};
+	struct SynchronizationReason: public Reason
+	{
+		string packageName;
+
+		SynchronizationReason(const string& packageName_)
+			: packageName(packageName_) {}
 	};
 
 	struct SuggestedPackage
 	{
 		shared_ptr< const BinaryVersion > version;
 		bool manuallySelected;
-		vector< Reason > reasons;
+		vector< shared_ptr< const Reason > > reasons;
 	};
 	typedef map< string, SuggestedPackage > SuggestedPackages;
 

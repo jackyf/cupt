@@ -38,6 +38,11 @@ class NativeResolverImpl
 	typedef list< shared_ptr< Solution > >::iterator SolutionListIterator;
  private:
 	typedef Resolver::Reason Reason;
+	typedef Resolver::UserReason UserReason;
+	typedef Resolver::AutoRemovalReason AutoRemovalReason;
+	typedef Resolver::SynchronizationReason SynchronizationReason;
+	typedef Resolver::RelationExpressionReason RelationExpressionReason;
+
 	typedef std::function< SolutionListIterator (list< shared_ptr< Solution > >&) > SolutionChooser;
 
 	struct Action
@@ -70,7 +75,7 @@ class NativeResolverImpl
 	void __import_installed_versions();
 	vector< DependencyEntry > __get_dependency_groups() const;
 	InstallVersionResult::Type __install_version_no_stick(const shared_ptr< const BinaryVersion >&,
-			const Reason&, PackageEntry*&);
+			const shared_ptr< const Reason >&, PackageEntry*&);
 	float __get_version_weight(const shared_ptr< const BinaryVersion >&) const;
 	float __get_action_profit(const shared_ptr< const BinaryVersion >&,
 			const shared_ptr< const BinaryVersion >&) const;

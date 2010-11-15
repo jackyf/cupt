@@ -433,54 +433,47 @@ void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 
 	FORIT(reasonIt, suggestedPackage.reasons)
 	{
-		const Resolver::Reason& reason = *reasonIt;
-		switch (reason.type)
+		const shared_ptr< const Resolver::Reason >& reason = *reasonIt;
+		if (auto r = dynamic_pointer_cast< const Resolver::RelationExpressionReason >(reason))
 		{
-			case Resolver::Reason::RelationExpression:
-			{
-				static const map< BinaryVersion::RelationTypes::Type, string > dependencyTypeTranslations = {
-					{ BinaryVersion::RelationTypes::PreDepends, __("pre-depends on") },
-					{ BinaryVersion::RelationTypes::Depends, __("depends on") },
-					{ BinaryVersion::RelationTypes::Recommends, __("recommends") },
-					{ BinaryVersion::RelationTypes::Suggests, __("suggests") },
-					{ BinaryVersion::RelationTypes::Conflicts, __("conflicts with") },
-					{ BinaryVersion::RelationTypes::Breaks, __("breaks") },
-				};
+			static const map< BinaryVersion::RelationTypes::Type, string > dependencyTypeTranslations = {
+				{ BinaryVersion::RelationTypes::PreDepends, __("pre-depends on") },
+				{ BinaryVersion::RelationTypes::Depends, __("depends on") },
+				{ BinaryVersion::RelationTypes::Recommends, __("recommends") },
+				{ BinaryVersion::RelationTypes::Suggests, __("suggests") },
+				{ BinaryVersion::RelationTypes::Conflicts, __("conflicts with") },
+				{ BinaryVersion::RelationTypes::Breaks, __("breaks") },
+			};
 
-				auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(reason.dependencyType);
-				if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
-				{
-					warn("unsupported reason dependency type '%s'",
-							BinaryVersion::RelationTypes::strings[reason.dependencyType].c_str());
-				}
-				else
-				{
-					sayReason(sf("%s %s %s '%s'",
-							reason.version->packageName.c_str(), reason.version->versionString.c_str(),
-							dependencyTypeTranslationIt->second.c_str(),
-							reason.relationExpression.toString().c_str()));
-				}
-			}
-			break;
-			case Resolver::Reason::Synchronization:
+			auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(r->dependencyType);
+			if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
 			{
-				sayReason(sf(__("synchronized with package '%s'"), reason.packageName.c_str()));
+				warn("unsupported reason dependency type '%s'",
+						BinaryVersion::RelationTypes::strings[r->dependencyType].c_str());
 			}
-			break;
-			case Resolver::Reason::User:
+			else
 			{
-				sayReason(__("user request"));
+				sayReason(sf("%s %s %s '%s'",
+						r->version->packageName.c_str(), r->version->versionString.c_str(),
+						dependencyTypeTranslationIt->second.c_str(),
+						r->relationExpression.toString().c_str()));
 			}
-			break;
-			case Resolver::Reason::AutoRemoval:
-			{
-				sayReason(__("auto-removal"));
-			}
-			break;
-			default:
-			{
-				warn("unsupported reason type '%d'", static_cast< int >(reason.type));
-			}
+		}
+		else if (auto r = dynamic_pointer_cast< const Resolver::SynchronizationReason >(reason))
+		{
+			sayReason(sf(__("synchronized with package '%s'"), r->packageName.c_str()));
+		}
+		else if (dynamic_pointer_cast< const Resolver::UserReason >(reason))
+		{
+			sayReason(__("user request"));
+		}
+		else if (dynamic_pointer_cast< const Resolver::AutoRemovalReason >(reason))
+		{
+			sayReason(__("auto-removal"));
+		}
+		else
+		{
+			warn("unsupported reason type");
 		}
 	}
 	cout << endl;

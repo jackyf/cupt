@@ -255,7 +255,8 @@ void NativeResolverImpl::__synchronize_related_packages(const shared_ptr< Soluti
 		}
 		if (trackReasons)
 		{
-			modifiedPackageEntry->reasons.push_back(Reason(packageName)); // synchronization signature
+			modifiedPackageEntry->reasons.push_back(
+					shared_ptr< const Reason >(new SynchronizationReason(packageName)));
 		}
 	}
 }
@@ -263,7 +264,7 @@ void NativeResolverImpl::__synchronize_related_packages(const shared_ptr< Soluti
 // installs new version, but does not sticks it
 NativeResolverImpl::InstallVersionResult::Type
 NativeResolverImpl::__install_version_no_stick(const shared_ptr< const BinaryVersion >& version,
-		const Reason& reason, PackageEntry*& packageEntry)
+		const shared_ptr< const Reason >& reason, PackageEntry*& packageEntry)
 {
 	const string& packageName = version->packageName;
 
@@ -319,7 +320,8 @@ void NativeResolverImpl::installVersion(const shared_ptr< const BinaryVersion >&
 	const string& packageName = version->packageName;
 
 	PackageEntry* packageEntry;
-	auto installResult = __install_version_no_stick(version, Reason(Reason::User), packageEntry);
+	shared_ptr< const Reason > reason(new UserReason());
+	auto installResult = __install_version_no_stick(version, reason, packageEntry);
 	if (installResult == InstallVersionResult::Restricted)
 	{
 		fatal("unable to re-schedule package '%s'", packageName.c_str());
@@ -375,7 +377,7 @@ void NativeResolverImpl::removePackage(const string& packageName)
 
 	if (__config->getBool("cupt::resolver::track-reasons"))
 	{
-		packageEntry->reasons.push_back(Reason(Reason::User));
+		packageEntry->reasons.push_back(shared_ptr< const Reason >(new UserReason));
 	}
 	if (__config->getBool("debug::resolver"))
 	{
@@ -385,6 +387,8 @@ void NativeResolverImpl::removePackage(const string& packageName)
 
 void NativeResolverImpl::upgrade()
 {
+	const shared_ptr< const Reason > reason(new UserReason);
+
 	auto packageNames = __initial_solution->getPackageNames();
 	FORIT(packageNameIt, packageNames)
 	{
@@ -410,7 +414,7 @@ void NativeResolverImpl::upgrade()
 		}
 
 		PackageEntry* unused;
-		__install_version_no_stick(supposedVersion, Reason(Reason::User), unused);
+		__install_version_no_stick(supposedVersion, reason, unused);
 	}
 }
 
@@ -732,6 +736,8 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 
 		auto reachableVertexes = dependencyGraph.getReachable(mainVertexPackageName);
 
+		shared_ptr< const Reason > reason(new AutoRemovalReason);
+
 		FORIT(packageNameIt, candidatesForRemoval)
 		{
 			const string& packageName = *packageNameIt;
@@ -744,9 +750,9 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 				if (trackReasons)
 				{
 					// leave only one reason :)
-					vector< Reason >& reasons = packageEntry->reasons;
+					vector< shared_ptr< const Reason > >& reasons = packageEntry->reasons;
 					reasons.clear();
-					reasons.push_back(Reason(Reason::AutoRemoval));
+					reasons.push_back(reason);
 				}
 				if (debugging)
 				{
@@ -956,7 +962,7 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 	}
 	else if (action.reason)
 	{
-		packageEntry->reasons.push_back(*(action.reason));
+		packageEntry->reasons.push_back(action.reason);
 	}
 
 	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
@@ -1212,7 +1218,7 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 					action.packageName = unsynchronizeablePackageName;
 					if (trackReasons)
 					{
-						action.reason.reset(new Reason(version->packageName));
+						action.reason.reset(new SynchronizationReason(version->packageName));
 					}
 					result.push_back(action);
 				}
@@ -1491,7 +1497,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 							if (trackReasons)
 							{
 								// setting a reason
-								shared_ptr< const Reason > reason(new Reason(version, dependencyType, relationExpression));
+								shared_ptr< const Reason > reason(new RelationExpressionReason(version, dependencyType, relationExpression));
 								FORIT(possibleActionIt, possibleActions)
 								{
 									possibleActionIt->reason = reason;
