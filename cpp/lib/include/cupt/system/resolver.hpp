@@ -59,6 +59,13 @@ class Resolver
 	 */
 	struct UserReason: public Reason
 	{};
+	/// reason: auto-removal
+	/**
+	 * This reason applies only to package removals. It means that resolver
+	 * decided to remove the package since it's automatically installed and no
+	 * manually installed packages or their dependencies depend on this package
+	 * anymore.
+	 */
 	struct AutoRemovalReason: public Reason
 	{};
 	struct RelationExpressionReason: public Reason
