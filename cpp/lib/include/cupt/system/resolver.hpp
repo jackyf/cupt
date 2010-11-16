@@ -113,9 +113,15 @@ class Resolver
 	};
 	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
 
+	/// user callback answer variants
 	struct UserAnswer
 	{
-		enum Type { Accept, Decline, Abandon };
+		enum Type
+		{
+			Accept, ///< finish computations and return @c true
+			Decline, ///< throw out the proposed solution and work on other ones
+			Abandon ///< finish computations and return @c false
+		};
 	};
 
 	typedef std::function< UserAnswer::Type (const SuggestedPackages&) > CallbackType;
