@@ -68,12 +68,18 @@ class Resolver
 	 */
 	struct AutoRemovalReason: public Reason
 	{};
+	/// reason: other version's dependency
+	/**
+	 * This reason means that a resolver decided to change a package state
+	 * because of some dependency of another package version.
+	 */
 	struct RelationExpressionReason: public Reason
 	{
-		shared_ptr< const BinaryVersion > version;
-		BinaryVersion::RelationTypes::Type dependencyType;
-		cache::RelationExpression relationExpression;
+		shared_ptr< const BinaryVersion > version; ///< version that caused the change
+		BinaryVersion::RelationTypes::Type dependencyType; ///< type of dependency that caused the change
+		cache::RelationExpression relationExpression; ///< relation expression which caused the change
 
+		/// trivial constructor
 		RelationExpressionReason(const shared_ptr< const BinaryVersion >& version_,
 				BinaryVersion::RelationTypes::Type dependencyType_,
 				const cache::RelationExpression& relationExpression_)
