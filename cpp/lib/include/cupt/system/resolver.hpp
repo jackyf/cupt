@@ -44,6 +44,7 @@ class Resolver
 	Resolver(const Resolver&);
 	Resolver& operator=(const Resolver&);
  public:
+	/// base class for resolver decision reasons
 	struct Reason
 	{
 	 protected:
