@@ -86,10 +86,17 @@ class Resolver
 			: version(version_), dependencyType(dependencyType_),
 			relationExpression(relationExpression_) {}
 	};
+	/// reason: source-synchronized with a related binary package
+	/**
+	 * This reason means that synchronizing by source versions was enabled and
+	 * this package was synchronized to the version of other binary package
+	 * from the same source.
+	 */
 	struct SynchronizationReason: public Reason
 	{
-		string packageName;
+		string packageName; ///< name of related binary package
 
+		/// trivial constructor
 		SynchronizationReason(const string& packageName_)
 			: packageName(packageName_) {}
 	};
