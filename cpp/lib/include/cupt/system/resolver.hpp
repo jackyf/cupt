@@ -101,13 +101,17 @@ class Resolver
 			: packageName(packageName_) {}
 	};
 
+	/// resolver's solution item
+	/**
+	 * Represents a binary package in the suggested system.
+	 */
 	struct SuggestedPackage
 	{
-		shared_ptr< const BinaryVersion > version;
-		bool manuallySelected;
-		vector< shared_ptr< const Reason > > reasons;
+		shared_ptr< const BinaryVersion > version; ///< package version
+		bool manuallySelected; ///< was this package version selected by user, not resolver?
+		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
 	};
-	typedef map< string, SuggestedPackage > SuggestedPackages;
+	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
 
 	struct UserAnswer
 	{
