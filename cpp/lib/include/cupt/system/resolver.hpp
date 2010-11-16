@@ -77,7 +77,7 @@ class Resolver
 	{
 		shared_ptr< const BinaryVersion > version; ///< version that caused the change
 		BinaryVersion::RelationTypes::Type dependencyType; ///< type of dependency that caused the change
-		cache::RelationExpression relationExpression; ///< relation expression which caused the change
+		RelationExpression relationExpression; ///< relation expression which caused the change
 
 		/// trivial constructor
 		RelationExpressionReason(const shared_ptr< const BinaryVersion >& version_,
