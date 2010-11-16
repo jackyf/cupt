@@ -52,6 +52,11 @@ class Resolver
 	 public:
 		virtual ~Reason() {}; // polymorphic
 	};
+	/// reason: asked by user
+	/**
+	 * This reason means that change was asked by "user" by calling @ref
+	 * installVersion, @ref removePackage etc. methods.
+	 */
 	struct UserReason: public Reason
 	{};
 	struct AutoRemovalReason: public Reason
