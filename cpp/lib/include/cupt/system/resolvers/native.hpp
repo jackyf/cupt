@@ -18,6 +18,8 @@
 #ifndef CUPT_SYSTEM_RESOLVERS_NATIVE
 #define CUPT_SYSTEM_RESOLVERS_NATIVE
 
+/// @file
+
 #include <cupt/system/resolver.hpp>
 #include <cupt/cache/relation.hpp>
 
@@ -31,11 +33,13 @@ class NativeResolverImpl;
 
 namespace system {
 
+/// library's problem resolver implementation
 class NativeResolver: public Resolver
 {
 	internal::NativeResolverImpl* __impl;
 
  public:
+	/// constructor
 	NativeResolver(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
 	void installVersion(const shared_ptr< const BinaryVersion >&);
