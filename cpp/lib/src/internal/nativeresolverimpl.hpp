@@ -110,6 +110,23 @@ class NativeResolverImpl
 	vector< Action > __filter_unsynchronizeable_actions(
 		const shared_ptr< Solution >&, const vector< Action >&);
 
+	struct BrokenDependencyInfo
+	{
+		const RelationExpression* relationExpressionPtr;
+		const shared_ptr< const BinaryVersion >* intersectVersionPtr;
+		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
+	};
+
+	bool __verify_relation_line(const shared_ptr< Solution >&,
+			const string* packageNamePtr, const PackageEntry*,
+			const shared_ptr< const BinaryVersion >&,
+			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
+			BrokenDependencyInfo*);
+	void __generate_possible_actions(vector< Action >*, const shared_ptr< Solution >&,
+			const string& packageName, const PackageEntry*,
+			const shared_ptr< const BinaryVersion >&, const BrokenDependencyInfo&,
+			BinaryVersion::RelationTypes::Type, bool isDependencyAnti);
+
 	static const string __dummy_package_name;
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);

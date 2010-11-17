@@ -1313,6 +1313,98 @@ void __get_sorted_package_names(const vector< const string* >& source,
 	}
 }
 
+bool NativeResolverImpl::__verify_relation_line(const shared_ptr< Solution >& solution,
+		const string* packageNamePtr, const PackageEntry* packageEntry,
+		const shared_ptr< const BinaryVersion >& version,
+		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti,
+		BrokenDependencyInfo* bdi)
+{
+	const string* ignorePackageNamePtr = (isDependencyAnti ? packageNamePtr : NULL);
+
+	const RelationLine& relationLine = version->relations[dependencyType];
+	FORIT(relationExpressionIt, relationLine)
+	{
+		const RelationExpression& relationExpression = *relationExpressionIt;
+
+		bdi->satisfyingVersions = __cache->getSatisfyingVersions(relationExpression);
+		bdi->intersectVersionPtr = __is_version_array_intersects_with_packages(
+				bdi->satisfyingVersions, solution, ignorePackageNamePtr);
+
+		// check if the relation expression satisfied/unsatisfied respectively
+		if (isDependencyAnti == !bdi->intersectVersionPtr) // XOR
+		{
+			continue;
+		}
+
+		if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
+			dependencyType == BinaryVersion::RelationTypes::Suggests)
+		{
+			// this is a soft dependency
+
+			const RelationLine& fakelySatisfied = packageEntry->fakelySatisfied;
+			if (std::find(fakelySatisfied.begin(), fakelySatisfied.end(), relationExpression) !=
+				fakelySatisfied.end())
+			{
+				// this soft relation expression was already fakely satisfied (score penalty)
+				continue;
+			}
+
+			if (__is_soft_dependency_ignored(version, dependencyType,
+					relationExpression, bdi->satisfyingVersions))
+			{
+				continue;
+			}
+		}
+
+		bdi->relationExpressionPtr = &*relationExpressionIt;
+		return false;
+	}
+	return true;
+}
+
+void NativeResolverImpl::__generate_possible_actions(vector< Action >* possibleActionsPtr,
+		const shared_ptr< Solution >& solution, const string& packageName,
+		const PackageEntry* packageEntry, const shared_ptr< const BinaryVersion >& version,
+		const BrokenDependencyInfo& bdi,
+		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti)
+{
+	vector< Action >& possibleActions = *possibleActionsPtr;
+	const RelationExpression& failedRelationExpression = *(bdi.relationExpressionPtr);
+
+	if (!isDependencyAnti)
+	{
+		if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
+			dependencyType == BinaryVersion::RelationTypes::Suggests)
+		{
+			// ok, then we have one more possible solution - do nothing at all
+			Action action;
+			action.packageName = packageName;
+			action.version = version;
+			// set profit manually, as we are inserting fake action here
+			action.profit = (dependencyType == BinaryVersion::RelationTypes::Recommends ? -200 : -50);
+			action.fakelySatisfies.reset(new RelationExpression(*(bdi.relationExpressionPtr)));
+
+			possibleActions.push_back(std::move(action));
+		}
+
+		// also
+		__add_actions_to_fix_dependency(possibleActions, solution, bdi.satisfyingVersions);
+		__add_actions_to_modify_package_entry(possibleActions, packageName,
+				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, true);
+	}
+	else
+	{
+		const shared_ptr< const BinaryVersion >& satisfyingVersion = *(bdi.intersectVersionPtr);
+		const string& satisfyingPackageName = satisfyingVersion->packageName;
+		auto satisfyingPackageEntry = solution->getPackageEntry(satisfyingPackageName);
+
+		__add_actions_to_modify_package_entry(possibleActions, satisfyingPackageName,
+				satisfyingPackageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions);
+		__add_actions_to_modify_package_entry(possibleActions, packageName,
+				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions);
+	}
+}
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser();
@@ -1401,132 +1493,61 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						continue;
 					}
 
-					const string* ignorePackageNamePtr = (isDependencyAnti ? &packageName : NULL);
-
-					const RelationLine& relationLine = version->relations[dependencyType];
-					FORIT(relationExpressionIt, relationLine)
+					BrokenDependencyInfo brokenDependencyInfo;
+					checkFailed = !__verify_relation_line(currentSolution, *packageNamePtrIt,
+							packageEntry, version, dependencyType, isDependencyAnti,
+							/* out -> */ &brokenDependencyInfo);
+					if (checkFailed)
 					{
-						const RelationExpression& relationExpression = *relationExpressionIt;
-
-						auto satisfyingVersions = __cache->getSatisfyingVersions(relationExpression);
-						auto intersectVersionPtr = __is_version_array_intersects_with_packages(
-								satisfyingVersions, currentSolution, ignorePackageNamePtr);
-
-						// check if the relation expression satisfied/unsatisfied respectively
-						if (isDependencyAnti == !intersectVersionPtr) // XOR
+						if (validateOnlyPass)
 						{
-							continue;
-						}
-
-						if (!isDependencyAnti)
-						{
-							if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
-								dependencyType == BinaryVersion::RelationTypes::Suggests)
+							// do nothing, continue checking
+							if (!possibleActions.empty())
 							{
-								// this is a soft dependency
-
-								const RelationLine& fakelySatisfied = packageEntry->fakelySatisfied;
-								if (std::find(fakelySatisfied.begin(), fakelySatisfied.end(), relationExpression) !=
-									fakelySatisfied.end())
-								{
-									// this soft relation expression was already fakely satisfied (score penalty)
-									continue;
-								}
-
-								if (__is_soft_dependency_ignored(version, dependencyType,
-										relationExpression, satisfyingVersions))
-								{
-									continue;
-								}
-
-								if (!validateOnlyPass)
-								{
-									// ok, then we have one more possible solution - do nothing at all
-									Action action;
-									action.packageName = packageName;
-									action.version = version;
-									// set profit manually, as we are inserting fake action here
-									action.profit = (dependencyType == BinaryVersion::RelationTypes::Recommends ? -200 : -50);
-									action.fakelySatisfies.reset(new RelationExpression(relationExpression));
-
-									possibleActions.push_back(std::move(action));
-								}
+								fatal("internal error: some actions were generated in validate-only pass");
 							}
+							recheckNeeded = true;
+							checkFailed = false;
 
-							if (!validateOnlyPass)
-							{
-								// for resolving we can do:
-								__add_actions_to_fix_dependency(possibleActions, currentSolution, satisfyingVersions);
-								__add_actions_to_modify_package_entry(possibleActions, packageName,
-										packageEntry, dependencyType, relationExpression, satisfyingVersions, true);
-							}
-
-							checkFailed = true;
+							goto next_package;
 						}
-						else
-						{
-							checkFailed = true;
-							if (!validateOnlyPass)
-							{
-								const shared_ptr< const BinaryVersion >& satisfyingVersion = *intersectVersionPtr;
-								const string& satisfyingPackageName = satisfyingVersion->packageName;
-								auto satisfyingPackageEntry = currentSolution->getPackageEntry(satisfyingPackageName);
+						__generate_possible_actions(&possibleActions, currentSolution, packageName,
+								packageEntry, version, brokenDependencyInfo, dependencyType, isDependencyAnti);
 
-								__add_actions_to_modify_package_entry(possibleActions, satisfyingPackageName,
-										satisfyingPackageEntry, dependencyType, relationExpression, satisfyingVersions);
-								__add_actions_to_modify_package_entry(possibleActions, packageName,
-										packageEntry, dependencyType, relationExpression, satisfyingVersions);
+						const RelationExpression& failedRelationExpression = *(brokenDependencyInfo.relationExpressionPtr);
+						if (trackReasons)
+						{
+							// setting a reason
+							shared_ptr< const Reason > reason(
+									new RelationExpressionReason(version, dependencyType, failedRelationExpression));
+							FORIT(possibleActionIt, possibleActions)
+							{
+								possibleActionIt->reason = reason;
 							}
 						}
 
-						if (checkFailed)
+						// mark package as failed one more time
+						failCounts[packageName] += 1;
+
+						if (debugging)
 						{
-							if (validateOnlyPass)
-							{
-								// do nothing, continue checking
-								if (!possibleActions.empty())
-								{
-									fatal("internal error: some actions were generated in validate-only pass");
-								}
-								recheckNeeded = true;
-								checkFailed = false;
-
-								goto next_package;
-							}
-
-							if (trackReasons)
-							{
-								// setting a reason
-								shared_ptr< const Reason > reason(new RelationExpressionReason(version, dependencyType, relationExpression));
-								FORIT(possibleActionIt, possibleActions)
-								{
-									possibleActionIt->reason = reason;
-								}
-							}
-
-							// mark package as failed one more time
-							failCounts[packageName] += 1;
-
-							if (debugging)
-							{
-								const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
-								auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
-										BinaryVersion::RelationTypes::rawStrings[dependencyType],
-										relationExpression.toString().c_str());
-								__mydebug_wrapper(currentSolution, message);
-							}
-							if (possibleActions.size() == 1)
-							{
-								__pre_apply_action(currentSolution, currentSolution, possibleActions[0]);
-								__post_apply_action(currentSolution);
-								possibleActions.clear();
-
-								recheckNeeded = true;
-								checkFailed = false;
-								goto redo_package;
-							}
-							goto finish_main_loop;
+							const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
+							auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
+									BinaryVersion::RelationTypes::rawStrings[dependencyType],
+									failedRelationExpression.toString().c_str());
+							__mydebug_wrapper(currentSolution, message);
 						}
+						if (possibleActions.size() == 1)
+						{
+							__pre_apply_action(currentSolution, currentSolution, possibleActions[0]);
+							__post_apply_action(currentSolution);
+							possibleActions.clear();
+
+							recheckNeeded = true;
+							checkFailed = false;
+							goto redo_package;
+						}
+						goto finish_main_loop;
 					}
 					packageEntry->checked.set(dependencyType); // validate
 
