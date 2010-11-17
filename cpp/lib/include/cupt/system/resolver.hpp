@@ -124,6 +124,7 @@ class Resolver
 		};
 	};
 
+	/// callback function type
 	typedef std::function< UserAnswer::Type (const SuggestedPackages&) > CallbackType;
 
 	Resolver() {};
