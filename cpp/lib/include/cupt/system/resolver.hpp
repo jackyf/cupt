@@ -152,6 +152,11 @@ class Resolver
 	 */
 	virtual void upgrade() = 0;
 
+	/// perform a resolve computations
+	/**
+	 * Takes all requested data and tries to find the best valid set of
+	 * packages which conforms to what was requested.
+	 */
 	virtual bool resolve(CallbackType) = 0;
 
 	/// destructor
