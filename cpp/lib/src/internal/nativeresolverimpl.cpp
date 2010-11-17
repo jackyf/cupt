@@ -1110,7 +1110,6 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< Action >& actio
 			actions.push_back(std::move(action));
 		}
 	}
-
 }
 
 void NativeResolverImpl::__prepare_stick_requests(vector< Action >& actions) const
