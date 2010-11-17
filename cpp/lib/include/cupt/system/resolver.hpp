@@ -156,6 +156,8 @@ class Resolver
 	/**
 	 * Takes all requested data and tries to find the best valid set of
 	 * packages which conforms to what was requested.
+	 *
+	 * @return @c true if the solution was found and accepted by user, @c false otherwise
 	 */
 	virtual bool resolve(CallbackType) = 0;
 
