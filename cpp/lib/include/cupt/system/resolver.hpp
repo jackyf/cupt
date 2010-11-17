@@ -129,10 +129,27 @@ class Resolver
 
 	Resolver() {};
 
+	/**
+	 * Requests installation of the specific version.
+	 */
 	virtual void installVersion(const shared_ptr< const BinaryVersion >&) = 0;
+	/**
+	 * Requests that specified relation expression is satisfied.
+	 */
 	virtual void satisfyRelationExpression(const RelationExpression&) = 0;
+	/**
+	 * Requests that specified relation expression is not satisfied.
+	 */
 	virtual void unsatisfyRelationExpression(const RelationExpression&) = 0;
+	/**
+	 * Requests that specified package is removed.
+	 *
+	 * @param packageName
+	 */
 	virtual void removePackage(const string& packageName) = 0;
+	/**
+	 * Requests an upgrade of all installed packages (to their policy version).
+	 */
 	virtual void upgrade() = 0;
 
 	virtual bool resolve(CallbackType) = 0;
