@@ -137,6 +137,7 @@ class Resolver
 
 	virtual bool resolve(CallbackType) = 0;
 
+	/// destructor
 	virtual ~Resolver() {};
 };
 
