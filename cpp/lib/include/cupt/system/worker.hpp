@@ -18,6 +18,8 @@
 #ifndef CUPT_SYSTEM_WORKER_SEEN
 #define CUPT_SYSTEM_WORKER_SEEN
 
+/// @file
+
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
 #include <cupt/system/resolver.hpp>
@@ -32,6 +34,7 @@ class WorkerImpl;
 
 namespace system {
 
+/// performs system modifications
 class Worker
 {
 	internal::WorkerImpl* __impl;
