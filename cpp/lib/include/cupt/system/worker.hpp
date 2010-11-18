@@ -38,7 +38,9 @@ namespace system {
 class Worker
 {
 	internal::WorkerImpl* __impl;
+
 	Worker(const Worker&);
+	Worker& operator=(const Worker&);
  public:
 	typedef vector< Resolver::SuggestedPackages > ActionsPreview;
 	struct Action
