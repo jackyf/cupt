@@ -79,6 +79,11 @@ class Worker
 	 */
 	void setDesiredState(const Resolver::SuggestedPackages& desiredState);
 
+	/**
+	 * Shouldn't be called before @ref setDesiredState.
+	 *
+	 * @return a set of actions to get the desired system state divided by action types
+	 */
 	shared_ptr< const ActionsPreview > getActionsPreview() const;
 	map< string, ssize_t > getUnpackedSizesPreview() const;
 	pair< size_t, size_t > getDownloadSizesPreview() const;
