@@ -46,10 +46,21 @@ class Worker
 	 * Vector of Action::Count elements.
 	 */
 	typedef vector< Resolver::SuggestedPackages > ActionsPreview;
+	/// action types
 	struct Action
 	{
-		enum Type { Install, Remove, Purge, Upgrade, Downgrade,
-				Configure, Deconfigure, Markauto, Unmarkauto, Count };
+		enum Type {
+			Install, ///< a new package is installed
+			Remove, ///< the existing package is removed
+			Purge, ///< the existing package is purged
+			Upgrade, ///< new version of the existing package is installed
+			Downgrade, ///< old version of the existing package is installed
+			Configure, ///< the existing package in intermediate state is configured (properly installed)
+			Deconfigure, ///< the existing package in intermediate state is removed
+			Markauto, ///< the package is marked as automatically installed
+			Unmarkauto, ///< the package is marked as manually installed
+			Count ///< element count
+		};
 	};
 
 	Worker(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache);
