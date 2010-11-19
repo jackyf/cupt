@@ -63,6 +63,11 @@ class Worker
 		};
 	};
 
+	/// constructor
+	/**
+	 * @param config
+	 * @param cache
+	 */
 	Worker(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache);
 	virtual ~Worker();
 	void setDesiredState(const Resolver::SuggestedPackages& desiredState);
