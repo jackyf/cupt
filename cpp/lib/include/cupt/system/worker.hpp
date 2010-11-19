@@ -42,6 +42,9 @@ class Worker
 	Worker(const Worker&);
 	Worker& operator=(const Worker&);
  public:
+	/**
+	 * Vector of Action::Count elements.
+	 */
 	typedef vector< Resolver::SuggestedPackages > ActionsPreview;
 	struct Action
 	{
