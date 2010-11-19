@@ -70,6 +70,13 @@ class Worker
 	 */
 	Worker(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache);
 	virtual ~Worker();
+	/**
+	 * Sets the desired system state.
+	 *
+	 * May be called several times for examining different possible system states.
+	 *
+	 * @param desiredState
+	 */
 	void setDesiredState(const Resolver::SuggestedPackages& desiredState);
 
 	shared_ptr< const ActionsPreview > getActionsPreview() const;
