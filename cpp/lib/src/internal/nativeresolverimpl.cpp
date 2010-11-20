@@ -1542,7 +1542,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 							possibleActions.clear();
 
 							recheckNeeded = true;
-							checkFailed = false;
 							goto redo_package;
 						}
 						goto finish_main_loop;
