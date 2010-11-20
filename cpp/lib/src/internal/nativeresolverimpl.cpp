@@ -1314,10 +1314,10 @@ void __get_sorted_package_names(const vector< const string* >& source,
 
 bool NativeResolverImpl::__verify_relation_line(const shared_ptr< Solution >& solution,
 		const string* packageNamePtr, const PackageEntry* packageEntry,
-		const shared_ptr< const BinaryVersion >& version,
 		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti,
 		BrokenDependencyInfo* bdi)
 {
+	const shared_ptr< const BinaryVersion >& version = packageEntry->version;
 	const string* ignorePackageNamePtr = (isDependencyAnti ? packageNamePtr : NULL);
 
 	const RelationLine& relationLine = version->relations[dependencyType];
@@ -1494,7 +1494,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 					BrokenDependencyInfo brokenDependencyInfo;
 					checkFailed = !__verify_relation_line(currentSolution, *packageNamePtrIt,
-							packageEntry, version, dependencyType, isDependencyAnti,
+							packageEntry, dependencyType, isDependencyAnti,
 							/* out -> */ &brokenDependencyInfo);
 					if (checkFailed)
 					{
