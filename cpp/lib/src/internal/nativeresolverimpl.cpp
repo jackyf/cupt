@@ -1506,7 +1506,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 								fatal("internal error: some actions were generated in validate-only pass");
 							}
 							recheckNeeded = true;
-							checkFailed = false;
 
 							goto next_package;
 						}
