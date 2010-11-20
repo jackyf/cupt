@@ -123,8 +123,7 @@ class NativeResolverImpl
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
 			BrokenDependencyInfo*);
 	void __generate_possible_actions(vector< Action >*, const shared_ptr< Solution >&,
-			const string& packageName, const PackageEntry*,
-			const shared_ptr< const BinaryVersion >&, const BrokenDependencyInfo&,
+			const string& packageName, const PackageEntry*, const BrokenDependencyInfo&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti);
 
 	static const string __dummy_package_name;

@@ -1363,10 +1363,10 @@ bool NativeResolverImpl::__verify_relation_line(const shared_ptr< Solution >& so
 
 void NativeResolverImpl::__generate_possible_actions(vector< Action >* possibleActionsPtr,
 		const shared_ptr< Solution >& solution, const string& packageName,
-		const PackageEntry* packageEntry, const shared_ptr< const BinaryVersion >& version,
-		const BrokenDependencyInfo& bdi,
+		const PackageEntry* packageEntry, const BrokenDependencyInfo& bdi,
 		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti)
 {
+	const shared_ptr< const BinaryVersion >& version = packageEntry->version;
 	vector< Action >& possibleActions = *possibleActionsPtr;
 	const RelationExpression& failedRelationExpression = *(bdi.relationExpressionPtr);
 
@@ -1510,7 +1510,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 							goto next_package;
 						}
 						__generate_possible_actions(&possibleActions, currentSolution, packageName,
-								packageEntry, version, brokenDependencyInfo, dependencyType, isDependencyAnti);
+								packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti);
 
 						const RelationExpression& failedRelationExpression = *(brokenDependencyInfo.relationExpressionPtr);
 						if (trackReasons)
