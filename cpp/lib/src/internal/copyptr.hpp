@@ -36,6 +36,14 @@ class CopyPtr
 		: __ptr(obj)
 	{}
 
+	void initIfEmpty()
+	{
+		if (!__ptr)
+		{
+			__ptr = new T;
+		}
+	}
+
 	CopyPtr(const CopyPtr& other) :
 		__ptr(other.__ptr ? new T(*(other.__ptr)) : NULL)
 	{};

@@ -958,10 +958,7 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 
 	if(action.fakelySatisfies)
 	{
-		if (!packageEntry->fakelySatisfied)
-		{
-			packageEntry->fakelySatisfied = new RelationLine;
-		}
+		packageEntry->fakelySatisfied.initIfEmpty();
 		packageEntry->fakelySatisfied->push_back(*(action.fakelySatisfies));
 	}
 	else if (action.reason)
