@@ -10,6 +10,9 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
       - Reorganized *Reason struct, transformed to struct hierarchy.
     - system/worker:
       - 'operator=': forbidden now.
+    - config:
+      - Option 'cupt::resolver::max-solution-count': increased default value
+        from 256 to 512.
   * debian:
     - rules:
       - Fixed installing bash completion script.

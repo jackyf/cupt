@@ -126,7 +126,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },
 		{ "cupt::resolver::keep-suggests", "no" },
-		{ "cupt::resolver::max-solution-count", "256" },
+		{ "cupt::resolver::max-solution-count", "512" },
 		{ "cupt::resolver::no-remove", "no" },
 		{ "cupt::resolver::quality-bar", "-50" },
 		{ "cupt::resolver::synchronize-source-versions", "none" },
