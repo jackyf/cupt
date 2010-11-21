@@ -255,7 +255,8 @@ void NativeResolverImpl::__synchronize_related_packages(const shared_ptr< Soluti
 		}
 		if (trackReasons)
 		{
-			modifiedPackageEntry->reasons.push_back(
+			modifiedPackageEntry->reasons.initIfEmpty();
+			modifiedPackageEntry->reasons->push_back(
 					shared_ptr< const Reason >(new SynchronizationReason(packageName)));
 		}
 	}
@@ -299,7 +300,8 @@ NativeResolverImpl::__install_version_no_stick(const shared_ptr< const BinaryVer
 	packageEntry->version = version;
 	if (__config->getBool("cupt::resolver::track-reasons"))
 	{
-		packageEntry->reasons.push_back(reason);
+		packageEntry->reasons.initIfEmpty();
+		packageEntry->reasons->push_back(reason);
 	}
 	if (__config->getBool("debug::resolver"))
 	{
@@ -377,7 +379,8 @@ void NativeResolverImpl::removePackage(const string& packageName)
 
 	if (__config->getBool("cupt::resolver::track-reasons"))
 	{
-		packageEntry->reasons.push_back(shared_ptr< const Reason >(new UserReason));
+		packageEntry->reasons.initIfEmpty();
+		packageEntry->reasons->push_back(shared_ptr< const Reason >(new UserReason));
 	}
 	if (__config->getBool("debug::resolver"))
 	{
@@ -750,7 +753,8 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 				if (trackReasons)
 				{
 					// leave only one reason :)
-					vector< shared_ptr< const Reason > >& reasons = packageEntry->reasons;
+					packageEntry->reasons.initIfEmpty();
+					vector< shared_ptr< const Reason > >& reasons = *(packageEntry->reasons);
 					reasons.clear();
 					reasons.push_back(reason);
 				}
@@ -963,7 +967,8 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 	}
 	else if (action.reason)
 	{
-		packageEntry->reasons.push_back(action.reason);
+		packageEntry->reasons.initIfEmpty();
+		packageEntry->reasons->push_back(action.reason);
 	}
 
 	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
@@ -1147,7 +1152,10 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		Resolver::SuggestedPackage& suggestedPackage = it->second;
 
 		suggestedPackage.version = packageEntry->version;
-		suggestedPackage.reasons = packageEntry->reasons;
+		if (packageEntry->reasons)
+		{
+			suggestedPackage.reasons = *(packageEntry->reasons);
+		}
 		suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);
 	}
 

@@ -42,7 +42,7 @@ struct PackageEntry
 	shared_ptr< const BinaryVersion > version;
 	bool sticked;
 	CopyPtr< RelationLine > fakelySatisfied;
-	vector< shared_ptr< const Resolver::Reason > > reasons;
+	CopyPtr< vector< shared_ptr< const Resolver::Reason > > > reasons;
 	RelationTypesBitset checked;
 
 	PackageEntry();
