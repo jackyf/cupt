@@ -24,6 +24,7 @@
 #include <cupt/system/resolver.hpp>
 
 #include <internal/graph.hpp>
+#include <internal/copyptr.hpp>
 
 namespace cupt {
 namespace internal {
@@ -40,7 +41,7 @@ struct PackageEntry
 {
 	shared_ptr< const BinaryVersion > version;
 	bool sticked;
-	RelationLine fakelySatisfied;
+	CopyPtr< RelationLine > fakelySatisfied;
 	vector< shared_ptr< const Resolver::Reason > > reasons;
 	RelationTypesBitset checked;
 

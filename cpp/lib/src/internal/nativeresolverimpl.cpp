@@ -958,7 +958,11 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 
 	if(action.fakelySatisfies)
 	{
-		packageEntry->fakelySatisfied.push_back(*(action.fakelySatisfies));
+		if (!packageEntry->fakelySatisfied)
+		{
+			packageEntry->fakelySatisfied = new RelationLine;
+		}
+		packageEntry->fakelySatisfied->push_back(*(action.fakelySatisfies));
 	}
 	else if (action.reason)
 	{
@@ -1340,12 +1344,15 @@ bool NativeResolverImpl::__verify_relation_line(const shared_ptr< Solution >& so
 		{
 			// this is a soft dependency
 
-			const RelationLine& fakelySatisfied = packageEntry->fakelySatisfied;
-			if (std::find(fakelySatisfied.begin(), fakelySatisfied.end(), relationExpression) !=
-				fakelySatisfied.end())
+			if (packageEntry->fakelySatisfied)
 			{
-				// this soft relation expression was already fakely satisfied (score penalty)
-				continue;
+				const RelationLine& fakelySatisfied = *(packageEntry->fakelySatisfied);
+				if (std::find(fakelySatisfied.begin(), fakelySatisfied.end(), relationExpression) !=
+					fakelySatisfied.end())
+				{
+					// this soft relation expression was already fakely satisfied (score penalty)
+					continue;
+				}
 			}
 
 			if (__is_soft_dependency_ignored(version, dependencyType,
