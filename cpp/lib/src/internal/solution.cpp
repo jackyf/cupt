@@ -209,7 +209,7 @@ void Solution::prepare()
 	else
 	{
 		// this a slave solution
-		static const float overdivertedFactor = 0.8;
+		static const float overdivertedFactor = 0.7;
 		if (__parent->__package_entries->size() >=
 			pow(__parent->__master_package_entries->size(), overdivertedFactor))
 		{
