@@ -85,6 +85,11 @@ class Worker
 	 * @return a set of actions to get the desired system state divided by action types
 	 */
 	shared_ptr< const ActionsPreview > getActionsPreview() const;
+	/**
+	 * Shouldn't be called before @ref setDesiredState.
+	 *
+	 * @return map: package name -> unpacked size change (in bytes)
+	 */
 	map< string, ssize_t > getUnpackedSizesPreview() const;
 	pair< size_t, size_t > getDownloadSizesPreview() const;
 
