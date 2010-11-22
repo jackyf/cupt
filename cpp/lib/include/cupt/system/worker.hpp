@@ -105,7 +105,13 @@ class Worker
 	 * @param value if @c true, marks as automatically installed, if @c false, marks as manually installed
 	 */
 	void setAutomaticallyInstalledFlag(const string& packageName, bool value);
-	void changeSystem(const shared_ptr< download::Progress >&);
+	/**
+	 * Modifies the system to achieve the desired state set by
+	 * @ref setDesiredState.
+	 *
+	 * @param progress
+	 */
+	void changeSystem(const shared_ptr< download::Progress >& progress);
 
 	void updateReleaseAndIndexData(const shared_ptr< download::Progress >&);
 
