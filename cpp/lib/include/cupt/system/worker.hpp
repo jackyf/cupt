@@ -91,6 +91,11 @@ class Worker
 	 * @return map: package name -> unpacked size change (in bytes)
 	 */
 	map< string, ssize_t > getUnpackedSizesPreview() const;
+	/**
+	 * Shouldn't be called before @ref setDesiredState.
+	 *
+	 * @return pair: total amount of needed binary archives (in bytes), amount to download (in bytes)
+	 */
 	pair< size_t, size_t > getDownloadSizesPreview() const;
 
 	void markAsAutomaticallyInstalled(const string& packageName, bool targetStatus);
