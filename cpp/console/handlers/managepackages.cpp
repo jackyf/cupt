@@ -982,7 +982,7 @@ int updateReleaseAndIndexData(Context& context)
 	return 0;
 }
 
-int changeAutoInstalledState(Context& context, bool targetState)
+int changeAutoInstalledState(Context& context, bool value)
 {
 	bpo::options_description noOptions;
 	vector< string > arguments;
@@ -995,7 +995,7 @@ int changeAutoInstalledState(Context& context, bool targetState)
 
 	FORIT(packageNameIt, arguments)
 	{
-		worker.markAsAutomaticallyInstalled(*packageNameIt, targetState);
+		worker.setAutomaticallyInstalledFlag(*packageNameIt, value);
 	}
 
 	return 0;

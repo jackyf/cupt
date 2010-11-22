@@ -2614,9 +2614,9 @@ pair< size_t, size_t > Worker::getDownloadSizesPreview() const
 	return __impl->getDownloadSizesPreview();
 }
 
-void Worker::markAsAutomaticallyInstalled(const string& packageName, bool targetStatus)
+void Worker::setAutomaticallyInstalledFlag(const string& packageName, bool value)
 {
-	__impl->markAsAutomaticallyInstalled(packageName, targetStatus);
+	__impl->markAsAutomaticallyInstalled(packageName, value);
 }
 
 void Worker::changeSystem(const shared_ptr< download::Progress >& progress)
