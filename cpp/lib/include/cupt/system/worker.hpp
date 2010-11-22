@@ -98,6 +98,12 @@ class Worker
 	 */
 	pair< size_t, size_t > getDownloadSizesPreview() const;
 
+	/**
+	 * Marks a package as automatically or manually installed.
+	 *
+	 * @param packageName
+	 * @param targetStatus if @c true, marks as automatically installed, if @c false, marks as manually installed
+	 */
 	void markAsAutomaticallyInstalled(const string& packageName, bool targetStatus);
 	void changeSystem(const shared_ptr< download::Progress >&);
 
