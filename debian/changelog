@@ -12,6 +12,7 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
       - 'operator=': forbidden now.
       - 'markAsAutomaticallyInstalled': renamed to
         'setAutomaticallyInstalledFlag'.
+      - 'deleteArchive': fixed possible directory traversal.
     - config:
       - Option 'cupt::resolver::max-solution-count': increased default value
         from 256 to 512.

@@ -2566,6 +2566,10 @@ void WorkerImpl::deleteArchive(const string& path)
 		fatal("path '%s' lies outside archives directory '%s'",
 				path.c_str(), archivesDirectory.c_str());
 	}
+	if (path.find("/../") != string::npos)
+	{
+		fatal("path '%s' contains at least one '/../' substring", path.c_str());
+	}
 
 	if (!__config->getBool("cupt::worker::simulate"))
 	{
