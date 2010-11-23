@@ -130,6 +130,12 @@ class Worker
 	 * @return array of pairs < package name, pointer to binary version >
 	 */
 	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
+	/**
+	 * Deletes an archive file (it may be a symlink). Verifies that deleted file is
+	 * located under archives path directory.
+	 *
+	 * @param path absolute (i.e., not relative) path to file
+	 */
 	void deleteArchive(const string& path);
 };
 
