@@ -19,6 +19,9 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
   * debian:
     - rules:
       - Fixed installing bash completion script.
+  * doc:
+    - reference:
+      - Documented dynamic library parts. All library is documented now.
 
  -- Eugene Lyubimkin <ext-lyubimkin.eugene@nokia.com>  Tue, 16 Nov 2010 10:09:36 +0200
 
