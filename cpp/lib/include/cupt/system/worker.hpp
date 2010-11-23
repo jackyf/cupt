@@ -121,6 +121,14 @@ class Worker
 	 */
 	void updateReleaseAndIndexData(const shared_ptr< download::Progress >& progress);
 
+	/// gets available archives of binary versions
+	/**
+	 * Gets paths of all '.deb' archives in the archives directory and matches
+	 * them to available binary versions. Not matched paths with be paired with
+	 * an empty pointer.
+	 *
+	 * @return array of pairs < package name, pointer to binary version >
+	 */
 	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
 	void deleteArchive(const string& path);
 };
