@@ -113,7 +113,13 @@ class Worker
 	 */
 	void changeSystem(const shared_ptr< download::Progress >& progress);
 
-	void updateReleaseAndIndexData(const shared_ptr< download::Progress >&);
+	/**
+	 * Downloads latest Release and Packages/Sources files from repository
+	 * sources.
+	 *
+	 * @param progress
+	 */
+	void updateReleaseAndIndexData(const shared_ptr< download::Progress >& progress);
 
 	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
 	void deleteArchive(const string& path);
