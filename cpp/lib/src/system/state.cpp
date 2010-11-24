@@ -91,8 +91,7 @@ void StateData::parseDpkgStatus()
 			do
 			{
 #define TAG(str, code) \
-				if ((size_t)(tagName.second - tagName.first) == sizeof(str) - 1 && \
-					!memcmp(str, &*tagName.first, sizeof(str) - 1)) \
+				if (tagName.equal(str, sizeof(str) - 1)) \
 				{ \
 					code; \
 				} \

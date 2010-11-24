@@ -34,6 +34,10 @@ class TagParser
 		{
 			return string(first, second);
 		}
+		bool equal(const char* buf, size_t size)
+		{
+			return ((size_t)(second - first) == size && !memcmp(buf, &*first, size));
+		}
 	};
  private:
 	const shared_ptr< File > __input;

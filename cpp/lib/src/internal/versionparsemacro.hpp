@@ -25,8 +25,7 @@
 		{ \
 			static const char tagNameParamString[] = #tagNameParam; \
 			static const size_t tagNameParamStringSize = sizeof(tagNameParamString) - 1; \
-			if ((size_t)(tagName.second - tagName.first) == tagNameParamStringSize && \
-				!memcmp(&*tagName.first, tagNameParamString, tagNameParamStringSize)) \
+			if (tagName.equal(tagNameParamString, tagNameParamStringSize)) \
 			{ \
 				code \
 				continue; \
@@ -66,13 +65,13 @@
 #define PARSE_OTHERS \
 			if (Version::parseOthers) \
 			{ \
-				string tagNameString(tagName); \
-				if (tagNameString != "Package" && tagNameString != "Status") \
+				if (!tagName.equal("Package", 7) && !tagName.equal("Status", 6)) \
 				{ \
 					if (!v->others) \
 					{ \
 						v->others = new map< string, string >; \
 					} \
+					string tagNameString(tagName); \
 					(*(v->others))[tagNameString] = tagValue; \
 				} \
 			}
