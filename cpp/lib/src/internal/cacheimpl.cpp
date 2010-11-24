@@ -615,7 +615,6 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		pair< string, vector< PrePackageRecord > > pairForInsertion;
 		while (true)
 		{
-			prePackageRecord.offset = file->tell();
 			const char* buf;
 			size_t size;
 			file->rawGetLine(buf, size);
@@ -645,7 +644,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				continue;
 			}
 
-			prePackageRecord.offset += size;
+			prePackageRecord.offset = file->tell();
 
 			pairForInsertion.first.swap(packageName);
 			auto it = prePackagesStorage->insert(pairForInsertion).first;
