@@ -608,7 +608,6 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	PrePackageRecord prePackageRecord;
 	prePackageRecord.releaseInfoAndFile = &*(releaseInfoAndFileStorage.rbegin());
 
-	string block;
 	try
 	{
 		string packageName;
