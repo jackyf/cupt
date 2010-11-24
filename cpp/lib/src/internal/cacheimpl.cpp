@@ -652,7 +652,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			while (file->rawGetLine(buf, size), size > 1)
 			{
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
-				if (size > providesAnchorLength && !memcmp("Provides: ", buf, providesAnchorLength))
+				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
 				{
 					processProvides(&it->first, buf + providesAnchorLength, buf + size - 1);
 				}
