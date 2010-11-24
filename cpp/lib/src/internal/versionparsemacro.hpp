@@ -36,23 +36,23 @@
 #define PARSE_PRIORITY \
 		TAG(Priority, \
 		{ \
-			if (string(tagValue) == "required") \
+			if (tagValue.equal("required", 8)) \
 			{ \
 				v->priority = Version::Priorities::Required; \
 			} \
-			else if (string(tagValue) == "important") \
+			else if (tagValue.equal("important", 9)) \
 			{ \
 				v->priority = Version::Priorities::Important; \
 			} \
-			else if (string(tagValue) == "standard") \
+			else if (tagValue.equal("standard", 8)) \
 			{ \
 				v->priority = Version::Priorities::Standard; \
 			} \
-			else if (string(tagValue) == "optional") \
+			else if (tagValue.equal("optional", 8)) \
 			{ \
 				v->priority = Version::Priorities::Optional; \
 			} \
-			else if (string(tagValue) == "extra") \
+			else if (tagValue.equal("extra", 5)) \
 			{ \
 				v->priority = Version::Priorities::Extra; \
 			} \
