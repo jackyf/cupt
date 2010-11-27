@@ -14,6 +14,11 @@ add_library(cupt2 SHARED
 	./src/internal/horspoolsearcher.cpp
 	./src/internal/debdeltahelper.cpp
 	./src/internal/tagparser.cpp
+	./src/internal/worker/base.cpp
+	./src/internal/worker/archives.cpp
+	./src/internal/worker/metadata.cpp
+	./src/internal/worker/setupandpreview.cpp
+	./src/internal/worker/packages.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
