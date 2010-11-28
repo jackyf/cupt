@@ -802,7 +802,8 @@ void NativeResolverImpl::__require_strict_relation_expressions()
 	auto packageEntry = __solution_storage.setPackageEntry(__initial_solution, __dummy_package_name);
 	packageEntry->version = version;
 	packageEntry->sticked = true;
-	__solution_storage.addVersionDependencies(version);
+	__solution_storage.addVersionDependencies(
+			vector< shared_ptr< const BinaryVersion > >{ version });
 }
 
 /* __pre_apply_action only prints debug info and changes level/score of the

@@ -92,7 +92,8 @@ class SolutionStorage
  public:
 	SolutionStorage(const shared_ptr< const Cache >&,
 			const vector< DependencyEntry >&, const string& dummyPackageName);
-	void addVersionDependencies(const shared_ptr< const BinaryVersion >&);
+	// should be called only with versions with the same package name
+	void addVersionDependencies(const vector< shared_ptr< const BinaryVersion > >&);
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
 	PackageEntry* setPackageEntry(const shared_ptr< Solution >&, const string& packageName);
 	void __invalidate(const shared_ptr< Solution >&, const string& packageName, PackageEntry*);

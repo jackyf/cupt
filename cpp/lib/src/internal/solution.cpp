@@ -47,29 +47,28 @@ void SolutionStorage::__add_package_dependencies(const string& packageName)
 	{
 		fatal("internal error: unable to find the package '%s'", packageName.c_str());
 	}
-	auto versions = package->getVersions();
 
-	FORIT(versionIt, versions)
-	{
-		addVersionDependencies(*versionIt);
-	}
+	addVersionDependencies(package->getVersions());
 }
 
-void SolutionStorage::addVersionDependencies(const shared_ptr< const BinaryVersion >& version)
+void SolutionStorage::addVersionDependencies(const vector< shared_ptr< const BinaryVersion > >& versions)
 {
-	const string& packageName = version->packageName;
+	const string& packageName = versions[0]->packageName;
 
 	FORIT(dependencyEntryIt, __dependency_entries)
 	{
 		set< string > satisfyingPackageNames;
 
-		const RelationLine& relationLine = version->relations[dependencyEntryIt->type];
-		FORIT(relationExpressionIt, relationLine)
+		FORIT(versionIt, versions)
 		{
-			auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
-			FORIT(satisfyingVersionIt, satisfyingVersions)
+			const RelationLine& relationLine = (*versionIt)->relations[dependencyEntryIt->type];
+			FORIT(relationExpressionIt, relationLine)
 			{
-				satisfyingPackageNames.insert((*satisfyingVersionIt)->packageName);
+				auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
+				FORIT(satisfyingVersionIt, satisfyingVersions)
+				{
+					satisfyingPackageNames.insert((*satisfyingVersionIt)->packageName);
+				}
 			}
 		}
 
