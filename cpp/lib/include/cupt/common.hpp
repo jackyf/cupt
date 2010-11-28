@@ -121,7 +121,6 @@ void simulate(const char* format, ...);
 
 /// @cond
 string sf(const string& format, ...);
-vector< string > split(char, const string&, bool allowEmpty = false);
 string join(const string& joiner, const vector< string >& parts);
 string humanReadableSizeString(uint64_t bytes);
 string globToRegexString(const string&);

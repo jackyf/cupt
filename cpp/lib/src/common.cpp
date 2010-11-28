@@ -138,33 +138,6 @@ string sf(const string& format, ...)
 	return formattedString;
 }
 
-vector< string > split(char c, const string& str, bool allowEmpty)
-{
-	vector< string > result;
-
-	size_t size = str.size();
-	size_t startPosition = 0;
-	for (size_t i = 0; i < size; ++i)
-	{
-		if (str[i] == c)
-		{
-			if (startPosition < i || allowEmpty)
-			{
-				// there is non-empty substring (or empty one allowed)
-				result.push_back(string(str, startPosition, i - startPosition));
-			}
-			startPosition = i + 1;
-		}
-	}
-	if (startPosition < size || allowEmpty)
-	{
-		// there is non-empty last substring (or empty allowed)
-		result.push_back(string(str, startPosition, size - startPosition));
-	}
-
-	return result;
-}
-
 string join(const string& joiner, const vector< string >& parts)
 {
 	if (parts.empty())

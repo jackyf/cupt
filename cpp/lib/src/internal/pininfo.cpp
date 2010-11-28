@@ -27,6 +27,7 @@
 
 #include <internal/pininfo.hpp>
 #include <internal/filesystem.hpp>
+#include <internal/common.hpp>
 
 namespace cupt {
 namespace internal {
@@ -205,7 +206,7 @@ void PinInfo::loadData(const string& path)
 			if (pinType == "release")
 			{
 				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
-				auto subExpressions = split(commaSeparatedRegex, pinExpression);
+				auto subExpressions = cupt::split(commaSeparatedRegex, pinExpression);
 
 				FORIT(subExpressionIt, subExpressions)
 				{

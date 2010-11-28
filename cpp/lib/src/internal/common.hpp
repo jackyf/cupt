@@ -25,6 +25,8 @@
 namespace cupt {
 namespace internal {
 
+vector< string > split(char, const string&, bool allowEmpty = false);
+
 string getWaitStatusDescription(int status);
 
 // we may use following instead of boost::lexical_cast<> because of speed

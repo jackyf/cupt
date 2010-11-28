@@ -27,6 +27,7 @@
 
 #include <internal/tagparser.hpp>
 #include <internal/cacheimpl.hpp>
+#include <internal/common.hpp>
 
 namespace cupt {
 
@@ -118,7 +119,7 @@ void StateData::parseDpkgStatus()
 			}
 			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
 
-			vector< string > statusStrings = split(' ', status);
+			vector< string > statusStrings = internal::split(' ', status);
 			if (statusStrings.size() != 3)
 			{
 				fatal("malformed 'Status' line (for package '%s')", packageName.c_str());

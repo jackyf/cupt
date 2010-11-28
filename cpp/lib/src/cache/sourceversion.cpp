@@ -56,7 +56,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 			{ \
 				string block; \
 				parser.parseAdditionalLines(block); \
-				auto lines = split('\n', block); \
+				auto lines = internal::split('\n', block); \
 				FORIT(lineIt, lines) \
 				{ \
 					const string& line = *lineIt; \
@@ -130,7 +130,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 			TAG(Directory, source.directory = tagValue;)
 			TAG(Version, v->versionString = tagValue;)
 			PARSE_PRIORITY
-			TAG(Architecture, v->architectures = split(' ', tagValue);)
+			TAG(Architecture, v->architectures = internal::split(' ', tagValue);)
 
 			if (Version::parseRelations)
 			{

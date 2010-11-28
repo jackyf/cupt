@@ -224,7 +224,7 @@ void ArchitecturedRelation::__init(string::const_iterator start, string::const_i
 	++start;
 	--end;
 
-	architectureFilters = split(' ', string(start, end));
+	architectureFilters = internal::split(' ', string(start, end));
 }
 
 ArchitecturedRelation::ArchitecturedRelation(const string& unparsed)

@@ -241,7 +241,7 @@ void CacheImpl::parseSourceList(const string& path)
 				continue;
 			}
 			vector< string > tokens;
-			tokens = split(sregex::compile("[\\t ]+"), line);
+			tokens = cupt::split(sregex::compile("[\\t ]+"), line);
 
 			IndexEntry entry;
 
@@ -534,7 +534,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 			}
 			else if (fieldName == "Architectures")
 			{
-				result->architectures = split(sregex::compile(" "), fieldValue);
+				result->architectures = split(' ', fieldValue);
 			}
 			else if (fieldName == "Description")
 			{
