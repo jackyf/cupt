@@ -49,6 +49,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		static const sregex dscPartRegex = sregex::compile("\\.dsc$", regex_constants::optimize);
 		static const sregex diffPartRegex = sregex::compile("\\.(?:diff\\.gz|debian\\.tar\\.\\w+)$", regex_constants::optimize);
 		smatch lineMatch;
+		smatch m;
 
 		while (parser.parseNextLine(tagName, tagValue))
 		{
@@ -70,8 +71,8 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 					} \
 					const string name = lineMatch[3]; \
  \
-					SourceVersion::FileParts::Type part = (regex_search(name, dscPartRegex) ? SourceVersion::FileParts::Dsc : \
-							(regex_search(name, diffPartRegex) ? SourceVersion::FileParts::Diff : SourceVersion::FileParts::Tarball)); \
+					SourceVersion::FileParts::Type part = (regex_search(name, m, dscPartRegex) ? SourceVersion::FileParts::Dsc : \
+							(regex_search(name, m, diffPartRegex) ? SourceVersion::FileParts::Diff : SourceVersion::FileParts::Tarball)); \
 					bool foundRecord = false; \
 					FORIT(recordIt, v->files[part]) \
 					{ \
