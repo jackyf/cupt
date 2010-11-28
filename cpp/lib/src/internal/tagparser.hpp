@@ -40,14 +40,14 @@ class TagParser
 		}
 	};
  private:
-	const shared_ptr< File > __input;
+	File* const __input;
 	const char* __buffer;
 	size_t __buffer_size;
 
 	TagParser(const TagParser&);
 	TagParser& operator=(const TagParser&);
  public:
-	TagParser(const shared_ptr< File >& input);
+	TagParser(File* input);
 
 	bool parseNextLine(StringRange& tagName, StringRange& tagValue);
 	// forbidden to call more than once for one tag, since one line

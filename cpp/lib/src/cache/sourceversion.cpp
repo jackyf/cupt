@@ -42,7 +42,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		// go to starting byte of the entry
 		initParams.file->seek(initParams.offset);
 
-		internal::TagParser parser(initParams.file);
+		internal::TagParser parser(initParams.file.get());
 		internal::TagParser::StringRange tagName, tagValue;
 
 		static const sregex checksumsLineRegex = sregex::compile(" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize);

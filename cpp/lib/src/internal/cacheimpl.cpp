@@ -33,6 +33,7 @@
 #include <internal/common.hpp>
 #include <internal/filesystem.hpp>
 #include <internal/pininfo.hpp>
+#include <internal/tagparser.hpp>
 
 namespace cupt {
 namespace internal {
@@ -933,37 +934,43 @@ void CacheImpl::parseExtendedStates()
 			fatal("unable to open file '%s': %s", path.c_str(), openError.c_str());
 		}
 
-		smatch m;
-		string block;
+		internal::TagParser parser(&file);
+		internal::TagParser::StringRange tagName, tagValue;
 		string packageName;
-		string value;
-		while (!file.getRecord(block).eof())
+
+		while (parser.parseNextLine(tagName, tagValue) && !file.eof())
 		{
-			static const sregex commentRegex = sregex::compile("\\s*(?:#.*|)");
-			if (regex_match(block, m, commentRegex))
+			if (!tagName.equal("Package", 7))
 			{
-				continue;
+				fatal("wrong tag: expected 'Package', got '%s' at file '%s'",
+						string(tagName).c_str(), path.c_str());
 			}
 
-			static const sregex chunkRegex = sregex::compile("^Package: (.*?)$.*?^Auto-Installed: (.*?)$");
-			if (!regex_search(block, m, chunkRegex))
+			packageName = tagValue;
+
+			bool valueFound = false;
+			while (parser.parseNextLine(tagName, tagValue))
 			{
-				fatal("bad chunk '%s' at file '%s'", block.c_str(), path.c_str());
+				if (tagName.equal("Auto-Installed", 14))
+				{
+					valueFound = true;
+					if (tagValue.equal("1", 1))
+					{
+						// adding to storage
+						extendedInfo.automaticallyInstalled.insert(packageName);
+					}
+					else if (!tagValue.equal("0", 1))
+					{
+						fatal("bad value '%s' (should be 0 or 1) for the package '%s' at file '%s'",
+								string(tagValue).c_str(), packageName.c_str(), path.c_str());
+					}
+				}
 			}
 
-			packageName = m[1];
-			value = m[2];
-
-			if (value != "0" && value != "1")
+			if (!valueFound)
 			{
-				fatal("bad value '%s' (should be 0 or 1) in chunk '%s' at file '%s'",
-						value.c_str(), block.c_str(), path.c_str());
-			}
-
-			if (value == "1")
-			{
-				// adding to storage
-				extendedInfo.automaticallyInstalled.insert(packageName);
+				fatal("no 'Auto-Installed' tag for the package '%s' at file '%s'",
+						packageName.c_str(), path.c_str());
 			}
 		}
 	}

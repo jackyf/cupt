@@ -25,7 +25,7 @@
 namespace cupt {
 namespace internal {
 
-TagParser::TagParser(const shared_ptr< File >& input)
+TagParser::TagParser(File* input)
 	: __input(input), __buffer(NULL)
 {}
 

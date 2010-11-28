@@ -80,7 +80,7 @@ void StateData::parseDpkgStatus()
 
 	try
 	{
-		internal::TagParser parser(file);
+		internal::TagParser parser(file.get());
 		internal::TagParser::StringRange tagName, tagValue;
 
 		while ((prePackageRecord.offset = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
