@@ -94,6 +94,7 @@ void StateData::parseDpkgStatus()
 				if (tagName.equal(str, sizeof(str) - 1)) \
 				{ \
 					code; \
+					continue; \
 				} \
 
 				TAG("Package", packageName = tagValue)
