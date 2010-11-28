@@ -936,7 +936,6 @@ void CacheImpl::parseExtendedStates()
 
 		internal::TagParser parser(&file);
 		internal::TagParser::StringRange tagName, tagValue;
-		string packageName;
 
 		while (parser.parseNextLine(tagName, tagValue) && !file.eof())
 		{
@@ -946,7 +945,7 @@ void CacheImpl::parseExtendedStates()
 						string(tagName).c_str(), path.c_str());
 			}
 
-			packageName = tagValue;
+			string packageName = tagValue;
 
 			bool valueFound = false;
 			while (parser.parseNextLine(tagName, tagValue))
