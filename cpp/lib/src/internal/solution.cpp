@@ -64,10 +64,9 @@ void SolutionStorage::addVersionDependencies(const shared_ptr< const BinaryVersi
 		vector< string > satisfyingPackageNames;
 
 		const RelationLine& relationLine = version->relations[dependencyEntryIt->type];
-		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
 		FORIT(relationExpressionIt, relationLine)
 		{
-			satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
+			auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
 			FORIT(satisfyingVersionIt, satisfyingVersions)
 			{
 				satisfyingPackageNames.push_back((*satisfyingVersionIt)->packageName);
