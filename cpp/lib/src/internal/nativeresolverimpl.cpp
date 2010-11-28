@@ -51,7 +51,7 @@ void NativeResolverImpl::__import_installed_versions()
 	FORIT(versionIt, versions)
 	{
 		// just moving versions, don't try to install or remove some dependencies
-		const shared_ptr< const BinaryVersion > version = *versionIt;
+		const shared_ptr< const BinaryVersion >& version = *versionIt;
 		const string& packageName = version->packageName;
 
 		auto packageEntry = __solution_storage.setPackageEntry(__old_solution, packageName);
