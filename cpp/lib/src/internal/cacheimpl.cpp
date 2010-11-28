@@ -988,8 +988,6 @@ string CacheImpl::getPathOfExtendedStates() const
 vector< shared_ptr< const BinaryVersion > >
 CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) const
 {
-	vector< shared_ptr< const BinaryVersion > > result;
-
 	string memoizeKey;
 	if (Cache::memoize)
 	{
@@ -1005,7 +1003,7 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 		}
 	}
 
-	result = getSatisfyingVersions(relationExpression[0]);
+	auto result = getSatisfyingVersions(relationExpression[0]);
 
 	// now, if alternatives (OR groups) are present, we should add them too,
 	// without duplicates, but without sorting to not change the order, specified
