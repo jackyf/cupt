@@ -61,7 +61,7 @@ void SolutionStorage::addVersionDependencies(const shared_ptr< const BinaryVersi
 
 	FORIT(dependencyEntryIt, __dependency_entries)
 	{
-		vector< string > satisfyingPackageNames;
+		set< string > satisfyingPackageNames;
 
 		const RelationLine& relationLine = version->relations[dependencyEntryIt->type];
 		FORIT(relationExpressionIt, relationLine)
@@ -69,13 +69,9 @@ void SolutionStorage::addVersionDependencies(const shared_ptr< const BinaryVersi
 			auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
 			FORIT(satisfyingVersionIt, satisfyingVersions)
 			{
-				satisfyingPackageNames.push_back((*satisfyingVersionIt)->packageName);
+				satisfyingPackageNames.insert((*satisfyingVersionIt)->packageName);
 			}
 		}
-
-		std::sort(satisfyingPackageNames.begin(), satisfyingPackageNames.end());
-		satisfyingPackageNames.erase(std::unique(satisfyingPackageNames.begin(),
-				satisfyingPackageNames.end()), satisfyingPackageNames.end());
 
 		bool isAnti = dependencyEntryIt->isAnti;
 		FORIT(satisfyingPackageNameIt, satisfyingPackageNames)
