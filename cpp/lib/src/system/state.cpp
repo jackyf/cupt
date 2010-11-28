@@ -88,19 +88,21 @@ void StateData::parseDpkgStatus()
 			string status;
 			string provides;
 			bool versionIsPresent = false;
+			bool parsedTagsByIndex[4] = {0};
 			do
 			{
-#define TAG(str, code) \
-				if (tagName.equal(str, sizeof(str) - 1)) \
+#define TAG(str, index, code) \
+				if (!parsedTagsByIndex[index] && tagName.equal(str, sizeof(str) - 1)) \
 				{ \
 					code; \
+					parsedTagsByIndex[index] = true; \
 					continue; \
 				} \
 
-				TAG("Package", packageName = tagValue)
-				TAG("Status", status = tagValue)
-				TAG("Version", versionIsPresent = true)
-				TAG("Provides", provides = tagValue)
+				TAG("Package", 0, packageName = tagValue)
+				TAG("Status", 1, status = tagValue)
+				TAG("Version", 2, versionIsPresent = true)
+				TAG("Provides", 3, provides = tagValue)
 #undef TAG
 			} while (parser.parseNextLine(tagName, tagValue));
 
