@@ -45,6 +45,9 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		internal::TagParser parser(initParams.file);
 		internal::TagParser::StringRange tagName, tagValue;
 
+		static const sregex checksumsLineRegex = sregex::compile(" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize);
+		static const sregex dscPartRegex = sregex::compile("\\.dsc$", regex_constants::optimize);
+		static const sregex diffPartRegex = sregex::compile("\\.(?:diff\\.gz|debian\\.tar\\.\\w+)$", regex_constants::optimize);
 		smatch lineMatch;
 
 		while (parser.parseNextLine(tagName, tagValue))
@@ -61,15 +64,12 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 				{ \
 					const string& line = *lineIt; \
  \
-					static const sregex checksumsLineRegex = sregex::compile(" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize); \
 					if (!regex_match(line, lineMatch, checksumsLineRegex)) \
 					{ \
 						fatal("malformed line '%s'", line.c_str()); \
 					} \
 					const string name = lineMatch[3]; \
  \
-					static const sregex dscPartRegex = sregex::compile("\\.dsc$", regex_constants::optimize); \
-					static const sregex diffPartRegex = sregex::compile("\\.(?:diff\\.gz|debian\\.tar\\.\\w+)$", regex_constants::optimize); \
 					SourceVersion::FileParts::Type part = (regex_search(name, dscPartRegex) ? SourceVersion::FileParts::Dsc : \
 							(regex_search(name, diffPartRegex) ? SourceVersion::FileParts::Diff : SourceVersion::FileParts::Tarball)); \
 					bool foundRecord = false; \
