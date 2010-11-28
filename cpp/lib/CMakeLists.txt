@@ -11,7 +11,6 @@ add_library(cupt2 SHARED
 	./src/internal/cacheimpl.cpp
 	./src/internal/pininfo.cpp
 	./src/internal/filesystem.cpp
-	./src/internal/horspoolsearcher.cpp
 	./src/internal/debdeltahelper.cpp
 	./src/internal/tagparser.cpp
 	./src/internal/worker/base.cpp

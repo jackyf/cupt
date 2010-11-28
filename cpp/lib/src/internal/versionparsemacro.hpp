@@ -15,9 +15,6 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-
-#include <internal/horspoolsearcher.hpp>
-
 #ifndef CUPT_TAGPARSE_MACRO_SEEN
 #define CUPT_TAGPARSE_MACRO_SEEN
 
