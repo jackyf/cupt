@@ -30,11 +30,11 @@ namespace internal {
 
 DebdeltaHelper::DebdeltaHelper()
 {
-	if (fs::exists("/usr/bin/debpatch"))
+	if (fs::fileExists("/usr/bin/debpatch"))
 	{
 		// fill debdelta sources only if patches is available
 		static const string sourcesPath = "/etc/debdelta/sources.conf";
-		if (fs::exists(sourcesPath))
+		if (fs::fileExists(sourcesPath))
 		{
 			try
 			{

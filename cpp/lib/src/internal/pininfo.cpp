@@ -388,7 +388,7 @@ void PinInfo::init()
 		}
 
 		string mainFilePath = fullEtcDir + "/" + config->getString("dir::etc::preferences");
-		if (fs::exists(mainFilePath))
+		if (fs::fileExists(mainFilePath))
 		{
 			paths.push_back(mainFilePath);
 		}

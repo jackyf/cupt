@@ -28,7 +28,8 @@ string filename(const string& path);
 string dirname(const string& path);
 string move(const string& oldPath, const string& newPath);
 vector< string > glob(const string& param);
-bool exists(const string& path);
+bool fileExists(const string& path);
+bool dirExists(const string& path);
 
 }
 }

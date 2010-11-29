@@ -293,7 +293,7 @@ void ConfigImpl::readConfigs(Config* config)
 		{
 			mainFilePath = envAptConfig;
 		}
-		if (internal::fs::exists(mainFilePath))
+		if (internal::fs::fileExists(mainFilePath))
 		{
 			configFiles.push_back(mainFilePath);
 		}

@@ -202,7 +202,7 @@ void CacheImpl::parseSourcesLists()
 		vector< string > sourceFiles = fs::glob(fullEtcDir + "/" + partsDir + "/*.list");
 
 		string mainFilePath = fullEtcDir + "/" + config->getString("dir::etc::sourcelist");
-		if (fs::exists(mainFilePath))
+		if (fs::fileExists(mainFilePath))
 		{
 			sourceFiles.push_back(mainFilePath);
 		}

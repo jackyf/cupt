@@ -243,7 +243,7 @@ pair< size_t, size_t > SetupAndPreviewWorker::getDownloadSizesPreview() const
 
 			auto basename = _get_archive_basename(version);
 			auto path = archivesDirectory + "/" + basename;
-			if (fs::exists(path))
+			if (fs::fileExists(path))
 			{
 				if (version->file.hashSums.verify(path))
 				{

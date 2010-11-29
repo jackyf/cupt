@@ -310,7 +310,7 @@ bool Cache::verifySignature(const shared_ptr< const Config >& config, const stri
 		debug("signature file is '%s'", signaturePath.c_str());
 	}
 
-	if (!internal::fs::exists(signaturePath))
+	if (!internal::fs::fileExists(signaturePath))
 	{
 		if (debugging)
 		{

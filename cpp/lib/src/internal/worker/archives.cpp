@@ -43,7 +43,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 	FORIT(debPathIt, debPaths)
 	{
 		const string& debPath = *debPathIt;
-		if (!fs::exists(debPath))
+		if (!fs::fileExists(debPath))
 		{
 			// a dangling symlink
 			if (unlink(debPath.c_str()) == -1)
@@ -63,7 +63,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 				correctedBasename.replace(offset, 3, ":");
 				auto correctedPath = archivesDirectory + "/" + correctedBasename;
 
-				if (!fs::exists(correctedPath))
+				if (!fs::fileExists(correctedPath))
 				{
 					if (symlink(pathBasename.c_str(), correctedPath.c_str()) == -1)
 					{
@@ -98,7 +98,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 		FORIT(versionIt, versions)
 		{
 			auto path = archivesDirectory + '/' + _get_archive_basename(*versionIt);
-			if (fs::exists(path))
+			if (fs::fileExists(path))
 			{
 				knownArchives[path] = *versionIt;
 
@@ -115,7 +115,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				{
 					// a symlink
 					string targetPath(&pathBuffer[0]);
-					if (fs::exists(targetPath))
+					if (fs::fileExists(targetPath))
 					{
 						knownArchives[targetPath] = *versionIt;
 					}

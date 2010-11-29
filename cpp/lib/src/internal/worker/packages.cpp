@@ -749,7 +749,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 	if (!_config->getBool("cupt::worker::simulate"))
 	{
 		string partialDirectory = archivesDirectory + partialDirectorySuffix;
-		if (! fs::exists(partialDirectory))
+		if (! fs::dirExists(partialDirectory))
 		{
 			if (mkdir(partialDirectory.c_str(), 0755) == -1)
 			{
@@ -787,7 +787,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 			auto targetPath = archivesDirectory + '/' + basename;
 
 			// exclude from downloading packages that are already present
-			if (fs::exists(targetPath) &&
+			if (fs::fileExists(targetPath) &&
 				version->file.hashSums.verify(targetPath))
 			{
 				continue;
@@ -827,7 +827,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 			downloadEntity.postAction = [version, downloadPath, targetPath]() -> string
 			{
-				if (!fs::exists(downloadPath))
+				if (!fs::fileExists(downloadPath))
 				{
 					return __("unable to find downloaded file");
 				}

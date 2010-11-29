@@ -94,10 +94,16 @@ bool __stat(const string& path, struct stat* result)
 	return true;
 }
 
-bool exists(const string& path)
+bool fileExists(const string& path)
 {
-	struct stat stat_structure;
-	return __stat(path, &stat_structure);
+	struct stat s;
+	return __stat(path, &s) && (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode) || S_ISFIFO(s.st_mode));
+}
+
+bool dirExists(const string& path)
+{
+	struct stat s;
+	return __stat(path, &s) && S_ISDIR(s.st_mode);
 }
 
 }

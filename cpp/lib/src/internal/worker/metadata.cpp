@@ -149,7 +149,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	//
 	HashSums hashSums; // empty now
 	hashSums[HashSums::MD5] = "0"; // won't match for sure
-	if (fs::exists(targetPath))
+	if (fs::fileExists(targetPath))
 	{
 		// the Release file already present
 		hashSums.fill(targetPath);
@@ -268,7 +268,7 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 
 	// checking maybe there is no difference between the local and the remote?
 	bool simulating = _config->getBool("cupt::worker::simulate");
-	if (!simulating && fs::exists(targetPath))
+	if (!simulating && fs::fileExists(targetPath))
 	{
 		FORIT(downloadRecordIt, downloadInfo)
 		{
@@ -317,7 +317,7 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		if (!simulating)
 		{
 			// here we check for outdated dangling indexes in partial directory
-			if (releaseFileChanged && fs::exists(downloadPath))
+			if (releaseFileChanged && fs::fileExists(downloadPath))
 			{
 				if (unlink(downloadPath.c_str()) == -1)
 				{
@@ -388,7 +388,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		if (!simulating)
 		{
 			// here we check for outdated dangling indexes in partial directory
-			if (indexFileChanged && fs::exists(downloadPath))
+			if (indexFileChanged && fs::fileExists(downloadPath))
 			{
 				if (unlink(downloadPath.c_str()) == -1)
 				{
@@ -468,7 +468,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		}
 
 		// also create directory if it doesn't exist
-		if (! fs::exists(partialIndexesDirectory))
+		if (! fs::dirExists(partialIndexesDirectory))
 		{
 			if (mkdir(partialIndexesDirectory.c_str(), 0755) == -1)
 			{
