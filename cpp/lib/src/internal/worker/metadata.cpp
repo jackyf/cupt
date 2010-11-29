@@ -387,7 +387,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 
 		if (!simulating)
 		{
-			// here we check for outdated dangling indexes in partial directory
+			// here we check for outdated dangling files in partial directory
 			if (indexFileChanged && fs::fileExists(downloadPath))
 			{
 				if (unlink(downloadPath.c_str()) == -1)
