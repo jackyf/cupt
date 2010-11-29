@@ -402,7 +402,7 @@ sub get_pin ($$) {
 
 	# discourage downgrading 
 	# downgradings will usually have pin <= 0
-	if (defined $self->_system_state) { # for example, for source versions will return false...
+	if ($version->isa('Cupt::Cache::BinaryVersion') and defined $self->_system_state) {
 		my $installed_info = $self->_system_state->get_installed_info($version->package_name);
 		if (defined $installed_info) {
 			my $installed_version_string = $installed_info->{'version_string'};

@@ -1,6 +1,10 @@
 cupt (1.5.15~) UNRELEASED; urgency=low
 
-  * 
+  * Cupt:
+    - Cache:
+      - 'get_pin': fix crash on source versions when a same-named binary
+        package is installed and is in 'on hold' state. Thanks to
+        Jonathan Nieder for the report. (Closes: #601711)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 29 Nov 2010 20:04:02 +0200
 
