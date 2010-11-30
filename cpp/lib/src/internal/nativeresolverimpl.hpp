@@ -59,7 +59,6 @@ class NativeResolverImpl
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
-	set< string > __installed_package_names;
 	set< string > __manually_modified_package_names;
 	SolutionStorage __solution_storage;
 	shared_ptr< Solution > __old_solution;

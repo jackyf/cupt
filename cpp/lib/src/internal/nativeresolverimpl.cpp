@@ -56,8 +56,6 @@ void NativeResolverImpl::__import_installed_versions()
 
 		auto packageEntry = __solution_storage.setPackageEntry(__old_solution, packageName);
 		packageEntry->version = version;
-
-		__installed_package_names.insert(packageName);
 	}
 	__initial_solution = __solution_storage.cloneSolution(__old_solution);
 	__initial_solution->prepare();
@@ -581,7 +579,7 @@ const shared_ptr< const BinaryVersion >* __is_version_array_intersects_with_pack
 bool NativeResolverImpl::__can_package_be_removed(const string& packageName) const
 {
 	return !__config->getBool("cupt::resolver::no-remove") ||
-			!__installed_package_names.count(packageName) ||
+			!__old_solution->getPackageEntry(packageName) ||
 			__cache->isAutomaticallyInstalled(packageName);
 }
 
@@ -637,7 +635,7 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 		}
 
 		auto canAutoremoveThisPackage = canAutoremove && __cache->isAutomaticallyInstalled(packageName);
-		bool packageWasInstalled = (__installed_package_names.count(packageName));
+		bool packageWasInstalled = (__old_solution->getPackageEntry(packageName));
 		if (packageWasInstalled && !canAutoremoveThisPackage)
 		{
 			continue;
