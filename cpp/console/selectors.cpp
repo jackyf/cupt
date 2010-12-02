@@ -28,8 +28,6 @@
 #include "common.hpp"
 #include "selectors.hpp"
 
-typedef shared_ptr< const Package > (*__package_selector)(shared_ptr< const Cache >,
-		const string& packageName, bool throwOnError);
 typedef shared_ptr< const Version > (*__version_selector)(shared_ptr< const Cache >,
 		const string& packageName, bool throwOnError);
 typedef std::function< vector< string > () > __package_names_fetcher;
@@ -54,9 +52,12 @@ shared_ptr< const SourcePackage > getSourcePackage(shared_ptr< const Cache > cac
 	return result;
 }
 
+template < typename PackageSelector >
 shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
-		const string& packageExpression, __package_selector packageSelector, bool throwOnError)
+		const string& packageExpression, PackageSelector packageSelector, bool throwOnError)
 {
+	typedef shared_ptr< const Version > ReturnType;
+
 	static const sregex exactVersionRegex = sregex::compile("(.*?)=(.*)");
 	static const sregex exactDistributionRegex = sregex::compile("(.*?)/(.*)");
 	smatch m;
@@ -72,7 +73,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		auto package = packageSelector(cache, packageName, throwOnError);
 		if (!package)
 		{
-			return shared_ptr< const Version >();
+			return ReturnType();
 		}
 
 		auto version = package->getSpecificVersion(versionString);
@@ -101,14 +102,14 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			else
 			{
 				warn("bad distribution '%s' requested, use archive or codename", distributionExpression.c_str());
-				return shared_ptr< const Version >();
+				return ReturnType();
 			}
 		}
 
 		auto package = packageSelector(cache, packageName, throwOnError);
 		if (!package)
 		{
-			return shared_ptr< const Version >();
+			return ReturnType();
 		}
 
 		// example: "nlkt/sid" or "nlkt/unstable"
@@ -132,7 +133,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			fatal("cannot find distribution '%s' for package '%s'",
 					distributionExpression.c_str(), packageName.c_str());
 		}
-		return shared_ptr< const Version >();
+		return ReturnType();
 	}
 	else
 	{
@@ -142,7 +143,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		auto package = packageSelector(cache, packageName, throwOnError);
 		if (!package)
 		{
-			return shared_ptr< const Version >();
+			return ReturnType();
 		}
 		auto version = cache->getPolicyVersion(package);
 		if (!version && throwOnError)
@@ -156,35 +157,15 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 shared_ptr< const BinaryVersion > selectBinaryVersion(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	static auto packageSelector =
-			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Package >
-			{
-				return static_pointer_cast< const Package >(getBinaryPackage(cache, packageName, throwOnError));
-			};
-	auto source = __select_version(cache, packageExpression, packageSelector, throwOnError);
-	shared_ptr< const BinaryVersion > result = dynamic_pointer_cast< const BinaryVersion >(source);
-	if (source && !result)
-	{
-		fatal("internal error: version is not binary");
-	}
-	return result;
+	return static_pointer_cast< const BinaryVersion >(__select_version< decltype(getBinaryPackage) >
+			(cache, packageExpression, getBinaryPackage, throwOnError));
 }
 
 shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	static auto packageSelector =
-			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Package >
-			{
-				return static_pointer_cast< const Package >(getSourcePackage(cache, packageName, throwOnError));
-			};
-	auto source = __select_version(cache, packageExpression, packageSelector, throwOnError);
-	shared_ptr< const SourceVersion > result = dynamic_pointer_cast< const SourceVersion >(source);
-	if (source && !result)
-	{
-		fatal("internal error: version is not source");
-	}
-	return result;
+	return static_pointer_cast< const SourceVersion >(__select_version< decltype(getSourcePackage) >
+			(cache, packageExpression, getSourcePackage, throwOnError));
 }
 
 vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< const Cache > cache,
