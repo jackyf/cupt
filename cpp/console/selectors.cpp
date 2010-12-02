@@ -164,8 +164,26 @@ shared_ptr< const BinaryVersion > selectBinaryVersion(shared_ptr< const Cache > 
 shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	return static_pointer_cast< const SourceVersion >(__select_version< decltype(getSourcePackage) >
-			(cache, packageExpression, getSourcePackage, throwOnError));
+	auto sourceVersion = static_pointer_cast< const SourceVersion >(__select_version< decltype(getSourcePackage) >
+			(cache, packageExpression, getSourcePackage, false));
+	if (sourceVersion)
+	{
+		return sourceVersion;
+	}
+
+	auto binaryVersion = selectBinaryVersion(cache, packageExpression, false);
+	if (binaryVersion)
+	{
+		auto newPackageExpression = binaryVersion->sourcePackageName +
+				'=' + binaryVersion->sourceVersionString;
+		return static_pointer_cast< const SourceVersion >(__select_version< decltype(getSourcePackage) >
+				(cache, newPackageExpression, getSourcePackage, throwOnError));
+	}
+	else if (throwOnError)
+	{
+		fatal("unable to find appropriate source or binary version for '%s'", packageExpression.c_str());
+	}
+	return sourceVersion;
 }
 
 vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< const Cache > cache,

@@ -1,5 +1,8 @@
 cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
 
+  * console:
+    - Fixed non-working binary-to-source mapping in source package version
+      expressions.
   * lib:
     - cache/binaryversion:
       - 'parseFromFile': 10-25% speed-up.
