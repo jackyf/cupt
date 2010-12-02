@@ -19,6 +19,8 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
     - config:
       - Option 'cupt::resolver::max-solution-count': increased default value
         from 256 to 512.
+      - Specified the 'quiet' option as '0' to make apt-listchanges work (a
+        work-around for #604130).
   * debian:
     - rules:
       - Fixed installing bash completion script.

@@ -86,7 +86,7 @@ void ConfigImpl::initializeVariables()
 		{ "dir::state::lists", "lists" },
 		{ "dir::state::status", "/var/lib/dpkg/status" },
 		{ "gpgv::trustedkeyring", "/var/lib/cupt/trusted.gpg" },
-		{ "quiet", "no" },
+		{ "quiet", "0" }, // bool, '0' instead of 'no' for apt-listchanges (#604130)
 
 		// unused APT vars
 		{ "apt::cache-limit", "0" },
