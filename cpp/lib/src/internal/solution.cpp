@@ -314,7 +314,8 @@ PackageEntry* Solution::setPackageEntryIfExists(const string& packageName)
 		if (it != __master_package_entries->end())
 		{
 			const PackageEntry& oldPackageEntry = it->second;
-			return &(__package_entries->insert(make_pair(packageName, oldPackageEntry)).first->second);
+			pair< const string, PackageEntry > newElement(packageName, oldPackageEntry);
+			return &(__package_entries->insert(newElement).first->second);
 		}
 	}
 
