@@ -611,8 +611,8 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	try
 	{
-		pair< string, vector< PrePackageRecord > > pairForInsertion;
-		string& packageName = pairForInsertion.first;
+		pair< const string, vector< PrePackageRecord > > pairForInsertion;
+		string& packageName = const_cast< string& > (pairForInsertion.first);
 
 		while (true)
 		{
