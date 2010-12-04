@@ -711,38 +711,50 @@ void CacheImpl::processTranslationFile(const string& path)
 
 	try
 	{
-		static const char md5pattern[] = "\nDescription-md5: ";
+		TagParser parser(&*file);
+		TagParser::StringRange tagName, tagValue;
+
+		static const char md5pattern[] = "Description-md5";
 		static const size_t md5patternSize = sizeof(md5pattern) - 1;
-		static const char descriptionSubPattern[] = "\nDescription-";
+		static const char descriptionSubPattern[] = "Description-";
 		static const size_t descriptionSubPatternSize = sizeof(descriptionSubPattern) - 1;
 
-		string block;
-		size_t currentPosition;
-		while ((currentPosition = file->tell()), !file->getRecord(block).eof())
+		size_t recordPosition;
+
+		string md5;
+		TranslationPosition translationPosition;
+		translationPosition.file = file;
+
+		while ((recordPosition = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
 		{
-			auto searchPosition = block.find(md5pattern);
-			if (searchPosition == string::npos)
-			{
-				fatal("unable to find md5 hash in translation block starting at byte '%u'", currentPosition);
-			}
-			searchPosition += md5patternSize;
-			auto endLinePosition = block.find('\n', searchPosition);
-			string md5 = block.substr(searchPosition, endLinePosition - searchPosition);
+			bool hashSumFound = false;
+			bool translationFound = false;
 
-			searchPosition = block.find(descriptionSubPattern, endLinePosition);
-			if (searchPosition == string::npos)
+			do
 			{
-				fatal("unable to find translated description in translation block starting at byte '%u'", currentPosition);
-			}
-			searchPosition = block.find(": ", searchPosition + descriptionSubPatternSize);
-			if (searchPosition == string::npos)
-			{
-				fatal("unable to find translated description in translation block starting at byte '%u'", currentPosition);
-			}
-			searchPosition += 2; // length of ": "
+				if (tagName.equal(md5pattern, md5patternSize))
+				{
+					hashSumFound = true;
+					md5 = tagValue;
+				}
+				else if ((size_t)(tagName.second - tagName.first) > descriptionSubPatternSize &&
+						!memcmp(&*tagName.first, descriptionSubPattern, descriptionSubPatternSize))
+				{
+					translationFound = true;
+					translationPosition.offset = file->tell() - (tagValue.second - tagValue.first) - 1; // -1 for '\n'
+				}
+			} while (parser.parseNextLine(tagName, tagValue));
 
-			TranslationPosition translationPosition = { file, currentPosition + searchPosition };
-			translations.insert(make_pair(std::move(md5), translationPosition));
+			if (!hashSumFound)
+			{
+				fatal("unable to find md5 hash in a translation record starting at byte '%u'", recordPosition);
+			}
+			if (!translationFound)
+			{
+				fatal("unable to find translation in a translation record starting at byte '%u'", recordPosition);
+			}
+
+			translations[md5] = translationPosition;
 		}
 	}
 	catch(Exception&)
