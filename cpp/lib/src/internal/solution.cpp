@@ -114,7 +114,7 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 	{
 		// there is no modifiable element in this solution, need to create new
 
-		PackageEntry newPackageEntry; // empty by default
+		pair< const string, PackageEntry > newElement(packageName, PackageEntry()); // package entry is empty by default
 
 		if (!solution->__master_package_entries)
 		{
@@ -128,7 +128,7 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 			if (masterIt != solution->__master_package_entries->end())
 			{
 				// yes, it does, so new package entry must be a copy of it
-				newPackageEntry = masterIt->second;
+				newElement.second = masterIt->second;
 			}
 			else
 			{
@@ -136,7 +136,7 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 				__add_package_dependencies(packageName);
 			}
 		}
-		it = solution->__package_entries->insert(make_pair(packageName, newPackageEntry)).first;
+		it = solution->__package_entries->insert(newElement).first;
 	}
 
 	PackageEntry* result = &(it->second);
