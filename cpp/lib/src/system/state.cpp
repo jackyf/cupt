@@ -83,13 +83,16 @@ void StateData::parseDpkgStatus()
 		internal::TagParser parser(file.get());
 		internal::TagParser::StringRange tagName, tagValue;
 
+		pair< const string, vector< internal::CacheImpl::PrePackageRecord > > pairForInsertion;
+		string& packageName = const_cast< string& >(pairForInsertion.first);
+
 		while ((prePackageRecord.offset = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
 		{
-			string packageName;
 			string status;
 			string provides;
 			bool versionIsPresent = false;
 			bool parsedTagsByIndex[4] = {0};
+			bool& packageNameIsPresent = parsedTagsByIndex[0];
 			do
 			{
 #define TAG(str, index, code) \
@@ -113,7 +116,7 @@ void StateData::parseDpkgStatus()
 			}
 			// we don't check package name for correctness - even if it's incorrent, we can't decline installed packages :(
 
-			if (packageName.empty())
+			if (!packageNameIsPresent)
 			{
 				fatal("no package name in the record");
 			}
@@ -184,9 +187,7 @@ void StateData::parseDpkgStatus()
 					//   semi-installed, regardless it has full entry info, so
 					//  add it (info) to cache
 
-					static const vector< internal::CacheImpl::PrePackageRecord > emptyPrePackageRecords;
-					auto it = preBinaryPackages->insert(
-							make_pair(packageName, emptyPrePackageRecords)).first;
+					auto it = preBinaryPackages->insert(pairForInsertion).first;
 					it->second.push_back(prePackageRecord);
 
 					if (!provides.empty())
