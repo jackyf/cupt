@@ -108,9 +108,8 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& solution,
 		const string& packageName)
 {
-	auto it = solution->__package_entries->find(packageName);
-
-	if (it == solution->__package_entries->end())
+	auto it = solution->__package_entries->lower_bound(packageName);
+	if (it == solution->__package_entries->end() || it->first != packageName)
 	{
 		// there is no modifiable element in this solution, need to create new
 
@@ -136,7 +135,7 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 				__add_package_dependencies(packageName);
 			}
 		}
-		it = solution->__package_entries->insert(newElement).first;
+		it = solution->__package_entries->insert(it, newElement);
 	}
 
 	PackageEntry* result = &(it->second);
