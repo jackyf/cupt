@@ -90,9 +90,9 @@ void StateData::parseDpkgStatus()
 		{
 			string status;
 			string provides;
-			bool versionIsPresent = false;
 			bool parsedTagsByIndex[4] = {0};
 			bool& packageNameIsPresent = parsedTagsByIndex[0];
+			bool& versionIsPresent = parsedTagsByIndex[2];
 			do
 			{
 #define TAG(str, index, code) \
@@ -105,7 +105,7 @@ void StateData::parseDpkgStatus()
 
 				TAG("Package", 0, packageName = tagValue)
 				TAG("Status", 1, status = tagValue)
-				TAG("Version", 2, versionIsPresent = true)
+				TAG("Version", 2, ;)
 				TAG("Provides", 3, provides = tagValue)
 #undef TAG
 			} while (parser.parseNextLine(tagName, tagValue));
