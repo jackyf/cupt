@@ -173,7 +173,8 @@ void SolutionStorage::__invalidate(const shared_ptr< Solution >& solution,
 
 			// this is package entry from _master_packages, and we change it, so we
 			// need to clone it
-			it = solution->__package_entries->insert(make_pair(successorPackageName, masterIt->second)).first;
+			pair< const string, PackageEntry > newElement(successorPackageName, masterIt->second);
+			it = solution->__package_entries->insert(newElement).first;
 		}
 		it->second.checked.reset();
 	}
