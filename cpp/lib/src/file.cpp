@@ -86,10 +86,7 @@ FileImpl::~FileImpl()
 			}
 		}
 	}
-	if (buf)
-	{
-		free(buf);
-	}
+	free(buf);
 }
 
 void FileImpl::assertFileOpened() const
