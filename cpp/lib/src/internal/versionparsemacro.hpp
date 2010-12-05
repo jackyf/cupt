@@ -27,7 +27,6 @@
 			} \
 		}
 
-// TODO: do string(tagValue) only one time
 #define PARSE_PRIORITY \
 		TAG(Priority, \
 		{ \
