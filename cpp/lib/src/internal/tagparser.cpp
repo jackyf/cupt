@@ -47,11 +47,16 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 	} while (isblank(__buffer[0]) && (__input->rawGetLine(__buffer, __buffer_size), true));
 
 	{ // ok, first line is ready
+		// chopping last '\n' if present
+		if (__buffer[__buffer_size-1] == '\n')
+		{
+			--__buffer_size;
+		}
 		// get tag name
-		auto colonPosition = memchr(__buffer, ':', __buffer_size - 1); // can't be last
+		auto colonPosition = memchr(__buffer+1, ':', __buffer_size - 1); // can't be very first
 		if (!colonPosition)
 		{
-			fatal("didn't find a colon in the line '%s'", __buffer);
+			fatal("didn't find a colon in the line '%s'", string(__buffer, __buffer_size).c_str());
 		}
 		tagName.first = decltype(tagName.first)(__buffer);
 		tagName.second = decltype(tagName.second)((const char*)colonPosition);
@@ -62,10 +67,6 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 			++tagValue.first;
 		}
 		tagValue.second = decltype(tagValue.second)(__buffer + __buffer_size);
-		if (*(tagValue.second-1) == '\n')
-		{
-			--tagValue.second;
-		}
 	}
 	__buffer = NULL;
 	return true;
