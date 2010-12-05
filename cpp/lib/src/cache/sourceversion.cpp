@@ -51,54 +51,52 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		smatch lineMatch;
 		smatch m;
 
+		auto parseChecksumRecord = [&](HashSums::Type hashSumType)
+		{
+			// TODO: check tagValue == ""
+			string block;
+			parser.parseAdditionalLines(block);
+			auto lines = internal::split('\n', block);
+			FORIT(lineIt, lines)
+			{
+				const string& line = *lineIt;
+
+				if (!regex_match(line, lineMatch, checksumsLineRegex))
+				{
+					fatal("malformed line '%s'", line.c_str());
+				}
+				const string name = lineMatch[3];
+
+				SourceVersion::FileParts::Type part = (regex_search(name, m, dscPartRegex) ? SourceVersion::FileParts::Dsc :
+						(regex_search(name, m, diffPartRegex) ? SourceVersion::FileParts::Diff : SourceVersion::FileParts::Tarball));
+				bool foundRecord = false;
+				FORIT(recordIt, v->files[part])
+				{
+					if (recordIt->name == name)
+					{
+						recordIt->hashSums[hashSumType] = lineMatch[1];
+						foundRecord = true;
+						break;
+					}
+				}
+
+				if (!foundRecord)
+				{
+					SourceVersion::FileRecord& fileRecord =
+							(v->files[part].push_back(SourceVersion::FileRecord()), *(v->files[part].rbegin()));
+					fileRecord.name = name;
+					fileRecord.size = internal::string2uint32(lineMatch[2]);
+					fileRecord.hashSums[hashSumType] = lineMatch[1];
+				}
+			}
+		};
+
 		while (parser.parseNextLine(tagName, tagValue))
 		{
 			// parsing checksums and file names
-			// TODO: check tagValue == ""
-#define PARSE_CHECKSUM_RECORD(TagName, HashSumName) \
-			TAG( TagName , \
-			{ \
-				string block; \
-				parser.parseAdditionalLines(block); \
-				auto lines = internal::split('\n', block); \
-				FORIT(lineIt, lines) \
-				{ \
-					const string& line = *lineIt; \
- \
-					if (!regex_match(line, lineMatch, checksumsLineRegex)) \
-					{ \
-						fatal("malformed line '%s'", line.c_str()); \
-					} \
-					const string name = lineMatch[3]; \
- \
-					SourceVersion::FileParts::Type part = (regex_search(name, m, dscPartRegex) ? SourceVersion::FileParts::Dsc : \
-							(regex_search(name, m, diffPartRegex) ? SourceVersion::FileParts::Diff : SourceVersion::FileParts::Tarball)); \
-					bool foundRecord = false; \
-					FORIT(recordIt, v->files[part]) \
-					{ \
-						if (recordIt->name == name) \
-						{ \
-							recordIt->hashSums[HashSums:: HashSumName ] = lineMatch[1]; \
-							foundRecord = true; \
-							break; \
-						} \
-					} \
-\
-					if (!foundRecord) \
-					{ \
-						SourceVersion::FileRecord& fileRecord = \
-								(v->files[part].push_back(SourceVersion::FileRecord()), *(v->files[part].rbegin())); \
-						fileRecord.name = name; \
-						fileRecord.size = internal::string2uint32(lineMatch[2]); \
-						fileRecord.hashSums[HashSums:: HashSumName ] = lineMatch[1]; \
-					} \
-				} \
-			})
-
-			PARSE_CHECKSUM_RECORD(Files, MD5)
-			PARSE_CHECKSUM_RECORD(Checksums-Sha1, SHA1)
-			PARSE_CHECKSUM_RECORD(Checksums-Sha256, SHA256)
-#undef PARSE_CHECKSUM_RECORD
+			TAG(Files, parseChecksumRecord(HashSums::MD5);)
+			TAG(Checksums-Sha1, parseChecksumRecord(HashSums::SHA1);)
+			TAG(Checksums-Sha256, parseChecksumRecord(HashSums::SHA256);)
 
 			TAG(Binary,
 			{
