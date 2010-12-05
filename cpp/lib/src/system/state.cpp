@@ -96,7 +96,7 @@ void StateData::parseDpkgStatus()
 			do
 			{
 #define TAG(str, index, code) \
-				if (!parsedTagsByIndex[index] && tagName.equal(str, sizeof(str) - 1)) \
+				if (!parsedTagsByIndex[index] && tagName.equal(BUFFER_AND_SIZE(str))) \
 				{ \
 					code; \
 					parsedTagsByIndex[index] = true; \

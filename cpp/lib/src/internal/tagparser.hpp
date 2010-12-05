@@ -21,6 +21,8 @@
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
 
+#define BUFFER_AND_SIZE(x) x, sizeof(x) - 1
+
 namespace cupt {
 namespace internal {
 

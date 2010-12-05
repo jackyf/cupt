@@ -714,8 +714,6 @@ void CacheImpl::processTranslationFile(const string& path)
 		TagParser parser(&*file);
 		TagParser::StringRange tagName, tagValue;
 
-		static const char md5pattern[] = "Description-md5";
-		static const size_t md5patternSize = sizeof(md5pattern) - 1;
 		static const char descriptionSubPattern[] = "Description-";
 		static const size_t descriptionSubPatternSize = sizeof(descriptionSubPattern) - 1;
 
@@ -732,7 +730,7 @@ void CacheImpl::processTranslationFile(const string& path)
 
 			do
 			{
-				if (tagName.equal(md5pattern, md5patternSize))
+				if (tagName.equal(BUFFER_AND_SIZE("Description-md5")))
 				{
 					hashSumFound = true;
 					md5 = tagValue;
@@ -962,15 +960,15 @@ void CacheImpl::parseExtendedStates()
 			bool valueFound = false;
 			while (parser.parseNextLine(tagName, tagValue))
 			{
-				if (tagName.equal("Auto-Installed", 14))
+				if (tagName.equal(BUFFER_AND_SIZE("Auto-Installed")))
 				{
 					valueFound = true;
-					if (tagValue.equal("1", 1))
+					if (tagValue.equal(BUFFER_AND_SIZE("1")))
 					{
 						// adding to storage
 						extendedInfo.automaticallyInstalled.insert(packageName);
 					}
-					else if (!tagValue.equal("0", 1))
+					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{
 						fatal("bad value '%s' (should be 0 or 1) for the package '%s' at file '%s'",
 								string(tagValue).c_str(), packageName.c_str(), path.c_str());
