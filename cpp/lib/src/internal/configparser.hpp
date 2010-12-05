@@ -20,14 +20,11 @@
 
 #include <functional>
 
-#include <boost/xpressive/xpressive_fwd.hpp>
-
 #include <cupt/common.hpp>
+#include <cupt/regex.hpp>
 
 namespace cupt {
 namespace internal {
-
-using boost::xpressive::sregex;
 
 class ConfigParser
 {
@@ -45,6 +42,8 @@ class ConfigParser
 	vector< string > __errors;
 	string __read;
 	string __option_prefix;
+
+	smatch __m;
 
 	void __statements();
 	bool __statement();

@@ -212,12 +212,11 @@ bool ConfigParser::__closing_bracket()
 
 bool ConfigParser::__regex(const sregex& regex)
 {
-	smatch m;
 	sci previous = __current;
-	if (regex_search(__current, __end, m, regex, regex_constants::match_continuous))
+	if (regex_search(__current, __end, __m, regex, regex_constants::match_continuous))
 	{
 		// accepted the term
-		__current = m[0].second;
+		__current = __m[0].second;
 		__read.assign(previous, __current);
 		__skip_spaces();
 		__errors.clear();
