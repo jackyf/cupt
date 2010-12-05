@@ -219,7 +219,8 @@ void StateData::parseDpkgStatus()
 				}
 
 				// add parsed info to installed_info
-				installedInfo.insert(std::make_pair(std::move(packageName), std::move(installedRecord)));
+				installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
+						std::move(packageName), std::move(installedRecord)));
 			}
 		}
 	}
