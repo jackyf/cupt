@@ -33,6 +33,8 @@ class Context
 	bool __used_binary;
 	bool __used_installed;
  public:
+	Context();
+
 	shared_ptr< Config > getConfig();
 	shared_ptr< const Cache > getCache(
 			bool useSource, bool useBinary, bool useInstalled,

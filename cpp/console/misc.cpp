@@ -271,6 +271,10 @@ shared_ptr< Config > Context::getConfig()
 	return __config;
 }
 
+Context::Context()
+	: __used_source(false), __used_binary(false), __used_installed(false)
+{}
+
 shared_ptr< const Cache > Context::getCache(
 		bool useSource, bool useBinary, bool useInstalled,
 		const vector< string >& packageNameGlobsToReinstall)
