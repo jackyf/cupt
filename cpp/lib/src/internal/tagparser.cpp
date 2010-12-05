@@ -51,8 +51,7 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 		auto colonPosition = memchr(__buffer, ':', __buffer_size - 1); // can't be last
 		if (!colonPosition)
 		{
-			// TODO: do fatal()
-			fatal("didn't find a colon");
+			fatal("didn't find a colon in the line '%s'", __buffer);
 		}
 		tagName.first = decltype(tagName.first)(__buffer);
 		tagName.second = decltype(tagName.second)((const char*)colonPosition);
