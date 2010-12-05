@@ -46,6 +46,82 @@ struct StateData
 	void parseDpkgStatus();
 };
 
+void parseStatusSubstrings(const string& packageName, const string& input,
+		const shared_ptr< InstalledRecord >& installedRecord)
+{
+	// status should be a triplet delimited by spaces (i.e. 2 ones)
+	internal::TagParser::StringRange current;
+
+	current.first = current.second = input.begin();
+	auto end = input.end();
+
+	while (current.second != end && *current.second != ' ')
+	{
+		++current.second;
+	}
+	{ // want
+#define CHECK_WANT(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->want = InstalledRecord::Want:: value; } else
+		CHECK_WANT("install", Install)
+		CHECK_WANT("deinstall", Deinstall)
+		CHECK_WANT("unknown", Unknown)
+		CHECK_WANT("hold", Hold)
+		CHECK_WANT("purge", Purge)
+		{ // else
+			fatal("malformed 'desired' status indicator (for package '%s')", packageName.c_str());
+		}
+#undef CHECK_WANT
+	}
+
+	if (current.second == end)
+	{
+		fatal("no 'error' status indicator (for package '%s')", packageName.c_str());
+	}
+	current.first = ++current.second;
+	while (current.second != end && *current.second != ' ')
+	{
+		++current.second;
+	}
+	{ // flag
+#define CHECK_FLAG(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->flag = InstalledRecord::Flag:: value; } else
+		CHECK_FLAG("ok", Ok)
+		CHECK_FLAG("reinstreq", Reinstreq)
+		CHECK_FLAG("hold", Hold)
+		CHECK_FLAG("hold-reinstreq", HoldAndReinstreq)
+		{ // else
+			fatal("malformed 'error' status indicator (for package '%s')", packageName.c_str());
+		}
+#undef CHECK_FLAG
+	}
+
+	if (current.second == end)
+	{
+		fatal("no 'status' status indicator (for package '%s')", packageName.c_str());
+	}
+	current.first = current.second + 1;
+	current.second = end;
+	{ // status
+#define CHECK_STATUS(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->status = InstalledRecord::Status:: value; } else
+		CHECK_STATUS("installed", Installed)
+		CHECK_STATUS("not-installed", NotInstalled)
+		CHECK_STATUS("config-files", ConfigFiles)
+		CHECK_STATUS("unpacked", Unpacked)
+		CHECK_STATUS("half-configured", HalfConfigured)
+		CHECK_STATUS("half-installed", HalfInstalled)
+		CHECK_STATUS("post-inst-failed", PostInstFailed)
+		CHECK_STATUS("removal-failed", RemovalFailed)
+		{ // else
+			if (current.second - current.first >= 7 && !memcmp(&*current.first, "trigger", 7))
+			{
+				fatal("some dpkg triggers are not processed, please run 'dpkg --triggers-only -a' as root");
+			}
+			else
+			{
+				fatal("malformed 'status' status indicator (for package '%s')", packageName.c_str());
+			}
+		}
+	}
+}
+
 void StateData::parseDpkgStatus()
 {
 	string path = config->getString("dir::state::status");
@@ -121,62 +197,7 @@ void StateData::parseDpkgStatus()
 				fatal("no package name in the record");
 			}
 			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
-
-			vector< string > statusStrings = internal::split(' ', status);
-			if (statusStrings.size() != 3)
-			{
-				fatal("malformed 'Status' line (for package '%s')", packageName.c_str());
-			}
-
-			{ // want
-				const string& want = statusStrings[0];
-#define CHECK_WANT(str, value) if (want == str) { installedRecord->want = InstalledRecord::Want:: value; } else
-				CHECK_WANT("install", Install)
-				CHECK_WANT("deinstall", Deinstall)
-				CHECK_WANT("unknown", Unknown)
-				CHECK_WANT("hold", Hold)
-				CHECK_WANT("purge", Purge)
-				{ // else
-					fatal("malformed 'desired' status indicator (for package '%s')", packageName.c_str());
-				}
-#undef CHECK_WANT
-			}
-
-			{ // flag
-				const string& flag = statusStrings[1];
-#define CHECK_FLAG(str, value) if (flag == str) { installedRecord->flag = InstalledRecord::Flag:: value; } else
-				CHECK_FLAG("ok", Ok)
-				CHECK_FLAG("reinstreq", Reinstreq)
-				CHECK_FLAG("hold", Hold)
-				CHECK_FLAG("hold-reinstreq", HoldAndReinstreq)
-				{ // else
-					fatal("malformed 'error' status indicator (for package '%s')", packageName.c_str());
-				}
-#undef CHECK_FLAG
-			}
-
-			{ // status
-				const string& status = statusStrings[2];
-#define CHECK_STATUS(str, value) if (status == str) { installedRecord->status = InstalledRecord::Status:: value; } else
-				CHECK_STATUS("installed", Installed)
-				CHECK_STATUS("not-installed", NotInstalled)
-				CHECK_STATUS("config-files", ConfigFiles)
-				CHECK_STATUS("unpacked", Unpacked)
-				CHECK_STATUS("half-configured", HalfConfigured)
-				CHECK_STATUS("half-installed", HalfInstalled)
-				CHECK_STATUS("post-inst-failed", PostInstFailed)
-				CHECK_STATUS("removal-failed", RemovalFailed)
-				{ // else
-					if (!status.compare(0, sizeof("trigger") - 1, "trigger"))
-					{
-						fatal("some dpkg triggers are not processed, please run 'dpkg --triggers-only -a' as root");
-					}
-					else
-					{
-						fatal("malformed 'status' status indicator (for package '%s')", packageName.c_str());
-					}
-				}
-			}
+			parseStatusSubstrings(packageName, status, installedRecord);
 
 			if (installedRecord->flag == InstalledRecord::Flag::Ok)
 			{
