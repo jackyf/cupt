@@ -141,7 +141,7 @@ bool ConfigParser::__clear()
 {
 	if (!__string("#clear"))
 	{
-		__maybe_error(__("clear directive ('#clear')"));
+		__maybe_error(Lexem::Clear);
 		return false;
 	}
 	if (!__name())
@@ -163,7 +163,7 @@ bool ConfigParser::__value()
 	auto result = __regex(regex);
 	if (!result)
 	{
-		__maybe_error(__("option value (quoted string)"));
+		__maybe_error(Lexem::Value);
 	}
 	return result;
 }
@@ -175,7 +175,7 @@ bool ConfigParser::__name()
 	auto result = __regex(regex);
 	if (!result)
 	{
-		__maybe_error(__("option name (letters, numbers, slashes, points, dashes, double colons allowed)"));
+		__maybe_error(Lexem::Name);
 	}
 	return result;
 }
@@ -185,7 +185,7 @@ bool ConfigParser::__semicolon()
 	auto result = __string(";");
 	if (!result)
 	{
-		__maybe_error(__("semicolon (';')"));
+		__maybe_error(Lexem::Semicolon);
 	}
 	return result;
 }
@@ -195,7 +195,7 @@ bool ConfigParser::__opening_bracket()
 	auto result = __string("{");
 	if (!result)
 	{
-		__maybe_error(__("opening curly bracket ('{')"));
+		__maybe_error(Lexem::OpeningBracket);
 	}
 	return result;
 }
@@ -205,7 +205,7 @@ bool ConfigParser::__closing_bracket()
 	auto result = __string("}");
 	if (!result)
 	{
-		__maybe_error(__("closing curly bracket ('}')"));
+		__maybe_error(Lexem::ClosingBracket);
 	}
 	return result;
 }
@@ -258,14 +258,34 @@ void ConfigParser::__skip_spaces()
 	}
 }
 
-void ConfigParser::__maybe_error(const string& message)
+void ConfigParser::__maybe_error(Lexem::Type type)
 {
-	__errors.push_back(message);
+	__errors.push_back(type);
+}
+
+string ConfigParser::__get_lexem_description(Lexem::Type type)
+{
+	switch (type)
+	{
+		case Lexem::Clear: return __("clear directive ('#clear')");
+		case Lexem::ClosingBracket: return __("closing curly bracket ('}')");
+		case Lexem::OpeningBracket: return __("opening curly bracket ('{')");
+		case Lexem::Semicolon: return __("semicolon (';')");
+		case Lexem::Value: return __("option value (quoted string)");
+		case Lexem::Name: return __("option name (letters, numbers, slashes, points, dashes, double colons allowed)");
+		default:
+			fatal("internal error: no description for lexem #%d", int(type));
+	}
+	return string(); // unreachable
 }
 
 void ConfigParser::__error_out()
 {
-	string errorDescription = join(" or ", __errors);
+	vector< string > lexemDescriptions;
+	std::transform(__errors.begin(), __errors.end(),
+			std::back_inserter(lexemDescriptions), __get_lexem_description);
+	string errorDescription = join(" or ", lexemDescriptions);
+
 	ssize_t contextLength = 40;
 	if (__end - __current < contextLength)
 	{

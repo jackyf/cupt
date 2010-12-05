@@ -33,13 +33,18 @@ class ConfigParser
  private:
 	typedef string::const_iterator sci;
 
+	struct Lexem
+	{
+		enum Type { Clear, Name, Value, Semicolon, OpeningBracket, ClosingBracket };
+	};
+
 	Handler __regular_handler;
 	Handler __list_handler;
 	Handler __clear_handler;
 
 	sci __end;
 	sci __current;
-	vector< string > __errors;
+	vector< Lexem::Type > __errors;
 	string __read;
 	string __option_prefix;
 
@@ -57,7 +62,9 @@ class ConfigParser
 	bool __regex(const sregex&);
 	bool __string(const char*);
 	void __skip_spaces();
-	void __maybe_error(const string&);
+	void __maybe_error(Lexem::Type);
+
+	static string __get_lexem_description(Lexem::Type type);
 	void __error_out();
  public:
 	ConfigParser(Handler regularHandler, Handler listHandler, Handler clearHandler);
