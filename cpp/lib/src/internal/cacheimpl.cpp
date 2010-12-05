@@ -1034,7 +1034,8 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 
 	if (Cache::memoize)
 	{
-		getSatisfyingVersionsCache.insert(make_pair(std::move(memoizeKey), result));
+		getSatisfyingVersionsCache.insert(
+				pair< const string, decltype(result) >(std::move(memoizeKey), result));
 	}
 
 	return result;
