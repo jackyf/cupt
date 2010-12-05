@@ -53,7 +53,10 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 
 		auto parseChecksumRecord = [&](HashSums::Type hashSumType)
 		{
-			// TODO: check tagValue == ""
+			if (tagValue.first != tagValue.second)
+			{
+				fatal("unexpected non-empty tag value '%s'", string(tagValue).c_str());
+			}
 			string block;
 			parser.parseAdditionalLines(block);
 			auto lines = internal::split('\n', block);
