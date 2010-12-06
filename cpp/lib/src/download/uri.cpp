@@ -60,6 +60,10 @@ Uri::Uri(const Uri& other)
 
 Uri& Uri::operator=(const Uri& other)
 {
+	if (this == &other)
+	{
+		return *this;
+	}
 	delete __data;
 	__data = new internal::UriData(*(other.__data));
 	return *this;
