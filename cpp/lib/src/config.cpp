@@ -363,6 +363,10 @@ Config::Config(const Config& other)
 
 Config& Config::operator=(const Config& other)
 {
+	if (this == &other)
+	{
+		return *this;
+	}
 	delete __impl;
 	__impl = new internal::ConfigImpl(*other.__impl);
 	return *this;
