@@ -1029,7 +1029,6 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		}
 
 		const string& path = infoIt->first;
-		size_t size;
 
 		struct stat stat_structure;
 		if (lstat(path.c_str(), &stat_structure))
@@ -1038,7 +1037,7 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		}
 		else
 		{
-			size = stat_structure.st_size;
+			size_t size = stat_structure.st_size;
 			totalDeletedBytes += size;
 			cout << sf(__("Deleting '%s' <%s>..."), path.c_str(), humanReadableSizeString(size).c_str()) << endl;
 			worker.deleteArchive(path);
