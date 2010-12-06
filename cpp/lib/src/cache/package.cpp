@@ -180,10 +180,7 @@ shared_ptr< const Version > Package::getSpecificVersion(const string& versionStr
 
 Package::~Package()
 {
-	if (__parsed_versions)
-	{
-		delete __parsed_versions;
-	}
+	delete __parsed_versions;
 }
 
 }
