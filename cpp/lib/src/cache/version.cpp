@@ -100,10 +100,7 @@ const string Version::Priorities::strings[] = {
 
 Version::~Version()
 {
-	if (others)
-	{
-		delete others;
-	}
+	delete others;
 }
 
 }
