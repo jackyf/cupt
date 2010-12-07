@@ -614,9 +614,6 @@ Example:
 
 You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
 
-One caveat exists, though: --installed-only option won't work under 'shell'
-subcommand.
-
 =back
 
 =head3 query-specific options

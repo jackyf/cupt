@@ -27,6 +27,8 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
   * doc:
     - reference:
       - Documented dynamic library parts. All library is documented now.
+    - cupt-experimental.1:
+      - '--installed-only' works under 'shell' subcommand since 2.0.0~alpha1.
 
  -- Eugene Lyubimkin <ext-lyubimkin.eugene@nokia.com>  Tue, 16 Nov 2010 10:09:36 +0200
 
