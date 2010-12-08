@@ -21,6 +21,8 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
         from 256 to 512.
       - Specified the 'quiet' option as '0' to make apt-listchanges work (a
         work-around for #604130).
+      - New method 'getPath' for unified handling of path options.
+      - New option 'cupt::directory'.
   * debian:
     - rules:
       - Fixed installing bash completion script.

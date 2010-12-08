@@ -922,6 +922,10 @@ boolean, don't treat using untrusted packages as dangerous action
 
 boolean, see L<--assume-yes|/--assume-yes>
 
+=item cupt::directory
+
+string, base directory for all cupt::directory::* options
+
 =item cupt::directory::state
 
 string, directory which contains Cupt state info

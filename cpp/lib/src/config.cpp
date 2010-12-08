@@ -99,6 +99,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::obey-hold", "1000000" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
+		{ "cupt::directory", "/" },
 		{ "cupt::directory::state", "var/lib/cupt" },
 		{ "cupt::directory::state::snapshots", "snapshots" },
 		{ "cupt::downloader::max-simultaneous-downloads", "2" },
@@ -281,13 +282,10 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		string fullEtcDir = config->getString("dir") + config->getString("dir::etc");
+		string partsDir = config->getPath("dir::etc::parts");
+		vector< string > configFiles = internal::fs::glob(partsDir + "/*");
 
-		string partsDir = config->getString("dir::etc::parts");
-
-		vector< string > configFiles = internal::fs::glob(fullEtcDir + "/" + partsDir + "/*");
-
-		string mainFilePath = fullEtcDir + "/" + config->getString("dir::etc::main");
+		string mainFilePath = config->getPath("dir::etc::main");
 		const char* envAptConfig = getenv("APT_CONFIG");
 		if (envAptConfig)
 		{
@@ -346,7 +344,7 @@ Config::Config()
 	__impl->readConfigs(this);
 
 	// setting architecture
-	string architecture = qx(getString("dir::bin::dpkg") + " --print-architecture");
+	string architecture = qx(getPath("dir::bin::dpkg") + " --print-architecture");
 	chomp(architecture);
 	setScalar("apt::architecture", architecture);
 }
@@ -408,6 +406,28 @@ string Config::getString(const string& optionName) const
 		fatal("an attempt to get wrong scalar option '%s'", optionName.c_str());
 	}
 	__builtin_unreachable();
+}
+
+string Config::getPath(const string& optionName) const
+{
+	auto shallowResult = getString(optionName);
+	if (!shallowResult.empty() && shallowResult[0] != '/')
+	{
+		// relative path -> combine with prefix
+
+		// let's see if we have a prefix
+		auto doubleColonPosition = optionName.rfind("::");
+		if (doubleColonPosition != string::npos)
+		{
+			auto prefixOptionName = optionName.substr(0, doubleColonPosition);
+			// let's see is it defined
+			if (__impl->regularVars.find(prefixOptionName) != __impl->regularVars.cend())
+			{
+				return getPath(prefixOptionName) + '/' + shallowResult;
+			}
+		}
+	}
+	return shallowResult;
 }
 
 bool Config::getBool(const string& optionName) const

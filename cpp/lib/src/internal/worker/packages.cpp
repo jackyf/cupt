@@ -1364,7 +1364,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	}
 
 	// doing or simulating the actions
-	auto dpkgBinary = _config->getString("dir::bin::dpkg");
+	auto dpkgBinary = _config->getPath("dir::bin::dpkg");
 	{
 		auto dpkgOptions = _config->getList("dpkg::options");
 		FORIT(optionIt, dpkgOptions)

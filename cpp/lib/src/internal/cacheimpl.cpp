@@ -197,11 +197,10 @@ void CacheImpl::parseSourcesLists()
 {
 	try
 	{
-		string fullEtcDir = config->getString("dir") + config->getString("dir::etc");
-		string partsDir = config->getString("dir::etc::sourceparts");
-		vector< string > sourceFiles = fs::glob(fullEtcDir + "/" + partsDir + "/*.list");
+		string partsDir = config->getPath("dir::etc::sourceparts");
+		vector< string > sourceFiles = fs::glob(partsDir + "/*.list");
 
-		string mainFilePath = fullEtcDir + "/" + config->getString("dir::etc::sourcelist");
+		string mainFilePath = config->getPath("dir::etc::sourcelist");
 		if (fs::fileExists(mainFilePath))
 		{
 			sourceFiles.push_back(mainFilePath);
@@ -776,8 +775,7 @@ string CacheImpl::getPathOfIndexEntry(const IndexEntry& entry) const
 	static sregex slashRegex = sregex::compile("/");
 	uriPrefix = regex_replace(uriPrefix, slashRegex, "_");
 
-	string directory = config->getString("dir") + config->getString("dir::state") +
-			"/" + config->getString("dir::state::lists");
+	string directory = config->getPath("dir::state::lists");
 
 	string distributionPart = regex_replace(entry.distribution, slashRegex, "_");
 
@@ -991,8 +989,7 @@ void CacheImpl::parseExtendedStates()
 
 string CacheImpl::getPathOfExtendedStates() const
 {
-	return config->getString("dir") + config->getString("dir::state") +
-			'/' + config->getString("dir::state::extendedstates");
+	return config->getPath("dir::state::extendedstates");
 }
 
 vector< shared_ptr< const BinaryVersion > >

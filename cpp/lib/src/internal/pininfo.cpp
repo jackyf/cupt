@@ -354,9 +354,8 @@ void PinInfo::init()
 	smatch m;
 	try
 	{
-		string fullEtcDir = config->getString("dir") + config->getString("dir::etc");
-		string partsDir = config->getString("dir::etc::preferencesparts");
-		vector< string > paths = fs::glob(fullEtcDir + "/" + partsDir + "/*");
+		string partsDir = config->getPath("dir::etc::preferencesparts");
+		vector< string > paths = fs::glob(partsDir + "/*");
 
 		{ // filtering
 			vector< string > filteredPaths;
@@ -387,7 +386,7 @@ void PinInfo::init()
 			paths.swap(filteredPaths);
 		}
 
-		string mainFilePath = fullEtcDir + "/" + config->getString("dir::etc::preferences");
+		string mainFilePath = config->getPath("dir::etc::preferences");
 		if (fs::fileExists(mainFilePath))
 		{
 			paths.push_back(mainFilePath);

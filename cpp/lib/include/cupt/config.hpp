@@ -86,6 +86,11 @@ class Config
 	 * @param optionName
 	 */
 	ssize_t getInteger(const string& optionName) const;
+	/// gets resolved value of the path variable
+	/**
+	 * @param optionName
+	 */
+	string getPath(const string& optionName) const;
 };
 
 } // namespace

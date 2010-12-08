@@ -124,7 +124,7 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 
 void StateData::parseDpkgStatus()
 {
-	string path = config->getString("dir::state::status");
+	string path = config->getPath("dir::state::status");
 	string openError;
 	shared_ptr< File > file(new File(path, "r", openError));
 	if (!openError.empty())

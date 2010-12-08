@@ -644,7 +644,7 @@ int policy(Context& context, bool source)
 					auto origin = release->baseUri;
 					if (origin.empty())
 					{
-						origin = config->getString("dir::state::status");
+						origin = config->getPath("dir::state::status");
 					}
 					cout << origin << ' ' << release->archive << '/' << release->component << ' '
 							<< '(' << (release->verified ? __("signed") : __("unsigned")) << ')' << endl;
@@ -659,7 +659,7 @@ int policy(Context& context, bool source)
 			string origin = releaseInfo->baseUri;
 			if (origin.empty())
 			{
-				origin = config->getString("dir::state::status");
+				origin = config->getPath("dir::state::status");
 			}
 			const string& archive = releaseInfo->archive;
 			const string& component = releaseInfo->component;

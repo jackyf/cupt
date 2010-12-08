@@ -35,7 +35,7 @@ WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_pt
 {
 	__umask = umask(0022);
 
-	string lockPath = _config->getString("dir") + _config->getString("cupt::directory::state") + "/lock";
+	string lockPath = _config->getPath("cupt::directory::state") + "/lock";
 	__lock = new Lock(_config, lockPath);
 }
 
@@ -47,9 +47,7 @@ WorkerBase::~WorkerBase()
 
 string WorkerBase::_get_archives_directory() const
 {
-	return _config->getString("dir") +
-			_config->getString("dir::cache") + '/' +
-			_config->getString("dir::cache::archives");
+	return _config->getPath("dir::cache::archives");
 }
 
 string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >& version)
