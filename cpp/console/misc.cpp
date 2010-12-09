@@ -39,7 +39,6 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	}
 
 	string command;
-	vector< string> commandArguments;
 	// parsing
 	bpo::options_description options("Common options");
 	vector< string > directOptions;
