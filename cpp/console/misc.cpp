@@ -65,6 +65,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	{
 		bpo::variables_map variablesMap;
 		bpo::parsed_options parsed = bpo::command_line_parser(argc, argv).options(options)
+				.style(bpo::command_line_style::default_style & ~bpo::command_line_style::allow_guessing)
 				.positional(positionalOptions).allow_unregistered().run();
 		bpo::store(parsed, variablesMap);
 		unparsed = bpo::collect_unrecognized(parsed.options, bpo::exclude_positional);
@@ -169,6 +170,7 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 	try
 	{
 		bpo::parsed_options parsed = bpo::command_line_parser(context.unparsed)
+				.style(bpo::command_line_style::default_style & ~bpo::command_line_style::allow_guessing)
 				.options(all).positional(positionalOptions).run();
 		bpo::store(parsed, variablesMap);
 	}
