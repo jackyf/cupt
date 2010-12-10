@@ -38,7 +38,7 @@ using std::endl;
 typedef Worker::Action WA;
 
 static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config >& config,
-		const shared_ptr< Resolver >& resolver)
+		Resolver& resolver)
 {
 	if (mode == ManagePackages::FullUpgrade || mode == ManagePackages::SafeUpgrade)
 	{
@@ -46,7 +46,7 @@ static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config 
 		{
 			config->setScalar("cupt::resolver::no-remove", "yes");
 		}
-		resolver->upgrade();
+		resolver.upgrade();
 
 		// despite the main action is {safe,full}-upgrade, allow package
 		// modifiers in the command line just as with the install command
@@ -64,7 +64,7 @@ static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config 
 	}
 	else if (mode == ManagePackages::BuildDepends)
 	{
-		resolver->satisfyRelationExpression(RelationExpression("build-essential"));
+		resolver.satisfyRelationExpression(RelationExpression("build-essential"));
 	}
 }
 
@@ -98,24 +98,24 @@ static void unrollFileArguments(vector< string >& arguments)
 	arguments.swap(newArguments);
 }
 
-void __satisfy_or_unsatisfy(const shared_ptr< Resolver >& resolver,
+void __satisfy_or_unsatisfy(Resolver& resolver,
 		const RelationLine& relationLine, bool negative)
 {
 	FORIT(relationExpressionIt, relationLine)
 	{
 		if (negative)
 		{
-			resolver->unsatisfyRelationExpression(*relationExpressionIt);
+			resolver.unsatisfyRelationExpression(*relationExpressionIt);
 		}
 		else
 		{
-			resolver->satisfyRelationExpression(*relationExpressionIt);
+			resolver.satisfyRelationExpression(*relationExpressionIt);
 		}
 	}
 }
 
 static void processSatisfyExpression(const shared_ptr< Config >& config,
-		const shared_ptr< Resolver >& resolver, string packageExpression)
+		Resolver& resolver, string packageExpression)
 {
 	bool negative = false;
 	if (!packageExpression.empty() && *(packageExpression.rbegin()) == '-')
@@ -132,7 +132,7 @@ static void processSatisfyExpression(const shared_ptr< Config >& config,
 
 static void processBuildDependsExpression(const shared_ptr< Config >& config,
 		const shared_ptr< const Cache >& cache,
-		const shared_ptr< Resolver >& resolver, const string& packageExpression)
+		Resolver& resolver, const string& packageExpression)
 {
 	auto architecture = config->getString("apt::architecture");
 
@@ -154,7 +154,7 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 
 static void processPackageExpressions(const shared_ptr< Config >& config,
 		const shared_ptr< const Cache >& cache, ManagePackages::Mode mode,
-		const shared_ptr< Resolver >& resolver, const vector< string >& packageExpressions)
+		Resolver& resolver, const vector< string >& packageExpressions)
 {
 	FORIT(packageExpressionIt, packageExpressions)
 	{
@@ -207,7 +207,7 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 				}
 				FORIT(versionIt, versions)
 				{
-					resolver->installVersion(*versionIt);
+					resolver.installVersion(*versionIt);
 				}
 			}
 			else // ManagePackages::Remove
@@ -224,7 +224,7 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 				{
 					FORIT(versionIt, versions)
 					{
-						resolver->removePackage((*versionIt)->packageName);
+						resolver.removePackage((*versionIt)->packageName);
 					}
 				}
 				else
@@ -236,7 +236,7 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 						fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
 					}
 
-					resolver->removePackage(packageExpression);
+					resolver.removePackage(packageExpression);
 				}
 			}
 		}
@@ -874,7 +874,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	}
 
 	cout << __("Initializing package resolver and worker... ") << endl;
-	shared_ptr< Resolver > resolver;
+	std::unique_ptr< Resolver > resolver;
 	{
 		if (!config->getString("cupt::resolver::external-command").empty())
 		{
@@ -896,8 +896,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	cout << __("Scheduling requested actions... ") << endl;
 
-	preProcessMode(mode, config, resolver);
-	processPackageExpressions(config, cache, mode, resolver, packageExpressions);
+	preProcessMode(mode, config, *resolver);
+	processPackageExpressions(config, cache, mode, *resolver, packageExpressions);
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
