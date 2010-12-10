@@ -857,7 +857,7 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 	solution.score += profit;
 	solution.score += qualityCorrection;
 
-	solution.pendingAction = shared_ptr< const Action >(new Action(actionToApply));
+	solution.pendingAction.reset(new Action(actionToApply));
 }
 
 void NativeResolverImpl::__calculate_profits(const shared_ptr< Solution >& solution,
