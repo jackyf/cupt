@@ -95,8 +95,8 @@ class SolutionStorage
 	// should be called only with versions with the same package name
 	void addVersionDependencies(const vector< shared_ptr< const BinaryVersion > >&);
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
-	PackageEntry* setPackageEntry(const shared_ptr< Solution >&, const string& packageName);
-	void __invalidate(const shared_ptr< Solution >&, const string& packageName, PackageEntry*);
+	PackageEntry* setPackageEntry(Solution&, const string& packageName);
+	void __invalidate(Solution&, const string& packageName, PackageEntry*);
 };
 
 }

@@ -54,7 +54,7 @@ void NativeResolverImpl::__import_installed_versions()
 		const shared_ptr< const BinaryVersion >& version = *versionIt;
 		const string& packageName = version->packageName;
 
-		auto packageEntry = __solution_storage.setPackageEntry(__old_solution, packageName);
+		auto packageEntry = __solution_storage.setPackageEntry(*__old_solution, packageName);
 		packageEntry->version = version;
 	}
 	__initial_solution = __solution_storage.cloneSolution(__old_solution);
@@ -82,14 +82,14 @@ vector< DependencyEntry > NativeResolverImpl::__get_dependency_groups() const
 	return result;
 }
 
-void __mydebug_wrapper(const shared_ptr< Solution >& solution, const string& message)
+void __mydebug_wrapper(const Solution& solution, const string& message)
 {
-	string levelString(solution->level, ' ');
-	debug("%s(%u:%.1f) %s", levelString.c_str(), solution->id, solution->score, message.c_str());
+	string levelString(solution.level, ' ');
+	debug("%s(%u:%.1f) %s", levelString.c_str(), solution.id, solution.score, message.c_str());
 }
 
 vector< string > __get_related_binary_package_names(const shared_ptr< const Cache >& cache,
-		const shared_ptr< Solution >& solution, const shared_ptr< const BinaryVersion >& version)
+		const Solution& solution, const shared_ptr< const BinaryVersion >& version)
 {
 	vector< string > result;
 
@@ -108,7 +108,7 @@ vector< string > __get_related_binary_package_names(const shared_ptr< const Cach
 			auto binaryPackageNames = sourceVersion->binaryPackageNames;
 			FORIT(binaryPackageNameIt, binaryPackageNames)
 			{
-				if (solution->getPackageEntry(*binaryPackageNameIt))
+				if (solution.getPackageEntry(*binaryPackageNameIt))
 				{
 					possiblyRelatedPackageNames.push_back(*binaryPackageNameIt);
 				}
@@ -117,7 +117,7 @@ vector< string > __get_related_binary_package_names(const shared_ptr< const Cach
 	}
 	if (possiblyRelatedPackageNames.empty())
 	{
-		possiblyRelatedPackageNames = solution->getPackageNames();
+		possiblyRelatedPackageNames = solution.getPackageNames();
 	}
 
 	FORIT(possiblyRelatedPackageNameIt, possiblyRelatedPackageNames)
@@ -127,7 +127,7 @@ vector< string > __get_related_binary_package_names(const shared_ptr< const Cach
 		{
 			continue;
 		}
-		auto otherVersion = solution->getPackageEntry(possiblyRelatedPackageName)->version;
+		auto otherVersion = solution.getPackageEntry(possiblyRelatedPackageName)->version;
 		if (!otherVersion)
 		{
 			continue;
@@ -158,7 +158,7 @@ shared_ptr< const BinaryVersion > __get_version_by_source_version_string(
 	return shared_ptr< const BinaryVersion >();
 }
 
-vector< string > NativeResolverImpl::__get_unsynchronizeable_related_package_names(const shared_ptr< Solution >& solution,
+vector< string > NativeResolverImpl::__get_unsynchronizeable_related_package_names(const Solution& solution,
 		const shared_ptr< const BinaryVersion >& version)
 {
 	const string& sourcePackageName = version->sourcePackageName;
@@ -189,7 +189,7 @@ vector< string > NativeResolverImpl::__get_unsynchronizeable_related_package_nam
 	{
 		const string& relatedPackageName = *relatedPackageNameIt;
 
-		auto relatedPackageEntry = solution->getPackageEntry(relatedPackageName);
+		auto relatedPackageEntry = solution.getPackageEntry(relatedPackageName);
 		auto relatedVersion = relatedPackageEntry->version;
 		if (relatedVersion->sourceVersionString == sourceVersionString)
 		{
@@ -208,12 +208,12 @@ vector< string > NativeResolverImpl::__get_unsynchronizeable_related_package_nam
 }
 
 bool NativeResolverImpl::__can_related_packages_be_synchronized(
-		const shared_ptr< Solution >& solution, const shared_ptr< const BinaryVersion >& version)
+		const Solution& solution, const shared_ptr< const BinaryVersion >& version)
 {
 	return __get_unsynchronizeable_related_package_names(solution, version).empty();
 }
 
-void NativeResolverImpl::__synchronize_related_packages(const shared_ptr< Solution >& solution,
+void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 		const shared_ptr< const BinaryVersion >& version, bool stick)
 {
 	auto relatedPackageNames = __get_related_binary_package_names(__cache, solution, version);
@@ -225,7 +225,7 @@ void NativeResolverImpl::__synchronize_related_packages(const shared_ptr< Soluti
 	FORIT(relatedPackageNameIt, relatedPackageNames)
 	{
 		const string& relatedPackageName = *relatedPackageNameIt;
-		auto packageEntry = solution->getPackageEntry(relatedPackageName);
+		auto packageEntry = solution.getPackageEntry(relatedPackageName);
 		if (packageEntry->sticked)
 		{
 			continue;
@@ -267,7 +267,7 @@ NativeResolverImpl::__install_version_no_stick(const shared_ptr< const BinaryVer
 {
 	const string& packageName = version->packageName;
 
-	packageEntry = __solution_storage.setPackageEntry(__initial_solution, packageName);
+	packageEntry = __solution_storage.setPackageEntry(*__initial_solution, packageName);
 
 	{ // maybe, nothing changed?
 		const shared_ptr< const BinaryVersion >& currentVersion = packageEntry->version;
@@ -287,7 +287,7 @@ NativeResolverImpl::__install_version_no_stick(const shared_ptr< const BinaryVer
 	if (synchronize == "hard")
 	{
 		// need to check is the whole operation doable
-		if (!__can_related_packages_be_synchronized(__initial_solution, version))
+		if (!__can_related_packages_be_synchronized(*__initial_solution, version))
 		{
 			// we cannot do it
 			return InstallVersionResult::Unsynchronizeable;
@@ -309,7 +309,7 @@ NativeResolverImpl::__install_version_no_stick(const shared_ptr< const BinaryVer
 
 	if (synchronize != "none")
 	{
-		__synchronize_related_packages(__initial_solution, version, false);
+		__synchronize_related_packages(*__initial_solution, version, false);
 	}
 
 	return InstallVersionResult::Ok;
@@ -363,7 +363,7 @@ void NativeResolverImpl::unsatisfyRelationExpression(const RelationExpression& r
 
 void NativeResolverImpl::removePackage(const string& packageName)
 {
-	auto packageEntry = __solution_storage.setPackageEntry(__initial_solution, packageName);
+	auto packageEntry = __solution_storage.setPackageEntry(*__initial_solution, packageName);
 
 	if (packageEntry->version && packageEntry->sticked)
 	{
@@ -797,7 +797,7 @@ void NativeResolverImpl::__require_strict_relation_expressions()
 	version->relations[BinaryVersion::RelationTypes::Depends] = __satisfy_relation_expressions;
 	version->relations[BinaryVersion::RelationTypes::Breaks] = __unsatisfy_relation_expressions;
 
-	auto packageEntry = __solution_storage.setPackageEntry(__initial_solution, __dummy_package_name);
+	auto packageEntry = __solution_storage.setPackageEntry(*__initial_solution, __dummy_package_name);
 	packageEntry->version = version;
 	packageEntry->sticked = true;
 	__solution_storage.addVersionDependencies(
@@ -809,10 +809,10 @@ void NativeResolverImpl::__require_strict_relation_expressions()
    __post_apply_action will perform actual changes when the solution is picked up
    by resolver */
 
-void NativeResolverImpl::__pre_apply_action(const shared_ptr< Solution >& originalSolution,
-		const shared_ptr< Solution >& solution, const Action& actionToApply)
+void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
+		Solution& solution, const Action& actionToApply)
 {
-	if (originalSolution->finished)
+	if (originalSolution.finished)
 	{
 		fatal("internal error: an attempt to make changes to already finished solution");
 	}
@@ -820,7 +820,7 @@ void NativeResolverImpl::__pre_apply_action(const shared_ptr< Solution >& origin
 	const string& packageName = actionToApply.packageName;
 	const shared_ptr< const BinaryVersion >& supposedVersion = actionToApply.version;
 
-	auto originalPackageEntry = originalSolution->getPackageEntry(packageName);
+	auto originalPackageEntry = originalSolution.getPackageEntry(packageName);
 	shared_ptr< const BinaryVersion > originalVersion;
 	if (originalPackageEntry)
 	{
@@ -836,7 +836,7 @@ void NativeResolverImpl::__pre_apply_action(const shared_ptr< Solution >& origin
 	// temporarily lower the score of the current solution to implement back-tracking
 	// the bigger quality bar, the bigger chance for other solutions
 	float qualityCorrection = - float(__config->getInteger("cupt::resolver::quality-bar")) /
-			pow((originalSolution->level + 1), 0.1);
+			pow((originalSolution.level + 1), 0.1);
 
 	if (__config->getBool("debug::resolver"))
 	{
@@ -848,16 +848,16 @@ void NativeResolverImpl::__pre_apply_action(const shared_ptr< Solution >& origin
 		auto qualityCorrectionString = sf("%+.1f", qualityCorrection);
 
 		auto message = sf("-> (%u,Δ:%s,qΔ:%s) trying: package '%s': '%s' -> '%s'",
-				solution->id, profitString.c_str(), qualityCorrectionString.c_str(),
+				solution.id, profitString.c_str(), qualityCorrectionString.c_str(),
 				packageName.c_str(), oldVersionString.c_str(), newVersionString.c_str());
 		__mydebug_wrapper(originalSolution, message);
 	}
 
-	solution->level += 1;
-	solution->score += profit;
-	solution->score += qualityCorrection;
+	solution.level += 1;
+	solution.score += profit;
+	solution.score += qualityCorrection;
 
-	solution->pendingAction = shared_ptr< const Action >(new Action(actionToApply));
+	solution.pendingAction = shared_ptr< const Action >(new Action(actionToApply));
 }
 
 void NativeResolverImpl::__calculate_profits(const shared_ptr< Solution >& solution,
@@ -905,7 +905,7 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 		solutions.push_back(clonedSolution);
 
 		// apply the solution
-		__pre_apply_action(currentSolution, clonedSolution, *actionIt);
+		__pre_apply_action(*currentSolution, *clonedSolution, *actionIt);
 	}
 }
 
@@ -930,19 +930,19 @@ void NativeResolverImpl::__erase_worst_solutions(list< shared_ptr< Solution > >&
 
 		if (debugging)
 		{
-			__mydebug_wrapper(*worstSolutionIt, "dropped");
+			__mydebug_wrapper(**worstSolutionIt, "dropped");
 		}
 		solutions.erase(worstSolutionIt);
 	}
 }
 
-void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solution)
+void NativeResolverImpl::__post_apply_action(Solution& solution)
 {
-	if (!solution->pendingAction)
+	if (!solution.pendingAction)
 	{
 		fatal("internal error: __post_apply_action: no action to apply");
 	}
-	const Action& action = *(static_pointer_cast< const Action >(solution->pendingAction));
+	const Action& action = *(static_pointer_cast< const Action >(solution.pendingAction));
 
 	const string& packageToModifyName = action.packageName;
 	const shared_ptr< const BinaryVersion >& supposedVersion = action.version;
@@ -979,7 +979,7 @@ void NativeResolverImpl::__post_apply_action(const shared_ptr< Solution >& solut
 		}
 	}
 
-	solution->pendingAction.reset();
+	solution.pendingAction.reset();
 }
 
 bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& version,
@@ -1130,14 +1130,14 @@ void NativeResolverImpl::__prepare_stick_requests(vector< Action >& actions) con
 }
 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
-		const shared_ptr< Solution >& solution, Resolver::CallbackType callback)
+		const Solution& solution, Resolver::CallbackType callback)
 {
 	static const Resolver::SuggestedPackage emptySuggestedPackage;
 
 	// build "user-frienly" version of solution
 	Resolver::SuggestedPackages suggestedPackages;
 
-	auto packageNames = solution->getPackageNames();
+	auto packageNames = solution.getPackageNames();
 	FORIT(packageNameIt, packageNames)
 	{
 		const string& packageName = *packageNameIt;
@@ -1146,7 +1146,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 			continue;
 		}
 
-		auto packageEntry = solution->getPackageEntry(packageName);
+		auto packageEntry = solution.getPackageEntry(packageName);
 		auto it = suggestedPackages.insert(make_pair(packageName, emptySuggestedPackage)).first; // iterator of inserted element
 		Resolver::SuggestedPackage& suggestedPackage = it->second;
 
@@ -1182,7 +1182,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 }
 
 vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizeable_actions(
-		const shared_ptr< Solution >& solution, const vector< Action >& actions)
+		const Solution& solution, const vector< Action >& actions)
 {
 	vector< Action > result;
 
@@ -1203,7 +1203,7 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 			FORIT(unsynchronizeablePackageNameIt, unsynchronizeablePackageNames)
 			{
 				const string& unsynchronizeablePackageName = *unsynchronizeablePackageNameIt;
-				if (solution->getPackageEntry(unsynchronizeablePackageName)->sticked)
+				if (solution.getPackageEntry(unsynchronizeablePackageName)->sticked)
 				{
 					continue;
 				}
@@ -1449,7 +1449,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		if (currentSolution->pendingAction)
 		{
 			currentSolution->prepare();
-			__post_apply_action(currentSolution);
+			__post_apply_action(*currentSolution);
 		}
 
 		// for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
@@ -1544,12 +1544,12 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 							auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
 									BinaryVersion::RelationTypes::rawStrings[dependencyType],
 									failedRelationExpression.toString().c_str());
-							__mydebug_wrapper(currentSolution, message);
+							__mydebug_wrapper(*currentSolution, message);
 						}
 						if (possibleActions.size() == 1)
 						{
-							__pre_apply_action(currentSolution, currentSolution, possibleActions[0]);
-							__post_apply_action(currentSolution);
+							__pre_apply_action(*currentSolution, *currentSolution, possibleActions[0]);
+							__post_apply_action(*currentSolution);
 							possibleActions.clear();
 
 							recheckNeeded = true;
@@ -1574,7 +1574,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			{
 				if (debugging)
 				{
-					__mydebug_wrapper(currentSolution, "finished");
+					__mydebug_wrapper(*currentSolution, "finished");
 				}
 				currentSolution->finished = 1;
 
@@ -1593,7 +1593,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				FORIT(packageNameIt, packageNames)
 				{
 					// invalidating all package entries
-					__solution_storage.setPackageEntry(currentSolution, *packageNameIt);
+					__solution_storage.setPackageEntry(*currentSolution, *packageNameIt);
 				}
 				continue;
 			}
@@ -1605,7 +1605,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				continue; // ok, process other solution
 			}
 
-			auto userAnswer = __propose_solution(currentSolution, callback);
+			auto userAnswer = __propose_solution(*currentSolution, callback);
 			switch (userAnswer)
 			{
 				case Resolver::UserAnswer::Accept:
@@ -1628,7 +1628,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				// if we have to synchronize source versions, can related packages be updated too?
 				// filter out actions that don't match this criteria
 				possibleActions = __filter_unsynchronizeable_actions(
-						currentSolution, possibleActions);
+						*currentSolution, possibleActions);
 			}
 
 			__prepare_stick_requests(possibleActions);
@@ -1642,7 +1642,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			{
 				if (debugging)
 				{
-					__mydebug_wrapper(currentSolution, "no solutions");
+					__mydebug_wrapper(*currentSolution, "no solutions");
 				}
 			}
 

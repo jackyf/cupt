@@ -105,17 +105,16 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 	return cloned;
 }
 
-PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& solution,
-		const string& packageName)
+PackageEntry* SolutionStorage::setPackageEntry(Solution& solution, const string& packageName)
 {
-	auto it = solution->__package_entries->lower_bound(packageName);
-	if (it == solution->__package_entries->end() || it->first != packageName)
+	auto it = solution.__package_entries->lower_bound(packageName);
+	if (it == solution.__package_entries->end() || it->first != packageName)
 	{
 		// there is no modifiable element in this solution, need to create new
 
 		pair< const string, PackageEntry > newElement(packageName, PackageEntry()); // package entry is empty by default
 
-		if (!solution->__master_package_entries)
+		if (!solution.__master_package_entries)
 		{
 			// this package may just appear...
 			__add_package_dependencies(packageName);
@@ -123,8 +122,8 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 		else
 		{
 			// let's see if master package entries contain one
-			auto masterIt = solution->__master_package_entries->find(packageName);
-			if (masterIt != solution->__master_package_entries->end())
+			auto masterIt = solution.__master_package_entries->find(packageName);
+			if (masterIt != solution.__master_package_entries->end())
 			{
 				// yes, it does, so new package entry must be a copy of it
 				newElement.second = masterIt->second;
@@ -135,7 +134,7 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 				__add_package_dependencies(packageName);
 			}
 		}
-		it = solution->__package_entries->insert(it, newElement);
+		it = solution.__package_entries->insert(it, newElement);
 	}
 
 	PackageEntry* result = &(it->second);
@@ -145,7 +144,7 @@ PackageEntry* SolutionStorage::setPackageEntry(const shared_ptr< Solution >& sol
 	return result;
 }
 
-void SolutionStorage::__invalidate(const shared_ptr< Solution >& solution,
+void SolutionStorage::__invalidate(Solution& solution,
 		const string& packageName, PackageEntry* packageEntry)
 {
 	packageEntry->checked.reset();
@@ -154,17 +153,17 @@ void SolutionStorage::__invalidate(const shared_ptr< Solution >& solution,
 	{
 		const string& successorPackageName = **successorPackageNamePtrIt;
 
-		auto it = solution->__package_entries->find(successorPackageName);
-		if (it == solution->__package_entries->end())
+		auto it = solution.__package_entries->find(successorPackageName);
+		if (it == solution.__package_entries->end())
 		{
-			if (!solution->__master_package_entries)
+			if (!solution.__master_package_entries)
 			{
 				// no such package entry in this solution
 				continue;
 			}
 
-			auto masterIt = solution->__master_package_entries->find(successorPackageName);
-			if (masterIt == solution->__master_package_entries->end())
+			auto masterIt = solution.__master_package_entries->find(successorPackageName);
+			if (masterIt == solution.__master_package_entries->end())
 			{
 				// no such package entry in this solution
 				continue;
@@ -173,7 +172,7 @@ void SolutionStorage::__invalidate(const shared_ptr< Solution >& solution,
 			// this is package entry from _master_packages, and we change it, so we
 			// need to clone it
 			pair< const string, PackageEntry > newElement(successorPackageName, masterIt->second);
-			it = solution->__package_entries->insert(newElement).first;
+			it = solution.__package_entries->insert(newElement).first;
 		}
 		it->second.checked.reset();
 	}

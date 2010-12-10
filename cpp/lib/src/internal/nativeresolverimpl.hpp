@@ -82,13 +82,12 @@ class NativeResolverImpl
 	void __clean_automatically_installed(const shared_ptr< Solution >&);
 	SolutionChooser __select_solution_chooser() const;
 	void __require_strict_relation_expressions();
-	void __pre_apply_action(const shared_ptr< Solution >&,
-			const shared_ptr< Solution >&, const Action&);
+	void __pre_apply_action(const Solution&, Solution&, const Action&);
 	void __calculate_profits(const shared_ptr< Solution >&, vector< Action >& actions) const;
 	void __pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
 			const shared_ptr< Solution >&, const vector< Action >&);
 	void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions);
-	void __post_apply_action(const shared_ptr< Solution >&);
+	void __post_apply_action(Solution&);
 	void __add_actions_to_modify_package_entry(vector< Action >&, const string&,
 			const PackageEntry*, BinaryVersion::RelationTypes::Type, const RelationExpression&,
 			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard = false);
@@ -96,18 +95,18 @@ class NativeResolverImpl
 			const vector< shared_ptr< const BinaryVersion > >&);
 	void __prepare_stick_requests(vector< Action >& actions) const;
 	Resolver::UserAnswer::Type __propose_solution(
-			const shared_ptr< Solution >&, Resolver::CallbackType);
+			const Solution&, Resolver::CallbackType);
 	bool __is_soft_dependency_ignored(const shared_ptr< const BinaryVersion >&,
 			BinaryVersion::RelationTypes::Type, const RelationExpression&,
 			const vector< shared_ptr< const BinaryVersion > >&) const;
-	vector< string > __get_unsynchronizeable_related_package_names(const shared_ptr< Solution >&,
+	vector< string > __get_unsynchronizeable_related_package_names(const Solution&,
 			const shared_ptr< const BinaryVersion >&);
 	bool __can_related_packages_be_synchronized(
-			const shared_ptr< Solution >&, const shared_ptr< const BinaryVersion >&);
-	void __synchronize_related_packages(const shared_ptr< Solution >&,
+			const Solution&, const shared_ptr< const BinaryVersion >&);
+	void __synchronize_related_packages(Solution&,
 			const shared_ptr< const BinaryVersion >&, bool);
 	vector< Action > __filter_unsynchronizeable_actions(
-		const shared_ptr< Solution >&, const vector< Action >&);
+		const Solution&, const vector< Action >&);
 
 	struct BrokenDependencyInfo
 	{
