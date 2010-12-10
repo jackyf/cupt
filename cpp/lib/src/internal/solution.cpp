@@ -96,7 +96,6 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 	cloned->level = source->level;
 	cloned->id = __next_free_id++;
 	cloned->finished = false;
-	cloned->pendingAction = source->pendingAction;
 
 	cloned->__parent = source;
 
