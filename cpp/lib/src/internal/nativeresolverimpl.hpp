@@ -50,7 +50,7 @@ class NativeResolverImpl
 		string packageName;
 		shared_ptr< const BinaryVersion > version;
 		vector< string > packageToStickNames;
-		shared_ptr< RelationExpression > fakelySatisfies;
+		shared_ptr< const RelationExpression > fakelySatisfies;
 		shared_ptr< const Reason > reason;
 		float profit;
 
