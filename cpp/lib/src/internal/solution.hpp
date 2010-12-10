@@ -69,7 +69,7 @@ class Solution
 	size_t level;
 	float score;
 	bool finished;
-	shared_ptr< const void > pendingAction;
+	std::unique_ptr< const void > pendingAction;
 
 	Solution();
 

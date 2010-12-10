@@ -942,7 +942,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	{
 		fatal("internal error: __post_apply_action: no action to apply");
 	}
-	const Action& action = *(static_pointer_cast< const Action >(solution.pendingAction));
+	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
 
 	const string& packageToModifyName = action.packageName;
 	const shared_ptr< const BinaryVersion >& supposedVersion = action.version;
