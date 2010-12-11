@@ -24,6 +24,14 @@
 namespace cupt {
 namespace internal {
 
+void chomp(string& str)
+{
+	if (!str.empty() && *str.rbegin() == '\n') // the last character is newline
+	{
+		str.erase(str.end() - 1); // delete it
+	}
+}
+
 vector< string > split(char c, const string& str, bool allowEmpty)
 {
 	vector< string > result;

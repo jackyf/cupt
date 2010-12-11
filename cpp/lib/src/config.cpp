@@ -29,6 +29,7 @@ using std::map;
 #include <cupt/regex.hpp>
 #include <cupt/file.hpp>
 
+#include <internal/common.hpp>
 #include <internal/configparser.hpp>
 #include <internal/filesystem.hpp>
 
@@ -329,14 +330,6 @@ static string qx(const string& shellCommand)
 	return result;
 }
 
-static void chomp(string& str)
-{
-	if (!str.empty() && *str.rbegin() == '\n') // the last character is newline
-	{
-		str.erase(str.end() - 1); // delete it
-	}
-}
-
 Config::Config()
 {
 	__impl = new internal::ConfigImpl;
@@ -345,7 +338,7 @@ Config::Config()
 
 	// setting architecture
 	string architecture = qx(getPath("dir::bin::dpkg") + " --print-architecture");
-	chomp(architecture);
+	internal::chomp(architecture);
 	setScalar("apt::architecture", architecture);
 }
 

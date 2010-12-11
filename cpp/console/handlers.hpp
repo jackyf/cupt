@@ -36,10 +36,11 @@ int downloadSourcePackage(Context&);
 int changeAutoInstalledState(Context&, bool);
 int cleanArchives(Context&, bool);
 int showScreenshotUris(Context&);
+int snapshot(Context&);
 
 struct ManagePackages
 {
-	enum Mode { FullUpgrade, SafeUpgrade, Install, Reinstall, Purge, Remove, Satisfy, BuildDepends };
+	enum Mode { FullUpgrade, SafeUpgrade, Install, Reinstall, Purge, Remove, Satisfy, BuildDepends, LoadSnapshot };
 };
 int managePackages(Context&, ManagePackages::Mode);
 int distUpgrade(Context&);

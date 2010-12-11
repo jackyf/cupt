@@ -72,7 +72,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		if (variablesMap.count("arguments"))
 		{
 			vector<std::string> arguments = variablesMap["arguments"].as< vector< string > >();
-			unparsed.insert(unparsed.end(), arguments.begin(), arguments.end());
+			unparsed.insert(unparsed.begin(), arguments.begin(), arguments.end());
 		}
 		bpo::notify(variablesMap);
 
@@ -219,10 +219,8 @@ std::function< int (Context&) > getHandler(const string& command)
 		{ "changelog", [](Context& c) -> int { return downloadChangelogOrCopyright(c, ChangelogOrCopyright::Changelog); } },
 		{ "copyright", [](Context& c) -> int { return downloadChangelogOrCopyright(c, ChangelogOrCopyright::Copyright); } },
 		{ "screenshots", &showScreenshotUris },
+		{ "snapshot", &snapshot },
 	};
-	/* TODO: snapshot handler
-		'snapshot' => \&snapshot,
-	*/
 	auto it = handlerMap.find(command);
 	if (it == handlerMap.end())
 	{

@@ -137,6 +137,27 @@ class Worker
 	 * @param path absolute (i.e., not relative) path to file
 	 */
 	void deleteArchive(const string& path);
+
+	/**
+	 * Makes a system snapshot with a name @a name.
+	 *
+	 * @param name the snapshot name.
+	 */
+	void saveSnapshot(const Snapshots&, const string& name);
+	/**
+	 * Renames a system snapshot.
+	 *
+	 * @param previousName previous snasphot name
+	 * @param newName new snapshot name
+	 */
+	void renameSnapshot(const Snapshots&,
+		const string& previousName, const string& newName);
+	/**
+	 * Removes a system snapshot.
+	 *
+	 * @param name name of the snapshot
+	 */
+	void removeSnapshot(const Snapshots&, const string& name);
 };
 
 }

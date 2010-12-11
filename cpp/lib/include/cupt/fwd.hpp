@@ -59,6 +59,7 @@ class State;
 class Resolver;
 class NativeResolver;
 class Worker;
+class Snapshots;
 
 }
 

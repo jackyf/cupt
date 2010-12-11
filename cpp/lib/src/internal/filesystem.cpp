@@ -106,6 +106,20 @@ bool dirExists(const string& path)
 	return __stat(path, &s) && S_ISDIR(s.st_mode);
 }
 
+size_t fileSize(const string& path)
+{
+	struct stat s;
+	if (!__stat(path, &s))
+	{
+		fatal("the file '%s' does not exists", path.c_str());
+	}
+	if (!S_ISREG(s.st_mode))
+	{
+		fatal("the file '%s' is not a regular file", path.c_str());
+	}
+	return s.st_size;
+}
+
 }
 }
 }

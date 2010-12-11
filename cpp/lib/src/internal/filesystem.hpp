@@ -30,6 +30,7 @@ string move(const string& oldPath, const string& newPath);
 vector< string > glob(const string& param);
 bool fileExists(const string& path);
 bool dirExists(const string& path);
+size_t fileSize(const string& path);
 
 }
 }

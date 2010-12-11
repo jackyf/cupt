@@ -31,6 +31,7 @@ using std::endl;
 #include <cupt/system/state.hpp>
 #include <cupt/system/resolver.hpp>
 #include <cupt/system/resolvers/native.hpp>
+#include <cupt/system/snapshots.hpp>
 #include <cupt/file.hpp>
 #include <cupt/system/worker.hpp>
 #include <cupt/cache/sourceversion.hpp>
@@ -844,17 +845,22 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	unrollFileArguments(packageExpressions);
 
-	/* TODO: snapshot handling
-	my $snapshot_name;
-	if ($action eq 'load-snapshot') {
-		require Cupt::System::Snapshots;
-		scalar @ARGV == 1 or
-				mydie('exactly one argument (the snapshot name) should be specified');
-		$snapshot_name = shift @ARGV;
-		Cupt::System::Snapshots->new($config)->setup_config_for_snapshot($snapshot_name);
-		$action = 'install';
+	// snapshot handling
+	string snapshotName; // empty if not applicable
+	if (mode == ManagePackages::LoadSnapshot)
+	{
+		if (packageExpressions.size() != 1)
+		{
+			fatal("exactly one argument (the snapshot name) should be specified");
+		}
+		snapshotName = packageExpressions[0];
+		packageExpressions.clear();
+		{
+			Snapshots snapshots(config);
+			snapshots.setupConfigForSnapshotOnly(snapshotName);
+		}
+		mode = ManagePackages::Install;
 	}
-	*/
 
 	shared_ptr< const Cache > cache;
 	{
@@ -886,11 +892,11 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		}
 	}
 
-	/* TODO: snapshot...
-	if (defined $snapshot_name) {
-		Cupt::System::Snapshots->new($config)->setup_resolver_for_snapshot($snapshot_name, $resolver);
+	if (!snapshotName.empty())
+	{
+		Snapshots snapshots(config);
+		snapshots.setupResolverForSnapshotOnly(snapshotName, *cache, *resolver);
 	}
-	*/
 
 	shared_ptr< Worker > worker(new Worker(config, cache));
 

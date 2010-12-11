@@ -15,36 +15,34 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_COMMON_SEEN
-#define CUPT_INTERNAL_COMMON_SEEN
+#ifndef CUPT_INTERNAL_WORKER_SNAPSHOTS_SEEN
+#define CUPT_INTERNAL_WORKER_SNAPSHOTS_SEEN
 
-#include <sys/wait.h>
+#include <cupt/fwd.hpp>
 
-#include <cupt/common.hpp>
+#include <internal/worker/base.hpp>
 
 namespace cupt {
 namespace internal {
 
-void chomp(string& str);
+using system::Snapshots;
 
-vector< string > split(char, const string&, bool allowEmpty = false);
+class SnapshotsWorker: public virtual WorkerBase
+{
+	void __delete_temporary(const string&, bool);
+	void __do_repacks(const vector< string >&, bool);
+	string __create_index_file(const Cache::IndexEntry&);
+	void __create_release_file(const string&, const string&,
+			const string&, const Cache::IndexEntry&, bool);
+ public:
+	void saveSnapshot(const Snapshots&, const string& name);
+	void renameSnapshot(const Snapshots& snapshots,
+		const string& previousName, const string& newName);
+	void removeSnapshot(const Snapshots& snapshots, const string& name);
+};
 
-string getWaitStatusDescription(int status);
-
-// we may use following instead of boost::lexical_cast<> because of speed
-uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input);
-
-bool architectureMatch(const string& architecture, const string& pattern);
-
-void processSpaceCommaSpaceDelimitedStrings(const char* begin, const char* end,
-		const std::function< void (const char*, const char*) >& callback);
-void processSpaceCommaSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback);
-void processSpacePipeSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback);
-
-} // namespace
-} // namespace
+}
+}
 
 #endif
 

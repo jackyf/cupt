@@ -18,6 +18,7 @@ add_library(cupt2 SHARED
 	./src/internal/worker/metadata.cpp
 	./src/internal/worker/setupandpreview.cpp
 	./src/internal/worker/packages.cpp
+	./src/internal/worker/snapshots.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
@@ -30,6 +31,7 @@ add_library(cupt2 SHARED
 	./src/system/state.cpp
 	./src/system/resolvers/native.cpp
 	./src/system/worker.cpp
+	./src/system/snapshots.cpp
 	./src/download/uri.cpp
 	./src/download/manager.cpp
 	./src/download/method.cpp

@@ -19,11 +19,13 @@
 #include <internal/worker/metadata.hpp>
 #include <internal/worker/setupandpreview.hpp>
 #include <internal/worker/packages.hpp>
+#include <internal/worker/snapshots.hpp>
 
 namespace cupt {
 namespace internal {
 
-class WorkerImpl: public ArchivesWorker, public MetadataWorker, public SetupAndPreviewWorker, public PackagesWorker
+class WorkerImpl: public ArchivesWorker, public MetadataWorker,
+		public SetupAndPreviewWorker, public PackagesWorker, public SnapshotsWorker
 {
  public:
 	WorkerImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache);
@@ -89,6 +91,23 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > Worker::getArchivesI
 void Worker::deleteArchive(const string& path)
 {
 	return __impl->deleteArchive(path);
+}
+
+void Worker::saveSnapshot(const Snapshots& snapshots, const string& name)
+{
+	__impl->saveSnapshot(snapshots, name);
+}
+
+void Worker::renameSnapshot(const Snapshots& snapshots,
+		const string& previousName, const string& newName)
+{
+	__impl->renameSnapshot(snapshots, previousName, newName);
+}
+
+void Worker::removeSnapshot(const Snapshots& snapshots,
+		const string& name)
+{
+	__impl->removeSnapshot(snapshots, name);
 }
 
 }
