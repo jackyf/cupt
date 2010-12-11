@@ -810,15 +810,15 @@ void NativeResolverImpl::__require_strict_relation_expressions()
    by resolver */
 
 void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
-		Solution& solution, const Action& actionToApply)
+		Solution& solution, unique_ptr< Action >&& actionToApply)
 {
 	if (originalSolution.finished)
 	{
 		fatal("internal error: an attempt to make changes to already finished solution");
 	}
 
-	const string& packageName = actionToApply.packageName;
-	const shared_ptr< const BinaryVersion >& supposedVersion = actionToApply.version;
+	const string& packageName = actionToApply->packageName;
+	const shared_ptr< const BinaryVersion >& supposedVersion = actionToApply->version;
 
 	auto originalPackageEntry = originalSolution.getPackageEntry(packageName);
 	shared_ptr< const BinaryVersion > originalVersion;
@@ -827,7 +827,7 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 		originalVersion = originalPackageEntry->version;
 	}
 
-	auto profit = actionToApply.profit;
+	auto profit = actionToApply->profit;
 	if (isnan(profit))
 	{
 		profit = __get_action_profit(originalVersion, supposedVersion);
@@ -857,16 +857,16 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 	solution.score += profit;
 	solution.score += qualityCorrection;
 
-	solution.pendingAction.reset(new Action(actionToApply));
+	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
 }
 
 void NativeResolverImpl::__calculate_profits(const shared_ptr< Solution >& solution,
-		vector< Action >& actions) const
+		vector< unique_ptr< Action > >& actions) const
 {
 	size_t positionPenalty = 0;
 	FORIT(actionIt, actions)
 	{
-		Action& action = *actionIt;
+		Action& action = **actionIt;
 
 		auto packageEntry = solution->getPackageEntry(action.packageName);
 		shared_ptr< const BinaryVersion > originalVersion;
@@ -886,18 +886,17 @@ void NativeResolverImpl::__calculate_profits(const shared_ptr< Solution >& solut
 }
 
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
-		const shared_ptr< Solution >& currentSolution, const vector< Action >& actions)
+		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
 	// sort them by "rank", from more good to more bad
-	auto sortedActions = actions;
-	std::stable_sort(sortedActions.begin(), sortedActions.end(),
-			[](const Action& left, const Action& right) -> bool
+	std::stable_sort(actions.begin(), actions.end(),
+			[](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
 			{
-				return right.profit < left.profit;
+				return right->profit < left->profit;
 			});
 
 	// fork the solution entry and apply all the solutions by one
-	FORIT(actionIt, sortedActions)
+	FORIT(actionIt, actions)
 	{
 		// clone the current stack to form a new one
 		auto clonedSolution = __solution_storage.cloneSolution(currentSolution);
@@ -905,7 +904,7 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 		solutions.push_back(clonedSolution);
 
 		// apply the solution
-		__pre_apply_action(*currentSolution, *clonedSolution, *actionIt);
+		__pre_apply_action(*currentSolution, *clonedSolution, std::move(*actionIt));
 	}
 }
 
@@ -1002,7 +1001,7 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 	return false;
 }
 
-void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< Action >& actions,
+void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< unique_ptr< Action > >& actions,
 		const string& packageName, const PackageEntry* packageEntry,
 		BinaryVersion::RelationTypes::Type dependencyType, const RelationExpression& relationExpression,
 		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions, bool tryHard)
@@ -1075,9 +1074,9 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< Action >&
 			if (!found)
 			{
 				// other version seems to be ok
-				Action action;
-				action.packageName = packageName;
-				action.version = otherVersion;
+				unique_ptr< Action > action(new Action);
+				action->packageName = packageName;
+				action->version = otherVersion;
 
 				actions.push_back(std::move(action));
 			}
@@ -1086,15 +1085,15 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< Action >&
 		if (__can_package_be_removed(packageName))
 		{
 			// remove the package
-			Action action;
-			action.packageName = packageName;
+			unique_ptr< Action > action(new Action);
+			action->packageName = packageName;
 
 			actions.push_back(std::move(action));
 		}
 	}
 }
 
-void NativeResolverImpl::__add_actions_to_fix_dependency(vector< Action >& actions,
+void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Action > >& actions,
 		const shared_ptr< Solution >& solution,
 		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions)
 {
@@ -1108,24 +1107,24 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< Action >& actio
 		auto satisfyingPackageEntry = solution->getPackageEntry(satisfyingPackageName);
 		if (!satisfyingPackageEntry || !satisfyingPackageEntry->sticked)
 		{
-			Action action;
-			action.packageName = satisfyingPackageName;
-			action.version = satisfyingVersion;
+			unique_ptr< Action > action(new Action);
+			action->packageName = satisfyingPackageName;
+			action->version = satisfyingVersion;
 
 			actions.push_back(std::move(action));
 		}
 	}
 }
 
-void NativeResolverImpl::__prepare_stick_requests(vector< Action >& actions) const
+void NativeResolverImpl::__prepare_stick_requests(vector< unique_ptr< Action > >& actions) const
 {
 	// each next action receives one more additional stick request to not
 	// interfere with all previous solutions
 	vector< string > packageNames;
 	FORIT(actionIt, actions)
 	{
-		actionIt->packageToStickNames = packageNames;
-		packageNames.push_back(actionIt->packageName);
+		(*actionIt)->packageToStickNames = packageNames;
+		packageNames.push_back((*actionIt)->packageName);
 	}
 }
 
@@ -1181,19 +1180,19 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	return userAnswer;
 }
 
-vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizeable_actions(
-		const Solution& solution, const vector< Action >& actions)
+void NativeResolverImpl::__filter_unsynchronizeable_actions(
+		const Solution& solution, vector< unique_ptr< Action > >& actions)
 {
-	vector< Action > result;
+	vector< unique_ptr< Action > > result;
 
 	bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	FORIT(actionIt, actions)
 	{
-		const shared_ptr< const BinaryVersion >& version = actionIt->version;
+		const shared_ptr< const BinaryVersion >& version = (*actionIt)->version;
 		if (!version || __can_related_packages_be_synchronized(solution, version))
 		{
-			result.push_back(*actionIt);
+			result.push_back(std::move(*actionIt));
 		}
 		else
 		{
@@ -1211,8 +1210,8 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 				bool foundSameAction = false;
 				FORIT(resultActionIt, result)
 				{
-					if (resultActionIt->packageName == unsynchronizeablePackageName &&
-							!resultActionIt->version)
+					if ((*resultActionIt)->packageName == unsynchronizeablePackageName &&
+							!((*resultActionIt)->version))
 					{
 						foundSameAction = true;
 						break;
@@ -1221,13 +1220,13 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 
 				if (!foundSameAction)
 				{
-					Action action;
-					action.packageName = unsynchronizeablePackageName;
+					unique_ptr< Action > action(new Action);
+					action->packageName = unsynchronizeablePackageName;
 					if (trackReasons)
 					{
-						action.reason.reset(new SynchronizationReason(version->packageName));
+						action->reason.reset(new SynchronizationReason(version->packageName));
 					}
-					result.push_back(action);
+					result.push_back(std::move(action));
 				}
 			}
 			if (debugging)
@@ -1239,7 +1238,7 @@ vector< NativeResolverImpl::Action > NativeResolverImpl::__filter_unsynchronizea
 			}
 		}
 	}
-	return result;
+	result.swap(actions);
 }
 
 bool NativeResolverImpl::__is_soft_dependency_ignored(const shared_ptr< const BinaryVersion >& version,
@@ -1372,13 +1371,13 @@ bool NativeResolverImpl::__verify_relation_line(const shared_ptr< Solution >& so
 	return true;
 }
 
-void NativeResolverImpl::__generate_possible_actions(vector< Action >* possibleActionsPtr,
+void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
 		const shared_ptr< Solution >& solution, const string& packageName,
 		const PackageEntry* packageEntry, const BrokenDependencyInfo& bdi,
 		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti)
 {
 	const shared_ptr< const BinaryVersion >& version = packageEntry->version;
-	vector< Action >& possibleActions = *possibleActionsPtr;
+	vector< unique_ptr< Action > >& possibleActions = *possibleActionsPtr;
 	const RelationExpression& failedRelationExpression = *(bdi.relationExpressionPtr);
 
 	if (!isDependencyAnti)
@@ -1387,12 +1386,12 @@ void NativeResolverImpl::__generate_possible_actions(vector< Action >* possibleA
 			dependencyType == BinaryVersion::RelationTypes::Suggests)
 		{
 			// ok, then we have one more possible solution - do nothing at all
-			Action action;
-			action.packageName = packageName;
-			action.version = version;
+			unique_ptr< Action > action(new Action);
+			action->packageName = packageName;
+			action->version = version;
 			// set profit manually, as we are inserting fake action here
-			action.profit = (dependencyType == BinaryVersion::RelationTypes::Recommends ? -200 : -50);
-			action.fakelySatisfies.reset(new RelationExpression(*(bdi.relationExpressionPtr)));
+			action->profit = (dependencyType == BinaryVersion::RelationTypes::Recommends ? -200 : -50);
+			action->fakelySatisfies.reset(new RelationExpression(*(bdi.relationExpressionPtr)));
 
 			possibleActions.push_back(std::move(action));
 		}
@@ -1441,7 +1440,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	while (!solutions.empty())
 	{
-		vector< Action > possibleActions;
+		vector< unique_ptr< Action > > possibleActions;
 
 		// choosing the solution to process
 		auto currentSolutionIt = solutionChooser(solutions);
@@ -1531,7 +1530,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 									new RelationExpressionReason(version, dependencyType, failedRelationExpression));
 							FORIT(possibleActionIt, possibleActions)
 							{
-								possibleActionIt->reason = reason;
+								(*possibleActionIt)->reason = reason;
 							}
 						}
 
@@ -1548,7 +1547,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						}
 						if (possibleActions.size() == 1)
 						{
-							__pre_apply_action(*currentSolution, *currentSolution, possibleActions[0]);
+							__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
 							__post_apply_action(*currentSolution);
 							possibleActions.clear();
 
@@ -1627,8 +1626,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			{
 				// if we have to synchronize source versions, can related packages be updated too?
 				// filter out actions that don't match this criteria
-				possibleActions = __filter_unsynchronizeable_actions(
-						*currentSolution, possibleActions);
+				__filter_unsynchronizeable_actions(*currentSolution, possibleActions);
 			}
 
 			__prepare_stick_requests(possibleActions);

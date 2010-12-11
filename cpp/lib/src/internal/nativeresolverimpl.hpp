@@ -31,6 +31,7 @@ namespace internal {
 
 using namespace cache;
 using std::list;
+using std::unique_ptr;
 
 class NativeResolverImpl
 {
@@ -50,7 +51,7 @@ class NativeResolverImpl
 		string packageName;
 		shared_ptr< const BinaryVersion > version;
 		vector< string > packageToStickNames;
-		shared_ptr< const RelationExpression > fakelySatisfies;
+		unique_ptr< const RelationExpression > fakelySatisfies;
 		shared_ptr< const Reason > reason;
 		float profit;
 
@@ -82,18 +83,18 @@ class NativeResolverImpl
 	void __clean_automatically_installed(const shared_ptr< Solution >&);
 	SolutionChooser __select_solution_chooser() const;
 	void __require_strict_relation_expressions();
-	void __pre_apply_action(const Solution&, Solution&, const Action&);
-	void __calculate_profits(const shared_ptr< Solution >&, vector< Action >& actions) const;
+	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);
+	void __calculate_profits(const shared_ptr< Solution >&, vector< unique_ptr< Action > >& actions) const;
 	void __pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
-			const shared_ptr< Solution >&, const vector< Action >&);
+			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
 	void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions);
 	void __post_apply_action(Solution&);
-	void __add_actions_to_modify_package_entry(vector< Action >&, const string&,
+	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const string&,
 			const PackageEntry*, BinaryVersion::RelationTypes::Type, const RelationExpression&,
 			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard = false);
-	void __add_actions_to_fix_dependency(vector< Action >&, const shared_ptr< Solution >&,
+	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const shared_ptr< Solution >&,
 			const vector< shared_ptr< const BinaryVersion > >&);
-	void __prepare_stick_requests(vector< Action >& actions) const;
+	void __prepare_stick_requests(vector< unique_ptr< Action > >& actions) const;
 	Resolver::UserAnswer::Type __propose_solution(
 			const Solution&, Resolver::CallbackType);
 	bool __is_soft_dependency_ignored(const shared_ptr< const BinaryVersion >&,
@@ -105,8 +106,8 @@ class NativeResolverImpl
 			const Solution&, const shared_ptr< const BinaryVersion >&);
 	void __synchronize_related_packages(Solution&,
 			const shared_ptr< const BinaryVersion >&, bool);
-	vector< Action > __filter_unsynchronizeable_actions(
-		const Solution&, const vector< Action >&);
+	void __filter_unsynchronizeable_actions(
+			const Solution&, vector< unique_ptr< Action > >&);
 
 	struct BrokenDependencyInfo
 	{
@@ -119,7 +120,7 @@ class NativeResolverImpl
 			const string* packageNamePtr, const PackageEntry*,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
 			BrokenDependencyInfo*);
-	void __generate_possible_actions(vector< Action >*, const shared_ptr< Solution >&,
+	void __generate_possible_actions(vector< unique_ptr< Action > >*, const shared_ptr< Solution >&,
 			const string& packageName, const PackageEntry*, const BrokenDependencyInfo&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti);
 
