@@ -327,46 +327,45 @@ RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArch
 
 string RelationExpression::getHashString() const
 {
-	char buf[1024];
-	uint16_t bufSize = 0;
+	char buffer[1024];
+	const char* const bufferEnd = buffer + sizeof(buffer);
+	char* p = buffer;
+
 	FORIT(relationIt, *this)
 	{
 		const Relation& relation = *relationIt;
 
-		if (bufSize) // not a start
+		if (p != buffer) // not a start
 		{
-			if (bufSize + 1u >= sizeof(buf))
+			if (p + 1u >= bufferEnd)
 			{
 				return string();
 			}
-			buf[bufSize] = '|';
-			++bufSize;
+			*(p++) = '|';
 		}
 
 		auto packageNameSize = relation.packageName.size();
-		if (bufSize + packageNameSize >= sizeof(buf))
+		if (p + packageNameSize >= bufferEnd)
 		{
 			return string();
 		}
-		strcpy(buf + bufSize, relation.packageName.c_str());
-		bufSize += packageNameSize;
+		strcpy(p, relation.packageName.c_str());
+		p += packageNameSize;
 
 		if (relation.relationType != Relation::Types::None)
 		{
 			auto versionStringSize = relation.versionString.size();
-			if (bufSize + versionStringSize + 3 >= sizeof(buf))
+			if (p + versionStringSize + 3 >= bufferEnd)
 			{
 				return string();
 			}
-			buf[bufSize] = ' ';
-			++bufSize;
-			buf[bufSize] = ('0' + relation.relationType);
-			++bufSize;
-			strcpy(buf + bufSize, relation.versionString.c_str());
-			bufSize += versionStringSize;
+			*(p++) = ' ';
+			*(p++) = ('0' + relation.relationType);
+			strcpy(p, relation.versionString.c_str());
+			p += versionStringSize;
 		}
 	}
-	return string(buf, bufSize);
+	return string(buffer, p);
 }
 
 
