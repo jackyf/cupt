@@ -327,7 +327,7 @@ RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArch
 
 string RelationExpression::getHashString() const
 {
-	char buf[1024] = {0};
+	char buf[1024];
 	uint16_t bufSize = 0;
 	FORIT(relationIt, *this)
 	{
