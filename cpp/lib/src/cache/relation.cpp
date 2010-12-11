@@ -362,8 +362,6 @@ string RelationExpression::getHashString() const
 			++bufSize;
 			buf[bufSize] = ('0' + relation.relationType);
 			++bufSize;
-			buf[bufSize] = ' ';
-			++bufSize;
 			strcpy(buf + bufSize, relation.versionString.c_str());
 			bufSize += versionStringSize;
 		}
