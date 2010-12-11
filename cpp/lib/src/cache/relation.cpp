@@ -349,7 +349,7 @@ string RelationExpression::getHashString() const
 		{
 			return string();
 		}
-		strcpy(p, relation.packageName.c_str());
+		memcpy(p, relation.packageName.c_str(), packageNameSize);
 		p += packageNameSize;
 
 		if (relation.relationType != Relation::Types::None)
@@ -361,7 +361,7 @@ string RelationExpression::getHashString() const
 			}
 			*(p++) = ' ';
 			*(p++) = ('0' + relation.relationType);
-			strcpy(p, relation.versionString.c_str());
+			memcpy(p, relation.versionString.c_str(), versionStringSize);
 			p += versionStringSize;
 		}
 	}
