@@ -355,7 +355,7 @@ string RelationExpression::getHashString() const
 		if (relation.relationType != Relation::Types::None)
 		{
 			auto versionStringSize = relation.versionString.size();
-			if (p + versionStringSize + 3 >= bufferEnd)
+			if (p + versionStringSize + 2 >= bufferEnd)
 			{
 				return string();
 			}
