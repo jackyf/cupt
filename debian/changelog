@@ -1,5 +1,7 @@
 cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
 
+  * All the non-experimental functionality from cupt 1.x is now implemented.
+
   * console:
     - Fixed non-working binary-to-source mapping in source package version
       expressions.
