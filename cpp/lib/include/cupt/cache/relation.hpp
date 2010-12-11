@@ -49,13 +49,13 @@ struct Relation
 	 * Parses @a input and constructs Relation from it.
 	 * @param input stringified relation
 	 */
-	Relation(const string& input);
+	explicit Relation(const string& input);
 	/// constructor
 	/**
 	 * Parses @a input and constructs Relation from it.
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
-	Relation(pair< string::const_iterator, string::const_iterator > input);
+	explicit Relation(pair< string::const_iterator, string::const_iterator > input);
 	/// destructor
 	virtual ~Relation();
 	/// gets the string reprentation
@@ -91,7 +91,7 @@ struct ArchitecturedRelation: public Relation
 	 * Parses @a input and constructs ArchitecturedRelation from it.
 	 * @param input stringified architectured relation
 	 */
-	ArchitecturedRelation(const string& input);
+	explicit ArchitecturedRelation(const string& input);
 	/// constructor
 	/**
 	 * Parses @a input and constructs ArchitecturedRelation from it.
@@ -121,13 +121,13 @@ struct RelationExpression: public vector< Relation >
 	/**
 	 * @param input string representation
 	 */
-	RelationExpression(const string& input);
+	explicit RelationExpression(const string& input);
 	/// constructor
 	/**
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	RelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	explicit RelationExpression(pair< string::const_iterator, string::const_iterator > input);
 	/// destructor
 	virtual ~RelationExpression();
 };
@@ -149,7 +149,7 @@ struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
 	/**
 	 * @param input string representation
 	 */
-	ArchitecturedRelationExpression(const string& input);
+	explicit ArchitecturedRelationExpression(const string& input);
 	/// constructor
 	/**
 	 * @param input pair of begin iterator and end iterator of string
@@ -177,13 +177,13 @@ struct RelationLine: public vector< RelationExpression >
 	/**
 	 * @param input string representation
 	 */
-	RelationLine(const string& input);
+	explicit RelationLine(const string& input);
 	/// constructor
 	/**
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	RelationLine(pair< string::const_iterator, string::const_iterator > input);
+	explicit RelationLine(pair< string::const_iterator, string::const_iterator > input);
 	/// destructor
 	virtual ~RelationLine();
 };
@@ -205,13 +205,13 @@ struct ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression
 	/**
 	 * @param input string representation
 	 */
-	ArchitecturedRelationLine(const string& input);
+	explicit ArchitecturedRelationLine(const string& input);
 	/// constructor
 	/**
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
+	explicit ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
 	/// converts to RelationLine given system architecture
 	/**
 	 * Filters ArchitecturedRelationLine using binary system architecture.

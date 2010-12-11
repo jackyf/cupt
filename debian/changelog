@@ -29,6 +29,8 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
       - New option 'cupt::directory'.
     - system/snapshots:
       - Implemented.
+    - cache/relation:
+      - All single-parameter constructors are now explicit.
   * debian:
     - rules:
       - Fixed installing bash completion script.
