@@ -74,8 +74,8 @@ class NativeResolverImpl
 
 	void __import_installed_versions();
 	vector< DependencyEntry > __get_dependency_groups() const;
-	InstallVersionResult::Type __install_version_no_stick(const shared_ptr< const BinaryVersion >&,
-			const shared_ptr< const Reason >&, PackageEntry*&);
+	InstallVersionResult::Type __prepare_version_no_stick(const shared_ptr< const BinaryVersion >&,
+			const shared_ptr< const Reason >&, PackageEntry&);
 	float __get_version_weight(const shared_ptr< const BinaryVersion >&) const;
 	float __get_action_profit(const shared_ptr< const BinaryVersion >&,
 			const shared_ptr< const BinaryVersion >&) const;
@@ -90,7 +90,7 @@ class NativeResolverImpl
 	void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions);
 	void __post_apply_action(Solution&);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const string&,
-			const PackageEntry*, BinaryVersion::RelationTypes::Type, const RelationExpression&,
+			const PackageEntry&, BinaryVersion::RelationTypes::Type, const RelationExpression&,
 			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard = false);
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const shared_ptr< Solution >&,
 			const vector< shared_ptr< const BinaryVersion > >&);
@@ -117,11 +117,11 @@ class NativeResolverImpl
 	};
 
 	bool __verify_relation_line(const shared_ptr< Solution >&,
-			const string* packageNamePtr, const PackageEntry*,
+			const string* packageNamePtr, const PackageEntry&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
 			BrokenDependencyInfo*);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const shared_ptr< Solution >&,
-			const string& packageName, const PackageEntry*, const BrokenDependencyInfo&,
+			const string& packageName, const PackageEntry&, const BrokenDependencyInfo&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti);
 
 	static const string __dummy_package_name;

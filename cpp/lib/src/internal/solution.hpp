@@ -76,8 +76,9 @@ class Solution
 	void prepare();
 	vector< string > getPackageNames() const;
 	vector< const string* > getMostlyUncheckedPackageNames(BinaryVersion::RelationTypes::Type) const;
-	const PackageEntry* getPackageEntry(const string& packageName) const;
-	PackageEntry* setPackageEntryIfExists(const string& packageName);
+	bool getPackageEntry(const string& packageName, PackageEntry*) const;
+	void validate(const string& packageName,
+			const PackageEntry&, BinaryVersion::RelationTypes::Type);
 };
 
 class SolutionStorage
@@ -95,8 +96,8 @@ class SolutionStorage
 	// should be called only with versions with the same package name
 	void addVersionDependencies(const vector< shared_ptr< const BinaryVersion > >&);
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
-	PackageEntry* setPackageEntry(Solution&, const string& packageName);
-	void __invalidate(Solution&, const string& packageName, PackageEntry*);
+	void setPackageEntry(Solution&, const string& packageName, const PackageEntry&);
+	void __invalidate_related(Solution&, const string& packageName);
 };
 
 }
