@@ -1310,8 +1310,8 @@ bool NativeResolverImpl::__is_soft_dependency_ignored(const shared_ptr< const Bi
 	return false;
 }
 
-void __get_sorted_package_names(const vector< const string* >& source,
-		const map< string, size_t >& failCounts, vector< const string* >& result)
+void __get_sorted_package_names(const vector< string >& source,
+		const map< string, size_t >& failCounts, vector< string >& result)
 {
 	// use Schwarz transformation
 	struct ForSort
@@ -1322,9 +1322,9 @@ void __get_sorted_package_names(const vector< const string* >& source,
 
 	vector< ForSort > aux;
 	aux.reserve(source.size());
-	FORIT(packageNamePtrIt, source)
+	FORIT(packageNameIt, source)
 	{
-		const string& packageName = **packageNamePtrIt;
+		const string& packageName = *packageNameIt;
 
 		auto failCountIt = failCounts.find(packageName);
 		auto failCount = (failCountIt != failCounts.end() ? failCountIt->second : 0);
@@ -1340,7 +1340,7 @@ void __get_sorted_package_names(const vector< const string* >& source,
 
 	FORIT(auxIt, aux)
 	{
-		result.push_back(auxIt->packageNamePtr);
+		result.push_back(*(auxIt->packageNamePtr));
 	}
 }
 
@@ -1503,15 +1503,15 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				   we call MostlyUnchecked for filtering to process less packages in
 				   __get_sorted_package_names; still, some returned packages may be
 				   already checked */
-				vector< const string* > packageNamePtrs;
+				vector< string > packageNames;
 				{
 					auto source = currentSolution->getMostlyUncheckedPackageNames(dependencyType);
-					__get_sorted_package_names(source, failCounts, packageNamePtrs);
+					__get_sorted_package_names(source, failCounts, packageNames);
 				}
 
-				FORIT(packageNamePtrIt, packageNamePtrs)
+				FORIT(packageNameIt, packageNames)
 				{
-					const string& packageName = **packageNamePtrIt;
+					const string& packageName = *packageNameIt;
 
 					redo_package:
 
@@ -1531,7 +1531,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					}
 
 					BrokenDependencyInfo brokenDependencyInfo;
-					checkFailed = !__verify_relation_line(currentSolution, *packageNamePtrIt,
+					checkFailed = !__verify_relation_line(currentSolution, &*packageNameIt,
 							packageEntry, dependencyType, isDependencyAnti,
 							/* out -> */ &brokenDependencyInfo);
 					if (checkFailed)

@@ -48,7 +48,7 @@ struct PackageEntry
 	PackageEntry();
 };
 
-typedef map< string, PackageEntry > PackageEntryMap;
+class PackageEntryMap;
 
 struct DependencyEntry
 {
@@ -75,7 +75,7 @@ class Solution
 
 	void prepare();
 	vector< string > getPackageNames() const;
-	vector< const string* > getMostlyUncheckedPackageNames(BinaryVersion::RelationTypes::Type) const;
+	vector< string > getMostlyUncheckedPackageNames(BinaryVersion::RelationTypes::Type) const;
 	bool getPackageEntry(const string& packageName, PackageEntry*) const;
 	void validate(const string& packageName,
 			const PackageEntry&, BinaryVersion::RelationTypes::Type);

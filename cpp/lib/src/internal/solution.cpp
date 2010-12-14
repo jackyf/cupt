@@ -28,6 +28,55 @@ PackageEntry::PackageEntry()
 	: sticked(false)
 {}
 
+class PackageEntryMap
+{
+ public:
+	typedef string key_t; // package name
+	typedef pair< key_t, PackageEntry > data_t; // vector requires assignable types
+	typedef data_t value_type; // for set_union
+	typedef vector< data_t > container_t;
+ private:
+	container_t __container;
+ public:
+	typedef data_t* iterator_t;
+	typedef const data_t* const_iterator_t;
+
+	size_t size() const { return __container.size(); }
+	void reserve(size_t size) { __container.reserve(size); }
+	iterator_t begin() { return &*__container.begin(); }
+	iterator_t end() { return &*__container.end(); }
+	iterator_t lower_bound(const key_t& key)
+	{
+		struct Comparator
+		{
+			bool operator()(const data_t& data, const key_t& key) const
+			{ return data.first < key; }
+		};
+		return std::lower_bound(begin(), end(), key, Comparator());
+	}
+	iterator_t find(const key_t& key)
+	{
+		auto result = lower_bound(key);
+		if (result != end() && result->first != key)
+		{
+			result = end();
+		}
+		return result;
+	}
+	// this insert() is called only for unexisting elements
+	// TODO: &&
+	iterator_t insert(iterator_t hint, const data_t& data)
+	{
+		auto distance = hint - begin();
+		__container.insert(static_cast< container_t::iterator >(hint), data);
+		return begin() + distance;
+	}
+	void push_back(const data_t& data)
+	{
+		__container.push_back(data);
+	}
+};
+
 SolutionStorage::SolutionStorage(const shared_ptr< const Cache >& cache,
 		const vector< DependencyEntry >& dependencyEntries,
 		const string& dummyPackageName)
@@ -127,8 +176,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 				__add_package_dependencies(packageName);
 			}
 		}
-		pair< string, PackageEntry > newElement(packageName, packageEntry);
-		it = solution.__package_entries->insert(it, newElement);
+		it = solution.__package_entries->insert(it, make_pair(packageName, packageEntry));
 	}
 	else
 	{
@@ -146,8 +194,8 @@ void SolutionStorage::__invalidate_related(Solution& solution, const string& pac
 	{
 		const string& successorPackageName = **successorPackageNamePtrIt;
 
-		auto it = solution.__package_entries->find(successorPackageName);
-		if (it == solution.__package_entries->end())
+		auto it = solution.__package_entries->lower_bound(successorPackageName);
+		if (it == solution.__package_entries->end() || it->first != successorPackageName)
 		{
 			if (!solution.__master_package_entries)
 			{
@@ -164,8 +212,8 @@ void SolutionStorage::__invalidate_related(Solution& solution, const string& pac
 
 			// this is package entry from _master_packages, and we change it, so we
 			// need to clone it
-			pair< const string, PackageEntry > newElement(successorPackageName, masterIt->second);
-			it = solution.__package_entries->insert(newElement).first;
+			it = solution.__package_entries->insert(it,
+					make_pair(successorPackageName, masterIt->second));
 		}
 		it->second.checked.reset();
 	}
@@ -200,13 +248,21 @@ void Solution::prepare()
 			pow(__parent->__master_package_entries->size(), overdivertedFactor))
 		{
 			// master solution is overdiverted, build new master one
-			*__package_entries = *(__parent->__master_package_entries);
-			FORIT(packageEntryIt, *__parent->__package_entries)
+			__package_entries.reset(new PackageEntryMap);
+			__package_entries->reserve(__parent->__package_entries->size() +
+					__parent->__master_package_entries->size());
+
+			// it's important that parent's __package_entries come first,
+			// if two elements are present in both (i.e. an element is overriden)
+			// the new version of an element will be written
+			struct Comparator
 			{
-				const string& key = packageEntryIt->first;
-				const PackageEntry& value = packageEntryIt->second;
-				(*__package_entries)[key] = value;
-			}
+				bool operator()(const PackageEntryMap::data_t& left, const PackageEntryMap::data_t& right)
+				{ return left.first < right.first; }
+			};
+			std::set_union(__parent->__package_entries->begin(), __parent->__package_entries->end(),
+					__parent->__master_package_entries->begin(), __parent->__master_package_entries->end(),
+					std::back_inserter(*__package_entries), Comparator());
 		}
 		else
 		{
@@ -242,10 +298,10 @@ vector< string > Solution::getPackageNames() const
 	return result;
 }
 
-vector< const string* > Solution::getMostlyUncheckedPackageNames(
+vector< string > Solution::getMostlyUncheckedPackageNames(
 		BinaryVersion::RelationTypes::Type dependencyType) const
 {
-	vector< const string* > result;
+	vector< string > result;
 
 	if (__master_package_entries)
 	{
@@ -253,7 +309,7 @@ vector< const string* > Solution::getMostlyUncheckedPackageNames(
 		{
 			if (!it->second.checked.test(dependencyType))
 			{
-				result.push_back(&(it->first));
+				result.push_back(it->first);
 			}
 		}
 	}
@@ -262,12 +318,12 @@ vector< const string* > Solution::getMostlyUncheckedPackageNames(
 	{
 		if (!it->second.checked.test(dependencyType))
 		{
-			result.push_back(&(it->first));
+			result.push_back(it->first);
 		}
 	}
 
-	std::inplace_merge(result.begin(), result.begin() + middleSize, result.end(), PointerLess< string >());
-	result.erase(std::unique(result.begin(), result.end(), PointerEqual< string >()), result.end());
+	std::inplace_merge(result.begin(), result.begin() + middleSize, result.end());
+	result.erase(std::unique(result.begin(), result.end()), result.end());
 
 	return result;
 }
@@ -306,8 +362,7 @@ void Solution::validate(const string& packageName,
 	auto it = __package_entries->lower_bound(packageName);
 	if (it == __package_entries->end() || it->first != packageName)
 	{
-		pair< string, PackageEntry > newElement(packageName, oldPackageEntry);
-		it = __package_entries->insert(it, newElement);
+		it = __package_entries->insert(it, make_pair(packageName, oldPackageEntry));
 	}
 
 	it->second.checked.set(relationType);
