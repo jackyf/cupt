@@ -121,7 +121,6 @@ void SolutionStorage::addVersionDependencies(const vector< shared_ptr< const Bin
 			}
 		}
 
-		bool isAnti = dependencyEntryIt->isAnti;
 		FORIT(satisfyingPackageNameIt, satisfyingPackageNames)
 		{
 			const string& satisfyingPackageName = *satisfyingPackageNameIt;
@@ -130,10 +129,6 @@ void SolutionStorage::addVersionDependencies(const vector< shared_ptr< const Bin
 				continue;
 			}
 			__dependency_graph.addEdge(satisfyingPackageName, packageName);
-			if (isAnti)
-			{
-				__dependency_graph.addEdge(packageName, satisfyingPackageName);
-			}
 		}
 	}
 }
