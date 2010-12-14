@@ -19,11 +19,12 @@
 #define CUPT_INTERNAL_SOLUTION_SEEN
 
 #include <bitset>
+#include <map>
+#include <set>
 
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
 
-#include <internal/graph.hpp>
 #include <internal/copyptr.hpp>
 
 namespace cupt {
@@ -33,7 +34,10 @@ using namespace cache;
 using namespace system;
 
 using std::bitset;
+using std::map;
+using std::set;
 
+typedef BinaryVersion::RelationTypes::Type RelationType;
 const size_t relationTypesCount = BinaryVersion::RelationTypes::Count;
 typedef bitset< relationTypesCount > RelationTypesBitset;
 
@@ -52,7 +56,7 @@ class PackageEntryMap;
 
 struct DependencyEntry
 {
-	BinaryVersion::RelationTypes::Type type;
+	RelationType type;
 	bool isAnti;
 };
 
@@ -75,17 +79,38 @@ class Solution
 
 	void prepare();
 	vector< string > getPackageNames() const;
-	vector< string > getMostlyUncheckedPackageNames(BinaryVersion::RelationTypes::Type) const;
+	vector< string > getMostlyUncheckedPackageNames(RelationType) const;
 	bool getPackageEntry(const string& packageName, PackageEntry*) const;
 	void validate(const string& packageName,
-			const PackageEntry&, BinaryVersion::RelationTypes::Type);
+			const PackageEntry&, RelationType);
 };
 
 class SolutionStorage
 {
+	struct PackageDependency
+	{
+		string packageName;
+		RelationType relationType;
+		bool operator<(const PackageDependency& other) const
+		{
+			auto packageNameComparisonResult = packageName.compare(other.packageName);
+			if (packageNameComparisonResult < 0)
+			{
+				return true;
+			}
+			else if (packageNameComparisonResult > 0)
+			{
+				return false;
+			}
+			else
+			{
+				return relationType < other.relationType;
+			}
+		}
+	};
 	shared_ptr< const Cache > __cache;
 	string __dummy_package_name;
-	Graph< string > __dependency_graph;
+	map< string, set< PackageDependency > > __dependency_map;
 	vector< DependencyEntry > __dependency_entries;
 	size_t __next_free_id;
 

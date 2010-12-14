@@ -106,11 +106,13 @@ void SolutionStorage::addVersionDependencies(const vector< shared_ptr< const Bin
 
 	FORIT(dependencyEntryIt, __dependency_entries)
 	{
+		auto relationType = dependencyEntryIt->type;
+
 		set< string > satisfyingPackageNames;
 
 		FORIT(versionIt, versions)
 		{
-			const RelationLine& relationLine = (*versionIt)->relations[dependencyEntryIt->type];
+			const RelationLine& relationLine = (*versionIt)->relations[relationType];
 			FORIT(relationExpressionIt, relationLine)
 			{
 				auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
@@ -128,7 +130,8 @@ void SolutionStorage::addVersionDependencies(const vector< shared_ptr< const Bin
 			{
 				continue;
 			}
-			__dependency_graph.addEdge(satisfyingPackageName, packageName);
+			__dependency_map[satisfyingPackageName].insert(
+					PackageDependency { packageName, relationType });
 		}
 	}
 }
@@ -184,10 +187,14 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 
 void SolutionStorage::__invalidate_related(Solution& solution, const string& packageName)
 {
-	const list< const string* >& successorPackageNamePtrs = __dependency_graph.getSuccessors(packageName);
-	FORIT(successorPackageNamePtrIt, successorPackageNamePtrs)
+	auto successorsIt = __dependency_map.find(packageName);
+	if (successorsIt == __dependency_map.end())
 	{
-		const string& successorPackageName = **successorPackageNamePtrIt;
+		return;
+	}
+	FORIT(successorIt, successorsIt->second)
+	{
+		const string& successorPackageName = successorIt->packageName;
 
 		auto it = solution.__package_entries->lower_bound(successorPackageName);
 		if (it == solution.__package_entries->end() || it->first != successorPackageName)
@@ -210,7 +217,7 @@ void SolutionStorage::__invalidate_related(Solution& solution, const string& pac
 			it = solution.__package_entries->insert(it,
 					make_pair(successorPackageName, masterIt->second));
 		}
-		it->second.checked.reset();
+		it->second.checked.reset(successorIt->relationType);
 	}
 }
 
@@ -294,7 +301,7 @@ vector< string > Solution::getPackageNames() const
 }
 
 vector< string > Solution::getMostlyUncheckedPackageNames(
-		BinaryVersion::RelationTypes::Type dependencyType) const
+		RelationType dependencyType) const
 {
 	vector< string > result;
 
@@ -352,7 +359,7 @@ bool Solution::getPackageEntry(const string& packageName, PackageEntry* result) 
 }
 
 void Solution::validate(const string& packageName,
-		const PackageEntry& oldPackageEntry, BinaryVersion::RelationTypes::Type relationType)
+		const PackageEntry& oldPackageEntry, RelationType relationType)
 {
 	auto it = __package_entries->lower_bound(packageName);
 	if (it == __package_entries->end() || it->first != packageName)

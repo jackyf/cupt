@@ -32,6 +32,7 @@ namespace internal {
 using namespace cache;
 using std::list;
 using std::unique_ptr;
+using std::set;
 
 class NativeResolverImpl
 {
