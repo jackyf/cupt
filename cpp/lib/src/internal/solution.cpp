@@ -206,7 +206,7 @@ void SolutionStorage::__invalidate_related(Solution& solution, const string& pac
 			}
 
 			// now, inserting new entry is an expensive operation, do we really need it?
-			if (! masterIt->second.checked.test(successorIt->relationType))
+			if (! masterIt->second.checked[successorIt->relationType])
 			{
 				continue; // no, it's reset already
 			}
@@ -216,7 +216,7 @@ void SolutionStorage::__invalidate_related(Solution& solution, const string& pac
 			it = solution.__package_entries->insert(it,
 					make_pair(successorPackageName, masterIt->second));
 		}
-		it->second.checked.reset(successorIt->relationType);
+		it->second.checked[successorIt->relationType] = false;
 	}
 }
 
@@ -308,7 +308,7 @@ vector< string > Solution::getMostlyUncheckedPackageNames(
 	{
 		FORIT(it, *__master_package_entries)
 		{
-			if (!it->second.checked.test(dependencyType))
+			if (!it->second.checked[dependencyType])
 			{
 				result.push_back(it->first);
 			}
@@ -317,7 +317,7 @@ vector< string > Solution::getMostlyUncheckedPackageNames(
 	auto middleSize = result.size();
 	FORIT(it, *__package_entries)
 	{
-		if (!it->second.checked.test(dependencyType))
+		if (!it->second.checked[dependencyType])
 		{
 			result.push_back(it->first);
 		}
@@ -366,7 +366,7 @@ void Solution::validate(const string& packageName,
 		it = __package_entries->insert(it, make_pair(packageName, oldPackageEntry));
 	}
 
-	it->second.checked.set(relationType);
+	it->second.checked[relationType] = true;
 }
 
 }
