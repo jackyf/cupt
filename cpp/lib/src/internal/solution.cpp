@@ -164,21 +164,9 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	{
 		// there is no modifiable element in this solution, need to create new
 
-		if (!solution.__master_package_entries)
-		{
-			// this package may just appear...
-			__add_package_dependencies(packageName);
-		}
-		else
-		{
-			// let's see if master package entries contain one
-			auto masterIt = solution.__master_package_entries->find(packageName);
-			if (masterIt == solution.__master_package_entries->end())
-			{
-				// this package may just appear...
-				__add_package_dependencies(packageName);
-			}
-		}
+		// this package may just appear...
+		__add_package_dependencies(packageName);
+
 		it = solution.__package_entries->insert(it, make_pair(packageName, packageEntry));
 	}
 	else
