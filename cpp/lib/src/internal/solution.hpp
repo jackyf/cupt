@@ -79,7 +79,7 @@ class Solution
 
 	void prepare();
 	vector< string > getPackageNames() const;
-	vector< string > getMostlyUncheckedPackageNames(RelationType) const;
+	vector< string > getUncheckedPackageNames(RelationType) const;
 	bool getPackageEntry(const string& packageName, PackageEntry*) const;
 	void validate(const string& packageName,
 			const PackageEntry&, RelationType);

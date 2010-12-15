@@ -1498,14 +1498,10 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				auto isDependencyAnti = dependencyGroupIt->isAnti;
 
 				/* to speed up the complex decision steps, if solution stack is not
-				   empty, firstly check the packages that had a problem
-
-				   we call MostlyUnchecked for filtering to process less packages in
-				   __get_sorted_package_names; still, some returned packages may be
-				   already checked */
+				   empty, firstly check the packages that had a problem */
 				vector< string > packageNames;
 				{
-					auto source = currentSolution->getMostlyUncheckedPackageNames(dependencyType);
+					auto source = currentSolution->getUncheckedPackageNames(dependencyType);
 					__get_sorted_package_names(source, failCounts, packageNames);
 				}
 
@@ -1517,12 +1513,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 					PackageEntry packageEntry;
 					currentSolution->getPackageEntry(packageName, &packageEntry);
-
-					// skip check if already marked as checked
-					if (packageEntry.checked.test(dependencyType))
-					{
-						continue;
-					}
 
 					const shared_ptr< const BinaryVersion >& version = packageEntry.version;
 					if (!version)

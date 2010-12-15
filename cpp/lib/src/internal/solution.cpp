@@ -299,32 +299,68 @@ vector< string > Solution::getPackageNames() const
 	return result;
 }
 
-vector< string > Solution::getMostlyUncheckedPackageNames(
+vector< string > Solution::getUncheckedPackageNames(
 		RelationType dependencyType) const
 {
 	vector< string > result;
-
-	if (__master_package_entries)
+	auto isEligible = [&dependencyType](decltype(__package_entries->begin()) it)
 	{
-		FORIT(it, *__master_package_entries)
-		{
-			if (!it->second.checked[dependencyType])
-			{
-				result.push_back(it->first);
-			}
-		}
-	}
-	auto middleSize = result.size();
-	FORIT(it, *__package_entries)
+		return (!it->second.checked[dependencyType] && it->second.version);
+	};
+	auto processEntry = [&result, &isEligible](decltype(__package_entries->begin()) it)
 	{
-		if (!it->second.checked[dependencyType])
+		if (isEligible(it))
 		{
 			result.push_back(it->first);
 		}
-	}
+	};
 
-	std::inplace_merge(result.begin(), result.begin() + middleSize, result.end());
-	result.erase(std::unique(result.begin(), result.end()), result.end());
+	auto masterIt = __master_package_entries ?
+			__master_package_entries->begin() : __package_entries->end();
+	auto masterEnd = __master_package_entries ?
+			__master_package_entries->end() : __package_entries->end();
+	auto ownIt = __package_entries->begin();
+	auto ownEnd = __package_entries->end();
+
+	while (masterIt != masterEnd && ownIt != ownEnd)
+	{
+		// compare is expensive operation and isEligible is cheap, usually most
+		// of masterIt won't be included anyway
+		if (!isEligible(masterIt))
+		{
+			++masterIt;
+			continue;
+		}
+
+		auto compareResult = masterIt->first.compare(ownIt->first);
+		if (compareResult < 0)
+		{
+			processEntry(masterIt);
+			++masterIt;
+		}
+		else if (compareResult > 0)
+		{
+			processEntry(ownIt);
+			++ownIt;
+		}
+		else // equal keys
+		{
+			// own entry overrides master entry
+			processEntry(ownIt);
+			++masterIt;
+			++ownIt;
+		}
+	}
+	while (masterIt != masterEnd)
+	{
+		processEntry(masterIt);
+		++masterIt;
+	}
+	while (ownIt != ownEnd)
+	{
+		processEntry(ownIt);
+		++ownIt;
+	}
 
 	return result;
 }
