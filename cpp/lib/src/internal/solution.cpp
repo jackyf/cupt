@@ -205,8 +205,14 @@ void SolutionStorage::__invalidate_related(Solution& solution, const string& pac
 				continue;
 			}
 
-			// this is package entry from _master_packages, and we change it, so we
-			// need to clone it
+			// now, inserting new entry is an expensive operation, do we really need it?
+			if (! masterIt->second.checked.test(successorIt->relationType))
+			{
+				continue; // no, it's reset already
+			}
+
+			// ok, this is package entry from _master_packages, and we change
+			// it, so we need to clone it
 			it = solution.__package_entries->insert(it,
 					make_pair(successorPackageName, masterIt->second));
 		}
