@@ -111,6 +111,7 @@ class SolutionStorage
 	shared_ptr< const Cache > __cache;
 	string __dummy_package_name;
 	map< string, set< PackageDependency > > __dependency_map;
+	set< string > __processed_dependencies;
 	vector< DependencyEntry > __dependency_entries;
 	size_t __next_free_id;
 

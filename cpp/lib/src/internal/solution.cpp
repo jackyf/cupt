@@ -86,6 +86,11 @@ SolutionStorage::SolutionStorage(const shared_ptr< const Cache >& cache,
 
 void SolutionStorage::__add_package_dependencies(const string& packageName)
 {
+	if (!__processed_dependencies.insert(packageName).second)
+	{
+		return; // already processed entry
+	}
+
 	if (packageName == __dummy_package_name)
 	{
 		return;
