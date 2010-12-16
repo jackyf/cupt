@@ -251,6 +251,7 @@ void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 		}
 
 		packageEntry.version = candidateVersion;
+		packageEntry.checked.reset(); // invalidating
 		packageEntry.sticked = stick;
 		if (debugging)
 		{
@@ -265,6 +266,7 @@ void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 					shared_ptr< const Reason >(new SynchronizationReason(packageName)));
 		}
 		__solution_storage.setPackageEntry(solution, relatedPackageName, packageEntry);
+		__solution_storage.invalidateReferencedBy(solution, relatedPackageName);
 	}
 }
 
@@ -977,6 +979,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	PackageEntry packageEntry;
 	solution.getPackageEntry(packageToModifyName, &packageEntry);
 	packageEntry.version = supposedVersion;
+	packageEntry.checked.reset(); // invalidating
 	packageEntry.sticked = true;
 	if(action.fakelySatisfies)
 	{
@@ -989,6 +992,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 		packageEntry.reasons->push_back(action.reason);
 	}
 	__solution_storage.setPackageEntry(solution, packageToModifyName, packageEntry);
+	__solution_storage.invalidateReferencedBy(solution, packageToModifyName);
 
 	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
 	{
@@ -1598,20 +1602,22 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				// clean up automatically installed by resolver and now unneeded packages
 				__clean_automatically_installed(currentSolution);
 
-				/* now, as we use partial checks (using set_package_entry/validate), before
-				   we present a solution it's a good idea to validate it from scratch finally:
-				   if it ever turns that partial checks pass a wrong solution, we must catch it
+				/* now, as we use partial checks (using
+				   setPackageEntry/invalidateReferencedBy/validate), before
+				   we present a solution it's a good idea to validate it from
+				   scratch finally: if it ever turns that partial checks pass a
+				   wrong solution, we must catch it
 
-				   so, we schedule a last check round for a solution, but as it already has
-				   'finished' property set, if the problem will appear, _pre_apply_action will
-				   die loudly
+				   so, we schedule a last check round for a solution, but as it
+				   already has 'finished' property set, if the problem will
+				   appear, __pre_apply_action will die loudly
 				*/
 				auto packageNames = currentSolution->getPackageNames();
 				FORIT(packageNameIt, packageNames)
 				{
-					// invalidating all package entries
 					PackageEntry packageEntry;
 					currentSolution->getPackageEntry(*packageNameIt, &packageEntry);
+					packageEntry.checked.reset(); // invalidating
 					__solution_storage.setPackageEntry(*currentSolution, *packageNameIt, packageEntry);
 				}
 				continue;

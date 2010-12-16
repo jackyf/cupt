@@ -173,12 +173,9 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	{
 		it->second = packageEntry;
 	}
-
-	it->second.checked.reset(); // invalidating this one
-	__invalidate_related(solution, packageName); // invalidating others;
 }
 
-void SolutionStorage::__invalidate_related(Solution& solution, const string& packageName)
+void SolutionStorage::invalidateReferencedBy(Solution& solution, const string& packageName)
 {
 	auto successorsIt = __dependency_map.find(packageName);
 	if (successorsIt == __dependency_map.end())

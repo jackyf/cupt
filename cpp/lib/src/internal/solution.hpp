@@ -123,7 +123,7 @@ class SolutionStorage
 	void addVersionDependencies(const vector< shared_ptr< const BinaryVersion > >&);
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
 	void setPackageEntry(Solution&, const string& packageName, const PackageEntry&);
-	void __invalidate_related(Solution&, const string& packageName);
+	void invalidateReferencedBy(Solution&, const string& packageName);
 };
 
 }
