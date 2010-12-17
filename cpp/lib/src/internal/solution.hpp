@@ -39,15 +39,15 @@ using std::set;
 
 typedef BinaryVersion::RelationTypes::Type RelationType;
 const size_t relationTypesCount = BinaryVersion::RelationTypes::Count;
-typedef bitset< relationTypesCount > RelationTypesBitset;
 
 struct PackageEntry
 {
+	enum class State : unsigned char { Dirty, Invalid, Valid };
 	shared_ptr< const BinaryVersion > version;
 	bool sticked;
 	CopyPtr< RelationLine > fakelySatisfied;
 	CopyPtr< vector< shared_ptr< const Resolver::Reason > > > reasons;
-	RelationTypesBitset checked;
+	State state[relationTypesCount];
 
 	PackageEntry();
 };
@@ -79,7 +79,7 @@ class Solution
 
 	void prepare();
 	vector< string > getPackageNames() const;
-	vector< string > getUncheckedPackageNames(RelationType) const;
+	vector< string > getFlaggedPackageNames(RelationType, PackageEntry::State) const;
 	bool getPackageEntry(const string& packageName, PackageEntry*) const;
 	void validate(const string& packageName,
 			const PackageEntry&, RelationType);

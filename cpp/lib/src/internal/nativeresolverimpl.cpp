@@ -251,7 +251,7 @@ void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 		}
 
 		packageEntry.version = candidateVersion;
-		packageEntry.checked.reset(); // invalidating
+		memset(packageEntry.state, 0, sizeof(packageEntry.state)); // invalidating
 		packageEntry.sticked = stick;
 		if (debugging)
 		{
@@ -979,7 +979,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	PackageEntry packageEntry;
 	solution.getPackageEntry(packageToModifyName, &packageEntry);
 	packageEntry.version = supposedVersion;
-	packageEntry.checked.reset(); // invalidating
+	memset(packageEntry.state, 0, sizeof(packageEntry.state)); // invalidating
 	packageEntry.sticked = true;
 	if(action.fakelySatisfies)
 	{
@@ -1505,7 +1505,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				   empty, firstly check the packages that had a problem */
 				vector< string > packageNames;
 				{
-					auto source = currentSolution->getUncheckedPackageNames(dependencyType);
+					auto source = currentSolution->getFlaggedPackageNames(dependencyType,
+							validateOnlyPass ? PackageEntry::State::Dirty : PackageEntry::State::Invalid);
 					__get_sorted_package_names(source, failCounts, packageNames);
 				}
 
@@ -1532,6 +1533,10 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					{
 						if (validateOnlyPass)
 						{
+							// validation failed, mark explicitly as so
+							packageEntry.state[dependencyType] = PackageEntry::State::Invalid;
+							__solution_storage.setPackageEntry(*currentSolution, packageName, packageEntry);
+
 							// do nothing, continue checking
 							if (!possibleActions.empty())
 							{
@@ -1584,7 +1589,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					;
 				}
 			}
-			validateOnlyPass = false;
+			if (validateOnlyPass)
+			{
+				validateOnlyPass = false;
+				recheckNeeded = true;
+			}
 		}
 		finish_main_loop:
 
@@ -1617,7 +1626,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				{
 					PackageEntry packageEntry;
 					currentSolution->getPackageEntry(*packageNameIt, &packageEntry);
-					packageEntry.checked.reset(); // invalidating
+					memset(packageEntry.state, 0, sizeof(packageEntry.state)); // invalidating
 					__solution_storage.setPackageEntry(*currentSolution, *packageNameIt, packageEntry);
 				}
 				continue;

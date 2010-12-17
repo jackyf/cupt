@@ -26,7 +26,9 @@ namespace internal {
 
 PackageEntry::PackageEntry()
 	: sticked(false)
-{}
+{
+	memset(state, 0, sizeof(state));
+}
 
 class PackageEntryMap
 {
@@ -203,9 +205,9 @@ void SolutionStorage::invalidateReferencedBy(Solution& solution, const string& p
 			}
 
 			// now, inserting new entry is an expensive operation, do we really need it?
-			if (! masterIt->second.checked[successorIt->relationType])
+			if (masterIt->second.state[successorIt->relationType] == PackageEntry::State::Dirty)
 			{
-				continue; // no, it's reset already
+				continue; // no, it's dirty already
 			}
 
 			// ok, this is package entry from _master_packages, and we change
@@ -213,7 +215,7 @@ void SolutionStorage::invalidateReferencedBy(Solution& solution, const string& p
 			it = solution.__package_entries->insert(it,
 					make_pair(successorPackageName, masterIt->second));
 		}
-		it->second.checked[successorIt->relationType] = false;
+		it->second.state[successorIt->relationType] = PackageEntry::State::Dirty;
 	}
 }
 
@@ -296,13 +298,13 @@ vector< string > Solution::getPackageNames() const
 	return result;
 }
 
-vector< string > Solution::getUncheckedPackageNames(
-		RelationType dependencyType) const
+vector< string > Solution::getFlaggedPackageNames(
+		RelationType dependencyType, PackageEntry::State flag) const
 {
 	vector< string > result;
-	auto isEligible = [&dependencyType](decltype(__package_entries->begin()) it)
+	auto isEligible = [&dependencyType, &flag](decltype(__package_entries->begin()) it)
 	{
-		return (!it->second.checked[dependencyType] && it->second.version);
+		return (it->second.state[dependencyType] == flag && it->second.version);
 	};
 	auto processEntry = [&result, &isEligible](decltype(__package_entries->begin()) it)
 	{
@@ -399,7 +401,7 @@ void Solution::validate(const string& packageName,
 		it = __package_entries->insert(it, make_pair(packageName, oldPackageEntry));
 	}
 
-	it->second.checked[relationType] = true;
+	it->second.state[relationType] = PackageEntry::State::Valid;
 }
 
 }
