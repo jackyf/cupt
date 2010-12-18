@@ -563,15 +563,21 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 	}
 
 	{ // checking Valid-Until
-		struct tm validUntilTm;
 		if (!result->validUntilDate.empty())
 		{
+			struct tm validUntilTm;
+			struct tm currentTm;
+
 			auto oldTimeSpec = setlocale(LC_TIME, "C");
 			auto parseResult = strptime(result->validUntilDate.c_str(), "%a, %d %b %Y %T UTC", &validUntilTm);
 			setlocale(LC_TIME, oldTimeSpec);
 			if (parseResult) // success
 			{
-				if (time(NULL) > mktime(&validUntilTm))
+				time_t localTime = time(NULL);
+				gmtime_r(&localTime, &currentTm);
+				// sanely, we should use timegm() here, but it's not portable,
+				// so we use mktime() which is enough for comparing two UTC tm's
+				if (mktime(&currentTm) > mktime(&validUntilTm))
 				{
 					fatal("release file '%s' has expired (expiry time '%s'), discarding it",
 							path.c_str(), result->validUntilDate.c_str());
