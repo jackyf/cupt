@@ -38,6 +38,12 @@ class PackageEntryMap
  private:
 	container_t __container;
  public:
+	size_t forkedCount;
+
+	PackageEntryMap()
+		: forkedCount(0)
+	{}
+
 	typedef data_t* iterator_t;
 	typedef const data_t* const_iterator_t;
 
@@ -214,10 +220,12 @@ void Solution::prepare()
 	else
 	{
 		// this a slave solution
-		static const float overdivertedFactor = 0.7;
-		if (__parent->__package_entries->size() >=
-			pow(__parent->__master_package_entries->size(), overdivertedFactor))
+		size_t& forkedCount = __parent->__master_package_entries->forkedCount;
+		forkedCount += __parent->__package_entries->size();
+		if (forkedCount > __parent->__master_package_entries->size())
 		{
+			forkedCount = 0;
+
 			// master solution is overdiverted, build new master one
 			__package_entries.reset(new PackageEntryMap);
 			__package_entries->reserve(__parent->__package_entries->size() +
