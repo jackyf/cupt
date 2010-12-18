@@ -1518,7 +1518,10 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 		}
 
 		auto relationType = referencedPartIt->relationType;
-		bool oldCheckedValue = packageEntry.checked[relationType];
+		if (!packageEntry.checked[relationType])
+		{
+			continue;
+		}
 
 		const DependencyEntry* dependencyEntryPtr = NULL;
 		{ // determining isDependencyAnti
@@ -1541,7 +1544,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 		packageEntry.checked[relationType] = __verify_relation_line(solution, &referencedPackageName,
 				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi);
 
-		if (packageEntry.checked[relationType] != oldCheckedValue)
+		if (!packageEntry.checked[relationType])
 		{
 			__solution_storage.setPackageEntry(solution, referencedPackageName, packageEntry);
 		}
