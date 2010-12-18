@@ -220,12 +220,14 @@ bool NativeResolverImpl::__can_related_packages_be_synchronized(
 	return __get_unsynchronizeable_related_package_names(solution, version).empty();
 }
 
-void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
+vector< string > NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 		const shared_ptr< const BinaryVersion >& version, bool stick)
 {
 	auto relatedPackageNames = __get_related_binary_package_names(__cache, solution, version);
 	const string& sourceVersionString = version->sourceVersionString;
 	const string& packageName = version->packageName;
+
+	vector< string > result;
 
 	auto debugging = __config->getBool("debug::resolver");
 	auto trackReasons = __config->getBool("cupt::resolver::track-reasons");
@@ -251,7 +253,7 @@ void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 		}
 
 		packageEntry.version = candidateVersion;
-		memset(packageEntry.state, 0, sizeof(packageEntry.state)); // invalidating
+		packageEntry.checked.reset(); // invalidating
 		packageEntry.sticked = stick;
 		if (debugging)
 		{
@@ -266,8 +268,11 @@ void NativeResolverImpl::__synchronize_related_packages(Solution& solution,
 					shared_ptr< const Reason >(new SynchronizationReason(packageName)));
 		}
 		__solution_storage.setPackageEntry(solution, relatedPackageName, packageEntry);
-		__solution_storage.invalidateReferencedBy(solution, relatedPackageName);
+
+		result.push_back(relatedPackageName);
 	}
+
+	return result;
 }
 
 // installs new version, but does not sticks it
@@ -554,7 +559,7 @@ float NativeResolverImpl::__get_action_profit(const shared_ptr< const BinaryVers
 
 const shared_ptr< const BinaryVersion >* __is_version_array_intersects_with_packages(
 		const vector< shared_ptr< const BinaryVersion > >& versions,
-		const shared_ptr< Solution >& solution, const string* ignorePackageNamePtr = NULL)
+		const Solution& solution, const string* ignorePackageNamePtr = NULL)
 {
 	PackageEntry packageEntry;
 	FORIT(versionIt, versions)
@@ -567,7 +572,7 @@ const shared_ptr< const BinaryVersion >* __is_version_array_intersects_with_pack
 			continue;
 		}
 
-		if (!solution->getPackageEntry(packageName, &packageEntry))
+		if (!solution.getPackageEntry(packageName, &packageEntry))
 		{
 			continue;
 		}
@@ -955,7 +960,8 @@ void NativeResolverImpl::__erase_worst_solutions(list< shared_ptr< Solution > >&
 	}
 }
 
-void NativeResolverImpl::__post_apply_action(Solution& solution)
+void NativeResolverImpl::__post_apply_action(Solution& solution,
+		const vector< DependencyEntry >& dependencyGroups)
 {
 	if (!solution.pendingAction)
 	{
@@ -979,7 +985,6 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	PackageEntry packageEntry;
 	solution.getPackageEntry(packageToModifyName, &packageEntry);
 	packageEntry.version = supposedVersion;
-	memset(packageEntry.state, 0, sizeof(packageEntry.state)); // invalidating
 	packageEntry.sticked = true;
 	if(action.fakelySatisfies)
 	{
@@ -992,14 +997,18 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 		packageEntry.reasons->push_back(action.reason);
 	}
 	__solution_storage.setPackageEntry(solution, packageToModifyName, packageEntry);
-	__solution_storage.invalidateReferencedBy(solution, packageToModifyName);
+	__validate_changed_package(solution, packageToModifyName, dependencyGroups);
 
 	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
 	{
 		// don't do synchronization for removals
 		if (supposedVersion)
 		{
-			__synchronize_related_packages(solution, supposedVersion, true);
+			auto changedPackageNames = __synchronize_related_packages(solution, supposedVersion, true);
+			FORIT(changedPackageNameIt, changedPackageNames)
+			{
+				__validate_changed_package(solution, *changedPackageNameIt, dependencyGroups);
+			}
 		}
 	}
 
@@ -1276,7 +1285,7 @@ bool NativeResolverImpl::__is_soft_dependency_ignored(const shared_ptr< const Bi
 		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions) const
 {
 	auto wasSatisfiedInPast = __is_version_array_intersects_with_packages(
-				satisfyingVersions, __old_solution);
+				satisfyingVersions, *__old_solution);
 	if (wasSatisfiedInPast)
 	{
 		return false;
@@ -1348,7 +1357,7 @@ void __get_sorted_package_names(const vector< string >& source,
 	}
 }
 
-bool NativeResolverImpl::__verify_relation_line(const shared_ptr< Solution >& solution,
+bool NativeResolverImpl::__verify_relation_line(const Solution& solution,
 		const string* packageNamePtr, const PackageEntry& packageEntry,
 		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti,
 		BrokenDependencyInfo* bdi)
@@ -1445,6 +1454,100 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 	}
 }
 
+void NativeResolverImpl::__validate_package_name(Solution& solution, const string& packageName,
+		const vector< DependencyEntry >& dependencyGroups)
+{
+	PackageEntry packageEntry;
+	solution.getPackageEntry(packageName, &packageEntry);
+
+	if (!packageEntry.version)
+	{
+		packageEntry.checked.set();
+		__solution_storage.setPackageEntry(solution, packageName, packageEntry);
+		return;
+	}
+
+	auto oldChecked = packageEntry.checked;
+
+	FORIT(dependencyGroupIt, dependencyGroups)
+	{
+		auto dependencyType = dependencyGroupIt->type;
+		auto isDependencyAnti = dependencyGroupIt->isAnti;
+
+		BrokenDependencyInfo brokenDependencyInfo;
+		packageEntry.checked[dependencyType] = __verify_relation_line(solution, &packageName,
+				packageEntry, dependencyType, isDependencyAnti, /* out -> */ &brokenDependencyInfo);
+	}
+	if (packageEntry.checked != oldChecked)
+	{
+		__solution_storage.setPackageEntry(solution, packageName, packageEntry);
+	}
+}
+
+void NativeResolverImpl::__initial_validate_pass(Solution& solution,
+		const vector< DependencyEntry >& dependencyGroups)
+{
+	vector< string > packageNames = solution.getPackageNames();
+
+	FORIT(packageNameIt, packageNames)
+	{
+		__validate_package_name(solution, *packageNameIt, dependencyGroups);
+	}
+}
+
+void NativeResolverImpl::__validate_changed_package(Solution& solution,
+		const string& changedPackageName, const vector< DependencyEntry >& dependencyGroups)
+{
+	__validate_package_name(solution, changedPackageName, dependencyGroups);
+
+	// and now validating referenced packages
+	const set< SolutionStorage::PackageDependency >& referencedParts =
+			__solution_storage.getReferencedSet(changedPackageName);
+	FORIT(referencedPartIt, referencedParts)
+	{
+		const string& referencedPackageName = referencedPartIt->packageName;
+
+		PackageEntry packageEntry;
+		if (!solution.getPackageEntry(referencedPackageName, &packageEntry))
+		{
+			continue;
+		}
+		if (!packageEntry.version)
+		{
+			continue; // nothing to change
+		}
+
+		auto relationType = referencedPartIt->relationType;
+		bool oldCheckedValue = packageEntry.checked[relationType];
+
+		const DependencyEntry* dependencyEntryPtr = NULL;
+		{ // determining isDependencyAnti
+			FORIT(it, dependencyGroups)
+			{
+				if (it->type == relationType)
+				{
+					dependencyEntryPtr = &*it;
+					break;
+				}
+			}
+			if (!dependencyEntryPtr)
+			{
+				fatal("internal error: didn't find a dependency group for relation type '%d'",
+						int(relationType));
+			}
+		}
+
+		BrokenDependencyInfo bdi; // unused
+		packageEntry.checked[relationType] = __verify_relation_line(solution, &referencedPackageName,
+				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi);
+
+		if (packageEntry.checked[relationType] != oldCheckedValue)
+		{
+			__solution_storage.setPackageEntry(solution, referencedPackageName, packageEntry);
+		}
+	}
+}
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser();
@@ -1462,6 +1565,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	list< shared_ptr< Solution > > solutions =
 			{ __solution_storage.cloneSolution(__initial_solution) };
 	(*solutions.begin())->prepare();
+	__initial_validate_pass(**solutions.begin(), dependencyGroups);
 
 	// for each package entry 'count' will contain the number of failures
 	// during processing these packages
@@ -1479,7 +1583,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		if (currentSolution->pendingAction)
 		{
 			currentSolution->prepare();
-			__post_apply_action(*currentSolution);
+			__post_apply_action(*currentSolution, dependencyGroups);
 		}
 
 		// for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
@@ -1488,9 +1592,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		//
 		// once two or more solutions are available, loop will be ended immediately
 		bool recheckNeeded = true;
-		// first pass is performed in validate-only mode - skip all invalid packages
-		// to decrease the number of valid packages not being validated
-		bool validateOnlyPass = true;
 		while (recheckNeeded)
 		{
 			recheckNeeded = false;
@@ -1505,8 +1606,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				   empty, firstly check the packages that had a problem */
 				vector< string > packageNames;
 				{
-					auto source = currentSolution->getFlaggedPackageNames(dependencyType,
-							validateOnlyPass ? PackageEntry::State::Dirty : PackageEntry::State::Invalid);
+					auto source = currentSolution->getUncheckedPackageNames(dependencyType);
 					__get_sorted_package_names(source, failCounts, packageNames);
 				}
 
@@ -1526,26 +1626,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					}
 
 					BrokenDependencyInfo brokenDependencyInfo;
-					checkFailed = !__verify_relation_line(currentSolution, &*packageNameIt,
+					checkFailed = !__verify_relation_line(*currentSolution, &*packageNameIt,
 							packageEntry, dependencyType, isDependencyAnti,
 							/* out -> */ &brokenDependencyInfo);
 					if (checkFailed)
 					{
-						if (validateOnlyPass)
-						{
-							// validation failed, mark explicitly as so
-							packageEntry.state[dependencyType] = PackageEntry::State::Invalid;
-							__solution_storage.setPackageEntry(*currentSolution, packageName, packageEntry);
-
-							// do nothing, continue checking
-							if (!possibleActions.empty())
-							{
-								fatal("internal error: some actions were generated in validate-only pass");
-							}
-							recheckNeeded = true;
-
-							goto next_package;
-						}
 						__generate_possible_actions(&possibleActions, currentSolution, packageName,
 								packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti);
 
@@ -1575,7 +1660,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						if (possibleActions.size() == 1)
 						{
 							__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
-							__post_apply_action(*currentSolution);
+							__post_apply_action(*currentSolution, dependencyGroups);
 							possibleActions.clear();
 
 							recheckNeeded = true;
@@ -1584,15 +1669,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						goto finish_main_loop;
 					}
 					currentSolution->validate(packageName, packageEntry, dependencyType);
-
-					next_package:
-					;
 				}
-			}
-			if (validateOnlyPass)
-			{
-				validateOnlyPass = false;
-				recheckNeeded = true;
 			}
 		}
 		finish_main_loop:
@@ -1626,7 +1703,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				{
 					PackageEntry packageEntry;
 					currentSolution->getPackageEntry(*packageNameIt, &packageEntry);
-					memset(packageEntry.state, 0, sizeof(packageEntry.state)); // invalidating
+					packageEntry.checked.reset(); // invalidating
 					__solution_storage.setPackageEntry(*currentSolution, *packageNameIt, packageEntry);
 				}
 				continue;

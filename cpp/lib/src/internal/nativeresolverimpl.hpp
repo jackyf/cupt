@@ -89,7 +89,10 @@ class NativeResolverImpl
 	void __pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
 			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
 	void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions);
-	void __post_apply_action(Solution&);
+	void __validate_package_name(Solution&, const string&, const vector< DependencyEntry >&);
+	void __initial_validate_pass(Solution&, const vector< DependencyEntry >&);
+	void __validate_changed_package(Solution&, const string&, const vector< DependencyEntry >&);
+	void __post_apply_action(Solution&, const vector< DependencyEntry >&);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const string&,
 			const PackageEntry&, BinaryVersion::RelationTypes::Type, const RelationExpression&,
 			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard = false);
@@ -105,7 +108,7 @@ class NativeResolverImpl
 			const shared_ptr< const BinaryVersion >&);
 	bool __can_related_packages_be_synchronized(
 			const Solution&, const shared_ptr< const BinaryVersion >&);
-	void __synchronize_related_packages(Solution&,
+	vector< string > __synchronize_related_packages(Solution&,
 			const shared_ptr< const BinaryVersion >&, bool);
 	void __filter_unsynchronizeable_actions(
 			const Solution&, vector< unique_ptr< Action > >&);
@@ -117,7 +120,7 @@ class NativeResolverImpl
 		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
 	};
 
-	bool __verify_relation_line(const shared_ptr< Solution >&,
+	bool __verify_relation_line(const Solution&,
 			const string* packageNamePtr, const PackageEntry&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
 			BrokenDependencyInfo*);

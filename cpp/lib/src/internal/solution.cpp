@@ -26,9 +26,7 @@ namespace internal {
 
 PackageEntry::PackageEntry()
 	: sticked(false)
-{
-	memset(state, 0, sizeof(state));
-}
+{}
 
 class PackageEntryMap
 {
@@ -177,45 +175,18 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	}
 }
 
-void SolutionStorage::invalidateReferencedBy(Solution& solution, const string& packageName)
+const set< SolutionStorage::PackageDependency >& SolutionStorage::getReferencedSet(const string& packageName)
 {
+	static const set< PackageDependency > nullSet;
+
 	auto successorsIt = __dependency_map.find(packageName);
-	if (successorsIt == __dependency_map.end())
+	if (successorsIt != __dependency_map.end())
 	{
-		return;
+		return successorsIt->second;
 	}
-	FORIT(successorIt, successorsIt->second)
+	else
 	{
-		const string& successorPackageName = successorIt->packageName;
-
-		auto it = solution.__package_entries->lower_bound(successorPackageName);
-		if (it == solution.__package_entries->end() || it->first != successorPackageName)
-		{
-			if (!solution.__master_package_entries)
-			{
-				// no such package entry in this solution
-				continue;
-			}
-
-			auto masterIt = solution.__master_package_entries->find(successorPackageName);
-			if (masterIt == solution.__master_package_entries->end())
-			{
-				// no such package entry in this solution
-				continue;
-			}
-
-			// now, inserting new entry is an expensive operation, do we really need it?
-			if (masterIt->second.state[successorIt->relationType] == PackageEntry::State::Dirty)
-			{
-				continue; // no, it's dirty already
-			}
-
-			// ok, this is package entry from _master_packages, and we change
-			// it, so we need to clone it
-			it = solution.__package_entries->insert(it,
-					make_pair(successorPackageName, masterIt->second));
-		}
-		it->second.state[successorIt->relationType] = PackageEntry::State::Dirty;
+		return nullSet;
 	}
 }
 
@@ -298,13 +269,13 @@ vector< string > Solution::getPackageNames() const
 	return result;
 }
 
-vector< string > Solution::getFlaggedPackageNames(
-		RelationType dependencyType, PackageEntry::State flag) const
+vector< string > Solution::getUncheckedPackageNames(
+		RelationType dependencyType) const
 {
 	vector< string > result;
-	auto isEligible = [&dependencyType, &flag](decltype(__package_entries->begin()) it)
+	auto isEligible = [&dependencyType](decltype(__package_entries->begin()) it)
 	{
-		return (it->second.state[dependencyType] == flag && it->second.version);
+		return (!it->second.checked[dependencyType] && it->second.version);
 	};
 	auto processEntry = [&result, &isEligible](decltype(__package_entries->begin()) it)
 	{
@@ -401,7 +372,7 @@ void Solution::validate(const string& packageName,
 		it = __package_entries->insert(it, make_pair(packageName, oldPackageEntry));
 	}
 
-	it->second.state[relationType] = PackageEntry::State::Valid;
+	it->second.checked[relationType] = true;
 }
 
 }
