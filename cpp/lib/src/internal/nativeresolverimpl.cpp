@@ -1360,7 +1360,7 @@ void __get_sorted_package_names(const vector< string >& source,
 bool NativeResolverImpl::__verify_relation_line(const Solution& solution,
 		const string* packageNamePtr, const PackageEntry& packageEntry,
 		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti,
-		BrokenDependencyInfo* bdi)
+		BrokenDependencyInfo* bdi, const string* changedPackageNamePtr)
 {
 	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
 	const string* ignorePackageNamePtr = (isDependencyAnti ? packageNamePtr : NULL);
@@ -1371,6 +1371,24 @@ bool NativeResolverImpl::__verify_relation_line(const Solution& solution,
 		const RelationExpression& relationExpression = *relationExpressionIt;
 
 		bdi->satisfyingVersions = __cache->getSatisfyingVersions(relationExpression);
+		if (changedPackageNamePtr)
+		{
+			// "invalidate"-mode, only verify the changes that could be caused
+			// by changedPackageName(Ptr)
+			bool found = false;
+			FORIT(it, bdi->satisfyingVersions)
+			{
+				if ((*it)->packageName == *changedPackageNamePtr)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				continue; // skip this relation expression
+			}
+		}
 		bdi->intersectVersionPtr = __is_version_array_intersects_with_packages(
 				bdi->satisfyingVersions, solution, ignorePackageNamePtr);
 
@@ -1542,7 +1560,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 
 		BrokenDependencyInfo bdi; // unused
 		packageEntry.checked[relationType] = __verify_relation_line(solution, &referencedPackageName,
-				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi);
+				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi, &changedPackageName);
 
 		if (!packageEntry.checked[relationType])
 		{
