@@ -1159,7 +1159,12 @@ void NativeResolverImpl::__prepare_stick_requests(vector< unique_ptr< Action > >
 	FORIT(actionIt, actions)
 	{
 		(*actionIt)->packageToStickNames = packageNames;
-		packageNames.push_back((*actionIt)->packageName);
+
+		const string& actionPackageName = (*actionIt)->packageName;
+		if (std::find(packageNames.begin(), packageNames.end(), actionPackageName) == packageNames.end())
+		{
+			packageNames.push_back(actionPackageName);
+		}
 	}
 }
 
