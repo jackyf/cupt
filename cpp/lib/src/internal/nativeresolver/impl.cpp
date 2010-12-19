@@ -28,7 +28,7 @@
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/regex.hpp>
 
-#include <internal/nativeresolverimpl.hpp>
+#include <internal/nativeresolver/impl.hpp>
 #include <internal/graph.hpp>
 
 namespace cupt {

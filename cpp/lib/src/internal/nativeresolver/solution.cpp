@@ -19,7 +19,7 @@
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
 
-#include <internal/solution.hpp>
+#include <internal/nativeresolver/solution.hpp>
 
 namespace cupt {
 namespace internal {

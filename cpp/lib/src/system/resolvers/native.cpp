@@ -17,7 +17,7 @@
 **************************************************************************/
 #include <cupt/system/resolvers/native.hpp>
 
-#include <internal/nativeresolverimpl.hpp>
+#include <internal/nativeresolver/impl.hpp>
 
 namespace cupt {
 namespace system {

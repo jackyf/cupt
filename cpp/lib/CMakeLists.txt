@@ -5,8 +5,8 @@ include_directories(src)
 add_library(cupt2 SHARED
 	./src/internal/common.cpp
 	./src/internal/configparser.cpp
-	./src/internal/nativeresolverimpl.cpp
-	./src/internal/solution.cpp
+	./src/internal/nativeresolver/impl.cpp
+	./src/internal/nativeresolver/solution.cpp
 	./src/internal/lock.cpp
 	./src/internal/cacheimpl.cpp
 	./src/internal/pininfo.cpp

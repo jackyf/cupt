@@ -24,7 +24,7 @@
 #include <cupt/fwd.hpp>
 #include <cupt/system/resolver.hpp>
 
-#include <internal/solution.hpp>
+#include <internal/nativeresolver/solution.hpp>
 
 namespace cupt {
 namespace internal {
