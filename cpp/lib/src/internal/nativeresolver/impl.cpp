@@ -485,11 +485,6 @@ float NativeResolverImpl::__get_version_weight(const shared_ptr< const BinaryVer
 
 	float result = __cache->getPin(version);
 
-	if (version->essential)
-	{
-		result *= 5.0;
-	}
-
 	// omitting priority 'standard' here
 	switch (version->priority)
 	{
@@ -551,6 +546,10 @@ float NativeResolverImpl::__get_action_profit(const shared_ptr< const BinaryVers
 		if (result < 0)
 		{
 			result *= 4;
+			if (originalVersion->essential)
+			{
+				result *= 5;
+			}
 		}
 	}
 
