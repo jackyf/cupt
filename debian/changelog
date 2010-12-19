@@ -17,6 +17,7 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
       - 'operator=': forbidden now.
       - Reorganized *Reason struct, transformed to struct hierarchy.
       - Apply essential package penalty only for removals.
+      - Version priorities don't affect versions' scores anymore.
     - system/worker:
       - 'operator=': forbidden now.
       - 'markAsAutomaticallyInstalled': renamed to

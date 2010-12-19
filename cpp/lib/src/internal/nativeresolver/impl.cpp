@@ -485,26 +485,6 @@ float NativeResolverImpl::__get_version_weight(const shared_ptr< const BinaryVer
 
 	float result = __cache->getPin(version);
 
-	// omitting priority 'standard' here
-	switch (version->priority)
-	{
-		case Version::Priorities::Optional:
-			result *= 0.9;
-			break;
-		case Version::Priorities::Extra:
-			result *= 0.7;
-			break;
-		case Version::Priorities::Important:
-			result *= 1.4;
-			break;
-		case Version::Priorities::Required:
-			result *= 2.0;
-			break;
-		default:
-			;
-			// do nothing
-	}
-
 	if (result > 0)
 	{
 		// apply the rules only to positive results so negative ones save their
