@@ -216,28 +216,24 @@ const list< const T* >& Graph< T >::getSuccessors(const T& vertex) const
 
 template < class T >
 void __dfs_visit(const Graph< T >& graph, const T* vertexPtr,
-		set< const T* >& seen, vector< pair< const T*, size_t > >& finishTimes, size_t& time)
+		set< const T* >& seen, vector< const T* >& output)
 {
 	seen.insert(vertexPtr);
-
-	++time;
 
 	const list< const T* >& successors = graph.getSuccessorsFromPointer(vertexPtr);
 	FORIT(toVertexIt, successors)
 	{
 		if (!seen.count(*toVertexIt))
 		{
-			__dfs_visit(graph, *toVertexIt, seen, finishTimes, time);
+			__dfs_visit(graph, *toVertexIt, seen, output);
 		}
 	}
 
-	++time;
-
-	finishTimes.push_back(std::make_pair(vertexPtr, time));
+	output.push_back(vertexPtr);
 }
 
 template < class T >
-vector< pair< const T*, size_t > > __dfs_mode1(const Graph< T >& graph)
+vector< const T* > __dfs_mode1(const Graph< T >& graph)
 {
 	vector< const T* > vertices;
 
@@ -249,26 +245,24 @@ vector< pair< const T*, size_t > > __dfs_mode1(const Graph< T >& graph)
 	std::random_shuffle(vertices.begin(), vertices.end());
 
 	set< const T* > seen;
-	vector< pair< const T*, size_t > > finishTimes;
-	size_t time = 0;
+	vector< const T* > result;
 
 	FORIT(vertexIt, vertices)
 	{
 		if (!seen.count(*vertexIt))
 		{
-			__dfs_visit(graph, *vertexIt, seen, finishTimes, time);
+			__dfs_visit(graph, *vertexIt, seen, result);
 		}
 	}
 
-	return finishTimes;
+	return result;
 }
 
 template < class T >
 vector< vector< T > > __dfs_mode2(const Graph< T >& graph, const vector< const T* >& vertices)
 {
 	set< const T* > seen;
-	vector< pair< const T*, size_t > > finishTimes;
-	size_t time = 0;
+	vector< const T* > stronglyConnectedComponent;
 
 	vector< vector< T > > result; // topologically sorted vertices
 
@@ -276,14 +270,14 @@ vector< vector< T > > __dfs_mode2(const Graph< T >& graph, const vector< const T
 	{
 		if (!seen.count(*vertexIt))
 		{
-			__dfs_visit(graph, *vertexIt, seen, finishTimes, time);
+			__dfs_visit(graph, *vertexIt, seen, stronglyConnectedComponent);
 			vector< T > toInsert;
-			FORIT(finishTimeIt, finishTimes)
+			FORIT(vertexPtrIt, stronglyConnectedComponent)
 			{
-				toInsert.push_back(*(finishTimeIt->first));
+				toInsert.push_back(**vertexPtrIt);
 			}
 			result.push_back(std::move(toInsert));
-			finishTimes.clear();
+			stronglyConnectedComponent.clear();
 		}
 	}
 
@@ -293,23 +287,12 @@ vector< vector< T > > __dfs_mode2(const Graph< T >& graph, const vector< const T
 template < class T >
 vector< vector< T > > Graph< T >::topologicalSortOfStronglyConnectedComponents()
 {
-	auto firstFinishTimes = __dfs_mode1(*this);
+	auto vertices = __dfs_mode1(*this);
 
 	// transposing the graph temporarily
 	__successors.swap(__predecessors);
 
-	// sort by finish time in descent order
-	auto predicate = [](const pair< const T*, size_t >& left, const pair< const T*, size_t >& right) -> bool
-	{
-		return left.second > right.second;
-	};
-	std::sort(firstFinishTimes.begin(), firstFinishTimes.end(), predicate);
-
-	vector< const T* > vertices;
-	FORIT(it, firstFinishTimes)
-	{
-		vertices.push_back(it->first);
-	}
+	std::reverse(vertices.begin(), vertices.end());
 
 	auto result = __dfs_mode2(*this, vertices);
 
