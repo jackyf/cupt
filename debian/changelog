@@ -45,7 +45,7 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
     - cupt-experimental.1:
       - '--installed-only' works under 'shell' subcommand since 2.0.0~alpha1.
 
- -- Eugene Lyubimkin <jackyf@debian.org>  Tue, 16 Nov 2010 10:09:36 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 16 Nov 2010 10:09:36 +0200
 
 cupt2 (2.0.0~alpha2) UNRELEASED; urgency=low
 
