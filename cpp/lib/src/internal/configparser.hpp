@@ -61,7 +61,7 @@ class ConfigParser
 	bool __closing_bracket();
 	bool __regex(const sregex&);
 	bool __string(const char*);
-	void __skip_spaces();
+	void __skip_spaces_and_comments();
 	void __maybe_error(Lexem::Type);
 
 	static string __get_lexem_description(Lexem::Type type);

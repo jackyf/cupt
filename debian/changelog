@@ -31,6 +31,7 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
         work-around for #604130).
       - New method 'getPath' for unified handling of path options.
       - New option 'cupt::directory'.
+      - Fixed parsing '#' and '//' strings inside the option values.
     - system/snapshots:
       - Implemented.
     - cache/relation:

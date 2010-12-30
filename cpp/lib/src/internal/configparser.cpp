@@ -40,22 +40,11 @@ void ConfigParser::parse(const string& path)
 	string block;
 	file.getFile(block);
 
-	static const sregex lineCommentRegex = sregex::compile("(?:#\\s|//).*$", regex_constants::not_dot_newline);
-	block = regex_replace(block, lineCommentRegex, "");
-
-	FORIT(charIt, block)
-	{
-		if (*charIt == '\n' || *charIt == '\t')
-		{
-			*charIt = ' ';
-		}
-	}
-
 	__option_prefix = "";
 	__errors.clear();
 	__current = block.begin();
 	__end = block.end();
-	__skip_spaces();
+	__skip_spaces_and_comments();
 	try
 	{
 		__statements();
@@ -218,7 +207,7 @@ bool ConfigParser::__regex(const sregex& regex)
 		// accepted the term
 		__current = __m[0].second;
 		__read.assign(previous, __current);
-		__skip_spaces();
+		__skip_spaces_and_comments();
 		__errors.clear();
 		return true;
 	}
@@ -240,7 +229,7 @@ bool ConfigParser::__string(const char* str)
 	{
 		__read.assign(__current, __current + length);
 		__current += length;
-		__skip_spaces();
+		__skip_spaces_and_comments();
 		__errors.clear();
 		return true;
 	}
@@ -250,11 +239,14 @@ bool ConfigParser::__string(const char* str)
 	}
 }
 
-void ConfigParser::__skip_spaces()
+void ConfigParser::__skip_spaces_and_comments()
 {
-	while (__current != __end && *__current == ' ')
+	static const sregex skipRegex = sregex::compile(
+			"(?:" "\\s+" "|" "(?:#\\s|//).*$" ")+", regex_constants::not_dot_newline);
+	smatch m;
+	if (regex_search(__current, __end, m, skipRegex, regex_constants::match_continuous))
 	{
-		++__current;
+		__current = m[0].second;
 	}
 }
 
