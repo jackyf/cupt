@@ -735,14 +735,21 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 		bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 		bool debugging = __config->getBool("debug::resolver");
 
-		auto reachableVertexes = dependencyGraph.getReachable(mainVertexPackageName);
+		set< string > reachablePackageNames;
+		{
+			auto source = dependencyGraph.getReachableFrom(mainVertexPackageName);
+			FORIT(sourceIt, source)
+			{
+				reachablePackageNames.insert(**sourceIt);
+			}
+		}
 
 		shared_ptr< const Reason > reason(new AutoRemovalReason);
 
 		FORIT(packageNameIt, candidatesForRemoval)
 		{
 			const string& packageName = *packageNameIt;
-			if (!reachableVertexes.count(packageName))
+			if (!reachablePackageNames.count(packageName))
 			{
 				// surely exists because of candidatesForRemoval :)
 				PackageEntry packageEntry;

@@ -31,18 +31,22 @@ namespace internal {
 
 using std::list;
 
-static const string __dummy_version_string = "<dummy>";
-
 struct Direction
 {
 	enum Type { After, Before };
 };
 struct InnerAction
 {
-	enum Type { Unpack, Remove, Configure } type;
+	enum Type { PriorityModifier, Remove, Unpack, Configure } type;
 	shared_ptr< const BinaryVersion > version;
 	bool fake;
-	string dpkgFlags;
+	mutable const InnerAction* linkedFrom;
+	mutable const InnerAction* linkedTo;
+	mutable ssize_t priority;
+
+	InnerAction()
+		: fake(false), linkedFrom(NULL), linkedTo(NULL), priority(0)
+	{}
 
 	bool operator<(const InnerAction& other) const
 	{
@@ -66,13 +70,17 @@ struct InnerAction
 
 	string toString() const
 	{
-		const static string typeStrings[] = { "unpack", "remove", "configure" };
+		const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
 		string prefix = fake ? "(fake)" : "";
 		string result = prefix + typeStrings[type] + " " + version->packageName +
 				" " + version->versionString;
 
 		return result;
 	}
+};
+struct InnerActionGroup: public vector< InnerAction >
+{
+	string dpkgFlags;
 };
 struct GraphAndAttributes
 {
@@ -85,16 +93,34 @@ struct GraphAndAttributes
 	};
 	struct Attribute
 	{
-		bool multiplied;
+		bool isFundamental;
 		vector< RelationInfoRecord > relationInfo;
 
-		Attribute() : multiplied(false) {};
+		Attribute() : isFundamental(false) {}
+
+		bool isDependencyHard() const
+		{
+			if (isFundamental)
+			{
+				return true;
+			}
+
+			FORIT(recordIt, relationInfo)
+			{
+				if (recordIt->dependencyType != BinaryVersion::RelationTypes::Breaks &&
+					(!recordIt->reverse || recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 	};
 	map< InnerAction, map< InnerAction, Attribute > > attributes;
 };
 struct Changeset
 {
-	vector< vector< InnerAction > > actionGroups;
+	vector< InnerActionGroup > actionGroups;
 	vector< pair< download::Manager::DownloadEntity, string > > downloads;
 };
 
@@ -102,8 +128,7 @@ class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
 
-	void __fill_actions(GraphAndAttributes&);
-	void __fill_graph_dependencies(GraphAndAttributes&);
+	void __fill_actions(GraphAndAttributes&, vector< pair< InnerAction, InnerAction > >&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
 	vector< Changeset > __get_changesets(GraphAndAttributes&,
@@ -111,16 +136,13 @@ class PackagesWorker: public virtual WorkerBase
 	void __run_dpkg_command(const string&, const string&, const string&);
 	void __do_dpkg_pre_actions();
 	void __do_dpkg_post_actions();
-	string __generate_input_for_preinstall_v2_hooks(const vector< vector< InnerAction > >&);
-	void __do_dpkg_pre_packages_actions(const vector< vector< InnerAction > >&);
+	string __generate_input_for_preinstall_v2_hooks(const vector< InnerActionGroup >&);
+	void __do_dpkg_pre_packages_actions(const vector< InnerActionGroup >&);
 	void __clean_downloads(const Changeset& changeset);
-	void __fill_action_dependencies(const shared_ptr< const BinaryVersion >&,
-			BinaryVersion::RelationTypes::Type, InnerAction::Type,
-			Direction::Type, const InnerAction&, GraphAndAttributes&, bool);
 	void __do_downloads(const vector< pair< download::Manager::DownloadEntity, string > >&,
 			const shared_ptr< download::Progress >&);
 	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
-	void __change_auto_status(InnerAction::Type, const vector< InnerAction >&);
+	void __change_auto_status(InnerAction::Type, const InnerActionGroup&);
  public:
 	PackagesWorker();
 

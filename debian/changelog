@@ -24,6 +24,11 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
         'setAutomaticallyInstalledFlag'.
       - 'deleteArchive': fixed possible directory traversal.
       - Implemented snapshot-related methods.
+      - Rewrote scheduling dpkg actions to automatically determine packages
+        which need an indirect upgrade, making the option
+        'cupt::worker::allow-indirect-upgrade' unneeded.
+      - Introduce dpkg action priority heuristics to reduce the time from
+        the package state is changed till the package state is final.
     - config:
       - Option 'cupt::resolver::max-solution-count': increased default value
         from 256 to 512.
@@ -32,6 +37,7 @@ cupt2 (2.0.0~alpha3~) UNRELEASED; urgency=low
       - New method 'getPath' for unified handling of path options.
       - New option 'cupt::directory'.
       - Fixed parsing '#' and '//' strings inside the option values.
+      - Deleted option 'cupt::worker::allow-indirect-upgrade'.
     - system/snapshots:
       - Implemented.
     - cache/relation:

@@ -1096,13 +1096,6 @@ boolean, see L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 string, see L<--resolver|/--resolver>
 
-=item cupt::worker::allow-indirect-upgrade
-
-list, package names which will be upgraded indirectly
-
-There are some packages with dependencies that make unable to upgrade the
-package properly. List them here. See also Debian BTS #551831.
-
 =item cupt::worker::archives-space-limit
 
 integer, bytes, positive, if set, limits the worker to not download more than specified

@@ -209,19 +209,6 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::http::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::ftp::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::resolver::synchronize-source-versions::exceptions", vector< string > { "db", "linux-\\d.\\d" } },
-		/* hack to work around packages with strict unkeepable
-		   Pre-Depends and ability to damage the system when
-		   dependencies is not satisfied */
-		{ "cupt::worker::allow-indirect-upgrade", vector< string > {
-			"libc6-i686",
-			"openjdk-6-jre",
-			"openjdk-6-jre-lib",
-			"openjdk-6-jre-headless",
-			"openoffice.org-core",
-			"openoffice.org-common",
-			"openoffice.org-writer2latex",
-			"openoffice.org-java-common"
-		} },
 	};
 }
 
