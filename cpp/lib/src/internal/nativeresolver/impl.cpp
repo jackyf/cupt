@@ -1026,90 +1026,92 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< unique_pt
 		BinaryVersion::RelationTypes::Type dependencyType, const RelationExpression& relationExpression,
 		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions, bool tryHard)
 {
-	if (!packageEntry.sticked)
+	if (packageEntry.sticked)
 	{
-		const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-		// change version of the package
-		auto package = __cache->getBinaryPackage(packageName);
-		auto versions = package->getVersions();
-		FORIT(otherVersionIt, versions)
+		return;
+	}
+
+	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
+	// change version of the package
+	auto package = __cache->getBinaryPackage(packageName);
+	auto versions = package->getVersions();
+	FORIT(otherVersionIt, versions)
+	{
+		const shared_ptr< const BinaryVersion >& otherVersion = *otherVersionIt;
+
+		// don't try existing version
+		if (otherVersion->versionString == version->versionString)
 		{
-			const shared_ptr< const BinaryVersion >& otherVersion = *otherVersionIt;
+			continue;
+		}
 
-			// don't try existing version
-			if (otherVersion->versionString == version->versionString)
+		bool found = false;
+		if (tryHard)
+		{
+			// let's check if other version has the same relation
+			// if it has, other version will also fail so it seems there is no sense trying it
+			found = __version_has_relation_expression(otherVersion,
+					dependencyType, relationExpression);
+			if (!found)
 			{
-				continue;
-			}
-
-			bool found = false;
-			if (tryHard)
-			{
-				// let's check if other version has the same relation
-				// if it has, other version will also fail so it seems there is no sense trying it
-				found = __version_has_relation_expression(otherVersion,
-						dependencyType, relationExpression);
-				if (!found)
+				// let's try even harder to find if the other version is really appropriate for us
+				const RelationLine& relationLine = otherVersion->relations[dependencyType];
+				FORIT(it, relationLine)
 				{
-					// let's try even harder to find if the other version is really appropriate for us
-					const RelationLine& relationLine = otherVersion->relations[dependencyType];
-					FORIT(it, relationLine)
+					/* we check only relations from dependency group that caused
+					   missing depends, it's not a full check, but pretty reasonable for
+					   most cases; in rare cases that some problematic dependency
+					   migrated to other dependency group, it will be revealed at
+					   next check run
+
+					   fail reveals that no one of available versions of dependent
+					   packages can satisfy the main package, so if some relation's
+					   satisfying versions are subset of failed ones, the version won't
+					   be accepted as a resolution
+					*/
+					bool isMoreWide = false;
+					auto candidateSatisfyingVersions = __cache->getSatisfyingVersions(*it);
+
+					FORIT(candidateIt, candidateSatisfyingVersions)
 					{
-						/* we check only relations from dependency group that caused
-						   missing depends, it's not a full check, but pretty reasonable for
-						   most cases; in rare cases that some problematic dependency
-						   migrated to other dependency group, it will be revealed at
-						   next check run
+						auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
+						bool candidateNotFound = (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
+								predicate) == satisfyingVersions.end());
 
-						   fail reveals that no one of available versions of dependent
-						   packages can satisfy the main package, so if some relation's
-						   satisfying versions are subset of failed ones, the version won't
-						   be accepted as a resolution
-						*/
-						bool isMoreWide = false;
-						auto candidateSatisfyingVersions = __cache->getSatisfyingVersions(*it);
-
-						FORIT(candidateIt, candidateSatisfyingVersions)
+						if (candidateNotFound)
 						{
-							auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
-							bool candidateNotFound = (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-									predicate) == satisfyingVersions.end());
-
-							if (candidateNotFound)
-							{
-								// more wide relation, can't say nothing bad with it at time being
-								isMoreWide = true;
-								break;
-							}
-						}
-
-						found = !isMoreWide;
-						if (found)
-						{
+							// more wide relation, can't say nothing bad with it at time being
+							isMoreWide = true;
 							break;
 						}
 					}
+
+					found = !isMoreWide;
+					if (found)
+					{
+						break;
+					}
 				}
 			}
-			if (!found)
-			{
-				// other version seems to be ok
-				unique_ptr< Action > action(new Action);
-				action->packageName = packageName;
-				action->version = otherVersion;
-
-				actions.push_back(std::move(action));
-			}
 		}
-
-		if (__can_package_be_removed(packageName))
+		if (!found)
 		{
-			// remove the package
+			// other version seems to be ok
 			unique_ptr< Action > action(new Action);
 			action->packageName = packageName;
+			action->version = otherVersion;
 
 			actions.push_back(std::move(action));
 		}
+	}
+
+	if (__can_package_be_removed(packageName))
+	{
+		// remove the package
+		unique_ptr< Action > action(new Action);
+		action->packageName = packageName;
+
+		actions.push_back(std::move(action));
 	}
 }
 
