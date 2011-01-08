@@ -1021,10 +1021,12 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 	return false;
 }
 
-void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< unique_ptr< Action > >& actions,
+void NativeResolverImpl::__add_actions_to_modify_package_entry(
+		vector< unique_ptr< Action > >& actions, const Solution& solution,
 		const string& packageName, const PackageEntry& packageEntry,
 		BinaryVersion::RelationTypes::Type dependencyType, const RelationExpression& relationExpression,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions, bool tryHard)
+		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions, bool tryHard,
+		bool debugging)
 {
 	if (packageEntry.sticked)
 	{
@@ -1052,6 +1054,12 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< unique_pt
 			// if it has, other version will also fail so it seems there is no sense trying it
 			found = __version_has_relation_expression(otherVersion,
 					dependencyType, relationExpression);
+			if (debugging && found)
+			{
+				__mydebug_wrapper(solution, sf(
+						"cannot consider installing %s %s: it contains the same relation expression",
+						otherVersion->packageName.c_str(), otherVersion->versionString.c_str()));
+			}
 			if (!found)
 			{
 				// let's try even harder to find if the other version is really appropriate for us
@@ -1116,7 +1124,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(vector< unique_pt
 }
 
 void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Action > >& actions,
-		const shared_ptr< Solution >& solution,
+		const Solution& solution,
 		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions)
 {
 	// install one of versions package needs
@@ -1127,7 +1135,7 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 
 		// can the package be updated?
 		PackageEntry satisfyingPackageEntry;
-		bool exists = solution->getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
+		bool exists = solution.getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
 		if (!exists || !satisfyingPackageEntry.sticked)
 		{
 			unique_ptr< Action > action(new Action);
@@ -1421,9 +1429,9 @@ bool NativeResolverImpl::__verify_relation_line(const Solution& solution,
 }
 
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
-		const shared_ptr< Solution >& solution, const string& packageName,
+		const Solution& solution, const string& packageName,
 		const PackageEntry& packageEntry, const BrokenDependencyInfo& bdi,
-		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti)
+		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti, bool debugging)
 {
 	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
 	vector< unique_ptr< Action > >& possibleActions = *possibleActionsPtr;
@@ -1447,8 +1455,8 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 
 		// also
 		__add_actions_to_fix_dependency(possibleActions, solution, bdi.satisfyingVersions);
-		__add_actions_to_modify_package_entry(possibleActions, packageName,
-				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, true);
+		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
+				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, true, debugging);
 	}
 	else
 	{
@@ -1456,12 +1464,12 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		const string& satisfyingPackageName = satisfyingVersion->packageName;
 
 		PackageEntry satisfyingPackageEntry;
-		solution->getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
+		solution.getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
 
-		__add_actions_to_modify_package_entry(possibleActions, satisfyingPackageName,
-				satisfyingPackageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions);
-		__add_actions_to_modify_package_entry(possibleActions, packageName,
-				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions);
+		__add_actions_to_modify_package_entry(possibleActions, solution, satisfyingPackageName,
+				satisfyingPackageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, false, debugging);
+		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
+				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, false, debugging);
 	}
 }
 
@@ -1645,10 +1653,19 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 							/* out -> */ &brokenDependencyInfo);
 					if (checkFailed)
 					{
-						__generate_possible_actions(&possibleActions, currentSolution, packageName,
-								packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti);
-
 						const RelationExpression& failedRelationExpression = *(brokenDependencyInfo.relationExpressionPtr);
+						if (debugging)
+						{
+							const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
+							auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
+									BinaryVersion::RelationTypes::rawStrings[dependencyType],
+									failedRelationExpression.toString().c_str());
+							__mydebug_wrapper(*currentSolution, message);
+						}
+
+						__generate_possible_actions(&possibleActions, *currentSolution, packageName,
+								packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti, debugging);
+
 						if (trackReasons)
 						{
 							// setting a reason
@@ -1663,14 +1680,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						// mark package as failed one more time
 						failCounts[packageName] += 1;
 
-						if (debugging)
-						{
-							const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
-							auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
-									BinaryVersion::RelationTypes::rawStrings[dependencyType],
-									failedRelationExpression.toString().c_str());
-							__mydebug_wrapper(*currentSolution, message);
-						}
 						if (possibleActions.size() == 1)
 						{
 							__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));

@@ -93,10 +93,10 @@ class NativeResolverImpl
 	void __initial_validate_pass(Solution&, const vector< DependencyEntry >&);
 	void __validate_changed_package(Solution&, const string&, const vector< DependencyEntry >&);
 	void __post_apply_action(Solution&, const vector< DependencyEntry >&);
-	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const string&,
+	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const Solution&, const string&,
 			const PackageEntry&, BinaryVersion::RelationTypes::Type, const RelationExpression&,
-			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard = false);
-	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const shared_ptr< Solution >&,
+			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard, bool debugging);
+	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const Solution&,
 			const vector< shared_ptr< const BinaryVersion > >&);
 	void __prepare_stick_requests(vector< unique_ptr< Action > >& actions) const;
 	Resolver::UserAnswer::Type __propose_solution(
@@ -124,9 +124,9 @@ class NativeResolverImpl
 			const string* packageNamePtr, const PackageEntry&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
 			BrokenDependencyInfo*, const string* changedPackageNamePtr = NULL);
-	void __generate_possible_actions(vector< unique_ptr< Action > >*, const shared_ptr< Solution >&,
+	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&,
 			const string& packageName, const PackageEntry&, const BrokenDependencyInfo&,
-			BinaryVersion::RelationTypes::Type, bool isDependencyAnti);
+			BinaryVersion::RelationTypes::Type, bool isDependencyAnti, bool debugging);
 
 	static const string __dummy_package_name;
  public:
