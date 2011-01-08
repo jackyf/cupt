@@ -1097,6 +1097,13 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 					found = !isMoreWide;
 					if (found)
 					{
+						if (debugging)
+						{
+							__mydebug_wrapper(solution, sf(
+									"cannot consider installing %s %s: it contains equal or less wide relation expression '%s'",
+									otherVersion->packageName.c_str(), otherVersion->versionString.c_str(),
+									it->toString().c_str()));
+						}
 						break;
 					}
 				}
