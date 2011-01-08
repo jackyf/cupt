@@ -1024,9 +1024,8 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		vector< unique_ptr< Action > >& actions, const Solution& solution,
 		const string& packageName, const PackageEntry& packageEntry,
-		BinaryVersion::RelationTypes::Type dependencyType, const RelationExpression& relationExpression,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions, bool tryHard,
-		bool debugging)
+		BinaryVersion::RelationTypes::Type dependencyType, const BrokenDependencyInfo& bdi,
+		bool tryHard, bool debugging)
 {
 	if (packageEntry.sticked)
 	{
@@ -1053,7 +1052,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 			// let's check if other version has the same relation
 			// if it has, other version will also fail so it seems there is no sense trying it
 			found = __version_has_relation_expression(otherVersion,
-					dependencyType, relationExpression);
+					dependencyType, *(bdi.relationExpressionPtr));
 			if (debugging && found)
 			{
 				__mydebug_wrapper(solution, sf(
@@ -1083,8 +1082,8 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 					FORIT(candidateIt, candidateSatisfyingVersions)
 					{
 						auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
-						bool candidateNotFound = (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-								predicate) == satisfyingVersions.end());
+						bool candidateNotFound = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
+								predicate) == bdi.satisfyingVersions.end());
 
 						if (candidateNotFound)
 						{
@@ -1442,7 +1441,6 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 {
 	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
 	vector< unique_ptr< Action > >& possibleActions = *possibleActionsPtr;
-	const RelationExpression& failedRelationExpression = *(bdi.relationExpressionPtr);
 
 	if (!isDependencyAnti)
 	{
@@ -1463,7 +1461,7 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		// also
 		__add_actions_to_fix_dependency(possibleActions, solution, bdi.satisfyingVersions);
 		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
-				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, true, debugging);
+				packageEntry, dependencyType, bdi, true, debugging);
 	}
 	else
 	{
@@ -1474,9 +1472,9 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		solution.getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
 
 		__add_actions_to_modify_package_entry(possibleActions, solution, satisfyingPackageName,
-				satisfyingPackageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, false, debugging);
+				satisfyingPackageEntry, dependencyType, bdi, false, debugging);
 		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
-				packageEntry, dependencyType, failedRelationExpression, bdi.satisfyingVersions, false, debugging);
+				packageEntry, dependencyType, bdi, false, debugging);
 	}
 }
 

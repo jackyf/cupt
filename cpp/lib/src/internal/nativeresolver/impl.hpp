@@ -73,6 +73,14 @@ class NativeResolverImpl
 		enum Type { Ok, Restricted, Unsynchronizeable };
 	};
 
+	struct BrokenDependencyInfo
+	{
+		const RelationExpression* relationExpressionPtr;
+		const shared_ptr< const BinaryVersion >* intersectVersionPtr;
+		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
+	};
+
+
 	void __import_installed_versions();
 	vector< DependencyEntry > __get_dependency_groups() const;
 	InstallVersionResult::Type __prepare_version_no_stick(const shared_ptr< const BinaryVersion >&,
@@ -94,8 +102,8 @@ class NativeResolverImpl
 	void __validate_changed_package(Solution&, const string&, const vector< DependencyEntry >&);
 	void __post_apply_action(Solution&, const vector< DependencyEntry >&);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const Solution&, const string&,
-			const PackageEntry&, BinaryVersion::RelationTypes::Type, const RelationExpression&,
-			const vector< shared_ptr< const BinaryVersion > >&, bool tryHard, bool debugging);
+			const PackageEntry&, BinaryVersion::RelationTypes::Type, const BrokenDependencyInfo&,
+			bool tryHard, bool debugging);
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const Solution&,
 			const vector< shared_ptr< const BinaryVersion > >&);
 	void __prepare_stick_requests(vector< unique_ptr< Action > >& actions) const;
@@ -112,13 +120,6 @@ class NativeResolverImpl
 			const shared_ptr< const BinaryVersion >&, bool);
 	void __filter_unsynchronizeable_actions(
 			const Solution&, vector< unique_ptr< Action > >&);
-
-	struct BrokenDependencyInfo
-	{
-		const RelationExpression* relationExpressionPtr;
-		const shared_ptr< const BinaryVersion >* intersectVersionPtr;
-		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
-	};
 
 	bool __verify_relation_line(const Solution&,
 			const string* packageNamePtr, const PackageEntry&,
