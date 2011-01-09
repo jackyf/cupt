@@ -1044,43 +1044,49 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		return false;
 	}
 
-	if (packageModificationType == PackageModificationType::ConflictMaster)
-	{
-		return true; // TODO: handle it
-	}
 	// let's try even harder to find if the other version is really appropriate for us
 	const RelationLine& relationLine = otherVersion->relations[dependencyType];
 	FORIT(it, relationLine)
 	{
 		/* we check only relations from dependency group that caused
-		   missing depends, it's not a full check, but pretty reasonable for
+		   the problem, it's not a full check, but pretty reasonable for
 		   most cases; in rare cases that some problematic dependency
 		   migrated to other dependency group, it will be revealed at
 		   next check run
 
-		   fail reveals that no one of available versions of dependent
-		   packages can satisfy the main package, so if some relation's
-		   satisfying versions are subset of failed ones, the version won't
-		   be accepted as a resolution
+		   if any of relation expressions gives us equal or less "space" in
+		   terms of satisfying versoins, the version won't be accepted as a
+		   resolution
 		*/
-		bool isMoreWide = false;
 		auto candidateSatisfyingVersions = __cache->getSatisfyingVersions(*it);
-
-		FORIT(candidateIt, candidateSatisfyingVersions)
+		bool eligible;
+		if (packageModificationType == PackageModificationType::DependencyMaster)
 		{
-			auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
-			bool candidateNotFound = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
-					predicate) == bdi.satisfyingVersions.end());
+			bool isMoreWide = false;
 
-			if (candidateNotFound)
+			FORIT(candidateIt, candidateSatisfyingVersions)
 			{
-				// more wide relation, can't say nothing bad with it at time being
-				isMoreWide = true;
-				break;
+				auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
+				bool candidateNotFound = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
+						predicate) == bdi.satisfyingVersions.end());
+
+				if (candidateNotFound)
+				{
+					// more wide relation, can't say nothing bad with it at time being
+					isMoreWide = true;
+					break;
+				}
 			}
+			eligible = isMoreWide;
+		}
+		else // PackageModificationType::ConflictMaster
+		{
+			auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *bdi.intersectVersionPtr);
+			eligible = (std::find_if(candidateSatisfyingVersions.begin(), candidateSatisfyingVersions.end(),
+					predicate) == candidateSatisfyingVersions.end());
 		}
 
-		if (!isMoreWide)
+		if (!eligible)
 		{
 			if (debugging)
 			{
