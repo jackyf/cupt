@@ -1028,7 +1028,16 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 {
 	if (packageModificationType == PackageModificationType::ConflictSlave)
 	{
-		return true; // TODO: handle it
+		auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), otherVersion);
+		bool stillConflicts = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
+				predicate) != bdi.satisfyingVersions.end());
+		if (stillConflicts && debugging)
+		{
+			__mydebug_wrapper(solution, sf(
+					"cannot consider installing %s %s: the relation expression is still satisfied",
+					otherVersion->packageName.c_str(), otherVersion->versionString.c_str()));
+		}
+		return !stillConflicts;
 	}
 	// let's check if other version has the same relation
 	// if it has, other version will also fail so it seems there is no sense trying it
