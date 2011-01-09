@@ -1021,6 +1021,73 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 	return false;
 }
 
+bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
+		const shared_ptr< const BinaryVersion >& otherVersion,
+		BinaryVersion::RelationTypes::Type dependencyType,
+		const BrokenDependencyInfo& bdi, bool debugging)
+{
+	// let's check if other version has the same relation
+	// if it has, other version will also fail so it seems there is no sense trying it
+	if (__version_has_relation_expression(otherVersion,
+			dependencyType, *(bdi.relationExpressionPtr)))
+	{
+		if (debugging)
+		{
+			__mydebug_wrapper(solution, sf(
+					"cannot consider installing %s %s: it contains the same relation expression",
+					otherVersion->packageName.c_str(), otherVersion->versionString.c_str()));
+		}
+		return false;
+	}
+
+	// let's try even harder to find if the other version is really appropriate for us
+	const RelationLine& relationLine = otherVersion->relations[dependencyType];
+	FORIT(it, relationLine)
+	{
+		/* we check only relations from dependency group that caused
+		   missing depends, it's not a full check, but pretty reasonable for
+		   most cases; in rare cases that some problematic dependency
+		   migrated to other dependency group, it will be revealed at
+		   next check run
+
+		   fail reveals that no one of available versions of dependent
+		   packages can satisfy the main package, so if some relation's
+		   satisfying versions are subset of failed ones, the version won't
+		   be accepted as a resolution
+		*/
+		bool isMoreWide = false;
+		auto candidateSatisfyingVersions = __cache->getSatisfyingVersions(*it);
+
+		FORIT(candidateIt, candidateSatisfyingVersions)
+		{
+			auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
+			bool candidateNotFound = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
+					predicate) == bdi.satisfyingVersions.end());
+
+			if (candidateNotFound)
+			{
+				// more wide relation, can't say nothing bad with it at time being
+				isMoreWide = true;
+				break;
+			}
+		}
+
+		if (!isMoreWide)
+		{
+			if (debugging)
+			{
+				__mydebug_wrapper(solution, sf(
+						"cannot consider installing %s %s: it contains equal or less wide relation expression '%s'",
+						otherVersion->packageName.c_str(), otherVersion->versionString.c_str(),
+						it->toString().c_str()));
+			}
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		vector< unique_ptr< Action > >& actions, const Solution& solution,
 		const string& packageName, const PackageEntry& packageEntry,
@@ -1046,69 +1113,8 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 			continue;
 		}
 
-		bool found = false;
-		if (tryHard)
-		{
-			// let's check if other version has the same relation
-			// if it has, other version will also fail so it seems there is no sense trying it
-			found = __version_has_relation_expression(otherVersion,
-					dependencyType, *(bdi.relationExpressionPtr));
-			if (debugging && found)
-			{
-				__mydebug_wrapper(solution, sf(
-						"cannot consider installing %s %s: it contains the same relation expression",
-						otherVersion->packageName.c_str(), otherVersion->versionString.c_str()));
-			}
-			if (!found)
-			{
-				// let's try even harder to find if the other version is really appropriate for us
-				const RelationLine& relationLine = otherVersion->relations[dependencyType];
-				FORIT(it, relationLine)
-				{
-					/* we check only relations from dependency group that caused
-					   missing depends, it's not a full check, but pretty reasonable for
-					   most cases; in rare cases that some problematic dependency
-					   migrated to other dependency group, it will be revealed at
-					   next check run
-
-					   fail reveals that no one of available versions of dependent
-					   packages can satisfy the main package, so if some relation's
-					   satisfying versions are subset of failed ones, the version won't
-					   be accepted as a resolution
-					*/
-					bool isMoreWide = false;
-					auto candidateSatisfyingVersions = __cache->getSatisfyingVersions(*it);
-
-					FORIT(candidateIt, candidateSatisfyingVersions)
-					{
-						auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
-						bool candidateNotFound = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
-								predicate) == bdi.satisfyingVersions.end());
-
-						if (candidateNotFound)
-						{
-							// more wide relation, can't say nothing bad with it at time being
-							isMoreWide = true;
-							break;
-						}
-					}
-
-					found = !isMoreWide;
-					if (found)
-					{
-						if (debugging)
-						{
-							__mydebug_wrapper(solution, sf(
-									"cannot consider installing %s %s: it contains equal or less wide relation expression '%s'",
-									otherVersion->packageName.c_str(), otherVersion->versionString.c_str(),
-									it->toString().c_str()));
-						}
-						break;
-					}
-				}
-			}
-		}
-		if (!found)
+		if (!tryHard || __makes_sense_to_modify_package(solution,
+				otherVersion, dependencyType, bdi, debugging))
 		{
 			// other version seems to be ok
 			unique_ptr< Action > action(new Action);
