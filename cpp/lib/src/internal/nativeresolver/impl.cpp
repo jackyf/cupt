@@ -1024,8 +1024,12 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
 		const shared_ptr< const BinaryVersion >& otherVersion,
 		BinaryVersion::RelationTypes::Type dependencyType,
-		const BrokenDependencyInfo& bdi, bool debugging)
+		const BrokenDependencyInfo& bdi, PackageModificationType packageModificationType, bool debugging)
 {
+	if (packageModificationType == PackageModificationType::ConflictSlave)
+	{
+		return true; // TODO: handle it
+	}
 	// let's check if other version has the same relation
 	// if it has, other version will also fail so it seems there is no sense trying it
 	if (__version_has_relation_expression(otherVersion,
@@ -1040,6 +1044,10 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		return false;
 	}
 
+	if (packageModificationType == PackageModificationType::ConflictMaster)
+	{
+		return true; // TODO: handle it
+	}
 	// let's try even harder to find if the other version is really appropriate for us
 	const RelationLine& relationLine = otherVersion->relations[dependencyType];
 	FORIT(it, relationLine)
@@ -1092,7 +1100,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		vector< unique_ptr< Action > >& actions, const Solution& solution,
 		const string& packageName, const PackageEntry& packageEntry,
 		BinaryVersion::RelationTypes::Type dependencyType, const BrokenDependencyInfo& bdi,
-		bool tryHard, bool debugging)
+		PackageModificationType packageModificationType, bool debugging)
 {
 	if (packageEntry.sticked)
 	{
@@ -1113,8 +1121,8 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 			continue;
 		}
 
-		if (!tryHard || __makes_sense_to_modify_package(solution,
-				otherVersion, dependencyType, bdi, debugging))
+		if (__makes_sense_to_modify_package(solution,
+				otherVersion, dependencyType, bdi, packageModificationType, debugging))
 		{
 			// other version seems to be ok
 			unique_ptr< Action > action(new Action);
@@ -1467,7 +1475,7 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		// also
 		__add_actions_to_fix_dependency(possibleActions, solution, bdi.satisfyingVersions);
 		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
-				packageEntry, dependencyType, bdi, true, debugging);
+				packageEntry, dependencyType, bdi, PackageModificationType::DependencyMaster, debugging);
 	}
 	else
 	{
@@ -1478,9 +1486,9 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		solution.getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
 
 		__add_actions_to_modify_package_entry(possibleActions, solution, satisfyingPackageName,
-				satisfyingPackageEntry, dependencyType, bdi, false, debugging);
+				satisfyingPackageEntry, dependencyType, bdi, PackageModificationType::ConflictSlave, debugging);
 		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
-				packageEntry, dependencyType, bdi, false, debugging);
+				packageEntry, dependencyType, bdi, PackageModificationType::ConflictMaster, debugging);
 	}
 }
 

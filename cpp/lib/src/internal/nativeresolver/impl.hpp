@@ -101,11 +101,13 @@ class NativeResolverImpl
 	void __initial_validate_pass(Solution&, const vector< DependencyEntry >&);
 	void __validate_changed_package(Solution&, const string&, const vector< DependencyEntry >&);
 	void __post_apply_action(Solution&, const vector< DependencyEntry >&);
+
+	enum class PackageModificationType { DependencyMaster, ConflictMaster, ConflictSlave };
 	bool __makes_sense_to_modify_package(const Solution&, const shared_ptr< const BinaryVersion >&,
-			BinaryVersion::RelationTypes::Type, const BrokenDependencyInfo&, bool);
+			BinaryVersion::RelationTypes::Type, const BrokenDependencyInfo&, PackageModificationType, bool);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const Solution&, const string&,
 			const PackageEntry&, BinaryVersion::RelationTypes::Type, const BrokenDependencyInfo&,
-			bool tryHard, bool debugging);
+			PackageModificationType, bool);
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const Solution&,
 			const vector< shared_ptr< const BinaryVersion > >&);
 	void __prepare_stick_requests(vector< unique_ptr< Action > >& actions) const;

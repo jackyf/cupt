@@ -1,6 +1,9 @@
 cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - system/resolver:
+      - Filter out changes of "master" conflicting packages which don't change
+        problematic relation expressions.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
 
