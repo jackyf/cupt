@@ -98,7 +98,7 @@ vector< string > __get_related_binary_package_names(const shared_ptr< const Cach
 	const string& packageName = version->packageName;
 	const string& sourcePackageName = version->sourcePackageName;
 
-	vector< string > possiblyRelatedPackageNames;
+	vector< string > relatedPackageNames;
 
 	auto sourcePackage = cache->getSourcePackage(sourcePackageName);
 	if (sourcePackage)
@@ -107,31 +107,29 @@ vector< string > __get_related_binary_package_names(const shared_ptr< const Cach
 				sourcePackage->getSpecificVersion(version->sourceVersionString));
 		if (sourceVersion)
 		{
+			// there will be at least one binary package name
+			// ('<packageName>'), starting from this point
 			auto binaryPackageNames = sourceVersion->binaryPackageNames;
 			FORIT(binaryPackageNameIt, binaryPackageNames)
 			{
-				if (solution.getPackageEntry(*binaryPackageNameIt, NULL))
-				{
-					possiblyRelatedPackageNames.push_back(*binaryPackageNameIt);
-				}
+				relatedPackageNames.push_back(*binaryPackageNameIt);
 			}
 		}
 	}
-	if (possiblyRelatedPackageNames.empty())
-	{
-		possiblyRelatedPackageNames = solution.getPackageNames();
-	}
 
-	FORIT(possiblyRelatedPackageNameIt, possiblyRelatedPackageNames)
+	FORIT(relatedPackageNameIt, relatedPackageNames)
 	{
-		const string& possiblyRelatedPackageName = *possiblyRelatedPackageNameIt;
-		if (possiblyRelatedPackageName == packageName)
+		const string& relatedPackageName = *relatedPackageNameIt;
+		if (relatedPackageName == packageName)
 		{
 			continue;
 		}
 
 		PackageEntry packageEntry;
-		solution.getPackageEntry(possiblyRelatedPackageName, &packageEntry);
+		if (!solution.getPackageEntry(relatedPackageName, &packageEntry))
+		{
+			continue;
+		}
 		const shared_ptr< const BinaryVersion >& otherVersion = packageEntry.version;
 		if (!otherVersion)
 		{
@@ -141,7 +139,7 @@ vector< string > __get_related_binary_package_names(const shared_ptr< const Cach
 		{
 			continue;
 		}
-		result.push_back(possiblyRelatedPackageName);
+		result.push_back(relatedPackageName);
 	}
 
 	return result;
