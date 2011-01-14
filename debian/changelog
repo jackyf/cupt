@@ -6,6 +6,9 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         effectively change the situation.
       - Use only reliable information from source packages for synchronizing
         source versions.
+    - config:
+      - Deleted option
+        'cupt::resolver::synchronize-source-versions::exceptions'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
 

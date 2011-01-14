@@ -164,25 +164,6 @@ shared_ptr< const BinaryVersion > __get_version_by_source_version_string(
 vector< string > NativeResolverImpl::__get_unsynchronizeable_related_package_names(const Solution& solution,
 		const shared_ptr< const BinaryVersion >& version)
 {
-	const string& sourcePackageName = version->sourcePackageName;
-	auto regexExceptionList = __config->getList("cupt::resolver::synchronize-source-versions::exceptions");
-	smatch m;
-	FORIT(exceptionalRegexStringIt, regexExceptionList)
-	{
-		const string& regexString = *exceptionalRegexStringIt;
-		try
-		{
-			const sregex regex = sregex::compile(regexString);
-			if (regex_match(sourcePackageName, m, regex))
-			{
-				return vector< string >();
-			}
-		}
-		catch (regex_error&)
-		{
-			fatal("regular expression '%s' is not valid", regexString.c_str());
-		}
-	}
 	const string& sourceVersionString = version->sourceVersionString;
 	vector< string > relatedPackageNames = __get_related_binary_package_names(__cache, solution, version);
 
