@@ -1605,21 +1605,21 @@ void PackagesWorker::__do_dpkg_post_actions()
 	}
 }
 
-void PackagesWorker::__change_auto_status(InnerAction::Type actionType,
-		const InnerActionGroup& actionGroup)
+void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 {
-	if (actionType == InnerAction::Configure)
-	{
-		return;
-	}
-
-	bool targetStatus = (actionType == InnerAction::Unpack); // will be false for removals
-
-	const Resolver::SuggestedPackages& suggestedPackages =
-			(*__actions_preview)[targetStatus ? Worker::Action::Markauto : Worker::Action::Unmarkauto];
-
 	FORIT(actionIt, actionGroup)
 	{
+		auto actionType = actionIt->type;
+		if (actionType == InnerAction::Configure)
+		{
+			continue;
+		}
+
+		bool targetStatus = (actionType == InnerAction::Unpack); // will be false for removals
+
+		const Resolver::SuggestedPackages& suggestedPackages =
+				(*__actions_preview)[targetStatus ? Worker::Action::Markauto : Worker::Action::Unmarkauto];
+
 		const string& packageName = actionIt->version->packageName;
 		if (suggestedPackages.count(packageName))
 		{
@@ -1810,7 +1810,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					break;
 			}
 
-			__change_auto_status(actionType, *actionGroupIt);
+			__change_auto_status(*actionGroupIt);
 
 			{ // dpkg actions
 				auto dpkgCommand = dpkgBinary + " --" + actionName;

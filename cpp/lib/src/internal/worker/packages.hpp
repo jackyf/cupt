@@ -142,7 +142,7 @@ class PackagesWorker: public virtual WorkerBase
 	void __do_downloads(const vector< pair< download::Manager::DownloadEntity, string > >&,
 			const shared_ptr< download::Progress >&);
 	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
-	void __change_auto_status(InnerAction::Type, const InnerActionGroup&);
+	void __change_auto_status(const InnerActionGroup&);
  public:
 	PackagesWorker();
 
