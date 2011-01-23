@@ -128,7 +128,7 @@ class NativeResolverImpl
 	bool __verify_relation_line(const Solution&,
 			const string* packageNamePtr, const PackageEntry&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
-			BrokenDependencyInfo*, const string* changedPackageNamePtr = NULL);
+			BrokenDependencyInfo*, const string* = NULL);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&,
 			const string& packageName, const PackageEntry&, const BrokenDependencyInfo&,
 			BinaryVersion::RelationTypes::Type, bool isDependencyAnti, bool debugging);

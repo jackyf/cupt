@@ -1338,40 +1338,6 @@ bool NativeResolverImpl::__is_soft_dependency_ignored(const shared_ptr< const Bi
 	return false;
 }
 
-void __get_sorted_package_names(const vector< string >& source,
-		const map< string, size_t >& failCounts, vector< string >& result)
-{
-	// use Schwarz transformation
-	struct ForSort
-	{
-		const string* packageNamePtr;
-		size_t failCount;
-	};
-
-	vector< ForSort > aux;
-	aux.reserve(source.size());
-	FORIT(packageNameIt, source)
-	{
-		const string& packageName = *packageNameIt;
-
-		auto failCountIt = failCounts.find(packageName);
-		auto failCount = (failCountIt != failCounts.end() ? failCountIt->second : 0);
-
-		aux.push_back(ForSort { &packageName, failCount });
-	}
-
-	std::stable_sort(aux.begin(), aux.end(),
-			[](const ForSort& left, const ForSort& right) -> bool
-			{
-				return (left.failCount > right.failCount);
-			});
-
-	FORIT(auxIt, aux)
-	{
-		result.push_back(*(auxIt->packageNamePtr));
-	}
-}
-
 bool NativeResolverImpl::__verify_relation_line(const Solution& solution,
 		const string* packageNamePtr, const PackageEntry& packageEntry,
 		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti,
@@ -1550,10 +1516,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 		}
 
 		auto relationType = referencedPartIt->relationType;
-		if (!packageEntry.checked[relationType])
-		{
-			continue;
-		}
+		bool oldCheckedValue = packageEntry.checked[relationType];
 
 		const DependencyEntry* dependencyEntryPtr = NULL;
 		{ // determining isDependencyAnti
@@ -1574,9 +1537,10 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 
 		BrokenDependencyInfo bdi; // unused
 		packageEntry.checked[relationType] = __verify_relation_line(solution, &referencedPackageName,
-				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi, &changedPackageName);
+				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi,
+				oldCheckedValue ? &changedPackageName : NULL);
 
-		if (!packageEntry.checked[relationType])
+		if (packageEntry.checked[relationType] != oldCheckedValue)
 		{
 			__solution_storage.setPackageEntry(solution, referencedPackageName, packageEntry);
 		}
@@ -1637,74 +1601,74 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				auto dependencyType = dependencyGroupIt->type;
 				auto isDependencyAnti = dependencyGroupIt->isAnti;
 
-				/* to speed up the complex decision steps, if solution stack is not
-				   empty, firstly check the packages that had a problem */
-				vector< string > packageNames;
+				string packageName;
 				{
-					auto source = currentSolution->getUncheckedPackageNames(dependencyType);
-					__get_sorted_package_names(source, failCounts, packageNames);
-				}
-
-				FORIT(packageNameIt, packageNames)
-				{
-					const string& packageName = *packageNameIt;
-
-					redo_package:
-
-					PackageEntry packageEntry;
-					currentSolution->getPackageEntry(packageName, &packageEntry);
-
-					const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-					if (!version)
+					auto packageNames = currentSolution->getUncheckedPackageNames(dependencyType);
+					if (packageNames.empty())
 					{
 						continue;
 					}
-
-					BrokenDependencyInfo brokenDependencyInfo;
-					checkFailed = !__verify_relation_line(*currentSolution, &*packageNameIt,
-							packageEntry, dependencyType, isDependencyAnti,
-							/* out -> */ &brokenDependencyInfo);
-					if (checkFailed)
+					auto failValue = [&failCounts](const string& s) -> size_t
 					{
-						const RelationExpression& failedRelationExpression = *(brokenDependencyInfo.relationExpressionPtr);
-						if (debugging)
-						{
-							const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
-							auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
-									BinaryVersion::RelationTypes::rawStrings[dependencyType],
-									failedRelationExpression.toString().c_str());
-							__mydebug_wrapper(*currentSolution, message);
-						}
-
-						__generate_possible_actions(&possibleActions, *currentSolution, packageName,
-								packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti, debugging);
-
-						if (trackReasons)
-						{
-							// setting a reason
-							shared_ptr< const Reason > reason(
-									new RelationExpressionReason(version, dependencyType, failedRelationExpression));
-							FORIT(possibleActionIt, possibleActions)
+						auto it = failCounts.find(s);
+						return it != failCounts.end() ? it->second : 0u;
+					};
+					packageName = *std::max_element(packageNames.begin(), packageNames.end(),
+							[failValue](const string& left, const string& right)
 							{
-								(*possibleActionIt)->reason = reason;
-							}
-						}
+								return failValue(left) < failValue(right);
+							});
+				}
+				PackageEntry packageEntry;
+				currentSolution->getPackageEntry(packageName, &packageEntry);
 
-						// mark package as failed one more time
-						failCounts[packageName] += 1;
+				BrokenDependencyInfo brokenDependencyInfo;
+				checkFailed = !__verify_relation_line(*currentSolution, &packageName,
+						packageEntry, dependencyType, isDependencyAnti,
+						/* out -> */ &brokenDependencyInfo);
+				if (!checkFailed && !currentSolution->finished)
+				{
+					fatal("internal error: known invalid entry was verified as valid");
+				}
 
-						if (possibleActions.size() == 1)
-						{
-							__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
-							__post_apply_action(*currentSolution, dependencyGroups);
-							possibleActions.clear();
+				__generate_possible_actions(&possibleActions, *currentSolution, packageName,
+						packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti, debugging);
 
-							recheckNeeded = true;
-							goto redo_package;
-						}
-						goto finish_main_loop;
+				const RelationExpression& failedRelationExpression = *(brokenDependencyInfo.relationExpressionPtr);
+				if (trackReasons)
+				{
+					// setting a reason
+					shared_ptr< const Reason > reason(
+							new RelationExpressionReason(packageEntry.version, dependencyType, failedRelationExpression));
+					FORIT(possibleActionIt, possibleActions)
+					{
+						(*possibleActionIt)->reason = reason;
 					}
-					currentSolution->validate(packageName, packageEntry, dependencyType);
+				}
+
+				if (debugging)
+				{
+					const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
+					auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
+							BinaryVersion::RelationTypes::rawStrings[dependencyType],
+							failedRelationExpression.toString().c_str());
+					__mydebug_wrapper(*currentSolution, message);
+				}
+				// mark package as failed one more time
+				failCounts[packageName] += 1;
+
+				if (possibleActions.size() == 1)
+				{
+					__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
+					__post_apply_action(*currentSolution, dependencyGroups);
+					possibleActions.clear();
+
+					recheckNeeded = true;
+					break; // goto next check iteration
+				}
+				else
+				{
+					goto finish_main_loop;
 				}
 			}
 		}

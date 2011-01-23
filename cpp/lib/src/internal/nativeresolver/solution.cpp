@@ -371,18 +371,6 @@ bool Solution::getPackageEntry(const string& packageName, PackageEntry* result) 
 	return false;
 }
 
-void Solution::validate(const string& packageName,
-		const PackageEntry& oldPackageEntry, RelationType relationType)
-{
-	auto it = __package_entries->lower_bound(packageName);
-	if (it == __package_entries->end() || it->first != packageName)
-	{
-		it = __package_entries->insert(it, make_pair(packageName, oldPackageEntry));
-	}
-
-	it->second.checked[relationType] = true;
-}
-
 }
 }
 
