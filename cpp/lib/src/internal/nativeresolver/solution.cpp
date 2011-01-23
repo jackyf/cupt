@@ -277,10 +277,10 @@ vector< string > Solution::getPackageNames() const
 	return result;
 }
 
-vector< string > Solution::getUncheckedPackageNames(
+vector< const string* > Solution::getUncheckedPackageNames(
 		RelationType dependencyType) const
 {
-	vector< string > result;
+	vector< const string* > result;
 	auto isEligible = [&dependencyType](decltype(__package_entries->begin()) it)
 	{
 		return (!it->second.checked[dependencyType] && it->second.version);
@@ -289,7 +289,7 @@ vector< string > Solution::getUncheckedPackageNames(
 	{
 		if (isEligible(it))
 		{
-			result.push_back(it->first);
+			result.push_back(&it->first);
 		}
 	};
 

@@ -1603,8 +1603,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 				string packageName;
 				{
-					auto packageNames = currentSolution->getUncheckedPackageNames(dependencyType);
-					if (packageNames.empty())
+					auto packageNamePtrs = currentSolution->getUncheckedPackageNames(dependencyType);
+					if (packageNamePtrs.empty())
 					{
 						continue;
 					}
@@ -1613,10 +1613,10 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						auto it = failCounts.find(s);
 						return it != failCounts.end() ? it->second : 0u;
 					};
-					packageName = *std::max_element(packageNames.begin(), packageNames.end(),
-							[failValue](const string& left, const string& right)
+					packageName = **std::max_element(packageNamePtrs.begin(), packageNamePtrs.end(),
+							[failValue](const string* left, const string* right)
 							{
-								return failValue(left) < failValue(right);
+								return failValue(*left) < failValue(*right);
 							});
 				}
 				PackageEntry packageEntry;

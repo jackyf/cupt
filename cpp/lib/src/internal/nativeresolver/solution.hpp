@@ -79,7 +79,7 @@ class Solution
 
 	void prepare();
 	vector< string > getPackageNames() const;
-	vector< string > getUncheckedPackageNames(RelationType) const;
+	vector< const string* > getUncheckedPackageNames(RelationType) const;
 	bool getPackageEntry(const string& packageName, PackageEntry*) const;
 };
 
