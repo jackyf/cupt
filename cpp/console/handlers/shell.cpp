@@ -190,9 +190,9 @@ int shell(Context& context)
 		if (std::find(safeCommands.begin(), safeCommands.end(), command) == safeCommands.end())
 		{
 			// the system could be modified, need to rebuild all
-			*(context.getConfig()) = *oldConfig;
 			context.clearCache();
 		}
+		*(context.getConfig()) = *oldConfig;
 		freeArgcArgv(argc, argv);
 	}
 

@@ -1,5 +1,8 @@
 cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
 
+  * console:
+    - shell:
+      - Restore initial config after every command.
   * lib:
     - system/resolver:
       - Filter out changes of conflicting packages which don't
