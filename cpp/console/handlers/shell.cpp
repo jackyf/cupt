@@ -123,7 +123,8 @@ void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
 	// kind of hack to get arguments as it was real shell
 	// if you know easier way, let me know :)
 	string errorString;
-	string shellCommand = sf("(for word in %s; do echo $word; done)", line.c_str());
+	// 'A' - to not let echo interpret $word as an option
+	string shellCommand = sf("(for word in %s; do echo A$word; done)", line.c_str());
 	File pipe(shellCommand, "pr", errorString);
 	if (!errorString.empty())
 	{
@@ -133,7 +134,7 @@ void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
 	string argument;
 	while (!pipe.getLine(argument).eof())
 	{
-		arguments.push_back(argument);
+		arguments.push_back(argument.substr(1));
 	}
 
 	argc = arguments.size() + 1;
