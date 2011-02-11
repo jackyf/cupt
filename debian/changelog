@@ -16,6 +16,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
     - system/worker:
       - Fixed not changing 'automatically installed' flag. This regression
         was introduced in 2.0.0~alpha3.
+      - Fixed determining an empty extension of index files. This regression
+        was introduced in 2.0.0~alpha1.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
 

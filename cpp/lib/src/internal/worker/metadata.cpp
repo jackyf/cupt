@@ -78,7 +78,7 @@ std::function< string () > generateMovingSub(const string& downloadPath, const s
 bool generateUncompressingSub(const download::Uri& uri, const string& downloadPath,
 		const string& targetPath, std::function< string () >& sub)
 {
-	auto filenameExtension = getFilenameExtension(downloadPath);
+	auto filenameExtension = getFilenameExtension(uri);
 
 	// checking and preparing unpackers
 	if (filenameExtension == ".lzma" || filenameExtension == ".bz2" || filenameExtension == ".gz")
