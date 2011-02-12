@@ -76,6 +76,12 @@ void __consume_number(string::const_iterator& substringStart,
 	}
 }
 
+static short inline __get_modified_ascii_value(char c)
+{
+	// all alphas sort before others
+	return isalpha(c) ? short(c) - 1000 : short(c);
+}
+
 int __compare_version_part(StringAnchorPair left, StringAnchorPair right)
 {
 	string::const_iterator leftSubstringStart;
@@ -137,7 +143,9 @@ int __compare_version_part(StringAnchorPair left, StringAnchorPair right)
 					}
 					else
 					{
-						return (*leftSubstringEnd < *rightSubstringEnd) ? -1 : 1;
+						auto leftValue = __get_modified_ascii_value(*leftSubstringEnd);
+						auto rightValue = __get_modified_ascii_value(*rightSubstringEnd);
+						return (leftValue < rightValue) ? -1 : 1;
 					}
 				}
 				else
