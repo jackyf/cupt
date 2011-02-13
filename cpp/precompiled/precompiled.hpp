@@ -25,10 +25,6 @@ struct PointerEqual: public std::binary_function< shared_ptr< T >, shared_ptr< T
 	{
 		return *left == *right;
 	}
-	bool operator()(const T* left, const T* right) const
-	{
-		return *left == *right;
-	}
 };
 
 }

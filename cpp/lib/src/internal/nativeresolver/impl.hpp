@@ -49,10 +49,9 @@ class NativeResolverImpl
 
 	struct Action
 	{
-		string packageName;
-		shared_ptr< const BinaryVersion > version;
-		vector< string > packageToStickNames;
-		unique_ptr< const RelationExpression > fakelySatisfies;
+		const dg::Element* oldElementPtr; // may be NULL
+		const dg::Element* newElementPtr; // many not be NULL
+		vector< const dg::Element* > elementsToStick;
 		shared_ptr< const Reason > reason;
 		float profit;
 
@@ -63,75 +62,45 @@ class NativeResolverImpl
 	shared_ptr< const Cache > __cache;
 	set< string > __manually_modified_package_names;
 	SolutionStorage __solution_storage;
-	shared_ptr< Solution > __old_solution;
-	shared_ptr< Solution > __initial_solution;
+	map< string, shared_ptr< const BinaryVersion > > __old_packages;
+	map< string, dg::InitialPackageEntry > __initial_packages;
 	RelationLine __satisfy_relation_expressions;
 	RelationLine __unsatisfy_relation_expressions;
 
-	struct InstallVersionResult
-	{
-		enum Type { Ok, Restricted, Unsynchronizeable };
-	};
-
-	struct BrokenDependencyInfo
-	{
-		const RelationExpression* relationExpressionPtr;
-		const shared_ptr< const BinaryVersion >* intersectVersionPtr;
-		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
-	};
-
-
 	void __import_installed_versions();
-	vector< DependencyEntry > __get_dependency_groups() const;
-	InstallVersionResult::Type __prepare_version_no_stick(const shared_ptr< const BinaryVersion >&,
-			const shared_ptr< const Reason >&, PackageEntry&);
+	bool __prepare_version_no_stick(const shared_ptr< const BinaryVersion >&,
+			dg::InitialPackageEntry&);
 	float __get_version_weight(const shared_ptr< const BinaryVersion >&) const;
 	float __get_action_profit(const shared_ptr< const BinaryVersion >&,
 			const shared_ptr< const BinaryVersion >&) const;
-	bool __can_package_be_removed(const string& packageName) const;
-	void __clean_automatically_installed(const shared_ptr< Solution >&);
+	bool __is_candidate_for_auto_removal(const dg::Element*,
+		const std::function< bool (const string&) >, bool);
+	void __clean_automatically_installed(Solution&);
 	SolutionChooser __select_solution_chooser() const;
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);
-	void __calculate_profits(const shared_ptr< Solution >&, vector< unique_ptr< Action > >& actions) const;
+	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;
 	void __pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
 			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
-	void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions);
-	void __validate_package_name(Solution&, const string&, const vector< DependencyEntry >&);
-	void __initial_validate_pass(Solution&, const vector< DependencyEntry >&);
-	void __validate_changed_package(Solution&, const string&, const vector< DependencyEntry >&);
-	void __post_apply_action(Solution&, const vector< DependencyEntry >&);
+	void __validate_element(Solution&, const dg::Element*);
+	void __initial_validate_pass(Solution&);
+	void __final_verify_solution(const Solution&);
+	void __validate_changed_package(Solution&, const dg::Element*, const dg::Element*);
+	void __post_apply_action(Solution&);
 
-	enum class PackageModificationType { DependencyMaster, ConflictMaster, ConflictSlave };
-	bool __makes_sense_to_modify_package(const Solution&, const shared_ptr< const BinaryVersion >&,
-			BinaryVersion::RelationTypes::Type, const BrokenDependencyInfo&, PackageModificationType, bool);
-	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const Solution&, const string&,
-			const PackageEntry&, BinaryVersion::RelationTypes::Type, const BrokenDependencyInfo&,
-			PackageModificationType, bool);
+	bool __makes_sense_to_modify_package(const Solution&, const dg::Element*,
+			const dg::Element*, bool);
+	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const Solution&,
+			const dg::Element*, const dg::Element*, bool);
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const Solution&,
-			const vector< shared_ptr< const BinaryVersion > >&);
+			const dg::Element*);
 	void __prepare_stick_requests(vector< unique_ptr< Action > >& actions) const;
 	Resolver::UserAnswer::Type __propose_solution(
-			const Solution&, Resolver::CallbackType);
-	bool __is_soft_dependency_ignored(const shared_ptr< const BinaryVersion >&,
-			BinaryVersion::RelationTypes::Type, const RelationExpression&,
-			const vector< shared_ptr< const BinaryVersion > >&) const;
-	vector< string > __get_unsynchronizeable_related_package_names(const Solution&,
-			const shared_ptr< const BinaryVersion >&);
-	bool __can_related_packages_be_synchronized(
-			const Solution&, const shared_ptr< const BinaryVersion >&);
-	vector< string > __synchronize_related_packages(Solution&,
-			const shared_ptr< const BinaryVersion >&, bool);
-	void __filter_unsynchronizeable_actions(
-			const Solution&, vector< unique_ptr< Action > >&);
+			const Solution&, Resolver::CallbackType, bool);
 
-	bool __verify_relation_line(const Solution&,
-			const string* packageNamePtr, const PackageEntry&,
-			BinaryVersion::RelationTypes::Type, bool isDependencyAnti,
-			BrokenDependencyInfo*, const string* = NULL);
+	bool __verify_element(const Solution&, const dg::Element*);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&,
-			const string& packageName, const PackageEntry&, const BrokenDependencyInfo&,
-			BinaryVersion::RelationTypes::Type, bool isDependencyAnti, bool debugging);
+			const dg::Element*, const dg::Element*, bool);
 
 	static const string __dummy_package_name;
  public:

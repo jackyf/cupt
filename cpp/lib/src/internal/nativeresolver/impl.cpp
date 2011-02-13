@@ -24,8 +24,6 @@
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
-#include <cupt/cache/sourcepackage.hpp>
-#include <cupt/cache/sourceversion.hpp>
 #include <cupt/regex.hpp>
 
 #include <internal/nativeresolver/impl.hpp>
@@ -38,8 +36,7 @@ using std::queue;
 
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __config(config), __cache(cache),
-	__solution_storage(__cache, __get_dependency_groups(), __dummy_package_name),
-	__old_solution(new Solution)
+	__solution_storage(*__config, *__cache)
 {
 	__import_installed_versions();
 }
@@ -47,41 +44,15 @@ NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config,
 void NativeResolverImpl::__import_installed_versions()
 {
 	auto versions = __cache->getInstalledVersions();
-	// __initial_solution will be modified, leave __old_solution as original system state
 
-	PackageEntry packageEntry;
 	FORIT(versionIt, versions)
 	{
 		// just moving versions, don't try to install or remove some dependencies
 		const shared_ptr< const BinaryVersion >& version = *versionIt;
-		const string& packageName = version->packageName;
 
-		packageEntry.version = version;
-		__solution_storage.setPackageEntry(*__old_solution, packageName, packageEntry);
+		__old_packages[version->packageName] = version;
+		__initial_packages[version->packageName].version = version;
 	}
-	__initial_solution = __solution_storage.cloneSolution(__old_solution);
-	__initial_solution->prepare();
-}
-
-vector< DependencyEntry > NativeResolverImpl::__get_dependency_groups() const
-{
-	vector< DependencyEntry > result = {
-		{ BinaryVersion::RelationTypes::PreDepends, false },
-		{ BinaryVersion::RelationTypes::Depends, false },
-		{ BinaryVersion::RelationTypes::Conflicts, true },
-		{ BinaryVersion::RelationTypes::Breaks, true },
-	};
-
-	if (__config->getBool("cupt::resolver::keep-recommends"))
-	{
-		result.push_back(DependencyEntry { BinaryVersion::RelationTypes::Recommends, false });
-	}
-	if (__config->getBool("cupt::resolver::keep-suggests"))
-	{
-		result.push_back(DependencyEntry { BinaryVersion::RelationTypes::Suggests, false });
-	}
-
-	return result;
 }
 
 void __mydebug_wrapper(const Solution& solution, const string& message)
@@ -90,251 +61,45 @@ void __mydebug_wrapper(const Solution& solution, const string& message)
 	debug("%s(%u:%.1f) %s", levelString.c_str(), solution.id, solution.score, message.c_str());
 }
 
-vector< string > __get_related_binary_package_names(const shared_ptr< const Cache >& cache,
-		const Solution& solution, const shared_ptr< const BinaryVersion >& version)
-{
-	vector< string > result;
-
-	const string& packageName = version->packageName;
-	const string& sourcePackageName = version->sourcePackageName;
-
-	vector< string > relatedPackageNames;
-
-	auto sourcePackage = cache->getSourcePackage(sourcePackageName);
-	if (sourcePackage)
-	{
-		auto sourceVersion = static_pointer_cast< const SourceVersion >(
-				sourcePackage->getSpecificVersion(version->sourceVersionString));
-		if (sourceVersion)
-		{
-			// there will be at least one binary package name
-			// ('<packageName>'), starting from this point
-			auto binaryPackageNames = sourceVersion->binaryPackageNames;
-			FORIT(binaryPackageNameIt, binaryPackageNames)
-			{
-				relatedPackageNames.push_back(*binaryPackageNameIt);
-			}
-		}
-	}
-
-	FORIT(relatedPackageNameIt, relatedPackageNames)
-	{
-		const string& relatedPackageName = *relatedPackageNameIt;
-		if (relatedPackageName == packageName)
-		{
-			continue;
-		}
-
-		PackageEntry packageEntry;
-		if (!solution.getPackageEntry(relatedPackageName, &packageEntry))
-		{
-			continue;
-		}
-		const shared_ptr< const BinaryVersion >& otherVersion = packageEntry.version;
-		if (!otherVersion)
-		{
-			continue;
-		}
-		if (otherVersion->sourcePackageName != sourcePackageName)
-		{
-			continue;
-		}
-		result.push_back(relatedPackageName);
-	}
-
-	return result;
-}
-
-shared_ptr< const BinaryVersion > __get_version_by_source_version_string(
-		const shared_ptr< const Cache >& cache, const string& packageName,
-		const string& sourceVersionString)
-{
-	auto versions = cache->getBinaryPackage(packageName)->getVersions();
-	FORIT(versionIt, versions)
-	{
-		if ((*versionIt)->sourceVersionString == sourceVersionString)
-		{
-			return *versionIt;
-		}
-	}
-
-	return shared_ptr< const BinaryVersion >();
-}
-
-vector< string > NativeResolverImpl::__get_unsynchronizeable_related_package_names(const Solution& solution,
-		const shared_ptr< const BinaryVersion >& version)
-{
-	const string& sourceVersionString = version->sourceVersionString;
-	vector< string > relatedPackageNames = __get_related_binary_package_names(__cache, solution, version);
-
-	vector< string > result;
-
-	FORIT(relatedPackageNameIt, relatedPackageNames)
-	{
-		const string& relatedPackageName = *relatedPackageNameIt;
-
-		PackageEntry relatedPackageEntry;
-		solution.getPackageEntry(relatedPackageName, &relatedPackageEntry);
-
-		const shared_ptr< const BinaryVersion >& relatedVersion = relatedPackageEntry.version;
-		if (relatedVersion->sourceVersionString == sourceVersionString)
-		{
-			continue; // no update needed
-		}
-
-		if (relatedPackageEntry.sticked ||
-			!__get_version_by_source_version_string(__cache, relatedPackageName, sourceVersionString))
-		{
-			// cannot update the package
-			result.push_back(relatedPackageName);
-		}
-	}
-
-	return result;
-}
-
-bool NativeResolverImpl::__can_related_packages_be_synchronized(
-		const Solution& solution, const shared_ptr< const BinaryVersion >& version)
-{
-	return __get_unsynchronizeable_related_package_names(solution, version).empty();
-}
-
-vector< string > NativeResolverImpl::__synchronize_related_packages(Solution& solution,
-		const shared_ptr< const BinaryVersion >& version, bool stick)
-{
-	auto relatedPackageNames = __get_related_binary_package_names(__cache, solution, version);
-	const string& sourceVersionString = version->sourceVersionString;
-	const string& packageName = version->packageName;
-
-	vector< string > result;
-
-	auto debugging = __config->getBool("debug::resolver");
-	auto trackReasons = __config->getBool("cupt::resolver::track-reasons");
-	FORIT(relatedPackageNameIt, relatedPackageNames)
-	{
-		const string& relatedPackageName = *relatedPackageNameIt;
-
-		PackageEntry packageEntry;
-		solution.getPackageEntry(relatedPackageName, &packageEntry);
-		if (packageEntry.sticked)
-		{
-			continue;
-		}
-		if (packageEntry.version->sourceVersionString == sourceVersionString)
-		{
-			continue;
-		}
-		auto candidateVersion = __get_version_by_source_version_string(__cache,
-				relatedPackageName, sourceVersionString);
-		if (!candidateVersion)
-		{
-			continue;
-		}
-
-		packageEntry.version = candidateVersion;
-		packageEntry.checked.reset(); // invalidating
-		packageEntry.sticked = stick;
-		if (debugging)
-		{
-			__mydebug_wrapper(solution,
-					sf("synchronizing package '%s' with package '%s'",
-							relatedPackageName.c_str(), packageName.c_str()));
-		}
-		if (trackReasons)
-		{
-			packageEntry.reasons.initIfEmpty();
-			packageEntry.reasons->push_back(
-					shared_ptr< const Reason >(new SynchronizationReason(packageName)));
-		}
-		__solution_storage.setPackageEntry(solution, relatedPackageName, packageEntry);
-
-		result.push_back(relatedPackageName);
-	}
-
-	return result;
-}
-
 // installs new version, but does not sticks it
-NativeResolverImpl::InstallVersionResult::Type
-NativeResolverImpl::__prepare_version_no_stick(const shared_ptr< const BinaryVersion >& version,
-		const shared_ptr< const Reason >& reason, PackageEntry& packageEntry)
+bool NativeResolverImpl::__prepare_version_no_stick(
+		const shared_ptr< const BinaryVersion >& version,
+		dg::InitialPackageEntry& initialPackageEntry)
 {
 	const string& packageName = version->packageName;
-
-	{ // maybe, nothing changed?
-		const shared_ptr< const BinaryVersion >& currentVersion = packageEntry.version;
-		if (currentVersion && currentVersion->versionString == version->versionString)
-		{
-			return InstallVersionResult::Ok;
-		}
-	}
-
-	if (packageEntry.sticked)
+	if (initialPackageEntry.version &&
+			initialPackageEntry.version->versionString == version->versionString)
 	{
-		// package is restricted to be updated
-		return InstallVersionResult::Restricted;
+		return true; // there is such version installed already
 	}
 
-	auto synchronize = __config->getString("cupt::resolver::synchronize-source-versions");
-	if (synchronize == "hard")
+	if (initialPackageEntry.sticked)
 	{
-		// need to check is the whole operation doable
-		if (!__can_related_packages_be_synchronized(*__initial_solution, version))
-		{
-			// we cannot do it
-			return InstallVersionResult::Unsynchronizeable;
-		}
+		return false; // package is restricted to be updated
 	}
 
-	// update the requested package
-	packageEntry.version = version;
-	if (__config->getBool("cupt::resolver::track-reasons"))
-	{
-		packageEntry.reasons.initIfEmpty();
-		packageEntry.reasons->push_back(reason);
-	}
 	if (__config->getBool("debug::resolver"))
 	{
-		debug("install package '%s', version '%s'",
-				packageName.c_str(), version->versionString.c_str());
+		debug("install package '%s', version '%s'", packageName.c_str(),
+				version->versionString.c_str());
 	}
+	initialPackageEntry.modified = true;
+	initialPackageEntry.version = version;
 
-	if (synchronize != "none")
-	{
-		__synchronize_related_packages(*__initial_solution, version, false);
-	}
-
-	return InstallVersionResult::Ok;
+	return true;
 }
 
 void NativeResolverImpl::installVersion(const shared_ptr< const BinaryVersion >& version)
 {
 	const string& packageName = version->packageName;
 
-	PackageEntry packageEntry;
-	__initial_solution->getPackageEntry(packageName, &packageEntry);
-
-	shared_ptr< const Reason > reason(new UserReason());
-	auto installResult = __prepare_version_no_stick(version, reason, packageEntry);
-	if (installResult == InstallVersionResult::Restricted)
+	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
+	if (!__prepare_version_no_stick(version, initialPackageEntry))
 	{
 		fatal("unable to re-schedule package '%s'", packageName.c_str());
 	}
-	else if (installResult == InstallVersionResult::Unsynchronizeable)
-	{
-		fatal("unable to synchronize related binary packages for %s %s'",
-					packageName.c_str(), version->versionString.c_str());
-	}
-	else
-	{
-		if (installResult != InstallVersionResult::Ok)
-		{
-			fatal("internal error: unknown install result");
-		}
-	}
 
-	packageEntry.sticked = true;
-	__solution_storage.setPackageEntry(*__initial_solution, packageName, packageEntry);
+	initialPackageEntry.sticked = true;
 	__manually_modified_package_names.insert(packageName);
 }
 
@@ -358,48 +123,38 @@ void NativeResolverImpl::unsatisfyRelationExpression(const RelationExpression& r
 
 void NativeResolverImpl::removePackage(const string& packageName)
 {
-	PackageEntry packageEntry;
-	__initial_solution->getPackageEntry(packageName, &packageEntry);
-
-	if (packageEntry.version && packageEntry.sticked)
+	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
+	if (initialPackageEntry.version && initialPackageEntry.sticked)
 	{
 		fatal("unable to re-schedule package '%s'", packageName.c_str());
 	}
-
+	initialPackageEntry.sticked = true;
+	initialPackageEntry.modified = true;
+	initialPackageEntry.version.reset();
 	__manually_modified_package_names.insert(packageName);
 
-	packageEntry.version.reset();
-	packageEntry.sticked = true;
-
-	if (__config->getBool("cupt::resolver::track-reasons"))
-	{
-		packageEntry.reasons.initIfEmpty();
-		packageEntry.reasons->push_back(shared_ptr< const Reason >(new UserReason));
-	}
 	if (__config->getBool("debug::resolver"))
 	{
 		debug("removing package '%s'", packageName.c_str());
 	}
-
-	__solution_storage.setPackageEntry(*__initial_solution, packageName, packageEntry);
 }
 
 void NativeResolverImpl::upgrade()
 {
-	const shared_ptr< const Reason > reason(new UserReason);
-
-	auto packageNames = __initial_solution->getPackageNames();
-	FORIT(packageNameIt, packageNames)
+	FORIT(it, __initial_packages)
 	{
-		const string& packageName = *packageNameIt;
-		auto package = __cache->getBinaryPackage(packageName);
-
-		PackageEntry packageEntry;
-		__initial_solution->getPackageEntry(packageName, &packageEntry);
-		if (!packageEntry.version)
+		dg::InitialPackageEntry& initialPackageEntry = it->second;
+		if (!initialPackageEntry.version)
 		{
 			continue;
 		}
+		if (initialPackageEntry.sticked)
+		{
+			continue;
+		}
+
+		const string& packageName = it->first;
+		auto package = __cache->getBinaryPackage(packageName);
 
 		// if there is original version, then at least one policy version should exist
 		auto supposedVersion = static_pointer_cast< const BinaryVersion >
@@ -409,8 +164,7 @@ void NativeResolverImpl::upgrade()
 			fatal("internal error: supposed version doesn't exist");
 		}
 
-		__prepare_version_no_stick(supposedVersion, reason, packageEntry);
-		__solution_storage.setPackageEntry(*__initial_solution, packageName, packageEntry);
+		__prepare_version_no_stick(supposedVersion, initialPackageEntry);
 	}
 }
 
@@ -474,7 +228,7 @@ float NativeResolverImpl::__get_version_weight(const shared_ptr< const BinaryVer
 		{
 			result /= 12.0;
 		}
-		else if (!__old_solution->getPackageEntry(packageName, NULL))
+		else if (!__old_packages.count(packageName))
 		{
 			// it's new package
 			result /= 100.0;
@@ -498,7 +252,7 @@ float NativeResolverImpl::__get_action_profit(const shared_ptr< const BinaryVers
 
 	auto result = supposedVersionWeight - originalVersionWeight;
 
-	if (!supposedVersion)
+	if (!supposedVersion && originalVersion)
 	{
 		// remove a package
 		result -= 50;
@@ -515,49 +269,49 @@ float NativeResolverImpl::__get_action_profit(const shared_ptr< const BinaryVers
 	return result;
 }
 
-const shared_ptr< const BinaryVersion >* __is_version_array_intersects_with_packages(
-		const vector< shared_ptr< const BinaryVersion > >& versions,
-		const Solution& solution, const string* ignorePackageNamePtr = NULL)
+bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr,
+		const std::function< bool (const string&) > isNeverAutoRemove,
+		bool canAutoremove)
 {
-	PackageEntry packageEntry;
-	FORIT(versionIt, versions)
+	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(*elementPtr);
+	if (!versionVertex)
 	{
-		const shared_ptr< const BinaryVersion >& version = *versionIt;
-		const string& packageName = version->packageName;
-
-		if (ignorePackageNamePtr && packageName == *ignorePackageNamePtr)
-		{
-			continue;
-		}
-
-		if (!solution.getPackageEntry(packageName, &packageEntry))
-		{
-			continue;
-		}
-
-		const shared_ptr< const BinaryVersion >& solutionVersion = packageEntry.version;
-		if (!solutionVersion)
-		{
-			continue;
-		}
-
-		if (version->versionString == solutionVersion->versionString)
-		{
-			return &version;
-		}
+		return false;
 	}
 
-	return NULL;
+	const string& packageName = versionVertex->getPackageName();
+	const shared_ptr< const BinaryVersion >& version = versionVertex->version;
+
+	if (packageName == __dummy_package_name)
+	{
+		return false;
+	}
+	if (!version)
+	{
+		return false;
+	}
+	if (__manually_modified_package_names.count(packageName))
+	{
+		return false;
+	}
+	if (version->essential)
+	{
+		return false;
+	}
+
+	auto canAutoremoveThisPackage = canAutoremove && __cache->isAutomaticallyInstalled(packageName);
+	if (__old_packages.count(packageName) && !canAutoremoveThisPackage)
+	{
+		return false;
+	}
+	if (isNeverAutoRemove(packageName))
+	{
+		return false;
+	}
+	return true;
 }
 
-bool NativeResolverImpl::__can_package_be_removed(const string& packageName) const
-{
-	return !__config->getBool("cupt::resolver::no-remove") ||
-			!__old_solution->getPackageEntry(packageName, NULL) ||
-			__cache->isAutomaticallyInstalled(packageName);
-}
-
-void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solution >& solution)
+void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 {
 	vector< sregex > neverAutoRemoveRegexes;
 	{
@@ -576,136 +330,60 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 		}
 	}
 
-	// firstly, prepare all package names that can be potentially removed
-	auto canAutoremove = __config->getBool("cupt::resolver::auto-remove");
-	set< string > candidatesForRemoval;
-
 	smatch m;
-
-	auto packageNames = solution->getPackageNames();
-	FORIT(packageNameIt, packageNames)
+	auto isNeverAutoRemove = [&neverAutoRemoveRegexes, &m](const string& packageName) -> bool
 	{
-		const string& packageName = *packageNameIt;
-		if (packageName == __dummy_package_name)
-		{
-			continue;
-		}
-
-		PackageEntry packageEntry;
-		solution->getPackageEntry(packageName, &packageEntry);
-		const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-		if (!version)
-		{
-			continue;
-		}
-
-		if (__manually_modified_package_names.count(packageName))
-		{
-			continue;
-		}
-
-		if (version->essential)
-		{
-			continue;
-		}
-
-		auto canAutoremoveThisPackage = canAutoremove && __cache->isAutomaticallyInstalled(packageName);
-		bool packageWasInstalled = (__old_solution->getPackageEntry(packageName, NULL));
-		if (packageWasInstalled && !canAutoremoveThisPackage)
-		{
-			continue;
-		}
-
-		bool eligible = true;
 		FORIT(regexIt, neverAutoRemoveRegexes)
 		{
 			if (regex_match(packageName, m, *regexIt))
 			{
-				eligible = false;
-				break;
+				return true;
 			}
 		}
+		return false;
+	};
 
-		if (eligible)
-		{
-			// ok, candidate for removing
-			candidatesForRemoval.insert(packageName);
-		}
-	}
+	auto canAutoremove = __config->getBool("cupt::resolver::auto-remove");
 
-	bool keepRecommends = __config->getBool("cupt::resolver::keep-recommends");
-	bool keepSuggests = __config->getBool("cupt::resolver::keep-suggests");
-
-	Graph< string > dependencyGraph;
-	static const string mainVertexPackageName = "main@vertex";
+	Graph< const dg::Element* > dependencyGraph;
+	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
+	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
 	{ // building dependency graph
-		FORIT(packageNameIt, packageNames)
+		auto elementPtrs = solution.getElements();
+		FORIT(elementPtrIt, elementPtrs)
 		{
-			const string& packageName = *packageNameIt;
-
-			PackageEntry packageEntry;
-			solution->getPackageEntry(packageName, &packageEntry);
-			const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-			if (!version)
+			dependencyGraph.addVertex(*elementPtrIt);
+		}
+		FORIT(elementPtrIt, vertices)
+		{
+			if (!*elementPtrIt)
 			{
-				continue;
+				continue; // main vertex
 			}
-
-			RelationLine valuableRelationLine;
-			valuableRelationLine.insert(valuableRelationLine.end(),
-					version->relations[BinaryVersion::RelationTypes::PreDepends].begin(),
-					version->relations[BinaryVersion::RelationTypes::PreDepends].end());
-			valuableRelationLine.insert(valuableRelationLine.end(),
-					version->relations[BinaryVersion::RelationTypes::Depends].begin(),
-					version->relations[BinaryVersion::RelationTypes::Depends].end());
-			if (keepRecommends)
+			const list< const dg::Element* >& successorElementPtrs =
+					__solution_storage.getSuccessorElements(*elementPtrIt);
+			FORIT(successorElementPtrIt, successorElementPtrs)
 			{
-				valuableRelationLine.insert(valuableRelationLine.end(),
-						version->relations[BinaryVersion::RelationTypes::Recommends].begin(),
-						version->relations[BinaryVersion::RelationTypes::Recommends].end());
-			}
-			if (keepSuggests)
-			{
-				valuableRelationLine.insert(valuableRelationLine.end(),
-						version->relations[BinaryVersion::RelationTypes::Suggests].begin(),
-						version->relations[BinaryVersion::RelationTypes::Suggests].end());
-			}
-
-			FORIT(relationExpressionIt, valuableRelationLine)
-			{
-				auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
-				FORIT(satisfyingVersionIt, satisfyingVersions)
+				if ((**successorElementPtrIt)->isAnti())
 				{
-					const shared_ptr< const BinaryVersion >& satisfyingVersion = *satisfyingVersionIt;
-					const string& candidatePackageName = satisfyingVersion->packageName;
-
-					if (!candidatesForRemoval.count(candidatePackageName))
+					continue;
+				}
+				const list< const dg::Element* >& successorSuccessorElementPtrs =
+						__solution_storage.getSuccessorElements(*successorElementPtrIt);
+				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
+				{
+					auto it = vertices.find(*successorSuccessorElementPtrIt);
+					if (it != vertices.end())
 					{
-						continue;
-					}
-
-					PackageEntry candidatePackageEntry ;
-					solution->getPackageEntry(candidatePackageName, &candidatePackageEntry);
-					const shared_ptr< const BinaryVersion >& candidateVersion =
-							candidatePackageEntry.version;
-
-					if (satisfyingVersion->versionString != candidateVersion->versionString)
-					{
-						continue;
-					}
-
-					// well, this is what we need
-					if (candidatesForRemoval.count(packageName))
-					{
-						// this is a relation between two weak packages
-						dependencyGraph.addEdge(packageName, candidatePackageName);
-					}
-					else
-					{
-						// this is a relation between installed system and a weak package
-						dependencyGraph.addEdge(mainVertexPackageName, candidatePackageName);
+						// found, add the edge
+						dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
 					}
 				}
+			}
+
+			if (!__is_candidate_for_auto_removal(*elementPtrIt, isNeverAutoRemove, canAutoremove))
+			{
+				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
 			}
 		}
 	}
@@ -714,27 +392,18 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 		bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 		bool debugging = __config->getBool("debug::resolver");
 
-		set< string > reachablePackageNames;
-		{
-			auto source = dependencyGraph.getReachableFrom(mainVertexPackageName);
-			FORIT(sourceIt, source)
-			{
-				reachablePackageNames.insert(**sourceIt);
-			}
-		}
+		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
 
 		shared_ptr< const Reason > reason(new AutoRemovalReason);
 
-		FORIT(packageNameIt, candidatesForRemoval)
+		FORIT(elementPtrIt, vertices)
 		{
-			const string& packageName = *packageNameIt;
-			if (!reachablePackageNames.count(packageName))
+			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
 			{
 				// surely exists because of candidatesForRemoval :)
 				PackageEntry packageEntry;
-				solution->getPackageEntry(packageName, &packageEntry);
+				auto emptyElementPtr = __solution_storage.getCorrespondingEmptyElement(*elementPtrIt);
 
-				packageEntry.version.reset();;
 				if (trackReasons)
 				{
 					// leave only one reason :)
@@ -745,9 +414,10 @@ void NativeResolverImpl::__clean_automatically_installed(const shared_ptr< Solut
 				}
 				if (debugging)
 				{
-					debug("auto-removed package '%s'", packageName.c_str());
+					debug("auto-removed '%s'", (**elementPtrIt)->toString().c_str());
 				}
-				__solution_storage.setPackageEntry(*solution, packageName, packageEntry);
+				__solution_storage.setPackageEntry(solution, emptyElementPtr,
+						packageEntry, *elementPtrIt);
 			}
 		}
 	}
@@ -785,13 +455,10 @@ void NativeResolverImpl::__require_strict_relation_expressions()
 	version->relations[BinaryVersion::RelationTypes::Depends] = __satisfy_relation_expressions;
 	version->relations[BinaryVersion::RelationTypes::Breaks] = __unsatisfy_relation_expressions;
 
-	PackageEntry packageEntry;
-	packageEntry.version = version;
-	packageEntry.sticked = true;
-	__solution_storage.setPackageEntry(*__initial_solution, __dummy_package_name, packageEntry);
-
-	__solution_storage.addVersionDependencies(
-			vector< shared_ptr< const BinaryVersion > >{ version });
+	dg::InitialPackageEntry initialPackageEntry;
+	initialPackageEntry.version = version;
+	initialPackageEntry.sticked = true;
+	__initial_packages[__dummy_package_name] = initialPackageEntry;
 }
 
 /* __pre_apply_action only prints debug info and changes level/score of the
@@ -807,21 +474,9 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 		fatal("internal error: an attempt to make changes to already finished solution");
 	}
 
-	const string& packageName = actionToApply->packageName;
-	const shared_ptr< const BinaryVersion >& supposedVersion = actionToApply->version;
-
-	PackageEntry originalPackageEntry;
-	shared_ptr< const BinaryVersion > originalVersion;
-	if (originalSolution.getPackageEntry(packageName, &originalPackageEntry))
-	{
-		originalVersion = originalPackageEntry.version;
-	}
-
+	auto oldElementPtr = actionToApply->oldElementPtr;
+	auto newElementPtr = actionToApply->newElementPtr;
 	auto profit = actionToApply->profit;
-	if (isnan(profit))
-	{
-		profit = __get_action_profit(originalVersion, supposedVersion);
-	}
 
 	// temporarily lower the score of the current solution to implement back-tracking
 	// the bigger quality bar, the bigger chance for other solutions
@@ -830,16 +485,13 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	if (__config->getBool("debug::resolver"))
 	{
-		static const string notInstalled = "<not installed>";
-		auto oldVersionString = (originalVersion ? originalVersion->versionString : notInstalled);
-		auto newVersionString = (supposedVersion ? supposedVersion->versionString : notInstalled);
-
 		auto profitString = sf("%+.1f", profit);
 		auto qualityCorrectionString = sf("%+.1f", qualityCorrection);
 
-		auto message = sf("-> (%u,Δ:%s,qΔ:%s) trying: package '%s': '%s' -> '%s'",
+		auto message = sf("-> (%u,Δ:%s,qΔ:%s) trying: '%s' -> '%s'",
 				solution.id, profitString.c_str(), qualityCorrectionString.c_str(),
-				packageName.c_str(), oldVersionString.c_str(), newVersionString.c_str());
+				oldElementPtr ? (*oldElementPtr)->toString().c_str() : "",
+				(*newElementPtr)->toString().c_str());
 		__mydebug_wrapper(originalSolution, message);
 	}
 
@@ -850,24 +502,32 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
 }
 
-void NativeResolverImpl::__calculate_profits(const shared_ptr< Solution >& solution,
-		vector< unique_ptr< Action > >& actions) const
+void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& actions) const
 {
+	auto getVersion = [](const dg::Element* elementPtr) -> shared_ptr< const BinaryVersion >
+	{
+		static shared_ptr< const BinaryVersion > emptyVersion;
+		if (!elementPtr)
+		{
+			return emptyVersion;
+		}
+		auto versionVertex = dynamic_cast< const dg::VersionVertex* >(*elementPtr);
+		if (!versionVertex)
+		{
+			return emptyVersion;
+		}
+		return versionVertex->version;
+	};
+
 	size_t positionPenalty = 0;
 	FORIT(actionIt, actions)
 	{
 		Action& action = **actionIt;
 
-		PackageEntry packageEntry;
-		shared_ptr< const BinaryVersion > originalVersion;
-		if (solution->getPackageEntry(action.packageName, &packageEntry))
-		{
-			originalVersion = packageEntry.version;
-		}
-
 		if (isnan(action.profit))
 		{
-			action.profit = __get_action_profit(originalVersion, action.version);
+			action.profit = __get_action_profit(
+					getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
 		}
 		action.profit -= positionPenalty;
 
@@ -898,11 +558,10 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 	}
 }
 
-void NativeResolverImpl::__erase_worst_solutions(list< shared_ptr< Solution > >& solutions)
+void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions,
+		size_t maxSolutionCount, bool debugging)
 {
 	// don't allow solution tree to grow unstoppably
-	size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
-	auto debugging = __config->getBool("debug::resolver");
 	while (solutions.size() > maxSolutionCount)
 	{
 		// find the worst solution and drop it
@@ -925,8 +584,7 @@ void NativeResolverImpl::__erase_worst_solutions(list< shared_ptr< Solution > >&
 	}
 }
 
-void NativeResolverImpl::__post_apply_action(Solution& solution,
-		const vector< DependencyEntry >& dependencyGroups)
+void NativeResolverImpl::__post_apply_action(Solution& solution)
 {
 	if (!solution.pendingAction)
 	{
@@ -934,154 +592,94 @@ void NativeResolverImpl::__post_apply_action(Solution& solution,
 	}
 	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
 
-	const string& packageToModifyName = action.packageName;
-	const shared_ptr< const BinaryVersion >& supposedVersion = action.version;
-
 	{ // stick all additionally requested package names
-		FORIT(packageNameIt, action.packageToStickNames)
+		FORIT(elementPtrIt, action.elementsToStick)
 		{
-			PackageEntry packageEntry;
-			solution.getPackageEntry(*packageNameIt, &packageEntry);
+			PackageEntry packageEntry = *solution.getPackageEntry(*elementPtrIt);
 			packageEntry.sticked = true;
-			__solution_storage.setPackageEntry(solution, *packageNameIt, packageEntry);
+			__solution_storage.setPackageEntry(solution, *elementPtrIt, packageEntry, NULL);
 		}
 	};
 
 	PackageEntry packageEntry;
-	solution.getPackageEntry(packageToModifyName, &packageEntry);
-	packageEntry.version = supposedVersion;
 	packageEntry.sticked = true;
-	if(action.fakelySatisfies)
-	{
-		packageEntry.fakelySatisfied.initIfEmpty();
-		packageEntry.fakelySatisfied->push_back(*(action.fakelySatisfies));
-	}
-	else if (action.reason)
+	if (action.reason)
 	{
 		packageEntry.reasons.initIfEmpty();
 		packageEntry.reasons->push_back(action.reason);
 	}
-	__solution_storage.setPackageEntry(solution, packageToModifyName, packageEntry);
-	__validate_changed_package(solution, packageToModifyName, dependencyGroups);
-
-	if (__config->getString("cupt::resolver::synchronize-source-versions") != "none")
-	{
-		// don't do synchronization for removals
-		if (supposedVersion)
-		{
-			auto changedPackageNames = __synchronize_related_packages(solution, supposedVersion, true);
-			FORIT(changedPackageNameIt, changedPackageNames)
-			{
-				__validate_changed_package(solution, *changedPackageNameIt, dependencyGroups);
-			}
-		}
-	}
+	__solution_storage.setPackageEntry(solution, action.newElementPtr,
+			packageEntry, action.oldElementPtr);
+	__validate_changed_package(solution, action.oldElementPtr, action.newElementPtr);
 
 	solution.pendingAction.reset();
 }
 
-bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& version,
-		BinaryVersion::RelationTypes::Type dependencyType,
-		const RelationExpression& relationExpression)
-{
-	auto relationExpressionString = relationExpression.getHashString();
-	if (!relationExpressionString.empty())
-	{
-		const RelationLine& relationLine = version->relations[dependencyType];
-		FORIT(candidateRelationExpressionIt, relationLine)
-		{
-			auto candidateString = candidateRelationExpressionIt->getHashString();
-			if (!candidateString.empty() && relationExpressionString == candidateString)
-			{
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
-		const shared_ptr< const BinaryVersion >& otherVersion,
-		BinaryVersion::RelationTypes::Type dependencyType,
-		const BrokenDependencyInfo& bdi, PackageModificationType packageModificationType, bool debugging)
+		const dg::Element* candidateElementPtr, const dg::Element* brokenElementPtr,
+		bool debugging)
 {
-	if (packageModificationType == PackageModificationType::ConflictSlave)
+	/* we check only successors with the same or bigger priority than
+	   currently broken one */
+	auto brokenElementPriority = (*brokenElementPtr)->getPriority();
+
+	const list< const dg::Element* >& successorElementPtrs =
+			__solution_storage.getSuccessorElements(candidateElementPtr);
+	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), otherVersion);
-		bool stillConflicts = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
-				predicate) != bdi.satisfyingVersions.end());
-		if (stillConflicts && debugging)
+		if ((**successorElementPtrIt)->getPriority() < brokenElementPriority)
 		{
-			__mydebug_wrapper(solution, sf(
-					"cannot consider installing %s %s: the relation expression is still satisfied",
-					otherVersion->packageName.c_str(), otherVersion->versionString.c_str()));
+			continue;
 		}
-		return !stillConflicts;
-	}
-	// let's check if other version has the same relation
-	// if it has, other version will also fail so it seems there is no sense trying it
-	if (__version_has_relation_expression(otherVersion,
-			dependencyType, *(bdi.relationExpressionPtr)))
-	{
-		if (debugging)
-		{
-			__mydebug_wrapper(solution, sf(
-					"cannot consider installing %s %s: it contains the same relation expression",
-					otherVersion->packageName.c_str(), otherVersion->versionString.c_str()));
-		}
-		return false;
-	}
-
-	// let's try even harder to find if the other version is really appropriate for us
-	const RelationLine& relationLine = otherVersion->relations[dependencyType];
-	FORIT(it, relationLine)
-	{
-		/* we check only relations from dependency group that caused
-		   the problem, it's not a full check, but pretty reasonable for
-		   most cases; in rare cases that some problematic dependency
-		   migrated to other dependency group, it will be revealed at
-		   next check run
-
-		   if any of relation expressions gives us equal or less "space" in
-		   terms of satisfying versoins, the version won't be accepted as a
-		   resolution
-		*/
-		auto candidateSatisfyingVersions = __cache->getSatisfyingVersions(*it);
-		bool eligible;
-		if (packageModificationType == PackageModificationType::DependencyMaster)
-		{
-			bool isMoreWide = false;
-
-			FORIT(candidateIt, candidateSatisfyingVersions)
-			{
-				auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *candidateIt);
-				bool candidateNotFound = (std::find_if(bdi.satisfyingVersions.begin(), bdi.satisfyingVersions.end(),
-						predicate) == bdi.satisfyingVersions.end());
-
-				if (candidateNotFound)
-				{
-					// more wide relation, can't say nothing bad with it at time being
-					isMoreWide = true;
-					break;
-				}
-			}
-			eligible = isMoreWide;
-		}
-		else // PackageModificationType::ConflictMaster
-		{
-			auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *bdi.intersectVersionPtr);
-			eligible = (std::find_if(candidateSatisfyingVersions.begin(), candidateSatisfyingVersions.end(),
-					predicate) == candidateSatisfyingVersions.end());
-		}
-
-		if (!eligible)
+		if (*successorElementPtrIt == brokenElementPtr)
 		{
 			if (debugging)
 			{
 				__mydebug_wrapper(solution, sf(
-						"cannot consider installing %s %s: it contains equal or less wide relation expression '%s'",
-						otherVersion->packageName.c_str(), otherVersion->versionString.c_str(),
-						it->toString().c_str()));
+						"not considering %s: it has the same problem",
+						(*candidateElementPtr)->toString().c_str()));
+			}
+			return false;
+		}
+	}
+
+	// let's try even harder to find if this candidate is really appropriate for us
+	const list< const dg::Element* >& brokenElementSuccessorElementPtrs =
+			__solution_storage.getSuccessorElements(brokenElementPtr);
+	FORIT(successorElementPtrIt, successorElementPtrs)
+	{
+		if ((**successorElementPtrIt)->getPriority() < brokenElementPriority)
+		{
+			continue;
+		}
+		/* if any of such successors gives us equal or less "space" in
+		   terms of satisfying elements, the version won't be accepted as a
+		   resolution */
+		const list< const dg::Element* >& successorElementSuccessorElementPtrs =
+				__solution_storage.getSuccessorElements(*successorElementPtrIt);
+
+		bool isMoreWide = false;
+		FORIT(elementPtrIt, successorElementSuccessorElementPtrs)
+		{
+			bool notFound = (std::find(brokenElementSuccessorElementPtrs.begin(),
+					brokenElementSuccessorElementPtrs.end(), *elementPtrIt)
+					== brokenElementSuccessorElementPtrs.end());
+
+			if (notFound)
+			{
+				// more wide relation, can't say nothing bad with it at time being
+				isMoreWide = true;
+				break;
+			}
+		}
+
+		if (!isMoreWide)
+		{
+			if (debugging)
+			{
+				__mydebug_wrapper(solution, sf(
+						"not considering %s: it contains equal or less wide relation expression '%s'",
+						(*candidateElementPtr)->toString().c_str(), (**successorElementPtrIt)->toString().c_str()));
 			}
 			return false;
 		}
@@ -1092,69 +690,49 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 
 void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		vector< unique_ptr< Action > >& actions, const Solution& solution,
-		const string& packageName, const PackageEntry& packageEntry,
-		BinaryVersion::RelationTypes::Type dependencyType, const BrokenDependencyInfo& bdi,
-		PackageModificationType packageModificationType, bool debugging)
+		const dg::Element* versionElementPtr, const dg::Element* brokenElementPtr,
+		bool debugging)
 {
-	if (packageEntry.sticked)
+	if (solution.getPackageEntry(versionElementPtr)->sticked)
 	{
 		return;
 	}
 
-	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-	// change version of the package
-	auto package = __cache->getBinaryPackage(packageName);
-	auto versions = package->getVersions();
-	FORIT(otherVersionIt, versions)
+	const forward_list< const dg::Element* >& conflictingElementPtrs =
+			__solution_storage.getConflictingElements(versionElementPtr);
+	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
 	{
-		const shared_ptr< const BinaryVersion >& otherVersion = *otherVersionIt;
-
-		// don't try existing version
-		if (otherVersion->versionString == version->versionString)
+		if (*conflictingElementPtrIt == versionElementPtr)
 		{
 			continue;
 		}
-
-		if (__makes_sense_to_modify_package(solution,
-				otherVersion, dependencyType, bdi, packageModificationType, debugging))
+		if (__makes_sense_to_modify_package(solution, *conflictingElementPtrIt,
+				brokenElementPtr, debugging))
 		{
 			// other version seems to be ok
 			unique_ptr< Action > action(new Action);
-			action->packageName = packageName;
-			action->version = otherVersion;
+			action->oldElementPtr = versionElementPtr;
+			action->newElementPtr = *conflictingElementPtrIt;
 
 			actions.push_back(std::move(action));
 		}
 	}
-
-	if (__can_package_be_removed(packageName))
-	{
-		// remove the package
-		unique_ptr< Action > action(new Action);
-		action->packageName = packageName;
-
-		actions.push_back(std::move(action));
-	}
 }
 
 void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Action > >& actions,
-		const Solution& solution,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions)
+		const Solution& solution, const dg::Element* brokenElementPtr)
 {
+	const list< const dg::Element* >& successorElementPtrs =
+			__solution_storage.getSuccessorElements(brokenElementPtr);
 	// install one of versions package needs
-	FORIT(satisfyingVersionIt, satisfyingVersions)
+	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		const shared_ptr< const BinaryVersion >& satisfyingVersion = *satisfyingVersionIt;
-		const string& satisfyingPackageName = satisfyingVersion->packageName;
-
-		// can the package be updated?
-		PackageEntry satisfyingPackageEntry;
-		bool exists = solution.getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
-		if (!exists || !satisfyingPackageEntry.sticked)
+		const dg::Element* conflictingElementPtr;
+		if (__solution_storage.simulateSetPackageEntry(solution, *successorElementPtrIt, &conflictingElementPtr))
 		{
 			unique_ptr< Action > action(new Action);
-			action->packageName = satisfyingPackageName;
-			action->version = satisfyingVersion;
+			action->oldElementPtr = conflictingElementPtr;
+			action->newElementPtr = *successorElementPtrIt;
 
 			actions.push_back(std::move(action));
 		}
@@ -1165,45 +743,58 @@ void NativeResolverImpl::__prepare_stick_requests(vector< unique_ptr< Action > >
 {
 	// each next action receives one more additional stick request to not
 	// interfere with all previous solutions
-	vector< string > packageNames;
+	vector< const dg::Element* > elementPtrs;
 	FORIT(actionIt, actions)
 	{
-		(*actionIt)->packageToStickNames = packageNames;
+		(*actionIt)->elementsToStick = elementPtrs;
 
-		const string& actionPackageName = (*actionIt)->packageName;
-		if (std::find(packageNames.begin(), packageNames.end(), actionPackageName) == packageNames.end())
+		auto oldElementPtr = (*actionIt)->oldElementPtr;
+		if (!oldElementPtr)
 		{
-			packageNames.push_back(actionPackageName);
+			continue;
+		}
+		if (std::find(elementPtrs.begin(), elementPtrs.end(), oldElementPtr) == elementPtrs.end())
+		{
+			elementPtrs.push_back(oldElementPtr);
 		}
 	}
 }
 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
-		const Solution& solution, Resolver::CallbackType callback)
+		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
 	static const Resolver::SuggestedPackage emptySuggestedPackage;
 
 	// build "user-frienly" version of solution
 	Resolver::SuggestedPackages suggestedPackages;
 
-	auto packageNames = solution.getPackageNames();
-	FORIT(packageNameIt, packageNames)
+	auto elementPtrs = solution.getElements();
+	FORIT(elementPtrIt, elementPtrs)
 	{
-		const string& packageName = *packageNameIt;
+		auto vertex = dynamic_cast< const dg::VersionVertex* >(**elementPtrIt);
+		if (!vertex)
+		{
+			continue; // non-version vertex
+		}
+
+		const string& packageName = vertex->getPackageName();
 		if (packageName == __dummy_package_name)
 		{
 			continue;
 		}
 
-		auto it = suggestedPackages.insert(make_pair(packageName, emptySuggestedPackage)).first; // iterator of inserted element
+		// iterator of inserted element
+		auto it = suggestedPackages.insert(make_pair(packageName, emptySuggestedPackage)).first;
 		Resolver::SuggestedPackage& suggestedPackage = it->second;
+		suggestedPackage.version = vertex->version;
 
-		PackageEntry packageEntry;
-		solution.getPackageEntry(packageName, &packageEntry);
-		suggestedPackage.version = packageEntry.version;
-		if (packageEntry.reasons)
+		if (trackReasons)
 		{
-			suggestedPackage.reasons = *(packageEntry.reasons);
+			auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
+			if (packageEntryPtr->reasons)
+			{
+				suggestedPackage.reasons = *(packageEntryPtr->reasons);
+			}
 		}
 		suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);
 	}
@@ -1231,318 +822,139 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	return userAnswer;
 }
 
-void NativeResolverImpl::__filter_unsynchronizeable_actions(
-		const Solution& solution, vector< unique_ptr< Action > >& actions)
+bool NativeResolverImpl::__verify_element(const Solution& solution,
+		const dg::Element* elementPtr)
 {
-	vector< unique_ptr< Action > > result;
-
-	bool debugging = __config->getBool("debug::resolver");
-	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
-	FORIT(actionIt, actions)
+	const list< const dg::Element* >& successorElementPtrs =
+			__solution_storage.getSuccessorElements(elementPtr);
+	FORIT(elementPtrIt, successorElementPtrs)
 	{
-		const shared_ptr< const BinaryVersion >& version = (*actionIt)->version;
-		if (!version || __can_related_packages_be_synchronized(solution, version))
-		{
-			result.push_back(std::move(*actionIt));
-		}
-		else
-		{
-			// we cannot proceed with it, so try deleting related packages
-			auto unsynchronizeablePackageNames = __get_unsynchronizeable_related_package_names(
-					solution, version);
-			FORIT(unsynchronizeablePackageNameIt, unsynchronizeablePackageNames)
-			{
-				const string& unsynchronizeablePackageName = *unsynchronizeablePackageNameIt;
-				PackageEntry packageEntry;
-				solution.getPackageEntry(unsynchronizeablePackageName, &packageEntry);
-				if (packageEntry.sticked)
-				{
-					continue;
-				}
-
-				bool foundSameAction = false;
-				FORIT(resultActionIt, result)
-				{
-					if ((*resultActionIt)->packageName == unsynchronizeablePackageName &&
-							!((*resultActionIt)->version))
-					{
-						foundSameAction = true;
-						break;
-					}
-				}
-
-				if (!foundSameAction)
-				{
-					unique_ptr< Action > action(new Action);
-					action->packageName = unsynchronizeablePackageName;
-					if (trackReasons)
-					{
-						action->reason.reset(new SynchronizationReason(version->packageName));
-					}
-					result.push_back(std::move(action));
-				}
-			}
-			if (debugging)
-			{
-				__mydebug_wrapper(solution, sf(
-						"cannot consider installing %s %s: unable to synchronize related packages (%s)",
-						version->packageName.c_str(), version->versionString.c_str(),
-						join(", ", unsynchronizeablePackageNames).c_str()));
-			}
-		}
-	}
-	result.swap(actions);
-}
-
-bool NativeResolverImpl::__is_soft_dependency_ignored(const shared_ptr< const BinaryVersion >& version,
-		BinaryVersion::RelationTypes::Type dependencyType,
-		const RelationExpression& relationExpression,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions) const
-{
-	auto wasSatisfiedInPast = __is_version_array_intersects_with_packages(
-				satisfyingVersions, *__old_solution);
-	if (wasSatisfiedInPast)
-	{
-		return false;
-	}
-
-	if (dependencyType == BinaryVersion::RelationTypes::Recommends)
-	{
-		if (!__config->getBool("apt::install-recommends"))
+		if (solution.getPackageEntry(*elementPtrIt))
 		{
 			return true;
 		}
 	}
-	else // Suggests
-	{
-		if (!__config->getBool("apt::install-suggests"))
-		{
-			return true;
-		}
-	}
-
-	PackageEntry oldPackageEntry;
-	if (__old_solution->getPackageEntry(version->packageName, &oldPackageEntry))
-	{
-		const shared_ptr< const BinaryVersion >& oldVersion = oldPackageEntry.version;
-		if (oldVersion && __version_has_relation_expression(oldVersion,
-			dependencyType, relationExpression))
-		{
-			// the fact that we are here means that the old version of this package
-			// had exactly the same relation expression, and it was unsatisfied
-			// so, upgrading the version doesn't bring anything new
-			return true;
-		}
-	}
-
 	return false;
 }
 
-bool NativeResolverImpl::__verify_relation_line(const Solution& solution,
-		const string* packageNamePtr, const PackageEntry& packageEntry,
-		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti,
-		BrokenDependencyInfo* bdi, const string* changedPackageNamePtr)
-{
-	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-	const string* ignorePackageNamePtr = (isDependencyAnti ? packageNamePtr : NULL);
-
-	const RelationLine& relationLine = version->relations[dependencyType];
-	FORIT(relationExpressionIt, relationLine)
-	{
-		const RelationExpression& relationExpression = *relationExpressionIt;
-
-		bdi->satisfyingVersions = __cache->getSatisfyingVersions(relationExpression);
-		if (changedPackageNamePtr)
-		{
-			// "invalidate"-mode, only verify the changes that could be caused
-			// by changedPackageName(Ptr)
-			bool found = false;
-			FORIT(it, bdi->satisfyingVersions)
-			{
-				if ((*it)->packageName == *changedPackageNamePtr)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				continue; // skip this relation expression
-			}
-		}
-		bdi->intersectVersionPtr = __is_version_array_intersects_with_packages(
-				bdi->satisfyingVersions, solution, ignorePackageNamePtr);
-
-		// check if the relation expression satisfied/unsatisfied respectively
-		if (isDependencyAnti == !bdi->intersectVersionPtr) // XOR
-		{
-			continue;
-		}
-
-		if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
-			dependencyType == BinaryVersion::RelationTypes::Suggests)
-		{
-			// this is a soft dependency
-
-			if (packageEntry.fakelySatisfied)
-			{
-				const RelationLine& fakelySatisfied = *(packageEntry.fakelySatisfied);
-				if (std::find(fakelySatisfied.begin(), fakelySatisfied.end(), relationExpression) !=
-					fakelySatisfied.end())
-				{
-					// this soft relation expression was already fakely satisfied (score penalty)
-					continue;
-				}
-			}
-
-			if (__is_soft_dependency_ignored(version, dependencyType,
-					relationExpression, bdi->satisfyingVersions))
-			{
-				continue;
-			}
-		}
-
-		bdi->relationExpressionPtr = &*relationExpressionIt;
-		return false;
-	}
-	return true;
-}
-
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
-		const Solution& solution, const string& packageName,
-		const PackageEntry& packageEntry, const BrokenDependencyInfo& bdi,
-		BinaryVersion::RelationTypes::Type dependencyType, bool isDependencyAnti, bool debugging)
+		const Solution& solution, const dg::Element* versionElementPtr,
+		const dg::Element* brokenElementPtr, bool debugging)
 {
-	const shared_ptr< const BinaryVersion >& version = packageEntry.version;
-	vector< unique_ptr< Action > >& possibleActions = *possibleActionsPtr;
+	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
+	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
+			versionElementPtr, brokenElementPtr, debugging);
+}
 
-	if (!isDependencyAnti)
+void NativeResolverImpl::__validate_element(
+		Solution& solution, const dg::Element* elementPtr)
+{
+	const list< const dg::Element* >& successorElementPtrs =
+			__solution_storage.getSuccessorElements(elementPtr);
+	forward_list< const dg::Element* > brokenSuccessors;
+	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
-			dependencyType == BinaryVersion::RelationTypes::Suggests)
+		if (!__verify_element(solution, *successorElementPtrIt))
 		{
-			// ok, then we have one more possible solution - do nothing at all
-			unique_ptr< Action > action(new Action);
-			action->packageName = packageName;
-			action->version = version;
-			// set profit manually, as we are inserting fake action here
-			action->profit = (dependencyType == BinaryVersion::RelationTypes::Recommends ? -200 : -50);
-			action->fakelySatisfies.reset(new RelationExpression(*(bdi.relationExpressionPtr)));
-
-			possibleActions.push_back(std::move(action));
+			brokenSuccessors.push_front(*successorElementPtrIt);
 		}
-
-		// also
-		__add_actions_to_fix_dependency(possibleActions, solution, bdi.satisfyingVersions);
-		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
-				packageEntry, dependencyType, bdi, PackageModificationType::DependencyMaster, debugging);
 	}
-	else
+	if (!brokenSuccessors.empty())
 	{
-		const shared_ptr< const BinaryVersion >& satisfyingVersion = *(bdi.intersectVersionPtr);
-		const string& satisfyingPackageName = satisfyingVersion->packageName;
-
-		PackageEntry satisfyingPackageEntry;
-		solution.getPackageEntry(satisfyingPackageName, &satisfyingPackageEntry);
-
-		__add_actions_to_modify_package_entry(possibleActions, solution, satisfyingPackageName,
-				satisfyingPackageEntry, dependencyType, bdi, PackageModificationType::ConflictSlave, debugging);
-		__add_actions_to_modify_package_entry(possibleActions, solution, packageName,
-				packageEntry, dependencyType, bdi, PackageModificationType::ConflictMaster, debugging);
+		PackageEntry packageEntry = *solution.getPackageEntry(elementPtr);
+		packageEntry.brokenSuccessors.swap(brokenSuccessors);
+		__solution_storage.setPackageEntry(solution, elementPtr,
+				packageEntry, NULL);
 	}
 }
 
-void NativeResolverImpl::__validate_package_name(Solution& solution, const string& packageName,
-		const vector< DependencyEntry >& dependencyGroups)
+void NativeResolverImpl::__initial_validate_pass(Solution& solution)
 {
-	PackageEntry packageEntry;
-	solution.getPackageEntry(packageName, &packageEntry);
-
-	if (!packageEntry.version)
+	auto elementPtrs = solution.getElements();
+	FORIT(elementPtrIt, elementPtrs)
 	{
-		packageEntry.checked.set();
-		__solution_storage.setPackageEntry(solution, packageName, packageEntry);
-		return;
-	}
-
-	auto oldChecked = packageEntry.checked;
-
-	FORIT(dependencyGroupIt, dependencyGroups)
-	{
-		auto dependencyType = dependencyGroupIt->type;
-		auto isDependencyAnti = dependencyGroupIt->isAnti;
-
-		BrokenDependencyInfo brokenDependencyInfo;
-		packageEntry.checked[dependencyType] = __verify_relation_line(solution, &packageName,
-				packageEntry, dependencyType, isDependencyAnti, /* out -> */ &brokenDependencyInfo);
-	}
-	if (packageEntry.checked != oldChecked)
-	{
-		__solution_storage.setPackageEntry(solution, packageName, packageEntry);
+		__validate_element(solution, *elementPtrIt);
 	}
 }
 
-void NativeResolverImpl::__initial_validate_pass(Solution& solution,
-		const vector< DependencyEntry >& dependencyGroups)
+void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 {
-	vector< string > packageNames = solution.getPackageNames();
-
-	FORIT(packageNameIt, packageNames)
+	auto elementPtrs = solution.getElements();
+	FORIT(elementPtrIt, elementPtrs)
 	{
-		__validate_package_name(solution, *packageNameIt, dependencyGroups);
+		const list< const dg::Element* >& successorElementPtrs =
+				__solution_storage.getSuccessorElements(*elementPtrIt);
+		FORIT(successorElementPtrIt, successorElementPtrs)
+		{
+			if (!__verify_element(solution, *successorElementPtrIt))
+			{
+				fatal("internal error: final solution check failed: solution '%u', version '%s', problem '%s'",
+						solution.id, (**elementPtrIt)->toString().c_str(),
+						(**successorElementPtrIt)->toString().c_str());
+			}
+		}
 	}
 }
 
 void NativeResolverImpl::__validate_changed_package(Solution& solution,
-		const string& changedPackageName, const vector< DependencyEntry >& dependencyGroups)
+		const dg::Element* oldElementPtr, const dg::Element* newElementPtr)
 {
-	__validate_package_name(solution, changedPackageName, dependencyGroups);
+	__validate_element(solution, newElementPtr);
 
-	// and now validating referenced packages
-	const set< SolutionStorage::PackageDependency >& referencedParts =
-			__solution_storage.getReferencedSet(changedPackageName);
-	FORIT(referencedPartIt, referencedParts)
-	{
-		const string& referencedPackageName = referencedPartIt->packageName;
-
-		PackageEntry packageEntry;
-		if (!solution.getPackageEntry(referencedPackageName, &packageEntry))
+	if (oldElementPtr)
+	{ // invalidate those which depend on the old element
+		const list< const dg::Element* >& predecessors =
+				__solution_storage.getPredecessorElements(oldElementPtr);
+		FORIT(predecessorElementPtrIt, predecessors)
 		{
-			continue;
-		}
-		if (!packageEntry.version)
-		{
-			continue; // nothing to change
-		}
-
-		auto relationType = referencedPartIt->relationType;
-		bool oldCheckedValue = packageEntry.checked[relationType];
-
-		const DependencyEntry* dependencyEntryPtr = NULL;
-		{ // determining isDependencyAnti
-			FORIT(it, dependencyGroups)
+			if (!__verify_element(solution, *predecessorElementPtrIt))
 			{
-				if (it->type == relationType)
+				const list< const dg::Element* >& dependentVersionElementPtrs =
+						__solution_storage.getPredecessorElements(*predecessorElementPtrIt);
+				FORIT(versionElementPtrIt, dependentVersionElementPtrs)
 				{
-					dependencyEntryPtr = &*it;
-					break;
+					auto packageEntryPtr = solution.getPackageEntry(*versionElementPtrIt);
+					if (!packageEntryPtr)
+					{
+						continue; // no such element in this solution
+					}
+					// here we assume packageEntry.brokenSuccessors doesn't
+					// contain predecessorElementPtr, since as old element was
+					// present, predecessorElementPtr was not broken
+					PackageEntry packageEntry = *packageEntryPtr;
+					packageEntry.brokenSuccessors.push_front(*predecessorElementPtrIt);
+					__solution_storage.setPackageEntry(solution, *versionElementPtrIt,
+							packageEntry, NULL);
 				}
 			}
-			if (!dependencyEntryPtr)
-			{
-				fatal("internal error: didn't find a dependency group for relation type '%d'",
-						int(relationType));
-			}
 		}
-
-		BrokenDependencyInfo bdi; // unused
-		packageEntry.checked[relationType] = __verify_relation_line(solution, &referencedPackageName,
-				packageEntry, relationType, dependencyEntryPtr->isAnti, /* out -> */ &bdi,
-				oldCheckedValue ? &changedPackageName : NULL);
-
-		if (packageEntry.checked[relationType] != oldCheckedValue)
+	}
+	{ // validate those which depend on the new element
+		const list< const dg::Element* >& predecessors =
+				__solution_storage.getPredecessorElements(newElementPtr);
+		FORIT(predecessorElementPtrIt, predecessors)
 		{
-			__solution_storage.setPackageEntry(solution, referencedPackageName, packageEntry);
+			const list< const dg::Element* >& dependentVersionElementPtrs =
+					__solution_storage.getPredecessorElements(*predecessorElementPtrIt);
+			FORIT(versionElementPtrIt, dependentVersionElementPtrs)
+			{
+				auto packageEntryPtr = solution.getPackageEntry(*versionElementPtrIt);
+				if (!packageEntryPtr)
+				{
+					continue; // no such element in this solution
+				}
+				FORIT(existingBrokenSuccessorIt, packageEntryPtr->brokenSuccessors)
+				{
+					if (*existingBrokenSuccessorIt == *predecessorElementPtrIt)
+					{
+						PackageEntry packageEntry = *packageEntryPtr;
+						packageEntry.brokenSuccessors.remove(*predecessorElementPtrIt);
+						__solution_storage.setPackageEntry(solution, *versionElementPtrIt,
+								packageEntry, NULL);
+						break;
+					}
+				}
+			}
 		}
 	}
 }
@@ -1550,25 +962,25 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser();
-	bool debugging = __config->getBool("debug::resolver");
+	const bool debugging = __config->getBool("debug::resolver");
+	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
+	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
+
 	if (debugging)
 	{
 		debug("started resolving");
 	}
 	__require_strict_relation_expressions();
 
-	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
+	shared_ptr< Solution > initialSolution(new Solution);
+	__solution_storage.prepareForResolving(*initialSolution, __old_packages, __initial_packages);
+	__initial_validate_pass(*initialSolution);
 
-	auto dependencyGroups = __get_dependency_groups();
-
-	list< shared_ptr< Solution > > solutions =
-			{ __solution_storage.cloneSolution(__initial_solution) };
-	(*solutions.begin())->prepare();
-	__initial_validate_pass(**solutions.begin(), dependencyGroups);
+	list< shared_ptr< Solution > > solutions = { initialSolution };
 
 	// for each package entry 'count' will contain the number of failures
 	// during processing these packages
-	map< string, size_t > failCounts;
+	map< const dg::Element*, size_t > failCounts;
 
 	bool checkFailed;
 
@@ -1582,7 +994,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		if (currentSolution->pendingAction)
 		{
 			currentSolution->prepare();
-			__post_apply_action(*currentSolution, dependencyGroups);
+			__post_apply_action(*currentSolution);
 		}
 
 		// for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
@@ -1596,83 +1008,72 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			recheckNeeded = false;
 			checkFailed = false;
 
-			FORIT(dependencyGroupIt, dependencyGroups)
+			const dg::Element* versionElementPtr;
+			const dg::Element* brokenElementPtr;
 			{
-				auto dependencyType = dependencyGroupIt->type;
-				auto isDependencyAnti = dependencyGroupIt->isAnti;
-
-				string packageName;
+				auto brokenPairs = currentSolution->getBrokenPairs();
+				if (brokenPairs.empty())
 				{
-					auto packageNamePtrs = currentSolution->getUncheckedPackageNames(dependencyType);
-					if (packageNamePtrs.empty())
-					{
-						continue;
-					}
-					auto failValue = [&failCounts](const string& s) -> size_t
-					{
-						auto it = failCounts.find(s);
-						return it != failCounts.end() ? it->second : 0u;
-					};
-					packageName = **std::max_element(packageNamePtrs.begin(), packageNamePtrs.end(),
-							[failValue](const string* left, const string* right)
+					break;
+				}
+				auto failValue = [&failCounts](const dg::Element* e) -> size_t
+				{
+					auto it = failCounts.find(e);
+					return it != failCounts.end() ? it->second : 0u;
+				};
+				typedef pair< const dg::Element*, const dg::Element* > BrokenPairType;
+				auto brokenPairPtr = *std::max_element(brokenPairs.begin(), brokenPairs.end(),
+						[failValue](const BrokenPairType& left, const BrokenPairType& right)
+						{
+							auto leftPriority = (*left.second)->getPriority();
+							auto rightPriority = (*right.second)->getPriority();
+							if (leftPriority < rightPriority)
 							{
-								return failValue(*left) < failValue(*right);
-							});
-				}
-				PackageEntry packageEntry;
-				currentSolution->getPackageEntry(packageName, &packageEntry);
+								return true;
+							}
+							if (leftPriority > rightPriority)
+							{
+								return false;
+							}
+							return failValue(left.second) < failValue(right.second);
+						});
+				versionElementPtr = brokenPairPtr.first;
+				brokenElementPtr = brokenPairPtr.second;
+			}
+			checkFailed = true;
 
-				BrokenDependencyInfo brokenDependencyInfo;
-				checkFailed = !__verify_relation_line(*currentSolution, &packageName,
-						packageEntry, dependencyType, isDependencyAnti,
-						/* out -> */ &brokenDependencyInfo);
-				if (!checkFailed && !currentSolution->finished)
+			if (debugging)
+			{
+				auto message = sf("problem: %s: %s", (*versionElementPtr)->toString().c_str(),
+						(*brokenElementPtr)->toString().c_str());
+				__mydebug_wrapper(*currentSolution, message);
+			}
+			__generate_possible_actions(&possibleActions, *currentSolution,
+					versionElementPtr, brokenElementPtr, debugging);
+
+			if (trackReasons)
+			{
+				// setting a reason
+				auto reason = (*brokenElementPtr)->getReason(**versionElementPtr);
+				FORIT(possibleActionIt, possibleActions)
 				{
-					fatal("internal error: known invalid entry was verified as valid");
-				}
-
-				__generate_possible_actions(&possibleActions, *currentSolution, packageName,
-						packageEntry, brokenDependencyInfo, dependencyType, isDependencyAnti, debugging);
-
-				const RelationExpression& failedRelationExpression = *(brokenDependencyInfo.relationExpressionPtr);
-				if (trackReasons)
-				{
-					// setting a reason
-					shared_ptr< const Reason > reason(
-							new RelationExpressionReason(packageEntry.version, dependencyType, failedRelationExpression));
-					FORIT(possibleActionIt, possibleActions)
-					{
-						(*possibleActionIt)->reason = reason;
-					}
-				}
-
-				if (debugging)
-				{
-					const char* satisfyState = (isDependencyAnti ? "satisfied" : "unsatisfied");
-					auto message = sf("problem: package '%s': %s %s '%s'", packageName.c_str(), satisfyState,
-							BinaryVersion::RelationTypes::rawStrings[dependencyType],
-							failedRelationExpression.toString().c_str());
-					__mydebug_wrapper(*currentSolution, message);
-				}
-				// mark package as failed one more time
-				failCounts[packageName] += 1;
-
-				if (possibleActions.size() == 1)
-				{
-					__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
-					__post_apply_action(*currentSolution, dependencyGroups);
-					possibleActions.clear();
-
-					recheckNeeded = true;
-					break; // goto next check iteration
-				}
-				else
-				{
-					goto finish_main_loop;
+					(*possibleActionIt)->reason = reason;
 				}
 			}
+
+			// mark package as failed one more time
+			failCounts[brokenElementPtr] += 1;
+
+			if (possibleActions.size() == 1)
+			{
+				__calculate_profits(possibleActions);
+				__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
+				__post_apply_action(*currentSolution);
+				possibleActions.clear();
+
+				recheckNeeded = true;
+			}
 		}
-		finish_main_loop:
 
 		if (!checkFailed)
 		{
@@ -1686,27 +1087,9 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				currentSolution->finished = 1;
 
 				// clean up automatically installed by resolver and now unneeded packages
-				__clean_automatically_installed(currentSolution);
+				__clean_automatically_installed(*currentSolution);
 
-				/* now, as we use partial checks (using
-				   setPackageEntry/invalidateReferencedBy/validate), before
-				   we present a solution it's a good idea to validate it from
-				   scratch finally: if it ever turns that partial checks pass a
-				   wrong solution, we must catch it
-
-				   so, we schedule a last check round for a solution, but as it
-				   already has 'finished' property set, if the problem will
-				   appear, __pre_apply_action will die loudly
-				*/
-				auto packageNames = currentSolution->getPackageNames();
-				FORIT(packageNameIt, packageNames)
-				{
-					PackageEntry packageEntry;
-					currentSolution->getPackageEntry(*packageNameIt, &packageEntry);
-					packageEntry.checked.reset(); // invalidating
-					__solution_storage.setPackageEntry(*currentSolution, *packageNameIt, packageEntry);
-				}
-				continue;
+				__final_verify_solution(*currentSolution);
 			}
 
 			// resolver can refuse the solution
@@ -1716,7 +1099,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				continue; // ok, process other solution
 			}
 
-			auto userAnswer = __propose_solution(*currentSolution, callback);
+			auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
 			switch (userAnswer)
 			{
 				case Resolver::UserAnswer::Accept:
@@ -1734,18 +1117,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		}
 		else
 		{
-			if (__config->getString("cupt::resolver::synchronize-source-versions") == "hard")
-			{
-				// if we have to synchronize source versions, can related packages be updated too?
-				// filter out actions that don't match this criteria
-				__filter_unsynchronizeable_actions(*currentSolution, possibleActions);
-			}
-
 			__prepare_stick_requests(possibleActions);
 
 			if (!possibleActions.empty())
 			{
-				__calculate_profits(currentSolution, possibleActions);
+				__calculate_profits(possibleActions);
 				__pre_apply_actions_to_solution_tree(solutions, currentSolution, possibleActions);
 			}
 			else
@@ -1762,7 +1138,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			if (!possibleActions.empty())
 			{
 				// some new solutions were added
-				__erase_worst_solutions(solutions);
+				__erase_worst_solutions(solutions, maxSolutionCount, debugging);
 			}
 		}
 	}

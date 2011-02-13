@@ -20,9 +20,12 @@
 #include <cupt/cache/binarypackage.hpp>
 
 #include <internal/nativeresolver/solution.hpp>
+#include <internal/nativeresolver/dependencygraph.hpp>
 
 namespace cupt {
 namespace internal {
+
+using std::make_pair;
 
 PackageEntry::PackageEntry()
 	: sticked(false)
@@ -31,7 +34,7 @@ PackageEntry::PackageEntry()
 class PackageEntryMap
 {
  public:
-	typedef string key_t; // package name
+	typedef const dg::Element* key_t; // package name
 	typedef pair< key_t, PackageEntry > data_t; // vector requires assignable types
 	typedef data_t value_type; // for set_union
 	typedef vector< data_t > container_t;
@@ -70,12 +73,15 @@ class PackageEntryMap
 		return result;
 	}
 	// this insert() is called only for unexisting elements
-	// TODO: &&
-	iterator_t insert(iterator_t hint, const data_t& data)
+	iterator_t insert(iterator_t position, data_t&& data)
 	{
-		auto distance = hint - begin();
-		__container.insert(static_cast< container_t::iterator >(hint), data);
+		auto distance = position - begin();
+		__container.insert(static_cast< container_t::iterator >(position), std::move(data));
 		return begin() + distance;
+	}
+	void erase(iterator_t position)
+	{
+		__container.erase(static_cast< container_t::iterator >(position));
 	}
 	void push_back(const data_t& data)
 	{
@@ -83,69 +89,9 @@ class PackageEntryMap
 	}
 };
 
-SolutionStorage::SolutionStorage(const shared_ptr< const Cache >& cache,
-		const vector< DependencyEntry >& dependencyEntries,
-		const string& dummyPackageName)
-	: __cache(cache), __dummy_package_name(dummyPackageName),
-	__dependency_entries(dependencyEntries), __next_free_id(0)
+SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
+	: __next_free_id(1), __dependency_graph(config, cache)
 {}
-
-void SolutionStorage::__add_package_dependencies(const string& packageName)
-{
-	if (!__processed_dependencies.insert(packageName).second)
-	{
-		return; // already processed entry
-	}
-
-	if (packageName == __dummy_package_name)
-	{
-		return;
-	}
-
-	auto package = __cache->getBinaryPackage(packageName);
-	if (!package)
-	{
-		fatal("internal error: unable to find the package '%s'", packageName.c_str());
-	}
-
-	addVersionDependencies(package->getVersions());
-}
-
-void SolutionStorage::addVersionDependencies(const vector< shared_ptr< const BinaryVersion > >& versions)
-{
-	const string& packageName = versions[0]->packageName;
-
-	FORIT(dependencyEntryIt, __dependency_entries)
-	{
-		auto relationType = dependencyEntryIt->type;
-
-		set< string > satisfyingPackageNames;
-
-		FORIT(versionIt, versions)
-		{
-			const RelationLine& relationLine = (*versionIt)->relations[relationType];
-			FORIT(relationExpressionIt, relationLine)
-			{
-				auto satisfyingVersions = __cache->getSatisfyingVersions(*relationExpressionIt);
-				FORIT(satisfyingVersionIt, satisfyingVersions)
-				{
-					satisfyingPackageNames.insert((*satisfyingVersionIt)->packageName);
-				}
-			}
-		}
-
-		FORIT(satisfyingPackageNameIt, satisfyingPackageNames)
-		{
-			const string& satisfyingPackageName = *satisfyingPackageNameIt;
-			if (satisfyingPackageName == packageName)
-			{
-				continue;
-			}
-			__dependency_map[satisfyingPackageName].insert(
-					PackageDependency { packageName, relationType });
-		}
-	}
-}
 
 shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution >& source)
 {
@@ -162,38 +108,96 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 	return cloned;
 }
 
-void SolutionStorage::setPackageEntry(Solution& solution,
-		const string& packageName, const PackageEntry& packageEntry)
+const list< const dg::Element* >& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
 {
-	auto it = solution.__package_entries->lower_bound(packageName);
-	if (it == solution.__package_entries->end() || it->first != packageName)
+	return __dependency_graph.getSuccessorsFromPointer(elementPtr);
+}
+
+const list< const dg::Element* >& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
+{
+	return __dependency_graph.getPredecessorsFromPointer(elementPtr);
+}
+
+const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(
+		const dg::Element* elementPtr)
+{
+	static const forward_list< const dg::Element* > nullList;
+	auto relatedElementPtrsPtr = (*elementPtr)->getRelatedElements();
+	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
+}
+
+bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
+		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr)
+{
+	const forward_list< const dg::Element* >& conflictingElementPtrs =
+			getConflictingElements(elementPtr);
+	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
 	{
-		// there is no modifiable element in this solution, need to create new
+		if (*conflictingElementPtrIt == elementPtr)
+		{
+			continue;
+		}
+		if (auto packageEntryPtr = solution.getPackageEntry(*conflictingElementPtrIt))
+		{
+			// there may be only one conflicting element in the solution
+			*conflictingElementPtrPtr = *conflictingElementPtrIt;
 
-		// this package may just appear...
-		__add_package_dependencies(packageName);
+			return !packageEntryPtr->sticked;
+		}
+	}
+	*conflictingElementPtrPtr = NULL; // no conflicting elements in this solution
+	return true;
+}
 
-		it = solution.__package_entries->insert(it, make_pair(packageName, packageEntry));
+void SolutionStorage::setPackageEntry(Solution& solution,
+		const dg::Element* elementPtr, const PackageEntry& packageEntry,
+		const dg::Element* conflictingElementPtr)
+{
+	auto it = solution.__added_entries->lower_bound(elementPtr);
+	if (it == solution.__added_entries->end() || it->first != elementPtr)
+	{
+		// there is no modifiable element in this solution
+		solution.__added_entries->insert(it, make_pair(elementPtr, packageEntry));
+
+		if (conflictingElementPtr)
+		{
+			auto forRemovalIt = solution.__added_entries->find(conflictingElementPtr);
+			if (forRemovalIt != solution.__added_entries->end())
+			{
+				solution.__added_entries->erase(forRemovalIt);
+			}
+			// may be present in master too, act safe
+			solution.__removed_entries.insert(conflictingElementPtr);
+		}
 	}
 	else
 	{
+		if (conflictingElementPtr)
+		{
+			fatal("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
+					solution.id, (*elementPtr)->toString().c_str(), (*conflictingElementPtr)->toString().c_str());
+		}
 		it->second = packageEntry;
 	}
 }
 
-const set< SolutionStorage::PackageDependency >& SolutionStorage::getReferencedSet(const string& packageName)
+void SolutionStorage::prepareForResolving(Solution& initialSolution,
+			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
+			const map< string, dg::InitialPackageEntry >& initialPackages)
 {
-	static const set< PackageDependency > nullSet;
+	auto source = __dependency_graph.fill(oldPackages, initialPackages);
+	// TODO: sort and batch-insert
+	FORIT(it, source)
+	{
+		auto position = initialSolution.__added_entries->lower_bound(it->first);
+		initialSolution.__added_entries->insert(position,
+				make_pair(it->first, it->second));
+	}
+}
 
-	auto successorsIt = __dependency_map.find(packageName);
-	if (successorsIt != __dependency_map.end())
-	{
-		return successorsIt->second;
-	}
-	else
-	{
-		return nullSet;
-	}
+const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
+{
+	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
 }
 
 
@@ -201,7 +205,7 @@ const set< SolutionStorage::PackageDependency >& SolutionStorage::getReferencedS
 Solution::Solution()
 	: id(0), level(0), score(0), finished(false)
 {
-	__package_entries.reset(new PackageEntryMap);
+	__added_entries.reset(new PackageEntryMap);
 }
 
 void Solution::prepare()
@@ -211,27 +215,28 @@ void Solution::prepare()
 		fatal("internal error: undefined master solution");
 	}
 
-	if (!__parent->__master_package_entries)
+	if (!__parent->__master_entries)
 	{
 		// parent solution is a master solution, build a slave on top of it
-		__master_package_entries = __parent->__package_entries;
-		__package_entries.reset(new PackageEntryMap);
+		__master_entries = __parent->__added_entries;
+		__added_entries.reset(new PackageEntryMap);
+		__removed_entries = __parent->__removed_entries;
 	}
 	else
 	{
 		// this a slave solution
-		size_t& forkedCount = __parent->__master_package_entries->forkedCount;
-		forkedCount += __parent->__package_entries->size();
-		if (forkedCount > __parent->__master_package_entries->size())
+		size_t& forkedCount = __parent->__master_entries->forkedCount;
+		forkedCount += __parent->__added_entries->size();
+		if (forkedCount > __parent->__master_entries->size())
 		{
 			forkedCount = 0;
 
 			// master solution is overdiverted, build new master one
-			__package_entries.reset(new PackageEntryMap);
-			__package_entries->reserve(__parent->__package_entries->size() +
-					__parent->__master_package_entries->size());
+			__added_entries.reset(new PackageEntryMap);
+			__added_entries->reserve(__parent->__added_entries->size() +
+					__parent->__master_entries->size());
 
-			// it's important that parent's __package_entries come first,
+			// it's important that parent's __added_entries come first,
 			// if two elements are present in both (i.e. an element is overriden)
 			// the new version of an element will be written
 			struct Comparator
@@ -239,34 +244,47 @@ void Solution::prepare()
 				bool operator()(const PackageEntryMap::data_t& left, const PackageEntryMap::data_t& right)
 				{ return left.first < right.first; }
 			};
-			std::set_union(__parent->__package_entries->begin(), __parent->__package_entries->end(),
-					__parent->__master_package_entries->begin(), __parent->__master_package_entries->end(),
-					std::back_inserter(*__package_entries), Comparator());
+			std::set_union(__parent->__added_entries->begin(), __parent->__added_entries->end(),
+					__parent->__master_entries->begin(), __parent->__master_entries->end(),
+					std::back_inserter(*__added_entries), Comparator());
+			// TODO: rewrite to hand-written in-place set_difference?
+			FORIT(it, __parent->__removed_entries)
+			{
+				auto presentIt = __added_entries->find(*it);
+				if (presentIt != __added_entries->end())
+				{
+					__added_entries->erase(presentIt);
+				}
+			}
 		}
 		else
 		{
 			// build new slave solution from current
-			__master_package_entries = __parent->__master_package_entries;
-			*__package_entries = *(__parent->__package_entries);
+			__master_entries = __parent->__master_entries;
+			*__added_entries = *(__parent->__added_entries);
+			__removed_entries = __parent->__removed_entries;
 		}
 	}
 
 	__parent.reset();
 }
 
-vector< string > Solution::getPackageNames() const
+vector< const dg::Element* > Solution::getElements() const
 {
-	vector< string > result;
+	vector< const dg::Element* > result;
 
-	if (__master_package_entries)
+	if (__master_entries)
 	{
-		FORIT(it, *__master_package_entries)
+		FORIT(it, *__master_entries)
 		{
-			result.push_back(it->first);
+			if (!__removed_entries.count(it->first))
+			{
+				result.push_back(it->first);
+			}
 		}
 	}
 	auto middleSize = result.size();
-	FORIT(it, *__package_entries)
+	FORIT(it, *__added_entries)
 	{
 		result.push_back(it->first);
 	}
@@ -277,46 +295,48 @@ vector< string > Solution::getPackageNames() const
 	return result;
 }
 
-vector< const string* > Solution::getUncheckedPackageNames(
-		RelationType dependencyType) const
+vector< pair< const dg::Element*, const dg::Element* > > Solution::getBrokenPairs() const
 {
-	vector< const string* > result;
-	auto isEligible = [&dependencyType](decltype(__package_entries->begin()) it)
+	vector< pair< const dg::Element*, const dg::Element* > > result;
+	auto isEligible = [](decltype(__added_entries->begin()) it) -> bool
 	{
-		return (!it->second.checked[dependencyType] && it->second.version);
+		return !it->second.brokenSuccessors.empty();
 	};
-	auto processEntry = [&result, &isEligible](decltype(__package_entries->begin()) it)
+	auto processEntry = [this, &result, &isEligible](decltype(__added_entries->begin()) it)
 	{
 		if (isEligible(it))
 		{
-			result.push_back(&it->first);
+			if (!__removed_entries.count(it->first))
+			{
+				FORIT(brokenSuccessorIt, it->second.brokenSuccessors)
+				{
+					result.push_back(make_pair(it->first, *brokenSuccessorIt));
+				}
+			}
 		}
 	};
 
-	auto masterIt = __master_package_entries ?
-			__master_package_entries->begin() : __package_entries->end();
-	auto masterEnd = __master_package_entries ?
-			__master_package_entries->end() : __package_entries->end();
-	auto ownIt = __package_entries->begin();
-	auto ownEnd = __package_entries->end();
+	auto masterIt = __master_entries ? __master_entries->begin() : __added_entries->end();
+	auto masterEnd = __master_entries ? __master_entries->end() : __added_entries->end();
+	auto ownIt = __added_entries->begin();
+	auto ownEnd = __added_entries->end();
 
+	// it's, surprisingly, several times faster than std::set_union due to no indirection
 	while (masterIt != masterEnd && ownIt != ownEnd)
 	{
-		// compare is expensive operation and isEligible is cheap, usually most
-		// of masterIt won't be included anyway
+		// speeding up a bit, usually most of masterIt won't be included anyway
 		if (!isEligible(masterIt))
 		{
 			++masterIt;
 			continue;
 		}
 
-		auto compareResult = masterIt->first.compare(ownIt->first);
-		if (compareResult < 0)
+		if (masterIt->first < ownIt->first)
 		{
 			processEntry(masterIt);
 			++masterIt;
 		}
-		else if (compareResult > 0)
+		else if (masterIt->first > ownIt->first)
 		{
 			processEntry(ownIt);
 			++ownIt;
@@ -343,32 +363,27 @@ vector< const string* > Solution::getUncheckedPackageNames(
 	return result;
 }
 
-bool Solution::getPackageEntry(const string& packageName, PackageEntry* result) const
+const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
 {
-	auto it = __package_entries->find(packageName);
-	if (it != __package_entries->end())
+	auto it = __added_entries->find(elementPtr);
+	if (it != __added_entries->end())
 	{
-		if (result)
-		{
-			*result = it->second;
-		}
-		return true;
+		return &it->second;
 	}
-	if (__master_package_entries)
+	if (__master_entries)
 	{
-		it = __master_package_entries->find(packageName);
-		if (it != __master_package_entries->end())
+		it = __master_entries->find(elementPtr);
+		if (it != __master_entries->end())
 		{
-			if (result)
+			if (__removed_entries.count(elementPtr))
 			{
-				*result = it->second;
+				return NULL;
 			}
-			return true;
+			return &it->second;
 		}
 	}
 
-	// not found
-	return false;
+	return NULL; // not found
 }
 
 }
