@@ -1006,13 +1006,10 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 	{
 		// caching results
 		memoizeKey = relationExpression.getHashString();
-		if (!memoizeKey.empty())
+		auto it = getSatisfyingVersionsCache.find(memoizeKey);
+		if (it != getSatisfyingVersionsCache.end())
 		{
-			auto it = getSatisfyingVersionsCache.find(memoizeKey);
-			if (it != getSatisfyingVersionsCache.end())
-			{
-				return it->second;
-			}
+			return it->second;
 		}
 	}
 
