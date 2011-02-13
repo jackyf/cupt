@@ -420,7 +420,6 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		}
 	};
 
-	// TODO: make getHashString() reliable
 	map< shared_ptr< const BinaryVersion >, const Element* > versionToVertexPtr;
 	auto getVertexPtr = [this, &oldPackages, &initialPackages, &versionToVertexPtr, &__empty_package_to_vertex_ptr]
 			(const string& packageName, const shared_ptr< const BinaryVersion >& version) -> const Element*

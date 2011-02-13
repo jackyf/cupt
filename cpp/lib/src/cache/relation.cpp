@@ -327,45 +327,45 @@ RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArch
 
 string RelationExpression::getHashString() const
 {
-	char buffer[1024];
-	const char* const bufferEnd = buffer + sizeof(buffer);
-	char* p = buffer;
+	size_t targetLength = 0;
+	FORIT(relationIt, *this)
+	{
+		const Relation& relation = *relationIt;
+
+		targetLength += 1 + relation.packageName.size();
+		if (relation.relationType != Relation::Types::None)
+		{
+			targetLength += relation.versionString.size() + 2;
+		}
+	}
+	if (targetLength) // not empty relation expression
+	{
+		targetLength -= 1;
+	}
+
+	string result(targetLength, '\0');
+	auto p = result.begin();
+	auto beginIt = p;
 
 	FORIT(relationIt, *this)
 	{
 		const Relation& relation = *relationIt;
 
-		if (p != buffer) // not a start
+		if (p != beginIt) // not a start
 		{
-			if (p + 1u >= bufferEnd)
-			{
-				return string();
-			}
 			*(p++) = '|';
 		}
 
-		auto packageNameSize = relation.packageName.size();
-		if (p + packageNameSize >= bufferEnd)
-		{
-			return string();
-		}
-		memcpy(p, relation.packageName.c_str(), packageNameSize);
-		p += packageNameSize;
+		p = std::copy(relation.packageName.begin(), relation.packageName.end(), p);
 
 		if (relation.relationType != Relation::Types::None)
 		{
-			auto versionStringSize = relation.versionString.size();
-			if (p + versionStringSize + 2 >= bufferEnd)
-			{
-				return string();
-			}
 			*(p++) = ' ';
 			*(p++) = ('0' + relation.relationType);
-			memcpy(p, relation.versionString.c_str(), versionStringSize);
-			p += versionStringSize;
+			p = std::copy(relation.versionString.begin(), relation.versionString.end(), p);
 		}
 	}
-	return string(buffer, p);
+	return result;
 }
 
 
