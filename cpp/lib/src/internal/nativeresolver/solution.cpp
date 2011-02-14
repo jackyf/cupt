@@ -186,12 +186,18 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 			const map< string, dg::InitialPackageEntry >& initialPackages)
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
-	// TODO: sort and batch-insert
+
+	auto comparator = [](const pair< const dg::Element*, PackageEntry >& left,
+			const pair< const dg::Element*, PackageEntry >& right)
+	{
+		return left.first < right.first;
+	};
+	std::sort(source.begin(), source.end(), comparator);
+
 	initialSolution.__added_entries->reserve(source.size());
 	FORIT(it, source)
 	{
-		auto position = initialSolution.__added_entries->lower_bound(it->first);
-		initialSolution.__added_entries->insert(position,
+		initialSolution.__added_entries->push_back(
 				make_pair(it->first, it->second));
 	}
 }
