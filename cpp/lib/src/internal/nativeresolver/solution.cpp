@@ -197,8 +197,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	initialSolution.__added_entries->reserve(source.size());
 	FORIT(it, source)
 	{
-		initialSolution.__added_entries->push_back(
-				make_pair(it->first, it->second));
+		initialSolution.__added_entries->push_back(*it);
 	}
 }
 
