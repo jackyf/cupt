@@ -187,6 +187,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
 	// TODO: sort and batch-insert
+	initialSolution.__added_entries->reserve(source.size());
 	FORIT(it, source)
 	{
 		auto position = initialSolution.__added_entries->lower_bound(it->first);
