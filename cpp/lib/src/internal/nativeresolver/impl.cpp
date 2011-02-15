@@ -988,7 +988,18 @@ pair< const dg::Element*, const dg::Element* > __get_broken_pair(
 				{
 					return false;
 				}
-				return failValue(left.second) < failValue(right.second);
+				auto leftFailValue = failValue(left.second);
+				auto rightFailValue = failValue(right.second);
+				if (leftFailValue < rightFailValue)
+				{
+					return true;
+				}
+				if (leftFailValue > rightFailValue)
+				{
+					return false;
+				}
+				return static_cast< const dg::VersionVertex* >(*left.first)->getPackageName() >
+						static_cast< const dg::VersionVertex* >(*right.first)->getPackageName();
 			});
 }
 
