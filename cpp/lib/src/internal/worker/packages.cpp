@@ -892,7 +892,7 @@ bool __is_circular_action_subgroup_allowed(const vector< InnerAction >& actionSu
 	{ // do all actions have the same package name?
 		const string& firstPackageName = actionSubgroup[0].version->packageName;
 		bool samePackageName = true;
-		FORIT(actionIt, actionSubgroup) // TODO: don't check first action again
+		FORIT(actionIt, actionSubgroup)
 		{
 			if (actionIt->version->packageName != firstPackageName)
 			{
