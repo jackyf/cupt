@@ -14,11 +14,14 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
     - config:
       - Deleted option
         'cupt::resolver::synchronize-source-versions::exceptions'.
+      - Deleted option 'cupt::worker::archives-space-limit::tries'.
     - system/worker:
       - Fixed not changing 'automatically installed' flag. This regression
         was introduced in 2.0.0~alpha3.
       - Fixed determining an empty extension of index files. This regression
         was introduced in 2.0.0~alpha1.
+      - Don't use randomization anymore for implementing
+        'cupt::worker::archives-space-limit' option.
     - common:
       - compareVersionStrings: fixed sorting letters before other characters.
         This regression was introduced in 2.0.0~alpha1.

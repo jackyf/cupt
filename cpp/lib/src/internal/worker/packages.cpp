@@ -1319,53 +1319,39 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 {
 	auto debugging = _config->getBool("debug::worker");
 	size_t archivesSpaceLimit = _config->getInteger("cupt::worker::archives-space-limit");
-	size_t archivesSpaceLimitTries = _config->getInteger("cupt::worker::archives-space-limit::tries");
-
-	bool ok = false;
-	size_t minMaxDownloadAmount = -1;
 
 	vector< Changeset > changesets;
 
-	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
-	for (size_t i = 0; i < archivesSpaceLimitTries; ++i)
+	vector< InnerActionGroup > actionGroups;
 	{
-		vector< InnerActionGroup > actionGroups;
-		{
-			vector< vector< InnerAction > > preActionGroups;
-			gaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
-					(dummyCallback, __regular_action_group_insert_iterator(preActionGroups));
-			actionGroups = __convert_vector(std::move(preActionGroups));
-		}
-		__split_heterogeneous_actions(_cache, actionGroups, gaa, debugging);
+		auto dummyCallback = [](const vector< InnerAction >&, bool) {};
+		vector< vector< InnerAction > > preActionGroups;
+		gaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
+				(dummyCallback, __regular_action_group_insert_iterator(preActionGroups));
+		actionGroups = __convert_vector(std::move(preActionGroups));
+	}
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, debugging);
 
-		// TODO: split by priority, not by configures
-		changesets = __split_action_groups_into_changesets(actionGroups, downloads);
+	// TODO: split by priority, not by configures
+	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
 
-		if (!archivesSpaceLimit)
-		{
-			ok = true;
-			break;
-		}
-
+	if (archivesSpaceLimit)
+	{
 		auto maxDownloadAmount = __get_max_download_amount(changesets, debugging);
-		if (minMaxDownloadAmount > maxDownloadAmount)
-		{
-			minMaxDownloadAmount = maxDownloadAmount;
-		}
 		if (debugging)
 		{
-			debug("the changeset download amounts: minimum maximum: %s",
-					humanReadableSizeString(minMaxDownloadAmount).c_str());
+			debug("the changeset download amounts: maximum: %s",
+					humanReadableSizeString(maxDownloadAmount).c_str());
 		}
-		if (maxDownloadAmount <= archivesSpaceLimit)
+		if (maxDownloadAmount > archivesSpaceLimit)
 		{
-			ok = true;
-			break;
+			// we failed to fit in limit
+			fatal("unable to fit in archives space limit '%zu', best try is '%zu'",
+					archivesSpaceLimit, maxDownloadAmount);
 		}
 	}
 
-	if (ok)
-	{
+	{ // merging changesets
 		auto doesDownloadAmountFit = [&archivesSpaceLimit](const size_t amount) -> bool
 		{
 			return !archivesSpaceLimit || amount <= archivesSpaceLimit;
@@ -1393,12 +1379,6 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 			}
 		}
 		changesets.swap(newChangesets);
-	}
-	else
-	{
-		// we failed to fit in limit
-		fatal("unable to fit in archives space limit '%zu', best try is '%zu'",
-				archivesSpaceLimit, minMaxDownloadAmount);
 	}
 
 	return changesets;

@@ -135,7 +135,6 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::track-reasons", "no" },
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::worker::archives-space-limit", "0" },
-		{ "cupt::worker::archives-space-limit::tries", "20" },
 		{ "cupt::worker::defer-triggers", "no" },
 		{ "cupt::worker::download-only", "no" },
 		{ "cupt::worker::purge", "no" },
