@@ -37,6 +37,14 @@ PackageEntry::PackageEntry(PackageEntry&& other)
 	brokenSuccessors.swap(other.brokenSuccessors);
 }
 
+PackageEntry& PackageEntry::operator=(PackageEntry&& other)
+{
+	sticked = other.sticked;
+	reasons = other.reasons;
+	brokenSuccessors.swap(other.brokenSuccessors);
+	return *this;
+}
+
 class PackageEntryMap
 {
  public:

@@ -49,6 +49,8 @@ struct PackageEntry
 
 	PackageEntry();
 	PackageEntry(PackageEntry&&);
+
+	PackageEntry& operator=(PackageEntry&&);
 };
 
 class PackageEntryMap;
