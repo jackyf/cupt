@@ -81,6 +81,9 @@ struct InnerAction
 struct InnerActionGroup: public vector< InnerAction >
 {
 	string dpkgFlags;
+	bool continued;
+
+	InnerActionGroup() : continued(false) {}
 };
 struct GraphAndAttributes
 {

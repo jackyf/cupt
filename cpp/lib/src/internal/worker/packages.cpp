@@ -1084,9 +1084,11 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 					// dpkg requires to pass both --force-depends and --force-breaks to achieve it
 					actionSubgroup.dpkgFlags = " --force-depends --force-breaks";
 				}
+				actionSubgroup.continued = true;
 
 				newActionGroups.push_back(actionSubgroup);
 			}
+			newActionGroups.rbegin()->continued = false;
 		}
 		else
 		{
@@ -1253,7 +1255,7 @@ vector< Changeset > __split_action_groups_into_changesets(
 
 		changeset.actionGroups.push_back(*actionGroupIt);
 
-		if (unpackedPackageNames.empty())
+		if (unpackedPackageNames.empty() && !actionGroupIt->continued)
 		{
 			// all unpacked packages are configured, the end of changeset
 			result.push_back(std::move(changeset));
@@ -1332,7 +1334,6 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 	}
 	__split_heterogeneous_actions(_cache, actionGroups, gaa, debugging);
 
-	// TODO: split by priority, not by configures
 	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
 
 	if (archivesSpaceLimit)
@@ -1836,7 +1837,8 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					{
 						stringifiedActions.push_back(actionIt->toString());
 					}
-					debug("do: (%s) %s", join(" & ", stringifiedActions).c_str(), dpkgFlags.c_str());
+					debug("do: (%s) %s%s", join(" & ", stringifiedActions).c_str(),
+							dpkgFlags.c_str(), actionGroupIt->continued ? " (continued)" : "");
 				}
 				_run_external_command(dpkgCommand);
 			};
