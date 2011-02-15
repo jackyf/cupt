@@ -48,6 +48,7 @@ struct PackageEntry
 	forward_list< const dg::Element* > brokenSuccessors;
 
 	PackageEntry();
+	PackageEntry(PackageEntry&&);
 };
 
 class PackageEntryMap;
@@ -96,7 +97,7 @@ class SolutionStorage
 	static bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**);
 	static void setPackageEntry(Solution&, const dg::Element*,
-			const PackageEntry&, const dg::Element*);
+			PackageEntry&&, const dg::Element*);
 };
 
 }

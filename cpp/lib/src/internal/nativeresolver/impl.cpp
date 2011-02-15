@@ -417,7 +417,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 					debug("auto-removed '%s'", (**elementPtrIt)->toString().c_str());
 				}
 				__solution_storage.setPackageEntry(solution, emptyElementPtr,
-						packageEntry, *elementPtrIt);
+						std::move(packageEntry), *elementPtrIt);
 			}
 		}
 	}
@@ -597,7 +597,8 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 		{
 			PackageEntry packageEntry = *solution.getPackageEntry(*elementPtrIt);
 			packageEntry.sticked = true;
-			__solution_storage.setPackageEntry(solution, *elementPtrIt, packageEntry, NULL);
+			__solution_storage.setPackageEntry(solution, *elementPtrIt,
+					std::move(packageEntry), NULL);
 		}
 	};
 
@@ -609,7 +610,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 		packageEntry.reasons->push_back(action.reason);
 	}
 	__solution_storage.setPackageEntry(solution, action.newElementPtr,
-			packageEntry, action.oldElementPtr);
+			std::move(packageEntry), action.oldElementPtr);
 	__validate_changed_package(solution, action.oldElementPtr, action.newElementPtr);
 
 	solution.pendingAction.reset();
@@ -864,7 +865,7 @@ void NativeResolverImpl::__validate_element(
 		PackageEntry packageEntry = *solution.getPackageEntry(elementPtr);
 		packageEntry.brokenSuccessors.swap(brokenSuccessors);
 		__solution_storage.setPackageEntry(solution, elementPtr,
-				packageEntry, NULL);
+				std::move(packageEntry), NULL);
 	}
 }
 
@@ -924,7 +925,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 					PackageEntry packageEntry = *packageEntryPtr;
 					packageEntry.brokenSuccessors.push_front(*predecessorElementPtrIt);
 					__solution_storage.setPackageEntry(solution, *versionElementPtrIt,
-							packageEntry, NULL);
+							std::move(packageEntry), NULL);
 				}
 			}
 		}
@@ -950,7 +951,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 						PackageEntry packageEntry = *packageEntryPtr;
 						packageEntry.brokenSuccessors.remove(*predecessorElementPtrIt);
 						__solution_storage.setPackageEntry(solution, *versionElementPtrIt,
-								packageEntry, NULL);
+								std::move(packageEntry), NULL);
 						break;
 					}
 				}

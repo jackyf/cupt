@@ -31,6 +31,12 @@ PackageEntry::PackageEntry()
 	: sticked(false)
 {}
 
+PackageEntry::PackageEntry(PackageEntry&& other)
+	: sticked(other.sticked), reasons(other.reasons)
+{
+	brokenSuccessors.swap(other.brokenSuccessors);
+}
+
 class PackageEntryMap
 {
  public:
@@ -150,14 +156,14 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 }
 
 void SolutionStorage::setPackageEntry(Solution& solution,
-		const dg::Element* elementPtr, const PackageEntry& packageEntry,
+		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr)
 {
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
 	{
 		// there is no modifiable element in this solution
-		solution.__added_entries->insert(it, make_pair(elementPtr, packageEntry));
+		solution.__added_entries->insert(it, make_pair(elementPtr, std::move(packageEntry)));
 
 		if (conflictingElementPtr)
 		{
@@ -177,7 +183,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 			fatal("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
 					solution.id, (*elementPtr)->toString().c_str(), (*conflictingElementPtr)->toString().c_str());
 		}
-		it->second = packageEntry;
+		it->second = std::move(packageEntry);
 	}
 }
 
