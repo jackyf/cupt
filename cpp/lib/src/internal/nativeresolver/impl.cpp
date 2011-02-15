@@ -960,6 +960,38 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 	}
 }
 
+pair< const dg::Element*, const dg::Element* > __get_broken_pair(
+		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
+{
+	typedef pair< const dg::Element*, const dg::Element* > BrokenPairType;
+	auto brokenPairs = solution.getBrokenPairs();
+	if (brokenPairs.empty())
+	{
+		static BrokenPairType noPair(NULL, NULL);
+		return noPair;
+	}
+	auto failValue = [&failCounts](const dg::Element* e) -> size_t
+	{
+		auto it = failCounts.find(e);
+		return it != failCounts.end() ? it->second : 0u;
+	};
+	return *std::max_element(brokenPairs.begin(), brokenPairs.end(),
+			[failValue](const BrokenPairType& left, const BrokenPairType& right)
+			{
+				auto leftPriority = (*left.second)->getPriority();
+				auto rightPriority = (*right.second)->getPriority();
+				if (leftPriority < rightPriority)
+				{
+					return true;
+				}
+				if (leftPriority > rightPriority)
+				{
+					return false;
+				}
+				return failValue(left.second) < failValue(right.second);
+			});
+}
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser();
@@ -1012,34 +1044,13 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			const dg::Element* versionElementPtr;
 			const dg::Element* brokenElementPtr;
 			{
-				auto brokenPairs = currentSolution->getBrokenPairs();
-				if (brokenPairs.empty())
+				auto brokenPair = __get_broken_pair(*currentSolution, failCounts);
+				versionElementPtr = brokenPair.first;
+				if (!versionElementPtr)
 				{
 					break;
 				}
-				auto failValue = [&failCounts](const dg::Element* e) -> size_t
-				{
-					auto it = failCounts.find(e);
-					return it != failCounts.end() ? it->second : 0u;
-				};
-				typedef pair< const dg::Element*, const dg::Element* > BrokenPairType;
-				auto brokenPairPtr = *std::max_element(brokenPairs.begin(), brokenPairs.end(),
-						[failValue](const BrokenPairType& left, const BrokenPairType& right)
-						{
-							auto leftPriority = (*left.second)->getPriority();
-							auto rightPriority = (*right.second)->getPriority();
-							if (leftPriority < rightPriority)
-							{
-								return true;
-							}
-							if (leftPriority > rightPriority)
-							{
-								return false;
-							}
-							return failValue(left.second) < failValue(right.second);
-						});
-				versionElementPtr = brokenPairPtr.first;
-				brokenElementPtr = brokenPairPtr.second;
+				brokenElementPtr = brokenPair.second;
 			}
 			checkFailed = true;
 
