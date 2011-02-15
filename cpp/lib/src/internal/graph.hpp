@@ -18,7 +18,6 @@
 #ifndef CUPT_INTERNAL_GRAPH_SEEN
 #define CUPT_INTERNAL_GRAPH_SEEN
 
-#include <algorithm>
 #include <set>
 #include <map>
 #include <list>
@@ -281,8 +280,6 @@ vector< const T* > __dfs_mode1(const Graph< T >& graph)
 	{
 		vertices.push_back(&*it);
 	}
-	// undefined order
-	std::random_shuffle(vertices.begin(), vertices.end());
 
 	set< const T* > seen;
 	vector< const T* > result;
