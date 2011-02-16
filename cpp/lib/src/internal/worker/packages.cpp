@@ -957,7 +957,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		{
 			const InnerAction& from = *(edgeIt->first);
 			const InnerAction& to = *(edgeIt->second);
-			if (!allowedVertices.count(from) || !allowedVertices.count(to))
+			if (!allowedVertices.count(to))
 			{
 				continue; // edge lies outside our mini graph
 			}
