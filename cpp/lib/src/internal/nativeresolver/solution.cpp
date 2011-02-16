@@ -268,7 +268,6 @@ void Solution::prepare()
 	{
 		// parent solution is a master solution, build a slave on top of it
 		__master_entries = __parent->__added_entries;
-		__added_entries.reset(new PackageEntryMap);
 		*__removed_entries = (*__parent->__removed_entries);
 	}
 	else
@@ -281,7 +280,6 @@ void Solution::prepare()
 			forkedCount = 0;
 
 			// master solution is overdiverted, build new master one
-			__added_entries.reset(new PackageEntryMap);
 			__added_entries->reserve(__parent->__added_entries->size() +
 					__parent->__master_entries->size());
 
