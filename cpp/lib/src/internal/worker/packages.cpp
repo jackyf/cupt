@@ -940,15 +940,9 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 	{ // filling minigraph and basic edges
 		vector< pair< const InnerAction*, const InnerAction* > > possibleEdges;
 		// fill vertices
-		// TODO: a place for optimization: many edges will be duplicated
 		FORIT(actionIt, actionGroup)
 		{
-			const list< const InnerAction* >& predecessors = gaa.graph.getPredecessors(*actionIt);
 			const list< const InnerAction* >& successors = gaa.graph.getSuccessors(*actionIt);
-			FORIT(predecessorPtrIt, predecessors)
-			{
-				possibleEdges.push_back(make_pair(*predecessorPtrIt, &*actionIt));
-			}
 			FORIT(successorPtrIt, successors)
 			{
 				possibleEdges.push_back(make_pair(&*actionIt, *successorPtrIt));
