@@ -509,7 +509,6 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		return elementPtr;
 	};
 
-	// TODO: disable getSatisfyingVersions cache?
 	unordered_map< string, const Element* > relationExpressionToVertexPtr;
 	auto getVertexPtrForRelationExpression = [this, &relationExpressionToVertexPtr](
 			const RelationExpression* relationExpressionPtr,
