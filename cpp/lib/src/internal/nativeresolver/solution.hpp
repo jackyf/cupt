@@ -20,7 +20,6 @@
 
 #include <bitset>
 #include <map>
-#include <set>
 #include <forward_list>
 
 #include <cupt/cache/binaryversion.hpp>
@@ -38,7 +37,6 @@ using namespace cache;
 using namespace system;
 
 using std::map;
-using std::set;
 using std::forward_list;
 
 struct PackageEntry
@@ -54,6 +52,7 @@ struct PackageEntry
 };
 
 class PackageEntryMap;
+class PackageEntrySet;
 
 class Solution
 {
@@ -62,7 +61,7 @@ class Solution
 	shared_ptr< const Solution > __parent;
 	shared_ptr< PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
-	set< const dg::Element* > __removed_entries;
+	shared_ptr< PackageEntrySet > __removed_entries;
  public:
 	size_t id;
 	size_t level;
@@ -71,6 +70,8 @@ class Solution
 	std::unique_ptr< const void > pendingAction;
 
 	Solution();
+	Solution(const Solution&) = delete;
+	Solution& operator=(const Solution&) = delete;
 
 	void prepare();
 	vector< const dg::Element* > getElements() const;

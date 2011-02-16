@@ -45,22 +45,16 @@ PackageEntry& PackageEntry::operator=(PackageEntry&& other)
 	return *this;
 }
 
-class PackageEntryMap
+template < class data_t, class Comparator, class KeyGetter >
+class PackageEntryMapBase
 {
  public:
-	typedef const dg::Element* key_t; // package name
-	typedef pair< key_t, PackageEntry > data_t; // vector requires assignable types
+	typedef const dg::Element* key_t;
 	typedef data_t value_type; // for set_union
 	typedef vector< data_t > container_t;
  private:
 	container_t __container;
  public:
-	size_t forkedCount;
-
-	PackageEntryMap()
-		: forkedCount(0)
-	{}
-
 	typedef data_t* iterator_t;
 	typedef const data_t* const_iterator_t;
 
@@ -70,17 +64,12 @@ class PackageEntryMap
 	iterator_t end() { return &*__container.end(); }
 	iterator_t lower_bound(const key_t& key)
 	{
-		struct Comparator
-		{
-			bool operator()(const data_t& data, const key_t& key) const
-			{ return data.first < key; }
-		};
 		return std::lower_bound(begin(), end(), key, Comparator());
 	}
 	iterator_t find(const key_t& key)
 	{
 		auto result = lower_bound(key);
-		if (result != end() && result->first != key)
+		if (result != end() && KeyGetter()(*result) != key)
 		{
 			result = end();
 		}
@@ -90,18 +79,55 @@ class PackageEntryMap
 	iterator_t insert(iterator_t position, data_t&& data)
 	{
 		auto distance = position - begin();
-		__container.insert(static_cast< container_t::iterator >(position), std::move(data));
+		__container.insert(static_cast< typename container_t::iterator >(position), std::move(data));
 		return begin() + distance;
 	}
 	void erase(iterator_t position)
 	{
-		__container.erase(static_cast< container_t::iterator >(position));
+		__container.erase(static_cast< typename container_t::iterator >(position));
 	}
 	void push_back(const data_t& data)
 	{
 		__container.push_back(data);
 	}
 };
+
+struct PackageEntryMapComparator
+{
+	bool operator()(const pair< const dg::Element*, PackageEntry >& data, const dg::Element* key) const
+	{ return data.first < key; }
+};
+struct PackageEntryMapKeyGetter
+{
+	const dg::Element* operator()(const pair< const dg::Element*, PackageEntry >& data)
+	{ return data.first; }
+};
+class PackageEntryMap: public PackageEntryMapBase<
+		pair< const dg::Element*, PackageEntry >,
+		PackageEntryMapComparator, PackageEntryMapKeyGetter >
+{
+ public:
+	size_t forkedCount;
+
+	PackageEntryMap()
+		: forkedCount(0)
+	{}
+};
+
+
+struct PackageEntrySetComparator
+{
+	bool operator()(const dg::Element* data, const dg::Element* key) const
+	{ return data < key; }
+};
+struct PackageEntrySetKeyGetter
+{
+	const dg::Element* operator()(const dg::Element* data) { return data; }
+};
+class PackageEntrySet: public PackageEntryMapBase< const dg::Element*,
+		PackageEntrySetComparator, PackageEntrySetKeyGetter >
+{};
+
 
 SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 	: __next_free_id(1), __dependency_graph(config, cache)
@@ -181,7 +207,9 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 				solution.__added_entries->erase(forRemovalIt);
 			}
 			// may be present in master too, act safe
-			solution.__removed_entries.insert(conflictingElementPtr);
+			solution.__removed_entries->insert(
+					solution.__removed_entries->lower_bound(conflictingElementPtr),
+					(const dg::Element*)conflictingElementPtr);
 		}
 	}
 	else
@@ -226,6 +254,7 @@ Solution::Solution()
 	: id(0), level(0), score(0), finished(false)
 {
 	__added_entries.reset(new PackageEntryMap);
+	__removed_entries.reset(new PackageEntrySet);
 }
 
 void Solution::prepare()
@@ -240,7 +269,7 @@ void Solution::prepare()
 		// parent solution is a master solution, build a slave on top of it
 		__master_entries = __parent->__added_entries;
 		__added_entries.reset(new PackageEntryMap);
-		__removed_entries = __parent->__removed_entries;
+		*__removed_entries = (*__parent->__removed_entries);
 	}
 	else
 	{
@@ -261,14 +290,14 @@ void Solution::prepare()
 			// the new version of an element will be written
 			struct Comparator
 			{
-				bool operator()(const PackageEntryMap::data_t& left, const PackageEntryMap::data_t& right)
+				bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
 				{ return left.first < right.first; }
 			};
 			std::set_union(__parent->__added_entries->begin(), __parent->__added_entries->end(),
 					__parent->__master_entries->begin(), __parent->__master_entries->end(),
 					std::back_inserter(*__added_entries), Comparator());
 			// TODO: rewrite to hand-written in-place set_difference?
-			FORIT(it, __parent->__removed_entries)
+			FORIT(it, *__parent->__removed_entries)
 			{
 				auto presentIt = __added_entries->find(*it);
 				if (presentIt != __added_entries->end())
@@ -282,7 +311,7 @@ void Solution::prepare()
 			// build new slave solution from current
 			__master_entries = __parent->__master_entries;
 			*__added_entries = *(__parent->__added_entries);
-			__removed_entries = __parent->__removed_entries;
+			*__removed_entries = *(__parent->__removed_entries);
 		}
 	}
 
@@ -297,7 +326,7 @@ vector< const dg::Element* > Solution::getElements() const
 	{
 		FORIT(it, *__master_entries)
 		{
-			if (!__removed_entries.count(it->first))
+			if (__removed_entries->find(it->first) == __removed_entries->end())
 			{
 				result.push_back(it->first);
 			}
@@ -326,7 +355,7 @@ vector< pair< const dg::Element*, const dg::Element* > > Solution::getBrokenPair
 	{
 		if (isEligible(it))
 		{
-			if (!__removed_entries.count(it->first))
+			if (__removed_entries->find(it->first) == __removed_entries->end())
 			{
 				FORIT(brokenSuccessorIt, it->second.brokenSuccessors)
 				{
@@ -395,7 +424,7 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 		it = __master_entries->find(elementPtr);
 		if (it != __master_entries->end())
 		{
-			if (__removed_entries.count(elementPtr))
+			if (__removed_entries->find(elementPtr) != __removed_entries->end())
 			{
 				return NULL;
 			}
