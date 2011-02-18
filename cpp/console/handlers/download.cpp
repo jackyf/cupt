@@ -28,6 +28,21 @@ using std::endl;
 #include <cupt/system/state.hpp>
 #include <cupt/download/manager.hpp>
 
+string getCodenameAndComponentString(const Version& version)
+{
+	vector< string > parts;
+	FORIT(sourceIt, version.sources)
+	{
+		auto releaseInfo = sourceIt->release;
+		if (releaseInfo->baseUri.empty())
+		{
+			continue;
+		}
+		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
+	}
+	return join(",", parts);
+}
+
 int downloadSourcePackage(Context& context)
 {
 	auto config = context.getConfig();
@@ -94,11 +109,7 @@ int downloadSourcePackage(Context& context)
 			const string& packageName = version->packageName;
 			const string& versionString = version->versionString;
 
-			auto releaseInfo = version->sources[0].release;
-			// TODO: maybe, pass releaseInfo in downloadInfo?
-			const string& codename = releaseInfo->codename;
-			const string& component = releaseInfo->component;
-
+			auto codenameAndComponentString = getCodenameAndComponentString(*version);
 			auto downloadInfo = version->getDownloadInfo();
 
 			FORIT(partIt, partsToDownload)
@@ -117,8 +128,8 @@ int downloadSourcePackage(Context& context)
 					FORIT(downloadInfoIt, downloadInfo)
 					{
 						string shortAlias = packageName + ' ' + SourceVersion::FileParts::strings[*partIt];
-						string longAlias = sf("%s %s/%s %s %s %s", downloadInfoIt->baseUri.c_str(),
-								codename.c_str(), component.c_str(), packageName.c_str(), versionString.c_str(),
+						string longAlias = sf("%s %s %s %s %s", downloadInfoIt->baseUri.c_str(),
+								codenameAndComponentString.c_str(), packageName.c_str(), versionString.c_str(),
 								SourceVersion::FileParts::strings[*partIt].c_str());
 						string uri = downloadInfoIt->baseUri + '/' +
 								downloadInfoIt->directory + '/' + filename;
