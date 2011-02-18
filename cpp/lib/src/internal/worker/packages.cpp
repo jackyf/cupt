@@ -1109,6 +1109,21 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 	newActionGroups.swap(actionGroups);
 }
 
+static string __get_codename_and_component_string(const Version& version)
+{
+	vector< string > parts;
+	FORIT(sourceIt, version.sources)
+	{
+		auto releaseInfo = sourceIt->release;
+		if (releaseInfo->baseUri.empty())
+		{
+			continue;
+		}
+		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
+	}
+	return join(",", parts);
+}
+
 map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker::__prepare_downloads()
 {
 	auto archivesDirectory = _get_archives_directory();
@@ -1162,9 +1177,8 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 			download::Manager::DownloadEntity downloadEntity;
 
-			const shared_ptr< const ReleaseInfo > release = version->sources[0].release;
-			string longAliasTail = sf("%s/%s %s %s", release->codename.c_str(),
-						release->component.c_str(), packageName.c_str(), versionString.c_str());
+			string longAliasTail = sf("%s %s %s", __get_codename_and_component_string(*version).c_str(),
+						packageName.c_str(), versionString.c_str());
 			FORIT(it, downloadInfo)
 			{
 				string uri = it->baseUri + '/' + it->directory + '/' + version->file.name;
