@@ -283,26 +283,35 @@ void Solution::prepare()
 			__added_entries->reserve(__parent->__added_entries->size() +
 					__parent->__master_entries->size());
 
-			// it's important that parent's __added_entries come first,
-			// if two elements are present in both (i.e. an element is overriden)
-			// the new version of an element will be written
+			class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
+			{
+				PackageEntryMap& __target;
+				PackageEntrySet& __exceptions;
+			 public:
+				RepackInsertIterator(PackageEntryMap& target, PackageEntrySet& exceptions)
+					: __target(target), __exceptions(exceptions) {}
+				RepackInsertIterator& operator++() { return *this; }
+				RepackInsertIterator& operator*() { return *this; }
+				void operator=(const PackageEntryMap::value_type& data)
+				{
+					auto presentIt = __exceptions.find(data.first);
+					if (presentIt == __exceptions.end())
+					{
+						__target.push_back(data);
+					}
+				}
+			};
 			struct Comparator
 			{
 				bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
 				{ return left.first < right.first; }
 			};
+			// it's important that parent's __added_entries come first,
+			// if two elements are present in both (i.e. an element is overriden)
+			// the new version of an element will be written
 			std::set_union(__parent->__added_entries->begin(), __parent->__added_entries->end(),
 					__parent->__master_entries->begin(), __parent->__master_entries->end(),
-					std::back_inserter(*__added_entries), Comparator());
-			// TODO: rewrite to hand-written in-place set_difference?
-			FORIT(it, *__parent->__removed_entries)
-			{
-				auto presentIt = __added_entries->find(*it);
-				if (presentIt != __added_entries->end())
-				{
-					__added_entries->erase(presentIt);
-				}
-			}
+					RepackInsertIterator(*__added_entries, *__parent->__removed_entries), Comparator());
 		}
 		else
 		{
