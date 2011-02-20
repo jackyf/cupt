@@ -123,6 +123,7 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 					{
 						action = (purge ? Action::Purge : Action::Remove);
 					}
+						break;
 					case State::InstalledRecord::Status::ConfigFiles:
 					{
 						if (purge)
