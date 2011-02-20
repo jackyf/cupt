@@ -871,7 +871,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 			packageNameGlobsToReinstall = packageExpressions;
 		}
 
-		// source packages give dramatic speed-up for synchronizing source versions
+		// source packages are needed for for synchronizing source versions
 		bool buildSource = (mode == ManagePackages::BuildDepends ||
 				config->getString("cupt::resolver::synchronize-source-versions") != "none");
 
