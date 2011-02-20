@@ -36,7 +36,7 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 		fatal("worker desired state is not given");
 	}
 
-	const bool purge = _config->getBool("cupt::worker::purge");
+	const bool purgeWanted = _config->getBool("cupt::worker::purge");
 
 	FORIT(desiredIt, *__desired_state)
 	{
@@ -117,6 +117,7 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 			// package is to be removed
 			if (installedInfo)
 			{
+				auto purge = purgeWanted && suggestedPackage.manuallySelected;
 				switch (installedInfo->status)
 				{
 					case State::InstalledRecord::Status::Installed:

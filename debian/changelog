@@ -24,6 +24,11 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         'cupt::worker::archives-space-limit' option.
       - When breaking changes to changesets, made sure that all subgroups of
         the same group are placed to the same changeset.
+      - When purge option is used, don't auto-purge not changed packages in
+        the state 'config-files'. Fixes a regression introduced in
+        2.0.0~alpha1.
+      - When purge option is used, do removal instead of purge for packages
+        removed by resolver and not by user.
     - common:
       - compareVersionStrings: fixed sorting letters before other characters.
         This regression was introduced in 2.0.0~alpha1.
