@@ -4,6 +4,9 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
     - shell:
       - Restore initial config after every command.
       - Fixed "eating" some one-letter options.
+    - Action preview prompt:
+      - For removed/purged packages which have an 'automatically installed'
+        flag set, append '(a)' to package names.
   * lib:
     - system/resolver:
       - Filter out changes of conflicting packages which don't

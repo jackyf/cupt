@@ -646,6 +646,13 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 					const string& packageName = it->first;
 					cout << packageName;
+					if (actionType == WA::Remove || actionType == WA::Purge)
+					{
+						if (cache->isAutomaticallyInstalled(packageName))
+						{
+							cout << "(a)";
+						}
+					}
 
 					if (showVersions)
 					{
