@@ -217,7 +217,7 @@ void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
 			const InnerAction& masterAction = (direction == Direction::After ? currentAction : innerAction);
 			const InnerAction& slaveAction = (direction == Direction::After ? innerAction : currentAction);
 
-			// TODO: uncomment or delete, depending on #582423
+			// commented, because of #582423
 			/* bool replacesFound = false;
 			if (dependencyType == BinaryVersion::RelationTypes::Conflicts)
 			{
