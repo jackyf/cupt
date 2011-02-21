@@ -101,7 +101,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 
 		if (compareVersionStrings(installedVersionString, version->versionString) > 0)
 		{
-			result -= 2000;
+			result -= 10000;
 		}
 
 		auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
