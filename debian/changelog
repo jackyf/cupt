@@ -14,10 +14,12 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
       - Use only reliable information from source packages for synchronizing
         source versions.
       - Reworked underlying data structures.
+      - New configurable score calculation system.
     - config:
       - Deleted option
         'cupt::resolver::synchronize-source-versions::exceptions'.
       - Deleted option 'cupt::worker::archives-space-limit::tries'.
+      - New option group 'cupt::resolver::tune-score::*'.
     - system/worker:
       - Fixed not changing 'automatically installed' flag. This regression
         was introduced in 2.0.0~alpha3.

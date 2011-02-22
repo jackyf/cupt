@@ -25,6 +25,7 @@
 #include <cupt/system/resolver.hpp>
 
 #include <internal/nativeresolver/solution.hpp>
+#include <internal/nativeresolver/score.hpp>
 
 namespace cupt {
 namespace internal {
@@ -53,15 +54,15 @@ class NativeResolverImpl
 		const dg::Element* newElementPtr; // many not be NULL
 		vector< const dg::Element* > elementsToStick;
 		shared_ptr< const Reason > reason;
-		float profit;
-
-		Action() : profit(NAN) {};
+		ScoreChange profit;
 	};
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
 	set< string > __manually_modified_package_names;
 	SolutionStorage __solution_storage;
+	ScoreManager __score_manager;
+
 	map< string, shared_ptr< const BinaryVersion > > __old_packages;
 	map< string, dg::InitialPackageEntry > __initial_packages;
 	RelationLine __satisfy_relation_expressions;
@@ -82,16 +83,18 @@ class NativeResolverImpl
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;
 	void __pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
 			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
-	void __validate_element(Solution&, const dg::Element*);
+
 	void __initial_validate_pass(Solution&);
-	void __final_verify_solution(const Solution&);
+	void __validate_element(Solution&, const dg::Element*);
 	void __validate_changed_package(Solution&, const dg::Element*, const dg::Element*);
 	void __post_apply_action(Solution&);
+	void __final_verify_solution(const Solution&);
 
 	bool __makes_sense_to_modify_package(const Solution&, const dg::Element*,
 			const dg::Element*, bool);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const Solution&,
 			const dg::Element*, const dg::Element*, bool);
+
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const Solution&,
 			const dg::Element*);
 	void __prepare_stick_requests(vector< unique_ptr< Action > >& actions) const;

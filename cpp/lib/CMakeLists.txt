@@ -7,6 +7,7 @@ add_library(cupt2 SHARED
 	./src/internal/configparser.cpp
 	./src/internal/nativeresolver/impl.cpp
 	./src/internal/nativeresolver/solution.cpp
+	./src/internal/nativeresolver/score.cpp
 	./src/internal/nativeresolver/dependencygraph.cpp
 	./src/internal/lock.cpp
 	./src/internal/cacheimpl.cpp

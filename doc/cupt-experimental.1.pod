@@ -1100,6 +1100,56 @@ boolean, see L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 string, see L<--resolver|/--resolver>
 
+=item cupt::resolver::tune-score::<part>
+
+The group of integer options which control internal resolver's score
+calculation. Values are relative, not absolute.
+
+<part> can be one of:
+
+=over
+
+=item new
+
+installing a new package
+
+=item removal
+
+removal of an existing package
+
+=item upgrade
+
+installing a higher version of an existing package
+
+=item downgrade
+
+installing a lower version of an existing package
+
+=item position-penalty
+
+when several actions may be performed to resolve a problem, apply N penalties
+to N-th action (counting from 0)
+
+=item quality-adjustment
+
+a multiplier for the L<cupt::resolver::quality-bar|/cupt::resolver::quality-bar>
+
+=item failed-recommends
+
+some 'recommends' dependency is not satisfied (when requested)
+
+=item failed-suggests
+
+some 'suggests' dependency is not satisfied (when requested)
+
+=item failed-synchronization
+
+some source version synchronization cannot be performed (when
+L<cupt::resolver::synchronize-source-versions|/cupt::resolver::synchronize-source-versions>
+is 'soft')
+
+=back
+
 =item cupt::worker::archives-space-limit
 
 integer, bytes, positive, if set, limits the worker to not download more than specified

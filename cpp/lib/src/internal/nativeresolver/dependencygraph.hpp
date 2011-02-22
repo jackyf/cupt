@@ -46,6 +46,11 @@ struct InitialPackageEntry
 	InitialPackageEntry();
 };
 
+struct Unsatisfied
+{
+	enum Type { None, Recommends, Suggests, Sync };
+};
+
 struct BasicVertex;
 typedef const BasicVertex* Element;
 struct BasicVertex
@@ -55,6 +60,7 @@ struct BasicVertex
 	virtual shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	virtual bool isAnti() const;
 	virtual const forward_list< const Element* >* getRelatedElements() const;
+	virtual Unsatisfied::Type getUnsatisfiedType() const;
 };
 struct VersionVertex: public BasicVertex
 {

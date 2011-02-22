@@ -36,7 +36,7 @@ using std::queue;
 
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __config(config), __cache(cache),
-	__solution_storage(*__config, *__cache)
+	__solution_storage(*__config, *__cache), __score_manager(*config, cache)
 {
 	__import_installed_versions();
 }
@@ -58,7 +58,8 @@ void NativeResolverImpl::__import_installed_versions()
 void __mydebug_wrapper(const Solution& solution, const string& message)
 {
 	string levelString(solution.level, ' ');
-	debug("%s(%u:%.1f) %s", levelString.c_str(), solution.id, solution.score, message.c_str());
+	debug("%s(%u:%zd) %s", levelString.c_str(), solution.id,
+			solution.score, message.c_str());
 }
 
 // installs new version, but does not sticks it
@@ -168,7 +169,8 @@ void NativeResolverImpl::upgrade()
 	}
 }
 
-NativeResolverImpl::SolutionListIterator __fair_chooser(list< shared_ptr< Solution > >& solutions)
+NativeResolverImpl::SolutionListIterator __fair_chooser(
+		list< shared_ptr< Solution > >& solutions)
 {
 	// choose the solution with maximum score
 	auto result = solutions.begin();
@@ -182,7 +184,7 @@ NativeResolverImpl::SolutionListIterator __fair_chooser(list< shared_ptr< Soluti
 		{
 			fatal("internal error: an empty solution");
 		}
-		if ((*it)->score > (*result)->score)
+		if ((*result)->score < (*it)->score)
 		{
 			result = it;
 		}
@@ -191,7 +193,8 @@ NativeResolverImpl::SolutionListIterator __fair_chooser(list< shared_ptr< Soluti
 	return result;
 }
 
-NativeResolverImpl::SolutionListIterator __full_chooser(list< shared_ptr< Solution > >& solutions)
+NativeResolverImpl::SolutionListIterator __full_chooser(
+		list< shared_ptr< Solution > >& solutions)
 {
 	// defer the decision until all solutions are built
 
@@ -206,67 +209,6 @@ NativeResolverImpl::SolutionListIterator __full_chooser(list< shared_ptr< Soluti
 	// heh, the whole solution tree has been already built?.. ok, let's choose
 	// the best solution
 	return __fair_chooser(solutions);
-}
-
-// every package version has a weight
-float NativeResolverImpl::__get_version_weight(const shared_ptr< const BinaryVersion >& version) const
-{
-	if (!version)
-	{
-		return 0.0;
-	}
-
-	float result = __cache->getPin(version);
-
-	if (result > 0)
-	{
-		// apply the rules only to positive results so negative ones save their
-		// negative effect
-		const string& packageName = version->packageName;
-
-		if (__cache->isAutomaticallyInstalled(packageName))
-		{
-			result /= 12.0;
-		}
-		else if (!__old_packages.count(packageName))
-		{
-			// it's new package
-			result /= 100.0;
-		}
-	}
-
-	return result;
-}
-
-float NativeResolverImpl::__get_action_profit(const shared_ptr< const BinaryVersion >& originalVersion,
-		const shared_ptr< const BinaryVersion >& supposedVersion) const
-{
-	auto supposedVersionWeight = __get_version_weight(supposedVersion);
-	auto originalVersionWeight = __get_version_weight(originalVersion);
-
-	if (!originalVersion)
-	{
-		// installing the version itself gains nothing
-		supposedVersionWeight -= 15;
-	}
-
-	auto result = supposedVersionWeight - originalVersionWeight;
-
-	if (!supposedVersion && originalVersion)
-	{
-		// remove a package
-		result -= 50;
-		if (result < 0)
-		{
-			result *= 4;
-			if (originalVersion->essential)
-			{
-				result *= 5;
-			}
-		}
-	}
-
-	return result;
 }
 
 bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr,
@@ -476,28 +418,19 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	auto oldElementPtr = actionToApply->oldElementPtr;
 	auto newElementPtr = actionToApply->newElementPtr;
-	auto profit = actionToApply->profit;
-
-	// temporarily lower the score of the current solution to implement back-tracking
-	// the bigger quality bar, the bigger chance for other solutions
-	float qualityCorrection = - float(__config->getInteger("cupt::resolver::quality-bar")) /
-			pow((originalSolution.level + 1), 0.1);
+	const ScoreChange& profit = actionToApply->profit;
 
 	if (__config->getBool("debug::resolver"))
 	{
-		auto profitString = sf("%+.1f", profit);
-		auto qualityCorrectionString = sf("%+.1f", qualityCorrection);
-
-		auto message = sf("-> (%u,Δ:%s,qΔ:%s) trying: '%s' -> '%s'",
-				solution.id, profitString.c_str(), qualityCorrectionString.c_str(),
+		auto message = sf("-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
+				solution.id, __score_manager.getScoreChangeString(profit).c_str(),
 				oldElementPtr ? (*oldElementPtr)->toString().c_str() : "",
 				(*newElementPtr)->toString().c_str());
 		__mydebug_wrapper(originalSolution, message);
 	}
 
 	solution.level += 1;
-	solution.score += profit;
-	solution.score += qualityCorrection;
+	solution.score += __score_manager.getScoreChangeValue(profit);
 
 	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
 }
@@ -519,19 +452,29 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 		return versionVertex->version;
 	};
 
-	size_t positionPenalty = 0;
+	size_t position = 0;
 	FORIT(actionIt, actions)
 	{
 		Action& action = **actionIt;
 
-		if (isnan(action.profit))
+		action.profit = __score_manager.getScoreChange(
+				getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
+		action.profit.setPosition(position);
+		switch ((*action.newElementPtr)->getUnsatisfiedType())
 		{
-			action.profit = __get_action_profit(
-					getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
+			case dg::Unsatisfied::None:
+				break;
+			case dg::Unsatisfied::Recommends:
+				action.profit.setFailedRecommends();
+				break;
+			case dg::Unsatisfied::Suggests:
+				action.profit.setFailedSuggests();
+				break;
+			case dg::Unsatisfied::Sync:
+				action.profit.setFailedSync();
+				break;
 		}
-		action.profit -= positionPenalty;
-
-		++positionPenalty;
+		++position;
 	}
 }
 
@@ -540,9 +483,10 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 {
 	// sort them by "rank", from more good to more bad
 	std::stable_sort(actions.begin(), actions.end(),
-			[](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
+			[this](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
 			{
-				return right->profit < left->profit;
+				return this->__score_manager.getScoreChangeValue(right->profit)
+						< this->__score_manager.getScoreChangeValue(left->profit);
 			});
 
 	// fork the solution entry and apply all the solutions by one
@@ -1006,6 +950,7 @@ pair< const dg::Element*, const dg::Element* > __get_broken_pair(
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser();
+
 	const bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");

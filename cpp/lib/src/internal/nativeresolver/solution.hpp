@@ -65,8 +65,8 @@ class Solution
  public:
 	size_t id;
 	size_t level;
-	float score;
 	bool finished;
+	ssize_t score;
 	std::unique_ptr< const void > pendingAction;
 
 	Solution();

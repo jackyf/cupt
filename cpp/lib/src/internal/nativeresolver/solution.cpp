@@ -251,7 +251,7 @@ const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Eleme
 
 
 Solution::Solution()
-	: id(0), level(0), score(0), finished(false)
+	: id(0), level(0), finished(false), score(0)
 {
 	__added_entries.reset(new PackageEntryMap);
 	__removed_entries.reset(new PackageEntrySet);

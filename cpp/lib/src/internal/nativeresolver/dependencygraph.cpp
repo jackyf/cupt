@@ -62,6 +62,11 @@ const forward_list< const Element* >* BasicVertex::getRelatedElements() const
 	return NULL; // unreachable
 }
 
+Unsatisfied::Type BasicVertex::getUnsatisfiedType() const
+{
+	return Unsatisfied::None;
+}
+
 VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >::iterator& it)
 	: __related_element_ptrs_it(it)
 {}
@@ -93,6 +98,7 @@ struct RelationExpressionVertex: public BasicVertex
 	size_t getPriority() const;
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	bool isAnti() const;
+	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
 string RelationExpressionVertex::toString() const
@@ -147,6 +153,19 @@ shared_ptr< const Reason > RelationExpressionVertex::getReason(const BasicVertex
 			dependencyType, *relationExpressionPtr));
 }
 
+Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
+{
+	switch (dependencyType)
+	{
+		case BinaryVersion::RelationTypes::Recommends:
+			return Unsatisfied::Recommends;
+		case BinaryVersion::RelationTypes::Suggests:
+			return Unsatisfied::Suggests;
+		default:
+			return Unsatisfied::None;
+	}
+}
+
 struct SynchronizeVertex: public BasicVertex
 {
 	string targetPackageName;
@@ -157,6 +176,7 @@ struct SynchronizeVertex: public BasicVertex
 	size_t getPriority() const;
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	bool isAnti() const;
+	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
 SynchronizeVertex::SynchronizeVertex(bool isHard)
@@ -189,12 +209,18 @@ bool SynchronizeVertex::isAnti() const
 	return true;
 }
 
+Unsatisfied::Type SynchronizeVertex::getUnsatisfiedType() const
+{
+	return Unsatisfied::Sync;
+}
+
 struct UnsatisfiedVertex: public BasicVertex
 {
 	const Element* parent;
 
 	string toString() const;
 	const forward_list< const Element* >* getRelatedElements() const;
+	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
 string UnsatisfiedVertex::toString() const
@@ -206,6 +232,11 @@ string UnsatisfiedVertex::toString() const
 const forward_list< const Element* >* UnsatisfiedVertex::getRelatedElements() const
 {
 	return NULL;
+}
+
+Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
+{
+	return (*parent)->getUnsatisfiedType();
 }
 
 bool __is_version_array_intersects_with_packages(
