@@ -121,7 +121,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 		const Action::Type& userAction = mapIt->first;
 		const vector< IA::Type >& innerActionTypes = mapIt->second;
 
-		FORIT(suggestedPackageIt, (*__actions_preview)[userAction])
+		FORIT(suggestedPackageIt, __actions_preview->groups[userAction])
 		{
 			const string& packageName = suggestedPackageIt->first;
 
@@ -1147,7 +1147,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 	static const vector< Action::Type > actions = { Action::Install, Action::Upgrade, Action::Downgrade };
 	FORIT(actionIt, actions)
 	{
-		const Resolver::SuggestedPackages& suggestedPackages = (*__actions_preview)[*actionIt];
+		const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
 		FORIT(it, suggestedPackages)
 		{
 			const shared_ptr< const BinaryVersion >& version = it->second.version;
@@ -1605,11 +1605,11 @@ void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 
 		bool targetStatus = (actionType == InnerAction::Unpack); // will be false for removals
 
-		const Resolver::SuggestedPackages& suggestedPackages =
-				(*__actions_preview)[targetStatus ? Worker::Action::Markauto : Worker::Action::Unmarkauto];
+		const map< string, bool >& autoFlagChanges = __actions_preview->autoFlagChanges;
 
 		const string& packageName = actionIt->version->packageName;
-		if (suggestedPackages.count(packageName))
+		auto it = autoFlagChanges.find(packageName);
+		if (it != autoFlagChanges.end() && it->second == targetStatus)
 		{
 			markAsAutomaticallyInstalled(packageName, targetStatus);
 		}

@@ -20,6 +20,8 @@
 
 /// @file
 
+#include <map>
+
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
 #include <cupt/system/resolver.hpp>
@@ -42,10 +44,6 @@ class Worker
 	Worker(const Worker&);
 	Worker& operator=(const Worker&);
  public:
-	/**
-	 * Vector of Action::Count elements.
-	 */
-	typedef vector< Resolver::SuggestedPackages > ActionsPreview;
 	/// action types
 	struct Action
 	{
@@ -57,10 +55,21 @@ class Worker
 			Downgrade, ///< old version of the existing package is installed
 			Configure, ///< the existing package in intermediate state is configured (properly installed)
 			Deconfigure, ///< the existing package in intermediate state is removed
-			Markauto, ///< the package is marked as automatically installed
-			Unmarkauto, ///< the package is marked as manually installed
 			Count ///< element count
 		};
+	};
+	struct ActionsPreview
+	{
+		Resolver::SuggestedPackages groups[Action::Count]; ///< system changes divided by type
+		/// maps package name to target 'automatically installed' flag value
+		/**
+		 * If a package name is not present in the map, the flag remains unchanged.
+		 *
+		 * If a package name is mapped to @c true, package will be marked as automatically installed.
+		 *
+		 * If a package name is mapped to @c false, package will be marked as manually installed.
+		 */
+		std::map< string, bool > autoFlagChanges;
 	};
 
 	/// constructor

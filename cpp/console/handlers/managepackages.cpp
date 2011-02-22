@@ -334,7 +334,7 @@ void checkForUntrustedPackages(const shared_ptr< const Worker::ActionsPreview >&
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = (*actionsPreview)[actionType];
+		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview->groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
@@ -364,7 +364,7 @@ void checkForRemovalOfEssentialPackages(const shared_ptr< const Cache >& cache,
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = (*actionsPreview)[actionType];
+		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview->groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
@@ -403,7 +403,7 @@ void checkForIgnoredHolds(const shared_ptr< const Cache >& cache,
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = (*actionsPreview)[actionType];
+		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview->groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
@@ -504,7 +504,7 @@ void showUnsatisfiedSoftDependencies(const shared_ptr< const Config >& config,
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& actionSuggestedPackages = (*actionsPreview)[actionType];
+		const Resolver::SuggestedPackages& actionSuggestedPackages = actionsPreview->groups[actionType];
 		FORIT(it, actionSuggestedPackages)
 		{
 			auto package = cache->getBinaryPackage(it->first);
@@ -629,7 +629,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			{
 				const WA::Type& actionType = actionTypesInOrder[i];
 
-				const Resolver::SuggestedPackages& actionSuggestedPackages = (*actionsPreview)[actionType];
+				const Resolver::SuggestedPackages& actionSuggestedPackages = actionsPreview->groups[actionType];
 
 				if (actionSuggestedPackages.empty())
 				{

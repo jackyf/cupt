@@ -34,6 +34,7 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         2.0.0~alpha1.
       - When purge option is used, do removal instead of purge for packages
         removed by resolver and not by user.
+      - Reorganized 'ActionsPreview' structure.
     - common:
       - compareVersionStrings: fixed sorting letters before other characters.
         This regression was introduced in 2.0.0~alpha1.

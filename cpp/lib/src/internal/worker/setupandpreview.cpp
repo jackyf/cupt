@@ -29,7 +29,7 @@ namespace internal {
 
 void SetupAndPreviewWorker::__generate_actions_preview()
 {
-	shared_ptr< ActionsPreview > result(new ActionsPreview(Action::Count));
+	shared_ptr< ActionsPreview > result(new ActionsPreview);
 
 	if (!__desired_state)
 	{
@@ -144,7 +144,7 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 
 		if (action != Action::Count)
 		{
-			(*result)[action][packageName] = suggestedPackage;
+			result->groups[action][packageName] = suggestedPackage;
 
 			if (action == Action::Remove ||
 				(action == Action::Purge && installedInfo &&
@@ -153,12 +153,12 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 				/* in case of removing a package we delete the 'automatically
 				   installed' info regardless was this flag set or not so next
 				   time when this package is installed it has 'clean' info */
-				(*result)[Action::Unmarkauto][packageName] = suggestedPackage;
+				result->autoFlagChanges[packageName] = false;
 			}
 			else if (action == Action::Install && !suggestedPackage.manuallySelected)
 			{
 				// set 'automatically installed' for new non-manually selected packages
-				(*result)[Action::Markauto][packageName] = suggestedPackage;
+				result->autoFlagChanges[packageName] = true;
 			}
 		}
 	}
@@ -184,7 +184,7 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 	set< string > changedPackageNames;
 	for (size_t i = 0; i < Action::Count; ++i)
 	{
-		const Resolver::SuggestedPackages& suggestedPackages = (*__actions_preview)[i];
+		const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[i];
 		FORIT(it, suggestedPackages)
 		{
 			changedPackageNames.insert(it->first);
@@ -233,7 +233,7 @@ pair< size_t, size_t > SetupAndPreviewWorker::getDownloadSizesPreview() const
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(Action::Type); ++i)
 	{
 		const Resolver::SuggestedPackages& suggestedPackages =
-			(*__actions_preview)[affectedActionTypes[i]];
+			__actions_preview->groups[affectedActionTypes[i]];
 
 		FORIT(it, suggestedPackages)
 		{
