@@ -84,7 +84,7 @@ class Worker
 	 *
 	 * May be called several times for examining different possible system states.
 	 *
-	 * @param desiredState
+	 * @param offer
 	 */
 	void setDesiredState(const Resolver::Offer& offer);
 
