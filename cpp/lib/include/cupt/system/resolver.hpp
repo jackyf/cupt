@@ -101,7 +101,7 @@ class Resolver
 			: packageName(packageName_) {}
 	};
 
-	/// resolver's solution item
+	/// resolver's main solution item
 	/**
 	 * Represents a binary package in the suggested system.
 	 */
@@ -112,9 +112,10 @@ class Resolver
 		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
 	};
 	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
+	/// the result of resolver's work
 	struct Offer
 	{
-		SuggestedPackages suggestedPackages;
+		SuggestedPackages suggestedPackages; ///< target system package set
 		vector< shared_ptr< const Reason > > unresolvedProblems;
 	};
 
