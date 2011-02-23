@@ -166,9 +166,9 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 	__actions_preview = result;
 }
 
-void SetupAndPreviewWorker::setDesiredState(const Resolver::SuggestedPackages& desiredState)
+void SetupAndPreviewWorker::setDesiredState(const Resolver::Offer& offer)
 {
-	__desired_state.reset(new Resolver::SuggestedPackages(desiredState));
+	__desired_state.reset(new Resolver::SuggestedPackages(offer.suggestedPackages));
 	__generate_actions_preview();
 }
 

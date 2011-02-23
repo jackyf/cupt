@@ -425,164 +425,79 @@ void checkForIgnoredHolds(const shared_ptr< const Cache >& cache,
 	}
 }
 
-void showReason(const Resolver::SuggestedPackage& suggestedPackage)
+string getReasonString(const shared_ptr< const Resolver::Reason >& reason)
 {
-	static auto sayReason = [](const string& message)
+	if (auto r = dynamic_pointer_cast< const Resolver::RelationExpressionReason >(reason))
 	{
-		cout << "  " << __("reason: ") << message << endl;
-	};
+		static const map< BinaryVersion::RelationTypes::Type, string > dependencyTypeTranslations = {
+			{ BinaryVersion::RelationTypes::PreDepends, __("pre-depends on") },
+			{ BinaryVersion::RelationTypes::Depends, __("depends on") },
+			{ BinaryVersion::RelationTypes::Recommends, __("recommends") },
+			{ BinaryVersion::RelationTypes::Suggests, __("suggests") },
+			{ BinaryVersion::RelationTypes::Conflicts, __("conflicts with") },
+			{ BinaryVersion::RelationTypes::Breaks, __("breaks") },
+		};
 
-	FORIT(reasonIt, suggestedPackage.reasons)
-	{
-		const shared_ptr< const Resolver::Reason >& reason = *reasonIt;
-		if (auto r = dynamic_pointer_cast< const Resolver::RelationExpressionReason >(reason))
+		auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(r->dependencyType);
+		if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
 		{
-			static const map< BinaryVersion::RelationTypes::Type, string > dependencyTypeTranslations = {
-				{ BinaryVersion::RelationTypes::PreDepends, __("pre-depends on") },
-				{ BinaryVersion::RelationTypes::Depends, __("depends on") },
-				{ BinaryVersion::RelationTypes::Recommends, __("recommends") },
-				{ BinaryVersion::RelationTypes::Suggests, __("suggests") },
-				{ BinaryVersion::RelationTypes::Conflicts, __("conflicts with") },
-				{ BinaryVersion::RelationTypes::Breaks, __("breaks") },
-			};
-
-			auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(r->dependencyType);
-			if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
-			{
-				warn("unsupported reason dependency type '%s'",
-						BinaryVersion::RelationTypes::strings[r->dependencyType].c_str());
-			}
-			else
-			{
-				sayReason(sf("%s %s %s '%s'",
-						r->version->packageName.c_str(), r->version->versionString.c_str(),
-						dependencyTypeTranslationIt->second.c_str(),
-						r->relationExpression.toString().c_str()));
-			}
-		}
-		else if (auto r = dynamic_pointer_cast< const Resolver::SynchronizationReason >(reason))
-		{
-			sayReason(sf(__("synchronized with package '%s'"), r->packageName.c_str()));
-		}
-		else if (dynamic_pointer_cast< const Resolver::UserReason >(reason))
-		{
-			sayReason(__("user request"));
-		}
-		else if (dynamic_pointer_cast< const Resolver::AutoRemovalReason >(reason))
-		{
-			sayReason(__("auto-removal"));
+			warn("unsupported reason dependency type '%s'",
+					BinaryVersion::RelationTypes::strings[r->dependencyType].c_str());
+			return string();
 		}
 		else
 		{
-			warn("unsupported reason type");
+			return sf("%s %s %s '%s'",
+					r->version->packageName.c_str(), r->version->versionString.c_str(),
+					dependencyTypeTranslationIt->second.c_str(),
+					r->relationExpression.toString().c_str());
+		}
+	}
+	else if (auto r = dynamic_pointer_cast< const Resolver::SynchronizationReason >(reason))
+	{
+		return sf(__("synchronized with package '%s'"), r->packageName.c_str());
+	}
+	else if (dynamic_pointer_cast< const Resolver::UserReason >(reason))
+	{
+		return __("user request");
+	}
+	else if (dynamic_pointer_cast< const Resolver::AutoRemovalReason >(reason))
+	{
+		return __("auto-removal");
+	}
+	else
+	{
+		warn("unsupported reason type");
+		return string();
+	}
+}
+
+void showReason(const Resolver::SuggestedPackage& suggestedPackage)
+{
+	FORIT(reasonIt, suggestedPackage.reasons)
+	{
+		auto reasonString = getReasonString(*reasonIt);
+		if (!reasonString.empty())
+		{
+			cout << "  " << __("reason: ") << reasonString << endl;
 		}
 	}
 	cout << endl;
 }
 
-void showUnsatisfiedSoftDependencies(const shared_ptr< const Config >& config,
-		const shared_ptr< const Cache >& cache,
-		const Resolver::SuggestedPackages& suggestedPackages,
-		const shared_ptr< const Worker::ActionsPreview >& actionsPreview)
+void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
 {
-	vector< BinaryVersion::RelationTypes::Type > affectedDependencyTypes;
-	if (config->getBool("cupt::resolver::keep-recommends"))
-	{
-		affectedDependencyTypes.push_back(BinaryVersion::RelationTypes::Recommends);
-	}
-	if (config->getBool("cupt::resolver::keep-suggests"))
-	{
-		affectedDependencyTypes.push_back(BinaryVersion::RelationTypes::Suggests);
-	}
-	if (affectedDependencyTypes.empty())
-	{
-		return;
-	}
-
-	vector< shared_ptr< const BinaryVersion > > versionsToRemove;
-	static const WA::Type affectedActionTypes[] = { WA::Remove, WA::Purge };
-	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
-	{
-		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& actionSuggestedPackages = actionsPreview->groups[actionType];
-		FORIT(it, actionSuggestedPackages)
-		{
-			auto package = cache->getBinaryPackage(it->first);
-			// package or version may be undefined for packages in 'config-files' state
-			if (!package)
-			{
-				continue;
-			}
-			auto version = package->getInstalledVersion();
-			if (version)
-			{
-				versionsToRemove.push_back(version);
-			}
-		}
-	}
-
 	vector< string > messages;
 
-	FORIT(suggestedEntryIt, suggestedPackages)
+	FORIT(unresolvedProblemIt, offer.unresolvedProblems)
 	{
-		const string& packageName = suggestedEntryIt->first;
-		const Resolver::SuggestedPackage& suggestedPackage = suggestedEntryIt->second;
-		if (!suggestedPackage.version)
+		auto reasonString = getReasonString(*unresolvedProblemIt);
+		if (!reasonString.empty())
 		{
-			continue;
-		}
-
-		FORIT(dependencyTypeIt, affectedDependencyTypes)
-		{
-			const BinaryVersion::RelationTypes::Type& dependencyType = *dependencyTypeIt;
-
-			FORIT(relationExpressionIt, suggestedPackage.version->relations[dependencyType])
-			{
-				auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
-
-				bool breakagePossible = false;
-				FORIT(versionToRemoveIt, versionsToRemove)
-				{
-					auto predicate = bind2nd(PointerEqual< const BinaryVersion >(), *versionToRemoveIt);
-					breakagePossible = (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-							predicate) != satisfyingVersions.end());
-					if (breakagePossible)
-					{
-						break;
-					}
-				}
-
-				if (breakagePossible)
-				{
-					bool isBroken = true;
-					FORIT(satisfyingVersionIt, satisfyingVersions)
-					{
-						const shared_ptr< const BinaryVersion >& satisfyingVersion = *satisfyingVersionIt;
-						const string& satisfyingPackageName = satisfyingVersion->packageName;
-
-						auto relevantSuggestedPackageIt = suggestedPackages.find(satisfyingPackageName);
-						if (relevantSuggestedPackageIt == suggestedPackages.end())
-						{
-							continue;
-						}
-						const shared_ptr< const BinaryVersion >& relevantVersion = relevantSuggestedPackageIt->second.version;
-						if (relevantVersion && relevantVersion->versionString == satisfyingVersion->versionString)
-						{
-							isBroken = false;
-							break;
-						}
-					}
-					if (isBroken)
-					{
-						const string& versionString = suggestedPackage.version->versionString;
-						messages.push_back(sf("%s %s %s %s", packageName.c_str(), versionString.c_str(),
-								(dependencyType == BinaryVersion::RelationTypes::Recommends ? __("recommends") : __("suggests")).c_str(),
-								relationExpressionIt->toString().c_str()));
-					}
-				}
-			}
+			messages.push_back(reasonString);
 		}
 	}
+
 	if (!messages.empty())
 	{
 		cout << __("Leave the following dependencies unresolved:") << endl;
@@ -600,11 +515,11 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		bool showVersions, bool showSizeChanges)
 {
 	auto result = [&config, &cache, &worker, showVersions, showSizeChanges]
-			(const Resolver::SuggestedPackages& suggestedPackages) -> Resolver::UserAnswer::Type
+			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 
-		worker->setDesiredState(suggestedPackages);
+		worker->setDesiredState(offer);
 
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
@@ -692,7 +607,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			return Resolver::UserAnswer::Accept;
 		}
 
-		showUnsatisfiedSoftDependencies(config, cache, suggestedPackages, actionsPreview);
+		showUnsatisfiedSoftDependencies(offer);
 
 		bool isDangerousAction = false;
 		if (!config->getBool("cupt::console::allow-untrusted"))

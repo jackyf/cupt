@@ -711,37 +711,55 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	static const Resolver::SuggestedPackage emptySuggestedPackage;
 
 	// build "user-frienly" version of solution
-	Resolver::SuggestedPackages suggestedPackages;
+	Resolver::Offer offer;
+	Resolver::SuggestedPackages& suggestedPackages = offer.suggestedPackages;
 
 	auto elementPtrs = solution.getElements();
 	FORIT(elementPtrIt, elementPtrs)
 	{
 		auto vertex = dynamic_cast< const dg::VersionVertex* >(**elementPtrIt);
-		if (!vertex)
+		if (vertex)
 		{
-			continue; // non-version vertex
-		}
-
-		const string& packageName = vertex->getPackageName();
-		if (packageName == __dummy_package_name)
-		{
-			continue;
-		}
-
-		// iterator of inserted element
-		auto it = suggestedPackages.insert(make_pair(packageName, emptySuggestedPackage)).first;
-		Resolver::SuggestedPackage& suggestedPackage = it->second;
-		suggestedPackage.version = vertex->version;
-
-		if (trackReasons)
-		{
-			auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
-			if (packageEntryPtr->reasons)
+			const string& packageName = vertex->getPackageName();
+			if (packageName == __dummy_package_name)
 			{
-				suggestedPackage.reasons = *(packageEntryPtr->reasons);
+				continue;
+			}
+
+			// iterator of inserted element
+			auto it = suggestedPackages.insert(make_pair(packageName, emptySuggestedPackage)).first;
+			Resolver::SuggestedPackage& suggestedPackage = it->second;
+			suggestedPackage.version = vertex->version;
+
+			if (trackReasons)
+			{
+				auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
+				if (packageEntryPtr->reasons)
+				{
+					suggestedPackage.reasons = *(packageEntryPtr->reasons);
+				}
+			}
+			suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);
+		}
+		else
+		{
+			// non-version vertex - unsatisfied one
+			const list< const dg::Element* >& predecessors =
+					__solution_storage.getPredecessorElements(*elementPtrIt);
+			FORIT(predecessorIt, predecessors)
+			{
+				const list< const dg::Element* >& affectedVersionElements =
+						__solution_storage.getPredecessorElements(*predecessorIt);
+				FORIT(affectedVersionElementIt, affectedVersionElements)
+				{
+					if (solution.getPackageEntry(*affectedVersionElementIt))
+					{
+						offer.unresolvedProblems.push_back(
+								(**predecessorIt)->getReason(***affectedVersionElementIt));
+					}
+				}
 			}
 		}
-		suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);
 	}
 
 	// suggest found solution
@@ -751,7 +769,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		__mydebug_wrapper(solution, "proposing this solution");
 	}
 
-	auto userAnswer = callback(suggestedPackages);
+	auto userAnswer = callback(offer);
 	if (debugging)
 	{
 		if (userAnswer == Resolver::UserAnswer::Accept)

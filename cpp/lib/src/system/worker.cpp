@@ -48,9 +48,9 @@ Worker::~Worker()
 	delete __impl;
 }
 
-void Worker::setDesiredState(const Resolver::SuggestedPackages& desiredState)
+void Worker::setDesiredState(const Resolver::Offer& offer)
 {
-	__impl->setDesiredState(desiredState);
+	__impl->setDesiredState(offer);
 }
 
 shared_ptr< const Worker::ActionsPreview > Worker::getActionsPreview() const

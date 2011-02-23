@@ -86,7 +86,7 @@ class Worker
 	 *
 	 * @param desiredState
 	 */
-	void setDesiredState(const Resolver::SuggestedPackages& desiredState);
+	void setDesiredState(const Resolver::Offer& offer);
 
 	/**
 	 * Shouldn't be called before @ref setDesiredState.

@@ -30,7 +30,7 @@ class SetupAndPreviewWorker: public virtual WorkerBase
 {
 	void __generate_actions_preview();
  public:
-	void setDesiredState(const Resolver::SuggestedPackages& desiredState);
+	void setDesiredState(const Resolver::Offer& offer);
 
 	shared_ptr< const ActionsPreview > getActionsPreview() const;
 	map< string, ssize_t > getUnpackedSizesPreview() const;

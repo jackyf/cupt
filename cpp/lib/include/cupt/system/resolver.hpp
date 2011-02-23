@@ -112,6 +112,11 @@ class Resolver
 		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
 	};
 	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
+	struct Offer
+	{
+		SuggestedPackages suggestedPackages;
+		vector< shared_ptr< const Reason > > unresolvedProblems;
+	};
 
 	/// user callback answer variants
 	struct UserAnswer
@@ -125,7 +130,7 @@ class Resolver
 	};
 
 	/// callback function type
-	typedef std::function< UserAnswer::Type (const SuggestedPackages&) > CallbackType;
+	typedef std::function< UserAnswer::Type (const Offer&) > CallbackType;
 
 	Resolver() {};
 
