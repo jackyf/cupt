@@ -17,6 +17,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
       - New configurable score calculation system.
       - New result type 'Offer'.
       - 'Offer': provide the info about unsatisfied soft dependencies.
+      - Do not additionally stick packages except of changed ones, it may hide
+        some solution in very rare cases. Fixes a regression since 0.2.2.
     - config:
       - Deleted option
         'cupt::resolver::synchronize-source-versions::exceptions'.

@@ -536,16 +536,6 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	}
 	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
 
-	{ // stick all additionally requested package names
-		FORIT(elementPtrIt, action.elementsToStick)
-		{
-			PackageEntry packageEntry = *solution.getPackageEntry(*elementPtrIt);
-			packageEntry.sticked = true;
-			__solution_storage.setPackageEntry(solution, *elementPtrIt,
-					std::move(packageEntry), NULL);
-		}
-	};
-
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
 	if (action.reason)
@@ -680,27 +670,6 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 			action->newElementPtr = *successorElementPtrIt;
 
 			actions.push_back(std::move(action));
-		}
-	}
-}
-
-void NativeResolverImpl::__prepare_stick_requests(vector< unique_ptr< Action > >& actions) const
-{
-	// each next action receives one more additional stick request to not
-	// interfere with all previous solutions
-	vector< const dg::Element* > elementPtrs;
-	FORIT(actionIt, actions)
-	{
-		(*actionIt)->elementsToStick = elementPtrs;
-
-		auto oldElementPtr = (*actionIt)->oldElementPtr;
-		if (!oldElementPtr)
-		{
-			continue;
-		}
-		if (std::find(elementPtrs.begin(), elementPtrs.end(), oldElementPtr) == elementPtrs.end())
-		{
-			elementPtrs.push_back(oldElementPtr);
 		}
 	}
 }
@@ -1103,8 +1072,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		}
 		else
 		{
-			__prepare_stick_requests(possibleActions);
-
 			if (!possibleActions.empty())
 			{
 				__calculate_profits(possibleActions);
