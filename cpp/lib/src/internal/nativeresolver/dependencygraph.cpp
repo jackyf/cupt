@@ -73,7 +73,8 @@ VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >
 
 string VersionVertex::toString() const
 {
-	return version ? (version->packageName + ' ' + version->versionString) : "";
+	return getPackageName() + ' ' +
+			(version ? version->versionString : "<not installed>");
 }
 
 const forward_list< const Element* >* VersionVertex::getRelatedElements() const
