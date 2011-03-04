@@ -9,14 +9,15 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         flag set, append '(a)' to package names.
   * lib:
     - system/resolver:
+      - New result type 'Offer'.
+      - 'Offer': provide the info about unsatisfied soft dependencies.
+    - system/resolvers/native:
       - Filter out changes of conflicting packages which don't
         effectively change the situation.
       - Use only reliable information from source packages for synchronizing
         source versions.
       - Reworked underlying data structures.
       - New configurable score calculation system.
-      - New result type 'Offer'.
-      - 'Offer': provide the info about unsatisfied soft dependencies.
       - Do not additionally stick packages except of changed ones, it may hide
         some solution in very rare cases. Fixes a regression since 0.2.2.
     - config:
@@ -68,6 +69,7 @@ cupt2 (2.0.0~alpha3) UNRELEASED; urgency=low
     - system/resolver:
       - 'operator=': forbidden now.
       - Reorganized *Reason struct, transformed to struct hierarchy.
+    - system/resolvers/native:
       - Apply essential package penalty only for removals.
       - Version priorities don't affect versions' scores anymore.
     - system/worker:
