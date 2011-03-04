@@ -11,6 +11,7 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
     - system/resolver:
       - New result type 'Offer'.
       - 'Offer': provide the info about unsatisfied soft dependencies.
+      - 'Reason': new method 'toString'.
     - system/resolvers/native:
       - Filter out changes of conflicting packages which don't
         effectively change the situation.

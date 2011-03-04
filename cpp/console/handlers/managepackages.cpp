@@ -425,62 +425,11 @@ void checkForIgnoredHolds(const shared_ptr< const Cache >& cache,
 	}
 }
 
-string getReasonString(const shared_ptr< const Resolver::Reason >& reason)
-{
-	if (auto r = dynamic_pointer_cast< const Resolver::RelationExpressionReason >(reason))
-	{
-		static const map< BinaryVersion::RelationTypes::Type, string > dependencyTypeTranslations = {
-			{ BinaryVersion::RelationTypes::PreDepends, __("pre-depends on") },
-			{ BinaryVersion::RelationTypes::Depends, __("depends on") },
-			{ BinaryVersion::RelationTypes::Recommends, __("recommends") },
-			{ BinaryVersion::RelationTypes::Suggests, __("suggests") },
-			{ BinaryVersion::RelationTypes::Conflicts, __("conflicts with") },
-			{ BinaryVersion::RelationTypes::Breaks, __("breaks") },
-		};
-
-		auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(r->dependencyType);
-		if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
-		{
-			warn("unsupported reason dependency type '%s'",
-					BinaryVersion::RelationTypes::strings[r->dependencyType].c_str());
-			return string();
-		}
-		else
-		{
-			return sf("%s %s %s '%s'",
-					r->version->packageName.c_str(), r->version->versionString.c_str(),
-					dependencyTypeTranslationIt->second.c_str(),
-					r->relationExpression.toString().c_str());
-		}
-	}
-	else if (auto r = dynamic_pointer_cast< const Resolver::SynchronizationReason >(reason))
-	{
-		return sf(__("synchronized with package '%s'"), r->packageName.c_str());
-	}
-	else if (dynamic_pointer_cast< const Resolver::UserReason >(reason))
-	{
-		return __("user request");
-	}
-	else if (dynamic_pointer_cast< const Resolver::AutoRemovalReason >(reason))
-	{
-		return __("auto-removal");
-	}
-	else
-	{
-		warn("unsupported reason type");
-		return string();
-	}
-}
-
 void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 {
 	FORIT(reasonIt, suggestedPackage.reasons)
 	{
-		auto reasonString = getReasonString(*reasonIt);
-		if (!reasonString.empty())
-		{
-			cout << "  " << __("reason: ") << reasonString << endl;
-		}
+		cout << "  " << __("reason: ") << (*reasonIt)->toString() << endl;
 	}
 	cout << endl;
 }
@@ -488,14 +437,9 @@ void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
 {
 	vector< string > messages;
-
 	FORIT(unresolvedProblemIt, offer.unresolvedProblems)
 	{
-		auto reasonString = getReasonString(*unresolvedProblemIt);
-		if (!reasonString.empty())
-		{
-			messages.push_back(reasonString);
-		}
+		messages.push_back((*unresolvedProblemIt)->toString());
 	}
 
 	if (!messages.empty())

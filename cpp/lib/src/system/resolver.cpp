@@ -20,6 +20,16 @@
 namespace cupt {
 namespace system {
 
+string Resolver::UserReason::toString() const
+{
+	return __("user request");
+}
+
+string Resolver::AutoRemovalReason::toString() const
+{
+	return __("auto-removal");
+}
+
 Resolver::RelationExpressionReason::RelationExpressionReason(
 		const shared_ptr< const BinaryVersion >& version_,
 		BinaryVersion::RelationTypes::Type dependencyType_,
@@ -28,9 +38,41 @@ Resolver::RelationExpressionReason::RelationExpressionReason(
 	relationExpression(relationExpression_)
 {}
 
+string Resolver::RelationExpressionReason::toString() const
+{
+	static const map< BinaryVersion::RelationTypes::Type, string > dependencyTypeTranslations = {
+		{ BinaryVersion::RelationTypes::PreDepends, __("pre-depends on") },
+		{ BinaryVersion::RelationTypes::Depends, __("depends on") },
+		{ BinaryVersion::RelationTypes::Recommends, __("recommends") },
+		{ BinaryVersion::RelationTypes::Suggests, __("suggests") },
+		{ BinaryVersion::RelationTypes::Conflicts, __("conflicts with") },
+		{ BinaryVersion::RelationTypes::Breaks, __("breaks") },
+	};
+
+	auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(dependencyType);
+	if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
+	{
+		warn("unsupported reason dependency type '%s'",
+				BinaryVersion::RelationTypes::strings[dependencyType].c_str());
+		return string();
+	}
+	else
+	{
+		return sf("%s %s %s '%s'",
+				version->packageName.c_str(), version->versionString.c_str(),
+				dependencyTypeTranslationIt->second.c_str(),
+				relationExpression.toString().c_str());
+	}
+}
+
 Resolver::SynchronizationReason::SynchronizationReason(const string& packageName_)
 	: packageName(packageName_)
 {}
+
+string Resolver::SynchronizationReason::toString() const
+{
+	return sf(__("synchronized with package '%s'"), packageName.c_str());
+}
 
 }
 }

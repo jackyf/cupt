@@ -51,6 +51,7 @@ class Resolver
 		Reason() {};
 	 public:
 		virtual ~Reason() {}; // polymorphic
+		virtual string toString() const = 0; ///< returns localized reason description
 	};
 	/// reason: asked by user
 	/**
@@ -58,7 +59,9 @@ class Resolver
 	 * installVersion, @ref removePackage etc. methods.
 	 */
 	struct UserReason: public Reason
-	{};
+	{
+		virtual string toString() const;
+	};
 	/// reason: auto-removal
 	/**
 	 * This reason applies only to package removals. It means that resolver
@@ -67,7 +70,9 @@ class Resolver
 	 * anymore.
 	 */
 	struct AutoRemovalReason: public Reason
-	{};
+	{
+		virtual string toString() const;
+	};
 	/// reason: other version's dependency
 	/**
 	 * This reason means that a resolver decided to change a package state
@@ -82,6 +87,7 @@ class Resolver
 		/// trivial constructor
 		RelationExpressionReason(const shared_ptr< const BinaryVersion >&,
 				BinaryVersion::RelationTypes::Type, const RelationExpression&);
+		virtual string toString() const;
 	};
 	/// reason: source-synchronized with a related binary package
 	/**
@@ -95,6 +101,7 @@ class Resolver
 
 		/// trivial constructor
 		SynchronizationReason(const string&);
+		virtual string toString() const;
 	};
 
 	/// resolver's main solution item
