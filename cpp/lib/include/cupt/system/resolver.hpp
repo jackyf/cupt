@@ -80,11 +80,8 @@ class Resolver
 		RelationExpression relationExpression; ///< relation expression which caused the change
 
 		/// trivial constructor
-		RelationExpressionReason(const shared_ptr< const BinaryVersion >& version_,
-				BinaryVersion::RelationTypes::Type dependencyType_,
-				const cache::RelationExpression& relationExpression_)
-			: version(version_), dependencyType(dependencyType_),
-			relationExpression(relationExpression_) {}
+		RelationExpressionReason(const shared_ptr< const BinaryVersion >&,
+				BinaryVersion::RelationTypes::Type, const RelationExpression&);
 	};
 	/// reason: source-synchronized with a related binary package
 	/**
@@ -97,8 +94,7 @@ class Resolver
 		string packageName; ///< name of related binary package
 
 		/// trivial constructor
-		SynchronizationReason(const string& packageName_)
-			: packageName(packageName_) {}
+		SynchronizationReason(const string&);
 	};
 
 	/// resolver's main solution item

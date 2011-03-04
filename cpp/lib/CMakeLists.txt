@@ -31,6 +31,7 @@ add_library(cupt2 SHARED
 	./src/cache/package.cpp
 	./src/cache/version.cpp
 	./src/system/state.cpp
+	./src/system/resolver.cpp
 	./src/system/resolvers/native.cpp
 	./src/system/worker.cpp
 	./src/system/snapshots.cpp
