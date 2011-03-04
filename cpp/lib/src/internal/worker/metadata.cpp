@@ -156,6 +156,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 	// downloading Release file
 	auto alias = indexEntry.distribution + ' ' + "Release";
+	auto longAlias = indexEntry.uri + ' ' + alias;
 
 	auto uri = _cache->getDownloadUriOfReleaseList(indexEntry);
 	auto downloadPath = getDownloadPath(targetPath);
@@ -164,7 +165,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		download::Manager::DownloadEntity downloadEntity;
 
 		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, indexEntry.uri + ' ' + alias);
+				alias, longAlias);
 
 		downloadEntity.extendedUris.push_back(std::move(extendedUri));
 		downloadEntity.targetPath = downloadPath;
@@ -197,7 +198,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		// (for compatibility with APT tools) and signature check failed,
 		// delete the downloaded file
 		auto oldSignaturePostAction = signaturePostAction;
-		signaturePostAction = [oldSignaturePostAction, alias, targetPath, signatureTargetPath, &_config]() -> string
+		signaturePostAction = [oldSignaturePostAction, longAlias, targetPath, signatureTargetPath, &_config]() -> string
 		{
 			auto moveError = oldSignaturePostAction();
 			if (!moveError.empty())
@@ -211,7 +212,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 				{
 					warn("unable to delete file '%s': EEE", signatureTargetPath.c_str());
 				}
-				warn("signature verification for '%s' failed", alias.c_str());
+				warn("signature verification for '%s' failed", longAlias.c_str());
 			}
 			return string();
 		};

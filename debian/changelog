@@ -40,6 +40,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         removed by resolver and not by user.
       - Reorganized 'ActionsPreview' structure.
       - 'setDesiredState': use Resolver::Offer as an argument.
+      - 'updateReleaseAndIndexData': use long alias, not short one in the
+        'signature verification failed' warning message.
     - common:
       - compareVersionStrings: fixed sorting letters before other characters.
         This regression was introduced in 2.0.0~alpha1.
