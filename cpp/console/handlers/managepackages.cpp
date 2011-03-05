@@ -456,11 +456,13 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
 
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showVersions, bool showSizeChanges)
+		bool showVersions, bool showSizeChanges, bool& addArgumentsFlag)
 {
-	auto result = [&config, &cache, &worker, showVersions, showSizeChanges]
+	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &addArgumentsFlag]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
+		addArgumentsFlag = false;
+
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 
 		worker->setDesiredState(offer);
@@ -571,12 +573,12 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		string question;
 		if (isDangerousAction)
 		{
-			question = sf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, anything else to discard this solution:\n"),
+			question = sf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, 'a' to add arguments, anything else to discard this solution:\n"),
 					confirmationForDangerousAction.c_str());
 		}
 		else
 		{
-			question = __("Do you want to continue? [y/N/q] ");
+			question = __("Do you want to continue? [y/N/q/a] ");
 		}
 		string positiveAnswer = isDangerousAction ? confirmationForDangerousAction : "y";
 
@@ -615,6 +617,11 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		}
 		else if (answer == "q")
 		{
+			return Resolver::UserAnswer::Abandon;
+		}
+		else if (answer == "a")
+		{
+			addArgumentsFlag = true;
 			return Resolver::UserAnswer::Abandon;
 		}
 		else if (interactive)
@@ -773,8 +780,24 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
-	auto callback = generateManagementPrompt(config, cache, worker, showVersions, showSizeChanges);
+	bool addArgumentsFlag;
+	auto callback = generateManagementPrompt(config, cache, worker,
+			showVersions, showSizeChanges, addArgumentsFlag);
+
+	resolve:
 	bool resolved = resolver->resolve(callback);
+	if (addArgumentsFlag && std::cin)
+	{
+		cout << __("Enter a package expression: ");
+		string answer;
+		std::getline(std::cin, answer);
+		if (!answer.empty())
+		{
+			processPackageExpressions(config, cache, mode, *resolver,
+					vector< string > { answer });
+		}
+		goto resolve;
+	}
 
 	// at this stage resolver has done its work, so to does not consume the RAM
 	resolver.reset();

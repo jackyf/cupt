@@ -7,6 +7,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
     - Action preview prompt:
       - For removed/purged packages which have an 'automatically installed'
         flag set, append '(a)' to package names.
+      - Added an ability to specify additional package expressions and restart
+        the solving process (choice 'a'). (Closes: #605416)
   * lib:
     - system/resolver:
       - New result type 'Offer'.
