@@ -61,7 +61,7 @@ class NativeResolverImpl
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
 	set< string > __manually_modified_package_names;
-	SolutionStorage __solution_storage;
+	unique_ptr< SolutionStorage > __solution_storage;
 	ScoreManager __score_manager;
 
 	map< string, shared_ptr< const BinaryVersion > > __old_packages;

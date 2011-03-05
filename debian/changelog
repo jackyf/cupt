@@ -23,6 +23,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         some solution in very rare cases. Fixes a regression since 0.2.2.
       - When no solutions were found, throw an error with a solution tree to
         show why.
+      - 'resolve': fixed a wrong result when being called multiple times on
+        the same object.
     - config:
       - Deleted option
         'cupt::resolver::synchronize-source-versions::exceptions'.

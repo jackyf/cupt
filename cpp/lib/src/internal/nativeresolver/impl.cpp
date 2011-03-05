@@ -35,8 +35,7 @@ namespace internal {
 using std::queue;
 
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
-	: __config(config), __cache(cache),
-	__solution_storage(*__config, *__cache), __score_manager(*config, cache)
+	: __config(config), __cache(cache), __score_manager(*config, cache)
 {
 	__import_installed_versions();
 }
@@ -303,7 +302,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 				continue; // main vertex
 			}
 			const list< const dg::Element* >& successorElementPtrs =
-					__solution_storage.getSuccessorElements(*elementPtrIt);
+					__solution_storage->getSuccessorElements(*elementPtrIt);
 			FORIT(successorElementPtrIt, successorElementPtrs)
 			{
 				if ((**successorElementPtrIt)->isAnti())
@@ -311,7 +310,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 					continue;
 				}
 				const list< const dg::Element* >& successorSuccessorElementPtrs =
-						__solution_storage.getSuccessorElements(*successorElementPtrIt);
+						__solution_storage->getSuccessorElements(*successorElementPtrIt);
 				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
 				{
 					auto it = vertices.find(*successorSuccessorElementPtrIt);
@@ -344,7 +343,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 			{
 				// surely exists because of candidatesForRemoval :)
 				PackageEntry packageEntry;
-				auto emptyElementPtr = __solution_storage.getCorrespondingEmptyElement(*elementPtrIt);
+				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
 
 				if (trackReasons)
 				{
@@ -358,7 +357,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 				{
 					debug("auto-removed '%s'", (**elementPtrIt)->toString().c_str());
 				}
-				__solution_storage.setPackageEntry(solution, emptyElementPtr,
+				__solution_storage->setPackageEntry(solution, emptyElementPtr,
 						std::move(packageEntry), *elementPtrIt);
 			}
 		}
@@ -493,7 +492,7 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 	FORIT(actionIt, actions)
 	{
 		// clone the current stack to form a new one
-		auto clonedSolution = __solution_storage.cloneSolution(currentSolution);
+		auto clonedSolution = __solution_storage->cloneSolution(currentSolution);
 
 		solutions.push_back(clonedSolution);
 
@@ -544,7 +543,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 		packageEntry.reasons.initIfEmpty();
 		packageEntry.reasons->push_back(action.reason);
 	}
-	__solution_storage.setPackageEntry(solution, action.newElementPtr,
+	__solution_storage->setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr);
 	solution.insertedElementPtrs.push_back(action.newElementPtr);
 	__validate_changed_package(solution, action.oldElementPtr, action.newElementPtr);
@@ -561,7 +560,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 	auto brokenElementPriority = (*brokenElementPtr)->getPriority();
 
 	const list< const dg::Element* >& successorElementPtrs =
-			__solution_storage.getSuccessorElements(candidateElementPtr);
+			__solution_storage->getSuccessorElements(candidateElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
 		if ((**successorElementPtrIt)->getPriority() < brokenElementPriority)
@@ -582,7 +581,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 
 	// let's try even harder to find if this candidate is really appropriate for us
 	const list< const dg::Element* >& brokenElementSuccessorElementPtrs =
-			__solution_storage.getSuccessorElements(brokenElementPtr);
+			__solution_storage->getSuccessorElements(brokenElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
 		if ((**successorElementPtrIt)->getPriority() < brokenElementPriority)
@@ -593,7 +592,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		   terms of satisfying elements, the version won't be accepted as a
 		   resolution */
 		const list< const dg::Element* >& successorElementSuccessorElementPtrs =
-				__solution_storage.getSuccessorElements(*successorElementPtrIt);
+				__solution_storage->getSuccessorElements(*successorElementPtrIt);
 
 		bool isMoreWide = false;
 		FORIT(elementPtrIt, successorElementSuccessorElementPtrs)
@@ -636,7 +635,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 	}
 
 	const forward_list< const dg::Element* >& conflictingElementPtrs =
-			__solution_storage.getConflictingElements(versionElementPtr);
+			__solution_storage->getConflictingElements(versionElementPtr);
 	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
 	{
 		if (*conflictingElementPtrIt == versionElementPtr)
@@ -660,12 +659,12 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 		const Solution& solution, const dg::Element* brokenElementPtr)
 {
 	const list< const dg::Element* >& successorElementPtrs =
-			__solution_storage.getSuccessorElements(brokenElementPtr);
+			__solution_storage->getSuccessorElements(brokenElementPtr);
 	// install one of versions package needs
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
 		const dg::Element* conflictingElementPtr;
-		if (__solution_storage.simulateSetPackageEntry(solution, *successorElementPtrIt, &conflictingElementPtr))
+		if (__solution_storage->simulateSetPackageEntry(solution, *successorElementPtrIt, &conflictingElementPtr))
 		{
 			unique_ptr< Action > action(new Action);
 			action->oldElementPtr = conflictingElementPtr;
@@ -716,11 +715,11 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		{
 			// non-version vertex - unsatisfied one
 			const list< const dg::Element* >& predecessors =
-					__solution_storage.getPredecessorElements(*elementPtrIt);
+					__solution_storage->getPredecessorElements(*elementPtrIt);
 			FORIT(predecessorIt, predecessors)
 			{
 				const list< const dg::Element* >& affectedVersionElements =
-						__solution_storage.getPredecessorElements(*predecessorIt);
+						__solution_storage->getPredecessorElements(*predecessorIt);
 				FORIT(affectedVersionElementIt, affectedVersionElements)
 				{
 					if (solution.getPackageEntry(*affectedVersionElementIt))
@@ -769,11 +768,11 @@ void NativeResolverImpl::__validate_element(
 		Solution& solution, const dg::Element* elementPtr)
 {
 	const list< const dg::Element* >& successorElementPtrs =
-			__solution_storage.getSuccessorElements(elementPtr);
+			__solution_storage->getSuccessorElements(elementPtr);
 	forward_list< const dg::Element* > brokenSuccessors;
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		if (!__solution_storage.verifyElement(solution, *successorElementPtrIt))
+		if (!__solution_storage->verifyElement(solution, *successorElementPtrIt))
 		{
 			brokenSuccessors.push_front(*successorElementPtrIt);
 		}
@@ -782,7 +781,7 @@ void NativeResolverImpl::__validate_element(
 	{
 		PackageEntry packageEntry = *solution.getPackageEntry(elementPtr);
 		packageEntry.brokenSuccessors.swap(brokenSuccessors);
-		__solution_storage.setPackageEntry(solution, elementPtr,
+		__solution_storage->setPackageEntry(solution, elementPtr,
 				std::move(packageEntry), NULL);
 	}
 }
@@ -802,10 +801,10 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 	FORIT(elementPtrIt, elementPtrs)
 	{
 		const list< const dg::Element* >& successorElementPtrs =
-				__solution_storage.getSuccessorElements(*elementPtrIt);
+				__solution_storage->getSuccessorElements(*elementPtrIt);
 		FORIT(successorElementPtrIt, successorElementPtrs)
 		{
-			if (!__solution_storage.verifyElement(solution, *successorElementPtrIt))
+			if (!__solution_storage->verifyElement(solution, *successorElementPtrIt))
 			{
 				fatal("internal error: final solution check failed: solution '%u', version '%s', problem '%s'",
 						solution.id, (**elementPtrIt)->toString().c_str(),
@@ -823,13 +822,13 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 	if (oldElementPtr)
 	{ // invalidate those which depend on the old element
 		const list< const dg::Element* >& predecessors =
-				__solution_storage.getPredecessorElements(oldElementPtr);
+				__solution_storage->getPredecessorElements(oldElementPtr);
 		FORIT(predecessorElementPtrIt, predecessors)
 		{
-			if (!__solution_storage.verifyElement(solution, *predecessorElementPtrIt))
+			if (!__solution_storage->verifyElement(solution, *predecessorElementPtrIt))
 			{
 				const list< const dg::Element* >& dependentVersionElementPtrs =
-						__solution_storage.getPredecessorElements(*predecessorElementPtrIt);
+						__solution_storage->getPredecessorElements(*predecessorElementPtrIt);
 				FORIT(versionElementPtrIt, dependentVersionElementPtrs)
 				{
 					auto packageEntryPtr = solution.getPackageEntry(*versionElementPtrIt);
@@ -842,7 +841,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 					// present, predecessorElementPtr was not broken
 					PackageEntry packageEntry = *packageEntryPtr;
 					packageEntry.brokenSuccessors.push_front(*predecessorElementPtrIt);
-					__solution_storage.setPackageEntry(solution, *versionElementPtrIt,
+					__solution_storage->setPackageEntry(solution, *versionElementPtrIt,
 							std::move(packageEntry), NULL);
 				}
 			}
@@ -850,11 +849,11 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 	}
 	{ // validate those which depend on the new element
 		const list< const dg::Element* >& predecessors =
-				__solution_storage.getPredecessorElements(newElementPtr);
+				__solution_storage->getPredecessorElements(newElementPtr);
 		FORIT(predecessorElementPtrIt, predecessors)
 		{
 			const list< const dg::Element* >& dependentVersionElementPtrs =
-					__solution_storage.getPredecessorElements(*predecessorElementPtrIt);
+					__solution_storage->getPredecessorElements(*predecessorElementPtrIt);
 			FORIT(versionElementPtrIt, dependentVersionElementPtrs)
 			{
 				auto packageEntryPtr = solution.getPackageEntry(*versionElementPtrIt);
@@ -868,7 +867,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 					{
 						PackageEntry packageEntry = *packageEntryPtr;
 						packageEntry.brokenSuccessors.remove(*predecessorElementPtrIt);
-						__solution_storage.setPackageEntry(solution, *versionElementPtrIt,
+						__solution_storage->setPackageEntry(solution, *versionElementPtrIt,
 								std::move(packageEntry), NULL);
 						break;
 					}
@@ -939,7 +938,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	__decision_fail_tree.clear();
 
 	shared_ptr< Solution > initialSolution(new Solution);
-	__solution_storage.prepareForResolving(*initialSolution, __old_packages, __initial_packages);
+	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
+	__solution_storage->prepareForResolving(*initialSolution, __old_packages, __initial_packages);
 	__initial_validate_pass(*initialSolution);
 
 	list< shared_ptr< Solution > > solutions = { initialSolution };
@@ -1003,7 +1003,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 				if (possibleActions.empty() && !__any_solution_was_found)
 				{
-					__decision_fail_tree.addFailedSolution(__solution_storage,
+					__decision_fail_tree.addFailedSolution(*__solution_storage,
 							*currentSolution, ourIntroducedBy);
 				}
 				else
