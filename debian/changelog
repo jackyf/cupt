@@ -65,6 +65,8 @@ cupt2 (2.0.0~beta1~) UNRELEASED; urgency=low
   * debian:
     - copyright:
       - Updated copyright years.
+    - control:
+      - Updated the git branch in the Vcs-Browser link.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
 
