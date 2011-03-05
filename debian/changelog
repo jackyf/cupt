@@ -10,6 +10,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
       - Added an ability to specify additional package expressions and restart
         the solving process (choice 'a'). (Closes: #605416)
       - Treat downgrades as dangerous actions.
+      - Ask for the confirmation for dangerous actions only if user has
+        accepted the solution.
   * lib:
     - system/resolver:
       - New result type 'Offer'.

@@ -457,41 +457,25 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
 Resolver::UserAnswer::Type askUserAboutSolution(
 		const Config& config, bool isDangerous, bool& addArgumentsFlag)
 {
-	static const string confirmationForDangerousAction = __("Yes, do as I say!");
-	string question;
-	if (isDangerous)
-	{
-		question = sf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, 'a' to add arguments, anything else to discard this solution:\n"),
-				confirmationForDangerousAction.c_str());
-	}
-	else
-	{
-		question = __("Do you want to continue? [y/N/q/a] ");
-	}
-	string positiveAnswer = isDangerous ? confirmationForDangerousAction : "y";
-
-	cout << question;
 	string answer;
-	bool interactive;
 
 	if (config.getBool("cupt::console::assume-yes"))
 	{
-		interactive = false;
-		answer = "y";
+		answer = isDangerous ? "q" : "y";
+		if (isDangerous)
+		{
+			cout << __("Didn't confirm dangerous actions.") << endl;
+		}
 	}
 	else
 	{
-		interactive = true;
+		ask:
+		cout << __("Do you want to continue? [y/N/q/a] ");
 		std::getline(std::cin, answer);
-	}
-
-	if (!std::cin)
-	{
-		return Resolver::UserAnswer::Abandon;
-	}
-
-	if (!isDangerous)
-	{
+		if (!std::cin)
+		{
+			return Resolver::UserAnswer::Abandon;
+		}
 		FORIT(it, answer)
 		{
 			*it = std::tolower(*it); // lowercasing
@@ -499,8 +483,19 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	}
 
 	// deciding
-	if (answer == positiveAnswer)
+	if (answer == "y")
 	{
+		if (isDangerous)
+		{
+			const string confirmationForDangerousAction = __("Yes, do as I say!");
+			cout << sf(__("Dangerous actions selected. Type '%s' if you want to continue, or anything else to go back:"),
+					confirmationForDangerousAction.c_str()) << endl;
+			std::getline(std::cin, answer);
+			if (answer != confirmationForDangerousAction)
+			{
+				goto ask;
+			}
+		}
 		return Resolver::UserAnswer::Accept;
 	}
 	else if (answer == "q")
@@ -512,16 +507,11 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 		addArgumentsFlag = true;
 		return Resolver::UserAnswer::Abandon;
 	}
-	else if (interactive)
+	else
 	{
 		// user haven't chosen this solution, try next one
 		cout << __("Resolving further... ") << endl;
 		return Resolver::UserAnswer::Decline;
-	}
-	else
-	{
-		// non-interactive, abandon immediately
-		return Resolver::UserAnswer::Abandon;
 	}
 }
 
