@@ -22,7 +22,8 @@
 namespace cupt {
 namespace internal {
 
-string DecisionFailTree::__fail_leaf_to_string(const __fail_leaf_t& failLeaf)
+string DecisionFailTree::__fail_leaf_to_string(const __fail_leaf_t& failLeaf,
+		size_t startLevel)
 {
 	auto insertedElementPtrToString = [](const dg::Element* elementPtr)
 	{
@@ -42,7 +43,7 @@ string DecisionFailTree::__fail_leaf_to_string(const __fail_leaf_t& failLeaf)
 	string result;
 	FORIT(it, failLeaf)
 	{
-		result.append(it->level * 2, ' ');
+		result.append((startLevel + it->level) * 2, ' ');
 		auto mainPart = (*it->introducedBy.brokenElementPtr)->
 				getReason(**it->introducedBy.versionElementPtr)->toString();
 		result.append(std::move(mainPart));
@@ -62,7 +63,7 @@ string DecisionFailTree::toString() const
 		{
 			fatal("internal error: no fail information in the leaf node");
 		}
-		return __fail_leaf_to_string(*__fail_leaf_ptr);
+		return __fail_leaf_to_string(*__fail_leaf_ptr, 0);
 	}
 	else
 	{
@@ -72,6 +73,27 @@ string DecisionFailTree::toString() const
 			parts.push_back((*childIt)->toString());
 		}
 		return join("\n", parts);
+	}
+}
+
+void DecisionFailTree::debugPrint(size_t level) const
+{
+	auto out = [&level](const string& message)
+	{
+		debug("%s%s", string(level*2, ' ').c_str(), message.c_str());
+	};
+	if (level != 0)
+	{
+		out(string("inserted element: ") + (*__inserted_element_ptr)->toString());
+		out(string("is dominant: ") + (__is_dominant ? "true" : "false"));
+	}
+	if (__fail_leaf_ptr)
+	{
+		out(string("leaf:\n") + __fail_leaf_to_string(*__fail_leaf_ptr, level+2).c_str());
+	}
+	FORIT(childIt, __children)
+	{
+		(*childIt)->debugPrint(level+1);
 	}
 }
 

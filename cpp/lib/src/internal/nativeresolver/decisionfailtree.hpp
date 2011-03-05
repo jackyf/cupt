@@ -42,7 +42,7 @@ class DecisionFailTree
 	unique_ptr< const __fail_leaf_t > __fail_leaf_ptr; // may be NULL
 	bool __is_dominant;
 
-	static string __fail_leaf_to_string(const __fail_leaf_t&);
+	static string __fail_leaf_to_string(const __fail_leaf_t&, size_t);
 	static unique_ptr< DecisionFailTree::__fail_leaf_t > __get_fail_leaf(
 			const SolutionStorage& solutionStorage, const Solution& solution,
 			const PackageEntry::IntroducedBy&);
@@ -52,6 +52,7 @@ class DecisionFailTree
 			vector< const dg::Element* >::const_iterator);
  public:
 	string toString() const;
+	void debugPrint(size_t) const;
 	void addFailedSolution(const SolutionStorage&, const Solution&,
 			const PackageEntry::IntroducedBy&);
 	void clear();
