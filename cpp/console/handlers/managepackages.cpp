@@ -639,6 +639,10 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			printDownloadSizes(downloadSizesPreview);
 			printUnpackedSizeChanges(unpackedSizesPreview);
 		}
+		if (!actionsPreview->groups[WA::Downgrade].empty())
+		{
+			isDangerousAction = true;
+		}
 
 		return askUserAboutSolution(*config, isDangerousAction, addArgumentsFlag);
 	};
