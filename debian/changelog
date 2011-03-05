@@ -197,7 +197,7 @@ cupt2 (2.0.0~alpha2) UNRELEASED; urgency=low
 
 cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
 
-  * Re-implemented in C++ (and subset of C++0x).
+  * Re-implemented in C++ (and subset of C++0x). (Closes: #605320)
 
   * console:
     - The '--installed-only' option now works under 'shell' command.
@@ -209,7 +209,7 @@ cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
       - Implemented issuing detailed error messages when facing syntax errors
         in configuration files.
     - cache:
-      - Implemented refusing expired Release files.
+      - Implemented refusing expired Release files. (Closes: #604543)
   * downloadmethods:
     - wget:
       - Implemented.
