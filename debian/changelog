@@ -62,6 +62,9 @@ cupt2 (2.0.0~beta1~) UNRELEASED; urgency=low
   * downloadmethods:
     - wget:
       - Fixed passing environment variables to wget process.
+  * debian:
+    - copyright:
+      - Updated copyright years.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
 
