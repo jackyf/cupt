@@ -538,6 +538,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
+	packageEntry.introducedBy = action.introducedBy;
 	if (action.reason)
 	{
 		packageEntry.reasons.initIfEmpty();
@@ -545,6 +546,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	}
 	__solution_storage.setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr);
+	solution.insertedElementPtrs.push_back(action.newElementPtr);
 	__validate_changed_package(solution, action.oldElementPtr, action.newElementPtr);
 
 	solution.pendingAction.reset();
@@ -754,21 +756,6 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	return userAnswer;
 }
 
-bool NativeResolverImpl::__verify_element(const Solution& solution,
-		const dg::Element* elementPtr)
-{
-	const list< const dg::Element* >& successorElementPtrs =
-			__solution_storage.getSuccessorElements(elementPtr);
-	FORIT(elementPtrIt, successorElementPtrs)
-	{
-		if (solution.getPackageEntry(*elementPtrIt))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
 		const Solution& solution, const dg::Element* versionElementPtr,
 		const dg::Element* brokenElementPtr, bool debugging)
@@ -786,7 +773,7 @@ void NativeResolverImpl::__validate_element(
 	forward_list< const dg::Element* > brokenSuccessors;
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		if (!__verify_element(solution, *successorElementPtrIt))
+		if (!__solution_storage.verifyElement(solution, *successorElementPtrIt))
 		{
 			brokenSuccessors.push_front(*successorElementPtrIt);
 		}
@@ -818,7 +805,7 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 				__solution_storage.getSuccessorElements(*elementPtrIt);
 		FORIT(successorElementPtrIt, successorElementPtrs)
 		{
-			if (!__verify_element(solution, *successorElementPtrIt))
+			if (!__solution_storage.verifyElement(solution, *successorElementPtrIt))
 			{
 				fatal("internal error: final solution check failed: solution '%u', version '%s', problem '%s'",
 						solution.id, (**elementPtrIt)->toString().c_str(),
@@ -839,7 +826,7 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 				__solution_storage.getPredecessorElements(oldElementPtr);
 		FORIT(predecessorElementPtrIt, predecessors)
 		{
-			if (!__verify_element(solution, *predecessorElementPtrIt))
+			if (!__solution_storage.verifyElement(solution, *predecessorElementPtrIt))
 			{
 				const list< const dg::Element* >& dependentVersionElementPtrs =
 						__solution_storage.getPredecessorElements(*predecessorElementPtrIt);
@@ -948,6 +935,9 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	}
 	__require_strict_relation_expressions();
 
+	__any_solution_was_found = false;
+	__decision_fail_tree.clear();
+
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.prepareForResolving(*initialSolution, __old_packages, __initial_packages);
 	__initial_validate_pass(*initialSolution);
@@ -1006,6 +996,25 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			__generate_possible_actions(&possibleActions, *currentSolution,
 					versionElementPtr, brokenElementPtr, debugging);
 
+			{
+				PackageEntry::IntroducedBy ourIntroducedBy;
+				ourIntroducedBy.versionElementPtr = versionElementPtr;
+				ourIntroducedBy.brokenElementPtr = brokenElementPtr;
+
+				if (possibleActions.empty() && !__any_solution_was_found)
+				{
+					__decision_fail_tree.addFailedSolution(__solution_storage,
+							*currentSolution, ourIntroducedBy);
+				}
+				else
+				{
+					FORIT(actionIt, possibleActions)
+					{
+						(*actionIt)->introducedBy = ourIntroducedBy;
+					}
+				}
+			}
+
 			if (trackReasons)
 			{
 				// setting a reason
@@ -1045,6 +1054,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				__clean_automatically_installed(*currentSolution);
 
 				__final_verify_solution(*currentSolution);
+			}
+			if (!__any_solution_was_found)
+			{
+				__any_solution_was_found = true;
+				__decision_fail_tree.clear(); // no need to store this tree anymore
 			}
 
 			// resolver can refuse the solution
@@ -1095,7 +1109,12 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			}
 		}
 	}
-	// no solutions pending, we have a great fail
+	if (!__any_solution_was_found)
+	{
+		// no solutions pending, we have a great fail
+		fatal("unable to resolve dependencies, because of:\n\n%s",
+				__decision_fail_tree.toString().c_str());
+	}
 	return false;
 }
 

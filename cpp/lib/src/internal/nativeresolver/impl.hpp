@@ -26,6 +26,7 @@
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/score.hpp>
+#include <internal/nativeresolver/decisionfailtree.hpp>
 
 namespace cupt {
 namespace internal {
@@ -54,6 +55,7 @@ class NativeResolverImpl
 		const dg::Element* newElementPtr; // many not be NULL
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
+		PackageEntry::IntroducedBy introducedBy;
 	};
 
 	shared_ptr< const Config > __config;
@@ -66,6 +68,9 @@ class NativeResolverImpl
 	map< string, dg::InitialPackageEntry > __initial_packages;
 	RelationLine __satisfy_relation_expressions;
 	RelationLine __unsatisfy_relation_expressions;
+
+	DecisionFailTree __decision_fail_tree;
+	bool __any_solution_was_found;
 
 	void __import_installed_versions();
 	bool __prepare_version_no_stick(const shared_ptr< const BinaryVersion >&,
@@ -99,7 +104,6 @@ class NativeResolverImpl
 	Resolver::UserAnswer::Type __propose_solution(
 			const Solution&, Resolver::CallbackType, bool);
 
-	bool __verify_element(const Solution&, const dg::Element*);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&,
 			const dg::Element*, const dg::Element*, bool);
 

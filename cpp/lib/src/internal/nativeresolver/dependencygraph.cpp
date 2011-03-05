@@ -87,6 +87,19 @@ const string& VersionVertex::getPackageName() const
 	return __related_element_ptrs_it->first;
 }
 
+string VersionVertex::toLocalizedString() const
+{
+	const string& packageName = getPackageName();
+	if (version)
+	{
+		return __("installed ") + packageName + ' ' + version->versionString;
+	}
+	else
+	{
+		return __("removed ") + packageName;
+	}
+}
+
 typedef BinaryVersion::RelationTypes::Type RelationType;
 
 struct RelationExpressionVertex: public BasicVertex

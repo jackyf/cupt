@@ -41,9 +41,23 @@ using std::forward_list;
 
 struct PackageEntry
 {
+	struct IntroducedBy
+	{
+		const dg::Element* versionElementPtr;
+		const dg::Element* brokenElementPtr;
+
+		IntroducedBy() : versionElementPtr(NULL) {}
+		bool empty() const { return !versionElementPtr; }
+		bool operator<(const IntroducedBy& other) const
+		{
+			return memcmp(this, &other, sizeof(*this)) < 0;
+		}
+	};
+
 	bool sticked;
 	CopyPtr< vector< shared_ptr< const Resolver::Reason > > > reasons;
 	forward_list< const dg::Element* > brokenSuccessors;
+	IntroducedBy introducedBy;
 
 	PackageEntry();
 	PackageEntry(PackageEntry&&);
@@ -68,6 +82,7 @@ class Solution
 	bool finished;
 	ssize_t score;
 	std::unique_ptr< const void > pendingAction;
+	vector< const dg::Element* > insertedElementPtrs; // in time order
 
 	Solution();
 	Solution(const Solution&) = delete;
@@ -93,6 +108,7 @@ class SolutionStorage
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const list< const dg::Element* >& getSuccessorElements(const dg::Element*) const;
 	const list< const dg::Element* >& getPredecessorElements(const dg::Element*) const;
+	bool verifyElement(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself
 	static const forward_list< const dg::Element* >&

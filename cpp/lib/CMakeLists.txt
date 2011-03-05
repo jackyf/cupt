@@ -9,6 +9,7 @@ add_library(cupt2 SHARED
 	./src/internal/nativeresolver/solution.cpp
 	./src/internal/nativeresolver/score.cpp
 	./src/internal/nativeresolver/dependencygraph.cpp
+	./src/internal/nativeresolver/decisionfailtree.cpp
 	./src/internal/lock.cpp
 	./src/internal/cacheimpl.cpp
 	./src/internal/pininfo.cpp

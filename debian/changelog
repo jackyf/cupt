@@ -21,6 +21,8 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
       - New configurable score calculation system.
       - Do not additionally stick packages except of changed ones, it may hide
         some solution in very rare cases. Fixes a regression since 0.2.2.
+      - When no solutions were found, throw an error with a solution tree to
+        show why.
     - config:
       - Deleted option
         'cupt::resolver::synchronize-source-versions::exceptions'.

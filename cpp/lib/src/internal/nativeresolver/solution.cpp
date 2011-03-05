@@ -32,7 +32,7 @@ PackageEntry::PackageEntry()
 {}
 
 PackageEntry::PackageEntry(PackageEntry&& other)
-	: sticked(other.sticked), reasons(other.reasons)
+	: sticked(other.sticked), reasons(other.reasons), introducedBy(other.introducedBy)
 {
 	brokenSuccessors.swap(other.brokenSuccessors);
 }
@@ -41,6 +41,7 @@ PackageEntry& PackageEntry::operator=(PackageEntry&& other)
 {
 	sticked = other.sticked;
 	reasons = other.reasons;
+	introducedBy = other.introducedBy;
 	brokenSuccessors.swap(other.brokenSuccessors);
 	return *this;
 }
@@ -241,6 +242,21 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	{
 		initialSolution.__added_entries->push_back(*it);
 	}
+}
+
+bool SolutionStorage::verifyElement(const Solution& solution,
+		const dg::Element* elementPtr) const
+{
+	const list< const dg::Element* >& successorElementPtrs =
+			getSuccessorElements(elementPtr);
+	FORIT(elementPtrIt, successorElementPtrs)
+	{
+		if (solution.getPackageEntry(*elementPtrIt))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)

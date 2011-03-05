@@ -73,6 +73,7 @@ struct VersionVertex: public BasicVertex
 	string toString() const;
 	const forward_list< const Element* >* getRelatedElements() const;
 	const string& getPackageName() const;
+	string toLocalizedString() const;
 };
 typedef const VersionVertex* VersionElement;
 
