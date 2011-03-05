@@ -12,6 +12,7 @@ cupt2 (2.0.0~beta1~) UNRELEASED; urgency=low
       - Treat downgrades as dangerous actions.
       - Ask for the confirmation for dangerous actions only if user has
         accepted the solution.
+      - Added a help command.
   * lib:
     - system/resolver:
       - New result type 'Offer'.

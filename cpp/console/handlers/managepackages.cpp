@@ -470,7 +470,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	else
 	{
 		ask:
-		cout << __("Do you want to continue? [y/N/q/a] ");
+		cout << __("Do you want to continue? [y/N/q/a/?] ");
 		std::getline(std::cin, answer);
 		if (!std::cin)
 		{
@@ -506,6 +506,15 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	{
 		addArgumentsFlag = true;
 		return Resolver::UserAnswer::Abandon;
+	}
+	else if (answer == "?")
+	{
+		cout << __("y: accept the solution") << endl;
+		cout << __("n: reject the solution, try to find other ones") << endl;
+		cout << __("q: reject the solution and exit") << endl;
+		cout << __("a: specify an additional binary package expression") << endl;
+		cout << __("?: output this help") << endl << endl;
+		goto ask;
 	}
 	else
 	{
