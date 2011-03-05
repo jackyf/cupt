@@ -30,6 +30,7 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         show why.
       - 'resolve': fixed a wrong result when being called multiple times on
         the same object.
+      - 'resolve': added a warning about dropped solutions.
     - config:
       - Deleted option
         'cupt::resolver::synchronize-source-versions::exceptions'.

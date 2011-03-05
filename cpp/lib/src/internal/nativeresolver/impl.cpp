@@ -502,7 +502,7 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 }
 
 void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions,
-		size_t maxSolutionCount, bool debugging)
+		size_t maxSolutionCount, bool debugging, bool& thereWereDrops)
 {
 	// don't allow solution tree to grow unstoppably
 	while (solutions.size() > maxSolutionCount)
@@ -524,6 +524,12 @@ void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions,
 			__mydebug_wrapper(**worstSolutionIt, "dropped");
 		}
 		solutions.erase(worstSolutionIt);
+		if (!thereWereDrops)
+		{
+			thereWereDrops = true;
+			warn("some solutions were dropped, you may want to increase the value of the '%s' option",
+					"cupt::resolver::max-solution-count");
+		}
 	}
 }
 
@@ -927,6 +933,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	const bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
+	bool thereWereSolutionsDropped = false;
 
 	if (debugging)
 	{
@@ -1105,7 +1112,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			if (!possibleActions.empty())
 			{
 				// some new solutions were added
-				__erase_worst_solutions(solutions, maxSolutionCount, debugging);
+				__erase_worst_solutions(solutions, maxSolutionCount, debugging, thereWereSolutionsDropped);
 			}
 		}
 	}
