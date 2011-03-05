@@ -59,6 +59,9 @@ cupt2 (2.0.0~alpha4~) UNRELEASED; urgency=low
         This regression was introduced in 2.0.0~alpha1.
     - cache:
       - 'getPin': increased downgrade penalty in 5 times.
+  * downloadmethods:
+    - wget:
+      - Fixed passing environment variables to wget process.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
 

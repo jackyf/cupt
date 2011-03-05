@@ -195,9 +195,14 @@ class WgetMethod: public cupt::download::Method
 				else
 				{
 					// wget executor
-					vector< char* > envp;
 					vector< string > p; // temporary array to put parameters
 					{
+						p.push_back("env");
+						auto proxy = getAcquireSuboptionForUri(config, uri, "proxy");
+						if (!proxy.empty() && proxy != "DIRECT")
+						{
+							p.push_back(uri.getProtocol() + "_proxy=" + proxy);
+						}
 						p.push_back("wget"); // passed as a binary name, not parameter
 						p.push_back("--continue");
 						p.push_back(string("--tries=") + lexical_cast< string >(config->getInteger("acquire::retries")+1));
@@ -206,15 +211,9 @@ class WgetMethod: public cupt::download::Method
 						{
 							p.push_back(string("--limit-rate=") + lexical_cast< string >(maxSpeedLimit) + "k");
 						}
-						auto proxy = getAcquireSuboptionForUri(config, uri, "proxy");
 						if (proxy == "DIRECT")
 						{
 							p.push_back("--no-proxy");
-						}
-						else if (!proxy.empty())
-						{
-							auto argument = uri.getProtocol() + "_proxy=" + proxy;
-							envp.push_back(strdup(argument.c_str()));
 						}
 						if (uri.getProtocol() != "http" || !config->getBool("acquire::http::allow-redirects"))
 						{
@@ -235,7 +234,6 @@ class WgetMethod: public cupt::download::Method
 						params.push_back(strdup(it->c_str()));
 					}
 					params.push_back(NULL);
-					envp.push_back(NULL);
 
 					if (dup2(wgetErrorStream.getWriterFd(), STDOUT_FILENO) == -1) // redirecting stdout
 					{
@@ -245,7 +243,7 @@ class WgetMethod: public cupt::download::Method
 					{
 						fatal("unable to redirect wget error stream: dup2 failed: EEE");
 					}
-					execve("/usr/bin/wget", &params[0], &envp[0]);
+					execv("/usr/bin/env", &params[0]);
 					// if we are here, exec returned an error
 					fatal("unable to launch wget process: EEE");
 				}
