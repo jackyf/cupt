@@ -454,6 +454,77 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
 	}
 }
 
+Resolver::UserAnswer::Type askUserAboutSolution(
+		const Config& config, bool isDangerous, bool& addArgumentsFlag)
+{
+	static const string confirmationForDangerousAction = __("Yes, do as I say!");
+	string question;
+	if (isDangerous)
+	{
+		question = sf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, 'a' to add arguments, anything else to discard this solution:\n"),
+				confirmationForDangerousAction.c_str());
+	}
+	else
+	{
+		question = __("Do you want to continue? [y/N/q/a] ");
+	}
+	string positiveAnswer = isDangerous ? confirmationForDangerousAction : "y";
+
+	cout << question;
+	string answer;
+	bool interactive;
+
+	if (config.getBool("cupt::console::assume-yes"))
+	{
+		interactive = false;
+		answer = "y";
+	}
+	else
+	{
+		interactive = true;
+		std::getline(std::cin, answer);
+	}
+
+	if (!std::cin)
+	{
+		return Resolver::UserAnswer::Abandon;
+	}
+
+	if (!isDangerous)
+	{
+		FORIT(it, answer)
+		{
+			*it = std::tolower(*it); // lowercasing
+		}
+	}
+
+	// deciding
+	if (answer == positiveAnswer)
+	{
+		return Resolver::UserAnswer::Accept;
+	}
+	else if (answer == "q")
+	{
+		return Resolver::UserAnswer::Abandon;
+	}
+	else if (answer == "a")
+	{
+		addArgumentsFlag = true;
+		return Resolver::UserAnswer::Abandon;
+	}
+	else if (interactive)
+	{
+		// user haven't chosen this solution, try next one
+		cout << __("Resolving further... ") << endl;
+		return Resolver::UserAnswer::Decline;
+	}
+	else
+	{
+		// non-interactive, abandon immediately
+		return Resolver::UserAnswer::Abandon;
+	}
+}
+
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
 		bool showVersions, bool showSizeChanges, bool& addArgumentsFlag)
@@ -569,72 +640,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			printUnpackedSizeChanges(unpackedSizesPreview);
 		}
 
-		static const string confirmationForDangerousAction = __("Yes, do as I say!");
-		string question;
-		if (isDangerousAction)
-		{
-			question = sf(__("Dangerous actions selected. Type '%s' if you want to continue, 'q' to exit, 'a' to add arguments, anything else to discard this solution:\n"),
-					confirmationForDangerousAction.c_str());
-		}
-		else
-		{
-			question = __("Do you want to continue? [y/N/q/a] ");
-		}
-		string positiveAnswer = isDangerousAction ? confirmationForDangerousAction : "y";
-
-		cout << question;
-		string answer;
-		bool interactive;
-
-		if (config->getBool("cupt::console::assume-yes"))
-		{
-			interactive = false;
-			answer = "y";
-		}
-		else
-		{
-			interactive = true;
-			std::getline(std::cin, answer);
-		}
-
-		if (!std::cin)
-		{
-			return Resolver::UserAnswer::Abandon;
-		}
-
-		if (!isDangerousAction)
-		{
-			FORIT(it, answer)
-			{
-				*it = std::tolower(*it); // lowercasing
-			}
-		}
-
-		// deciding
-		if (answer == positiveAnswer)
-		{
-			return Resolver::UserAnswer::Accept;
-		}
-		else if (answer == "q")
-		{
-			return Resolver::UserAnswer::Abandon;
-		}
-		else if (answer == "a")
-		{
-			addArgumentsFlag = true;
-			return Resolver::UserAnswer::Abandon;
-		}
-		else if (interactive)
-		{
-			// user haven't chosen this solution, try next one
-			cout << __("Resolving further... ") << endl;
-			return Resolver::UserAnswer::Decline;
-		}
-		else
-		{
-			// non-interactive, abandon immediately
-			return Resolver::UserAnswer::Abandon;
-		}
+		return askUserAboutSolution(*config, isDangerousAction, addArgumentsFlag);
 	};
 
 	return result;
