@@ -1,0 +1,19 @@
+2.0 (beta1)
+ - Re-implemented in C++(0x).
+ - Added a support for multiple upstream tarballs in source packages.
+ - More descriptive error messages for errors in configuration files.
+ - Implemented refusing expired Release files.
+ - New wget-based download method for http(s)/ftp.
+ - Implemented dpkg action priority heuristics to reduce the time from the
+   package state is changed till the package state is final.
+ - New configurable score calculation system in the native resolver
+   (new option group 'cupt::resolver::tune-score::*').
+ - When no solutions were found, throw an error with a solution tree(s) to
+   show why.
+ - Automatically determine packages which need an indirect upgrade, making the
+   option 'cupt::worker::allow-indirect-upgrade' unneeded.
+ - Added an ability to specify additional package expressions and restart the
+   solving process in the action preview prompt (new choice 'a').
+ - Don't use randomization anymore for implementing
+   'cupt::worker::archives-space-limit' option. Deleted option
+   'cupt::worker::archives-space-limit::tries'.
