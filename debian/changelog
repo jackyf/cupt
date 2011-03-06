@@ -1,4 +1,4 @@
-cupt2 (2.0.0~beta1~) UNRELEASED; urgency=low
+cupt2 (2.0.0~beta1) UNRELEASED; urgency=low
 
   * console:
     - shell:
@@ -71,7 +71,7 @@ cupt2 (2.0.0~beta1~) UNRELEASED; urgency=low
     - debian/cupt-experimental.docs:
       - Added to install 'NEWS' file.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 07 Jan 2011 10:05:23 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 06 Mar 2011 15:22:47 +0200
 
 cupt2 (2.0.0~alpha3) UNRELEASED; urgency=low
 
