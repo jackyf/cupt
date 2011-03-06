@@ -22,8 +22,8 @@
 namespace cupt {
 namespace internal {
 
-string DecisionFailTree::__fail_leaf_to_string(const __fail_leaf_t& failLeaf,
-		size_t startLevel)
+string DecisionFailTree::__decisions_to_string(
+		const vector< Decision >& decisions)
 {
 	auto insertedElementPtrToString = [](const dg::Element* elementPtr)
 	{
@@ -41,9 +41,9 @@ string DecisionFailTree::__fail_leaf_to_string(const __fail_leaf_t& failLeaf,
 	};
 
 	string result;
-	FORIT(it, failLeaf)
+	FORIT(it, decisions)
 	{
-		result.append((startLevel + it->level) * 2, ' ');
+		result.append(it->level * 2, ' ');
 		auto mainPart = (*it->introducedBy.brokenElementPtr)->
 				getReason(**it->introducedBy.versionElementPtr)->toString();
 		result.append(std::move(mainPart));
@@ -56,53 +56,20 @@ string DecisionFailTree::__fail_leaf_to_string(const __fail_leaf_t& failLeaf,
 
 string DecisionFailTree::toString() const
 {
-	if (__children.empty())
+	string result;
+	FORIT(childIt, __fail_items)
 	{
-		// this should be a leaf node
-		if (!__fail_leaf_ptr)
-		{
-			fatal("internal error: no fail information in the leaf node");
-		}
-		return __fail_leaf_to_string(*__fail_leaf_ptr, 0);
+		result += __decisions_to_string(childIt->decisions);
+		result += "\n";
 	}
-	else
-	{
-		vector< string > parts;
-		FORIT(childIt, __children)
-		{
-			parts.push_back((*childIt)->toString());
-		}
-		return join("\n", parts);
-	}
+	return result;
 }
 
-void DecisionFailTree::debugPrint(size_t level) const
-{
-	auto out = [&level](const string& message)
-	{
-		debug("%s%s", string(level*2, ' ').c_str(), message.c_str());
-	};
-	if (level != 0)
-	{
-		out(string("inserted element: ") + (*__inserted_element_ptr)->toString());
-		out(string("is dominant: ") + (__is_dominant ? "true" : "false"));
-	}
-	if (__fail_leaf_ptr)
-	{
-		out(string("leaf:\n") + __fail_leaf_to_string(*__fail_leaf_ptr, level+2).c_str());
-	}
-	FORIT(childIt, __children)
-	{
-		(*childIt)->debugPrint(level+1);
-	}
-}
-
-unique_ptr< DecisionFailTree::__fail_leaf_t > DecisionFailTree::__get_fail_leaf(
+vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		const SolutionStorage& solutionStorage, const Solution& solution,
 		const PackageEntry::IntroducedBy& lastIntroducedBy)
 {
-	unique_ptr< DecisionFailTree::__fail_leaf_t > result(
-			new DecisionFailTree::__fail_leaf_t);
+	vector< Decision > result;
 
 	std::stack< Decision > chainStack;
 	auto queueItem = [&chainStack](
@@ -121,7 +88,7 @@ unique_ptr< DecisionFailTree::__fail_leaf_t > DecisionFailTree::__get_fail_leaf(
 		auto item = chainStack.top();
 		chainStack.pop();
 
-		result->push_back(item);
+		result.push_back(item);
 
 		const PackageEntry::IntroducedBy& introducedBy = item.introducedBy;
 
@@ -161,11 +128,11 @@ unique_ptr< DecisionFailTree::__fail_leaf_t > DecisionFailTree::__get_fail_leaf(
 	return std::move(result);
 }
 
-// fail leaf is dominant if a diversed element didn't cause final breakage
-bool DecisionFailTree::__is_fail_leaf_dominant(
-		const __fail_leaf_t& failLeaf, const dg::Element* diversedElementPtr)
+// fail item is dominant if a diversed element didn't cause final breakage
+bool DecisionFailTree::__is_dominant(const FailItem& failItem, size_t offset)
 {
-	FORIT(it, failLeaf)
+	auto diversedElementPtr = failItem.insertedElementPtrs[offset];
+	FORIT(it, failItem.decisions)
 	{
 		if (it->introducedBy.versionElementPtr == diversedElementPtr)
 		{
@@ -175,75 +142,58 @@ bool DecisionFailTree::__is_fail_leaf_dominant(
 	return true;
 }
 
-void DecisionFailTree::__insert_fail_leaf(
-		unique_ptr< const __fail_leaf_t >&& failLeafPtr, bool isFirstDominant,
-		vector< const dg::Element* >::const_iterator insertedElementsIt,
-		vector< const dg::Element* >::const_iterator insertedElementsEnd)
-{
-	__is_dominant = isFirstDominant;
-	__inserted_element_ptr = *insertedElementsIt;
-
-	++insertedElementsIt;
-	if (insertedElementsIt != insertedElementsEnd)
-	{
-		__children.push_front(unique_ptr< DecisionFailTree >(new DecisionFailTree));
-		(*__children.begin())->__insert_fail_leaf(std::move(failLeafPtr),
-				__is_fail_leaf_dominant(*failLeafPtr, *insertedElementsIt),
-				insertedElementsIt, insertedElementsEnd);
-	}
-	else
-	{
-		__fail_leaf_ptr = std::move(failLeafPtr);
-	}
-}
-
 void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		const Solution& solution, const PackageEntry::IntroducedBy& lastIntroducedBy)
 {
 	// first, find the diverse point
-	auto insertedElementsIt = solution.insertedElementPtrs.begin();
-	DecisionFailTree* currentTree = this;
+	auto getDiverseOffset = [](const vector< const dg::Element* >& left,
+			const vector< const dg::Element* >& right) -> size_t
 	{
-		diverse_point_cycle:
-		FORIT(childIt, currentTree->__children)
+		size_t offset = 0;
+		while (left[offset] == right[offset])
 		{
-			if ((*childIt)->__inserted_element_ptr == *insertedElementsIt)
+			++offset;
+		}
+		return offset;
+	};
+
+	FailItem failItem;
+	failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
+	failItem.insertedElementPtrs = solution.insertedElementPtrs;
+	bool willBeAdded = true;
+
+	auto it = __fail_items.begin();
+	while (it != __fail_items.end())
+	{
+		auto diverseOffset = getDiverseOffset(it->insertedElementPtrs, failItem.insertedElementPtrs);
+		auto existingIsDominant = __is_dominant(*it, diverseOffset);
+		if (existingIsDominant)
+		{
+			willBeAdded = false;
+			++it;
+		}
+		else
+		{
+			if (__is_dominant(failItem, diverseOffset))
 			{
-				currentTree = childIt->get();
-				++insertedElementsIt;
-				goto diverse_point_cycle;
+				it = __fail_items.erase(it);
+			}
+			else
+			{
+				++it;
 			}
 		}
 	}
 
-	auto failLeafPtr = __get_fail_leaf(solutionStorage, solution, lastIntroducedBy);
-	bool isDominant = __is_fail_leaf_dominant(*failLeafPtr, *insertedElementsIt);
-
-	bool noDominantsPresent = true;
-	FORIT(childIt, currentTree->__children)
+	if (willBeAdded)
 	{
-		if ((*childIt)->__is_dominant)
-		{
-			noDominantsPresent = false;
-			break;
-		}
-	}
-
-	if (noDominantsPresent) // dominants are "equal" between
-	{
-		if (isDominant)
-		{
-			currentTree->__children.clear(); // eat recessives
-		}
-		currentTree->__insert_fail_leaf(std::move(failLeafPtr), isDominant,
-				insertedElementsIt, solution.insertedElementPtrs.end());
+		__fail_items.push_back(std::move(failItem));
 	}
 }
 
 void DecisionFailTree::clear()
 {
-	__fail_leaf_ptr.reset();
-	__children.clear();
+	__fail_items.clear();
 }
 
 }

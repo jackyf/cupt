@@ -18,7 +18,7 @@
 #ifndef CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
 #define CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
 
-#include <forward_list>
+#include <list>
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/graph.hpp>
@@ -36,23 +36,20 @@ class DecisionFailTree
 		size_t level;
 		const dg::Element* insertedElementPtr;
 	};
-	typedef vector< Decision > __fail_leaf_t;
-	forward_list< unique_ptr< DecisionFailTree > > __children;
-	const dg::Element* __inserted_element_ptr;
-	unique_ptr< const __fail_leaf_t > __fail_leaf_ptr; // may be NULL
-	bool __is_dominant;
+	struct FailItem
+	{
+		vector< Decision > decisions;
+		vector< const dg::Element* > insertedElementPtrs;
+	};
+	list< FailItem > __fail_items;
 
-	static string __fail_leaf_to_string(const __fail_leaf_t&, size_t);
-	static unique_ptr< DecisionFailTree::__fail_leaf_t > __get_fail_leaf(
+	static string __decisions_to_string(const vector< Decision >&);
+	static vector< Decision > __get_decisions(
 			const SolutionStorage& solutionStorage, const Solution& solution,
 			const PackageEntry::IntroducedBy&);
-	static bool __is_fail_leaf_dominant(const __fail_leaf_t&, const dg::Element*);
-	void __insert_fail_leaf(unique_ptr< const __fail_leaf_t >&&, bool,
-			vector< const dg::Element* >::const_iterator,
-			vector< const dg::Element* >::const_iterator);
+	static bool __is_dominant(const FailItem&, size_t);
  public:
 	string toString() const;
-	void debugPrint(size_t) const;
 	void addFailedSolution(const SolutionStorage&, const Solution&,
 			const PackageEntry::IntroducedBy&);
 	void clear();

@@ -1119,10 +1119,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	if (!__any_solution_was_found)
 	{
 		// no solutions pending, we have a great fail
-		if (debugging)
-		{
-			__decision_fail_tree.debugPrint(0);
-		}
 		fatal("unable to resolve dependencies, because of:\n\n%s",
 				__decision_fail_tree.toString().c_str());
 	}
