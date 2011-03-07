@@ -820,7 +820,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			}
 		}
 
-		if (synchronizeLevel)
+		if (synchronizeLevel && !version->isInstalled())
 		{
 			processSynchronizations(version, vertexPtr, synchronizeLevel);
 		}
