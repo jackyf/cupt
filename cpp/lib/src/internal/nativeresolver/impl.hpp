@@ -79,7 +79,8 @@ class NativeResolverImpl
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;
-	void __pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
+	void __pre_apply_actions_to_solution_tree(
+			std::function< void (const shared_ptr< Solution >&) > callback,
 			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
 
 	void __initial_validate_pass(Solution&);

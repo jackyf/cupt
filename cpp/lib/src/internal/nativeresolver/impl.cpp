@@ -168,36 +168,34 @@ void NativeResolverImpl::upgrade()
 	}
 }
 
-typedef list< shared_ptr< Solution > >::iterator SolutionListIterator;
-typedef std::function< SolutionListIterator (list< shared_ptr< Solution > >&) > SolutionChooser;
+struct SolutionScoreLess
+{
+	bool operator()(const shared_ptr< Solution >& left,
+			const shared_ptr< Solution >& right) const
+	{
+		if (left->score < right->score)
+		{
+			return true;
+		}
+		if (left->score > right->score)
+		{
+			return false;
+		}
+		return left->id > right->id;
+	}
+};
+typedef set< shared_ptr< Solution >, SolutionScoreLess > SolutionContainer;
+typedef std::function< SolutionContainer::iterator (SolutionContainer&) > SolutionChooser;
 
-SolutionListIterator __fair_chooser(list< shared_ptr< Solution > >& solutions)
+SolutionContainer::iterator __fair_chooser(SolutionContainer& solutions)
 {
 	// choose the solution with maximum score
-	auto result = solutions.begin();
-
-	auto it = result;
-	++it;
-
-	for (; it != solutions.end(); ++it)
-	{
-		if (! *it)
-		{
-			fatal("internal error: an empty solution");
-		}
-		if ((*result)->score < (*it)->score)
-		{
-			result = it;
-		}
-	}
-
-	return result;
+	return --solutions.end();
 }
 
-SolutionListIterator __full_chooser(list< shared_ptr< Solution > >& solutions)
+SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 {
 	// defer the decision until all solutions are built
-
 	FORIT(solutionIt, solutions)
 	{
 		if (! (*solutionIt)->finished)
@@ -478,7 +476,8 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 	}
 }
 
-void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< Solution > >& solutions,
+void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
+		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
 	// sort them by "rank", from more good to more bad
@@ -495,31 +494,21 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(list< shared_ptr< 
 		// clone the current stack to form a new one
 		auto clonedSolution = __solution_storage->cloneSolution(currentSolution);
 
-		solutions.push_back(clonedSolution);
-
 		// apply the solution
 		__pre_apply_action(*currentSolution, *clonedSolution, std::move(*actionIt));
+
+		callback(clonedSolution);
 	}
 }
 
-void __erase_worst_solutions(list< shared_ptr< Solution > >& solutions,
+void __erase_worst_solutions(SolutionContainer& solutions,
 		size_t maxSolutionCount, bool debugging, bool& thereWereDrops)
 {
 	// don't allow solution tree to grow unstoppably
 	while (solutions.size() > maxSolutionCount)
 	{
-		// find the worst solution and drop it
+		// drop the worst solution
 		auto worstSolutionIt = solutions.begin();
-		auto solutionIt = solutions.begin();
-		++solutionIt;
-		for (; solutionIt != solutions.end(); ++solutionIt)
-		{
-			if ((*solutionIt)->score < (*worstSolutionIt)->score)
-			{
-				worstSolutionIt = solutionIt;
-			}
-		}
-
 		if (debugging)
 		{
 			__mydebug_wrapper(**worstSolutionIt, "dropped");
@@ -950,7 +939,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	__solution_storage->prepareForResolving(*initialSolution, __old_packages, __initial_packages);
 	__initial_validate_pass(*initialSolution);
 
-	list< shared_ptr< Solution > > solutions = { initialSolution };
+	SolutionContainer solutions = { initialSolution };
 
 	// for each package entry 'count' will contain the number of failures
 	// during processing these packages
@@ -963,8 +952,13 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		vector< unique_ptr< Action > > possibleActions;
 
 		// choosing the solution to process
-		auto currentSolutionIt = solutionChooser(solutions);
-		const shared_ptr< Solution >& currentSolution = *currentSolutionIt;
+		shared_ptr< Solution > currentSolution;
+		{
+			auto currentSolutionIt = solutionChooser(solutions);
+			currentSolution = *currentSolutionIt;
+			solutions.erase(currentSolutionIt);
+		}
+
 		if (currentSolution->pendingAction)
 		{
 			currentSolution->prepare();
@@ -1070,11 +1064,13 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			}
 
 			// resolver can refuse the solution
-			auto newSelectedSolution = solutionChooser(solutions);
-			if (newSelectedSolution != currentSolutionIt)
+			solutions.insert(currentSolution);
+			auto newSelectedSolutionIt = solutionChooser(solutions);
+			if (*newSelectedSolutionIt != currentSolution)
 			{
 				continue; // ok, process other solution
 			}
+			solutions.erase(newSelectedSolutionIt);
 
 			auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
 			switch (userAnswer)
@@ -1086,10 +1082,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					// user has selected abandoning all further efforts
 					return false;
 				case Resolver::UserAnswer::Decline:
-					// caller hasn't accepted this solution, well, go next...
-
-					// purge current solution
-					solutions.erase(currentSolutionIt);
+					; // caller hasn't accepted this solution, well, go next...
 			}
 		}
 		else
@@ -1097,7 +1090,12 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			if (!possibleActions.empty())
 			{
 				__calculate_profits(possibleActions);
-				__pre_apply_actions_to_solution_tree(solutions, currentSolution, possibleActions);
+
+				auto callback = [&solutions](const shared_ptr< Solution >& solution)
+				{
+					solutions.insert(solution);
+				};
+				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
 			}
 			else
 			{
@@ -1106,9 +1104,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					__mydebug_wrapper(*currentSolution, "no solutions");
 				}
 			}
-
-			// purge current solution
-			solutions.erase(currentSolutionIt);
 
 			if (!possibleActions.empty())
 			{
