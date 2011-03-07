@@ -165,7 +165,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 
 bool BinaryVersion::isInstalled() const
 {
-	return sources[0].release->baseUri.empty();
+	return sources.empty() ? false : sources[0].release->baseUri.empty();
 }
 
 bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) const
