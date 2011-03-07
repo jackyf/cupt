@@ -168,8 +168,10 @@ void NativeResolverImpl::upgrade()
 	}
 }
 
-NativeResolverImpl::SolutionListIterator __fair_chooser(
-		list< shared_ptr< Solution > >& solutions)
+typedef list< shared_ptr< Solution > >::iterator SolutionListIterator;
+typedef std::function< SolutionListIterator (list< shared_ptr< Solution > >&) > SolutionChooser;
+
+SolutionListIterator __fair_chooser(list< shared_ptr< Solution > >& solutions)
 {
 	// choose the solution with maximum score
 	auto result = solutions.begin();
@@ -192,8 +194,7 @@ NativeResolverImpl::SolutionListIterator __fair_chooser(
 	return result;
 }
 
-NativeResolverImpl::SolutionListIterator __full_chooser(
-		list< shared_ptr< Solution > >& solutions)
+SolutionListIterator __full_chooser(list< shared_ptr< Solution > >& solutions)
 {
 	// defer the decision until all solutions are built
 
@@ -364,11 +365,11 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 	}
 }
 
-NativeResolverImpl::SolutionChooser NativeResolverImpl::__select_solution_chooser() const
+SolutionChooser __select_solution_chooser(const Config& config)
 {
 	SolutionChooser result;
 
-	auto resolverType = __config->getString("cupt::resolver::type");
+	auto resolverType = config.getString("cupt::resolver::type");
 	if (resolverType == "fair")
 	{
 		result = __fair_chooser;
@@ -928,7 +929,7 @@ pair< const dg::Element*, const dg::Element* > __get_broken_pair(
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
-	auto solutionChooser = __select_solution_chooser();
+	auto solutionChooser = __select_solution_chooser(*__config);
 
 	const bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");

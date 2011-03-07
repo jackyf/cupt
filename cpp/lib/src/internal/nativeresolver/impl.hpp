@@ -38,16 +38,11 @@ using std::set;
 
 class NativeResolverImpl
 {
- public:
-	typedef list< shared_ptr< Solution > >::iterator SolutionListIterator;
- private:
 	typedef Resolver::Reason Reason;
 	typedef Resolver::UserReason UserReason;
 	typedef Resolver::AutoRemovalReason AutoRemovalReason;
 	typedef Resolver::SynchronizationReason SynchronizationReason;
 	typedef Resolver::RelationExpressionReason RelationExpressionReason;
-
-	typedef std::function< SolutionListIterator (list< shared_ptr< Solution > >&) > SolutionChooser;
 
 	struct Action
 	{
@@ -81,7 +76,6 @@ class NativeResolverImpl
 	bool __is_candidate_for_auto_removal(const dg::Element*,
 		const std::function< bool (const string&) >, bool);
 	void __clean_automatically_installed(Solution&);
-	SolutionChooser __select_solution_chooser() const;
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;
