@@ -675,6 +675,8 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
 	static const Resolver::SuggestedPackage emptySuggestedPackage;
+	static const shared_ptr< system::Resolver::UserReason >
+			userReason(new system::Resolver::UserReason);
 
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
@@ -703,6 +705,11 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 				if (packageEntryPtr->reasons)
 				{
 					suggestedPackage.reasons = *(packageEntryPtr->reasons);
+				}
+				auto initialPackageIt = __initial_packages.find(packageName);
+				if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
+				{
+					suggestedPackage.reasons.push_back(userReason);
 				}
 			}
 			suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);

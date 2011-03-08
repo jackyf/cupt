@@ -828,20 +828,11 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 
 	vector< pair< const Element*, PackageEntry > > result;
 	{ // generating solution elements
-		shared_ptr< system::Resolver::UserReason > reason(new system::Resolver::UserReason);
 		FORIT(it, initialPackages)
 		{
 			auto elementPtr = getVertexPtr(it->first, it->second.version);
 			PackageEntry packageEntry;
 			packageEntry.sticked = it->second.sticked;
-			if (it->second.modified)
-			{
-				if (__config.getBool("cupt::resolver::track-reasons"))
-				{
-					packageEntry.reasons.initIfEmpty();
-					packageEntry.reasons->push_back(reason);
-				}
-			}
 			result.push_back(make_pair(elementPtr, packageEntry));
 		}
 		PackageEntry defaultPackageEntry;
