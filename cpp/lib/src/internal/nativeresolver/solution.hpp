@@ -52,6 +52,10 @@ struct PackageEntry
 		{
 			return memcmp(this, &other, sizeof(*this)) < 0;
 		}
+		shared_ptr< const Resolver::Reason > getReason() const
+		{
+			return (*brokenElementPtr)->getReason(**versionElementPtr);
+		}
 	};
 
 	bool sticked;

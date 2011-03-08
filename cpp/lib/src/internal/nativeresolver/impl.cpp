@@ -706,6 +706,10 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 				{
 					suggestedPackage.reasons = *(packageEntryPtr->reasons);
 				}
+				if (!packageEntryPtr->introducedBy.empty())
+				{
+					suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
+				}
 				auto initialPackageIt = __initial_packages.find(packageName);
 				if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
 				{
@@ -1021,16 +1025,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					{
 						(*actionIt)->introducedBy = ourIntroducedBy;
 					}
-				}
-			}
-
-			if (trackReasons)
-			{
-				// setting a reason
-				auto reason = (*brokenElementPtr)->getReason(**versionElementPtr);
-				FORIT(possibleActionIt, possibleActions)
-				{
-					(*possibleActionIt)->reason = reason;
 				}
 			}
 
