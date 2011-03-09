@@ -28,11 +28,12 @@ namespace internal {
 using std::make_pair;
 
 PackageEntry::PackageEntry()
-	: sticked(false)
+	: sticked(false), autoremoved(false)
 {}
 
 PackageEntry::PackageEntry(PackageEntry&& other)
-	: sticked(other.sticked), reasons(other.reasons), introducedBy(other.introducedBy)
+	: sticked(other.sticked), autoremoved(other.autoremoved),
+	reasons(other.reasons), introducedBy(other.introducedBy)
 {
 	brokenSuccessors.swap(other.brokenSuccessors);
 }
@@ -40,6 +41,7 @@ PackageEntry::PackageEntry(PackageEntry&& other)
 PackageEntry& PackageEntry::operator=(PackageEntry&& other)
 {
 	sticked = other.sticked;
+	autoremoved = other.autoremoved;
 	reasons = other.reasons;
 	introducedBy = other.introducedBy;
 	brokenSuccessors.swap(other.brokenSuccessors);

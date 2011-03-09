@@ -329,29 +329,18 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 	}
 
 	{ // looping through the candidates
-		bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 		bool debugging = __config->getBool("debug::resolver");
 
 		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
-
-		shared_ptr< const Reason > reason(new AutoRemovalReason);
 
 		FORIT(elementPtrIt, vertices)
 		{
 			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
 			{
-				// surely exists because of candidatesForRemoval :)
 				PackageEntry packageEntry;
+				packageEntry.autoremoved = true;
 				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
 
-				if (trackReasons)
-				{
-					// leave only one reason :)
-					packageEntry.reasons.initIfEmpty();
-					vector< shared_ptr< const Reason > >& reasons = *(packageEntry.reasons);
-					reasons.clear();
-					reasons.push_back(reason);
-				}
 				if (debugging)
 				{
 					debug("auto-removed '%s'", (**elementPtrIt)->toString().c_str());
@@ -677,6 +666,8 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	static const Resolver::SuggestedPackage emptySuggestedPackage;
 	static const shared_ptr< system::Resolver::UserReason >
 			userReason(new system::Resolver::UserReason);
+	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
+
 
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
@@ -709,6 +700,10 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 				if (!packageEntryPtr->introducedBy.empty())
 				{
 					suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
+				}
+				if (packageEntryPtr->autoremoved)
+				{
+					suggestedPackage.reasons.push_back(autoRemovalReason);
 				}
 				auto initialPackageIt = __initial_packages.find(packageName);
 				if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)

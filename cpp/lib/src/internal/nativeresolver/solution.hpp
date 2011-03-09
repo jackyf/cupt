@@ -59,6 +59,7 @@ struct PackageEntry
 	};
 
 	bool sticked;
+	bool autoremoved;
 	CopyPtr< vector< shared_ptr< const Resolver::Reason > > > reasons;
 	forward_list< const dg::Element* > brokenSuccessors;
 	IntroducedBy introducedBy;
