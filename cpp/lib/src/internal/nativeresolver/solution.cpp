@@ -54,21 +54,28 @@ class PackageEntryMapBase
 	typedef const dg::Element* key_t;
 	typedef data_t value_type; // for set_union
 	typedef vector< data_t > container_t;
- private:
-	container_t __container;
- public:
 	typedef data_t* iterator_t;
 	typedef const data_t* const_iterator_t;
-
+ private:
+	container_t __container;
+	typename container_t::iterator __position_to_iterator(const_iterator_t position)
+	{
+		return static_cast< typename container_t::iterator >(const_cast< iterator_t >(position));
+	}
+ public:
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
-	iterator_t begin() { return &*__container.begin(); }
-	iterator_t end() { return &*__container.end(); }
-	iterator_t lower_bound(const key_t& key)
+	const_iterator_t begin() const { return &*__container.begin(); }
+	const_iterator_t end() const { return &*__container.end(); }
+	const_iterator_t lower_bound(const key_t& key) const
 	{
 		return std::lower_bound(begin(), end(), key, Comparator());
 	}
-	iterator_t find(const key_t& key)
+	iterator_t lower_bound(const key_t& key)
+	{
+		return const_cast< iterator_t >(((const PackageEntryMapBase*)this)->lower_bound(key));
+	}
+	const_iterator_t find(const key_t& key) const
 	{
 		auto result = lower_bound(key);
 		if (result != end() && KeyGetter()(*result) != key)
@@ -78,15 +85,15 @@ class PackageEntryMapBase
 		return result;
 	}
 	// this insert() is called only for unexisting elements
-	iterator_t insert(iterator_t position, data_t&& data)
+	iterator_t insert(const_iterator_t position, data_t&& data)
 	{
 		auto distance = position - begin();
-		__container.insert(static_cast< typename container_t::iterator >(position), std::move(data));
-		return begin() + distance;
+		__container.insert(__position_to_iterator(position), std::move(data));
+		return const_cast< iterator_t >(begin()) + distance;
 	}
-	void erase(iterator_t position)
+	void erase(const_iterator_t position)
 	{
-		__container.erase(static_cast< typename container_t::iterator >(position));
+		__container.erase(__position_to_iterator(position));
 	}
 	void push_back(const data_t& data)
 	{
@@ -109,7 +116,7 @@ class PackageEntryMap: public PackageEntryMapBase<
 		PackageEntryMapComparator, PackageEntryMapKeyGetter >
 {
  public:
-	size_t forkedCount;
+	mutable size_t forkedCount;
 
 	PackageEntryMap()
 		: forkedCount(0)
@@ -372,11 +379,11 @@ vector< const dg::Element* > Solution::getElements() const
 vector< pair< const dg::Element*, const dg::Element* > > Solution::getBrokenPairs() const
 {
 	vector< pair< const dg::Element*, const dg::Element* > > result;
-	auto isEligible = [](decltype(__added_entries->begin()) it) -> bool
+	auto isEligible = [](PackageEntryMap::const_iterator_t it) -> bool
 	{
 		return !it->second.brokenSuccessors.empty();
 	};
-	auto processEntry = [this, &result, &isEligible](decltype(__added_entries->begin()) it)
+	auto processEntry = [this, &result, &isEligible](PackageEntryMap::const_iterator_t it)
 	{
 		if (isEligible(it))
 		{

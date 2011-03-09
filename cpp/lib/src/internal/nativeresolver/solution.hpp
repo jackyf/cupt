@@ -76,7 +76,7 @@ class Solution
 	friend class SolutionStorage;
 
 	shared_ptr< const Solution > __parent;
-	shared_ptr< PackageEntryMap > __master_entries;
+	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
 	shared_ptr< PackageEntrySet > __removed_entries;
  public:
