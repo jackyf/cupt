@@ -1038,11 +1038,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					__mydebug_wrapper(*currentSolution, "finished");
 				}
 				currentSolution->finished = 1;
-
-				// clean up automatically installed by resolver and now unneeded packages
-				__clean_automatically_installed(*currentSolution);
-
-				__final_verify_solution(*currentSolution);
 			}
 			if (!__any_solution_was_found)
 			{
@@ -1058,6 +1053,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				continue; // ok, process other solution
 			}
 			solutions.erase(newSelectedSolutionIt);
+
+			// clean up automatically installed by resolver and now unneeded packages
+			__clean_automatically_installed(*currentSolution);
+
+			__final_verify_solution(*currentSolution);
 
 			auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
 			switch (userAnswer)
