@@ -523,11 +523,6 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
-	if (action.reason)
-	{
-		packageEntry.reasons.initIfEmpty();
-		packageEntry.reasons->push_back(action.reason);
-	}
 	__solution_storage->setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr);
 	solution.insertedElementPtrs.push_back(action.newElementPtr);
@@ -693,10 +688,6 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 			if (trackReasons)
 			{
 				auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
-				if (packageEntryPtr->reasons)
-				{
-					suggestedPackage.reasons = *(packageEntryPtr->reasons);
-				}
 				if (!packageEntryPtr->introducedBy.empty())
 				{
 					suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());

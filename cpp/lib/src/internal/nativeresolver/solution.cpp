@@ -33,7 +33,7 @@ PackageEntry::PackageEntry()
 
 PackageEntry::PackageEntry(PackageEntry&& other)
 	: sticked(other.sticked), autoremoved(other.autoremoved),
-	reasons(other.reasons), introducedBy(other.introducedBy)
+	introducedBy(other.introducedBy)
 {
 	brokenSuccessors.swap(other.brokenSuccessors);
 }
@@ -42,7 +42,6 @@ PackageEntry& PackageEntry::operator=(PackageEntry&& other)
 {
 	sticked = other.sticked;
 	autoremoved = other.autoremoved;
-	reasons = other.reasons;
 	introducedBy = other.introducedBy;
 	brokenSuccessors.swap(other.brokenSuccessors);
 	return *this;
