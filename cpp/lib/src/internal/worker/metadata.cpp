@@ -436,15 +436,65 @@ bool MetadataWorker::__update_release_and_index_data(download::Manager& download
 	return true;
 }
 
+void MetadataWorker::__list_cleanup(const string& lockPath)
+{
+	set< string > usedPaths;
+	auto addUsedPrefix = [&usedPaths](const string& prefix)
+	{
+		auto existingFiles = fs::glob(prefix + '*');
+		FORIT(existingFileIt, existingFiles)
+		{
+			usedPaths.insert(*existingFileIt);
+		}
+	};
+
+	auto indexEntries = _cache->getIndexEntries();
+	FORIT(indexEntryIt, indexEntries)
+	{
+		addUsedPrefix(_cache->getPathOfReleaseList(*indexEntryIt));
+		addUsedPrefix(_cache->getPathOfIndexList(*indexEntryIt));
+
+		auto translationsDownloadInfo = _cache->getDownloadInfoOfLocalizedDescriptions(*indexEntryIt);
+		FORIT(downloadRecordIt, translationsDownloadInfo)
+		{
+			addUsedPrefix(downloadRecordIt->localPath);
+		}
+	}
+	addUsedPrefix(lockPath);
+
+	bool simulating = _config->getBool("cupt::worker::simulate");
+
+	auto allListFiles = fs::glob(__get_indexes_directory() + "/*");
+	FORIT(fileIt, allListFiles)
+	{
+		if (!usedPaths.count(*fileIt) && fs::fileExists(*fileIt) /* is a file */)
+		{
+			// needs deletion
+			if (simulating)
+			{
+				simulate("deleting '%s'", fileIt->c_str());
+			}
+			else
+			{
+				if (unlink(fileIt->c_str()) == -1)
+				{
+					warn("unable to delete '%s': EEE", fileIt->c_str());
+				}
+			}
+		}
+	}
+}
+
 void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto indexesDirectory = __get_indexes_directory();
 	bool simulating = _config->getBool("cupt::worker::simulate");
 
 	shared_ptr< internal::Lock > lock;
+	string lockFilePath = indexesDirectory + "/lock";
 	if (!simulating)
 	{
-		lock.reset(new internal::Lock(_config, indexesDirectory + "/lock"));
+		lock.reset(new internal::Lock(_config, lockFilePath));
 	}
 
 	{ // run pre-actions
@@ -529,6 +579,11 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			}
 		}
 	};
+
+	if (_config->getBool("apt::get::list-cleanup"))
+	{
+		__list_cleanup(lockFilePath);
+	}
 
 	{ // run post-actions
 		auto postCommands = _config->getList("apt::update::post-invoke");

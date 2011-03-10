@@ -71,6 +71,7 @@ void ConfigImpl::initializeVariables()
 		{ "apt::install-recommends", "yes" },
 		{ "apt::install-suggests", "no" },
 		{ "apt::get::allowunauthenticated", "no" },
+		{ "apt::get::list-cleanup", "yes" },
 		{ "dir", "/" },
 		{ "dir::bin::dpkg", "/usr/bin/dpkg" },
 		{ "dir::cache", "var/cache/apt" },

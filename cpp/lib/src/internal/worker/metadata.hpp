@@ -35,6 +35,7 @@ class MetadataWorker: public virtual WorkerBase
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,
 			const Cache::IndexEntry&, bool indexFileChanged);
+	void __list_cleanup(const string&);
  public:
 	void updateReleaseAndIndexData(const shared_ptr< download::Progress >&);
 };
