@@ -530,8 +530,6 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		}
 	};
 
-	lock.reset();
-
 	{ // run post-actions
 		auto postCommands = _config->getList("apt::update::post-invoke");
 		FORIT(commandIt, postCommands)
@@ -549,6 +547,8 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			}
 		}
 	}
+
+	lock.reset();
 
 	if (!masterExitCode)
 	{
