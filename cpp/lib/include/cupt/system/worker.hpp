@@ -55,6 +55,7 @@ class Worker
 			Downgrade, ///< old version of the existing package is installed
 			Configure, ///< the existing package in intermediate state is configured (properly installed)
 			Deconfigure, ///< the existing package in intermediate state is removed
+			ProcessTriggers, ///< triggers are processed for the existing package
 			Count ///< element count
 		};
 	};

@@ -109,15 +109,10 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 		CHECK_STATUS("half-installed", HalfInstalled)
 		CHECK_STATUS("post-inst-failed", PostInstFailed)
 		CHECK_STATUS("removal-failed", RemovalFailed)
+		CHECK_STATUS("triggers-pending", TriggersPending)
+		CHECK_STATUS("triggers-awaited", TriggersAwaited)
 		{ // else
-			if (current.second - current.first >= 7 && !memcmp(&*current.first, "trigger", 7))
-			{
-				fatal("some dpkg triggers are not processed, please run 'dpkg --triggers-only -a' as root");
-			}
-			else
-			{
-				fatal("malformed 'status' status indicator (for package '%s')", packageName.c_str());
-			}
+			fatal("malformed 'status' status indicator (for package '%s')", packageName.c_str());
 		}
 	}
 }

@@ -839,7 +839,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		vector< pair< InnerAction, InnerAction > > basicEdges;
 		__fill_actions(gaa, basicEdges);
 		// maybe, we have nothing to do?
-		if (gaa.graph.getVertices().empty())
+		if (gaa.graph.getVertices().empty() && __actions_preview->groups[Action::ProcessTriggers].empty())
 		{
 			return false;
 		}
@@ -1749,6 +1749,11 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	auto deferTriggers = _config->getBool("cupt::worker::defer-triggers");
 
 	__do_dpkg_pre_actions();
+
+	{ // make sure system is trigger-clean
+		auto command = dpkgBinary + " --triggers-only -a";
+		__run_dpkg_command("triggers-only", command, command);
+	}
 
 	auto archivesDirectory = _get_archives_directory();
 	auto purging = _config->getBool("cupt::worker::purge");

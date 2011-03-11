@@ -14,6 +14,11 @@ cupt2 (2.0.0~beta2~) UNRELEASED; urgency=low
         are run.
       - 'updateReleaseAndIndexData': honor the option
         'apt::get::list-cleanup'. (Closes: #610285)
+      - 'Action': new value 'ProcessTriggers'.
+      - Now tries to run all triggers before the main action set.
+    - system/state:
+      - Don't give an error anymore on packages in 'triggers-awaited' and
+        'triggers-pending' states. (Closes: #602263)
     - config:
       - Recognize the option 'apt::get::list-cleanup'.
 

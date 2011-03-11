@@ -101,7 +101,14 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 						if (installedVersion->versionString == supposedVersion->versionString)
 						{
 							// the same version, but the package was in some interim state
-							action = Action::Configure;
+							if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
+							{
+								action = Action::ProcessTriggers;
+							}
+							else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
+							{
+								action = Action::Configure;
+							}
 						}
 						else
 						{
