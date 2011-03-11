@@ -550,11 +550,12 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				{ WA::Downgrade, __("DOWNGRADED") },
 				{ WA::Configure, __("CONFIGURED") },
 				{ WA::Deconfigure, __("DECONFIGURED") },
+				{ WA::ProcessTriggers, __("TRIGGER-PROCESSED") },
 			};
 			cout << endl;
 
 			static const WA::Type actionTypesInOrder[] = { WA::Install, WA::Upgrade, WA::Remove,
-					WA::Purge, WA::Downgrade, WA::Configure, WA::Deconfigure };
+					WA::Purge, WA::Downgrade, WA::Configure, WA::ProcessTriggers, WA::Deconfigure };
 
 			for (size_t i = 0; i < sizeof(actionTypesInOrder) / sizeof(WA::Type); ++i)
 			{
