@@ -711,6 +711,11 @@ class __regular_action_group_insert_iterator
 
 bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 {
+	if (gaa.graph.getVertices().empty())
+	{
+		return false;
+	}
+
 	bool linkedSomething = false;
 
 	__set_action_priorities(gaa, debugging);
