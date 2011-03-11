@@ -234,6 +234,7 @@ cupt2 (2.0.0~alpha2) UNRELEASED; urgency=low
 cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
 
   * Re-implemented in C++ (and subset of C++0x). (Closes: #605320)
+    - Parsing version entries is much faster now. (Closes: #547950)
 
   * console:
     - The '--installed-only' option now works under 'shell' command.
