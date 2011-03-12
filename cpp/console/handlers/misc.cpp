@@ -272,6 +272,10 @@ int showSourceVersions(Context& context)
 			p(__("Priority"), Version::Priorities::strings[version->priority]);
 			p(__("Section"), version->section);
 			p(__("Maintainer"), version->maintainer);
+			if (!version->uploaders.empty())
+			{
+				p(__("Uploaders"), join(", ", version->uploaders));
+			}
 			p(__("Architectures"), join(" ", version->architectures));
 			if (variables.count("with-release-info"))
 			{
