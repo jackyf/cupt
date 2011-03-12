@@ -37,6 +37,7 @@ int changeAutoInstalledState(Context&, bool);
 int cleanArchives(Context&, bool);
 int showScreenshotUris(Context&);
 int snapshot(Context&);
+int tarMetadata(Context&);
 
 struct ManagePackages
 {

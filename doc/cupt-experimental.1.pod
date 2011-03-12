@@ -298,6 +298,15 @@ L</depends>, L</rdepends>, L</search>, L</pkgnames>, L</changelog> actions
 
 =back
 
+=item tar-metadata
+
+This subcommand is experimental. Its name and functionality are unstable.
+
+Packs all cupt configuration files and repository metadata to a tar stream and
+outputs it to standard output.
+
+Example: C<< cupt tar-metadata | xz --verbose -c > cupt-metadata.tar.xz >>
+
 =head2 Management actions
 
 =over

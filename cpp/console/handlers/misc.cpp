@@ -902,3 +902,37 @@ int showScreenshotUris(Context& context)
 	return 0;
 }
 
+int tarMetadata(Context& context)
+{
+	vector< string > arguments;
+	bpo::options_description noOptions("");
+	parseOptions(context, noOptions, arguments);
+	checkNoExtraArguments(arguments);
+
+	auto config = context.getConfig();
+
+	auto listsDirectory = config->getPath("dir::state::lists");
+	vector< string > pathList = {
+		config->getPath("dir::etc::main"),
+		config->getPath("dir::etc::parts"),
+		config->getPath("dir::etc::sourcelist"),
+		config->getPath("dir::etc::sourceparts"),
+		config->getPath("dir::etc::preferences"),
+		config->getPath("dir::etc::preferencesparts"),
+		config->getPath("dir::state::extendedstates"),
+		config->getPath("dir::state::status"),
+		listsDirectory + "/*Release",
+		listsDirectory + "/*Packages",
+		listsDirectory + "/*Sources",
+	};
+
+	string tarCommand = "tar -cf -";
+	FORIT(pathIt, pathList)
+	{
+		tarCommand += ' ';
+		tarCommand += *pathIt;
+	}
+
+	return ::system(tarCommand.c_str());
+}
+

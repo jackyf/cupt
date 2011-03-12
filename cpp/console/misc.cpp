@@ -220,6 +220,7 @@ std::function< int (Context&) > getHandler(const string& command)
 		{ "copyright", [](Context& c) -> int { return downloadChangelogOrCopyright(c, ChangelogOrCopyright::Copyright); } },
 		{ "screenshots", &showScreenshotUris },
 		{ "snapshot", &snapshot },
+		{ "tar-metadata", &tarMetadata },
 	};
 	auto it = handlerMap.find(command);
 	if (it == handlerMap.end())
