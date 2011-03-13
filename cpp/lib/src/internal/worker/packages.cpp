@@ -510,7 +510,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		// delete the whole attribute
 		gaa.attributes[*fromPredecessorPtr].erase(*fromSuccessorPtr);
 
-		gaa.graph.deleteEdge(*fromPredecessorPtr, *fromSuccessorPtr);
+		// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' will be deleted by deleteVertex at the end
+
 		gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
 	};
 
