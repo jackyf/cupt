@@ -220,8 +220,8 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 				continue;
 			}
 
-			const InnerAction& masterAction = (direction == Direction::After ? *currentActionPtr : *gi.innerActionPtr);
-			const InnerAction& slaveAction = (direction == Direction::After ? *gi.innerActionPtr : *currentActionPtr);
+			auto masterActionPtr = (direction == Direction::After ? currentActionPtr : gi.innerActionPtr);
+			auto slaveActionPtr = (direction == Direction::After ? gi.innerActionPtr : currentActionPtr);
 
 			// commented, because of #582423
 			/* bool replacesFound = false;
@@ -278,19 +278,19 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 				}
 			}
 
-			gi.gaaPtr->graph.addEdge(slaveAction, masterAction);
+			gi.gaaPtr->graph.addEdgeFromPointers(slaveActionPtr, masterActionPtr);
 
 			// adding relation to attributes
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
-					gi.gaaPtr->attributes[slaveAction][masterAction].relationInfo;
+					gi.gaaPtr->attributes[*slaveActionPtr][*masterActionPtr].relationInfo;
 			GraphAndAttributes::RelationInfoRecord record =
 					{ dependencyType, *relationExpressionIt, direction == Direction::After };
 			relationInfo.push_back(std::move(record));
 
 			if (gi.debugging)
 			{
-				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveAction.toString().c_str(),
-						masterAction.toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
+				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString().c_str(),
+						masterActionPtr->toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
 						relationExpressionIt->toString().c_str());
 			}
 		}
