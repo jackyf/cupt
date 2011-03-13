@@ -511,7 +511,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		gaa.attributes[*fromPredecessorPtr].erase(*fromSuccessorPtr);
 
 		gaa.graph.deleteEdge(*fromPredecessorPtr, *fromSuccessorPtr);
-		gaa.graph.addEdge(*toPredecessorPtr, *toSuccessorPtr);
+		gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
 	};
 
 	FORIT(edgeIt, virtualEdges)
