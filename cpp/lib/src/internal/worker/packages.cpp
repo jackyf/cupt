@@ -965,18 +965,19 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		const set< InnerAction >& allowedVertices = miniGaa.graph.getVertices();
 		FORIT(edgeIt, possibleEdges)
 		{
-			const InnerAction& from = *(edgeIt->first);
-			const InnerAction& to = *(edgeIt->second);
-			if (!allowedVertices.count(to))
+			auto fromPtr = edgeIt->first;
+			auto toPtr = edgeIt->second;
+			if (!allowedVertices.count(*toPtr))
 			{
 				continue; // edge lies outside our mini graph
 			}
 
-			if (gaa.attributes[from][to].isFundamental)
+			if (gaa.attributes[*fromPtr][*toPtr].isFundamental)
 			{
 				basicEdges.push_back(*edgeIt);
 				// also adding to the graph solely for next priority modifiers block
-				miniGaa.graph.addEdge(from, to);
+				// don't do FromPointers here, these pointers don't exist in miniGaa
+				miniGaa.graph.addEdge(*fromPtr, *toPtr);
 			}
 		}
 		{ // adding priority modifiers
