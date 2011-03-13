@@ -97,7 +97,7 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 }
 
 void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
-		vector< pair< InnerAction, InnerAction > >& basicEdges)
+		vector< pair< const InnerAction*, const InnerAction* > >& basicEdges)
 {
 	typedef InnerAction IA;
 
@@ -162,18 +162,18 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 				{
 					// the edge between consecutive actions
 					using std::make_pair;
-					basicEdges.push_back(make_pair(*previousInnerActionPtr, action));
+					basicEdges.push_back(make_pair(previousInnerActionPtr, newVertexPtr));
 					if (previousInnerActionPtr->type == IA::Remove &&
 							(newVertexPtr->version->essential || pseudoEssentialPackageNames.count(packageName)))
 					{
 						// merging remove/unpack
-						basicEdges.push_back(make_pair(action, *previousInnerActionPtr));
+						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
 					}
 					if (previousInnerActionPtr->type == IA::Unpack &&
 							pseudoEssentialPackageNames.count(packageName))
 					{
 						// merging unpack/configure
-						basicEdges.push_back(make_pair(action, *previousInnerActionPtr));
+						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
 					}
 				}
 				previousInnerActionPtr = newVertexPtr;
@@ -841,7 +841,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 	bool debugging = _config->getBool("debug::worker");
 
 	{
-		vector< pair< InnerAction, InnerAction > > basicEdges;
+		vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
 		__fill_actions(gaa, basicEdges);
 		// maybe, we have nothing to do?
 		if (gaa.graph.getVertices().empty() && __actions_preview->groups[Action::ProcessTriggers].empty())
@@ -861,8 +861,8 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 
 			FORIT(it, basicEdges)
 			{
-				gaa.graph.addEdge(it->first, it->second);
-				gaa.attributes[it->first][it->second].isFundamental = true;
+				gaa.graph.addEdgeFromPointers(it->first, it->second);
+				gaa.attributes[*it->first][*it->second].isFundamental = true;
 			}
 			FORIT(it, virtualEdges)
 			{
