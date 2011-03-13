@@ -490,31 +490,31 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const vector< pair< InnerAction, InnerAction > >& virtualEdges, bool debugging)
 {
-	auto moveEdge = [&gaa, debugging](const InnerAction& fromPredecessor, const InnerAction& fromSuccessor,
-			const InnerAction& toPredecessor, const InnerAction& toSuccessor)
+	auto moveEdge = [&gaa, debugging](const InnerAction* fromPredecessorPtr, const InnerAction* fromSuccessorPtr,
+			const InnerAction* toPredecessorPtr, const InnerAction* toSuccessorPtr)
 	{
 		if (debugging)
 		{
 			debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
-					fromPredecessor.toString().c_str(), fromSuccessor.toString().c_str(),
-					toPredecessor.toString().c_str(), toSuccessor.toString().c_str());
+					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
+					toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
 		}
-		if (toPredecessor == toSuccessor)
+		if (toPredecessorPtr == toSuccessorPtr)
 		{
 			return;
 		}
-		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[toPredecessor][toSuccessor];
-		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[fromPredecessor][fromSuccessor];
+		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[*toPredecessorPtr][*toSuccessorPtr];
+		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[*fromPredecessorPtr][*fromSuccessorPtr];
 
 		// concatenating relationInfo
 		toAttribute.relationInfo.insert(toAttribute.relationInfo.end(),
 				fromAttribute.relationInfo.begin(), fromAttribute.relationInfo.end());
 
 		// delete the whole attribute
-		gaa.attributes[fromPredecessor].erase(fromSuccessor);
+		gaa.attributes[*fromPredecessorPtr].erase(*fromSuccessorPtr);
 
-		gaa.graph.deleteEdge(fromPredecessor, fromSuccessor);
-		gaa.graph.addEdge(toPredecessor, toSuccessor);
+		gaa.graph.deleteEdge(*fromPredecessorPtr, *fromSuccessorPtr);
+		gaa.graph.addEdge(*toPredecessorPtr, *toSuccessorPtr);
 	};
 
 	FORIT(edgeIt, virtualEdges)
@@ -531,8 +531,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 			FORIT(successorVertexPtrIt, successors)
 			{
 				// moving edge attributes too
-				moveEdge(**predecessorVertexPtrIt, *fromPtr, **predecessorVertexPtrIt, **successorVertexPtrIt);
-				moveEdge(*toPtr, **successorVertexPtrIt, **predecessorVertexPtrIt, **successorVertexPtrIt);
+				moveEdge(*predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt);
+				moveEdge(toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt);
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
