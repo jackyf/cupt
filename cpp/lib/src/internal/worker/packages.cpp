@@ -499,10 +499,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
 					toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
 		}
-		if (toPredecessorPtr == toSuccessorPtr)
-		{
-			return;
-		}
+
 		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[*toPredecessorPtr][*toSuccessorPtr];
 		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[*fromPredecessorPtr][*fromSuccessorPtr];
 
@@ -530,6 +527,10 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		{
 			FORIT(successorVertexPtrIt, successors)
 			{
+				if (*predecessorVertexPtrIt == *successorVertexPtrIt)
+				{
+					continue;
+				}
 				// moving edge attributes too
 				moveEdge(*predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt);
 				moveEdge(toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt);
