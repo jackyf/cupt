@@ -214,14 +214,14 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			{
 				continue;
 			}
-			const InnerAction& currentAction = *vertexIt;
-			if (gi.innerActionPtr->fake && currentAction.fake)
+			const InnerAction* currentActionPtr = &*vertexIt;
+			if (gi.innerActionPtr->fake && currentActionPtr->fake)
 			{
 				continue;
 			}
 
-			const InnerAction& masterAction = (direction == Direction::After ? currentAction : *gi.innerActionPtr);
-			const InnerAction& slaveAction = (direction == Direction::After ? *gi.innerActionPtr : currentAction);
+			const InnerAction& masterAction = (direction == Direction::After ? *currentActionPtr : *gi.innerActionPtr);
+			const InnerAction& slaveAction = (direction == Direction::After ? *gi.innerActionPtr : *currentActionPtr);
 
 			// commented, because of #582423
 			/* bool replacesFound = false;
@@ -254,16 +254,16 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 				const InnerAction* antagonisticActionPtr = NULL;
 				if (actionType == InnerAction::Configure && direction == Direction::Before)
 				{
-					if (currentAction.linkedFrom && currentAction.linkedFrom->linkedFrom)
+					if (currentActionPtr->linkedFrom && currentActionPtr->linkedFrom->linkedFrom)
 					{
-						antagonisticActionPtr = currentAction.linkedFrom->linkedFrom;
+						antagonisticActionPtr = currentActionPtr->linkedFrom->linkedFrom;
 					}
 				}
 				else if (actionType == InnerAction::Remove && direction == Direction::After)
 				{
-					if (currentAction.linkedTo && currentAction.linkedTo->linkedTo)
+					if (currentActionPtr->linkedTo && currentActionPtr->linkedTo->linkedTo)
 					{
-						antagonisticActionPtr = currentAction.linkedTo->linkedTo;
+						antagonisticActionPtr = currentActionPtr->linkedTo->linkedTo;
 					}
 				}
 
