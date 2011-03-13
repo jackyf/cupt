@@ -182,13 +182,19 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 	}
 }
 
-void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
+struct FillActionGeneralInfo
+{
+	shared_ptr< const Cache > cache;
+	GraphAndAttributes* gaaPtr;
+	bool debugging;
+};
+
+void __fill_action_dependencies(FillActionGeneralInfo& gi,
 		const shared_ptr< const BinaryVersion >& version,
 		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
-		Direction::Type direction, const InnerAction& innerAction,
-		GraphAndAttributes& gaa, bool debugging)
+		Direction::Type direction, const InnerAction& innerAction)
 {
-	const set< InnerAction >& verticesMap = gaa.graph.getVertices();
+	const set< InnerAction >& verticesMap = gi.gaaPtr->graph.getVertices();
 
 	InnerAction candidateAction;
 	candidateAction.type = actionType;
@@ -196,7 +202,7 @@ void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
 	const RelationLine& relationLine = version->relations[dependencyType];
 	FORIT(relationExpressionIt, relationLine)
 	{
-		auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
+		auto satisfyingVersions = gi.cache->getSatisfyingVersions(*relationExpressionIt);
 
 		FORIT(satisfyingVersionIt, satisfyingVersions)
 		{
@@ -272,16 +278,16 @@ void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
 				}
 			}
 
-			gaa.graph.addEdge(slaveAction, masterAction);
+			gi.gaaPtr->graph.addEdge(slaveAction, masterAction);
 
 			// adding relation to attributes
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
-					gaa.attributes[slaveAction][masterAction].relationInfo;
+					gi.gaaPtr->attributes[slaveAction][masterAction].relationInfo;
 			GraphAndAttributes::RelationInfoRecord record =
 					{ dependencyType, *relationExpressionIt, direction == Direction::After };
 			relationInfo.push_back(std::move(record));
 
-			if (debugging)
+			if (gi.debugging)
 			{
 				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveAction.toString().c_str(),
 						masterAction.toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
@@ -295,6 +301,11 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 		GraphAndAttributes& gaa, bool debugging)
 {
 	typedef BinaryVersion::RelationTypes RT;
+
+	FillActionGeneralInfo gi;
+	gi.cache = cache;
+	gi.gaaPtr = &gaa;
+	gi.debugging = debugging;
 
 	// fill the actions' dependencies
 	const set< InnerAction >& vertices = gaa.graph.getVertices();
@@ -311,21 +322,21 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 				process_unpack:
 
 				// pre-depends must be unpacked before
-				__fill_action_dependencies(cache, version, RT::PreDepends, InnerAction::Configure,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::PreDepends, InnerAction::Configure,
+						Direction::Before, innerAction);
 				// conflicts must be unsatisfied before
-				__fill_action_dependencies(cache, version, RT::Conflicts, InnerAction::Remove,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Conflicts, InnerAction::Remove,
+						Direction::Before, innerAction);
 				// breaks must be unsatisfied before (yes, before the unpack)
-				__fill_action_dependencies(cache, version, RT::Breaks, InnerAction::Remove,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Breaks, InnerAction::Remove,
+						Direction::Before, innerAction);
 			}
 				break;
 			case InnerAction::Configure:
 			{
 				// depends must be configured before
-				__fill_action_dependencies(cache, version, RT::Depends, InnerAction::Configure,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Depends, InnerAction::Configure,
+						Direction::Before, innerAction);
 
 				// it has also to be unpacked if the same version was not in state 'unpacked'
 				// search for the appropriate unpack action
@@ -342,22 +353,22 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 			case InnerAction::Remove:
 			{
 				// pre-depends must be removed after
-				__fill_action_dependencies(cache, version, RT::PreDepends, InnerAction::Remove,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::PreDepends, InnerAction::Remove,
+						Direction::After, innerAction);
 				// depends must be removed after
-				__fill_action_dependencies(cache, version, RT::Depends, InnerAction::Remove,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Depends, InnerAction::Remove,
+						Direction::After, innerAction);
 				// conflicts may be satisfied only after
-				__fill_action_dependencies(cache, version, RT::Conflicts, InnerAction::Unpack,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Conflicts, InnerAction::Unpack,
+						Direction::After, innerAction);
 				// breaks may be satisfied only after
-				__fill_action_dependencies(cache, version, RT::Breaks, InnerAction::Unpack,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Breaks, InnerAction::Unpack,
+						Direction::After, innerAction);
 				// in the previous case it may happen that package was already unpacked
 				// with breaking dependencies already, so there won't be 'unpack' action but just
 				// 'configure' one, so set dependency to 'configure' too just in case
-				__fill_action_dependencies(cache, version, RT::Breaks, InnerAction::Configure,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, version, RT::Breaks, InnerAction::Configure,
+						Direction::After, innerAction);
 			}
 		}
 	}
