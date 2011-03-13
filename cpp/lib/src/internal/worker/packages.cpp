@@ -187,18 +187,19 @@ struct FillActionGeneralInfo
 	shared_ptr< const Cache > cache;
 	GraphAndAttributes* gaaPtr;
 	bool debugging;
+	const InnerAction* innerActionPtr;
 };
 
 void __fill_action_dependencies(FillActionGeneralInfo& gi,
 		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
-		Direction::Type direction, const InnerAction& innerAction)
+		Direction::Type direction)
 {
 	const set< InnerAction >& verticesMap = gi.gaaPtr->graph.getVertices();
 
 	InnerAction candidateAction;
 	candidateAction.type = actionType;
 
-	const RelationLine& relationLine = innerAction.version->relations[dependencyType];
+	const RelationLine& relationLine = gi.innerActionPtr->version->relations[dependencyType];
 	FORIT(relationExpressionIt, relationLine)
 	{
 		auto satisfyingVersions = gi.cache->getSatisfyingVersions(*relationExpressionIt);
@@ -214,13 +215,13 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 				continue;
 			}
 			const InnerAction& currentAction = *vertexIt;
-			if (innerAction.fake && currentAction.fake)
+			if (gi.innerActionPtr->fake && currentAction.fake)
 			{
 				continue;
 			}
 
-			const InnerAction& masterAction = (direction == Direction::After ? currentAction : innerAction);
-			const InnerAction& slaveAction = (direction == Direction::After ? innerAction : currentAction);
+			const InnerAction& masterAction = (direction == Direction::After ? currentAction : *gi.innerActionPtr);
+			const InnerAction& slaveAction = (direction == Direction::After ? *gi.innerActionPtr : currentAction);
 
 			// commented, because of #582423
 			/* bool replacesFound = false;
@@ -310,8 +311,9 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 	const set< InnerAction >& vertices = gaa.graph.getVertices();
 	FORIT(vertexIt, vertices)
 	{
-		const InnerAction& innerAction = *vertexIt;
-		switch (innerAction.type)
+		const InnerAction* innerActionPtr = &*vertexIt;
+		gi.innerActionPtr = innerActionPtr;
+		switch (innerActionPtr->type)
 		{
 			case InnerAction::PriorityModifier:
 				break;
@@ -320,25 +322,21 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 				process_unpack:
 
 				// pre-depends must be unpacked before
-				__fill_action_dependencies(gi, RT::PreDepends, InnerAction::Configure,
-						Direction::Before, innerAction);
+				__fill_action_dependencies(gi, RT::PreDepends, InnerAction::Configure, Direction::Before);
 				// conflicts must be unsatisfied before
-				__fill_action_dependencies(gi, RT::Conflicts, InnerAction::Remove,
-						Direction::Before, innerAction);
+				__fill_action_dependencies(gi, RT::Conflicts, InnerAction::Remove, Direction::Before);
 				// breaks must be unsatisfied before (yes, before the unpack)
-				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Remove,
-						Direction::Before, innerAction);
+				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Remove, Direction::Before);
 			}
 				break;
 			case InnerAction::Configure:
 			{
 				// depends must be configured before
-				__fill_action_dependencies(gi, RT::Depends, InnerAction::Configure,
-						Direction::Before, innerAction);
+				__fill_action_dependencies(gi, RT::Depends, InnerAction::Configure, Direction::Before);
 
 				// it has also to be unpacked if the same version was not in state 'unpacked'
 				// search for the appropriate unpack action
-				auto candidateAction = innerAction;
+				auto candidateAction = *innerActionPtr;
 				candidateAction.type = InnerAction::Unpack;
 
 				if (!vertices.count(candidateAction))
@@ -351,22 +349,17 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 			case InnerAction::Remove:
 			{
 				// pre-depends must be removed after
-				__fill_action_dependencies(gi, RT::PreDepends, InnerAction::Remove,
-						Direction::After, innerAction);
+				__fill_action_dependencies(gi, RT::PreDepends, InnerAction::Remove, Direction::After);
 				// depends must be removed after
-				__fill_action_dependencies(gi, RT::Depends, InnerAction::Remove,
-						Direction::After, innerAction);
+				__fill_action_dependencies(gi, RT::Depends, InnerAction::Remove, Direction::After);
 				// conflicts may be satisfied only after
-				__fill_action_dependencies(gi, RT::Conflicts, InnerAction::Unpack,
-						Direction::After, innerAction);
+				__fill_action_dependencies(gi, RT::Conflicts, InnerAction::Unpack, Direction::After);
 				// breaks may be satisfied only after
-				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Unpack,
-						Direction::After, innerAction);
+				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Unpack, Direction::After);
 				// in the previous case it may happen that package was already unpacked
 				// with breaking dependencies already, so there won't be 'unpack' action but just
 				// 'configure' one, so set dependency to 'configure' too just in case
-				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Configure,
-						Direction::After, innerAction);
+				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Configure, Direction::After);
 			}
 		}
 	}
