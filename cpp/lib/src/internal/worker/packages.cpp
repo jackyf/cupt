@@ -519,22 +519,23 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 
 	FORIT(edgeIt, virtualEdges)
 	{
-		const InnerAction& from = edgeIt->first;
-		const InnerAction& to = edgeIt->second;
+		// getting vertex pointers
+		const InnerAction* fromPtr = gaa.graph.addVertex(edgeIt->first);
+		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const list< const InnerAction* > predecessors = gaa.graph.getPredecessors(from);
-		const list< const InnerAction* > successors = gaa.graph.getSuccessors(to);
+		const list< const InnerAction* > predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
+		const list< const InnerAction* > successors = gaa.graph.getSuccessorsFromPointer(toPtr);
 		FORIT(predecessorVertexPtrIt, predecessors)
 		{
 			FORIT(successorVertexPtrIt, successors)
 			{
 				// moving edge attributes too
-				moveEdge(**predecessorVertexPtrIt, from, **predecessorVertexPtrIt, **successorVertexPtrIt);
-				moveEdge(to, **successorVertexPtrIt, **predecessorVertexPtrIt, **successorVertexPtrIt);
+				moveEdge(**predecessorVertexPtrIt, *fromPtr, **predecessorVertexPtrIt, **successorVertexPtrIt);
+				moveEdge(*toPtr, **successorVertexPtrIt, **predecessorVertexPtrIt, **successorVertexPtrIt);
 				if (debugging)
 				{
-					const string& mediatorPackageName = from.version->packageName;
+					const string& mediatorPackageName = fromPtr->version->packageName;
 					debug("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
 							(*predecessorVertexPtrIt)->toString().c_str(), (*successorVertexPtrIt)->toString().c_str(),
 							mediatorPackageName.c_str());
@@ -543,8 +544,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 			}
 		}
 
-		gaa.graph.deleteVertex(from);
-		gaa.graph.deleteVertex(to);
+		gaa.graph.deleteVertex(*fromPtr);
+		gaa.graph.deleteVertex(*toPtr);
 	}
 }
 
