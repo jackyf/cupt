@@ -1022,14 +1022,15 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			auto edges = miniGaa.graph.getEdges();
 			FORIT(edgeIt, edges)
 			{
-				const InnerAction& from = *(edgeIt->first);
-				const InnerAction& to = *(edgeIt->second);
-				if (!miniGaa.attributes[from][to].isDependencyHard())
+				auto fromPtr = edgeIt->first;
+				auto toPtr = edgeIt->second;
+				if (!miniGaa.attributes[*fromPtr][*toPtr].isDependencyHard())
 				{
-					miniGaa.graph.deleteEdge(from, to);
+					miniGaa.graph.deleteEdge(*fromPtr, *toPtr);
 					if (debugging)
 					{
-						debug("ignoring soft edge '%s' -> '%s'", from.toString().c_str(), to.toString().c_str());
+						debug("ignoring soft edge '%s' -> '%s'",
+								fromPtr->toString().c_str(), toPtr->toString().c_str());
 					}
 				}
 			}
