@@ -31,6 +31,42 @@
 namespace cupt {
 namespace internal {
 
+// InnerAction
+InnerAction::InnerAction()
+	: fake(false), linkedFrom(NULL), linkedTo(NULL), priority(0)
+{}
+
+bool InnerAction::operator<(const InnerAction& other) const
+{
+	if (type < other.type)
+	{
+		return true;
+	}
+	else if (type > other.type)
+	{
+		return false;
+	}
+	else
+	{
+		return *version < *(other.version);
+	}
+}
+bool InnerAction::operator==(const InnerAction& other) const
+{
+	return type == other.type && *version == *(other.version);
+}
+
+string InnerAction::toString() const
+{
+	const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
+	string prefix = fake ? "(fake)" : "";
+	string result = prefix + typeStrings[type] + " " + version->packageName +
+			" " + version->versionString;
+
+	return result;
+}
+
+
 using std::make_pair;
 
 PackagesWorker::PackagesWorker()

@@ -40,39 +40,10 @@ struct InnerAction
 	mutable const InnerAction* linkedTo;
 	mutable ssize_t priority;
 
-	InnerAction()
-		: fake(false), linkedFrom(NULL), linkedTo(NULL), priority(0)
-	{}
-
-	bool operator<(const InnerAction& other) const
-	{
-		if (type < other.type)
-		{
-			return true;
-		}
-		else if (type > other.type)
-		{
-			return false;
-		}
-		else
-		{
-			return *version < *(other.version);
-		}
-	}
-	bool operator==(const InnerAction& other) const
-	{
-		return type == other.type && *version == *(other.version);
-	}
-
-	string toString() const
-	{
-		const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
-		string prefix = fake ? "(fake)" : "";
-		string result = prefix + typeStrings[type] + " " + version->packageName +
-				" " + version->versionString;
-
-		return result;
-	}
+	InnerAction();
+	bool operator<(const InnerAction& other) const;
+	bool operator==(const InnerAction& other) const;
+	string toString() const;
 };
 struct InnerActionGroup: public vector< InnerAction >
 {
