@@ -1013,7 +1013,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		miniGaa.attributes.clear();
 		FORIT(it, basicEdges)
 		{
-			miniGaa.graph.addEdge(*(it->first), *(it->second));
+			miniGaa.graph.addEdgeFromPointers(it->first, it->second);
 			miniGaa.attributes[*(it->first)][*(it->second)].isFundamental = true;
 		}
 
