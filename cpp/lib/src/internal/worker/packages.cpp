@@ -66,6 +66,29 @@ string InnerAction::toString() const
 	return result;
 }
 
+// Attribute
+GraphAndAttributes::Attribute::Attribute()
+	: isFundamental(false)
+{}
+
+bool GraphAndAttributes::Attribute::isDependencyHard() const
+{
+	if (isFundamental)
+	{
+		return true;
+	}
+
+	FORIT(recordIt, relationInfo)
+	{
+		if (recordIt->dependencyType != BinaryVersion::RelationTypes::Breaks &&
+			(!recordIt->reverse || recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 
 using std::make_pair;
 

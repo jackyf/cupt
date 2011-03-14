@@ -66,25 +66,8 @@ struct GraphAndAttributes
 		bool isFundamental;
 		vector< RelationInfoRecord > relationInfo;
 
-		Attribute() : isFundamental(false) {}
-
-		bool isDependencyHard() const
-		{
-			if (isFundamental)
-			{
-				return true;
-			}
-
-			FORIT(recordIt, relationInfo)
-			{
-				if (recordIt->dependencyType != BinaryVersion::RelationTypes::Breaks &&
-					(!recordIt->reverse || recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts))
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+		Attribute();
+		bool isDependencyHard() const;
 	};
 	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
 };
