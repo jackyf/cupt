@@ -191,6 +191,10 @@ struct FillActionGeneralInfo
 	bool debugging;
 	const InnerAction* innerActionPtr;
 };
+struct Direction
+{
+	enum Type { After, Before };
+};
 
 void __fill_action_dependencies(FillActionGeneralInfo& gi,
 		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,

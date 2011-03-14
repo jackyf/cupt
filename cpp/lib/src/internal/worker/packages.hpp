@@ -31,10 +31,6 @@ namespace internal {
 
 using std::list;
 
-struct Direction
-{
-	enum Type { After, Before };
-};
 struct InnerAction
 {
 	enum Type { PriorityModifier, Remove, Unpack, Configure } type;
