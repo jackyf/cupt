@@ -885,12 +885,12 @@ void __make_cycles_for_linked_actions(GraphAndAttributes& gaa)
 		{
 			if (innerActionIt->linkedFrom)
 			{
-				gaa.graph.addEdge(*innerActionIt, *(innerActionIt->linkedFrom));
+				gaa.graph.addEdgeFromPointers(&*innerActionIt, innerActionIt->linkedFrom);
 			}
 
 			if (innerActionIt->linkedTo)
 			{
-				gaa.graph.addEdge(*(innerActionIt->linkedTo), *innerActionIt);
+				gaa.graph.addEdgeFromPointers(innerActionIt->linkedTo, &*innerActionIt);
 			}
 		}
 	}
