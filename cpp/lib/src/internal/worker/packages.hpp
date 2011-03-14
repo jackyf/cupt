@@ -42,7 +42,6 @@ struct InnerAction
 
 	InnerAction();
 	bool operator<(const InnerAction& other) const;
-	bool operator==(const InnerAction& other) const;
 	string toString() const;
 };
 struct InnerActionGroup: public vector< InnerAction >

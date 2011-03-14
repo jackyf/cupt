@@ -51,10 +51,6 @@ bool InnerAction::operator<(const InnerAction& other) const
 		return *version < *(other.version);
 	}
 }
-bool InnerAction::operator==(const InnerAction& other) const
-{
-	return type == other.type && *version == *(other.version);
-}
 
 string InnerAction::toString() const
 {
