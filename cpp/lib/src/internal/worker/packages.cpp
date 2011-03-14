@@ -948,36 +948,38 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 	vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
 
 	{ // filling minigraph and basic edges
-		vector< pair< const InnerAction*, const InnerAction* > > possibleEdges;
 		// fill vertices
 		FORIT(actionIt, actionGroup)
 		{
-			const list< const InnerAction* >& successors = gaa.graph.getSuccessors(*actionIt);
-			FORIT(successorPtrIt, successors)
-			{
-				possibleEdges.push_back(make_pair(&*actionIt, *successorPtrIt));
-			}
 			auto vertexPtr = miniGaa.graph.addVertex(*actionIt);
 			vertexPtr->linkedFrom = NULL;
 			vertexPtr->linkedTo = NULL;
 		}
-		// filtering edges
+		// filling basic edges
 		const set< InnerAction >& allowedVertices = miniGaa.graph.getVertices();
-		FORIT(edgeIt, possibleEdges)
+		FORIT(it, allowedVertices)
 		{
-			auto fromPtr = edgeIt->first;
-			auto toPtr = edgeIt->second;
-			if (!allowedVertices.count(*toPtr))
-			{
-				continue; // edge lies outside our mini graph
-			}
+			auto newFromPtr = &*it;
+			auto oldFromPtr = gaa.graph.addVertex(*newFromPtr);
 
-			if (gaa.attributes[*fromPtr][*toPtr].isFundamental)
+			const list< const InnerAction* >& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
+			FORIT(successorPtrIt, oldSuccessors)
 			{
-				basicEdges.push_back(*edgeIt);
-				// also adding to the graph solely for next priority modifiers block
-				// don't do FromPointers here, these pointers don't exist in miniGaa
-				miniGaa.graph.addEdge(*fromPtr, *toPtr);
+				auto oldToPtr = *successorPtrIt;
+				if (gaa.attributes[*oldFromPtr][*oldToPtr].isFundamental)
+				{
+					auto newToIt = allowedVertices.find(*oldToPtr);
+					if (newToIt != allowedVertices.end())
+					{
+						// yes, edge lies inside our mini graph
+						auto newToPtr = &*newToIt;
+
+						basicEdges.push_back(make_pair(newFromPtr, newToPtr));
+						// also adding to the graph solely for next priority modifiers block
+						// don't do FromPointers here, these pointers don't exist in miniGaa
+						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+					}
+				}
 			}
 		}
 		{ // adding priority modifiers
