@@ -282,7 +282,7 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 
 			// adding relation to attributes
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
-					gi.gaaPtr->attributes[*slaveActionPtr][*masterActionPtr].relationInfo;
+					gi.gaaPtr->attributes[slaveActionPtr][masterActionPtr].relationInfo;
 			GraphAndAttributes::RelationInfoRecord record =
 					{ dependencyType, *relationExpressionIt, direction == Direction::After };
 			relationInfo.push_back(std::move(record));
@@ -373,7 +373,7 @@ void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool deb
 		const InnerAction* fromPtr = edgeIt->first;
 		const InnerAction* toPtr = edgeIt->second;
 		const vector< GraphAndAttributes::RelationInfoRecord >& records =
-				gaa.attributes[*fromPtr][*toPtr].relationInfo;
+				gaa.attributes[fromPtr][toPtr].relationInfo;
 
 		RelationLine preDependencyRelationExpressions;
 		FORIT(recordIt, records)
@@ -500,15 +500,15 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 					toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
 		}
 
-		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[*toPredecessorPtr][*toSuccessorPtr];
-		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[*fromPredecessorPtr][*fromSuccessorPtr];
+		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[toPredecessorPtr][toSuccessorPtr];
+		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[fromPredecessorPtr][fromSuccessorPtr];
 
 		// concatenating relationInfo
 		toAttribute.relationInfo.insert(toAttribute.relationInfo.end(),
 				fromAttribute.relationInfo.begin(), fromAttribute.relationInfo.end());
 
 		// delete the whole attribute
-		gaa.attributes[*fromPredecessorPtr].erase(*fromSuccessorPtr);
+		gaa.attributes[fromPredecessorPtr].erase(fromSuccessorPtr);
 
 		// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' will be deleted by deleteVertex at the end
 
@@ -862,7 +862,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 			FORIT(it, basicEdges)
 			{
 				gaa.graph.addEdgeFromPointers(it->first, it->second);
-				gaa.attributes[*it->first][*it->second].isFundamental = true;
+				gaa.attributes[it->first][it->second].isFundamental = true;
 			}
 			FORIT(it, virtualEdges)
 			{
@@ -888,7 +888,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		{
 			debug("the present action dependency: '%s' -> '%s', %s",
 					edgeIt->first->toString().c_str(), edgeIt->second->toString().c_str(),
-					gaa.attributes[*(edgeIt->first)][*(edgeIt->second)].isDependencyHard() ? "hard" : "soft");
+					gaa.attributes[edgeIt->first][edgeIt->second].isDependencyHard() ? "hard" : "soft");
 		}
 	}
 
@@ -966,7 +966,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;
-				if (gaa.attributes[*oldFromPtr][*oldToPtr].isFundamental)
+				if (gaa.attributes[oldFromPtr][oldToPtr].isFundamental)
 				{
 					auto newToIt = allowedVertices.find(*oldToPtr);
 					if (newToIt != allowedVertices.end())
@@ -1014,7 +1014,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		FORIT(it, basicEdges)
 		{
 			miniGaa.graph.addEdgeFromPointers(it->first, it->second);
-			miniGaa.attributes[*(it->first)][*(it->second)].isFundamental = true;
+			miniGaa.attributes[it->first][it->second].isFundamental = true;
 		}
 
 		__fill_graph_dependencies(cache, miniGaa, debugging);
@@ -1024,7 +1024,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			{
 				auto fromPtr = edgeIt->first;
 				auto toPtr = edgeIt->second;
-				if (!miniGaa.attributes[*fromPtr][*toPtr].isDependencyHard())
+				if (!miniGaa.attributes[fromPtr][toPtr].isDependencyHard())
 				{
 					miniGaa.graph.deleteEdge(*fromPtr, *toPtr);
 					if (debugging)
