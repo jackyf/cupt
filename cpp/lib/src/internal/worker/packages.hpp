@@ -119,7 +119,7 @@ struct GraphAndAttributes
 			return false;
 		}
 	};
-	map< const InnerAction*, map< const InnerAction*, Attribute > > attributes;
+	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
 };
 struct Changeset
 {
