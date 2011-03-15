@@ -73,9 +73,8 @@ Resolver::SynchronizationReason::SynchronizationReason(
 
 string Resolver::SynchronizationReason::toString() const
 {
-	return sf(__("%s %s synchronized with package '%s'"),
-			version->packageName.c_str(), version->versionString.c_str(),
-			relatedPackageName.c_str());
+	return sf(__("%s: synchronization with %s %s"), relatedPackageName.c_str(),
+			version->packageName.c_str(), version->versionString.c_str());
 }
 
 }
