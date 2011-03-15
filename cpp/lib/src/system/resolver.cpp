@@ -65,13 +65,17 @@ string Resolver::RelationExpressionReason::toString() const
 	}
 }
 
-Resolver::SynchronizationReason::SynchronizationReason(const string& packageName_)
-	: packageName(packageName_)
+Resolver::SynchronizationReason::SynchronizationReason(
+		const shared_ptr< const BinaryVersion >& version_,
+		const string& packageName_)
+	: version(version_), relatedPackageName(packageName_)
 {}
 
 string Resolver::SynchronizationReason::toString() const
 {
-	return sf(__("synchronized with package '%s'"), packageName.c_str());
+	return sf(__("%s %s synchronized with package '%s'"),
+			version->packageName.c_str(), version->versionString.c_str(),
+			relatedPackageName.c_str());
 }
 
 }

@@ -215,7 +215,7 @@ shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& paren
 		fatal("internal error: a parent of relation expression vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
-			new system::Resolver::SynchronizationReason(versionParent->getPackageName()));
+			new system::Resolver::SynchronizationReason(versionParent->version, targetPackageName));
 }
 
 bool SynchronizeVertex::isAnti() const

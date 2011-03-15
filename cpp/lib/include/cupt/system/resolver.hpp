@@ -97,10 +97,11 @@ class Resolver
 	 */
 	struct SynchronizationReason: public Reason
 	{
-		string packageName; ///< name of related binary package
+		shared_ptr< const BinaryVersion > version; ///< version that caused the change
+		string relatedPackageName; ///< name of related binary package
 
 		/// trivial constructor
-		SynchronizationReason(const string&);
+		SynchronizationReason(const shared_ptr< const BinaryVersion >&, const string&);
 		virtual string toString() const;
 	};
 
