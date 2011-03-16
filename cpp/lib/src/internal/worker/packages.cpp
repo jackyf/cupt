@@ -46,18 +46,30 @@ bool InnerAction::operator<(const InnerAction& other) const
 	{
 		return false;
 	}
-	else
+	else if (versionProxy->getPackageName() < other.versionProxy->getPackageName())
 	{
-		return *version < *(other.version);
+		return true;
 	}
+	else if (versionProxy->getPackageName() > other.versionProxy->getPackageName())
+	{
+		return false;
+	}
+	else if (versionProxy->getVersionString() < other.versionProxy->getVersionString())
+	{
+		return true;
+	}
+	else if (versionProxy->getVersionString() > other.versionProxy->getVersionString())
+	{
+		return false;
+	}
+	return versionProxy->getAdditionaSortKey() < other.versionProxy->getAdditionaSortKey();
 }
 
 string InnerAction::toString() const
 {
 	const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
 	string prefix = fake ? "(fake)" : "";
-	string result = prefix + typeStrings[type] + " " + version->packageName +
-			" " + version->versionString;
+	string result = prefix + typeStrings[type] + " " + versionProxy->toString();
 
 	return result;
 }
@@ -84,6 +96,9 @@ bool GraphAndAttributes::Attribute::isDependencyHard() const
 	}
 	return false;
 }
+
+// OneRelationExpressionVersionProxy
+const RelationLine OneRelationExpressionVersionProxy::__null_result;
 
 
 using std::make_pair;
@@ -210,8 +225,13 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 				}
 
 				InnerAction action;
-			    action.version = version;
-				action.type = innerActionType;
+				{
+					action.type = innerActionType;
+
+					auto proxy = new FullVersionProxy;
+					proxy->setVersion(version);
+					action.versionProxy.reset(proxy);
+				}
 
 				auto newVertexPtr = gaa.graph.addVertex(action);
 
@@ -221,7 +241,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 					using std::make_pair;
 					basicEdges.push_back(make_pair(previousInnerActionPtr, newVertexPtr));
 					if (previousInnerActionPtr->type == IA::Remove &&
-							(newVertexPtr->version->essential || pseudoEssentialPackageNames.count(packageName)))
+							(version->essential || pseudoEssentialPackageNames.count(packageName)))
 					{
 						// merging remove/unpack
 						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
@@ -255,19 +275,23 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
 		Direction::Type direction)
 {
+	// allowed, this function is not re-entrant
+	static shared_ptr< FullVersionProxy > searchVersionProxy(new FullVersionProxy);
+
 	const set< InnerAction >& verticesMap = gi.gaaPtr->graph.getVertices();
 
 	InnerAction candidateAction;
 	candidateAction.type = actionType;
 
-	const RelationLine& relationLine = gi.innerActionPtr->version->relations[dependencyType];
+	const RelationLine& relationLine = gi.innerActionPtr->versionProxy->getRelations(dependencyType);
 	FORIT(relationExpressionIt, relationLine)
 	{
 		auto satisfyingVersions = gi.cache->getSatisfyingVersions(*relationExpressionIt);
 
 		FORIT(satisfyingVersionIt, satisfyingVersions)
 		{
-			candidateAction.version = *satisfyingVersionIt;
+			searchVersionProxy->setVersion(*satisfyingVersionIt);
+			candidateAction.versionProxy = searchVersionProxy;
 
 			// search for the appropriate action in action list
 			auto vertexIt = verticesMap.find(candidateAction);
@@ -330,7 +354,8 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 
 				if (antagonisticActionPtr)
 				{
-					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticActionPtr->version);
+					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(),
+							antagonisticActionPtr->versionProxy->getVersion());
 					if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
 							predicate) != satisfyingVersions.end())
 					{
@@ -464,7 +489,7 @@ void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool deb
 			vector< string > packageNamesInPath;
 			FORIT(pathIt, path)
 			{
-				packageNamesInPath.push_back((*pathIt)->version->packageName);
+				packageNamesInPath.push_back((*pathIt)->versionProxy->getPackageName());
 			}
 			string packageNamesString = join(", ", packageNamesInPath);
 
@@ -504,7 +529,7 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	// building the black list
 	FORIT(vertexIt, gaa.graph.getVertices())
 	{
-		blacklistedPackageNames.insert(vertexIt->version->packageName);
+		blacklistedPackageNames.insert(vertexIt->versionProxy->getPackageName());
 	}
 
 	auto installedVersions = cache->getInstalledVersions();
@@ -523,18 +548,17 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 		{
 			FORIT(relationExpressionIt, installedVersion->relations[*dependencyTypeIt])
 			{
-				shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
-				virtualVersion->packageName = packageName + " [" + relationExpressionIt->toString() + "]";
-				virtualVersion->versionString = installedVersion->versionString;
-				virtualVersion->relations[*dependencyTypeIt].push_back(*relationExpressionIt);
+				shared_ptr< OneRelationExpressionVersionProxy > virtualVersionProxy(
+						new OneRelationExpressionVersionProxy(
+						installedVersion, *dependencyTypeIt, *relationExpressionIt));
 
 				InnerAction from;
-				from.version = virtualVersion;
+				from.versionProxy = virtualVersionProxy;
 				from.type = InnerAction::Configure;
 				from.fake = true;
 
 				InnerAction to;
-				to.version = virtualVersion;
+				to.versionProxy = virtualVersionProxy;
 				to.type = InnerAction::Remove;
 				to.fake = true;
 
@@ -598,7 +622,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 				moveEdge(toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt);
 				if (debugging)
 				{
-					const string& mediatorPackageName = fromPtr->version->packageName;
+					const string& mediatorPackageName = fromPtr->versionProxy->getPackageName();
 					debug("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
 							(*predecessorVertexPtrIt)->toString().c_str(), (*successorVertexPtrIt)->toString().c_str(),
 							mediatorPackageName.c_str());
@@ -657,7 +681,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 	{
 		if (innerActionIt->type == InnerAction::Unpack)
 		{
-			const string& packageName = innerActionIt->version->packageName;
+			const string& packageName = innerActionIt->versionProxy->getPackageName();
 
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
@@ -666,7 +690,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
-					(*actionPtrIt)->version->packageName == packageName)
+					(*actionPtrIt)->versionProxy->getPackageName() == packageName)
 				{
 					fromPtr = *actionPtrIt;
 					break;
@@ -677,7 +701,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
-					(*actionPtrIt)->version->packageName == packageName)
+					(*actionPtrIt)->versionProxy->getPackageName() == packageName)
 				{
 					toPtr = *actionPtrIt;
 					break;
@@ -713,7 +737,7 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 			{
 				if (vertexPtr->type == InnerAction::PriorityModifier)
 				{
-					if (vertexPtr->version->packageName == fromPtr->version->packageName)
+					if (vertexPtr->versionProxy->getPackageName() == fromPtr->versionProxy->getPackageName())
 					{
 						// this is "own" priority modifier, can be reached only once
 						vertexPtr->priority = -(ssize_t)reachableToVertices.size();
@@ -816,7 +840,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 		{
 			return; // was linked already
 		}
-		if (from.version->packageName == to.version->packageName)
+		if (from.versionProxy->getPackageName() == to.versionProxy->getPackageName())
 		{
 			if ((from.type == InnerAction::Remove && to.type == InnerAction::Unpack)
 					|| (from.type == InnerAction::Unpack && to.type == InnerAction::Configure))
@@ -961,11 +985,11 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 bool __is_circular_action_subgroup_allowed(const vector< InnerAction >& actionSubgroup)
 {
 	{ // do all actions have the same package name?
-		const string& firstPackageName = actionSubgroup[0].version->packageName;
+		const string& firstPackageName = actionSubgroup[0].versionProxy->getPackageName();
 		bool samePackageName = true;
 		FORIT(actionIt, actionSubgroup)
 		{
-			if (actionIt->version->packageName != firstPackageName)
+			if (actionIt->versionProxy->getPackageName() != firstPackageName)
 			{
 				samePackageName = false;
 				break;
@@ -1317,7 +1341,7 @@ vector< Changeset > __split_action_groups_into_changesets(
 		FORIT(actionIt, *actionGroupIt)
 		{
 			auto actionType = actionIt->type;
-			const string& packageName = actionIt->version->packageName;
+			const string& packageName = actionIt->versionProxy->getPackageName();
 			if (actionType == InnerAction::Unpack)
 			{
 				unpackedPackageNames.insert(packageName);
@@ -1548,7 +1572,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		FORIT(actionIt, *actionGroupIt)
 		{
 			auto actionType = actionIt->type;
-			const shared_ptr< const BinaryVersion >& version = actionIt->version;
+			const shared_ptr< const BinaryVersion >& version = actionIt->versionProxy->getVersion();
 			string path;
 			switch (actionType)
 			{
@@ -1645,7 +1669,8 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 				{
 					if (actionIt->type == InnerAction::Unpack)
 					{
-						auto debPath = archivesDirectory + "/" + _get_archive_basename(actionIt->version);
+						auto debPath = archivesDirectory + "/" +
+								_get_archive_basename(actionIt->versionProxy->getVersion());
 						commandInput += debPath;
 						commandInput += "\n";
 					}
@@ -1682,7 +1707,7 @@ void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 
 		const map< string, bool >& autoFlagChanges = __actions_preview->autoFlagChanges;
 
-		const string& packageName = actionIt->version->packageName;
+		const string& packageName = actionIt->versionProxy->getPackageName();
 		auto it = autoFlagChanges.find(packageName);
 		if (it != autoFlagChanges.end() && it->second == targetStatus)
 		{
@@ -1902,15 +1927,15 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					{
 						continue; // will be true for non-last linked actions
 					}
+					const shared_ptr< const BinaryVersion >& version = actionIt->versionProxy->getVersion();
 					string actionExpression;
 					if (actionName == "unpack" || actionName == "install")
 					{
-						const shared_ptr< const BinaryVersion > version = actionIt->version;
 						actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
 					}
 					else
 					{
-						actionExpression = actionIt->version->packageName;
+						actionExpression = version->packageName;
 					}
 					dpkgCommand += " ";
 					dpkgCommand += actionExpression;
