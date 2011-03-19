@@ -33,6 +33,9 @@ cupt2 (2.0.0~beta2~) UNRELEASED; urgency=low
         'triggers-pending' states. (Closes: #602263)
     - config:
       - Recognize the option 'apt::get::list-cleanup'.
+    - cache:
+      - Fixed extracting release version from Release files. This regression
+        was introduced in 2.0.0~alpha1.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 07 Mar 2011 12:09:47 +0200
 

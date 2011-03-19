@@ -540,7 +540,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 			{
 				result->description = fieldValue;
 				smatch descriptionMatch;
-				if (regex_match(fieldValue, descriptionMatch, sregex::compile("[0-9][0-9a-z._-]*")))
+				if (regex_search(fieldValue, descriptionMatch, sregex::compile("[0-9][0-9a-z._-]*")))
 				{
 					result->version = descriptionMatch[0];
 				}
