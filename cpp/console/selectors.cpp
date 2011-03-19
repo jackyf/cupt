@@ -114,6 +114,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 
 		// example: "nlkt/sid" or "nlkt/unstable"
 		auto versions = package->getVersions();
+		decltype(versions) matchingVersions;
 		FORIT(versionIt, versions)
 		{
 			FORIT(sourceIt, (*versionIt)->sources)
@@ -121,19 +122,38 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 				if (sourceIt->release->archive == distributionExpression ||
 					sourceIt->release->codename == distributionExpression)
 				{
-					// found such a version
-					return *versionIt;
+					matchingVersions.push_back(*versionIt);
+					break;
 				}
 			}
 		}
 
-		// not found
-		if (throwOnError)
+		if (matchingVersions.empty())
 		{
-			fatal("cannot find distribution '%s' for package '%s'",
-					distributionExpression.c_str(), packageName.c_str());
+			// not found
+			if (throwOnError)
+			{
+				fatal("cannot find distribution '%s' for package '%s'",
+						distributionExpression.c_str(), packageName.c_str());
+			}
+			return ReturnType();
 		}
-		return ReturnType();
+		else if (matchingVersions.size() == 1)
+		{
+			return matchingVersions[0];
+		}
+		else
+		{
+			vector< string > versionStrings;
+			FORIT(it, matchingVersions)
+			{
+				versionStrings.push_back((*it)->versionString);
+			}
+			fatal("for the package '%s' and the distribution '%s' several versions found: %s;"
+					" you should explicitly select by version", packageName.c_str(),
+					distributionExpression.c_str(), join(", ", versionStrings).c_str());
+			return ReturnType(); // unreachable
+		}
 	}
 	else
 	{
