@@ -13,6 +13,7 @@ Vcs-Browser: https://github.com/jackyf/cupt/tree/develop
 Package: libcupt2-0
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
+Conflicts: libcupt2-0-experimental
 Breaks: debdelta (<< 0.31)
 Recommends: libcupt2-0-downloadmethod-curl | libcupt2-0-downloadmethod-wget, bzip2, gpgv
 Suggests: cupt, lzma, debdelta (>= 0.31), dpkg-dev, dpkg-repack
@@ -35,6 +36,7 @@ Description: alternative front-end for dpkg -- runtime library
 Package: libcupt2-dev
 Architecture: any
 Depends: ${misc:Depends}, libcupt2-0 (= ${binary:Version})
+Conflicts: libcupt2-dev-experimental
 Suggests: libcupt2-doc
 Description: arternative front-end for dpkg -- development files
  This package provides headers for Cupt library.
