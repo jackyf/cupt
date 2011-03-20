@@ -1,4 +1,4 @@
-Source: cupt2
+Source: cupt
 Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 7.0.50), g++-4.5, libboost-program-options1.42-dev,

@@ -1,4 +1,4 @@
-cupt2 (2.0.0~beta2~) UNRELEASED; urgency=low
+cupt (2.0.0~beta2~) UNRELEASED; urgency=low
 
   * console:
     - Action preview prompt: support 'ProcessTriggers' action.
@@ -36,10 +36,12 @@ cupt2 (2.0.0~beta2~) UNRELEASED; urgency=low
     - cache:
       - Fixed extracting release version from Release files. This regression
         was introduced in 2.0.0~alpha1.
+  * debian:
+    - changelog, control: source package is back to 'cupt' from 'cupt2'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 07 Mar 2011 12:09:47 +0200
 
-cupt2 (2.0.0~beta1) UNRELEASED; urgency=low
+cupt (2.0.0~beta1) UNRELEASED; urgency=low
 
   * console:
     - shell:
@@ -114,7 +116,7 @@ cupt2 (2.0.0~beta1) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 06 Mar 2011 15:22:47 +0200
 
-cupt2 (2.0.0~alpha3) UNRELEASED; urgency=low
+cupt (2.0.0~alpha3) UNRELEASED; urgency=low
 
   * All the non-experimental functionality from cupt 1.x is now implemented.
 
@@ -170,7 +172,7 @@ cupt2 (2.0.0~alpha3) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 06 Jan 2011 12:35:15 +0200
 
-cupt2 (2.0.0~alpha2) UNRELEASED; urgency=low
+cupt (2.0.0~alpha2) UNRELEASED; urgency=low
 
   * console:
     - 'why': fixed infinite CPU and RAM usage when some of starting versions
@@ -251,7 +253,7 @@ cupt2 (2.0.0~alpha2) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 14 Nov 2010 10:39:41 +0200
 
-cupt2 (2.0.0~alpha1) UNRELEASED; urgency=low
+cupt (2.0.0~alpha1) UNRELEASED; urgency=low
 
   * Re-implemented in C++ (and subset of C++0x). (Closes: #605320)
     - Parsing version entries is much faster now. (Closes: #547950)
