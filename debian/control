@@ -34,6 +34,7 @@ Description: alternative front-end for dpkg -- runtime library
  See also description of 'cupt' package for more information.
 
 Package: libcupt2-dev
+Section: libdevel
 Architecture: any
 Depends: ${misc:Depends}, libcupt2-0 (= ${binary:Version})
 Conflicts: libcupt2-dev-experimental
@@ -44,6 +45,7 @@ Description: arternative front-end for dpkg -- development files
  See also description of libcupt2-0 package.
 
 Package: libcupt2-doc
+Section: doc
 Architecture: all
 Depends: ${misc:Depends}
 Description: alternative front-end for dpkg -- library documentation

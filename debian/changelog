@@ -39,7 +39,10 @@ cupt (2.0.0~beta2~) UNRELEASED; urgency=low
   * debian:
     - changelog, control: source package is back to 'cupt' from 'cupt2'.
     - *: removed the suffix '-experimental' from binary package names.
-    - control: added needed Conflicts against obsolete packages.
+    - control:
+      - Added needed Conflicts against obsolete packages.
+      - Changed sections of 'libcupt2-dev' and 'libcupt2-doc' as suggested
+        by lintian.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 07 Mar 2011 12:09:47 +0200
 
