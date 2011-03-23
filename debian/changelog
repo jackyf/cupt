@@ -4,6 +4,10 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - Action preview prompt:
       - Allow specifying several package expressions under 'a' choice before
         re-running a resolver.
+  * lib:
+    - system/resolvers/native:
+      - Fixed an algorithmic bug in calculating error trees when no solutions
+        are found, which might lead to incorrect trees sometimes.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 23 Mar 2011 09:59:32 +0200
 

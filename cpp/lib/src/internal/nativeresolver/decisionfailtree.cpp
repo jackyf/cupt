@@ -134,7 +134,7 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, size_t offset)
 	auto diversedElementPtr = failItem.insertedElementPtrs[offset];
 	FORIT(it, failItem.decisions)
 	{
-		if (it->introducedBy.versionElementPtr == diversedElementPtr)
+		if (it->insertedElementPtr == diversedElementPtr)
 		{
 			return false;
 		}
