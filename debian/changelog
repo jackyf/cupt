@@ -1,6 +1,9 @@
 cupt (2.0.0~rc1~) UNRELEASED; urgency=low
 
-  * 
+  * console:
+    - Action preview prompt:
+      - Allow specifying several package expressions under 'a' choice before
+        re-running a resolver.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 23 Mar 2011 09:59:32 +0200
 

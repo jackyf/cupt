@@ -798,14 +798,21 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	bool resolved = resolver->resolve(callback);
 	if (addArgumentsFlag && std::cin)
 	{
-		cout << __("Enter a package expression: ");
 		string answer;
-		std::getline(std::cin, answer);
-		if (!answer.empty())
+		do
 		{
-			processPackageExpressions(config, cache, mode, *resolver,
-					vector< string > { answer });
-		}
+			cout << __("Enter a package expression (empty to finish): ");
+			std::getline(std::cin, answer);
+			if (!answer.empty())
+			{
+				processPackageExpressions(config, cache, mode, *resolver,
+						vector< string > { answer });
+			}
+			else
+			{
+				break;
+			}
+		} while (true);
 		goto resolve;
 	}
 
