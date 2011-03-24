@@ -350,6 +350,17 @@ struct DependencyEntry
 
 vector< DependencyEntry > __get_dependency_groups(const Config& config)
 {
+	auto checkForUselessPairOption = [config](const string& subname)
+	{
+		auto installOptionName = string("apt::install-") + subname;
+		if (config.getBool(installOptionName))
+		{
+			warn("a positive value of the option '%s' has no effect without a positive value of the option '%s'",
+					installOptionName.c_str(),
+					(string("cupt::resolver::keep-") + subname).c_str());
+		}
+	};
+
 	vector< DependencyEntry > result = {
 		{ BinaryVersion::RelationTypes::PreDepends, false },
 		{ BinaryVersion::RelationTypes::Depends, false },
@@ -361,9 +372,18 @@ vector< DependencyEntry > __get_dependency_groups(const Config& config)
 	{
 		result.push_back(DependencyEntry { BinaryVersion::RelationTypes::Recommends, false });
 	}
+	else
+	{
+		checkForUselessPairOption("recommends");
+	}
+
 	if (config.getBool("cupt::resolver::keep-suggests"))
 	{
 		result.push_back(DependencyEntry { BinaryVersion::RelationTypes::Suggests, false });
+	}
+	else
+	{
+		checkForUselessPairOption("suggests");
 	}
 
 	return result;
