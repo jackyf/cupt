@@ -1,0 +1,11 @@
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+Makefile
+!/doc/examples/show-upgradeable/Makefile
+
+*.gch
+*.so
+*.so.*
+*.bin
+install_manifest.txt

@@ -1,0 +1,7 @@
+/files
+*.substvars
+*.debhelper.log
+*.debhelper
+/tmp/
+/cupt/
+/libcupt*/
