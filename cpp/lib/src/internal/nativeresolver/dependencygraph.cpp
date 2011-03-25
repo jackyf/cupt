@@ -282,15 +282,12 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 		const RelationExpression& relationExpression)
 {
 	auto relationExpressionString = relationExpression.getHashString();
-	if (!relationExpressionString.empty())
+	FORIT(candidateRelationExpressionIt, version->relations[dependencyType])
 	{
-		FORIT(candidateRelationExpressionIt, version->relations[dependencyType])
+		auto candidateString = candidateRelationExpressionIt->getHashString();
+		if (relationExpressionString == candidateString)
 		{
-			auto candidateString = candidateRelationExpressionIt->getHashString();
-			if (!candidateString.empty() && relationExpressionString == candidateString)
-			{
-				return true;
-			}
+			return true;
 		}
 	}
 	return false;
