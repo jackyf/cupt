@@ -5,6 +5,7 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
       - Allow specifying several package expressions under 'a' choice before
         re-running a resolver.
   * lib:
+    - Always set 'close-on-exec' flag for internal pipes.
     - system/resolvers/native:
       - Fixed an algorithmic bug in calculating error trees when no solutions
         are found, which might lead to incorrect trees sometimes.

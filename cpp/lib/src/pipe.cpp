@@ -15,6 +15,9 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <cupt/pipe.hpp>
 
 namespace cupt {
@@ -52,6 +55,24 @@ Pipe::Pipe(const string& name_)
 	{
 		fatal("unable to create '%s' pipe: EEE", __data->name.c_str());
 	}
+
+	// setting FD_CLOEXEC flags
+	for (size_t i = 0; i < 2; ++i)
+	{
+		int fd = pipeFdPair[i];
+		int oldFdFlags = fcntl(fd, F_GETFD);
+		if (oldFdFlags < 0)
+		{
+			fatal("unable to create '%s' pipe: unable to get file descriptor flags: EEE",
+					__data->name.c_str());
+		}
+		if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
+		{
+			fatal("unable to create '%s' pipe: unable to set the close-on-exec flag: EEE",
+					__data->name.c_str());
+		}
+	}
+
 	__data->inputFd = pipeFdPair[0];
 	__data->outputFd = pipeFdPair[1];
 }
