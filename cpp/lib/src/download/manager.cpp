@@ -373,7 +373,7 @@ void disablePingTimer()
 	timerStruct.it_interval.tv_usec = 0;
 	timerStruct.it_value.tv_sec = 0;
 	timerStruct.it_value.tv_usec = 0;
-	if (setitimer(ITIMER_REAL, 0, 0) == -1)
+	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
 	{
 		fatal("unable to disable ALRM signal: setitimer failed: EEE");
 	}
