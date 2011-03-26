@@ -179,6 +179,7 @@ void ConfigImpl::initializeVariables()
 		"dpkg::tools::options::*::*",
 
 		// unused APT vars
+		"acquire::cdrom::*",
 		"acquire::compressiontypes::*",
 		"apt::archives::*",
 		"apt::periodic::*",

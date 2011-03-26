@@ -16,6 +16,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         but 'cupt::resolver::keep-<X>' option is unset.
     - file:
        - Always set 'close-on-exec' flag for opened file descriptors.
+    - config:
+      - Recognize 'acquire::cdrom::*' variables.
     - Set of close-on-exec flag changes above Closes: #619650. Thanks to
       Jonathan Nieder for the report and an initial patch set.
 
