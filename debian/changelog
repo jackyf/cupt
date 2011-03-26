@@ -4,6 +4,9 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - Action preview prompt:
       - Allow specifying several package expressions under 'a' choice before
         re-running a resolver.
+    - 'dist-upgrade':
+      - Pre-upgrade 'cupt' package first, not 'cupt-experimental'. Fixes
+        a regression introduced in 2.0.0~beta2.
   * lib:
     - Always set 'close-on-exec' flag for internal pipes.
     - system/resolvers/native:

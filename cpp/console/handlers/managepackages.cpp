@@ -848,7 +848,7 @@ int distUpgrade(Context& context)
 		cout << __("[ upgrading package management tools ]") << endl;
 		cout << endl;
 		context.unparsed.push_back("dpkg");
-		context.unparsed.push_back("cupt-experimental");
+		context.unparsed.push_back("cupt");
 		if (managePackages(context, ManagePackages::Install) != 0)
 		{
 			fatal("upgrading of the package management tools failed");
