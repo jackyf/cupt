@@ -18,12 +18,24 @@
 #include <cstdio>
 
 #include <sys/file.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <cupt/file.hpp>
 
 #include <internal/common.hpp>
 
 namespace cupt {
+
+static int __guarded_fileno(FILE* handle, const string& path)
+{
+	int fd = fileno(handle);
+	if (fd == -1)
+	{
+		fatal("fileno on file '%s' failed: EEE", path.c_str());
+	}
+	return fd;
+}
 
 namespace internal {
 
@@ -59,6 +71,24 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	if (!handle)
 	{
 		openError = sf("EEE");
+	}
+	else
+	{
+		// setting FD_CLOEXEC flag
+
+		int fd = __guarded_fileno(handle, path);
+		int oldFdFlags = fcntl(fd, F_GETFD);
+		if (oldFdFlags < 0)
+		{
+			openError = sf("unable to get file descriptor flags: EEE");
+		}
+		else
+		{
+			if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
+			{
+				openError = sf("unable to set the close-on-exec flag: EEE");
+			}
+		}
 	}
 }
 
@@ -245,11 +275,7 @@ size_t File::tell() const
 void File::lock(int flags)
 {
 	__impl->assertFileOpened();
-	int fd = fileno(__impl->handle);
-	if (fd == -1)
-	{
-		fatal("fileno on file '%s' failed: EEE", __impl->path.c_str());
-	}
+	int fd = __guarded_fileno(__impl->handle, __impl->path);
 	// TODO/2.1: consider using fcntl
 	if (flock(fd, flags) == -1)
 	{

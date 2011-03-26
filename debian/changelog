@@ -10,6 +10,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         are found, which might lead to incorrect trees sometimes.
       - Output a warning about no effect when 'apt::install-<X>' option is set
         but 'cupt::resolver::keep-<X>' option is unset.
+    - file:
+       - Always set 'close-on-exec' flag for opened file descriptors.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 23 Mar 2011 09:59:32 +0200
 
