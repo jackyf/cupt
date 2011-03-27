@@ -924,6 +924,11 @@ when you have thousands of manually installed packages and very large query;
 when you have a manually crafted pin priorities system with very large pin
 values.
 
+=item cupt::cache::pin::addendums::not-automatic
+
+integer, specifies priority increase for versions that come only from 'not
+automatic' sources. Defaults to -4000.
+
 =item cupt::console::allow-untrusted
 
 boolean, don't treat using untrusted packages as dangerous action

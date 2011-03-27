@@ -148,4 +148,9 @@ not 'acquire::compression-types'
 
 the difference between 'specific' and 'general' pin types is not supported
 
+=item
+
+an additional pin priority penalty is applied by default to NotAutomatic
+releases (see 'cupt::cache::pin::addendums::not-automatic' option)
+
 =back

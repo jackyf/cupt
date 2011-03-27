@@ -50,9 +50,12 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 	static const ssize_t installedPriority = 100;
 	static const ssize_t defaultPriority = 500;
 
-	ssize_t result = 0;
-
 	auto defaultRelease = config->getString("apt::default-release");
+
+	// this one is Cupt-specific
+	auto notAutomaticAddendum = config->getInteger("cupt::cache::pin::addendums::not-automatic");
+
+	ssize_t result = std::min(0, notAutomaticAddendum);
 
 	size_t sourceCount = version->sources.size();
 	for (size_t i = 0; i < sourceCount; ++i)
@@ -66,7 +69,7 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 		}
 		else if (entry.release->notAutomatic)
 		{
-			currentPriority = notAutomaticReleasePriority;
+			currentPriority = notAutomaticReleasePriority + notAutomaticAddendum;
 		}
 		else if (entry.release->archive == "installed")
 		{
