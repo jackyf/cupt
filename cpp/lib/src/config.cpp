@@ -98,7 +98,7 @@ void ConfigImpl::initializeVariables()
 
 		// Cupt vars
 		{ "acquire::http::allow-redirects", "yes" },
-		{ "cupt::cache::obey-hold", "1000000" },
+		{ "cupt::cache::pin::addendums::hold", "1000000" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::directory", "/" },

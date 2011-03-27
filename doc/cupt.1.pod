@@ -915,7 +915,7 @@ if undefined, intepretes as empty list
 boolean, specifies whether should downloader follow HTTP redirects.
 True by default.
 
-=item cupt::cache::obey-hold
+=item cupt::cache::pin::addendums::hold
 
 integer, specifies priority increase for versions that are put on hold.
 Defaults to 1000000. Set this option to 0 if you do not want to obey holds.

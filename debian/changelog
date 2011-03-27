@@ -18,6 +18,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
        - Always set 'close-on-exec' flag for opened file descriptors.
     - config:
       - Recognize 'acquire::cdrom::*' variables.
+      - The option is 'cupt::cache::obey-hold' is renamed to
+        'cupt::cache::pin::addendums::hold'.
     - download/manager:
       - Pass the right pointer to setitimer() when disabling SIGALRM. Thanks
         to Jonathan Nieder for the report. (Closes: #619727)
