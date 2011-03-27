@@ -101,25 +101,45 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 			}
 		}
 		// dependants
-		if (!solutionStorage.verifyElement(solution, introducedBy.brokenElementPtr))
+		set< const dg::Element* > alreadyProcessedConflictors;
+		const list< const dg::Element* >& successors =
+				solutionStorage.getSuccessorElements(introducedBy.brokenElementPtr);
+		FORIT(successorIt, successors)
 		{
-			set< const dg::Element* > alreadyProcessedConflictors;
-			const list< const dg::Element* >& successors =
-					solutionStorage.getSuccessorElements(introducedBy.brokenElementPtr);
-			FORIT(successorIt, successors)
+			const dg::Element* conflictingElementPtr;
+			if (!solutionStorage.simulateSetPackageEntry(
+					solution, *successorIt, &conflictingElementPtr))
 			{
-				const dg::Element* conflictingElementPtr;
-				if (!solutionStorage.simulateSetPackageEntry(
-						solution, *successorIt, &conflictingElementPtr))
+				// conflicting element is surely exists here
+				if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
 				{
-					// conflicting element is surely exists here
-					if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
+					// not yet processed
+
+					// verifying that conflicting element was added to a
+					// solution earlier than currently processed item
+					auto conflictingElementInsertedPosition =
+							std::find(solution.insertedElementPtrs.begin(), solution.insertedElementPtrs.end(),
+							conflictingElementPtr);
+					if (conflictingElementInsertedPosition == solution.insertedElementPtrs.end())
 					{
-						// not yet processed
-						const PackageEntry::IntroducedBy& candidateIntroducedBy =
-								solution.getPackageEntry(conflictingElementPtr)->introducedBy;
-						queueItem(candidateIntroducedBy, item.level + 1, conflictingElementPtr);
+						// conflicting element was not a resolver decision, so it can't
+						// have valid 'introducedBy' anyway
+						continue;
 					}
+					auto currentElementInsertedPosition =
+							std::find(solution.insertedElementPtrs.begin(), conflictingElementInsertedPosition + 1,
+							item.insertedElementPtr);
+					if (currentElementInsertedPosition <= conflictingElementInsertedPosition)
+					{
+						// it means conflicting element was inserted to a solution _after_
+						// the current element, so it can't be a reason for it
+						continue;
+					}
+
+					// verified, queueing now
+					const PackageEntry::IntroducedBy& candidateIntroducedBy =
+							solution.getPackageEntry(conflictingElementPtr)->introducedBy;
+					queueItem(candidateIntroducedBy, item.level + 1, conflictingElementPtr);
 				}
 			}
 		}

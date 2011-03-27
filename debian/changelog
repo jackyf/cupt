@@ -14,6 +14,7 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         are found, which might lead to incorrect trees sometimes.
       - Output a warning about no effect when 'apt::install-<X>' option is set
         but 'cupt::resolver::keep-<X>' option is unset.
+      - Fixed an endless loop when calculating error trees in some rare cases.
     - file:
        - Always set 'close-on-exec' flag for opened file descriptors.
     - config:
