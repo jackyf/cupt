@@ -15,6 +15,10 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
       - Output a warning about no effect when 'apt::install-<X>' option is set
         but 'cupt::resolver::keep-<X>' option is unset.
       - Fixed an endless loop when calculating error trees in some rare cases.
+      - Consider all binary builds (not only selected one) of some source
+        package version to be already synchronized with any binary build of
+        the related package. Fixes a bug which was present since an initial
+        implementation of synchronizing source versions.
     - file:
        - Always set 'close-on-exec' flag for opened file descriptors.
     - config:

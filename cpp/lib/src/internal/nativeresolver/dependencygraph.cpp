@@ -428,9 +428,10 @@ vector< string > __get_related_binary_package_names(const Cache& cache,
 	return vector< string >();
 }
 
-shared_ptr< const BinaryVersion > __get_version_by_source_version_string(const Cache& cache,
+vector< shared_ptr< const BinaryVersion > > __get_versions_by_source_version_string(const Cache& cache,
 		const string& packageName, const string& sourceVersionString)
 {
+	vector< shared_ptr< const BinaryVersion > > result;
 	if (auto package = cache.getBinaryPackage(packageName))
 	{
 		auto versions = package->getVersions();
@@ -438,12 +439,12 @@ shared_ptr< const BinaryVersion > __get_version_by_source_version_string(const C
 		{
 			if ((*versionIt)->sourceVersionString == sourceVersionString)
 			{
-				return *versionIt;
+				result.push_back(*versionIt);
 			}
 		}
 	}
 
-	return shared_ptr< const BinaryVersion >();
+	return result;
 }
 
 short __get_synchronize_level(const Config& config)
@@ -771,11 +772,11 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 				syncVertex->targetPackageName = *packageNameIt;
 				auto syncVertexPtr = this->addVertex(syncVertex);
 
-				auto relatedVersion = __get_version_by_source_version_string(
+				auto relatedVersions = __get_versions_by_source_version_string(
 						__cache, *packageNameIt, version->sourceVersionString);
-				if (relatedVersion)
+				FORIT(relatedVersionIt, relatedVersions)
 				{
-					if (auto relatedVersionVertexPtr = queueVersion(relatedVersion))
+					if (auto relatedVersionVertexPtr = queueVersion(*relatedVersionIt))
 					{
 						addEdgeCustom(syncVertexPtr, relatedVersionVertexPtr);
 					}
