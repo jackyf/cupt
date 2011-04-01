@@ -461,9 +461,9 @@ void ManagerImpl::processFinalResult(Pipe& workerPipe,
 
 		auto matchedPendingDownloads = pendingDuplicates.equal_range(uri);
 		for (auto pendingDownloadIt = matchedPendingDownloads.first;
-				pendingDownloadIt != matchedPendingDownloads.second; ++pendingDownloadIt)
+				pendingDownloadIt != matchedPendingDownloads.second;)
 		{
-			finishPendingDownload(pendingDownloadIt, result, debugging);
+			finishPendingDownload(pendingDownloadIt++, result, debugging);
 		}
 	}
 	if (debugging)

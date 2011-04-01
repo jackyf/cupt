@@ -29,6 +29,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - download/manager:
       - Pass the right pointer to setitimer() when disabling SIGALRM. Thanks
         to Jonathan Nieder for the report. (Closes: #619727)
+      - Fixed undefined behavior in handling duplicated downloads.
+        Fixes a regression introduced in 2.0.0~alpha1.
     - cache:
       - Apply an additional pin priority penalty for not automatic releases.
     - Set of close-on-exec flag changes above Closes: #619650. Thanks to
