@@ -134,7 +134,7 @@ void showHelp(const char* argv0)
 		{ "markauto", __("marks binary package(s) as automatically installed") },
 		{ "unmarkauto", __("marks binary package(s) as manually installed") },
 		{ "shell", __("starts an interactive package manager shell") },
-		{ "snapshot", __("(not implemented) works with system snapshots") },
+		{ "snapshot", __("works with system snapshots") },
 	};
 
 	cout << sf(__("Usage: %s <action> [<parameters>]"), argv0) << endl;

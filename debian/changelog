@@ -7,6 +7,9 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - 'dist-upgrade':
       - [Jonathan Nieder] Pre-upgrade 'cupt' package first, not
         'cupt-experimental'. Fixes a regression introduced in 2.0.0~beta2.
+    - 'help':
+      - Removed the temporary message that 'snapshot' subcommand is not
+        implemented, it's implemented since 2.0.0~alpha3.
   * lib:
     - Always set 'close-on-exec' flag for internal pipes.
     - system/resolvers/native:
