@@ -36,6 +36,7 @@ namespace regex_constants = boost::xpressive::regex_constants;
 
 vector< string > split(const sregex&, const string&);
 
+string globToRegexString(const string&);
 shared_ptr< sregex > stringToRegex(const string& input);
 shared_ptr< sregex > globToRegex(const string& glob);
 

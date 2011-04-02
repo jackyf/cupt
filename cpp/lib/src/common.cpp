@@ -21,7 +21,6 @@
 #include <cstdarg>
 
 #include <cupt/common.hpp>
-#include <cupt/regex.hpp>
 
 #include <internal/common.hpp>
 
@@ -188,19 +187,6 @@ string humanReadableSizeString(uint64_t bytes)
 string __(const char* buf)
 {
 	return string(dgettext("cupt", buf));
-}
-
-string globToRegexString(const string& input)
-{
-	// quoting all metacharacters
-	static const sregex metaCharRegex = sregex::compile("[^A-Za-z0-9_]");
-	string output = regex_replace(input, metaCharRegex, "\\$&");
-	static const sregex questionSignRegex = sregex::compile("\\\\\\?");
-	output = regex_replace(output, questionSignRegex, ".");
-	static const sregex starSignRegex = sregex::compile("\\\\\\*");
-	output = regex_replace(output, starSignRegex, ".*?");
-
-	return output;
 }
 
 } // namespace

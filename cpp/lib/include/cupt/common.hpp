@@ -123,7 +123,6 @@ void simulate(const char* format, ...);
 string sf(const string& format, ...);
 string join(const string& joiner, const vector< string >& parts);
 string humanReadableSizeString(uint64_t bytes);
-string globToRegexString(const string&);
 /// @endcond
 
 /// localizes message

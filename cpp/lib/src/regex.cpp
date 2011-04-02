@@ -29,6 +29,19 @@ vector< string > split(const sregex& regex, const string& str)
 	return result;
 }
 
+string globToRegexString(const string& input)
+{
+	// quoting all metacharacters
+	static const sregex metaCharRegex = sregex::compile("[^A-Za-z0-9_]");
+	string output = regex_replace(input, metaCharRegex, "\\$&");
+	static const sregex questionSignRegex = sregex::compile("\\\\\\?");
+	output = regex_replace(output, questionSignRegex, ".");
+	static const sregex starSignRegex = sregex::compile("\\\\\\*");
+	output = regex_replace(output, starSignRegex, ".*?");
+
+	return output;
+}
+
 shared_ptr< sregex > stringToRegex(const string& input)
 {
 	shared_ptr< sregex > result;
