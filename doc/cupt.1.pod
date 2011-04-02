@@ -1017,13 +1017,6 @@ boolean, see L<--no-auto-remove/|--no-auto-remove>
 
 integer, positive, see L<--max-solution-count|/--max-solution-count>
 
-=item cupt::resolver::quality-bar
-
-integer, the "quality bar" for the native resolver. For the situations
-when a lot of solutions available, increasing this value slows down choosing the
-solution to propose, but may increase its quality. Defaults to -50. The sane
-value borders: from -1000 to 1000.
-
 =item cupt::resolver::external-command
 
 string, a preview-only, experimental option to use external resolver using CUDF
@@ -1115,10 +1108,10 @@ boolean, see L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 string, see L<--resolver|/--resolver>
 
-=item cupt::resolver::tune-score::<part>
+=item cupt::resolver::score::<part>
 
 The group of integer options which control internal resolver's score
-calculation. Values are relative, not absolute.
+calculation. Values are absolute.
 
 <part> can be one of:
 
@@ -1147,13 +1140,13 @@ to N-th action (counting from 0)
 
 =item quality-adjustment
 
-a multiplier for the L<cupt::resolver::quality-bar|/cupt::resolver::quality-bar>
+the value will be added to each action's score
 
-=item failed-recommends
+=item unsatisfied-recommends
 
 some 'recommends' dependency is not satisfied (when requested)
 
-=item failed-suggests
+=item unsatisfied-suggests
 
 some 'suggests' dependency is not satisfied (when requested)
 

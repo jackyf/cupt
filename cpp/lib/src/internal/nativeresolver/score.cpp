@@ -29,7 +29,10 @@ namespace internal {
 ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >& cache)
 	: __cache(cache)
 {
-	for (size_t i = 0; i < ScoreChange::SubScore::Count; ++i)
+	__quality_adjustment = config.getInteger("cupt::resolver::score::quality-adjustment");
+	__subscore_multipliers[ScoreChange::SubScore::Version] = 1u;
+	// from 1, skipping SubScore::Version
+	for (size_t i = 1; i < ScoreChange::SubScore::Count; ++i)
 	{
 		const char* leafOption;
 		switch (ScoreChange::SubScore::Type(i))
@@ -42,14 +45,12 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 				leafOption = "upgrade"; break;
 			case ScoreChange::SubScore::Downgrade:
 				leafOption = "downgrade"; break;
-			case ScoreChange::SubScore::QualityAdjustment:
-				leafOption = "quality-adjustment"; break;
 			case ScoreChange::SubScore::PositionPenalty:
 				leafOption = "position-penalty"; break;
-			case ScoreChange::SubScore::FailedRecommends:
-				leafOption = "failed-recommends"; break;
-			case ScoreChange::SubScore::FailedSuggests:
-				leafOption = "failed-suggests"; break;
+			case ScoreChange::SubScore::UnsatisfiedRecommends:
+				leafOption = "unsatisfied-recommends"; break;
+			case ScoreChange::SubScore::UnsatisfiedSuggests:
+				leafOption = "unsatisfied-suggests"; break;
 			case ScoreChange::SubScore::FailedSync:
 				leafOption = "failed-synchronization"; break;
 			default:
@@ -57,9 +58,8 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 		}
 
 		__subscore_multipliers[i] = config.getInteger(
-				string("cupt::resolver::tune-score::") + leafOption);
+				string("cupt::resolver::score::") + leafOption);
 	}
-	__quality_bar = config.getInteger("cupt::resolver::quality-bar");
 }
 
 ssize_t ScoreManager::__get_version_weight(const shared_ptr< const BinaryVersion >& version) const
@@ -67,7 +67,7 @@ ssize_t ScoreManager::__get_version_weight(const shared_ptr< const BinaryVersion
 	return version ? __cache->getPin(version) : 0;
 }
 
-ScoreChange ScoreManager::getScoreChange(const shared_ptr< const BinaryVersion >& originalVersion,
+ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVersion >& originalVersion,
 		const shared_ptr< const BinaryVersion >& supposedVersion) const
 {
 	auto supposedVersionWeight = __get_version_weight(supposedVersion);
@@ -95,23 +95,41 @@ ScoreChange ScoreManager::getScoreChange(const shared_ptr< const BinaryVersion >
 	}
 
 	ScoreChange scoreChange;
-	scoreChange.__subscores[scoreType] = value;
-	// quality correction makes backtracking more/less possible
-	scoreChange.__subscores[ScoreChange::SubScore::QualityAdjustment] -= __quality_bar;
+	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
+	scoreChange.__subscores[scoreType] = 1;
 
 	return scoreChange;
 }
 
+ScoreChange ScoreManager::getUnsatisfiedRecommendsScoreChange() const
+{
+	ScoreChange result;
+	result.__subscores[ScoreChange::SubScore::UnsatisfiedRecommends] = 1;
+	return result;
+}
+
+ScoreChange ScoreManager::getUnsatisfiedSuggestsScoreChange() const
+{
+	ScoreChange result;
+	result.__subscores[ScoreChange::SubScore::UnsatisfiedSuggests] = 1;
+	return result;
+}
+
+ScoreChange ScoreManager::getUnsatisfiedSynchronizationScoreChange() const
+{
+	ScoreChange result;
+	result.__subscores[ScoreChange::SubScore::FailedSync] = 1;
+	return result;
+}
+
 ssize_t ScoreManager::getScoreChangeValue(const ScoreChange& scoreChange) const
 {
-	ssize_t result = 0;
+	// quality correction makes backtracking more/less possible
+	ssize_t result = __quality_adjustment;
+
 	for (size_t i = 0; i < ScoreChange::SubScore::Count; ++i)
 	{
 		auto subValue = (ssize_t)(scoreChange.__subscores[i] * __subscore_multipliers[i]);
-		if (i <= ScoreChange::SubScore::Downgrade)
-		{
-			subValue /= 10;
-		}
 		result += subValue;
 	}
 	return result;
@@ -143,9 +161,14 @@ string ScoreChange::__to_string() const
 			{
 				result << '/';
 			}
-			result << subscore;
+			if (subscore != 1u)
+			{
+				result << subscore;
+			}
 			switch (i)
 			{
+				case SubScore::Version:
+					result << 'v'; break;
 				case SubScore::New:
 					result << 'a'; break;
 				case SubScore::Removal:
@@ -154,16 +177,14 @@ string ScoreChange::__to_string() const
 					result << 'u'; break;
 				case SubScore::Downgrade:
 					result << 'd'; break;
-				case SubScore::QualityAdjustment:
-					result << 'q'; break;
 				case SubScore::PositionPenalty:
 					result << "pp"; break;
-				case SubScore::FailedRecommends:
-					result << "fr"; break;
-				case SubScore::FailedSuggests:
-					result << "fs"; break;
+				case SubScore::UnsatisfiedRecommends:
+					result << "ur"; break;
+				case SubScore::UnsatisfiedSuggests:
+					result << "us"; break;
 				case SubScore::FailedSync:
-					result << "fy"; break;
+					result << "fs"; break;
 			}
 		}
 	}
@@ -173,22 +194,7 @@ string ScoreChange::__to_string() const
 
 void ScoreChange::setPosition(size_t position)
 {
-	__subscores[SubScore::PositionPenalty] = -(ssize_t)position;
-}
-
-void ScoreChange::setFailedRecommends()
-{
-	__subscores[SubScore::FailedRecommends] = -1;
-}
-
-void ScoreChange::setFailedSuggests()
-{
-	__subscores[SubScore::FailedSuggests] = -1;
-}
-
-void ScoreChange::setFailedSync()
-{
-	__subscores[SubScore::FailedSync] = -1;
+	__subscores[SubScore::PositionPenalty] = position;
 }
 
 }

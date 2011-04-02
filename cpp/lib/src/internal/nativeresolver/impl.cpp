@@ -444,23 +444,23 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 	{
 		Action& action = **actionIt;
 
-		action.profit = __score_manager.getScoreChange(
-				getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
-		action.profit.setPosition(position);
 		switch ((*action.newElementPtr)->getUnsatisfiedType())
 		{
 			case dg::Unsatisfied::None:
+				action.profit = __score_manager.getVersionScoreChange(
+						getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
 				break;
 			case dg::Unsatisfied::Recommends:
-				action.profit.setFailedRecommends();
+				action.profit = __score_manager.getUnsatisfiedRecommendsScoreChange();
 				break;
 			case dg::Unsatisfied::Suggests:
-				action.profit.setFailedSuggests();
+				action.profit = __score_manager.getUnsatisfiedSuggestsScoreChange();
 				break;
 			case dg::Unsatisfied::Sync:
-				action.profit.setFailedSync();
+				action.profit = __score_manager.getUnsatisfiedSynchronizationScoreChange();
 				break;
 		}
+		action.profit.setPosition(position);
 		++position;
 	}
 }

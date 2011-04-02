@@ -32,8 +32,8 @@ class ScoreChange
 
 	struct SubScore
 	{
-		enum Type { New, Removal, Upgrade, Downgrade, FailedRecommends, FailedSuggests,
-				FailedSync, QualityAdjustment, PositionPenalty, Count };
+		enum Type { Version, New, Removal, Upgrade, Downgrade, UnsatisfiedRecommends,
+				UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
 	};
 
 	ssize_t __subscores[SubScore::Count];
@@ -43,23 +43,23 @@ class ScoreChange
  public:
 	ScoreChange();
 	void setPosition(size_t);
-	void setFailedRecommends();
-	void setFailedSuggests();
-	void setFailedSync();
 };
 
 class ScoreManager
 {
 	shared_ptr< const Cache > __cache;
 	ssize_t __subscore_multipliers[ScoreChange::SubScore::Count];
-	ssize_t __quality_bar;
+	ssize_t __quality_adjustment;
 
 	ssize_t __get_version_weight(const shared_ptr< const BinaryVersion >& version) const;
  public:
 	ScoreManager(const Config&, const shared_ptr< const Cache >&);
 	ssize_t getScoreChangeValue(const ScoreChange&) const;
-	ScoreChange getScoreChange(const shared_ptr< const BinaryVersion >&,
+	ScoreChange getVersionScoreChange(const shared_ptr< const BinaryVersion >&,
 			const shared_ptr< const BinaryVersion >&) const;
+	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
+	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
+	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
 	string getScoreChangeString(const ScoreChange&) const;
 };
 

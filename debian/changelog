@@ -22,6 +22,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         package version to be already synchronized with any binary build of
         the related package. Fixes a bug which was present since an initial
         implementation of synchronizing source versions.
+      - Changed scoring system once again, to overcome some design bugs in
+        previous one.
     - file:
        - Always set 'close-on-exec' flag for opened file descriptors.
     - config:
@@ -29,6 +31,10 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
       - The option is 'cupt::cache::obey-hold' is renamed to
         'cupt::cache::pin::addendums::hold'.
       - New option 'cupt::cache::pin::addendums::not-automatic'.
+      - The option group 'cupt::resolver::tune-score::*' is renamed to
+        'cupt::resolver::score::*'.
+      - Deleted the option 'cupt::resolver::quality-bar', it's superseded by
+        the option 'cupt::resolver::score::quality-adjustment'.
     - download/manager:
       - Pass the right pointer to setitimer() when disabling SIGALRM. Thanks
         to Jonathan Nieder for the report. (Closes: #619727)
