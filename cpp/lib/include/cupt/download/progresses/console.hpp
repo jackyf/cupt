@@ -44,7 +44,7 @@ class ConsoleProgress: public Progress
  public:
 	/// constructor
 	ConsoleProgress();
-	/// desctuctor
+	/// destructor
 	~ConsoleProgress();
 };
 
