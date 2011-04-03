@@ -41,9 +41,6 @@ _cupt()
 				subcommand_type='query'
 				arguments='--tar-only --diff-only --dsc-only --download-only'
 				;;
-			config-dump)
-				arguments=$(${command} config-dump | sed 's/ .*//')
-				;;
 			show|showsrc)
 				subcommand_type='query'
 				arguments='--all-versions -a --no-all-versions --with-release-info'
