@@ -33,7 +33,7 @@ struct FileImpl;
 }
 
 /// high-level interface to file routines
-class File
+class CUPT_API File
 {
 	internal::FileImpl* __impl;
  public:

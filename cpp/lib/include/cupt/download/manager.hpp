@@ -37,7 +37,7 @@ class ManagerImpl;
 namespace download {
 
 /// performs downloads
-class Manager
+class CUPT_API Manager
 {
 	internal::ManagerImpl* __impl;
  public:

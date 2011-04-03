@@ -34,7 +34,7 @@ struct UriData;
 namespace download {
 
 /// uniform resource indentifier, "download path"
-class Uri
+class CUPT_API Uri
 {
 	internal::UriData* __data;
  public:

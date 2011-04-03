@@ -26,11 +26,11 @@ namespace cupt {
 namespace cache {
 
 /// %relation against certain binary package
-struct Relation
+struct CUPT_API Relation
 {
  private:
-	bool __parse_versioned_info(string::const_iterator, string::const_iterator);
-	void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL bool __parse_versioned_info(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
  public:
 	/// %relation type
 	struct Types
@@ -78,10 +78,10 @@ struct Relation
 };
 
 /// relation with optional architecture filters
-struct ArchitecturedRelation: public Relation
+struct CUPT_API ArchitecturedRelation: public Relation
 {
  private:
-	void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
  public:
 	/// architecture filters
 	vector< string > architectureFilters;
@@ -103,10 +103,10 @@ struct ArchitecturedRelation: public Relation
 };
 
 /// group of alternative relations
-struct RelationExpression: public vector< Relation >
+struct CUPT_API RelationExpression: public vector< Relation >
 {
  private:
-	void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -133,10 +133,10 @@ struct RelationExpression: public vector< Relation >
 };
 
 /// group of alternative architectured relation expressions
-struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
+struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
 {
  private:
-	void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -161,10 +161,10 @@ struct ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
 };
 
 /// array of relation expressions
-struct RelationLine: public vector< RelationExpression >
+struct CUPT_API RelationLine: public vector< RelationExpression >
 {
  private:
-	void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -189,10 +189,10 @@ struct RelationLine: public vector< RelationExpression >
 };
 
 /// array of architectured relation expressions
-struct ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression >
+struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression >
 {
  private:
-	void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
  public:
 	/// gets the string representation
 	string toString() const;

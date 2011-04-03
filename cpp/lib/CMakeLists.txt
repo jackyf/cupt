@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOVERSION=${CUPT_SOVERSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOVERSION=${CUPT_SOVERSION} -fvisibility=hidden")
 
 include_directories(include)
 include_directories(src)

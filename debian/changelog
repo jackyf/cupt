@@ -44,6 +44,7 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
       - Apply an additional pin priority penalty for not automatic releases.
     - Set of close-on-exec flag changes above Closes: #619650. Thanks to
       Jonathan Nieder for the report and an initial patch set.
+    - Non-API symbols are not exported anymore.
   * doc:
     - reference:
       - Removed protected members of cupt::cache::Package and its subclasses

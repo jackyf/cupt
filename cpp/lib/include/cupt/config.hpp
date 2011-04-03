@@ -31,7 +31,7 @@ struct ConfigImpl;
 }
 
 /// stores library's configuration variables
-class Config
+class CUPT_API Config
 {
 	internal::ConfigImpl* __impl;
  public:

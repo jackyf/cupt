@@ -27,13 +27,13 @@ namespace cupt {
 namespace cache {
 
 /// Package for binary versions
-class BinaryPackage: public Package
+class CUPT_API BinaryPackage: public Package
 {
 	const bool __allow_reinstall;
  protected:
 	/// @cond
-	virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
-	virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const;
+	CUPT_LOCAL virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
+	CUPT_LOCAL virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const;
 	/// @endcond
  public:
 	/// constructor

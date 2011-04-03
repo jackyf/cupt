@@ -36,7 +36,7 @@ class StateData;
 namespace system {
 
 /// stores an additional information for installed packages
-class State
+class CUPT_API State
 {
 	internal::StateData* __data;
 	State(const State&);
@@ -70,7 +70,7 @@ class State
 	};
 
 	/// constructor, not for public use
-	State(shared_ptr< const Config >, internal::CacheImpl*);
+	CUPT_LOCAL State(shared_ptr< const Config >, internal::CacheImpl*);
 	/// destructor
 	~State();
 

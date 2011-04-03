@@ -32,7 +32,7 @@ struct PipeData;
 
 }
 
-class Pipe
+class CUPT_API Pipe
 {
 	internal::PipeData* __data;
 	Pipe(const Pipe&);

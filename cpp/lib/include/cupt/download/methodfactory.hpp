@@ -34,7 +34,7 @@ class MethodFactoryImpl;
 namespace download {
 
 /// class to get a download method for URIs
-class MethodFactory
+class CUPT_API MethodFactory
 {
 	internal::MethodFactoryImpl* __impl;
 	MethodFactory(const MethodFactory&);

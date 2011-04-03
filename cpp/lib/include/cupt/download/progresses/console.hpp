@@ -33,7 +33,7 @@ class ConsoleProgressImpl;
 namespace download {
 
 /// console-based download progress meter
-class ConsoleProgress: public Progress
+class CUPT_API ConsoleProgress: public Progress
 {
 	internal::ConsoleProgressImpl* __impl;
  protected:

@@ -34,7 +34,7 @@ class SnapshotsImpl;
 namespace system {
 
 /// various snapshot-related routines
-class Snapshots
+class CUPT_API Snapshots
 {
 	internal::SnapshotsImpl* __impl;
 
@@ -42,7 +42,7 @@ class Snapshots
 	Snapshots& operator=(const Snapshots&);
  public:
 	/// @cond
-	static const string installedPackageNamesFilename;
+	CUPT_LOCAL static const string installedPackageNamesFilename;
 	/// @endcond
 
 	/// constructor

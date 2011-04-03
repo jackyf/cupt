@@ -39,7 +39,7 @@ using namespace cache;
  * system, and then you finally call @ref resolve to get a consistent package
  * set(s) for specified modifications.
  */
-class Resolver
+class CUPT_API Resolver
 {
 	Resolver(const Resolver&);
 	Resolver& operator=(const Resolver&);
@@ -48,7 +48,7 @@ class Resolver
 	struct Reason
 	{
 	 protected:
-		Reason() {};
+		CUPT_LOCAL Reason() {};
 	 public:
 		virtual ~Reason() {}; // polymorphic
 		virtual string toString() const = 0; ///< returns localized reason description

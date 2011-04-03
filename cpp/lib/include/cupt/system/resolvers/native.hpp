@@ -34,7 +34,7 @@ class NativeResolverImpl;
 namespace system {
 
 /// library's problem resolver implementation
-class NativeResolver: public Resolver
+class CUPT_API NativeResolver: public Resolver
 {
 	internal::NativeResolverImpl* __impl;
 

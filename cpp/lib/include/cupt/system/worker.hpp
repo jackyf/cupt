@@ -37,7 +37,7 @@ class WorkerImpl;
 namespace system {
 
 /// performs system modifications
-class Worker
+class CUPT_API Worker
 {
 	internal::WorkerImpl* __impl;
 

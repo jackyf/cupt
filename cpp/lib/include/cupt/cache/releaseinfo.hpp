@@ -27,7 +27,7 @@ namespace cupt {
 namespace cache {
 
 /// release information
-struct ReleaseInfo
+struct CUPT_API ReleaseInfo
 {
 	bool verified; ///< @c true, if information is signed and a signature is verified
 	string version; ///< distribution version, may be empty

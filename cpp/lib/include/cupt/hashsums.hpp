@@ -25,7 +25,7 @@
 namespace cupt {
 
 /// hash sums
-class HashSums
+class CUPT_API HashSums
 {
  public:
 	/// hash sum type

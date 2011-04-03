@@ -35,7 +35,7 @@ class ProgressImpl;
 namespace download {
 
 /// download progress meter
-class Progress
+class CUPT_API Progress
 {
 	internal::ProgressImpl* __impl;
  public:
@@ -159,7 +159,7 @@ class Progress
 	void setTotalEstimatedSize(uint64_t size);
 
 	/// @cond
-	void progress(const vector< string >& params);
+	CUPT_LOCAL void progress(const vector< string >& params);
 	/// @endcond
 
 	/// destructor

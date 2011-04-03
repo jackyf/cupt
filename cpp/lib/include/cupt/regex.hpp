@@ -38,7 +38,7 @@ vector< string > split(const sregex&, const string&);
 
 string globToRegexString(const string&);
 shared_ptr< sregex > stringToRegex(const string& input);
-shared_ptr< sregex > globToRegex(const string& glob);
+CUPT_API shared_ptr< sregex > globToRegex(const string& glob);
 
 }
 

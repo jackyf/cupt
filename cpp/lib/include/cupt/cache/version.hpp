@@ -36,7 +36,7 @@ using std::map;
 /**
  * @see SourceVersion and BinaryVersion
  */
-struct Version
+struct CUPT_API Version
 {
 	/// where version comes from
 	struct Source

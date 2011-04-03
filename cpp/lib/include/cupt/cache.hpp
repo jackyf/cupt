@@ -41,7 +41,7 @@ using std::set;
 using namespace cache;
 
 /// the source of package and version information
-class Cache
+class CUPT_API Cache
 {
  public:
 	/// describes smallest index source piece

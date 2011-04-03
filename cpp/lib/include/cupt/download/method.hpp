@@ -29,7 +29,7 @@ namespace cupt {
 namespace download {
 
 /// base class of download methods
-class Method
+class CUPT_API Method
 {
  protected:
 	Method();

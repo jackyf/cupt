@@ -18,6 +18,9 @@
 #ifndef CUPT_COMMON_SEEN
 #define CUPT_COMMON_SEEN
 
+#define CUPT_API __attribute__ ((visibility("default")))
+#define CUPT_LOCAL __attribute__ ((visibility("hidden")))
+
 /*! @file */
 
 #include <string>
@@ -28,7 +31,7 @@
 /** @namespace cupt */
 namespace cupt {
 
-extern const char* const libraryVersion; ///< the version of Cupt library
+CUPT_API extern const char* const libraryVersion; ///< the version of Cupt library
 
 using std::vector;
 using std::string;
@@ -37,7 +40,7 @@ using std::string;
 /**
  * Any library function may throw this exception.
  */
-class Exception: public std::runtime_error
+class CUPT_API Exception: public std::runtime_error
 {
  public:
 	/// constructor
@@ -69,7 +72,7 @@ using std::dynamic_pointer_cast;
  * All library error, warning, debug and simulate messages will be pointed here.
  * If @a messageFd @c == @c -1, messages will be suppressed. Defaults to @c -1.
  */
-extern int messageFd;
+CUPT_API extern int messageFd;
 
 /// sends an error message and throws exception
 /**
@@ -92,7 +95,7 @@ extern int messageFd;
  * @ref messageFd and throw Exception with message @c "unable to open
  * file 'abcd.dat': Permission denied"
  */
-void fatal(const char* format, ...);
+void CUPT_API fatal(const char* format, ...);
 
 /// sends a warning message
 /**
@@ -105,24 +108,24 @@ void fatal(const char* format, ...);
  *
  * @see fatal
  */
-void warn(const char* format, ...);
+void CUPT_API warn(const char* format, ...);
 
 /// sends a debug message
 /**
  * Equal to @ref warn, only sends @c "D:" instead of @c "W:"
  */
-void debug(const char* format, ...);
+void CUPT_API debug(const char* format, ...);
 
 /// sends a simulate message
 /**
  * Equal to @ref warn, only sends @c "S:" instead of @c "W:"
  */
-void simulate(const char* format, ...);
+void CUPT_API simulate(const char* format, ...);
 
 /// @cond
-string sf(const string& format, ...);
-string join(const string& joiner, const vector< string >& parts);
-string humanReadableSizeString(uint64_t bytes);
+CUPT_API string sf(const string& format, ...);
+CUPT_API string join(const string& joiner, const vector< string >& parts);
+CUPT_API string humanReadableSizeString(uint64_t bytes);
 /// @endcond
 
 /// localizes message
@@ -130,7 +133,7 @@ string humanReadableSizeString(uint64_t bytes);
  * @param message input string
  * @return localized message
  */
-string __(const char* message);
+string CUPT_API __(const char* message);
 
 /// reads package name in range
 /**
@@ -150,7 +153,7 @@ string __(const char* message);
  * @endcode
  * @c "zzuf" will be printed
  */
-void consumePackageName(string::const_iterator begin, string::const_iterator end,
+void CUPT_API consumePackageName(string::const_iterator begin, string::const_iterator end,
 		string::const_iterator& resultEnd);
 
 /// checks package name for correctness
@@ -159,13 +162,13 @@ void consumePackageName(string::const_iterator begin, string::const_iterator end
  * @param throwOnError if set to @c true, function will throw exception if @a packageName is not correct
  * @return @c true if the @a packageName is correct, @c false if @a packageName is not correct and @a throwOnError is @c false
  */
-bool checkPackageName(const string& packageName, bool throwOnError = true);
+bool CUPT_API checkPackageName(const string& packageName, bool throwOnError = true);
 
 /// checks version string for correctness
 /**
  * Equal to @ref checkPackageName, only checks version string instead of package name
  */
-bool checkVersionString(const string& versionString, bool throwOnError = true);
+bool CUPT_API checkVersionString(const string& versionString, bool throwOnError = true);
 
 /// compares two version strings
 /**
@@ -177,7 +180,7 @@ bool checkVersionString(const string& versionString, bool throwOnError = true);
  * equal. Unless you are comparing version strings that belong to the same
  * cache::Package, you should use this function to test their equality.
  */
-int compareVersionStrings(const string& left, const string& right);
+int CUPT_API compareVersionStrings(const string& left, const string& right);
 
 } // namespace
 

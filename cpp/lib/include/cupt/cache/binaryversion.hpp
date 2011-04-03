@@ -28,7 +28,7 @@ namespace cupt {
 namespace cache {
 
 /// binary version info
-struct BinaryVersion: public Version
+struct CUPT_API BinaryVersion: public Version
 {
 	/// relation types between binary versions
 	struct RelationTypes
