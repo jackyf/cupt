@@ -62,13 +62,13 @@ _cupt()
 				arguments='list save load remove rename'
 				;;
 			markauto|unmarkauto)
-				arguments="$(${command} pkgnames --installed-only)"
+				arguments="$(${command} pkgnames ${cur} --installed-only)"
 				;;
 		esac
 
 		if ([ "${subcommand_type}" == "query" ] || [ "${subcommand_type}" == "manage" ]) && [[ "${cur}" != -* ]]; then
 			# package list
-			arguments="${arguments} $(${command} pkgnames)"
+			arguments="${arguments} $(${command} pkgnames ${cur})"
 		fi
 
 		if [ "${subcommand_type}" == "query" ]; then
