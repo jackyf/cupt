@@ -540,6 +540,7 @@ int dumpConfig(Context& context)
 
 	auto outputList = [&](const string& name)
 	{
+		cout << name << " {};" << endl;
 		auto values = config->getList(name);
 		FORIT(valueIt, values)
 		{
