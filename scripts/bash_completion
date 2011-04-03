@@ -94,5 +94,5 @@ _cupt()
 	return 0
 }
 
-complete -F _cupt cupt-experimental
+complete -F _cupt cupt
 

@@ -49,8 +49,12 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - reference:
       - Removed protected members of cupt::cache::Package and its subclasses
         from the documentation, they exist for internal usage only.
+  * scripts:
+    - bash_completion:
+      - Complete 'cupt', not 'cupt-experimental'. Fixes a regression
+        introduced in 2.0.0~beta2.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 02 Apr 2011 19:51:23 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 03 Apr 2011 13:20:06 +0300
 
 cupt (2.0.0~beta2) experimental; urgency=low
 
