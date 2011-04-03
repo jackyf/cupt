@@ -1,6 +1,6 @@
 _cupt()
 {
-	local cur subcommands subcommand command arguments common_options
+	local cur subcommands subcommand command arguments package_name_arguments common_options
 
 	subcommands='-h --help help \
 			-v --version version \
@@ -62,13 +62,12 @@ _cupt()
 				arguments='list save load remove rename'
 				;;
 			markauto|unmarkauto)
-				arguments="$(${command} pkgnames ${cur} --installed-only)"
+				package_name_arguments="$(${command} pkgnames ${cur} --installed-only)"
 				;;
 		esac
 
 		if ([ "${subcommand_type}" == "query" ] || [ "${subcommand_type}" == "manage" ]) && [[ "${cur}" != -* ]]; then
-			# package list
-			arguments="${arguments} $(${command} pkgnames ${cur})"
+			package_name_arguments="$(${command} pkgnames ${cur})"
 		fi
 
 		if [ "${subcommand_type}" == "query" ]; then
@@ -89,8 +88,8 @@ _cupt()
 
 	common_options="-o --option --target-release --default-release -t --purge --quiet -q"
 	arguments="${arguments} ${common_options}"
-
-	COMPREPLY=($(compgen -W "${arguments}" -- ${cur}))
+	arguments=$(compgen -W "${arguments}" -- ${cur})
+	COMPREPLY=(${arguments} ${package_name_arguments})
 	return 0
 }
 
