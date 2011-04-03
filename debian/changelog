@@ -59,6 +59,7 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         than supplying a full list to compgen.
       - Remove arguments completion for 'config-dump' subcommand, it does not
         accept arguments since 2.0.0~alpha1.
+      - Complete also option names after '--option' and '-o'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 03 Apr 2011 14:45:21 +0300
 

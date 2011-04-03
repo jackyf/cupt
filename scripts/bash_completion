@@ -18,6 +18,15 @@ _cupt()
 	command="${COMP_WORDS[0]}"
 	cur="${COMP_WORDS[COMP_CWORD]}"
 
+	local previous_word="${COMP_WORDS[$((COMP_CWORD-1))]}"
+	if [ "${previous_word}" == "-o" ] || [ "${previous_word}"  == "--option" ]; then
+		COMPREPLY=($(compgen -W "$($command config-dump | sed 's/ .*//')" -- ${cur}))
+		if type -t __ltrim_colon_completions > /dev/null; then
+			__ltrim_colon_completions ${cur}
+		fi
+		return 0;
+	fi
+
 	# determining subcommand
 	for word_number in `seq 1 $((COMP_CWORD-1))`; do
 		if [[ "${COMP_WORDS[word_number]}" != -* ]]; then
