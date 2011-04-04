@@ -526,7 +526,8 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	__solution_storage->setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr);
 	solution.insertedElementPtrs.push_back(action.newElementPtr);
-	__validate_changed_package(solution, action.oldElementPtr, action.newElementPtr);
+	__validate_changed_package(solution, action.oldElementPtr,
+			action.newElementPtr, action.brokenElementPriority + 1);
 
 	solution.pendingAction.reset();
 }
@@ -537,13 +538,13 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 {
 	/* we check only successors with the same or bigger priority than
 	   currently broken one */
-	auto brokenElementPriority = (*brokenElementPtr)->getPriority();
+	auto brokenElementTypePriority = (*brokenElementPtr)->getTypePriority();
 
 	const list< const dg::Element* >& successorElementPtrs =
 			__solution_storage->getSuccessorElements(candidateElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		if ((**successorElementPtrIt)->getPriority() < brokenElementPriority)
+		if ((**successorElementPtrIt)->getTypePriority() < brokenElementTypePriority)
 		{
 			continue;
 		}
@@ -564,7 +565,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 			__solution_storage->getSuccessorElements(brokenElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		if ((**successorElementPtrIt)->getPriority() < brokenElementPriority)
+		if ((**successorElementPtrIt)->getTypePriority() < brokenElementTypePriority)
 		{
 			continue;
 		}
@@ -758,16 +759,17 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 }
 
 void NativeResolverImpl::__validate_element(
-		Solution& solution, const dg::Element* elementPtr)
+		Solution& solution, const dg::Element* elementPtr, size_t priority)
 {
 	const list< const dg::Element* >& successorElementPtrs =
 			__solution_storage->getSuccessorElements(elementPtr);
-	forward_list< const dg::Element* > brokenSuccessors;
+	forward_list< PackageEntry::BrokenSuccessor > brokenSuccessors;
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
 		if (!__solution_storage->verifyElement(solution, *successorElementPtrIt))
 		{
-			brokenSuccessors.push_front(*successorElementPtrIt);
+			brokenSuccessors.push_front(
+					PackageEntry::BrokenSuccessor(*successorElementPtrIt, priority));
 		}
 	}
 	if (!brokenSuccessors.empty())
@@ -784,7 +786,7 @@ void NativeResolverImpl::__initial_validate_pass(Solution& solution)
 	auto elementPtrs = solution.getElements();
 	FORIT(elementPtrIt, elementPtrs)
 	{
-		__validate_element(solution, *elementPtrIt);
+		__validate_element(solution, *elementPtrIt, 0u);
 	}
 }
 
@@ -808,9 +810,10 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 }
 
 void NativeResolverImpl::__validate_changed_package(Solution& solution,
-		const dg::Element* oldElementPtr, const dg::Element* newElementPtr)
+		const dg::Element* oldElementPtr, const dg::Element* newElementPtr,
+		size_t priority)
 {
-	__validate_element(solution, newElementPtr);
+	__validate_element(solution, newElementPtr, priority);
 
 	if (oldElementPtr)
 	{ // invalidate those which depend on the old element
@@ -833,7 +836,8 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 					// contain predecessorElementPtr, since as old element was
 					// present, predecessorElementPtr was not broken
 					PackageEntry packageEntry = *packageEntryPtr;
-					packageEntry.brokenSuccessors.push_front(*predecessorElementPtrIt);
+					packageEntry.brokenSuccessors.push_front(
+							PackageEntry::BrokenSuccessor(*predecessorElementPtrIt, priority));
 					__solution_storage->setPackageEntry(solution, *versionElementPtrIt,
 							std::move(packageEntry), NULL);
 				}
@@ -856,10 +860,14 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 				}
 				FORIT(existingBrokenSuccessorIt, packageEntryPtr->brokenSuccessors)
 				{
-					if (*existingBrokenSuccessorIt == *predecessorElementPtrIt)
+					if (existingBrokenSuccessorIt->elementPtr == *predecessorElementPtrIt)
 					{
 						PackageEntry packageEntry = *packageEntryPtr;
-						packageEntry.brokenSuccessors.remove(*predecessorElementPtrIt);
+						packageEntry.brokenSuccessors.remove_if(
+								[predecessorElementPtrIt](const PackageEntry::BrokenSuccessor& brokenSuccessor)
+								{
+									return brokenSuccessor.elementPtr == *predecessorElementPtrIt;
+								});
 						__solution_storage->setPackageEntry(solution, *versionElementPtrIt,
 								std::move(packageEntry), NULL);
 						break;
@@ -870,14 +878,14 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 	}
 }
 
-pair< const dg::Element*, const dg::Element* > __get_broken_pair(
+pair< const dg::Element*, PackageEntry::BrokenSuccessor > __get_broken_pair(
 		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
 {
-	typedef pair< const dg::Element*, const dg::Element* > BrokenPairType;
+	typedef pair< const dg::Element*, PackageEntry::BrokenSuccessor > BrokenPairType;
 	auto brokenPairs = solution.getBrokenPairs();
 	if (brokenPairs.empty())
 	{
-		static BrokenPairType noPair(NULL, NULL);
+		static BrokenPairType noPair(NULL, PackageEntry::BrokenSuccessor());
 		return noPair;
 	}
 	auto failValue = [&failCounts](const dg::Element* e) -> size_t
@@ -888,18 +896,28 @@ pair< const dg::Element*, const dg::Element* > __get_broken_pair(
 	return *std::max_element(brokenPairs.begin(), brokenPairs.end(),
 			[failValue](const BrokenPairType& left, const BrokenPairType& right)
 			{
-				auto leftPriority = (*left.second)->getPriority();
-				auto rightPriority = (*right.second)->getPriority();
-				if (leftPriority < rightPriority)
+				auto leftTypePriority = (*left.second.elementPtr)->getTypePriority();
+				auto rightTypePriority = (*right.second.elementPtr)->getTypePriority();
+				if (leftTypePriority < rightTypePriority)
 				{
 					return true;
 				}
-				if (leftPriority > rightPriority)
+				if (leftTypePriority > rightTypePriority)
 				{
 					return false;
 				}
-				auto leftFailValue = failValue(left.second);
-				auto rightFailValue = failValue(right.second);
+
+				if (left.second.priority < right.second.priority)
+				{
+					return true;
+				}
+				if (left.second.priority > right.second.priority)
+				{
+					return false;
+				}
+
+				auto leftFailValue = failValue(left.second.elementPtr);
+				auto rightFailValue = failValue(right.second.elementPtr);
 				if (leftFailValue < rightFailValue)
 				{
 					return true;
@@ -908,6 +926,7 @@ pair< const dg::Element*, const dg::Element* > __get_broken_pair(
 				{
 					return false;
 				}
+
 				return static_cast< const dg::VersionVertex* >(*left.first)->getPackageName() >
 						static_cast< const dg::VersionVertex* >(*right.first)->getPackageName();
 			});
@@ -974,7 +993,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			checkFailed = false;
 
 			const dg::Element* versionElementPtr;
-			const dg::Element* brokenElementPtr;
+			PackageEntry::BrokenSuccessor brokenSuccessor;
 			{
 				auto brokenPair = __get_broken_pair(*currentSolution, failCounts);
 				versionElementPtr = brokenPair.first;
@@ -982,23 +1001,25 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				{
 					break;
 				}
-				brokenElementPtr = brokenPair.second;
+				brokenSuccessor = brokenPair.second;
 			}
 			checkFailed = true;
 
 			if (debugging)
 			{
-				auto message = sf("problem: %s: %s", (*versionElementPtr)->toString().c_str(),
-						(*brokenElementPtr)->toString().c_str());
+				auto message = sf("problem (%zu:%zu): %s: %s",
+						(*brokenSuccessor.elementPtr)->getTypePriority(), brokenSuccessor.priority,
+						(*versionElementPtr)->toString().c_str(),
+						(*brokenSuccessor.elementPtr)->toString().c_str());
 				__mydebug_wrapper(*currentSolution, message);
 			}
 			__generate_possible_actions(&possibleActions, *currentSolution,
-					versionElementPtr, brokenElementPtr, debugging);
+					versionElementPtr, brokenSuccessor.elementPtr, debugging);
 
 			{
 				PackageEntry::IntroducedBy ourIntroducedBy;
 				ourIntroducedBy.versionElementPtr = versionElementPtr;
-				ourIntroducedBy.brokenElementPtr = brokenElementPtr;
+				ourIntroducedBy.brokenElementPtr = brokenSuccessor.elementPtr;
 
 				if (possibleActions.empty() && !__any_solution_was_found)
 				{
@@ -1014,8 +1035,13 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				}
 			}
 
+			FORIT(actionIt, possibleActions)
+			{
+				(*actionIt)->brokenElementPriority = brokenSuccessor.priority;
+			}
+
 			// mark package as failed one more time
-			failCounts[brokenElementPtr] += 1;
+			failCounts[brokenSuccessor.elementPtr] += 1;
 
 			if (possibleActions.size() == 1)
 			{

@@ -26,6 +26,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         implementation of synchronizing source versions.
       - Changed scoring system once again, to overcome some design bugs in
         previous one.
+      - Try to make backtracking more effective by processing "derived"
+        problems closer to their "parents".
     - file:
        - Always set 'close-on-exec' flag for opened file descriptors.
     - config:

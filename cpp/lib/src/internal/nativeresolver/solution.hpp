@@ -56,10 +56,21 @@ struct PackageEntry
 			return (*brokenElementPtr)->getReason(**versionElementPtr);
 		}
 	};
+	struct BrokenSuccessor
+	{
+		const dg::Element* elementPtr;
+		size_t priority;
+
+		BrokenSuccessor()
+		{}
+		BrokenSuccessor(const dg::Element* elementPtr_, size_t priority_)
+			: elementPtr(elementPtr_), priority(priority_)
+		{}
+	};
 
 	bool sticked;
 	bool autoremoved;
-	forward_list< const dg::Element* > brokenSuccessors;
+	forward_list< BrokenSuccessor > brokenSuccessors;
 	IntroducedBy introducedBy;
 
 	PackageEntry();
@@ -93,7 +104,7 @@ class Solution
 
 	void prepare();
 	vector< const dg::Element* > getElements() const;
-	vector< pair< const dg::Element*, const dg::Element* > > getBrokenPairs() const;
+	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > getBrokenPairs() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 };

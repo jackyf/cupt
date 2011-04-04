@@ -51,6 +51,7 @@ class NativeResolverImpl
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
 		PackageEntry::IntroducedBy introducedBy;
+		size_t brokenElementPriority;
 	};
 
 	shared_ptr< const Config > __config;
@@ -84,8 +85,9 @@ class NativeResolverImpl
 			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
 
 	void __initial_validate_pass(Solution&);
-	void __validate_element(Solution&, const dg::Element*);
-	void __validate_changed_package(Solution&, const dg::Element*, const dg::Element*);
+	void __validate_element(Solution&, const dg::Element*, size_t);
+	void __validate_changed_package(Solution&, const dg::Element*,
+			const dg::Element*, size_t);
 	void __post_apply_action(Solution&);
 	void __final_verify_solution(const Solution&);
 

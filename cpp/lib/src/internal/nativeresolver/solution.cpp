@@ -376,9 +376,9 @@ vector< const dg::Element* > Solution::getElements() const
 	return result;
 }
 
-vector< pair< const dg::Element*, const dg::Element* > > Solution::getBrokenPairs() const
+vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::getBrokenPairs() const
 {
-	vector< pair< const dg::Element*, const dg::Element* > > result;
+	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > result;
 	auto isEligible = [](PackageEntryMap::const_iterator_t it) -> bool
 	{
 		return !it->second.brokenSuccessors.empty();

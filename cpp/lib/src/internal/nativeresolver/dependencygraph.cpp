@@ -38,7 +38,7 @@ InitialPackageEntry::InitialPackageEntry()
 	: sticked(false), modified(false)
 {}
 
-size_t BasicVertex::getPriority() const
+size_t BasicVertex::getTypePriority() const
 {
 	fatal("internal error: getting priority of '%s'", toString().c_str());
 	return 0; // unreachable
@@ -109,7 +109,7 @@ struct RelationExpressionVertex: public BasicVertex
 	string specificPackageName;
 
 	string toString() const;
-	size_t getPriority() const;
+	size_t getTypePriority() const;
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	bool isAnti() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
@@ -126,15 +126,13 @@ string RelationExpressionVertex::toString() const
 	return result;
 }
 
-size_t RelationExpressionVertex::getPriority() const
+size_t RelationExpressionVertex::getTypePriority() const
 {
 	switch (dependencyType)
 	{
 		case BinaryVersion::RelationTypes::Conflicts:
 		case BinaryVersion::RelationTypes::Breaks:
-			return 5;
 		case BinaryVersion::RelationTypes::PreDepends:
-			return 4;
 		case BinaryVersion::RelationTypes::Depends:
 			return 3;
 		case BinaryVersion::RelationTypes::Recommends:
@@ -187,7 +185,7 @@ struct SynchronizeVertex: public BasicVertex
 
 	SynchronizeVertex(bool isHard);
 	string toString() const;
-	size_t getPriority() const;
+	size_t getTypePriority() const;
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	bool isAnti() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
@@ -202,9 +200,9 @@ string SynchronizeVertex::toString() const
 	return string("sync with ") + targetPackageName;
 }
 
-size_t SynchronizeVertex::getPriority() const
+size_t SynchronizeVertex::getTypePriority() const
 {
-	return isHard ? 5 : 2;
+	return isHard ? 3 : 2;
 }
 
 shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& parent) const
