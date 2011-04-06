@@ -92,8 +92,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 {
 	auto result = getOriginalAptPin(version);
 
-	// discourage downgrading
-	// downgradings will usually have pin <= 0
+	// adjust for downgrades and holds
 	if (!installedVersionString.empty())
 	{
 		auto installedInfo = systemState->getInstalledInfo(version->packageName);
@@ -104,7 +103,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 
 		if (compareVersionStrings(installedVersionString, version->versionString) > 0)
 		{
-			result -= 10000;
+			result += config->getInteger("cupt::cache::pin::addendums::downgrade");
 		}
 
 		auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);

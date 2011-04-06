@@ -39,6 +39,7 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
         'cupt::resolver::score::*'.
       - Deleted the option 'cupt::resolver::quality-bar', it's superseded by
         the option 'cupt::resolver::score::quality-adjustment'.
+      - New option 'cupt::cache::pin::addendums::downgrade'.
     - download/manager:
       - Pass the right pointer to setitimer() when disabling SIGALRM. Thanks
         to Jonathan Nieder for the report. (Closes: #619727)

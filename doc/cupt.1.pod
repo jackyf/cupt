@@ -915,6 +915,11 @@ if undefined, intepretes as empty list
 boolean, specifies whether should downloader follow HTTP redirects.
 True by default.
 
+=item cupt::cache::pin::addendums::downgrade
+
+integer, specifies priority change for versions that are smaller than currently
+installed. Defaults to -10000.
+
 =item cupt::cache::pin::addendums::hold
 
 integer, specifies priority increase for versions that are put on hold.
