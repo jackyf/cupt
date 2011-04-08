@@ -1033,7 +1033,7 @@ Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cud
 
 boolean, see L<--no-remove|/--no-remove>
 
-=item cupt::resolver::synchronize-source-versions
+=item cupt::resolver::synchronize-by-source-versions
 
 string, this option controls whether and how the native resolver will attempt to keep
 all binary packages from the same source package at the same source version
@@ -1048,7 +1048,7 @@ Possible values:
 
 =item none
 
-Don't attempt to synchronize source versions. This is the default value.
+Don't attempt to synchronize. This is the default value.
 
 =item soft
 

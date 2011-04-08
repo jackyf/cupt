@@ -756,7 +756,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 		// source packages are needed for for synchronizing source versions
 		bool buildSource = (mode == ManagePackages::BuildDepends ||
-				config->getString("cupt::resolver::synchronize-source-versions") != "none");
+				config->getString("cupt::resolver::synchronize-by-source-versions") != "none");
 
 		cout << __("Building the package cache... ") << endl;
 		cache = context.getCache(buildSource, true, true, packageNameGlobsToReinstall);

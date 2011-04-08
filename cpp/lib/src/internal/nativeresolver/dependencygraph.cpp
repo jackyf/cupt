@@ -447,7 +447,7 @@ vector< shared_ptr< const BinaryVersion > > __get_versions_by_source_version_str
 
 short __get_synchronize_level(const Config& config)
 {
-	const string optionName = "cupt::resolver::synchronize-source-versions";
+	const string optionName = "cupt::resolver::synchronize-by-source-versions";
 	auto optionValue = config.getString(optionName);
 	if (optionValue == "none")
 	{

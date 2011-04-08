@@ -133,7 +133,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::keep-suggests", "no" },
 		{ "cupt::resolver::max-solution-count", "512" },
 		{ "cupt::resolver::no-remove", "no" },
-		{ "cupt::resolver::synchronize-source-versions", "none" },
+		{ "cupt::resolver::synchronize-by-source-versions", "none" },
 		{ "cupt::resolver::track-reasons", "no" },
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "-300" },
