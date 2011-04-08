@@ -1063,9 +1063,6 @@ package cannot be synchronized with the modified one.
 
 =back
 
-It's highly recommended to have source entries for as more as possible
-available binary packages for more fast and accurate results.
-
 Example:
 
 Suppose we have 'libfoo1' and 'foo' binary packages which came from the same
