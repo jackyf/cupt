@@ -1,4 +1,4 @@
-cupt (2.0.0~rc1~) UNRELEASED; urgency=low
+cupt (2.0.0~rc1) experimental; urgency=low
 
   * console:
     - Action preview prompt:
@@ -74,7 +74,7 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - control:
       - Build-depend on 'txt2tags'.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 03 Apr 2011 14:45:21 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 09 Apr 2011 18:28:51 +0300
 
 cupt (2.0.0~beta2) experimental; urgency=low
 
