@@ -57,6 +57,8 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
     - reference:
       - Removed protected members of cupt::cache::Package and its subclasses
         from the documentation, they exist for internal usage only.
+    - tutorial:
+      - Created.
   * scripts:
     - bash_completion:
       - Complete 'cupt', not 'cupt-experimental'. Fixes a regression
@@ -68,6 +70,9 @@ cupt (2.0.0~rc1~) UNRELEASED; urgency=low
       - Complete also option names after '--option' and '-o'.
   * downloadmethods:
     - Added '--as-needed' to link flags.
+  * debian:
+    - control:
+      - Build-depend on 'txt2tags'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 03 Apr 2011 14:45:21 +0300
 

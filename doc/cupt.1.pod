@@ -6,6 +6,13 @@
 
 cupt - console package management tool
 
+=head1 DESCRIPTION
+
+Cupt is a high-level package manager for Debian and Debian-based systems.
+
+You might want to read L<cupt_tutorial(7)> (or its HTML version at
+/usr/share/doc/cupt/tutorial.html) before.
+
 =head1 SYNOPSIS
 
 cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
@@ -422,11 +429,7 @@ relation expressions unsatisfied instead.
 
 Examples:
 
-C<< cupt satisfy "kmail (>= 4:4.2)" >>
-
-C<< cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)" >>
-
-C<< cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget (>= 1.10.0)" >>
+C<< cupt satisfy "kmail (>= 4:4.2), wget (>= 1.10.0)" >>
 
 C<< cupt satisfy "gettext (= 0.17-7)" "mail-transport-agent-" >>
 
@@ -542,84 +545,6 @@ across all session. You can override them for any subcommand in a usual way.
 On every shell prompt you can supply any valid subcommand from this manual
 page, using all allowed parameters, just if it was command line. Simple shell
 quotes around arguments are also allowed.
-
-Example:
-
-	$ cupt shell
-	This is interactive shell of cupt package manager.
-	Building the package cache... [done]
-	cupt>policy libsoprano4
-	libsoprano4:
-	  Installed: 2.2.2+dfsg.1-1
-	  Candidate: 2.3.0+dfsg.1-2
-	  Version table:
-		 2.3.0+dfsg.1-2 501
-			http://debian.org.ua/debian unstable/main (signed)
-	 *** 2.2.2+dfsg.1-1 100
-			/var/lib/dpkg/status installed/ (unsigned)
-		 2.3.0+dfsg.1-1 2
-			http://debian.org.ua/debian experimental/main (signed)
-	cupt>depends libsoprano4/experimental
-	libsoprano4 2.3.0+dfsg.1-1:
-	  Depends: libc6 (>= 2.2.5)
-	  Depends: libclucene0ldbl (>= 0.9.20-1)
-	  Depends: libgcc1 (>= 1:4.1.1)
-	  Depends: libqt4-dbus (>= 4:4.5.2)
-	  Depends: libqt4-network (>= 4:4.5.2)
-	  Depends: libqt4-xml (>= 4:4.5.2)
-	  Depends: libqtcore4 (>= 4:4.5.2)
-	  Depends: libstdc++6 (>= 4.1.1)
-	  Depends: soprano-daemon (= 2.3.0+dfsg.1-1)
-	cupt>rdepends soprano-daemon
-	soprano-daemon 2.3.0+dfsg.1-2:
-	  Reverse-Depends: libsoprano4 2.3.0+dfsg.1-2: soprano-daemon (= 2.3.0+dfsg.1-2)
-	cupt>show soprano-daemon
-	Package: soprano-daemon
-	Version: 2.3.0+dfsg.1-2
-	Status: not installed
-	Source: soprano
-	Priority: optional
-	Section: utils
-	Size: 153KiB
-	Uncompressed size: 536KiB
-	Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
-	Architecture: amd64
-	Depends: libc6 (>= 2.2.5), libgcc1 (>= 1:4.1.1), libqt4-dbus (>= 4:4.5.2), libqt4-network (>= 4:4.5.2),
-	libqtcore4 (>= 4:4.5.2), libraptor1 (>= 1.4.18), librdf0 (>= 1.0.9), libsoprano4 (>= 2.3.0), libstdc++6 (>= 4.1.1)
-	Conflicts: libsoprano-dev (<< 2.3.0+dfsg.1-1), libsoprano4 (<< 2.3.0+dfsg.1-1)
-	Replaces: libsoprano-dev (<< 2.3.0+dfsg.1-1), libsoprano4 (<< 2.3.0+dfsg.1-1)
-	URI: http://debian.org.ua/debian/pool/main/s/soprano/soprano-daemon_2.3.0+dfsg.1-2_amd64.deb
-	MD5: af29b39a741d9a52de91c8e5562e0609
-	SHA1: 1dfebe27b79f10911358949e56f89c64b43265eb
-	SHA256: d5b290a60de56f6a7e0af44f5265c6668bb4689204556b9022a5233a808349fc
-	Description: daemon for the Soprano RDF framework
-	 Soprano is a pluggable RDF storage, parsing, and serialization framework based
-	 on Qt 4. Soprano is targeted at desktop applications that need to store RDF
-	 data. Its API has been optimized for simplicity and ease of use, while its
-	 modular structure allows it to use various different RDF storage
-	 implementations as its backend.
-	 .
-	 This package contains the Soprano daemon, D-Bus service, parser
-	 plugins, and a storage plugin for the Redland RDF Application Framework.
-	Homepage: http://soprano.sourceforge.net
-
-	cupt>--simulate install libsoprano4
-	Building the package cache... [done]
-	Initializing package resolver and worker... [done]
-	Scheduling requested actions... [done]
-	Resolving possible unmet dependencies... 
-	The following 1 packages will be INSTALLED:
-
-	soprano-daemon 
-
-	The following 1 packages will be UPGRADED:
-
-	libsoprano4 
-
-	Need to get 700KiB/700KiB of archives. After unpacking 196KiB will be used.
-	Do you want to continue? [y/N/q] q
-
-	cupt>exit
 
 You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
 
@@ -1063,41 +988,6 @@ package cannot be synchronized with the modified one.
 
 =back
 
-Example:
-
-Suppose we have 'libfoo1' and 'foo' binary packages which came from the same
-source package. We have libfoo1 '1.2-1' and foo '1.2-1' installed.
-
-Situation 1: libfoo1 has new '1.3-1' version and foo has new '1.3-1' version.
-
-Situation 2: libfoo1 has new '1.3-1' version and foo has new '1.3-2' version.
-
-We called: C<cupt install foo>.
-
-What would be done by resolver:
-
-=over
-
-=item none
-
-Situation 1: install new foo, leave libfoo1 as of installed version
-
-Situation 2: install new foo, leave libfoo1 as of installed version
-
-=item soft
-
-Situation 1: install new foo and libfoo1
-
-Situation 2: install new foo, leave libfoo1 as of installed version
-
-=item hard
-
-Situation 1: install new foo and libfoo1
-
-Situation 2: prohibit to install new version of foo
-
-=back
-
 =item cupt::resolver::track-reasons
 
 boolean, see L<--show-reasons|/--show-reasons,--show-deps,-D>
@@ -1217,7 +1107,7 @@ The discussion channel about Cupt is irc://irc.debian.org#cupt.
 
 =head1 SEE ALSO
 
-L<cupt_vs_apt(5)>, L<cupt_howto(7)>
+L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>
 
 =head1 AUTHOR
 

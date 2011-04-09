@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Build-Depends: debhelper (>= 7.0.50), g++-4.5, libboost-program-options1.42-dev,
   libboost1.42-dev, libreadline6-dev, chrpath, libcurl4-gnutls-dev (>= 7.19.4),
-  cmake (>= 2.6), doxygen, libgcrypt11-dev
+  cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
 Standards-Version: 3.9.1

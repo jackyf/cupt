@@ -1,0 +1,1638 @@
+Cupt tutorial
+Eugene V. Lyubimkin
+%%date
+
+%!preproc(man): '%man% ' ''
+%!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
+%!postproc(man): ' \(#\w+\)' ''
+%!options(html): --toc
+%!postproc(html): <HEAD> '<HEAD>\n<STYLE>body{margin:2em;}</STYLE>'
+%!postproc: '^the_end_of_the_config_area' ''
+
+the_end_of_the_config_area
+
+%man% = NAME =
+%man%
+%man% cupt_tutorial - tutorial for cupt package manager
+%man%
+
+= PREFACE =
+
+== Abstract ==
+
+Cupt is a high-level package manager for Debian and Debian-derived OSes, with
+//dpkg(1)// as a back-end.
+
+The aim of this manual is to describe the all features Cupt package manager has
+to manage the system, from the most basics to very advanced tuning. Please
+submit your proposals/patches when you see some use case is not covered.
+
+This manual was written for the second major version of Cupt (2.x branch). Most
+of it is however applicable to first major version (1.x branch) too.
+
+== Disadvantages and advantages ==
+
+You might not want to use Cupt, because:
+
+- Cupt is "unofficial" package manager. Currently, nothing in Debian ecosystem
+uses Cupt. It also means you won't get a support for it on most of Debian
+resources (you can however file bugs or join IRC channel, see //cupt(1)/Reporting//).
+
+- Cupt is not very well tested by users yet. Its userbase is relatively small.
+However, you are invited to test it and increase the number of users.
+
+- Some features which are present in other high-level package managers are missing.
+
+Among them: GUI and TUI interfaces, cdrom:// URI download method, PDiffs
+(repository index deltas), integration with //cron(8)//. And there are probably
+many more.
+
+
+You might want to use Cupt to have these, to my best knowledge, unique features:
+
+- integration with debdelta (binary package deltas)
+
+- synchronization by source versions
+
+- strict, full-case, configurable problem resolver
+
+- full tree errors for unresolvable dependency problems
+
+- package manager shell
+
+- satisfy subcommand
+
+- changeset-based system modifications for systems with low free disk space
+
+- APT-like option name checker
+
+- dpkg action sequences with heuristics to make an average number of packages in interim states low
+
+
+Also, one of Cupt's targets is to have zero non-wishlist bugs. You might want
+to try it if you encountered a bug in other package manager(s).
+
+== Getting started ==
+
+To start working with Cupt just install it using any present package manager,
+for example ``apt-get install cupt`` or ``aptitude install cupt``.
+
+Cupt uses existing APT infrastructure for the work. It should be safe to co-use
+Cupt and any APT-based package managers.
+
+When using commands that modify a system, you have to either execute ``cupt`` with
+root priviledes or supply ``--simulate`` (or ``-s``) option.
+
+Use ``cupt help`` to get a list of subcommands and their short descriptions.
+
+= BASICS =
+
+== The debian system as Cupt sees it ==
+
+Cupt package manager sees the Debian system as a set of installed packages and
+repositories of available packages.
+
+Each binary package has zero, one or more versions, of which zero or one versions
+may be installed.
+
+Any installed package may be marked as **automatically installed**, it means that
+user didn't ask for this package to be installed, but it is needed to satisfy
+some dependency. Packages which are not automatically installed are
+**manually installed**.
+
+Available versions (including installed one) of the binary package have unique
+version strings.
+
+== Errors and warnings ==[errors_and_warnings]
+
+Cupt uses three types of output to user: information, warnings and errors.
+
+All warning messages are prepended with ``W:``. They mean non-critical errors,
+which may be, depending on the situation, real errors or things to ignore.
+
+All error messages are prepended with ``E:``. Most of errors block the executing
+of the program, but not all.
+
+Errors and warnings are written to the standard error.
+
+All other messages are the information for the user. They are written to
+standard output.
+
+== Exploring the system ==
+
+=== what packages are installed? ===
+
+``` cupt pkgnames --installed-only
+
+gives you the list, one package name per line. You can also use
+
+``` dpkg -l | grep "^ii"
+
+for more detailed information.
+
+=== getting information about an installed package ===
+
+``dpkg -s`` //package_name//
+
+or
+
+``cupt show --installed-only`` //package_name//
+
+A second command is preferrable, for example, when you want to know is this
+package automatically installed or not.
+
+=== details of available package versions ===
+
+To show a default package version:
+
+``cupt show`` //package_name//
+
+Example: ``cupt show dpkg``
+
+To show all available package versions:
+
+``cupt show --all-versions`` //package_name//
+
+If you want to see a Debian changelog for a package, use the subcommand ``changelog``.
+
+Example: ``cupt changelog exim4``
+
+If you want to see a Debian copyright file a for a package, use the subcommand ``copyright``.
+
+Example: ``cupt copyright exim4``
+
+Note: Cupt can show changelogs and copyrights either for installed packages, or
+for packages available in official repositories in Debian or Ubuntu.
+
+=== searching for a package ===
+
+To search for a package, specify one or more regular expressions as arguments:
+
+``cupt search`` //keyword1// //keyword2// ... //keywordN//
+
+Example: you want to find a Qt-based audio player:
+
+``cupt search audio qt player``: found qmmp.
+
+``cupt search music qt player``: found also amarok.
+
+Another example: you want to find GTK+-related Perl modules:
+
+``` cupt search --names-only "gtk.*perl"
+
+== Updating repository metadata ==
+
+To update repository medadata, use
+
+``` cupt update
+
+It's recommended to update metadata every time before you install or upgrade
+packages.
+
+Note: Cupt downloads quite a many files to update repository metadata. Some
+files may be downloaded in 2-3 different ways (like indexes) or are not so
+important (like translations for package descriptions). You may see some
+warnings, but if you don't see an error message like
+
+``` E: there were errors while downloading release and index data
+
+, the process overall went fine. You can also check program exit code.
+
+== Modifying the system ==
+
+=== package actions terminology ===[package_actions_terminology]
+
+When some package is changing its state, Cupt calls the action:
+
+: install
+
+when a package which wasn't installed is now going to be installed
+
+: remove
+
+when a package will be removed
+
+: upgrade
+
+when a new (bigger) version of the already installed package is to be installed
+
+: downgrade
+
+when an old (more less) version of the already installed package is to be installed
+
+: purge
+
+when a package and its configuration files will be removed
+
+
+=== action preview prompt ===[action_preview_prompt]
+
+An example of action preview prompt:
+
+```
+ $ cupt install kdm akregator exim4
+ Building the package cache...
+ Initializing package resolver and worker...
+ Scheduling requested actions...
+ Resolving possible unmet dependencies...
+ 
+ The following 7 packages will be INSTALLED:
+ 
+ exim4 exim4-base exim4-config exim4-daemon-light libgnutlsxx26 libntrack-qt4-1
+ libntrack0
+ 
+ The following 32 packages will be UPGRADED:
+ 
+ akregator kde-window-manager kdebase-workspace-bin kdebase-workspace-data
+ kdebase-workspace-kgreet-plugins kdm ksysguard ksysguardd libgnutls-dev
+ libgnutls26 libkdecorations4 libkdepim4 libkephal4 libkscreensaver5 libksgrd4
+ libksignalplotter4 libkwineffects1a libkworkspace4 libpcre3
+ libplasma-geolocation-interface4 libplasmaclock4a libplasmagenericshell4
+ libprocesscore4a libprocessui4a libsolidcontrol4 libsolidcontrolifaces4
+ libsoup2.4-1 libtaskmanager4a libweather-ion4a plasma-dataengines-workspace
+ plasma-desktop plasma-widgets-workspace
+ 
+ The following 4 packages will be REMOVED:
+ 
+ libgsasl7(a) libntlm0(a) msmtp(a) msmtp-mta
+ 
+ Need to get 25.7MiB/83.4MiB of archives. After unpacking 3512KiB will be used.
+ Do you want to continue? [y/N/q/a/?]
+```
+
+In the output above you can see: lists of packages to change the state (with a
+total number by each [action #package_actions_terminology], the total
+download amount of packages (83.4MiB), the download amount considering the
+cache of already downloaded archives (25.7MiB), an estimate of difference in
+disk usage after the actions (+3512KiB), a user prompt what to do.
+
+For removed and purged packages, a suffix **(a)** is appended to a package name
+if a package was automatically installed.
+
+The following answers to a user prompt are available:
+
+: y
+
+accept a solution, i.e. proceed with it
+
+: n
+
+decline a solution, i.e. ask to find another solution
+
+: q
+
+don't do anything, quit immediately
+
+: ?
+
+output a short help about available answers
+
+: a
+
+explained [here #specifying_more_package_expression_arguments]
+
+
+=== installing packages ===[installing_packages]
+
+To install a package:
+
+``cupt install`` //package_name//
+
+Example: ``cupt install exim4``
+
+To install several packages:
+
+``cupt install`` //package_name_1// //package_name_2// ... //package_name_N//
+
+Example: ``cupt install exim4 kvirc kdm``
+
+=== upgrading packages ===
+
+To upgrade one or more installed packages, use the same commands as for [installing packages #installing_packages].
+
+=== removing packages ===
+
+To remove a package:
+
+``cupt remove`` //package_name//
+
+Example:
+
+``` cupt remove gdb
+
+To remove several packages:
+
+``cupt remove`` //package_name_1// //package_name_2// ... //package_name_N//
+
+Example:
+
+``` cupt remove gdb kvirc exim4
+
+=== upgrading the whole system ===
+
+To upgrade as many packages as possible:
+
+``` cupt full-upgrade
+
+In the mode above, Cupt will even consider removing manually installed
+packages. If you want to restrict removing manually installed packages, do
+
+``` cupt full-upgrade --no-remove
+
+Or, shorter:
+
+``` cupt safe-upgrade
+
+There is the third upgrade mode, ``cupt dist-upgrade``, which is to be used for
+upgrades to the next major distribution releases. This command upgrades itself
+and dpkg at first, and then calls new version of itself to upgrade the rest.
+
+=== purging packages ===
+
+To purge a package, i.e. remove a package along with its configuration files
+and maybe some dynamically generated or runtime files:
+
+``cupt remove --purge`` //package_name//
+
+Or:
+
+``cupt purge`` //package_name//
+
+To purge several packages:
+
+``cupt purge`` //package_name_1// //package_name_2// ... //package_name_N//
+
+Example:
+
+``` cupt purge gdb
+
+= INTERMEDIATE LEVEL =
+
+== Working with multiple package versions ==
+
+=== changing repositories ===
+
+Cupt uses the same repository list format as APT. See //sources.list(5)//.
+
+=== release information ===[release_info]
+
+Each version of a certain package has one or more **source**s where it comes from.
+
+Each source consists of download information and a subrepository information,
+or **release information**.
+
+The following properties belong to release information:
+
+: basic URI
+
+a common prefix of URIs for all files which come for this (sub)repository (also
+referred as **origin** in APT documentation)
+
+Example: ``http://ftp.fi.debian.org/debian``
+
+: archive
+
+a repository archive name, for example ``testing`` or ``stable``
+
+: codename
+
+a release code name, for example ``wheezy`` or ``sid``
+
+: component
+
+a subrepository component name, for example ``main`` or ``non-free``
+
+: vendor
+
+a vendor name, for example: ``Debian``
+
+: label
+
+a vendor-provided label, for example: ``Debian-Security``
+
+: version
+
+a release version, for example: ``6.0``
+
+: description
+
+a repository description line
+
+
+Any of properties above may be empty.
+
+To see available releases:
+
+``` cupt policy
+
+Example:
+
+```
+ $ cupt policy
+ Package files:
+   /var/lib/dpkg/status installed/: o=dpkg,a=installed,l=,c=,v=,n=now
+   http://ftp.fi.debian.org/debian stable/main: o=Debian,a=stable,l=Debian,c=main,v=6.0,n=squeeze
+   http://security.debian.org stable/main: o=Debian,a=stable,l=Debian-Security,c=main,v=6.0,n=squeeze
+   http://ftp.fi.debian.org/debian squeeze-updates/main: o=Debian,a=squeeze-updates,l=Debian,c=main,v=,n=squeeze-updates
+   http://ftp.fi.debian.org/debian testing/main: o=Debian,a=testing,l=Debian,c=main,v=,n=wheezy
+   http://ftp.fi.debian.org/debian testing/contrib: o=Debian,a=testing,l=Debian,c=contrib,v=,n=wheezy
+   http://ftp.fi.debian.org/debian testing/non-free: o=Debian,a=testing,l=Debian,c=non-free,v=,n=wheezy
+   http://ftp.fi.debian.org/debian unstable/main: o=Debian,a=unstable,l=Debian,c=main,v=,n=sid
+   http://ftp.fi.debian.org/debian unstable/contrib: o=Debian,a=unstable,l=Debian,c=contrib,v=,n=sid
+   http://ftp.fi.debian.org/debian unstable/non-free: o=Debian,a=unstable,l=Debian,c=non-free,v=,n=sid
+   http://ftp.fi.debian.org/debian experimental/main: o=Debian,a=experimental,l=Debian,c=main,v=,n=experimental
+```
+
+The format of lines above:
+
+//basic_URI// //archive//``/``//component//``: o=``//vendor//``,a=``//archive//``,l=``//label//``,c=``//component//``,v=``//version//``,n=``//codename//
+
+Note that "installed" release have the archive ``installed`` and the codename ``now``.
+
+To see the release descriptions of releases a version belongs to:
+
+``cupt show --with-release-info`` //package_name//
+
+Example:
+
+``` cupt show --with-release-info dpkg
+
+=== version pinning system ===[pinning]
+
+Each package version has a **pin**, an integer number. Amongst all versions of
+the same binary package, the one who has maximal pin is **policy**, or **candidate**
+version.
+
+Cupt assigns pins to package versions according to the APT documentation
+(//apt_preferences(5)//). Plus, it adds:
+
+- 1 to pin of every version which has a signed source
+
+- downgrade penalty (the option ``cupt::cache::pin::addendums::downgrade``)
+
+- hold penalty for packages that are 'on hold' (the option ``cupt::cache::pin::addendums::hold``)
+
+- **not automatic** penalty for versions which come solely from sources marked as not automatic, for example, from Debian
+``experimental`` distribution (the option ``cupt::cache::pin::addendums::not-automatic``)
+
+
+Note that sometimes the way APT assigns pins to versions is not the way
+described in its documentation, so Cupt's pins (modulo Cupt-specific additions
+described above) are not necessarily identical to what APT produces.
+
+=== what package versions are available? ===[binary_package_policy]
+
+``cupt policy`` //package_name//
+
+Example:
+
+```
+ $ cupt policy dpkg
+ dpkg:
+   Installed: 1.15.5.6
+   Candidate: 1.15.8.10
+   Version table:
+      1.15.8.10 991
+         http://ftp.fi.debian.org/debian testing/main (signed)
+         http://ftp.fi.debian.org/debian unstable/main (unsigned)
+         http://ftp.se.debian.org/debian testing/main (signed)
+         http://ftp.se.debian.org/debian unstable/main (signed)
+  *** 1.15.5.6 100
+         /var/lib/dpkg/status installed/ (unsigned)
+      1.14.31 -1499
+         http://security.debian.org oldstable/main (signed)
+```
+
+In the output above we can see: installed version ('1.15.5.6'), candidate version
+('1.15.8.10') and a version table. In total, 3 versions of dpkg are available.
+
+For each version in version table we can see (on example of '1.15.8.10'): a version pin ('991'),
+a list of repositories where this version is available.
+
+Each repository line is:
+
+//basic_URI// //archive//``/``//component// (//signeness//)
+
+The repository marked as **signed** if it has a valid and
+verified cryptographic signature, and **unsigned** otherwise.
+
+=== selecting binary package versions ===[selecting_binary_package_versions]
+
+When there are more than one version for a package, Cupt provides following ways to
+select a version of the binary package in the arguments of the various subcommands:
+
+: policy version
+
+to select a policy version, just specify a package name alone.
+
+Example:
+
+``` cupt show dpkg
+
+: specific version
+
+to select an exact version of the package, use the suffix ``=``//version//.
+
+Example:
+
+``` cupt show dpkg=1.15.8.10
+
+: by archive or codename
+
+to select a version in release with known [archive or codename #release_info], use the suffix
+``/``//archive// or ``/``//codename//.
+
+Examples:
+
+``` cupt show dpkg/unstable
+
+``` cupt show dpkg/sid
+
+
+The syntax described above is known as **binary package version expression**.
+In the //cupt(1)// manual page all subcommands which accept this syntax are clearly
+marked as such.
+
+== Combining multiple version arguments ==
+
+Many subcommands accept several arguments of the same meaning. Examples:
+
+``` cupt show dpkg cupt libpqxx3=3.0.2-1>
+
+``` cupt install youtube-dl clive/stable
+
+``` cupt remove libabc-dev libefg-dev libxyz-dev
+
+``` cupt policy perl perl-base
+
+You can use wildcards **''*''** and **?** to select multiple package names. Examples:
+
+- ``cupt show perl-b*``
+
+Shows policy versions of packages which names start with ``perl-b``, for example
+``perl-base`` and ``perl-byacc``.
+
+- ``cupt show perl-*/experimental``
+
+Shows experimental version of packages which names start with ``perl-`` and
+which have experimental versions. In other words, packages without a version in
+``experimental`` distribution won't be selected.
+
+- ``cupt show *=2.0.0-1 | grep Package``
+
+List packages which have a version ``2.0.0-1``. Using wildcards with versions is
+maybe useless, but possible.
+
+- ``cupt full-upgrade xserver-xorg-*/installed``
+
+Perform a full upgrade but keep all installed packages with names starting with
+``xserver-xorg-`` at their current versions.
+
+- ``cupt show ?aff*``
+
+Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
+3rd and 4th positions (starting with 1st), respectively.
+
+
+Also, some subcommands accept arguments' special modifiers:
+
+: +
+
+"install this"
+
+: -
+
+"remove this"
+
+
+You can use the **+** modifier in subcommands: ``remove``, ``purge``. Examples:
+
+``cupt remove youtube-dl clive+``: remove ``youtube-dl``, install ``clive``
+
+``cupt purge exim4 msmtp-mta+ mutt/experimental+``: remove ``exim4`` along with
+its configuration files, install ``msmtp-mta`` and ``mutt`` (from experimental)
+
+You can use the **-** modifier in the ``install`` and ``*-upgrade``-like subcommands. Examples:
+
+``cupt install gnuchess/unstable gnome-chess pychess-``: install ``gnuchess``
+(from ``unstable``), ``gnome-chess``, remove ``pychess``
+
+``cupt full-upgrade cvs-``:
+
+a) ``cvs`` is installed -> do an upgrade with removing ``cvs``
+
+b) ``cvs`` is not installed -> do an upgrade, keeping ``cvs`` uninstalled
+
+== Using package archive deltas ==
+
+Cupt has an integration (through a special download method) with
+//debdelta(1)//. To make Cupt try to download archive deltas before downloading
+full archives, just install the package ``debdelta`` and that's it. No manual
+invocation of debdelta utilities is needed.
+
+See more about debdelta project here: http://debdelta.debian.net/.
+
+== Listing dependency information ==
+
+To list the dependencies of one or more package versions, use the subcommand ``depends``:
+
+``` cupt depends libc6/testing arora/unstable
+
+If you don't want to see Recommends there, use ``--important``:
+
+``` cupt depends --important libc6/testing
+
+If, on the contrary, you want to see even Suggests, use ``--with-suggests``:
+
+``` cupt depends --with-suggests libc6/testing
+
+You can also list selected relations recursively, using ``--recurse``:
+
+``` cupt depends --recurse dpkg
+
+If you want to see a **reverse** dependencies of some version, use the subcommand ``rdepends``:
+
+``` cupt rdepends xz-utils
+
+All the command switches described here are also applicable to ``rdepends`` as well.
+
+== Action preview prompt (extended) ==
+
+=== detailed solution preview ===
+
+You can request more information to show in the [action preview prompt #action_preview_prompt]:
+
+- package versions
+
+Use ``--show-versions`` (``-V``) option. Example:
+
+```
+ $ cupt install gcc-4.6 -V
+ Building the package cache...
+ Initializing package resolver and worker...
+ Scheduling requested actions...
+ Resolving possible unmet dependencies...
+ 
+ The following 7 packages will be INSTALLED:
+ 
+ cpp-4.6 [4.6.0~rc1-1]
+ gcc-4.6 [4.6.0~rc1-1]
+ gcc-4.6-base [4.6.0~rc1-1]
+ libppl-c4 [0.11.2-3]
+ libppl9 [0.11.2-3]
+ libpwl5 [0.11.2-3]
+ libquadmath0 [4.6.0~rc1-1]
+ 
+ The following 4 packages will be UPGRADED:
+ 
+ binutils [2.20.1-15 -> 2.21.0.20110302-2]
+ libcloog-ppl0 [0.15.9-2 -> 0.15.9-3]
+ libgcc1 [1:4.5.2-1 -> 1:4.6.0~rc1-1]
+ libgomp1 [4.5.2-1 -> 4.6.0~rc1-1]
+```
+
+- by-package disk usage changes
+
+Use ``--show-size-changes`` (``-Z``) option. Example:
+
+```
+ $ cupt install gcc-4.6 -Z
+ Building the package cache...                     
+ Initializing package resolver and worker...       
+ Scheduling requested actions...                   
+ Resolving possible unmet dependencies...          
+
+ The following 7 packages will be INSTALLED:
+ 
+ cpp-4.6 <+10.6MiB>
+ gcc-4.6 <+15.0MiB>
+ gcc-4.6-base <+192KiB>
+ libppl-c4 <+4264KiB>  
+ libppl9 <+1176KiB>    
+ libpwl5 <+100KiB>     
+ libquadmath0 <+496KiB>
+ 
+ The following 4 packages will be UPGRADED:
+ 
+ binutils <+1300KiB>
+ libcloog-ppl0
+ libgcc1 <+8192B>
+ libgomp1 <+16.0KiB>
+```
+
+- change reasons
+
+To show, why resolver did the change(s), use ``--show-reasons`` (``-D``) option.
+Example:
+
+```
+ $ cupt install gcc-4.6 -D
+ Building the package cache...
+ Initializing package resolver and worker...
+ Scheduling requested actions...
+ Resolving possible unmet dependencies...
+ 
+ The following 7 packages will be INSTALLED:
+ 
+ cpp-4.6
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'cpp-4.6 (= 4.6.0~rc1-1)'
+ 
+ gcc-4.6
+   reason: user request
+ 
+ gcc-4.6-base
+   reason: cpp-4.6 4.6.0~rc1-1 depends on 'gcc-4.6-base (= 4.6.0~rc1-1)'
+ 
+ libppl-c4
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'libppl-c4'
+ 
+ libppl9
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'libppl9'
+ 
+ libpwl5
+   reason: libppl-c4 0.11.2-3 depends on 'libpwl5'
+ 
+ libquadmath0
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'libquadmath0 (>= 4.6.0~rc1-1)'
+ 
+ 
+ The following 4 packages will be UPGRADED:
+ 
+ binutils
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'binutils (>= 2.21~)'
+ 
+ libcloog-ppl0
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'libcloog-ppl0 (>= 0.15.9-3~)'
+ 
+ libgcc1
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'libgcc1 (>= 1:4.6.0~rc1-1)'
+ 
+ libgomp1
+   reason: gcc-4.6 4.6.0~rc1-1 depends on 'libgomp1 (>= 4.6.0~rc1-1)'
+```
+
+
+You can also combine them.
+
+=== specifying more package expression arguments ===[specifying_more_package_expression_arguments]
+
+In a solution preview (action preview prompt) you have an ability to specify
+more package expressions and a restart a resolving process. To do this, use the
+choice **a**. Example:
+
+```
+ $ cupt install gnash
+ Building the package cache...
+ Initializing package resolver and worker...
+ Scheduling requested actions...
+ Resolving possible unmet dependencies...
+ 
+ The following 64 packages will be INSTALLED:
+ 
+ dmsetup dosfstools freepats fuse-utils gconf2-common gnash gnash-common
+ gstreamer0.10-ffmpeg gstreamer0.10-fluendo-mp3 gstreamer0.10-plugins-bad
+ gstreamer0.10-plugins-base gvfs hdparm libass4 libatasmart4
+ libboost-thread1.42.0 libcdaudio1 libcelt0-0 libexempi3 libexif12 libfftw3-3
+ libflite1 libfuse2 libgconf2-4 libgdu0 libgme0 libgnome-keyring0 libgsf-1-114
+ libgsf-1-common libgtkglext1 libgudev-1.0-0 libidl0 libiptcdata0 libkate1
+ liblvm2app2.2 libmimic0 libmms0 libmodplug1 libmusicbrainz4c2a libntfs-3g75
+ libntfs10 libofa0 libopenspc0 liborbit2 liborc-0.4-0 libparted0debian1
+ libpolkit-backend-1-0 libraptor2-0 librasqal3 librsvg2-2 libsgutils2-2
+ libslv2-9 libsoundtouch0 libvisual-0.4-0 libvisual-0.4-plugins libwildmidi1
+ libyajl1 libzbar0 mtools ntfs-3g ntfsprogs policykit-1 policykit-1-gnome udisks
+ 
+ The following 12 packages will be UPGRADED:
+ 
+ libblkid1 libdbus-glib-1-2 libdevmapper1.02.1 libglib2.0-0
+ libgstreamer-plugins-base0.10-0 libgstreamer0.10-0 libpcre3 libpolkit-agent-1-0
+ libpolkit-gobject-1-0 librdf0 libschroedinger-1.0-0 libudev0
+ 
+ The following 2 packages will be REMOVED:
+ 
+ libeggdbus-1-0(a) librasqal2(a)
+ 
+ Need to get 62.3MiB/62.3MiB of archives. After unpacking 105MiB will be used.
+ Do you want to continue? [y/N/q/a/?] a**
+ Enter a package expression (empty to finish): libgnome-keyring0-
+ Enter a package expression (empty to finish):
+ 
+ The following 39 packages will be INSTALLED:
+ 
+ freepats gnash gnash-common gstreamer0.10-ffmpeg gstreamer0.10-fluendo-mp3
+ gstreamer0.10-plugins-bad gstreamer0.10-plugins-base libass4
+ libboost-thread1.42.0 libcdaudio1 libcelt0-0 libexempi3 libexif12 libfftw3-3
+ libflite1 libgme0 libgsf-1-114 libgsf-1-common libgtkglext1 libgudev-1.0-0
+ libiptcdata0 libkate1 libmimic0 libmms0 libmodplug1 libmusicbrainz4c2a libofa0
+ libopenspc0 liborc-0.4-0 libraptor2-0 librasqal3 librsvg2-2 libslv2-9
+ libsoundtouch0 libvisual-0.4-0 libvisual-0.4-plugins libwildmidi1 libyajl1
+ libzbar0
+ 
+ The following 7 packages will be UPGRADED:
+ 
+ libglib2.0-0 libgstreamer-plugins-base0.10-0 libgstreamer0.10-0 libpcre3
+ librdf0 libschroedinger-1.0-0 libudev0
+ 
+ The following 1 packages will be REMOVED:
+ 
+ librasqal2(a)
+ 
+ Leave the following dependencies unresolved:
+ 
+ gstreamer0.10-plugins-base 0.10.30-1 recommends 'gvfs'
+ 
+ Need to get 56.2MiB/56.2MiB of archives. After unpacking 85.6MiB will be used.
+ Do you want to continue? [y/N/q/a/?]
+```
+
+The effect above is the same as if you specified
+
+``` cupt install gnash libgnome-keyring0-
+
+in the command line from the start.
+
+== Adjusting configuration variables ==
+
+There are two types of configuration variables - **regular** (or **scalar**) and
+**list** ones.  Scalar options have a single scalar value, and list option's
+value is a list of strings. Modifying a scalar option means substituting its
+previous value completely in favor of new specified one, modifying a list
+option means adding one more string to the existing list.
+
+Cupt has many configuration variables, some of them may be specified/overridden
+using command-line switches, some needs to be modified explicitly. See the full
+variable list and descriptions at //cupt(1)/Configuration variables//.
+
+To see the current configuration, use ``config-dump`` subcommand. Examples:
+
+```
+ $ cupt config-dump | grep recommends
+ apt::install-recommends "yes";
+ cupt::resolver::keep-recommends "yes";
+ cupt::resolver::tune-score::failed-recommends "600";
+```
+```
+ $ cupt config-dump | grep "methods "
+ cupt::downloader::protocols::copy::methods { "file"; };
+ cupt::downloader::protocols::debdelta::methods { "debdelta"; };
+ cupt::downloader::protocols::file::methods { "file"; };
+ cupt::downloader::protocols::ftp::methods { "curl"; };
+ cupt::downloader::protocols::ftp::methods { "wget"; };
+ cupt::downloader::protocols::http::methods { "curl"; };
+ cupt::downloader::protocols::http::methods { "wget"; };
+ cupt::downloader::protocols::https::methods { "curl"; };
+ cupt::downloader::protocols::https::methods { "wget"; };
+```
+
+You can distingiush list options there by figure brackets around the values.
+
+Cupt reads configuration first from files (conforming to the APT documentation
+(//apt.conf(5)//)), then applies those specified in the command line using
+``--option`` (or ``-o``) switch or by dedicated switches corresponding to the
+option.
+
+To modify a regular option in the command line, use
+
+``-o`` //option_name//``=``//new_value//
+
+Example:
+
+``` cupt install kmail -o cupt::console::assume-yes=yes
+
+To modify a list option (i.e. add a new string) in the command line, use
+
+``-o`` //option_name//``::=``//added_string//
+
+Example:
+
+``` cupt -s update -o "apt::update::pre-invoke::=ls /var"
+
+You can use ``-o`` multiple times.
+
+== Automatically installed packages ==[automatically_installed_packages]
+
+=== view ===
+
+If you want to know, is a certain package automatically installed or not, do
+
+``cupt show --installed-only`` //package_name//
+
+Example:
+
+``` cupt show --installed-only dpkg
+
+Unfortunately there is no command in //cupt(1)// yet to list all automatically
+or manually installed packages, but you can use the following, provided you
+have a package ``dctrl-tools`` installed: 
+
+To list manually installed packages:
+
+``` LC_MESSAGES=C cupt --installed-only show "*" | grep-dctrl "-FAutomatically installed" no --show-field Package --no-field-names
+
+To list automatically installed packages:
+
+``` LC_MESSAGES=C cupt --installed-only show "*" | grep-dctrl "-FAutomatically installed" yes --show-field Package --no-field-names
+
+=== change ===
+
+To mark some package(s) as automatically installed, use the ``markauto`` subcommand, for example:
+
+``` cupt markauto libqtcore4 udev
+
+To mark some package(s) as manually installed, use the ``unmarkauto`` subcommand, for example:
+
+``` cupt unmarkauto tar traceroute
+
+=== removal ===[auto-removal]
+
+When doing installs/upgrades/etc. all newly installed packages not requested by
+user are marked as automatically installed. For every package management
+actions Cupt's resolver can determine if some automatically installed packages
+are not needed anymore. Automatically installed packages, which are no more a
+part of any valuable dependency chain of manually installed packages, are
+deleted by default. The names of this process is **auto-removal**.
+
+If you don't want auto-removal to be performed, use ``--no-auto-remove`` switch
+or set the option ``cupt::resolver::auto-remove`` to ``no``.
+
+== Soft dependencies ==
+
+All forward interdependencies between packages can be divided into two groups
+-- **hard** and **soft** ones. While hard dependencies must be satisfied in order
+to make a system (or proposed solution) valid, soft ones may stay unsatisfied.
+Hard dependencies are 'Pre-Depends', 'Depends'. Soft dependencies are
+'Recommends', 'Suggests' and 'Enhances'. Cupt completely ignores 'Enhances',
+but can act on 'Recommends' or 'Suggests'. All the remainder of this section is
+dedicated to the last two.
+
+By default, Cupt ignores 'Suggests', but tries to, with an average priority,
+satisfy new dependencies in 'Recommends' and keep already satisfied
+'Recommends'.
+
+You can use the following options to change the behavior:
+
+: apt::install-recommends
+
+set this to ``no`` to not satisfy new 'Recommends'. See also the command-line
+switch ``--no-install-recommends``.
+
+: cupt::resolver::keep-recommends
+
+set this to ``no`` to make resolver ignore all 'Recommends'
+
+: apt::install-suggests
+
+set this ``yes`` to make resolver try to satisfy new 'Suggests'
+
+: cupt::resolver::keep-suggests
+
+set this to ``yes`` to make resolver try to keep already satisfied 'Suggests'
+
+
+Note 1: having the option ``apt::install-``//X// set to ``yes`` without
+``cupt::resolver::keep-``//X// set to ``yes`` as well is useless, Cupt's native
+resolver will warn about it.
+
+Note 2: even when the appropriate ``apt::install-``//X// option is set, Cupt
+ignores not changed soft dependencies.  Say, if there is an installed package
+``gettext`` of version ``1.2`` which ``Recommends: cvs``, a relation ``cvs`` is not
+satisfied in the system, and ``gettext`` is upgraded to a version ``1.3`` which also
+have the same ``Recommends: cvs``, Cupt won't try to satisfy this dependency.
+
+== Understanding package installation process ==
+
+After you agree with a proposed solution (by entering a positive answer in an
+[action preview prompt #action_preview_prompt]) Cupt starts a package
+installation process, which is done in several phases:
+
++ preparation
+
+In this phase Cupt computes the order in which //dpkg(1)// will called and the
+options to pass. This phase may take a while for large changes.
+
++ downloading
+
+In this phase Cupt downloads needed binary packages (``*.deb``). May be empty
+if no packages are needed or all needed packages are already in the cache.
+
++ pre-hooks
+
+In this phase Cupt calls registered pre-hooks (options ``dpkg::pre-invoke`` and
+``dpkg::pre-install-pkgs``) if any. Examples of them are //apt-listchanges(1)//,
+//apt-listbugs(1)// and //dpkg-preconfigure(1)//.  These hooks may ask questions
+and cancel the whole package installation process.
+
++ action themselves
+
+In this phase Cupt calls dpkg as many times as needed to perform requested
+actions.
+
++ post-hooks
+
+In this phase Cupt calls registered post-hooks (the option
+//dpkg::post-invoke//) if any.
+
+
+Note: Cupt itself does not ask anything from the user during the package
+installation process. All questions usually come from programs which Cupt
+calls.
+
+Example:
+
+```
+ 1: # cupt install cmake
+ 2: Building the package cache...
+ 3: Initializing package resolver and worker...
+ 4: Scheduling requested actions...
+ 5: Resolving possible unmet dependencies...
+ 6:
+ 7: The following 4 packages will be INSTALLED:
+ 8:
+ 9: libarchive1 libcurl3 libssh2-1 libxmlrpc-core-c3
+ 10:
+ 11: The following 2 packages will be UPGRADED:
+ 12:
+ 13: cmake cmake-data
+ 14:
+ 15: Need to get 5637KiB/6007KiB of archives. After unpacking 1963KiB will be freed.
+ 16: Do you want to continue? [y/N/q/a/?] y
+ 17: Performing requested actions:
+ 18: Get:1 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake-data 2.8.4+dfsg.1-2 [1224KiB]
+ 19: Get:2 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake 2.8.4+dfsg.1-2 [4102KiB]
+ 20: Get:3 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libarchive1 2.8.4-1 [149KiB]
+ 21: Get:4 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libxmlrpc-core-c3 1.16.33-2 [162KiB]
+ 22: Fetched 5637KiB in 1s.
+ 23: Reading changelogs... Done
+ 24: Selecting previously deselected package libarchive1.
+ 25: (Reading database ... 94022 files and directories currently installed.)
+ 26: Unpacking libarchive1 (from .../libarchive1_2.8.4-1_i386.deb) ...
+ 27: Setting up libarchive1 (2.8.4-1) ...
+ 28: Processing triggers for man-db ...
+ 29: Selecting previously deselected package libssh2-1.
+ 30: (Reading database ... 94034 files and directories currently installed.)
+ 31: Unpacking libssh2-1 (from .../libssh2-1_1.2.6-1_i386.deb) ...
+ 32: Setting up libssh2-1 (1.2.6-1) ...
+ 33: Selecting previously deselected package libcurl3.
+ 34: (Reading database ... 94041 files and directories currently installed.)
+ 35: Unpacking libcurl3 (from .../libcurl3_7.21.3-1_i386.deb) ...
+ 36: Setting up libcurl3 (7.21.3-1) ...
+ 37: Selecting previously deselected package libxmlrpc-core-c3.
+ 38: (Reading database ... 94058 files and directories currently installed.)
+ 39: Unpacking libxmlrpc-core-c3 (from .../libxmlrpc-core-c3_1.16.33-2_i386.deb) ...
+ 40: Setting up libxmlrpc-core-c3 (1.16.33-2) ...
+ 41: (Reading database ... 94080 files and directories currently installed.)
+ 42: Removing cmake ...
+ 43: Processing triggers for man-db ...
+ 44: (Reading database ... 94071 files and directories currently installed.)
+ 45: Preparing to replace cmake-data 2.8.1-2 (using .../cmake-data_2.8.4+dfsg.1-2_all.deb) ...
+ 46: Unpacking replacement cmake-data ...
+ 47: Setting up cmake-data (2.8.4+dfsg.1-2) ...
+ 48: emacsen-common: Handling install of emacsen flavor emacs
+ 49: Processing triggers for man-db ...
+ 50: Selecting previously deselected package cmake.
+ 51: (Reading database ... 94087 files and directories currently installed.)
+ 52: Unpacking cmake (from .../cmake_2.8.4+dfsg.1-2_i386.deb) ...
+ 53: Setting up cmake (2.8.4+dfsg.1-2) ...
+ 54: Processing triggers for man-db ...
+```
+
+In the output above:
+
+```
+ 2-5: information messages
+ 7-16: action preview prompt
+ 17: phase 'preparation'
+ 18-22: phase 'downloading'
+ 23: phase 'pre-hooks' (namely, apt-listchanges)
+ 24-54: phase 'action themselves', dpkg's output
+```
+
+In the case the process fails at phase 'action themselves' (either due to bug
+in Cupt, dpkg, or packages), you'll see some error messages from dpkg and then
+[error messages from Cupt #errors_and_warnings].
+
+== Source packages ==
+
+=== overview ===
+
+Source packages are the files from which binary packages are built. They have two major differences:
+
+- Source packages cannot be "installed" to the system like binary packages.
+
+- Unlike binary packages, source package consists of 3 or more files, not a single one:
+
+ - tarball(s)
+
+ one or more compressed //tar(1)// archives containing an upstream code
+
+ - diff
+
+ a file containing Debian changes, may be missing in the **native** (Debian-specific) packages
+
+ - dsc
+
+ a text file with some headers
+
+
+=== exploring ===
+
+To view a source package information:
+
+``cupt showsrc`` //package_name//
+
+Example:
+
+``` cupt showsrc cupt
+
+You can specify more than one package, for example:
+
+``` cupt showsrc sed mawk
+
+To view available source versions, pin info and releases versions come from,
+use ``policysrc`` subcommand. Its output is the same as for [policy #binary_package_policy]
+subcommand. Example:
+
+``` cupt policysrc sed mawk
+
+To download source package(s), use the ``source`` subcommand, for example:
+
+``` cupt source clive youtube-dl
+
+By default ``source`` subcommand also unpack the package so it's ready for the
+exploring and building. To prevent this, use the ``--download-only`` switch.
+Also, you can download only one part of source package, use switches
+``--tar-only``, ``--diff-only`` and ``--dsc-only`` for that.
+
+=== satisfying build dependencies ===
+
+If you want to build binary packages out of a source one, you will have to
+satisfy source package's build dependencies before. Use the subcommand
+``build-dep`` to do it, for example:
+
+``` cupt build-dep clive
+
+All new packages, installed by this subcommand, will be marked as
+[automatically installed #automatically_installed_packages], and will be a
+subject for [auto-removal #auto-removal] at next package management action.
+
+So, the process of building binary packages out of source one may be, taking
+``clive`` package as an example:
+
+```
+ cupt source clive
+ cupt build-dep clive
+ cd clive-2.2.13 && debuild && cd ../
+ [...]
+ cupt install
+```
+
+The last line will remove all unneeded anymore packages (given auto-removal is
+turned on), including those installed by ``build-dep``.
+
+=== selecting source package versions ===
+
+You can select source package versions in two ways:
+
++ Provide a **source package version expression**. It has the same syntax as
+[binary package version expression #selecting_binary_package_versions], but
+instead of specifying a binary package name you specify a source package name.
+
+Example:
+
+``` cupt showsrc game-music-emu=0.5.5-2 gcc-defaults/experimental
+
++ Provide a binary package version expression, which will be converted to a
+source package version expression when possible.
+
+Example:
+
+```
+ $ cupt show g++/experimental | head -n5
+ Package: g++
+ Version: 4:4.6.0-2exp1
+ Status: not installed
+ Source: gcc-defaults
+ Source version: 1.101exp1
+ $ cupt showsrc g++/experimental | head -n3
+ Package: gcc-defaults
+ Binary: cpp, g++, g++-multilib, gobjc, gobjc-multilib, gobjc++,
+ gobjc++-multilib, gfortran, gfortran-multilib, gccgo, gccgo-multilib,
+ libgcj-common, gcj, gij, libgcj-bc, gcj-jdk, gcj-jre-headless, gcj-jre, gcc,
+ gcc-multilib, gdc, gcc-spu, g++-spu, gfortran-spu
+ Version: 1.101exp1
+```
+
+Here, ``g++`` is a binary package name and ``gcc-defaults`` is a source package
+name. In the second command, as there is no source package ``g++``, a binary
+package was looked up, a version ``4:4.6.0-2exp1`` of it was found, and then a
+source version was selected as if you specified
+
+``` cupt showsrc gcc-defaults=1.101exp1
+
+in the first place.
+
+
+You can supply both syntaxes to all subcommands which work with source
+package versions, examples:
+
+``` cupt build-dep clive/unstable
+
+``` cupt source man-db=2.5.9-4>
+
+== Package manager shell ==
+
+Cupt has a shell-like environment, in which you can supply any subcommand as if
+you typed it in to the command line, but without preceding cupt command name.
+
+Example:
+
+```
+ $ cupt shell
+ This is interactive shell of cupt package manager.
+ Building the package cache... [done]
+ cupt>policy libsoprano4
+ libsoprano4:
+   Installed: 2.2.2+dfsg.1-1
+   Candidate: 2.3.0+dfsg.1-2
+   Version table:
+      2.3.0+dfsg.1-2 501
+        http://debian.org.ua/debian unstable/main (signed)
+  *** 2.2.2+dfsg.1-1 100
+        /var/lib/dpkg/status installed/ (unsigned)
+      2.3.0+dfsg.1-1 2
+        http://debian.org.ua/debian experimental/main (signed)
+ cupt>depends libsoprano4/experimental
+ libsoprano4 2.3.0+dfsg.1-1:
+   Depends: libc6 (>= 2.2.5)
+   Depends: libclucene0ldbl (>= 0.9.20-1)
+   Depends: libgcc1 (>= 1:4.1.1)
+   Depends: libqt4-dbus (>= 4:4.5.2)
+   Depends: libqt4-network (>= 4:4.5.2)
+   Depends: libqt4-xml (>= 4:4.5.2)
+   Depends: libqtcore4 (>= 4:4.5.2)
+   Depends: libstdc++6 (>= 4.1.1)
+   Depends: soprano-daemon (= 2.3.0+dfsg.1-1)
+ cupt>rdepends soprano-daemon
+ soprano-daemon 2.3.0+dfsg.1-2:
+   Reverse-Depends: libsoprano4 2.3.0+dfsg.1-2: soprano-daemon (= 2.3.0+dfsg.1-2)
+ cupt>show soprano-daemon
+ Package: soprano-daemon
+ Version: 2.3.0+dfsg.1-2
+ Status: not installed
+ Source: soprano
+ Priority: optional
+ Section: utils
+ Size: 153KiB
+ Uncompressed size: 536KiB
+ Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
+ Architecture: amd64
+ Depends: libc6 (>= 2.2.5), libgcc1 (>= 1:4.1.1), libqt4-dbus (>= 4:4.5.2), libqt4-network (>= 4:4.5.2),
+ libqtcore4 (>= 4:4.5.2), libraptor1 (>= 1.4.18), librdf0 (>= 1.0.9), libsoprano4 (>= 2.3.0), libstdc++6 (>= 4.1.1)
+ Conflicts: libsoprano-dev (<< 2.3.0+dfsg.1-1), libsoprano4 (<< 2.3.0+dfsg.1-1)
+ Replaces: libsoprano-dev (<< 2.3.0+dfsg.1-1), libsoprano4 (<< 2.3.0+dfsg.1-1)
+ URI: http://debian.org.ua/debian/pool/main/s/soprano/soprano-daemon_2.3.0+dfsg.1-2_amd64.deb
+ MD5: af29b39a741d9a52de91c8e5562e0609
+ SHA1: 1dfebe27b79f10911358949e56f89c64b43265eb
+ SHA256: d5b290a60de56f6a7e0af44f5265c6668bb4689204556b9022a5233a808349fc
+ Description: daemon for the Soprano RDF framework
+  Soprano is a pluggable RDF storage, parsing, and serialization framework based
+  on Qt 4. Soprano is targeted at desktop applications that need to store RDF
+  data. Its API has been optimized for simplicity and ease of use, while its
+  modular structure allows it to use various different RDF storage
+  implementations as its backend.
+  .
+  This package contains the Soprano daemon, D-Bus service, parser
+  plugins, and a storage plugin for the Redland RDF Application Framework.
+ Homepage: http://soprano.sourceforge.net
+
+ cupt>--simulate install libsoprano4
+ Building the package cache... [done]
+ Initializing package resolver and worker... [done]
+ Scheduling requested actions... [done]
+ Resolving possible unmet dependencies... 
+ The following 1 packages will be INSTALLED:
+
+ soprano-daemon 
+
+ The following 1 packages will be UPGRADED:
+
+ libsoprano4 
+
+ Need to get 700KiB/700KiB of archives. After unpacking 196KiB will be used.
+ Do you want to continue? [y/N/q] q
+
+ cupt>exit
+```
+
+What this mode may be useful for:
+
+- fast queries
+
+When entering shell mode, the configuration is read and cache is built. Until
+some management subcommand is executed, query subcommands don't have to re-read
+the configuration and cache on each invocation, and most of them execute
+instantly in shell mode.
+
+- common configuration changes
+
+As the ``shell`` subcommand, as all others, recognizes //cupt(1)/Common options//,
+you can use that to set some configuration options for all the shell session.
+
+Example:
+
+``` cupt shell --simulate -o apt::install-recommends=no
+
+Installing new recommends will be switched off for all the session inside the
+shell, and no real actions will be performed for subcommands that change the
+system. Note that you can override them (by supplying ``-o cupt::worker::simulate=no``
+and ``-o apt::install-recommends=yes``, respectively, for this example).
+
+
+= ADVANCED USAGE =
+
+== System snapshots ==
+
+System snapshots, created by Cupt, consist of binary archives of installed
+packages.  The idea is you create snapshots at some time, and when after some
+changes you system is messed up, you can go back to the working set of
+packages.
+
+Caveats:
+
+- The most usual use case for it is downgrade the packages after a bad upgrade,
+  but package downgrades are usually not supported, so it have not a guarantee
+to work.
+
+- As of now, snapshots does not store an information about automatically
+installed packages.
+
+- If the system doesn't boot or messed up to the level that Cupt or dpkg are
+unable to run properly, you cannot revert the system.
+
+
+It's recommended not to use this feature if you have better alternatives
+available (for example, LVM snapshots or filesystem-level snapshots).
+
+To create a snapshot, use
+
+``cupt snapshot save`` //snapshot_name//
+
+Example:
+
+``` cupt snapshot save 20110405
+
+To revert the system to a saved snapshot, use
+
+``cupt snapshot load`` //snapshot_name//
+
+Example:
+
+``` cupt snapshot load 20110405
+
+You can also list the available snapshots (``cupt snapshot list``), rename
+(``cupt snapshot rename``), remove (``cupt snapshot remove``).
+
+== Satisfying particular dependency relation expressions ==
+
+There is an ability to change the system not by specifying versions of packages
+to install or remove, but by specifying dependencies just as some binary
+package have them. The subcommand to perform this is ``satisfy``:
+
+``cupt satisfy`` //dependency_expression_1// ... //dependency_expression_N//
+
+Examples:
+
+``` cupt satisfy "xserver-xorg (>> 1.6)" "xserver-common (<< 1.6.1~)"
+
+``` cupt satisfy "nautilus (>= 2.16.0), libnautilus-extension1 (>= 2.16.0), wget (>= 1.10.0)"
+
+``` cupt satisfy "youtube-dl | clive"
+
+If you want some dependency expression to be unsatisfied instead, add minus
+(``-``) to the end of an argument:
+
+``` cupt satisfy mail-reader-
+
+Be careful:
+
+``cupt satisfy vim emacs-``: install vim or anything which provides it, remove emacs and anything which provides it
+
+``cupt satisfy "vim, emacs-"``: remove emacs, vim and anything which provides them
+
+== Changes in systems with a low disk space ==
+
+If you happen to have a system, where the disk space is very limited, doing a
+big upgrades or installations can be a problem. For example, you have 1 GiB of
+disk space total, installed packages occupy 600 MiB of them, now you want to do
+a massive upgrade, and it's needed to download 500 MiB of archives to do that,
+and after the upgrade packages will occupy 700 MiB. Here, the simple approach
+of download everything needed and then upgrade everything needed wouldn't work
+since there is no 1100 MiB of the disk space available. The answer is to do the
+upgrade by smaller parts. Now, although it can be done by selecting groups of
+packages to upgrade or install by hand, Cupt can try to do it automatically.
+
+To enable the **changeset-based mode** you will be need specify how many space is
+available for downloaded files. It's impossible to compute the amount reliably since
+changed packages may use some additional space (for example, kernel upgrades)
+or you may write or remove something to the filesystem before/while the
+upgrading is progressing. A rough guess of 'amount of free space minus 100 MiB' is
+a good start.
+
+After you computed the disk space you can give for package archives, specify it
+as a value, in bytes, for ``cupt::worker::archives-space-limit`` option.
+Example:
+
+``` cupt full-upgrade -o cupt::worker::archives-space-limit=200000000
+
+Once this option is set, an action scheduler will try to divide all the changes
+into smaller consequtive changesets so the following conditions are met:
+
+- Download amounts for package changes in any changeset won't exceed the declared limit.
+
+- After each changeset is done, system is fully working in the sense of packages,
+i.e. all dependencies are met and there are no packages in interim states.
+
+
+If such changesets are found, Cupt will proceed with actions, otherwise an
+error with a minimal suitable number will be printed.
+
+For each changeset, package archives will be downloaded before doing actions
+and removed before the next changeset begins.
+
+== Synchronization by source versions ==
+
+Sometimes it is a good idea to keep installed binary packages which were built
+out of same source package (let's call them **related**) to have the same source version.
+
+Related packages are **synchronized** if they have the same source version, i.e.
+binary version may not be the same. For example, the following pairs are usually synchronized:
+
+- ``qprint 1.0-1`` and ``qprint-doc 1.0-1``
+
+- ``qprint 1.0-1+b2`` and ``qprint-doc 1.0-1``
+
+
+But the following are usually not:
+
+- ``qprint 1.0-1`` and ``qprint-doc 1.0-2``
+
+
+Cupt's resolver tries to synchronize the versions of related binary packages if
+the option ``cupt::resolver::synchronize-by-source-versions`` is set to
+non-default value.
+
+Note: this option works properly only if you have source packages available for
+all the packages touched by a resolver.
+
+Note: this option doesn't touch installed packages.
+
+Example:
+
+``` cupt safe-upgrade -o cupt::resolver::synchronize-by-source-versions=hard
+
+
+The ``hard`` value means that all changed packages must be synchronized, e.g.
+consider the synchronization an additional hard dependency.  The ``soft`` value
+means that all unsynchronized changed packages will have a penalty of
+``cupt::resolver::score::failed-synchronization``, e.g. consider the
+synchronization as additional soft dependency.
+
+Example:
+
+Suppose we have ``libfoo1`` and ``foo`` binary packages which came from the same
+source package. We have ``libfoo1 1.2-1`` and ``foo 1.2-1`` installed.
+
+Situation 1: ``libfoo1`` has new ``1.3-1`` version and foo has new ``1.3-1`` version.
+
+Situation 2: ``libfoo1`` has new ``1.3-1`` version and foo has new ``1.3-2`` version.
+
+We do:
+
+``` cupt install foo
+
+What would be done by resolver if we have:
+
+- no synchronization
+
+Situation 1: install new ``foo``, leave ``libfoo1`` as of installed version
+
+Situation 2: install new ``foo``, leave ``libfoo1`` as of installed version
+
+- soft synchronization
+
+Situation 1: install new ``foo`` and ``libfoo1``
+
+Situation 2: install new ``foo``, leave ``libfoo1`` as of installed version
+
+- hard synchronization
+
+Situation 1: install new ``foo`` and ``libfoo1``
+
+Situation 2: give up with an error tree, (assuming ``foo`` depends on
+``libfoo1``, if it does not, then install new ``foo``, remove ``libfoo1``)
+
+
+== Resolver score tuning ==
+
+Cupt's native dependency problem resolver plans system changes, if needed, to
+make installed packages set correct after making the changes user demand.
+
+In the most cases, there are several solutions to a problem. To choose
+amonst them, resolver assign **scores** to all of them.
+
+Score is an integer (i.e. can positive and negative) and is a sum of version
+pin difference (for uninstalled version, zero pin is assumed) and an action
+modifier. Action modifiers are action type-specific addendums and are
+controlled by the option group ``cupt::resolver::score::``//X// (see the full
+list of them in //cupt(1)/Configuration variables//).
+
+For native resolver, the negative scores indicate "negative" changes, and
+positive scores indicate "positive" changes. When several alternative solutions
+for a problem are available, they are considered in the score descending order.
+The ultimate goal of score system to assign positive scores to everything user
+wants and negative scores to everything user don't want. But since "positive"
+and "negative" is something that varies from user to user and from action to
+action, there is no (and cannot be) a silver bullet.
+
+So, how can you adjust solution scores? From the definition of the score
+(above) you may adjust [version pinning #pinning] and/or set
+resolver score variables to different values.
+
+Examples:
+
+```
+$ echo 'q' | cupt -s -t experimental full-upgrade | fgrep 'following'
+W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+The following 202 packages will be INSTALLED:
+The following 710 packages will be UPGRADED:
+The following 55 packages will be REMOVED:
+Leave the following dependencies unresolved:
+$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=250 | fgrep 'following'
+W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+The following 150 packages will be INSTALLED:
+The following 708 packages will be UPGRADED:
+The following 58 packages will be REMOVED:
+Leave the following dependencies unresolved:
+$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=400 | fgrep 'following'
+W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+The following 149 packages will be INSTALLED:
+The following 708 packages will be UPGRADED:
+The following 58 packages will be REMOVED:
+Leave the following dependencies unresolved:
+$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=1000 | fgrep 'following'
+W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+The following 148 packages will be INSTALLED:
+The following 708 packages will be UPGRADED:
+The following 58 packages will be REMOVED:
+Leave the following dependencies unresolved:
+$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::new=-1000 | fgrep 'following'
+W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+The following 64 packages will be INSTALLED:
+The following 661 packages will be UPGRADED:
+The following 100 packages will be REMOVED:
+Leave the following dependencies unresolved:
+WARNING! The following essential packages will be REMOVED:
+$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::new=-1000 -o cupt::resolver::score::downgrade=0 | fgrep 'following'
+W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+The following 26 packages will be INSTALLED:
+The following 618 packages will be UPGRADED:
+The following 42 packages will be REMOVED:
+Leave the following dependencies unresolved:
+```
+
+== Getting debug information ==
+
+There are several types of debug information available, the debug output is
+turned on by setting some ``debug::``//type// option to `yes`. All debug output
+lines is prepended with ``D:`` and are sent to standard error.
+
+: resolver
+
+The native resolver will output its resolution tree and scores.
+
+The debug option is ``debug::resolver``.
+
+: worker
+
+A debug information regarding scheduling dpkg actions will be printed.
+
+The debug option is ``debug::worker``.
+
+: downloader
+
+A debug information regarding downloader's states will be printed.
+
+The debug option is ``debug::downloader``.
+
+: gpg signatures
+
+The gpg signature checker will output its debug information.
+
+The debug option is ``debug::gpgv``.
+
+
+An example: you want to see a very detailed resolver information regarding your query:
+
+``` cupt install exim4 -o debug::resolver=yes 2>resolver.debug.log
+
+A debug information will be put to a file ``resolver.debug.log``.
+

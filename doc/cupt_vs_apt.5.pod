@@ -6,113 +6,9 @@
 
 cupt_vs_apt - overview of things Cupt and APT differ in
 
-=head1 ADVANTAGES
+=head1 FEATURE SETS
 
-=head2 Core
-
-=over
-
-=item
-
-pins can be specified also by source package
-
-=item
-
-negative pin values don't strictly prevent version to be installed
-
-=item
-
-correctness of APT options is checked
-
-=back
-
-=head2 Search
-
-=over
-
-=item
-
-'search' command searches all versions of package, not policy or installed ones
-
-=item
-
-'search' command can search case-sensitively ('--case-sensitive' switch)
-
-=back
-
-=head2 Interface
-
-=over
-
-=item
-
-'show' command can show release description ('--with-release-info' switch)
-
-=item
-
-'/<distribution' and '=<version>' suffixes can be used with 'depends' and
-'rdepends' commands
-
-=item
-
-'policysrc' command
-
-=item
-
-'shell' command
-
-=back
-
-=head2 Managing packages
-
-=over
-
-=item
-
-'satisfy' command is present
-
-=item
-
-two types of multi-case problem resolvers available (see L<--resolver in cupt(1)|cupt(1)/--resolver>)
-
-=item
-
-worker passes '--force-*' options to dpkg only when really needed, not always
-
-=item
-
-source versions of the same binary packages can be synchronized by resolver
-(see L<option cupt::resolver::synchronize-source-versions|cupt(1)/cupt::resolver::synchronize-source-versions>)
-
-=back
-
-=head2 Downloading
-
-=over
-
-=item
-
-HTTP redirects can be followed (see L<acquire::http::allow-redirects in cupt(1)|cupt(1)/acquire::http::allow-redirects>)
-
-=item
-
-downloading deb binary packages via debdelta(1) is supported
-
-=back
-
-=head1 DISADVANTAGES
-
-=over
-
-=item
-
-cdrom URI type is not handled
-
-=item
-
-PDiffs are not supported
-
-=back
+See L<cupt_tutorial/Disadvantages and advantages>.
 
 =head1 DIFFERENT BEHAVIOR
 
@@ -123,11 +19,6 @@ PDiffs are not supported
 =item
 
 'apt::cache::allversions' defaults to 0, not 1 as in apt-cache
-
-=item
-
-setting 'acquire::<protocol>::[<host>::]proxy' to "" is equivalent to setting it
-to "DIRECT"
 
 =item
 
