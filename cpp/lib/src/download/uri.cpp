@@ -81,12 +81,23 @@ string Uri::getProtocol() const
 
 string Uri::getHost() const
 {
-	auto hostEndPosition = __data->uri.find_first_of("/:", __data->hostStartPosition);
+	auto hostEndPosition = __data->uri.find("/", __data->hostStartPosition);
 	if (hostEndPosition == string::npos)
 	{
 		hostEndPosition = __data->uri.size();
 	}
-	return __data->uri.substr(__data->hostStartPosition, hostEndPosition - __data->hostStartPosition);
+	auto result = __data->uri.substr(__data->hostStartPosition, hostEndPosition - __data->hostStartPosition);
+	auto credentialsEndPosition = result.rfind('@');
+	if (credentialsEndPosition != string::npos)
+	{
+		result.erase(0, credentialsEndPosition+1);
+	}
+	auto portPreStartPosition = result.find(':');
+	if (portPreStartPosition != string::npos)
+	{
+		result.erase(portPreStartPosition);
+	}
+	return result;
 }
 
 string Uri::getOpaque() const
