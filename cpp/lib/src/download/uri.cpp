@@ -81,7 +81,7 @@ string Uri::getProtocol() const
 
 string Uri::getHost() const
 {
-	auto hostEndPosition = __data->uri.find('/', __data->hostStartPosition);
+	auto hostEndPosition = __data->uri.find_first_of("/:", __data->hostStartPosition);
 	if (hostEndPosition == string::npos)
 	{
 		hostEndPosition = __data->uri.size();

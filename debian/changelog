@@ -3,6 +3,10 @@ cupt (2.0.0~rc2~) UNRELEASED; urgency=low
   * lib:
     - Make sure that std::min() receives arguments of the same type.
       Fixes FTBFS on some architectures.
+    - download/uri:
+      - 'getHost': fixed to not include a port to the answer. Thanks to
+        Julian Andres Klode for the report. The regression was introduced
+        in 2.0.0~alpha1. (Closes: #621853)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 09 Apr 2011 20:29:28 +0300
 
