@@ -1,3 +1,11 @@
+cupt (2.0.0~rc2~) UNRELEASED; urgency=low
+
+  * lib:
+    - Make sure that std::min() receives arguments of the same type.
+      Fixes FTBFS on some architectures.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 09 Apr 2011 20:29:28 +0300
+
 cupt (2.0.0~rc1) experimental; urgency=low
 
   * console:

@@ -53,9 +53,9 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 	auto defaultRelease = config->getString("apt::default-release");
 
 	// this one is Cupt-specific
-	auto notAutomaticAddendum = config->getInteger("cupt::cache::pin::addendums::not-automatic");
+	ssize_t notAutomaticAddendum = config->getInteger("cupt::cache::pin::addendums::not-automatic");
 
-	ssize_t result = std::min(0, notAutomaticAddendum);
+	ssize_t result = std::min((ssize_t)0, notAutomaticAddendum);
 
 	size_t sourceCount = version->sources.size();
 	for (size_t i = 0; i < sourceCount; ++i)
