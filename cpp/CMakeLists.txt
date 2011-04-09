@@ -51,6 +51,9 @@ IF(PROFILE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")
 ENDIF(PROFILE)
 
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--as-needed")
+
 MACRO(ADD_PRECOMPILED_HEADER Target)
 	get_target_property(Sources ${Target} SOURCES)
 	# message(STATUS "Sources found for ${Target}: ${Sources}")
