@@ -7,7 +7,7 @@
  - Implemented dpkg action priority heuristics to reduce the time from the
    package state is changed till the package state is final.
  - New configurable score calculation system in the native resolver
-   (new option group 'cupt::resolver::tune-score::*').
+   (new option group 'cupt::resolver::score::*').
  - When no solutions were found, throw an error with a solution tree(s) to
    show why.
  - Automatically determine packages which need an indirect upgrade, making the
