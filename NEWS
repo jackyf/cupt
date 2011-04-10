@@ -1,5 +1,6 @@
 2.0
  - Re-implemented in C++(0x).
+ - A tutorial is now available.
  - Added a support for multiple upstream tarballs in source packages.
  - More descriptive error messages for errors in configuration files.
  - Implemented refusing expired Release files.
