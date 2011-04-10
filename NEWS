@@ -1,4 +1,4 @@
-2.0 (beta1)
+2.0
  - Re-implemented in C++(0x).
  - Added a support for multiple upstream tarballs in source packages.
  - More descriptive error messages for errors in configuration files.
