@@ -9,6 +9,9 @@ cupt (2.0.0~rc2~) UNRELEASED; urgency=low
         in 2.0.0~alpha1. (Closes: #621853)
       - 'getHost': fixed to not include credentials to the answer.
         The regression was introduced in 2.0.0~alpha1.
+    - system/resolvers/native:
+      - Fixed applying penalty on removing essential packages even if proposed
+        version is not essential anymore.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 09 Apr 2011 20:29:28 +0300
 
