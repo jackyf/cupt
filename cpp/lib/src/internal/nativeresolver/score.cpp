@@ -90,7 +90,7 @@ ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVe
 			auto installedVersion = binaryPackage->getInstalledVersion();
 			if (installedVersion && installedVersion->essential)
 			{
-				value *= 5;
+				value -= 200000;
 			}
 		}
 	}
