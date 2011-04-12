@@ -31,7 +31,6 @@ string Method::getAcquireSuboptionForUri(const shared_ptr< const Config >& confi
 		const Uri& uri, const string& suboptionName)
 {
 	auto host = uri.getHost();
-	debug("got host: %s", host.c_str());
 	// this "zoo" of per-host variants is given by APT...
 	string optionNamePrefix = string("acquire::") + uri.getProtocol();
 	auto result = config->getString(optionNamePrefix + "::" + suboptionName + "::" + host);
