@@ -1,4 +1,4 @@
-cupt (2.0.0~rc2~) UNRELEASED; urgency=low
+cupt (2.0.0~rc2) experimental; urgency=medium
 
   * lib:
     - Make sure that std::min() receives arguments of the same type.
@@ -15,7 +15,7 @@ cupt (2.0.0~rc2~) UNRELEASED; urgency=low
       - Made the penalty on removing essential packages not pin-dependent and
         much bigger.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 09 Apr 2011 20:29:28 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 12 Apr 2011 19:46:59 +0300
 
 cupt (2.0.0~rc1) experimental; urgency=low
 
