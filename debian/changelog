@@ -2,7 +2,7 @@ cupt (2.0.0~rc2~) UNRELEASED; urgency=low
 
   * lib:
     - Make sure that std::min() receives arguments of the same type.
-      Fixes FTBFS on some architectures.
+      Fixes FTBFS on some architectures. (Closes: #622061)
     - download/uri:
       - 'getHost': fixed to not include a port to the answer. Thanks to
         Julian Andres Klode for the report. The regression was introduced
