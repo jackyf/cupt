@@ -1,6 +1,6 @@
 _cupt()
 {
-	local cur subcommands subcommand command arguments common_options
+	local cur subcommands subcommand command arguments package_name_arguments common_options
 
 	subcommands='-h --help help \
 			-v --version version \
@@ -17,6 +17,15 @@ _cupt()
 
 	command="${COMP_WORDS[0]}"
 	cur="${COMP_WORDS[COMP_CWORD]}"
+
+	local previous_word="${COMP_WORDS[$((COMP_CWORD-1))]}"
+	if [ "${previous_word}" == "-o" ] || [ "${previous_word}"  == "--option" ]; then
+		COMPREPLY=($(compgen -W "$($command config-dump | sed 's/ .*//')" -- ${cur}))
+		if type -t __ltrim_colon_completions > /dev/null; then
+			__ltrim_colon_completions ${cur}
+		fi
+		return 0;
+	fi
 
 	# determining subcommand
 	for word_number in `seq 1 $((COMP_CWORD-1))`; do
@@ -41,9 +50,6 @@ _cupt()
 				subcommand_type='query'
 				arguments='--tar-only --diff-only --dsc-only --download-only'
 				;;
-			config-dump)
-				arguments=$(${command} config-dump | sed 's/ .*//')
-				;;
 			show|showsrc)
 				subcommand_type='query'
 				arguments='--all-versions -a --no-all-versions --with-release-info'
@@ -62,13 +68,12 @@ _cupt()
 				arguments='list save load remove rename'
 				;;
 			markauto|unmarkauto)
-				arguments="$(${command} pkgnames --installed-only)"
+				package_name_arguments="$(${command} pkgnames ${cur} --installed-only)"
 				;;
 		esac
 
 		if ([ "${subcommand_type}" == "query" ] || [ "${subcommand_type}" == "manage" ]) && [[ "${cur}" != -* ]]; then
-			# package list
-			arguments="${arguments} $(${command} pkgnames)"
+			package_name_arguments="$(${command} pkgnames ${cur})"
 		fi
 
 		if [ "${subcommand_type}" == "query" ]; then
@@ -89,9 +94,10 @@ _cupt()
 
 	common_options="-o --option --target-release --default-release -t --purge --quiet -q"
 	arguments="${arguments} ${common_options}"
-
-	COMPREPLY=($(compgen -W "${arguments}" -- ${cur}))
+	arguments=$(compgen -W "${arguments}" -- ${cur})
+	COMPREPLY=(${arguments} ${package_name_arguments})
 	return 0
 }
 
 complete -F _cupt cupt
+

@@ -1,32 +1,30 @@
 Source: cupt
-Section: perl
+Section: admin
 Priority: optional
-Build-Depends: debhelper (>= 7.0.50)
-Build-Depends-Indep: perl (>= 5.10.0), liburi-perl, libparse-recdescent-perl,
-  libwww-curl-perl (>= 4.05), liblist-moreutils-perl (>= 0.23)
+Build-Depends: debhelper (>= 7.0.50), g++-4.5, libboost-program-options1.42-dev,
+  libboost1.42-dev, libreadline6-dev, chrpath, libcurl4-gnutls-dev (>= 7.19.4),
+  cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.9.0
+Standards-Version: 3.9.1
 Vcs-Git: git://github.com/jackyf/cupt.git
-Vcs-Browser: http://github.com/jackyf/cupt/tree/master
+Vcs-Browser: https://github.com/jackyf/cupt/tree/develop
 
-Package: libcupt-perl
-Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}, perl (>= 5.10.0), liburi-perl,
-  libwww-curl-perl (>= 4.05), libterm-size-perl,
-  libparse-recdescent-perl, libdigest-sha-perl,
-  liblist-moreutils-perl (>= 0.23)
+Package: libcupt2-0
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Conflicts: libcupt2-0-experimental
 Breaks: debdelta (<< 0.31)
-Recommends: liblocale-gettext-perl, bzip2, gpgv
+Recommends: libcupt2-0-downloadmethod-curl | libcupt2-0-downloadmethod-wget, bzip2, gpgv
 Suggests: cupt, lzma, debdelta (>= 0.31), dpkg-dev, dpkg-repack
-Description: alternative front-end for dpkg -- Perl modules
- This is a set of Cupt Perl modules implementing front-end to dpkg.
+Description: alternative front-end for dpkg -- runtime library
+ This is a Cupt library implementing front-end to dpkg.
  .
  Provides:
   - parsing and manipulating configuration info;
   - parsing indexes metadata info;
   - version strings comparison;
-  - inspection of the binary package' versions;
+  - inspection of the binary and source package' versions;
   - parsing and querying info about installed packages;
   - parsing and working with relations and relation expressions;
   - download manager and downloaders for some schemes;
@@ -35,16 +33,33 @@ Description: alternative front-end for dpkg -- Perl modules
  .
  See also description of 'cupt' package for more information.
 
-Package: cupt
+Package: libcupt2-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}, libcupt2-0 (= ${binary:Version})
+Conflicts: libcupt2-dev-experimental
+Suggests: libcupt2-doc
+Description: arternative front-end for dpkg -- development files
+ This package provides headers for Cupt library.
+ .
+ See also description of libcupt2-0 package.
+
+Package: libcupt2-doc
+Section: doc
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends},
- libcupt-perl (>= ${libcupt-perl:current}),
- libcupt-perl (<< ${libcupt-perl:next}),
- sensible-utils
-Suggests: libterm-readline-gnu-perl
+Depends: ${misc:Depends}
+Description: alternative front-end for dpkg -- library documentation
+ This package provides documentation for Cupt library.
+ .
+ See also description of libcupt2-0 package.
+
+Package: cupt
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt2-0 (>= ${binary:Version})
+Suggests: sensible-utils, libreadline6
 Description: alternative front-end for dpkg -- console interface
  This package provides a console interface to Cupt library, which is a
- re-implementation of libapt-pkg C++ library using Perl. The aim is to produce
+ re-implementation of libapt-pkg C++ library. The aim is to produce
  more strict, more robust, less buggy front-end than APT.
  .
  Cupt uses the same APT infrastructure, e.g. index files, deb cache archive
@@ -62,8 +77,26 @@ Description: alternative front-end for dpkg -- console interface
   - support of LZMA-compressed indexes;
   - source versions synchronization;
   - 'shell' subcommand (to get command history, search etc. working, install
-    the package 'libterm-readline-gnu-perl');
+    the package 'libreadline6');
   - integration with debdelta (to get it, install the package 'debdelta');
   - system snapshots (needs packages 'dpkg-dev' and 'dpkg-repack').
  .
  Its interface is mostly like apt-get/aptitude console interface.
+
+Package: libcupt2-0-downloadmethod-curl
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: arternative front-end for dpkg -- libcurl download method
+ This package provides http(s) and ftp download handlers for Cupt library
+ using libcurl.
+ .
+ See also description of libcupt2-0 package.
+
+Package: libcupt2-0-downloadmethod-wget
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, wget
+Description: arternative front-end for dpkg -- wget download method
+ This package provides http(s) and ftp download handlers for Cupt library
+ using wget.
+ .
+ See also description of libcupt2-0 package.

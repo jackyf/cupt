@@ -1,12 +1,381 @@
-cupt (1.5.15~) UNRELEASED; urgency=low
+cupt (2.0.0~rc2) experimental; urgency=medium
 
-  * Cupt:
-    - Cache:
-      - 'get_pin': fix crash on source versions when a same-named binary
-        package is installed and is in 'on hold' state. Thanks to
-        Jonathan Nieder for the report. (Closes: #601711)
+  * lib:
+    - Make sure that std::min() receives arguments of the same type.
+      Fixes FTBFS on some architectures. (Closes: #622061)
+    - download/uri:
+      - 'getHost': fixed to not include a port to the answer. Thanks to
+        Julian Andres Klode for the report. The regression was introduced
+        in 2.0.0~alpha1. (Closes: #621853)
+      - 'getHost': fixed to not include credentials to the answer.
+        The regression was introduced in 2.0.0~alpha1.
+    - system/resolvers/native:
+      - Fixed applying penalty on removing essential packages even if proposed
+        version is not essential anymore.
+      - Made the penalty on removing essential packages not pin-dependent and
+        much bigger.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 29 Nov 2010 20:04:02 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 12 Apr 2011 19:46:59 +0300
+
+cupt (2.0.0~rc1) experimental; urgency=low
+
+  * console:
+    - Action preview prompt:
+      - Allow specifying several package expressions under 'a' choice before
+        re-running a resolver.
+    - 'dist-upgrade':
+      - [Jonathan Nieder] Pre-upgrade 'cupt' package first, not
+        'cupt-experimental'. Fixes a regression introduced in 2.0.0~beta2.
+    - 'help':
+      - Removed the temporary message that 'snapshot' subcommand is not
+        implemented, it's implemented since 2.0.0~alpha3.
+    - 'config-dump':
+      - Print empty value list first for all list options.
+    - Added '--as-needed' to link flags.
+  * lib:
+    - Always set 'close-on-exec' flag for internal pipes.
+    - system/resolvers/native:
+      - Fixed an algorithmic bug in calculating error trees when no solutions
+        are found, which might lead to incorrect trees sometimes.
+      - Output a warning about no effect when 'apt::install-<X>' option is set
+        but 'cupt::resolver::keep-<X>' option is unset.
+      - Fixed an endless loop when calculating error trees in some rare cases.
+      - Consider all binary builds (not only selected one) of some source
+        package version to be already synchronized with any binary build of
+        the related package. Fixes a bug which was present since an initial
+        implementation of synchronizing source versions.
+      - Changed scoring system once again, to overcome some design bugs in
+        previous one.
+      - Try to make backtracking more effective by processing "derived"
+        problems closer to their "parents".
+    - file:
+       - Always set 'close-on-exec' flag for opened file descriptors.
+    - config:
+      - Recognize 'acquire::cdrom::*' variables.
+      - The option is 'cupt::cache::obey-hold' is renamed to
+        'cupt::cache::pin::addendums::hold'.
+      - New option 'cupt::cache::pin::addendums::not-automatic'.
+      - The option group 'cupt::resolver::tune-score::*' is renamed to
+        'cupt::resolver::score::*'.
+      - Deleted the option 'cupt::resolver::quality-bar', it's superseded by
+        the option 'cupt::resolver::score::quality-adjustment'.
+      - New option 'cupt::cache::pin::addendums::downgrade'.
+      - The option 'cupt::resolver::synchronize-source-versions' is renamed
+        to 'cupt::resolver::synchronize-by-source-versions'.
+    - download/manager:
+      - Pass the right pointer to setitimer() when disabling SIGALRM. Thanks
+        to Jonathan Nieder for the report. (Closes: #619727)
+      - Fixed undefined behavior in handling duplicated downloads.
+        Fixes a regression introduced in 2.0.0~alpha1.
+    - cache:
+      - Apply an additional pin priority penalty for not automatic releases.
+    - Set of close-on-exec flag changes above Closes: #619650. Thanks to
+      Jonathan Nieder for the report and an initial patch set.
+    - Non-API symbols are not exported anymore.
+  * doc:
+    - reference:
+      - Removed protected members of cupt::cache::Package and its subclasses
+        from the documentation, they exist for internal usage only.
+    - tutorial:
+      - Created.
+  * scripts:
+    - bash_completion:
+      - Complete 'cupt', not 'cupt-experimental'. Fixes a regression
+        introduced in 2.0.0~beta2.
+      - Pre-filter package names using 'cupt pkgnames <start>', it's faster
+        than supplying a full list to compgen.
+      - Remove arguments completion for 'config-dump' subcommand, it does not
+        accept arguments since 2.0.0~alpha1.
+      - Complete also option names after '--option' and '-o'.
+  * downloadmethods:
+    - Added '--as-needed' to link flags.
+  * debian:
+    - control:
+      - Build-depend on 'txt2tags'.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 09 Apr 2011 18:28:51 +0300
+
+cupt (2.0.0~beta2) experimental; urgency=low
+
+  * console:
+    - Action preview prompt: support 'ProcessTriggers' action.
+    - New experimental subcommand 'tar-metadata'.
+    - 'showsrc':
+      - Output also Uploaders when not empty. Fixes a regression introduced
+        in 2.0.0~alpha1.
+    - When selecting a version by archive/codename, throw an error if more
+      than one matching version is found.
+  * lib:
+    - cache/binaryversion:
+      - 'isInstalled': fixed crash when a version has no sources.
+    - system/resolvers/native:
+      - Don't attempt to synchronize installed versions, reverting to the
+        behavior of cupt 1.x.
+      - Optimized solutions' selecting and dropping.
+      - Reduced a bit CPU and RAM overhead when tracking reasons is on.
+      - Clean and verify the solution only before the proposing.
+    - system/resolver:
+      - 'SynchronizationReason': added the field 'version'.
+      - 'SynchronizationReason': renamed the field 'packageName' to
+        'relatedPackageName'.
+    - system/worker:
+      - 'updateReleaseAndIndexData': release the lock only after post-actions
+        are run.
+      - 'updateReleaseAndIndexData': honor the option
+        'apt::get::list-cleanup'. (Closes: #610285)
+      - 'Action': new value 'ProcessTriggers'.
+      - Now tries to run all triggers before the main action set.
+    - system/state:
+      - Don't give an error anymore on packages in 'triggers-awaited' and
+        'triggers-pending' states. (Closes: #602263)
+    - config:
+      - Recognize the option 'apt::get::list-cleanup'.
+    - cache:
+      - Fixed extracting release version from Release files. This regression
+        was introduced in 2.0.0~alpha1.
+  * debian:
+    - changelog, control: source package is back to 'cupt' from 'cupt2'.
+    - *: removed the suffix '-experimental' from binary package names.
+    - control:
+      - Added needed Conflicts against obsolete packages.
+      - Changed sections of 'libcupt2-dev' and 'libcupt2-doc' as suggested
+        by lintian.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 20 Mar 2011 12:17:28 +0200
+
+cupt (2.0.0~beta1) UNRELEASED; urgency=low
+
+  * console:
+    - shell:
+      - Restore initial config after every command.
+      - Fixed "eating" some one-letter options.
+    - Action preview prompt:
+      - For removed/purged packages which have an 'automatically installed'
+        flag set, append '(a)' to package names.
+      - Added an ability to specify additional package expressions and restart
+        the solving process (choice 'a'). (Closes: #605416)
+      - Treat downgrades as dangerous actions.
+      - Ask for the confirmation for dangerous actions only if user has
+        accepted the solution.
+      - Added a help command.
+  * lib:
+    - system/resolver:
+      - New result type 'Offer'.
+      - 'Offer': provide the info about unsatisfied soft dependencies.
+      - 'Reason': new method 'toString'.
+    - system/resolvers/native:
+      - Filter out changes of conflicting packages which don't
+        effectively change the situation.
+      - Use only reliable information from source packages for synchronizing
+        source versions.
+      - Reworked underlying data structures.
+      - New configurable score calculation system.
+      - Do not additionally stick packages except of changed ones, it may hide
+        some solution in very rare cases. Fixes a regression since 0.2.2.
+      - When no solutions were found, throw an error with a solution tree to
+        show why.
+      - 'resolve': fixed a wrong result when being called multiple times on
+        the same object.
+      - 'resolve': added a warning about dropped solutions.
+    - config:
+      - Deleted option
+        'cupt::resolver::synchronize-source-versions::exceptions'.
+      - Deleted option 'cupt::worker::archives-space-limit::tries'.
+      - New option group 'cupt::resolver::tune-score::*'.
+    - system/worker:
+      - Fixed not changing 'automatically installed' flag. This regression
+        was introduced in 2.0.0~alpha3.
+      - Fixed determining an empty extension of index files. This regression
+        was introduced in 2.0.0~alpha1.
+      - Don't use randomization anymore for implementing
+        'cupt::worker::archives-space-limit' option.
+      - When breaking changes to changesets, made sure that all subgroups of
+        the same group are placed to the same changeset.
+      - When purge option is used, don't auto-purge not changed packages in
+        the state 'config-files'. Fixes a regression introduced in
+        2.0.0~alpha1.
+      - When purge option is used, do removal instead of purge for packages
+        removed by resolver and not by user.
+      - Reorganized 'ActionsPreview' structure.
+      - 'setDesiredState': use Resolver::Offer as an argument.
+      - 'updateReleaseAndIndexData': use long alias, not short one in the
+        'signature verification failed' warning message.
+    - common:
+      - compareVersionStrings: fixed sorting letters before other characters.
+        This regression was introduced in 2.0.0~alpha1.
+    - cache:
+      - 'getPin': increased downgrade penalty in 5 times.
+  * downloadmethods:
+    - wget:
+      - Fixed passing environment variables to wget process.
+  * debian:
+    - copyright:
+      - Updated copyright years.
+    - control:
+      - Updated the git branch in the Vcs-Browser link.
+    - debian/cupt-experimental.docs:
+      - Added to install 'NEWS' file.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 06 Mar 2011 15:22:47 +0200
+
+cupt (2.0.0~alpha3) UNRELEASED; urgency=low
+
+  * All the non-experimental functionality from cupt 1.x is now implemented.
+
+  * console:
+    - Fixed non-working binary-to-source mapping in source package version
+      expressions.
+    - Disallow matching options by prefix. Fixes a regression since
+      2.0.0~alpha1.
+    - 'snapshot': implemented.
+  * lib:
+    - cache/binaryversion:
+      - 'parseFromFile': 10-25% speed-up.
+    - file:
+      - 'getRecord': removed parameter 'accepter'.
+    - system/resolver:
+      - 'operator=': forbidden now.
+      - Reorganized *Reason struct, transformed to struct hierarchy.
+    - system/resolvers/native:
+      - Apply essential package penalty only for removals.
+      - Version priorities don't affect versions' scores anymore.
+    - system/worker:
+      - 'operator=': forbidden now.
+      - 'markAsAutomaticallyInstalled': renamed to
+        'setAutomaticallyInstalledFlag'.
+      - 'deleteArchive': fixed possible directory traversal.
+      - Implemented snapshot-related methods.
+      - Rewrote scheduling dpkg actions to automatically determine packages
+        which need an indirect upgrade, making the option
+        'cupt::worker::allow-indirect-upgrade' unneeded.
+      - Introduce dpkg action priority heuristics to reduce the time from
+        the package state is changed till the package state is final.
+    - config:
+      - Option 'cupt::resolver::max-solution-count': increased default value
+        from 256 to 512.
+      - Specified the 'quiet' option as '0' to make apt-listchanges work (a
+        work-around for #604130).
+      - New method 'getPath' for unified handling of path options.
+      - New option 'cupt::directory'.
+      - Fixed parsing '#' and '//' strings inside the option values.
+      - Deleted option 'cupt::worker::allow-indirect-upgrade'.
+    - system/snapshots:
+      - Implemented.
+    - cache/relation:
+      - All single-parameter constructors are now explicit.
+  * debian:
+    - rules:
+      - Fixed installing bash completion script.
+  * doc:
+    - reference:
+      - Documented dynamic library parts. All library is documented now.
+    - cupt-experimental.1:
+      - '--installed-only' works under 'shell' subcommand since 2.0.0~alpha1.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 06 Jan 2011 12:35:15 +0200
+
+cupt (2.0.0~alpha2) UNRELEASED; urgency=low
+
+  * console:
+    - 'why': fixed infinite CPU and RAM usage when some of starting versions
+      have a dependency cycle with any other version.
+  * lib:
+    - hashsums:
+      - 'getStringHash': speed-up.
+      - 'getStringHash': renamed to 'getHashOfString'.
+      - 'getHashOfString': fixed crash on non-ASCII strings.
+      - Use libgcrypt for hash computations.
+    - cache:
+      - Pre-parsing index files: really discard packages with broken package
+        names.
+      - 'operator=': forbidden now.
+      - Refusing expired Release files: use a workaround to parse expiry date
+        as UTC time, not local time.
+    - file:
+      - 'getBlock': renamed to 'getRecord'.
+      - destructor: check child exit status in a pipe mode.
+    - common:
+      - 'exception': renamed to 'Exception'.
+    - system/resolvers/native:
+      - Don't add new reason to an action which received unsatisfied soft
+        dependency penalty.
+    - config:
+      - 'getNumber': renamed to 'getInteger'.
+    - cache/version:
+      - 'AvailableAsEntry': renamed to 'Source'.
+      - 'availableAs': renamed to 'sources'.
+    - download/progress:
+      - 'progress': fixed nasty bug with wrong computing total download
+        size when at least one download has an unknown size.
+      - 'finish': renamed to 'finishHook' and moved to protected section.
+      - 'getOverallEstimatedTime': now returns time since the start of the
+        download session, not from the current moment.
+      - don't include '<ctime>' header anymore.
+    - Link with 'rt'.
+    - cache/relation:
+      - 'unarchitectureRelationLine': moved to ArchitecturedRelationLine class
+        and renamed to 'toRelationLine'.
+      - 'ArchitecturedRelationExpression::getHashString': doesn't exist,
+        removed its declaration.
+    - cache/package:
+      - 'operator=': forbidden now.
+      - copy constructor: forbidden now.
+    - system/worker:
+      - Fixed typo which resulted in some action dependencies being lost while
+        merging remove and unpack actions.
+      - Fixed typos which resulted in many false positives when checking for
+        temporary broken pre-depends.
+    - download/manager:
+      - Added multiple inclusion guards to the header.
+      - If download method reported expected download file size after a
+        download was started, pass it to download progress object.
+    - download/method:
+      - 'getNumericAcquireSuboptionForUri': renamed to
+        'getIntegerAcquireSuboptionForUri'.
+    - download/methodfactory:
+      - 'operator=': forbidden now.
+    - cache/binaryversion:
+      - 'task': removed the field.
+  * doc:
+    - examples:
+      - Added 'show-upgradeable' example.
+    - reference:
+      - Documented static part of the library.
+      - Added a build infrastructure.
+      - Documented library's download subsystem (namespace 'cupt::download').
+  * debian:
+    - rules:
+      - Moved starting buildpoint to top directory (from 'cpp').
+    - control:
+      - Added build-dependency on doxygen.
+      - Added new binary package 'libcupt2-doc-experimental'.
+      - The package libcupt2-dev-experimental now suggests
+        libcupt2-doc-experimental.
+      - Added build-dependency on libgcrypt11-dev.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 14 Nov 2010 10:39:41 +0200
+
+cupt (2.0.0~alpha1) UNRELEASED; urgency=low
+
+  * Re-implemented in C++ (and subset of C++0x). (Closes: #605320)
+    - Parsing version entries is much faster now. (Closes: #547950)
+
+  * console:
+    - The '--installed-only' option now works under 'shell' command.
+    - The 'config-dump' subcommand no longer accepts arguments.
+  * lib:
+    - cache/sourceversion:
+      - Support multiple tarballs.
+    - config:
+      - Implemented issuing detailed error messages when facing syntax errors
+        in configuration files.
+    - cache:
+      - Implemented refusing expired Release files. (Closes: #604543)
+  * downloadmethods:
+    - wget:
+      - Implemented.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 26 Sep 2010 12:31:09 +0300
 
 cupt (1.5.14.1) unstable; urgency=low
 
