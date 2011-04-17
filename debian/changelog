@@ -7,6 +7,9 @@ cupt (2.0.1~) UNRELEASED; urgency=low
     - reference:
       - Hide 'CUPT_API' macro in declarations.
       - Hide 'CUPT_*' macro definitions.
+    - tutorial:
+      - Documented repository cache layout incompatibility with recent
+        versions of APT.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 17 Apr 2011 15:54:46 +0300
 
