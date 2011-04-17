@@ -6,6 +6,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
     - system/worker:
       - A small speed-up of generating dpkg action sequences for large queries.
       - RAM usage optimizations.
+      - [Julian Andres Klode] Introduced a support for xz-compressed index
+        files. (Closes: #623129)
     - config:
       - Be more clear in configuration file error messages that they talk
         about syntax errors.

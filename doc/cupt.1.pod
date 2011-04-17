@@ -899,7 +899,7 @@ list, names of the methods available to download protocol I<protocol>
 
 integer, defines preference to download compressed files with higher priority first. 100 by default.
 
-'*' can be 'gz', 'bz2', 'lzma' and 'uncompressed'.
+'*' can be 'gz', 'bz2', 'lzma', 'xz', and 'uncompressed'.
 
 Set some option to <100 value to make it low-precedence than default, and >100
 to make it high-precedence than default.

@@ -83,10 +83,14 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 	auto filenameExtension = getFilenameExtension(uri);
 
 	// checking and preparing unpackers
-	if (filenameExtension == ".lzma" || filenameExtension == ".bz2" || filenameExtension == ".gz")
+	if (filenameExtension == ".xz" || filenameExtension == ".lzma" || filenameExtension == ".bz2" || filenameExtension == ".gz")
 	{
 		string uncompressorName;
-		if (filenameExtension == ".lzma")
+		if (filenameExtension == ".xz")
+		{
+			uncompressorName = "unxz";
+		}
+		else if (filenameExtension == ".lzma")
 		{
 			uncompressorName = "unlzma";
 		}
