@@ -18,8 +18,10 @@
 #ifndef CUPT_COMMON_SEEN
 #define CUPT_COMMON_SEEN
 
+/// @cond
 #define CUPT_API __attribute__ ((visibility("default")))
 #define CUPT_LOCAL __attribute__ ((visibility("hidden")))
+/// @endcond
 
 /*! @file */
 
