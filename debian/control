@@ -39,7 +39,7 @@ Architecture: any
 Depends: ${misc:Depends}, libcupt2-0 (= ${binary:Version})
 Conflicts: libcupt2-dev-experimental
 Suggests: libcupt2-doc
-Description: arternative front-end for dpkg -- development files
+Description: alternative front-end for dpkg -- development files
  This package provides headers for Cupt library.
  .
  See also description of libcupt2-0 package.
@@ -86,7 +86,7 @@ Description: alternative front-end for dpkg -- console interface
 Package: libcupt2-0-downloadmethod-curl
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: arternative front-end for dpkg -- libcurl download method
+Description: alternative front-end for dpkg -- libcurl download method
  This package provides http(s) and ftp download handlers for Cupt library
  using libcurl.
  .
@@ -95,7 +95,7 @@ Description: arternative front-end for dpkg -- libcurl download method
 Package: libcupt2-0-downloadmethod-wget
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, wget
-Description: arternative front-end for dpkg -- wget download method
+Description: alternative front-end for dpkg -- wget download method
  This package provides http(s) and ftp download handlers for Cupt library
  using wget.
  .

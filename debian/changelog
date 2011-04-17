@@ -1,6 +1,8 @@
 cupt (2.0.1~) UNRELEASED; urgency=low
 
-  * 
+  * debian:
+    - control:
+      - Fixed typo 'arternative' in some short descriptions.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 17 Apr 2011 15:54:46 +0300
 
