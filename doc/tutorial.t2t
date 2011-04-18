@@ -1535,7 +1535,9 @@ Situation 2: give up with an error tree, (assuming ``foo`` depends on
 ``libfoo1``, if it does not, then install new ``foo``, remove ``libfoo1``)
 
 
-== Resolver score tuning ==
+== Resolver tuning ==
+
+=== score ===
 
 Cupt's native dependency problem resolver plans system changes, if needed, to
 make installed packages set correct after making the changes user demand.
@@ -1602,6 +1604,19 @@ The following 618 packages will be UPGRADED:
 The following 42 packages will be REMOVED:
 Leave the following dependencies unresolved:
 ```
+
+=== maximum solution count ===
+
+When an amount of available solutions is big, you may see the following message while resolver is operating:
+
+``` W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
+
+Cupt's native resolver may have only limited amount of different solutions in
+the memory, and this amount is determined by the value of the
+``cupt::resolver::max-solution-count`` option. The default value is enough for
+requests of small and medium complexity, but may be not enough for request of
+high complexity. So, for systems where there is enough free RAM, consider
+increasing the value to values like 4000 or even 16000.
 
 == Getting debug information ==
 
