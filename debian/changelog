@@ -6,6 +6,7 @@ cupt (2.0.1~) UNRELEASED; urgency=low
         - Give a warning instead of an error on the systems where the socket
           option SO_RCVTIMEO is not supported. Thanks to Jonathan Nieder for
           the analysis.
+    - [Jonathan Nieder] Don't check for WIFCONTINUED. (Closes: #623159)
   * debian:
     - control:
       - Fixed typo 'arternative' in some short descriptions.

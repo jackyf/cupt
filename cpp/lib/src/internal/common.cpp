@@ -73,10 +73,6 @@ string getWaitStatusDescription(int status)
 	{
 		return sf("stopped by signal '%s'", strsignal(WSTOPSIG(status)));
 	}
-	else if (WIFCONTINUED(status))
-	{
-		return sf("continued");
-	}
 	else if (WIFEXITED(status))
 	{
 		return sf("exit code '%d'", WEXITSTATUS(status));
