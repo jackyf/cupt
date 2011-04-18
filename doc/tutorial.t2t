@@ -1033,7 +1033,7 @@ actions.
 + post-hooks
 
 In this phase Cupt calls registered post-hooks (the option
-//dpkg::post-invoke//) if any.
+``dpkg::post-invoke``) if any.
 
 
 Note: Cupt itself does not ask anything from the user during the package
