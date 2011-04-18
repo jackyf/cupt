@@ -16,6 +16,7 @@ add_custom_command(
 	COMMAND touch ../doxygen-stamp
 )
 add_custom_command(
+	MAIN_DEPENDENCY tutorial.t2t
 	OUTPUT tutorial-stamp
 
 	COMMAND txt2tags ARGS -t html -o tutorial.html tutorial.t2t
