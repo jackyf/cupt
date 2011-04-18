@@ -1057,7 +1057,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 		tv.tv_usec = 0;
 		if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == -1)
 		{
-			fatal("unable to set download client socket timeout: EEE");
+			warn("unable to set download client socket timeout: EEE");
 		}
 	}
 

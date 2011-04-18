@@ -1,5 +1,10 @@
 cupt (2.0.1~) UNRELEASED; urgency=low
 
+  * lib:
+    - download:
+      - manager:
+        - Give a warning instead of an error on the systems where the socket
+          option SO_RCVTIMEO is not supported.
   * debian:
     - control:
       - Fixed typo 'arternative' in some short descriptions.
