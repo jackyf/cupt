@@ -1,3 +1,11 @@
+cupt (2.1.0~) UNRELEASED; urgency=low
+
+  * lib:
+    - cache/relation:
+      - RelationLine: new method 'operator=(RelationLine&&)'.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
+
 cupt (2.0.2) unstable; urgency=low
 
   * lib:

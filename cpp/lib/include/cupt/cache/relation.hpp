@@ -184,6 +184,8 @@ struct CUPT_API RelationLine: public vector< RelationExpression >
 	 * representation
 	 */
 	explicit RelationLine(pair< string::const_iterator, string::const_iterator > input);
+	/// operator= from the rvalue reference
+	RelationLine& operator=(RelationLine&& other);
 	/// destructor
 	virtual ~RelationLine();
 };

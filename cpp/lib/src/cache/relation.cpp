@@ -462,6 +462,12 @@ DEFINE_RELATION_LINE_CLASS(RelationLine, RelationExpression)
 DEFINE_RELATION_LINE_CLASS(ArchitecturedRelationLine, ArchitecturedRelationExpression)
 #undef DEFINE_RELATION_LINE_CLASS
 
+RelationLine& RelationLine::operator=(RelationLine&& other)
+{
+	std::vector< RelationExpression >::swap(other);
+	return *this;
+}
+
 }
 }
 
