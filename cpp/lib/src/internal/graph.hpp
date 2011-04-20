@@ -19,6 +19,7 @@
 #define CUPT_INTERNAL_GRAPH_SEEN
 
 #include <set>
+#include <unordered_set>
 #include <map>
 #include <list>
 #include <queue>
@@ -30,6 +31,7 @@ namespace internal {
 
 using std::map;
 using std::set;
+using std::unordered_set;
 using std::list;
 using std::queue;
 using std::priority_queue;
@@ -65,8 +67,8 @@ class Graph
 	void addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr);
 	void deleteEdge(const T& from, const T& to);
 
-	set< const T* > getReachableFrom(const T& from) const;
-	set< const T* > getReachableTo(const T& to) const;
+	unordered_set< const T* > getReachableFrom(const T& from) const;
+	unordered_set< const T* > getReachableTo(const T& to) const;
 	vector< const T* > getPathVertices(const T& from, const T& to) const;
 
 	template< class PriorityLess, class OutputIterator >
@@ -436,18 +438,18 @@ void Graph< T >::topologicalSortOfStronglyConnectedComponents(
 }
 
 template < class T >
-set< const T* > Graph< T >::getReachableFrom(const T& from) const
+unordered_set< const T* > Graph< T >::getReachableFrom(const T& from) const
 {
 	auto it = __vertices.find(from);
 	if (it == __vertices.end())
 	{
-		return set< const T* >();
+		return unordered_set< const T* >();
 	}
 
 	queue< const T* > currentVertices;
 	currentVertices.push(&*it);
 
-	set< const T* > result = { &*it };
+	unordered_set< const T* > result = { &*it };
 
 	while (!currentVertices.empty())
 	{
@@ -470,7 +472,7 @@ set< const T* > Graph< T >::getReachableFrom(const T& from) const
 }
 
 template < class T >
-set< const T* > Graph< T >::getReachableTo(const T& to) const
+unordered_set< const T* > Graph< T >::getReachableTo(const T& to) const
 {
 	__successors.swap(__predecessors); // transposing the graph temporarily
 	auto result = getReachableFrom(to);

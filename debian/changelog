@@ -3,6 +3,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
   * lib:
     - cache/relation:
       - RelationLine: new method 'operator=(RelationLine&&)'.
+    - system/worker:
+      - A small speed-up of generating dpkg action sequences for large queries.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
 
