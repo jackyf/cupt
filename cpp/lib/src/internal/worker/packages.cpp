@@ -103,6 +103,8 @@ const RelationLine OneRelationExpressionVersionProxy::__null_result;
 
 using std::make_pair;
 
+typedef Graph< InnerAction >::CessorListType GraphCessorListType;
+
 PackagesWorker::PackagesWorker()
 {
 	__auto_installed_package_names = _cache->getExtendedInfo().automaticallyInstalled;
@@ -607,8 +609,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const list< const InnerAction* > predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
-		const list< const InnerAction* > successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+		const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
+		const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
 		FORIT(predecessorVertexPtrIt, predecessors)
 		{
 			FORIT(successorVertexPtrIt, successors)
@@ -686,7 +688,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
 
-			const list< const InnerAction* >& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
@@ -697,7 +699,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 				}
 			}
 
-			const list< const InnerAction* >& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
@@ -1047,7 +1049,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			auto newFromPtr = &*it;
 			auto oldFromPtr = gaa.graph.addVertex(*newFromPtr);
 
-			const list< const InnerAction* >& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
+			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;

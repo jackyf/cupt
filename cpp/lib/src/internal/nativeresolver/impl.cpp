@@ -300,7 +300,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 			{
 				continue; // main vertex
 			}
-			const list< const dg::Element* >& successorElementPtrs =
+			const GraphCessorListType& successorElementPtrs =
 					__solution_storage->getSuccessorElements(*elementPtrIt);
 			FORIT(successorElementPtrIt, successorElementPtrs)
 			{
@@ -308,7 +308,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 				{
 					continue;
 				}
-				const list< const dg::Element* >& successorSuccessorElementPtrs =
+				const GraphCessorListType& successorSuccessorElementPtrs =
 						__solution_storage->getSuccessorElements(*successorElementPtrIt);
 				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
 				{
@@ -540,7 +540,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 	   currently broken one */
 	auto brokenElementTypePriority = (*brokenElementPtr)->getTypePriority();
 
-	const list< const dg::Element* >& successorElementPtrs =
+	const GraphCessorListType& successorElementPtrs =
 			__solution_storage->getSuccessorElements(candidateElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
@@ -561,7 +561,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 	}
 
 	// let's try even harder to find if this candidate is really appropriate for us
-	const list< const dg::Element* >& brokenElementSuccessorElementPtrs =
+	const GraphCessorListType& brokenElementSuccessorElementPtrs =
 			__solution_storage->getSuccessorElements(brokenElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
@@ -572,7 +572,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		/* if any of such successors gives us equal or less "space" in
 		   terms of satisfying elements, the version won't be accepted as a
 		   resolution */
-		const list< const dg::Element* >& successorElementSuccessorElementPtrs =
+		const GraphCessorListType& successorElementSuccessorElementPtrs =
 				__solution_storage->getSuccessorElements(*successorElementPtrIt);
 
 		bool isMoreWide = false;
@@ -639,7 +639,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Action > >& actions,
 		const Solution& solution, const dg::Element* brokenElementPtr)
 {
-	const list< const dg::Element* >& successorElementPtrs =
+	const GraphCessorListType& successorElementPtrs =
 			__solution_storage->getSuccessorElements(brokenElementPtr);
 	// install one of versions package needs
 	FORIT(successorElementPtrIt, successorElementPtrs)
@@ -708,11 +708,11 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		else
 		{
 			// non-version vertex - unsatisfied one
-			const list< const dg::Element* >& predecessors =
+			const GraphCessorListType& predecessors =
 					__solution_storage->getPredecessorElements(*elementPtrIt);
 			FORIT(predecessorIt, predecessors)
 			{
-				const list< const dg::Element* >& affectedVersionElements =
+				const GraphCessorListType& affectedVersionElements =
 						__solution_storage->getPredecessorElements(*predecessorIt);
 				FORIT(affectedVersionElementIt, affectedVersionElements)
 				{
@@ -761,7 +761,7 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 void NativeResolverImpl::__validate_element(
 		Solution& solution, const dg::Element* elementPtr, size_t priority)
 {
-	const list< const dg::Element* >& successorElementPtrs =
+	const GraphCessorListType& successorElementPtrs =
 			__solution_storage->getSuccessorElements(elementPtr);
 	forward_list< PackageEntry::BrokenSuccessor > brokenSuccessors;
 	FORIT(successorElementPtrIt, successorElementPtrs)
@@ -795,7 +795,7 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 	auto elementPtrs = solution.getElements();
 	FORIT(elementPtrIt, elementPtrs)
 	{
-		const list< const dg::Element* >& successorElementPtrs =
+		const GraphCessorListType& successorElementPtrs =
 				__solution_storage->getSuccessorElements(*elementPtrIt);
 		FORIT(successorElementPtrIt, successorElementPtrs)
 		{
@@ -817,13 +817,13 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 
 	if (oldElementPtr)
 	{ // invalidate those which depend on the old element
-		const list< const dg::Element* >& predecessors =
+		const GraphCessorListType& predecessors =
 				__solution_storage->getPredecessorElements(oldElementPtr);
 		FORIT(predecessorElementPtrIt, predecessors)
 		{
 			if (!__solution_storage->verifyElement(solution, *predecessorElementPtrIt))
 			{
-				const list< const dg::Element* >& dependentVersionElementPtrs =
+				const GraphCessorListType& dependentVersionElementPtrs =
 						__solution_storage->getPredecessorElements(*predecessorElementPtrIt);
 				FORIT(versionElementPtrIt, dependentVersionElementPtrs)
 				{
@@ -845,11 +845,11 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 		}
 	}
 	{ // validate those which depend on the new element
-		const list< const dg::Element* >& predecessors =
+		const GraphCessorListType& predecessors =
 				__solution_storage->getPredecessorElements(newElementPtr);
 		FORIT(predecessorElementPtrIt, predecessors)
 		{
-			const list< const dg::Element* >& dependentVersionElementPtrs =
+			const GraphCessorListType& dependentVersionElementPtrs =
 					__solution_storage->getPredecessorElements(*predecessorElementPtrIt);
 			FORIT(versionElementPtrIt, dependentVersionElementPtrs)
 			{

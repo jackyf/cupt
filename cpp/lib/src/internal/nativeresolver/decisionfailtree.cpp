@@ -102,7 +102,7 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		}
 		// dependants
 		set< const dg::Element* > alreadyProcessedConflictors;
-		const list< const dg::Element* >& successors =
+		const GraphCessorListType& successors =
 				solutionStorage.getSuccessorElements(introducedBy.brokenElementPtr);
 		FORIT(successorIt, successors)
 		{

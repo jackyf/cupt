@@ -31,6 +31,7 @@ namespace cupt {
 namespace internal {
 
 namespace dg = dependencygraph;
+typedef dg::DependencyGraph::CessorListType GraphCessorListType;
 
 using namespace cache;
 using namespace system;
@@ -120,8 +121,8 @@ class SolutionStorage
 			const map< string, shared_ptr< const BinaryVersion > >&,
 			const map< string, dg::InitialPackageEntry >&);
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
-	const list< const dg::Element* >& getSuccessorElements(const dg::Element*) const;
-	const list< const dg::Element* >& getPredecessorElements(const dg::Element*) const;
+	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
+	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
 	bool verifyElement(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself

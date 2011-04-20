@@ -157,12 +157,12 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 	return cloned;
 }
 
-const list< const dg::Element* >& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
 {
 	return __dependency_graph.getSuccessorsFromPointer(elementPtr);
 }
 
-const list< const dg::Element* >& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
 {
 	return __dependency_graph.getPredecessorsFromPointer(elementPtr);
 }
@@ -255,7 +255,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 bool SolutionStorage::verifyElement(const Solution& solution,
 		const dg::Element* elementPtr) const
 {
-	const list< const dg::Element* >& successorElementPtrs =
+	const GraphCessorListType& successorElementPtrs =
 			getSuccessorElements(elementPtr);
 	FORIT(elementPtrIt, successorElementPtrs)
 	{

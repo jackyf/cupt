@@ -96,6 +96,7 @@ class DependencyGraph: protected Graph< Element >
 	const Element* getCorrespondingEmptyElement(const Element*);
 	using Graph< Element >::getSuccessorsFromPointer;
 	using Graph< Element >::getPredecessorsFromPointer;
+	using Graph< Element >::CessorListType;
 };
 
 }

@@ -39,11 +39,14 @@ using std::priority_queue;
 template < class T >
 class Graph
 {
+ public:
+	typedef list< const T* > CessorListType; // type for {suc,prede}cessor lists
+ private:
 	set< T > __vertices;
-	mutable map< const T*, list< const T* > > __predecessors;
-	mutable map< const T*, list< const T* > > __successors;
+	mutable map< const T*, CessorListType > __predecessors;
+	mutable map< const T*, CessorListType > __successors;
 
-	static const list< const T* > __null_list;
+	static const CessorListType __null_list;
 
  public:
 	void clearEdges();
@@ -54,10 +57,10 @@ class Graph
 	bool hasEdge(const T& from, const T& to) const;
 	bool hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr) const;
 
-	const list< const T* >& getPredecessors(const T& vertex) const;
-	const list< const T* >& getSuccessors(const T& vertex) const;
-	const list< const T* >& getPredecessorsFromPointer(const T* vertexPtr) const;
-	const list< const T* >& getSuccessorsFromPointer(const T* vertexPtr) const;
+	const CessorListType& getPredecessors(const T& vertex) const;
+	const CessorListType& getSuccessors(const T& vertex) const;
+	const CessorListType& getPredecessorsFromPointer(const T* vertexPtr) const;
+	const CessorListType& getSuccessorsFromPointer(const T* vertexPtr) const;
 
 
 	const T* addVertex(const T& vertex);
@@ -78,7 +81,7 @@ class Graph
 };
 
 template < class T >
-const list< const T* > Graph< T >::__null_list;
+const typename Graph< T >::CessorListType Graph< T >::__null_list;
 
 template < class T >
 void Graph< T >::clearEdges()
@@ -101,7 +104,7 @@ vector< pair< const T*, const T* > > Graph< T >::getEdges() const
 	{
 		const T* vertexPtr = &*vertexIt;
 
-		const list< const T* >& predecessors = getPredecessorsFromPointer(vertexPtr);
+		const CessorListType& predecessors = getPredecessorsFromPointer(vertexPtr);
 		FORIT(predecessorPtrIt, predecessors)
 		{
 			result.push_back(std::make_pair(*predecessorPtrIt, vertexPtr));
@@ -126,8 +129,8 @@ void Graph< T >::deleteVertex(const T& vertex)
 	{
 		auto vertexPtr = &*it;
 		// deleting edges containing vertex
-		const list< const T* >& predecessors = getPredecessorsFromPointer(vertexPtr);
-		const list< const T* >& successors = getSuccessorsFromPointer(vertexPtr);
+		const CessorListType& predecessors = getPredecessorsFromPointer(vertexPtr);
+		const CessorListType& successors = getSuccessorsFromPointer(vertexPtr);
 		FORIT(predecessorIt, predecessors)
 		{
 			__successors[*predecessorIt].remove(vertexPtr);
@@ -148,7 +151,7 @@ void Graph< T >::deleteVertex(const T& vertex)
 template < class T >
 bool Graph< T >::hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr) const
 {
-	const list< const T* >& predecessors = getPredecessorsFromPointer(toVertexPtr);
+	const CessorListType& predecessors = getPredecessorsFromPointer(toVertexPtr);
 	FORIT(vertexPtrIt, predecessors)
 	{
 		if (fromVertexPtr == *vertexPtrIt)
@@ -220,21 +223,21 @@ void Graph< T >::deleteEdge(const T& from, const T& to)
 }
 
 template < class T >
-const list< const T* >& Graph< T >::getPredecessorsFromPointer(const T* vertexPtr) const
+const typename Graph< T >::CessorListType& Graph< T >::getPredecessorsFromPointer(const T* vertexPtr) const
 {
 	auto it = __predecessors.find(vertexPtr);
 	return (it != __predecessors.end() ? it->second : __null_list);
 }
 
 template < class T >
-const list< const T* >& Graph< T >::getSuccessorsFromPointer(const T* vertexPtr) const
+const typename Graph< T >::CessorListType& Graph< T >::getSuccessorsFromPointer(const T* vertexPtr) const
 {
 	auto it = __successors.find(vertexPtr);
 	return (it != __successors.end() ? it->second : __null_list);
 }
 
 template < class T >
-const list< const T* >& Graph< T >::getPredecessors(const T& vertex) const
+const typename Graph< T >::CessorListType& Graph< T >::getPredecessors(const T& vertex) const
 {
 	auto vertexIt = __vertices.find(vertex);
 	if (vertexIt == __vertices.end())
@@ -245,7 +248,7 @@ const list< const T* >& Graph< T >::getPredecessors(const T& vertex) const
 }
 
 template < class T >
-const list< const T* >& Graph< T >::getSuccessors(const T& vertex) const
+const typename Graph< T >::CessorListType& Graph< T >::getSuccessors(const T& vertex) const
 {
 	auto vertexIt = __vertices.find(vertex);
 	if (vertexIt == __vertices.end())
@@ -261,7 +264,7 @@ void __dfs_visit(const Graph< T >& graph, const T* vertexPtr,
 {
 	seen.insert(vertexPtr);
 
-	const list< const T* >& successors = graph.getSuccessorsFromPointer(vertexPtr);
+	const typename Graph< T >::CessorListType& successors = graph.getSuccessorsFromPointer(vertexPtr);
 	FORIT(toVertexIt, successors)
 	{
 		if (!seen.count(*toVertexIt))
@@ -352,7 +355,7 @@ Graph< vector< T > > __make_scc_graph(const Graph< T >& graph,
 			const T* vertexPtr = &*vertexIt;
 			auto fromComponentPtr = vertexToComponent[vertexPtr];
 
-			const list< const T* >& successors = graph.getSuccessorsFromPointer(vertexPtr);
+			const typename Graph< T >::CessorListType& successors = graph.getSuccessorsFromPointer(vertexPtr);
 			FORIT(successorPtrIt, successors)
 			{
 				auto toComponentPtr = vertexToComponent[*successorPtrIt];
@@ -393,7 +396,8 @@ void __topological_sort_with_priorities(Graph< vector< T > >&& graph,
 		++outputIterator;
 		callback(*vertexPtr, true);
 
-		const list< const vector< T >* > successors = graph.getSuccessorsFromPointer(vertexPtr); // list copy, yes
+		const typename Graph< vector< T > >::CessorListType successors =
+				graph.getSuccessorsFromPointer(vertexPtr); // list copy, yes
 		graph.deleteVertex(*vertexPtr);
 		FORIT(successorIt, successors)
 		{
@@ -456,7 +460,7 @@ unordered_set< const T* > Graph< T >::getReachableFrom(const T& from) const
 		auto currentVertexPtr = currentVertices.front();
 		currentVertices.pop();
 
-		const list< const T* >& successors = getSuccessorsFromPointer(currentVertexPtr);
+		const CessorListType& successors = getSuccessorsFromPointer(currentVertexPtr);
 		FORIT(vertexIt, successors)
 		{
 			auto successorPtr = *vertexIt;
@@ -515,7 +519,7 @@ vector< const T* > Graph< T >::getPathVertices(const T& from, const T& to) const
 		if (insertResult.second)
 		{
 			// unseen element
-			const list< const T* >& successors = getSuccessorsFromPointer(currentVertexPtr);
+			const CessorListType& successors = getSuccessorsFromPointer(currentVertexPtr);
 			FORIT(successorIt, successors)
 			{
 				vector< const T* > newPath = currentPath;
