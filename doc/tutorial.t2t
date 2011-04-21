@@ -370,6 +370,24 @@ Example:
 
 ``` cupt purge gdb
 
+== Package archives cleaning ==
+
+Whenever Cupt needs to install, upgrade or downgrade packages it downloads
+binary package archives (``.deb`` files) to an archive cache. These archives
+are not removed after the first usage so they can be reused later.
+
+If you do upgrades often, it's a good idea to periodically delete old package
+archives to save the disk space. It's done by the subcommand ``autoclean``:
+
+``` cupt autoclean
+
+The command above will delete all package archives which do not belong to
+currently available repositories.
+
+If you want to remove all archives from the cache, do
+
+``` cupt clean
+
 = INTERMEDIATE LEVEL =
 
 == Working with multiple package versions ==

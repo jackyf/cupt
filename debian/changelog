@@ -17,6 +17,7 @@ cupt (2.0.1~) UNRELEASED; urgency=low
       - Documented repository cache layout incompatibility with recent
         versions of APT.
       - Documented a tuning of resolver's maximum solution count.
+      - Documented package archives cleaning.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 17 Apr 2011 15:54:46 +0300
 
