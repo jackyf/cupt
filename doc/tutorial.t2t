@@ -347,9 +347,12 @@ Or, shorter:
 
 ``` cupt safe-upgrade
 
-There is the third upgrade mode, ``cupt dist-upgrade``, which is to be used for
-upgrades to the next major distribution releases. This command upgrades itself
-and dpkg at first, and then calls new version of itself to upgrade the rest.
+There is the third upgrade mode, which is to be used for upgrades to the next
+major distribution releases:
+
+``` cupt dist-upgrade
+
+This subcommand upgrades Cupt itself and dpkg at first, and then calls new version of itself to upgrade the rest.
 
 === purging packages ===
 
