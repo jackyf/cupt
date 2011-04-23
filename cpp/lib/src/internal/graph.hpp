@@ -66,7 +66,6 @@ class Graph
 	const T* addVertex(const T& vertex);
 	void deleteVertex(const T& vertex);
 
-	void addEdge(const T& from, const T& to);
 	void addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr);
 	void deleteEdge(const T& from, const T& to);
 
@@ -174,18 +173,6 @@ bool Graph< T >::hasEdge(const T& from, const T& to) const
 		}
 	}
 	return false;
-}
-
-template < class T >
-void Graph< T >::addEdge(const T& from, const T& to)
-{
-	if (!hasEdge(from, to))
-	{
-		auto fromPtr = addVertex(from);
-		auto toPtr = addVertex(to);
-		__predecessors[toPtr].push_back(fromPtr);
-		__successors[fromPtr].push_back(toPtr);
-	}
 }
 
 template < class T >
