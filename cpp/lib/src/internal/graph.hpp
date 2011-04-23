@@ -21,7 +21,7 @@
 #include <set>
 #include <unordered_set>
 #include <map>
-#include <list>
+#include <vector>
 #include <queue>
 
 #include <cupt/common.hpp>
@@ -39,7 +39,7 @@ template < class T >
 class Graph
 {
  public:
-	typedef std::list< const T* > CessorListType; // type for {suc,prede}cessor lists
+	typedef std::vector< const T* > CessorListType; // type for {suc,prede}cessor lists
  private:
 	set< T > __vertices;
 	mutable map< const T*, CessorListType > __predecessors;
