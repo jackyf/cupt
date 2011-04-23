@@ -16,6 +16,8 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 
+#include <fnmatch.h>
+
 #include <functional>
 
 #include <cupt/regex.hpp>
@@ -237,14 +239,13 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	else
 	{
 		// handling wildcards
-		auto packageNameRegex = globToRegex(packageNameExpression);
+		const char* packageNameGlob = packageNameExpression.c_str();
 
 		auto packageNames = packageNamesFetcher();
-		smatch m;
 		FORIT(proposedPackageNameIt, packageNames)
 		{
 			const string& proposedPackageName = *proposedPackageNameIt;
-			if (regex_match(proposedPackageName, m, *packageNameRegex))
+			if (!fnmatch(packageNameGlob, proposedPackageName.c_str(), 0))
 			{
 				auto version = versionSelector(cache, proposedPackageName + remainder, false);
 				if (version)
