@@ -118,6 +118,20 @@ const T* Graph< T >::addVertex(const T& vertex)
 }
 
 template < class T >
+void __remove_from_cessors(typename Graph< T >::CessorListType& cessors, const T* vertexPtr)
+{
+	FORIT(it, cessors)
+	{
+		if (*it == vertexPtr)
+		{
+			cessors.erase(it);
+			return;
+		}
+	}
+	fatal("internal error: graph: the vertex was not found while deleting from cessors list");
+}
+
+template < class T >
 void Graph< T >::deleteVertex(const T& vertex)
 {
 	// searching for vertex
@@ -130,13 +144,13 @@ void Graph< T >::deleteVertex(const T& vertex)
 		const CessorListType& successors = getSuccessorsFromPointer(vertexPtr);
 		FORIT(predecessorIt, predecessors)
 		{
-			__successors[*predecessorIt].remove(vertexPtr);
+			__remove_from_cessors(__successors[*predecessorIt], vertexPtr);
 		}
 		__predecessors.erase(vertexPtr);
 
 		FORIT(successorIt, successors)
 		{
-			__predecessors[*successorIt].remove(vertexPtr);
+			__remove_from_cessors(__predecessors[*successorIt], vertexPtr);
 		}
 		__successors.erase(vertexPtr);
 
@@ -185,11 +199,11 @@ void Graph< T >::deleteEdge(const T& from, const T& to)
 	auto successorsIt = __successors.find(fromPtr);
 	if (predecessorsIt != __predecessors.end())
 	{
-		predecessorsIt->second.remove(fromPtr);
+		__remove_from_cessors(predecessorsIt->second, fromPtr);
 	}
 	if (successorsIt != __successors.end())
 	{
-		successorsIt->second.remove(toPtr);
+		__remove_from_cessors(successorsIt->second, toPtr);
 	}
 }
 
