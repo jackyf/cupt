@@ -32,7 +32,6 @@ namespace internal {
 using std::map;
 using std::set;
 using std::unordered_set;
-using std::list;
 using std::queue;
 using std::priority_queue;
 
@@ -40,7 +39,7 @@ template < class T >
 class Graph
 {
  public:
-	typedef list< const T* > CessorListType; // type for {suc,prede}cessor lists
+	typedef std::list< const T* > CessorListType; // type for {suc,prede}cessor lists
  private:
 	set< T > __vertices;
 	mutable map< const T*, CessorListType > __predecessors;

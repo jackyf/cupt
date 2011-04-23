@@ -17,6 +17,8 @@
 **************************************************************************/
 #include <unordered_map>
 using std::unordered_map;
+#include <list>
+using std::list;
 
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>

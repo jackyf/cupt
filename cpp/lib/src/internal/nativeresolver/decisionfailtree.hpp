@@ -41,7 +41,7 @@ class DecisionFailTree
 		vector< Decision > decisions;
 		vector< const dg::Element* > insertedElementPtrs;
 	};
-	list< FailItem > __fail_items;
+	std::list< FailItem > __fail_items;
 
 	static string __decisions_to_string(const vector< Decision >&);
 	static vector< Decision > __get_decisions(
