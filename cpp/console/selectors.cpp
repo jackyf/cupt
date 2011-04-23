@@ -217,7 +217,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	{
 		fatal("bad package name in package expression '%s'", packageExpression.c_str());
 	}
-	string packageName = m[1];
+	string packageNameExpression = m[1];
 	string remainder;
 	if (m[2].matched)
 	{
@@ -225,7 +225,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	}
 
 	vector< shared_ptr< const Version > > result;
-	if (packageName.find('?') == string::npos && packageName.find('*') == string::npos)
+	if (packageNameExpression.find('?') == string::npos && packageNameExpression.find('*') == string::npos)
 	{
 		// there are no wildcards
 		auto version = versionSelector(cache, packageExpression, throwOnError);
@@ -237,14 +237,14 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	else
 	{
 		// handling wildcards
-		auto packageRegex = globToRegex(packageName);
+		auto packageNameRegex = globToRegex(packageNameExpression);
 
 		auto packageNames = packageNamesFetcher();
 		smatch m;
 		FORIT(proposedPackageNameIt, packageNames)
 		{
 			const string& proposedPackageName = *proposedPackageNameIt;
-			if (regex_match(proposedPackageName, m, *packageRegex))
+			if (regex_match(proposedPackageName, m, *packageNameRegex))
 			{
 				auto version = versionSelector(cache, proposedPackageName + remainder, false);
 				if (version)
