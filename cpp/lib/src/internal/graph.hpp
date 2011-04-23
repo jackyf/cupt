@@ -54,7 +54,6 @@ class Graph
 	const set< T >& getVertices() const;
 	vector< pair< const T*, const T* > > getEdges() const;
 
-	bool hasEdge(const T& from, const T& to) const;
 	bool hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr) const;
 
 	const CessorListType& getPredecessors(const T& vertex) const;
@@ -154,20 +153,6 @@ bool Graph< T >::hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPt
 	FORIT(vertexPtrIt, predecessors)
 	{
 		if (fromVertexPtr == *vertexPtrIt)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-template < class T >
-bool Graph< T >::hasEdge(const T& from, const T& to) const
-{
-	const list< const T* >& predecessors = getPredecessors(to);
-	FORIT(vertexIt, predecessors)
-	{
-		if (from == **vertexIt)
 		{
 			return true;
 		}
