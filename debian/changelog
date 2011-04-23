@@ -6,6 +6,9 @@ cupt (2.1.0~) UNRELEASED; urgency=low
     - system/worker:
       - A small speed-up of generating dpkg action sequences for large queries.
       - RAM usage optimizations.
+    - config:
+      - Be more clear in configuration file error messages that they talk
+        about syntax errors.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
 
