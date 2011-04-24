@@ -1113,7 +1113,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 				auto toPtr = edgeIt->second;
 				if (!miniGaa.attributes[make_pair(fromPtr, toPtr)].isDependencyHard())
 				{
-					miniGaa.graph.deleteEdge(*fromPtr, *toPtr);
+					miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
 					if (debugging)
 					{
 						debug("ignoring soft edge '%s' -> '%s'",

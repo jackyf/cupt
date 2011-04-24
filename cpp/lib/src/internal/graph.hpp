@@ -65,7 +65,7 @@ class Graph
 	void deleteVertex(const T& vertex);
 
 	void addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr);
-	void deleteEdge(const T& from, const T& to);
+	void deleteEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr);
 
 	unordered_set< const T* > getReachableFrom(const T& from) const;
 	unordered_set< const T* > getReachableTo(const T& to) const;
@@ -184,26 +184,17 @@ void Graph< T >::addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPt
 }
 
 template < class T >
-void Graph< T >::deleteEdge(const T& from, const T& to)
+void Graph< T >::deleteEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr)
 {
-	auto fromIt = __vertices.find(from);
-	auto toIt = __vertices.find(to);
-	if (fromIt == __vertices.end() || toIt == __vertices.end())
-	{
-		return;
-	}
-	auto fromPtr = &*fromIt;
-	auto toPtr = &*toIt;
-
-	auto predecessorsIt = __predecessors.find(toPtr);
-	auto successorsIt = __successors.find(fromPtr);
+	auto predecessorsIt = __predecessors.find(toVertexPtr);
+	auto successorsIt = __successors.find(fromVertexPtr);
 	if (predecessorsIt != __predecessors.end())
 	{
-		__remove_from_cessors(predecessorsIt->second, fromPtr);
+		__remove_from_cessors(predecessorsIt->second, fromVertexPtr);
 	}
 	if (successorsIt != __successors.end())
 	{
-		__remove_from_cessors(successorsIt->second, toPtr);
+		__remove_from_cessors(successorsIt->second, toVertexPtr);
 	}
 }
 
