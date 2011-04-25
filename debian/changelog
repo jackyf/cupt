@@ -1,4 +1,4 @@
-cupt (2.0.1~) UNRELEASED; urgency=low
+cupt (2.0.1) unstable; urgency=low
 
   * lib:
     - download/manager:
@@ -19,7 +19,7 @@ cupt (2.0.1~) UNRELEASED; urgency=low
       - Documented a tuning of resolver's maximum solution count.
       - Documented package archives cleaning.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 17 Apr 2011 15:54:46 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 25 Apr 2011 12:15:20 +0300
 
 cupt (2.0.0) unstable; urgency=low
 
