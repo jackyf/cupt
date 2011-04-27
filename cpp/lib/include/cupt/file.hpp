@@ -103,7 +103,7 @@ class CUPT_API File
 	/**
 	 * Reads up to @a size characters from current position to @a buffer.
 	 * @param buffer buffer to read in
-	 * @param size up limit on character count
+	 * @param [in,out] size before: up limit on character count, after: number of bytes read
 	 * @return reference to self
 	 */
 	File& getBlock(char* buffer, size_t& size);
