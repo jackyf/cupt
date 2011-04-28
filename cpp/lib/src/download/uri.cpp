@@ -41,10 +41,18 @@ Uri::Uri(const string& uri)
 	{
 		fatal("unable to find scheme(protocol) in URI '%s'", uri.c_str());
 	}
-	__data->hostStartPosition = uri.find_first_not_of("/", __data->colonPosition+1);
-	if (__data->hostStartPosition == string::npos)
+
+	// a valid position since colonPosition is verified to be not last
+	__data->hostStartPosition = __data->colonPosition + 1;
+
+	if (uri[__data->hostStartPosition] == '/')
 	{
-		fatal("unable to find host or path in URI '%s'", uri.c_str());
+		// "//" is dropped
+		if (uri.size() < __data->hostStartPosition + 2 || uri[__data->hostStartPosition+1] != '/')
+		{
+			fatal("there should be no or two slashes after a colon in URI '%s'", uri.c_str());
+		}
+		__data->hostStartPosition += 2;
 	}
 }
 
