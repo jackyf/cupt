@@ -6,6 +6,9 @@ cupt (2.0.2~) UNRELEASED; urgency=low
         no needed symbols were found.
     - download/uri:
       - Correctly handle URIs with tree slashes, such as 'file:///...'.
+  * downloadmethods:
+    - file:
+      - Implemented. Fixes a regression since 2.0.0~alpha1. (Closes: #624216)
   * doc:
     - reference:
       - 'File::getBlock': documented an output value of the 'size' parameter.

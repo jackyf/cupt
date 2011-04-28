@@ -12,4 +12,8 @@ add_library(debdelta MODULE debdelta.cpp)
 add_precompiled_header(debdelta)
 target_link_libraries(debdelta cupt2)
 
-install(TARGETS wget curl debdelta DESTINATION lib/cupt2-${CUPT_SOVERSION}/downloadmethods)
+add_library(file MODULE file.cpp)
+add_precompiled_header(file)
+target_link_libraries(file cupt2)
+
+install(TARGETS file wget curl debdelta DESTINATION lib/cupt2-${CUPT_SOVERSION}/downloadmethods)
