@@ -1,5 +1,9 @@
 cupt (2.0.2~) UNRELEASED; urgency=low
 
+  * lib:
+    - download/methodfactory:
+      - Don't try to unload a module twice if it was loaded successfully but
+        no needed symbols were found.
   * doc:
     - reference:
       - 'File::getBlock': documented an output value of the 'size' parameter.

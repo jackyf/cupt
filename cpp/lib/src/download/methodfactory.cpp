@@ -118,6 +118,7 @@ void MethodFactoryImpl::__load_methods()
 			{
 				warn("unable to unload dl handle '%p': %s", dlHandle, dlerror());
 			}
+			continue;
 		}
 		__dl_handles.push_back(dlHandle);
 		__method_builders[methodName] = methodBuilder;
