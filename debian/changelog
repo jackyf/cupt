@@ -13,6 +13,7 @@ cupt (2.1.0~) UNRELEASED; urgency=low
     - control:
       - Relax Boost build requirements to match 1.42 and higher, not only
         1.42.
+      - Vcs-Browser: the main branch is now 'master' again.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
 

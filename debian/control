@@ -9,7 +9,7 @@ Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
 Standards-Version: 3.9.1
 Vcs-Git: git://github.com/jackyf/cupt.git
-Vcs-Browser: https://github.com/jackyf/cupt/tree/develop
+Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
 Package: libcupt2-0
 Architecture: any
