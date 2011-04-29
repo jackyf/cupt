@@ -399,14 +399,6 @@ DependencyGraph::~DependencyGraph()
 	}
 }
 
-bool DependencyGraph::__can_package_be_removed(const string& packageName,
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages) const
-{
-	return !__config.getBool("cupt::resolver::no-remove") ||
-			!oldPackages.count(packageName) ||
-			__cache.isAutomaticallyInstalled(packageName);
-}
-
 vector< string > __get_related_binary_package_names(const Cache& cache,
 		const shared_ptr< const BinaryVersion >& version)
 {
@@ -467,30 +459,44 @@ short __get_synchronize_level(const Config& config)
 	return 0; // unreachable
 }
 
-vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
-		const map< string, InitialPackageEntry >& initialPackages)
+class DependencyGraph::FillHelper
 {
-	bool debugging = __config.getBool("debug::resolver");
+	DependencyGraph& __dependency_graph;
+	const map< string, shared_ptr< const BinaryVersion > >& __old_packages;
+	const map< string, InitialPackageEntry >& __initial_packages;
+	queue< const Element* >& __to_process;
+	bool __debugging;
 
-	auto addEdgeCustom = [this, &debugging](const Element* fromVertexPtr, const Element* toVertexPtr)
-	{
-		this->addEdgeFromPointers(fromVertexPtr, toVertexPtr);
-		if (debugging)
-		{
-			debug("adding an edge '%s' -> '%s'",
-					(*fromVertexPtr)->toString().c_str(), (*toVertexPtr)->toString().c_str());
-		}
-	};
+	map< shared_ptr< const BinaryVersion >, const Element* > __version_to_vertex_ptr;
+	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
+	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
+	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
 
-	map< shared_ptr< const BinaryVersion >, const Element* > versionToVertexPtr;
-	auto getVertexPtr = [this, &oldPackages, &initialPackages, &versionToVertexPtr, &__empty_package_to_vertex_ptr]
-			(const string& packageName, const shared_ptr< const BinaryVersion >& version) -> const Element*
+	bool __can_package_be_removed(const string& packageName) const
 	{
-		auto isVertexAllowed = [this, &packageName, &version, &oldPackages, &initialPackages]() -> bool
+		return !__dependency_graph.__config.getBool("cupt::resolver::no-remove") ||
+				!__old_packages.count(packageName) ||
+				__dependency_graph.__cache.isAutomaticallyInstalled(packageName);
+	}
+
+	// TODO: make all but some private
+ public:
+	FillHelper(DependencyGraph& dependencyGraph,
+			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
+			const map< string, InitialPackageEntry >& initialPackages,
+			queue< const Element* >& toProcess)
+		: __dependency_graph(dependencyGraph),
+		__old_packages(oldPackages), __initial_packages(initialPackages),
+		__to_process(toProcess),
+		__debugging(__dependency_graph.__config.getBool("debug::resolver"))
+	{}
+
+	const Element* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
+	{
+		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
-			auto initialPackageIt = initialPackages.find(packageName);
-			if (initialPackageIt != initialPackages.end() && initialPackageIt->second.sticked)
+			auto initialPackageIt = this->__initial_packages.find(packageName);
+			if (initialPackageIt != this->__initial_packages.end() && initialPackageIt->second.sticked)
 			{
 				const shared_ptr< const BinaryVersion >& initialVersion = initialPackageIt->second.version;
 				if (version)
@@ -509,7 +515,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 				}
 			}
 
-			if (!version && !__can_package_be_removed(packageName, oldPackages))
+			if (!version && !__can_package_be_removed(packageName))
 			{
 				return false;
 			}
@@ -519,11 +525,11 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		auto makeVertex = [this, &packageName, &version]() -> const Element*
 		{
 			static const forward_list< const Element* > nullElementList;
-			auto relatedVertexPtrsIt = this->__package_name_to_vertex_ptrs.insert(
+			auto relatedVertexPtrsIt = __dependency_graph.__package_name_to_vertex_ptrs.insert(
 					make_pair(packageName, nullElementList)).first;
 			auto vertex(new VersionVertex(relatedVertexPtrsIt));
 			vertex->version = version;
-			auto vertexPtr = this->addVertex(vertex);
+			auto vertexPtr = __dependency_graph.addVertex(vertex);
 			relatedVertexPtrsIt->second.push_front(vertexPtr);
 			return vertexPtr;
 		};
@@ -532,14 +538,14 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		bool isNew;
 		if (version)
 		{
-			auto insertResult = versionToVertexPtr.insert(
+			auto insertResult = __version_to_vertex_ptr.insert(
 					make_pair(version, (const Element*)NULL));
 			isNew = insertResult.second;
 			elementPtrPtr = &insertResult.first->second;
 		}
 		else
 		{
-			auto insertResult = __empty_package_to_vertex_ptr.insert(
+			auto insertResult = __dependency_graph.__empty_package_to_vertex_ptr.insert(
 					make_pair(packageName, (const Element*)NULL));
 			isNew = insertResult.second;
 			elementPtrPtr = &insertResult.first->second;
@@ -551,34 +557,24 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			*elementPtrPtr = makeVertex();
 		}
 		return *elementPtrPtr;
-	};
-	auto getVertexPtrForEmptyPackage = [&getVertexPtr]
-			(const string& packageName) -> const Element*
-	{
-		return getVertexPtr(packageName, shared_ptr< const BinaryVersion >());
-	};
+	}
 
-	queue< const Element* > toProcess;
-	auto queueVersion = [this, &getVertexPtr, &toProcess](
-			const shared_ptr< const BinaryVersion >& version) -> const Element*
+ private:
+	void addEdgeCustom(const Element* fromVertexPtr, const Element* toVertexPtr)
 	{
-		const set< Element >& vertices = this->getVertices();
-		auto oldSize = vertices.size();
-		auto elementPtr = getVertexPtr(version->packageName, version);
-		if (vertices.size() > oldSize && elementPtr) // newly inserted
+		__dependency_graph.addEdgeFromPointers(fromVertexPtr, toVertexPtr);
+		if (__debugging)
 		{
-			toProcess.push(elementPtr);
+			debug("adding an edge '%s' -> '%s'",
+					(*fromVertexPtr)->toString().c_str(), (*toVertexPtr)->toString().c_str());
 		}
-		return elementPtr;
-	};
+	}
 
-	unordered_map< string, const Element* > relationExpressionToVertexPtr;
-	auto getVertexPtrForRelationExpression = [this, &relationExpressionToVertexPtr](
-			const RelationExpression* relationExpressionPtr,
-			const RelationType& dependencyType, bool* isNew) -> const Element*
+	const Element* getVertexPtrForRelationExpression(const RelationExpression* relationExpressionPtr,
+			const RelationType& dependencyType, bool* isNew)
 	{
 		auto hashKey = relationExpressionPtr->getHashString() + char('0' + dependencyType);
-		const Element*& elementPtr = relationExpressionToVertexPtr.insert(
+		const Element*& elementPtr = __relation_expression_to_vertex_ptr.insert(
 				make_pair(hashKey, (const Element*)NULL)).first->second;
 		*isNew = !elementPtr;
 		if (!elementPtr)
@@ -586,53 +582,43 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			auto vertex(new RelationExpressionVertex);
 			vertex->dependencyType = dependencyType;
 			vertex->relationExpressionPtr = relationExpressionPtr;
-			elementPtr = this->addVertex(vertex);
+			elementPtr = __dependency_graph.addVertex(vertex);
 		}
 		return elementPtr;
-	};
-
-	{ // getting elements from initial packages
-		FORIT(it, initialPackages)
-		{
-			const InitialPackageEntry& initialPackageEntry = it->second;
-			const shared_ptr< const BinaryVersion >& initialVersion = initialPackageEntry.version;
-
-			if (initialVersion)
-			{
-				queueVersion(initialVersion);
-
-				if (!initialPackageEntry.sticked)
-				{
-					const string& packageName = it->first;
-					auto package = __cache.getBinaryPackage(packageName);
-					auto versions = package->getVersions();
-					FORIT(versionIt, versions)
-					{
-						queueVersion(*versionIt);
-					}
-
-					getVertexPtrForEmptyPackage(packageName); // also, empty one
-				}
-			}
-		}
 	}
 
-	unordered_map< string, list< pair< string, const Element* > > > metaAntiRelationExpressionVertices;
-	auto processAntiRelation = [this, &metaAntiRelationExpressionVertices, &queueVersion,
-			&addEdgeCustom, &getVertexPtrForEmptyPackage](const string& packageName,
+ public:
+	const Element* getVertexPtrForEmptyPackage(const string& packageName)
+	{
+		return getVertexPtr(packageName, shared_ptr< const BinaryVersion >());
+	}
+
+	const Element* queueVersion(const shared_ptr< const BinaryVersion >& version)
+	{
+		const set< Element >& vertices = __dependency_graph.getVertices();
+		auto oldSize = vertices.size();
+		auto elementPtr = getVertexPtr(version->packageName, version);
+		if (vertices.size() > oldSize && elementPtr) // newly inserted
+		{
+			__to_process.push(elementPtr);
+		}
+		return elementPtr;
+	}
+
+	void processAntiRelation(const string& packageName,
 			const Element* vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
 		static const list< pair< string, const Element* > > emptyList;
-		auto insertResult = metaAntiRelationExpressionVertices.insert(
+		auto insertResult = __meta_anti_relation_expression_vertices.insert(
 				make_pair(hashKey, emptyList));
 		bool isNewRelationExpressionVertex = insertResult.second;
 		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
 
 		if (isNewRelationExpressionVertex)
 		{
-			auto satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
+			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 			// filling sub elements
 			map< string, list< const BinaryVersion* > > groupedSatisfiedVersions;
 			FORIT(satisfyingVersionIt, satisfyingVersions)
@@ -649,10 +635,10 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 				subVertex->dependencyType = dependencyType;
 				subVertex->relationExpressionPtr = &relationExpression;
 				subVertex->specificPackageName = packageName;
-				auto subVertexPtr = this->addVertex(subVertex);
+				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
 				subElementPtrs.push_back(make_pair(packageName, subVertexPtr));
 
-				auto package = __cache.getBinaryPackage(packageName);
+				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
 				if (!package)
 				{
 					fatal("internal error: the binary package '%s' doesn't exist", packageName.c_str());
@@ -689,12 +675,10 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			}
 			addEdgeCustom(vertexPtr, subElementPtrIt->second);
 		}
-	};
+	}
 
-	auto processForwardRelation = [this, &addEdgeCustom, &oldPackages,
-			&debugging, &getVertexPtrForRelationExpression, &queueVersion](
-			const shared_ptr< const BinaryVersion >& version, const Element* vertexPtr,
-			const RelationExpression& relationExpression,
+	void processForwardRelation(const shared_ptr< const BinaryVersion >& version,
+			const Element* vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
@@ -704,11 +688,11 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
 				dependencyType == BinaryVersion::RelationTypes::Suggests)
 		{
-			satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
-			if (__is_soft_dependency_ignored(__config, version, dependencyType,
-					relationExpression, satisfyingVersions, oldPackages))
+			satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
+			if (__is_soft_dependency_ignored(__dependency_graph.__config, version, dependencyType,
+					relationExpression, satisfyingVersions, __old_packages))
 			{
-				if (debugging)
+				if (__debugging)
 				{
 					debug("ignoring soft dependency relation: %s: %s '%s'",
 							(*vertexPtr)->toString().c_str(),
@@ -731,7 +715,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 
 		if (!calculatedSatisfyingVersions)
 		{
-			satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
+			satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 		}
 
 		FORIT(satisfyingVersionIt, satisfyingVersions)
@@ -747,33 +731,30 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		{
 			auto notSatisfiedVertex(new UnsatisfiedVertex);
 			notSatisfiedVertex->parent = relationExpressionVertexPtr;
-			addEdgeCustom(relationExpressionVertexPtr, this->addVertex(notSatisfiedVertex));
+			addEdgeCustom(relationExpressionVertexPtr, __dependency_graph.addVertex(notSatisfiedVertex));
 		}
-	};
+	}
 
-	unordered_map< string, list< pair< string, const Element* > > > metaSynchronizeMap;
-	auto processSynchronizations = [this, &getVertexPtrForEmptyPackage, &addEdgeCustom,
-			&queueVersion, &metaSynchronizeMap](
-			const shared_ptr< const BinaryVersion >& version,
+	void processSynchronizations(const shared_ptr< const BinaryVersion >& version,
 			const Element* vertexPtr, short level)
 	{
 		auto hashKey = version->sourcePackageName + ' ' + version->sourceVersionString;
 		static const list< pair< string, const Element* > > emptyList;
-		auto insertResult = metaSynchronizeMap.insert(make_pair(hashKey, emptyList));
+		auto insertResult = __meta_synchronize_map.insert(make_pair(hashKey, emptyList));
 		bool isNewMetaVertex = insertResult.second;
 		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
 
 		if (isNewMetaVertex)
 		{
-			auto packageNames = __get_related_binary_package_names(__cache, version);
+			auto packageNames = __get_related_binary_package_names(__dependency_graph.__cache, version);
 			FORIT(packageNameIt, packageNames)
 			{
 				auto syncVertex = new SynchronizeVertex(level > 1);
 				syncVertex->targetPackageName = *packageNameIt;
-				auto syncVertexPtr = this->addVertex(syncVertex);
+				auto syncVertexPtr = __dependency_graph.addVertex(syncVertex);
 
 				auto relatedVersions = __get_versions_by_source_version_string(
-						__cache, *packageNameIt, version->sourceVersionString);
+						__dependency_graph.__cache, *packageNameIt, version->sourceVersionString);
 				FORIT(relatedVersionIt, relatedVersions)
 				{
 					if (auto relatedVersionVertexPtr = queueVersion(*relatedVersionIt))
@@ -791,7 +772,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 				{
 					auto unsatisfiedVertex = new UnsatisfiedVertex;
 					unsatisfiedVertex->parent = syncVertexPtr;
-					addEdgeCustom(syncVertexPtr, this->addVertex(unsatisfiedVertex));
+					addEdgeCustom(syncVertexPtr, __dependency_graph.addVertex(unsatisfiedVertex));
 				}
 
 				subElementPtrs.push_back(make_pair(*packageNameIt, syncVertexPtr));
@@ -806,7 +787,41 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			}
 			addEdgeCustom(vertexPtr, subElementPtrIt->second);
 		}
-	};
+	}
+};
+
+vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
+		const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
+		const map< string, InitialPackageEntry >& initialPackages)
+{
+	queue< const Element* > toProcess;
+	DependencyGraph::FillHelper helper(*this, oldPackages, initialPackages, toProcess);
+
+	{ // getting elements from initial packages
+		FORIT(it, initialPackages)
+		{
+			const InitialPackageEntry& initialPackageEntry = it->second;
+			const shared_ptr< const BinaryVersion >& initialVersion = initialPackageEntry.version;
+
+			if (initialVersion)
+			{
+				helper.queueVersion(initialVersion);
+
+				if (!initialPackageEntry.sticked)
+				{
+					const string& packageName = it->first;
+					auto package = __cache.getBinaryPackage(packageName);
+					auto versions = package->getVersions();
+					FORIT(versionIt, versions)
+					{
+						helper.queueVersion(*versionIt);
+					}
+
+					helper.getVertexPtrForEmptyPackage(packageName); // also, empty one
+				}
+			}
+		}
+	}
 
 	auto synchronizeLevel = __get_synchronize_level(__config);
 	auto dependencyGroups = __get_dependency_groups(__config);
@@ -829,18 +844,18 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 
 				if (isDependencyAnti)
 				{
-					processAntiRelation(version->packageName, vertexPtr, relationExpression, dependencyType);
+					helper.processAntiRelation(version->packageName, vertexPtr, relationExpression, dependencyType);
 				}
 				else
 				{
-					processForwardRelation(version, vertexPtr, relationExpression, dependencyType);
+					helper.processForwardRelation(version, vertexPtr, relationExpression, dependencyType);
 				}
 			}
 		}
 
 		if (synchronizeLevel && !version->isInstalled())
 		{
-			processSynchronizations(version, vertexPtr, synchronizeLevel);
+			helper.processSynchronizations(version, vertexPtr, synchronizeLevel);
 		}
 	}
 
@@ -848,7 +863,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 	{ // generating solution elements
 		FORIT(it, initialPackages)
 		{
-			auto elementPtr = getVertexPtr(it->first, it->second.version);
+			auto elementPtr = helper.getVertexPtr(it->first, it->second.version);
 			PackageEntry packageEntry;
 			packageEntry.sticked = it->second.sticked;
 			result.push_back(make_pair(elementPtr, packageEntry));

@@ -84,8 +84,8 @@ class DependencyGraph: protected Graph< Element >
 	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
 	map< string, const Element* > __empty_package_to_vertex_ptr;
 
-	bool __can_package_be_removed(const string&,
-			const map< string, shared_ptr< const BinaryVersion > >&) const;
+	class FillHelper;
+	friend class FillHelper;
  public:
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
