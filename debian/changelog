@@ -1,4 +1,4 @@
-cupt (2.0.2~) UNRELEASED; urgency=low
+cupt (2.0.2) unstable; urgency=low
 
   * lib:
     - download/methodfactory:
@@ -13,7 +13,7 @@ cupt (2.0.2~) UNRELEASED; urgency=low
     - reference:
       - 'File::getBlock': documented an output value of the 'size' parameter.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 27 Apr 2011 11:26:22 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 30 Apr 2011 14:31:22 +0300
 
 cupt (2.0.1) unstable; urgency=low
 
