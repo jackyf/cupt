@@ -253,6 +253,20 @@ Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
 	return (*parent)->getUnsatisfiedType();
 }
 
+
+bool __are_versions_equal(const shared_ptr< const BinaryVersion >& left,
+		const shared_ptr< const BinaryVersion >& right)
+{
+	if (left)
+	{
+		return right && left->versionString == right->versionString;
+	}
+	else
+	{
+		return !right;
+	}
+}
+
 bool __is_version_array_intersects_with_packages(
 		const vector< shared_ptr< const BinaryVersion > >& versions,
 		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
@@ -498,20 +512,9 @@ class DependencyGraph::FillHelper
 			auto initialPackageIt = this->__initial_packages.find(packageName);
 			if (initialPackageIt != this->__initial_packages.end() && initialPackageIt->second.sticked)
 			{
-				const shared_ptr< const BinaryVersion >& initialVersion = initialPackageIt->second.version;
-				if (version)
+				if (!__are_versions_equal(version, initialPackageIt->second.version))
 				{
-					if (!initialVersion || version->versionString != initialVersion->versionString)
-					{
-						return false;
-					}
-				}
-				else
-				{
-					if (initialVersion)
-					{
-						return false;
-					}
+					return false;
 				}
 			}
 
