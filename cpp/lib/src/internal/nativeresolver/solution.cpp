@@ -171,7 +171,7 @@ const forward_list< const dg::Element* >& SolutionStorage::getConflictingElement
 		const dg::Element* elementPtr)
 {
 	static const forward_list< const dg::Element* > nullList;
-	auto relatedElementPtrsPtr = (*elementPtr)->getRelatedElements();
+	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }
 
@@ -226,7 +226,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		if (conflictingElementPtr)
 		{
 			fatal("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					solution.id, (*elementPtr)->toString().c_str(), (*conflictingElementPtr)->toString().c_str());
+					solution.id, elementPtr->toString().c_str(), conflictingElementPtr->toString().c_str());
 		}
 		it->second = std::move(packageEntry);
 	}

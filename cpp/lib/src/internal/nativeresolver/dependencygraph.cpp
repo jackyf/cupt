@@ -240,7 +240,7 @@ struct UnsatisfiedVertex: public BasicVertex
 string UnsatisfiedVertex::toString() const
 {
 	static const string u = "unsatisfied ";
-	return u + (*parent)->toString();
+	return u + parent->toString();
 }
 
 const forward_list< const Element* >* UnsatisfiedVertex::getRelatedElements() const
@@ -250,7 +250,7 @@ const forward_list< const Element* >* UnsatisfiedVertex::getRelatedElements() co
 
 Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
 {
-	return (*parent)->getUnsatisfiedType();
+	return parent->getUnsatisfiedType();
 }
 
 
@@ -406,7 +406,7 @@ DependencyGraph::DependencyGraph(const Config& config, const Cache& cache)
 
 DependencyGraph::~DependencyGraph()
 {
-	const set< Element >& vertices = this->getVertices();
+	const set< const Element* >& vertices = this->getVertices();
 	FORIT(elementIt, vertices)
 	{
 		delete *elementIt;
@@ -569,7 +569,7 @@ class DependencyGraph::FillHelper
 		if (__debugging)
 		{
 			debug("adding an edge '%s' -> '%s'",
-					(*fromVertexPtr)->toString().c_str(), (*toVertexPtr)->toString().c_str());
+					fromVertexPtr->toString().c_str(), toVertexPtr->toString().c_str());
 		}
 	}
 
@@ -598,7 +598,7 @@ class DependencyGraph::FillHelper
 
 	const Element* queueVersion(const shared_ptr< const BinaryVersion >& version)
 	{
-		const set< Element >& vertices = __dependency_graph.getVertices();
+		const set< const Element* >& vertices = __dependency_graph.getVertices();
 		auto oldSize = vertices.size();
 		auto elementPtr = getVertexPtr(version->packageName, version);
 		if (vertices.size() > oldSize && elementPtr) // newly inserted
@@ -698,7 +698,7 @@ class DependencyGraph::FillHelper
 				if (__debugging)
 				{
 					debug("ignoring soft dependency relation: %s: %s '%s'",
-							(*vertexPtr)->toString().c_str(),
+							vertexPtr->toString().c_str(),
 							BinaryVersion::RelationTypes::rawStrings[dependencyType],
 							relationExpression.toString().c_str());
 				}
@@ -833,7 +833,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		auto vertexPtr = toProcess.front();
 		toProcess.pop();
 		// persistent one
-		auto version = static_cast< const VersionVertex* >(*vertexPtr)->version;
+		auto version = static_cast< const VersionVertex* >(vertexPtr)->version;
 
 		FORIT(dependencyGroupIt, dependencyGroups)
 		{
@@ -886,7 +886,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 
 const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
 {
-	auto versionVertex = dynamic_cast< const VersionVertex* >(*elementPtr);
+	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
 	{
 		fatal("internal error: getting corresponding empty element for non-version vertex");

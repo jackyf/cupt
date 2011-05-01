@@ -54,7 +54,7 @@ struct PackageEntry
 		}
 		shared_ptr< const Resolver::Reason > getReason() const
 		{
-			return (*brokenElementPtr)->getReason(**versionElementPtr);
+			return brokenElementPtr->getReason(*versionElementPtr);
 		}
 	};
 	struct BrokenSuccessor

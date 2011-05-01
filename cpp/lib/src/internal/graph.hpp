@@ -35,15 +35,30 @@ using std::unordered_set;
 using std::queue;
 using std::priority_queue;
 
-template < class T >
+namespace {
+
+template< class T >
+struct DefaultPointerTraits
+{
+	typedef const T* PointerType;
+	static PointerType toPointer(const T& vertex)
+	{
+		return &vertex;
+	}
+};
+
+}
+
+template < class T, template < class X > class PtrTraitsT = DefaultPointerTraits >
 class Graph
 {
+	typedef typename PtrTraitsT< T >::PointerType PtrT;
  public:
-	typedef std::vector< const T* > CessorListType; // type for {suc,prede}cessor lists
+	typedef std::vector< PtrT > CessorListType; // type for {suc,prede}cessor lists
  private:
 	set< T > __vertices;
-	mutable map< const T*, CessorListType > __predecessors;
-	mutable map< const T*, CessorListType > __successors;
+	mutable map< PtrT, CessorListType > __predecessors;
+	mutable map< PtrT, CessorListType > __successors;
 
 	static const CessorListType __null_list;
 
@@ -51,23 +66,23 @@ class Graph
 	void clearEdges();
 
 	const set< T >& getVertices() const;
-	vector< pair< const T*, const T* > > getEdges() const;
+	vector< pair< PtrT, PtrT > > getEdges() const;
 
-	bool hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr) const;
+	bool hasEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr) const;
 
-	const CessorListType& getPredecessorsFromPointer(const T* vertexPtr) const;
-	const CessorListType& getSuccessorsFromPointer(const T* vertexPtr) const;
+	const CessorListType& getPredecessorsFromPointer(PtrT vertexPtr) const;
+	const CessorListType& getSuccessorsFromPointer(PtrT vertexPtr) const;
 
 
-	const T* addVertex(const T& vertex);
+	PtrT addVertex(const T& vertex);
 	void deleteVertex(const T& vertex);
 
-	void addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr);
-	void deleteEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr);
+	void addEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr);
+	void deleteEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr);
 
-	unordered_set< const T* > getReachableFrom(const T& from) const;
-	unordered_set< const T* > getReachableTo(const T& to) const;
-	vector< const T* > getPathVertices(const T& from, const T& to) const;
+	unordered_set< PtrT > getReachableFrom(const T& from) const;
+	unordered_set< PtrT > getReachableTo(const T& to) const;
+	vector< PtrT > getPathVertices(const T& from, const T& to) const;
 
 	template< class PriorityLess, class OutputIterator >
 	void topologicalSortOfStronglyConnectedComponents(
@@ -75,29 +90,29 @@ class Graph
 			OutputIterator outputIterator) const;
 };
 
-template < class T >
-const typename Graph< T >::CessorListType Graph< T >::__null_list;
+template< class T, template < class X > class PtrTraitsT >
+const typename Graph< T, PtrTraitsT >::CessorListType Graph< T, PtrTraitsT >::__null_list;
 
-template < class T >
-void Graph< T >::clearEdges()
+template< class T, template < class X > class PtrTraitsT >
+void Graph< T, PtrTraitsT >::clearEdges()
 {
 	__predecessors.clear();
 	__successors.clear();
 }
 
-template < class T >
-const set< T >& Graph< T >::getVertices() const
+template< class T, template < class X > class PtrTraitsT >
+const set< T >& Graph< T, PtrTraitsT >::getVertices() const
 {
 	return __vertices;
 }
 
-template < class T >
-vector< pair< const T*, const T* > > Graph< T >::getEdges() const
+template< class T, template < class X > class PtrTraitsT >
+auto Graph< T, PtrTraitsT >::getEdges() const -> vector< pair< PtrT, PtrT > >
 {
-	vector< pair< const T*, const T* > > result;
+	vector< pair< PtrT, PtrT > > result;
 	FORIT(vertexIt, __vertices)
 	{
-		const T* vertexPtr = &*vertexIt;
+		PtrT vertexPtr = &*vertexIt;
 
 		const CessorListType& predecessors = getPredecessorsFromPointer(vertexPtr);
 		FORIT(predecessorPtrIt, predecessors)
@@ -109,14 +124,14 @@ vector< pair< const T*, const T* > > Graph< T >::getEdges() const
 	return result;
 }
 
-template < class T >
-const T* Graph< T >::addVertex(const T& vertex)
+template< class T, template < class X > class PtrTraitsT >
+auto Graph< T, PtrTraitsT >::addVertex(const T& vertex) -> PtrT
 {
-	return &*(__vertices.insert(vertex).first);
+	return PtrTraitsT< T >::toPointer(*__vertices.insert(vertex).first);
 }
 
-template < class T >
-void __remove_from_cessors(typename Graph< T >::CessorListType& cessors, const T* vertexPtr)
+template< class ContainerT, class ElementT >
+void __remove_from_cessors(ContainerT& cessors, const ElementT& vertexPtr)
 {
 	FORIT(it, cessors)
 	{
@@ -129,14 +144,14 @@ void __remove_from_cessors(typename Graph< T >::CessorListType& cessors, const T
 	fatal("internal error: graph: the vertex was not found while deleting from cessors list");
 }
 
-template < class T >
-void Graph< T >::deleteVertex(const T& vertex)
+template< class T, template < class X > class PtrTraitsT >
+void Graph< T, PtrTraitsT >::deleteVertex(const T& vertex)
 {
 	// searching for vertex
 	auto it = __vertices.find(vertex);
 	if (it != __vertices.end())
 	{
-		auto vertexPtr = &*it;
+		auto vertexPtr = PtrTraitsT< T >::toPointer(*it);
 		// deleting edges containing vertex
 		const CessorListType& predecessors = getPredecessorsFromPointer(vertexPtr);
 		const CessorListType& successors = getSuccessorsFromPointer(vertexPtr);
@@ -157,8 +172,8 @@ void Graph< T >::deleteVertex(const T& vertex)
 	}
 }
 
-template < class T >
-bool Graph< T >::hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr) const
+template< class T, template < class X > class PtrTraitsT >
+bool Graph< T, PtrTraitsT >::hasEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr) const
 {
 	const CessorListType& predecessors = getPredecessorsFromPointer(toVertexPtr);
 	FORIT(vertexPtrIt, predecessors)
@@ -171,8 +186,8 @@ bool Graph< T >::hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPt
 	return false;
 }
 
-template < class T >
-void Graph< T >::addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr)
+template< class T, template < class X > class PtrTraitsT >
+void Graph< T, PtrTraitsT >::addEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr)
 {
 	if (!hasEdgeFromPointers(fromVertexPtr, toVertexPtr))
 	{
@@ -181,8 +196,8 @@ void Graph< T >::addEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPt
 	}
 }
 
-template < class T >
-void Graph< T >::deleteEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr)
+template< class T, template < class X > class PtrTraitsT >
+void Graph< T, PtrTraitsT >::deleteEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr)
 {
 	auto predecessorsIt = __predecessors.find(toVertexPtr);
 	auto successorsIt = __successors.find(fromVertexPtr);
@@ -196,21 +211,21 @@ void Graph< T >::deleteEdgeFromPointers(const T* fromVertexPtr, const T* toVerte
 	}
 }
 
-template < class T >
-const typename Graph< T >::CessorListType& Graph< T >::getPredecessorsFromPointer(const T* vertexPtr) const
+template< class T, template < class X > class PtrTraitsT >
+const typename Graph< T, PtrTraitsT >::CessorListType& Graph< T, PtrTraitsT >::getPredecessorsFromPointer(PtrT vertexPtr) const
 {
 	auto it = __predecessors.find(vertexPtr);
 	return (it != __predecessors.end() ? it->second : __null_list);
 }
 
-template < class T >
-const typename Graph< T >::CessorListType& Graph< T >::getSuccessorsFromPointer(const T* vertexPtr) const
+template< class T, template < class X > class PtrTraitsT >
+const typename Graph< T, PtrTraitsT >::CessorListType& Graph< T, PtrTraitsT >::getSuccessorsFromPointer(PtrT vertexPtr) const
 {
 	auto it = __successors.find(vertexPtr);
 	return (it != __successors.end() ? it->second : __null_list);
 }
 
-template < class T >
+template< class T >
 void __dfs_visit(const Graph< T >& graph, const T* vertexPtr,
 		set< const T* >& seen, vector< const T* >& output)
 {
@@ -367,9 +382,9 @@ void __topological_sort_with_priorities(Graph< vector< T > >&& graph,
 	}
 }
 
-template < class T >
+template< class T, template < class X > class PtrTraitsT >
 template < class PriorityLess, class OutputIterator >
-void Graph< T >::topologicalSortOfStronglyConnectedComponents(
+void Graph< T, PtrTraitsT >::topologicalSortOfStronglyConnectedComponents(
 		std::function< void (const vector< T >&, bool) > callback,
 		OutputIterator outputIterator) const
 {
@@ -393,19 +408,19 @@ void Graph< T >::topologicalSortOfStronglyConnectedComponents(
 			__make_scc_graph(*this, scc), callback, outputIterator);
 }
 
-template < class T >
-unordered_set< const T* > Graph< T >::getReachableFrom(const T& from) const
+template < class T, template < class X > class PtrTraitsT >
+auto Graph< T, PtrTraitsT >::getReachableFrom(const T& from) const -> unordered_set< PtrT >
 {
 	auto it = __vertices.find(from);
 	if (it == __vertices.end())
 	{
-		return unordered_set< const T* >();
+		return unordered_set< PtrT >();
 	}
 
-	queue< const T* > currentVertices;
+	queue< PtrT > currentVertices;
 	currentVertices.push(&*it);
 
-	unordered_set< const T* > result = { &*it };
+	unordered_set< PtrT > result = { &*it };
 
 	while (!currentVertices.empty())
 	{
@@ -427,8 +442,8 @@ unordered_set< const T* > Graph< T >::getReachableFrom(const T& from) const
 	return result;
 }
 
-template < class T >
-unordered_set< const T* > Graph< T >::getReachableTo(const T& to) const
+template< class T, template < class X > class PtrTraitsT >
+auto Graph< T, PtrTraitsT >::getReachableTo(const T& to) const -> unordered_set< PtrT >
 {
 	__successors.swap(__predecessors); // transposing the graph temporarily
 	auto result = getReachableFrom(to);
@@ -436,32 +451,32 @@ unordered_set< const T* > Graph< T >::getReachableTo(const T& to) const
 	return result;
 }
 
-template < class T >
-vector< const T* > Graph< T >::getPathVertices(const T& from, const T& to) const
+template< class T, template < class X > class PtrTraitsT >
+auto Graph< T, PtrTraitsT >::getPathVertices(const T& from, const T& to) const -> vector< PtrT >
 {
 	auto fromIt = __vertices.find(from);
 	auto toIt = __vertices.find(to);
 
 	if (fromIt == __vertices.end() || toIt == __vertices.end())
 	{
-		return vector< const T* >();
+		return vector< PtrT >();
 	}
 
 	auto fromPtr = &*fromIt;
 	auto toPtr = &*toIt;
 
-	queue< pair< const T*, vector< const T* > > > verticesAndPaths;
-    verticesAndPaths.push(make_pair(fromPtr, vector< const T* > { fromPtr }));
+	queue< pair< PtrT, vector< PtrT > > > verticesAndPaths;
+    verticesAndPaths.push(make_pair(fromPtr, vector< PtrT > { fromPtr }));
 
-	set< const T* > seenVertices;
+	set< PtrT > seenVertices;
 
 	while (!verticesAndPaths.empty())
 	{
 		auto element = verticesAndPaths.front();
 		verticesAndPaths.pop();
 
-		const T* currentVertexPtr = element.first;
-		const vector< const T* >& currentPath = element.second;
+		PtrT currentVertexPtr = element.first;
+		const vector< PtrT >& currentPath = element.second;
 		if (currentVertexPtr == toPtr)
 		{
 			return currentPath;
@@ -474,15 +489,15 @@ vector< const T* > Graph< T >::getPathVertices(const T& from, const T& to) const
 			const CessorListType& successors = getSuccessorsFromPointer(currentVertexPtr);
 			FORIT(successorIt, successors)
 			{
-				vector< const T* > newPath = currentPath;
+				vector< PtrT > newPath = currentPath;
 				newPath.push_back(*successorIt);
-				verticesAndPaths.push(pair< const T*, vector< const T* > >(*successorIt, newPath));
+				verticesAndPaths.push(pair< PtrT, vector< PtrT > >(*successorIt, newPath));
 			}
 		}
 	}
 
 	// if not found
-	return vector< const T* >();
+	return vector< PtrT >();
 }
 
 }
