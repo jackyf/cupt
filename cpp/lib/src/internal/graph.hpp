@@ -55,8 +55,6 @@ class Graph
 
 	bool hasEdgeFromPointers(const T* fromVertexPtr, const T* toVertexPtr) const;
 
-	const CessorListType& getPredecessors(const T& vertex) const;
-	const CessorListType& getSuccessors(const T& vertex) const;
 	const CessorListType& getPredecessorsFromPointer(const T* vertexPtr) const;
 	const CessorListType& getSuccessorsFromPointer(const T* vertexPtr) const;
 
@@ -210,28 +208,6 @@ const typename Graph< T >::CessorListType& Graph< T >::getSuccessorsFromPointer(
 {
 	auto it = __successors.find(vertexPtr);
 	return (it != __successors.end() ? it->second : __null_list);
-}
-
-template < class T >
-const typename Graph< T >::CessorListType& Graph< T >::getPredecessors(const T& vertex) const
-{
-	auto vertexIt = __vertices.find(vertex);
-	if (vertexIt == __vertices.end())
-	{
-		return __null_list;
-	}
-	return getPredecessorsFromPointer(&*vertexIt);
-}
-
-template < class T >
-const typename Graph< T >::CessorListType& Graph< T >::getSuccessors(const T& vertex) const
-{
-	auto vertexIt = __vertices.find(vertex);
-	if (vertexIt == __vertices.end())
-	{
-		return __null_list;
-	}
-	return getSuccessorsFromPointer(&*vertexIt);
 }
 
 template < class T >
