@@ -96,7 +96,7 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	const Config& __config;
 	const Cache& __cache;
 	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
-	map< string, const Element* > __empty_package_to_vertex_ptr;
+	map< string, const VersionElement* > __empty_package_to_vertex_ptr;
 
 	class FillHelper;
 	friend class FillHelper;

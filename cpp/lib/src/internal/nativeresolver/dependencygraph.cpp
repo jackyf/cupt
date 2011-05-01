@@ -478,10 +478,10 @@ class DependencyGraph::FillHelper
 	DependencyGraph& __dependency_graph;
 	const map< string, shared_ptr< const BinaryVersion > >& __old_packages;
 	const map< string, InitialPackageEntry >& __initial_packages;
-	queue< const Element* >& __to_process;
+	queue< const VersionVertex* >& __to_process;
 	bool __debugging;
 
-	map< shared_ptr< const BinaryVersion >, const Element* > __version_to_vertex_ptr;
+	map< shared_ptr< const BinaryVersion >, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
@@ -498,14 +498,14 @@ class DependencyGraph::FillHelper
 	FillHelper(DependencyGraph& dependencyGraph,
 			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
 			const map< string, InitialPackageEntry >& initialPackages,
-			queue< const Element* >& toProcess)
+			queue< const VersionVertex* >& toProcess)
 		: __dependency_graph(dependencyGraph),
 		__old_packages(oldPackages), __initial_packages(initialPackages),
 		__to_process(toProcess),
 		__debugging(__dependency_graph.__config.getBool("debug::resolver"))
 	{}
 
-	const Element* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
+	const VersionVertex* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
 	{
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
@@ -525,31 +525,31 @@ class DependencyGraph::FillHelper
 
 			return true;
 		};
-		auto makeVertex = [this, &packageName, &version]() -> const Element*
+		auto makeVertex = [this, &packageName, &version]() -> const VersionVertex*
 		{
 			static const forward_list< const Element* > nullElementList;
 			auto relatedVertexPtrsIt = __dependency_graph.__package_name_to_vertex_ptrs.insert(
 					make_pair(packageName, nullElementList)).first;
-			auto vertex(new VersionVertex(relatedVertexPtrsIt));
-			vertex->version = version;
-			auto vertexPtr = __dependency_graph.addVertex(vertex);
+			auto vertexPtr(new VersionVertex(relatedVertexPtrsIt));
+			vertexPtr->version = version;
+			__dependency_graph.addVertex(vertexPtr);
 			relatedVertexPtrsIt->second.push_front(vertexPtr);
 			return vertexPtr;
 		};
 
-		const Element** elementPtrPtr;
+		const VersionVertex** elementPtrPtr;
 		bool isNew;
 		if (version)
 		{
 			auto insertResult = __version_to_vertex_ptr.insert(
-					make_pair(version, (const Element*)NULL));
+					make_pair(version, (const VersionVertex*)NULL));
 			isNew = insertResult.second;
 			elementPtrPtr = &insertResult.first->second;
 		}
 		else
 		{
 			auto insertResult = __dependency_graph.__empty_package_to_vertex_ptr.insert(
-					make_pair(packageName, (const Element*)NULL));
+					make_pair(packageName, (const VersionVertex*)NULL));
 			isNew = insertResult.second;
 			elementPtrPtr = &insertResult.first->second;
 		}
@@ -797,7 +797,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
 {
-	queue< const Element* > toProcess;
+	queue< const VersionVertex* > toProcess;
 	DependencyGraph::FillHelper helper(*this, oldPackages, initialPackages, toProcess);
 
 	{ // getting elements from initial packages
@@ -833,7 +833,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		auto vertexPtr = toProcess.front();
 		toProcess.pop();
 		// persistent one
-		auto version = static_cast< const VersionVertex* >(vertexPtr)->version;
+		auto version = vertexPtr->version;
 
 		FORIT(dependencyGroupIt, dependencyGroups)
 		{
@@ -896,10 +896,10 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elem
 	if (it == __empty_package_to_vertex_ptr.end())
 	{
 		// it's an unreachable empty element, but we need some container for it
-		auto vertex(new VersionVertex(__package_name_to_vertex_ptrs.find(packageName)));
-		auto vertexPtr = this->addVertex(vertex);
+		auto vertexPtr(new VersionVertex(__package_name_to_vertex_ptrs.find(packageName)));
+		this->addVertex(vertexPtr);
 
-		const Element*& elementPtr = __empty_package_to_vertex_ptr[packageName];
+		const VersionElement*& elementPtr = __empty_package_to_vertex_ptr[packageName];
 		elementPtr = vertexPtr;
 		return elementPtr;
 	}
