@@ -20,6 +20,8 @@
 #include <fcntl.h>
 #include <time.h>
 
+#include <algorithm>
+
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
