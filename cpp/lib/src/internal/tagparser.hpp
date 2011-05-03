@@ -18,6 +18,8 @@
 #ifndef CUPT_INTERNAL_TAGPARSER_SEEN
 #define CUPT_INTERNAL_TAGPARSER_SEEN
 
+#include <cstring>
+
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
 
@@ -38,7 +40,7 @@ class TagParser
 		}
 		bool equal(const char* buf, size_t size)
 		{
-			return ((size_t)(second - first) == size && !memcmp(buf, &*first, size));
+			return ((size_t)(second - first) == size && !std::memcmp(buf, &*first, size));
 		}
 	};
  private:
