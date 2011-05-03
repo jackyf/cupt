@@ -21,6 +21,7 @@
 #include <bitset>
 #include <map>
 #include <forward_list>
+#include <cstring>
 
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
@@ -50,7 +51,7 @@ struct PackageEntry
 		bool empty() const { return !versionElementPtr; }
 		bool operator<(const IntroducedBy& other) const
 		{
-			return memcmp(this, &other, sizeof(*this)) < 0;
+			return std::memcmp(this, &other, sizeof(*this)) < 0;
 		}
 		shared_ptr< const Resolver::Reason > getReason() const
 		{
