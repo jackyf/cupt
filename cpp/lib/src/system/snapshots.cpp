@@ -16,6 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <set>
+#include <algorithm>
 
 #include <cupt/system/snapshots.hpp>
 #include <cupt/system/resolver.hpp>
