@@ -15,6 +15,7 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <algorithm>
 
 #include <cupt/common.hpp>
 #include <cupt/cache/relation.hpp>
