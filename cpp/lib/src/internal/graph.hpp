@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <queue>
+#include <algorithm>
 
 #include <cupt/common.hpp>
 
