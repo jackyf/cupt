@@ -15,12 +15,14 @@ add_custom_command(
 	COMMAND doxygen
 	COMMAND touch ../doxygen-stamp
 )
+
+set(TUTORIAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/tutorial.t2t")
 add_custom_command(
-	MAIN_DEPENDENCY tutorial.t2t
+	MAIN_DEPENDENCY ${TUTORIAL_SOURCE}
 	OUTPUT tutorial-stamp
 
-	COMMAND txt2tags ARGS -t html -o tutorial.html tutorial.t2t
-	COMMAND txt2tags ARGS -t man -o cupt_tutorial.7 tutorial.t2t
+	COMMAND txt2tags ARGS -t html -o tutorial.html ${TUTORIAL_SOURCE}
+	COMMAND txt2tags ARGS -t man -o cupt_tutorial.7 ${TUTORIAL_SOURCE}
 	COMMAND touch tutorial-stamp
 )
 add_custom_target(doc ALL DEPENDS doxygen-stamp tutorial-stamp)
