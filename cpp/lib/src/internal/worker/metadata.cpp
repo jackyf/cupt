@@ -18,6 +18,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <algorithm>
+
 #include <cupt/config.hpp>
 #include <cupt/download/uri.hpp>
 #include <cupt/download/manager.hpp>
