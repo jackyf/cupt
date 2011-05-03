@@ -10,6 +10,5 @@ add_executable(cupt.bin
 	handlers/snapshot.cpp
 	selectors.cpp)
 target_link_libraries(cupt.bin cupt2 boost_program_options)
-add_precompiled_header(cupt.bin)
 
 install(PROGRAMS cupt.bin DESTINATION bin RENAME cupt)
