@@ -55,7 +55,7 @@ shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) con
 	smatch m;
 	FORIT(regexPtrIt, packageNameRegexesToReinstall)
 	{
-		if (regex_match(packageName, m, **regexPtrIt))
+		if (regex_search(packageName, m, **regexPtrIt))
 		{
 			needsReinstall = true;
 			break;

@@ -297,7 +297,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
-					matched = regex_match(version->packageName, m, *regex);
+					matched = regex_search(version->packageName, m, *regex);
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
@@ -307,11 +307,11 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 							matched = false;
 							break;
 						}
-						matched = regex_match(binaryVersion->sourcePackageName, m, *regex);
+						matched = regex_search(binaryVersion->sourcePackageName, m, *regex);
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_match(version->versionString, m, *regex);
+					matched = regex_search(version->versionString, m, *regex);
 					break;
 #define RELEASE_CASE(constant, member) \
 				case PinEntry::Condition::constant: \
@@ -319,7 +319,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					FORIT(sourceIt, version->sources) \
 					{ \
 						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
-						if (regex_match(release->member, m, *regex)) \
+						if (regex_search(release->member, m, *regex)) \
 						{ \
 							matched = true; \
 							break; \

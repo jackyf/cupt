@@ -39,7 +39,7 @@ string globToRegexString(const string& input)
 	static const sregex starSignRegex = sregex::compile("\\\\\\*");
 	output = regex_replace(output, starSignRegex, ".*?");
 
-	return output;
+	return string("^") + output + "$";
 }
 
 shared_ptr< sregex > stringToRegex(const string& input)
