@@ -15,14 +15,10 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_REGEX_SEEN
-#define CUPT_REGEX_SEEN
-
-/// @cond
+#ifndef CUPT_COMMON_REGEX_SEEN
+#define CUPT_COMMON_REGEX_SEEN
 
 #include <boost/xpressive/xpressive_dynamic.hpp>
-
-#include <cupt/common.hpp>
 
 namespace cupt {
 
@@ -35,8 +31,6 @@ using boost::xpressive::regex_error;
 namespace regex_constants = boost::xpressive::regex_constants;
 
 }
-
-/// @endcode
 
 #endif
 

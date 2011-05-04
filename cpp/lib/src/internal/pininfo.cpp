@@ -17,8 +17,9 @@
 **************************************************************************/
 #include <boost/lexical_cast.hpp>
 
+#include <common/regex.hpp>
+
 #include <cupt/cache/version.hpp>
-#include <cupt/regex.hpp>
 #include <cupt/file.hpp>
 #include <cupt/config.hpp>
 #include <cupt/cache/releaseinfo.hpp>

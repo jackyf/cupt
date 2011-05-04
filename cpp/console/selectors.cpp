@@ -20,7 +20,8 @@
 
 #include <functional>
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/sourcepackage.hpp>

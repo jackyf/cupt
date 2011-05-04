@@ -18,7 +18,7 @@
 #ifndef CUPT_INTERNAL_REGEX_SEEN
 #define CUPT_INTERNAL_REGEX_SEEN
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
 
 namespace cupt {
 namespace internal {

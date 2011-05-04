@@ -18,7 +18,8 @@
 
 #include <algorithm>
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/file.hpp>
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>

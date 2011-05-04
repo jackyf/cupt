@@ -24,9 +24,10 @@ using std::map;
 
 #include <boost/lexical_cast.hpp>
 
+#include <common/regex.hpp>
+
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
-#include <cupt/regex.hpp>
 #include <cupt/file.hpp>
 
 #include <internal/common.hpp>

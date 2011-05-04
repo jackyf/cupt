@@ -20,7 +20,8 @@
 #include <map>
 using std::map;
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/download/progresses/console.hpp>
 
 #include "common.hpp"

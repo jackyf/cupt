@@ -21,10 +21,11 @@
 #include <queue>
 #include <algorithm>
 
+#include <common/regex.hpp>
+
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
-#include <cupt/regex.hpp>
 
 #include <internal/nativeresolver/impl.hpp>
 #include <internal/graph.hpp>

@@ -16,7 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 
-#include <cupt/regex.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace internal {

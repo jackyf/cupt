@@ -18,7 +18,8 @@
 #include <clocale>
 #include <ctime>
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/config.hpp>
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/sourcepackage.hpp>

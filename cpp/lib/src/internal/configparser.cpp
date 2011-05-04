@@ -18,7 +18,6 @@
 
 #include <internal/configparser.hpp>
 #include <cupt/file.hpp>
-#include <cupt/regex.hpp>
 
 namespace cupt {
 namespace internal {

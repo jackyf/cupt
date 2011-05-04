@@ -25,7 +25,7 @@ IF(NOT EXISTS /usr/include/readline/readline.h)
 	message(FATAL_ERROR "missing GNU Readline library")
 ENDIF(NOT EXISTS /usr/include/readline/readline.h)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=gnu++0x -fPIC -include ${CMAKE_SOURCE_DIR}/cpp/common/common.hpp")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
 
 OPTION(VERBOSE "is build verbose")
 IF(VERBOSE)
