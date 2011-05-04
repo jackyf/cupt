@@ -43,7 +43,7 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 
 	FORIT(it, packageNameGlobsToReinstall)
 	{
-		__impl->packageNameRegexesToReinstall.push_back(globToRegex(*it));
+		__impl->packageNameRegexesToReinstall.push_back(internal::globToRegex(*it));
 	}
 
 	{ // ugly hack to copy trusted keyring from APT whenever possible

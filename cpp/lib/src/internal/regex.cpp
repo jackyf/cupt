@@ -19,6 +19,7 @@
 #include <cupt/regex.hpp>
 
 namespace cupt {
+namespace internal {
 
 vector< string > split(const sregex& regex, const string& str)
 {
@@ -60,5 +61,6 @@ shared_ptr< sregex > globToRegex(const string& glob)
 	return stringToRegex(globToRegexString(glob));
 }
 
+}
 }
 

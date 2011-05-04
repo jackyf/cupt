@@ -242,7 +242,7 @@ void CacheImpl::parseSourceList(const string& path)
 				continue;
 			}
 			vector< string > tokens;
-			tokens = cupt::split(sregex::compile("[\\t ]+"), line);
+			tokens = internal::split(sregex::compile("[\\t ]+"), line);
 
 			IndexEntry entry;
 
