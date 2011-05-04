@@ -126,6 +126,18 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 	return result;
 }
 
+string pinStringToRegexString(const string& input)
+{
+	if (input.size() >= 2 && input[0] == '/' && *input.rbegin() == '/')
+	{
+		return input.substr(1, input.size() - 2);
+	}
+	else
+	{
+		return globToRegexString(input);
+	}
+}
+
 void PinInfo::loadData(const string& path)
 {
 	using boost::lexical_cast;
@@ -185,7 +197,7 @@ void PinInfo::loadData(const string& path)
 			vector< string > parts = split(' ', m[2]);
 			FORIT(it, parts)
 			{
-				*it = globToRegexString(*it);
+				*it = pinStringToRegexString(*it);
 			}
 			condition.value = stringToRegex(join("|", parts));
 			pinEntry.conditions.push_back(std::move(condition));
@@ -236,7 +248,7 @@ void PinInfo::loadData(const string& path)
 									"in release expression at file '%s' line %u",
 									subExpressionType, path.c_str(), lineNumber);
 					}
-					condition.value = globToRegex(m[2]);
+					condition.value = stringToRegex(pinStringToRegexString(m[2]));
 					pinEntry.conditions.push_back(std::move(condition));
 				}
 			}
@@ -244,14 +256,14 @@ void PinInfo::loadData(const string& path)
 			{
 				PinEntry::Condition condition;
 				condition.type = PinEntry::Condition::Version;
-				condition.value = globToRegex(pinExpression);
+				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
 			else if (pinType == "origin")
 			{
 				PinEntry::Condition condition;
 				condition.type = PinEntry::Condition::BaseUri;
-				condition.value = globToRegex(pinExpression);
+				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
 			else
