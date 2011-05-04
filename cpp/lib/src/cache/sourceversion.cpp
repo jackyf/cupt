@@ -23,6 +23,7 @@
 #include <internal/tagparser.hpp>
 #include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace cache {

@@ -28,6 +28,7 @@
 #include <internal/pininfo.hpp>
 #include <internal/filesystem.hpp>
 #include <internal/common.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace internal {

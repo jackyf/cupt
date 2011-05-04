@@ -34,6 +34,7 @@
 #include <internal/filesystem.hpp>
 #include <internal/pininfo.hpp>
 #include <internal/tagparser.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace internal {

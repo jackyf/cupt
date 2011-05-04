@@ -28,6 +28,7 @@
 
 #include <internal/filesystem.hpp>
 #include <internal/cacheimpl.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 

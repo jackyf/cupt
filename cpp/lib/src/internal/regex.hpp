@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,28 +15,20 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_REGEX_SEEN
-#define CUPT_REGEX_SEEN
+#ifndef CUPT_INTERNAL_REGEX_SEEN
+#define CUPT_INTERNAL_REGEX_SEEN
 
-/// @cond
-
-#include <boost/xpressive/xpressive_dynamic.hpp>
-
-#include <cupt/common.hpp>
+#include <cupt/regex.hpp>
 
 namespace cupt {
 
-using boost::xpressive::sregex;
-using boost::xpressive::sregex_token_iterator;
-using boost::xpressive::smatch;
-using boost::xpressive::regex_match;
-using boost::xpressive::regex_search;
-using boost::xpressive::regex_error;
-namespace regex_constants = boost::xpressive::regex_constants;
+vector< string > split(const sregex&, const string&);
+
+string globToRegexString(const string&);
+shared_ptr< sregex > stringToRegex(const string& input);
+shared_ptr< sregex > globToRegex(const string& glob);
 
 }
-
-/// @endcode
 
 #endif
 
