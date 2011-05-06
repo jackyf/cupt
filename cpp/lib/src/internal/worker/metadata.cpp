@@ -495,6 +495,16 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 {
 	auto indexesDirectory = __get_indexes_directory();
 	bool simulating = _config->getBool("cupt::worker::simulate");
+	if (!simulating)
+	{
+		if (!fs::dirExists(indexesDirectory))
+		{
+			if (mkdir(indexesDirectory.c_str(), 0755) == -1)
+			{
+				fatal("unable to create the lists directory '%s': EEE", indexesDirectory.c_str());
+			}
+		}
+	}
 
 	shared_ptr< internal::Lock > lock;
 	string lockFilePath = indexesDirectory + "/lock";
