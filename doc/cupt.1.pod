@@ -931,8 +931,7 @@ cupt::update::compression-types::uncompressed::priority "300";
 =item cupt::update::keep-bad-signatures
 
 boolean, specifies whether to keep signature files that failed GPG check
-when doing update. False by default. Setting this option to true will break
-compatibility with APT in area of signature checking.
+when doing update. True by default.
 
 =item cupt::resolver::keep-recommends
 

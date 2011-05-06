@@ -13,6 +13,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
       - Be more clear in configuration file error messages that they talk
         about syntax errors.
       - New configuration variable 'cupt::directory::state::lists'.
+      - Changed the default value of the variable
+        'cupt::update::keep-bad-signatures' to 'yes'.
     - cache:
       - Support regular expressions in pin preferences. Thanks to
         Julian Andres Klode for the suggestion. (Closes: #587478)

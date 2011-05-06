@@ -129,7 +129,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::update::compression-types::lzma::priority", "100" },
 		{ "cupt::update::compression-types::xz::priority", "100" },
 		{ "cupt::update::compression-types::uncompressed::priority", "100" },
-		{ "cupt::update::keep-bad-signatures", "no" },
+		{ "cupt::update::keep-bad-signatures", "yes" },
 		{ "cupt::resolver::auto-remove", "yes" },
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },
