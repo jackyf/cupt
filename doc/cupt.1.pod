@@ -787,7 +787,7 @@ apt::update::pre-invoke, apt::update::post-invoke,
 apt::update::post-invoke-success, dir, dir::bin::dpkg, dir::cache,
 dir::cache::archives, dir::etc, dir::etc::sourcelist, dir::etc::sourceparts,
 dir::etc::parts, dir::etc::main, dir::etc::preferences, dir::state,
-dir::state::extendedstates, dir::state::lists, dir::state::status,
+dir::state::extendedstates, dir::state::status,
 dpkg::options, dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
 gpgv::trustedkeyring, quiet
 
@@ -796,8 +796,9 @@ See L<apt.conf(5)> for their meanings.
 Secondly, Cupt recognizes (but doesn't use) following configuration variables:
 
 apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
-unattended-upgrade::*, acquire::compressiontypes, apt::get::show-upgraded,
-apt::get::build-dep-automatic, rpm::pre-invoke, rpm::post-invoke
+dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
+apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
+rpm::post-invoke
 
 Thirdly, Cupt introduces cupt-specific configuration variables.
 
@@ -874,6 +875,10 @@ string, base directory for all cupt::directory::* options
 =item cupt::directory::state
 
 string, directory which contains Cupt state info
+
+=item cupt::directory::state::lists
+
+string, directory for repository indexes
 
 =item cupt::downloader::max-simultaneous-downloads
 

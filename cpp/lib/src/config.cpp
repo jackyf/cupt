@@ -106,6 +106,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::state", "var/lib/cupt" },
+		{ "cupt::directory::state::lists", "lists" },
 		{ "cupt::directory::state::snapshots", "snapshots" },
 		{ "cupt::downloader::max-simultaneous-downloads", "2" },
 		{ "cupt::downloader::protocols::file::priority", "300" },

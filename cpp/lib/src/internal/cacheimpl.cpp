@@ -783,7 +783,7 @@ string CacheImpl::getPathOfIndexEntry(const IndexEntry& entry) const
 	static sregex slashRegex = sregex::compile("/");
 	uriPrefix = regex_replace(uriPrefix, slashRegex, "_");
 
-	string directory = config->getPath("dir::state::lists");
+	string directory = config->getPath("cupt::directory::state::lists");
 
 	string distributionPart = regex_replace(entry.distribution, slashRegex, "_");
 

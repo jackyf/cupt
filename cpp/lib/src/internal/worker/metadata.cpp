@@ -34,7 +34,7 @@ namespace internal {
 
 string MetadataWorker::__get_indexes_directory() const
 {
-	return _config->getPath("dir::state::lists");
+	return _config->getPath("cupt::directory::state::lists");
 }
 
 string getDownloadPath(const string& targetPath)

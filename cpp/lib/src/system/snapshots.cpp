@@ -77,7 +77,7 @@ void SnapshotsImpl::setupConfigForSnapshotOnly(const string& snapshotName)
 {
 	auto snapshotDirectory = getSnapshotDirectory(snapshotName);
 
-	__config->setScalar("dir::state::lists", snapshotDirectory);
+	__config->setScalar("cupt::directory::state::lists", snapshotDirectory);
 	__config->setScalar("dir::cache::archives", snapshotDirectory);
 
 	__config->setScalar("dir::etc::sourcelist", snapshotDirectory + "/source");

@@ -916,7 +916,7 @@ int tarMetadata(Context& context)
 
 	auto config = context.getConfig();
 
-	auto listsDirectory = config->getPath("dir::state::lists");
+	auto listsDirectory = config->getPath("cupt::directory::state::lists");
 	vector< string > pathList = {
 		config->getPath("dir::etc::main"),
 		config->getPath("dir::etc::parts"),
