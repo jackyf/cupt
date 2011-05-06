@@ -1,0 +1,6 @@
+cupt (2.1.0) unstable; urgency=low
+
+ Cupt now uses its own directory for index lists. APT-based package managers do
+ not change Cupt repository cache anymore, and vice versa.
+
+ -- Eugene V. Lyubimkin <jackyf.devel@gmail.com>  Fri, 06 May 2011 11:29:59 +0300

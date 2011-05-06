@@ -22,6 +22,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
         1.42.
       - Vcs-Browser: the main branch is now 'master' again.
   * Support out-of-tree builds. (Closes: #623115)
+  * Switched to Cupt-specific directory 'cupt::directory::state::lists' for
+    index lists.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
 
