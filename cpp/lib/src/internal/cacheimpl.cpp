@@ -365,7 +365,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 	}
 	catch (Exception&)
 	{
-		warn("skipped translations of the index file '%s'", indexFileToParse.c_str());
+		warn("skipped translations of the index '%s'", indexAlias.c_str());
 	}
 }
 
