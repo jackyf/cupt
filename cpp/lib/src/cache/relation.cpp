@@ -405,6 +405,10 @@ RelationExpressionType::RelationExpressionType(const string& expression) \
 	__init(expression.begin(), expression.end()); \
 } \
 \
+RelationExpressionType::RelationExpressionType(RelationExpressionType&& other) \
+	: vector< UnderlyingElement >(std::move(other)) \
+{} \
+\
 RelationExpressionType::~RelationExpressionType() \
 {} \
  \
