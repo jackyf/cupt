@@ -56,6 +56,8 @@ struct CUPT_API Relation
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
 	explicit Relation(pair< string::const_iterator, string::const_iterator > input);
+	/// constructor from rvalue reference
+	Relation(Relation&&);
 	/// destructor
 	virtual ~Relation();
 	/// gets the string reprentation

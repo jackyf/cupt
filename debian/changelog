@@ -2,6 +2,7 @@ cupt (2.1.0~) UNRELEASED; urgency=low
 
   * lib:
     - cache/relation:
+      - Relation: new copy constructor from Relation&&.
       - RelationLine: new method 'operator=(RelationLine&&)'.
       - RelationExpression: new copy constructor from RelationExpression&&.
       - ArchitecturedRelationExpression: new copy constructor from

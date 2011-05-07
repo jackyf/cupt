@@ -160,6 +160,12 @@ Relation::Relation(const string& unparsed)
 	__init(unparsed.begin(), unparsed.end());
 }
 
+Relation::Relation(Relation&& other)
+	: packageName(std::move(other.packageName)),
+	relationType(other.relationType),
+	versionString(std::move(other.versionString))
+{}
+
 Relation::~Relation()
 {}
 
