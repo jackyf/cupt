@@ -18,6 +18,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
     - cache:
       - Support regular expressions in pin preferences. Thanks to
         Julian Andres Klode for the suggestion. (Closes: #587478)
+      - When skipping an index file processing due to a an error, use
+        a human-readable alias in the warning message.
   * debian:
     - control:
       - Relax Boost build requirements to match 1.42 and higher, not only

@@ -324,6 +324,10 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 {
 	string indexFileToParse = getPathOfIndexList(indexEntry);
 
+	string indexAlias = indexEntry.uri + ' ' + indexEntry.distribution + ' ' +
+			indexEntry.component + ' ' +
+			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "source");
+
 	try
 	{
 		auto releaseInfo = getReleaseInfo(this->getPathOfReleaseList(indexEntry));
@@ -342,7 +346,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 	}
 	catch (Exception&)
 	{
-		warn("skipped the index file '%s'", indexFileToParse.c_str());
+		warn("skipped the index '%s'", indexAlias.c_str());
 	}
 
 	try  // processing translations if any
