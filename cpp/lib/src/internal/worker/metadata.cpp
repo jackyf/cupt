@@ -26,6 +26,7 @@
 
 #include <internal/filesystem.hpp>
 #include <internal/lock.hpp>
+#include <internal/cachefiles.hpp>
 
 #include <internal/worker/metadata.hpp>
 
@@ -146,7 +147,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
-	auto targetPath = _cache->getPathOfReleaseList(indexEntry);
+	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
 	// we'll check hash sums of local file before and after to
 	// determine do we need to clean partial indexes
@@ -164,7 +165,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	auto alias = indexEntry.distribution + ' ' + "Release";
 	auto longAlias = indexEntry.uri + ' ' + alias;
 
-	auto uri = _cache->getDownloadUriOfReleaseList(indexEntry);
+	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
 	auto downloadPath = getDownloadPath(targetPath);
 
 	{
@@ -266,8 +267,8 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry, bool releaseFileChanged, bool& indexFileChanged)
 {
 	// downloading Packages/Sources
-	auto targetPath = _cache->getPathOfIndexList(indexEntry);
-	auto downloadInfo = _cache->getDownloadInfoOfIndexList(indexEntry);
+	auto targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
+	auto downloadInfo = cachefiles::getDownloadInfoOfIndexList(*_config, indexEntry);
 
 	indexFileChanged = true;
 
@@ -372,7 +373,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 {
 	bool simulating = _config->getBool("cupt::worker::simulate");
 	// downloading file containing localized descriptions
-	auto downloadInfo = _cache->getDownloadInfoOfLocalizedDescriptions(indexEntry);
+	auto downloadInfo = cachefiles::getDownloadInfoOfLocalizedDescriptions(*_config, indexEntry);
 	string downloadError;
 	FORIT(downloadRecordIt, downloadInfo)
 	{
@@ -457,10 +458,11 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 	auto indexEntries = _cache->getIndexEntries();
 	FORIT(indexEntryIt, indexEntries)
 	{
-		addUsedPrefix(_cache->getPathOfReleaseList(*indexEntryIt));
-		addUsedPrefix(_cache->getPathOfIndexList(*indexEntryIt));
+		addUsedPrefix(cachefiles::getPathOfReleaseList(*_config, *indexEntryIt));
+		addUsedPrefix(cachefiles::getPathOfIndexList(*_config, *indexEntryIt));
 
-		auto translationsDownloadInfo = _cache->getDownloadInfoOfLocalizedDescriptions(*indexEntryIt);
+		auto translationsDownloadInfo =
+				cachefiles::getDownloadInfoOfLocalizedDescriptions(*_config, *indexEntryIt);
 		FORIT(downloadRecordIt, translationsDownloadInfo)
 		{
 			addUsedPrefix(downloadRecordIt->localPath);
