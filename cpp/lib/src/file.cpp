@@ -277,7 +277,7 @@ void File::lock(int flags)
 {
 	__impl->assertFileOpened();
 	int fd = __guarded_fileno(__impl->handle, __impl->path);
-	// TODO/2.1: consider using fcntl
+	// TODO/API break/: provide only lock(void) and unlock(void) methods, consider using fcntl
 	if (flock(fd, flags) == -1)
 	{
 		const char* actionName = (flags & LOCK_UN) ? "release" : "obtain";
