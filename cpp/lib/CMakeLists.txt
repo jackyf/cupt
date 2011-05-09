@@ -23,6 +23,7 @@ add_library(cupt2 SHARED
 	./src/internal/worker/packages.cpp
 	./src/internal/worker/snapshots.cpp
 	./src/internal/regex.cpp
+	./src/internal/cachefiles.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp

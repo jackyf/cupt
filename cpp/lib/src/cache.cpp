@@ -30,6 +30,7 @@
 #include <internal/filesystem.hpp>
 #include <internal/cacheimpl.hpp>
 #include <internal/regex.hpp>
+#include <internal/cachefiles.hpp>
 
 namespace cupt {
 
@@ -104,32 +105,32 @@ vector< Cache::IndexEntry > Cache::getIndexEntries() const
 
 string Cache::getPathOfIndexList(const IndexEntry& entry) const
 {
-	return __impl->getPathOfIndexList(entry);
+	return internal::cachefiles::getPathOfIndexList(*__impl->config, entry);
 }
 
 string Cache::getPathOfReleaseList(const IndexEntry& entry) const
 {
-	return __impl->getPathOfReleaseList(entry);
+	return internal::cachefiles::getPathOfReleaseList(*__impl->config, entry);
 }
 
 string Cache::getPathOfExtendedStates() const
 {
-	return __impl->getPathOfExtendedStates();
+	return internal::cachefiles::getPathOfExtendedStates(*__impl->config);
 }
 
 string Cache::getDownloadUriOfReleaseList(const IndexEntry& entry) const
 {
-	return __impl->getDownloadUriOfReleaseList(entry);
+	return internal::cachefiles::getDownloadUriOfReleaseList(entry);
 }
 
 vector< Cache::IndexDownloadRecord > Cache::getDownloadInfoOfIndexList(const IndexEntry& entry) const
 {
-	return __impl->getDownloadInfoOfIndexList(entry);
+	return internal::cachefiles::getDownloadInfoOfIndexList(*__impl->config, entry);
 }
 
 vector< Cache::LocalizationDownloadRecord > Cache::getDownloadInfoOfLocalizedDescriptions(const IndexEntry& entry) const
 {
-	return __impl->getDownloadInfoOfLocalizedDescriptions(entry);
+	return internal::cachefiles::getDownloadInfoOfLocalizedDescriptions(*__impl->config, entry);
 }
 
 vector< string > Cache::getBinaryPackageNames() const
