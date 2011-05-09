@@ -32,6 +32,8 @@
 #include <internal/regex.hpp>
 #include <internal/cachefiles.hpp>
 
+// TODO/API break/: remove deprecated entities
+
 namespace cupt {
 
 typedef internal::CacheImpl::PrePackageRecord PrePackageRecord;

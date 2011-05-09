@@ -24,6 +24,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
         Julian Andres Klode for the suggestion. (Closes: #587478)
       - When skipping an index or translation file processing due to an error,
         use a human-readable alias in the warning message.
+      - Mark structures and methods, which are related to local and remote
+        locations of internal cache files, as deprecated.
   * debian:
     - control:
       - Relax Boost build requirements to match 1.42 and higher, not only
