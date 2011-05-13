@@ -176,7 +176,7 @@ const forward_list< const dg::Element* >& SolutionStorage::getConflictingElement
 }
 
 bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
-		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr)
+		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr) const
 {
 	const forward_list< const dg::Element* >& conflictingElementPtrs =
 			getConflictingElements(elementPtr);
@@ -194,7 +194,17 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 			return !packageEntryPtr->sticked;
 		}
 	}
-	*conflictingElementPtrPtr = NULL; // no conflicting elements in this solution
+
+	// no conflicting elements in this solution
+	*conflictingElementPtrPtr = NULL;
+	if (auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr))
+	{
+		if (versionElement->version)
+		{
+			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
+					(__dependency_graph).getCorrespondingEmptyElement(elementPtr, false);
+		}
+	}
 	return true;
 }
 
@@ -264,12 +274,29 @@ bool SolutionStorage::verifyElement(const Solution& solution,
 			return true;
 		}
 	}
+
+	// second try, check for non-present empty elements as they are virtually present
+	FORIT(elementPtrIt, successorElementPtrs)
+	{
+		if (auto versionElement = dynamic_cast< const dg::VersionElement* >(*elementPtrIt))
+		{
+			if (!versionElement->version)
+			{
+				const dg::Element* conflictorPtr;
+				if (simulateSetPackageEntry(solution, versionElement, &conflictorPtr), !conflictorPtr)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
 	return false;
 }
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
 {
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
+	return __dependency_graph.getCorrespondingEmptyElement(elementPtr, true);
 }
 
 

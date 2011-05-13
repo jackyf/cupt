@@ -871,20 +871,12 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			packageEntry.sticked = it->second.sticked;
 			result.push_back(make_pair(elementPtr, packageEntry));
 		}
-		PackageEntry defaultPackageEntry;
-		FORIT(it, __empty_package_to_vertex_ptr)
-		{
-			auto emptyElementPtr = it->second;
-			if (!initialPackages.count(it->first))
-			{
-				result.push_back(make_pair(emptyElementPtr, defaultPackageEntry));
-			}
-		}
 	}
 	return result;
 }
 
-const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
+const Element* DependencyGraph::getCorrespondingEmptyElement(
+		const Element* elementPtr, bool createIfNotExists)
 {
 	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
@@ -895,13 +887,20 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elem
 	auto it = __empty_package_to_vertex_ptr.find(packageName);
 	if (it == __empty_package_to_vertex_ptr.end())
 	{
-		// it's an unreachable empty element, but we need some container for it
-		auto vertexPtr(new VersionVertex(__package_name_to_vertex_ptrs.find(packageName)));
-		this->addVertex(vertexPtr);
+		if (createIfNotExists)
+		{
+			// it's an unreachable empty element, but we need some container for it
+			auto vertexPtr(new VersionVertex(__package_name_to_vertex_ptrs.find(packageName)));
+			this->addVertex(vertexPtr);
 
-		const VersionElement*& elementPtr = __empty_package_to_vertex_ptr[packageName];
-		elementPtr = vertexPtr;
-		return elementPtr;
+			const VersionElement*& elementPtr = __empty_package_to_vertex_ptr[packageName];
+			elementPtr = vertexPtr;
+			return elementPtr;
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 	else
 	{

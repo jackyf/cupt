@@ -109,7 +109,7 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 			const map< string, shared_ptr< const BinaryVersion > >&,
 			const map< string, InitialPackageEntry >&);
 
-	const Element* getCorrespondingEmptyElement(const Element*);
+	const Element* getCorrespondingEmptyElement(const Element*, bool);
 	using BaseT::getSuccessorsFromPointer;
 	using BaseT::getPredecessorsFromPointer;
 	using BaseT::CessorListType;
