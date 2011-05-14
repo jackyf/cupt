@@ -28,6 +28,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
         locations of internal cache files, as deprecated.
     - system/resolvers/native:
       - RAM usage optimizations.
+      - Do not depend on cache memoizing. Fixes a regression introduced in
+        2.0.0~beta1.
   * debian:
     - control:
       - Relax Boost build requirements to match 1.42 and higher, not only

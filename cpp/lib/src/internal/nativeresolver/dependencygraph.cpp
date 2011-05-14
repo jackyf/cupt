@@ -484,8 +484,7 @@ class DependencyGraph::FillHelper
 	vector< DependencyEntry > __dependency_groups;
 
 	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
-	map< string, const VersionElement* > __empty_package_to_vertex_ptr;
-	map< shared_ptr< const BinaryVersion >, const VersionVertex* > __version_to_vertex_ptr;
+	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
@@ -544,22 +543,11 @@ class DependencyGraph::FillHelper
 			return vertexPtr;
 		};
 
-		const VersionVertex** elementPtrPtr;
-		bool isNew;
-		if (version)
-		{
-			auto insertResult = __version_to_vertex_ptr.insert(
-					make_pair(version, (const VersionVertex*)NULL));
-			isNew = insertResult.second;
-			elementPtrPtr = &insertResult.first->second;
-		}
-		else
-		{
-			auto insertResult = __empty_package_to_vertex_ptr.insert(
-					make_pair(packageName, (const VersionVertex*)NULL));
-			isNew = insertResult.second;
-			elementPtrPtr = &insertResult.first->second;
-		}
+		string versionHashString = packageName + ' ' + (version ? version->versionString : "");
+		auto insertResult = __version_to_vertex_ptr.insert(
+				make_pair(std::move(versionHashString), (const VersionVertex*)NULL));
+		bool isNew = insertResult.second;
+		const VersionVertex** elementPtrPtr = &insertResult.first->second;
 
 		if (isNew && isVertexAllowed())
 		{
