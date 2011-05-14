@@ -131,8 +131,9 @@ class SolutionStorage
 			getConflictingElements(const dg::Element*);
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
-	static void setPackageEntry(Solution&, const dg::Element*,
+	void setPackageEntry(Solution&, const dg::Element*,
 			PackageEntry&&, const dg::Element*);
+	void unfoldElement(const dg::Element*);
 };
 
 }

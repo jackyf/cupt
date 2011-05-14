@@ -541,6 +541,8 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 	   currently broken one */
 	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
 
+	__solution_storage->unfoldElement(candidateElementPtr);
+
 	const GraphCessorListType& successorElementPtrs =
 			__solution_storage->getSuccessorElements(candidateElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)

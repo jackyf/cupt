@@ -100,6 +100,8 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 
 	class FillHelper;
 	friend class FillHelper;
+
+	std::unique_ptr< FillHelper > __fill_helper;
  public:
 	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
 
@@ -110,6 +112,8 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 			const map< string, InitialPackageEntry >&);
 
 	const Element* getCorrespondingEmptyElement(const Element*, bool);
+	void unfoldElement(const Element*);
+
 	using BaseT::getSuccessorsFromPointer;
 	using BaseT::getPredecessorsFromPointer;
 	using BaseT::CessorListType;

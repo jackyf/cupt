@@ -212,6 +212,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr)
 {
+	__dependency_graph.unfoldElement(elementPtr);
+
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
 	{
@@ -258,6 +260,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	initialSolution.__added_entries->reserve(source.size());
 	FORIT(it, source)
 	{
+		__dependency_graph.unfoldElement(it->first);
 		initialSolution.__added_entries->push_back(*it);
 	}
 }
@@ -299,6 +302,10 @@ const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Eleme
 	return __dependency_graph.getCorrespondingEmptyElement(elementPtr, true);
 }
 
+void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
+{
+	__dependency_graph.unfoldElement(elementPtr);
+}
 
 
 Solution::Solution()
