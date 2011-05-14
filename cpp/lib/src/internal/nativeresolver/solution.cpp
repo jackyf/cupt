@@ -202,7 +202,7 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 		if (versionElement->version)
 		{
 			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
-					(__dependency_graph).getCorrespondingEmptyElement(elementPtr, false);
+					(__dependency_graph).getCorrespondingEmptyElement(elementPtr);
 		}
 	}
 	return true;
@@ -299,7 +299,7 @@ bool SolutionStorage::verifyElement(const Solution& solution,
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
 {
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr, true);
+	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
 }
 
 void SolutionStorage::unfoldElement(const dg::Element* elementPtr)

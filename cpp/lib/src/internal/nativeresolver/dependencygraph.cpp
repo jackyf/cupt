@@ -889,8 +889,7 @@ void DependencyGraph::unfoldElement(const Element* elementPtr)
 	__fill_helper->unfoldElement(elementPtr);
 }
 
-const Element* DependencyGraph::getCorrespondingEmptyElement(
-		const Element* elementPtr, bool createIfNotExists)
+const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
 {
 	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
@@ -898,28 +897,7 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(
 		fatal("internal error: getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
-	auto it = __empty_package_to_vertex_ptr.find(packageName);
-	if (it == __empty_package_to_vertex_ptr.end())
-	{
-		if (createIfNotExists)
-		{
-			// it's an unreachable empty element, but we need some container for it
-			auto vertexPtr(new VersionVertex(__package_name_to_vertex_ptrs.find(packageName)));
-			this->addVertex(vertexPtr);
-
-			const VersionElement*& elementPtr = __empty_package_to_vertex_ptr[packageName];
-			elementPtr = vertexPtr;
-			return elementPtr;
-		}
-		else
-		{
-			return NULL;
-		}
-	}
-	else
-	{
-		return it->second;
-	}
+	return __fill_helper->getVertexPtrForEmptyPackage(packageName);
 }
 
 }
