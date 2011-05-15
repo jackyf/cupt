@@ -30,6 +30,9 @@ cupt (2.1.0~) UNRELEASED; urgency=low
       - RAM usage optimizations.
       - Do not depend on cache memoizing. Fixes a regression introduced in
         2.0.0~beta1.
+    - cache/{source,binary}version:
+      - Don't error out, only print a warning for unrecognized values of the
+        'Priority' field. Fixes a regression introduced in 2.0.0~alpha1.
   * debian:
     - control:
       - Relax Boost build requirements to match 1.42 and higher, not only

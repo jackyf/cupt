@@ -52,7 +52,8 @@
 			} \
 			else \
 			{ \
-				fatal("bad priority value '%s'", string(tagValue).c_str()); \
+				warn("package %s, version %s: unrecognized priority value '%s', using 'extra' instead", \
+						v->packageName.c_str(), v->versionString.c_str(), string(tagValue).c_str()); \
 			} \
 		})
 
