@@ -31,24 +31,23 @@ namespace cachefiles {
 
 static string getPathOfIndexEntry(const Config& config, const IndexEntry& entry)
 {
-	// "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
-	// "file:/home/jackyf" -> "/home/jackyf"
-	static sregex schemeRegex = sregex::compile("^\\w+:(?://)?");
-	string uriPrefix = regex_replace(entry.uri, schemeRegex, "");
-
-	// "escaping" tilde, following APT practice :(
-	static sregex tildeRegex = sregex::compile("~");
-	uriPrefix = regex_replace(uriPrefix, tildeRegex, "%7e");
-
-	// "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
-	static sregex slashRegex = sregex::compile("/");
-	uriPrefix = regex_replace(uriPrefix, slashRegex, "_");
+	auto escape = [](const string& input) -> string
+	{
+		auto result = input;
+		FORIT(it, result)
+		{
+			if (*it == '~' || *it == '/' || *it == ':')
+			{
+				*it = '_';
+			}
+		}
+		return result;
+	};
 
 	string directory = config.getPath("cupt::directory::state::lists");
 
-	string distributionPart = regex_replace(entry.distribution, slashRegex, "_");
-
-	string basePart = uriPrefix + "_";
+	string distributionPart = escape(entry.distribution);
+	string basePart = escape(entry.uri) + "_";
 	if (entry.component.empty())
 	{
 		// easy source type
