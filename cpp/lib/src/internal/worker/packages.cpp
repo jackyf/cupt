@@ -1916,11 +1916,17 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 				// add necessary options if requested
 				dpkgCommand += actionGroupIt->dpkgFlags;
 
-				// TODO: re-evaluate with lenny->squeeze (e)glibc upgrade
 				/* the workaround for a dpkg bug #558151
 
 				   dpkg performs some IMHO useless checks for programs in PATH
-				   which breaks some upgrades of packages that contains important programs */
+				   which breaks some upgrades of packages that contains important programs
+
+				   It is possible that this hack is not needed anymore with
+				   better scheduling heuristics of 2.x but we cannot
+				   re-evaluate it with lenny->squeeze (e)glibc upgrade since
+				   new Cupt requires new libgcc which in turn requires new
+				   glibc.
+				*/
 				dpkgCommand += " --force-bad-path";
 
 				FORIT(actionIt, *actionGroupIt)
