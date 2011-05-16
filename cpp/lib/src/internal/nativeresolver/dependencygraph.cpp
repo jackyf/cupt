@@ -498,7 +498,6 @@ class DependencyGraph::FillHelper
 				__dependency_graph.__cache.isAutomaticallyInstalled(packageName);
 	}
 
-	// TODO: use VersionElement* when needed
  public:
 	FillHelper(DependencyGraph& dependencyGraph,
 			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
