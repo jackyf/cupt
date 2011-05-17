@@ -84,14 +84,12 @@ ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVe
 	else if (!supposedVersion)
 	{
 		scoreType = ScoreChange::SubScore::Removal;
-		if (value < 0)
+
+		auto binaryPackage = __cache->getBinaryPackage(originalVersion->packageName);
+		auto installedVersion = binaryPackage->getInstalledVersion();
+		if (installedVersion && installedVersion->essential)
 		{
-			auto binaryPackage = __cache->getBinaryPackage(originalVersion->packageName);
-			auto installedVersion = binaryPackage->getInstalledVersion();
-			if (installedVersion && installedVersion->essential)
-			{
-				value -= 200000;
-			}
+			value -= 200000;
 		}
 	}
 	else

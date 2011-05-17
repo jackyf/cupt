@@ -30,6 +30,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
       - RAM usage optimizations.
       - Do not depend on cache memoizing. Fixes a regression introduced in
         2.0.0~beta1.
+      - Apply a penalty for removal of an essential package regardless of the
+        score sign.
     - cache/{source,binary}version:
       - Don't error out, only print a warning for unrecognized values of the
         'Priority' field. Fixes a regression introduced in 2.0.0~alpha1.
