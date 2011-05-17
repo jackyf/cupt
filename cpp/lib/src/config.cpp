@@ -141,6 +141,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "-300" },
 		{ "cupt::resolver::score::removal", "-500" },
+		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
 		{ "cupt::resolver::score::position-penalty", "-20" },

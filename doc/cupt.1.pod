@@ -1017,6 +1017,10 @@ installing a new package
 
 removal of an existing package
 
+=item removal-of-essential
+
+removal of an existing essential package (a general B<removal> option is applied as well)
+
 =item upgrade
 
 installing a higher version of an existing package

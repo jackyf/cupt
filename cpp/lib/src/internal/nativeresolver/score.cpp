@@ -42,6 +42,8 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 				leafOption = "new"; break;
 			case ScoreChange::SubScore::Removal:
 				leafOption = "removal"; break;
+			case ScoreChange::SubScore::RemovalOfEssential:
+				leafOption = "removal-of-essential"; break;
 			case ScoreChange::SubScore::Upgrade:
 				leafOption = "upgrade"; break;
 			case ScoreChange::SubScore::Downgrade:
@@ -76,6 +78,8 @@ ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVe
 
 	auto value = supposedVersionWeight - originalVersionWeight;
 
+	ScoreChange scoreChange;
+
 	ScoreChange::SubScore::Type scoreType;
 	if (!originalVersion)
 	{
@@ -89,7 +93,7 @@ ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVe
 		auto installedVersion = binaryPackage->getInstalledVersion();
 		if (installedVersion && installedVersion->essential)
 		{
-			value -= 200000;
+			scoreChange.__subscores[ScoreChange::SubScore::RemovalOfEssential] = 1;
 		}
 	}
 	else
@@ -98,7 +102,6 @@ ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVe
 				supposedVersion->versionString) < 0 ? ScoreChange::SubScore::Upgrade : ScoreChange::SubScore::Downgrade;
 	}
 
-	ScoreChange scoreChange;
 	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
 	scoreChange.__subscores[scoreType] = 1;
 
@@ -177,6 +180,8 @@ string ScoreChange::__to_string() const
 					result << 'a'; break;
 				case SubScore::Removal:
 					result << 'r'; break;
+				case SubScore::RemovalOfEssential:
+					result << "re"; break;
 				case SubScore::Upgrade:
 					result << 'u'; break;
 				case SubScore::Downgrade:

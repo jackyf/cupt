@@ -32,8 +32,8 @@ class ScoreChange
 
 	struct SubScore
 	{
-		enum Type { Version, New, Removal, Upgrade, Downgrade, UnsatisfiedRecommends,
-				UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
+		enum Type { Version, New, Removal, RemovalOfEssential, Upgrade, Downgrade,
+				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
 	};
 
 	ssize_t __subscores[SubScore::Count];

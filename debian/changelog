@@ -19,6 +19,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
       - New configuration variable 'cupt::directory::state::lists'.
       - Changed the default value of the variable
         'cupt::update::keep-bad-signatures' to 'yes'.
+      - New configuration variable
+        'cupt::resolver::score::removal-of-essential'.
     - cache:
       - Support regular expressions in pin preferences. Thanks to
         Julian Andres Klode for the suggestion. (Closes: #587478)
