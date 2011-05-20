@@ -133,6 +133,7 @@ void showHelp(const char* argv0)
 		{ "autoclean", __("cleans unavailable from repositories archives from binary package cache") },
 		{ "markauto", __("marks binary package(s) as automatically installed") },
 		{ "unmarkauto", __("marks binary package(s) as manually installed") },
+		{ "showauto", __("shows list of manually or automatically installed packages") },
 		{ "shell", __("starts an interactive package manager shell") },
 		{ "snapshot", __("works with system snapshots") },
 	};
