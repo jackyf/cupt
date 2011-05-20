@@ -121,6 +121,15 @@ C<cupt search -n vim>
 
 C<cupt search "package manager">
 
+=item showauto
+
+prints list of automatically/manually installed packages, one package name per
+line
+
+L<cupt showauto>: prints list of automatically installed packages
+
+L<cupt showauto --invert>: prints list of manually installed packages
+
 =item depends
 
 prints dependency relation expressions for given version of package

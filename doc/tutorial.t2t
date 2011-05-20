@@ -945,17 +945,13 @@ Example:
 
 ``` cupt show --installed-only dpkg
 
-Unfortunately there is no command in //cupt(1)// yet to list all automatically
-or manually installed packages, but you can use the following, provided you
-have a package ``dctrl-tools`` installed: 
-
 To list manually installed packages:
 
-``` LC_MESSAGES=C cupt --installed-only show "*" | grep-dctrl "-FAutomatically installed" no --show-field Package --no-field-names
+``` cupt showauto --invert
 
 To list automatically installed packages:
 
-``` LC_MESSAGES=C cupt --installed-only show "*" | grep-dctrl "-FAutomatically installed" yes --show-field Package --no-field-names
+``` cupt showauto
 
 === change ===
 

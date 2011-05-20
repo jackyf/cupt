@@ -215,6 +215,7 @@ std::function< int (Context&) > getHandler(const string& command)
 		{ "source", &downloadSourcePackage },
 		{ "markauto", [](Context& c) -> int { return changeAutoInstalledState(c, true); } },
 		{ "unmarkauto", [](Context& c) -> int { return changeAutoInstalledState(c, false); } },
+		{ "showauto", &showAutoInstalled },
 		{ "clean", [](Context& c) -> int { return cleanArchives(c, false); } },
 		{ "autoclean", [](Context& c) -> int { return cleanArchives(c, true); } },
 		{ "changelog", [](Context& c) -> int { return downloadChangelogOrCopyright(c, ChangelogOrCopyright::Changelog); } },
