@@ -343,7 +343,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 
 				if (debugging)
 				{
-					debug("auto-removed '%s'", (*elementPtrIt)->toString().c_str());
+					__mydebug_wrapper(solution, sf("auto-removed '%s'", (*elementPtrIt)->toString().c_str()));
 				}
 				__solution_storage->setPackageEntry(solution, emptyElementPtr,
 						std::move(packageEntry), *elementPtrIt);
