@@ -248,6 +248,11 @@ ArchitecturedRelation::ArchitecturedRelation(
 	__init(std::find(input.first, input.second, '['), input.second);
 }
 
+ArchitecturedRelation::ArchitecturedRelation(ArchitecturedRelation&& other)
+	: Relation(static_cast< Relation&& >(other)),
+	architectureFilters(std::move(other.architectureFilters))
+{}
+
 string ArchitecturedRelation::toString() const
 {
 	static const string openingBracket = "[";

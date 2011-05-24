@@ -101,6 +101,7 @@ struct CUPT_API ArchitecturedRelation: public Relation
 	 * architectured relation
 	 */
 	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
+	ArchitecturedRelation(ArchitecturedRelation&&);
 	string toString() const;
 };
 

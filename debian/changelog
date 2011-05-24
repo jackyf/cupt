@@ -7,6 +7,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
       - Relation: new copy constructor from Relation&&.
       - RelationLine: new method 'operator=(RelationLine&&)'.
       - RelationExpression: new copy constructor from RelationExpression&&.
+      - ArchitecturedRelation: new copy constructor from
+        ArchitecturedRelation&&.
       - ArchitecturedRelationExpression: new copy constructor from
         ArchitecturedRelationExpression&&.
     - system/worker:
