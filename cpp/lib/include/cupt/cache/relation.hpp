@@ -221,6 +221,8 @@ struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationE
 	 * representation
 	 */
 	explicit ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
+	/// operator= from the rvalue reference
+	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&);
 	/// converts to RelationLine given system architecture
 	/**
 	 * Filters ArchitecturedRelationLine using binary system architecture.

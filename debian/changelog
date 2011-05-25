@@ -11,6 +11,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
         ArchitecturedRelation&&.
       - ArchitecturedRelationExpression: new copy constructor from
         ArchitecturedRelationExpression&&.
+      - ArchitecturedRelationLine: new method
+        'operator=(ArchitecturedRelationLine&&)'.
     - system/worker:
       - A small speed-up of generating dpkg action sequences for large queries.
       - RAM usage optimizations.

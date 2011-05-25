@@ -462,6 +462,12 @@ RelationLineType::RelationLineType(const string& line) \
 	__init(line.begin(), line.end()); \
 } \
  \
+RelationLineType& RelationLineType::operator=(RelationLineType&& other) \
+{ \
+	std::vector< UnderlyingElement >::swap(other); \
+	return *this; \
+} \
+ \
 RelationLineType::~RelationLineType() \
 {} \
  \
@@ -478,12 +484,6 @@ string RelationLineType::toString() const \
 DEFINE_RELATION_LINE_CLASS(RelationLine, RelationExpression)
 DEFINE_RELATION_LINE_CLASS(ArchitecturedRelationLine, ArchitecturedRelationExpression)
 #undef DEFINE_RELATION_LINE_CLASS
-
-RelationLine& RelationLine::operator=(RelationLine&& other)
-{
-	std::vector< RelationExpression >::swap(other);
-	return *this;
-}
 
 }
 }
