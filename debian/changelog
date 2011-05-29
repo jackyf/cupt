@@ -1,4 +1,4 @@
-cupt (2.1.0~) UNRELEASED; urgency=low
+cupt (2.1.0) unstable; urgency=low
 
   * console:
     - New 'showauto' subcommand.
@@ -57,7 +57,7 @@ cupt (2.1.0~) UNRELEASED; urgency=low
   * Switched to Cupt-specific directory 'cupt::directory::state::lists' for
     index lists.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 29 May 2011 12:46:37 +0300
 
 cupt (2.0.2) unstable; urgency=low
 
