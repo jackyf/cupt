@@ -121,6 +121,15 @@ C<cupt search -n vim>
 
 C<cupt search "package manager">
 
+=item showauto
+
+prints list of automatically/manually installed packages, one package name per
+line
+
+L<cupt showauto>: prints list of automatically installed packages
+
+L<cupt showauto --invert>: prints list of manually installed packages
+
 =item depends
 
 prints dependency relation expressions for given version of package
@@ -787,7 +796,7 @@ apt::update::pre-invoke, apt::update::post-invoke,
 apt::update::post-invoke-success, dir, dir::bin::dpkg, dir::cache,
 dir::cache::archives, dir::etc, dir::etc::sourcelist, dir::etc::sourceparts,
 dir::etc::parts, dir::etc::main, dir::etc::preferences, dir::state,
-dir::state::extendedstates, dir::state::lists, dir::state::status,
+dir::state::extendedstates, dir::state::status,
 dpkg::options, dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
 gpgv::trustedkeyring, quiet
 
@@ -796,8 +805,9 @@ See L<apt.conf(5)> for their meanings.
 Secondly, Cupt recognizes (but doesn't use) following configuration variables:
 
 apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
-unattended-upgrade::*, acquire::compressiontypes, apt::get::show-upgraded,
-apt::get::build-dep-automatic, rpm::pre-invoke, rpm::post-invoke
+dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
+apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
+rpm::post-invoke
 
 Thirdly, Cupt introduces cupt-specific configuration variables.
 
@@ -875,6 +885,10 @@ string, base directory for all cupt::directory::* options
 
 string, directory which contains Cupt state info
 
+=item cupt::directory::state::lists
+
+string, directory for repository indexes
+
 =item cupt::downloader::max-simultaneous-downloads
 
 integer, positive, specifies maximum number of simultaneous downloads. Defaults to 2.
@@ -899,7 +913,7 @@ list, names of the methods available to download protocol I<protocol>
 
 integer, defines preference to download compressed files with higher priority first. 100 by default.
 
-'*' can be 'gz', 'bz2', 'lzma' and 'uncompressed'.
+'*' can be 'gz', 'bz2', 'lzma', 'xz', and 'uncompressed'.
 
 Set some option to <100 value to make it low-precedence than default, and >100
 to make it high-precedence than default.
@@ -926,8 +940,7 @@ cupt::update::compression-types::uncompressed::priority "300";
 =item cupt::update::keep-bad-signatures
 
 boolean, specifies whether to keep signature files that failed GPG check
-when doing update. False by default. Setting this option to true will break
-compatibility with APT in area of signature checking.
+when doing update. True by default.
 
 =item cupt::resolver::keep-recommends
 
@@ -1012,6 +1025,10 @@ installing a new package
 =item removal
 
 removal of an existing package
+
+=item removal-of-essential
+
+removal of an existing essential package (a general B<removal> option is applied as well)
 
 =item upgrade
 

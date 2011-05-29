@@ -16,6 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <set>
+#include <algorithm>
 
 #include <cupt/system/snapshots.hpp>
 #include <cupt/system/resolver.hpp>
@@ -76,7 +77,7 @@ void SnapshotsImpl::setupConfigForSnapshotOnly(const string& snapshotName)
 {
 	auto snapshotDirectory = getSnapshotDirectory(snapshotName);
 
-	__config->setScalar("dir::state::lists", snapshotDirectory);
+	__config->setScalar("cupt::directory::state::lists", snapshotDirectory);
 	__config->setScalar("dir::cache::archives", snapshotDirectory);
 
 	__config->setScalar("dir::etc::sourcelist", snapshotDirectory + "/source");

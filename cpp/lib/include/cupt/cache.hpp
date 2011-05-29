@@ -57,18 +57,18 @@ class CUPT_API Cache
 		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
 		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
 	};
-	/// download record for cache index files
+	/// @deprecated an internal structure, should not be used
 	struct IndexDownloadRecord
 	{
-		string uri; ///< download URI
-		uint32_t size; ///< size in bytes
-		HashSums hashSums; ///< hash sums
+		string uri;
+		uint32_t size;
+		HashSums hashSums;
 	};
-	/// download record for localization files
+	/// @copydoc IndexDownloadRecord
 	struct LocalizationDownloadRecord
 	{
-		string uri; ///< download URI
-		string localPath; ///< path, where download to
+		string uri;
+		string localPath;
 	};
 	/// extended package information
 	struct ExtendedInfo
@@ -131,24 +131,18 @@ class CUPT_API Cache
 	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;
 
-	/// gets the path of Release file corresponding to certain IndexEntry
-	/**
-	 * @param entry index entry
-	 */
+	/// @deprecated an internal method, should not be used
 	string getPathOfReleaseList(const IndexEntry& entry) const;
-	/// gets the path of index file (Packages or Sources) corresponding to certain IndexEntry
-	/**
-	 * @param entry index entry
-	 */
+	/// @copydoc getPathOfReleaseList
 	string getPathOfIndexList(const IndexEntry& entry) const;
-	/// gets the path of extended states file
+	/// @copydoc getPathOfReleaseList
 	string getPathOfExtendedStates() const;
 
-	/// gets download URI of Release file corresponding to certain IndexEntry
+	/// @copydoc getPathOfReleaseList
 	string getDownloadUriOfReleaseList(const IndexEntry&) const;
-	/// gets download records of index file corresponding to certain IndexEntry
+	/// @copydoc getPathOfReleaseList
 	vector< IndexDownloadRecord > getDownloadInfoOfIndexList(const IndexEntry&) const;
-	/// gets download records of possible localization files corresponding to certain IndexEntry
+	/// @copydoc getPathOfReleaseList
 	vector< LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(const IndexEntry&) const;
 
 	/// gets system state

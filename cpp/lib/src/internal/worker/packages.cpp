@@ -31,6 +31,80 @@
 namespace cupt {
 namespace internal {
 
+// InnerAction
+InnerAction::InnerAction()
+	: fake(false), linkedFrom(NULL), linkedTo(NULL), priority(0)
+{}
+
+bool InnerAction::operator<(const InnerAction& other) const
+{
+	if (type < other.type)
+	{
+		return true;
+	}
+	else if (type > other.type)
+	{
+		return false;
+	}
+	else if (versionProxy->getPackageName() < other.versionProxy->getPackageName())
+	{
+		return true;
+	}
+	else if (versionProxy->getPackageName() > other.versionProxy->getPackageName())
+	{
+		return false;
+	}
+	else if (versionProxy->getVersionString() < other.versionProxy->getVersionString())
+	{
+		return true;
+	}
+	else if (versionProxy->getVersionString() > other.versionProxy->getVersionString())
+	{
+		return false;
+	}
+	return versionProxy->getAdditionaSortKey() < other.versionProxy->getAdditionaSortKey();
+}
+
+string InnerAction::toString() const
+{
+	const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
+	string prefix = fake ? "(fake)" : "";
+	string result = prefix + typeStrings[type] + " " + versionProxy->toString();
+
+	return result;
+}
+
+// Attribute
+GraphAndAttributes::Attribute::Attribute()
+	: isFundamental(false)
+{}
+
+bool GraphAndAttributes::Attribute::isDependencyHard() const
+{
+	if (isFundamental)
+	{
+		return true;
+	}
+
+	FORIT(recordIt, relationInfo)
+	{
+		if (recordIt->dependencyType != BinaryVersion::RelationTypes::Breaks &&
+			(!recordIt->reverse || recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+// OneRelationExpressionVersionProxy
+const RelationLine OneRelationExpressionVersionProxy::__null_result;
+
+
+using std::make_pair;
+
+typedef Graph< InnerAction >::CessorListType GraphCessorListType;
+
 PackagesWorker::PackagesWorker()
 {
 	__auto_installed_package_names = _cache->getExtendedInfo().automaticallyInstalled;
@@ -97,7 +171,7 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 }
 
 void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
-		vector< pair< InnerAction, InnerAction > >& basicEdges)
+		vector< pair< const InnerAction*, const InnerAction* > >& basicEdges)
 {
 	typedef InnerAction IA;
 
@@ -153,8 +227,13 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 				}
 
 				InnerAction action;
-			    action.version = version;
-				action.type = innerActionType;
+				{
+					action.type = innerActionType;
+
+					auto proxy = new FullVersionProxy;
+					proxy->setVersion(version);
+					action.versionProxy.reset(proxy);
+				}
 
 				auto newVertexPtr = gaa.graph.addVertex(action);
 
@@ -162,18 +241,18 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 				{
 					// the edge between consecutive actions
 					using std::make_pair;
-					basicEdges.push_back(make_pair(*previousInnerActionPtr, action));
+					basicEdges.push_back(make_pair(previousInnerActionPtr, newVertexPtr));
 					if (previousInnerActionPtr->type == IA::Remove &&
-							(newVertexPtr->version->essential || pseudoEssentialPackageNames.count(packageName)))
+							(version->essential || pseudoEssentialPackageNames.count(packageName)))
 					{
 						// merging remove/unpack
-						basicEdges.push_back(make_pair(action, *previousInnerActionPtr));
+						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
 					}
 					if (previousInnerActionPtr->type == IA::Unpack &&
 							pseudoEssentialPackageNames.count(packageName))
 					{
 						// merging unpack/configure
-						basicEdges.push_back(make_pair(action, *previousInnerActionPtr));
+						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
 					}
 				}
 				previousInnerActionPtr = newVertexPtr;
@@ -182,25 +261,39 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 	}
 }
 
-void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
-		const shared_ptr< const BinaryVersion >& version,
-		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
-		Direction::Type direction, const InnerAction& innerAction,
-		GraphAndAttributes& gaa, bool debugging)
+struct FillActionGeneralInfo
 {
-	const set< InnerAction >& verticesMap = gaa.graph.getVertices();
+	shared_ptr< const Cache > cache;
+	GraphAndAttributes* gaaPtr;
+	bool debugging;
+	const InnerAction* innerActionPtr;
+};
+struct Direction
+{
+	enum Type { After, Before };
+};
+
+void __fill_action_dependencies(FillActionGeneralInfo& gi,
+		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
+		Direction::Type direction)
+{
+	// allowed, this function is not re-entrant
+	static shared_ptr< FullVersionProxy > searchVersionProxy(new FullVersionProxy);
+
+	const set< InnerAction >& verticesMap = gi.gaaPtr->graph.getVertices();
 
 	InnerAction candidateAction;
 	candidateAction.type = actionType;
 
-	const RelationLine& relationLine = version->relations[dependencyType];
+	const RelationLine& relationLine = gi.innerActionPtr->versionProxy->getRelations(dependencyType);
 	FORIT(relationExpressionIt, relationLine)
 	{
-		auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
+		auto satisfyingVersions = gi.cache->getSatisfyingVersions(*relationExpressionIt);
 
 		FORIT(satisfyingVersionIt, satisfyingVersions)
 		{
-			candidateAction.version = *satisfyingVersionIt;
+			searchVersionProxy->setVersion(*satisfyingVersionIt);
+			candidateAction.versionProxy = searchVersionProxy;
 
 			// search for the appropriate action in action list
 			auto vertexIt = verticesMap.find(candidateAction);
@@ -208,14 +301,14 @@ void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
 			{
 				continue;
 			}
-			const InnerAction& currentAction = *vertexIt;
-			if (innerAction.fake && currentAction.fake)
+			const InnerAction* currentActionPtr = &*vertexIt;
+			if (gi.innerActionPtr->fake && currentActionPtr->fake)
 			{
 				continue;
 			}
 
-			const InnerAction& masterAction = (direction == Direction::After ? currentAction : innerAction);
-			const InnerAction& slaveAction = (direction == Direction::After ? innerAction : currentAction);
+			auto masterActionPtr = (direction == Direction::After ? currentActionPtr : gi.innerActionPtr);
+			auto slaveActionPtr = (direction == Direction::After ? gi.innerActionPtr : currentActionPtr);
 
 			// commented, because of #582423
 			/* bool replacesFound = false;
@@ -248,22 +341,23 @@ void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
 				const InnerAction* antagonisticActionPtr = NULL;
 				if (actionType == InnerAction::Configure && direction == Direction::Before)
 				{
-					if (currentAction.linkedFrom && currentAction.linkedFrom->linkedFrom)
+					if (currentActionPtr->linkedFrom && currentActionPtr->linkedFrom->linkedFrom)
 					{
-						antagonisticActionPtr = currentAction.linkedFrom->linkedFrom;
+						antagonisticActionPtr = currentActionPtr->linkedFrom->linkedFrom;
 					}
 				}
 				else if (actionType == InnerAction::Remove && direction == Direction::After)
 				{
-					if (currentAction.linkedTo && currentAction.linkedTo->linkedTo)
+					if (currentActionPtr->linkedTo && currentActionPtr->linkedTo->linkedTo)
 					{
-						antagonisticActionPtr = currentAction.linkedTo->linkedTo;
+						antagonisticActionPtr = currentActionPtr->linkedTo->linkedTo;
 					}
 				}
 
 				if (antagonisticActionPtr)
 				{
-					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticActionPtr->version);
+					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(),
+							antagonisticActionPtr->versionProxy->getVersion());
 					if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
 							predicate) != satisfyingVersions.end())
 					{
@@ -272,19 +366,19 @@ void __fill_action_dependencies(const shared_ptr< const Cache >& cache,
 				}
 			}
 
-			gaa.graph.addEdge(slaveAction, masterAction);
+			gi.gaaPtr->graph.addEdgeFromPointers(slaveActionPtr, masterActionPtr);
 
 			// adding relation to attributes
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
-					gaa.attributes[slaveAction][masterAction].relationInfo;
+					gi.gaaPtr->attributes[make_pair(slaveActionPtr, masterActionPtr)].relationInfo;
 			GraphAndAttributes::RelationInfoRecord record =
 					{ dependencyType, *relationExpressionIt, direction == Direction::After };
 			relationInfo.push_back(std::move(record));
 
-			if (debugging)
+			if (gi.debugging)
 			{
-				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveAction.toString().c_str(),
-						masterAction.toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
+				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString().c_str(),
+						masterActionPtr->toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
 						relationExpressionIt->toString().c_str());
 			}
 		}
@@ -296,13 +390,18 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 {
 	typedef BinaryVersion::RelationTypes RT;
 
+	FillActionGeneralInfo gi;
+	gi.cache = cache;
+	gi.gaaPtr = &gaa;
+	gi.debugging = debugging;
+
 	// fill the actions' dependencies
 	const set< InnerAction >& vertices = gaa.graph.getVertices();
 	FORIT(vertexIt, vertices)
 	{
-		const InnerAction& innerAction = *vertexIt;
-		const shared_ptr< const BinaryVersion >& version = innerAction.version;
-		switch (innerAction.type)
+		const InnerAction* innerActionPtr = &*vertexIt;
+		gi.innerActionPtr = innerActionPtr;
+		switch (innerActionPtr->type)
 		{
 			case InnerAction::PriorityModifier:
 				break;
@@ -311,25 +410,21 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 				process_unpack:
 
 				// pre-depends must be unpacked before
-				__fill_action_dependencies(cache, version, RT::PreDepends, InnerAction::Configure,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::PreDepends, InnerAction::Configure, Direction::Before);
 				// conflicts must be unsatisfied before
-				__fill_action_dependencies(cache, version, RT::Conflicts, InnerAction::Remove,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Conflicts, InnerAction::Remove, Direction::Before);
 				// breaks must be unsatisfied before (yes, before the unpack)
-				__fill_action_dependencies(cache, version, RT::Breaks, InnerAction::Remove,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Remove, Direction::Before);
 			}
 				break;
 			case InnerAction::Configure:
 			{
 				// depends must be configured before
-				__fill_action_dependencies(cache, version, RT::Depends, InnerAction::Configure,
-						Direction::Before, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Depends, InnerAction::Configure, Direction::Before);
 
 				// it has also to be unpacked if the same version was not in state 'unpacked'
 				// search for the appropriate unpack action
-				auto candidateAction = innerAction;
+				auto candidateAction = *innerActionPtr;
 				candidateAction.type = InnerAction::Unpack;
 
 				if (!vertices.count(candidateAction))
@@ -342,22 +437,17 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 			case InnerAction::Remove:
 			{
 				// pre-depends must be removed after
-				__fill_action_dependencies(cache, version, RT::PreDepends, InnerAction::Remove,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::PreDepends, InnerAction::Remove, Direction::After);
 				// depends must be removed after
-				__fill_action_dependencies(cache, version, RT::Depends, InnerAction::Remove,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Depends, InnerAction::Remove, Direction::After);
 				// conflicts may be satisfied only after
-				__fill_action_dependencies(cache, version, RT::Conflicts, InnerAction::Unpack,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Conflicts, InnerAction::Unpack, Direction::After);
 				// breaks may be satisfied only after
-				__fill_action_dependencies(cache, version, RT::Breaks, InnerAction::Unpack,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Unpack, Direction::After);
 				// in the previous case it may happen that package was already unpacked
 				// with breaking dependencies already, so there won't be 'unpack' action but just
 				// 'configure' one, so set dependency to 'configure' too just in case
-				__fill_action_dependencies(cache, version, RT::Breaks, InnerAction::Configure,
-						Direction::After, innerAction, gaa, debugging);
+				__fill_action_dependencies(gi, RT::Breaks, InnerAction::Configure, Direction::After);
 			}
 		}
 	}
@@ -371,7 +461,7 @@ void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool deb
 		const InnerAction* fromPtr = edgeIt->first;
 		const InnerAction* toPtr = edgeIt->second;
 		const vector< GraphAndAttributes::RelationInfoRecord >& records =
-				gaa.attributes[*fromPtr][*toPtr].relationInfo;
+				gaa.attributes[make_pair(fromPtr, toPtr)].relationInfo;
 
 		RelationLine preDependencyRelationExpressions;
 		FORIT(recordIt, records)
@@ -401,7 +491,7 @@ void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool deb
 			vector< string > packageNamesInPath;
 			FORIT(pathIt, path)
 			{
-				packageNamesInPath.push_back((*pathIt)->version->packageName);
+				packageNamesInPath.push_back((*pathIt)->versionProxy->getPackageName());
 			}
 			string packageNamesString = join(", ", packageNamesInPath);
 
@@ -441,7 +531,7 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	// building the black list
 	FORIT(vertexIt, gaa.graph.getVertices())
 	{
-		blacklistedPackageNames.insert(vertexIt->version->packageName);
+		blacklistedPackageNames.insert(vertexIt->versionProxy->getPackageName());
 	}
 
 	auto installedVersions = cache->getInstalledVersions();
@@ -460,18 +550,17 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 		{
 			FORIT(relationExpressionIt, installedVersion->relations[*dependencyTypeIt])
 			{
-				shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
-				virtualVersion->packageName = packageName + " [" + relationExpressionIt->toString() + "]";
-				virtualVersion->versionString = installedVersion->versionString;
-				virtualVersion->relations[*dependencyTypeIt].push_back(*relationExpressionIt);
+				shared_ptr< OneRelationExpressionVersionProxy > virtualVersionProxy(
+						new OneRelationExpressionVersionProxy(
+						installedVersion, *dependencyTypeIt, *relationExpressionIt));
 
 				InnerAction from;
-				from.version = virtualVersion;
+				from.versionProxy = virtualVersionProxy;
 				from.type = InnerAction::Configure;
 				from.fake = true;
 
 				InnerAction to;
-				to.version = virtualVersion;
+				to.versionProxy = virtualVersionProxy;
 				to.type = InnerAction::Remove;
 				to.fake = true;
 
@@ -488,51 +577,54 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const vector< pair< InnerAction, InnerAction > >& virtualEdges, bool debugging)
 {
-	auto moveEdge = [&gaa, debugging](const InnerAction& fromPredecessor, const InnerAction& fromSuccessor,
-			const InnerAction& toPredecessor, const InnerAction& toSuccessor)
+	auto moveEdge = [&gaa, debugging](const InnerAction* fromPredecessorPtr, const InnerAction* fromSuccessorPtr,
+			const InnerAction* toPredecessorPtr, const InnerAction* toSuccessorPtr)
 	{
 		if (debugging)
 		{
 			debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
-					fromPredecessor.toString().c_str(), fromSuccessor.toString().c_str(),
-					toPredecessor.toString().c_str(), toSuccessor.toString().c_str());
+					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
+					toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
 		}
-		if (toPredecessor == toSuccessor)
-		{
-			return;
-		}
-		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[toPredecessor][toSuccessor];
-		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[fromPredecessor][fromSuccessor];
+
+		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[make_pair(toPredecessorPtr, toSuccessorPtr)];
+		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[make_pair(fromPredecessorPtr, fromSuccessorPtr)];
 
 		// concatenating relationInfo
 		toAttribute.relationInfo.insert(toAttribute.relationInfo.end(),
 				fromAttribute.relationInfo.begin(), fromAttribute.relationInfo.end());
 
 		// delete the whole attribute
-		gaa.attributes[fromPredecessor].erase(fromSuccessor);
+		gaa.attributes.erase(make_pair(fromPredecessorPtr, fromSuccessorPtr));
 
-		gaa.graph.deleteEdge(fromPredecessor, fromSuccessor);
-		gaa.graph.addEdge(toPredecessor, toSuccessor);
+		// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' will be deleted by deleteVertex at the end
+
+		gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
 	};
 
 	FORIT(edgeIt, virtualEdges)
 	{
-		const InnerAction& from = edgeIt->first;
-		const InnerAction& to = edgeIt->second;
+		// getting vertex pointers
+		const InnerAction* fromPtr = gaa.graph.addVertex(edgeIt->first);
+		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const list< const InnerAction* > predecessors = gaa.graph.getPredecessors(from);
-		const list< const InnerAction* > successors = gaa.graph.getSuccessors(to);
+		const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
+		const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
 		FORIT(predecessorVertexPtrIt, predecessors)
 		{
 			FORIT(successorVertexPtrIt, successors)
 			{
+				if (*predecessorVertexPtrIt == *successorVertexPtrIt)
+				{
+					continue;
+				}
 				// moving edge attributes too
-				moveEdge(**predecessorVertexPtrIt, from, **predecessorVertexPtrIt, **successorVertexPtrIt);
-				moveEdge(to, **successorVertexPtrIt, **predecessorVertexPtrIt, **successorVertexPtrIt);
+				moveEdge(*predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt);
+				moveEdge(toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt);
 				if (debugging)
 				{
-					const string& mediatorPackageName = from.version->packageName;
+					const string& mediatorPackageName = fromPtr->versionProxy->getPackageName();
 					debug("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
 							(*predecessorVertexPtrIt)->toString().c_str(), (*successorVertexPtrIt)->toString().c_str(),
 							mediatorPackageName.c_str());
@@ -541,8 +633,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 			}
 		}
 
-		gaa.graph.deleteVertex(from);
-		gaa.graph.deleteVertex(to);
+		gaa.graph.deleteVertex(*fromPtr);
+		gaa.graph.deleteVertex(*toPtr);
 	}
 }
 
@@ -591,27 +683,27 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 	{
 		if (innerActionIt->type == InnerAction::Unpack)
 		{
-			const string& packageName = innerActionIt->version->packageName;
+			const string& packageName = innerActionIt->versionProxy->getPackageName();
 
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
 
-			const list< const InnerAction* >& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
-					(*actionPtrIt)->version->packageName == packageName)
+					(*actionPtrIt)->versionProxy->getPackageName() == packageName)
 				{
 					fromPtr = *actionPtrIt;
 					break;
 				}
 			}
 
-			const list< const InnerAction* >& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
-					(*actionPtrIt)->version->packageName == packageName)
+					(*actionPtrIt)->versionProxy->getPackageName() == packageName)
 				{
 					toPtr = *actionPtrIt;
 					break;
@@ -647,7 +739,7 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 			{
 				if (vertexPtr->type == InnerAction::PriorityModifier)
 				{
-					if (vertexPtr->version->packageName == fromPtr->version->packageName)
+					if (vertexPtr->versionProxy->getPackageName() == fromPtr->versionProxy->getPackageName())
 					{
 						// this is "own" priority modifier, can be reached only once
 						vertexPtr->priority = -(ssize_t)reachableToVertices.size();
@@ -750,7 +842,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 		{
 			return; // was linked already
 		}
-		if (from.version->packageName == to.version->packageName)
+		if (from.versionProxy->getPackageName() == to.versionProxy->getPackageName())
 		{
 			if ((from.type == InnerAction::Remove && to.type == InnerAction::Unpack)
 					|| (from.type == InnerAction::Unpack && to.type == InnerAction::Configure))
@@ -815,12 +907,12 @@ void __make_cycles_for_linked_actions(GraphAndAttributes& gaa)
 		{
 			if (innerActionIt->linkedFrom)
 			{
-				gaa.graph.addEdge(*innerActionIt, *(innerActionIt->linkedFrom));
+				gaa.graph.addEdgeFromPointers(&*innerActionIt, innerActionIt->linkedFrom);
 			}
 
 			if (innerActionIt->linkedTo)
 			{
-				gaa.graph.addEdge(*(innerActionIt->linkedTo), *innerActionIt);
+				gaa.graph.addEdgeFromPointers(innerActionIt->linkedTo, &*innerActionIt);
 			}
 		}
 	}
@@ -836,7 +928,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 	bool debugging = _config->getBool("debug::worker");
 
 	{
-		vector< pair< InnerAction, InnerAction > > basicEdges;
+		vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
 		__fill_actions(gaa, basicEdges);
 		// maybe, we have nothing to do?
 		if (gaa.graph.getVertices().empty() && __actions_preview->groups[Action::ProcessTriggers].empty())
@@ -856,8 +948,8 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 
 			FORIT(it, basicEdges)
 			{
-				gaa.graph.addEdge(it->first, it->second);
-				gaa.attributes[it->first][it->second].isFundamental = true;
+				gaa.graph.addEdgeFromPointers(it->first, it->second);
+				gaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
 			}
 			FORIT(it, virtualEdges)
 			{
@@ -883,7 +975,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		{
 			debug("the present action dependency: '%s' -> '%s', %s",
 					edgeIt->first->toString().c_str(), edgeIt->second->toString().c_str(),
-					gaa.attributes[*(edgeIt->first)][*(edgeIt->second)].isDependencyHard() ? "hard" : "soft");
+					gaa.attributes[make_pair(edgeIt->first, edgeIt->second)].isDependencyHard() ? "hard" : "soft");
 		}
 	}
 
@@ -895,11 +987,11 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 bool __is_circular_action_subgroup_allowed(const vector< InnerAction >& actionSubgroup)
 {
 	{ // do all actions have the same package name?
-		const string& firstPackageName = actionSubgroup[0].version->packageName;
+		const string& firstPackageName = actionSubgroup[0].versionProxy->getPackageName();
 		bool samePackageName = true;
 		FORIT(actionIt, actionSubgroup)
 		{
-			if (actionIt->version->packageName != firstPackageName)
+			if (actionIt->versionProxy->getPackageName() != firstPackageName)
 			{
 				samePackageName = false;
 				break;
@@ -943,35 +1035,38 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 	vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
 
 	{ // filling minigraph and basic edges
-		vector< pair< const InnerAction*, const InnerAction* > > possibleEdges;
 		// fill vertices
 		FORIT(actionIt, actionGroup)
 		{
-			const list< const InnerAction* >& successors = gaa.graph.getSuccessors(*actionIt);
-			FORIT(successorPtrIt, successors)
-			{
-				possibleEdges.push_back(make_pair(&*actionIt, *successorPtrIt));
-			}
 			auto vertexPtr = miniGaa.graph.addVertex(*actionIt);
 			vertexPtr->linkedFrom = NULL;
 			vertexPtr->linkedTo = NULL;
 		}
-		// filtering edges
+		// filling basic edges
 		const set< InnerAction >& allowedVertices = miniGaa.graph.getVertices();
-		FORIT(edgeIt, possibleEdges)
+		FORIT(it, allowedVertices)
 		{
-			const InnerAction& from = *(edgeIt->first);
-			const InnerAction& to = *(edgeIt->second);
-			if (!allowedVertices.count(to))
-			{
-				continue; // edge lies outside our mini graph
-			}
+			auto newFromPtr = &*it;
+			auto oldFromPtr = gaa.graph.addVertex(*newFromPtr);
 
-			if (gaa.attributes[from][to].isFundamental)
+			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
+			FORIT(successorPtrIt, oldSuccessors)
 			{
-				basicEdges.push_back(*edgeIt);
-				// also adding to the graph solely for next priority modifiers block
-				miniGaa.graph.addEdge(from, to);
+				auto oldToPtr = *successorPtrIt;
+				if (gaa.attributes[make_pair(oldFromPtr, oldToPtr)].isFundamental)
+				{
+					auto newToIt = allowedVertices.find(*oldToPtr);
+					if (newToIt != allowedVertices.end())
+					{
+						// yes, edge lies inside our mini graph
+						auto newToPtr = &*newToIt;
+
+						basicEdges.push_back(make_pair(newFromPtr, newToPtr));
+						// also adding to the graph solely for next priority modifiers block
+						// don't do FromPointers here, these pointers don't exist in miniGaa
+						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+					}
+				}
 			}
 		}
 		{ // adding priority modifiers
@@ -1005,8 +1100,8 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		miniGaa.attributes.clear();
 		FORIT(it, basicEdges)
 		{
-			miniGaa.graph.addEdge(*(it->first), *(it->second));
-			miniGaa.attributes[*(it->first)][*(it->second)].isFundamental = true;
+			miniGaa.graph.addEdgeFromPointers(it->first, it->second);
+			miniGaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
 		}
 
 		__fill_graph_dependencies(cache, miniGaa, debugging);
@@ -1014,14 +1109,15 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			auto edges = miniGaa.graph.getEdges();
 			FORIT(edgeIt, edges)
 			{
-				const InnerAction& from = *(edgeIt->first);
-				const InnerAction& to = *(edgeIt->second);
-				if (!miniGaa.attributes[from][to].isDependencyHard())
+				auto fromPtr = edgeIt->first;
+				auto toPtr = edgeIt->second;
+				if (!miniGaa.attributes[make_pair(fromPtr, toPtr)].isDependencyHard())
 				{
-					miniGaa.graph.deleteEdge(from, to);
+					miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
 					if (debugging)
 					{
-						debug("ignoring soft edge '%s' -> '%s'", from.toString().c_str(), to.toString().c_str());
+						debug("ignoring soft edge '%s' -> '%s'",
+								fromPtr->toString().c_str(), toPtr->toString().c_str());
 					}
 				}
 			}
@@ -1247,7 +1343,7 @@ vector< Changeset > __split_action_groups_into_changesets(
 		FORIT(actionIt, *actionGroupIt)
 		{
 			auto actionType = actionIt->type;
-			const string& packageName = actionIt->version->packageName;
+			const string& packageName = actionIt->versionProxy->getPackageName();
 			if (actionType == InnerAction::Unpack)
 			{
 				unpackedPackageNames.insert(packageName);
@@ -1478,7 +1574,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		FORIT(actionIt, *actionGroupIt)
 		{
 			auto actionType = actionIt->type;
-			const shared_ptr< const BinaryVersion >& version = actionIt->version;
+			const shared_ptr< const BinaryVersion >& version = actionIt->versionProxy->getVersion();
 			string path;
 			switch (actionType)
 			{
@@ -1575,7 +1671,8 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 				{
 					if (actionIt->type == InnerAction::Unpack)
 					{
-						auto debPath = archivesDirectory + "/" + _get_archive_basename(actionIt->version);
+						auto debPath = archivesDirectory + "/" +
+								_get_archive_basename(actionIt->versionProxy->getVersion());
 						commandInput += debPath;
 						commandInput += "\n";
 					}
@@ -1612,7 +1709,7 @@ void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 
 		const map< string, bool >& autoFlagChanges = __actions_preview->autoFlagChanges;
 
-		const string& packageName = actionIt->version->packageName;
+		const string& packageName = actionIt->versionProxy->getPackageName();
 		auto it = autoFlagChanges.find(packageName);
 		if (it != autoFlagChanges.end() && it->second == targetStatus)
 		{
@@ -1819,11 +1916,17 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 				// add necessary options if requested
 				dpkgCommand += actionGroupIt->dpkgFlags;
 
-				// TODO: re-evaluate with lenny->squeeze (e)glibc upgrade
 				/* the workaround for a dpkg bug #558151
 
 				   dpkg performs some IMHO useless checks for programs in PATH
-				   which breaks some upgrades of packages that contains important programs */
+				   which breaks some upgrades of packages that contains important programs
+
+				   It is possible that this hack is not needed anymore with
+				   better scheduling heuristics of 2.x but we cannot
+				   re-evaluate it with lenny->squeeze (e)glibc upgrade since
+				   new Cupt requires new libgcc which in turn requires new
+				   glibc.
+				*/
 				dpkgCommand += " --force-bad-path";
 
 				FORIT(actionIt, *actionGroupIt)
@@ -1832,15 +1935,15 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					{
 						continue; // will be true for non-last linked actions
 					}
+					const shared_ptr< const BinaryVersion >& version = actionIt->versionProxy->getVersion();
 					string actionExpression;
 					if (actionName == "unpack" || actionName == "install")
 					{
-						const shared_ptr< const BinaryVersion > version = actionIt->version;
 						actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
 					}
 					else
 					{
-						actionExpression = actionIt->version->packageName;
+						actionExpression = version->packageName;
 					}
 					dpkgCommand += " ";
 					dpkgCommand += actionExpression;

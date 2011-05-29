@@ -80,9 +80,9 @@ for example ``apt-get install cupt`` or ``aptitude install cupt``.
 Cupt uses existing APT infrastructure for the work. It should be safe to co-use
 Cupt and any APT-based package managers.
 
-Note: recent versions of APT switched to use different repository headers
-scheme; you will have to run ``cupt update`` after each repository updates done
-by APT-based package managers.
+Note: since version 2.1.0, Cupt uses its own directory for repository index
+lists, so ``apt-get update``, ``aptitude update`` etc. do not change Cupt index
+data anymore.
 
 When using commands that modify a system, you have to either execute ``cupt`` with
 root priviledes or supply ``--simulate`` (or ``-s``) option.
@@ -945,17 +945,13 @@ Example:
 
 ``` cupt show --installed-only dpkg
 
-Unfortunately there is no command in //cupt(1)// yet to list all automatically
-or manually installed packages, but you can use the following, provided you
-have a package ``dctrl-tools`` installed: 
-
 To list manually installed packages:
 
-``` LC_MESSAGES=C cupt --installed-only show "*" | grep-dctrl "-FAutomatically installed" no --show-field Package --no-field-names
+``` cupt showauto --invert
 
 To list automatically installed packages:
 
-``` LC_MESSAGES=C cupt --installed-only show "*" | grep-dctrl "-FAutomatically installed" yes --show-field Package --no-field-names
+``` cupt showauto
 
 === change ===
 

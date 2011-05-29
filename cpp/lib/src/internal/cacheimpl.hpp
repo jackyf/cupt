@@ -72,11 +72,6 @@ class CacheImpl
 	void processIndexFile(const string& path, IndexEntry::Type category,
 			shared_ptr< const ReleaseInfo >);
 	void processTranslationFile(const string& path);
-	string getPathOfIndexEntry(const IndexEntry& entry) const;
-	string getUriOfIndexEntry(const IndexEntry& entry) const;
-	string getIndexListSuffix(const IndexEntry& entry, char delimiter) const;
-	vector< vector< string > > getChunksOfLocalizedDescriptions(const IndexEntry& entry) const;
-	vector< string > getPathsOfLocalizedDescriptions(const IndexEntry& entry) const;
 	shared_ptr< ReleaseInfo > getReleaseInfo(const string& path) const;
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const Relation&) const;
  public:
@@ -97,12 +92,6 @@ class CacheImpl
 	void processIndexEntry(const IndexEntry&);
 	void parsePreferences();
 	void parseExtendedStates();
-	string getPathOfIndexList(const IndexEntry&) const;
-	string getPathOfReleaseList(const IndexEntry&) const;
-	string getPathOfExtendedStates() const;
-	string getDownloadUriOfReleaseList(const IndexEntry&) const;
-	vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(const IndexEntry&) const;
-	vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(const IndexEntry&) const;
 	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;
 	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
 	ssize_t getPin(const shared_ptr< const Version >&, const string& installedVersionString) const;

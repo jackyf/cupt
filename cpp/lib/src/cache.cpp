@@ -18,7 +18,8 @@
 
 #include <algorithm>
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/file.hpp>
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
@@ -28,6 +29,10 @@
 
 #include <internal/filesystem.hpp>
 #include <internal/cacheimpl.hpp>
+#include <internal/regex.hpp>
+#include <internal/cachefiles.hpp>
+
+// TODO/API break/: remove deprecated entities
 
 namespace cupt {
 
@@ -42,7 +47,7 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 
 	FORIT(it, packageNameGlobsToReinstall)
 	{
-		__impl->packageNameRegexesToReinstall.push_back(globToRegex(*it));
+		__impl->packageNameRegexesToReinstall.push_back(internal::globToRegex(*it));
 	}
 
 	{ // ugly hack to copy trusted keyring from APT whenever possible
@@ -102,32 +107,32 @@ vector< Cache::IndexEntry > Cache::getIndexEntries() const
 
 string Cache::getPathOfIndexList(const IndexEntry& entry) const
 {
-	return __impl->getPathOfIndexList(entry);
+	return internal::cachefiles::getPathOfIndexList(*__impl->config, entry);
 }
 
 string Cache::getPathOfReleaseList(const IndexEntry& entry) const
 {
-	return __impl->getPathOfReleaseList(entry);
+	return internal::cachefiles::getPathOfReleaseList(*__impl->config, entry);
 }
 
 string Cache::getPathOfExtendedStates() const
 {
-	return __impl->getPathOfExtendedStates();
+	return internal::cachefiles::getPathOfExtendedStates(*__impl->config);
 }
 
 string Cache::getDownloadUriOfReleaseList(const IndexEntry& entry) const
 {
-	return __impl->getDownloadUriOfReleaseList(entry);
+	return internal::cachefiles::getDownloadUriOfReleaseList(entry);
 }
 
 vector< Cache::IndexDownloadRecord > Cache::getDownloadInfoOfIndexList(const IndexEntry& entry) const
 {
-	return __impl->getDownloadInfoOfIndexList(entry);
+	return internal::cachefiles::getDownloadInfoOfIndexList(*__impl->config, entry);
 }
 
 vector< Cache::LocalizationDownloadRecord > Cache::getDownloadInfoOfLocalizedDescriptions(const IndexEntry& entry) const
 {
-	return __impl->getDownloadInfoOfLocalizedDescriptions(entry);
+	return internal::cachefiles::getDownloadInfoOfLocalizedDescriptions(*__impl->config, entry);
 }
 
 vector< string > Cache::getBinaryPackageNames() const

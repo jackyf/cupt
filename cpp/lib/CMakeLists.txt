@@ -22,6 +22,8 @@ add_library(cupt2 SHARED
 	./src/internal/worker/setupandpreview.cpp
 	./src/internal/worker/packages.cpp
 	./src/internal/worker/snapshots.cpp
+	./src/internal/regex.cpp
+	./src/internal/cachefiles.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
@@ -46,13 +48,11 @@ add_library(cupt2 SHARED
 	./src/common/compareversions.cpp
 	./src/common/consumers.cpp
 	./src/file.cpp
-	./src/regex.cpp
 	./src/hashsums.cpp
 	./src/pipe.cpp
 )
 set_target_properties(cupt2 PROPERTIES VERSION 2.0.0 SOVERSION ${CUPT_SOVERSION})
 target_link_libraries(cupt2 dl rt gcrypt)
-add_precompiled_header(cupt2)
 
 install(TARGETS cupt2 DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)

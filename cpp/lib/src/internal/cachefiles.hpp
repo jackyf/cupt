@@ -15,46 +15,31 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
-#define CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
+#ifndef CUPT_INTERNAL_CACHEFILES_SEEN
+#define CUPT_INTERNAL_CACHEFILES_SEEN
 
-#include <list>
-
-#include <internal/nativeresolver/solution.hpp>
-#include <internal/graph.hpp>
+#include <cupt/fwd.hpp>
+#include <cupt/cache.hpp>
 
 namespace cupt {
 namespace internal {
+namespace cachefiles {
 
-using std::unique_ptr;
+typedef Cache::IndexEntry IndexEntry;
 
-class DecisionFailTree
-{
-	struct Decision
-	{
-		PackageEntry::IntroducedBy introducedBy;
-		size_t level;
-		const dg::Element* insertedElementPtr;
-	};
-	struct FailItem
-	{
-		vector< Decision > decisions;
-		vector< const dg::Element* > insertedElementPtrs;
-	};
-	std::list< FailItem > __fail_items;
+string getPathOfIndexList(const Config&, const IndexEntry&);
+string getPathOfReleaseList(const Config&, const IndexEntry&);
+string getPathOfExtendedStates(const Config&);
 
-	static string __decisions_to_string(const vector< Decision >&);
-	static vector< Decision > __get_decisions(
-			const SolutionStorage& solutionStorage, const Solution& solution,
-			const PackageEntry::IntroducedBy&);
-	static bool __is_dominant(const FailItem&, size_t);
- public:
-	string toString() const;
-	void addFailedSolution(const SolutionStorage&, const Solution&,
-			const PackageEntry::IntroducedBy&);
-	void clear();
-};
+string getDownloadUriOfReleaseList(const IndexEntry&);
+vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
+		const Config&, const IndexEntry&);
 
+vector< string > getPathsOfLocalizedDescriptions(const Config&, const IndexEntry& entry);
+vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
+		const Config&, const IndexEntry&);
+
+}
 }
 }
 

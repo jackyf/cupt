@@ -52,7 +52,7 @@ struct Unsatisfied
 };
 
 struct BasicVertex;
-typedef const BasicVertex* Element;
+typedef BasicVertex Element;
 struct BasicVertex
 {
 	virtual string toString() const = 0;
@@ -75,18 +75,34 @@ struct VersionVertex: public BasicVertex
 	const string& getPackageName() const;
 	string toLocalizedString() const;
 };
-typedef const VersionVertex* VersionElement;
+typedef VersionVertex VersionElement;
 
-class DependencyGraph: protected Graph< Element >
+namespace {
+
+template< class T >
+struct PointeredAlreadyTraits
+{
+	typedef T PointerType;
+	static T toPointer(T vertex)
+	{
+		return vertex;
+	}
+};
+
+}
+
+class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 {
 	const Config& __config;
 	const Cache& __cache;
-	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
-	map< string, const Element* > __empty_package_to_vertex_ptr;
 
-	bool __can_package_be_removed(const string&,
-			const map< string, shared_ptr< const BinaryVersion > >&) const;
+	class FillHelper;
+	friend class FillHelper;
+
+	std::unique_ptr< FillHelper > __fill_helper;
  public:
+	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
+
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
 	vector< pair< const Element*, PackageEntry > > fill(
@@ -94,8 +110,11 @@ class DependencyGraph: protected Graph< Element >
 			const map< string, InitialPackageEntry >&);
 
 	const Element* getCorrespondingEmptyElement(const Element*);
-	using Graph< Element >::getSuccessorsFromPointer;
-	using Graph< Element >::getPredecessorsFromPointer;
+	void unfoldElement(const Element*);
+
+	using BaseT::getSuccessorsFromPointer;
+	using BaseT::getPredecessorsFromPointer;
+	using BaseT::CessorListType;
 };
 
 }

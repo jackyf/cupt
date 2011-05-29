@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cstdarg>
+#include <cstring>
 
 #include <cupt/common.hpp>
 

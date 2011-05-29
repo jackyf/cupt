@@ -15,14 +15,16 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <common/regex.hpp>
+
 #include <cupt/file.hpp>
-#include <cupt/regex.hpp>
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 
 #include <internal/tagparser.hpp>
 #include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace cache {

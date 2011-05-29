@@ -24,9 +24,10 @@ using std::map;
 
 #include <boost/lexical_cast.hpp>
 
+#include <common/regex.hpp>
+
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
-#include <cupt/regex.hpp>
 #include <cupt/file.hpp>
 
 #include <internal/common.hpp>
@@ -105,6 +106,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::state", "var/lib/cupt" },
+		{ "cupt::directory::state::lists", "lists" },
 		{ "cupt::directory::state::snapshots", "snapshots" },
 		{ "cupt::downloader::max-simultaneous-downloads", "2" },
 		{ "cupt::downloader::protocols::file::priority", "300" },
@@ -125,8 +127,9 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::update::compression-types::gz::priority", "100" },
 		{ "cupt::update::compression-types::bz2::priority", "100" },
 		{ "cupt::update::compression-types::lzma::priority", "100" },
+		{ "cupt::update::compression-types::xz::priority", "100" },
 		{ "cupt::update::compression-types::uncompressed::priority", "100" },
-		{ "cupt::update::keep-bad-signatures", "no" },
+		{ "cupt::update::keep-bad-signatures", "yes" },
 		{ "cupt::resolver::auto-remove", "yes" },
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },
@@ -138,6 +141,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "-300" },
 		{ "cupt::resolver::score::removal", "-500" },
+		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
 		{ "cupt::resolver::score::position-penalty", "-20" },

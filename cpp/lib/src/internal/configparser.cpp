@@ -18,7 +18,6 @@
 
 #include <internal/configparser.hpp>
 #include <cupt/file.hpp>
-#include <cupt/regex.hpp>
 
 namespace cupt {
 namespace internal {
@@ -285,7 +284,7 @@ void ConfigParser::__error_out()
 	}
 	string context(__current, __current + contextLength);
 
-	fatal("expected: %s before '%s'", errorDescription.c_str(), context.c_str());
+	fatal("a syntax error: expected: %s before '%s'", errorDescription.c_str(), context.c_str());
 }
 
 } // namespace

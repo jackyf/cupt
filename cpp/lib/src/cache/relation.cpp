@@ -15,6 +15,7 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <algorithm>
 
 #include <cupt/common.hpp>
 #include <cupt/cache/relation.hpp>
@@ -159,6 +160,12 @@ Relation::Relation(const string& unparsed)
 	__init(unparsed.begin(), unparsed.end());
 }
 
+Relation::Relation(Relation&& other)
+	: packageName(std::move(other.packageName)),
+	relationType(other.relationType),
+	versionString(std::move(other.versionString))
+{}
+
 Relation::~Relation()
 {}
 
@@ -233,12 +240,18 @@ ArchitecturedRelation::ArchitecturedRelation(const string& unparsed)
 	__init(std::find(unparsed.begin(), unparsed.end(), '['), unparsed.end());
 }
 
+// TODO/API break/: make this constructor explicit too
 ArchitecturedRelation::ArchitecturedRelation(
 		pair< string::const_iterator, string::const_iterator > input)
 	: Relation(make_pair(input.first, std::find(input.first, input.second, '[')))
 {
 	__init(std::find(input.first, input.second, '['), input.second);
 }
+
+ArchitecturedRelation::ArchitecturedRelation(ArchitecturedRelation&& other)
+	: Relation(static_cast< Relation&& >(other)),
+	architectureFilters(std::move(other.architectureFilters))
+{}
 
 string ArchitecturedRelation::toString() const
 {
@@ -404,6 +417,10 @@ RelationExpressionType::RelationExpressionType(const string& expression) \
 	__init(expression.begin(), expression.end()); \
 } \
 \
+RelationExpressionType::RelationExpressionType(RelationExpressionType&& other) \
+	: vector< UnderlyingElement >(std::move(other)) \
+{} \
+\
 RelationExpressionType::~RelationExpressionType() \
 {} \
  \
@@ -443,6 +460,12 @@ RelationLineType::RelationLineType(pair< string::const_iterator, string::const_i
 RelationLineType::RelationLineType(const string& line) \
 { \
 	__init(line.begin(), line.end()); \
+} \
+ \
+RelationLineType& RelationLineType::operator=(RelationLineType&& other) \
+{ \
+	std::vector< UnderlyingElement >::swap(other); \
+	return *this; \
 } \
  \
 RelationLineType::~RelationLineType() \

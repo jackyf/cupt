@@ -19,7 +19,8 @@
 using std::cout;
 using std::endl;
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/binaryversion.hpp>
 

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,47 +15,21 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
-#define CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
+#ifndef CUPT_COMMON_REGEX_SEEN
+#define CUPT_COMMON_REGEX_SEEN
 
-#include <list>
-
-#include <internal/nativeresolver/solution.hpp>
-#include <internal/graph.hpp>
+#include <boost/xpressive/xpressive_dynamic.hpp>
 
 namespace cupt {
-namespace internal {
 
-using std::unique_ptr;
+using boost::xpressive::sregex;
+using boost::xpressive::sregex_token_iterator;
+using boost::xpressive::smatch;
+using boost::xpressive::regex_match;
+using boost::xpressive::regex_search;
+using boost::xpressive::regex_error;
+namespace regex_constants = boost::xpressive::regex_constants;
 
-class DecisionFailTree
-{
-	struct Decision
-	{
-		PackageEntry::IntroducedBy introducedBy;
-		size_t level;
-		const dg::Element* insertedElementPtr;
-	};
-	struct FailItem
-	{
-		vector< Decision > decisions;
-		vector< const dg::Element* > insertedElementPtrs;
-	};
-	std::list< FailItem > __fail_items;
-
-	static string __decisions_to_string(const vector< Decision >&);
-	static vector< Decision > __get_decisions(
-			const SolutionStorage& solutionStorage, const Solution& solution,
-			const PackageEntry::IntroducedBy&);
-	static bool __is_dominant(const FailItem&, size_t);
- public:
-	string toString() const;
-	void addFailedSolution(const SolutionStorage&, const Solution&,
-			const PackageEntry::IntroducedBy&);
-	void clear();
-};
-
-}
 }
 
 #endif

@@ -6,21 +6,26 @@ IF(NOT EXISTS /usr/bin/txt2tags)
 	message(FATAL_ERROR "missing txt2tags")
 ENDIF(NOT EXISTS /usr/bin/txt2tags)
 
+set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/reference")
 add_custom_command(
 	OUTPUT doxygen-stamp
 	DEPENDS cupt2
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/reference"
 
-	COMMAND pwd
-	COMMAND doxygen
-	COMMAND touch ../doxygen-stamp
+	COMMAND mkdir -p ${DOXYGEN_OUTPUT_DIRECTORY}
+	COMMAND sh -c "( cat Doxyfile; echo \"OUTPUT_DIRECTORY=${DOXYGEN_OUTPUT_DIRECTORY}\" ) | doxygen -"
+	COMMAND touch ${CMAKE_CURRENT_BINARY_DIR}/doxygen-stamp
+
+	VERBATIM
 )
+
+set(TUTORIAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/tutorial.t2t")
 add_custom_command(
-	MAIN_DEPENDENCY tutorial.t2t
+	MAIN_DEPENDENCY ${TUTORIAL_SOURCE}
 	OUTPUT tutorial-stamp
 
-	COMMAND txt2tags ARGS -t html -o tutorial.html tutorial.t2t
-	COMMAND txt2tags ARGS -t man -o cupt_tutorial.7 tutorial.t2t
+	COMMAND txt2tags ARGS -t html -o tutorial.html ${TUTORIAL_SOURCE}
+	COMMAND txt2tags ARGS -t man -o cupt_tutorial.7 ${TUTORIAL_SOURCE}
 	COMMAND touch tutorial-stamp
 )
 add_custom_target(doc ALL DEPENDS doxygen-stamp tutorial-stamp)

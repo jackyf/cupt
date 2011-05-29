@@ -17,8 +17,9 @@
 **************************************************************************/
 #include <boost/lexical_cast.hpp>
 
+#include <common/regex.hpp>
+
 #include <cupt/cache/version.hpp>
-#include <cupt/regex.hpp>
 #include <cupt/file.hpp>
 #include <cupt/config.hpp>
 #include <cupt/cache/releaseinfo.hpp>
@@ -28,6 +29,7 @@
 #include <internal/pininfo.hpp>
 #include <internal/filesystem.hpp>
 #include <internal/common.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace internal {
@@ -125,6 +127,18 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 	return result;
 }
 
+string pinStringToRegexString(const string& input)
+{
+	if (input.size() >= 2 && input[0] == '/' && *input.rbegin() == '/')
+	{
+		return input.substr(1, input.size() - 2);
+	}
+	else
+	{
+		return globToRegexString(input);
+	}
+}
+
 void PinInfo::loadData(const string& path)
 {
 	using boost::lexical_cast;
@@ -184,7 +198,7 @@ void PinInfo::loadData(const string& path)
 			vector< string > parts = split(' ', m[2]);
 			FORIT(it, parts)
 			{
-				*it = globToRegexString(*it);
+				*it = pinStringToRegexString(*it);
 			}
 			condition.value = stringToRegex(join("|", parts));
 			pinEntry.conditions.push_back(std::move(condition));
@@ -208,7 +222,7 @@ void PinInfo::loadData(const string& path)
 			if (pinType == "release")
 			{
 				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
-				auto subExpressions = cupt::split(commaSeparatedRegex, pinExpression);
+				auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
 
 				FORIT(subExpressionIt, subExpressions)
 				{
@@ -235,7 +249,7 @@ void PinInfo::loadData(const string& path)
 									"in release expression at file '%s' line %u",
 									subExpressionType, path.c_str(), lineNumber);
 					}
-					condition.value = globToRegex(m[2]);
+					condition.value = stringToRegex(pinStringToRegexString(m[2]));
 					pinEntry.conditions.push_back(std::move(condition));
 				}
 			}
@@ -243,14 +257,14 @@ void PinInfo::loadData(const string& path)
 			{
 				PinEntry::Condition condition;
 				condition.type = PinEntry::Condition::Version;
-				condition.value = globToRegex(pinExpression);
+				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
 			else if (pinType == "origin")
 			{
 				PinEntry::Condition condition;
 				condition.type = PinEntry::Condition::BaseUri;
-				condition.value = globToRegex(pinExpression);
+				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
 			else
@@ -297,7 +311,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
-					matched = regex_match(version->packageName, m, *regex);
+					matched = regex_search(version->packageName, m, *regex);
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
@@ -307,11 +321,11 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 							matched = false;
 							break;
 						}
-						matched = regex_match(binaryVersion->sourcePackageName, m, *regex);
+						matched = regex_search(binaryVersion->sourcePackageName, m, *regex);
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_match(version->versionString, m, *regex);
+					matched = regex_search(version->versionString, m, *regex);
 					break;
 #define RELEASE_CASE(constant, member) \
 				case PinEntry::Condition::constant: \
@@ -319,7 +333,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					FORIT(sourceIt, version->sources) \
 					{ \
 						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
-						if (regex_match(release->member, m, *regex)) \
+						if (regex_search(release->member, m, *regex)) \
 						{ \
 							matched = true; \
 							break; \

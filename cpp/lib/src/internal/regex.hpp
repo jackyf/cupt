@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,50 +15,22 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#ifndef CUPT_INTERNAL_REGEX_SEEN
+#define CUPT_INTERNAL_REGEX_SEEN
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
 
 namespace cupt {
+namespace internal {
 
-vector< string > split(const sregex& regex, const string& str)
-{
-	vector< string > result;
-	sregex_token_iterator tokenIterator(str.begin(), str.end(), regex, -1);
-	sregex_token_iterator end;
-	std::copy(tokenIterator, end, std::back_inserter(result));
-	return result;
-}
+vector< string > split(const sregex&, const string&);
 
-string globToRegexString(const string& input)
-{
-	// quoting all metacharacters
-	static const sregex metaCharRegex = sregex::compile("[^A-Za-z0-9_]");
-	string output = regex_replace(input, metaCharRegex, "\\$&");
-	static const sregex questionSignRegex = sregex::compile("\\\\\\?");
-	output = regex_replace(output, questionSignRegex, ".");
-	static const sregex starSignRegex = sregex::compile("\\\\\\*");
-	output = regex_replace(output, starSignRegex, ".*?");
-
-	return output;
-}
-
-shared_ptr< sregex > stringToRegex(const string& input)
-{
-	shared_ptr< sregex > result;
-	try
-	{
-		result = shared_ptr< sregex >(new sregex(sregex::compile(input)));
-	}
-	catch (regex_error& e)
-	{
-		fatal("invalid regular expression '%s'", input.c_str());
-	}
-	return result;
-}
-shared_ptr< sregex > globToRegex(const string& glob)
-{
-	return stringToRegex(globToRegexString(glob));
-}
+string globToRegexString(const string&);
+shared_ptr< sregex > stringToRegex(const string& input);
+shared_ptr< sregex > globToRegex(const string& glob);
 
 }
+}
+
+#endif
 

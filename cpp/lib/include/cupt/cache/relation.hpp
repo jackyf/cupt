@@ -56,6 +56,8 @@ struct CUPT_API Relation
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
 	explicit Relation(pair< string::const_iterator, string::const_iterator > input);
+	/// constructor from rvalue reference
+	Relation(Relation&&);
 	/// destructor
 	virtual ~Relation();
 	/// gets the string reprentation
@@ -99,6 +101,7 @@ struct CUPT_API ArchitecturedRelation: public Relation
 	 * architectured relation
 	 */
 	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
+	ArchitecturedRelation(ArchitecturedRelation&&);
 	string toString() const;
 };
 
@@ -128,6 +131,8 @@ struct CUPT_API RelationExpression: public vector< Relation >
 	 * representation
 	 */
 	explicit RelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	/// copy constructor from rvalue reference
+	RelationExpression(RelationExpression&&);
 	/// destructor
 	virtual ~RelationExpression();
 };
@@ -156,6 +161,8 @@ struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRel
 	 * representation
 	 */
 	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	/// copy constructor from rvalue reference
+	ArchitecturedRelationExpression(ArchitecturedRelationExpression&&);
 	/// destructor
 	virtual ~ArchitecturedRelationExpression();
 };
@@ -184,6 +191,8 @@ struct CUPT_API RelationLine: public vector< RelationExpression >
 	 * representation
 	 */
 	explicit RelationLine(pair< string::const_iterator, string::const_iterator > input);
+	/// operator= from the rvalue reference
+	RelationLine& operator=(RelationLine&& other);
 	/// destructor
 	virtual ~RelationLine();
 };
@@ -212,6 +221,8 @@ struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationE
 	 * representation
 	 */
 	explicit ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
+	/// operator= from the rvalue reference
+	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&);
 	/// converts to RelationLine given system architecture
 	/**
 	 * Filters ArchitecturedRelationLine using binary system architecture.

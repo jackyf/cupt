@@ -31,11 +31,11 @@ string DecisionFailTree::__decisions_to_string(
 		{
 			return __("no solutions"); // root
 		}
-		auto versionElement = dynamic_cast< const dg::VersionElement >(*elementPtr);
+		auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr);
 		if (!versionElement)
 		{
 			fatal("internal error: __fail_leaf_to_string: '%s' is not a version element",
-					(*elementPtr)->toString().c_str());
+					elementPtr->toString().c_str());
 		}
 		return versionElement->toLocalizedString();
 	};
@@ -44,8 +44,8 @@ string DecisionFailTree::__decisions_to_string(
 	FORIT(it, decisions)
 	{
 		result.append(it->level * 2, ' ');
-		auto mainPart = (*it->introducedBy.brokenElementPtr)->
-				getReason(**it->introducedBy.versionElementPtr)->toString();
+		auto mainPart = it->introducedBy.brokenElementPtr->
+				getReason(*it->introducedBy.versionElementPtr)->toString();
 		result.append(std::move(mainPart));
 		result.append(" -> ");
 		result.append(insertedElementPtrToString(it->insertedElementPtr));
@@ -102,7 +102,7 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		}
 		// dependants
 		set< const dg::Element* > alreadyProcessedConflictors;
-		const list< const dg::Element* >& successors =
+		const GraphCessorListType& successors =
 				solutionStorage.getSuccessorElements(introducedBy.brokenElementPtr);
 		FORIT(successorIt, successors)
 		{

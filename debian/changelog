@@ -1,3 +1,59 @@
+cupt (2.1.0~) UNRELEASED; urgency=low
+
+  * console:
+    - New 'showauto' subcommand.
+  * lib:
+    - cache/relation:
+      - Relation: new copy constructor from Relation&&.
+      - RelationLine: new method 'operator=(RelationLine&&)'.
+      - RelationExpression: new copy constructor from RelationExpression&&.
+      - ArchitecturedRelation: new copy constructor from
+        ArchitecturedRelation&&.
+      - ArchitecturedRelationExpression: new copy constructor from
+        ArchitecturedRelationExpression&&.
+      - ArchitecturedRelationLine: new method
+        'operator=(ArchitecturedRelationLine&&)'.
+    - system/worker:
+      - A small speed-up of generating dpkg action sequences for large queries.
+      - RAM usage optimizations.
+      - [Julian Andres Klode] Introduced a support for xz-compressed index
+        files. (Closes: #623129)
+      - Create lists directory if it does not exist.
+    - config:
+      - Be more clear in configuration file error messages that they talk
+        about syntax errors.
+      - New configuration variable 'cupt::directory::state::lists'.
+      - Changed the default value of the variable
+        'cupt::update::keep-bad-signatures' to 'yes'.
+      - New configuration variable
+        'cupt::resolver::score::removal-of-essential'.
+    - cache:
+      - Support regular expressions in pin preferences. Thanks to
+        Julian Andres Klode for the suggestion. (Closes: #587478)
+      - When skipping an index or translation file processing due to an error,
+        use a human-readable alias in the warning message.
+      - Mark structures and methods, which are related to local and remote
+        locations of internal cache files, as deprecated.
+    - system/resolvers/native:
+      - RAM usage optimizations.
+      - Do not depend on cache memoizing. Fixes a regression introduced in
+        2.0.0~beta1.
+      - Apply a penalty for removal of an essential package regardless of the
+        score sign.
+    - cache/{source,binary}version:
+      - Don't error out, only print a warning for unrecognized values of the
+        'Priority' field. Fixes a regression introduced in 2.0.0~alpha1.
+  * debian:
+    - control:
+      - Relax Boost build requirements to match 1.42 and higher, not only
+        1.42.
+      - Vcs-Browser: the main branch is now 'master' again.
+  * Support out-of-tree builds. (Closes: #623115)
+  * Switched to Cupt-specific directory 'cupt::directory::state::lists' for
+    index lists.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 19 Apr 2011 19:04:22 +0300
+
 cupt (2.0.2) unstable; urgency=low
 
   * lib:

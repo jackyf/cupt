@@ -20,8 +20,9 @@
 
 #include <functional>
 
+#include <common/regex.hpp>
+
 #include <cupt/common.hpp>
-#include <cupt/regex.hpp>
 
 namespace cupt {
 namespace internal {

@@ -31,52 +31,98 @@ namespace internal {
 
 using std::list;
 
-struct Direction
+class VersionProxy
 {
-	enum Type { After, Before };
+ protected:
+	shared_ptr< const BinaryVersion > _version;
+ public:
+	const string& getPackageName() const
+	{
+		return _version->packageName;
+	}
+	const string& getVersionString() const
+	{
+		return _version->versionString;
+	}
+
+	virtual const RelationLine& getRelations(BinaryVersion::RelationTypes::Type) const = 0;
+	virtual const shared_ptr< const BinaryVersion >& getVersion() const = 0;
+	virtual string toString() const = 0;
+	virtual const string& getAdditionaSortKey() const = 0;
+	virtual ~VersionProxy() {}
 };
+class FullVersionProxy: public VersionProxy
+{
+ public:
+	const RelationLine& getRelations(BinaryVersion::RelationTypes::Type type) const
+	{
+		return _version->relations[type];
+	}
+	void setVersion(const shared_ptr< const BinaryVersion >& version)
+	{
+		_version = version;
+	}
+	const shared_ptr< const BinaryVersion >& getVersion() const
+	{
+		return _version;
+	}
+	string toString() const
+	{
+		return getPackageName() + ' ' + getVersionString();
+	}
+	const string& getAdditionaSortKey() const
+	{
+		static const string emptyString;
+		return emptyString;
+	}
+};
+class OneRelationExpressionVersionProxy: public VersionProxy
+{
+	BinaryVersion::RelationTypes::Type __type;
+	RelationLine __relation_expression;
+	string __hash_key;
+
+	static const RelationLine __null_result;
+ public:
+	OneRelationExpressionVersionProxy(const shared_ptr< const BinaryVersion >& version,
+			BinaryVersion::RelationTypes::Type type, const RelationExpression& relationExpression)
+		: __type(type), __hash_key(relationExpression.getHashString())
+	{
+		_version = version;
+		__relation_expression.push_back(relationExpression);
+	}
+	const RelationLine& getRelations(BinaryVersion::RelationTypes::Type type) const
+	{
+		return (type == __type) ? __relation_expression : __null_result;
+	}
+	const shared_ptr< const BinaryVersion >& getVersion() const
+	{
+		fatal("internal error: getting version of one relation expression proxy");
+		return _version; // unreachable
+	}
+	string toString() const
+	{
+		return getPackageName() + " [" + __relation_expression[0].toString()
+				+ "] " + getVersionString();
+	}
+	const string& getAdditionaSortKey() const
+	{
+		return __hash_key;
+	}
+};
+
 struct InnerAction
 {
 	enum Type { PriorityModifier, Remove, Unpack, Configure } type;
-	shared_ptr< const BinaryVersion > version;
+	shared_ptr< const VersionProxy > versionProxy;
 	bool fake;
 	mutable const InnerAction* linkedFrom;
 	mutable const InnerAction* linkedTo;
 	mutable ssize_t priority;
 
-	InnerAction()
-		: fake(false), linkedFrom(NULL), linkedTo(NULL), priority(0)
-	{}
-
-	bool operator<(const InnerAction& other) const
-	{
-		if (type < other.type)
-		{
-			return true;
-		}
-		else if (type > other.type)
-		{
-			return false;
-		}
-		else
-		{
-			return *version < *(other.version);
-		}
-	}
-	bool operator==(const InnerAction& other) const
-	{
-		return type == other.type && *version == *(other.version);
-	}
-
-	string toString() const
-	{
-		const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
-		string prefix = fake ? "(fake)" : "";
-		string result = prefix + typeStrings[type] + " " + version->packageName +
-				" " + version->versionString;
-
-		return result;
-	}
+	InnerAction();
+	bool operator<(const InnerAction& other) const;
+	string toString() const;
 };
 struct InnerActionGroup: public vector< InnerAction >
 {
@@ -99,27 +145,10 @@ struct GraphAndAttributes
 		bool isFundamental;
 		vector< RelationInfoRecord > relationInfo;
 
-		Attribute() : isFundamental(false) {}
-
-		bool isDependencyHard() const
-		{
-			if (isFundamental)
-			{
-				return true;
-			}
-
-			FORIT(recordIt, relationInfo)
-			{
-				if (recordIt->dependencyType != BinaryVersion::RelationTypes::Breaks &&
-					(!recordIt->reverse || recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts))
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+		Attribute();
+		bool isDependencyHard() const;
 	};
-	map< InnerAction, map< InnerAction, Attribute > > attributes;
+	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
 };
 struct Changeset
 {
@@ -131,7 +160,8 @@ class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
 
-	void __fill_actions(GraphAndAttributes&, vector< pair< InnerAction, InnerAction > >&);
+	void __fill_actions(GraphAndAttributes&,
+			vector< pair< const InnerAction*, const InnerAction* > >&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
 	vector< Changeset > __get_changesets(GraphAndAttributes&,

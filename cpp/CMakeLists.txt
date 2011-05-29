@@ -25,7 +25,7 @@ IF(NOT EXISTS /usr/include/readline/readline.h)
 	message(FATAL_ERROR "missing GNU Readline library")
 ENDIF(NOT EXISTS /usr/include/readline/readline.h)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=gnu++0x  -fPIC")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
 
 OPTION(VERBOSE "is build verbose")
 IF(VERBOSE)
@@ -54,16 +54,6 @@ ENDIF(PROFILE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--as-needed")
 
-MACRO(ADD_PRECOMPILED_HEADER Target)
-	get_target_property(Sources ${Target} SOURCES)
-	# message(STATUS "Sources found for ${Target}: ${Sources}")
-	SET_SOURCE_FILES_PROPERTIES(${Sources}
-		PROPERTIES
-		COMPILE_FLAGS "-include ../precompiled/precompiled.hpp -Winvalid-pch"
-	)
-	add_dependencies(${Target} precompiled)
-ENDMACRO(ADD_PRECOMPILED_HEADER)
-
 set(CUPT_SOVERSION 0)
 
 # detect version from debian/changelog
@@ -84,6 +74,6 @@ ENDIF(CUPT_VERSION)
 
 add_subdirectory(console)
 add_subdirectory(lib)
-add_subdirectory(precompiled)
+# add_subdirectory(precompiled)
 add_subdirectory(downloadmethods)
 

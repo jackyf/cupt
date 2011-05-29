@@ -15,10 +15,10 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <clocale>
 #include <ctime>
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/config.hpp>
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/sourcepackage.hpp>
@@ -30,10 +30,12 @@
 #include <cupt/file.hpp>
 
 #include <internal/cacheimpl.hpp>
-#include <internal/common.hpp>
 #include <internal/filesystem.hpp>
 #include <internal/pininfo.hpp>
 #include <internal/tagparser.hpp>
+#include <internal/regex.hpp>
+#include <internal/common.hpp>
+#include <internal/cachefiles.hpp>
 
 namespace cupt {
 namespace internal {
@@ -55,7 +57,7 @@ shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) con
 	smatch m;
 	FORIT(regexPtrIt, packageNameRegexesToReinstall)
 	{
-		if (regex_match(packageName, m, **regexPtrIt))
+		if (regex_search(packageName, m, **regexPtrIt))
 		{
 			needsReinstall = true;
 			break;
@@ -241,7 +243,7 @@ void CacheImpl::parseSourceList(const string& path)
 				continue;
 			}
 			vector< string > tokens;
-			tokens = cupt::split(sregex::compile("[\\t ]+"), line);
+			tokens = internal::split(sregex::compile("[\\t ]+"), line);
 
 			IndexEntry entry;
 
@@ -320,11 +322,16 @@ void CacheImpl::parseSourceList(const string& path)
 
 void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 {
-	string indexFileToParse = getPathOfIndexList(indexEntry);
+	string indexFileToParse = cachefiles::getPathOfIndexList(*config, indexEntry);
+
+	string indexAlias = indexEntry.uri + ' ' + indexEntry.distribution + ' ' +
+			indexEntry.component + ' ' +
+			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "source");
 
 	try
 	{
-		auto releaseInfo = getReleaseInfo(this->getPathOfReleaseList(indexEntry));
+		auto releaseInfo = getReleaseInfo(
+				cachefiles::getPathOfReleaseList(*config, indexEntry));
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
 		if (indexEntry.category == IndexEntry::Binary)
@@ -340,12 +347,13 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 	}
 	catch (Exception&)
 	{
-		warn("skipped the index file '%s'", indexFileToParse.c_str());
+		warn("skipped the index '%s'", indexAlias.c_str());
 	}
 
 	try  // processing translations if any
 	{
-		auto descriptionTranslationPaths = getPathsOfLocalizedDescriptions(indexEntry);
+		auto descriptionTranslationPaths =
+				cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
 		FORIT(pathIt, descriptionTranslationPaths)
 		{
 			string errorString;
@@ -359,122 +367,8 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 	}
 	catch (Exception&)
 	{
-		warn("skipped translations of the index file '%s'", indexFileToParse.c_str());
+		warn("skipped translations of the index '%s'", indexAlias.c_str());
 	}
-}
-
-string CacheImpl::getPathOfIndexList(const IndexEntry& entry) const
-{
-	auto basePath = getPathOfIndexEntry(entry);
-	auto indexListSuffix = getIndexListSuffix(entry, '_');
-
-	return basePath + "_" + indexListSuffix;
-}
-
-string CacheImpl::getPathOfReleaseList(const IndexEntry& entry) const
-{
-	return getPathOfIndexEntry(entry) + "_Release";
-}
-
-string CacheImpl::getDownloadUriOfReleaseList(const IndexEntry& entry) const
-{
-	return getUriOfIndexEntry(entry) + "/Release";
-}
-
-vector< Cache::IndexDownloadRecord > CacheImpl::getDownloadInfoOfIndexList(const IndexEntry& indexEntry) const
-{
-	auto baseUri = getUriOfIndexEntry(indexEntry);
-	auto indexListSuffix = getIndexListSuffix(indexEntry, '/');
-
-	vector< Cache::IndexDownloadRecord > result;
-	{ // reading
-		string openError;
-		auto releaseFilePath = getPathOfReleaseList(indexEntry);
-		File releaseFile(releaseFilePath, "r", openError);
-		if (!openError.empty())
-		{
-			fatal("unable to open release file '%s': %s",
-					releaseFilePath.c_str(), openError.c_str());
-		}
-
-		HashSums::Type currentHashSumType = HashSums::Count;
-		// now we need to find if this variant is present in the release file
-		string line;
-		smatch m;
-		while (!releaseFile.getLine(line).eof())
-		{
-			if (line.compare(0, 3, "MD5") == 0)
-			{
-				currentHashSumType = HashSums::MD5;
-			}
-			else if (line.compare(0, 4, "SHA1") == 0)
-			{
-				currentHashSumType = HashSums::SHA1;
-			}
-			else if (line.compare(0, 6, "SHA256") == 0)
-			{
-				currentHashSumType = HashSums::SHA256;
-			}
-			else if (line.find(indexListSuffix) != string::npos)
-			{
-				if (currentHashSumType == HashSums::Count)
-				{
-					fatal("release line '%s' without previous hash sum declaration at release file '%s'",
-								line.c_str(), releaseFilePath.c_str());
-				}
-				static sregex hashSumsLineRegex = sregex::compile("\\s([[:xdigit:]]+)\\s+(\\d+)\\s+(.*)");
-				if (!regex_match(line, m, hashSumsLineRegex))
-				{
-					fatal("malformed release line '%s' at file '%s'",
-								line.c_str(), releaseFilePath.c_str());
-				}
-
-				string name = m[3];
-				if (name.compare(0, indexListSuffix.size(), indexListSuffix) != 0)
-				{
-					continue; // doesn't start with indexListSuffix
-				}
-
-				string diffNamePattern = indexListSuffix + ".diff";
-				if (name.compare(0, diffNamePattern.size(), diffNamePattern) == 0)
-				{
-					continue; // skipping diffs for now...
-				}
-
-				// filling result structure
-				string uri = baseUri + '/' + name;
-				bool foundRecord = false;
-				FORIT(recordIt, result)
-				{
-					if (recordIt->uri == uri)
-					{
-						recordIt->hashSums[currentHashSumType] = m[1];
-						foundRecord = true;
-						break;
-					}
-				}
-				if (!foundRecord)
-				{
-					Cache::IndexDownloadRecord& record =
-							(result.push_back(Cache::IndexDownloadRecord()), *(result.rbegin()));
-					record.uri = uri;
-					record.size = string2uint32(m[2]);
-					record.hashSums[currentHashSumType] = m[1];
-				}
-			}
-		}
-	}
-
-	// checks
-	FORIT(recordIt, result)
-	{
-		if (recordIt->hashSums.empty())
-		{
-			fatal("no hash sums defined for index list URI '%s'", recordIt->uri.c_str());
-		}
-	}
-
-	return result;
 }
 
 shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
@@ -671,40 +565,6 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	}
 }
 
-vector< string > CacheImpl::getPathsOfLocalizedDescriptions(const IndexEntry& entry) const
-{
-	auto chunkArrays = getChunksOfLocalizedDescriptions(entry);
-	auto basePath = getPathOfIndexEntry(entry);
-
-	vector< string > result;
-	FORIT(chunkArrayIt, chunkArrays)
-	{
-		result.push_back(basePath + "_" + join("_", *chunkArrayIt));
-	}
-
-	return result;
-}
-
-vector< Cache::LocalizationDownloadRecord > CacheImpl::getDownloadInfoOfLocalizedDescriptions(const IndexEntry& entry) const
-{
-	auto chunkArrays = getChunksOfLocalizedDescriptions(entry);
-	auto basePath = getPathOfIndexEntry(entry);
-	auto baseUri = getUriOfIndexEntry(entry);
-
-	vector< Cache::LocalizationDownloadRecord > result;
-
-	FORIT(chunkArrayIt, chunkArrays)
-	{
-		Cache::LocalizationDownloadRecord record;
-		record.localPath = basePath + "_" + join("_", *chunkArrayIt);
-		// yes, somewhy translations are always bzip2'ed
-		record.uri = baseUri + "/" + join("/", *chunkArrayIt) + ".bz2";
-		result.push_back(std::move(record));
-	}
-
-	return result;
-}
-
 void CacheImpl::processTranslationFile(const string& path)
 {
 	string errorString;
@@ -766,123 +626,6 @@ void CacheImpl::processTranslationFile(const string& path)
 	}
 }
 
-string CacheImpl::getPathOfIndexEntry(const IndexEntry& entry) const
-{
-	// "http://ftp.ua.debian.org" -> "ftp.ua.debian.org"
-	// "file:/home/jackyf" -> "/home/jackyf"
-	static sregex schemeRegex = sregex::compile("^\\w+:(?://)?");
-	string uriPrefix = regex_replace(entry.uri, schemeRegex, "");
-
-	// "escaping" tilde, following APT practice :(
-	static sregex tildeRegex = sregex::compile("~");
-	uriPrefix = regex_replace(uriPrefix, tildeRegex, "%7e");
-
-	// "ftp.ua.debian.org/debian" -> "ftp.ua.debian.org_debian"
-	static sregex slashRegex = sregex::compile("/");
-	uriPrefix = regex_replace(uriPrefix, slashRegex, "_");
-
-	string directory = config->getPath("dir::state::lists");
-
-	string distributionPart = regex_replace(entry.distribution, slashRegex, "_");
-
-	string basePart = uriPrefix + "_";
-	if (entry.component.empty())
-	{
-		// easy source type
-		basePart += distributionPart;
-	}
-	else
-	{
-		// normal source type
-		basePart += (string("dists") + "_" + distributionPart);
-	}
-
-	return directory + "/" + basePart;
-}
-
-string CacheImpl::getUriOfIndexEntry(const IndexEntry& indexEntry) const
-{
-    if (indexEntry.component.empty())
-	{
-		// easy source type
-		return indexEntry.uri + '/' + indexEntry.distribution;
-	}
-	else
-	{
-		// normal source type
-		return indexEntry.uri + '/' + "dists" + '/' + indexEntry.distribution;
-	}
-}
-
-string CacheImpl::getIndexListSuffix(const IndexEntry& entry, char delimiter) const
-{
-	if (entry.component.empty())
-	{
-		// easy source type
-		return (entry.category == IndexEntry::Binary ? "Packages" : "Sources");
-	}
-	else
-	{
-		// normal source type
-		string delimiterString = string(1, delimiter);
-		if (entry.category == IndexEntry::Binary)
-		{
-			return join(delimiterString, vector< string >{
-					entry.component, string("binary-") + *binaryArchitecture, "Packages" });
-		}
-		else
-		{
-			return join(delimiterString, vector< string >{
-					entry.component, "source", "Sources" });
-		}
-	}
-}
-
-vector< vector< string > > CacheImpl::getChunksOfLocalizedDescriptions(const IndexEntry& entry) const
-{
-	vector< vector< string > > result;
-
-	if (entry.category != IndexEntry::Binary)
-	{
-		return result;
-	}
-
-	auto translationVariable = config->getString("apt::acquire::translation");
-	auto locale = translationVariable == "environment" ?
-			setlocale(LC_MESSAGES, NULL) : translationVariable;
-	if (locale == "none")
-	{
-		return result;
-	}
-
-	vector< string > chunks;
-	if (!entry.component.empty())
-	{
-		chunks.push_back(entry.component);
-	}
-	chunks.push_back("i18n");
-
-	result.push_back(chunks);
-	// cutting out an encoding
-	auto dotPosition = locale.rfind('.');
-	if (dotPosition != string::npos)
-	{
-		locale.erase(dotPosition);
-	}
-	result[0].push_back(string("Translation-") + locale);
-
-	result.push_back(chunks);
-	// cutting out an country specificator
-	auto underlinePosition = locale.rfind('_');
-	if (underlinePosition != string::npos)
-	{
-		locale.erase(underlinePosition);
-	}
-	result[1].push_back(string("Translation-") + locale);
-
-	return result;
-}
-
 void CacheImpl::parsePreferences()
 {
 	pinInfo.reset(new PinInfo(config, systemState));
@@ -939,7 +682,7 @@ void CacheImpl::parseExtendedStates()
 
 	try
 	{
-		string path = getPathOfExtendedStates();
+		string path = cachefiles::getPathOfExtendedStates(*config);
 
 		string openError;
 		File file(path, "r", openError);
@@ -991,11 +734,6 @@ void CacheImpl::parseExtendedStates()
 	{
 		fatal("error while parsing extended states");
 	}
-}
-
-string CacheImpl::getPathOfExtendedStates() const
-{
-	return config->getPath("dir::state::extendedstates");
 }
 
 vector< shared_ptr< const BinaryVersion > >

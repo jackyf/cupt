@@ -21,6 +21,7 @@
 #include <bitset>
 #include <map>
 #include <forward_list>
+#include <cstring>
 
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
@@ -31,6 +32,7 @@ namespace cupt {
 namespace internal {
 
 namespace dg = dependencygraph;
+typedef dg::DependencyGraph::CessorListType GraphCessorListType;
 
 using namespace cache;
 using namespace system;
@@ -49,11 +51,11 @@ struct PackageEntry
 		bool empty() const { return !versionElementPtr; }
 		bool operator<(const IntroducedBy& other) const
 		{
-			return memcmp(this, &other, sizeof(*this)) < 0;
+			return std::memcmp(this, &other, sizeof(*this)) < 0;
 		}
 		shared_ptr< const Resolver::Reason > getReason() const
 		{
-			return (*brokenElementPtr)->getReason(**versionElementPtr);
+			return brokenElementPtr->getReason(*versionElementPtr);
 		}
 	};
 	struct BrokenSuccessor
@@ -120,17 +122,18 @@ class SolutionStorage
 			const map< string, shared_ptr< const BinaryVersion > >&,
 			const map< string, dg::InitialPackageEntry >&);
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
-	const list< const dg::Element* >& getSuccessorElements(const dg::Element*) const;
-	const list< const dg::Element* >& getPredecessorElements(const dg::Element*) const;
+	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
+	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
 	bool verifyElement(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself
 	static const forward_list< const dg::Element* >&
 			getConflictingElements(const dg::Element*);
-	static bool simulateSetPackageEntry(const Solution& solution,
-			const dg::Element*, const dg::Element**);
-	static void setPackageEntry(Solution&, const dg::Element*,
+	bool simulateSetPackageEntry(const Solution& solution,
+			const dg::Element*, const dg::Element**) const;
+	void setPackageEntry(Solution&, const dg::Element*,
 			PackageEntry&&, const dg::Element*);
+	void unfoldElement(const dg::Element*);
 };
 
 }

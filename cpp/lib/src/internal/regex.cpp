@@ -15,34 +15,52 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_REGEX_SEEN
-#define CUPT_REGEX_SEEN
 
-/// @cond
-
-#include <boost/xpressive/xpressive_dynamic.hpp>
-
-#include <cupt/common.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
+namespace internal {
 
-using boost::xpressive::sregex;
-using boost::xpressive::sregex_token_iterator;
-using boost::xpressive::smatch;
-using boost::xpressive::regex_match;
-using boost::xpressive::regex_search;
-using boost::xpressive::regex_error;
-namespace regex_constants = boost::xpressive::regex_constants;
-
-vector< string > split(const sregex&, const string&);
-
-string globToRegexString(const string&);
-shared_ptr< sregex > stringToRegex(const string& input);
-CUPT_API shared_ptr< sregex > globToRegex(const string& glob);
-
+vector< string > split(const sregex& regex, const string& str)
+{
+	vector< string > result;
+	sregex_token_iterator tokenIterator(str.begin(), str.end(), regex, -1);
+	sregex_token_iterator end;
+	std::copy(tokenIterator, end, std::back_inserter(result));
+	return result;
 }
 
-/// @endcode
+string globToRegexString(const string& input)
+{
+	// quoting all metacharacters
+	static const sregex metaCharRegex = sregex::compile("[^A-Za-z0-9_]");
+	string output = regex_replace(input, metaCharRegex, "\\$&");
+	static const sregex questionSignRegex = sregex::compile("\\\\\\?");
+	output = regex_replace(output, questionSignRegex, ".");
+	static const sregex starSignRegex = sregex::compile("\\\\\\*");
+	output = regex_replace(output, starSignRegex, ".*?");
 
-#endif
+	return string("^") + output + "$";
+}
+
+shared_ptr< sregex > stringToRegex(const string& input)
+{
+	shared_ptr< sregex > result;
+	try
+	{
+		result = shared_ptr< sregex >(new sregex(sregex::compile(input)));
+	}
+	catch (regex_error& e)
+	{
+		fatal("invalid regular expression '%s'", input.c_str());
+	}
+	return result;
+}
+shared_ptr< sregex > globToRegex(const string& glob)
+{
+	return stringToRegex(globToRegexString(glob));
+}
+
+}
+}
 

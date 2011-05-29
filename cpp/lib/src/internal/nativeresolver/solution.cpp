@@ -157,12 +157,12 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 	return cloned;
 }
 
-const list< const dg::Element* >& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
 {
 	return __dependency_graph.getSuccessorsFromPointer(elementPtr);
 }
 
-const list< const dg::Element* >& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
 {
 	return __dependency_graph.getPredecessorsFromPointer(elementPtr);
 }
@@ -171,12 +171,12 @@ const forward_list< const dg::Element* >& SolutionStorage::getConflictingElement
 		const dg::Element* elementPtr)
 {
 	static const forward_list< const dg::Element* > nullList;
-	auto relatedElementPtrsPtr = (*elementPtr)->getRelatedElements();
+	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }
 
 bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
-		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr)
+		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr) const
 {
 	const forward_list< const dg::Element* >& conflictingElementPtrs =
 			getConflictingElements(elementPtr);
@@ -194,7 +194,17 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 			return !packageEntryPtr->sticked;
 		}
 	}
-	*conflictingElementPtrPtr = NULL; // no conflicting elements in this solution
+
+	// no conflicting elements in this solution
+	*conflictingElementPtrPtr = NULL;
+	if (auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr))
+	{
+		if (versionElement->version)
+		{
+			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
+					(__dependency_graph).getCorrespondingEmptyElement(elementPtr);
+		}
+	}
 	return true;
 }
 
@@ -202,6 +212,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr)
 {
+	__dependency_graph.unfoldElement(elementPtr);
+
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
 	{
@@ -226,7 +238,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		if (conflictingElementPtr)
 		{
 			fatal("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					solution.id, (*elementPtr)->toString().c_str(), (*conflictingElementPtr)->toString().c_str());
+					solution.id, elementPtr->toString().c_str(), conflictingElementPtr->toString().c_str());
 		}
 		it->second = std::move(packageEntry);
 	}
@@ -248,6 +260,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	initialSolution.__added_entries->reserve(source.size());
 	FORIT(it, source)
 	{
+		__dependency_graph.unfoldElement(it->first);
 		initialSolution.__added_entries->push_back(*it);
 	}
 }
@@ -255,7 +268,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 bool SolutionStorage::verifyElement(const Solution& solution,
 		const dg::Element* elementPtr) const
 {
-	const list< const dg::Element* >& successorElementPtrs =
+	const GraphCessorListType& successorElementPtrs =
 			getSuccessorElements(elementPtr);
 	FORIT(elementPtrIt, successorElementPtrs)
 	{
@@ -264,6 +277,23 @@ bool SolutionStorage::verifyElement(const Solution& solution,
 			return true;
 		}
 	}
+
+	// second try, check for non-present empty elements as they are virtually present
+	FORIT(elementPtrIt, successorElementPtrs)
+	{
+		if (auto versionElement = dynamic_cast< const dg::VersionElement* >(*elementPtrIt))
+		{
+			if (!versionElement->version)
+			{
+				const dg::Element* conflictorPtr;
+				if (simulateSetPackageEntry(solution, versionElement, &conflictorPtr), !conflictorPtr)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
 	return false;
 }
 
@@ -272,6 +302,10 @@ const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Eleme
 	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
 }
 
+void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
+{
+	__dependency_graph.unfoldElement(elementPtr);
+}
 
 
 Solution::Solution()

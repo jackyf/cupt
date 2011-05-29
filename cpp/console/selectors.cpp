@@ -16,9 +16,12 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 
+#include <fnmatch.h>
+
 #include <functional>
 
-#include <cupt/regex.hpp>
+#include <common/regex.hpp>
+
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/sourcepackage.hpp>
@@ -217,7 +220,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	{
 		fatal("bad package name in package expression '%s'", packageExpression.c_str());
 	}
-	string packageName = m[1];
+	string packageNameExpression = m[1];
 	string remainder;
 	if (m[2].matched)
 	{
@@ -225,7 +228,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	}
 
 	vector< shared_ptr< const Version > > result;
-	if (packageName.find('?') == string::npos && packageName.find('*') == string::npos)
+	if (packageNameExpression.find('?') == string::npos && packageNameExpression.find('*') == string::npos)
 	{
 		// there are no wildcards
 		auto version = versionSelector(cache, packageExpression, throwOnError);
@@ -237,14 +240,13 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	else
 	{
 		// handling wildcards
-		auto packageRegex = globToRegex(packageName);
+		const char* packageNameGlob = packageNameExpression.c_str();
 
 		auto packageNames = packageNamesFetcher();
-		smatch m;
 		FORIT(proposedPackageNameIt, packageNames)
 		{
 			const string& proposedPackageName = *proposedPackageNameIt;
-			if (regex_match(proposedPackageName, m, *packageRegex))
+			if (!fnmatch(packageNameGlob, proposedPackageName.c_str(), 0))
 			{
 				auto version = versionSelector(cache, proposedPackageName + remainder, false);
 				if (version)

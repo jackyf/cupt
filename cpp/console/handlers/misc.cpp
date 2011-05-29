@@ -916,7 +916,7 @@ int tarMetadata(Context& context)
 
 	auto config = context.getConfig();
 
-	auto listsDirectory = config->getPath("dir::state::lists");
+	auto listsDirectory = config->getPath("cupt::directory::state::lists");
 	vector< string > pathList = {
 		config->getPath("dir::etc::main"),
 		config->getPath("dir::etc::parts"),
@@ -939,5 +939,31 @@ int tarMetadata(Context& context)
 	}
 
 	return ::system(tarCommand.c_str());
+}
+
+int showAutoInstalled(Context& context)
+{
+	vector< string > arguments;
+	bpo::options_description options;
+	options.add_options()("invert", "");
+	auto variables = parseOptions(context, options, arguments);
+	checkNoExtraArguments(arguments);
+
+	bool showManual = variables.count("invert");
+
+	auto cache = context.getCache(false, false, true); // installed only
+
+	auto installedPackageNames = cache->getBinaryPackageNames();
+	FORIT(packageNameIt, installedPackageNames)
+	{
+		const string& packageName = *packageNameIt;
+
+		bool isAutoInstalled = cache->isAutomaticallyInstalled(packageName);
+		if (isAutoInstalled == !showManual)
+		{
+			cout << packageName << endl;
+		}
+	}
+	return 0;
 }
 
