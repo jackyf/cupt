@@ -48,6 +48,8 @@ cupt (2.1.0~) UNRELEASED; urgency=low
       - Relax Boost build requirements to match 1.42 and higher, not only
         1.42.
       - Vcs-Browser: the main branch is now 'master' again.
+    - rules:
+      - Support 'noopt' in DEB_BUILD_OPTIONS. (Closes: #628405)
   * Support out-of-tree builds. (Closes: #623115)
   * Switched to Cupt-specific directory 'cupt::directory::state::lists' for
     index lists.

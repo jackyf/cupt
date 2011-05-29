@@ -1,9 +1,16 @@
 #!/usr/bin/make -f
 
 PERL ?= /usr/bin/perl
+CMAKE_OPTIONS = -DLOCAL:bool=OFF
+ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+	CMAKE_OPTIONS += -DOPTIMIZE=0
+else
+	CMAKE_OPTIONS += -DOPTIMIZE=2
+endif
+
 
 override_dh_auto_configure:
-	cmake -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/tmp/usr -DOPTIMIZE=2 ./
+	cmake -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/tmp/usr $(CMAKE_OPTIONS) ./
 
 override_dh_auto_install:
 	$(MAKE) install
