@@ -20,4 +20,4 @@ override_dh_auto_install:
 	install -m644 scripts/bash_completion $(CURDIR)/debian/cupt/etc/bash_completion.d/cupt
 
 %:
-	dh $@
+	dh --parallel $@
