@@ -49,6 +49,7 @@ cupt (2.1.0~) UNRELEASED; urgency=low
         1.42.
       - Vcs-Browser: the main branch is now 'master' again.
       - Bumped debhelper build-dependency to (>= 7.4.10) to use --parallel.
+      - Bumped Standards-Version to 3.9.2, no changes needed.
     - rules:
       - Support 'noopt' in DEB_BUILD_OPTIONS. (Closes: #628405)
       - Support 'parallel=N' in DEB_BUILD_OPTIONS.
