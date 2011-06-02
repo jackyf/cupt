@@ -460,6 +460,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 		if (!result->validUntilDate.empty())
 		{
 			struct tm validUntilTm;
+			memset(&validUntilTm, 0, sizeof(validUntilTm));
 			struct tm currentTm;
 
 			auto oldTimeSpec = setlocale(LC_TIME, "C");
