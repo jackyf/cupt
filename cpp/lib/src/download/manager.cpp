@@ -87,15 +87,7 @@ static vector< string > receiveSocketMessage(int socket)
 	{
 		if (errno != ECONNRESET /* handled under */)
 		{
-			if (errno == EWOULDBLOCK || errno == EAGAIN)
-			{
-				// time is out
-				fatal("unable to receive socket message length: the connection died");
-			}
-			else
-			{
-				fatal("unable to receive socket message length: EEE");
-			}
+			fatal("unable to receive socket message length: EEE");
 		}
 	}
 	else if (readResult != sizeof(len) && readResult != 0)
@@ -1018,6 +1010,31 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 	return result;
 }
 
+static void checkSocketForTimeout(int sock)
+{
+	pollfd pollFd;
+	pollFd.fd = sock;
+	pollFd.events = POLLIN;
+	do_poll:
+	auto pollResult = poll(&pollFd, 1, 2000); // 2 seconds
+	if (pollResult == -1)
+	{
+		if (errno == EINTR)
+		{
+			goto do_poll;
+		}
+		else
+		{
+			fatal("download client: polling client socket failed: EEE");
+		}
+	}
+	else if (!pollResult)
+	{
+		// time is out
+		fatal("download client: download server socket is timed out");
+	}
+}
+
 string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 {
 	if (config->getBool("cupt::worker::simulate"))
@@ -1047,15 +1064,6 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	if (connect(sock, (sockaddr*)&serverSocketAddress, sizeof(sockaddr_un)) == -1)
 	{
 		fatal("unable to connect to server socket: EEE");
-	}
-	{ // setting timeout
-		struct timeval tv;
-		tv.tv_sec = 2;
-		tv.tv_usec = 0;
-		if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == -1)
-		{
-			warn("unable to set download client socket timeout: EEE");
-		}
 	}
 
 	auto scheduleDownload = [&sock, &downloads, &waitedUriToTargetPath](const string& targetPath)
@@ -1094,6 +1102,8 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	string result; // no error by default
 	while (!waitedUriToTargetPath.empty())
 	{
+		checkSocketForTimeout(sock);
+
 		auto params = receiveSocketMessage(sock);
 		if (params.size() == 1 && params[0] == "ping")
 		{

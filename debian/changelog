@@ -1,5 +1,10 @@
 cupt (2.1.1~) UNRELEASED; urgency=low
 
+  * lib:
+    - download/manager:
+      - Use poll(2) instead of SO_RCVTIMEO socket property to check for worker
+        socket timeouts. Thanks to Jonathan Nieder for the report.
+        (Closes: #628992)
   * Pass '-ggdb' to the compiler. Makes builds with 'nostrip' in
     DEB_BUILD_OPTIONS debuggable.
 
