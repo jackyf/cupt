@@ -1217,44 +1217,6 @@ Manager::~Manager()
 	delete __impl;
 }
 
-/*
-=head2 download
-
-method, adds group of download queries to queue. Blocks execution of program until
-all downloads are done.
-
-This method is re-entrant.
-
-Parameters:
-
-Returns:
-
-I<result> - '0' on success, otherwise the string that contains the fail reason,
-
-Example:
-
-  my $download_manager = new Cupt::Download::Manager;
-  $download_manager->download(
-    { 'uri-entries' => [ { 'uri' => 'http://www.en.debian.org' } ], 'filename' => '/tmp/en.html' },
-    { 'uri-entries' => [ { 'uri' => 'http://www.ru.debian.org' } ], 'filename' => '/tmp/ru.html', 'post-action' => \&checker },
-    { 'uri-entries' => [ { 'uri' => 'http://www.ua.debian.org' } ], 'filename' => '/tmp/ua.html', 'size' => 10254 }
-    { 'uri-entries' => [
-        {
-          'uri' => 'http://ftp.de.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
-          'long-alias' => 'ftp.de.debian.org/debian sid/main nlkt 0.3.2.1-2',
-          'short-alias' => 'nlkt',
-        },
-        {
-          'uri' => 'http://ftp.ua.debian.org/debian/pool/main/n/nlkt/nlkt_0.3.2.1-2_amd64.deb',
-          'long-alias' => 'ftp.ua.debian.org/debian sid/main nlkt 0.3.2.1-2',
-          'short-alias' => 'nlkt',
-        },
-      ], 'filename' => '/var/cache/apt/archives/nlkt_0.3.2.1-2_amd64.deb' }
-  );
-
-=cut
-*/
-
 string Manager::download(const vector< DownloadEntity >& entities)
 {
 	return __impl->download(entities);
