@@ -788,9 +788,6 @@ void ManagerImpl::worker()
 
 	// while caller may set exit flag, we should continue processing as long as
 	// something is pending in internal queue
-	pollfd workerReaderPollFd;
-	workerReaderPollFd.fd = workerPipe.getReaderFd();
-	workerReaderPollFd.events = POLLIN;
 	int sock;
 	while ((sock = pollAllSockets(persistentSockets, clientSockets, exitFlag, debugging)))
 	{
