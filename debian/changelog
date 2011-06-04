@@ -5,6 +5,9 @@ cupt (2.1.1~) UNRELEASED; urgency=low
       - Use poll(2) instead of SO_RCVTIMEO socket property to check for worker
         socket timeouts. Thanks to Jonathan Nieder for the report.
         (Closes: #628992)
+      - Avoided creating new process groups. Fixes delivering stop/resume
+        signals to the downloader's worker process. Thanks to Jonathan Nieder
+        for the report. (Closes: #629210)
   * Pass '-ggdb' to the compiler. Makes builds with 'nostrip' in
     DEB_BUILD_OPTIONS debuggable.
 

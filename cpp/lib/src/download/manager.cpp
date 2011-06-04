@@ -172,6 +172,7 @@ class ManagerImpl
 	void proceedDownload(Pipe& workerPipe, const vector< string >& params, bool debugging);
 	void killPerformerBecauseOfWrongSize(Pipe& workerPipe, const string& uri,
 			const string& actionName, const string& errorString);
+	void terminateDownloadProcesses();
 	void startNewDownload(const string& uri, const string& targetPath, int waiterSocket, bool debugging);
 	int pollAllSockets(const vector< int >& persistentSockets, set< int >& clientSockets,
 			bool exitFlag, bool debugging);
@@ -257,11 +258,7 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 				debug("aborting download worker process because of exception");
 			}
 
-			// kill all forked processes
-			if (kill(0, SIGTERM) == -1)
-			{
-				warn("unable to send SIGTERM signal to download worker process group: EEE");
-			}
+			terminateDownloadProcesses();
 
 			_exit(EXIT_FAILURE);
 		}
@@ -302,6 +299,21 @@ ManagerImpl::~ManagerImpl()
 		if (unlink(serverSocketPath.c_str()) == -1)
 		{
 			warn("unable to delete download server socket file '%s': EEE", serverSocketPath.c_str());
+		}
+	}
+}
+
+void ManagerImpl::terminateDownloadProcesses()
+{
+	FORIT(activeDownloadIt, activeDownloads)
+	{
+		auto pid = activeDownloadIt->second.performerPid;
+		if (kill(pid, SIGTERM) == -1)
+		{
+			if (errno != ESRCH)
+			{
+				warn("download manager: unable to terminate a performer process (pid '%d')", pid);
+			}
 		}
 	}
 }
@@ -761,10 +773,6 @@ void ManagerImpl::worker()
 		debug("download worker process started");
 	}
 
-	if (setpgid(0, 0) == -1)
-	{
-		warn("unable to establish new download worker process group: setpgid failed: EEE");
-	}
 	parentPipe->useAsReader();
 	Pipe workerPipe("worker's own");
 
@@ -806,11 +814,7 @@ void ManagerImpl::worker()
 			{
 				// oh-ho, parent process exited before closing parentPipe socket...
 				// no reason to live anymore
-				// kill all forked processes including itself
-				if (kill(0, SIGTERM) == -1)
-				{
-					warn("unable to send SIGTERM signal to download worker process group: EEE");
-				}
+				terminateDownloadProcesses();
 				_exit(EXIT_FAILURE);
 			}
 			bool isPerformerSocket = false;
