@@ -1853,7 +1853,6 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	}
 
 	auto archivesDirectory = _get_archives_directory();
-	auto purging = _config->getBool("cupt::worker::purge");
 	FORIT(changesetIt, changesets)
 	{
 		const Changeset& changeset = *changesetIt;
@@ -1888,7 +1887,11 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					fatal("internal error: unexpected priority-modifier action in the changeset");
 					break;
 				case InnerAction::Remove:
-					actionName = purging ? "purge" : "remove";
+				{
+					const string& packageName = actionGroupIt->rbegin()->versionProxy->getPackageName();
+					actionName = __actions_preview->groups[Action::Purge].count(packageName) ?
+							"purge" : "remove";
+				}
 					break;
 				case InnerAction::Unpack:
 					actionName = "unpack";

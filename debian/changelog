@@ -8,6 +8,11 @@ cupt (2.1.1~) UNRELEASED; urgency=low
       - Avoided creating new process groups. Fixes delivering stop/resume
         signals to the downloader's worker process. Thanks to Jonathan Nieder
         for the report. (Closes: #629210)
+    - system/worker:
+      - If the global purging flag was turned on, worker still purged,
+        not only removed the packages, removed by resolver, despite the right
+        action preview. Fixed this feature, which was introduced in
+        2.0.0~beta1.
   * Pass '-ggdb' to the compiler. Makes builds with 'nostrip' in
     DEB_BUILD_OPTIONS debuggable.
 
