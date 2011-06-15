@@ -1,4 +1,4 @@
-cupt (2.1.1~) UNRELEASED; urgency=low
+cupt (2.1.1) unstable; urgency=low
 
   * lib:
     - download/manager:
@@ -16,7 +16,7 @@ cupt (2.1.1~) UNRELEASED; urgency=low
   * Pass '-ggdb' to the compiler. Makes builds with 'nostrip' in
     DEB_BUILD_OPTIONS debuggable.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 29 May 2011 22:08:35 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 15 Jun 2011 19:43:58 +0300
 
 cupt (2.1.0) unstable; urgency=low
 
