@@ -55,10 +55,15 @@ string __get_formatted_string(const char* format, va_list va)
 {
 	char formattedBuffer[4096];
 
+	va_list vb;
+	va_copy(vb, va);
+
 	auto substitutedFormat = __substitute_eee(format, errno);
 
 	auto bytesWritten = vsnprintf(formattedBuffer, sizeof(formattedBuffer),
-			substitutedFormat.c_str(), va);
+			substitutedFormat.c_str(), vb);
+
+	va_end(vb);
 
 	if ((size_t)bytesWritten < sizeof(formattedBuffer))
 	{
