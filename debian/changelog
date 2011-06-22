@@ -1,5 +1,9 @@
 cupt (2.1.2~) UNRELEASED; urgency=low
 
+  * console:
+    - Fixed a crash (under certain conditions) when package wildcards are
+      used within the 'shell' subcommand. Thanks to Karol Kozłowski for the
+      report.
   * lib:
     - Fixed a double use of va_list. Thanks to Julian Andres Klode for the
       report and the patch. (Closes: #630824)

@@ -268,11 +268,11 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	static auto packageNamesFetcher = [&cache]() -> vector< string >
+	auto packageNamesFetcher = [&cache]() -> vector< string >
 	{
 		return cache->getBinaryPackageNames();
 	};
-	static auto versionSelector =
+	auto versionSelector =
 			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
 			{
 				return static_pointer_cast< const Version >(selectBinaryVersion(cache, packageName, throwOnError));
@@ -298,11 +298,11 @@ vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(share
 vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	static auto packageNamesFetcher = [&cache]() -> vector< string >
+	auto packageNamesFetcher = [&cache]() -> vector< string >
 	{
 		return cache->getSourcePackageNames();
 	};
-	static auto versionSelector =
+	auto versionSelector =
 			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
 			{
 				return static_pointer_cast< const Version >(selectSourceVersion(cache, packageName, throwOnError));
