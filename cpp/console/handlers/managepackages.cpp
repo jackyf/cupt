@@ -153,6 +153,76 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 	}
 }
 
+static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& cache,
+		Resolver& resolver, ManagePackages::Mode mode, string packageExpression)
+{
+	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
+	if (versions.empty())
+	{
+		/* we have a funny situation with package names like 'g++',
+		   where one don't know is there simple package name or '+'/'-'
+		   modifier at the end of package name, so we enter here only if
+		   it seems that there is no such binary package */
+
+		// "localizing" action to make it modifiable by package modifiers
+		if (!packageExpression.empty())
+		{
+			const char& lastLetter = *(packageExpression.end() - 1);
+			if (lastLetter == '+')
+			{
+				mode = ManagePackages::Install;
+				packageExpression.erase(packageExpression.end() - 1);
+			}
+			else if (lastLetter == '-')
+			{
+				mode = ManagePackages::Remove;
+				packageExpression.erase(packageExpression.end() - 1);
+			}
+		}
+	}
+
+	if (mode == ManagePackages::Install)
+	{
+		if (versions.empty())
+		{
+			versions = selectBinaryVersionsWildcarded(cache, packageExpression);
+		}
+		FORIT(versionIt, versions)
+		{
+			resolver.installVersion(*versionIt);
+		}
+	}
+	else // ManagePackages::Remove
+	{
+		if (versions.empty())
+		{
+			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
+			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
+					packageExpression.find('*') != string::npos;
+			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
+		}
+
+		if (!versions.empty())
+		{
+			FORIT(versionIt, versions)
+			{
+				resolver.removePackage((*versionIt)->packageName);
+			}
+		}
+		else
+		{
+			checkPackageName(packageExpression);
+			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
+				!getBinaryPackage(cache, packageExpression, false))
+			{
+				fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
+			}
+
+			resolver.removePackage(packageExpression);
+		}
+	}
+}
+
 static void processPackageExpressions(const shared_ptr< Config >& config,
 		const shared_ptr< const Cache >& cache, ManagePackages::Mode mode,
 		Resolver& resolver, const vector< string >& packageExpressions)
@@ -169,77 +239,7 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		}
 		else
 		{
-			// localizing mode
-			ManagePackages::Mode oldMode = mode;
-			ManagePackages::Mode mode = oldMode;
-
-			string packageExpression = *packageExpressionIt;
-
-			auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
-			if (versions.empty())
-			{
-				/* we have a funny situation with package names like 'g++',
-				   where one don't know is there simple package name or '+'/'-'
-				   modifier at the end of package name, so we enter here only if
-				   it seems that there is no such binary package */
-
-				// "localizing" action to make it modifiable by package modifiers
-				if (!packageExpression.empty())
-				{
-					const char& lastLetter = *(packageExpression.end() - 1);
-					if (lastLetter == '+')
-					{
-						mode = ManagePackages::Install;
-						packageExpression.erase(packageExpression.end() - 1);
-					}
-					else if (lastLetter == '-')
-					{
-						mode = ManagePackages::Remove;
-						packageExpression.erase(packageExpression.end() - 1);
-					}
-				}
-			}
-
-			if (mode == ManagePackages::Install)
-			{
-				if (versions.empty())
-				{
-					versions = selectBinaryVersionsWildcarded(cache, packageExpression);
-				}
-				FORIT(versionIt, versions)
-				{
-					resolver.installVersion(*versionIt);
-				}
-			}
-			else // ManagePackages::Remove
-			{
-				if (versions.empty())
-				{
-					// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
-					bool wildcardsPresent = packageExpression.find('?') != string::npos ||
-							packageExpression.find('*') != string::npos;
-					versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
-				}
-
-				if (!versions.empty())
-				{
-					FORIT(versionIt, versions)
-					{
-						resolver.removePackage((*versionIt)->packageName);
-					}
-				}
-				else
-				{
-					checkPackageName(packageExpression);
-					if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
-						!getBinaryPackage(cache, packageExpression, false))
-					{
-						fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
-					}
-
-					resolver.removePackage(packageExpression);
-				}
-			}
+			processInstallOrRemoveExpression(cache, resolver, mode, *packageExpressionIt);
 		}
 	}
 }
