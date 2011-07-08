@@ -1621,11 +1621,17 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 			else
 			{
 				auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
-				switch (comparisonResult)
+				if (comparisonResult < 0)
 				{
-					case -1: compareVersionStringsSign = "<"; break;
-					case  0: compareVersionStringsSign = "="; break;
-					case  1: compareVersionStringsSign = ">"; break;
+					compareVersionStringsSign = "<";
+				}
+				else if (comparisonResult == 0)
+				{
+					compareVersionStringsSign = "=";
+				}
+				else
+				{
+					compareVersionStringsSign = ">";
 				}
 			}
 

@@ -5,8 +5,13 @@ cupt (2.1.2~) UNRELEASED; urgency=low
       used within the 'shell' subcommand. Thanks to Karol Kozłowski for the
       report.
   * lib:
-    - Fixed a double use of va_list. Thanks to Julian Andres Klode for the
-      report and the patch. (Closes: #630824)
+    - common:
+      - Fixed a double use of va_list. Thanks to Julian Andres Klode for the
+        report and the patch. (Closes: #630824)
+    - system/worker:
+      - [Jonathan Nieder] Do not assume the return value from memcmp is -1, 0,
+        or 1. Fixes a bug in which cupt would sometimes leave out the <, =,
+        or > symbol in VERSION 2 input for preinstall hooks. (Closes: #633138)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 20 Jun 2011 19:07:35 +0300
 
