@@ -113,8 +113,8 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				}
 				else
 				{
-					// a symlink
-					string targetPath(&pathBuffer[0]);
+					// a symlink (relative)
+					string targetPath(archivesDirectory + '/' + &pathBuffer[0]);
 					if (fs::fileExists(targetPath))
 					{
 						knownArchives[targetPath] = *versionIt;
