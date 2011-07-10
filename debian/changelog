@@ -1,4 +1,4 @@
-cupt (2.1.2~) UNRELEASED; urgency=low
+cupt (2.1.2) unstable; urgency=low
 
   * console:
     - Fixed a crash (under certain conditions) when package wildcards are
@@ -13,7 +13,7 @@ cupt (2.1.2~) UNRELEASED; urgency=low
         or 1. Fixes a bug in which cupt would sometimes leave out the <, =,
         or > symbol in VERSION 2 input for preinstall hooks. (Closes: #633138)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 20 Jun 2011 19:07:35 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Jul 2011 13:10:46 +0300
 
 cupt (2.1.1) unstable; urgency=low
 
