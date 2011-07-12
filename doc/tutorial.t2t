@@ -619,7 +619,25 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
-Also, some subcommands accept arguments' special modifiers:
+== Overriding package management actions ==
+
+=== Action override options ===
+
+You can use special positional options ``--install``, ``--remove`` and
+``--satisfy`` to override the specified action until the end of the arguments
+or the next action override option.
+
+Example:
+
+``` cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --remove cvs subversion --install git
+
+The command above will install packages ``clive`` and ``git``, remove packages
+``youtube-dl``, ``cvs`` and ``subversion``, make sure that the package
+``iceweasel`` of version 4 or higher is installed.
+
+=== Package name suffixes ===
+
+Alternatively, you can supply some suffixes to package names, that suffixes override the current action for the suffixed package(s) only:
 
 : +
 

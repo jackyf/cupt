@@ -160,7 +160,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 }
 
 bpo::variables_map parseOptions(const Context& context, bpo::options_description options,
-		vector< string >& arguments)
+		vector< string >& arguments, std::function< pair< string, string > (const string&) > extraParser)
 {
 	bpo::options_description argumentOptions("");
 	argumentOptions.add_options()
@@ -178,7 +178,7 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 	{
 		bpo::parsed_options parsed = bpo::command_line_parser(context.unparsed)
 				.style(bpo::command_line_style::default_style & ~bpo::command_line_style::allow_guessing)
-				.options(all).positional(positionalOptions).run();
+				.options(all).positional(positionalOptions).extra_parser(extraParser).run();
 		bpo::store(parsed, variablesMap);
 	}
 	catch (const bpo::unknown_option& e)

@@ -229,7 +229,19 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 {
 	FORIT(packageExpressionIt, packageExpressions)
 	{
-		if (mode == ManagePackages::Satisfy)
+		if (*packageExpressionIt == "--remove")
+		{
+			mode = ManagePackages::Remove;
+		}
+		else if (*packageExpressionIt == "--install")
+		{
+			mode = ManagePackages::Install;
+		}
+		else if (*packageExpressionIt == "--satisfy")
+		{
+			mode = ManagePackages::Satisfy;
+		}
+		else if (mode == ManagePackages::Satisfy)
 		{
 			processSatisfyExpression(config, resolver, *packageExpressionIt);
 		}
@@ -667,7 +679,23 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 		("download-only,d", "")
 		("assume-yes", "")
 		("yes,y", "");
-	auto variables = parseOptions(context, options, packageExpressions);
+
+	// use action modifiers as arguments, not options
+	auto extraParser = [](const string& input) -> pair< string, string >
+	{
+		const set< string > actionModifierOptionNames = {
+			"--install", "--remove", "--satisfy"
+		};
+		if (actionModifierOptionNames.count(input))
+		{
+			return make_pair("arguments", input);
+		}
+		else
+		{
+			return make_pair(string(), string());
+		}
+	};
+	auto variables = parseOptions(context, options, packageExpressions, extraParser);
 
 	auto config = context.getConfig();
 	if (variables.count("max-solution-count"))

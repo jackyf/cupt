@@ -660,7 +660,45 @@ Corresponding configuration options: L<apt::get::assume-yes>, L<cupt::console::a
 
 =back
 
-=head3 management modifiers
+=head3 management modifiers: action override options
+
+Unlike all the other options, these ones are positional and are effective only
+for the rest of parameters (and before next override option if any). One can
+specify as many action override options as needed.
+
+=over
+
+=item --install
+
+install the rest of packages
+
+Example:
+
+C<cupt install exim4-daemon-light --remove msmtp-mta esmtp> - install the package
+'exim4-daemon-light', remove the packages 'msmtp-mta' and 'esmtp'
+
+=item --remove
+
+remove rest of packages
+
+Example:
+
+C<cupt remove msmtp-mta --install exim4-daemon-light esmtp> - install the packages
+'exim4-daemon-light' and 'esmtp', remove the package 'msmtp-mta'
+
+=item --satisfy
+
+satisfy the rest of relation expressions
+
+Example:
+
+C<< cupt install lightspark --remove gnash --satisfy "iceweasel (>= 5)" >> -
+install the package 'lightspark', remove the packae 'gnash', and make sure that
+iceweasel (at least of version 5) is installed
+
+=back
+
+=head3 management modifiers: package name suffixes
 
 =over
 
