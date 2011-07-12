@@ -69,13 +69,19 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 				.style(bpo::command_line_style::default_style & ~bpo::command_line_style::allow_guessing)
 				.positional(positionalOptions).allow_unregistered().run();
 		bpo::store(parsed, variablesMap);
-		unparsed = bpo::collect_unrecognized(parsed.options, bpo::exclude_positional);
-		if (variablesMap.count("arguments"))
-		{
-			vector<std::string> arguments = variablesMap["arguments"].as< vector< string > >();
-			unparsed.insert(unparsed.begin(), arguments.begin(), arguments.end());
-		}
 		bpo::notify(variablesMap);
+
+		{ // do not pass 'command' further
+			FORIT(optionIt, parsed.options)
+			{
+				if (optionIt->string_key == "command")
+				{
+					parsed.options.erase(optionIt);
+					break;
+				}
+			}
+		}
+		unparsed = bpo::collect_unrecognized(parsed.options, bpo::include_positional);
 
 		{ // processing
 			if (command.empty())
