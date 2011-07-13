@@ -3,7 +3,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
   * console:
     - Managing packages:
       - New positional action override options '--install', '--remove',
-        '--satisfy'.
+        '--satisfy', '--unsatisfy'.
 
  -- Eugene Lyubimkin <ext-lyubimkin.eugene@nokia.com>  Wed, 13 Jul 2011 09:33:27 +0300
 

@@ -100,11 +100,11 @@ static void unrollFileArguments(vector< string >& arguments)
 }
 
 void __satisfy_or_unsatisfy(Resolver& resolver,
-		const RelationLine& relationLine, bool negative)
+		const RelationLine& relationLine, ManagePackages::Mode mode)
 {
 	FORIT(relationExpressionIt, relationLine)
 	{
-		if (negative)
+		if (mode == ManagePackages::Unsatisfy)
 		{
 			resolver.unsatisfyRelationExpression(*relationExpressionIt);
 		}
@@ -116,19 +116,18 @@ void __satisfy_or_unsatisfy(Resolver& resolver,
 }
 
 static void processSatisfyExpression(const shared_ptr< Config >& config,
-		Resolver& resolver, string packageExpression)
+		Resolver& resolver, string packageExpression, ManagePackages::Mode mode)
 {
-	bool negative = false;
-	if (!packageExpression.empty() && *(packageExpression.rbegin()) == '-')
+	if (mode == ManagePackages::Satisfy && !packageExpression.empty() && *(packageExpression.rbegin()) == '-')
 	{
-		negative = true;
+		mode = ManagePackages::Unsatisfy;
 		packageExpression.erase(packageExpression.end() - 1);
 	}
 
 	auto relationLine = ArchitecturedRelationLine(packageExpression)
 			.toRelationLine(config->getString("apt::architecture"));
 
-	__satisfy_or_unsatisfy(resolver, relationLine, negative);
+	__satisfy_or_unsatisfy(resolver, relationLine, mode);
 }
 
 static void processBuildDependsExpression(const shared_ptr< Config >& config,
@@ -143,13 +142,13 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 	{
 		const shared_ptr< const SourceVersion >& version = *versionIt;
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
-				.toRelationLine(architecture), false);
+				.toRelationLine(architecture), ManagePackages::Satisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
-				.toRelationLine(architecture), false);
+				.toRelationLine(architecture), ManagePackages::Satisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
-				.toRelationLine(architecture), true);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
-				.toRelationLine(architecture), true);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy);
 	}
 }
 
@@ -241,9 +240,13 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		{
 			mode = ManagePackages::Satisfy;
 		}
-		else if (mode == ManagePackages::Satisfy)
+		else if (*packageExpressionIt == "--unsatisfy")
 		{
-			processSatisfyExpression(config, resolver, *packageExpressionIt);
+			mode = ManagePackages::Unsatisfy;
+		}
+		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
+		{
+			processSatisfyExpression(config, resolver, *packageExpressionIt, mode);
 		}
 		else if (mode == ManagePackages::BuildDepends)
 		{
@@ -684,7 +687,7 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 	auto extraParser = [](const string& input) -> pair< string, string >
 	{
 		const set< string > actionModifierOptionNames = {
-			"--install", "--remove", "--satisfy"
+			"--install", "--remove", "--satisfy", "--unsatisfy"
 		};
 		if (actionModifierOptionNames.count(input))
 		{
