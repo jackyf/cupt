@@ -88,6 +88,23 @@ class CUPT_API Worker
 	 * @param offer
 	 */
 	void setDesiredState(const Resolver::Offer& offer);
+	/**
+	 * Sets the purge flag for removed packages.
+	 *
+	 * Removed packages can be either simply removed or removed along with
+	 * their configuration files (purged).
+	 *
+	 * This method should be called only after @ref setDesiredState. If the new call
+	 * to @ref setDesiredState has been made, all the changes made previously
+	 * by calling this method are reset and should be repeated if needed.
+	 *
+	 * This method must not be called for packages which are not marked for
+	 * removal or purge.
+	 *
+	 * @param packageName binary package name to modify a flag value for
+	 * @param value the target state of the flag
+	 */
+	void setPackagePurgeFlag(const string& packageName, bool value);
 
 	/**
 	 * Shouldn't be called before @ref setDesiredState.

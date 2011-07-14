@@ -28,9 +28,12 @@ namespace internal {
 
 class SetupAndPreviewWorker: public virtual WorkerBase
 {
+	void __generate_action_preview(const string&,
+			const Resolver::SuggestedPackage&, bool);
 	void __generate_actions_preview();
  public:
 	void setDesiredState(const Resolver::Offer& offer);
+	void setPackagePurgeFlag(const string&, bool);
 
 	shared_ptr< const ActionsPreview > getActionsPreview() const;
 	map< string, ssize_t > getUnpackedSizesPreview() const;

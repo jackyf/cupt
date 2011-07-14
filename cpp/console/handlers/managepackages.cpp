@@ -53,11 +53,6 @@ static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config 
 		// modifiers in the command line just as with the install command
 		mode = ManagePackages::Install;
 	}
-	else if (mode == ManagePackages::Purge)
-	{
-		mode = ManagePackages::Remove;
-		config->setScalar("cupt::worker::purge", "yes");
-	}
 	else if (mode == ManagePackages::Satisfy || mode == ManagePackages::BuildDepends)
 	{
 		config->setScalar("apt::install-recommends", "no");
@@ -153,7 +148,8 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 }
 
 static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& cache,
-		Resolver& resolver, ManagePackages::Mode mode, string packageExpression)
+		Resolver& resolver, ManagePackages::Mode mode, string packageExpression,
+		set< string >& purgedPackageNames)
 {
 	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
 	if (versions.empty())
@@ -191,7 +187,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			resolver.installVersion(*versionIt);
 		}
 	}
-	else // ManagePackages::Remove
+	else // ManagePackages::Remove or ManagePackages::Purge
 	{
 		if (versions.empty())
 		{
@@ -201,11 +197,20 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
 		}
 
+		auto scheduleRemoval = [&resolver, &purgedPackageNames, mode](const string& packageName)
+		{
+			resolver.removePackage(packageName);
+			if (mode == ManagePackages::Purge)
+			{
+				purgedPackageNames.insert(packageName);
+			}
+		};
+
 		if (!versions.empty())
 		{
 			FORIT(versionIt, versions)
 			{
-				resolver.removePackage((*versionIt)->packageName);
+				scheduleRemoval((*versionIt)->packageName);
 			}
 		}
 		else
@@ -217,14 +222,15 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 				fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
 			}
 
-			resolver.removePackage(packageExpression);
+			scheduleRemoval(packageExpression);
 		}
 	}
 }
 
 static void processPackageExpressions(const shared_ptr< Config >& config,
 		const shared_ptr< const Cache >& cache, ManagePackages::Mode mode,
-		Resolver& resolver, const vector< string >& packageExpressions)
+		Resolver& resolver, const vector< string >& packageExpressions,
+		set< string >& purgedPackageNames)
 {
 	FORIT(packageExpressionIt, packageExpressions)
 	{
@@ -254,7 +260,8 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		}
 		else
 		{
-			processInstallOrRemoveExpression(cache, resolver, mode, *packageExpressionIt);
+			processInstallOrRemoveExpression(cache, resolver, mode,
+					*packageExpressionIt, purgedPackageNames);
 		}
 	}
 }
@@ -541,9 +548,10 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showVersions, bool showSizeChanges, bool& addArgumentsFlag)
+		bool showVersions, bool showSizeChanges, const set< string >& purgedPackageNames,
+		bool& addArgumentsFlag)
 {
-	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &addArgumentsFlag]
+	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &purgedPackageNames, &addArgumentsFlag]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
@@ -551,6 +559,10 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 
 		worker->setDesiredState(offer);
+		FORIT(packageNameIt, purgedPackageNames)
+		{
+			worker->setPackagePurgeFlag(*packageNameIt, true);
+		}
 
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
@@ -666,13 +678,14 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 }
 
 void parseManagementOptions(Context& context, vector< string >& packageExpressions,
-		bool& showVersions, bool& showSizeChanges)
+		ManagePackages::Mode& mode, bool& showVersions, bool& showSizeChanges)
 {
 	bpo::options_description options;
 	options.add_options()
 		("no-install-recommends,R", "")
 		("no-remove", "")
 		("no-auto-remove", "")
+		("purge", "")
 		("max-solution-count", bpo::value< string >())
 		("resolver", bpo::value< string >())
 		("show-versions,V", "")
@@ -734,6 +747,13 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 	{
 		config->setScalar("cupt::resolver::auto-remove", "no");
 	}
+	if (variables.count("purge"))
+	{
+		if (mode == ManagePackages::Remove)
+		{
+			mode = ManagePackages::Purge;
+		}
+	}
 
 	showVersions = variables.count("show-versions");
 	showSizeChanges = variables.count("show-size-changes");
@@ -755,7 +775,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	vector< string > packageExpressions;
 	bool showVersions;
 	bool showSizeChanges;
-	parseManagementOptions(context, packageExpressions, showVersions, showSizeChanges);
+	parseManagementOptions(context, packageExpressions, mode, showVersions, showSizeChanges);
 
 	unrollFileArguments(packageExpressions);
 
@@ -817,13 +837,15 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	cout << __("Scheduling requested actions... ") << endl;
 
 	preProcessMode(mode, config, *resolver);
-	processPackageExpressions(config, cache, mode, *resolver, packageExpressions);
+
+	set< string > purgedPackageNames;
+	processPackageExpressions(config, cache, mode, *resolver, packageExpressions, purgedPackageNames);
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
 	bool addArgumentsFlag;
 	auto callback = generateManagementPrompt(config, cache, worker,
-			showVersions, showSizeChanges, addArgumentsFlag);
+			showVersions, showSizeChanges, purgedPackageNames, addArgumentsFlag);
 
 	resolve:
 	bool resolved = resolver->resolve(callback);
@@ -837,7 +859,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 			if (!answer.empty())
 			{
 				processPackageExpressions(config, cache, mode, *resolver,
-						vector< string > { answer });
+						vector< string > { answer }, purgedPackageNames);
 			}
 			else
 			{

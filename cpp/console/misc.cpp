@@ -48,7 +48,6 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		("important,i", "")
 		("option,o", bpo::value< vector< string > >(&directOptions))
 		("recurse", "")
-		("purge", "")
 		("all-versions,a", "")
 		("no-all-versions", "")
 		("target-release", bpo::value< string >(&targetRelease))
@@ -99,10 +98,6 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			if (!targetRelease.empty())
 			{
 				config->setScalar("apt::default-release", targetRelease);
-			}
-			if (variablesMap.count("purge"))
-			{
-				config->setScalar("cupt::worker::purge", "yes");
 			}
 			if (variablesMap.count("all-versions"))
 			{

@@ -46,7 +46,7 @@ class WorkerBase
 	typedef Worker::ActionsPreview ActionsPreview;
 	typedef Worker::Action Action;
 	shared_ptr< const Resolver::SuggestedPackages > __desired_state;
-	shared_ptr< const ActionsPreview > __actions_preview;
+	shared_ptr< ActionsPreview > __actions_preview;
 
 	string _get_archives_directory() const;
 	static string _get_archive_basename(const shared_ptr< const BinaryVersion >&);

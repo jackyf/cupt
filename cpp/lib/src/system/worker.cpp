@@ -53,6 +53,11 @@ void Worker::setDesiredState(const Resolver::Offer& offer)
 	__impl->setDesiredState(offer);
 }
 
+void Worker::setPackagePurgeFlag(const string& packageName, bool value)
+{
+	__impl->setPackagePurgeFlag(packageName, value);
+}
+
 shared_ptr< const Worker::ActionsPreview > Worker::getActionsPreview() const
 {
 	return __impl->getActionsPreview();
