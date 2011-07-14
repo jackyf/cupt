@@ -11,6 +11,9 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - New method 'setPackagePurgeFlag'.
       - The global purge option now unconditionally purges all removed
         packages again.
+  * doc:
+    - cupt(1) manual:
+      - Documented 'purge' subcommand.
 
  -- Eugene Lyubimkin <ext-lyubimkin.eugene@nokia.com>  Wed, 13 Jul 2011 09:33:27 +0300
 

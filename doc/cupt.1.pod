@@ -364,6 +364,22 @@ C<cupt remove nlkt>
 
 C<cupt remove devscripts kde4-minimal>
 
+=item purge
+
+removes specified packages along with their configuration files.  Also this
+command can purge the configuration files when the packages are removed
+already.
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt purge nlkt>
+
+C<cupt purge devscripts kde4-minimal>
+
+See also the configuration option L<cupt::worker::purge>.
+
 =item full-upgrade
 
 performs as more upgrades of the installed packages as possible, the
@@ -565,9 +581,7 @@ You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
 
 =item --purge
 
-when removing packages (specified in the arguments), also delete their configuration files
-
-See also the configuration option L<cupt::worker::purge>.
+'cupt remove --purge' is an equivalent to 'cupt purge'
 
 =item --no-remove
 
