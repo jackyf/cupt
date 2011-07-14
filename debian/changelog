@@ -4,8 +4,9 @@ cupt (2.2.0~) UNRELEASED; urgency=low
     - Managing packages:
       - New positional action override options '--install', '--remove',
         '--satisfy', '--unsatisfy'.
-      - The action 'purge' (and the option '--purge') does not set global
-        purge flag anymore but only purges packages specified as arguments.
+      - The option '--purge' is converted to positional action override one.
+      - The action 'purge' does not set global purge flag anymore but only
+        purges packages specified as arguments.
   * lib:
     - system/worker:
       - New method 'setPackagePurgeFlag'.

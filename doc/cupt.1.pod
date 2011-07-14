@@ -579,10 +579,6 @@ You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
 
 =over
 
-=item --purge
-
-'cupt remove --purge' is an equivalent to 'cupt purge'
-
 =item --no-remove
 
 disallow problem resolver to remove manually installed packages. Packages that are marked to remove/purge in the command line will be remove/purged as usual.
@@ -705,6 +701,15 @@ Example:
 
 C<cupt remove msmtp-mta --install exim4-daemon-light esmtp> - install the packages
 'exim4-daemon-light' and 'esmtp', remove the package 'msmtp-mta'
+
+=item --purge
+
+purge the rest of packages
+
+Example:
+
+C<cupt purge libkate1 --remove libass4 --purge libdirac-decoder0> - remove the
+package 'libass4', purge packages 'libkate1' and 'libdirac-decoder0'
 
 =item --satisfy
 

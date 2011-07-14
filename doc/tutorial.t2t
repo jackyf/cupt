@@ -623,16 +623,16 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 
 === Action override options ===
 
-You can use special positional options ``--install``, ``--remove``,
+You can use special positional options ``--install``, ``--remove``, ``--purge``,
 ``--satisfy`` and ``--unsatisfy`` to override the specified action until the
 end of the arguments or the next action override option.
 
 Example:
 
-``` cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --remove cvs subversion --install git --unsatisfy "xinput (<< 1.5)"
+``` cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"
 
-The command above will install packages ``clive`` and ``git``, remove packages
-``youtube-dl``, ``cvs`` and ``subversion``, make sure that the package
+The command above will install packages ``clive`` and ``git``, remove the package
+``youtube-dl``, purge packages ``cvs`` and ``subversion``, make sure that the package
 ``iceweasel`` of version 4 or higher is installed, make sure that the package
 ``xinput`` either is not installed or has the version ``1.5`` or higher.
 

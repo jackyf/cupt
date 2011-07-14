@@ -238,6 +238,10 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		{
 			mode = ManagePackages::Remove;
 		}
+		else if (*packageExpressionIt == "--purge")
+		{
+			mode = ManagePackages::Purge;
+		}
 		else if (*packageExpressionIt == "--install")
 		{
 			mode = ManagePackages::Install;
@@ -678,14 +682,13 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 }
 
 void parseManagementOptions(Context& context, vector< string >& packageExpressions,
-		ManagePackages::Mode& mode, bool& showVersions, bool& showSizeChanges)
+		bool& showVersions, bool& showSizeChanges)
 {
 	bpo::options_description options;
 	options.add_options()
 		("no-install-recommends,R", "")
 		("no-remove", "")
 		("no-auto-remove", "")
-		("purge", "")
 		("max-solution-count", bpo::value< string >())
 		("resolver", bpo::value< string >())
 		("show-versions,V", "")
@@ -700,7 +703,7 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 	auto extraParser = [](const string& input) -> pair< string, string >
 	{
 		const set< string > actionModifierOptionNames = {
-			"--install", "--remove", "--satisfy", "--unsatisfy"
+			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy"
 		};
 		if (actionModifierOptionNames.count(input))
 		{
@@ -747,13 +750,6 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 	{
 		config->setScalar("cupt::resolver::auto-remove", "no");
 	}
-	if (variables.count("purge"))
-	{
-		if (mode == ManagePackages::Remove)
-		{
-			mode = ManagePackages::Purge;
-		}
-	}
 
 	showVersions = variables.count("show-versions");
 	showSizeChanges = variables.count("show-size-changes");
@@ -775,7 +771,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	vector< string > packageExpressions;
 	bool showVersions;
 	bool showSizeChanges;
-	parseManagementOptions(context, packageExpressions, mode, showVersions, showSizeChanges);
+	parseManagementOptions(context, packageExpressions, showVersions, showSizeChanges);
 
 	unrollFileArguments(packageExpressions);
 
