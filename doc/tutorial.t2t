@@ -837,7 +837,7 @@ choice **a**. Example:
  libeggdbus-1-0(a) librasqal2(a)
  
  Need to get 62.3MiB/62.3MiB of archives. After unpacking 105MiB will be used.
- Do you want to continue? [y/N/q/a/?] a**
+ Do you want to continue? [y/N/q/a/?] a
  Enter a package expression (empty to finish): libgnome-keyring0-
  Enter a package expression (empty to finish):
  
