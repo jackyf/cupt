@@ -164,6 +164,10 @@ class CUPT_API Worker
 	 * @param path absolute (i.e., not relative) path to file
 	 */
 	void deleteArchive(const string& path);
+	/**
+	 * Deletes all partially downloaded archive files.
+	 */
+	void deletePartialArchives();
 
 	/**
 	 * Makes a system snapshot with a name @a name.

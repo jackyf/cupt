@@ -98,6 +98,11 @@ void Worker::deleteArchive(const string& path)
 	return __impl->deleteArchive(path);
 }
 
+void Worker::deletePartialArchives()
+{
+	return __impl->deletePartialArchives();
+}
+
 void Worker::saveSnapshot(const Snapshots& snapshots, const string& name)
 {
 	__impl->saveSnapshot(snapshots, name);

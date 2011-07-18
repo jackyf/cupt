@@ -12,6 +12,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - New method 'setPackagePurgeFlag'.
       - The global purge option now unconditionally purges all removed
         packages again.
+      - New method 'deletePartialArchives'.
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.

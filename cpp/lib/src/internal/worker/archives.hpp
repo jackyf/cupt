@@ -31,6 +31,7 @@ class ArchivesWorker: public virtual WorkerBase
 
 	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
 	void deleteArchive(const string& path);
+	void deletePartialArchives();
 };
 
 }
