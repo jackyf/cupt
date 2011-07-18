@@ -1005,6 +1005,10 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		}
 	}
 	cout << sf(__("Freed %s of disk space."), humanReadableSizeString(totalDeletedBytes).c_str()) << endl;
+
+	cout << __("Deleting partial archives...") << endl;
+	worker.deletePartialArchives();
+
 	return 0;
 }
 

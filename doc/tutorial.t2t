@@ -391,6 +391,9 @@ If you want to remove all archives from the cache, do
 
 ``` cupt clean
 
+Both subcommands above will also remove the partially downloaded archive files
+which may stay around after the terminated download operations.
+
 = INTERMEDIATE LEVEL =
 
 == Working with multiple package versions ==

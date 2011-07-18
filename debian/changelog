@@ -7,6 +7,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - The option '--purge' is converted to positional action override one.
       - The action 'purge' does not set global purge flag anymore but only
         purges packages specified as arguments.
+    - 'clean', 'autoclean': remove also partially downloaded archive files.
+      Thanks to Karol Kozłowski for the suggestion. (Closes: #633485)
   * lib:
     - system/worker:
       - New method 'setPackagePurgeFlag'.

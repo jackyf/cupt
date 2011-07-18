@@ -509,7 +509,7 @@ C<< cupt source libxine1 >>
 
 =item clean
 
-removes all deb archives from cache on disk
+removes all deb archives and partially downloaded archive files from the cache on a disk
 
 This subcommand receives no arguments.
 
@@ -517,8 +517,8 @@ Example: C<cupt clean>
 
 =item autoclean
 
-removes deb archives which are not available in package indexes from cache
-on disk
+removes deb archives which are not available in package indexes and partially
+downloaded archive files from the cache on a disk
 
 This subcommand receives no arguments.
 
