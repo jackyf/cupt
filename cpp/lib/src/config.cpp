@@ -56,6 +56,7 @@ void ConfigImpl::initializeVariables()
 	{
 		// used APT vars
 		{ "acquire::http::timeout", "120" },
+		{ "acquire::http::allowredirect", "yes" },
 		{ "acquire::https::timeout", "120" },
 		{ "acquire::ftp::timeout", "120" },
 		{ "acquire::file::timeout", "20" },
@@ -98,7 +99,6 @@ void ConfigImpl::initializeVariables()
 		{ "acquire::pdiffs", "yes" },
 
 		// Cupt vars
-		{ "acquire::http::allow-redirects", "yes" },
 		{ "cupt::cache::pin::addendums::downgrade", "-10000" },
 		{ "cupt::cache::pin::addendums::hold", "1000000" },
 		{ "cupt::cache::pin::addendums::not-automatic", "-4000" },

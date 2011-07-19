@@ -853,18 +853,18 @@ don't output anything to standard output
 
 Firstly, Cupt uses following APT configuration variables:
 
-acquire::*::timeout, acquire::*::proxy, acquire::retries,
-apt::acquire::translation, apt::cache::allversions, apt::cache::important,
-apt::cache::namesonly, apt::cache::recursedepends, apt::default-release,
-apt::install-recommends, apt::install-suggests, apt::neverautoremove,
-apt::get::assume-yes, apt::get::allowunauthenticated,
+acquire::*::timeout, acquire::*::proxy, acquire::http::allowredirect,
+acquire::retries, apt::acquire::translation, apt::cache::allversions,
+apt::cache::important, apt::cache::namesonly, apt::cache::recursedepends,
+apt::default-release, apt::install-recommends, apt::install-suggests,
+apt::neverautoremove, apt::get::assume-yes, apt::get::allowunauthenticated,
 apt::get::automaticremove, apt::get::list-cleanup, apt::get::purge,
 apt::update::pre-invoke, apt::update::post-invoke,
 apt::update::post-invoke-success, dir, dir::bin::dpkg, dir::cache,
 dir::cache::archives, dir::etc, dir::etc::sourcelist, dir::etc::sourceparts,
 dir::etc::parts, dir::etc::main, dir::etc::preferences, dir::state,
-dir::state::extendedstates, dir::state::status,
-dpkg::options, dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
+dir::state::extendedstates, dir::state::status, dpkg::options,
+dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
 gpgv::trustedkeyring, quiet
 
 See L<apt.conf(5)> for their meanings.
@@ -911,11 +911,6 @@ if undefined, intepretes as empty list
 =head2 variables
 
 =over
-
-=item acquire::http::allow-redirects
-
-boolean, specifies whether should downloader follow HTTP redirects.
-True by default.
 
 =item cupt::cache::pin::addendums::downgrade
 

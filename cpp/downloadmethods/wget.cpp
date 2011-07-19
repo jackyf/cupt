@@ -215,7 +215,7 @@ class WgetMethod: public cupt::download::Method
 						{
 							p.push_back("--no-proxy");
 						}
-						if (uri.getProtocol() != "http" || !config->getBool("acquire::http::allow-redirects"))
+						if (uri.getProtocol() != "http" || !config->getBool("acquire::http::allowredirect"))
 						{
 							p.push_back("--max-redirect=0");
 						}

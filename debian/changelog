@@ -17,6 +17,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - New method 'deletePartialArchives'.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
+      - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific
+        'acquire::http::allow-redirects'.
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.
