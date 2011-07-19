@@ -936,6 +936,13 @@ values.
 integer, specifies priority increase for versions that come only from 'not
 automatic' sources. Defaults to -4000.
 
+=item cupt::cache::release-file-expiration::ignore
+
+boolean, if set to true, Cupt will ignore the fact that a Release file is
+expired and use it anyway. False by default.
+
+B<Warning! Setting this option to true will make the system vulnerable to a replay attack on package manager indexes.>
+
 =item cupt::console::allow-untrusted
 
 boolean, don't treat using untrusted packages as dangerous action

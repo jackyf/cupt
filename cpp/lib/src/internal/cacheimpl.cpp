@@ -474,7 +474,8 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 				// so we use mktime() which is enough for comparing two UTC tm's
 				if (mktime(&currentTm) > mktime(&validUntilTm))
 				{
-					fatal("release file '%s' has expired (expiry time '%s'), discarding it",
+					bool warnOnly = config->getBool("cupt::cache::release-file-expiration::ignore");
+					(warnOnly ? warn : fatal)("release file '%s' has expired (expiry time '%s'), discarding it",
 							path.c_str(), result->validUntilDate.c_str());
 				}
 			}

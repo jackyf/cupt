@@ -102,6 +102,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::pin::addendums::downgrade", "-10000" },
 		{ "cupt::cache::pin::addendums::hold", "1000000" },
 		{ "cupt::cache::pin::addendums::not-automatic", "-4000" },
+		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::directory", "/" },
