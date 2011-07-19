@@ -160,7 +160,7 @@ void ArchivesWorker::deleteArchive(const string& path)
 	{
 		if (unlink(path.c_str()) == -1)
 		{
-			fatal("unable to delete file '%s'", path.c_str());
+			fatal("unable to delete file '%s': EEE", path.c_str());
 		}
 	}
 	else
