@@ -39,6 +39,8 @@ vector< string > getPathsOfLocalizedDescriptions(const Config&, const IndexEntry
 vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
 		const Config&, const IndexEntry&);
 
+bool verifySignature(const Config&, const string& releaseFilePath);
+
 }
 }
 }

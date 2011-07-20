@@ -487,7 +487,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const string& path) const
 		}
 	}
 
-	result->verified = Cache::verifySignature(config, path);
+	result->verified = cachefiles::verifySignature(*config, path);
 
 	return result;
 }

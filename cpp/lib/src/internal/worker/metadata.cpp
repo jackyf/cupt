@@ -213,7 +213,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 				return moveError;
 			}
 
-			if (!Cache::verifySignature(_config, targetPath))
+			if (!cachefiles::verifySignature(*_config, targetPath))
 			{
 				if (unlink(signatureTargetPath.c_str()) == -1)
 				{
