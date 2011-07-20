@@ -4,6 +4,9 @@ cupt (2.1.3~) UNRELEASED; urgency=low
     - system/worker:
       - 'getArchivesInfo': fixed returning absolute path for files downloaded
         by APT. Thanks to Karol Kozłowski and James Vega for noticing.
+  * debian:
+    - libcupt2-0.install:
+      - Really install 'file' download method.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Jul 2011 19:50:56 +0300
 
