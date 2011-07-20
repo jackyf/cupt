@@ -16,10 +16,12 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <clocale>
+#include <ctime>
 
 #include <common/regex.hpp>
 
 #include <cupt/config.hpp>
+#include <cupt/cache/releaseinfo.hpp>
 #include <cupt/file.hpp>
 
 #include <internal/cachefiles.hpp>
@@ -515,6 +517,127 @@ bool verifySignature(const Config& config, const string& path)
 		debug("the verify result is %u", (unsigned int)verifyResult);
 	}
 	return verifyResult;
+}
+
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const string& path)
+{
+	shared_ptr< cache::ReleaseInfo > result(new cache::ReleaseInfo);
+	result->notAutomatic = false; // default
+
+	string openError;
+	File file(path, "r", openError);
+	if (!openError.empty())
+	{
+		fatal("unable to open release file '%s': EEE", path.c_str());
+	}
+
+	size_t lineNumber = 1;
+	static sregex fieldRegex = sregex::compile("^((?:\\w|-)+?): (.*)"); // $ implied in regex
+	smatch matches;
+	try
+	{
+		string line;
+		while (! file.getLine(line).eof())
+		{
+			if (!regex_match(line, matches, fieldRegex))
+			{
+				break;
+			}
+			string fieldName = matches[1];
+			string fieldValue = matches[2];
+
+			if (fieldName == "Origin")
+			{
+				result->vendor = fieldValue;
+			}
+			else if (fieldName == "Label")
+			{
+				result->label = fieldValue;
+			}
+			else if (fieldName == "Suite")
+			{
+				result->archive = fieldValue;
+			}
+			else if (fieldName == "Codename")
+			{
+				result->codename = fieldValue;
+			}
+			else if (fieldName == "Date")
+			{
+				result->date = fieldValue;
+			}
+			else if (fieldName == "Valid-Until")
+			{
+				result->validUntilDate = fieldValue;
+			}
+			else if (fieldName == "NotAutomatic")
+			{
+				result->notAutomatic = true;
+			}
+			else if (fieldName == "Architectures")
+			{
+				result->architectures = split(' ', fieldValue);
+			}
+			else if (fieldName == "Description")
+			{
+				result->description = fieldValue;
+				smatch descriptionMatch;
+				if (regex_search(fieldValue, descriptionMatch, sregex::compile("[0-9][0-9a-z._-]*")))
+				{
+					result->version = descriptionMatch[0];
+				}
+			}
+		}
+		++lineNumber;
+	}
+	catch (Exception&)
+	{
+		fatal("error parsing release file '%s', line %u", path.c_str(), lineNumber);
+	}
+
+	if (result->vendor.empty())
+	{
+		warn("no vendor specified in release file '%s'", path.c_str());
+	}
+	if (result->archive.empty())
+	{
+		warn("no archive specified in release file '%s'", path.c_str());
+	}
+
+	{ // checking Valid-Until
+		if (!result->validUntilDate.empty())
+		{
+			struct tm validUntilTm;
+			memset(&validUntilTm, 0, sizeof(validUntilTm));
+			struct tm currentTm;
+
+			auto oldTimeSpec = setlocale(LC_TIME, "C");
+			auto parseResult = strptime(result->validUntilDate.c_str(), "%a, %d %b %Y %T UTC", &validUntilTm);
+			setlocale(LC_TIME, oldTimeSpec);
+			if (parseResult) // success
+			{
+				time_t localTime = time(NULL);
+				gmtime_r(&localTime, &currentTm);
+				// sanely, we should use timegm() here, but it's not portable,
+				// so we use mktime() which is enough for comparing two UTC tm's
+				if (mktime(&currentTm) > mktime(&validUntilTm))
+				{
+					bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
+					(warnOnly ? warn : fatal)("release file '%s' has expired (expiry time '%s'), discarding it",
+							path.c_str(), result->validUntilDate.c_str());
+				}
+			}
+			else
+			{
+				warn("unable to parse expiry time '%s' in release file '%s'",
+						result->validUntilDate.c_str(), path.c_str());
+			}
+		}
+	}
+
+	result->verified = cachefiles::verifySignature(config, path);
+
+	return result;
 }
 
 }

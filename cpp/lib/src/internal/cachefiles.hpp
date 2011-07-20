@@ -40,6 +40,7 @@ vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptio
 		const Config&, const IndexEntry&);
 
 bool verifySignature(const Config&, const string& releaseFilePath);
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config&, const string& path);
 
 }
 }
