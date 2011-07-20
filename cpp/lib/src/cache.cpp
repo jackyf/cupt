@@ -18,9 +18,6 @@
 
 #include <algorithm>
 
-#include <common/regex.hpp>
-
-#include <cupt/file.hpp>
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
