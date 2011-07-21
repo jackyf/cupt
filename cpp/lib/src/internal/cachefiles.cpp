@@ -635,8 +635,6 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 		}
 	}
 
-	result->verified = cachefiles::verifySignature(config, path);
-
 	return result;
 }
 

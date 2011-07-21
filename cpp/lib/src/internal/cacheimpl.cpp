@@ -328,10 +328,12 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 
 	try
 	{
-		auto releaseInfo = cachefiles::getReleaseInfo(*config,
-				cachefiles::getPathOfReleaseList(*config, indexEntry));
+		auto releaseFilePath = cachefiles::getPathOfReleaseList(*config, indexEntry);
+		auto releaseInfo = cachefiles::getReleaseInfo(*config, releaseFilePath);
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
+		releaseInfo->verified = cachefiles::verifySignature(*config, releaseFilePath);
+
 		if (indexEntry.category == IndexEntry::Binary)
 		{
 			binaryReleaseData.push_back(releaseInfo);
