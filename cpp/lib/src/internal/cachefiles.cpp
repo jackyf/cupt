@@ -623,7 +623,7 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 				if (mktime(&currentTm) > mktime(&validUntilTm))
 				{
 					bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
-					(warnOnly ? warn : fatal)("release file '%s' has expired (expiry time '%s'), discarding it",
+					(warnOnly ? warn : fatal)("release file '%s' has expired (expiry time '%s')",
 							path.c_str(), result->validUntilDate.c_str());
 				}
 			}
