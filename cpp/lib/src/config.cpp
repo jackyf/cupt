@@ -125,6 +125,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods::wget::priority", "80" },
 		{ "cupt::downloader::protocols::http::methods::wget::priority", "80" },
 		{ "cupt::downloader::protocols::ftp::methods::wget::priority", "80" },
+		{ "cupt::update::check-release-files", "yes" },
 		{ "cupt::update::compression-types::gz::priority", "100" },
 		{ "cupt::update::compression-types::bz2::priority", "100" },
 		{ "cupt::update::compression-types::lzma::priority", "100" },

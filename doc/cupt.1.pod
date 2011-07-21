@@ -978,6 +978,11 @@ Defaults to 100.
 
 list, names of the methods available to download protocol I<protocol>
 
+=item cupt::update::check-release-files
+
+boolean, if set, Release files will be checked for the validity (including the
+expiration check) at the download stage. True by default.
+
 =item cupt::update::compression-types::*::priority
 
 integer, defines preference to download compressed files with higher priority first. 100 by default.

@@ -19,6 +19,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific
         'acquire::http::allow-redirects'.
+      - New option 'cupt::update::check-release-files'. Thanks to
+        Karol Kozłowski for the suggestion. (Closes: #633492)
     - cache:
       - 'verifySignature': is deprecated now.
   * doc:

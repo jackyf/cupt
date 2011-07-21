@@ -147,6 +147,8 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
+	bool simulating = _config->getBool("cupt::worker::simulate");
+
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
 	// we'll check hash sums of local file before and after to
@@ -179,6 +181,30 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
 		downloadEntity.size = (size_t)-1;
 
+		if (!simulating && _config->getBool("cupt::update::check-release-files"))
+		{
+			auto oldPostAction = downloadEntity.postAction;
+			auto extendedPostAction = [oldPostAction, _config, targetPath]() -> string
+			{
+				auto moveError = oldPostAction();
+				if (!moveError.empty())
+				{
+					return moveError;
+				}
+
+				try
+				{
+					cachefiles::getReleaseInfo(*_config, targetPath);
+				}
+				catch (Exception& e)
+				{
+					return e.what();
+				}
+				return string(); // success
+			};
+			downloadEntity.postAction = extendedPostAction;
+		}
+
 		auto downloadResult = downloadManager.download(
 				vector< download::Manager::DownloadEntity >{ downloadEntity });
 		if (!downloadResult.empty())
@@ -198,7 +224,6 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 	auto signaturePostAction = generateMovingSub(signatureDownloadPath, signatureTargetPath);
 
-	bool simulating = _config->getBool("cupt::worker::simulate");
 	if (!simulating and !_config->getBool("cupt::update::keep-bad-signatures"))
 	{
 		// if we have to check signature prior to moving to canonical place
