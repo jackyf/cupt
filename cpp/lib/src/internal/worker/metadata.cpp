@@ -148,6 +148,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
 	bool simulating = _config->getBool("cupt::worker::simulate");
+	bool runChecks = _config->getBool("cupt::update::check-release-files");
 
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
@@ -181,7 +182,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
 		downloadEntity.size = (size_t)-1;
 
-		if (!simulating && _config->getBool("cupt::update::check-release-files"))
+		if (!simulating && runChecks)
 		{
 			auto oldPostAction = downloadEntity.postAction;
 			auto extendedPostAction = [oldPostAction, _config, targetPath]() -> string
@@ -224,11 +225,8 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 	auto signaturePostAction = generateMovingSub(signatureDownloadPath, signatureTargetPath);
 
-	if (!simulating and !_config->getBool("cupt::update::keep-bad-signatures"))
+	if (!simulating and runChecks)
 	{
-		// if we have to check signature prior to moving to canonical place
-		// (for compatibility with APT tools) and signature check failed,
-		// delete the downloaded file
 		auto oldSignaturePostAction = signaturePostAction;
 		signaturePostAction = [oldSignaturePostAction, longAlias, targetPath, signatureTargetPath, &_config]() -> string
 		{
@@ -240,11 +238,16 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 			if (!cachefiles::verifySignature(*_config, targetPath))
 			{
-				if (unlink(signatureTargetPath.c_str()) == -1)
-				{
-					warn("unable to delete file '%s': EEE", signatureTargetPath.c_str());
-				}
 				warn("signature verification for '%s' failed", longAlias.c_str());
+
+				if (!_config->getBool("cupt::update::keep-bad-signatures"))
+				{
+					// for compatibility with APT tools delete the downloaded file
+					if (unlink(signatureTargetPath.c_str()) == -1)
+					{
+						warn("unable to delete file '%s': EEE", signatureTargetPath.c_str());
+					}
+				}
 			}
 			return string();
 		};
