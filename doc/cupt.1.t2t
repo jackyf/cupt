@@ -1,4 +1,4 @@
-Cupt manual page
+cupt
 Eugene V. Lyubimkin
 %%date
 
@@ -22,7 +22,7 @@ You might want to read //cupt_tutorial(7)// (or its HTML version at
 
 = SYNOPSIS =
 
-cupt [ I<option>... ] I<action> [ { I<parameter> | I<option> } ... ]
+cupt [ //option//... ] //action// [ { //parameter// | //option// } ... ]
 
 =head1 ACTIONS
 
