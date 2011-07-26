@@ -24,59 +24,49 @@ You might want to read //cupt_tutorial(7)// (or its HTML version at
 
 cupt [ //option//... ] //action// [ { //parameter// | //option// } ... ]
 
-=head1 ACTIONS
+= ACTIONS =
 
-=head2 Query actions
+== Query actions ==
 
-=over
-
-=item version,-v,--version
-
+: version,-v,--version
 prints versions of packages 'cupt' and 'libcupt-perl'
 
-=item help,-h,--help
-
+: help,-h,--help
 prints the short help for available actions
 
-=item config-dump
-
+: config-dump
 prints all configuration variables to standard output
 
 Example:
 
-C<cupt config-dump>
+``` cupt config-dump
 
-=item show
-
+: show
 prints version info of specified binary packages
 
-This subcommand receives list of L</"Binary package version expression">'s, see below.
+This subcommand receives list of "Binary package version expression"'s, see below.
 
 Specific options:
 
-=over
-
-=item --all-versions,-a
+- --all-versions,-a
 
 print all versions of the package, not selected one
 
-Corresponding configuration variable: L<apt::cache::allversions>
+Corresponding configuration variable: apt::cache::allversions
 
-=item --no-all-versions
+- --no-all-versions
 
 don't print all versions of the package, use only selected one
 
-Corresponding configuration variable: L<apt::cache::allversions>
+Corresponding configuration variable: apt::cache::allversions
 
-=item --with-release-info
+- --with-release-info
 
 also print information about release info where the version of the package live
 
-=back
-
 Examples:
 
-C<cupt show qmmp>
+``` cupt show qmmp
 
 C<cupt show --all-versions qmmp debianutils>
 
