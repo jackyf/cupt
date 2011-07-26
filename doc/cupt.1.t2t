@@ -64,15 +64,17 @@ Corresponding configuration variable: apt::cache::allversions
 
 also print information about release info where the version of the package live
 
+-
+
 Examples:
 
 ``` cupt show qmmp
 
-C<cupt show --all-versions qmmp debianutils>
+``` cupt show --all-versions qmmp debianutils
 
-C<cupt show --with-release-info audacious/testing apt debianutils=2.3.38>
+``` cupt show --with-release-info audacious/testing apt debianutils=2.3.38>
 
-=item showsrc
+: showsrc
 
 The same as L<show>, only for source packages.
 
