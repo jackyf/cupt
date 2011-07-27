@@ -21,6 +21,10 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         'acquire::http::allow-redirects'.
       - New option 'cupt::update::check-release-files'. Thanks to
         Karol Kozłowski for the suggestion. (Closes: #633492)
+      - Support Cupt-specific configuration files (/etc/cupt by default).
+        New options 'cupt::directory::configuration',
+        'cupt::directory::configuration::main',
+        'cupt::directory::configuration::main-parts'.
     - cache:
       - 'verifySignature': is deprecated now.
   * doc:

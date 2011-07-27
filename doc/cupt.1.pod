@@ -950,6 +950,20 @@ boolean, see L<--assume-yes|/--assume-yes>
 
 string, base directory for all cupt::directory::* options
 
+=item cupt::directory::configuration
+
+string, base directory for Cupt-specific configuration files
+
+=item cupt::directory::configuration::main
+
+string, relative file path for the Cupt main configuration file (same format as
+L<apt.conf(5)>)
+
+=item cupt::directory::configuration::main-parts
+
+string, relative directory path for additional Cupt configuration files (same
+format as L<apt.conf(5)>)
+
 =item cupt::directory::state
 
 string, directory which contains Cupt state info

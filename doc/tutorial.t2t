@@ -932,10 +932,11 @@ To see the current configuration, use ``config-dump`` subcommand. Examples:
 
 You can distingiush list options there by figure brackets around the values.
 
-Cupt reads configuration first from files (conforming to the APT documentation
-(//apt.conf(5)//)), then applies those specified in the command line using
-``--option`` (or ``-o``) switch or by dedicated switches corresponding to the
-option.
+Cupt reads configuration first from APT configuration files (conforming to the
+APT documentation (//apt.conf(5)//)), then from Cupt-specific configuration
+files (see //cupt(1)/cupt::directory::configuration//), then applies those
+specified in the command line using ``--option`` (or ``-o``) switch or by
+dedicated switches corresponding to the option.
 
 To modify a regular option in the command line, use
 

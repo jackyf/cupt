@@ -106,6 +106,9 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::directory", "/" },
+		{ "cupt::directory::configuration", "etc/cupt" },
+		{ "cupt::directory::configuration::main", "cupt.conf" },
+		{ "cupt::directory::configuration::main-parts", "cupt.conf.d" },
 		{ "cupt::directory::state", "var/lib/cupt" },
 		{ "cupt::directory::state::lists", "lists" },
 		{ "cupt::directory::state::snapshots", "snapshots" },
@@ -286,18 +289,29 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		string partsDir = config->getPath("dir::etc::parts");
-		vector< string > configFiles = internal::fs::glob(partsDir + "/*");
+		vector< string > configFiles;
 
-		string mainFilePath = config->getPath("dir::etc::main");
-		const char* envAptConfig = getenv("APT_CONFIG");
-		if (envAptConfig)
-		{
-			mainFilePath = envAptConfig;
+		{ // APT files
+			string partsDir = config->getPath("dir::etc::parts");
+			configFiles = internal::fs::glob(partsDir + "/*");
+
+			string mainFilePath = config->getPath("dir::etc::main");
+			const char* envAptConfig = getenv("APT_CONFIG");
+			if (envAptConfig)
+			{
+				mainFilePath = envAptConfig;
+			}
+			if (internal::fs::fileExists(mainFilePath))
+			{
+				configFiles.push_back(mainFilePath);
+			}
 		}
-		if (internal::fs::fileExists(mainFilePath))
-		{
-			configFiles.push_back(mainFilePath);
+		{ // Cupt files
+			auto cuptParts = internal::fs::glob(config->getPath(
+					"cupt::directory::configuration::main-parts") + "/*");
+			configFiles.insert(configFiles.end(), cuptParts.begin(), cuptParts.end());
+			configFiles.push_back(config->getPath(
+					"cupt::directory::configuration::main"));
 		}
 
 		FORIT(configFileIt, configFiles)
