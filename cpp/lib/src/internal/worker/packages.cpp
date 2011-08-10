@@ -1063,7 +1063,6 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 
 						basicEdges.push_back(make_pair(newFromPtr, newToPtr));
 						// also adding to the graph solely for next priority modifiers block
-						// don't do FromPointers here, these pointers don't exist in miniGaa
 						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
 					}
 				}
