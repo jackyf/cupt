@@ -30,6 +30,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
     - system/resolvers/native:
       - Implemented 'reinstall or remove' for packages that require the
         reinstallation.
+      - Installed packages with the status 'half-installed' also require
+        the reinstallation, mark them as such. (Closes: #637490)
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.

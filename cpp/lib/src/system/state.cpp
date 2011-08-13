@@ -121,7 +121,8 @@ static bool canPackageBeConfigured(const InstalledRecord& record)
 {
 	return (record.flag == InstalledRecord::Flag::Ok &&
 			record.status != InstalledRecord::Status::NotInstalled &&
-			record.status != InstalledRecord::Status::ConfigFiles);
+			record.status != InstalledRecord::Status::ConfigFiles &&
+			record.status != InstalledRecord::Status::HalfInstalled);
 }
 
 void StateData::parseDpkgStatus()
@@ -282,7 +283,10 @@ vector< string > State::getReinstallRequiredPackageNames() const
 	FORIT(it, __data->installedInfo)
 	{
 		const InstalledRecord::Flag::Type& flag = it->second->flag;
-		if (flag == InstalledRecord::Flag::Reinstreq || flag == InstalledRecord::Flag::HoldAndReinstreq)
+		const InstalledRecord::Status::Type& status = it->second->status;
+		if (flag == InstalledRecord::Flag::Reinstreq ||
+				flag == InstalledRecord::Flag::HoldAndReinstreq ||
+				status == InstalledRecord::Status::HalfInstalled)
 		{
 			result.push_back(it->first);
 		}
