@@ -27,6 +27,9 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         'cupt::directory::configuration::main-parts'.
     - cache:
       - 'verifySignature': is deprecated now.
+    - system/resolvers/native:
+      - Implemented 'reinstall or remove' for packages that require the
+        reinstallation.
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.

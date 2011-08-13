@@ -25,6 +25,7 @@
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/system/state.hpp>
 
 #include <internal/nativeresolver/impl.hpp>
 #include <internal/graph.hpp>
@@ -43,7 +44,6 @@ NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config,
 void NativeResolverImpl::__import_installed_versions()
 {
 	auto versions = __cache->getInstalledVersions();
-
 	FORIT(versionIt, versions)
 	{
 		// just moving versions, don't try to install or remove some dependencies
@@ -51,6 +51,37 @@ void NativeResolverImpl::__import_installed_versions()
 
 		__old_packages[version->packageName] = version;
 		__initial_packages[version->packageName].version = version;
+	}
+
+	__import_packages_to_reinstall();
+}
+
+void NativeResolverImpl::__import_packages_to_reinstall()
+{
+	bool debugging = __config->getBool("debug::resolver");
+
+	auto reinstallRequiredPackageNames = __cache->getSystemState()->getReinstallRequiredPackageNames();
+	FORIT(packageNameIt, reinstallRequiredPackageNames)
+	{
+		if (debugging)
+		{
+			debug("the package '%s' needs a reinstall", packageNameIt->c_str());
+		}
+
+		// this also involves creating new entry in __initial_packages
+		shared_ptr< const BinaryVersion >& targetVersion = __initial_packages[*packageNameIt].version;
+		targetVersion.reset(); // removed by default
+
+		// let's see if we can reinstall it
+		auto package = __cache->getBinaryPackage(*packageNameIt);
+		if (package)
+		{
+			auto policyVersion = __cache->getPolicyVersion(package);
+			if (policyVersion)
+			{
+				targetVersion = static_pointer_cast< const BinaryVersion > (policyVersion); // yes, we can
+			}
+		}
 	}
 }
 

@@ -85,6 +85,9 @@ class CUPT_API State
 	 * @return array of package names
 	 */
 	vector< string > getInstalledPackageNames() const;
+	/// @cond
+	CUPT_LOCAL vector< string > getReinstallRequiredPackageNames() const;
+	/// @endcond
 };
 
 }

@@ -119,7 +119,8 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 
 static bool canPackageBeConfigured(const InstalledRecord& record)
 {
-	return (record.status != InstalledRecord::Status::NotInstalled &&
+	return (record.flag == InstalledRecord::Flag::Ok &&
+			record.status != InstalledRecord::Status::NotInstalled &&
 			record.status != InstalledRecord::Status::ConfigFiles);
 }
 
@@ -200,28 +201,25 @@ void StateData::parseDpkgStatus()
 			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
 			parseStatusSubstrings(packageName, status, installedRecord);
 
-			if (installedRecord->flag == InstalledRecord::Flag::Ok)
+			if (canPackageBeConfigured(*installedRecord))
 			{
-				if (canPackageBeConfigured(*installedRecord))
+				// this conditions mean that package is installed or
+				//   semi-installed, regardless it has full entry info, so
+				//  add it (info) to cache
+
+				auto it = preBinaryPackages->insert(pairForInsertion).first;
+				it->second.push_back(prePackageRecord);
+
+				if (!provides.empty())
 				{
-					// this conditions mean that package is installed or
-					//   semi-installed, regardless it has full entry info, so
-					//  add it (info) to cache
-
-					auto it = preBinaryPackages->insert(pairForInsertion).first;
-					it->second.push_back(prePackageRecord);
-
-					if (!provides.empty())
-					{
-						cacheImpl->processProvides(&it->first,
-								&*(provides.begin()), &*(provides.end()));
-					}
+					cacheImpl->processProvides(&it->first,
+							&*(provides.begin()), &*(provides.end()));
 				}
-
-				// add parsed info to installed_info
-				installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
-						std::move(packageName), std::move(installedRecord)));
 			}
+
+			// add parsed info to installed_info
+			installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
+					std::move(packageName), std::move(installedRecord)));
 		}
 	}
 	catch (Exception&)
@@ -269,6 +267,22 @@ vector< string > State::getInstalledPackageNames() const
 		const InstalledRecord& installedRecord = *(it->second);
 
 		if (internal::canPackageBeConfigured(installedRecord))
+		{
+			result.push_back(it->first);
+		}
+	}
+
+	return result;
+}
+
+vector< string > State::getReinstallRequiredPackageNames() const
+{
+	vector< string > result;
+
+	FORIT(it, __data->installedInfo)
+	{
+		const InstalledRecord::Flag::Type& flag = it->second->flag;
+		if (flag == InstalledRecord::Flag::Reinstreq || flag == InstalledRecord::Flag::HoldAndReinstreq)
 		{
 			result.push_back(it->first);
 		}
