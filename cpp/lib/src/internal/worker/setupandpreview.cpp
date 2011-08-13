@@ -54,54 +54,43 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 				fatal("internal error: the binary package '%s' does not exist", packageName.c_str());
 			}
 			auto installedVersion = package->getInstalledVersion();
-			if (installedInfo->status != State::InstalledRecord::Status::ConfigFiles && !installedVersion)
+
+			if (!installedVersion)
 			{
-				fatal("internal error: there is no installed version for the binary package '%s'",
-						packageName.c_str());
+				action = Action::Install;
 			}
-
-			switch (installedInfo->status)
+			else if (installedInfo->status == State::InstalledRecord::Status::Installed)
 			{
-				case State::InstalledRecord::Status::ConfigFiles:
-				{
-					// treat as the same as uninstalled
-					action = Action::Install;
-				}
-					break;
-				case State::InstalledRecord::Status::Installed:
-				{
-					auto versionComparisonResult = compareVersionStrings(
-							supposedVersion->versionString, installedVersion->versionString);
+				auto versionComparisonResult = compareVersionStrings(
+						supposedVersion->versionString, installedVersion->versionString);
 
-					if (versionComparisonResult > 0)
+				if (versionComparisonResult > 0)
+				{
+					action = Action::Upgrade;
+				}
+				else if (versionComparisonResult < 0)
+				{
+					action = Action::Downgrade;
+				}
+			}
+			else
+			{
+				if (installedVersion->versionString == supposedVersion->versionString)
+				{
+					// the same version, but the package was in some interim state
+					if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
 					{
-						action = Action::Upgrade;
+						action = Action::ProcessTriggers;
 					}
-					else if (versionComparisonResult < 0)
+					else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
 					{
-						action = Action::Downgrade;
+						action = Action::Configure;
 					}
 				}
-					break;
-				default:
+				else
 				{
-					if (installedVersion->versionString == supposedVersion->versionString)
-					{
-						// the same version, but the package was in some interim state
-						if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
-						{
-							action = Action::ProcessTriggers;
-						}
-						else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
-						{
-							action = Action::Configure;
-						}
-					}
-					else
-					{
-						// some interim state, but other version
-						action = Action::Install;
-					}
+					// some interim state, but other version
+					action = Action::Install;
 				}
 			}
 		}
