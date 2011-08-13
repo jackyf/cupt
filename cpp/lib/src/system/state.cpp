@@ -117,6 +117,12 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 	}
 }
 
+static bool canPackageBeConfigured(const InstalledRecord& record)
+{
+	return (record.status != InstalledRecord::Status::NotInstalled &&
+			record.status != InstalledRecord::Status::ConfigFiles);
+}
+
 void StateData::parseDpkgStatus()
 {
 	string path = config->getPath("dir::state::status");
@@ -196,8 +202,7 @@ void StateData::parseDpkgStatus()
 
 			if (installedRecord->flag == InstalledRecord::Flag::Ok)
 			{
-				if (installedRecord->status != InstalledRecord::Status::NotInstalled &&
-					installedRecord->status != InstalledRecord::Status::ConfigFiles)
+				if (canPackageBeConfigured(*installedRecord))
 				{
 					// this conditions mean that package is installed or
 					//   semi-installed, regardless it has full entry info, so
@@ -263,14 +268,10 @@ vector< string > State::getInstalledPackageNames() const
 	{
 		const InstalledRecord& installedRecord = *(it->second);
 
-		if (installedRecord.status == InstalledRecord::Status::NotInstalled ||
-			installedRecord.status == InstalledRecord::Status::ConfigFiles)
+		if (internal::canPackageBeConfigured(installedRecord))
 		{
-			continue;
+			result.push_back(it->first);
 		}
-
-		result.push_back(it->first);
-
 	}
 
 	return result;
