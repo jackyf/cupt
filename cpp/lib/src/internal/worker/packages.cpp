@@ -19,6 +19,7 @@
 #include <cupt/cache.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/system/state.hpp>
 #include <cupt/file.hpp>
 #include <cupt/download/progress.hpp>
 
@@ -1423,6 +1424,45 @@ size_t __get_max_download_amount(const vector< Changeset >& changesets, bool deb
 	return result;
 }
 
+void __set_force_options_for_removals_if_needed(const Cache& cache,
+		vector< InnerActionGroup >& actionGroups)
+{
+	auto systemState = cache.getSystemState();
+	FORIT(actionGroupIt, actionGroups)
+	{
+		FORIT(actionIt, *actionGroupIt)
+		{
+			if (actionIt->type == InnerAction::Remove)
+			{
+				const string& packageName = actionIt->versionProxy->getVersion()->packageName;
+				auto nextActionIt = actionIt+1;
+				if (nextActionIt != actionGroupIt->end())
+				{
+					if (nextActionIt->type == InnerAction::Unpack &&
+							nextActionIt->versionProxy->getVersion()->packageName == packageName)
+					{
+						continue; // okay, this is not really a removal, we can ignore it
+					}
+				}
+
+				auto installedRecord = systemState->getInstalledInfo(packageName);
+				if (!installedRecord)
+				{
+					fatal("internal error: worker: __set_force_options_for_removals_if_needed: "
+							"there is no installed record for the package '%s' which is to be removed",
+							packageName.c_str());
+				}
+				typedef system::State::InstalledRecord::Flag IRFlag;
+				if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
+				{
+					actionGroupIt->dpkgFlags += " --force-remove-reinstreq";
+					break; // no more need to check this action group
+				}
+			}
+		}
+	}
+}
+
 vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		const map< string, pair< download::Manager::DownloadEntity, string > >& downloads)
 {
@@ -1440,6 +1480,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		actionGroups = __convert_vector(std::move(preActionGroups));
 	}
 	__split_heterogeneous_actions(_cache, actionGroups, gaa, debugging);
+	__set_force_options_for_removals_if_needed(*_cache, actionGroups);
 
 	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
 
