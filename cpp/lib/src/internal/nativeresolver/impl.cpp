@@ -72,6 +72,9 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 		shared_ptr< const BinaryVersion >& targetVersion = __initial_packages[*packageNameIt].version;
 		targetVersion.reset(); // removed by default
 
+		// = this package was not installed by resolver
+		__manually_modified_package_names.insert(*packageNameIt);
+
 		// let's see if we can reinstall it
 		auto package = __cache->getBinaryPackage(*packageNameIt);
 		if (package)
