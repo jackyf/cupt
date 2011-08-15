@@ -224,6 +224,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 					auto versionPtr = new BinaryVersion;
 					versionPtr->packageName = packageName;
 					versionPtr->versionString = "<dummy>";
+					versionPtr->essential = false;
 					version.reset(versionPtr);
 				}
 
@@ -1430,6 +1431,9 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 	auto systemState = cache.getSystemState();
 	FORIT(actionGroupIt, actionGroups)
 	{
+		bool removeReinstreqFlagIsSet = false;
+		bool removeEssentialFlagIsSet = false;
+
 		FORIT(actionIt, *actionGroupIt)
 		{
 			if (actionIt->type == InnerAction::Remove)
@@ -1445,18 +1449,30 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					}
 				}
 
-				auto installedRecord = systemState->getInstalledInfo(packageName);
-				if (!installedRecord)
+				if (!removeReinstreqFlagIsSet)
 				{
-					fatal("internal error: worker: __set_force_options_for_removals_if_needed: "
-							"there is no installed record for the package '%s' which is to be removed",
-							packageName.c_str());
+					auto installedRecord = systemState->getInstalledInfo(packageName);
+					if (!installedRecord)
+					{
+						fatal("internal error: worker: __set_force_options_for_removals_if_needed: "
+								"there is no installed record for the package '%s' which is to be removed",
+								packageName.c_str());
+					}
+					typedef system::State::InstalledRecord::Flag IRFlag;
+					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
+					{
+						actionGroupIt->dpkgFlags += " --force-remove-reinstreq";
+						removeReinstreqFlagIsSet = true;
+					}
 				}
-				typedef system::State::InstalledRecord::Flag IRFlag;
-				if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
+
+				if (!removeEssentialFlagIsSet)
 				{
-					actionGroupIt->dpkgFlags += " --force-remove-reinstreq";
-					break; // no more need to check this action group
+					if (actionIt->versionProxy->getVersion()->essential)
+					{
+						actionGroupIt->dpkgFlags += " --force-remove-essential";
+						removeEssentialFlagIsSet = true;
+					}
 				}
 			}
 		}

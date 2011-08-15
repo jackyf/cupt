@@ -15,6 +15,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - The global purge option now unconditionally purges all removed
         packages again.
       - New method 'deletePartialArchives'.
+      - Really allow removing Essential packages (when requested and passed
+        all front-end checks).
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific
