@@ -866,8 +866,8 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 	};
 
 	// contiguous action can be safely linked
-	for(auto actionGroupIt = preActionGroups.begin();
-			actionGroupIt != preActionGroups.end() - 1; ++actionGroupIt)
+	auto preActionGroupsEndIt = preActionGroups.end();
+	FORIT(actionGroupIt, preActionGroups)
 	{
 		FORIT(actionIt, *actionGroupIt)
 		{
@@ -881,9 +881,12 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			{
 				// then, linked action should be also one in action group and a very next
 				auto nextActionGroupIt = actionGroupIt + 1;
-				if (nextActionGroupIt->size() == 1)
+				if (nextActionGroupIt != preActionGroupsEndIt)
 				{
-					processCandidates(from, (*nextActionGroupIt)[0]);
+					if (nextActionGroupIt->size() == 1)
+					{
+						processCandidates(from, (*nextActionGroupIt)[0]);
+					}
 				}
 			}
 			else
