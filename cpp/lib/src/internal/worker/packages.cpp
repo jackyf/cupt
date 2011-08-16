@@ -803,6 +803,19 @@ class __regular_action_group_insert_iterator
 	}
 };
 
+bool __is_single_package_group(const vector< InnerAction >& actionGroup)
+{
+	const string& firstPackageName = actionGroup[0].versionProxy->getPackageName();
+	FORIT(actionIt, actionGroup)
+	{
+		if (actionIt->versionProxy->getPackageName() != firstPackageName)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 {
 	if (gaa.graph.getVertices().empty())
@@ -991,21 +1004,9 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 
 bool __is_circular_action_subgroup_allowed(const vector< InnerAction >& actionSubgroup)
 {
-	{ // do all actions have the same package name?
-		const string& firstPackageName = actionSubgroup[0].versionProxy->getPackageName();
-		bool samePackageName = true;
-		FORIT(actionIt, actionSubgroup)
-		{
-			if (actionIt->versionProxy->getPackageName() != firstPackageName)
-			{
-				samePackageName = false;
-				break;
-			}
-		}
-		if (samePackageName)
-		{
-			return true;
-		}
+	if (__is_single_package_group(actionSubgroup))
+	{
+		return true;
 	}
 
 	// otherwise, only circular configures allowed
