@@ -890,24 +890,24 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 				continue; // was linked already
 			}
 
-			if (actionGroupIt->size() == 1)
+			if (actionGroupIt->size() != 1)
 			{
-				// then, linked action should be also one in action group and a very next
-				auto nextActionGroupIt = actionGroupIt + 1;
-				if (nextActionGroupIt != preActionGroupsEndIt)
-				{
-					if (nextActionGroupIt->size() == 1)
-					{
-						processCandidates(from, (*nextActionGroupIt)[0]);
-					}
-				}
-			}
-			else
-			{
-				// linked action should be in the same group
+				// search in the same group
 				FORIT(candidateActionIt, *actionGroupIt)
 				{
 					processCandidates(from, *candidateActionIt);
+				}
+			}
+
+			auto nextActionGroupIt = actionGroupIt + 1;
+			if (nextActionGroupIt != preActionGroupsEndIt)
+			{
+				if (__is_single_package_group(*actionGroupIt) && __is_single_package_group(*nextActionGroupIt))
+				{
+					FORIT(candidateActionIt, *nextActionGroupIt)
+					{
+						processCandidates(from, *candidateActionIt);
+					}
 				}
 			}
 		}
