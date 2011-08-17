@@ -310,8 +310,11 @@ void ConfigImpl::readConfigs(Config* config)
 			auto cuptParts = internal::fs::glob(config->getPath(
 					"cupt::directory::configuration::main-parts") + "/*");
 			configFiles.insert(configFiles.end(), cuptParts.begin(), cuptParts.end());
-			configFiles.push_back(config->getPath(
-					"cupt::directory::configuration::main"));
+			auto mainFilePath = config->getPath("cupt::directory::configuration::main");
+			if (internal::fs::fileExists(mainFilePath))
+			{
+				configFiles.push_back(mainFilePath);
+			}
 		}
 
 		FORIT(configFileIt, configFiles)
