@@ -721,6 +721,11 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 {
 	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr)
 	{
+		if (debugging)
+		{
+			debug("adjusting the pair '%s' -> '%s':",
+					fromPtr->toString().c_str(), toPtr->toString().c_str());
+		}
 		auto reachableToVertices = gaa.graph.getReachableTo(*toPtr);
 		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
 		FORIT(vertexPtrIt, reachableToVertices)
