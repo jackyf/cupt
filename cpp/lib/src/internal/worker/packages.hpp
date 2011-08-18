@@ -147,6 +147,7 @@ struct GraphAndAttributes
 
 		Attribute();
 		bool isDependencyHard() const;
+		bool isFromVirtual() const;
 	};
 	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
 };

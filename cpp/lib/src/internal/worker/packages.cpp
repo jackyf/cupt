@@ -98,6 +98,18 @@ bool GraphAndAttributes::Attribute::isDependencyHard() const
 	return false;
 }
 
+bool GraphAndAttributes::Attribute::isFromVirtual() const
+{
+	FORIT(recordIt, relationInfo)
+	{
+		if (!recordIt->reverse || recordIt->dependencyType != BinaryVersion::RelationTypes::Depends)
+		{
+			return false;
+		}
+	}
+	return true; // reverse-Depends only
+}
+
 // OneRelationExpressionVersionProxy
 const RelationLine OneRelationExpressionVersionProxy::__null_result;
 
@@ -1038,9 +1050,11 @@ vector< InnerActionGroup > __convert_vector(vector< vector< InnerAction > >&& so
 	return result;
 }
 
+enum class SplitStage { One, Two };
+
 void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		const InnerActionGroup& actionGroup, GraphAndAttributes& gaa,
-		GraphAndAttributes& miniGaa, bool debugging)
+		GraphAndAttributes& miniGaa, SplitStage stage, bool debugging)
 {
 	using std::make_pair;
 	vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
@@ -1121,13 +1135,17 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			{
 				auto fromPtr = edgeIt->first;
 				auto toPtr = edgeIt->second;
-				if (!miniGaa.attributes[make_pair(fromPtr, toPtr)].isDependencyHard())
+				const GraphAndAttributes::Attribute& attribute = miniGaa.attributes[make_pair(fromPtr, toPtr)];
+				if (!attribute.isDependencyHard())
 				{
-					miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
-					if (debugging)
+					if (stage == SplitStage::Two || attribute.isFromVirtual())
 					{
-						debug("ignoring soft edge '%s' -> '%s'",
-								fromPtr->toString().c_str(), toPtr->toString().c_str());
+						miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
+						if (debugging)
+						{
+							debug("ignoring soft edge '%s' -> '%s'",
+									fromPtr->toString().c_str(), toPtr->toString().c_str());
+						}
 					}
 				}
 			}
@@ -1141,8 +1159,14 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 }
 
 void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
-		vector< InnerActionGroup >& actionGroups, GraphAndAttributes& gaa, bool debugging)
+		vector< InnerActionGroup >& actionGroups, GraphAndAttributes& gaa,
+		SplitStage stage, bool debugging)
 {
+	if (debugging)
+	{
+		debug("splitting heterogeneous actions, stage %d", stage == SplitStage::Two ? 2 : 1);
+	}
+
 	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
 
 	vector< InnerActionGroup > newActionGroups;
@@ -1156,7 +1180,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 
 			// we build a mini-graph with really important edges
 			GraphAndAttributes miniGaa;
-			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, debugging);
+			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, stage, debugging);
 
 			vector< InnerActionGroup > actionSubgroupsSorted;
 			{
@@ -1168,7 +1192,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 			FORIT(actionSubgroupIt, actionSubgroupsSorted)
 			{
 				InnerActionGroup& actionSubgroup = *actionSubgroupIt;
-				if (actionSubgroup.size() > 1)
+				if (stage == SplitStage::Two && actionSubgroup.size() > 1)
 				{
 					if (!__is_circular_action_subgroup_allowed(actionSubgroup))
 					{
@@ -1182,22 +1206,28 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 					}
 				}
 
+				actionSubgroup.dpkgFlags = actionGroup.dpkgFlags;
 				if (actionSubgroupsSorted.size() > 1) // self-contained heterogeneous actions don't need it
 				{
-					// always set forcing all dependencies
-					// dpkg requires to pass both --force-depends and --force-breaks to achieve it
-					actionSubgroup.dpkgFlags = " --force-depends --force-breaks";
+					if (actionSubgroup.dpkgFlags.empty())
+					{
+						actionSubgroup.dpkgFlags = " --force-depends --force-breaks";
+					}
 				}
 				actionSubgroup.continued = true;
 
 				newActionGroups.push_back(actionSubgroup);
 			}
-			newActionGroups.rbegin()->continued = false;
+			if (!actionGroup.continued)
+			{
+				newActionGroups.rbegin()->continued = false;
+			}
 		}
 		else
 		{
 			newActionGroups.push_back(actionGroup);
 		}
+
 	}
 	FORIT(groupIt, newActionGroups)
 	{
@@ -1504,7 +1534,8 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 				(dummyCallback, __regular_action_group_insert_iterator(preActionGroups));
 		actionGroups = __convert_vector(std::move(preActionGroups));
 	}
-	__split_heterogeneous_actions(_cache, actionGroups, gaa, debugging);
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, SplitStage::One, debugging);
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, SplitStage::Two, debugging);
 	__set_force_options_for_removals_if_needed(*_cache, actionGroups);
 
 	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
