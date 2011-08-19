@@ -743,18 +743,7 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 		FORIT(vertexPtrIt, reachableToVertices)
 		{
 			auto vertexPtr = *vertexPtrIt;
-			if (reachableFromVertices.count(vertexPtr))
-			{
-				if (vertexPtr->type != InnerAction::PriorityModifier)
-				{
-					vertexPtr->priority += 1;
-					if (debugging)
-					{
-						debug("adjusting action priority: '+1' for '%s'", vertexPtr->toString().c_str());
-					}
-				}
-			}
-			else
+			if (!reachableFromVertices.count(vertexPtr))
 			{
 				if (vertexPtr->type == InnerAction::PriorityModifier)
 				{
