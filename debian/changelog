@@ -22,7 +22,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - Prefer temporary breaking reverse-Depends than anything else.
         (Closes: #637233)
       - Don't modify first-level priorities of non-first subactions of
-        the same package.
+        the same package, except of incrementing prioties for
+        unpack-after-removal actions.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific

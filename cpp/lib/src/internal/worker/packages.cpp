@@ -691,7 +691,7 @@ struct __action_group_pointer_priority_less
 };
 
 void __for_each_package_sequence(const Graph< InnerAction >& graph,
-		std::function< void (const InnerAction*, const InnerAction*) > callback)
+		std::function< void (const InnerAction*, const InnerAction*, const InnerAction*) > callback)
 {
 	FORIT(innerActionIt, graph.getVertices())
 	{
@@ -724,20 +724,31 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 				}
 			}
 
-			callback(fromPtr, toPtr);
+			callback(fromPtr, toPtr, &*innerActionIt);
 		}
 	}
 }
 
 void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 {
-	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr)
+	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr,
+			const InnerAction* unpackActionPtr)
 	{
 		if (debugging)
 		{
 			debug("adjusting the pair '%s' -> '%s':",
 					fromPtr->toString().c_str(), toPtr->toString().c_str());
 		}
+		if (fromPtr->type == InnerAction::Remove)
+		{
+			unpackActionPtr->priority += 1;
+			if (debugging)
+			{
+				debug("incrementing priority for unpack-after-removal action '%s'",
+						unpackActionPtr->toString().c_str());
+			}
+		}
+
 		auto reachableToVertices = gaa.graph.getReachableTo(*toPtr);
 		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
 		FORIT(vertexPtrIt, reachableToVertices)
@@ -1085,7 +1096,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		{ // adding priority modifiers
 			vector< pair< const InnerAction*, const InnerAction* > > sequences;
 			__for_each_package_sequence(miniGaa.graph,
-					[&sequences](const InnerAction* fromPtr, const InnerAction* toPtr)
+					[&sequences](const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 					{
 						sequences.push_back(make_pair(fromPtr, toPtr));
 					});
