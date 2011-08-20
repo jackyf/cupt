@@ -764,33 +764,6 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 	__for_each_package_sequence(gaa.graph, adjustPair);
 }
 
-// TODO: remove it?
-class __regular_action_group_insert_iterator
-{
- public:
-	typedef vector< vector< InnerAction > > container_t;
- private:
-	container_t& __container;
- public:
-	typedef __regular_action_group_insert_iterator self;
-	__regular_action_group_insert_iterator(container_t& container)
-		: __container(container)
-	{}
-	self& operator++()
-	{
-		return *this;
-	}
-	self& operator*()
-	{
-		return *this;
-	}
-	self& operator=(const vector< InnerAction >& data)
-	{
-		__container.push_back(data);
-		return *this;
-	}
-};
-
 bool __is_single_package_group(const vector< InnerAction >& actionGroup)
 {
 	const string& firstPackageName = actionGroup[0].versionProxy->getPackageName();
@@ -836,7 +809,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 	};
 	vector< vector< InnerAction > > preActionGroups;
 	gaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
-			(callback, __regular_action_group_insert_iterator(preActionGroups));
+			(callback, std::back_inserter(preActionGroups));
 
 	auto processCandidates = [&gaa, &debugging, &linkedSomething](const InnerAction& from, const InnerAction& to)
 	{
@@ -1134,7 +1107,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 			{
 				vector< vector< InnerAction > > preActionSubgroups;
 				miniGaa.graph.topologicalSortOfStronglyConnectedComponents< PointerLess< vector< InnerAction > > >
-						(dummyCallback, __regular_action_group_insert_iterator(preActionSubgroups));
+						(dummyCallback, std::back_inserter(preActionSubgroups));
 				actionSubgroupsSorted = __convert_vector(std::move(preActionSubgroups));
 			}
 			FORIT(actionSubgroupIt, actionSubgroupsSorted)
@@ -1479,7 +1452,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		auto dummyCallback = [](const vector< InnerAction >&, bool) {};
 		vector< vector< InnerAction > > preActionGroups;
 		gaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
-				(dummyCallback, __regular_action_group_insert_iterator(preActionGroups));
+				(dummyCallback, std::back_inserter(preActionGroups));
 		actionGroups = __convert_vector(std::move(preActionGroups));
 	}
 	__split_heterogeneous_actions(_cache, actionGroups, gaa, SplitStage::One, debugging);
