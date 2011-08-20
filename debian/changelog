@@ -24,6 +24,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - Don't modify first-level priorities of non-first subactions of
         the same package, except of incrementing prioties for
         unpack-after-removal actions.
+      - Greatly simplified the algorithm of setting priority links. Increases
+        processing speed a lot.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific

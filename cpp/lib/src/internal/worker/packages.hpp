@@ -113,7 +113,7 @@ class OneRelationExpressionVersionProxy: public VersionProxy
 
 struct InnerAction
 {
-	enum Type { PriorityModifier, Remove, Unpack, Configure } type;
+	enum Type { Remove, Unpack, Configure } type;
 	shared_ptr< const VersionProxy > versionProxy;
 	bool fake;
 	mutable const InnerAction* linkedFrom;

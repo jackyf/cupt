@@ -68,7 +68,7 @@ bool InnerAction::operator<(const InnerAction& other) const
 
 string InnerAction::toString() const
 {
-	const static string typeStrings[] = { "<priority-modifier>", "remove", "unpack", "configure", };
+	const static string typeStrings[] = { "remove", "unpack", "configure", };
 	string prefix = fake ? "(fake)" : "";
 	string result = prefix + typeStrings[type] + " " + versionProxy->toString();
 
@@ -190,9 +190,9 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 
 	// user action - action name from actions preview
 	const map< Action::Type, vector< IA::Type > > actionsMapping = {
-		{ Action::Install, vector< IA::Type >{ IA::PriorityModifier, IA::Unpack, IA::Configure } },
-		{ Action::Upgrade, vector< IA::Type >{ IA::PriorityModifier, IA::Remove, IA::Unpack, IA::Configure } },
-		{ Action::Downgrade, vector< IA::Type >{ IA::PriorityModifier, IA::Remove, IA::Unpack, IA::Configure } },
+		{ Action::Install, vector< IA::Type >{ IA::Unpack, IA::Configure } },
+		{ Action::Upgrade, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
+		{ Action::Downgrade, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
 		{ Action::Configure, vector< IA::Type >{ IA::Configure } },
 		{ Action::Deconfigure, vector< IA::Type >{ IA::Remove } },
 		{ Action::Remove, vector< IA::Type >{ IA::Remove } },
@@ -227,7 +227,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 						version = package->getInstalledVersion(); // may be undef too in purge-only case
 					}
 				}
-				else if (innerActionType != IA::PriorityModifier)
+				else
 				{
 					version = suggestedPackageIt->second.version;
 				}
@@ -417,8 +417,6 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 		gi.innerActionPtr = innerActionPtr;
 		switch (innerActionPtr->type)
 		{
-			case InnerAction::PriorityModifier:
-				break;
 			case InnerAction::Unpack:
 			{
 				process_unpack:
@@ -749,34 +747,28 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 			}
 		}
 
-		auto reachableToVertices = gaa.graph.getReachableTo(*toPtr);
-		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
-		FORIT(vertexPtrIt, reachableToVertices)
+		std::list< const InnerAction* > notFirstActions = { toPtr };
+		if (unpackActionPtr != fromPtr && unpackActionPtr != toPtr)
 		{
-			auto vertexPtr = *vertexPtrIt;
-			if (!reachableFromVertices.count(vertexPtr))
+			notFirstActions.push_back(unpackActionPtr);
+		}
+
+		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
+		FORIT(actionPtrIt, notFirstActions)
+		{
+			const GraphCessorListType& predecessors = gaa.graph.getPredecessorsFromPointer(*actionPtrIt);
+			FORIT(predecessorIt, predecessors)
 			{
-				if (vertexPtr->type == InnerAction::PriorityModifier)
+				if (!reachableFromVertices.count(*predecessorIt))
 				{
-					if (vertexPtr->versionProxy->getPackageName() == fromPtr->versionProxy->getPackageName())
+					// the fact we reached here means:
+					// 1) predecessorIt does not belong to a chain being adjusted
+					// 2) link 'predecessor' -> 'from' does not create a cycle
+					gaa.graph.addEdgeFromPointers(*predecessorIt, fromPtr);
+					if (debugging)
 					{
-						// this is "own" priority modifier, can be reached only once
-						vertexPtr->priority = -(ssize_t)reachableToVertices.size();
-						if (debugging)
-						{
-							debug("setting action priority: '%zd' for '%s'",
-									vertexPtr->priority, vertexPtr->toString().c_str());
-						}
-					}
-					else
-					{
-						// this is "other" priority modifier
-						gaa.graph.addEdgeFromPointers(vertexPtr, fromPtr);
-						if (debugging)
-						{
-							debug("setting priority link: '%s' -> '%s'",
-									vertexPtr->toString().c_str(), fromPtr->toString().c_str());
-						}
+						debug("setting priority link: '%s' -> '%s'",
+								(*predecessorIt)->toString().c_str(), fromPtr->toString().c_str());
 					}
 				}
 			}
@@ -791,6 +783,7 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 	__for_each_package_sequence(gaa.graph, adjustPair);
 }
 
+// TODO: remove it?
 class __regular_action_group_insert_iterator
 {
  public:
@@ -812,10 +805,7 @@ class __regular_action_group_insert_iterator
 	}
 	self& operator=(const vector< InnerAction >& data)
 	{
-		if (data.size() != 1 || data[0].type != InnerAction::PriorityModifier)
-		{
-			__container.push_back(data);
-		}
+		__container.push_back(data);
 		return *this;
 	}
 };
@@ -1087,29 +1077,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						auto newToPtr = &*newToIt;
 
 						basicEdges.push_back(make_pair(newFromPtr, newToPtr));
-						// also adding to the graph solely for next priority modifiers block
-						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
 					}
-				}
-			}
-		}
-		{ // adding priority modifiers
-			vector< pair< const InnerAction*, const InnerAction* > > sequences;
-			__for_each_package_sequence(miniGaa.graph,
-					[&sequences](const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
-					{
-						sequences.push_back(make_pair(fromPtr, toPtr));
-					});
-			FORIT(sequenceIt, sequences)
-			{
-				const InnerAction* fromPtr = sequenceIt->first;
-				const InnerAction* toPtr = sequenceIt->second;
-				if (fromPtr != toPtr) // if sequence has at least two elements
-				{
-					InnerAction priorityModifier = *toPtr;
-					priorityModifier.type = InnerAction::PriorityModifier;
-					auto newVertex = miniGaa.graph.addVertex(priorityModifier);
-					basicEdges.push_back(make_pair(newVertex, fromPtr));
 				}
 			}
 		}
@@ -1674,8 +1642,6 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 			string path;
 			switch (actionType)
 			{
-				case InnerAction::PriorityModifier:
-				continue;
 				case InnerAction::Configure:
 				{
 					path = "**CONFIGURE**";
@@ -1979,9 +1945,6 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			string actionName;
 			switch (actionType)
 			{
-				case InnerAction::PriorityModifier:
-					fatal("internal error: unexpected priority-modifier action in the changeset");
-					break;
 				case InnerAction::Remove:
 				{
 					const string& packageName = actionGroupIt->rbegin()->versionProxy->getPackageName();
