@@ -650,22 +650,14 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 	}
 }
 
-struct ActionGroupPriority
+ssize_t __get_action_group_priority(const vector< InnerAction >& preActionGroup)
 {
-	ssize_t main;
-	size_t auxiliary;
-};
-
-ActionGroupPriority __get_action_group_priority(const vector< InnerAction >& preActionGroup)
-{
-	ssize_t mainPriority = 0;
-	size_t auxiliaryPriority = 0;
+	ssize_t result = 0;
 	FORIT(actionIt, preActionGroup)
 	{
-		mainPriority += actionIt->priority;
-		auxiliaryPriority += actionIt->type;
+		result += actionIt->priority;
 	}
-	return ActionGroupPriority { mainPriority, auxiliaryPriority };
+	return result;
 }
 struct __action_group_pointer_priority_less
 {
@@ -673,18 +665,7 @@ struct __action_group_pointer_priority_less
 	{
 		auto leftPriority = __get_action_group_priority(*left);
 		auto rightPriority = __get_action_group_priority(*right);
-		if (leftPriority.main < rightPriority.main)
-		{
-			return true;
-		}
-		else if (rightPriority.main < leftPriority.main)
-		{
-			return false;
-		}
-		else
-		{
-			return leftPriority.auxiliary < rightPriority.auxiliary;
-		}
+		return (leftPriority < rightPriority);
 	}
 };
 
@@ -778,7 +759,7 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 	const set< InnerAction >& vertices = gaa.graph.getVertices();
 	FORIT(innerActionIt, vertices)
 	{
-		innerActionIt->priority = 0;
+		innerActionIt->priority = innerActionIt->type * 2;
 	}
 	__for_each_package_sequence(gaa.graph, adjustPair);
 }
@@ -848,9 +829,8 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			if (!s.empty())
 			{
 				auto priority = __get_action_group_priority(preActionGroup);
-				debug("toposort: %s action group: '%s' (priority: %zd(%zu))",
-						(closing ? "selected" : "opened"), join(", ", s).c_str(),
-						priority.main, priority.auxiliary);
+				debug("toposort: %s action group: '%s' (priority: %zd)",
+						(closing ? "selected" : "opened"), join(", ", s).c_str(), priority);
 			}
 		}
 	};
