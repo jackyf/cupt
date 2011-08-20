@@ -1398,12 +1398,12 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 		{
 			if (actionIt->type == InnerAction::Remove)
 			{
-				const string& packageName = actionIt->versionProxy->getVersion()->packageName;
+				const string& packageName = actionIt->versionProxy->getPackageName();
 				auto nextActionIt = actionIt+1;
 				if (nextActionIt != actionGroupIt->end())
 				{
 					if (nextActionIt->type == InnerAction::Unpack &&
-							nextActionIt->versionProxy->getVersion()->packageName == packageName)
+							nextActionIt->versionProxy->getPackageName() == packageName)
 					{
 						continue; // okay, this is not really a removal, we can ignore it
 					}
