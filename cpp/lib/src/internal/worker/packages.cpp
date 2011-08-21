@@ -1123,7 +1123,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 			vector< InnerActionGroup > actionSubgroupsSorted;
 			{
 				vector< vector< InnerAction > > preActionSubgroups;
-				miniGaa.graph.topologicalSortOfStronglyConnectedComponents< PointerLess< vector< InnerAction > > >
+				miniGaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
 						(dummyCallback, std::back_inserter(preActionSubgroups));
 				actionSubgroupsSorted = __convert_vector(std::move(preActionSubgroups));
 			}
