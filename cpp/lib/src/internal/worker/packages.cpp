@@ -742,7 +742,7 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 		}
 		if (fromPtr->type == InnerAction::Remove)
 		{
-			unpackActionPtr->priority += 1;
+			unpackActionPtr->priority = 4;
 			if (debugging)
 			{
 				debug("incrementing priority for unpack-after-removal action '%s'",
@@ -781,7 +781,31 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 	const set< InnerAction >& vertices = gaa.graph.getVertices();
 	FORIT(innerActionIt, vertices)
 	{
-		innerActionIt->priority = innerActionIt->type * 2;
+		/* priorities here and for unpack-after-removal variant (see above) are assigned so
+		 * the possible chains are sorted in an following order by total priority,
+		 * from the worst to the best:
+		 *
+		 * remove
+		 * unpack
+		 * remove + unpack-after-removal
+		 * unpack + configure
+		 * remove + unpack-after-removal + configure
+		 * configure
+		 * unpack-after-removal
+		 * unpack-after-removal + configure
+		 */
+		switch (innerActionIt->type)
+		{
+			case InnerAction::Remove:
+				innerActionIt->priority = -5;
+				break;
+			case InnerAction::Unpack:
+				innerActionIt->priority = -2;
+				break;
+			case InnerAction::Configure:
+				innerActionIt->priority = 3;
+				break;
+		};
 	}
 	__for_each_package_sequence(gaa.graph, adjustPair);
 }
