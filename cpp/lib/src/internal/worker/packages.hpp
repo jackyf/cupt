@@ -142,12 +142,14 @@ struct GraphAndAttributes
 	};
 	struct Attribute
 	{
+		enum Level { Priority, FromVirtual, Soft, Hard, Fundamental };
+		static const char* levelStrings[5];
+
 		bool isFundamental;
 		vector< RelationInfoRecord > relationInfo;
 
 		Attribute();
-		bool isDependencyHard() const;
-		bool isFromVirtual() const;
+		Level getLevel() const;
 	};
 	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
 };

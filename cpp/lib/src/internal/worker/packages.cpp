@@ -80,35 +80,49 @@ GraphAndAttributes::Attribute::Attribute()
 	: isFundamental(false)
 {}
 
-bool GraphAndAttributes::Attribute::isDependencyHard() const
+auto GraphAndAttributes::Attribute::getLevel() const -> Level
 {
 	if (isFundamental)
 	{
-		return true;
+		return Fundamental;
 	}
 
+	Level result = Priority; // by default
 	FORIT(recordIt, relationInfo)
 	{
-		if (recordIt->dependencyType != BinaryVersion::RelationTypes::Breaks &&
-			(!recordIt->reverse || recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts))
+		Level subLevel;
+		if (recordIt->dependencyType == BinaryVersion::RelationTypes::Conflicts)
 		{
-			return true;
+			subLevel = Hard;
 		}
+		else if (recordIt->dependencyType == BinaryVersion::RelationTypes::Breaks)
+		{
+			subLevel = Soft;
+		}
+		else if (recordIt->reverse)
+		{
+			if (recordIt->dependencyType == BinaryVersion::RelationTypes::Depends)
+			{
+				subLevel = FromVirtual;
+			}
+			else
+			{
+				subLevel = Soft;
+			}
+		}
+		else
+		{
+			subLevel = Hard;
+		}
+		result = std::max(result, subLevel);
 	}
-	return false;
-}
 
-bool GraphAndAttributes::Attribute::isFromVirtual() const
-{
-	FORIT(recordIt, relationInfo)
-	{
-		if (!recordIt->reverse || recordIt->dependencyType != BinaryVersion::RelationTypes::Depends)
-		{
-			return false;
-		}
-	}
-	return true; // reverse-Depends only
-}
+	return result;
+};
+
+const char* GraphAndAttributes::Attribute::levelStrings[5] = {
+	"priority", "from-virtual", "soft", "hard", "fundamental"
+};
 
 // OneRelationExpressionVersionProxy
 const RelationLine OneRelationExpressionVersionProxy::__null_result;
@@ -951,9 +965,10 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		auto edges = gaa.graph.getEdges();
 		FORIT(edgeIt, edges)
 		{
+			auto attributeLevel = gaa.attributes[make_pair(edgeIt->first, edgeIt->second)].getLevel();
 			debug("the present action dependency: '%s' -> '%s', %s",
 					edgeIt->first->toString().c_str(), edgeIt->second->toString().c_str(),
-					gaa.attributes[make_pair(edgeIt->first, edgeIt->second)].isDependencyHard() ? "hard" : "soft");
+					GraphAndAttributes::Attribute::levelStrings[attributeLevel]);
 		}
 	}
 
@@ -993,12 +1008,10 @@ vector< InnerActionGroup > __convert_vector(vector< vector< InnerAction > >&& so
 	return result;
 }
 
-enum class SplitStage { One, Two };
-
 void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		const InnerActionGroup& actionGroup, GraphAndAttributes& gaa,
 		GraphAndAttributes& miniGaa, set< BinaryVersion::RelationTypes::Type >& removedRelations,
-		SplitStage stage, bool debugging)
+		GraphAndAttributes::Attribute::Level minimumAttributeLevel, bool debugging)
 {
 	using std::make_pair;
 	vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
@@ -1058,20 +1071,17 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 				auto fromPtr = edgeIt->first;
 				auto toPtr = edgeIt->second;
 				const GraphAndAttributes::Attribute& attribute = miniGaa.attributes[make_pair(fromPtr, toPtr)];
-				if (!attribute.isDependencyHard())
+				if (attribute.getLevel() < minimumAttributeLevel)
 				{
-					if (stage == SplitStage::Two || attribute.isFromVirtual())
+					miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
+					FORIT(relationInfoRecordIt, attribute.relationInfo)
 					{
-						miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
-						FORIT(relationInfoRecordIt, attribute.relationInfo)
-						{
-							removedRelations.insert(relationInfoRecordIt->dependencyType);
-						}
-						if (debugging)
-						{
-							debug("ignoring soft edge '%s' -> '%s'",
-									fromPtr->toString().c_str(), toPtr->toString().c_str());
-						}
+						removedRelations.insert(relationInfoRecordIt->dependencyType);
+					}
+					if (debugging)
+					{
+						debug("ignoring edge '%s' -> '%s'",
+								fromPtr->toString().c_str(), toPtr->toString().c_str());
 					}
 				}
 			}
@@ -1086,11 +1096,12 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 
 void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 		vector< InnerActionGroup >& actionGroups, GraphAndAttributes& gaa,
-		SplitStage stage, bool debugging)
+		GraphAndAttributes::Attribute::Level level, bool debugging)
 {
+	typedef GraphAndAttributes::Attribute Attribute;
 	if (debugging)
 	{
-		debug("splitting heterogeneous actions, stage %d", stage == SplitStage::Two ? 2 : 1);
+		debug("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
 	}
 
 	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
@@ -1107,7 +1118,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 			// we build a mini-graph with really important edges
 			GraphAndAttributes miniGaa;
 			set< BinaryVersion::RelationTypes::Type > removedRelations;
-			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, removedRelations, stage, debugging);
+			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, removedRelations, level, debugging);
 
 			vector< InnerActionGroup > actionSubgroupsSorted;
 			{
@@ -1119,7 +1130,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 			FORIT(actionSubgroupIt, actionSubgroupsSorted)
 			{
 				InnerActionGroup& actionSubgroup = *actionSubgroupIt;
-				if (stage == SplitStage::Two && actionSubgroup.size() > 1)
+				if (level >= Attribute::Hard && actionSubgroup.size() > 1)
 				{
 					if (!__is_circular_action_subgroup_allowed(actionSubgroup))
 					{
@@ -1460,6 +1471,8 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		const map< string, pair< download::Manager::DownloadEntity, string > >& downloads)
 {
+	typedef GraphAndAttributes::Attribute Attribute;
+
 	auto debugging = _config->getBool("debug::worker");
 	size_t archivesSpaceLimit = _config->getInteger("cupt::worker::archives-space-limit");
 
@@ -1473,8 +1486,8 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 				(dummyCallback, std::back_inserter(preActionGroups));
 		actionGroups = __convert_vector(std::move(preActionGroups));
 	}
-	__split_heterogeneous_actions(_cache, actionGroups, gaa, SplitStage::One, debugging);
-	__split_heterogeneous_actions(_cache, actionGroups, gaa, SplitStage::Two, debugging);
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Soft, debugging);
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Hard, debugging);
 	__set_force_options_for_removals_if_needed(*_cache, actionGroups);
 
 	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
