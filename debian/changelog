@@ -28,6 +28,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         processing speed a lot.
       - Set dependency dpkg force options according to broken relations, not
         "nothing or all".
+      - Make dpkg sequence output fixed between the different runs for the
+        same input.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific

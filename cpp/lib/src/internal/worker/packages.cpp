@@ -679,7 +679,15 @@ struct __action_group_pointer_priority_less
 	{
 		auto leftPriority = __get_action_group_priority(*left);
 		auto rightPriority = __get_action_group_priority(*right);
-		return (leftPriority < rightPriority);
+		if (leftPriority < rightPriority)
+		{
+			return true;
+		}
+		else if (leftPriority > rightPriority)
+		{
+			return false;
+		}
+		return (*left > *right); // so "lesser" action group have a bigger priority
 	}
 };
 
