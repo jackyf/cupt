@@ -26,6 +26,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         unpack-after-removal actions.
       - Greatly simplified the algorithm of setting priority links. Increases
         processing speed a lot.
+      - Set dependency dpkg force options according to broken relations, not
+        "nothing or all".
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific

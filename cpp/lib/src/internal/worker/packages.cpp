@@ -997,7 +997,8 @@ enum class SplitStage { One, Two };
 
 void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		const InnerActionGroup& actionGroup, GraphAndAttributes& gaa,
-		GraphAndAttributes& miniGaa, SplitStage stage, bool debugging)
+		GraphAndAttributes& miniGaa, set< BinaryVersion::RelationTypes::Type >& removedRelations,
+		SplitStage stage, bool debugging)
 {
 	using std::make_pair;
 	vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
@@ -1062,6 +1063,10 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 					if (stage == SplitStage::Two || attribute.isFromVirtual())
 					{
 						miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
+						FORIT(relationInfoRecordIt, attribute.relationInfo)
+						{
+							removedRelations.insert(relationInfoRecordIt->dependencyType);
+						}
 						if (debugging)
 						{
 							debug("ignoring soft edge '%s' -> '%s'",
@@ -1101,7 +1106,8 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 
 			// we build a mini-graph with really important edges
 			GraphAndAttributes miniGaa;
-			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, stage, debugging);
+			set< BinaryVersion::RelationTypes::Type > removedRelations;
+			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, removedRelations, stage, debugging);
 
 			vector< InnerActionGroup > actionSubgroupsSorted;
 			{
@@ -1130,9 +1136,21 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 				actionSubgroup.dpkgFlags = actionGroup.dpkgFlags;
 				if (actionSubgroupsSorted.size() > 1) // self-contained heterogeneous actions don't need it
 				{
-					if (actionSubgroup.dpkgFlags.empty())
+					FORIT(removedRelationIt, removedRelations)
 					{
-						actionSubgroup.dpkgFlags = " --force-depends --force-breaks";
+						switch (*removedRelationIt)
+						{
+							case BinaryVersion::RelationTypes::Depends:
+							case BinaryVersion::RelationTypes::PreDepends:
+								actionSubgroup.dpkgFlags.insert("--force-depends");
+								break;
+							case BinaryVersion::RelationTypes::Breaks:
+								actionSubgroup.dpkgFlags.insert("--force-breaks");
+								break;
+							default:
+								fatal("internal error: worker: a relation '%s' cannot be soft",
+										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]);
+						}
 					}
 				}
 				actionSubgroup.continued = true;
@@ -1421,7 +1439,7 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
 					{
-						actionGroupIt->dpkgFlags += " --force-remove-reinstreq";
+						actionGroupIt->dpkgFlags.insert("--force-remove-reinstreq");
 						removeReinstreqFlagIsSet = true;
 					}
 				}
@@ -1430,7 +1448,7 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 				{
 					if (actionIt->versionProxy->getVersion()->essential)
 					{
-						actionGroupIt->dpkgFlags += " --force-remove-essential";
+						actionGroupIt->dpkgFlags.insert("--force-remove-essential");
 						removeEssentialFlagIsSet = true;
 					}
 				}
@@ -1929,7 +1947,12 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					dpkgCommand += " --no-triggers";
 				}
 				// add necessary options if requested
-				dpkgCommand += actionGroupIt->dpkgFlags;
+				string requestedDpkgOptions;
+				FORIT(dpkgFlagIt, actionGroupIt->dpkgFlags)
+				{
+					requestedDpkgOptions += string(" ") + *dpkgFlagIt;
+				}
+				dpkgCommand += requestedDpkgOptions;
 
 				/* the workaround for a dpkg bug #558151
 
@@ -1967,13 +1990,12 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 				{
 
 					vector< string > stringifiedActions;
-					const string& dpkgFlags = actionGroupIt->dpkgFlags;
 					FORIT(actionIt, *actionGroupIt)
 					{
 						stringifiedActions.push_back(actionIt->toString());
 					}
 					debug("do: (%s) %s%s", join(" & ", stringifiedActions).c_str(),
-							dpkgFlags.c_str(), actionGroupIt->continued ? " (continued)" : "");
+							requestedDpkgOptions.c_str(), actionGroupIt->continued ? " (continued)" : "");
 				}
 				_run_external_command(dpkgCommand);
 			};
