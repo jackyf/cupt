@@ -503,6 +503,24 @@ void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool deb
 	}
 }
 
+void __create_virtual_edge(
+		const shared_ptr< const BinaryVersion >& fromVirtualVersion,
+		const shared_ptr< const BinaryVersion >& toVirtualVersion,
+		vector< pair< InnerAction, InnerAction > >* virtualEdgesPtr)
+{
+	InnerAction from;
+	from.version = toVirtualVersion;
+	from.type = InnerAction::Configure;
+	from.fake = true;
+
+	InnerAction to;
+	to.version = fromVirtualVersion;
+	to.type = InnerAction::Remove;
+	to.fake = true;
+
+	virtualEdgesPtr->push_back(std::make_pair(from, to));
+}
+
 vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 		GraphAndAttributes& gaa, const shared_ptr< const Cache >& cache)
 {
@@ -555,19 +573,7 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 		virtualVersion->relations[RT::Depends] = installedVersion->relations[RT::Depends];
 		virtualVersion->essential = false;
 
-		InnerAction from;
-		from.version = virtualVersion;
-		from.type = InnerAction::Configure;
-		from.fake = true;
-
-		InnerAction to;
-		to.version = virtualVersion;
-		to.type = InnerAction::Remove;
-		to.fake = true;
-
-		// we don't add edge here, but add the vertexes to gain dependencies and
-		// save the vertexes order
-		virtualEdges.push_back(std::make_pair(from, to));
+		__create_virtual_edge(virtualVersion, virtualVersion, &virtualEdges);
 	}
 
 	return virtualEdges;
