@@ -503,6 +503,20 @@ void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool deb
 	}
 }
 
+const shared_ptr< const BinaryVersion > __create_virtual_version(
+		const shared_ptr< const BinaryVersion >& version)
+{
+	typedef BinaryVersion::RelationTypes RT;
+
+	shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
+	virtualVersion->packageName = version->packageName;
+	virtualVersion->versionString = version->versionString;
+	virtualVersion->relations[RT::PreDepends] = version->relations[RT::PreDepends];
+	virtualVersion->relations[RT::Depends] = version->relations[RT::Depends];
+	virtualVersion->essential = false;
+	return virtualVersion;
+}
+
 void __create_virtual_edge(
 		const shared_ptr< const BinaryVersion >& fromVirtualVersion,
 		const shared_ptr< const BinaryVersion >& toVirtualVersion,
@@ -564,15 +578,7 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 			continue;
 		}
 
-		typedef BinaryVersion::RelationTypes RT;
-
-		shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
-		virtualVersion->packageName = packageName;
-		virtualVersion->versionString = installedVersion->versionString;
-		virtualVersion->relations[RT::PreDepends] = installedVersion->relations[RT::PreDepends];
-		virtualVersion->relations[RT::Depends] = installedVersion->relations[RT::Depends];
-		virtualVersion->essential = false;
-
+		auto virtualVersion = __create_virtual_version(installedVersion);
 		__create_virtual_edge(virtualVersion, virtualVersion, &virtualEdges);
 	}
 
