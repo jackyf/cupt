@@ -63,6 +63,7 @@ string InnerAction::toString() const
 	return result;
 }
 
+
 // Attribute
 GraphAndAttributes::Attribute::Attribute()
 	: isFundamental(false)
@@ -546,34 +547,47 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 		}
 
 		typedef BinaryVersion::RelationTypes RT;
-		static const vector< RT::Type > dependencyTypes = { RT::PreDepends, RT::Depends };
-		FORIT(dependencyTypeIt, dependencyTypes)
-		{
-			FORIT(relationExpressionIt, installedVersion->relations[*dependencyTypeIt])
-			{
-				shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
-				virtualVersion->packageName = packageName + " [" + relationExpressionIt->toString() + "]";
-				virtualVersion->versionString = installedVersion->versionString;
-				virtualVersion->relations[*dependencyTypeIt].push_back(*relationExpressionIt);
 
-				InnerAction from;
-				from.version = virtualVersion;
-				from.type = InnerAction::Configure;
-				from.fake = true;
+		shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
+		virtualVersion->packageName = packageName;
+		virtualVersion->versionString = installedVersion->versionString;
+		virtualVersion->relations[RT::PreDepends] = installedVersion->relations[RT::PreDepends];
+		virtualVersion->relations[RT::Depends] = installedVersion->relations[RT::Depends];
+		virtualVersion->essential = false;
 
-				InnerAction to;
-				to.version = virtualVersion;
-				to.type = InnerAction::Remove;
-				to.fake = true;
+		InnerAction from;
+		from.version = virtualVersion;
+		from.type = InnerAction::Configure;
+		from.fake = true;
 
-				// we don't add edge here, but add the vertexes to gain dependencies and
-				// save the vertexes order
-				virtualEdges.push_back(std::make_pair(from, to));
-			}
-		}
+		InnerAction to;
+		to.version = virtualVersion;
+		to.type = InnerAction::Remove;
+		to.fake = true;
+
+		// we don't add edge here, but add the vertexes to gain dependencies and
+		// save the vertexes order
+		virtualEdges.push_back(std::make_pair(from, to));
 	}
 
 	return virtualEdges;
+}
+
+bool __share_relation_expression(const GraphAndAttributes::Attribute& left,
+		const GraphAndAttributes::Attribute& right)
+{
+	FORIT(leftRelationRecordIt, left.relationInfo)
+	{
+		FORIT(rightRelationRecordIt, right.relationInfo)
+		{
+			if (leftRelationRecordIt->dependencyType == rightRelationRecordIt->dependencyType &&
+					leftRelationRecordIt->relationExpression == rightRelationRecordIt->relationExpression)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
@@ -621,6 +635,13 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 				{
 					continue;
 				}
+				if (!__share_relation_expression(
+							gaa.attributes[make_pair(*predecessorVertexPtrIt, fromPtr)],
+							gaa.attributes[make_pair(toPtr, *successorVertexPtrIt)]))
+				{
+					continue;
+				}
+
 				// moving edge attributes too
 				moveEdge(*predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt);
 				moveEdge(toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt);

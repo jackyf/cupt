@@ -30,6 +30,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         "nothing or all".
       - Make dpkg sequence output fixed between the different runs for the
         same input.
+      - Made the virtual vertices' CPU and RAM footprint smaller.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific
