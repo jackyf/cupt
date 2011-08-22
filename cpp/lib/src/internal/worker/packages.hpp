@@ -59,6 +59,7 @@ struct GraphAndAttributes
 		BinaryVersion::RelationTypes::Type dependencyType;
 		RelationExpression relationExpression;
 		bool reverse;
+		bool fromVirtual;
 	};
 	struct Attribute
 	{

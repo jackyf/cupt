@@ -88,16 +88,13 @@ auto GraphAndAttributes::Attribute::getLevel() const -> Level
 		{
 			subLevel = Soft;
 		}
+		else if (recordIt->fromVirtual)
+		{
+			subLevel = FromVirtual;
+		}
 		else if (recordIt->reverse)
 		{
-			if (recordIt->dependencyType == BinaryVersion::RelationTypes::Depends)
-			{
-				subLevel = FromVirtual;
-			}
-			else
-			{
-				subLevel = Soft;
-			}
+			subLevel = Soft;
 		}
 		else
 		{
@@ -376,7 +373,8 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
 					gi.gaaPtr->attributes[make_pair(slaveActionPtr, masterActionPtr)].relationInfo;
 			GraphAndAttributes::RelationInfoRecord record =
-					{ dependencyType, *relationExpressionIt, direction == Direction::After };
+					{ dependencyType, *relationExpressionIt, direction == Direction::After,
+						slaveActionPtr->fake || masterActionPtr->fake };
 			relationInfo.push_back(std::move(record));
 
 			if (gi.debugging)
