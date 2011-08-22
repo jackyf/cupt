@@ -339,6 +339,8 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			}
 			*/
 
+			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
+			if (!fromVirtual)
 			{ // checking if action dependency is neutralized by linked antagonistic action
 				const InnerAction* antagonisticActionPtr = NULL;
 				if (actionType == InnerAction::Configure && direction == Direction::Before)
@@ -362,7 +364,7 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 					if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
 							predicate) != satisfyingVersions.end())
 					{
-						continue; // yes, neutralized
+						fromVirtual = true; // yes, neutralized so the dependency is only virtual now
 					}
 				}
 			}
@@ -373,8 +375,7 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
 					gi.gaaPtr->attributes[make_pair(slaveActionPtr, masterActionPtr)].relationInfo;
 			GraphAndAttributes::RelationInfoRecord record =
-					{ dependencyType, *relationExpressionIt, direction == Direction::After,
-						slaveActionPtr->fake || masterActionPtr->fake };
+					{ dependencyType, *relationExpressionIt, direction == Direction::After, fromVirtual };
 			relationInfo.push_back(std::move(record));
 
 			if (gi.debugging)
@@ -600,6 +601,45 @@ bool __share_relation_expression(const GraphAndAttributes::Attribute& left,
 	return false;
 }
 
+void __for_each_package_sequence(const Graph< InnerAction >& graph,
+		std::function< void (const InnerAction*, const InnerAction*, const InnerAction*) > callback)
+{
+	FORIT(innerActionIt, graph.getVertices())
+	{
+		if (innerActionIt->type == InnerAction::Unpack)
+		{
+			const string& packageName = innerActionIt->version->packageName;
+
+			const InnerAction* fromPtr = &*innerActionIt;
+			const InnerAction* toPtr = &*innerActionIt;
+
+			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
+			FORIT(actionPtrIt, predecessors)
+			{
+				if ((*actionPtrIt)->type == InnerAction::Remove &&
+					(*actionPtrIt)->version->packageName == packageName)
+				{
+					fromPtr = *actionPtrIt;
+					break;
+				}
+			}
+
+			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
+			FORIT(actionPtrIt, successors)
+			{
+				if ((*actionPtrIt)->type == InnerAction::Configure &&
+					(*actionPtrIt)->version->packageName == packageName)
+				{
+					toPtr = *actionPtrIt;
+					break;
+				}
+			}
+
+			callback(fromPtr, toPtr, &*innerActionIt);
+		}
+	}
+}
+
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const vector< pair< InnerAction, InnerAction > >& virtualEdges, bool debugging)
 {
@@ -669,6 +709,50 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		gaa.graph.deleteVertex(*fromPtr);
 		gaa.graph.deleteVertex(*toPtr);
 	}
+
+	// expanding linked actions
+	__for_each_package_sequence(gaa.graph, [&gaa, &moveEdge]
+			(const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
+			{
+				if (fromPtr->type != InnerAction::Remove || toPtr->type != InnerAction::Configure)
+				{
+					return; // we are dealing only with full chains
+				}
+				if (!fromPtr->linkedTo || fromPtr->linkedTo != toPtr->linkedFrom)
+				{
+					return; // this chain is not fully linked
+				}
+
+				const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr); // copying
+				FORIT(predecessorPtrIt, predecessors)
+				{
+					if (*predecessorPtrIt == toPtr)
+					{
+						continue;
+					}
+					if (gaa.attributes[make_pair(*predecessorPtrIt, fromPtr)].getLevel()
+							== GraphAndAttributes::Attribute::FromVirtual)
+					{
+						moveEdge(*predecessorPtrIt, fromPtr, toPtr, fromPtr);
+						gaa.graph.deleteEdgeFromPointers(*predecessorPtrIt, fromPtr);
+					}
+				}
+
+				const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+				FORIT(successorPtrIt, successors)
+				{
+					if (*successorPtrIt == fromPtr)
+					{
+						continue;
+					}
+					if (gaa.attributes[make_pair(toPtr, *successorPtrIt)].getLevel()
+							== GraphAndAttributes::Attribute::FromVirtual)
+					{
+						moveEdge(toPtr, *successorPtrIt, toPtr, fromPtr);
+						gaa.graph.deleteEdgeFromPointers(toPtr, *successorPtrIt);
+					}
+				}
+			});
 }
 
 ssize_t __get_action_group_priority(const vector< InnerAction >& preActionGroup)
@@ -697,45 +781,6 @@ struct __action_group_pointer_priority_less
 		return (*left > *right); // so "lesser" action group have a bigger priority
 	}
 };
-
-void __for_each_package_sequence(const Graph< InnerAction >& graph,
-		std::function< void (const InnerAction*, const InnerAction*, const InnerAction*) > callback)
-{
-	FORIT(innerActionIt, graph.getVertices())
-	{
-		if (innerActionIt->type == InnerAction::Unpack)
-		{
-			const string& packageName = innerActionIt->version->packageName;
-
-			const InnerAction* fromPtr = &*innerActionIt;
-			const InnerAction* toPtr = &*innerActionIt;
-
-			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
-			FORIT(actionPtrIt, predecessors)
-			{
-				if ((*actionPtrIt)->type == InnerAction::Remove &&
-					(*actionPtrIt)->version->packageName == packageName)
-				{
-					fromPtr = *actionPtrIt;
-					break;
-				}
-			}
-
-			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
-			FORIT(actionPtrIt, successors)
-			{
-				if ((*actionPtrIt)->type == InnerAction::Configure &&
-					(*actionPtrIt)->version->packageName == packageName)
-				{
-					toPtr = *actionPtrIt;
-					break;
-				}
-			}
-
-			callback(fromPtr, toPtr, &*innerActionIt);
-		}
-	}
-}
 
 void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 {
