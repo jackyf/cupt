@@ -31,90 +31,10 @@ namespace internal {
 
 using std::list;
 
-class VersionProxy
-{
- protected:
-	shared_ptr< const BinaryVersion > _version;
- public:
-	const string& getPackageName() const
-	{
-		return _version->packageName;
-	}
-	const string& getVersionString() const
-	{
-		return _version->versionString;
-	}
-
-	virtual const RelationLine& getRelations(BinaryVersion::RelationTypes::Type) const = 0;
-	virtual const shared_ptr< const BinaryVersion >& getVersion() const = 0;
-	virtual string toString() const = 0;
-	virtual const string& getAdditionaSortKey() const = 0;
-	virtual ~VersionProxy() {}
-};
-class FullVersionProxy: public VersionProxy
-{
- public:
-	const RelationLine& getRelations(BinaryVersion::RelationTypes::Type type) const
-	{
-		return _version->relations[type];
-	}
-	void setVersion(const shared_ptr< const BinaryVersion >& version)
-	{
-		_version = version;
-	}
-	const shared_ptr< const BinaryVersion >& getVersion() const
-	{
-		return _version;
-	}
-	string toString() const
-	{
-		return getPackageName() + ' ' + getVersionString();
-	}
-	const string& getAdditionaSortKey() const
-	{
-		static const string emptyString;
-		return emptyString;
-	}
-};
-class OneRelationExpressionVersionProxy: public VersionProxy
-{
-	BinaryVersion::RelationTypes::Type __type;
-	RelationLine __relation_expression;
-	string __hash_key;
-
-	static const RelationLine __null_result;
- public:
-	OneRelationExpressionVersionProxy(const shared_ptr< const BinaryVersion >& version,
-			BinaryVersion::RelationTypes::Type type, const RelationExpression& relationExpression)
-		: __type(type), __hash_key(relationExpression.getHashString())
-	{
-		_version = version;
-		__relation_expression.push_back(relationExpression);
-	}
-	const RelationLine& getRelations(BinaryVersion::RelationTypes::Type type) const
-	{
-		return (type == __type) ? __relation_expression : __null_result;
-	}
-	const shared_ptr< const BinaryVersion >& getVersion() const
-	{
-		fatal("internal error: getting version of one relation expression proxy");
-		return _version; // unreachable
-	}
-	string toString() const
-	{
-		return getPackageName() + " [" + __relation_expression[0].toString()
-				+ "] " + getVersionString();
-	}
-	const string& getAdditionaSortKey() const
-	{
-		return __hash_key;
-	}
-};
-
 struct InnerAction
 {
 	enum Type { Remove, Unpack, Configure } type;
-	shared_ptr< const VersionProxy > versionProxy;
+	shared_ptr< const BinaryVersion > version;
 	bool fake;
 	mutable const InnerAction* linkedFrom;
 	mutable const InnerAction* linkedTo;
