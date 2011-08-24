@@ -711,8 +711,10 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		gaa.graph.deleteVertex(*fromPtr);
 		gaa.graph.deleteVertex(*toPtr);
 	}
+}
 
-	// expanding linked actions
+void __expand_linked_actions(GraphAndAttributes& gaa, bool debugging)
+{
 	__for_each_package_sequence(gaa.graph, [&gaa, debugging]
 			(const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 			{
@@ -1037,6 +1039,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 
 			__fill_graph_dependencies(_cache, gaa, debugging);
 			__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
+			__expand_linked_actions(gaa, debugging);
 		} while (__link_actions(gaa, debugging));
 		if (debugging)
 		{
