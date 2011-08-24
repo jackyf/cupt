@@ -1164,16 +1164,8 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 				}
 			}
 		}
-	}
-	do // iterating
-	{
-		if (debugging)
-		{
-			debug("building mini action graph: next iteration");
-		}
-		miniGaa.graph.clearEdges();
-		miniGaa.attributes.clear();
-		FORIT(it, basicEdges)
+		// fill edges
+		FORIT(it, basicEdges) // TODO: merge with above
 		{
 			miniGaa.graph.addEdgeFromPointers(it->first, it->second);
 			miniGaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
@@ -1202,6 +1194,14 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 				}
 			}
 		}
+	}
+	do // iterating
+	{
+		if (debugging)
+		{
+			debug("building mini action graph: next iteration");
+		}
+		__expand_linked_actions(*cache, miniGaa, debugging);
 	} while (__link_actions(miniGaa, debugging));
 	__make_cycles_for_linked_actions(miniGaa);
 	if (debugging)
