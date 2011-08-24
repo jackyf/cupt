@@ -829,11 +829,6 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 		if (fromPtr->type == InnerAction::Remove)
 		{
 			unpackActionPtr->priority = 4;
-			if (debugging)
-			{
-				debug("incrementing priority for unpack-after-removal action '%s'",
-						unpackActionPtr->toString().c_str());
-			}
 		}
 
 		std::list< const InnerAction* > notFirstActions = { toPtr };
