@@ -713,9 +713,37 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 	}
 }
 
-void __expand_linked_actions(GraphAndAttributes& gaa, bool debugging)
+void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool debugging)
 {
-	__for_each_package_sequence(gaa.graph, [&gaa, debugging]
+	auto markAsVirtualWhereLinkAllows = [&cache](GraphAndAttributes::Attribute& attribute,
+			const InnerAction* antagonisticPtr, bool neededValueOfReverse)
+	{
+		FORIT(relationRecordIt, attribute.relationInfo)
+		{
+			if (relationRecordIt->reverse == neededValueOfReverse)
+			{
+				auto satisfyingVersions = cache.getSatisfyingVersions(relationRecordIt->relationExpression);
+				auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticPtr->version);
+				if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
+						predicate) != satisfyingVersions.end())
+				{
+					relationRecordIt->fromVirtual = true; // this relation record is only virtual now
+				}
+			}
+		}
+	};
+
+	auto deleteEdge = [&gaa, debugging](const InnerAction* fromPtr, const InnerAction* toPtr)
+	{
+		gaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
+		if (debugging)
+		{
+			debug("deleting the edge '%s' -> '%s'",
+					fromPtr->toString().c_str(), toPtr->toString().c_str());
+		}
+	};
+
+	__for_each_package_sequence(gaa.graph, [&gaa, &markAsVirtualWhereLinkAllows, &deleteEdge, debugging]
 			(const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 			{
 				if (fromPtr->type != InnerAction::Remove || toPtr->type != InnerAction::Configure)
@@ -734,11 +762,12 @@ void __expand_linked_actions(GraphAndAttributes& gaa, bool debugging)
 					{
 						continue;
 					}
-					if (gaa.attributes[make_pair(*predecessorPtrIt, fromPtr)].getLevel()
-							== GraphAndAttributes::Attribute::FromVirtual)
+					GraphAndAttributes::Attribute& attribute = gaa.attributes[make_pair(*predecessorPtrIt, fromPtr)];
+					markAsVirtualWhereLinkAllows(attribute, toPtr, true);
+					if (attribute.getLevel() == GraphAndAttributes::Attribute::FromVirtual)
 					{
 						__move_edge(gaa, *predecessorPtrIt, fromPtr, toPtr, fromPtr, debugging);
-						gaa.graph.deleteEdgeFromPointers(*predecessorPtrIt, fromPtr);
+						deleteEdge(*predecessorPtrIt, fromPtr);
 					}
 				}
 
@@ -749,11 +778,12 @@ void __expand_linked_actions(GraphAndAttributes& gaa, bool debugging)
 					{
 						continue;
 					}
-					if (gaa.attributes[make_pair(toPtr, *successorPtrIt)].getLevel()
-							== GraphAndAttributes::Attribute::FromVirtual)
+					GraphAndAttributes::Attribute& attribute = gaa.attributes[make_pair(toPtr, *successorPtrIt)];
+					markAsVirtualWhereLinkAllows(attribute, fromPtr, false);
+					if (attribute.getLevel() == GraphAndAttributes::Attribute::FromVirtual)
 					{
 						__move_edge(gaa, toPtr, *successorPtrIt, toPtr, fromPtr, debugging);
-						gaa.graph.deleteEdgeFromPointers(toPtr, *successorPtrIt);
+						deleteEdge(toPtr, *successorPtrIt);
 					}
 				}
 			});
@@ -1017,29 +1047,26 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		}
 		auto virtualEdges = __create_virtual_actions(gaa, _cache);
 
+		FORIT(it, basicEdges)
+		{
+			gaa.graph.addEdgeFromPointers(it->first, it->second);
+			gaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
+		}
+		FORIT(it, virtualEdges)
+		{
+			gaa.graph.addVertex(it->first);
+			gaa.graph.addVertex(it->second);
+		}
+		__fill_graph_dependencies(_cache, gaa, debugging);
+		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
+
 		do
 		{
 			if (debugging)
 			{
 				debug("building action graph: next iteration");
 			}
-			gaa.graph.clearEdges();
-			gaa.attributes.clear();
-
-			FORIT(it, basicEdges)
-			{
-				gaa.graph.addEdgeFromPointers(it->first, it->second);
-				gaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
-			}
-			FORIT(it, virtualEdges)
-			{
-				gaa.graph.addVertex(it->first);
-				gaa.graph.addVertex(it->second);
-			}
-
-			__fill_graph_dependencies(_cache, gaa, debugging);
-			__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
-			__expand_linked_actions(gaa, debugging);
+			__expand_linked_actions(*_cache, gaa, debugging);
 		} while (__link_actions(gaa, debugging));
 		if (debugging)
 		{
