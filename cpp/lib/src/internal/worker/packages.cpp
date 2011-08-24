@@ -1130,7 +1130,6 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		GraphAndAttributes::Attribute::Level minimumAttributeLevel, bool debugging)
 {
 	using std::make_pair;
-	vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
 
 	{ // filling minigraph and basic edges
 		// fill vertices
@@ -1159,19 +1158,15 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						// yes, edge lies inside our mini graph
 						auto newToPtr = &*newToIt;
 
-						basicEdges.push_back(make_pair(newFromPtr, newToPtr));
+						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+						miniGaa.attributes[make_pair(newFromPtr, newToPtr)].isFundamental = true;
 					}
 				}
 			}
 		}
-		// fill edges
-		FORIT(it, basicEdges) // TODO: merge with above
-		{
-			miniGaa.graph.addEdgeFromPointers(it->first, it->second);
-			miniGaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
-		}
 
 		__fill_graph_dependencies(cache, miniGaa, debugging);
+
 		{ // deleting soft edges
 			auto edges = miniGaa.graph.getEdges();
 			FORIT(edgeIt, edges)
