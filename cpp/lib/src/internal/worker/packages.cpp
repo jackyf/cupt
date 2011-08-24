@@ -640,34 +640,37 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 	}
 }
 
+void __move_edge(GraphAndAttributes& gaa,
+		const InnerAction* fromPredecessorPtr, const InnerAction* fromSuccessorPtr,
+		const InnerAction* toPredecessorPtr, const InnerAction* toSuccessorPtr,
+		bool debugging)
+{
+	if (debugging)
+	{
+		debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
+				fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
+				toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
+	}
+
+	GraphAndAttributes::Attribute& toAttribute = gaa.attributes[make_pair(toPredecessorPtr, toSuccessorPtr)];
+	GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[make_pair(fromPredecessorPtr, fromSuccessorPtr)];
+
+	// concatenating relationInfo
+	toAttribute.relationInfo.insert(toAttribute.relationInfo.end(),
+			fromAttribute.relationInfo.begin(), fromAttribute.relationInfo.end());
+
+	// delete the whole attribute
+	gaa.attributes.erase(make_pair(fromPredecessorPtr, fromSuccessorPtr));
+
+	// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' should be deleted
+	// manually after the call of this function
+
+	gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
+};
+
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const vector< pair< InnerAction, InnerAction > >& virtualEdges, bool debugging)
 {
-	auto moveEdge = [&gaa, debugging](const InnerAction* fromPredecessorPtr, const InnerAction* fromSuccessorPtr,
-			const InnerAction* toPredecessorPtr, const InnerAction* toSuccessorPtr)
-	{
-		if (debugging)
-		{
-			debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
-					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
-					toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
-		}
-
-		GraphAndAttributes::Attribute& toAttribute = gaa.attributes[make_pair(toPredecessorPtr, toSuccessorPtr)];
-		GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[make_pair(fromPredecessorPtr, fromSuccessorPtr)];
-
-		// concatenating relationInfo
-		toAttribute.relationInfo.insert(toAttribute.relationInfo.end(),
-				fromAttribute.relationInfo.begin(), fromAttribute.relationInfo.end());
-
-		// delete the whole attribute
-		gaa.attributes.erase(make_pair(fromPredecessorPtr, fromSuccessorPtr));
-
-		// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' will be deleted by deleteVertex at the end
-
-		gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
-	};
-
 	FORIT(edgeIt, virtualEdges)
 	{
 		// getting vertex pointers
@@ -692,9 +695,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 					continue;
 				}
 
-				// moving edge attributes too
-				moveEdge(*predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt);
-				moveEdge(toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt);
+				__move_edge(gaa, *predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
+				__move_edge(gaa, toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
@@ -711,7 +713,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 	}
 
 	// expanding linked actions
-	__for_each_package_sequence(gaa.graph, [&gaa, &moveEdge]
+	__for_each_package_sequence(gaa.graph, [&gaa, debugging]
 			(const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 			{
 				if (fromPtr->type != InnerAction::Remove || toPtr->type != InnerAction::Configure)
@@ -733,7 +735,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 					if (gaa.attributes[make_pair(*predecessorPtrIt, fromPtr)].getLevel()
 							== GraphAndAttributes::Attribute::FromVirtual)
 					{
-						moveEdge(*predecessorPtrIt, fromPtr, toPtr, fromPtr);
+						__move_edge(gaa, *predecessorPtrIt, fromPtr, toPtr, fromPtr, debugging);
 						gaa.graph.deleteEdgeFromPointers(*predecessorPtrIt, fromPtr);
 					}
 				}
@@ -748,7 +750,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 					if (gaa.attributes[make_pair(toPtr, *successorPtrIt)].getLevel()
 							== GraphAndAttributes::Attribute::FromVirtual)
 					{
-						moveEdge(toPtr, *successorPtrIt, toPtr, fromPtr);
+						__move_edge(gaa, toPtr, *successorPtrIt, toPtr, fromPtr, debugging);
 						gaa.graph.deleteEdgeFromPointers(toPtr, *successorPtrIt);
 					}
 				}
