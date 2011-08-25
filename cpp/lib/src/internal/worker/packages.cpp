@@ -966,6 +966,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 					debug("new link: '%s' -> '%s'",
 							fromPtr->toString().c_str(), toPtr->toString().c_str());
 				}
+				gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
 			}
 		}
 	};
@@ -1008,26 +1009,6 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 	}
 
 	return linkedSomething;
-}
-
-void __make_cycles_for_linked_actions(GraphAndAttributes& gaa)
-{
-	const set< InnerAction >& vertices = gaa.graph.getVertices();
-	FORIT(innerActionIt, vertices)
-	{
-		if (innerActionIt->type == InnerAction::Unpack)
-		{
-			if (innerActionIt->linkedFrom)
-			{
-				gaa.graph.addEdgeFromPointers(&*innerActionIt, innerActionIt->linkedFrom);
-			}
-
-			if (innerActionIt->linkedTo)
-			{
-				gaa.graph.addEdgeFromPointers(innerActionIt->linkedTo, &*innerActionIt);
-			}
-		}
-	}
 }
 
 bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
@@ -1074,8 +1055,6 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		{
 			debug("building action graph: finished");
 		}
-
-		__make_cycles_for_linked_actions(gaa);
 	}
 
 	if (debugging)
@@ -1194,7 +1173,6 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		}
 		__expand_linked_actions(*cache, miniGaa, debugging);
 	} while (__link_actions(miniGaa, debugging));
-	__make_cycles_for_linked_actions(miniGaa);
 	if (debugging)
 	{
 		debug("building mini action graph: finished");
