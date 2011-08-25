@@ -133,7 +133,11 @@ GraphAndAttributes::GraphAndAttributes(const GraphAndAttributes& other)
 			auto myToPtr = graph.addVertex(*otherToPtr);
 
 			graph.addEdgeFromPointers(myFromPtr, myToPtr);
-			attributes[make_pair(myFromPtr, myToPtr)] = other.attributes.find(make_pair(otherFromPtr, otherToPtr))->second;
+			auto otherAttributeIt = other.attributes.find(make_pair(otherFromPtr, otherToPtr));
+			if (otherAttributeIt != other.attributes.end())
+			{
+				attributes[make_pair(myFromPtr, myToPtr)] = otherAttributeIt->second;
+			}
 		}
 	}
 }
