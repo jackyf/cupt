@@ -2007,7 +2007,6 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 				}
 				if (debugging)
 				{
-
 					vector< string > stringifiedActions;
 					FORIT(actionIt, *actionGroupIt)
 					{
