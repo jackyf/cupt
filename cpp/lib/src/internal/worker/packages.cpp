@@ -495,54 +495,6 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 	}
 }
 
-void PackagesWorker::__check_graph_pre_depends(GraphAndAttributes& gaa, bool debugging)
-{
-	auto edges = gaa.graph.getEdges();
-	FORIT(edgeIt, edges)
-	{
-		const InnerAction* fromPtr = edgeIt->first;
-		const InnerAction* toPtr = edgeIt->second;
-		const vector< GraphAndAttributes::RelationInfoRecord >& records =
-				gaa.attributes[make_pair(fromPtr, toPtr)].relationInfo;
-
-		RelationLine preDependencyRelationExpressions;
-		FORIT(recordIt, records)
-		{
-			if (recordIt->dependencyType == BinaryVersion::RelationTypes::PreDepends)
-			{
-				preDependencyRelationExpressions.push_back(recordIt->relationExpression);
-			}
-		}
-		if (preDependencyRelationExpressions.empty())
-		{
-			continue;
-		}
-
-		if (debugging)
-		{
-			debug("checking edge '%s' -> '%s' for pre-dependency cycle",
-					fromPtr->toString().c_str(), toPtr->toString().c_str());
-		}
-		if (gaa.graph.getReachableFrom(*toPtr).count(fromPtr))
-		{
-			// bah! the pre-dependency cannot be overridden
-			// it is not worker's fail (at least, it shouldn't be)
-
-			auto path = gaa.graph.getPathVertices(*toPtr, *fromPtr);
-
-			vector< string > packageNamesInPath;
-			FORIT(pathIt, path)
-			{
-				packageNamesInPath.push_back((*pathIt)->version->packageName);
-			}
-			string packageNamesString = join(", ", packageNamesInPath);
-
-			warn("the pre-dependency(ies) '%s' will be broken during the actions, the packages involved: %s",
-					preDependencyRelationExpressions.toString().c_str(), packageNamesString.c_str());
-		}
-	}
-}
-
 const shared_ptr< const BinaryVersion > __create_virtual_version(
 		const shared_ptr< const BinaryVersion >& version)
 {
@@ -1068,8 +1020,6 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 					GraphAndAttributes::Attribute::levelStrings[attributeLevel]);
 		}
 	}
-
-	__check_graph_pre_depends(gaa, debugging);
 
 	return true;
 }
