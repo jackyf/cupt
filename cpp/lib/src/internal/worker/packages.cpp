@@ -909,11 +909,6 @@ bool __is_single_package_group(const vector< InnerAction >& actionGroup)
 
 bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 {
-	if (gaa.graph.getVertices().empty())
-	{
-		return false;
-	}
-
 	bool linkedSomething = false;
 
 	__set_priority_links(gaa, debugging);
