@@ -849,10 +849,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			vector< string > s;
 			FORIT(actionIt, preActionGroup)
 			{
-				if (!actionIt->fake)
-				{
-					s.push_back(actionIt->toString());
-				}
+				s.push_back(actionIt->toString());
 			}
 			if (!s.empty())
 			{
@@ -868,7 +865,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 
 	auto processCandidates = [&gaa, &debugging, &linkedSomething](const InnerAction& from, const InnerAction& to)
 	{
-		if (to.linkedFrom || to.fake)
+		if (to.linkedFrom)
 		{
 			return; // was linked already
 		}
@@ -901,7 +898,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 		FORIT(actionIt, *actionGroupIt)
 		{
 			const InnerAction& from = *actionIt;
-			if (from.linkedTo || from.fake)
+			if (from.linkedTo)
 			{
 				continue; // was linked already
 			}
