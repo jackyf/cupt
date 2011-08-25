@@ -992,7 +992,9 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			auto nextActionGroupIt = actionGroupIt + 1;
 			if (nextActionGroupIt != preActionGroupsEndIt)
 			{
-				if (__is_single_package_group(*actionGroupIt) && __is_single_package_group(*nextActionGroupIt))
+				bool ll = __is_single_package_group(*actionGroupIt);
+				bool rr = __is_single_package_group(*nextActionGroupIt);
+				if (from.type == InnerAction::Remove ? (ll || rr) : (ll && rr))
 				{
 					FORIT(candidateActionIt, *nextActionGroupIt)
 					{
