@@ -380,38 +380,9 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			}
 			*/
 
-			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
-			if (!fromVirtual)
-			{ // checking if action dependency is neutralized by linked antagonistic action
-				const InnerAction* antagonisticActionPtr = NULL;
-				if (actionType == InnerAction::Configure && direction == Direction::Before)
-				{
-					if (currentActionPtr->linkedFrom && currentActionPtr->linkedFrom->linkedFrom)
-					{
-						antagonisticActionPtr = currentActionPtr->linkedFrom->linkedFrom;
-					}
-				}
-				else if (actionType == InnerAction::Remove && direction == Direction::After)
-				{
-					if (currentActionPtr->linkedTo && currentActionPtr->linkedTo->linkedTo)
-					{
-						antagonisticActionPtr = currentActionPtr->linkedTo->linkedTo;
-					}
-				}
-
-				if (antagonisticActionPtr)
-				{
-					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticActionPtr->version);
-					if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-							predicate) != satisfyingVersions.end())
-					{
-						fromVirtual = true; // yes, neutralized so the dependency is only virtual now
-					}
-				}
-			}
-
 			gi.gaaPtr->graph.addEdgeFromPointers(slaveActionPtr, masterActionPtr);
 
+			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
 			// adding relation to attributes
 			vector< GraphAndAttributes::RelationInfoRecord >& relationInfo =
 					gi.gaaPtr->attributes[make_pair(slaveActionPtr, masterActionPtr)].relationInfo;
