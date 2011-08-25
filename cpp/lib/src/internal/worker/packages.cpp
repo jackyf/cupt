@@ -931,6 +931,24 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 	return linkedSomething;
 }
 
+void __iterate_over_graph(const Cache& cache, GraphAndAttributes& gaa,
+		bool isMini, bool debugging)
+{
+	const char* maybeMini = isMini ? "mini " : "";
+	do // iterating
+	{
+		if (debugging)
+		{
+			debug("building %saction graph: next iteration", maybeMini);
+		}
+		__expand_linked_actions(cache, gaa, debugging);
+	} while (__link_actions(gaa, debugging));
+	if (debugging)
+	{
+		debug("building %saction graph: finished", maybeMini);
+	}
+}
+
 bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
@@ -963,18 +981,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		__fill_graph_dependencies(_cache, gaa, debugging);
 		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
 
-		do
-		{
-			if (debugging)
-			{
-				debug("building action graph: next iteration");
-			}
-			__expand_linked_actions(*_cache, gaa, debugging);
-		} while (__link_actions(gaa, debugging));
-		if (debugging)
-		{
-			debug("building action graph: finished");
-		}
+		__iterate_over_graph(*_cache, gaa, false, debugging);
 	}
 
 	if (debugging)
@@ -1083,18 +1090,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			}
 		}
 	}
-	do // iterating
-	{
-		if (debugging)
-		{
-			debug("building mini action graph: next iteration");
-		}
-		__expand_linked_actions(*cache, miniGaa, debugging);
-	} while (__link_actions(miniGaa, debugging));
-	if (debugging)
-	{
-		debug("building mini action graph: finished");
-	}
+	__iterate_over_graph(*cache, miniGaa, true, debugging);
 }
 
 void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
