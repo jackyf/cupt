@@ -66,8 +66,6 @@ class Graph
  public:
 	void clearEdges();
 
-	void swap(Graph< T, PtrTraitsT >& other);
-
 	const set< T >& getVertices() const;
 	vector< pair< PtrT, PtrT > > getEdges() const;
 
@@ -101,14 +99,6 @@ void Graph< T, PtrTraitsT >::clearEdges()
 {
 	__predecessors.clear();
 	__successors.clear();
-}
-
-template< class T, template < class X > class PtrTraitsT >
-void Graph< T, PtrTraitsT >::swap(Graph< T, PtrTraitsT >& other)
-{
-	__vertices.swap(other.__vertices);
-	__predecessors.swap(other.__predecessors);
-	__successors.swap(other.__successors);
 }
 
 template< class T, template < class X > class PtrTraitsT >

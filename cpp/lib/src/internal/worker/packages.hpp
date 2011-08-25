@@ -73,11 +73,6 @@ struct GraphAndAttributes
 		Level getLevel() const;
 	};
 	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
-
-	GraphAndAttributes();
-	GraphAndAttributes(const GraphAndAttributes& other);
-	void swap(GraphAndAttributes& other);
-	GraphAndAttributes& operator=(const GraphAndAttributes& other);
 };
 struct Changeset
 {
@@ -91,9 +86,9 @@ class PackagesWorker: public virtual WorkerBase
 
 	void __fill_actions(GraphAndAttributes&,
 			vector< pair< const InnerAction*, const InnerAction* > >&);
-	bool __build_actions_graph(GraphAndAttributes&, GraphAndAttributes&);
+	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
-	vector< Changeset > __get_changesets(GraphAndAttributes&, GraphAndAttributes&,
+	vector< Changeset > __get_changesets(GraphAndAttributes&,
 			const map< string, pair< download::Manager::DownloadEntity, string > >&);
 	void __run_dpkg_command(const string&, const string&, const string&);
 	void __do_dpkg_pre_actions();

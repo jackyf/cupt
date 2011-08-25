@@ -110,51 +110,10 @@ const char* GraphAndAttributes::Attribute::levelStrings[5] = {
 	"priority", "from-virtual", "soft", "hard", "fundamental"
 };
 
-// GraphAndAttributes
+
 using std::make_pair;
 
 typedef Graph< InnerAction >::CessorListType GraphCessorListType;
-
-GraphAndAttributes::GraphAndAttributes()
-{}
-
-GraphAndAttributes::GraphAndAttributes(const GraphAndAttributes& other)
-{
-	const set< InnerAction >& otherVertices = other.graph.getVertices();
-	FORIT(it, otherVertices)
-	{
-		auto otherFromPtr = &*it;
-		auto myFromPtr = graph.addVertex(*otherFromPtr);
-
-		const GraphCessorListType& otherSuccessors = other.graph.getSuccessorsFromPointer(otherFromPtr);
-		FORIT(successorPtrIt, otherSuccessors)
-		{
-			auto otherToPtr = *successorPtrIt;
-			auto myToPtr = graph.addVertex(*otherToPtr);
-
-			graph.addEdgeFromPointers(myFromPtr, myToPtr);
-			attributes[make_pair(myFromPtr, myToPtr)] = other.attributes.find(make_pair(otherFromPtr, otherToPtr))->second;
-		}
-	}
-}
-
-GraphAndAttributes& GraphAndAttributes::operator=(const GraphAndAttributes& other)
-{
-	if (this == &other)
-	{
-		return *this;
-	}
-
-	GraphAndAttributes newGaa(other);
-	this->swap(newGaa);
-	return *this;
-}
-
-void GraphAndAttributes::swap(GraphAndAttributes& other)
-{
-	graph.swap(other.graph);
-	attributes.swap(other.attributes);
-}
 
 PackagesWorker::PackagesWorker()
 {
@@ -1064,7 +1023,7 @@ void __make_cycles_for_linked_actions(GraphAndAttributes& gaa)
 	}
 }
 
-bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa, GraphAndAttributes& unlinkedGaa)
+bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
 	{
@@ -1095,8 +1054,6 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa, GraphAndAttr
 		}
 		__fill_graph_dependencies(_cache, gaa, debugging);
 		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
-
-		unlinkedGaa = gaa;
 
 		do
 		{
@@ -1177,7 +1134,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			vertexPtr->linkedFrom = NULL;
 			vertexPtr->linkedTo = NULL;
 		}
-		// filling edges
+		// filling basic edges
 		const set< InnerAction >& allowedVertices = miniGaa.graph.getVertices();
 		FORIT(it, allowedVertices)
 		{
@@ -1188,26 +1145,22 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;
-
-				auto newToIt = allowedVertices.find(*oldToPtr);
-				if (newToIt != allowedVertices.end())
+				if (gaa.attributes[make_pair(oldFromPtr, oldToPtr)].isFundamental)
 				{
-					// yes, edge lies inside our mini graph
-					auto newToPtr = &*newToIt;
-
-					miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
-
-					const GraphAndAttributes::Attribute& oldAttribute = gaa.attributes[make_pair(oldFromPtr, oldToPtr)];
-					miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
-					if (debugging)
+					auto newToIt = allowedVertices.find(*oldToPtr);
+					if (newToIt != allowedVertices.end())
 					{
-						debug("adding edge '%s' -> '%s'",
-								newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+						// yes, edge lies inside our mini graph
+						auto newToPtr = &*newToIt;
+
+						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+						miniGaa.attributes[make_pair(newFromPtr, newToPtr)].isFundamental = true;
 					}
-					// TODO: check unneeded edges already here
 				}
 			}
 		}
+
+		__fill_graph_dependencies(cache, miniGaa, debugging);
 
 		{ // deleting soft edges
 			auto edges = miniGaa.graph.getEdges();
@@ -1621,8 +1574,7 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 	}
 }
 
-vector< Changeset > PackagesWorker::__get_changesets(
-		GraphAndAttributes& gaa, GraphAndAttributes& unlinkedGaa,
+vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		const map< string, pair< download::Manager::DownloadEntity, string > >& downloads)
 {
 	typedef GraphAndAttributes::Attribute Attribute;
@@ -1640,8 +1592,8 @@ vector< Changeset > PackagesWorker::__get_changesets(
 				(dummyCallback, std::back_inserter(preActionGroups));
 		actionGroups = __convert_vector(std::move(preActionGroups));
 	}
-	__split_heterogeneous_actions(_cache, actionGroups, unlinkedGaa, Attribute::Soft, debugging);
-	__split_heterogeneous_actions(_cache, actionGroups, unlinkedGaa, Attribute::Hard, debugging);
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Soft, debugging);
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Hard, debugging);
 	__set_force_options_for_removals_if_needed(*_cache, actionGroups);
 
 	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
@@ -2023,13 +1975,12 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	vector< Changeset > changesets;
 	{
 		GraphAndAttributes gaa;
-		GraphAndAttributes unlinkedGaa;
-		if (!__build_actions_graph(gaa, unlinkedGaa))
+		if (!__build_actions_graph(gaa))
 		{
 			return; // exit when nothing to do
 		}
 
-		changesets = __get_changesets(gaa, unlinkedGaa, preDownloads);
+		changesets = __get_changesets(gaa, preDownloads);
 	}
 
 	// doing or simulating the actions
