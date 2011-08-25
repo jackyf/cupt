@@ -84,8 +84,7 @@ class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
 
-	void __fill_actions(GraphAndAttributes&,
-			vector< pair< const InnerAction*, const InnerAction* > >&);
+	void __fill_actions(GraphAndAttributes&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
 	vector< Changeset > __get_changesets(GraphAndAttributes&,

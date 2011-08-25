@@ -215,8 +215,7 @@ void __set_action_priority(const InnerAction* actionPtr, const InnerAction* prev
 	};
 }
 
-void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
-		vector< pair< const InnerAction*, const InnerAction* > >& basicEdges)
+void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 {
 	typedef InnerAction IA;
 
@@ -233,6 +232,12 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 
 	auto pseudoEssentialPackageNames = __get_pseudo_essential_package_names(
 			*_cache, _config->getBool("debug::worker"));
+
+	auto addBasicEdge = [&gaa](const InnerAction* fromPtr, const InnerAction* toPtr)
+	{
+		gaa.graph.addEdgeFromPointers(fromPtr, toPtr);
+		gaa.attributes[make_pair(fromPtr, toPtr)].isFundamental = true;
+	};
 
 	// convert all actions into inner ones
 	FORIT(mapIt, actionsMapping)
@@ -283,18 +288,18 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 				{
 					// the edge between consecutive actions
 					using std::make_pair;
-					basicEdges.push_back(make_pair(previousInnerActionPtr, newVertexPtr));
+					addBasicEdge(previousInnerActionPtr, newVertexPtr);
 					if (previousInnerActionPtr->type == IA::Remove &&
 							(newVertexPtr->version->essential || pseudoEssentialPackageNames.count(packageName)))
 					{
 						// merging remove/unpack
-						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
+						addBasicEdge(newVertexPtr, previousInnerActionPtr);
 					}
 					if (previousInnerActionPtr->type == IA::Unpack &&
 							pseudoEssentialPackageNames.count(packageName))
 					{
 						// merging unpack/configure
-						basicEdges.push_back(make_pair(newVertexPtr, previousInnerActionPtr));
+						addBasicEdge(newVertexPtr, previousInnerActionPtr);
 					}
 				}
 				previousInnerActionPtr = newVertexPtr;
@@ -1031,20 +1036,14 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 	bool debugging = _config->getBool("debug::worker");
 
 	{
-		vector< pair< const InnerAction*, const InnerAction* > > basicEdges;
-		__fill_actions(gaa, basicEdges);
+		__fill_actions(gaa);
 		// maybe, we have nothing to do?
 		if (gaa.graph.getVertices().empty() && __actions_preview->groups[Action::ProcessTriggers].empty())
 		{
 			return false;
 		}
-		auto virtualEdges = __create_virtual_actions(gaa, _cache);
 
-		FORIT(it, basicEdges)
-		{
-			gaa.graph.addEdgeFromPointers(it->first, it->second);
-			gaa.attributes[make_pair(it->first, it->second)].isFundamental = true;
-		}
+		auto virtualEdges = __create_virtual_actions(gaa, _cache);
 		FORIT(it, virtualEdges)
 		{
 			gaa.graph.addVertex(it->first);
