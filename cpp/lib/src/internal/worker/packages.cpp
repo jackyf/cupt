@@ -787,6 +787,10 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr,
 			const InnerAction* unpackActionPtr)
 	{
+		if (gaa.graph.hasEdgeFromPointers(toPtr, fromPtr))
+		{
+			return;
+		}
 		if (debugging)
 		{
 			debug("adjusting the pair '%s' -> '%s':",
