@@ -51,6 +51,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.
+      - Fixed a typo in the description of '--download-only' option.
+        (Closes: #639160)
 
  -- Eugene Lyubimkin <ext-lyubimkin.eugene@nokia.com>  Wed, 13 Jul 2011 09:33:27 +0300
 

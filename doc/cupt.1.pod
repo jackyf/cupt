@@ -663,7 +663,7 @@ cancels behavior described.
 =item --download-only,-d
 
 stop after download stage, don't modify the system; not applicable for
-L</markauto> and L</markauto> actions
+L</markauto> and L</unmarkauto> actions
 
 Corresponding configuration option: L<cupt::worker::download-only>
 
