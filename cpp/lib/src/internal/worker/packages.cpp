@@ -180,6 +180,41 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 	return result;
 }
 
+void __set_action_priority(const InnerAction* actionPtr, const InnerAction* previousActionPtr)
+{
+	/* priorities are assigned that way so the possible chains are sorted in
+	 * the following order by total priority, from the worst to the best:
+	 *
+	 * remove
+	 * unpack
+	 * remove + unpack-after-removal
+	 * unpack + configure
+	 * remove + unpack-after-removal + configure
+	 * configure
+	 * unpack-after-removal
+	 * unpack-after-removal + configure
+	 */
+	switch (actionPtr->type)
+	{
+		case InnerAction::Remove:
+			actionPtr->priority = -5;
+			break;
+		case InnerAction::Unpack:
+			if (previousActionPtr)
+			{
+				actionPtr->priority = 4; // unpack-after-removal
+			}
+			else
+			{
+				actionPtr->priority = -2;
+			}
+			break;
+		case InnerAction::Configure:
+			actionPtr->priority = 3;
+			break;
+	};
+}
+
 void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 		vector< pair< const InnerAction*, const InnerAction* > >& basicEdges)
 {
@@ -242,6 +277,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa,
 				action.type = innerActionType;
 
 				auto newVertexPtr = gaa.graph.addVertex(action);
+				__set_action_priority(newVertexPtr, previousInnerActionPtr);
 
 				if (previousInnerActionPtr)
 				{
@@ -816,7 +852,7 @@ struct __action_group_pointer_priority_less
 	}
 };
 
-void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
+void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 {
 	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr,
 			const InnerAction* unpackActionPtr)
@@ -825,10 +861,6 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 		{
 			debug("adjusting the pair '%s' -> '%s':",
 					fromPtr->toString().c_str(), toPtr->toString().c_str());
-		}
-		if (fromPtr->type == InnerAction::Remove)
-		{
-			unpackActionPtr->priority = 4;
 		}
 
 		std::list< const InnerAction* > notFirstActions = { toPtr };
@@ -859,35 +891,6 @@ void __set_action_priorities(GraphAndAttributes& gaa, bool debugging)
 		}
 	};
 
-	const set< InnerAction >& vertices = gaa.graph.getVertices();
-	FORIT(innerActionIt, vertices)
-	{
-		/* priorities here and for unpack-after-removal variant (see above) are assigned so
-		 * the possible chains are sorted in an following order by total priority,
-		 * from the worst to the best:
-		 *
-		 * remove
-		 * unpack
-		 * remove + unpack-after-removal
-		 * unpack + configure
-		 * remove + unpack-after-removal + configure
-		 * configure
-		 * unpack-after-removal
-		 * unpack-after-removal + configure
-		 */
-		switch (innerActionIt->type)
-		{
-			case InnerAction::Remove:
-				innerActionIt->priority = -5;
-				break;
-			case InnerAction::Unpack:
-				innerActionIt->priority = -2;
-				break;
-			case InnerAction::Configure:
-				innerActionIt->priority = 3;
-				break;
-		};
-	}
 	__for_each_package_sequence(gaa.graph, adjustPair);
 }
 
@@ -913,7 +916,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 
 	bool linkedSomething = false;
 
-	__set_action_priorities(gaa, debugging);
+	__set_priority_links(gaa, debugging);
 	auto callback = [debugging](const vector< InnerAction >& preActionGroup, bool closing)
 	{
 		if (debugging)
