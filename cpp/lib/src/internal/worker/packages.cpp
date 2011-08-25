@@ -1052,6 +1052,12 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 			gaa.graph.addVertex(it->first);
 			gaa.graph.addVertex(it->second);
 		}
+		__for_each_package_sequence(gaa.graph,
+				[&gaa](const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
+				{
+					// priority edge for shorting distance between package subactions
+					gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+				});
 		__fill_graph_dependencies(_cache, gaa, debugging);
 		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
 
@@ -1274,7 +1280,10 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 						}
 					}
 				}
-				actionSubgroup.continued = true;
+				if (level - 1 > Attribute::Priority) // level - 1 == highest level of removed edges
+				{
+					actionSubgroup.continued = true;
+				}
 
 				newActionGroups.push_back(actionSubgroup);
 			}
@@ -1596,6 +1605,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 				(dummyCallback, std::back_inserter(preActionGroups));
 		actionGroups = __convert_vector(std::move(preActionGroups));
 	}
+	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::FromVirtual, debugging);
 	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Soft, debugging);
 	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Hard, debugging);
 	__set_force_options_for_removals_if_needed(*_cache, actionGroups);
