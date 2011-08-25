@@ -34,7 +34,7 @@ namespace internal {
 
 // InnerAction
 InnerAction::InnerAction()
-	: fake(false), linkedFrom(NULL), linkedTo(NULL), priority(0)
+	: fake(false), priority(0), linkedFrom(NULL), linkedTo(NULL)
 {}
 
 bool InnerAction::operator<(const InnerAction& other) const

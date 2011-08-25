@@ -36,9 +36,9 @@ struct InnerAction
 	enum Type { Remove, Unpack, Configure } type;
 	shared_ptr< const BinaryVersion > version;
 	bool fake;
+	mutable int16_t priority;
 	mutable const InnerAction* linkedFrom;
 	mutable const InnerAction* linkedTo;
-	mutable ssize_t priority;
 
 	InnerAction();
 	bool operator<(const InnerAction& other) const;
