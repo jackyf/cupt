@@ -839,7 +839,7 @@ ssize_t __get_action_group_priority(const vector< InnerAction >& preActionGroup)
 		sum += actionIt->priority;
 		packageNames.insert(actionIt->version->packageName);
 	}
-	return sum / packageNames.size();
+	return sum / (ssize_t)packageNames.size();
 }
 struct __action_group_pointer_priority_less
 {
