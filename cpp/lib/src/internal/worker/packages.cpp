@@ -1215,7 +1215,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 	FORIT(actionGroupIt, actionGroups)
 	{
 		const InnerActionGroup& actionGroup = *actionGroupIt;
-		if (actionGroup.size() > 1)
+		if (actionGroup.size() > 1 && !__is_circular_action_subgroup_allowed(actionGroup))
 		{
 			// multiple actions at once
 
