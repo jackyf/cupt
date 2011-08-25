@@ -1135,7 +1135,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 {
 	using std::make_pair;
 
-	{ // filling minigraph and basic edges
+	{ // filling minigraph
 		// fill vertices
 		FORIT(actionIt, actionGroup)
 		{
@@ -1159,40 +1159,30 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 				if (newToIt != allowedVertices.end())
 				{
 					// yes, edge lies inside our mini graph
-					auto newToPtr = &*newToIt;
-
-					miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
-
 					const GraphAndAttributes::Attribute& oldAttribute = gaa.attributes[make_pair(oldFromPtr, oldToPtr)];
-					miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
-					if (debugging)
+					if (oldAttribute.getLevel() < minimumAttributeLevel)
 					{
-						debug("adding edge '%s' -> '%s'",
-								newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+						FORIT(relationInfoRecordIt, oldAttribute.relationInfo)
+						{
+							removedRelations.insert(relationInfoRecordIt->dependencyType);
+						}
+						if (debugging)
+						{
+							debug("ignoring edge '%s' -> '%s'",
+									oldFromPtr->toString().c_str(), oldToPtr->toString().c_str());
+						}
 					}
-					// TODO: check unneeded edges already here
-				}
-			}
-		}
+					else
+					{
+						auto newToPtr = &*newToIt;
 
-		{ // deleting soft edges
-			auto edges = miniGaa.graph.getEdges();
-			FORIT(edgeIt, edges)
-			{
-				auto fromPtr = edgeIt->first;
-				auto toPtr = edgeIt->second;
-				const GraphAndAttributes::Attribute& attribute = miniGaa.attributes[make_pair(fromPtr, toPtr)];
-				if (attribute.getLevel() < minimumAttributeLevel)
-				{
-					miniGaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
-					FORIT(relationInfoRecordIt, attribute.relationInfo)
-					{
-						removedRelations.insert(relationInfoRecordIt->dependencyType);
-					}
-					if (debugging)
-					{
-						debug("ignoring edge '%s' -> '%s'",
-								fromPtr->toString().c_str(), toPtr->toString().c_str());
+						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
+						if (debugging)
+						{
+							debug("adding edge '%s' -> '%s'",
+									newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+						}
 					}
 				}
 			}
