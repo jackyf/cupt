@@ -64,8 +64,6 @@ class Graph
 	static const CessorListType __null_list;
 
  public:
-	void clearEdges();
-
 	const set< T >& getVertices() const;
 	vector< pair< PtrT, PtrT > > getEdges() const;
 
@@ -93,13 +91,6 @@ class Graph
 
 template< class T, template < class X > class PtrTraitsT >
 const typename Graph< T, PtrTraitsT >::CessorListType Graph< T, PtrTraitsT >::__null_list;
-
-template< class T, template < class X > class PtrTraitsT >
-void Graph< T, PtrTraitsT >::clearEdges()
-{
-	__predecessors.clear();
-	__successors.clear();
-}
 
 template< class T, template < class X > class PtrTraitsT >
 const set< T >& Graph< T, PtrTraitsT >::getVertices() const
