@@ -832,12 +832,14 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 
 ssize_t __get_action_group_priority(const vector< InnerAction >& preActionGroup)
 {
-	ssize_t result = 0;
+	set< string > packageNames;
+	ssize_t sum = 0;
 	FORIT(actionIt, preActionGroup)
 	{
-		result += actionIt->priority;
+		sum += actionIt->priority;
+		packageNames.insert(actionIt->version->packageName);
 	}
-	return result;
+	return sum / packageNames.size();
 }
 struct __action_group_pointer_priority_less
 {
