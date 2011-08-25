@@ -81,7 +81,6 @@ class Graph
 
 	unordered_set< PtrT > getReachableFrom(const T& from) const;
 	unordered_set< PtrT > getReachableTo(const T& to) const;
-	vector< PtrT > getPathVertices(const T& from, const T& to) const;
 
 	template< class PriorityLess, class OutputIterator >
 	void topologicalSortOfStronglyConnectedComponents(
@@ -441,55 +440,6 @@ auto Graph< T, PtrTraitsT >::getReachableTo(const T& to) const -> unordered_set<
 	auto result = getReachableFrom(to);
 	__successors.swap(__predecessors); // transposing it to original state
 	return result;
-}
-
-template< class T, template < class X > class PtrTraitsT >
-auto Graph< T, PtrTraitsT >::getPathVertices(const T& from, const T& to) const -> vector< PtrT >
-{
-	auto fromIt = __vertices.find(from);
-	auto toIt = __vertices.find(to);
-
-	if (fromIt == __vertices.end() || toIt == __vertices.end())
-	{
-		return vector< PtrT >();
-	}
-
-	auto fromPtr = &*fromIt;
-	auto toPtr = &*toIt;
-
-	queue< pair< PtrT, vector< PtrT > > > verticesAndPaths;
-    verticesAndPaths.push(make_pair(fromPtr, vector< PtrT > { fromPtr }));
-
-	set< PtrT > seenVertices;
-
-	while (!verticesAndPaths.empty())
-	{
-		auto element = verticesAndPaths.front();
-		verticesAndPaths.pop();
-
-		PtrT currentVertexPtr = element.first;
-		const vector< PtrT >& currentPath = element.second;
-		if (currentVertexPtr == toPtr)
-		{
-			return currentPath;
-		}
-
-		auto insertResult = seenVertices.insert(currentVertexPtr);
-		if (insertResult.second)
-		{
-			// unseen element
-			const CessorListType& successors = getSuccessorsFromPointer(currentVertexPtr);
-			FORIT(successorIt, successors)
-			{
-				vector< PtrT > newPath = currentPath;
-				newPath.push_back(*successorIt);
-				verticesAndPaths.push(pair< PtrT, vector< PtrT > >(*successorIt, newPath));
-			}
-		}
-	}
-
-	// if not found
-	return vector< PtrT >();
 }
 
 }
