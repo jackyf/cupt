@@ -57,11 +57,14 @@ struct FileImpl
 FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	: handle(NULL), buf(NULL), bufLength(0), path(path_), isPipe(false)
 {
-	if (std::strcmp(mode, "pr") == 0)
+	if (mode[0] == 'p')
 	{
-		// need to open read pipe
+		if (strlen(mode) != 2)
+		{
+			fatal("pipe specification mode should be exact 2 characters");
+		}
 		isPipe = true;
-		handle = popen(path.c_str(), "r");
+		handle = popen(path.c_str(), mode+1);
 	}
 	else
 	{

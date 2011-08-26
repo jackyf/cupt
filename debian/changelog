@@ -51,6 +51,9 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         reinstallation.
       - Installed packages with the status 'half-installed' also require
         the reinstallation, mark them as such. (Closes: #637490)
+    - file:
+      - Constructor now accepts "pw" as a special mode for shell pipes opened
+        for writing.
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.
