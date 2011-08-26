@@ -1,3 +1,9 @@
+2.2
+ - New positional action override options '--install', '--remove', '--purge',
+   '--satisfy', '--unsatisfy'.
+ - The quality of generating dpkg package sequence is improved; it's also much
+   faster now.
+
 2.1
  - New subcommand 'showauto'.
  - Implemented regular expressions in pin preferences.
