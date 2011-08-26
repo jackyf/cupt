@@ -43,6 +43,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         New options 'cupt::directory::configuration',
         'cupt::directory::configuration::main',
         'cupt::directory::configuration::main-parts'.
+      - New option 'cupt::worker::use-locks'.
     - cache:
       - 'verifySignature': is deprecated now.
     - system/resolvers/native:

@@ -1183,6 +1183,14 @@ False by default.
 
 boolean, see L<--simulate|/--simulate,-s>
 
+=item cupt::worker::use-locks
+
+boolean, specifies whether Cupt protects simultaneous runs of itself against
+the misuse of the common resources. True by default.
+
+B<Warning! Setting this option to false will allow several non-simulating Cupt
+instances to break the system when misused.>
+
 =item debug::resolver
 
 boolean, if true, resolver will print a lot of debug information to the

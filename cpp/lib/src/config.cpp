@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -159,6 +159,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::worker::download-only", "no" },
 		{ "cupt::worker::purge", "no" },
 		{ "cupt::worker::simulate", "no" },
+		{ "cupt::worker::use-locks", "yes" },
 		{ "debug::downloader", "no" },
 		{ "debug::resolver", "no" },
 		{ "debug::worker", "no" },

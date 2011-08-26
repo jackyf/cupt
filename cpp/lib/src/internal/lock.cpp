@@ -28,7 +28,8 @@ namespace internal {
 Lock::Lock(const shared_ptr< const Config >& config, const string& path)
 	: __path(path), __file_ptr(NULL)
 {
-	__simulating = config->getBool("cupt::worker::simulate");
+	__simulating = config->getBool("cupt::worker::simulate") ||
+			!config->getBool("cupt::worker::use-locks");
 	__debugging = config->getBool("debug::worker");
 
 	if (__debugging)
