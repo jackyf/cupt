@@ -33,6 +33,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - Made the virtual vertices' CPU and RAM footprint smaller.
       - Removed ad-hoc pre-dependency check warnings as useless and obsolete.
       - Merge remove/unpack subactions even more aggressively.
+      - Submit the input for a running commands using pipes instead of 'echo'
+        shell command. (Closes: #637494)
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific

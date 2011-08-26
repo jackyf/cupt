@@ -1548,10 +1548,10 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 	return changesets;
 }
 
-void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& alias)
+void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& commandInput)
 {
-	auto errorId = sf(__("dpkg '%s' action '%s'"), flavor.c_str(), alias.c_str());
-	_run_external_command(command, errorId);
+	auto errorId = sf(__("dpkg '%s' action '%s'"), flavor.c_str(), command.c_str());
+	_run_external_command(command, commandInput, errorId);
 }
 
 void PackagesWorker::__clean_downloads(const Changeset& changeset)
@@ -1581,7 +1581,7 @@ void PackagesWorker::__do_dpkg_pre_actions()
 	auto commands = _config->getList("dpkg::pre-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("post", *commandIt, *commandIt);
+		__run_dpkg_command("post", *commandIt, "");
 	}
 }
 
@@ -1732,9 +1732,7 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 			}
 		}
 
-		string alias = command;
-		command = string("echo '") + commandInput + "' | " + command;
-		__run_dpkg_command("pre", command, alias);
+		__run_dpkg_command("pre", command, commandInput);
 	}
 }
 
@@ -1743,7 +1741,7 @@ void PackagesWorker::__do_dpkg_post_actions()
 	auto commands = _config->getList("dpkg::post-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("post", *commandIt, *commandIt);
+		__run_dpkg_command("post", *commandIt, "");
 	}
 }
 
@@ -1901,7 +1899,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 	{ // make sure system is trigger-clean
 		auto command = dpkgBinary + " --triggers-only -a";
-		__run_dpkg_command("triggers-only", command, command);
+		__run_dpkg_command("triggers-only", command, "");
 	}
 
 	auto archivesDirectory = _get_archives_directory();
@@ -2026,7 +2024,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			{
 				debug("running triggers");
 			}
-			__run_dpkg_command("triggers", command, command);
+			__run_dpkg_command("triggers", command, "");
 		}
 
 		if (archivesSpaceLimit)

@@ -50,7 +50,7 @@ class WorkerBase
 
 	string _get_archives_directory() const;
 	static string _get_archive_basename(const shared_ptr< const BinaryVersion >&);
-	void _run_external_command(const string&, const string& = "");
+	void _run_external_command(const string&, const string& = "", const string& = "");
  public:
 	static const string partialDirectorySuffix;
 

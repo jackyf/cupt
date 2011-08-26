@@ -16,6 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <cupt/config.hpp>
+#include <cupt/file.hpp>
 
 #include <internal/lock.hpp>
 #include <internal/common.hpp>
@@ -56,24 +57,44 @@ string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >
 			version->architecture + ".deb";
 }
 
-void WorkerBase::_run_external_command(const string& command, const string& errorId)
+void WorkerBase::_run_external_command(const string& command,
+		const string& commandInput, const string& errorId)
 {
 	if (_config->getBool("cupt::worker::simulate"))
 	{
-		simulate("running command '%s'", command.c_str());
+		if (commandInput.empty())
+		{
+			simulate("running command '%s'", command.c_str());
+		}
+		else
+		{
+			simulate("running command '%s' with the input\n-8<-\n%s\n->8-",
+					command.c_str(), commandInput.c_str());
+		}
 	}
 	else
 	{
-		// invoking command
-		auto result = ::system(command.c_str());
 		const char* id = (errorId.empty() ? command.c_str() : errorId.c_str());
-		if (result == -1)
+
+		try
 		{
-			fatal("'%s': system() failed: EEE", id);
+			// invoking command
+			string errorString;
+			File pipeFile(command, "pw", errorString);
+			if (!errorString.empty())
+			{
+				fatal("unable to launch a pipe to the command '%s': %s",
+						command.c_str(), errorString.c_str());
+			}
+
+			if (!commandInput.empty())
+			{
+				pipeFile.put(commandInput);
+			}
 		}
-		else if (result)
+		catch (...)
 		{
-			fatal("'%s' failed: %s", id, getWaitStatusDescription(result).c_str());
+			fatal("%s failed", id);
 		}
 	}
 }
