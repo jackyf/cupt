@@ -1,3 +1,8 @@
+2.1
+ - New subcommand 'showauto'.
+ - Implemented regular expressions in pin preferences.
+ - Now uses its own directory for package metadata.
+
 2.0
  - Re-implemented in C++(0x).
  - A tutorial is now available.
