@@ -18,6 +18,7 @@
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/cache/releaseinfo.hpp>
 #include <cupt/system/state.hpp>
 
 #include <internal/filesystem.hpp>
@@ -59,38 +60,49 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			{
 				action = Action::Install;
 			}
-			else if (installedInfo->status == State::InstalledRecord::Status::Installed)
-			{
-				auto versionComparisonResult = compareVersionStrings(
-						supposedVersion->versionString, installedVersion->versionString);
-
-				if (versionComparisonResult > 0)
-				{
-					action = Action::Upgrade;
-				}
-				else if (versionComparisonResult < 0)
-				{
-					action = Action::Downgrade;
-				}
-			}
 			else
 			{
-				if (installedVersion->versionString == supposedVersion->versionString)
+				bool isImproperlyInstalled = installedVersion->sources[0].
+						release->archive == "improperly-installed";
+
+				if (installedInfo->status == State::InstalledRecord::Status::Installed ||
+						isImproperlyInstalled)
 				{
-					// the same version, but the package was in some interim state
-					if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
+					auto versionComparisonResult = compareVersionStrings(
+							supposedVersion->versionString, installedVersion->versionString);
+
+					if (versionComparisonResult > 0)
 					{
-						action = Action::ProcessTriggers;
+						action = Action::Upgrade;
 					}
-					else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
+					else if (versionComparisonResult < 0)
 					{
-						action = Action::Configure;
+						action = Action::Downgrade;
+					}
+					else if (isImproperlyInstalled)
+					{
+						action = Action::Upgrade; // TODO/ABI Break/: Action::Reinstall
 					}
 				}
 				else
 				{
-					// some interim state, but other version
-					action = Action::Install;
+					if (installedVersion->versionString == supposedVersion->versionString)
+					{
+						// the same version, but the package was in some interim state
+						if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
+						{
+							action = Action::ProcessTriggers;
+						}
+						else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
+						{
+							action = Action::Configure;
+						}
+					}
+					else
+					{
+						// some interim state, but other version
+						action = Action::Install;
+					}
 				}
 			}
 		}
