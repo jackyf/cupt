@@ -120,6 +120,11 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 		{
 			if (relation.isSatisfiedBy((*it)->versionString))
 			{
+				if ((*it)->isInstalled() &&
+						systemState->getInstalledInfo((*it)->packageName)->isBroken())
+				{
+					continue;
+				}
 				result.push_back(*it);
 			}
 		}
@@ -143,6 +148,11 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 				auto versions = reverseProvidePackage->getVersions();
 				FORIT(versionIt, versions)
 				{
+					if ((*versionIt)->isInstalled() &&
+							systemState->getInstalledInfo((*versionIt)->packageName)->isBroken())
+					{
+						continue;
+					}
 					const vector< string >& realProvides = (*versionIt)->provides;
 					FORIT(realProvidesIt, realProvides)
 					{
