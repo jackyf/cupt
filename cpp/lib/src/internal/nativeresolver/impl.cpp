@@ -74,17 +74,6 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 
 		// = this package was not installed by resolver
 		__manually_modified_package_names.insert(*packageNameIt);
-
-		// let's see if we can reinstall it
-		auto package = __cache->getBinaryPackage(*packageNameIt);
-		if (package)
-		{
-			auto policyVersion = __cache->getPolicyVersion(package);
-			if (policyVersion)
-			{
-				targetVersion = static_pointer_cast< const BinaryVersion > (policyVersion); // yes, we can
-			}
-		}
 	}
 }
 
