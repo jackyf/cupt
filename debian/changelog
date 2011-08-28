@@ -46,6 +46,8 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         'cupt::directory::configuration::main',
         'cupt::directory::configuration::main-parts'.
       - New option 'cupt::worker::use-locks'.
+      - Recognize APT variables 'dir::log', 'dir::log::terminal',
+        'dir::log::history'.
     - cache:
       - 'verifySignature': is deprecated now.
     - system/resolvers/native:

@@ -97,6 +97,9 @@ void ConfigImpl::initializeVariables()
 		{ "apt::get::show-upgraded", "no" },
 		{ "apt::get::build-dep-automatic", "yes" },
 		{ "acquire::pdiffs", "yes" },
+		{ "dir::log", "var/log/apt" },
+		{ "dir::log::history", "history.log" },
+		{ "dir::log::terminal", "term.log" },
 
 		// Cupt vars
 		{ "cupt::cache::pin::addendums::downgrade", "-10000" },
