@@ -58,6 +58,9 @@ cupt (2.2.0~) UNRELEASED; urgency=low
     - file:
       - Constructor now accepts "pw" as a special mode for shell pipes opened
         for writing.
+    - system/state:
+      - Add package entry to the cache even if the installed version requires
+        the reinstallation. (Closes: #639605)
   * doc:
     - cupt(1) manual:
       - Documented 'purge' subcommand.

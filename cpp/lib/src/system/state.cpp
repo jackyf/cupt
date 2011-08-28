@@ -117,12 +117,35 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 	}
 }
 
-static bool canPackageBeConfigured(const InstalledRecord& record)
+static bool packageHasFullEntryInfo(const InstalledRecord& record)
 {
-	return (record.flag == InstalledRecord::Flag::Ok &&
-			record.status != InstalledRecord::Status::NotInstalled &&
-			record.status != InstalledRecord::Status::ConfigFiles &&
-			record.status != InstalledRecord::Status::HalfInstalled);
+	return record.status != InstalledRecord::Status::NotInstalled &&
+			record.status != InstalledRecord::Status::ConfigFiles;
+}
+
+static bool packageIsNotBroken(const InstalledRecord& record)
+{
+	return record.flag == InstalledRecord::Flag::Ok &&
+			record.status != InstalledRecord::Status::HalfInstalled;
+}
+
+typedef pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > > VersionSource;
+
+VersionSource* createVersionSource(internal::CacheImpl* cacheImpl,
+		const string& archiveName, const shared_ptr< File >& file)
+{
+	// filling release info
+	shared_ptr< ReleaseInfo > releaseInfo(new ReleaseInfo);
+	releaseInfo->archive = archiveName;
+	releaseInfo->codename = "now";
+	releaseInfo->vendor = "dpkg";
+	releaseInfo->verified = false;
+	releaseInfo->notAutomatic = false;
+
+	cacheImpl->binaryReleaseData.push_back(releaseInfo);
+
+	cacheImpl->releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
+	return &*(cacheImpl->releaseInfoAndFileStorage.rbegin());
 }
 
 void StateData::parseDpkgStatus()
@@ -142,20 +165,12 @@ void StateData::parseDpkgStatus()
 	    and 'Section' fields.
 	*/
 
-	// filling release info
-	shared_ptr< ReleaseInfo > releaseInfo(new ReleaseInfo);
-	releaseInfo->archive = "installed";
-	releaseInfo->codename = "now";
-	releaseInfo->vendor = "dpkg";
-	releaseInfo->verified = false;
-	releaseInfo->notAutomatic = false;
+	auto installedSource = createVersionSource(cacheImpl, "installed", file);
+	auto improperlyInstalledSource = createVersionSource(cacheImpl, "improperly-installed", file);
 
-	cacheImpl->releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
-	internal::CacheImpl::PrePackageRecord prePackageRecord;
-	prePackageRecord.releaseInfoAndFile = &*(cacheImpl->releaseInfoAndFileStorage.rbegin());
-
-	cacheImpl->binaryReleaseData.push_back(releaseInfo);
 	auto preBinaryPackages = &(cacheImpl->preBinaryPackages);
+
+	internal::CacheImpl::PrePackageRecord prePackageRecord;
 
 	try
 	{
@@ -202,11 +217,13 @@ void StateData::parseDpkgStatus()
 			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
 			parseStatusSubstrings(packageName, status, installedRecord);
 
-			if (canPackageBeConfigured(*installedRecord))
+			if (packageHasFullEntryInfo(*installedRecord))
 			{
 				// this conditions mean that package is installed or
-				//   semi-installed, regardless it has full entry info, so
-				//  add it (info) to cache
+				// semi-installed, regardless it has full entry info, so add it
+				// (info) to cache
+				prePackageRecord.releaseInfoAndFile = packageIsNotBroken(*installedRecord) ?
+						installedSource : improperlyInstalledSource;
 
 				auto it = preBinaryPackages->insert(pairForInsertion).first;
 				it->second.push_back(prePackageRecord);
@@ -267,7 +284,7 @@ vector< string > State::getInstalledPackageNames() const
 	{
 		const InstalledRecord& installedRecord = *(it->second);
 
-		if (internal::canPackageBeConfigured(installedRecord))
+		if (internal::packageHasFullEntryInfo(installedRecord))
 		{
 			result.push_back(it->first);
 		}
