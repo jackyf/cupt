@@ -62,8 +62,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			}
 			else
 			{
-				bool isImproperlyInstalled = installedVersion->sources[0].
-						release->archive == "improperly-installed";
+				bool isImproperlyInstalled = installedInfo->isBroken();
 
 				if (installedInfo->status == State::InstalledRecord::Status::Installed ||
 						isImproperlyInstalled)

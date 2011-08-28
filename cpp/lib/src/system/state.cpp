@@ -123,12 +123,6 @@ static bool packageHasFullEntryInfo(const InstalledRecord& record)
 			record.status != InstalledRecord::Status::ConfigFiles;
 }
 
-static bool packageIsNotBroken(const InstalledRecord& record)
-{
-	return record.flag == InstalledRecord::Flag::Ok &&
-			record.status != InstalledRecord::Status::HalfInstalled;
-}
-
 typedef pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > > VersionSource;
 
 VersionSource* createVersionSource(internal::CacheImpl* cacheImpl,
@@ -222,8 +216,8 @@ void StateData::parseDpkgStatus()
 				// this conditions mean that package is installed or
 				// semi-installed, regardless it has full entry info, so add it
 				// (info) to cache
-				prePackageRecord.releaseInfoAndFile = packageIsNotBroken(*installedRecord) ?
-						installedSource : improperlyInstalledSource;
+				prePackageRecord.releaseInfoAndFile = installedRecord->isBroken() ?
+						improperlyInstalledSource : installedSource;
 
 				auto it = preBinaryPackages->insert(pairForInsertion).first;
 				it->second.push_back(prePackageRecord);
@@ -249,6 +243,12 @@ void StateData::parseDpkgStatus()
 }
 
 namespace system {
+
+bool State::InstalledRecord::isBroken() const
+{
+	return flag != InstalledRecord::Flag::Ok ||
+			status == InstalledRecord::Status::HalfInstalled;
+}
 
 State::State(shared_ptr< const Config > config, internal::CacheImpl* cacheImpl)
 	: __data(new internal::StateData)

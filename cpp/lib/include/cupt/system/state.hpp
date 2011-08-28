@@ -67,6 +67,9 @@ class CUPT_API State
 		Want::Type want;
 		Flag::Type flag;
 		Status::Type status;
+
+		/// returns true when the package is not installed properly
+		bool isBroken() const;
 	};
 
 	/// constructor, not for public use
