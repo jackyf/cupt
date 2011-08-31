@@ -964,6 +964,10 @@ L<apt.conf(5)>)
 string, relative directory path for additional Cupt configuration files (same
 format as L<apt.conf(5)>)
 
+=item cupt::directory::log
+
+string, relative file path for the log file
+
 =item cupt::directory::state
 
 string, directory which contains Cupt state info
@@ -1174,6 +1178,23 @@ system in the interim trigger state, which can be fixed by manual run of 'dpkg
 
 boolean, see L<--download-only|/--download-only,-d>
 
+=item cupt::worker::log
+
+boolean, whether to log performed actions or not. True by default.
+
+=item cupt::worker::log::levels::metadata
+
+non-negative integer, the log level for the metadata updates. 1 by default.
+
+=item cupt::worker::log::levels::packages
+
+non-negative integer, the log level for the package changes
+(install/upgrade/remove etc.). 2 by default.
+
+=item cupt::worker::log::levels::snapshots
+
+non-negative integer, the log level for the snapshot actions. 1 by default.
+
 =item cupt::worker::purge
 
 boolean, specifies whether purge packages in addition to removing or not.
@@ -1210,6 +1231,10 @@ signatures to the standard error. False by default.
 
 boolean, if true, the downloader manager will print some debug messages. False
 by default.
+
+=item debug::logger
+
+boolean, if true, the logger will print some debug messages. False by default.
 
 =back
 
