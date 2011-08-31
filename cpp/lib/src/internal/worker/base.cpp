@@ -34,6 +34,8 @@ WorkerBase::WorkerBase()
 WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: _config(config), _cache(cache)
 {
+	_logger = new Logger(*_config);
+
 	__umask = umask(0022);
 
 	string lockPath = _config->getPath("cupt::directory::state") + "/lock";
@@ -44,6 +46,7 @@ WorkerBase::~WorkerBase()
 {
 	delete __lock;
 	umask(__umask);
+	delete _logger;
 }
 
 string WorkerBase::_get_archives_directory() const
@@ -57,9 +60,11 @@ string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >
 			version->architecture + ".deb";
 }
 
-void WorkerBase::_run_external_command(const string& command,
-		const string& commandInput, const string& errorId)
+void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
+		const string& command, const string& commandInput, const string& errorId)
 {
+	_logger->log(subsystem, 3, sf("running: %s", command.c_str()));
+
 	if (_config->getBool("cupt::worker::simulate"))
 	{
 		if (commandInput.empty())

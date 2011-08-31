@@ -41,7 +41,7 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	try
 	{
 		string command = string("rm -r ") + directory;
-		_run_external_command(command.c_str());
+		_run_external_command(Logger::Subsystem::Snapshots, command.c_str());
 	}
 	catch (Exception&)
 	{
@@ -90,7 +90,7 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 		}
 		const string& architecture = version->architecture;
 
-		_run_external_command(sf("dpkg-repack --arch=%s %s",
+		_run_external_command(Logger::Subsystem::Snapshots, sf("dpkg-repack --arch=%s %s",
 					architecture.c_str(), packageName.c_str()));
 
 		/* dpkg-repack uses dpkg-deb -b, which produces file in format
@@ -128,7 +128,7 @@ string SnapshotsWorker::__create_index_file(const Cache::IndexEntry& indexEntry)
 	auto filename = fs::filename(_cache->getPathOfIndexList(indexEntry));
 
 	// building a index file
-	_run_external_command(string("dpkg-scanpackages . > ") + filename);
+	_run_external_command(Logger::Subsystem::Snapshots, string("dpkg-scanpackages . > ") + filename);
 	return filename;
 }
 
@@ -315,7 +315,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 
 		try
 		{
-			_run_external_command(string("rm -r " + temporarySnapshotDirectory));
+			_run_external_command(Logger::Subsystem::Snapshots,
+					string("rm -r " + temporarySnapshotDirectory));
 		}
 		catch (...)
 		{
@@ -345,7 +346,7 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
 	auto newSnapshotDirectory = snapshots.getSnapshotDirectory(newName);
 
-	_run_external_command(sf("mv %s %s",
+	_run_external_command(Logger::Subsystem::Snapshots, sf("mv %s %s",
 			previousSnapshotDirectory.c_str(), newSnapshotDirectory.c_str()));
 }
 
@@ -369,7 +370,8 @@ void SnapshotsWorker::removeSnapshot(const Snapshots& snapshots, const string& n
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);
 	checkLooksLikeSnapshot(snapshotDirectory);
 
-	_run_external_command(string("rm -r ") + snapshotDirectory);
+	_run_external_command(Logger::Subsystem::Snapshots,
+			string("rm -r ") + snapshotDirectory);
 }
 
 }

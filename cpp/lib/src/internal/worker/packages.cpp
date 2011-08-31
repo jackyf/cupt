@@ -1551,7 +1551,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& commandInput)
 {
 	auto errorId = sf(__("dpkg '%s' action '%s'"), flavor.c_str(), command.c_str());
-	_run_external_command(command, commandInput, errorId);
+	_run_external_command(Logger::Subsystem::Packages, command, commandInput, errorId);
 }
 
 void PackagesWorker::__clean_downloads(const Changeset& changeset)
@@ -2013,7 +2013,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					debug("do: (%s) %s%s", join(" & ", stringifiedActions).c_str(),
 							requestedDpkgOptions.c_str(), actionGroupIt->continued ? " (continued)" : "");
 				}
-				_run_external_command(dpkgCommand);
+				_run_external_command(Logger::Subsystem::Packages, dpkgCommand);
 			};
 		}
 		if (deferTriggers)
