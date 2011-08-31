@@ -58,6 +58,7 @@ class CUPT_API Worker
 			ProcessTriggers, ///< triggers are processed for the existing package
 			Count ///< element count
 		};
+		static const char* rawStrings[Count]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings
 	};
 	struct ActionsPreview
 	{

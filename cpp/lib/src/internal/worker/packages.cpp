@@ -245,11 +245,15 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 		const Action::Type& userAction = mapIt->first;
 		const vector< IA::Type >& innerActionTypes = mapIt->second;
 
+		string userActionString = string("task: ") + Action::rawStrings[userAction];
+
 		FORIT(suggestedPackageIt, __actions_preview->groups[userAction])
 		{
 			const string& packageName = suggestedPackageIt->first;
 
 			const InnerAction* previousInnerActionPtr = NULL;
+
+			string logMessage = userActionString + ' ' + packageName + " [";
 
 			FORIT(innerActionTypeIt, innerActionTypes)
 			{
@@ -275,6 +279,15 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 					versionPtr->versionString = "<dummy>";
 					versionPtr->essential = false;
 					version.reset(versionPtr);
+				}
+
+				if (innerActionType != IA::Unpack)
+				{
+					if (*logMessage.rbegin() != '[') // upgrade/downgrade
+					{
+						logMessage += " -> ";
+					}
+					logMessage += version->versionString;
 				}
 
 				InnerAction action;
@@ -304,6 +317,9 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 				}
 				previousInnerActionPtr = newVertexPtr;
 			}
+
+			logMessage += "]";
+			_logger->log(Logger::Subsystem::Packages, 2, logMessage);
 		}
 	}
 }
@@ -1578,6 +1594,7 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 
 void PackagesWorker::__do_dpkg_pre_actions()
 {
+	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-invoke hooks");
 	auto commands = _config->getList("dpkg::pre-invoke");
 	FORIT(commandIt, commands)
 	{
@@ -1695,6 +1712,8 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 
 void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGroup >& actionGroups)
 {
+	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-install-packages hooks");
+
 	auto archivesDirectory = _get_archives_directory();
 	auto commands = _config->getList("dpkg::pre-install-pkgs");
 	FORIT(commandIt, commands)
@@ -1738,6 +1757,8 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 
 void PackagesWorker::__do_dpkg_post_actions()
 {
+	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg post-invoke hooks");
+
 	auto commands = _config->getList("dpkg::post-invoke");
 	FORIT(commandIt, commands)
 	{
@@ -1771,6 +1792,12 @@ void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, bool targetStatus)
 {
 	auto simulating = _config->getBool("cupt::worker::simulate");
+
+	{ // logging
+		auto message = sf("marking '%s' as %s installed",
+				packageName.c_str(), targetStatus ? "automatically" : "manually");
+		_logger->log(Logger::Subsystem::Packages, 2, message);
+	}
 
 	if (simulating)
 	{
@@ -1852,6 +1879,21 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 	}
 }
 
+string __get_dpkg_action_log(const InnerActionGroup& actionGroup,
+		InnerAction::Type actionType, const string& actionName)
+{
+	vector< string > subResults;
+	FORIT(actionIt, actionGroup)
+	{
+		if (actionIt->type == actionType)
+		{
+			subResults.push_back(actionName + ' ' + actionIt->version->packageName
+					+ ' ' + actionIt->version->versionString);
+		}
+	}
+	return join(" & ", subResults);
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -1871,16 +1913,22 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		return;
 	};
 
+	_logger->log(Logger::Subsystem::Packages, 1, "scheduling dpkg actions");
+
 	vector< Changeset > changesets;
 	{
 		GraphAndAttributes gaa;
 		if (!__build_actions_graph(gaa))
 		{
-			return; // exit when nothing to do
+			_logger->log(Logger::Subsystem::Packages, 1, "nothing to do");
+			return;
 		}
 
+		_logger->log(Logger::Subsystem::Packages, 2, "computing dpkg action sequence");
 		changesets = __get_changesets(gaa, preDownloads);
 	}
+
+	_logger->log(Logger::Subsystem::Packages, 1, "changing the system");
 
 	// doing or simulating the actions
 	auto dpkgBinary = _config->getPath("dir::bin::dpkg");
@@ -1898,6 +1946,8 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	__do_dpkg_pre_actions();
 
 	{ // make sure system is trigger-clean
+		_logger->log(Logger::Subsystem::Packages, 2, "running all package triggers");
+
 		auto command = dpkgBinary + " --triggers-only -a";
 		__run_dpkg_command("triggers-only", command, "");
 	}
@@ -2003,15 +2053,20 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					dpkgCommand += " ";
 					dpkgCommand += actionExpression;
 				}
-				if (debugging)
-				{
-					vector< string > stringifiedActions;
-					FORIT(actionIt, *actionGroupIt)
+				{ // debug & logs
+					if (debugging)
 					{
-						stringifiedActions.push_back(actionIt->toString());
+						vector< string > stringifiedActions;
+						FORIT(actionIt, *actionGroupIt)
+						{
+							stringifiedActions.push_back(actionIt->toString());
+						}
+						auto actionsString = join(" & ", stringifiedActions);
+						debug("do: (%s) %s%s", actionsString.c_str(), requestedDpkgOptions.c_str(),
+								actionGroupIt->continued ? " (continued)" : "");
 					}
-					debug("do: (%s) %s%s", join(" & ", stringifiedActions).c_str(),
-							requestedDpkgOptions.c_str(), actionGroupIt->continued ? " (continued)" : "");
+					_logger->log(Logger::Subsystem::Packages, 2,
+							__get_dpkg_action_log(*actionGroupIt, actionType, actionName));
 				}
 				_run_external_command(Logger::Subsystem::Packages, dpkgCommand);
 			};
@@ -2019,6 +2074,8 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		if (deferTriggers)
 		{
 			// triggers were not processed during actions perfomed before, do it now at once
+			_logger->log(Logger::Subsystem::Packages, 2, "running pending triggers");
+
 			string command = dpkgBinary + " --triggers-only --pending";
 			if (debugging)
 			{

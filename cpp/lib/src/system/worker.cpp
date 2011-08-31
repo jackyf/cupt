@@ -39,6 +39,12 @@ WorkerImpl::WorkerImpl(const shared_ptr< const Config >& config, const shared_pt
 
 namespace system {
 
+const char* Worker::Action::rawStrings[] = {
+	"install", "remove", "purge", "upgrade", "downgrade",
+	"configure", "deconfigure", "process triggers"
+};
+
+
 Worker::Worker(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __impl(new internal::WorkerImpl(config, cache))
 {}
