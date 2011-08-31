@@ -144,6 +144,15 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 	}
 };
 
+string __get_pidded_string(const string& input)
+{
+	return sf("(%d): %s", getpid(), input.c_str());
+}
+string __get_download_log_message(const string& longAlias)
+{
+	return __get_pidded_string(string("downloading: ") + longAlias);
+}
+
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
@@ -167,6 +176,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	// downloading Release file
 	auto alias = indexEntry.distribution + ' ' + "Release";
 	auto longAlias = indexEntry.uri + ' ' + alias;
+	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
 	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
 	auto downloadPath = getDownloadPath(targetPath);
@@ -222,6 +232,9 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	auto signatureDownloadPath = downloadPath + ".gpg";
 
 	auto signatureAlias = alias + ".gpg";
+	auto signatureLongAlias = indexEntry.uri + ' ' + signatureAlias;
+	_logger->log(Logger::Subsystem::Metadata, 3,
+			__get_download_log_message(signatureLongAlias));
 
 	auto signaturePostAction = generateMovingSub(signatureDownloadPath, signatureTargetPath);
 
@@ -257,7 +270,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		download::Manager::DownloadEntity downloadEntity;
 
 		download::Manager::ExtendedUri extendedUri(download::Uri(signatureUri),
-				signatureAlias, indexEntry.uri + ' ' + signatureAlias);
+				signatureAlias, signatureLongAlias);
 
 		downloadEntity.extendedUris.push_back(std::move(extendedUri));
 		downloadEntity.targetPath = signatureDownloadPath;
@@ -347,6 +360,8 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 
 		auto alias = indexEntry.distribution + '/' + indexEntry.component +
 				' ' + getUriBasename(uri);
+		auto longAlias = indexEntry.uri + ' ' + alias;
+		_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
 		if (!simulating)
 		{
@@ -364,7 +379,7 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		download::Manager::DownloadEntity downloadEntity;
 
 		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, indexEntry.uri + ' ' + alias);
+				alias, longAlias);
 		downloadEntity.extendedUris.push_back(std::move(extendedUri));
 		downloadEntity.targetPath = downloadPath;
 		downloadEntity.size = downloadRecordIt->size;
@@ -418,6 +433,8 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 
 		auto alias = indexEntry.distribution + '/' + indexEntry.component +
 				' ' + getUriBasename(uri);
+		auto longAlias = indexEntry.uri + ' ' + alias;
+		_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
 		if (!simulating)
 		{
@@ -435,7 +452,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		download::Manager::DownloadEntity downloadEntity;
 
 		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, indexEntry.uri + ' ' + alias);
+				alias, longAlias);
 		downloadEntity.extendedUris.push_back(std::move(extendedUri));
 		downloadEntity.targetPath = downloadPath;
 		downloadEntity.size = (size_t)-1;
@@ -453,6 +470,12 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 bool MetadataWorker::__update_release_and_index_data(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry)
 {
+	auto indexEntryDescription =
+			string(indexEntry.category == Cache::IndexEntry::Binary ? "deb" : "deb-src") +
+			' ' + indexEntry.uri + ' ' + indexEntry.distribution + '/' + indexEntry.component;
+	_logger->log(Logger::Subsystem::Metadata, 2,
+			__get_pidded_string(string("updating: ") + indexEntryDescription));
+
 	// phase 1
 	bool releaseFileChanged;
 	if (!__update_release(downloadManager, indexEntry, releaseFileChanged))
@@ -473,6 +496,8 @@ bool MetadataWorker::__update_release_and_index_data(download::Manager& download
 
 void MetadataWorker::__list_cleanup(const string& lockPath)
 {
+	_logger->log(Logger::Subsystem::Metadata, 2, "cleaning up old index lists");
+
 	set< string > usedPaths;
 	auto addUsedPrefix = [&usedPaths](const string& prefix)
 	{
@@ -523,6 +548,8 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 
 void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progress >& downloadProgress)
 {
+	_logger->log(Logger::Subsystem::Metadata, 1, "updating package metadata");
+
 	auto indexesDirectory = __get_indexes_directory();
 	bool simulating = _config->getBool("cupt::worker::simulate");
 	if (!simulating)
@@ -544,6 +571,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 	}
 
 	{ // run pre-actions
+		_logger->log(Logger::Subsystem::Metadata, 2, "running apt pre-invoke hooks");
 		auto preCommands = _config->getList("apt::update::pre-invoke");
 		FORIT(commandIt, preCommands)
 		{
@@ -632,6 +660,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 	}
 
 	{ // run post-actions
+		_logger->log(Logger::Subsystem::Metadata, 2, "running apt post-invoke hooks");
 		auto postCommands = _config->getList("apt::update::post-invoke");
 		FORIT(commandIt, postCommands)
 		{
@@ -640,6 +669,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		}
 		if (masterExitCode)
 		{
+			_logger->log(Logger::Subsystem::Metadata, 2, "running apt post-invoke-success hooks");
 			auto postSuccessCommands = _config->getList("apt::update::post-invoke-success");
 			FORIT(commandIt, postSuccessCommands)
 			{
