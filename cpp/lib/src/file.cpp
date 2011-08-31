@@ -302,5 +302,29 @@ void File::put(const string& bytes)
 	put(bytes.c_str(), bytes.size());
 }
 
+void File::unbufferedPut(const char* data, size_t size)
+{
+	fflush(__impl->handle);
+	int fd = __guarded_fileno(__impl->handle, __impl->path);
+
+	size_t currentOffset = 0;
+	while (currentOffset < size)
+	{
+		auto writeResult = write(fd, data + currentOffset, size - currentOffset);
+		if (writeResult == -1)
+		{
+			if (errno == EINTR)
+			{
+				continue;
+			}
+			else
+			{
+				fatal("unable to write to file '%s': EEE", __impl->path.c_str());
+			}
+		}
+		currentOffset += writeResult;
+	}
+}
+
 } // namespace
 

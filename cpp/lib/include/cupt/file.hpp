@@ -127,6 +127,10 @@ class CUPT_API File
 	 * @param size size of the buffer
 	 */
 	void put(const char* data, size_t size);
+	/// @cond
+	void unbufferedPut(const char* data, size_t size);
+	/// @endcond
+
 
 	/// checks for the end of file condition
 	bool eof() const;

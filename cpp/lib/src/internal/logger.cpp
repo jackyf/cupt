@@ -105,7 +105,9 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 	{
 		if (level <= __levels[(int)subsystem])
 		{
-			__file->put(__get_log_string(subsystem, level, message) + "\n");
+			auto logData = __get_log_string(subsystem, level, message) + "\n";
+			// stdio-buffered fails when there are several writing processes
+			__file->unbufferedPut(logData.c_str(), logData.size());
 		}
 	}
 }
