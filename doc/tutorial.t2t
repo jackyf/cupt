@@ -184,7 +184,7 @@ Another example: you want to find GTK+-related Perl modules:
 
 ``` cupt search --names-only "gtk.*perl"
 
-== Updating repository metadata ==
+== Updating repository metadata ==[update_metadata]
 
 To update repository medadata, use
 
@@ -202,7 +202,7 @@ warnings, but if you don't see an error message like
 
 , the process overall went fine. You can also check program exit code.
 
-== Modifying the system ==
+== Modifying the system ==[modifying_system]
 
 === package actions terminology ===[package_actions_terminology]
 
@@ -1391,9 +1391,43 @@ system. Note that you can override them (by supplying ``-o cupt::worker::simulat
 and ``-o apt::install-recommends=yes``, respectively, for this example).
 
 
+== Logging ==
+
+As of Cupt version 2.2, most actions that effectively change the state of
+the system or Cupt itself (namely, [working with packages #modifying_system],
+[updating repository metadata #update_metadata] and
+working with [system snapshots #system_snapshots]) are logged by default.
+
+The place (the file path) where to place the logs is determined by the option
+``cupt::directory::log``. By default, logs are written to ``/var/log/cupt.log``.
+
+There are 4 levels of logging:
+
+: 0
+absolutely no logging at all
+
+: 1
+very minimal logging
+
+: 2
+the significant information is logged
+
+: 3
+very detailed logging
+
+
+Logging levels are set for each subsystem independently. By default, the
+logging level for package changes is set to ``2``, other logging levels are set
+to ``1``. To change the logging level for some subsystem, use the option
+``cupt::worker::log::levels::``//subsystem//.
+See //cupt(1)/Configuration variables// for details.
+
+Finally, if you want to disable the logging entirely, set the option
+``cupt::worker::log`` to ``no``.
+
 = ADVANCED USAGE =
 
-== System snapshots ==
+== System snapshots ==[system_snapshots]
 
 System snapshots, created by Cupt, consist of binary archives of installed
 packages.  The idea is you create snapshots at some time, and when after some
