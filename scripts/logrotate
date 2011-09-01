@@ -1,0 +1,10 @@
+/var/log/cupt.log {
+	monthly
+	rotate 24
+	maxage 731
+	compress
+	delaycompress
+	missingok
+	notifempty
+	nocreate
+}
