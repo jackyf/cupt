@@ -3,6 +3,7 @@
    '--satisfy', '--unsatisfy'.
  - The quality of generating dpkg package sequence is improved; it's also much
    faster now.
+ - Implemented logging.
 
 2.1
  - New subcommand 'showauto'.
