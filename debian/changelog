@@ -35,6 +35,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - Merge remove/unpack subactions even more aggressively.
       - Submit the input for a running commands using pipes instead of 'echo'
         shell command. (Closes: #637494)
+      - Implemented logging.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific
