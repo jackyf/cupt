@@ -1722,6 +1722,13 @@ The gpg signature checker will output its debug information.
 
 The debug option is ``debug::gpgv``.
 
+: logger
+
+All log messages (of all levels, regardless of logging settings) will be
+printed as debug messages.
+
+The debug option is ``debug::logger``.
+
 
 An example: you want to see a very detailed resolver information regarding your query:
 
