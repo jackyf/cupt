@@ -1695,7 +1695,7 @@ increasing the value to values like 4000 or even 16000.
 == Getting debug information ==
 
 There are several types of debug information available, the debug output is
-turned on by setting some ``debug::``//type// option to `yes`. All debug output
+turned on by setting some ``debug::``//type// option to ``yes``. All debug output
 lines is prepended with ``D:`` and are sent to standard error.
 
 : resolver
