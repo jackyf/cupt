@@ -1188,11 +1188,18 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 					actionSubgroup.continued = true;
 				}
 
-				newActionGroups.push_back(actionSubgroup);
 			}
 			if (!actionGroup.continued)
 			{
-				newActionGroups.rbegin()->continued = false;
+				actionSubgroupsSorted.rbegin()->continued = false;
+			}
+
+			__split_heterogeneous_actions(cache, actionSubgroupsSorted, gaa,
+					Attribute::Level((int)level+1), debugging);
+
+			FORIT(actionSubgroupIt, actionSubgroupsSorted)
+			{
+				newActionGroups.push_back(*actionSubgroupIt);
 			}
 		}
 		else
@@ -1501,9 +1508,8 @@ void __get_action_groups(const shared_ptr< const Cache >& cache,
 	*actionGroupsPtr = __convert_vector(std::move(preActionGroups));
 
 	typedef GraphAndAttributes::Attribute Attribute;
-	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, Attribute::FromVirtual, debugging);
-	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, Attribute::Soft, debugging);
-	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, Attribute::Hard, debugging);
+	auto initialSplitLevel = Attribute::FromVirtual;
+	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, initialSplitLevel, debugging);
 
 	__set_force_options_for_removals_if_needed(*cache, *actionGroupsPtr);
 }
