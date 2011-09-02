@@ -1132,9 +1132,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 		const InnerActionGroup& actionGroup = *actionGroupIt;
 		if (actionGroup.size() > 1 && !__is_circular_action_subgroup_allowed(actionGroup))
 		{
-			// multiple actions at once
-
-			// we build a mini-graph with really important edges
+			// we build a mini-graph with reduced number of edges
 			GraphAndAttributes miniGaa;
 			set< BinaryVersion::RelationTypes::Type > removedRelations;
 			__build_mini_action_graph(cache, actionGroup, gaa, miniGaa, removedRelations, level, debugging);
