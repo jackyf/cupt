@@ -1490,30 +1490,36 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 	}
 }
 
+void __get_action_groups(const shared_ptr< const Cache >& cache,
+		GraphAndAttributes& gaa, vector< InnerActionGroup >* actionGroupsPtr,
+		bool debugging)
+{
+	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
+	vector< vector< InnerAction > > preActionGroups;
+	gaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
+			(dummyCallback, std::back_inserter(preActionGroups));
+	*actionGroupsPtr = __convert_vector(std::move(preActionGroups));
+
+	typedef GraphAndAttributes::Attribute Attribute;
+	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, Attribute::FromVirtual, debugging);
+	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, Attribute::Soft, debugging);
+	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, Attribute::Hard, debugging);
+
+	__set_force_options_for_removals_if_needed(*cache, *actionGroupsPtr);
+}
+
 vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		const map< string, pair< download::Manager::DownloadEntity, string > >& downloads)
 {
-	typedef GraphAndAttributes::Attribute Attribute;
-
 	auto debugging = _config->getBool("debug::worker");
 	size_t archivesSpaceLimit = _config->getInteger("cupt::worker::archives-space-limit");
 
 	vector< Changeset > changesets;
-
-	vector< InnerActionGroup > actionGroups;
 	{
-		auto dummyCallback = [](const vector< InnerAction >&, bool) {};
-		vector< vector< InnerAction > > preActionGroups;
-		gaa.graph.topologicalSortOfStronglyConnectedComponents< __action_group_pointer_priority_less >
-				(dummyCallback, std::back_inserter(preActionGroups));
-		actionGroups = __convert_vector(std::move(preActionGroups));
+		vector< InnerActionGroup > actionGroups;
+		__get_action_groups(_cache, gaa, &actionGroups, debugging);
+		changesets = __split_action_groups_into_changesets(actionGroups, downloads);
 	}
-	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::FromVirtual, debugging);
-	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Soft, debugging);
-	__split_heterogeneous_actions(_cache, actionGroups, gaa, Attribute::Hard, debugging);
-	__set_force_options_for_removals_if_needed(*_cache, actionGroups);
-
-	changesets = __split_action_groups_into_changesets(actionGroups, downloads);
 
 	if (archivesSpaceLimit)
 	{
