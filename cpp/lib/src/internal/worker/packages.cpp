@@ -1190,7 +1190,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 				actionSubgroupsSorted.rbegin()->continued = false;
 			}
 
-			__split_heterogeneous_actions(cache, actionSubgroupsSorted, gaa,
+			__split_heterogeneous_actions(cache, actionSubgroupsSorted, miniGaa,
 					Attribute::Level((int)level+1), debugging);
 
 			FORIT(actionSubgroupIt, actionSubgroupsSorted)
