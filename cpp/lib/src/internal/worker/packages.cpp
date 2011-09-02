@@ -1132,6 +1132,17 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 		const InnerActionGroup& actionGroup = *actionGroupIt;
 		if (actionGroup.size() > 1 && !__is_circular_action_subgroup_allowed(actionGroup))
 		{
+			if (level > Attribute::Hard)
+			{
+				// no-go
+				vector< string > actionStrings;
+				FORIT(it, actionGroup)
+				{
+					actionStrings.push_back(it->toString());
+				}
+				fatal("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings).c_str());
+			}
+
 			// we build a mini-graph with reduced number of edges
 			GraphAndAttributes miniGaa;
 			set< BinaryVersion::RelationTypes::Type > removedRelations;
@@ -1147,19 +1158,6 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 			FORIT(actionSubgroupIt, actionSubgroupsSorted)
 			{
 				InnerActionGroup& actionSubgroup = *actionSubgroupIt;
-				if (level >= Attribute::Hard && actionSubgroup.size() > 1)
-				{
-					if (!__is_circular_action_subgroup_allowed(actionSubgroup))
-					{
-						// no-go
-						vector< string > actionStrings;
-						FORIT(it, actionSubgroup)
-						{
-							actionStrings.push_back(it->toString());
-						}
-						fatal("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings).c_str());
-					}
-				}
 
 				actionSubgroup.dpkgFlags = actionGroup.dpkgFlags;
 				if (actionSubgroupsSorted.size() > 1) // self-contained heterogeneous actions don't need it
