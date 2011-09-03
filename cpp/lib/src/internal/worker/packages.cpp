@@ -695,9 +695,18 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 
 void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool debugging)
 {
-	auto markAsVirtualWhereLinkAllows = [&cache](GraphAndAttributes::Attribute& attribute,
+	auto canBecomeVirtual = [&cache](const GraphAndAttributes::Attribute& attribute,
 			const InnerAction* antagonisticPtr, bool neededValueOfReverse)
 	{
+		auto attributeLevel = attribute.getLevel();
+		if (attributeLevel == GraphAndAttributes::Attribute::Level::Priority)
+		{
+			return false; // not an interesting edge
+		}
+		if (attributeLevel == GraphAndAttributes::Attribute::Level::Fundamental)
+		{
+			return false; // unmoveable
+		}
 		FORIT(relationRecordIt, attribute.relationInfo)
 		{
 			if (relationRecordIt->reverse == neededValueOfReverse)
@@ -705,11 +714,20 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 				auto satisfyingVersions = cache.getSatisfyingVersions(relationRecordIt->relationExpression);
 				auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticPtr->version);
 				if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-						predicate) != satisfyingVersions.end())
+						predicate) == satisfyingVersions.end())
 				{
-					relationRecordIt->fromVirtual = true; // this relation record is only virtual now
+					return false;
 				}
 			}
+		}
+		return true;
+	};
+
+	auto setVirtual = [&cache](GraphAndAttributes::Attribute& attribute)
+	{
+		FORIT(relationRecordIt, attribute.relationInfo)
+		{
+			relationRecordIt->fromVirtual = true; // this relation record is only virtual now
 		}
 	};
 
@@ -723,7 +741,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		}
 	};
 
-	__for_each_package_sequence(gaa.graph, [&gaa, &markAsVirtualWhereLinkAllows, &deleteEdge, debugging]
+	__for_each_package_sequence(gaa.graph, [&gaa, &canBecomeVirtual, &setVirtual, &deleteEdge, debugging]
 			(const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 			{
 				if (fromPtr->type != InnerAction::Remove || toPtr->type != InnerAction::Configure)
@@ -743,9 +761,9 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 						continue;
 					}
 					GraphAndAttributes::Attribute& attribute = gaa.attributes[make_pair(*predecessorPtrIt, fromPtr)];
-					markAsVirtualWhereLinkAllows(attribute, toPtr, true);
-					if (attribute.getLevel() == GraphAndAttributes::Attribute::FromVirtual)
+					if (canBecomeVirtual(attribute, toPtr, true))
 					{
+						setVirtual(attribute);
 						__move_edge(gaa, *predecessorPtrIt, fromPtr, toPtr, fromPtr, debugging);
 						deleteEdge(*predecessorPtrIt, fromPtr);
 					}
@@ -759,9 +777,9 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 						continue;
 					}
 					GraphAndAttributes::Attribute& attribute = gaa.attributes[make_pair(toPtr, *successorPtrIt)];
-					markAsVirtualWhereLinkAllows(attribute, fromPtr, false);
-					if (attribute.getLevel() == GraphAndAttributes::Attribute::FromVirtual)
+					if (canBecomeVirtual(attribute, fromPtr, false))
 					{
+						setVirtual(attribute);
 						__move_edge(gaa, toPtr, *successorPtrIt, toPtr, fromPtr, debugging);
 						deleteEdge(toPtr, *successorPtrIt);
 					}
