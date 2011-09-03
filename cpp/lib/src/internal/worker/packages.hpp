@@ -51,6 +51,7 @@ struct InnerActionGroup: public vector< InnerAction >
 
 	InnerActionGroup() : continued(false) {}
 };
+typedef pair< const InnerAction*, const InnerAction* > InnerActionPtrPair;
 struct GraphAndAttributes
 {
 	Graph< InnerAction > graph;
@@ -72,7 +73,7 @@ struct GraphAndAttributes
 		Attribute();
 		Level getLevel() const;
 	};
-	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
+	map< InnerActionPtrPair, Attribute > attributes;
 };
 struct Changeset
 {
