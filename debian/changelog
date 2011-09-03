@@ -9,6 +9,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
         purges packages specified as arguments.
     - 'clean', 'autoclean': remove also partially downloaded archive files.
       Thanks to Karol Kozłowski for the suggestion. (Closes: #633485)
+    - 'version': support '-v' as a alias again. (Closes: #640148)
   * lib:
     - system/worker:
       - New method 'setPackagePurgeFlag'.
