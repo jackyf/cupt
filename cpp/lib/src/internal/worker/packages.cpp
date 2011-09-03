@@ -636,9 +636,10 @@ void __move_edge(GraphAndAttributes& gaa,
 	GraphAndAttributes::Attribute& fromAttribute = gaa.attributes[make_pair(fromPredecessorPtr, fromSuccessorPtr)];
 
 	// concatenating relationInfo
-	toAttribute.relationInfo.insert(toAttribute.relationInfo.end(),
-			fromAttribute.relationInfo.begin(), fromAttribute.relationInfo.end());
-
+	FORIT(relationRecordIt, fromAttribute.relationInfo)
+	{
+		toAttribute.relationInfo.push_back(std::move(*relationRecordIt));
+	}
 	// delete the whole attribute
 	gaa.attributes.erase(make_pair(fromPredecessorPtr, fromSuccessorPtr));
 
