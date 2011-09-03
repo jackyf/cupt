@@ -731,17 +731,27 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		}
 	};
 
-	auto deleteEdge = [&gaa, debugging](const InnerAction* fromPtr, const InnerAction* toPtr)
+	auto moveEdgeToPotential = [&gaa, &setVirtual, debugging](
+		const InnerAction* fromPredecessorPtr, const InnerAction* fromSuccessorPtr,
+		GraphAndAttributes::Attribute& fromAttribute,
+		const InnerAction* toPredecessorPtr, const InnerAction* toSuccessorPtr)
 	{
-		gaa.graph.deleteEdgeFromPointers(fromPtr, toPtr);
+		gaa.potentialEdges.insert(make_pair(
+				InnerActionPtrPair(toPredecessorPtr, toSuccessorPtr),
+				make_pair(InnerActionPtrPair(fromPredecessorPtr, fromSuccessorPtr), fromAttribute)));
+
+		setVirtual(fromAttribute);
+		__move_edge(gaa, fromPredecessorPtr, fromSuccessorPtr, toPredecessorPtr, toSuccessorPtr, debugging);
+
+		gaa.graph.deleteEdgeFromPointers(fromPredecessorPtr, fromSuccessorPtr);
 		if (debugging)
 		{
 			debug("deleting the edge '%s' -> '%s'",
-					fromPtr->toString().c_str(), toPtr->toString().c_str());
+					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str());
 		}
 	};
 
-	__for_each_package_sequence(gaa.graph, [&gaa, &canBecomeVirtual, &setVirtual, &deleteEdge, debugging]
+	__for_each_package_sequence(gaa.graph, [&gaa, &canBecomeVirtual, &moveEdgeToPotential]
 			(const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 			{
 				if (fromPtr->type != InnerAction::Remove || toPtr->type != InnerAction::Configure)
@@ -763,9 +773,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					GraphAndAttributes::Attribute& attribute = gaa.attributes[make_pair(*predecessorPtrIt, fromPtr)];
 					if (canBecomeVirtual(attribute, toPtr, true))
 					{
-						setVirtual(attribute);
-						__move_edge(gaa, *predecessorPtrIt, fromPtr, toPtr, fromPtr, debugging);
-						deleteEdge(*predecessorPtrIt, fromPtr);
+						moveEdgeToPotential(*predecessorPtrIt, fromPtr, attribute, toPtr, fromPtr);
 					}
 				}
 
@@ -779,9 +787,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					GraphAndAttributes::Attribute& attribute = gaa.attributes[make_pair(toPtr, *successorPtrIt)];
 					if (canBecomeVirtual(attribute, fromPtr, false))
 					{
-						setVirtual(attribute);
-						__move_edge(gaa, toPtr, *successorPtrIt, toPtr, fromPtr, debugging);
-						deleteEdge(toPtr, *successorPtrIt);
+						moveEdgeToPotential(toPtr, *successorPtrIt, attribute, toPtr, fromPtr);
 					}
 				}
 			});
@@ -1085,6 +1091,11 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 		}
 		// filling edges
 		const set< InnerAction >& allowedVertices = miniGaa.graph.getVertices();
+		auto getNewVertex = [&allowedVertices](const InnerAction* oldPtr)
+		{
+			auto newToIt = allowedVertices.find(*oldPtr);
+			return (newToIt != allowedVertices.end()) ? &*newToIt : NULL;
+		};
 		FORIT(it, allowedVertices)
 		{
 			auto newFromPtr = &*it;
@@ -1094,13 +1105,14 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;
+				auto newToPtr = getNewVertex(oldToPtr);
 
-				auto newToIt = allowedVertices.find(*oldToPtr);
-				if (newToIt != allowedVertices.end())
+				if (newToPtr)
 				{
 					// yes, edge lies inside our mini graph
 					const GraphAndAttributes::Attribute& oldAttribute = gaa.attributes[make_pair(oldFromPtr, oldToPtr)];
-					if (oldAttribute.getLevel() < minimumAttributeLevel)
+					auto ignoring = oldAttribute.getLevel() < minimumAttributeLevel;
+					if (ignoring)
 					{
 						FORIT(relationInfoRecordIt, oldAttribute.relationInfo)
 						{
@@ -1114,14 +1126,48 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 					}
 					else
 					{
-						auto newToPtr = &*newToIt;
-
 						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
 						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
 						if (debugging)
 						{
 							debug("adding edge '%s' -> '%s'",
 									newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+						}
+					}
+
+					auto edgesToRestoreRange = gaa.potentialEdges.equal_range(make_pair(oldFromPtr, oldToPtr));
+					for(auto edgeToRestoreIt = edgesToRestoreRange.first;
+							edgeToRestoreIt != edgesToRestoreRange.second; ++edgeToRestoreIt)
+					{
+						const InnerActionPtrPair& potentialEdgePair = edgeToRestoreIt->second.first;
+
+						auto newPotentialFromPtr = getNewVertex(potentialEdgePair.first);
+						if (!newPotentialFromPtr)
+						{
+							continue;
+						}
+						auto newPotentialToPtr = getNewVertex(potentialEdgePair.second);
+						if (!newPotentialToPtr)
+						{
+							continue;
+						}
+
+						if (ignoring)
+						{
+							miniGaa.graph.addEdgeFromPointers(newPotentialFromPtr, newPotentialToPtr);
+							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] =
+									edgeToRestoreIt->second.second;
+						}
+						else
+						{
+							miniGaa.potentialEdges.insert(make_pair(
+									InnerActionPtrPair(newFromPtr, newToPtr),
+									make_pair(InnerActionPtrPair(newPotentialFromPtr, newPotentialToPtr), edgeToRestoreIt->second.second)));
+						}
+						if (debugging)
+						{
+							debug("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
+									newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
 						}
 					}
 				}

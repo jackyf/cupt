@@ -19,6 +19,7 @@
 #define CUPT_INTERNAL_WORKER_PACKAGES_SEEN
 
 #include <list>
+#include <map>
 
 #include <cupt/download/manager.hpp>
 
@@ -30,6 +31,7 @@ namespace cupt {
 namespace internal {
 
 using std::list;
+using std::multimap;
 
 struct InnerAction
 {
@@ -74,6 +76,7 @@ struct GraphAndAttributes
 		Level getLevel() const;
 	};
 	map< InnerActionPtrPair, Attribute > attributes;
+	multimap< InnerActionPtrPair, pair< InnerActionPtrPair, Attribute > > potentialEdges;
 };
 struct Changeset
 {
