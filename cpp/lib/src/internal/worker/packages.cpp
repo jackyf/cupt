@@ -86,7 +86,7 @@ auto GraphAndAttributes::Attribute::getLevel() const -> Level
 		}
 		else if (recordIt->dependencyType == BinaryVersion::RelationTypes::Breaks)
 		{
-			subLevel = Soft;
+			subLevel = Medium;
 		}
 		else if (recordIt->fromVirtual)
 		{
@@ -106,8 +106,8 @@ auto GraphAndAttributes::Attribute::getLevel() const -> Level
 	return result;
 };
 
-const char* GraphAndAttributes::Attribute::levelStrings[5] = {
-	"priority", "from-virtual", "soft", "hard", "fundamental"
+const char* GraphAndAttributes::Attribute::levelStrings[] = {
+	"priority", "from-virtual", "soft", "medium", "hard", "fundamental"
 };
 
 

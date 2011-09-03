@@ -66,8 +66,8 @@ struct GraphAndAttributes
 	};
 	struct Attribute
 	{
-		enum Level { Priority, FromVirtual, Soft, Hard, Fundamental };
-		static const char* levelStrings[5];
+		enum Level { Priority, FromVirtual, Soft, Medium, Hard, Fundamental };
+		static const char* levelStrings[6];
 
 		bool isFundamental;
 		vector< RelationInfoRecord > relationInfo;
