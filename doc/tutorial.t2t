@@ -585,7 +585,7 @@ marked as such.
 
 Many subcommands accept several arguments of the same meaning. Examples:
 
-``` cupt show dpkg cupt libpqxx3=3.0.2-1>
+``` cupt show dpkg cupt libpqxx3=3.0.2-1
 
 ``` cupt install youtube-dl clive/stable
 
