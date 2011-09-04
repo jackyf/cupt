@@ -346,7 +346,6 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 	}
 
 	auto baseDownloadPath = getDownloadPath(targetPath);
-	string downloadError;
 	FORIT(downloadRecordIt, downloadInfo)
 	{
 		const string& uri = downloadRecordIt->uri;
@@ -417,7 +416,6 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 	bool simulating = _config->getBool("cupt::worker::simulate");
 	// downloading file containing localized descriptions
 	auto downloadInfo = cachefiles::getDownloadInfoOfLocalizedDescriptions(*_config, indexEntry);
-	string downloadError;
 	FORIT(downloadRecordIt, downloadInfo)
 	{
 		const string& uri = downloadRecordIt->uri;
