@@ -4,6 +4,7 @@
  - The quality of generating dpkg package sequence is improved; it's also much
    faster now.
  - Implemented logging.
+ - Added an initial support of repository index deltas (PDiffs).
 
 2.1
  - New subcommand 'showauto'.

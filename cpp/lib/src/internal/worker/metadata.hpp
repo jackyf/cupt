@@ -31,6 +31,8 @@ class MetadataWorker: public virtual WorkerBase
 	bool __update_release_and_index_data(download::Manager&, const Cache::IndexEntry&);
 	bool __update_release(download::Manager&, const Cache::IndexEntry&, bool& releaseFileChanged);
 	ssize_t __get_uri_priority(const string& uri);
+	bool __download_index(download::Manager&, const Cache::IndexDownloadRecord&, bool,
+			const Cache::IndexEntry&, const string&, const string&, bool, bool);
 	bool __update_index(download::Manager&, const Cache::IndexEntry&,
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,

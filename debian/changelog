@@ -37,6 +37,7 @@ cupt (2.2.0~) UNRELEASED; urgency=low
       - Submit the input for a running commands using pipes instead of 'echo'
         shell command. (Closes: #637494)
       - Implemented logging.
+      - An initial support of repository index deltas.
     - config:
       - New option 'cupt::cache::release-file-expiration::ignore'.
       - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific

@@ -20,13 +20,18 @@
 
 #include <algorithm>
 
+#include <common/regex.hpp>
+
 #include <cupt/config.hpp>
 #include <cupt/download/uri.hpp>
 #include <cupt/download/manager.hpp>
+#include <cupt/file.hpp>
 
 #include <internal/filesystem.hpp>
 #include <internal/lock.hpp>
 #include <internal/cachefiles.hpp>
+#include <internal/tagparser.hpp>
+#include <internal/common.hpp>
 
 #include <internal/worker/metadata.hpp>
 
@@ -44,11 +49,19 @@ string getDownloadPath(const string& targetPath)
 			"/" + fs::filename(targetPath);
 }
 
-string getUriBasename(const string& uri)
+string getUriBasename(const string& uri, bool skipFirstSlash = false)
 {
 	auto slashPosition = uri.rfind('/');
 	if (slashPosition != string::npos)
 	{
+		if (skipFirstSlash && slashPosition != 0)
+		{
+			auto secondSlashPosition = uri.rfind('/', slashPosition-1);
+			if (secondSlashPosition != string::npos)
+			{
+				slashPosition = secondSlashPosition;
+			}
+		}
 		return uri.substr(slashPosition + 1);
 	}
 	else
@@ -304,11 +317,303 @@ ssize_t MetadataWorker::__get_uri_priority(const string& uri)
 	return _config->getInteger(variableName);
 }
 
+string getBaseUri(const string& uri)
+{
+	auto slashPosition = uri.rfind('/');
+	return uri.substr(0, slashPosition);
+}
+
+// all this function is just guesses, there are no documentation
+bool __download_and_apply_patches(download::Manager& downloadManager,
+		const Cache::IndexDownloadRecord& downloadRecord,
+		const Cache::IndexEntry& indexEntry, const string& baseDownloadPath,
+		const string& diffIndexPath, const string& targetPath,
+		Logger* logger)
+{
+	// total hash -> { name of the patch-to-apply, total size }
+	map< string, pair< string, size_t > > history;
+	// name -> { hash, size }
+	map< string, pair< string, size_t > > patches;
+	string wantedHashSum;
+
+	auto baseUri = getBaseUri(downloadRecord.uri);
+
+	auto baseAlias = indexEntry.distribution + '/' + indexEntry.component +
+			' ' + getUriBasename(baseUri);
+	auto baseLongAlias = indexEntry.uri + ' ' + baseAlias;
+
+	auto patchedPath = baseDownloadPath + ".patched";
+
+	auto cleanUp = [patchedPath, diffIndexPath]()
+	{
+		unlink(patchedPath.c_str());
+		unlink(diffIndexPath.c_str());
+	};
+	auto fail = [baseLongAlias, &cleanUp]()
+	{
+		cleanUp();
+		warn("%s: failed to proceed", baseLongAlias.c_str());
+	};
+
+	try
+	{
+		{ // parsing diff index
+			string openError;
+			File diffIndexFile(diffIndexPath, "r", openError);
+			if (!openError.empty())
+			{
+				fatal("unable to open the file '%s': EEE", diffIndexPath.c_str());
+			}
+
+			TagParser diffIndexParser(&diffIndexFile);
+			TagParser::StringRange fieldName, fieldValue;
+			smatch m;
+			while (diffIndexParser.parseNextLine(fieldName, fieldValue))
+			{
+				bool isHistory = fieldName.equal(BUFFER_AND_SIZE("SHA1-History"));
+				bool isPatchInfo = fieldName.equal(BUFFER_AND_SIZE("SHA1-Patches"));
+				if (isHistory || isPatchInfo)
+				{
+					string block;
+					diffIndexParser.parseAdditionalLines(block);
+					// TODO: make it common?
+					static const sregex checksumsLineRegex = sregex::compile(
+							" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize);
+
+					auto lines = internal::split('\n', block);
+					FORIT(lineIt, lines)
+					{
+						const string& line = *lineIt;
+						if (!regex_match(line, m, checksumsLineRegex))
+						{
+							fatal("malformed 'hash-size-name' line '%s'", line.c_str());
+						}
+
+						if (isHistory)
+						{
+							history[m[1]] = make_pair(string(m[3]), string2uint32(m[2]));
+						}
+						else // patches
+						{
+							patches[m[3]] = make_pair(string(m[1]), string2uint32(m[2]));
+						}
+					}
+				}
+				else if (fieldName.equal(BUFFER_AND_SIZE("SHA1-Current")))
+				{
+					auto values = internal::split(' ', string(fieldValue));
+					if (values.size() != 2)
+					{
+						fatal("malformed 'hash-size' line '%s'", string(fieldValue).c_str());
+					}
+					wantedHashSum = values[0];
+				}
+			}
+			if (wantedHashSum.empty())
+			{
+				fatal("failed to find wanted hash sum");
+			}
+		}
+		if (unlink(diffIndexPath.c_str()) == -1)
+		{
+			warn("unable to delete a temporary index file '%s'", diffIndexPath.c_str());
+		}
+
+		HashSums subTargetHashSums;
+		subTargetHashSums.fill(targetPath);
+		const string& currentSha1Sum = subTargetHashSums[HashSums::SHA1];
+
+		const string initialSha1Sum = currentSha1Sum;
+
+		if (::system(sf("cp %s %s", targetPath.c_str(), patchedPath.c_str()).c_str()))
+		{
+			fatal("unable to copy '%s' to '%s'", targetPath.c_str(), patchedPath.c_str());
+		}
+
+		while (currentSha1Sum != wantedHashSum)
+		{
+			auto historyIt = history.find(currentSha1Sum);
+			if (historyIt == history.end())
+			{
+				if (currentSha1Sum == initialSha1Sum)
+				{
+					logger->log(Logger::Subsystem::Metadata, 3, __get_pidded_string(
+							"no matching index patches found, presumably the local index is too old"));
+					cleanUp();
+					return false; // local index is too old
+				}
+				else
+				{
+					fatal("unable to find a patch for the sha1 sum '%s'", currentSha1Sum.c_str());
+				}
+			}
+
+			const string& patchName = historyIt->second.first;
+			auto patchIt = patches.find(patchName);
+			if (patchIt == patches.end())
+			{
+				fatal("unable to a patch entry for the patch '%s'", patchName.c_str());
+			}
+
+			string patchSuffix = "/" + patchName + ".gz";
+			auto alias = baseAlias + patchSuffix;
+			auto longAlias = baseLongAlias + patchSuffix;
+			logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
+
+			auto unpackedPath = baseDownloadPath + '.' + patchName;
+			auto downloadPath = unpackedPath + ".gz";
+
+			download::Manager::DownloadEntity downloadEntity;
+
+			auto patchUri = baseUri + patchSuffix;
+			download::Manager::ExtendedUri extendedUri(download::Uri(patchUri),
+					alias, longAlias);
+			downloadEntity.extendedUris.push_back(std::move(extendedUri));
+			downloadEntity.targetPath = downloadPath;
+			downloadEntity.size = (size_t)-1;
+
+			HashSums patchHashSums;
+			patchHashSums[HashSums::SHA1] = patchIt->second.first;
+
+			std::function< string () > uncompressingSub;
+			generateUncompressingSub(patchUri, downloadPath, unpackedPath, uncompressingSub);
+
+			downloadEntity.postAction = [&patchHashSums, &subTargetHashSums,
+					&uncompressingSub, &patchedPath, &unpackedPath]() -> string
+			{
+				auto partialDirectory = fs::dirname(patchedPath);
+				auto patchedPathBasename = fs::filename(patchedPath);
+
+				string result = uncompressingSub();
+				if (!result.empty())
+				{
+					return result; // unpackedPath is not yet created
+				}
+
+				if (!patchHashSums.verify(unpackedPath))
+				{
+					result = __("hash sums mismatch");
+					goto out;
+				}
+				if (::system(sf("(cat %s && echo w) | (cd %s && red -s - %s >/dev/null)",
+							unpackedPath.c_str(), partialDirectory.c_str(), patchedPathBasename.c_str()).c_str()))
+				{
+					result = __("applying ed script failed");
+					goto out;
+				}
+				subTargetHashSums.fill(patchedPath);
+			 out:
+				if (unlink(unpackedPath.c_str()) == -1)
+				{
+					warn("unable to remove partial index patch file '%s': EEE", unpackedPath.c_str());
+				}
+				return result;
+			};
+			auto downloadError = downloadManager.download(
+					vector< download::Manager::DownloadEntity >{ downloadEntity });
+			if (!downloadError.empty())
+			{
+				fail();
+				return false;
+			}
+		}
+
+		auto moveError = fs::move(patchedPath, targetPath);
+		if (!moveError.empty())
+		{
+			fatal("%s", moveError.c_str());
+		}
+		return true;
+	}
+	catch (...)
+	{
+		fail();
+		return false;
+	}
+}
+
+bool MetadataWorker::__download_index(download::Manager& downloadManager,
+		const Cache::IndexDownloadRecord& downloadRecord, bool isDiff,
+		const Cache::IndexEntry& indexEntry, const string& baseDownloadPath,
+		const string& targetPath, bool releaseFileChanged, bool simulating)
+{
+	if (isDiff && !fs::fileExists(targetPath))
+	{
+		return false; // nothing to patch
+	}
+
+	const string& uri = downloadRecord.uri;
+	auto downloadPath = baseDownloadPath +
+			(isDiff ? string(".diffindex") : getFilenameExtension(uri));
+
+	std::function< string () > uncompressingSub;
+	if (isDiff)
+	{
+		uncompressingSub = []() -> string { return ""; }; // diffIndex is not a final file
+	}
+	else if (!generateUncompressingSub(uri, downloadPath, targetPath, uncompressingSub))
+	{
+		return false;
+	}
+
+	auto alias = indexEntry.distribution + '/' + indexEntry.component +
+			' ' + getUriBasename(uri, isDiff);
+	auto longAlias = indexEntry.uri + ' ' + alias;
+	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
+
+	if (!simulating)
+	{
+		// here we check for outdated dangling indexes in partial directory
+		if (releaseFileChanged && fs::fileExists(downloadPath))
+		{
+			if (unlink(downloadPath.c_str()) == -1)
+			{
+				warn("unable to remove outdated partial index file '%s': EEE",
+						downloadPath.c_str());
+			}
+		}
+	}
+
+	download::Manager::DownloadEntity downloadEntity;
+
+	download::Manager::ExtendedUri extendedUri(download::Uri(uri),
+			alias, longAlias);
+	downloadEntity.extendedUris.push_back(std::move(extendedUri));
+	downloadEntity.targetPath = downloadPath;
+	downloadEntity.size = downloadRecord.size;
+
+	auto hashSums = downloadRecord.hashSums;
+	downloadEntity.postAction = [&hashSums, &downloadPath, &uncompressingSub]() -> string
+	{
+		if (!hashSums.verify(downloadPath))
+		{
+			if (unlink(downloadPath.c_str()) == -1)
+			{
+				warn("unable to remove partial index file '%s': EEE", downloadPath.c_str());
+			}
+			return __("hash sums mismatch");
+		}
+		return uncompressingSub();
+	};
+	auto downloadError = downloadManager.download(
+			vector< download::Manager::DownloadEntity >{ downloadEntity });
+	if (isDiff && !simulating && downloadError.empty())
+	{
+		return __download_and_apply_patches(downloadManager, downloadRecord,
+				indexEntry, baseDownloadPath, downloadPath, targetPath, _logger);
+	}
+	else
+	{
+		return downloadError.empty();
+	}
+}
+
 bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		const Cache::IndexEntry& indexEntry, bool releaseFileChanged, bool& indexFileChanged)
 {
 	// downloading Packages/Sources
 	auto targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
+
 	auto downloadInfo = cachefiles::getDownloadInfoOfIndexList(*_config, indexEntry);
 
 	indexFileChanged = true;
@@ -328,6 +633,8 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		}
 	}
 
+	auto baseDownloadPath = getDownloadPath(targetPath);
+
 	{ // sort download files by priority and size
 		auto comparator = [this](const Cache::IndexDownloadRecord& left, const Cache::IndexDownloadRecord& right)
 		{
@@ -345,60 +652,28 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		std::sort(downloadInfo.begin(), downloadInfo.end(), comparator);
 	}
 
-	auto baseDownloadPath = getDownloadPath(targetPath);
+	bool useIndexDiffs = _config->getBool("cupt::update::use-index-diffs");
+	if (useIndexDiffs && ::system("which red >/dev/null 2>/dev/null"))
+	{
+		_logger->log(Logger::Subsystem::Metadata, 3,
+				__get_pidded_string("the 'red' binary is not available, skipping index diffs"));
+		useIndexDiffs = false;
+	}
+
+	const string diffIndexSuffix = ".diff/Index";
+	auto diffIndexSuffixSize = diffIndexSuffix.size();
 	FORIT(downloadRecordIt, downloadInfo)
 	{
 		const string& uri = downloadRecordIt->uri;
-		auto downloadPath = baseDownloadPath + getFilenameExtension(uri);
-
-		std::function< string () > uncompressingSub;
-		if (!generateUncompressingSub(uri, downloadPath, targetPath, uncompressingSub))
+		bool isDiff = (uri.size() >= diffIndexSuffixSize &&
+				!uri.compare(uri.size() - diffIndexSuffixSize, diffIndexSuffixSize, diffIndexSuffix));
+		if (isDiff && !useIndexDiffs)
 		{
 			continue;
 		}
 
-		auto alias = indexEntry.distribution + '/' + indexEntry.component +
-				' ' + getUriBasename(uri);
-		auto longAlias = indexEntry.uri + ' ' + alias;
-		_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
-
-		if (!simulating)
-		{
-			// here we check for outdated dangling indexes in partial directory
-			if (releaseFileChanged && fs::fileExists(downloadPath))
-			{
-				if (unlink(downloadPath.c_str()) == -1)
-				{
-					warn("unable to remove outdated partial index file '%s': EEE",
-							downloadPath.c_str());
-				}
-			}
-		}
-
-		download::Manager::DownloadEntity downloadEntity;
-
-		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, longAlias);
-		downloadEntity.extendedUris.push_back(std::move(extendedUri));
-		downloadEntity.targetPath = downloadPath;
-		downloadEntity.size = downloadRecordIt->size;
-
-		auto hashSums = downloadRecordIt->hashSums;
-		downloadEntity.postAction = [&hashSums, &downloadPath, &uncompressingSub]() -> string
-		{
-			if (!hashSums.verify(downloadPath))
-			{
-				if (unlink(downloadPath.c_str()) == -1)
-				{
-					warn("unable to remove partial index file '%s': EEE", downloadPath.c_str());
-				}
-				return __("hash sums mismatch");
-			}
-			return uncompressingSub();
-		};
-		auto downloadError = downloadManager.download(
-				vector< download::Manager::DownloadEntity >{ downloadEntity });
-		if (downloadError.empty())
+		if(__download_index(downloadManager, *downloadRecordIt, isDiff, indexEntry,
+				baseDownloadPath, targetPath, releaseFileChanged, simulating))
 		{
 			return true;
 		}
@@ -430,7 +705,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		}
 
 		auto alias = indexEntry.distribution + '/' + indexEntry.component +
-				' ' + getUriBasename(uri);
+				' ' + getUriBasename(uri, true);
 		auto longAlias = indexEntry.uri + ' ' + alias;
 		_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 

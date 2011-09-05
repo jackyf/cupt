@@ -1035,6 +1035,16 @@ boolean, specifies whether to keep signature files that failed GPG check
 when doing update. True by default. Setting this option to false will not have
 an effect if the option L<cupt::update::check-release-files> is set to false.
 
+=item cupt::update::use-index-diffs
+
+boolean, specifies whether to try downloading repository index deltas and apply
+them locally before downloading the full index. True by default.
+
+When turned on, this option saves bandwidth but increases CPU and disk usage
+while updating. On the fast unlimited connections (say, >= 2 Mbit/s, but
+heavily depends on many other factors) you would likely want to turn off this
+option.
+
 =item cupt::resolver::keep-recommends
 
 boolean, specifies whether should resolver try to keep already installed

@@ -176,12 +176,6 @@ vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
 					continue; // doesn't start with indexListSuffix
 				}
 
-				string diffNamePattern = indexListSuffix + ".diff";
-				if (name.compare(0, diffNamePattern.size(), diffNamePattern) == 0)
-				{
-					continue; // skipping diffs for now...
-				}
-
 				// filling result structure
 				string uri = baseUri + '/' + name;
 				bool foundRecord = false;
