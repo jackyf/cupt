@@ -290,12 +290,8 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		downloadEntity.postAction = signaturePostAction;
 		downloadEntity.size = (size_t)-1;
 
-		auto downloadResult = downloadManager.download(
+		downloadManager.download(
 				vector< download::Manager::DownloadEntity >{ downloadEntity });
-		if (!downloadResult.empty())
-		{
-			return false;
-		}
 	}
 
 	return true;
