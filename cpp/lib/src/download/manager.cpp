@@ -900,7 +900,7 @@ void ManagerImpl::worker()
 				pollResult = poll(&pollFd, 1, 0);
 				if (pollResult == -1)
 				{
-					if (pollResult == EINTR)
+					if (errno == EINTR)
 					{
 						goto do_poll;
 					}

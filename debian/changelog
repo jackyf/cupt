@@ -1,3 +1,85 @@
+cupt (2.2.0~) UNRELEASED; urgency=low
+
+  * console:
+    - Managing packages:
+      - New positional action override options '--install', '--remove',
+        '--satisfy', '--unsatisfy'.
+      - The option '--purge' is converted to positional action override one.
+      - The action 'purge' does not set global purge flag anymore but only
+        purges packages specified as arguments.
+    - 'clean', 'autoclean': remove also partially downloaded archive files.
+      Thanks to Karol Kozłowski for the suggestion. (Closes: #633485)
+    - 'version': support '-v' as a alias again. (Closes: #640148)
+  * lib:
+    - system/worker:
+      - New method 'setPackagePurgeFlag'.
+      - The global purge option now unconditionally purges all removed
+        packages again.
+      - New method 'deletePartialArchives'.
+      - Really allow removing Essential packages (when requested and passed
+        all front-end checks).
+      - Unpack/configure actions of some important packages were not optimally
+        merged before when there are reverse-[Pre-]Depends.
+      - Prefer temporary breaking reverse-Depends than anything else.
+        (Closes: #637233)
+      - Don't modify first-level priorities of non-first subactions of
+        the same package, except of incrementing prioties for
+        unpack-after-removal actions.
+      - Greatly simplified the algorithm of setting priority links. Increases
+        processing speed a lot.
+      - Set dependency dpkg force options according to broken relations, not
+        "nothing or all".
+      - Make dpkg sequence output fixed between the different runs for the
+        same input.
+      - Made the virtual vertices' CPU and RAM footprint smaller.
+      - Removed ad-hoc pre-dependency check warnings as useless and obsolete.
+      - Merge remove/unpack subactions even more aggressively.
+      - Submit the input for a running commands using pipes instead of 'echo'
+        shell command. (Closes: #637494)
+      - Implemented logging.
+      - An initial support of repository index deltas.
+    - config:
+      - New option 'cupt::cache::release-file-expiration::ignore'.
+      - Use APT option 'acquire::http::allowredirect' instead of Cupt-specific
+        'acquire::http::allow-redirects'.
+      - New option 'cupt::update::check-release-files'. Thanks to
+        Karol Kozłowski for the suggestion. (Closes: #633492)
+      - Support Cupt-specific configuration files (/etc/cupt by default).
+        New options 'cupt::directory::configuration',
+        'cupt::directory::configuration::main',
+        'cupt::directory::configuration::main-parts'.
+      - New option 'cupt::worker::use-locks'.
+      - Recognize APT variables 'dir::log', 'dir::log::terminal',
+        'dir::log::history'.
+      - New options 'cupt::directory::log', 'cupt::worker::log'.
+      - New options 'cupt::worker::log::levels::{metadata,packages,snapshots}'.
+    - cache:
+      - 'verifySignature': is deprecated now.
+    - system/resolvers/native:
+      - Implemented 'reinstall or remove' for packages that require the
+        reinstallation.
+      - Installed packages with the status 'half-installed' also require
+        the reinstallation, mark them as such. (Closes: #637490)
+    - file:
+      - Constructor now accepts "pw" as a special mode for shell pipes opened
+        for writing.
+    - system/state:
+      - Add package entry to the cache even if the installed version requires
+        the reinstallation. (Closes: #639605)
+      - InstalledRecord: new method 'isBroken'.
+    - download/manager:
+      - Fixed handling of EINTR while polling waiter sockets.
+  * doc:
+    - cupt(1) manual:
+      - Documented 'purge' subcommand.
+      - Fixed a typo in the description of '--download-only' option.
+        (Closes: #639160)
+  * scripts:
+    - logrotate:
+      - Created.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 13 Jul 2011 09:33:27 +0300
+
 cupt (2.1.3) unstable; urgency=low
 
   * lib:

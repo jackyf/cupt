@@ -179,17 +179,7 @@ class CUPT_API Cache
 	 */
 	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
 
-	/// verifies file signature
-	/**
-	 * Verifies a GPG signature of a file. Signature file path is assumed to be
-	 * <tt> @a path + ".gpg" </tt>.
-	 *
-	 * Usually supposed to verify the signature of Release file.
-	 *
-	 * @param path path to the file to verify
-	 * @return @c true if signature is present and verified successfully, @c
-	 * false otherwise
-	 */
+	/// @copydoc getPathOfReleaseList
 	static bool verifySignature(const shared_ptr< const Config >&, const string& path);
 	/// gets a supposed system path of package copyright file for certain binary version
 	/**

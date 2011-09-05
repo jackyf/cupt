@@ -182,7 +182,7 @@ class CurlMethod: public cupt::download::Method
 				{
 					curl.setOption(CURLOPT_PROXY, proxy, "proxy");
 				}
-				if (uri.getProtocol() == "http" && config->getBool("acquire::http::allow-redirects"))
+				if (uri.getProtocol() == "http" && config->getBool("acquire::http::allowredirect"))
 				{
 					curl.setOption(CURLOPT_FOLLOWLOCATION, 1, "follow-location");
 				}

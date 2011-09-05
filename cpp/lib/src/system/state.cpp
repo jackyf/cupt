@@ -117,6 +117,31 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 	}
 }
 
+static bool packageHasFullEntryInfo(const InstalledRecord& record)
+{
+	return record.status != InstalledRecord::Status::NotInstalled &&
+			record.status != InstalledRecord::Status::ConfigFiles;
+}
+
+typedef pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > > VersionSource;
+
+VersionSource* createVersionSource(internal::CacheImpl* cacheImpl,
+		const string& archiveName, const shared_ptr< File >& file)
+{
+	// filling release info
+	shared_ptr< ReleaseInfo > releaseInfo(new ReleaseInfo);
+	releaseInfo->archive = archiveName;
+	releaseInfo->codename = "now";
+	releaseInfo->vendor = "dpkg";
+	releaseInfo->verified = false;
+	releaseInfo->notAutomatic = false;
+
+	cacheImpl->binaryReleaseData.push_back(releaseInfo);
+
+	cacheImpl->releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
+	return &*(cacheImpl->releaseInfoAndFileStorage.rbegin());
+}
+
 void StateData::parseDpkgStatus()
 {
 	string path = config->getPath("dir::state::status");
@@ -134,20 +159,12 @@ void StateData::parseDpkgStatus()
 	    and 'Section' fields.
 	*/
 
-	// filling release info
-	shared_ptr< ReleaseInfo > releaseInfo(new ReleaseInfo);
-	releaseInfo->archive = "installed";
-	releaseInfo->codename = "now";
-	releaseInfo->vendor = "dpkg";
-	releaseInfo->verified = false;
-	releaseInfo->notAutomatic = false;
+	auto installedSource = createVersionSource(cacheImpl, "installed", file);
+	auto improperlyInstalledSource = createVersionSource(cacheImpl, "improperly-installed", file);
 
-	cacheImpl->releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
-	internal::CacheImpl::PrePackageRecord prePackageRecord;
-	prePackageRecord.releaseInfoAndFile = &*(cacheImpl->releaseInfoAndFileStorage.rbegin());
-
-	cacheImpl->binaryReleaseData.push_back(releaseInfo);
 	auto preBinaryPackages = &(cacheImpl->preBinaryPackages);
+
+	internal::CacheImpl::PrePackageRecord prePackageRecord;
 
 	try
 	{
@@ -194,29 +211,27 @@ void StateData::parseDpkgStatus()
 			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
 			parseStatusSubstrings(packageName, status, installedRecord);
 
-			if (installedRecord->flag == InstalledRecord::Flag::Ok)
+			if (packageHasFullEntryInfo(*installedRecord))
 			{
-				if (installedRecord->status != InstalledRecord::Status::NotInstalled &&
-					installedRecord->status != InstalledRecord::Status::ConfigFiles)
+				// this conditions mean that package is installed or
+				// semi-installed, regardless it has full entry info, so add it
+				// (info) to cache
+				prePackageRecord.releaseInfoAndFile = installedRecord->isBroken() ?
+						improperlyInstalledSource : installedSource;
+
+				auto it = preBinaryPackages->insert(pairForInsertion).first;
+				it->second.push_back(prePackageRecord);
+
+				if (!provides.empty())
 				{
-					// this conditions mean that package is installed or
-					//   semi-installed, regardless it has full entry info, so
-					//  add it (info) to cache
-
-					auto it = preBinaryPackages->insert(pairForInsertion).first;
-					it->second.push_back(prePackageRecord);
-
-					if (!provides.empty())
-					{
-						cacheImpl->processProvides(&it->first,
-								&*(provides.begin()), &*(provides.end()));
-					}
+					cacheImpl->processProvides(&it->first,
+							&*(provides.begin()), &*(provides.end()));
 				}
-
-				// add parsed info to installed_info
-				installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
-						std::move(packageName), std::move(installedRecord)));
 			}
+
+			// add parsed info to installed_info
+			installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
+					std::move(packageName), std::move(installedRecord)));
 		}
 	}
 	catch (Exception&)
@@ -228,6 +243,12 @@ void StateData::parseDpkgStatus()
 }
 
 namespace system {
+
+bool State::InstalledRecord::isBroken() const
+{
+	return flag != InstalledRecord::Flag::Ok ||
+			status == InstalledRecord::Status::HalfInstalled;
+}
 
 State::State(shared_ptr< const Config > config, internal::CacheImpl* cacheImpl)
 	: __data(new internal::StateData)
@@ -263,14 +284,29 @@ vector< string > State::getInstalledPackageNames() const
 	{
 		const InstalledRecord& installedRecord = *(it->second);
 
-		if (installedRecord.status == InstalledRecord::Status::NotInstalled ||
-			installedRecord.status == InstalledRecord::Status::ConfigFiles)
+		if (internal::packageHasFullEntryInfo(installedRecord))
 		{
-			continue;
+			result.push_back(it->first);
 		}
+	}
 
-		result.push_back(it->first);
+	return result;
+}
 
+vector< string > State::getReinstallRequiredPackageNames() const
+{
+	vector< string > result;
+
+	FORIT(it, __data->installedInfo)
+	{
+		const InstalledRecord::Flag::Type& flag = it->second->flag;
+		const InstalledRecord::Status::Type& status = it->second->status;
+		if (flag == InstalledRecord::Flag::Reinstreq ||
+				flag == InstalledRecord::Flag::HoldAndReinstreq ||
+				status == InstalledRecord::Status::HalfInstalled)
+		{
+			result.push_back(it->first);
+		}
 	}
 
 	return result;

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -56,6 +56,7 @@ void ConfigImpl::initializeVariables()
 	{
 		// used APT vars
 		{ "acquire::http::timeout", "120" },
+		{ "acquire::http::allowredirect", "yes" },
 		{ "acquire::https::timeout", "120" },
 		{ "acquire::ftp::timeout", "120" },
 		{ "acquire::file::timeout", "20" },
@@ -96,15 +97,22 @@ void ConfigImpl::initializeVariables()
 		{ "apt::get::show-upgraded", "no" },
 		{ "apt::get::build-dep-automatic", "yes" },
 		{ "acquire::pdiffs", "yes" },
+		{ "dir::log", "var/log/apt" },
+		{ "dir::log::history", "history.log" },
+		{ "dir::log::terminal", "term.log" },
 
 		// Cupt vars
-		{ "acquire::http::allow-redirects", "yes" },
 		{ "cupt::cache::pin::addendums::downgrade", "-10000" },
 		{ "cupt::cache::pin::addendums::hold", "1000000" },
 		{ "cupt::cache::pin::addendums::not-automatic", "-4000" },
+		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::directory", "/" },
+		{ "cupt::directory::configuration", "etc/cupt" },
+		{ "cupt::directory::configuration::main", "cupt.conf" },
+		{ "cupt::directory::configuration::main-parts", "cupt.conf.d" },
+		{ "cupt::directory::log", "var/log/cupt.log" },
 		{ "cupt::directory::state", "var/lib/cupt" },
 		{ "cupt::directory::state::lists", "lists" },
 		{ "cupt::directory::state::snapshots", "snapshots" },
@@ -124,12 +132,14 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods::wget::priority", "80" },
 		{ "cupt::downloader::protocols::http::methods::wget::priority", "80" },
 		{ "cupt::downloader::protocols::ftp::methods::wget::priority", "80" },
+		{ "cupt::update::check-release-files", "yes" },
 		{ "cupt::update::compression-types::gz::priority", "100" },
 		{ "cupt::update::compression-types::bz2::priority", "100" },
 		{ "cupt::update::compression-types::lzma::priority", "100" },
 		{ "cupt::update::compression-types::xz::priority", "100" },
 		{ "cupt::update::compression-types::uncompressed::priority", "100" },
 		{ "cupt::update::keep-bad-signatures", "yes" },
+		{ "cupt::update::use-index-diffs", "yes" },
 		{ "cupt::resolver::auto-remove", "yes" },
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },
@@ -152,9 +162,15 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::worker::archives-space-limit", "0" },
 		{ "cupt::worker::defer-triggers", "no" },
 		{ "cupt::worker::download-only", "no" },
+		{ "cupt::worker::log", "yes" },
+		{ "cupt::worker::log::levels::metadata", "1" },
+		{ "cupt::worker::log::levels::packages", "2" },
+		{ "cupt::worker::log::levels::snapshots", "1" },
 		{ "cupt::worker::purge", "no" },
 		{ "cupt::worker::simulate", "no" },
+		{ "cupt::worker::use-locks", "yes" },
 		{ "debug::downloader", "no" },
+		{ "debug::logger", "no" },
 		{ "debug::resolver", "no" },
 		{ "debug::worker", "no" },
 		{ "debug::gpgv", "no" },
@@ -284,18 +300,32 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		string partsDir = config->getPath("dir::etc::parts");
-		vector< string > configFiles = internal::fs::glob(partsDir + "/*");
+		vector< string > configFiles;
 
-		string mainFilePath = config->getPath("dir::etc::main");
-		const char* envAptConfig = getenv("APT_CONFIG");
-		if (envAptConfig)
-		{
-			mainFilePath = envAptConfig;
+		{ // APT files
+			string partsDir = config->getPath("dir::etc::parts");
+			configFiles = internal::fs::glob(partsDir + "/*");
+
+			string mainFilePath = config->getPath("dir::etc::main");
+			const char* envAptConfig = getenv("APT_CONFIG");
+			if (envAptConfig)
+			{
+				mainFilePath = envAptConfig;
+			}
+			if (internal::fs::fileExists(mainFilePath))
+			{
+				configFiles.push_back(mainFilePath);
+			}
 		}
-		if (internal::fs::fileExists(mainFilePath))
-		{
-			configFiles.push_back(mainFilePath);
+		{ // Cupt files
+			auto cuptParts = internal::fs::glob(config->getPath(
+					"cupt::directory::configuration::main-parts") + "/*");
+			configFiles.insert(configFiles.end(), cuptParts.begin(), cuptParts.end());
+			auto mainFilePath = config->getPath("cupt::directory::configuration::main");
+			if (internal::fs::fileExists(mainFilePath))
+			{
+				configFiles.push_back(mainFilePath);
+			}
 		}
 
 		FORIT(configFileIt, configFiles)

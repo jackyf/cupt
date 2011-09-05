@@ -39,6 +39,12 @@ WorkerImpl::WorkerImpl(const shared_ptr< const Config >& config, const shared_pt
 
 namespace system {
 
+const char* Worker::Action::rawStrings[] = {
+	"install", "remove", "purge", "upgrade", "downgrade",
+	"configure", "deconfigure", "process triggers"
+};
+
+
 Worker::Worker(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __impl(new internal::WorkerImpl(config, cache))
 {}
@@ -51,6 +57,11 @@ Worker::~Worker()
 void Worker::setDesiredState(const Resolver::Offer& offer)
 {
 	__impl->setDesiredState(offer);
+}
+
+void Worker::setPackagePurgeFlag(const string& packageName, bool value)
+{
+	__impl->setPackagePurgeFlag(packageName, value);
 }
 
 shared_ptr< const Worker::ActionsPreview > Worker::getActionsPreview() const
@@ -91,6 +102,11 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > Worker::getArchivesI
 void Worker::deleteArchive(const string& path)
 {
 	return __impl->deleteArchive(path);
+}
+
+void Worker::deletePartialArchives()
+{
+	return __impl->deletePartialArchives();
 }
 
 void Worker::saveSnapshot(const Snapshots& snapshots, const string& name)

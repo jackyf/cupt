@@ -57,11 +57,14 @@ struct FileImpl
 FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	: handle(NULL), buf(NULL), bufLength(0), path(path_), isPipe(false)
 {
-	if (std::strcmp(mode, "pr") == 0)
+	if (mode[0] == 'p')
 	{
-		// need to open read pipe
+		if (strlen(mode) != 2)
+		{
+			fatal("pipe specification mode should be exact 2 characters");
+		}
 		isPipe = true;
-		handle = popen(path.c_str(), "r");
+		handle = popen(path.c_str(), mode+1);
 	}
 	else
 	{
@@ -297,6 +300,30 @@ void File::put(const char* data, size_t size)
 void File::put(const string& bytes)
 {
 	put(bytes.c_str(), bytes.size());
+}
+
+void File::unbufferedPut(const char* data, size_t size)
+{
+	fflush(__impl->handle);
+	int fd = __guarded_fileno(__impl->handle, __impl->path);
+
+	size_t currentOffset = 0;
+	while (currentOffset < size)
+	{
+		auto writeResult = write(fd, data + currentOffset, size - currentOffset);
+		if (writeResult == -1)
+		{
+			if (errno == EINTR)
+			{
+				continue;
+			}
+			else
+			{
+				fatal("unable to write to file '%s': EEE", __impl->path.c_str());
+			}
+		}
+		currentOffset += writeResult;
+	}
 }
 
 } // namespace

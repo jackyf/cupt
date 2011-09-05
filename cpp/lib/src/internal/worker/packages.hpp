@@ -19,6 +19,7 @@
 #define CUPT_INTERNAL_WORKER_PACKAGES_SEEN
 
 #include <list>
+#include <map>
 
 #include <cupt/download/manager.hpp>
 
@@ -30,95 +31,16 @@ namespace cupt {
 namespace internal {
 
 using std::list;
-
-class VersionProxy
-{
- protected:
-	shared_ptr< const BinaryVersion > _version;
- public:
-	const string& getPackageName() const
-	{
-		return _version->packageName;
-	}
-	const string& getVersionString() const
-	{
-		return _version->versionString;
-	}
-
-	virtual const RelationLine& getRelations(BinaryVersion::RelationTypes::Type) const = 0;
-	virtual const shared_ptr< const BinaryVersion >& getVersion() const = 0;
-	virtual string toString() const = 0;
-	virtual const string& getAdditionaSortKey() const = 0;
-	virtual ~VersionProxy() {}
-};
-class FullVersionProxy: public VersionProxy
-{
- public:
-	const RelationLine& getRelations(BinaryVersion::RelationTypes::Type type) const
-	{
-		return _version->relations[type];
-	}
-	void setVersion(const shared_ptr< const BinaryVersion >& version)
-	{
-		_version = version;
-	}
-	const shared_ptr< const BinaryVersion >& getVersion() const
-	{
-		return _version;
-	}
-	string toString() const
-	{
-		return getPackageName() + ' ' + getVersionString();
-	}
-	const string& getAdditionaSortKey() const
-	{
-		static const string emptyString;
-		return emptyString;
-	}
-};
-class OneRelationExpressionVersionProxy: public VersionProxy
-{
-	BinaryVersion::RelationTypes::Type __type;
-	RelationLine __relation_expression;
-	string __hash_key;
-
-	static const RelationLine __null_result;
- public:
-	OneRelationExpressionVersionProxy(const shared_ptr< const BinaryVersion >& version,
-			BinaryVersion::RelationTypes::Type type, const RelationExpression& relationExpression)
-		: __type(type), __hash_key(relationExpression.getHashString())
-	{
-		_version = version;
-		__relation_expression.push_back(relationExpression);
-	}
-	const RelationLine& getRelations(BinaryVersion::RelationTypes::Type type) const
-	{
-		return (type == __type) ? __relation_expression : __null_result;
-	}
-	const shared_ptr< const BinaryVersion >& getVersion() const
-	{
-		fatal("internal error: getting version of one relation expression proxy");
-		return _version; // unreachable
-	}
-	string toString() const
-	{
-		return getPackageName() + " [" + __relation_expression[0].toString()
-				+ "] " + getVersionString();
-	}
-	const string& getAdditionaSortKey() const
-	{
-		return __hash_key;
-	}
-};
+using std::multimap;
 
 struct InnerAction
 {
-	enum Type { PriorityModifier, Remove, Unpack, Configure } type;
-	shared_ptr< const VersionProxy > versionProxy;
+	enum Type { Remove, Unpack, Configure } type;
+	shared_ptr< const BinaryVersion > version;
 	bool fake;
+	mutable int16_t priority;
 	mutable const InnerAction* linkedFrom;
 	mutable const InnerAction* linkedTo;
-	mutable ssize_t priority;
 
 	InnerAction();
 	bool operator<(const InnerAction& other) const;
@@ -126,11 +48,12 @@ struct InnerAction
 };
 struct InnerActionGroup: public vector< InnerAction >
 {
-	string dpkgFlags;
+	set< string > dpkgFlags;
 	bool continued;
 
 	InnerActionGroup() : continued(false) {}
 };
+typedef pair< const InnerAction*, const InnerAction* > InnerActionPtrPair;
 struct GraphAndAttributes
 {
 	Graph< InnerAction > graph;
@@ -139,16 +62,21 @@ struct GraphAndAttributes
 		BinaryVersion::RelationTypes::Type dependencyType;
 		RelationExpression relationExpression;
 		bool reverse;
+		bool fromVirtual;
 	};
 	struct Attribute
 	{
+		enum Level { Priority, FromVirtual, Soft, Medium, Hard, Fundamental };
+		static const char* levelStrings[6];
+
 		bool isFundamental;
 		vector< RelationInfoRecord > relationInfo;
 
 		Attribute();
-		bool isDependencyHard() const;
+		Level getLevel() const;
 	};
-	map< pair< const InnerAction*, const InnerAction* >, Attribute > attributes;
+	map< InnerActionPtrPair, Attribute > attributes;
+	multimap< InnerActionPtrPair, pair< InnerActionPtrPair, Attribute > > potentialEdges;
 };
 struct Changeset
 {
@@ -160,8 +88,7 @@ class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
 
-	void __fill_actions(GraphAndAttributes&,
-			vector< pair< const InnerAction*, const InnerAction* > >&);
+	void __fill_actions(GraphAndAttributes&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
 	vector< Changeset > __get_changesets(GraphAndAttributes&,

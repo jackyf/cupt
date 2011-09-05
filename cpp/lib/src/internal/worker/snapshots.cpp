@@ -38,10 +38,12 @@ namespace internal {
 
 void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 {
+	_logger->log(Logger::Subsystem::Snapshots, 2,
+			sf("deleting a partial snapshot directory '%s'", directory.c_str()));
 	try
 	{
 		string command = string("rm -r ") + directory;
-		_run_external_command(command.c_str());
+		_run_external_command(Logger::Subsystem::Snapshots, command.c_str());
 	}
 	catch (Exception&)
 	{
@@ -49,8 +51,11 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	}
 }
 
-void createTextFile(const string& path, const vector< string >& lines, bool simulating)
+void createTextFile(const string& path, const vector< string >& lines,
+		Logger* logger, bool simulating)
 {
+	logger->log(Logger::Subsystem::Snapshots, 3,
+			sf("creating the file '%s'", path.c_str()));
 	if (simulating)
 	{
 		simulate("writing file '%s'", path.c_str());
@@ -90,7 +95,9 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 		}
 		const string& architecture = version->architecture;
 
-		_run_external_command(sf("dpkg-repack --arch=%s %s",
+		_logger->log(Logger::Subsystem::Snapshots, 2,
+				sf("repacking the installed package '%s'", packageName.c_str()));
+		_run_external_command(Logger::Subsystem::Snapshots, sf("dpkg-repack --arch=%s %s",
 					architecture.c_str(), packageName.c_str()));
 
 		/* dpkg-repack uses dpkg-deb -b, which produces file in format
@@ -127,8 +134,8 @@ string SnapshotsWorker::__create_index_file(const Cache::IndexEntry& indexEntry)
 {
 	auto filename = fs::filename(_cache->getPathOfIndexList(indexEntry));
 
-	// building a index file
-	_run_external_command(string("dpkg-scanpackages . > ") + filename);
+	_logger->log(Logger::Subsystem::Snapshots, 2, "building an index file");
+	_run_external_command(Logger::Subsystem::Snapshots, string("dpkg-scanpackages . > ") + filename);
 	return filename;
 }
 
@@ -136,6 +143,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 		const string& snapshotName, const string& indexFilename,
 		const Cache::IndexEntry& indexEntry,bool simulating)
 {
+	_logger->log(Logger::Subsystem::Snapshots, 2, "building a Release file");
 	vector< string > lines;
 
 #define LL(x) lines.push_back(x)
@@ -180,7 +188,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 
 	auto path = temporarySnapshotDirectory + '/' +
 			fs::filename(_cache->getPathOfReleaseList(indexEntry));
-	createTextFile(path, lines, simulating);
+	createTextFile(path, lines, _logger, simulating);
 }
 
 void checkSnapshotName(const Snapshots& snapshots, const string& name)
@@ -222,6 +230,9 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 	checkSnapshotName(snapshots, name);
 	checkSnapshotSavingTools();
 
+	_logger->log(Logger::Subsystem::Snapshots, 1,
+			sf("saving the system snapshot under the name '%s'", name.c_str()));
+
 	auto snapshotsDirectory = snapshots.getSnapshotsDirectory();
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);
 	auto temporarySnapshotDirectory = snapshots.getSnapshotDirectory(string(".partial-") + name);
@@ -252,16 +263,22 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 	auto installedPackageNames = _cache->getSystemState()->getInstalledPackageNames();
 	try
 	{
-		// snapshot format version
-		createTextFile(temporarySnapshotDirectory + "/format", vector< string >{ "1" }, simulating);
+		{
+			_logger->log(Logger::Subsystem::Snapshots, 2, "creating snapshot information files");
 
-		// saving list of package names
-		createTextFile(temporarySnapshotDirectory + "/" + Snapshots::installedPackageNamesFilename,
-				installedPackageNames, simulating);
+			// snapshot format version
+			createTextFile(temporarySnapshotDirectory + "/format", vector< string >{ "1" },
+					_logger, simulating);
 
-		{ // building source line
-			auto sourceLine = sf("deb file://%s %s/", snapshotsDirectory.c_str(), name.c_str());
-			createTextFile(temporarySnapshotDirectory + "/source", vector< string >{ sourceLine }, simulating);
+			// saving list of package names
+			createTextFile(temporarySnapshotDirectory + "/" + Snapshots::installedPackageNamesFilename,
+					installedPackageNames, _logger, simulating);
+
+			{ // building source line
+				auto sourceLine = sf("deb file://%s %s/", snapshotsDirectory.c_str(), name.c_str());
+				createTextFile(temporarySnapshotDirectory + "/source", vector< string >{ sourceLine },
+						_logger, simulating);
+			}
 		}
 
 		auto currentDirectoryFd = open(".", O_RDONLY);
@@ -315,7 +332,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 
 		try
 		{
-			_run_external_command(string("rm -r " + temporarySnapshotDirectory));
+			_run_external_command(Logger::Subsystem::Snapshots,
+					string("rm -r " + temporarySnapshotDirectory));
 		}
 		catch (...)
 		{
@@ -345,7 +363,9 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
 	auto newSnapshotDirectory = snapshots.getSnapshotDirectory(newName);
 
-	_run_external_command(sf("mv %s %s",
+	_logger->log(Logger::Subsystem::Snapshots, 1,
+			sf("renaming the snapshot from '%s' to '%s'", previousName.c_str(), newName.c_str()));
+	_run_external_command(Logger::Subsystem::Snapshots, sf("mv %s %s",
 			previousSnapshotDirectory.c_str(), newSnapshotDirectory.c_str()));
 }
 
@@ -369,7 +389,10 @@ void SnapshotsWorker::removeSnapshot(const Snapshots& snapshots, const string& n
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);
 	checkLooksLikeSnapshot(snapshotDirectory);
 
-	_run_external_command(string("rm -r ") + snapshotDirectory);
+	_logger->log(Logger::Subsystem::Snapshots, 1,
+			sf("removing the snapshot '%s'", name.c_str()));
+	_run_external_command(Logger::Subsystem::Snapshots,
+			string("rm -r ") + snapshotDirectory);
 }
 
 }

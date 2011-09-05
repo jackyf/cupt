@@ -160,13 +160,47 @@ void ArchivesWorker::deleteArchive(const string& path)
 	{
 		if (unlink(path.c_str()) == -1)
 		{
-			fatal("unable to delete file '%s'", path.c_str());
+			fatal("unable to delete file '%s': EEE", path.c_str());
 		}
 	}
 	else
 	{
 		auto filename = fs::filename(path);
 		simulate("deleting an archive '%s'", filename.c_str());
+	}
+}
+
+void ArchivesWorker::deletePartialArchives()
+{
+	auto partialArchivesDirectory = _get_archives_directory() + partialDirectorySuffix;
+	if (!fs::dirExists(partialArchivesDirectory))
+	{
+		return;
+	}
+
+	bool simulating = _config->getBool("cupt::worker::simulate");
+
+	auto paths = fs::glob(partialArchivesDirectory + "/*");
+	bool success = true;
+	FORIT(pathIt, paths)
+	{
+		if (simulating)
+		{
+			auto filename = fs::filename(*pathIt);
+			simulate("deleting a partial archive file '%s'", filename.c_str());
+		}
+		else
+		{
+			if (unlink(pathIt->c_str()) == -1)
+			{
+				success = false;
+				warn("unable to delete file '%s': EEE", pathIt->c_str());
+			}
+		}
+	}
+	if (!success)
+	{
+		fatal("unable to delete partial archives");
 	}
 }
 

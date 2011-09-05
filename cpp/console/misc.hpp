@@ -49,7 +49,9 @@ std::function< int (Context&) > getHandler(const string&);
 
 string parseCommonOptions(int argc, char** argv, shared_ptr< Config >, vector< string >& unparsed);
 bpo::variables_map parseOptions(const Context& context, bpo::options_description options,
-		vector< string >& arguments);
+		vector< string >& arguments,
+		std::function< pair< string, string > (const string&) > extraParser =
+		[](const string&) -> pair< string, string > { return make_pair(string(), string()); } );
 
 void checkNoExtraArguments(const vector< string >& arguments);
 

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,52 +15,37 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <sys/file.h>
+#ifndef CUPT_INTERNAL_LOGGER_SEEN
+#define CUPT_INTERNAL_LOGGER_SEEN
 
-#include <cupt/config.hpp>
-#include <cupt/file.hpp>
-
-#include <internal/lock.hpp>
+#include <cupt/fwd.hpp>
 
 namespace cupt {
 namespace internal {
 
-Lock::Lock(const shared_ptr< const Config >& config, const string& path)
-	: __path(path), __file_ptr(NULL)
+class Logger
 {
-	__simulating = config->getBool("cupt::worker::simulate") ||
-			!config->getBool("cupt::worker::use-locks");
-	__debugging = config->getBool("debug::worker");
+ public:
+	typedef uint16_t Level;
+	enum class Subsystem { Session, Metadata, Packages, Snapshots };
 
-	if (__debugging)
-	{
-		debug("obtaining lock '%s'", __path.c_str());
-	}
-	if (!__simulating)
-	{
-		string errorString;
-		__file_ptr = new File(__path, "w", errorString);
-		if (!errorString.empty())
-		{
-			fatal("unable to open file '%s': %s", __path.c_str(), errorString.c_str());
-		}
-		__file_ptr->lock(LOCK_EX | LOCK_NB);
-	}
-}
+	Logger(const Config& config);
+	~Logger();
+	void log(Subsystem, Level, const string& message);
+ private:
+	Level __levels[4];
+	File* __file;
+	bool __enabled;
+	bool __simulating;
+	bool __debugging;
 
-Lock::~Lock()
-{
-	if (__debugging)
-	{
-		debug("releasing lock '%s'", __path.c_str());
-	}
-	if (!__simulating)
-	{
-		__file_ptr->lock(LOCK_UN);
-		delete __file_ptr;
-	}
-}
+	string __get_log_string(Subsystem, Level, const string& message);
+
+	static const char* __subsystem_strings[4];
+};
 
 }
 }
+
+#endif
 

@@ -43,9 +43,8 @@ However, you are invited to test it and increase the number of users.
 
 - Some features which are present in other high-level package managers are missing.
 
-Among them: GUI and TUI interfaces, cdrom:// URI download method, PDiffs
-(repository index deltas), integration with //cron(8)//. And there are probably
-many more.
+Among them: GUI and TUI interfaces, cdrom:// URI download method, integration
+with //cron(8)//. And there are probably many more.
 
 
 You might want to use Cupt to have these, to my best knowledge, unique features:
@@ -184,7 +183,7 @@ Another example: you want to find GTK+-related Perl modules:
 
 ``` cupt search --names-only "gtk.*perl"
 
-== Updating repository metadata ==
+== Updating repository metadata ==[update_metadata]
 
 To update repository medadata, use
 
@@ -202,7 +201,7 @@ warnings, but if you don't see an error message like
 
 , the process overall went fine. You can also check program exit code.
 
-== Modifying the system ==
+== Modifying the system ==[modifying_system]
 
 === package actions terminology ===[package_actions_terminology]
 
@@ -390,6 +389,9 @@ currently available repositories.
 If you want to remove all archives from the cache, do
 
 ``` cupt clean
+
+Both subcommands above will also remove the partially downloaded archive files
+which may stay around after the terminated download operations.
 
 = INTERMEDIATE LEVEL =
 
@@ -582,7 +584,7 @@ marked as such.
 
 Many subcommands accept several arguments of the same meaning. Examples:
 
-``` cupt show dpkg cupt libpqxx3=3.0.2-1>
+``` cupt show dpkg cupt libpqxx3=3.0.2-1
 
 ``` cupt install youtube-dl clive/stable
 
@@ -619,7 +621,26 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
-Also, some subcommands accept arguments' special modifiers:
+== Overriding package management actions ==
+
+=== Action override options ===
+
+You can use special positional options ``--install``, ``--remove``, ``--purge``,
+``--satisfy`` and ``--unsatisfy`` to override the specified action until the
+end of the arguments or the next action override option.
+
+Example:
+
+``` cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"
+
+The command above will install packages ``clive`` and ``git``, remove the package
+``youtube-dl``, purge packages ``cvs`` and ``subversion``, make sure that the package
+``iceweasel`` of version 4 or higher is installed, make sure that the package
+``xinput`` either is not installed or has the version ``1.5`` or higher.
+
+=== Package name suffixes ===
+
+Alternatively, you can supply some suffixes to package names, that suffixes override the current action for the suffixed package(s) only:
 
 : +
 
@@ -910,10 +931,11 @@ To see the current configuration, use ``config-dump`` subcommand. Examples:
 
 You can distingiush list options there by figure brackets around the values.
 
-Cupt reads configuration first from files (conforming to the APT documentation
-(//apt.conf(5)//)), then applies those specified in the command line using
-``--option`` (or ``-o``) switch or by dedicated switches corresponding to the
-option.
+Cupt reads configuration first from APT configuration files (conforming to the
+APT documentation (//apt.conf(5)//)), then from Cupt-specific configuration
+files (see //cupt(1)/cupt::directory::configuration//), then applies those
+specified in the command line using ``--option`` (or ``-o``) switch or by
+dedicated switches corresponding to the option.
 
 To modify a regular option in the command line, use
 
@@ -1368,9 +1390,43 @@ system. Note that you can override them (by supplying ``-o cupt::worker::simulat
 and ``-o apt::install-recommends=yes``, respectively, for this example).
 
 
+== Logging ==
+
+As of Cupt version 2.2, most actions that effectively change the state of
+the system or Cupt itself (namely, [working with packages #modifying_system],
+[updating repository metadata #update_metadata] and
+working with [system snapshots #system_snapshots]) are logged by default.
+
+The place (the file path) where to place the logs is determined by the option
+``cupt::directory::log``. By default, logs are written to ``/var/log/cupt.log``.
+
+There are 4 levels of logging:
+
+: 0
+absolutely no logging at all
+
+: 1
+very minimal logging
+
+: 2
+the significant information is logged
+
+: 3
+very detailed logging
+
+
+Logging levels are set for each subsystem independently. By default, the
+logging level for package changes is set to ``2``, other logging levels are set
+to ``1``. To change the logging level for some subsystem, use the option
+``cupt::worker::log::levels::``//subsystem//.
+See //cupt(1)/Configuration variables// for details.
+
+Finally, if you want to disable the logging entirely, set the option
+``cupt::worker::log`` to ``no``.
+
 = ADVANCED USAGE =
 
-== System snapshots ==
+== System snapshots ==[system_snapshots]
 
 System snapshots, created by Cupt, consist of binary archives of installed
 packages.  The idea is you create snapshots at some time, and when after some
@@ -1638,7 +1694,7 @@ increasing the value to values like 4000 or even 16000.
 == Getting debug information ==
 
 There are several types of debug information available, the debug output is
-turned on by setting some ``debug::``//type// option to `yes`. All debug output
+turned on by setting some ``debug::``//type// option to ``yes``. All debug output
 lines is prepended with ``D:`` and are sent to standard error.
 
 : resolver
@@ -1664,6 +1720,13 @@ The debug option is ``debug::downloader``.
 The gpg signature checker will output its debug information.
 
 The debug option is ``debug::gpgv``.
+
+: logger
+
+All log messages (of all levels, regardless of logging settings) will be
+printed as debug messages.
+
+The debug option is ``debug::logger``.
 
 
 An example: you want to see a very detailed resolver information regarding your query:

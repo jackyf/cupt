@@ -1,3 +1,16 @@
+2.2
+ - New positional action override options '--install', '--remove', '--purge',
+   '--satisfy', '--unsatisfy'.
+ - The quality of generating dpkg package sequence is improved; it's also much
+   faster now.
+ - Implemented logging.
+ - Added an initial support of repository index deltas (PDiffs).
+
+2.1
+ - New subcommand 'showauto'.
+ - Implemented regular expressions in pin preferences.
+ - Now uses its own directory for package metadata.
+
 2.0
  - Re-implemented in C++(0x).
  - A tutorial is now available.

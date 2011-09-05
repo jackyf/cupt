@@ -69,6 +69,7 @@ class NativeResolverImpl
 	bool __any_solution_was_found;
 
 	void __import_installed_versions();
+	void __import_packages_to_reinstall();
 	bool __prepare_version_no_stick(const shared_ptr< const BinaryVersion >&,
 			dg::InitialPackageEntry&);
 	float __get_version_weight(const shared_ptr< const BinaryVersion >&) const;

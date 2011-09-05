@@ -364,6 +364,22 @@ C<cupt remove nlkt>
 
 C<cupt remove devscripts kde4-minimal>
 
+=item purge
+
+removes specified packages along with their configuration files.  Also this
+command can purge the configuration files when the packages are removed
+already.
+
+This subcommand receives the list of package names.
+
+Examples:
+
+C<cupt purge nlkt>
+
+C<cupt purge devscripts kde4-minimal>
+
+See also the configuration option L<cupt::worker::purge>.
+
 =item full-upgrade
 
 performs as more upgrades of the installed packages as possible, the
@@ -493,7 +509,7 @@ C<< cupt source libxine1 >>
 
 =item clean
 
-removes all deb archives from cache on disk
+removes all deb archives and partially downloaded archive files from the cache on a disk
 
 This subcommand receives no arguments.
 
@@ -501,8 +517,8 @@ Example: C<cupt clean>
 
 =item autoclean
 
-removes deb archives which are not available in package indexes from cache
-on disk
+removes deb archives which are not available in package indexes and partially
+downloaded archive files from the cache on a disk
 
 This subcommand receives no arguments.
 
@@ -647,7 +663,7 @@ cancels behavior described.
 =item --download-only,-d
 
 stop after download stage, don't modify the system; not applicable for
-L</markauto> and L</markauto> actions
+L</markauto> and L</unmarkauto> actions
 
 Corresponding configuration option: L<cupt::worker::download-only>
 
@@ -660,7 +676,64 @@ Corresponding configuration options: L<apt::get::assume-yes>, L<cupt::console::a
 
 =back
 
-=head3 management modifiers
+=head3 management modifiers: action override options
+
+Unlike all the other options, these ones are positional and are effective only
+for the rest of parameters (and before next override option if any). One can
+specify as many action override options as needed.
+
+=over
+
+=item --install
+
+install the rest of packages
+
+Example:
+
+C<cupt install exim4-daemon-light --remove msmtp-mta esmtp> - install the package
+'exim4-daemon-light', remove the packages 'msmtp-mta' and 'esmtp'
+
+=item --remove
+
+remove rest of packages
+
+Example:
+
+C<cupt remove msmtp-mta --install exim4-daemon-light esmtp> - install the packages
+'exim4-daemon-light' and 'esmtp', remove the package 'msmtp-mta'
+
+=item --purge
+
+purge the rest of packages
+
+Example:
+
+C<cupt purge libkate1 --remove libass4 --purge libdirac-decoder0> - remove the
+package 'libass4', purge packages 'libkate1' and 'libdirac-decoder0'
+
+=item --satisfy
+
+satisfy the rest of relation expressions
+
+Example:
+
+C<< cupt install lightspark --remove gnash --satisfy "iceweasel (>= 5)" >> -
+install the package 'lightspark', remove the packae 'gnash', and make sure that
+iceweasel (at least of version 5) is installed
+
+=item --unsatisfy
+
+unsatisfy the rest of relation expressions
+
+Example:
+
+C<< cupt install sieve-connect --unsatisfy "iceweasel (<< 3.5.20)" >> - install
+the package 'sieve-connect', upgrade or remove the package 'iceweasel' if it is installed
+and has the version lower than '3.5.20'
+
+=back
+
+=head3 management modifiers: package name suffixes
 
 =over
 
@@ -770,12 +843,6 @@ Corresponding configuration option: L<apt::default-release>
 
 Examples: C<cupt install -t unstable xserver-xorg>, C<cupt -t squeeze full-upgrade>
 
-=item --purge
-
-when removing packages, also delete their configuration files
-
-Corresponding configuration option: L<cupt::worker::purge>
-
 =item --quiet,-q
 
 don't output anything to standard output
@@ -786,18 +853,18 @@ don't output anything to standard output
 
 Firstly, Cupt uses following APT configuration variables:
 
-acquire::*::timeout, acquire::*::proxy, acquire::retries,
-apt::acquire::translation, apt::cache::allversions, apt::cache::important,
-apt::cache::namesonly, apt::cache::recursedepends, apt::default-release,
-apt::install-recommends, apt::install-suggests, apt::neverautoremove,
-apt::get::assume-yes, apt::get::allowunauthenticated,
+acquire::*::timeout, acquire::*::proxy, acquire::http::allowredirect,
+acquire::retries, apt::acquire::translation, apt::cache::allversions,
+apt::cache::important, apt::cache::namesonly, apt::cache::recursedepends,
+apt::default-release, apt::install-recommends, apt::install-suggests,
+apt::neverautoremove, apt::get::assume-yes, apt::get::allowunauthenticated,
 apt::get::automaticremove, apt::get::list-cleanup, apt::get::purge,
 apt::update::pre-invoke, apt::update::post-invoke,
 apt::update::post-invoke-success, dir, dir::bin::dpkg, dir::cache,
 dir::cache::archives, dir::etc, dir::etc::sourcelist, dir::etc::sourceparts,
 dir::etc::parts, dir::etc::main, dir::etc::preferences, dir::state,
-dir::state::extendedstates, dir::state::status,
-dpkg::options, dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
+dir::state::extendedstates, dir::state::status, dpkg::options,
+dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
 gpgv::trustedkeyring, quiet
 
 See L<apt.conf(5)> for their meanings.
@@ -845,11 +912,6 @@ if undefined, intepretes as empty list
 
 =over
 
-=item acquire::http::allow-redirects
-
-boolean, specifies whether should downloader follow HTTP redirects.
-True by default.
-
 =item cupt::cache::pin::addendums::downgrade
 
 integer, specifies priority change for versions that are smaller than currently
@@ -869,6 +931,13 @@ values.
 integer, specifies priority increase for versions that come only from 'not
 automatic' sources. Defaults to -4000.
 
+=item cupt::cache::release-file-expiration::ignore
+
+boolean, if set to true, Cupt will ignore the fact that a Release file is
+expired and use it anyway. False by default.
+
+B<Warning! Setting this option to true will make the system vulnerable to a replay attack on package manager indexes.>
+
 =item cupt::console::allow-untrusted
 
 boolean, don't treat using untrusted packages as dangerous action
@@ -880,6 +949,24 @@ boolean, see L<--assume-yes|/--assume-yes>
 =item cupt::directory
 
 string, base directory for all cupt::directory::* options
+
+=item cupt::directory::configuration
+
+string, base directory for Cupt-specific configuration files
+
+=item cupt::directory::configuration::main
+
+string, relative file path for the Cupt main configuration file (same format as
+L<apt.conf(5)>)
+
+=item cupt::directory::configuration::main-parts
+
+string, relative directory path for additional Cupt configuration files (same
+format as L<apt.conf(5)>)
+
+=item cupt::directory::log
+
+string, relative file path for the log file
 
 =item cupt::directory::state
 
@@ -908,6 +995,11 @@ Defaults to 100.
 =item cupt::downloader::protocols::I<protocol>::methods
 
 list, names of the methods available to download protocol I<protocol>
+
+=item cupt::update::check-release-files
+
+boolean, if set, Release files will be checked for the validity (including the
+expiration check and a signature if present) at the download stage. True by default.
 
 =item cupt::update::compression-types::*::priority
 
@@ -940,7 +1032,18 @@ cupt::update::compression-types::uncompressed::priority "300";
 =item cupt::update::keep-bad-signatures
 
 boolean, specifies whether to keep signature files that failed GPG check
-when doing update. True by default.
+when doing update. True by default. Setting this option to false will not have
+an effect if the option L<cupt::update::check-release-files> is set to false.
+
+=item cupt::update::use-index-diffs
+
+boolean, specifies whether to try downloading repository index deltas and apply
+them locally before downloading the full index. True by default.
+
+When turned on, this option saves bandwidth but increases CPU and disk usage
+while updating. On the fast unlimited connections (say, >= 2 Mbit/s, but
+heavily depends on many other factors) you would likely want to turn off this
+option.
 
 =item cupt::resolver::keep-recommends
 
@@ -1085,6 +1188,23 @@ system in the interim trigger state, which can be fixed by manual run of 'dpkg
 
 boolean, see L<--download-only|/--download-only,-d>
 
+=item cupt::worker::log
+
+boolean, whether to log performed actions or not. True by default.
+
+=item cupt::worker::log::levels::metadata
+
+non-negative integer, the log level for the metadata updates. 1 by default.
+
+=item cupt::worker::log::levels::packages
+
+non-negative integer, the log level for the package changes
+(install/upgrade/remove etc.). 2 by default.
+
+=item cupt::worker::log::levels::snapshots
+
+non-negative integer, the log level for the snapshot actions. 1 by default.
+
 =item cupt::worker::purge
 
 boolean, specifies whether purge packages in addition to removing or not.
@@ -1093,6 +1213,14 @@ False by default.
 =item cupt::worker::simulate
 
 boolean, see L<--simulate|/--simulate,-s>
+
+=item cupt::worker::use-locks
+
+boolean, specifies whether Cupt protects simultaneous runs of itself against
+the misuse of the common resources. True by default.
+
+B<Warning! Setting this option to false will allow several non-simulating Cupt
+instances to break the system when misused.>
 
 =item debug::resolver
 
@@ -1113,6 +1241,10 @@ signatures to the standard error. False by default.
 
 boolean, if true, the downloader manager will print some debug messages. False
 by default.
+
+=item debug::logger
+
+boolean, if true, the logger will print some debug messages. False by default.
 
 =back
 

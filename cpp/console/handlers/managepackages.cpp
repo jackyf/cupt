@@ -53,11 +53,6 @@ static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config 
 		// modifiers in the command line just as with the install command
 		mode = ManagePackages::Install;
 	}
-	else if (mode == ManagePackages::Purge)
-	{
-		mode = ManagePackages::Remove;
-		config->setScalar("cupt::worker::purge", "yes");
-	}
 	else if (mode == ManagePackages::Satisfy || mode == ManagePackages::BuildDepends)
 	{
 		config->setScalar("apt::install-recommends", "no");
@@ -100,11 +95,11 @@ static void unrollFileArguments(vector< string >& arguments)
 }
 
 void __satisfy_or_unsatisfy(Resolver& resolver,
-		const RelationLine& relationLine, bool negative)
+		const RelationLine& relationLine, ManagePackages::Mode mode)
 {
 	FORIT(relationExpressionIt, relationLine)
 	{
-		if (negative)
+		if (mode == ManagePackages::Unsatisfy)
 		{
 			resolver.unsatisfyRelationExpression(*relationExpressionIt);
 		}
@@ -116,19 +111,18 @@ void __satisfy_or_unsatisfy(Resolver& resolver,
 }
 
 static void processSatisfyExpression(const shared_ptr< Config >& config,
-		Resolver& resolver, string packageExpression)
+		Resolver& resolver, string packageExpression, ManagePackages::Mode mode)
 {
-	bool negative = false;
-	if (!packageExpression.empty() && *(packageExpression.rbegin()) == '-')
+	if (mode == ManagePackages::Satisfy && !packageExpression.empty() && *(packageExpression.rbegin()) == '-')
 	{
-		negative = true;
+		mode = ManagePackages::Unsatisfy;
 		packageExpression.erase(packageExpression.end() - 1);
 	}
 
 	auto relationLine = ArchitecturedRelationLine(packageExpression)
 			.toRelationLine(config->getString("apt::architecture"));
 
-	__satisfy_or_unsatisfy(resolver, relationLine, negative);
+	__satisfy_or_unsatisfy(resolver, relationLine, mode);
 }
 
 static void processBuildDependsExpression(const shared_ptr< Config >& config,
@@ -143,25 +137,126 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 	{
 		const shared_ptr< const SourceVersion >& version = *versionIt;
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
-				.toRelationLine(architecture), false);
+				.toRelationLine(architecture), ManagePackages::Satisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
-				.toRelationLine(architecture), false);
+				.toRelationLine(architecture), ManagePackages::Satisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
-				.toRelationLine(architecture), true);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
-				.toRelationLine(architecture), true);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy);
+	}
+}
+
+static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& cache,
+		Resolver& resolver, ManagePackages::Mode mode, string packageExpression,
+		set< string >& purgedPackageNames)
+{
+	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
+	if (versions.empty())
+	{
+		/* we have a funny situation with package names like 'g++',
+		   where one don't know is there simple package name or '+'/'-'
+		   modifier at the end of package name, so we enter here only if
+		   it seems that there is no such binary package */
+
+		// "localizing" action to make it modifiable by package modifiers
+		if (!packageExpression.empty())
+		{
+			const char& lastLetter = *(packageExpression.end() - 1);
+			if (lastLetter == '+')
+			{
+				mode = ManagePackages::Install;
+				packageExpression.erase(packageExpression.end() - 1);
+			}
+			else if (lastLetter == '-')
+			{
+				mode = ManagePackages::Remove;
+				packageExpression.erase(packageExpression.end() - 1);
+			}
+		}
+	}
+
+	if (mode == ManagePackages::Install)
+	{
+		if (versions.empty())
+		{
+			versions = selectBinaryVersionsWildcarded(cache, packageExpression);
+		}
+		FORIT(versionIt, versions)
+		{
+			resolver.installVersion(*versionIt);
+		}
+	}
+	else // ManagePackages::Remove or ManagePackages::Purge
+	{
+		if (versions.empty())
+		{
+			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
+			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
+					packageExpression.find('*') != string::npos;
+			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
+		}
+
+		auto scheduleRemoval = [&resolver, &purgedPackageNames, mode](const string& packageName)
+		{
+			resolver.removePackage(packageName);
+			if (mode == ManagePackages::Purge)
+			{
+				purgedPackageNames.insert(packageName);
+			}
+		};
+
+		if (!versions.empty())
+		{
+			FORIT(versionIt, versions)
+			{
+				scheduleRemoval((*versionIt)->packageName);
+			}
+		}
+		else
+		{
+			checkPackageName(packageExpression);
+			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
+				!getBinaryPackage(cache, packageExpression, false))
+			{
+				fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
+			}
+
+			scheduleRemoval(packageExpression);
+		}
 	}
 }
 
 static void processPackageExpressions(const shared_ptr< Config >& config,
 		const shared_ptr< const Cache >& cache, ManagePackages::Mode mode,
-		Resolver& resolver, const vector< string >& packageExpressions)
+		Resolver& resolver, const vector< string >& packageExpressions,
+		set< string >& purgedPackageNames)
 {
 	FORIT(packageExpressionIt, packageExpressions)
 	{
-		if (mode == ManagePackages::Satisfy)
+		if (*packageExpressionIt == "--remove")
 		{
-			processSatisfyExpression(config, resolver, *packageExpressionIt);
+			mode = ManagePackages::Remove;
+		}
+		else if (*packageExpressionIt == "--purge")
+		{
+			mode = ManagePackages::Purge;
+		}
+		else if (*packageExpressionIt == "--install")
+		{
+			mode = ManagePackages::Install;
+		}
+		else if (*packageExpressionIt == "--satisfy")
+		{
+			mode = ManagePackages::Satisfy;
+		}
+		else if (*packageExpressionIt == "--unsatisfy")
+		{
+			mode = ManagePackages::Unsatisfy;
+		}
+		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
+		{
+			processSatisfyExpression(config, resolver, *packageExpressionIt, mode);
 		}
 		else if (mode == ManagePackages::BuildDepends)
 		{
@@ -169,77 +264,8 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		}
 		else
 		{
-			// localizing mode
-			ManagePackages::Mode oldMode = mode;
-			ManagePackages::Mode mode = oldMode;
-
-			string packageExpression = *packageExpressionIt;
-
-			auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
-			if (versions.empty())
-			{
-				/* we have a funny situation with package names like 'g++',
-				   where one don't know is there simple package name or '+'/'-'
-				   modifier at the end of package name, so we enter here only if
-				   it seems that there is no such binary package */
-
-				// "localizing" action to make it modifiable by package modifiers
-				if (!packageExpression.empty())
-				{
-					const char& lastLetter = *(packageExpression.end() - 1);
-					if (lastLetter == '+')
-					{
-						mode = ManagePackages::Install;
-						packageExpression.erase(packageExpression.end() - 1);
-					}
-					else if (lastLetter == '-')
-					{
-						mode = ManagePackages::Remove;
-						packageExpression.erase(packageExpression.end() - 1);
-					}
-				}
-			}
-
-			if (mode == ManagePackages::Install)
-			{
-				if (versions.empty())
-				{
-					versions = selectBinaryVersionsWildcarded(cache, packageExpression);
-				}
-				FORIT(versionIt, versions)
-				{
-					resolver.installVersion(*versionIt);
-				}
-			}
-			else // ManagePackages::Remove
-			{
-				if (versions.empty())
-				{
-					// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
-					bool wildcardsPresent = packageExpression.find('?') != string::npos ||
-							packageExpression.find('*') != string::npos;
-					versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
-				}
-
-				if (!versions.empty())
-				{
-					FORIT(versionIt, versions)
-					{
-						resolver.removePackage((*versionIt)->packageName);
-					}
-				}
-				else
-				{
-					checkPackageName(packageExpression);
-					if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
-						!getBinaryPackage(cache, packageExpression, false))
-					{
-						fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
-					}
-
-					resolver.removePackage(packageExpression);
-				}
-			}
+			processInstallOrRemoveExpression(cache, resolver, mode,
+					*packageExpressionIt, purgedPackageNames);
 		}
 	}
 }
@@ -526,9 +552,10 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showVersions, bool showSizeChanges, bool& addArgumentsFlag)
+		bool showVersions, bool showSizeChanges, const set< string >& purgedPackageNames,
+		bool& addArgumentsFlag)
 {
-	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &addArgumentsFlag]
+	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &purgedPackageNames, &addArgumentsFlag]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
@@ -536,6 +563,10 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 
 		worker->setDesiredState(offer);
+		FORIT(packageNameIt, purgedPackageNames)
+		{
+			worker->setPackagePurgeFlag(*packageNameIt, true);
+		}
 
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
@@ -667,7 +698,23 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 		("download-only,d", "")
 		("assume-yes", "")
 		("yes,y", "");
-	auto variables = parseOptions(context, options, packageExpressions);
+
+	// use action modifiers as arguments, not options
+	auto extraParser = [](const string& input) -> pair< string, string >
+	{
+		const set< string > actionModifierOptionNames = {
+			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy"
+		};
+		if (actionModifierOptionNames.count(input))
+		{
+			return make_pair("arguments", input);
+		}
+		else
+		{
+			return make_pair(string(), string());
+		}
+	};
+	auto variables = parseOptions(context, options, packageExpressions, extraParser);
 
 	auto config = context.getConfig();
 	if (variables.count("max-solution-count"))
@@ -786,13 +833,15 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	cout << __("Scheduling requested actions... ") << endl;
 
 	preProcessMode(mode, config, *resolver);
-	processPackageExpressions(config, cache, mode, *resolver, packageExpressions);
+
+	set< string > purgedPackageNames;
+	processPackageExpressions(config, cache, mode, *resolver, packageExpressions, purgedPackageNames);
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
 	bool addArgumentsFlag;
 	auto callback = generateManagementPrompt(config, cache, worker,
-			showVersions, showSizeChanges, addArgumentsFlag);
+			showVersions, showSizeChanges, purgedPackageNames, addArgumentsFlag);
 
 	resolve:
 	bool resolved = resolver->resolve(callback);
@@ -806,7 +855,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 			if (!answer.empty())
 			{
 				processPackageExpressions(config, cache, mode, *resolver,
-						vector< string > { answer });
+						vector< string > { answer }, purgedPackageNames);
 			}
 			else
 			{
@@ -956,6 +1005,10 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		}
 	}
 	cout << sf(__("Freed %s of disk space."), humanReadableSizeString(totalDeletedBytes).c_str()) << endl;
+
+	cout << __("Deleting partial archives...") << endl;
+	worker.deletePartialArchives();
+
 	return 0;
 }
 

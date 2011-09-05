@@ -18,6 +18,7 @@
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/cache/releaseinfo.hpp>
 #include <cupt/system/state.hpp>
 
 #include <internal/filesystem.hpp>
@@ -27,156 +28,172 @@
 namespace cupt {
 namespace internal {
 
+void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
+		const Resolver::SuggestedPackage& suggestedPackage, bool purgeFlag)
+{
+	Action::Type action = Action::Count; // invalid
+
+	const shared_ptr< const BinaryVersion >& supposedVersion = suggestedPackage.version;
+	auto installedInfo = _cache->getSystemState()->getInstalledInfo(packageName);
+
+	if (supposedVersion)
+	{
+		// some package version is to be installed
+		if (!installedInfo)
+		{
+			// no installed info for package
+			action = Action::Install;
+		}
+		else
+		{
+			// there is some installed info about package
+
+			// determine installed version
+			auto package = _cache->getBinaryPackage(packageName);
+			if (!package)
+			{
+				fatal("internal error: the binary package '%s' does not exist", packageName.c_str());
+			}
+			auto installedVersion = package->getInstalledVersion();
+
+			if (!installedVersion)
+			{
+				action = Action::Install;
+			}
+			else
+			{
+				bool isImproperlyInstalled = installedInfo->isBroken();
+
+				if (installedInfo->status == State::InstalledRecord::Status::Installed ||
+						isImproperlyInstalled)
+				{
+					auto versionComparisonResult = compareVersionStrings(
+							supposedVersion->versionString, installedVersion->versionString);
+
+					if (versionComparisonResult > 0)
+					{
+						action = Action::Upgrade;
+					}
+					else if (versionComparisonResult < 0)
+					{
+						action = Action::Downgrade;
+					}
+					else if (isImproperlyInstalled)
+					{
+						action = Action::Upgrade; // TODO/ABI Break/: Action::Reinstall
+					}
+				}
+				else
+				{
+					if (installedVersion->versionString == supposedVersion->versionString)
+					{
+						// the same version, but the package was in some interim state
+						if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
+						{
+							action = Action::ProcessTriggers;
+						}
+						else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
+						{
+							action = Action::Configure;
+						}
+					}
+					else
+					{
+						// some interim state, but other version
+						action = Action::Install;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		// package is to be removed
+		if (installedInfo)
+		{
+			switch (installedInfo->status)
+			{
+				case State::InstalledRecord::Status::Installed:
+				{
+					action = (purgeFlag ? Action::Purge : Action::Remove);
+				}
+					break;
+				case State::InstalledRecord::Status::ConfigFiles:
+				{
+					if (purgeFlag)
+					{
+						action = Action::Purge;
+					}
+				}
+					break;
+				default:
+				{
+					// package was in some interim state
+					action = Action::Deconfigure;
+				}
+			}
+		}
+	}
+
+	if (action != Action::Count)
+	{
+		__actions_preview->groups[action][packageName] = suggestedPackage;
+
+		if (action == Action::Remove ||
+			(action == Action::Purge && installedInfo &&
+			installedInfo->status == State::InstalledRecord::Status::Installed))
+		{
+			/* in case of removing a package we delete the 'automatically
+			   installed' info regardless was this flag set or not so next
+			   time when this package is installed it has 'clean' info */
+			__actions_preview->autoFlagChanges[packageName] = false;
+		}
+		else if (action == Action::Install && !suggestedPackage.manuallySelected)
+		{
+			// set 'automatically installed' for new non-manually selected packages
+			__actions_preview->autoFlagChanges[packageName] = true;
+		}
+	}
+}
+
 void SetupAndPreviewWorker::__generate_actions_preview()
 {
-	shared_ptr< ActionsPreview > result(new ActionsPreview);
+	__actions_preview.reset(new ActionsPreview);
 
 	if (!__desired_state)
 	{
 		fatal("worker desired state is not given");
 	}
 
-	const bool purgeWanted = _config->getBool("cupt::worker::purge");
+	const bool purge = _config->getBool("cupt::worker::purge");
 
 	FORIT(desiredIt, *__desired_state)
 	{
 		const string& packageName = desiredIt->first;
 		const Resolver::SuggestedPackage& suggestedPackage = desiredIt->second;
 
-		Action::Type action = Action::Count; // invalid
-
-		const shared_ptr< const BinaryVersion >& supposedVersion = suggestedPackage.version;
-		auto installedInfo = _cache->getSystemState()->getInstalledInfo(packageName);
-
-		if (supposedVersion)
-		{
-			// some package version is to be installed
-			if (!installedInfo)
-			{
-				// no installed info for package
-				action = Action::Install;
-			}
-			else
-			{
-				// there is some installed info about package
-
-				// determine installed version
-				auto package = _cache->getBinaryPackage(packageName);
-				if (!package)
-				{
-					fatal("internal error: the binary package '%s' does not exist", packageName.c_str());
-				}
-				auto installedVersion = package->getInstalledVersion();
-				if (installedInfo->status != State::InstalledRecord::Status::ConfigFiles && !installedVersion)
-				{
-					fatal("internal error: there is no installed version for the binary package '%s'",
-							packageName.c_str());
-				}
-
-				switch (installedInfo->status)
-				{
-					case State::InstalledRecord::Status::ConfigFiles:
-					{
-						// treat as the same as uninstalled
-						action = Action::Install;
-					}
-						break;
-					case State::InstalledRecord::Status::Installed:
-					{
-						auto versionComparisonResult = compareVersionStrings(
-								supposedVersion->versionString, installedVersion->versionString);
-
-						if (versionComparisonResult > 0)
-						{
-							action = Action::Upgrade;
-						}
-						else if (versionComparisonResult < 0)
-						{
-							action = Action::Downgrade;
-						}
-					}
-						break;
-					default:
-					{
-						if (installedVersion->versionString == supposedVersion->versionString)
-						{
-							// the same version, but the package was in some interim state
-							if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
-							{
-								action = Action::ProcessTriggers;
-							}
-							else if (installedInfo->status != State::InstalledRecord::Status::TriggersAwaited)
-							{
-								action = Action::Configure;
-							}
-						}
-						else
-						{
-							// some interim state, but other version
-							action = Action::Install;
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			// package is to be removed
-			if (installedInfo)
-			{
-				auto purge = purgeWanted && suggestedPackage.manuallySelected;
-				switch (installedInfo->status)
-				{
-					case State::InstalledRecord::Status::Installed:
-					{
-						action = (purge ? Action::Purge : Action::Remove);
-					}
-						break;
-					case State::InstalledRecord::Status::ConfigFiles:
-					{
-						if (purge)
-						{
-							action = Action::Purge;
-						}
-					}
-						break;
-					default:
-					{
-						// package was in some interim state
-						action = Action::Deconfigure;
-					}
-				}
-			}
-		}
-
-		if (action != Action::Count)
-		{
-			result->groups[action][packageName] = suggestedPackage;
-
-			if (action == Action::Remove ||
-				(action == Action::Purge && installedInfo &&
-				installedInfo->status == State::InstalledRecord::Status::Installed))
-			{
-				/* in case of removing a package we delete the 'automatically
-				   installed' info regardless was this flag set or not so next
-				   time when this package is installed it has 'clean' info */
-				result->autoFlagChanges[packageName] = false;
-			}
-			else if (action == Action::Install && !suggestedPackage.manuallySelected)
-			{
-				// set 'automatically installed' for new non-manually selected packages
-				result->autoFlagChanges[packageName] = true;
-			}
-		}
+		__generate_action_preview(packageName, suggestedPackage, purge);
 	}
-
-	__actions_preview = result;
 }
 
 void SetupAndPreviewWorker::setDesiredState(const Resolver::Offer& offer)
 {
 	__desired_state.reset(new Resolver::SuggestedPackages(offer.suggestedPackages));
 	__generate_actions_preview();
+}
+
+void SetupAndPreviewWorker::setPackagePurgeFlag(const string& packageName, bool value)
+{
+	auto desiredIt = __desired_state->find(packageName);
+	if (desiredIt == __desired_state->end())
+	{
+		fatal("there is no package '%s' in the desired state", packageName.c_str());
+	}
+	auto sourceActionType = value ? Action::Remove : Action::Purge;
+	__actions_preview->groups[sourceActionType].erase(packageName);
+
+	// and regenerate
+	__generate_action_preview(packageName, desiredIt->second, value);
 }
 
 shared_ptr< const Worker::ActionsPreview > SetupAndPreviewWorker::getActionsPreview() const

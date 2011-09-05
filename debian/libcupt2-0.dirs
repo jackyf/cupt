@@ -1,0 +1,3 @@
+etc/logrotate.d
+etc/cupt
+etc/cupt/cupt.conf.d
