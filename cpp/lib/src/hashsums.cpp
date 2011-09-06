@@ -72,19 +72,9 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 	static bool initialized = false;
 	if (!initialized)
 	{
-		try
-		{
-			if (!gcry_check_version (GCRYPT_VERSION))
-			{
-				fatal("libgcrypt version mismatch");
-			}
-			gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
-			gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-		}
-		catch (Exception& e)
-		{
-			fatal("unable to initialize hash sums computing");
-		}
+		gcry_check_version(NULL);
+		gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
 	}
 
 	int gcryptAlgorithm;
