@@ -7,6 +7,10 @@ cupt (2.2.0~rc2) UNRELEASED; urgency=low
     - hashsums:
       - Don't check gcrypt version despite what is advised in its manual.
         Linker does its work fine.
+  * debian:
+    - control:
+      'libcupt2-0': set Breaks against download methods earlier than 2.0.0~rc1
+      because of the redirect download option change.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Sep 2011 21:04:52 +0300
 
