@@ -81,7 +81,22 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 	{
 		const char* id = (errorId.empty() ? command.c_str() : errorId.c_str());
 
-		try
+		if (commandInput.empty())
+		{
+			// invoking command
+			auto result = ::system(command.c_str());
+			if (result == -1)
+			{
+				fatal("unable to launch command '%s': EEE",
+						command.c_str());
+			}
+			else if (result)
+			{
+				fatal("command '%s' execution failed: %s", command.c_str(),
+						getWaitStatusDescription(result).c_str());
+			}
+		}
+		else try
 		{
 			// invoking command
 			string errorString;
@@ -92,10 +107,7 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 						command.c_str(), errorString.c_str());
 			}
 
-			if (!commandInput.empty())
-			{
-				pipeFile.put(commandInput);
-			}
+			pipeFile.put(commandInput);
 		}
 		catch (...)
 		{
