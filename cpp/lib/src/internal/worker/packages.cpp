@@ -1671,7 +1671,7 @@ void PackagesWorker::__do_dpkg_pre_actions()
 	auto commands = _config->getList("dpkg::pre-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("post", *commandIt, "");
+		__run_dpkg_command("pre", *commandIt, "");
 	}
 }
 
