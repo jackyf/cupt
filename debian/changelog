@@ -8,7 +8,7 @@ cupt (2.2.0~rc2) UNRELEASED; urgency=low
         unpack.
       - [Jonathan Nieder] Switch back to system() for running commands without
         an input, such as dpkg, providing them a standard input from
-        a terminal. Fixes the regression since 2.2.0~rc1.
+        a terminal. Fixes the regression since 2.2.0~rc1. (Closes: #640849)
     - hashsums:
       - Don't check gcrypt version despite what is advised in its manual.
         Linker does its work fine.
