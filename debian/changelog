@@ -4,6 +4,8 @@ cupt (2.2.0~rc2) UNRELEASED; urgency=low
     - system/worker:
       - Downloading of index data should continue regardless of the download
         result of Release signature. Thanks to Karol Kozłowski for the report.
+      - Don't run pre-install-packages hooks if there is no packages to
+        unpack.
     - hashsums:
       - Don't check gcrypt version despite what is advised in its manual.
         Linker does its work fine.

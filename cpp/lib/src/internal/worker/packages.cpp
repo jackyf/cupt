@@ -1828,6 +1828,10 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 					}
 				}
 			}
+			if (commandInput.empty())
+			{
+				continue;
+			}
 		}
 
 		__run_dpkg_command("pre", command, commandInput);
