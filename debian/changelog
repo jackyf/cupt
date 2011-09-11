@@ -6,6 +6,9 @@ cupt (2.2.0~rc2) UNRELEASED; urgency=low
         result of Release signature. Thanks to Karol Kozłowski for the report.
       - Don't run pre-install-packages hooks if there is no packages to
         unpack.
+      - [Jonathan Nieder] Switch back to system() for running commands without
+        an input, such as dpkg, providing them a standard input from
+        a terminal. Fixes the regression since 2.2.0~rc1.
     - hashsums:
       - Don't check gcrypt version despite what is advised in its manual.
         Linker does its work fine.
