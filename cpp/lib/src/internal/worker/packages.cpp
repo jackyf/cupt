@@ -1930,6 +1930,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 	// don't bother ourselves with download preparings if nothing to download
 	if (!downloads.empty())
 	{
+		_logger->log(Logger::Subsystem::Packages, 2, "downloading packages");
 		auto archivesDirectory = _get_archives_directory();
 
 		string downloadResult;
