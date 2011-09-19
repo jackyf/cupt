@@ -228,7 +228,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 }
 
 static void processPackageExpressions(const shared_ptr< Config >& config,
-		const shared_ptr< const Cache >& cache, ManagePackages::Mode mode,
+		const shared_ptr< const Cache >& cache, ManagePackages::Mode& mode,
 		Resolver& resolver, const vector< string >& packageExpressions,
 		set< string >& purgedPackageNames)
 {
