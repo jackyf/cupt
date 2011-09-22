@@ -338,7 +338,6 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 					auto it = vertices.find(*successorSuccessorElementPtrIt);
 					if (it != vertices.end())
 					{
-						// found, add the edge
 						dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
 					}
 				}
