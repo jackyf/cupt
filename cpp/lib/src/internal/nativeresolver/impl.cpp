@@ -253,11 +253,11 @@ bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elem
 	{
 		return false;
 	}
-	if (__manually_modified_package_names.count(packageName))
+	if (version->essential)
 	{
 		return false;
 	}
-	if (version->essential)
+	if (__manually_modified_package_names.count(packageName))
 	{
 		return false;
 	}
