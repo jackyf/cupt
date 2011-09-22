@@ -1,3 +1,13 @@
+cupt (2.3.0~) UNRELEASED; urgency=low
+
+  * lib:
+    - system/resolvers/native:
+      - Removing automatically installed packages: stopped considering
+        those inter-package relations which are satisfied by some
+        non-removable package.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
+
 cupt (2.2.0) unstable; urgency=low
 
   * Upload to unstable.

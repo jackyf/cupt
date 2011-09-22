@@ -308,6 +308,20 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 
 	auto canAutoremove = __config->getBool("cupt::resolver::auto-remove");
 
+	map< const dg::Element*, bool > isCandidateForAutoRemovalCache;
+	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache, &isNeverAutoRemove, canAutoremove]
+			(const dg::Element* elementPtr) -> bool
+	{
+		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert(
+				std::make_pair(elementPtr, false));
+		bool& answer = cacheInsertionResult.first->second;
+		if (cacheInsertionResult.second)
+		{
+			answer = __is_candidate_for_auto_removal(elementPtr, isNeverAutoRemove, canAutoremove);
+		}
+		return answer;
+	};
+
 	Graph< const dg::Element* > dependencyGraph;
 	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
 	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
@@ -333,17 +347,35 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 				}
 				const GraphCessorListType& successorSuccessorElementPtrs =
 						__solution_storage->getSuccessorElements(*successorElementPtrIt);
+
+				bool allRightSidesAreAutomatic = true;
+				list< const dg::Element* const* > rightSideVertexPtrs;
 				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
 				{
 					auto it = vertices.find(*successorSuccessorElementPtrIt);
 					if (it != vertices.end())
 					{
-						dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
+						if (!isCandidateForAutoRemoval(*it))
+						{
+							allRightSidesAreAutomatic = false;
+							break;
+						}
+						else
+						{
+							rightSideVertexPtrs.push_back(&*it);
+						}
+					}
+				}
+				if (allRightSidesAreAutomatic)
+				{
+					FORIT(rightSideVertexPtrIt, rightSideVertexPtrs)
+					{
+						dependencyGraph.addEdgeFromPointers(&*elementPtrIt, *rightSideVertexPtrIt);
 					}
 				}
 			}
 
-			if (!__is_candidate_for_auto_removal(*elementPtrIt, isNeverAutoRemove, canAutoremove))
+			if (!isCandidateForAutoRemoval(*elementPtrIt))
 			{
 				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
 			}
