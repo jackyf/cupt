@@ -613,7 +613,15 @@ class DependencyGraph::FillHelper
 	}
 
  private:
-	//void relaxDependencyIfBrokenAndAllowed(const Element* vertexPtr,
+
+	void relaxDependencyIfBrokenAndAllowed(const Element* relationExpressionVertexPtr)
+	{
+		if (__broken_relations.count(relationExpressionVertexPtr))
+		{
+
+		}
+	}
+
 	void processAntiRelation(const string& packageName,
 			const Element* vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
