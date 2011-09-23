@@ -522,7 +522,8 @@ class DependencyGraph::FillHelper
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
-		__allow_already_broken_relations_level = __get_allow_already_broken_relations_level();
+		__allow_already_broken_relations_level =
+				__get_allow_already_broken_relations_level(__dependency_graph.__config);
 	}
 
 	const VersionVertex* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
@@ -611,6 +612,7 @@ class DependencyGraph::FillHelper
 	}
 
  private:
+	//void relaxDependencyIfBrokenAndAllowed(const Element* vertexPtr,
 	void processAntiRelation(const string& packageName,
 			const Element* vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
