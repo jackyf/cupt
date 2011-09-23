@@ -453,24 +453,37 @@ vector< shared_ptr< const BinaryVersion > > __get_versions_by_source_version_str
 	return result;
 }
 
-short __get_synchronize_level(const Config& config)
+short __get_three_value_option_value(const Config& config, const string& optionName,
+		const string& value0, const string& value1, const string& value2)
 {
-	const string optionName = "cupt::resolver::synchronize-by-source-versions";
 	auto optionValue = config.getString(optionName);
-	if (optionValue == "none")
+	if (optionValue == value0)
 	{
 		return 0;
 	}
-	else if (optionValue == "soft")
+	else if (optionValue == value1)
 	{
 		return 1;
 	}
-	else if (optionValue == "hard")
+	else if (optionValue == value2)
 	{
 		return 2;
 	}
-	fatal("the option '%s' can have only values 'none, 'soft' or 'hard'", optionName.c_str());
+	fatal("the option '%s' can have only values '%s', '%s' or '%s'",
+			optionName.c_str(), value0.c_str(), value1.c_str(), value2.c_str());
 	return 0; // unreachable
+}
+
+short __get_synchronize_level(const Config& config)
+{
+	return __get_three_value_option_value(config,
+			"cupt::resolver::synchronize-by-source-versions", "none", "soft", "hard");
+}
+
+short __get_allow_already_broken_relations_level(const Config& config)
+{
+	return __get_three_value_option_value(config,
+			"cupt::resolver::allow-already-broken-relations", "none", "in-installed", "in-all");
 }
 
 class DependencyGraph::FillHelper
@@ -482,6 +495,7 @@ class DependencyGraph::FillHelper
 
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
+	short __allow_already_broken_relations_level;
 
 	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
@@ -508,6 +522,7 @@ class DependencyGraph::FillHelper
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
+		__allow_already_broken_relations_level = __get_allow_already_broken_relations_level();
 	}
 
 	const VersionVertex* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
