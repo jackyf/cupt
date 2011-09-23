@@ -479,6 +479,7 @@ class DependencyGraph::FillHelper
 	const map< string, shared_ptr< const BinaryVersion > >& __old_packages;
 	const map< string, InitialPackageEntry >& __initial_packages;
 	bool __debugging;
+	bool __ignore_currently_broken_relations;
 
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
@@ -506,6 +507,8 @@ class DependencyGraph::FillHelper
 		__old_packages(oldPackages), __initial_packages(initialPackages),
 		__debugging(__dependency_graph.__config.getBool("debug::resolver"))
 	{
+		__ignore_currently_broken_relations = __dependency_graph.__config.getBool(
+				"cupt::resolver::ignore-currently-broken-relations");
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
 	}
@@ -800,6 +803,8 @@ class DependencyGraph::FillHelper
 			return;
 		}
 
+		bool ignoreBrokenDependencies = (__ignore_currently_broken_relations && version->isInstalled());
+
 		FORIT(dependencyGroupIt, __dependency_groups)
 		{
 			auto dependencyType = dependencyGroupIt->type;
@@ -810,6 +815,8 @@ class DependencyGraph::FillHelper
 			{
 				const RelationExpression& relationExpression = *relationExpressionIt;
 
+				if (
+				auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 				if (isDependencyAnti)
 				{
 					processAntiRelation(version->packageName, elementPtr, relationExpression, dependencyType);
