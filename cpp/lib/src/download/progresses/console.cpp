@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -53,7 +53,7 @@ class ConsoleProgressImpl
  public:
 	ConsoleProgressImpl();
 	void newDownload(const DownloadRecord& record, const string& longAlias);
-	void finishedDownload(const string& uri, const string& result, const string& longAlias);
+	void finishedDownload(const string& uri, const string& result, size_t number);
 	void finish(uint64_t size, size_t time);
 
 	bool isUpdateNeeded(bool immediate);
@@ -142,14 +142,14 @@ void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string
 }
 
 void ConsoleProgressImpl::finishedDownload(const string& uri,
-		const string& result, const string& longAlias)
+		const string& result, size_t number)
 {
 	if (!result.empty())
 	{
 		// some error occured, output it
 		termClean();
-		nonBlockingPrint(sf("W: downloading '%s' (uri '%s') failed: %s\n",
-				longAlias.c_str(), uri.c_str(), result.c_str()));
+		nonBlockingPrint(sf("W:%zu downloading failed (uri '%s'): %s\n",
+				number, uri.c_str(), result.c_str()));
 	}
 }
 
@@ -280,7 +280,18 @@ void ConsoleProgress::updateHook(bool immediate)
 
 void ConsoleProgress::finishedDownloadHook(const string& uri, const string& result)
 {
-	__impl->finishedDownload(uri, result, getLongAliasForUri(uri));
+	auto finishedDownloadRecordIt = this->getDownloadRecords().find(uri);
+	size_t recordNumber = 0;
+	if (finishedDownloadRecordIt != this->getDownloadRecords().end())
+	{
+		recordNumber = finishedDownloadRecordIt->second.number;
+	}
+	else
+	{
+		warn("internal error: console download progress: no existing download record for the uri '%s'",
+				uri.c_str());
+	}
+	__impl->finishedDownload(uri, result, recordNumber);
 }
 
 void ConsoleProgress::finishHook()

@@ -5,6 +5,9 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - Removing automatically installed packages: stopped considering
         those inter-package relations which are satisfied by some
         non-removable package.
+    - download/progresses/console:
+      - Printing 'download failed' messages: use a download number instead of
+        the download description.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
 
