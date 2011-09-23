@@ -872,7 +872,7 @@ See L<apt.conf(5)> for their meanings.
 Secondly, Cupt recognizes (but doesn't use) following configuration variables:
 
 apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
-dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
+dir::log*, dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
 apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
 rpm::post-invoke
 
