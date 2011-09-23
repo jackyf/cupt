@@ -950,12 +950,13 @@ int changeAutoInstalledState(Context& context, bool value)
 	auto variables = parseOptions(context, noOptions, arguments);
 
 	auto config = context.getConfig();
-	auto cache = context.getCache(false, false, false);
+	auto cache = context.getCache(false, false, true);
 
 	Worker worker(config, cache);
 
 	FORIT(packageNameIt, arguments)
 	{
+		getBinaryPackage(cache, *packageNameIt); // check that it exists
 		worker.setAutomaticallyInstalledFlag(*packageNameIt, value);
 	}
 

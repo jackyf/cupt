@@ -4,6 +4,8 @@ cupt (2.2.1~) UNRELEASED; urgency=low
     - Managing packages:
       - Fixed the work of action override options inside the interactive
         prompt for new package expressions.
+      - 'markauto', 'unmarkauto': reject not installed packages. Thanks to
+        Karol Kozłowski for the report.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 19 Sep 2011 11:24:03 +0300
 
