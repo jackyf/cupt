@@ -815,8 +815,20 @@ class DependencyGraph::FillHelper
 			{
 				const RelationExpression& relationExpression = *relationExpressionIt;
 
-				if (
-				auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
+				if (ignoreBrokenDependencies)
+				{
+					auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
+					if (!__is_version_array_intersects_with_packages(satisfyingVersions, __old_packages))
+					{
+						if (__debugging)
+						{
+							debug("'%s': ignoring the broken relation expression '%s'",
+									elementPtr->toString().c_str(), relationExpression.toString().c_str());
+						}
+						continue;
+					}
+				}
+
 				if (isDependencyAnti)
 				{
 					processAntiRelation(version->packageName, elementPtr, relationExpression, dependencyType);
