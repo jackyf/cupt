@@ -148,8 +148,8 @@ void ConsoleProgressImpl::finishedDownload(const string& uri,
 	{
 		// some error occured, output it
 		termClean();
-		nonBlockingPrint(sf("W:%zu downloading failed (uri '%s'): %s\n",
-				number, uri.c_str(), result.c_str()));
+		nonBlockingPrint(__("Fail") + ":" + lexical_cast< string >(number) + " " +
+				result + " (uri '" + uri + "')\n");
 	}
 }
 

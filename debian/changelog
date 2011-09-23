@@ -8,6 +8,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
     - download/progresses/console:
       - Printing 'download failed' messages: use a download number instead of
         the download description.
+      - Printing 'download failed' messages: reformatted to have the error
+        string earlier in the string and match the 'Get:<number>' style.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
 
