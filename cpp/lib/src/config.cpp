@@ -140,6 +140,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::update::compression-types::uncompressed::priority", "100" },
 		{ "cupt::update::keep-bad-signatures", "yes" },
 		{ "cupt::update::use-index-diffs", "yes" },
+		{ "cupt::resolver::allow-already-broken-relations", "none" },
 		{ "cupt::resolver::auto-remove", "yes" },
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },

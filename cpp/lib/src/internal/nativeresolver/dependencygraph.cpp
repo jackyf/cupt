@@ -504,6 +504,7 @@ class DependencyGraph::FillHelper
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
 
 	set< const Element* > __unfolded_elements;
+	set< const Element* > __broken_relations; // TODO: ? filled only if __allow_already_broken_relations_level == 1
 
 	bool __can_package_be_removed(const string& packageName) const
 	{
