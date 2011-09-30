@@ -6,6 +6,11 @@ cupt (2.2.1~) UNRELEASED; urgency=low
         prompt for new package expressions.
       - 'markauto', 'unmarkauto': reject not installed packages. Thanks to
         Karol Kozłowski for the report.
+  * lib:
+    - system/resolvers/native:
+      - Made sure that if the package is auto-removed there are no other
+        resolver reasons present. Thanks to Karol Kozłowski for the report.
+        (Closes: #643798)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 19 Sep 2011 11:24:03 +0300
 
