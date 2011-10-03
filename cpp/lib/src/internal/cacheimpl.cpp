@@ -328,6 +328,25 @@ void CacheImpl::parseSourceList(const string& path)
 	}
 }
 
+void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
+{
+	FORIT(indexEntryIt, indexEntries)
+	{
+		const IndexEntry& entry = *indexEntryIt;
+
+		if (entry.category == IndexEntry::Binary && !useBinary)
+		{
+			continue;
+		}
+		if (entry.category == IndexEntry::Source && !useSource)
+		{
+			continue;
+		}
+
+		processIndexEntry(entry);
+	}
+}
+
 void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 {
 	string indexFileToParse = cachefiles::getPathOfIndexList(*config, indexEntry);

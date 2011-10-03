@@ -61,22 +61,7 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 		__impl->systemState.reset(new system::State(config, __impl));
 	}
 
-	FORIT(indexEntryIt, __impl->indexEntries)
-	{
-		const IndexEntry& entry = *indexEntryIt;
-
-		if (entry.category == IndexEntry::Binary && !useBinary)
-		{
-			continue;
-		}
-		if (entry.category == IndexEntry::Source && !useSource)
-		{
-			continue;
-		}
-
-		__impl->processIndexEntry(entry);
-	}
-
+	__impl->processIndexEntries(useBinary, useSource);
 	__impl->parsePreferences();
 	__impl->parseExtendedStates();
 }

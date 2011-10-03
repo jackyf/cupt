@@ -88,6 +88,7 @@ class CacheImpl
 	ExtendedInfo extendedInfo;
 
 	void parseSourcesLists();
+	void processIndexEntries(bool, bool);
 	void processIndexEntry(const IndexEntry&);
 	void parsePreferences();
 	void parseExtendedStates();
