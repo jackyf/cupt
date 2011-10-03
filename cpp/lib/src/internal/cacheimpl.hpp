@@ -31,6 +31,7 @@ namespace cupt {
 namespace internal {
 
 class PinInfo;
+class ReleaseLimits;
 
 using std::list;
 using std::unordered_map;
@@ -69,6 +70,7 @@ class CacheImpl
 			unordered_map< string, shared_ptr< Package > >&, const string&,
 			decltype(&CacheImpl::newBinaryPackage)) const;
 	void parseSourceList(const string& path);
+	void processIndexEntry(const IndexEntry&, const ReleaseLimits&);
 	void processIndexFile(const string& path, IndexEntry::Type category,
 			shared_ptr< const ReleaseInfo >);
 	void processTranslationFile(const string& path);
@@ -89,7 +91,6 @@ class CacheImpl
 
 	void parseSourcesLists();
 	void processIndexEntries(bool, bool);
-	void processIndexEntry(const IndexEntry&);
 	void parsePreferences();
 	void parseExtendedStates();
 	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;

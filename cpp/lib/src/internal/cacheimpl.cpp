@@ -328,8 +328,79 @@ void CacheImpl::parseSourceList(const string& path)
 	}
 }
 
+class ReleaseLimits
+{
+	struct Item
+	{
+		std::function< string (const ReleaseInfo&) > attributeExtractor;
+		bool typeIsInclude;
+		vector< string > values;
+	};
+	std::list< Item > __items;
+ public:
+	ReleaseLimits(const Config& config)
+	{
+		const static map< string, std::function< string (const ReleaseInfo&) > > limitCategories = {
+			{ "archive", [](const ReleaseInfo& ri) { return ri.archive; } },
+			{ "codename", [](const ReleaseInfo& ri) { return ri.codename; } }
+		};
+
+		FORIT(categoryIt, limitCategories)
+		{
+			auto limitValuesOptionName = string("cupt::cache::limit-releases::by-") + categoryIt->first;
+			auto limitTypeOptionName = limitValuesOptionName + "::type";
+
+			auto limitType = config.getString(limitTypeOptionName);
+			bool limitTypeIsInclude = true /* will be re-initialized anyway */;
+			if (limitType == "none")
+			{
+				continue;
+			}
+			else if (limitType == "include")
+			{
+				limitTypeIsInclude = true;
+			}
+			else if (limitType == "exclude")
+			{
+				limitTypeIsInclude = false;
+			}
+			else
+			{
+				try
+				{
+					fatal("the option '%s' can have only values 'none', 'include' or 'exclude'",
+							limitTypeOptionName.c_str());
+				}
+				catch (Exception&)
+				{
+					continue;
+				}
+			}
+			auto limitValues = config.getList(limitValuesOptionName);
+
+			__items.push_back(Item { categoryIt->second, limitTypeIsInclude, limitValues });
+		}
+	}
+
+	bool isExcluded(const ReleaseInfo& releaseInfo) const
+	{
+		FORIT(itemIt, __items)
+		{
+			bool foundInLimitValues = std::find(itemIt->values.begin(), itemIt->values.end(),
+					(itemIt->attributeExtractor)(releaseInfo)) != itemIt->values.end();
+			if (itemIt->typeIsInclude != foundInLimitValues)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+};
+
 void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 {
+	ReleaseLimits releaseLimits(*config);
 	FORIT(indexEntryIt, indexEntries)
 	{
 		const IndexEntry& entry = *indexEntryIt;
@@ -343,11 +414,12 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 			continue;
 		}
 
-		processIndexEntry(entry);
+		processIndexEntry(entry, releaseLimits);
 	}
 }
 
-void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
+void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
+		const ReleaseLimits& releaseLimits)
 {
 	string indexFileToParse = cachefiles::getPathOfIndexList(*config, indexEntry);
 
@@ -362,6 +434,11 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry)
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
 		releaseInfo->verified = cachefiles::verifySignature(*config, releaseFilePath);
+
+		if (releaseLimits.isExcluded(*releaseInfo))
+		{
+			return;
+		}
 
 		if (indexEntry.category == IndexEntry::Binary)
 		{

@@ -912,6 +912,44 @@ if undefined, intepretes as empty list
 
 =over
 
+=item cupt::cache::limit-releases::by-*::type
+
+string, determines the type of limiting repository releases to use
+
+All repository indexes which are disallowed by this option are not added to
+the package cache, in other words, they are completely hidden.
+
+'*' can be 'archive' or 'codename'
+
+Possible values:
+
+=over
+
+=item none
+
+No limiting will be done for this category. The default.
+
+=item include
+
+Only values of the 'cupt::cache::limit-releases::by-*' option will be allowed.
+
+=item exclude
+
+Only values which are not present in the value of the 'cupt::cache::limit-releases::by-*' option will be allowed.
+
+=back
+
+Example:
+
+If you set 'cupt::cache::limit-releases::by-archive::type' to 'include' and
+'cupt::cache::limit-releases::by-archive' to '{ "stable", "testing" };', only
+repositories with archive names 'stable' and 'testing' will be added to the
+cache.
+
+=item cupt::cache::limit-releases::by-*
+
+list of allowed/disallowed release attributes, see above
+
 =item cupt::cache::pin::addendums::downgrade
 
 integer, specifies priority change for versions that are smaller than currently

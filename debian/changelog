@@ -10,6 +10,13 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         the download description.
       - Printing 'download failed' messages: reformatted to have the error
         string earlier in the string and match the 'Get:<number>' style.
+    - config:
+      - New options 'cupt::cache::limit-releases::by-archive',
+        'cupt::cache::limit-releases::by-archive::type'.
+      - New options 'cupt::cache::limit-releases::by-codename',
+        'cupt::cache::limit-releases::by-codename::type'.
+    - cache:
+      - Honor 'cupt::cache::limit-releases::*' options.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
 
