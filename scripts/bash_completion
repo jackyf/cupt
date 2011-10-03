@@ -96,6 +96,7 @@ _cupt()
 	fi
 
 	common_options="-o --option --target-release --default-release -t --purge --quiet -q"
+	common_options="${common_options} --include-archives --exclude-archives --include-codenames --exclude-codenames"
 	arguments="${arguments} ${common_options}"
 	arguments=$(compgen -W "${arguments}" -- ${cur})
 	COMPREPLY=(${arguments} ${package_name_arguments})
