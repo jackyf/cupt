@@ -19,6 +19,7 @@
 #include <cstring>
 #include <map>
 using std::map;
+#include <sstream>
 
 #include <common/regex.hpp>
 
@@ -27,6 +28,44 @@ using std::map;
 #include "common.hpp"
 #include "misc.hpp"
 #include "handlers.hpp"
+
+void parseReleaseLimit(Config& config, const string& limitName, const string& included, const string& excluded)
+{
+	auto setLimitList = [&config](const string& listOptionName, const string& valuesString)
+	{
+		std::istringstream valueStream(valuesString);
+		string value;
+		while (std::getline(valueStream, value, ','))
+		{
+			config.setList(listOptionName, value);
+		}
+	};
+
+	auto limitOptionName = string("cupt::cache::limit-releases::by-") + limitName;
+	if (!included.empty() && !excluded.empty())
+	{
+		fatal("options '--include-%ss' and '--exclude-%ss' cannot be specified together",
+				limitName.c_str(), limitName.c_str());
+	}
+	else if (!included.empty())
+	{
+		config.setScalar(limitOptionName + "::type", "include");
+		setLimitList(limitOptionName, included);
+	}
+	else if (!excluded.empty())
+	{
+		config.setScalar(limitOptionName + "::type", "exclude");
+		setLimitList(limitOptionName, excluded);
+	}
+}
+
+void parseReleaseLimits(Config& config, const string& includedArchives, const string& excludedArchives,
+		const string& includedCodenames, const string& excludedCodenames)
+{
+	parseReleaseLimit(config, "archive", includedArchives, excludedArchives);
+	parseReleaseLimit(config, "codename", includedCodenames, excludedCodenames);
+}
+
 
 string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, vector< string >& unparsed)
 {
@@ -44,6 +83,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	bpo::options_description options("Common options");
 	vector< string > directOptions;
 	string targetRelease;
+	string includedArchives, excludedArchives, includedCodenames, excludedCodenames;
 	options.add_options()
 		("important,i", "")
 		("option,o", bpo::value< vector< string > >(&directOptions))
@@ -52,6 +92,10 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		("no-all-versions", "")
 		("target-release", bpo::value< string >(&targetRelease))
 		("default-release,t", bpo::value< string >(&targetRelease))
+		("include-archives", bpo::value< string >(&includedArchives))
+		("exclude-archives", bpo::value< string >(&excludedArchives))
+		("include-codenames", bpo::value< string >(&includedCodenames))
+		("exclude-codenames", bpo::value< string >(&excludedCodenames))
 		("simulate,s", "")
 		("quiet,q", "")
 		("command", bpo::value< string >(&command))
@@ -116,6 +160,8 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 				config->setScalar("quiet", "yes");
 				handleQuietOption(config);
 			}
+			parseReleaseLimits(*config, includedArchives, excludedArchives,
+					includedCodenames, excludedCodenames);
 		}
 
 		smatch m;

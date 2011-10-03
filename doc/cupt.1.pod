@@ -843,6 +843,54 @@ Corresponding configuration option: L<apt::default-release>
 
 Examples: C<cupt install -t unstable xserver-xorg>, C<cupt -t squeeze full-upgrade>
 
+=item --include-archives=
+
+Use only repositories with specified archive names (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-archive>,
+L<cupt::cache::limit-releases::by-archive::type>.
+
+Example:
+
+C<cupt safe-upgrade --include-archives=stable,stable-updates>
+
+=item --exclude-archives=
+
+Ignore repositories with specified archive names (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-archive>,
+L<cupt::cache::limit-releases::by-archive::type>.
+
+Example:
+
+C<cupt rdepends libcomerr2 --exclude-archives=experimental,unstable>
+
+=item --include-codenames=
+
+Use only repositories with specified codenames (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-codename>,
+L<cupt::cache::limit-releases::by-codename::type>.
+
+Example:
+
+C<cupt safe-upgrade --include-codenames=squeeze,squeeze-updates>
+
+=item --exclude-codenames=
+
+Ignore repositories with specified codenames (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-codename>,
+L<cupt::cache::limit-releases::by-codename::type>.
+
+Example:
+
+C<cupt rdepends libcomerr2 --exclude-codenames=experimental,sid>
+
 =item --quiet,-q
 
 don't output anything to standard output
