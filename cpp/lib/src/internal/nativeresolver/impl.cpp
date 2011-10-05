@@ -574,6 +574,13 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	}
 	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
 
+	{ // process elements to reject
+		FORIT(elementPtrIt, action.elementsToReject)
+		{
+			__solution_storage->setRejection(solution, *elementPtrIt);
+		}
+	};
+
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
@@ -666,7 +673,8 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		const dg::Element* versionElementPtr, const dg::Element* brokenElementPtr,
 		bool debugging)
 {
-	if (solution.getPackageEntry(versionElementPtr)->sticked)
+	auto versionPackageEntryPtr = solution.getPackageEntry(versionElementPtr);
+	if (versionPackageEntryPtr->sticked)
 	{
 		return;
 	}
@@ -676,6 +684,10 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
 	{
 		if (*conflictingElementPtrIt == versionElementPtr)
+		{
+			continue;
+		}
+		if (!versionPackageEntryPtr->isModificationAllowed(*conflictingElementPtrIt))
 		{
 			continue;
 		}
@@ -709,6 +721,19 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 
 			actions.push_back(std::move(action));
 		}
+	}
+}
+
+void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > >& actions) const
+{
+	// each next action receives one more additional reject request to not
+	// interfere with all previous solutions
+	vector< const dg::Element* > elementPtrs;
+	FORIT(actionIt, actions)
+	{
+		(*actionIt)->elementsToReject = elementPtrs;
+
+		elementPtrs.push_back((*actionIt)->newElementPtr);
 	}
 }
 
@@ -1156,6 +1181,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		}
 		else
 		{
+			__prepare_reject_requests(possibleActions);
+
 			if (!possibleActions.empty())
 			{
 				__calculate_profits(possibleActions);
