@@ -1,4 +1,4 @@
-cupt (2.2.1~) UNRELEASED; urgency=low
+cupt (2.2.1) unstable; urgency=low
 
   * console:
     - Managing packages:
@@ -12,7 +12,7 @@ cupt (2.2.1~) UNRELEASED; urgency=low
         resolver reasons present. Thanks to Karol Kozłowski for the report.
         (Closes: #643798)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 19 Sep 2011 11:24:03 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 06 Oct 2011 20:42:16 +0300
 
 cupt (2.2.0) unstable; urgency=low
 
