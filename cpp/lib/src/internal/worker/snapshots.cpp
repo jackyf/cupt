@@ -47,7 +47,15 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	}
 	catch (Exception&)
 	{
-		(warnOnly ? warn : fatal)("unable to delete partial snapshot directory '%s'", directory.c_str());
+		auto message = sf("unable to delete partial snapshot directory '%s'", directory.c_str());
+		if (warnOnly)
+		{
+			warn("%s", message.c_str());
+		}
+		else
+		{
+			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2, message);
+		}
 	}
 }
 
@@ -66,7 +74,8 @@ void createTextFile(const string& path, const vector< string >& lines,
 		File file(path, "w", openError);
 		if (!openError.empty())
 		{
-			fatal("unable to open file '%s' for writing: %s", path.c_str(), openError.c_str());
+			logger->loggedFatal(Logger::Subsystem::Snapshots, 3,
+					sf("unable to open file '%s' for writing: %s", path.c_str(), openError.c_str()));
 		}
 
 		FORIT(lineIt, lines)
@@ -83,49 +92,63 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 	FORIT(packageNameIt, installedPackageNames)
 	{
 		const string& packageName = *packageNameIt;
-		auto package = _cache->getBinaryPackage(packageName);
-		if (!package)
-		{
-			fatal("internal error: no binary package '%s'", packageName.c_str());
-		}
-		auto version = package->getInstalledVersion();
-		if (!version)
-		{
-			fatal("internal error: no installed version for the installed package '%s'", packageName.c_str());
-		}
-		const string& architecture = version->architecture;
 
 		_logger->log(Logger::Subsystem::Snapshots, 2,
 				sf("repacking the installed package '%s'", packageName.c_str()));
-		_run_external_command(Logger::Subsystem::Snapshots, sf("dpkg-repack --arch=%s %s",
-					architecture.c_str(), packageName.c_str()));
 
-		/* dpkg-repack uses dpkg-deb -b, which produces file in format
-
-		   <package_name>_<stripped_version_string>_<arch>.deb
-
-		   I can't say why the hell someone decided to strip version here,
-		   so I have to rename the file properly.
-		*/
-		if (!simulating)
+		try
 		{
-			// find a file
-			auto files = fs::glob(packageName + "_*.deb");
-			if (files.size() != 1)
+			auto package = _cache->getBinaryPackage(packageName);
+			if (!package)
 			{
-				fatal("dpkg-repack produced either no or more than one Debian archive for the package '%s'",
-						packageName.c_str());
+				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+						sf("internal error: no binary package '%s'", packageName.c_str()));
 			}
-			const string& badFilename = files[0];
-			auto goodFilename = sf("%s_%s_%s.deb", packageName.c_str(),
-					version->versionString.c_str(), architecture.c_str());
+			auto version = package->getInstalledVersion();
+			if (!version)
+			{
+				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+						sf("internal error: no installed version for the installed package '%s'", packageName.c_str()));
+			}
+			const string& architecture = version->architecture;
 
-			auto moveError = fs::move(badFilename, goodFilename);
-			if (!moveError.empty())
+			_run_external_command(Logger::Subsystem::Snapshots, sf("dpkg-repack --arch=%s %s",
+						architecture.c_str(), packageName.c_str()));
+
+			/* dpkg-repack uses dpkg-deb -b, which produces file in format
+
+			   <package_name>_<stripped_version_string>_<arch>.deb
+
+			   I can't say why the hell someone decided to strip version here,
+			   so I have to rename the file properly.
+			*/
+			if (!simulating)
 			{
-				fatal("unable to move '%s' to '%s': %s",
-						badFilename.c_str(), goodFilename.c_str(), moveError.c_str());
+				// find a file
+				auto files = fs::glob(packageName + "_*.deb");
+				if (files.size() != 1)
+				{
+					_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+							sf("dpkg-repack produced either no or more than one Debian archive for the package '%s'",
+							packageName.c_str()));
+				}
+				const string& badFilename = files[0];
+				auto goodFilename = sf("%s_%s_%s.deb", packageName.c_str(),
+						version->versionString.c_str(), architecture.c_str());
+
+				auto moveError = fs::move(badFilename, goodFilename);
+				if (!moveError.empty())
+				{
+					_logger->loggedFatal(Logger::Subsystem::Snapshots, 3,
+							sf("unable to move '%s' to '%s': %s",
+							badFilename.c_str(), goodFilename.c_str(), moveError.c_str()));
+				}
 			}
+		}
+		catch (...)
+		{
+			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+					sf("failed to repack the package '%s'", packageName.c_str()));
 		}
 	}
 }
@@ -160,7 +183,8 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 		char timeBuf[128];
 		if (!strftime(timeBuf, sizeof(timeBuf), "%a, %d %b %Y %H:%M:%S UTC", gmtime_r(&unixTime, &brokenDownTime)))
 		{
-			fatal("strftime failed: EEE");
+			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+					sf("strftime failed: EEE"));
 		}
 		LL(string("Date: ") + timeBuf);
 
@@ -246,7 +270,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		{
 			if (mkdir(snapshotsDirectory.c_str(), 0755) == -1)
 			{
-				fatal("unable to create the snapshots directory '%s': EEE", snapshotsDirectory.c_str());
+				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+						sf("unable to create the snapshots directory '%s': EEE", snapshotsDirectory.c_str()));
 			}
 		}
 		if (fs::dirExists(temporarySnapshotDirectory))
@@ -256,7 +281,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		}
 		if (mkdir(temporarySnapshotDirectory.c_str(), 0755) == -1)
 		{
-			fatal("unable to create a temporary snapshot directory '%s': EEE", temporarySnapshotDirectory.c_str());
+			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+					sf("unable to create a temporary snapshot directory '%s': EEE", temporarySnapshotDirectory.c_str()));
 		}
 	}
 
@@ -284,14 +310,16 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		auto currentDirectoryFd = open(".", O_RDONLY);
 		if (currentDirectoryFd == -1)
 		{
-			fatal("unable to open the current directory: EEE");
+			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+					sf("unable to open the current directory: EEE"));
 		}
 
 		if (!simulating)
 		{
 			if (chdir(temporarySnapshotDirectory.c_str()) == -1)
 			{
-				fatal("unable to set current directory to '%s': EEE", temporarySnapshotDirectory.c_str());
+				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+						sf("unable to set current directory to '%s': EEE", temporarySnapshotDirectory.c_str()));
 			}
 		}
 
@@ -310,15 +338,17 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		{
 			if (fchdir(currentDirectoryFd) == -1)
 			{
-				fatal("unable to return to previous working directory: EEE");
+				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+						sf("unable to return to previous working directory: EEE"));
 			}
 
 			// all done, do final move
 			auto moveError = fs::move(temporarySnapshotDirectory, snapshotDirectory);
 			if (!moveError.empty())
 			{
-				fatal("unable to move directory '%s' to '%s': %s",
-						temporarySnapshotDirectory.c_str(), snapshotDirectory.c_str(), moveError.c_str());
+				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
+						sf("unable to move directory '%s' to '%s': %s",
+						temporarySnapshotDirectory.c_str(), snapshotDirectory.c_str(), moveError.c_str()));
 			}
 		}
 	}
@@ -341,7 +371,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 					temporarySnapshotDirectory.c_str());
 		}
 
-		fatal("error constructing system snapshot named '%s'", name.c_str());
+		_logger->loggedFatal(Logger::Subsystem::Snapshots, 1,
+				sf("error constructing system snapshot named '%s'", name.c_str()));
 	}
 }
 

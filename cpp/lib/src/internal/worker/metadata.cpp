@@ -358,7 +358,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			File diffIndexFile(diffIndexPath, "r", openError);
 			if (!openError.empty())
 			{
-				fatal("unable to open the file '%s': EEE", diffIndexPath.c_str());
+				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+						__get_pidded_string(sf("unable to open the file '%s': EEE", diffIndexPath.c_str())));
 			}
 
 			TagParser diffIndexParser(&diffIndexFile);
@@ -382,7 +383,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 						const string& line = *lineIt;
 						if (!regex_match(line, m, checksumsLineRegex))
 						{
-							fatal("malformed 'hash-size-name' line '%s'", line.c_str());
+							logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+									__get_pidded_string(sf("malformed 'hash-size-name' line '%s'", line.c_str())));
 						}
 
 						if (isHistory)
@@ -400,14 +402,16 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					auto values = internal::split(' ', string(fieldValue));
 					if (values.size() != 2)
 					{
-						fatal("malformed 'hash-size' line '%s'", string(fieldValue).c_str());
+						logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+								__get_pidded_string(sf("malformed 'hash-size' line '%s'", string(fieldValue).c_str())));
 					}
 					wantedHashSum = values[0];
 				}
 			}
 			if (wantedHashSum.empty())
 			{
-				fatal("failed to find wanted hash sum");
+				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+						__get_pidded_string("failed to find wanted hash sum"));
 			}
 		}
 		if (unlink(diffIndexPath.c_str()) == -1)
@@ -423,7 +427,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 
 		if (::system(sf("cp %s %s", targetPath.c_str(), patchedPath.c_str()).c_str()))
 		{
-			fatal("unable to copy '%s' to '%s'", targetPath.c_str(), patchedPath.c_str());
+			logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+					__get_pidded_string(sf("unable to copy '%s' to '%s'", targetPath.c_str(), patchedPath.c_str())));
 		}
 
 		while (currentSha1Sum != wantedHashSum)
@@ -440,7 +445,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				}
 				else
 				{
-					fatal("unable to find a patch for the sha1 sum '%s'", currentSha1Sum.c_str());
+					logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+							__get_pidded_string(sf("unable to find a patch for the sha1 sum '%s'", currentSha1Sum.c_str())));
 				}
 			}
 
@@ -448,7 +454,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			auto patchIt = patches.find(patchName);
 			if (patchIt == patches.end())
 			{
-				fatal("unable to a patch entry for the patch '%s'", patchName.c_str());
+				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+						__get_pidded_string(sf("unable to a patch entry for the patch '%s'", patchName.c_str())));
 			}
 
 			string patchSuffix = "/" + patchName + ".gz";
@@ -517,7 +524,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 		auto moveError = fs::move(patchedPath, targetPath);
 		if (!moveError.empty())
 		{
-			fatal("%s", moveError.c_str());
+			logger->loggedFatal(Logger::Subsystem::Metadata, 3, __get_pidded_string(moveError));
 		}
 		return true;
 	}
@@ -820,53 +827,63 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 	_logger->log(Logger::Subsystem::Metadata, 1, "updating package metadata");
 
 	auto indexesDirectory = __get_indexes_directory();
-	bool simulating = _config->getBool("cupt::worker::simulate");
-	if (!simulating)
-	{
-		if (!fs::dirExists(indexesDirectory))
-		{
-			if (mkdir(indexesDirectory.c_str(), 0755) == -1)
-			{
-				fatal("unable to create the lists directory '%s': EEE", indexesDirectory.c_str());
-			}
-		}
-	}
-
-	shared_ptr< internal::Lock > lock;
 	string lockFilePath = indexesDirectory + "/lock";
-	if (!simulating)
+	shared_ptr< internal::Lock > lock;
+
+	try // preparations
 	{
-		lock.reset(new internal::Lock(_config, lockFilePath));
-	}
-
-	{ // run pre-actions
-		_logger->log(Logger::Subsystem::Metadata, 2, "running apt pre-invoke hooks");
-		auto preCommands = _config->getList("apt::update::pre-invoke");
-		FORIT(commandIt, preCommands)
+		bool simulating = _config->getBool("cupt::worker::simulate");
+		if (!simulating)
 		{
-			auto errorId = sf("pre-invoke action '%s'", commandIt->c_str());
-			_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
-		}
-	}
-
-	if (!simulating)
-	{
-		// unconditional clearing of partial chunks of Release[.gpg] files
-		auto partialIndexesDirectory = indexesDirectory + partialDirectorySuffix;
-		auto paths = fs::glob(partialIndexesDirectory + "/*Release*");
-		FORIT(pathIt, paths)
-		{
-			unlink(pathIt->c_str()); // without error-checking, yeah
-		}
-
-		// also create directory if it doesn't exist
-		if (! fs::dirExists(partialIndexesDirectory))
-		{
-			if (mkdir(partialIndexesDirectory.c_str(), 0755) == -1)
+			if (!fs::dirExists(indexesDirectory))
 			{
-				fatal("unable to create partial directory '%s': EEE", partialIndexesDirectory.c_str());
+				if (mkdir(indexesDirectory.c_str(), 0755) == -1)
+				{
+					_logger->loggedFatal(Logger::Subsystem::Metadata, 2,
+							sf("unable to create the lists directory '%s': EEE", indexesDirectory.c_str()));
+				}
 			}
 		}
+
+		if (!simulating)
+		{
+			lock.reset(new internal::Lock(_config, lockFilePath));
+		}
+
+		{ // run pre-actions
+			_logger->log(Logger::Subsystem::Metadata, 2, "running apt pre-invoke hooks");
+			auto preCommands = _config->getList("apt::update::pre-invoke");
+			FORIT(commandIt, preCommands)
+			{
+				auto errorId = sf("pre-invoke action '%s'", commandIt->c_str());
+				_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
+			}
+		}
+
+		if (!simulating)
+		{
+			// unconditional clearing of partial chunks of Release[.gpg] files
+			auto partialIndexesDirectory = indexesDirectory + partialDirectorySuffix;
+			auto paths = fs::glob(partialIndexesDirectory + "/*Release*");
+			FORIT(pathIt, paths)
+			{
+				unlink(pathIt->c_str()); // without error-checking, yeah
+			}
+
+			// also create directory if it doesn't exist
+			if (! fs::dirExists(partialIndexesDirectory))
+			{
+				if (mkdir(partialIndexesDirectory.c_str(), 0755) == -1)
+				{
+					_logger->loggedFatal(Logger::Subsystem::Metadata, 2,
+							sf("unable to create partial directory '%s': EEE", partialIndexesDirectory.c_str()));
+				}
+			}
+		}
+	}
+	catch (...)
+	{
+		_logger->loggedFatal(Logger::Subsystem::Metadata, 1, "aborted downloading release and index data");
 	}
 
 	int masterExitCode = true;
@@ -881,7 +898,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			auto pid = fork();
 			if (pid == -1)
 			{
-				fatal("fork failed: EEE");
+				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, sf("fork failed: EEE"));
 			}
 
 			if (pid)
@@ -912,7 +929,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			pid_t pid = wait(&status);
 			if (pid == -1)
 			{
-				fatal("wait failed: EEE");
+				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, sf("wait failed: EEE"));
 			}
 			pids.erase(pid);
 			// if something went bad in child, the parent won't return non-zero code too
@@ -952,7 +969,8 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 
 	if (!masterExitCode)
 	{
-		fatal("there were errors while downloading release and index data");
+		_logger->loggedFatal(Logger::Subsystem::Metadata, 1,
+				"there were errors while downloading release and index data");
 	}
 }
 

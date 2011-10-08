@@ -998,7 +998,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
 	{
-		fatal("worker desired state is not given");
+		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "worker desired state is not given");
 	}
 
 	bool debugging = _config->getBool("debug::worker");
@@ -1178,7 +1178,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 	__iterate_over_graph(*cache, miniGaa, true, debugging);
 }
 
-void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
+void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logger& logger,
 		vector< InnerActionGroup >& actionGroups, GraphAndAttributes& gaa,
 		GraphAndAttributes::Attribute::Level level, bool debugging)
 {
@@ -1205,7 +1205,9 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 				{
 					actionStrings.push_back(it->toString());
 				}
-				fatal("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings).c_str());
+				logger.loggedFatal(Logger::Subsystem::Packages, 2,
+						sf("internal error: unable to schedule circular actions '%s'",
+						join(", ", actionStrings).c_str()));
 			}
 
 			// we build a mini-graph with reduced number of edges
@@ -1239,8 +1241,9 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 								actionSubgroup.dpkgFlags.insert("--force-breaks");
 								break;
 							default:
-								fatal("internal error: worker: a relation '%s' cannot be soft",
-										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]);
+								logger.loggedFatal(Logger::Subsystem::Packages, 2,
+										sf("internal error: worker: a relation '%s' cannot be soft",
+										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]));
 						}
 					}
 				}
@@ -1255,7 +1258,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache,
 				actionSubgroupsSorted.rbegin()->continued = false;
 			}
 
-			__split_heterogeneous_actions(cache, actionSubgroupsSorted, miniGaa,
+			__split_heterogeneous_actions(cache, logger, actionSubgroupsSorted, miniGaa,
 					Attribute::Level((int)level+1), debugging);
 
 			FORIT(actionSubgroupIt, actionSubgroupsSorted)
@@ -1307,110 +1310,121 @@ static string __get_codename_and_component_string(const Version& version)
 
 map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker::__prepare_downloads()
 {
-	auto archivesDirectory = _get_archives_directory();
-
-	if (!_config->getBool("cupt::worker::simulate"))
-	{
-		string partialDirectory = archivesDirectory + partialDirectorySuffix;
-		if (! fs::dirExists(partialDirectory))
-		{
-			if (mkdir(partialDirectory.c_str(), 0755) == -1)
-			{
-				fatal("unable to create partial directory '%s': EEE", partialDirectory.c_str());
-			}
-		}
-	}
+	_logger->log(Logger::Subsystem::Packages, 2, "preparing downloads");
 
 	map< string, pair< download::Manager::DownloadEntity, string > > downloads;
-
-	DebdeltaHelper debdeltaHelper;
-
-	static const vector< Action::Type > actions = { Action::Install, Action::Upgrade, Action::Downgrade };
-	FORIT(actionIt, actions)
+	try
 	{
-		const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
-		FORIT(it, suggestedPackages)
+		auto archivesDirectory = _get_archives_directory();
+
+		if (!_config->getBool("cupt::worker::simulate"))
 		{
-			const shared_ptr< const BinaryVersion >& version = it->second.version;
-
-			const string& packageName = version->packageName;
-			const string& versionString = version->versionString;
-
-			auto downloadInfo = version->getDownloadInfo();
-
-			// we need at least one real URI
-			if (downloadInfo.empty())
+			string partialDirectory = archivesDirectory + partialDirectorySuffix;
+			if (! fs::dirExists(partialDirectory))
 			{
-				fatal("no available download URIs for %s %s", packageName.c_str(), versionString.c_str());
-			}
-
-			// paths
-			auto basename = _get_archive_basename(version);
-			auto downloadPath = archivesDirectory + partialDirectorySuffix + '/' + basename;
-			auto targetPath = archivesDirectory + '/' + basename;
-
-			// exclude from downloading packages that are already present
-			if (fs::fileExists(targetPath) &&
-				version->file.hashSums.verify(targetPath))
-			{
-				continue;
-			}
-
-			download::Manager::DownloadEntity downloadEntity;
-
-			string longAliasTail = sf("%s %s %s", __get_codename_and_component_string(*version).c_str(),
-						packageName.c_str(), versionString.c_str());
-			FORIT(it, downloadInfo)
-			{
-				string uri = it->baseUri + '/' + it->directory + '/' + version->file.name;
-
-
-				string shortAlias = packageName;
-				string longAlias = it->baseUri + ' ' + longAliasTail;
-
-				downloadEntity.extendedUris.push_back(
-						download::Manager::ExtendedUri(uri, shortAlias, longAlias));
-			}
-			{
-				auto debdeltaDownloadInfo = debdeltaHelper.getDownloadInfo(version, _cache);
-				FORIT(it, debdeltaDownloadInfo)
+				if (mkdir(partialDirectory.c_str(), 0755) == -1)
 				{
-					const string& uri = it->uri;
+					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+							sf("unable to create partial directory '%s': EEE", partialDirectory.c_str()));
+				}
+			}
+		}
+
+
+		DebdeltaHelper debdeltaHelper;
+
+		static const vector< Action::Type > actions = { Action::Install, Action::Upgrade, Action::Downgrade };
+		FORIT(actionIt, actions)
+		{
+			const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
+			FORIT(it, suggestedPackages)
+			{
+				const shared_ptr< const BinaryVersion >& version = it->second.version;
+
+				const string& packageName = version->packageName;
+				const string& versionString = version->versionString;
+
+				auto downloadInfo = version->getDownloadInfo();
+
+				// we need at least one real URI
+				if (downloadInfo.empty())
+				{
+					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+							sf("no available download URIs for %s %s", packageName.c_str(), versionString.c_str()));
+				}
+
+				// paths
+				auto basename = _get_archive_basename(version);
+				auto downloadPath = archivesDirectory + partialDirectorySuffix + '/' + basename;
+				auto targetPath = archivesDirectory + '/' + basename;
+
+				// exclude from downloading packages that are already present
+				if (fs::fileExists(targetPath) &&
+					version->file.hashSums.verify(targetPath))
+				{
+					continue;
+				}
+
+				download::Manager::DownloadEntity downloadEntity;
+
+				string longAliasTail = sf("%s %s %s", __get_codename_and_component_string(*version).c_str(),
+							packageName.c_str(), versionString.c_str());
+				FORIT(it, downloadInfo)
+				{
+					string uri = it->baseUri + '/' + it->directory + '/' + version->file.name;
+
+
+					string shortAlias = packageName;
 					string longAlias = it->baseUri + ' ' + longAliasTail;
 
 					downloadEntity.extendedUris.push_back(
-							download::Manager::ExtendedUri(uri, packageName, longAlias));
+							download::Manager::ExtendedUri(uri, shortAlias, longAlias));
 				}
+				{
+					auto debdeltaDownloadInfo = debdeltaHelper.getDownloadInfo(version, _cache);
+					FORIT(it, debdeltaDownloadInfo)
+					{
+						const string& uri = it->uri;
+						string longAlias = it->baseUri + ' ' + longAliasTail;
+
+						downloadEntity.extendedUris.push_back(
+								download::Manager::ExtendedUri(uri, packageName, longAlias));
+					}
+				}
+
+				// caution: targetPath and downloadEntity.targetPath are different
+				downloadEntity.targetPath = downloadPath;
+				downloadEntity.size = version->file.size;
+
+				downloadEntity.postAction = [version, downloadPath, targetPath]() -> string
+				{
+					if (!fs::fileExists(downloadPath))
+					{
+						return __("unable to find downloaded file");
+					}
+					if (!version->file.hashSums.verify(downloadPath))
+					{
+						unlink(downloadPath.c_str()); // intentionally ignore errors if any
+						return __("hash sums mismatch");
+					}
+
+					return fs::move(downloadPath, targetPath);
+				};
+
+				auto downloadValue = std::make_pair(std::move(downloadEntity), targetPath);
+				downloads.insert(std::make_pair(packageName, downloadValue));
 			}
-
-			// caution: targetPath and downloadEntity.targetPath are different
-			downloadEntity.targetPath = downloadPath;
-			downloadEntity.size = version->file.size;
-
-			downloadEntity.postAction = [version, downloadPath, targetPath]() -> string
-			{
-				if (!fs::fileExists(downloadPath))
-				{
-					return __("unable to find downloaded file");
-				}
-				if (!version->file.hashSums.verify(downloadPath))
-				{
-					unlink(downloadPath.c_str()); // intentionally ignore errors if any
-					return __("hash sums mismatch");
-				}
-
-				return fs::move(downloadPath, targetPath);
-			};
-
-			auto downloadValue = std::make_pair(std::move(downloadEntity), targetPath);
-			downloads.insert(std::make_pair(packageName, downloadValue));
 		}
+	}
+	catch (...)
+	{
+		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to prepare downloads");
 	}
 
 	return downloads;
 }
 
-vector< Changeset > __split_action_groups_into_changesets(
+vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		const vector< InnerActionGroup >& actionGroups,
 		const map< string, pair< download::Manager::DownloadEntity, string > >& downloads)
 {
@@ -1458,8 +1472,9 @@ vector< Changeset > __split_action_groups_into_changesets(
 		vector< string > unconfiguredPackageNames;
 		std::copy(unpackedPackageNames.begin(), unpackedPackageNames.end(),
 				std::back_inserter(unconfiguredPackageNames));
-		fatal("internal error: packages stay unconfigured: '%s'",
-				join(" ", unconfiguredPackageNames).c_str());
+		logger.loggedFatal(Logger::Subsystem::Packages, 2,
+				sf("internal error: packages stay unconfigured: '%s'",
+				join(" ", unconfiguredPackageNames).c_str()));
 	}
 
 	return result;
@@ -1505,7 +1520,7 @@ size_t __get_max_download_amount(const vector< Changeset >& changesets, bool deb
 }
 
 void __set_force_options_for_removals_if_needed(const Cache& cache,
-		vector< InnerActionGroup >& actionGroups)
+		Logger& logger, vector< InnerActionGroup >& actionGroups)
 {
 	auto systemState = cache.getSystemState();
 	FORIT(actionGroupIt, actionGroups)
@@ -1533,9 +1548,10 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					auto installedRecord = systemState->getInstalledInfo(packageName);
 					if (!installedRecord)
 					{
-						fatal("internal error: worker: __set_force_options_for_removals_if_needed: "
+						logger.loggedFatal(Logger::Subsystem::Packages, 2,
+								sf("internal error: worker: __set_force_options_for_removals_if_needed: "
 								"there is no installed record for the package '%s' which is to be removed",
-								packageName.c_str());
+								packageName.c_str()));
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
@@ -1558,7 +1574,7 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 	}
 }
 
-void __get_action_groups(const shared_ptr< const Cache >& cache,
+void __get_action_groups(const shared_ptr< const Cache >& cache, Logger& logger,
 		GraphAndAttributes& gaa, vector< InnerActionGroup >* actionGroupsPtr,
 		bool debugging)
 {
@@ -1570,9 +1586,9 @@ void __get_action_groups(const shared_ptr< const Cache >& cache,
 
 	typedef GraphAndAttributes::Attribute Attribute;
 	auto initialSplitLevel = Attribute::FromVirtual;
-	__split_heterogeneous_actions(cache, *actionGroupsPtr, gaa, initialSplitLevel, debugging);
+	__split_heterogeneous_actions(cache, logger, *actionGroupsPtr, gaa, initialSplitLevel, debugging);
 
-	__set_force_options_for_removals_if_needed(*cache, *actionGroupsPtr);
+	__set_force_options_for_removals_if_needed(*cache, logger, *actionGroupsPtr);
 }
 
 vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
@@ -1584,8 +1600,8 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 	vector< Changeset > changesets;
 	{
 		vector< InnerActionGroup > actionGroups;
-		__get_action_groups(_cache, gaa, &actionGroups, debugging);
-		changesets = __split_action_groups_into_changesets(actionGroups, downloads);
+		__get_action_groups(_cache, *_logger, gaa, &actionGroups, debugging);
+		changesets = __split_action_groups_into_changesets(*_logger, actionGroups, downloads);
 	}
 
 	if (archivesSpaceLimit)
@@ -1599,8 +1615,9 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		if (maxDownloadAmount > archivesSpaceLimit)
 		{
 			// we failed to fit in limit
-			fatal("unable to fit in archives space limit '%zu', best try is '%zu'",
-					archivesSpaceLimit, maxDownloadAmount);
+			_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+					sf("unable to fit in archives space limit '%zu', best try is '%zu'",
+					archivesSpaceLimit, maxDownloadAmount));
 		}
 	}
 
@@ -1645,23 +1662,32 @@ void PackagesWorker::__run_dpkg_command(const string& flavor, const string& comm
 
 void PackagesWorker::__clean_downloads(const Changeset& changeset)
 {
-	internal::Lock archivesLock(_config, _get_archives_directory() + "/lock");
-
-	bool simulating = _config->getBool("cupt::worker::simulate");
-	FORIT(it, changeset.downloads)
+	_logger->log(Logger::Subsystem::Packages, 2, "cleaning downloaded archives");
+	try
 	{
-		const char* targetPath = it->second.c_str();
-		if (simulating)
+		internal::Lock archivesLock(_config, _get_archives_directory() + "/lock");
+
+		bool simulating = _config->getBool("cupt::worker::simulate");
+		FORIT(it, changeset.downloads)
 		{
-			simulate("removing archive '%s'", targetPath);
-		}
-		else
-		{
-			if (unlink(targetPath) == -1)
+			const char* targetPath = it->second.c_str();
+			if (simulating)
 			{
-				fatal("unable to remove file '%s': EEE", targetPath);
+				simulate("removing archive '%s'", targetPath);
+			}
+			else
+			{
+				if (unlink(targetPath) == -1)
+				{
+					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+							sf("unable to remove file '%s': EEE", targetPath));
+				}
 			}
 		}
+	}
+	catch (...)
+	{
+		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to clean downloaded archives");
 	}
 }
 
@@ -1890,36 +1916,46 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 	}
 	else
 	{
-		if (targetStatus)
+		try
 		{
-			__auto_installed_package_names.insert(packageName);
-		}
-		else
-		{
-			__auto_installed_package_names.erase(packageName);
-		}
-		auto extendedInfoPath = _cache->getPathOfExtendedStates();
-		auto tempPath = extendedInfoPath + ".cupt.tmp";
-
-		{
-			string errorString;
-			File tempFile(tempPath, "w", errorString);
-			if (!errorString.empty())
+			if (targetStatus)
 			{
-				fatal("unable to open temporary file '%s': %s", tempPath.c_str(), errorString.c_str());
+				__auto_installed_package_names.insert(packageName);
+			}
+			else
+			{
+				__auto_installed_package_names.erase(packageName);
+			}
+			auto extendedInfoPath = _cache->getPathOfExtendedStates();
+			auto tempPath = extendedInfoPath + ".cupt.tmp";
+
+			{
+				string errorString;
+				File tempFile(tempPath, "w", errorString);
+				if (!errorString.empty())
+				{
+					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+							sf("unable to open temporary file '%s': %s", tempPath.c_str(), errorString.c_str()));
+				}
+
+				// filling new info
+				FORIT(packageNameIt, __auto_installed_package_names)
+				{
+					tempFile.put(sf("Package: %s\nAuto-Installed: 1\n\n", packageNameIt->c_str()));
+				}
 			}
 
-			// filling new info
-			FORIT(packageNameIt, __auto_installed_package_names)
+			auto moveResult = fs::move(tempPath, extendedInfoPath);
+			if (!moveResult.empty())
 			{
-				tempFile.put(sf("Package: %s\nAuto-Installed: 1\n\n", packageNameIt->c_str()));
+				_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+						sf("unable to renew extended states file: %s", moveResult.c_str()));
 			}
 		}
-
-		auto moveResult = fs::move(tempPath, extendedInfoPath);
-		if (!moveResult.empty())
+		catch (...)
 		{
-			fatal("unable to renew extended states file: %s", moveResult.c_str());
+			_logger->loggedFatal(Logger::Subsystem::Packages, 2,
+					"failed to change the 'automatically installed' flag");
 		}
 	}
 }
@@ -1958,7 +1994,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		if (!downloadResult.empty())
 		{
-			fatal("there were download errors");
+			_logger->loggedFatal(Logger::Subsystem::Packages, 2, "there were download errors");
 		}
 	}
 }

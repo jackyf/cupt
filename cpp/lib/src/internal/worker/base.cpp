@@ -63,7 +63,8 @@ string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >
 void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 		const string& command, const string& commandInput, const string& errorId)
 {
-	_logger->log(subsystem, 3, sf("running: %s", command.c_str()));
+	const Logger::Level level = 3;
+	_logger->log(subsystem, level, sf("running: %s", command.c_str()));
 
 	if (_config->getBool("cupt::worker::simulate"))
 	{
@@ -79,7 +80,7 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 	}
 	else
 	{
-		const char* id = (errorId.empty() ? command.c_str() : errorId.c_str());
+		const string& id = (errorId.empty() ? command : errorId);
 
 		if (commandInput.empty())
 		{
@@ -87,13 +88,14 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			auto result = ::system(command.c_str());
 			if (result == -1)
 			{
-				fatal("unable to launch command '%s': EEE",
-						command.c_str());
+				_logger->loggedFatal(subsystem, level,
+						sf("unable to launch command '%s': EEE", command.c_str()));
 			}
 			else if (result)
 			{
-				fatal("command '%s' execution failed: %s", command.c_str(),
-						getWaitStatusDescription(result).c_str());
+				_logger->loggedFatal(subsystem, level,
+						sf("command '%s' execution failed: %s", command.c_str(),
+						getWaitStatusDescription(result).c_str()));
 			}
 		}
 		else try
@@ -103,15 +105,16 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			File pipeFile(command, "pw", errorString);
 			if (!errorString.empty())
 			{
-				fatal("unable to launch a pipe to the command '%s': %s",
-						command.c_str(), errorString.c_str());
+				_logger->loggedFatal(subsystem, level,
+						sf("unable to launch a pipe to the command '%s': %s",
+						command.c_str(), errorString.c_str()));
 			}
 
 			pipeFile.put(commandInput);
 		}
 		catch (...)
 		{
-			fatal("%s failed", id);
+			_logger->loggedFatal(subsystem, level, id + " failed");
 		}
 	}
 }

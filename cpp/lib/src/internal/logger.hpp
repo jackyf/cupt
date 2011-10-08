@@ -32,6 +32,7 @@ class Logger
 	Logger(const Config& config);
 	~Logger();
 	void log(Subsystem, Level, const string& message);
+	void loggedFatal(Subsystem, Level, const string& message);
  private:
 	Level __levels[4];
 	File* __file;

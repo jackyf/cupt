@@ -21,6 +21,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         'cupt::cache::limit-releases::by-archive::type'.
       - New options 'cupt::cache::limit-releases::by-codename',
         'cupt::cache::limit-releases::by-codename::type'.
+    - system/worker:
+      - Logging: log errors too.
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
 
