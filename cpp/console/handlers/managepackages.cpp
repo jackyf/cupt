@@ -228,7 +228,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 }
 
 static void processPackageExpressions(const shared_ptr< Config >& config,
-		const shared_ptr< const Cache >& cache, ManagePackages::Mode mode,
+		const shared_ptr< const Cache >& cache, ManagePackages::Mode& mode,
 		Resolver& resolver, const vector< string >& packageExpressions,
 		set< string >& purgedPackageNames)
 {
@@ -950,12 +950,13 @@ int changeAutoInstalledState(Context& context, bool value)
 	auto variables = parseOptions(context, noOptions, arguments);
 
 	auto config = context.getConfig();
-	auto cache = context.getCache(false, false, false);
+	auto cache = context.getCache(false, false, true);
 
 	Worker worker(config, cache);
 
 	FORIT(packageNameIt, arguments)
 	{
+		getBinaryPackage(cache, *packageNameIt); // check that it exists
 		worker.setAutomaticallyInstalledFlag(*packageNameIt, value);
 	}
 

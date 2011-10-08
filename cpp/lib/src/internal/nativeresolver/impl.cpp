@@ -770,18 +770,21 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 			if (trackReasons)
 			{
 				auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
-				if (!packageEntryPtr->introducedBy.empty())
-				{
-					suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
-				}
 				if (packageEntryPtr->autoremoved)
 				{
 					suggestedPackage.reasons.push_back(autoRemovalReason);
 				}
-				auto initialPackageIt = __initial_packages.find(packageName);
-				if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
+				else
 				{
-					suggestedPackage.reasons.push_back(userReason);
+					if (!packageEntryPtr->introducedBy.empty())
+					{
+						suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
+					}
+					auto initialPackageIt = __initial_packages.find(packageName);
+					if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
+					{
+						suggestedPackage.reasons.push_back(userReason);
+					}
 				}
 			}
 			suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);

@@ -26,6 +26,22 @@ cupt (2.3.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
 
+cupt (2.2.1) unstable; urgency=low
+
+  * console:
+    - Managing packages:
+      - Fixed the work of action override options inside the interactive
+        prompt for new package expressions.
+      - 'markauto', 'unmarkauto': reject not installed packages. Thanks to
+        Karol Kozłowski for the report.
+  * lib:
+    - system/resolvers/native:
+      - Made sure that if the package is auto-removed there are no other
+        resolver reasons present. Thanks to Karol Kozłowski for the report.
+        (Closes: #643798)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 06 Oct 2011 20:42:16 +0300
+
 cupt (2.2.0) unstable; urgency=low
 
   * Upload to unstable.
