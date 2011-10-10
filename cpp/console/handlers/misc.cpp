@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -456,16 +456,16 @@ int showRelations(Context& context, bool reverse)
 							// push the version with the maximum pin
 							if (!satisfyingVersions.empty())
 							{
-								auto candidateVersion = satisfyingVersions[0];
+								auto preferredVersion = satisfyingVersions[0];
 								for (auto satisfyingVersionIt = satisfyingVersions.begin() + 1;
 										satisfyingVersionIt != satisfyingVersions.end(); ++satisfyingVersionIt)
 								{
-									if (cache->getPin(*satisfyingVersionIt) > cache->getPin(candidateVersion))
+									if (cache->getPin(*satisfyingVersionIt) > cache->getPin(preferredVersion))
 									{
-										candidateVersion = *satisfyingVersionIt;
+										preferredVersion = *satisfyingVersionIt;
 									}
 								}
-								versions.push(candidateVersion);
+								versions.push(preferredVersion);
 							}
 						}
 					}
@@ -620,7 +620,7 @@ int policy(Context& context, bool source)
 						<< endl;
 			}
 
-			cout << "  " << __("Candidate") << ": " << policyVersion->versionString << endl;
+			cout << "  " << __("Preferred") << ": " << policyVersion->versionString << endl;
 			cout << "  " << __("Version table") << ':' << endl;
 
 			auto pinnedVersions = cache->getSortedPinnedVersions(package);

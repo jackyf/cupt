@@ -486,9 +486,11 @@ Example:
 
 === version pinning system ===[pinning]
 
-Each package version has a **pin**, an integer number. Amongst all versions of
-the same binary package, the one who has maximal pin is **policy**, or **candidate**
-version.
+Each package version has a **pin**, an integer number.
+
+Amongst all versions of the same binary package, the one who has maximal pin is
+**policy**, or **preferred** version.  It's also **candidate** in APT
+terminology and in Cupt before 2.3.
 
 Cupt assigns pins to package versions according to the APT documentation
 (//apt_preferences(5)//). Plus, it adds:
@@ -517,7 +519,7 @@ Example:
  $ cupt policy dpkg
  dpkg:
    Installed: 1.15.5.6
-   Candidate: 1.15.8.10
+   Preferred: 1.15.8.10
    Version table:
       1.15.8.10 991
          http://ftp.fi.debian.org/debian testing/main (signed)
@@ -530,7 +532,7 @@ Example:
          http://security.debian.org oldstable/main (signed)
 ```
 
-In the output above we can see: installed version ('1.15.5.6'), candidate version
+In the output above we can see: installed version ('1.15.5.6'), preferred version
 ('1.15.8.10') and a version table. In total, 3 versions of dpkg are available.
 
 For each version in version table we can see (on example of '1.15.8.10'): a version pin ('991'),
@@ -1295,7 +1297,7 @@ Example:
  cupt>policy libsoprano4
  libsoprano4:
    Installed: 2.2.2+dfsg.1-1
-   Candidate: 2.3.0+dfsg.1-2
+   Preferred: 2.3.0+dfsg.1-2
    Version table:
       2.3.0+dfsg.1-2 501
         http://debian.org.ua/debian unstable/main (signed)

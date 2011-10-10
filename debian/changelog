@@ -4,6 +4,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
     - Common options:
       - New options '--include-archives', '--exclude-archives',
         '--include-codenames', --exclude-codenames'.
+    - 'policy':
+      - 'Candidate' field name is ambiguous, changed it to 'Preferred'.
   * lib:
     - system/resolvers/native:
       - Removing automatically installed packages: stopped considering
@@ -25,6 +27,9 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - Logging: log errors too.
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
+  * doc:
+    - What was referred as 'candidate version' is really
+      the 'preferred version'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
 
