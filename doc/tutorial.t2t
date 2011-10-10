@@ -1390,6 +1390,71 @@ system. Note that you can override them (by supplying ``-o cupt::worker::simulat
 and ``-o apt::install-recommends=yes``, respectively, for this example).
 
 
+== Limiting used repositories ==
+
+As of Cupt version 2.3, you can limit the used package repositories for each
+package manager invocation without editing the //sources.list(5)//. The
+limiting can be done by [repository archive names or codenames #release_info].
+
+The common syntax is:
+
+//limiting_option//``=``//value//``,``//value//``,``...``,``//value//
+
+Use the option ``--include-archives`` or ``--include-codenames`` to use only
+specified repositories. In other words, no matter how many repositories are
+present in the //sources.list(5)//, only packages from specified repositories
+will be considered.
+
+Examples:
+
+- ``cupt rdepends --include-archives=testing,unstable libffi5``
+
+List reverse-dependencies of ``libffi5`` package in ``testing`` and
+``unstable``.
+
+- ``cupt safe-upgrade --include-archives=stable,stable-updates``
+
+Upgrade the system, considering only packages from archives ``stable`` and
+``stable-updates``.
+
+- ``cupt install xserver-xorg --include-codenames=wheezy``
+
+Install the package ``xserver-xorg``, if its version in the ``wheezy`` is different
+than installed one or there is no such package installed. If any packages need
+to be changed in order to process this query (e.g., installing new dependencies
+or removing conflicting packages), only versions from ``wheezy`` will be
+considered.
+
+- ``cupt search --names-only '.*?-perl' --include-archives=experimental``
+
+Search for Perl module packages in ``experimental``.
+
+
+Use the option ``--exclude-archives`` or ``--exclude-codenames`` to not use
+specified repositories.  If a package version has multiple repositories and at
+least one of them is not excluded, the version will be visible.
+
+Examples:
+
+- ``search -n cupt --exclude-archives=stable``
+
+Search for Cupt-related packages, but ignore packages from ``stable``.
+
+- ``cupt full-upgrade --exclude-codenames=sid,experimental``
+
+Upgrade not using packages which come only from ``sid`` or ``experimental``.
+
+
+Limiting repositories can also be done by modifying the
+``cupt::cache::limit-releases::*`` family of configuration variables directly.
+
+Note: unlike the [pinning settings #pinning] which only set version priorities,
+limiting repositories is an "absolute" tool. For example, if the version has a
+very negative pin, it will be still considered for installation if there is no
+better choices, but if all repositories which contain a version are not used,
+Cupt will forgot about that version from a very start and forever, without
+exceptions.
+
 == Logging ==
 
 As of Cupt version 2.2, most actions that effectively change the state of
