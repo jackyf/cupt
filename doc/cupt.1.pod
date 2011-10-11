@@ -575,7 +575,7 @@ You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
 
 =back
 
-=head3 query-specific options
+=head3 management-specific options
 
 =over
 
