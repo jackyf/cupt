@@ -1085,10 +1085,18 @@ Example:
 
 ```
  1: # cupt install cmake
+```
+This is a command line.
+
+```
  2: Building the package cache...
  3: Initializing package resolver and worker...
  4: Scheduling requested actions...
  5: Resolving possible unmet dependencies...
+```
+These are information messages from Cupt.
+
+```
  6:
  7: The following 4 packages will be INSTALLED:
  8:
@@ -1100,13 +1108,29 @@ Example:
  14:
  15: Need to get 5637KiB/6007KiB of archives. After unpacking 1963KiB will be freed.
  16: Do you want to continue? [y/N/q/a/?] y
+```
+This is an action preview prompt.
+
+```
  17: Performing requested actions:
+```
+This is the 'preparation' phase.
+
+```
  18: Get:1 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake-data 2.8.4+dfsg.1-2 [1224KiB]
  19: Get:2 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake 2.8.4+dfsg.1-2 [4102KiB]
  20: Get:3 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libarchive1 2.8.4-1 [149KiB]
  21: Get:4 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libxmlrpc-core-c3 1.16.33-2 [162KiB]
  22: Fetched 5637KiB in 1s.
+```
+This is the 'downloading' phase.
+
+```
  23: Reading changelogs... Done
+```
+This is the 'pre-hooks' phase (namely, apt-listchanges in this case).
+
+```
  24: Selecting previously deselected package libarchive1.
  25: (Reading database ... 94022 files and directories currently installed.)
  26: Unpacking libarchive1 (from .../libarchive1_2.8.4-1_i386.deb) ...
@@ -1139,17 +1163,8 @@ Example:
  53: Setting up cmake (2.8.4+dfsg.1-2) ...
  54: Processing triggers for man-db ...
 ```
+This is the 'action themselves' phase, dpkg's output and messages from packages' maintainer scripts.
 
-In the output above:
-
-```
- 2-5: information messages
- 7-16: action preview prompt
- 17: phase 'preparation'
- 18-22: phase 'downloading'
- 23: phase 'pre-hooks' (namely, apt-listchanges)
- 24-54: phase 'action themselves', dpkg's output
-```
 
 In the case the process fails at phase 'action themselves' (either due to bug
 in Cupt, dpkg, or packages), you'll see some error messages from dpkg and then
