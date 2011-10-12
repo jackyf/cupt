@@ -553,12 +553,14 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
 		bool showVersions, bool showSizeChanges, const set< string >& purgedPackageNames,
-		bool& addArgumentsFlag)
+		bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
-	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &purgedPackageNames, &addArgumentsFlag]
+	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &purgedPackageNames,
+			&addArgumentsFlag, &thereIsNothingToDo]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
+		thereIsNothingToDo = false;
 
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 
@@ -652,7 +654,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		// nothing to do maybe?
 		if (actionCount == 0)
 		{
-			return Resolver::UserAnswer::Accept;
+			thereIsNothingToDo = true;
+			return Resolver::UserAnswer::Abandon;
 		}
 
 		showUnsatisfiedSoftDependencies(offer);
@@ -839,9 +842,10 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
-	bool addArgumentsFlag;
+	bool addArgumentsFlag, thereIsNothingToDo;
 	auto callback = generateManagementPrompt(config, cache, worker,
-			showVersions, showSizeChanges, purgedPackageNames, addArgumentsFlag);
+			showVersions, showSizeChanges, purgedPackageNames,
+			addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
 	bool resolved = resolver->resolve(callback);
@@ -868,7 +872,12 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	// at this stage resolver has done its work, so to does not consume the RAM
 	resolver.reset();
 
-	if (resolved)
+	if (thereIsNothingToDo)
+	{
+		cout << __("Nothing to do.") << endl;
+		return 0;
+	}
+	else if (resolved)
 	{
 		// if some solution was found and user has accepted it
 

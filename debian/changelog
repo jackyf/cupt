@@ -6,6 +6,9 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         '--include-codenames', --exclude-codenames'.
     - 'policy':
       - 'Candidate' field name is ambiguous, changed it to 'Preferred'.
+    - Managing packages:
+      - Don't print misleading 'Performing requested actions' when there is
+        nothing to do.
   * lib:
     - system/resolvers/native:
       - Removing automatically installed packages: stopped considering
