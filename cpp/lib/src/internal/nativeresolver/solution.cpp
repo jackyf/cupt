@@ -223,8 +223,7 @@ void SolutionStorage::setRejection(Solution& solution, const dg::Element* elemen
 	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
 	if (!conflictingElementPtr)
 	{
-		fatal("internal error: the element to reject '%s' has no conflicting elements",
-				elementPtr->toString().c_str());
+		return;
 	}
 	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
 
