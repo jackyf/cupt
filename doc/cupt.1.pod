@@ -1032,6 +1032,31 @@ boolean, don't treat using untrusted packages as dangerous action
 
 boolean, see L<--assume-yes|/--assume-yes>
 
+=item cupt::console::actions-preview::show-not-preferred
+
+string, determines whether packages which will have a not preferred version
+after the proposed changes are done should be shown in the actions preview.
+Defaults to 'for-upgrades'.
+
+Possible values:
+
+=over
+
+=item no
+
+Do not show.
+
+=item for-upgrades
+
+Show for upgrade subcommands (namely, for L</full-upgrade>, L</safe-upgrade>
+and the second part of L</dist-upgrade>).
+
+=item yes
+
+Show always.
+
+=back
+
 =item cupt::directory
 
 string, base directory for all cupt::directory::* options

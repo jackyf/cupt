@@ -9,6 +9,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
     - Managing packages:
       - Don't print misleading 'Performing requested actions' when there is
         nothing to do.
+      - New option '--show-not-preferred'.
   * lib:
     - system/resolvers/native:
       - Removing automatically installed packages: stopped considering
@@ -26,6 +27,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         'cupt::cache::limit-releases::by-archive::type'.
       - New options 'cupt::cache::limit-releases::by-codename',
         'cupt::cache::limit-releases::by-codename::type'.
+      - New option 'cupt::console::actions-preview::show-not-preferred'.
     - system/worker:
       - Logging: log errors too.
     - cache:

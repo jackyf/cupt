@@ -110,6 +110,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
+		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },
 		{ "cupt::directory::configuration::main", "cupt.conf" },

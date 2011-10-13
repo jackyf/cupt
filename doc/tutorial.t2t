@@ -819,6 +819,40 @@ Example:
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'libgomp1 (>= 4.6.0~rc1-1)'
 ```
 
+- show not preferred versions
+
+To show packages which will have a not preferred version (which usually means
+not (enough) upgraded), use ``--show-not-preferred`` option.
+
+This is enabled for upgrades by default.
+
+For non-upgrade example, the next command may be used to determine the
+installed packages which have a better candidate (again, usually that means
+they can be upgraded):
+
+```
+ $ cupt install --no-auto-remove --show-not-preferred -V
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following 11 packages will have a not preferred version:
+ 
+ comerr-dev [2.1-1.41.12-4], preferred: 2.1-1.41.12-4stable1
+ e2fslibs [1.41.12-4], preferred: 1.41.12-4stable1
+ e2fsprogs [1.41.12-4], preferred: 1.41.12-4stable1
+ libcomerr2 [1.41.12-4], preferred: 1.41.12-4stable1
+ libkadm5clnt-mit7 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libkadm5srv-mit7 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libkdb5-4 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libss2 [1.41.12-4], preferred: 1.41.12-4stable1
+ linux-image-2.6.32-5-amd64 [2.6.32-34squeeze1], preferred: 2.6.32-38
+ openssh-client [1:5.5p1-6], preferred: 1:5.5p1-6+squeeze1
+ tzdata [2011g-1], preferred: 2011k-0squeeze1
+ 
+```
+
 
 You can also combine them.
 
