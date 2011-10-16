@@ -469,7 +469,7 @@ short __get_synchronize_level(const Config& config)
 	{
 		return 2;
 	}
-	fatal("the option '%s' can have only values 'none, 'soft' or 'hard'", optionName.c_str());
+	fatal("the option '%s' can have only values 'none', 'soft' or 'hard'", optionName.c_str());
 	return 0; // unreachable
 }
 
