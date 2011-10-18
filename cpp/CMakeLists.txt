@@ -67,6 +67,8 @@ ELSE(CUPT_VERSION)
 	message(FATAL_ERROR "Unable to detect Cupt version.")
 ENDIF(CUPT_VERSION)
 
+include_directories(.)
+
 add_subdirectory(console)
 add_subdirectory(lib)
 # add_subdirectory(precompiled)
