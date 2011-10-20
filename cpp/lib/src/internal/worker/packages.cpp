@@ -1293,19 +1293,25 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 	newActionGroups.swap(actionGroups);
 }
 
-static string __get_codename_and_component_string(const Version& version)
+static string __get_codename_and_component_string(const Version& version, const string& baseUri)
 {
 	vector< string > parts;
 	FORIT(sourceIt, version.sources)
 	{
 		auto releaseInfo = sourceIt->release;
-		if (releaseInfo->baseUri.empty())
+		if (releaseInfo->baseUri != baseUri)
 		{
 			continue;
 		}
 		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
 	}
 	return join(",", parts);
+}
+
+static string __get_long_alias_tail(const Version& version, const string& baseUri)
+{
+	return sf("%s %s %s", __get_codename_and_component_string(version, baseUri).c_str(),
+			version.packageName.c_str(), version.versionString.c_str());
 }
 
 map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker::__prepare_downloads()
@@ -1367,15 +1373,12 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 				download::Manager::DownloadEntity downloadEntity;
 
-				string longAliasTail = sf("%s %s %s", __get_codename_and_component_string(*version).c_str(),
-							packageName.c_str(), versionString.c_str());
 				FORIT(it, downloadInfo)
 				{
 					string uri = it->baseUri + '/' + it->directory + '/' + version->file.name;
 
-
 					string shortAlias = packageName;
-					string longAlias = it->baseUri + ' ' + longAliasTail;
+					string longAlias = it->baseUri + ' ' + __get_long_alias_tail(*version, it->baseUri);
 
 					downloadEntity.extendedUris.push_back(
 							download::Manager::ExtendedUri(uri, shortAlias, longAlias));
@@ -1385,7 +1388,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 					FORIT(it, debdeltaDownloadInfo)
 					{
 						const string& uri = it->uri;
-						string longAlias = it->baseUri + ' ' + longAliasTail;
+						string longAlias = it->baseUri + ' ' + __get_long_alias_tail(*version, it->baseUri);
 
 						downloadEntity.extendedUris.push_back(
 								download::Manager::ExtendedUri(uri, packageName, longAlias));
