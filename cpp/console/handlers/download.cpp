@@ -28,13 +28,13 @@ using std::endl;
 #include <cupt/system/state.hpp>
 #include <cupt/download/manager.hpp>
 
-string getCodenameAndComponentString(const Version& version)
+string getCodenameAndComponentString(const Version& version, const string& baseUri)
 {
 	vector< string > parts;
 	FORIT(sourceIt, version.sources)
 	{
 		auto releaseInfo = sourceIt->release;
-		if (releaseInfo->baseUri.empty())
+		if (releaseInfo->baseUri != baseUri)
 		{
 			continue;
 		}
@@ -109,7 +109,6 @@ int downloadSourcePackage(Context& context)
 			const string& packageName = version->packageName;
 			const string& versionString = version->versionString;
 
-			auto codenameAndComponentString = getCodenameAndComponentString(*version);
 			auto downloadInfo = version->getDownloadInfo();
 
 			FORIT(partIt, partsToDownload)
@@ -129,7 +128,8 @@ int downloadSourcePackage(Context& context)
 					{
 						string shortAlias = packageName + ' ' + SourceVersion::FileParts::strings[*partIt];
 						string longAlias = sf("%s %s %s %s %s", downloadInfoIt->baseUri.c_str(),
-								codenameAndComponentString.c_str(), packageName.c_str(), versionString.c_str(),
+								getCodenameAndComponentString(*version, downloadInfoIt->baseUri).c_str(),
+								packageName.c_str(), versionString.c_str(),
 								SourceVersion::FileParts::strings[*partIt].c_str());
 						string uri = downloadInfoIt->baseUri + '/' +
 								downloadInfoIt->directory + '/' + filename;
