@@ -10,6 +10,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - Downloading source package parts: include only those codename/component
         pairs to long descriptions which belong to a selected base
         download URI.
+      - Don't try to re-download already existing (i.e. hash sums match) files.
     - Managing packages:
       - Don't print misleading 'Performing requested actions' when there is
         nothing to do.

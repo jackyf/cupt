@@ -118,12 +118,27 @@ int downloadSourcePackage(Context& context)
 				{
 					const Version::FileRecord& record = *fileRecordIt;
 
-					Manager::DownloadEntity downloadEntity;
 					const string& filename = record.name;
 					if (*partIt == SourceVersion::FileParts::Dsc)
 					{
 						dscFilenames.push_back(filename); // for unpacking after
 					}
+
+					{ // exclude from downloading packages that are already present
+						decltype(cupt::messageFd) oldMessageFd = cupt::messageFd;
+						cupt::messageFd = -1; // don't print errors if any
+						try
+						{
+							if (record.hashSums.verify(filename))
+							{
+								continue;
+							}
+						}
+						catch (Exception&) {}
+						cupt::messageFd = oldMessageFd;
+					}
+
+					Manager::DownloadEntity downloadEntity;
 					FORIT(downloadInfoIt, downloadInfo)
 					{
 						string shortAlias = packageName + ' ' + SourceVersion::FileParts::strings[*partIt];
