@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -146,18 +146,18 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal("version string isn't defined");
+		fatal2("version string isn't defined");
 	}
 	if (v->architecture.empty())
 	{
-		warn("package %s, version %s: architecture isn't defined, setting it to 'all'",
-				v->packageName.c_str(), v->versionString.c_str());
+		warn2("package %s, version %s: architecture isn't defined, setting it to 'all'",
+				v->packageName, v->versionString);
 		v->architecture = "all";
 	}
 	v->sources.push_back(source);
 	if (!v->isInstalled() && v->file.hashSums.empty())
 	{
-		fatal("no hash sums specified");
+		fatal2("no hash sums specified");
 	}
 
 	return shared_ptr< BinaryVersion >(v);
@@ -173,7 +173,7 @@ bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 	shared_ptr< const BinaryVersion > o = dynamic_pointer_cast< const BinaryVersion >(other);
 	if (!o)
 	{
-		fatal("internal error: areHashesEqual: non-binary version parameter");
+		fatal2("internal error: areHashesEqual: non-binary version parameter");
 	}
 	return file.hashSums.match(o->file.hashSums);
 }

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -56,7 +56,7 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 		auto colonPosition = memchr(__buffer+1, ':', __buffer_size - 1); // can't be very first
 		if (!colonPosition)
 		{
-			fatal("didn't find a colon in the line '%s'", string(__buffer, __buffer_size).c_str());
+			fatal2("didn't find a colon in the line '%s'", string(__buffer, __buffer_size));
 		}
 		tagName.first = decltype(tagName.first)(__buffer);
 		tagName.second = decltype(tagName.second)((const char*)colonPosition);

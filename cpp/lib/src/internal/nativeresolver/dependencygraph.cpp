@@ -42,25 +42,25 @@ InitialPackageEntry::InitialPackageEntry()
 
 size_t BasicVertex::getTypePriority() const
 {
-	fatal("internal error: getting priority of '%s'", toString().c_str());
+	fatal2("internal error: getting priority of '%s'", toString());
 	return 0; // unreachable
 }
 
 bool BasicVertex::isAnti() const
 {
-	fatal("internal error: getting isAnti of '%s'", toString().c_str());
+	fatal2("internal error: getting isAnti of '%s'", toString());
 	return false; // unreachable
 }
 
 shared_ptr< const Reason > BasicVertex::getReason(const BasicVertex&) const
 {
-	fatal("internal error: getting reason of '%s'", toString().c_str());
+	fatal2("internal error: getting reason of '%s'", toString());
 	return shared_ptr< const Reason >(); // unreachable
 }
 
 const forward_list< const Element* >* BasicVertex::getRelatedElements() const
 {
-	fatal("internal error: getting related elements of '%s'", toString().c_str());
+	fatal2("internal error: getting related elements of '%s'", toString());
 	return NULL; // unreachable
 }
 
@@ -119,8 +119,8 @@ struct RelationExpressionVertex: public BasicVertex
 
 string RelationExpressionVertex::toString() const
 {
-	auto result = sf("%s '%s'", BinaryVersion::RelationTypes::rawStrings[dependencyType],
-			relationExpressionPtr->toString().c_str());
+	auto result = format2("%s '%s'", BinaryVersion::RelationTypes::rawStrings[dependencyType],
+			relationExpressionPtr->toString());
 	if (!specificPackageName.empty())
 	{
 		result += string(" [") + specificPackageName + ']';
@@ -142,7 +142,7 @@ size_t RelationExpressionVertex::getTypePriority() const
 		case BinaryVersion::RelationTypes::Suggests:
 			return 1;
 		default:
-			fatal("internal error: unsupported dependency type '%d'", int(dependencyType));
+			fatal2("internal error: unsupported dependency type '%d'", int(dependencyType));
 	}
 	return 0; // unreacahble
 }
@@ -160,7 +160,7 @@ shared_ptr< const Reason > RelationExpressionVertex::getReason(const BasicVertex
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal("internal error: a parent of relation expression vertex is not a version vertex");
+		fatal2("internal error: a parent of relation expression vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new OurReason(versionParent->version,
@@ -212,7 +212,7 @@ shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& paren
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal("internal error: a parent of relation expression vertex is not a version vertex");
+		fatal2("internal error: a parent of relation expression vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new system::Resolver::SynchronizationReason(versionParent->version, targetPackageName));
@@ -366,9 +366,8 @@ vector< DependencyEntry > __get_dependency_groups(const Config& config)
 		auto installOptionName = string("apt::install-") + subname;
 		if (config.getBool(installOptionName))
 		{
-			warn("a positive value of the option '%s' has no effect without a positive value of the option '%s'",
-					installOptionName.c_str(),
-					(string("cupt::resolver::keep-") + subname).c_str());
+			warn2("a positive value of the option '%s' has no effect without a positive value of the option '%s'",
+					installOptionName, string("cupt::resolver::keep-") + subname);
 		}
 	};
 
@@ -469,7 +468,7 @@ short __get_synchronize_level(const Config& config)
 	{
 		return 2;
 	}
-	fatal("the option '%s' can have only values 'none, 'soft' or 'hard'", optionName.c_str());
+	fatal2("the option '%s' can have only values 'none', 'soft' or 'hard'", optionName);
 	return 0; // unreachable
 }
 
@@ -565,11 +564,6 @@ class DependencyGraph::FillHelper
 	void addEdgeCustom(const Element* fromVertexPtr, const Element* toVertexPtr)
 	{
 		__dependency_graph.addEdgeFromPointers(fromVertexPtr, toVertexPtr);
-		if (__debugging)
-		{
-			debug("adding an edge '%s' -> '%s'",
-					fromVertexPtr->toString().c_str(), toVertexPtr->toString().c_str());
-		}
 	}
 
 	const Element* getVertexPtrForRelationExpression(const RelationExpression* relationExpressionPtr,
@@ -632,7 +626,7 @@ class DependencyGraph::FillHelper
 				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
 				if (!package)
 				{
-					fatal("internal error: the binary package '%s' doesn't exist", packageName.c_str());
+					fatal2("internal error: the binary package '%s' doesn't exist", packageName);
 				}
 				auto packageVersions = package->getVersions();
 				const list< const BinaryVersion* >& subSatisfiedVersions = groupIt->second;
@@ -685,10 +679,10 @@ class DependencyGraph::FillHelper
 			{
 				if (__debugging)
 				{
-					debug("ignoring soft dependency relation: %s: %s '%s'",
-							vertexPtr->toString().c_str(),
+					debug2("ignoring soft dependency relation: %s: %s '%s'",
+							vertexPtr->toString(),
 							BinaryVersion::RelationTypes::rawStrings[dependencyType],
-							relationExpression.toString().c_str());
+							relationExpression.toString());
 				}
 				return;
 			}
@@ -883,7 +877,7 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elem
 	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
 	{
-		fatal("internal error: getting corresponding empty element for non-version vertex");
+		fatal2("internal error: getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
 	return __fill_helper->getVertexPtrForEmptyPackage(packageName);

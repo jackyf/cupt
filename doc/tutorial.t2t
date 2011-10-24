@@ -486,9 +486,11 @@ Example:
 
 === version pinning system ===[pinning]
 
-Each package version has a **pin**, an integer number. Amongst all versions of
-the same binary package, the one who has maximal pin is **policy**, or **candidate**
-version.
+Each package version has a **pin**, an integer number.
+
+Amongst all versions of the same binary package, the one who has maximal pin is
+**policy**, or **preferred** version.  It's also **candidate** in APT
+terminology and in Cupt before 2.3.
 
 Cupt assigns pins to package versions according to the APT documentation
 (//apt_preferences(5)//). Plus, it adds:
@@ -517,7 +519,7 @@ Example:
  $ cupt policy dpkg
  dpkg:
    Installed: 1.15.5.6
-   Candidate: 1.15.8.10
+   Preferred: 1.15.8.10
    Version table:
       1.15.8.10 991
          http://ftp.fi.debian.org/debian testing/main (signed)
@@ -530,7 +532,7 @@ Example:
          http://security.debian.org oldstable/main (signed)
 ```
 
-In the output above we can see: installed version ('1.15.5.6'), candidate version
+In the output above we can see: installed version ('1.15.5.6'), preferred version
 ('1.15.8.10') and a version table. In total, 3 versions of dpkg are available.
 
 For each version in version table we can see (on example of '1.15.8.10'): a version pin ('991'),
@@ -817,6 +819,40 @@ Example:
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'libgomp1 (>= 4.6.0~rc1-1)'
 ```
 
+- show not preferred versions
+
+To show packages which will have a not preferred version (which usually means
+not (enough) upgraded), use ``--show-not-preferred`` option.
+
+This is enabled for upgrades by default.
+
+For non-upgrade example, the next command may be used to determine the
+installed packages which have a better candidate (again, usually that means
+they can be upgraded):
+
+```
+ $ cupt install --no-auto-remove --show-not-preferred -V
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following 11 packages will have a not preferred version:
+ 
+ comerr-dev [2.1-1.41.12-4], preferred: 2.1-1.41.12-4stable1
+ e2fslibs [1.41.12-4], preferred: 1.41.12-4stable1
+ e2fsprogs [1.41.12-4], preferred: 1.41.12-4stable1
+ libcomerr2 [1.41.12-4], preferred: 1.41.12-4stable1
+ libkadm5clnt-mit7 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libkadm5srv-mit7 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libkdb5-4 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libss2 [1.41.12-4], preferred: 1.41.12-4stable1
+ linux-image-2.6.32-5-amd64 [2.6.32-34squeeze1], preferred: 2.6.32-38
+ openssh-client [1:5.5p1-6], preferred: 1:5.5p1-6+squeeze1
+ tzdata [2011g-1], preferred: 2011k-0squeeze1
+ 
+```
+
 
 You can also combine them.
 
@@ -1083,10 +1119,18 @@ Example:
 
 ```
  1: # cupt install cmake
+```
+This is a command line.
+
+```
  2: Building the package cache...
  3: Initializing package resolver and worker...
  4: Scheduling requested actions...
  5: Resolving possible unmet dependencies...
+```
+These are information messages from Cupt.
+
+```
  6:
  7: The following 4 packages will be INSTALLED:
  8:
@@ -1098,13 +1142,29 @@ Example:
  14:
  15: Need to get 5637KiB/6007KiB of archives. After unpacking 1963KiB will be freed.
  16: Do you want to continue? [y/N/q/a/?] y
+```
+This is an action preview prompt.
+
+```
  17: Performing requested actions:
+```
+This is the 'preparation' phase.
+
+```
  18: Get:1 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake-data 2.8.4+dfsg.1-2 [1224KiB]
  19: Get:2 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake 2.8.4+dfsg.1-2 [4102KiB]
  20: Get:3 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libarchive1 2.8.4-1 [149KiB]
  21: Get:4 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libxmlrpc-core-c3 1.16.33-2 [162KiB]
  22: Fetched 5637KiB in 1s.
+```
+This is the 'downloading' phase.
+
+```
  23: Reading changelogs... Done
+```
+This is the 'pre-hooks' phase (namely, apt-listchanges in this case).
+
+```
  24: Selecting previously deselected package libarchive1.
  25: (Reading database ... 94022 files and directories currently installed.)
  26: Unpacking libarchive1 (from .../libarchive1_2.8.4-1_i386.deb) ...
@@ -1137,17 +1197,8 @@ Example:
  53: Setting up cmake (2.8.4+dfsg.1-2) ...
  54: Processing triggers for man-db ...
 ```
+This is the 'action themselves' phase, dpkg's output and messages from packages' maintainer scripts.
 
-In the output above:
-
-```
- 2-5: information messages
- 7-16: action preview prompt
- 17: phase 'preparation'
- 18-22: phase 'downloading'
- 23: phase 'pre-hooks' (namely, apt-listchanges)
- 24-54: phase 'action themselves', dpkg's output
-```
 
 In the case the process fails at phase 'action themselves' (either due to bug
 in Cupt, dpkg, or packages), you'll see some error messages from dpkg and then
@@ -1295,7 +1346,7 @@ Example:
  cupt>policy libsoprano4
  libsoprano4:
    Installed: 2.2.2+dfsg.1-1
-   Candidate: 2.3.0+dfsg.1-2
+   Preferred: 2.3.0+dfsg.1-2
    Version table:
       2.3.0+dfsg.1-2 501
         http://debian.org.ua/debian unstable/main (signed)
@@ -1389,6 +1440,71 @@ shell, and no real actions will be performed for subcommands that change the
 system. Note that you can override them (by supplying ``-o cupt::worker::simulate=no``
 and ``-o apt::install-recommends=yes``, respectively, for this example).
 
+
+== Limiting used repositories ==
+
+As of Cupt version 2.3, you can limit the used package repositories for each
+package manager invocation without editing the //sources.list(5)//. The
+limiting can be done by [repository archive names or codenames #release_info].
+
+The common syntax is:
+
+//limiting_option//``=``//value//``,``//value//``,``...``,``//value//
+
+Use the option ``--include-archives`` or ``--include-codenames`` to use only
+specified repositories. In other words, no matter how many repositories are
+present in the //sources.list(5)//, only packages from specified repositories
+will be considered.
+
+Examples:
+
+- ``cupt rdepends --include-archives=testing,unstable libffi5``
+
+List reverse-dependencies of ``libffi5`` package in ``testing`` and
+``unstable``.
+
+- ``cupt safe-upgrade --include-archives=stable,stable-updates``
+
+Upgrade the system, considering only packages from archives ``stable`` and
+``stable-updates``.
+
+- ``cupt install xserver-xorg --include-codenames=wheezy``
+
+Install the package ``xserver-xorg``, if its version in the ``wheezy`` is different
+than installed one or there is no such package installed. If any packages need
+to be changed in order to process this query (e.g., installing new dependencies
+or removing conflicting packages), only versions from ``wheezy`` will be
+considered.
+
+- ``cupt search --names-only '.*?-perl' --include-archives=experimental``
+
+Search for Perl module packages in ``experimental``.
+
+
+Use the option ``--exclude-archives`` or ``--exclude-codenames`` to not use
+specified repositories.  If a package version has multiple repositories and at
+least one of them is not excluded, the version will be visible.
+
+Examples:
+
+- ``search -n cupt --exclude-archives=stable``
+
+Search for Cupt-related packages, but ignore packages from ``stable``.
+
+- ``cupt full-upgrade --exclude-codenames=sid,experimental``
+
+Upgrade not using packages which come only from ``sid`` or ``experimental``.
+
+
+Limiting repositories can also be done by modifying the
+``cupt::cache::limit-releases::*`` family of configuration variables directly.
+
+Note: unlike the [pinning settings #pinning] which only set version priorities,
+limiting repositories is an "absolute" tool. For example, if the version has a
+very negative pin, it will be still considered for installation if there is no
+better choices, but if all repositories which contain a version are not used,
+Cupt will forgot about that version from a very start and forever, without
+exceptions.
 
 == Logging ==
 

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -59,7 +59,7 @@ MethodFactoryImpl::~MethodFactoryImpl()
 	{
 		if (dlclose(*dlHandleIt))
 		{
-			warn("unable to unload dl handle '%p': %s", *dlHandleIt, dlerror());
+			warn2("unable to unload dl handle '%p': %s", *dlHandleIt, dlerror());
 		}
 	}
 }
@@ -80,7 +80,7 @@ void MethodFactoryImpl::__load_methods()
 	auto paths = fs::glob(downloadMethodPath + "*.so");
 	if (paths.empty())
 	{
-		warn("no download methods found");
+		warn2("no download methods found");
 	}
 	FORIT(pathIt, paths)
 	{
@@ -92,31 +92,30 @@ void MethodFactoryImpl::__load_methods()
 			// also, it should start with 'lib'
 			if (methodName.size() < 4 || methodName.compare(0, 3, "lib"))
 			{
-				debug("method filename '%s' does not start with 'lib', discarding it",
-						methodName.c_str());
+				debug2("method filename '%s' does not start with 'lib', discarding it", methodName);
 			}
 			methodName = methodName.substr(3);
 		}
 
 		if (__method_builders.count(methodName))
 		{
-			warn("not loading another copy of download method '%s'", methodName.c_str());
+			warn2("not loading another copy of download method '%s'", methodName);
 			continue;
 		}
 
 		auto dlHandle = dlopen(pathIt->c_str(), RTLD_NOW | RTLD_LOCAL);
 		if (!dlHandle)
 		{
-			warn("unable to load download method '%s': dlopen: %s", methodName.c_str(), dlerror());
+			warn2("unable to load download method '%s': dlopen: %s", methodName, dlerror());
 			continue;
 		}
 		MethodBuilder methodBuilder = reinterpret_cast< MethodBuilder >(dlsym(dlHandle, "construct"));
 		if (!methodBuilder)
 		{
-			warn("unable to load download method '%s': dlsym: %s", methodName.c_str(), dlerror());
+			warn2("unable to load download method '%s': dlsym: %s", methodName, dlerror());
 			if (dlclose(dlHandle))
 			{
-				warn("unable to unload dl handle '%p': %s", dlHandle, dlerror());
+				warn2("unable to unload dl handle '%p': %s", dlHandle, dlerror());
 			}
 			continue;
 		}
@@ -124,7 +123,7 @@ void MethodFactoryImpl::__load_methods()
 		__method_builders[methodName] = methodBuilder;
 		if (debugging)
 		{
-			debug("loaded download method '%s'", methodName.c_str());
+			debug2("loaded download method '%s'", methodName);
 		}
 	}
 }
@@ -137,7 +136,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 	auto availableHandlerNames = __config->getList(optionName);
 	if (availableHandlerNames.empty())
 	{
-		fatal("no download handlers defined for '%s' protocol", protocol.c_str());
+		fatal2("no download handlers defined for '%s' protocol", protocol);
 	}
 
 	// not very effective, but readable and we hardly ever get >10 handlers for same protocol
@@ -159,21 +158,20 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 		{
 			if (debugging)
 			{
-				debug("download handler '%s' (priority %d) for uri '%s' is not available",
-						handlerName.c_str(), handlerIt->first, ((string)uri).c_str());
+				debug2("download handler '%s' (priority %d) for uri '%s' is not available",
+						handlerName, handlerIt->first, (string)uri);
 			}
 			continue;
 		}
 		if (debugging)
 		{
-			debug("selected download handler '%s' for uri '%s'",
-					handlerName.c_str(), ((string)uri).c_str());
+			debug2("selected download handler '%s' for uri '%s'", handlerName, (string)uri);
 		}
 
 		return (methodBuilderIt->second)();
 	}
 
-	fatal("no download handlers available");
+	fatal2("no download handlers available");
 	return NULL; // unreachable
 }
 

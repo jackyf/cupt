@@ -102,12 +102,15 @@ void ConfigImpl::initializeVariables()
 		{ "dir::log::terminal", "term.log" },
 
 		// Cupt vars
+		{ "cupt::cache::limit-releases::by-archive::type", "none" },
+		{ "cupt::cache::limit-releases::by-codename::type", "none" },
 		{ "cupt::cache::pin::addendums::downgrade", "-10000" },
 		{ "cupt::cache::pin::addendums::hold", "1000000" },
 		{ "cupt::cache::pin::addendums::not-automatic", "-4000" },
 		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
+		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },
 		{ "cupt::directory::configuration::main", "cupt.conf" },
@@ -233,6 +236,8 @@ void ConfigImpl::initializeVariables()
 		{ "apt::never-markauto-sections", vector< string > {} },
 
 		// Cupt vars
+		{ "cupt::cache::limit-releases::by-archive", vector< string > {} },
+		{ "cupt::cache::limit-releases::by-codename", vector< string > {} },
 		{ "cupt::downloader::protocols::file::methods", vector< string > { "file" } },
 		{ "cupt::downloader::protocols::copy::methods", vector< string > { "file" } },
 		{ "cupt::downloader::protocols::debdelta::methods", vector< string > { "debdelta" } },
@@ -265,7 +270,7 @@ void ConfigImpl::readConfigs(Config* config)
 	{
 		if (value.size() < 2)
 		{
-			fatal("internal error: unquoted simple value '%s'", value.c_str());
+			fatal2("internal error: unquoted simple value '%s'", value);
 		}
 		return string(value.begin() + 1, value.end() - 1);
 	};
@@ -336,7 +341,7 @@ void ConfigImpl::readConfigs(Config* config)
 			}
 			catch (Exception&)
 			{
-				warn("skipped configuration file '%s'", configFileIt->c_str());
+				warn2("skipped configuration file '%s'", *configFileIt);
 			}
 		}
 	}
@@ -350,7 +355,7 @@ static string qx(const string& shellCommand)
 	File file(shellCommand, "pr", openError); // reading from pipe
 	if (!openError.empty())
 	{
-		fatal("unable to open pipe '%s': %s", shellCommand.c_str(), openError.c_str());
+		fatal2("unable to open pipe '%s': %s", shellCommand, openError);
 	}
 	string result;
 	string block;
@@ -427,7 +432,7 @@ string Config::getString(const string& optionName) const
 	}
 	else
 	{
-		fatal("an attempt to get wrong scalar option '%s'", optionName.c_str());
+		fatal2("an attempt to get wrong scalar option '%s'", optionName);
 	}
 	__builtin_unreachable();
 }
@@ -483,7 +488,7 @@ ssize_t Config::getInteger(const string& optionName) const
 		}
 		catch (boost::bad_lexical_cast&)
 		{
-			fatal("unable to convert '%s' to number", source.c_str());
+			fatal2("unable to convert '%s' to number", source);
 		}
 		return result; // we'll never return default value here
 	}
@@ -502,7 +507,7 @@ vector< string > Config::getList(const string& optionName) const
 	}
 	else
 	{
-		fatal("an attempt to get wrong list option '%s'", optionName.c_str());
+		fatal2("an attempt to get wrong list option '%s'", optionName);
 	}
 	__builtin_unreachable();
 }
@@ -532,7 +537,7 @@ void Config::setScalar(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn("an attempt to set wrong scalar option '%s'", optionName.c_str());
+		warn2("an attempt to set wrong scalar option '%s'", optionName);
 	}
 }
 
@@ -550,7 +555,7 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn("an attempt to set wrong list option '%s'", optionName.c_str());
+		warn2("an attempt to set wrong list option '%s'", optionName);
 	}
 }
 

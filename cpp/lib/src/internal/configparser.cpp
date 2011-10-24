@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -33,7 +33,7 @@ void ConfigParser::parse(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal("unable to open file '%s': %s", path.c_str(), openError.c_str());
+		fatal2("unable to open file '%s': %s", path, openError);
 	}
 
 	string block;
@@ -50,7 +50,7 @@ void ConfigParser::parse(const string& path)
 	}
 	catch (Exception&)
 	{
-		fatal("unable to parse config file '%s'", path.c_str());
+		fatal2("unable to parse config file '%s'", path);
 	}
 }
 
@@ -265,7 +265,7 @@ string ConfigParser::__get_lexem_description(Lexem::Type type)
 		case Lexem::Value: return __("option value (quoted string)");
 		case Lexem::Name: return __("option name (letters, numbers, slashes, points, dashes, double colons allowed)");
 		default:
-			fatal("internal error: no description for lexem #%d", int(type));
+			fatal2("internal error: no description for lexem #%d", int(type));
 	}
 	return string(); // unreachable
 }
@@ -284,7 +284,7 @@ void ConfigParser::__error_out()
 	}
 	string context(__current, __current + contextLength);
 
-	fatal("a syntax error: expected: %s before '%s'", errorDescription.c_str(), context.c_str());
+	fatal2("a syntax error: expected: %s before '%s'", errorDescription, context);
 }
 
 } // namespace

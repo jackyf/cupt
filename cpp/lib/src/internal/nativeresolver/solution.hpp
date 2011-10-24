@@ -73,12 +73,15 @@ struct PackageEntry
 	bool sticked;
 	bool autoremoved;
 	forward_list< BrokenSuccessor > brokenSuccessors;
+	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
 
 	PackageEntry();
 	PackageEntry(PackageEntry&&);
 
 	PackageEntry& operator=(PackageEntry&&);
+
+	bool isModificationAllowed(const dg::Element*) const;
 };
 
 class PackageEntryMap;
@@ -131,6 +134,7 @@ class SolutionStorage
 			getConflictingElements(const dg::Element*);
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
+	void setRejection(Solution&, const dg::Element*);
 	void setPackageEntry(Solution&, const dg::Element*,
 			PackageEntry&&, const dg::Element*);
 	void unfoldElement(const dg::Element*);

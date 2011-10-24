@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -40,7 +40,7 @@ shared_ptr< const BinaryPackage > getBinaryPackage(shared_ptr< const Cache > cac
 	shared_ptr< const BinaryPackage > result = cache->getBinaryPackage(packageName);
 	if (!result && throwOnError)
 	{
-		fatal("unable to find the binary package '%s'", packageName.c_str());
+		fatal2("unable to find the binary package '%s'", packageName);
 	}
 	return result;
 }
@@ -50,7 +50,7 @@ shared_ptr< const SourcePackage > getSourcePackage(shared_ptr< const Cache > cac
 	shared_ptr< const SourcePackage > result = cache->getSourcePackage(packageName);
 	if (!result && throwOnError)
 	{
-		fatal("unable to find the source package '%s'", packageName.c_str());
+		fatal2("unable to find the source package '%s'", packageName);
 	}
 	return result;
 }
@@ -83,7 +83,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 
 		if (!version && throwOnError)
 		{
-			fatal("unable to find version '%s' for package '%s'", versionString.c_str(), packageName.c_str());
+			fatal2("unable to find version '%s' for package '%s'", versionString, packageName);
 		}
 		return version;
 	}
@@ -100,11 +100,11 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		{
 			if (throwOnError)
 			{
-				fatal("bad distribution '%s' requested, use archive or codename", distributionExpression.c_str());
+				fatal2("bad distribution '%s' requested, use archive or codename", distributionExpression);
 			}
 			else
 			{
-				warn("bad distribution '%s' requested, use archive or codename", distributionExpression.c_str());
+				warn2("bad distribution '%s' requested, use archive or codename", distributionExpression);
 				return ReturnType();
 			}
 		}
@@ -136,8 +136,8 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			// not found
 			if (throwOnError)
 			{
-				fatal("cannot find distribution '%s' for package '%s'",
-						distributionExpression.c_str(), packageName.c_str());
+				fatal2("cannot find distribution '%s' for package '%s'",
+						distributionExpression, packageName);
 			}
 			return ReturnType();
 		}
@@ -152,9 +152,9 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			{
 				versionStrings.push_back((*it)->versionString);
 			}
-			fatal("for the package '%s' and the distribution '%s' several versions found: %s;"
-					" you should explicitly select by version", packageName.c_str(),
-					distributionExpression.c_str(), join(", ", versionStrings).c_str());
+			fatal2("for the package '%s' and the distribution '%s' several versions found: %s;"
+					" you should explicitly select by version", packageName,
+					distributionExpression, join(", ", versionStrings));
 			return ReturnType(); // unreachable
 		}
 	}
@@ -171,7 +171,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		auto version = cache->getPolicyVersion(package);
 		if (!version && throwOnError)
 		{
-			fatal("no versions available for package '%s'", packageName.c_str());
+			fatal2("no versions available for package '%s'", packageName);
 		}
 		return version;
 	}
@@ -204,7 +204,7 @@ shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > 
 	}
 	else if (throwOnError)
 	{
-		fatal("unable to find appropriate source or binary version for '%s'", packageExpression.c_str());
+		fatal2("unable to find appropriate source or binary version for '%s'", packageExpression);
 	}
 	return sourceVersion;
 }
@@ -218,7 +218,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	smatch m;
 	if (!regex_match(packageExpression, m, packageAndRemainderRegex))
 	{
-		fatal("bad package name in package expression '%s'", packageExpression.c_str());
+		fatal2("bad package name in package expression '%s'", packageExpression);
 	}
 	string packageNameExpression = m[1];
 	string remainder;
@@ -258,7 +258,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 
 		if (result.empty() && throwOnError)
 		{
-			fatal("no appropriate versions available for wildcarded version expression '%s'", packageExpression.c_str());
+			fatal2("no appropriate versions available for wildcarded version expression '%s'", packageExpression);
 		}
 	}
 
@@ -287,7 +287,7 @@ vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(share
 		auto version = dynamic_pointer_cast< const BinaryVersion >(source[i]);
 		if (!version)
 		{
-			fatal("internal error: version is not binary");
+			fatal2("internal error: version is not binary");
 		}
 		result.push_back(version);
 	}
@@ -317,7 +317,7 @@ vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(share
 		auto version = dynamic_pointer_cast< const SourceVersion >(source[i]);
 		if (!version)
 		{
-			fatal("internal error: version is not source");
+			fatal2("internal error: version is not source");
 		}
 		result.push_back(version);
 	}

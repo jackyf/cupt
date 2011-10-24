@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -42,7 +42,7 @@ Lock::Lock(const shared_ptr< const Config >& config, const string& path)
 		__file_ptr = new File(__path, "w", errorString);
 		if (!errorString.empty())
 		{
-			fatal("unable to open file '%s': %s", __path.c_str(), errorString.c_str());
+			fatal2("unable to open file '%s': %s", __path, errorString);
 		}
 		__file_ptr->lock(LOCK_EX | LOCK_NB);
 	}

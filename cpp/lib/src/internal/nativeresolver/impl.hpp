@@ -48,6 +48,7 @@ class NativeResolverImpl
 	{
 		const dg::Element* oldElementPtr; // may be NULL
 		const dg::Element* newElementPtr; // many not be NULL
+		vector< const dg::Element* > elementsToReject;
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
 		PackageEntry::IntroducedBy introducedBy;
@@ -99,6 +100,7 @@ class NativeResolverImpl
 
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const Solution&,
 			const dg::Element*);
+	void __prepare_reject_requests(vector< unique_ptr< Action > >& actions) const;
 	Resolver::UserAnswer::Type __propose_solution(
 			const Solution&, Resolver::CallbackType, bool);
 

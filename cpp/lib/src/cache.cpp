@@ -50,8 +50,8 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 		auto cuptKeyringPath = config->getString("gpgv::trustedkeyring");
 		auto aptKeyringPath = "/etc/apt/trusted.gpg";
 		// ignore all errors, let install do its best
-		std::system(sf("install -m644 %s %s >/dev/null 2>/dev/null",
-				aptKeyringPath, cuptKeyringPath.c_str()).c_str());
+		std::system(format2("install -m644 %s %s >/dev/null 2>/dev/null",
+				aptKeyringPath, cuptKeyringPath).c_str());
 	}
 
 	__impl->parseSourcesLists();
@@ -61,22 +61,7 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 		__impl->systemState.reset(new system::State(config, __impl));
 	}
 
-	FORIT(indexEntryIt, __impl->indexEntries)
-	{
-		const IndexEntry& entry = *indexEntryIt;
-
-		if (entry.category == IndexEntry::Binary && !useBinary)
-		{
-			continue;
-		}
-		if (entry.category == IndexEntry::Source && !useSource)
-		{
-			continue;
-		}
-
-		__impl->processIndexEntry(entry);
-	}
-
+	__impl->processIndexEntries(useBinary, useSource);
 	__impl->parsePreferences();
 	__impl->parseExtendedStates();
 }
@@ -266,12 +251,12 @@ vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
 		auto package = getBinaryPackage(packageName);
 		if (!package)
 		{
-			fatal("internal error: unable to find the package '%s'", packageName.c_str());
+			fatal2("internal error: unable to find the package '%s'", packageName);
 		}
 		auto version = package->getInstalledVersion();
 		if (!version)
 		{
-			fatal("internal error: the package '%s' does not have installed version", packageName.c_str());
+			fatal2("internal error: the package '%s' does not have installed version", packageName);
 		}
 
 		result.push_back(version);

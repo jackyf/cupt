@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -36,6 +36,7 @@ PackageEntry::PackageEntry(PackageEntry&& other)
 	introducedBy(other.introducedBy)
 {
 	brokenSuccessors.swap(other.brokenSuccessors);
+	rejectedConflictors.swap(other.rejectedConflictors);
 }
 
 PackageEntry& PackageEntry::operator=(PackageEntry&& other)
@@ -44,7 +45,15 @@ PackageEntry& PackageEntry::operator=(PackageEntry&& other)
 	autoremoved = other.autoremoved;
 	introducedBy = other.introducedBy;
 	brokenSuccessors.swap(other.brokenSuccessors);
+	rejectedConflictors.swap(other.rejectedConflictors);
 	return *this;
+}
+
+bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
+{
+	auto findResult = std::find(rejectedConflictors.begin(),
+			rejectedConflictors.end(), elementPtr);
+	return (findResult == rejectedConflictors.end());
 }
 
 template < class data_t, class Comparator, class KeyGetter >
@@ -191,7 +200,7 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 			// there may be only one conflicting element in the solution
 			*conflictingElementPtrPtr = *conflictingElementPtrIt;
 
-			return !packageEntryPtr->sticked;
+			return (!packageEntryPtr->sticked && packageEntryPtr->isModificationAllowed(elementPtr));
 		}
 	}
 
@@ -206,6 +215,24 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 		}
 	}
 	return true;
+}
+
+void SolutionStorage::setRejection(Solution& solution, const dg::Element* elementPtr)
+{
+	const dg::Element* conflictingElementPtr;
+	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
+	if (!conflictingElementPtr)
+	{
+		return;
+	}
+	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
+
+	PackageEntry packageEntry = (conflictorPackageEntryPtr ?
+			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
+
+	packageEntry.rejectedConflictors.push_front(elementPtr);
+	setPackageEntry(solution, conflictingElementPtr,
+			std::move(packageEntry), NULL);
 }
 
 void SolutionStorage::setPackageEntry(Solution& solution,
@@ -237,8 +264,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	{
 		if (conflictingElementPtr)
 		{
-			fatal("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					solution.id, elementPtr->toString().c_str(), conflictingElementPtr->toString().c_str());
+			fatal2("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
+					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
 		it->second = std::move(packageEntry);
 	}
@@ -319,7 +346,7 @@ void Solution::prepare()
 {
 	if (!__parent)
 	{
-		fatal("internal error: undefined master solution");
+		fatal2("internal error: undefined master solution");
 	}
 
 	if (!__parent->__master_entries)

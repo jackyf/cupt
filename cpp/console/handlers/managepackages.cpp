@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -37,6 +37,8 @@ using std::endl;
 #include <cupt/cache/sourceversion.hpp>
 
 typedef Worker::Action WA;
+const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
+
 
 static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config >& config,
 		Resolver& resolver)
@@ -78,7 +80,7 @@ static void unrollFileArguments(vector< string >& arguments)
 			File file(path, "r", openError);
 			if (!openError.empty())
 			{
-				fatal("unable to open file '%s': %s", path.c_str(), openError.c_str());
+				fatal2("unable to open file '%s': %s", path, openError);
 			}
 			string line;
 			while (!file.getLine(line).eof())
@@ -219,7 +221,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
 				!getBinaryPackage(cache, packageExpression, false))
 			{
-				fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
+				fatal2("unable to find binary package/expression '%s'", packageExpression);
 			}
 
 			scheduleRemoval(packageExpression);
@@ -281,11 +283,11 @@ void printUnpackedSizeChanges(const map< string, ssize_t >& unpackedSizesPreview
 	string message;
 	if (totalUnpackedSizeChange >= 0)
 	{
-		message = sf(__("After unpacking %s will be used."),
-				humanReadableSizeString(totalUnpackedSizeChange).c_str());
+		message = format2(__("After unpacking %s will be used."),
+				humanReadableSizeString(totalUnpackedSizeChange));
 	} else {
-		message = sf(__("After unpacking %s will be freed."),
-				humanReadableSizeString(-totalUnpackedSizeChange).c_str());
+		message = format2(__("After unpacking %s will be freed."),
+				humanReadableSizeString(-totalUnpackedSizeChange));
 	}
 
 	cout << message << endl;
@@ -295,18 +297,17 @@ void printDownloadSizes(const pair< size_t, size_t >& downloadSizes)
 {
 	auto total = downloadSizes.first;
 	auto need = downloadSizes.second;
-	cout << sf(__("Need to get %s/%s of archives. "),
-					humanReadableSizeString(need).c_str(),
-					humanReadableSizeString(total).c_str());
+	cout << format2(__("Need to get %s/%s of archives. "),
+			humanReadableSizeString(need), humanReadableSizeString(total));
 }
 
 void showVersion(const shared_ptr< const Cache >& cache, const string& packageName,
-		const Resolver::SuggestedPackage& suggestedPackage)
+		const Resolver::SuggestedPackage& suggestedPackage, WA::Type actionType)
 {
 	auto package = cache->getBinaryPackage(packageName);
 	if (!package)
 	{
-		fatal("internal error: no binary package '%s' available", packageName.c_str());
+		fatal2("internal error: no binary package '%s' available", packageName);
 	}
 	auto oldVersion = package->getInstalledVersion();
 
@@ -315,17 +316,23 @@ void showVersion(const shared_ptr< const Cache >& cache, const string& packageNa
 	auto newVersion = suggestedPackage.version;
 	string newVersionString = newVersion ? newVersion->versionString : "";
 
-	if (!oldVersionString.empty() && !newVersionString.empty())
+	if (!oldVersionString.empty() && !newVersionString.empty() &&
+			(actionType != fakeNotPolicyVersionAction || oldVersionString != newVersionString))
 	{
-		cout << sf(" [%s -> %s]", oldVersionString.c_str(), newVersionString.c_str());
+		cout << format2(" [%s -> %s]", oldVersionString, newVersionString);
 	}
 	else if (!oldVersionString.empty())
 	{
-		cout << sf(" [%s]", oldVersionString.c_str());
+		cout << format2(" [%s]", oldVersionString);
 	}
 	else
 	{
-		cout << sf(" [%s]", newVersionString.c_str());
+		cout << format2(" [%s]", newVersionString);
+	}
+
+	if (actionType == fakeNotPolicyVersionAction)
+	{
+		cout << ", " << __("preferred") << ": " << cache->getPolicyVersion(package)->versionString;
 	}
 }
 
@@ -514,8 +521,8 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 		if (isDangerous)
 		{
 			const string confirmationForDangerousAction = __("Yes, do as I say!");
-			cout << sf(__("Dangerous actions selected. Type '%s' if you want to continue, or anything else to go back:"),
-					confirmationForDangerousAction.c_str()) << endl;
+			cout << format2(__("Dangerous actions selected. Type '%s' if you want to continue, or anything else to go back:"),
+					confirmationForDangerousAction) << endl;
 			std::getline(std::cin, answer);
 			if (answer != confirmationForDangerousAction)
 			{
@@ -550,15 +557,37 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	}
 }
 
+Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const Cache >& cache,
+		const Resolver::SuggestedPackages& packages)
+{
+	Resolver::SuggestedPackages result;
+	FORIT(suggestedPackageIt, packages)
+	{
+		const shared_ptr< const BinaryVersion >& suggestedVersion = suggestedPackageIt->second.version;
+		if (suggestedVersion)
+		{
+			auto policyVersion = cache->getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
+			if (!(*policyVersion == *suggestedVersion))
+			{
+				result.insert(*suggestedPackageIt);
+			}
+		}
+	}
+
+	return result;
+}
+
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showVersions, bool showSizeChanges, const set< string >& purgedPackageNames,
-		bool& addArgumentsFlag)
+		bool showVersions, bool showSizeChanges, bool showNotPreferred,
+		const set< string >& purgedPackageNames, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
-	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, &purgedPackageNames, &addArgumentsFlag]
+	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, showNotPreferred,
+			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
+		thereIsNothingToDo = false;
 
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 
@@ -573,26 +602,33 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 		size_t actionCount = 0;
 		{ // print planned actions
-			static const map< WA::Type, string > actionNames = {
-				{ WA::Install, __("INSTALLED") },
-				{ WA::Remove, __("REMOVED") },
-				{ WA::Upgrade, __("UPGRADED") },
-				{ WA::Purge, __("PURGED") },
-				{ WA::Downgrade, __("DOWNGRADED") },
-				{ WA::Configure, __("CONFIGURED") },
-				{ WA::Deconfigure, __("DECONFIGURED") },
-				{ WA::ProcessTriggers, __("TRIGGER-PROCESSED") },
+			const map< WA::Type, string > actionNames = {
+				{ WA::Install, __("will be INSTALLED") },
+				{ WA::Remove, __("will be REMOVED") },
+				{ WA::Upgrade, __("will be UPGRADED") },
+				{ WA::Purge, __("will be PURGED") },
+				{ WA::Downgrade, __("will be DOWNGRADED") },
+				{ WA::Configure, __("will be CONFIGURED") },
+				{ WA::Deconfigure, __("will be DECONFIGURED") },
+				{ WA::ProcessTriggers, __("will have TRIGGERS processed") },
+				{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
 			};
 			cout << endl;
 
-			static const WA::Type actionTypesInOrder[] = { WA::Install, WA::Upgrade, WA::Remove,
+			vector< WA::Type > actionTypesInOrder = { WA::Install, WA::Upgrade, WA::Remove,
 					WA::Purge, WA::Downgrade, WA::Configure, WA::ProcessTriggers, WA::Deconfigure };
-
-			for (size_t i = 0; i < sizeof(actionTypesInOrder) / sizeof(WA::Type); ++i)
+			if (showNotPreferred)
 			{
-				const WA::Type& actionType = actionTypesInOrder[i];
+				actionTypesInOrder.push_back(fakeNotPolicyVersionAction);
+			}
 
-				const Resolver::SuggestedPackages& actionSuggestedPackages = actionsPreview->groups[actionType];
+			FORIT (actionTypeIt, actionTypesInOrder)
+			{
+				const WA::Type& actionType = *actionTypeIt;
+
+				const Resolver::SuggestedPackages& actionSuggestedPackages =
+						actionType == fakeNotPolicyVersionAction ?
+						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
 
 				if (actionSuggestedPackages.empty())
 				{
@@ -600,12 +636,15 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				}
 
 				const string& actionName = actionNames.find(actionType)->second;
-				cout << sf(__("The following %u packages will be %s:"),
-						actionSuggestedPackages.size(), actionName.c_str()) << endl << endl;
+				cout << format2(__("The following %u packages %s:"),
+						actionSuggestedPackages.size(), actionName) << endl << endl;
 
 				FORIT(it, actionSuggestedPackages)
 				{
-					++actionCount;
+					if (actionType != fakeNotPolicyVersionAction)
+					{
+						++actionCount;
+					}
 
 					const string& packageName = it->first;
 					cout << packageName;
@@ -619,7 +658,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 					if (showVersions)
 					{
-						showVersion(cache, packageName, it->second);
+						showVersion(cache, packageName, it->second, actionType);
 					}
 
 					if (showSizeChanges)
@@ -652,7 +691,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		// nothing to do maybe?
 		if (actionCount == 0)
 		{
-			return Resolver::UserAnswer::Accept;
+			thereIsNothingToDo = true;
+			return Resolver::UserAnswer::Abandon;
 		}
 
 		showUnsatisfiedSoftDependencies(offer);
@@ -681,8 +721,9 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 	return result;
 }
 
-void parseManagementOptions(Context& context, vector< string >& packageExpressions,
-		bool& showVersions, bool& showSizeChanges)
+void parseManagementOptions(Context& context, ManagePackages::Mode mode,
+		vector< string >& packageExpressions,
+		bool& showVersions, bool& showSizeChanges, bool& showNotPreferred)
 {
 	bpo::options_description options;
 	options.add_options()
@@ -695,6 +736,7 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 		("show-size-changes,Z", "")
 		("show-reasons,D", "")
 		("show-deps", "")
+		("show-not-preferred", "")
 		("download-only,d", "")
 		("assume-yes", "")
 		("yes,y", "");
@@ -753,6 +795,11 @@ void parseManagementOptions(Context& context, vector< string >& packageExpressio
 
 	showVersions = variables.count("show-versions");
 	showSizeChanges = variables.count("show-size-changes");
+	string showNotPreferredConfigValue = config->getString("cupt::console::actions-preview::show-not-preferred");
+	showNotPreferred = variables.count("show-not-preferred") ||
+			showNotPreferredConfigValue == "yes" ||
+			((mode == ManagePackages::FullUpgrade || mode == ManagePackages::SafeUpgrade) &&
+					showNotPreferredConfigValue == "for-upgrades");
 }
 
 int managePackages(Context& context, ManagePackages::Mode mode)
@@ -769,9 +816,9 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	Cache::memoize = true;
 
 	vector< string > packageExpressions;
-	bool showVersions;
-	bool showSizeChanges;
-	parseManagementOptions(context, packageExpressions, showVersions, showSizeChanges);
+	bool showVersions, showSizeChanges, showNotPreferred;
+	parseManagementOptions(context, mode, packageExpressions,
+			showVersions, showSizeChanges, showNotPreferred);
 
 	unrollFileArguments(packageExpressions);
 
@@ -781,7 +828,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (packageExpressions.size() != 1)
 		{
-			fatal("exactly one argument (the snapshot name) should be specified");
+			fatal2("exactly one argument (the snapshot name) should be specified");
 		}
 		snapshotName = packageExpressions[0];
 		packageExpressions.clear();
@@ -814,7 +861,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (!config->getString("cupt::resolver::external-command").empty())
 		{
-			fatal("using external resolver is not supported now");
+			fatal2("using external resolver is not supported now");
 		}
 		else
 		{
@@ -839,9 +886,10 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
-	bool addArgumentsFlag;
+	bool addArgumentsFlag, thereIsNothingToDo;
 	auto callback = generateManagementPrompt(config, cache, worker,
-			showVersions, showSizeChanges, purgedPackageNames, addArgumentsFlag);
+			showVersions, showSizeChanges, showNotPreferred,
+			purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
 	bool resolved = resolver->resolve(callback);
@@ -868,7 +916,12 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	// at this stage resolver has done its work, so to does not consume the RAM
 	resolver.reset();
 
-	if (resolved)
+	if (thereIsNothingToDo)
+	{
+		cout << __("Nothing to do.") << endl;
+		return 0;
+	}
+	else if (resolved)
 	{
 		// if some solution was found and user has accepted it
 
@@ -880,7 +933,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		}
 		catch (Exception&)
 		{
-			fatal("unable to do requested actions");
+			fatal2("unable to do requested actions");
 		}
 		return 0;
 	}
@@ -900,7 +953,7 @@ int distUpgrade(Context& context)
 		context.unparsed.push_back("cupt");
 		if (managePackages(context, ManagePackages::Install) != 0)
 		{
-			fatal("upgrading of the package management tools failed");
+			fatal2("upgrading of the package management tools failed");
 		}
 	}
 
@@ -918,7 +971,7 @@ int distUpgrade(Context& context)
 			}
 		}
 		execvp(argv[0], argv);
-		fatal("upgrading the system failed: execvp failed: EEE");
+		fatal2e("upgrading the system failed: execvp failed");
 	}
 	return 0; // unreachable due to exec
 }
@@ -995,17 +1048,17 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		struct stat stat_structure;
 		if (lstat(path.c_str(), &stat_structure))
 		{
-			fatal("lstat() failed: '%s': EEE", path.c_str());
+			fatal2e("lstat() failed: '%s'", path);
 		}
 		else
 		{
 			size_t size = stat_structure.st_size;
 			totalDeletedBytes += size;
-			cout << sf(__("Deleting '%s' <%s>..."), path.c_str(), humanReadableSizeString(size).c_str()) << endl;
+			cout << format2(__("Deleting '%s' <%s>..."), path, humanReadableSizeString(size)) << endl;
 			worker.deleteArchive(path);
 		}
 	}
-	cout << sf(__("Freed %s of disk space."), humanReadableSizeString(totalDeletedBytes).c_str()) << endl;
+	cout << format2(__("Freed %s of disk space."), humanReadableSizeString(totalDeletedBytes)) << endl;
 
 	cout << __("Deleting partial archives...") << endl;
 	worker.deletePartialArchives();

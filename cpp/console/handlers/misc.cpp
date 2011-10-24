@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -60,7 +60,7 @@ int showBinaryVersions(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal("no binary package expressions specified");
+		fatal2("no binary package expressions specified");
 	}
 
 	if (!shellMode)
@@ -237,7 +237,7 @@ int showSourceVersions(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal("no source package expressions specified");
+		fatal2("no source package expressions specified");
 	}
 
 	if (!shellMode)
@@ -344,7 +344,7 @@ int showRelations(Context& context, bool reverse)
 
 	if (arguments.empty())
 	{
-		fatal("no binary package expressions specified");
+		fatal2("no binary package expressions specified");
 	}
 
 	if (reverse)
@@ -456,16 +456,16 @@ int showRelations(Context& context, bool reverse)
 							// push the version with the maximum pin
 							if (!satisfyingVersions.empty())
 							{
-								auto candidateVersion = satisfyingVersions[0];
+								auto preferredVersion = satisfyingVersions[0];
 								for (auto satisfyingVersionIt = satisfyingVersions.begin() + 1;
 										satisfyingVersionIt != satisfyingVersions.end(); ++satisfyingVersionIt)
 								{
-									if (cache->getPin(*satisfyingVersionIt) > cache->getPin(candidateVersion))
+									if (cache->getPin(*satisfyingVersionIt) > cache->getPin(preferredVersion))
 									{
-										candidateVersion = *satisfyingVersionIt;
+										preferredVersion = *satisfyingVersionIt;
 									}
 								}
-								versions.push(candidateVersion);
+								versions.push(preferredVersion);
 							}
 						}
 					}
@@ -596,7 +596,7 @@ int policy(Context& context, bool source)
 			auto policyVersion = cache->getPolicyVersion(package);
 			if (!policyVersion)
 			{
-				fatal("no versions available for package '%s'", packageName.c_str());
+				fatal2("no versions available for package '%s'", packageName);
 			}
 
 			cout << packageName << ':' << endl;
@@ -607,7 +607,7 @@ int policy(Context& context, bool source)
 				auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package);
 				if (!binaryPackage)
 				{
-					fatal("internal error: binary package expected");
+					fatal2("internal error: binary package expected");
 				}
 				auto installedVersion = binaryPackage->getInstalledVersion();
 				if (installedVersion)
@@ -620,7 +620,7 @@ int policy(Context& context, bool source)
 						<< endl;
 			}
 
-			cout << "  " << __("Candidate") << ": " << policyVersion->versionString << endl;
+			cout << "  " << __("Preferred") << ": " << policyVersion->versionString << endl;
 			cout << "  " << __("Version table") << ':' << endl;
 
 			auto pinnedVersions = cache->getSortedPinnedVersions(package);
@@ -752,7 +752,7 @@ int findDependencyChain(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal("no binary packages specified");
+		fatal2("no binary packages specified");
 	}
 
 	bool installedOnly = variables.count("installed-only") || (arguments.size() == 1);
@@ -841,11 +841,10 @@ int findDependencyChain(Context& context)
 			{
 				PathEntry pathEntry = path.top();
 				path.pop();
-				cout << sf("%s %s: %s: %s",
-						pathEntry.version->packageName.c_str(),
-						pathEntry.version->versionString.c_str(),
-						BinaryVersion::RelationTypes::strings[pathEntry.dependencyType].c_str(),
-						pathEntry.relationExpression.toString().c_str()) << endl;
+				cout << format2("%s %s: %s: %s",
+						pathEntry.version->packageName, pathEntry.version->versionString,
+						BinaryVersion::RelationTypes::strings[pathEntry.dependencyType],
+						pathEntry.relationExpression.toString()) << endl;
 			}
 			break;
 		}
@@ -890,7 +889,7 @@ int showScreenshotUris(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal("no binary package names specified");
+		fatal2("no binary package names specified");
 	}
 
 	auto cache = context.getCache(false, true, true); // binary and installed

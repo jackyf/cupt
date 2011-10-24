@@ -575,7 +575,7 @@ You can use 'quit', 'exit', ':q' or 'q' command to exit cupt shell.
 
 =back
 
-=head3 query-specific options
+=head3 management-specific options
 
 =over
 
@@ -843,6 +843,54 @@ Corresponding configuration option: L<apt::default-release>
 
 Examples: C<cupt install -t unstable xserver-xorg>, C<cupt -t squeeze full-upgrade>
 
+=item --include-archives=
+
+Use only repositories with specified archive names (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-archive>,
+L<cupt::cache::limit-releases::by-archive::type>.
+
+Example:
+
+C<cupt safe-upgrade --include-archives=stable,stable-updates>
+
+=item --exclude-archives=
+
+Ignore repositories with specified archive names (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-archive>,
+L<cupt::cache::limit-releases::by-archive::type>.
+
+Example:
+
+C<cupt rdepends libcomerr2 --exclude-archives=experimental,unstable>
+
+=item --include-codenames=
+
+Use only repositories with specified codenames (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-codename>,
+L<cupt::cache::limit-releases::by-codename::type>.
+
+Example:
+
+C<cupt safe-upgrade --include-codenames=squeeze,squeeze-updates>
+
+=item --exclude-codenames=
+
+Ignore repositories with specified codenames (comma-separated).
+
+Corresponding configuration options:
+L<cupt::cache::limit-releases::by-codename>,
+L<cupt::cache::limit-releases::by-codename::type>.
+
+Example:
+
+C<cupt rdepends libcomerr2 --exclude-codenames=experimental,sid>
+
 =item --quiet,-q
 
 don't output anything to standard output
@@ -872,7 +920,7 @@ See L<apt.conf(5)> for their meanings.
 Secondly, Cupt recognizes (but doesn't use) following configuration variables:
 
 apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
-dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
+dir::log*, dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
 apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
 rpm::post-invoke
 
@@ -912,6 +960,44 @@ if undefined, intepretes as empty list
 
 =over
 
+=item cupt::cache::limit-releases::by-*::type
+
+string, determines the type of limiting repository releases to use
+
+All repository indexes which are disallowed by this option are not added to
+the package cache, in other words, they are completely hidden.
+
+'*' can be 'archive' or 'codename'
+
+Possible values:
+
+=over
+
+=item none
+
+No limiting will be done for this category. The default.
+
+=item include
+
+Only values of the 'cupt::cache::limit-releases::by-*' option will be allowed.
+
+=item exclude
+
+Only values which are not present in the value of the 'cupt::cache::limit-releases::by-*' option will be allowed.
+
+=back
+
+Example:
+
+If you set 'cupt::cache::limit-releases::by-archive::type' to 'include' and
+'cupt::cache::limit-releases::by-archive' to '{ "stable", "testing" };', only
+repositories with archive names 'stable' and 'testing' will be added to the
+cache.
+
+=item cupt::cache::limit-releases::by-*
+
+list of allowed/disallowed release attributes, see above
+
 =item cupt::cache::pin::addendums::downgrade
 
 integer, specifies priority change for versions that are smaller than currently
@@ -945,6 +1031,31 @@ boolean, don't treat using untrusted packages as dangerous action
 =item cupt::console::assume-yes
 
 boolean, see L<--assume-yes|/--assume-yes>
+
+=item cupt::console::actions-preview::show-not-preferred
+
+string, determines whether packages which will have a not preferred version
+after the proposed changes are done should be shown in the actions preview.
+Defaults to 'for-upgrades'.
+
+Possible values:
+
+=over
+
+=item no
+
+Do not show.
+
+=item for-upgrades
+
+Show for upgrade subcommands (namely, for L</full-upgrade>, L</safe-upgrade>
+and the second part of L</dist-upgrade>).
+
+=item yes
+
+Show always.
+
+=back
 
 =item cupt::directory
 
