@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -223,7 +223,7 @@ void CacheImpl::parseSourcesLists()
 	}
 	catch (Exception&)
 	{
-		fatal("error while parsing sources list");
+		fatal2("error while parsing sources list");
 	}
 }
 
@@ -233,7 +233,7 @@ void CacheImpl::parseSourceList(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal("unable to open file '%s': %s", path.c_str(), openError.c_str());
+		fatal2("unable to open file '%s': %s", path, openError);
 	}
 
 	string line;
@@ -258,7 +258,7 @@ void CacheImpl::parseSourceList(const string& path)
 			// type
 			if (tokens.empty())
 			{
-				fatal("undefined source type at file '%s', line %u", path.c_str(), lineNumber);
+				fatal2("undefined source type at file '%s', line %u", path, lineNumber);
 			}
 			else
 			{
@@ -272,14 +272,14 @@ void CacheImpl::parseSourceList(const string& path)
 				}
 				else
 				{
-					fatal("incorrect source type at file '%s', line %u", path.c_str(), lineNumber);
+					fatal2("incorrect source type at file '%s', line %u", path, lineNumber);
 				}
 			}
 
 			// uri
 			if (tokens.size() < 2)
 			{
-				fatal("undefined source uri at file '%s', line %u", path.c_str(), lineNumber);
+				fatal2("undefined source uri at file '%s', line %u", path, lineNumber);
 			}
 			else
 			{
@@ -288,7 +288,7 @@ void CacheImpl::parseSourceList(const string& path)
 
 			if (tokens.size() < 3)
 			{
-				fatal("undefined source distribution at file '%s', line %u", path.c_str(), lineNumber);
+				fatal2("undefined source distribution at file '%s', line %u", path, lineNumber);
 			}
 			else
 			{
@@ -321,7 +321,7 @@ void CacheImpl::parseSourceList(const string& path)
 				}
 				else
 				{
-					fatal("distribution doesn't end with a slash at file '%s', line %u", path.c_str(), lineNumber);
+					fatal2("distribution doesn't end with a slash at file '%s', line %u", path, lineNumber);
 				}
 			}
 		}
@@ -368,8 +368,8 @@ class ReleaseLimits
 			{
 				try
 				{
-					fatal("the option '%s' can have only values 'none', 'include' or 'exclude'",
-							limitTypeOptionName.c_str());
+					fatal2("the option '%s' can have only values 'none', 'include' or 'exclude'",
+							limitTypeOptionName);
 				}
 				catch (Exception&)
 				{
@@ -453,7 +453,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 	}
 	catch (Exception&)
 	{
-		warn("skipped the index '%s'", indexAlias.c_str());
+		warn2("skipped the index '%s'", indexAlias);
 	}
 
 	try  // processing translations if any
@@ -473,7 +473,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 	}
 	catch (Exception&)
 	{
-		warn("skipped translations of the index '%s'", indexAlias.c_str());
+		warn2("skipped translations of the index '%s'", indexAlias);
 	}
 }
 
@@ -490,7 +490,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	shared_ptr< File > file(new File(path, "r", openError));
 	if (!openError.empty())
 	{
-		fatal("unable to open index file '%s': %s", path.c_str(), openError.c_str());
+		fatal2("unable to open index file '%s': %s", path, openError);
 	}
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
@@ -519,7 +519,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			}
 			else
 			{
-				fatal("unable to find correct Package line");
+				fatal2("unable to find correct Package line");
 			}
 
 			try
@@ -528,7 +528,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			}
 			catch (Exception&)
 			{
-				warn("discarding this package version from index file '%s'", path.c_str());
+				warn2("discarding this package version from index file '%s'", path);
 				while (file->rawGetLine(buf, size), size > 1) {}
 				continue;
 			}
@@ -550,7 +550,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	}
 	catch (Exception&)
 	{
-		fatal("error parsing index file '%s'", path.c_str());
+		fatal2("error parsing index file '%s'", path);
 	}
 }
 
@@ -560,7 +560,7 @@ void CacheImpl::processTranslationFile(const string& path)
 	shared_ptr< File > file(new File(path, "r", errorString));
 	if (!errorString.empty())
 	{
-		fatal("unable to open translation file '%s': %s", path.c_str(), errorString.c_str());
+		fatal2("unable to open translation file '%s': %s", path, errorString);
 	}
 
 	try
@@ -599,11 +599,11 @@ void CacheImpl::processTranslationFile(const string& path)
 
 			if (!hashSumFound)
 			{
-				fatal("unable to find md5 hash in a translation record starting at byte '%u'", recordPosition);
+				fatal2("unable to find md5 hash in a translation record starting at byte '%u'", recordPosition);
 			}
 			if (!translationFound)
 			{
-				fatal("unable to find translation in a translation record starting at byte '%u'", recordPosition);
+				fatal2("unable to find translation in a translation record starting at byte '%u'", recordPosition);
 			}
 
 			translations[md5] = translationPosition;
@@ -611,7 +611,7 @@ void CacheImpl::processTranslationFile(const string& path)
 	}
 	catch(Exception&)
 	{
-		fatal("error parsing translation file '%s'", path.c_str());
+		fatal2("error parsing translation file '%s'", path);
 	}
 }
 
@@ -677,7 +677,7 @@ void CacheImpl::parseExtendedStates()
 		File file(path, "r", openError);
 		if (!openError.empty())
 		{
-			fatal("unable to open file '%s': %s", path.c_str(), openError.c_str());
+			fatal2("unable to open file '%s': %s", path, openError);
 		}
 
 		internal::TagParser parser(&file);
@@ -687,8 +687,7 @@ void CacheImpl::parseExtendedStates()
 		{
 			if (!tagName.equal("Package", 7))
 			{
-				fatal("wrong tag: expected 'Package', got '%s' at file '%s'",
-						string(tagName).c_str(), path.c_str());
+				fatal2("wrong tag: expected 'Package', got '%s' at file '%s'", string(tagName), path);
 			}
 
 			string packageName = tagValue;
@@ -706,22 +705,21 @@ void CacheImpl::parseExtendedStates()
 					}
 					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{
-						fatal("bad value '%s' (should be 0 or 1) for the package '%s' at file '%s'",
-								string(tagValue).c_str(), packageName.c_str(), path.c_str());
+						fatal2("bad value '%s' (should be 0 or 1) for the package '%s' at file '%s'",
+								string(tagValue), packageName, path);
 					}
 				}
 			}
 
 			if (!valueFound)
 			{
-				fatal("no 'Auto-Installed' tag for the package '%s' at file '%s'",
-						packageName.c_str(), path.c_str());
+				fatal2("no 'Auto-Installed' tag for the package '%s' at file '%s'", packageName, path);
 			}
 		}
 	}
 	catch (Exception&)
 	{
-		fatal("error while parsing extended states");
+		fatal2("error while parsing extended states");
 	}
 }
 

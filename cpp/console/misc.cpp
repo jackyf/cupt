@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -44,8 +44,8 @@ void parseReleaseLimit(Config& config, const string& limitName, const string& in
 	auto limitOptionName = string("cupt::cache::limit-releases::by-") + limitName;
 	if (!included.empty() && !excluded.empty())
 	{
-		fatal("options '--include-%ss' and '--exclude-%ss' cannot be specified together",
-				limitName.c_str(), limitName.c_str());
+		fatal2("options '--include-%ss' and '--exclude-%ss' cannot be specified together",
+				limitName, limitName);
 	}
 	else if (!included.empty())
 	{
@@ -129,7 +129,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		{ // processing
 			if (command.empty())
 			{
-				fatal("no command specified");
+				fatal2("no command specified");
 			}
 			if (variablesMap.count("important"))
 			{
@@ -171,7 +171,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			const string& directOption = *directOptionIt;
 			if (!regex_match(directOption, m, optionRegex))
 			{
-				fatal("invalid option syntax in '%s' (right is '<option>=<value>')", directOption.c_str());
+				fatal2("invalid option syntax in '%s' (right is '<option>=<value>')", directOption);
 			}
 			string key = m[1];
 			string value = m[2];
@@ -191,11 +191,11 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	}
 	catch (const bpo::error& e)
 	{
-		fatal("failed to parse command-line options: %s", e.what());
+		fatal2("failed to parse command-line options: %s", e.what());
 	}
 	catch (Exception&)
 	{
-		fatal("error while processing command-line options");
+		fatal2("error while processing command-line options");
 	}
 	return command;
 }
@@ -224,11 +224,11 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 	}
 	catch (const bpo::unknown_option& e)
 	{
-		fatal("unknown option '%s'", e.get_option_name().c_str());
+		fatal2("unknown option '%s'", e.get_option_name());
 	}
 	catch (const bpo::error& e)
 	{
-		fatal("failed to parse options: %s", e.what());
+		fatal2("failed to parse options: %s", e.what());
 	}
 	bpo::notify(variablesMap);
 
@@ -274,7 +274,7 @@ std::function< int (Context&) > getHandler(const string& command)
 	auto it = handlerMap.find(command);
 	if (it == handlerMap.end())
 	{
-		fatal("unrecognized command '%s'", command.c_str());
+		fatal2("unrecognized command '%s'", command);
 	}
 	return it->second;
 }
@@ -284,7 +284,7 @@ void checkNoExtraArguments(const vector< string >& arguments)
 	if (!arguments.empty())
 	{
 		auto argumentsString = join(" ", arguments);
-		warn("extra arguments '%s' are not processed", argumentsString.c_str());
+		warn2("extra arguments '%s' are not processed", argumentsString);
 	}
 }
 
@@ -294,7 +294,7 @@ void handleQuietOption(const shared_ptr< Config >& config)
 	{
 		if (!freopen("/dev/null", "w", stdout))
 		{
-			fatal("unable to redirect standard output to '/dev/null': EEE");
+			fatal2e("unable to redirect standard output to '/dev/null'");
 		}
 	}
 }
@@ -314,7 +314,7 @@ shared_ptr< Config > Context::getConfig()
 		}
 		catch (Exception&)
 		{
-			fatal("error while loading config");
+			fatal2("error while loading config");
 		}
 	}
 	return __config;
@@ -342,7 +342,7 @@ shared_ptr< const Cache > Context::getCache(
 		}
 		catch (Exception&)
 		{
-			fatal("error while creating package cache");
+			fatal2("error while creating package cache");
 		}
 	}
 

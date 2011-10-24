@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -95,20 +95,20 @@ class Readline
 		auto handle = dlopen("libreadline.so.6", RTLD_NOW);
 		if (!handle)
 		{
-			warn("unable to dynamically find libreadline.so.6: dlopen: %s", dlerror());
+			warn2("unable to dynamically find libreadline.so.6: dlopen: %s", dlerror());
 			return;
 		}
 
 		__dl_readline = reinterpret_cast< decltype(__dl_readline) >(dlsym(handle, "readline"));
 		if (!__dl_readline)
 		{
-			warn("unable to dynamically bind symbol 'readline': %s", dlerror());
+			warn2("unable to dynamically bind symbol 'readline': %s", dlerror());
 		}
 
 		__dl_add_history = reinterpret_cast< decltype(__dl_add_history) >(dlsym(handle, "add_history"));
 		if (!__dl_add_history)
 		{
-			warn("unable to dynamically bind symbol 'add_history': %s", dlerror());
+			warn2("unable to dynamically bind symbol 'add_history': %s", dlerror());
 		}
 	}
 };
@@ -124,11 +124,11 @@ void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
 	// if you know easier way, let me know :)
 	string errorString;
 	// 'A' - to not let echo interpret $word as an option
-	string shellCommand = sf("(for word in %s; do echo A$word; done)", line.c_str());
+	string shellCommand = format2("(for word in %s; do echo A$word; done)", line);
 	File pipe(shellCommand, "pr", errorString);
 	if (!errorString.empty())
 	{
-		fatal("unable to open internal shell pipe: %s", errorString.c_str());
+		fatal2("unable to open internal shell pipe: %s", errorString);
 	}
 
 	string argument;

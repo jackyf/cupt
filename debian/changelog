@@ -40,6 +40,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         download URI.
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
+    - 'fatal', 'warn', 'debug', 'simulate': are deprecated now.
   * doc:
     - What was referred as 'candidate version' is really
       the 'preferred version'.

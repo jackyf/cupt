@@ -34,8 +34,8 @@ string DecisionFailTree::__decisions_to_string(
 		auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr);
 		if (!versionElement)
 		{
-			fatal("internal error: __fail_leaf_to_string: '%s' is not a version element",
-					elementPtr->toString().c_str());
+			fatal2("internal error: __fail_leaf_to_string: '%s' is not a version element",
+					elementPtr->toString());
 		}
 		return versionElement->toLocalizedString();
 	};

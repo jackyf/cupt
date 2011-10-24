@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -42,7 +42,7 @@ bool checkPackageName(const string& input, bool throwOnError)
 	bool result = (resultEnd == input.end());
 	if (!result && throwOnError)
 	{
-		fatal("invalid package name '%s'", input.c_str());
+		fatal2("invalid package name '%s'", input);
 	}
 	return result;
 }
@@ -134,18 +134,18 @@ bool checkVersionString(const string& input, bool throwOnError)
 	bool result = __check_version_string(input, underscoresPresent, firstUpstreamCharacter);
 	if (!result && throwOnError)
 	{
-		fatal("invalid version string '%s'", input.c_str());
+		fatal2("invalid version string '%s'", input);
 	}
 	if (result)
 	{
 		if (underscoresPresent)
 		{
-			warn("version string '%s': should not contain underscores", input.c_str());
+			warn2("version string '%s': should not contain underscores", input);
 		}
 		if (firstUpstreamCharacter < '0' || firstUpstreamCharacter > '9')
 		{
-			warn("version string '%s': first upstream character '%c' is not a digit",
-					input.c_str(), firstUpstreamCharacter);
+			warn2("version string '%s': first upstream character '%c' is not a digit",
+					input, firstUpstreamCharacter);
 		}
 	}
 	return result;

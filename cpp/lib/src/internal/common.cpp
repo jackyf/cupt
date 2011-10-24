@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -63,23 +63,23 @@ string getWaitStatusDescription(int status)
 {
 	if (status == 0)
 	{
-		return sf("success");
+		return "success";
 	}
 	else if (WIFSIGNALED(status))
 	{
-		return sf("terminated by signal '%s'", strsignal(WTERMSIG(status)));
+		return format2("terminated by signal '%s'", strsignal(WTERMSIG(status)));
 	}
 	else if (WIFSTOPPED(status))
 	{
-		return sf("stopped by signal '%s'", strsignal(WSTOPSIG(status)));
+		return format2("stopped by signal '%s'", strsignal(WSTOPSIG(status)));
 	}
 	else if (WIFEXITED(status))
 	{
-		return sf("exit code '%d'", WEXITSTATUS(status));
+		return format2("exit code '%d'", WEXITSTATUS(status));
 	}
 	else
 	{
-		return sf("unknown status");
+		return "unknown status";
 	}
 }
 
@@ -93,8 +93,8 @@ bool architectureMatch(const string& architecture, const string& pattern)
 	if (insertResult.second)
 	{
 		// new element
-		it->second = !system(sf("dpkg-architecture -a%s -i%s",
-					architecture.c_str(), pattern.c_str()).c_str());
+		it->second = !system(format2("dpkg-architecture -a%s -i%s",
+					architecture, pattern).c_str());
 	}
 	return it->second;
 }
@@ -105,22 +105,22 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 	size_t inputLength = input.second - input.first;
 	if (inputLength >= sizeof(buf))
 	{
-		fatal("too long number string");
+		fatal2("too long number string");
 	}
 	memcpy(buf, &(*input.first), inputLength);
 	errno = 0;
 	long long number = strtoll(buf, NULL, 10);
 	if (errno)
 	{
-		fatal("invalid number '%s': EEE", buf);
+		fatal2e("invalid number '%s'", buf);
 	}
 	if (number < 0)
 	{
-		fatal("negative number '%s'", buf);
+		fatal2("negative number '%s'", buf);
 	}
 	if (number >= 0x100000000LL) // uint32_t upper limit
 	{
-		fatal("too big number '%s'", buf);
+		fatal2("too big number '%s'", buf);
 	}
 	return uint32_t(number);
 }

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -28,7 +28,7 @@ namespace internal {
 
 WorkerBase::WorkerBase()
 {
-	fatal("internal error: WorkerBase::WorkerBase shouldn't be ever called");
+	fatal2("internal error: WorkerBase::WorkerBase shouldn't be ever called");
 }
 
 WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
@@ -64,18 +64,18 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 		const string& command, const string& commandInput, const string& errorId)
 {
 	const Logger::Level level = 3;
-	_logger->log(subsystem, level, sf("running: %s", command.c_str()));
+	_logger->log(subsystem, level, format2("running: %s", command));
 
 	if (_config->getBool("cupt::worker::simulate"))
 	{
 		if (commandInput.empty())
 		{
-			simulate("running command '%s'", command.c_str());
+			simulate2("running command '%s'", command);
 		}
 		else
 		{
-			simulate("running command '%s' with the input\n-8<-\n%s\n->8-",
-					command.c_str(), commandInput.c_str());
+			simulate2("running command '%s' with the input\n-8<-\n%s\n->8-",
+					command, commandInput);
 		}
 	}
 	else
@@ -89,13 +89,12 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			if (result == -1)
 			{
 				_logger->loggedFatal(subsystem, level,
-						sf("unable to launch command '%s': EEE", command.c_str()));
+						format2e("unable to launch command '%s'", command));
 			}
 			else if (result)
 			{
 				_logger->loggedFatal(subsystem, level,
-						sf("command '%s' execution failed: %s", command.c_str(),
-						getWaitStatusDescription(result).c_str()));
+						format2("command '%s' execution failed: %s", command, getWaitStatusDescription(result)));
 			}
 		}
 		else try
@@ -106,8 +105,7 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			if (!errorString.empty())
 			{
 				_logger->loggedFatal(subsystem, level,
-						sf("unable to launch a pipe to the command '%s': %s",
-						command.c_str(), errorString.c_str()));
+						format2("unable to launch a pipe to the command '%s': %s", command, errorString));
 			}
 
 			pipeFile.put(commandInput);

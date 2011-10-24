@@ -57,7 +57,7 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 			case ScoreChange::SubScore::FailedSync:
 				leafOption = "failed-synchronization"; break;
 			default:
-				fatal("internal error: missing score multiplier for the score '%zu'", i);
+				fatal2("internal error: missing score multiplier for the score '%zu'", i);
 		}
 
 		__subscore_multipliers[i] = config.getInteger(
@@ -144,7 +144,7 @@ ssize_t ScoreManager::getScoreChangeValue(const ScoreChange& scoreChange) const
 
 string ScoreManager::getScoreChangeString(const ScoreChange& scoreChange) const
 {
-	return sf("%s=%zd", scoreChange.__to_string().c_str(), getScoreChangeValue(scoreChange));
+	return format2("%s=%zd", scoreChange.__to_string(), getScoreChangeValue(scoreChange));
 }
 
 

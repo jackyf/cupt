@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -39,7 +39,7 @@ Uri::Uri(const string& uri)
 	__data->colonPosition = uri.find(':');
 	if (__data->colonPosition == string::npos || __data->colonPosition == uri.size() - 1)
 	{
-		fatal("unable to find scheme(protocol) in URI '%s'", uri.c_str());
+		fatal2("unable to find scheme(protocol) in URI '%s'", uri);
 	}
 
 	// a valid position since colonPosition is verified to be not last
@@ -50,7 +50,7 @@ Uri::Uri(const string& uri)
 		// "//" is dropped
 		if (uri.size() < __data->hostStartPosition + 2 || uri[__data->hostStartPosition+1] != '/')
 		{
-			fatal("there should be no or two slashes after a colon in URI '%s'", uri.c_str());
+			fatal2("there should be no or two slashes after a colon in URI '%s'", uri);
 		}
 		__data->hostStartPosition += 2;
 	}

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -53,7 +53,7 @@ int search(Context& context)
 
 	if (patterns.empty())
 	{
-		fatal("no search patterns specified");
+		fatal2("no search patterns specified");
 	}
 
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
@@ -73,7 +73,7 @@ int search(Context& context)
 		}
 		catch (regex_error&)
 		{
-			fatal("regular expression '%s' is not valid", pattern.c_str());
+			fatal2("regular expression '%s' is not valid", pattern);
 		}
 	});
 

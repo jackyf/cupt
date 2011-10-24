@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -52,8 +52,8 @@
 			} \
 			else \
 			{ \
-				warn("package %s, version %s: unrecognized priority value '%s', using 'extra' instead", \
-						v->packageName.c_str(), v->versionString.c_str(), string(tagValue).c_str()); \
+				warn2("package %s, version %s: unrecognized priority value '%s', using 'extra' instead", \
+						v->packageName, v->versionString, string(tagValue)); \
 			} \
 		})
 

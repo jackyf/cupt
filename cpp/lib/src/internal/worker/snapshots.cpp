@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -39,7 +39,7 @@ namespace internal {
 void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 {
 	_logger->log(Logger::Subsystem::Snapshots, 2,
-			sf("deleting a partial snapshot directory '%s'", directory.c_str()));
+			format2("deleting a partial snapshot directory '%s'", directory));
 	try
 	{
 		string command = string("rm -r ") + directory;
@@ -47,10 +47,10 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	}
 	catch (Exception&)
 	{
-		auto message = sf("unable to delete partial snapshot directory '%s'", directory.c_str());
+		auto message = format2("unable to delete partial snapshot directory '%s'", directory);
 		if (warnOnly)
 		{
-			warn("%s", message.c_str());
+			warn2("%s", message);
 		}
 		else
 		{
@@ -63,10 +63,10 @@ void createTextFile(const string& path, const vector< string >& lines,
 		Logger* logger, bool simulating)
 {
 	logger->log(Logger::Subsystem::Snapshots, 3,
-			sf("creating the file '%s'", path.c_str()));
+			format2("creating the file '%s'", path));
 	if (simulating)
 	{
-		simulate("writing file '%s'", path.c_str());
+		simulate2("writing file '%s'", path);
 	}
 	else
 	{
@@ -75,7 +75,7 @@ void createTextFile(const string& path, const vector< string >& lines,
 		if (!openError.empty())
 		{
 			logger->loggedFatal(Logger::Subsystem::Snapshots, 3,
-					sf("unable to open file '%s' for writing: %s", path.c_str(), openError.c_str()));
+					format2("unable to open file '%s' for writing: %s", path, openError));
 		}
 
 		FORIT(lineIt, lines)
@@ -94,7 +94,7 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 		const string& packageName = *packageNameIt;
 
 		_logger->log(Logger::Subsystem::Snapshots, 2,
-				sf("repacking the installed package '%s'", packageName.c_str()));
+				format2("repacking the installed package '%s'", packageName));
 
 		try
 		{
@@ -102,18 +102,18 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 			if (!package)
 			{
 				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						sf("internal error: no binary package '%s'", packageName.c_str()));
+						format2("internal error: no binary package '%s'", packageName));
 			}
 			auto version = package->getInstalledVersion();
 			if (!version)
 			{
 				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						sf("internal error: no installed version for the installed package '%s'", packageName.c_str()));
+						format2("internal error: no installed version for the installed package '%s'", packageName));
 			}
 			const string& architecture = version->architecture;
 
-			_run_external_command(Logger::Subsystem::Snapshots, sf("dpkg-repack --arch=%s %s",
-						architecture.c_str(), packageName.c_str()));
+			_run_external_command(Logger::Subsystem::Snapshots, format2("dpkg-repack --arch=%s %s",
+						architecture, packageName));
 
 			/* dpkg-repack uses dpkg-deb -b, which produces file in format
 
@@ -129,26 +129,25 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				if (files.size() != 1)
 				{
 					_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-							sf("dpkg-repack produced either no or more than one Debian archive for the package '%s'",
-							packageName.c_str()));
+							format2("dpkg-repack produced either no or more than one Debian archive for the package '%s'",
+							packageName));
 				}
 				const string& badFilename = files[0];
-				auto goodFilename = sf("%s_%s_%s.deb", packageName.c_str(),
-						version->versionString.c_str(), architecture.c_str());
+				auto goodFilename = format2("%s_%s_%s.deb", packageName,
+						version->versionString, architecture);
 
 				auto moveError = fs::move(badFilename, goodFilename);
 				if (!moveError.empty())
 				{
 					_logger->loggedFatal(Logger::Subsystem::Snapshots, 3,
-							sf("unable to move '%s' to '%s': %s",
-							badFilename.c_str(), goodFilename.c_str(), moveError.c_str()));
+							format2("unable to move '%s' to '%s': %s", badFilename, goodFilename, moveError));
 				}
 			}
 		}
 		catch (...)
 		{
 			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					sf("failed to repack the package '%s'", packageName.c_str()));
+					format2("failed to repack the package '%s'", packageName));
 		}
 	}
 }
@@ -183,8 +182,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 		char timeBuf[128];
 		if (!strftime(timeBuf, sizeof(timeBuf), "%a, %d %b %Y %H:%M:%S UTC", gmtime_r(&unixTime, &brokenDownTime)))
 		{
-			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					sf("strftime failed: EEE"));
+			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2, format2e("strftime failed"));
 		}
 		LL(string("Date: ") + timeBuf);
 
@@ -192,7 +190,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 	}
 
 	LL("Architectures: all " + _config->getString("apt::architecture"));
-	LL(sf("Description: Cupt-made system snapshot '%s'", snapshotName.c_str()));
+	LL(format2("Description: Cupt-made system snapshot '%s'", snapshotName));
 
 	if (!simulating)
 	{
@@ -202,11 +200,11 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 		auto size = fs::fileSize(indexFilename);
 
 		LL("MD5Sum:");
-	    LL(sf(" %s %zu Packages", indexHashSums[HashSums::MD5].c_str(), size));
+	    LL(format2(" %s %zu Packages", indexHashSums[HashSums::MD5], size));
 		LL("SHA1:");
-	    LL(sf(" %s %zu Packages", indexHashSums[HashSums::SHA1].c_str(), size));
+	    LL(format2(" %s %zu Packages", indexHashSums[HashSums::SHA1], size));
 		LL("SHA256:");
-	    LL(sf(" %s %zu Packages", indexHashSums[HashSums::SHA256].c_str(), size));
+	    LL(format2(" %s %zu Packages", indexHashSums[HashSums::SHA256], size));
 	}
 #undef LL
 
@@ -219,18 +217,18 @@ void checkSnapshotName(const Snapshots& snapshots, const string& name)
 {
 	if (name.empty())
 	{
-		fatal("the system snapshot name cannot be empty");
+		fatal2("the system snapshot name cannot be empty");
 	}
 	if (name[0] == '.')
 	{
-		fatal("the system snapshot name '%s' cannot start with a '.'", name.c_str());
+		fatal2("the system snapshot name '%s' cannot start with a '.'", name);
 	}
 
 	{
 		auto existingNames = snapshots.getSnapshotNames();
 		if (std::find(existingNames.begin(), existingNames.end(), name) != existingNames.end())
 		{
-			fatal("the system snapshot named '%s' already exists", name.c_str());
+			fatal2("the system snapshot named '%s' already exists", name);
 		}
 	}
 }
@@ -240,11 +238,11 @@ void checkSnapshotSavingTools()
 	// ensuring needed tools is available
 	if (::system("which dpkg-repack >/dev/null 2>/dev/null"))
 	{
-		fatal("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'");
+		fatal2("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'");
 	}
 	if (::system("which dpkg-scanpackages >/dev/null 2>/dev/null"))
 	{
-		fatal("the 'dpkg-scanpackages' binary is not available, install the package 'dpkg-dev'");
+		fatal2("the 'dpkg-scanpackages' binary is not available, install the package 'dpkg-dev'");
 	}
 
 }
@@ -255,7 +253,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 	checkSnapshotSavingTools();
 
 	_logger->log(Logger::Subsystem::Snapshots, 1,
-			sf("saving the system snapshot under the name '%s'", name.c_str()));
+			format2("saving the system snapshot under the name '%s'", name));
 
 	auto snapshotsDirectory = snapshots.getSnapshotsDirectory();
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);
@@ -271,7 +269,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			if (mkdir(snapshotsDirectory.c_str(), 0755) == -1)
 			{
 				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						sf("unable to create the snapshots directory '%s': EEE", snapshotsDirectory.c_str()));
+						format2e("unable to create the snapshots directory '%s'", snapshotsDirectory));
 			}
 		}
 		if (fs::dirExists(temporarySnapshotDirectory))
@@ -282,7 +280,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		if (mkdir(temporarySnapshotDirectory.c_str(), 0755) == -1)
 		{
 			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					sf("unable to create a temporary snapshot directory '%s': EEE", temporarySnapshotDirectory.c_str()));
+					format2e("unable to create a temporary snapshot directory '%s'", temporarySnapshotDirectory));
 		}
 	}
 
@@ -301,7 +299,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 					installedPackageNames, _logger, simulating);
 
 			{ // building source line
-				auto sourceLine = sf("deb file://%s %s/", snapshotsDirectory.c_str(), name.c_str());
+				auto sourceLine = format2("deb file://%s %s/", snapshotsDirectory, name);
 				createTextFile(temporarySnapshotDirectory + "/source", vector< string >{ sourceLine },
 						_logger, simulating);
 			}
@@ -311,7 +309,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		if (currentDirectoryFd == -1)
 		{
 			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					sf("unable to open the current directory: EEE"));
+					format2e("unable to open the current directory"));
 		}
 
 		if (!simulating)
@@ -319,7 +317,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			if (chdir(temporarySnapshotDirectory.c_str()) == -1)
 			{
 				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						sf("unable to set current directory to '%s': EEE", temporarySnapshotDirectory.c_str()));
+						format2e("unable to set current directory to '%s'", temporarySnapshotDirectory));
 			}
 		}
 
@@ -339,7 +337,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			if (fchdir(currentDirectoryFd) == -1)
 			{
 				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						sf("unable to return to previous working directory: EEE"));
+						format2e("unable to return to previous working directory"));
 			}
 
 			// all done, do final move
@@ -347,8 +345,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			if (!moveError.empty())
 			{
 				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						sf("unable to move directory '%s' to '%s': %s",
-						temporarySnapshotDirectory.c_str(), snapshotDirectory.c_str(), moveError.c_str()));
+						format2("unable to move directory '%s' to '%s': %s",
+						temporarySnapshotDirectory, snapshotDirectory, moveError));
 			}
 		}
 	}
@@ -357,7 +355,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		// deleting partially constructed snapshot (try)
 		if (chdir(snapshotsDirectory.c_str()) == -1)
 		{
-			warn("unable to set current directory to '%s': EEE", snapshotsDirectory.c_str());
+			warn2e("unable to set current directory to '%s'", snapshotsDirectory);
 		}
 
 		try
@@ -367,12 +365,12 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		}
 		catch (...)
 		{
-			warn("unable to delete partial snapshot directory '%s'",
-					temporarySnapshotDirectory.c_str());
+			warn2("unable to delete partial snapshot directory '%s'",
+					temporarySnapshotDirectory);
 		}
 
 		_logger->loggedFatal(Logger::Subsystem::Snapshots, 1,
-				sf("error constructing system snapshot named '%s'", name.c_str()));
+				format2("error constructing system snapshot named '%s'", name));
 	}
 }
 
@@ -383,28 +381,28 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), previousName)
 			== snapshotNames.end())
 	{
-		fatal("unable to find snapshot named '%s'", previousName.c_str());
+		fatal2("unable to find snapshot named '%s'", previousName);
 	}
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), newName)
 			!= snapshotNames.end())
 	{
-		fatal("the snapshot named '%s' already exists", newName.c_str());
+		fatal2("the snapshot named '%s' already exists", newName);
 	}
 
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
 	auto newSnapshotDirectory = snapshots.getSnapshotDirectory(newName);
 
 	_logger->log(Logger::Subsystem::Snapshots, 1,
-			sf("renaming the snapshot from '%s' to '%s'", previousName.c_str(), newName.c_str()));
-	_run_external_command(Logger::Subsystem::Snapshots, sf("mv %s %s",
-			previousSnapshotDirectory.c_str(), newSnapshotDirectory.c_str()));
+			format2("renaming the snapshot from '%s' to '%s'", previousName, newName));
+	_run_external_command(Logger::Subsystem::Snapshots, format2("mv %s %s",
+			previousSnapshotDirectory, newSnapshotDirectory));
 }
 
 void checkLooksLikeSnapshot(const string& directory)
 {
 	if (!fs::fileExists(directory + '/' + Snapshots::installedPackageNamesFilename))
 	{
-		fatal("'%s' is not a valid snapshot", directory.c_str());
+		fatal2("'%s' is not a valid snapshot", directory);
 	}
 }
 
@@ -414,14 +412,14 @@ void SnapshotsWorker::removeSnapshot(const Snapshots& snapshots, const string& n
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), name)
 			== snapshotNames.end())
 	{
-		fatal("unable to find snapshot named '%s'", name.c_str());
+		fatal2("unable to find snapshot named '%s'", name);
 	}
 
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);
 	checkLooksLikeSnapshot(snapshotDirectory);
 
 	_logger->log(Logger::Subsystem::Snapshots, 1,
-			sf("removing the snapshot '%s'", name.c_str()));
+			format2("removing the snapshot '%s'", name));
 	_run_external_command(Logger::Subsystem::Snapshots,
 			string("rm -r ") + snapshotDirectory);
 }

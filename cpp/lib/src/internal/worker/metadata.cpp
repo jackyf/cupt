@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -118,26 +118,26 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 		}
 		else
 		{
-			fatal("internal error: extension '%s' has no uncompressor", filenameExtension.c_str());
+			fatal2("internal error: extension '%s' has no uncompressor", filenameExtension);
 		}
 
-		if (::system(sf("which %s >/dev/null", uncompressorName.c_str()).c_str()))
+		if (::system(format2("which %s >/dev/null", uncompressorName).c_str()))
 		{
-			warn("'%s' uncompressor is not available, not downloading '%s'",
-					uncompressorName.c_str(), string(uri).c_str());
+			warn2("'%s' uncompressor is not available, not downloading '%s'",
+					uncompressorName, string(uri));
 			return false;
 		}
 
 		sub = [uncompressorName, downloadPath, targetPath]() -> string
 		{
-			auto uncompressingResult = ::system(sf("%s %s -c > %s",
-					uncompressorName.c_str(), downloadPath.c_str(), targetPath.c_str()).c_str());
+			auto uncompressingResult = ::system(format2("%s %s -c > %s",
+					uncompressorName, downloadPath, targetPath).c_str());
 			// anyway, remove the compressed file, ignoring errors if any
 			unlink(downloadPath.c_str());
 			if (uncompressingResult)
 			{
-				return sf(__("failed to uncompress '%s', '%s' returned error %d"),
-						downloadPath.c_str(), uncompressorName.c_str(), uncompressingResult);
+				return format2(__("failed to uncompress '%s', '%s' returned error %d"),
+						downloadPath, uncompressorName, uncompressingResult);
 			}
 			return string(); // success
 		};
@@ -151,15 +151,15 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 	}
 	else
 	{
-		warn("unknown file extension '%s', not downloading '%s'",
-					filenameExtension.c_str(), string(uri).c_str());
+		warn2("unknown file extension '%s', not downloading '%s'",
+					filenameExtension, string(uri));
 		return false;
 	}
 };
 
 string __get_pidded_string(const string& input)
 {
-	return sf("(%d): %s", getpid(), input.c_str());
+	return format2("(%d): %s", getpid(), input);
 }
 string __get_download_log_message(const string& longAlias)
 {
@@ -264,14 +264,14 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 			if (!cachefiles::verifySignature(*_config, targetPath))
 			{
-				warn("signature verification for '%s' failed", longAlias.c_str());
+				warn2("signature verification for '%s' failed", longAlias);
 
 				if (!_config->getBool("cupt::update::keep-bad-signatures"))
 				{
 					// for compatibility with APT tools delete the downloaded file
 					if (unlink(signatureTargetPath.c_str()) == -1)
 					{
-						warn("unable to delete file '%s': EEE", signatureTargetPath.c_str());
+						warn2e("unable to delete file '%s'", signatureTargetPath);
 					}
 				}
 			}
@@ -348,7 +348,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 	auto fail = [baseLongAlias, &cleanUp]()
 	{
 		cleanUp();
-		warn("%s: failed to proceed", baseLongAlias.c_str());
+		warn2("%s: failed to proceed", baseLongAlias);
 	};
 
 	try
@@ -359,7 +359,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			if (!openError.empty())
 			{
 				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-						__get_pidded_string(sf("unable to open the file '%s': EEE", diffIndexPath.c_str())));
+						__get_pidded_string(format2e("unable to open the file '%s'", diffIndexPath)));
 			}
 
 			TagParser diffIndexParser(&diffIndexFile);
@@ -384,7 +384,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 						if (!regex_match(line, m, checksumsLineRegex))
 						{
 							logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-									__get_pidded_string(sf("malformed 'hash-size-name' line '%s'", line.c_str())));
+									__get_pidded_string(format2("malformed 'hash-size-name' line '%s'", line)));
 						}
 
 						if (isHistory)
@@ -403,7 +403,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					if (values.size() != 2)
 					{
 						logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-								__get_pidded_string(sf("malformed 'hash-size' line '%s'", string(fieldValue).c_str())));
+								__get_pidded_string(format2("malformed 'hash-size' line '%s'", string(fieldValue))));
 					}
 					wantedHashSum = values[0];
 				}
@@ -416,7 +416,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 		}
 		if (unlink(diffIndexPath.c_str()) == -1)
 		{
-			warn("unable to delete a temporary index file '%s'", diffIndexPath.c_str());
+			warn2("unable to delete a temporary index file '%s'", diffIndexPath);
 		}
 
 		HashSums subTargetHashSums;
@@ -425,10 +425,10 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 
 		const string initialSha1Sum = currentSha1Sum;
 
-		if (::system(sf("cp %s %s", targetPath.c_str(), patchedPath.c_str()).c_str()))
+		if (::system(format2("cp %s %s", targetPath, patchedPath).c_str()))
 		{
 			logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-					__get_pidded_string(sf("unable to copy '%s' to '%s'", targetPath.c_str(), patchedPath.c_str())));
+					__get_pidded_string(format2("unable to copy '%s' to '%s'", targetPath, patchedPath)));
 		}
 
 		while (currentSha1Sum != wantedHashSum)
@@ -446,7 +446,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				else
 				{
 					logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-							__get_pidded_string(sf("unable to find a patch for the sha1 sum '%s'", currentSha1Sum.c_str())));
+							__get_pidded_string(format2("unable to find a patch for the sha1 sum '%s'", currentSha1Sum)));
 				}
 			}
 
@@ -455,7 +455,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			if (patchIt == patches.end())
 			{
 				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-						__get_pidded_string(sf("unable to a patch entry for the patch '%s'", patchName.c_str())));
+						__get_pidded_string(format2("unable to a patch entry for the patch '%s'", patchName)));
 			}
 
 			string patchSuffix = "/" + patchName + ".gz";
@@ -498,8 +498,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					result = __("hash sums mismatch");
 					goto out;
 				}
-				if (::system(sf("(cat %s && echo w) | (cd %s && red -s - %s >/dev/null)",
-							unpackedPath.c_str(), partialDirectory.c_str(), patchedPathBasename.c_str()).c_str()))
+				if (::system(format2("(cat %s && echo w) | (cd %s && red -s - %s >/dev/null)",
+							unpackedPath, partialDirectory, patchedPathBasename).c_str()))
 				{
 					result = __("applying ed script failed");
 					goto out;
@@ -508,7 +508,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			 out:
 				if (unlink(unpackedPath.c_str()) == -1)
 				{
-					warn("unable to remove partial index patch file '%s': EEE", unpackedPath.c_str());
+					warn2e("unable to remove partial index patch file '%s'", unpackedPath);
 				}
 				return result;
 			};
@@ -571,8 +571,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 		{
 			if (unlink(downloadPath.c_str()) == -1)
 			{
-				warn("unable to remove outdated partial index file '%s': EEE",
-						downloadPath.c_str());
+				warn2e("unable to remove outdated partial index file '%s'", downloadPath);
 			}
 		}
 	}
@@ -592,7 +591,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 		{
 			if (unlink(downloadPath.c_str()) == -1)
 			{
-				warn("unable to remove partial index file '%s': EEE", downloadPath.c_str());
+				warn2e("unable to remove partial index file '%s'", downloadPath);
 			}
 			return __("hash sums mismatch");
 		}
@@ -683,8 +682,8 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 	}
 
 	// we reached here if neither download URI succeeded
-	warn("failed to download index for '%s/%s'",
-			indexEntry.distribution.c_str(), indexEntry.component.c_str());
+	warn2("failed to download index for '%s/%s'",
+			indexEntry.distribution, indexEntry.component);
 	return false;
 }
 
@@ -719,8 +718,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 			{
 				if (unlink(downloadPath.c_str()) == -1)
 				{
-					warn("unable to remove outdated partial index localization file '%s': EEE",
-							downloadPath.c_str());
+					warn2e("unable to remove outdated partial index localization file '%s'", downloadPath);
 				}
 			}
 		}
@@ -809,13 +807,13 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 			// needs deletion
 			if (simulating)
 			{
-				simulate("deleting '%s'", fileIt->c_str());
+				simulate2("deleting '%s'", *fileIt);
 			}
 			else
 			{
 				if (unlink(fileIt->c_str()) == -1)
 				{
-					warn("unable to delete '%s': EEE", fileIt->c_str());
+					warn2e("unable to delete '%s'", *fileIt);
 				}
 			}
 		}
@@ -840,7 +838,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 				if (mkdir(indexesDirectory.c_str(), 0755) == -1)
 				{
 					_logger->loggedFatal(Logger::Subsystem::Metadata, 2,
-							sf("unable to create the lists directory '%s': EEE", indexesDirectory.c_str()));
+							format2e("unable to create the lists directory '%s'", indexesDirectory));
 				}
 			}
 		}
@@ -855,7 +853,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			auto preCommands = _config->getList("apt::update::pre-invoke");
 			FORIT(commandIt, preCommands)
 			{
-				auto errorId = sf("pre-invoke action '%s'", commandIt->c_str());
+				auto errorId = format2("pre-invoke action '%s'", *commandIt);
 				_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
 			}
 		}
@@ -876,7 +874,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 				if (mkdir(partialIndexesDirectory.c_str(), 0755) == -1)
 				{
 					_logger->loggedFatal(Logger::Subsystem::Metadata, 2,
-							sf("unable to create partial directory '%s': EEE", partialIndexesDirectory.c_str()));
+							format2e("unable to create partial directory '%s'", partialIndexesDirectory));
 				}
 			}
 		}
@@ -898,7 +896,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			auto pid = fork();
 			if (pid == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, sf("fork failed: EEE"));
+				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, format2e("fork failed"));
 			}
 
 			if (pid)
@@ -929,7 +927,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			pid_t pid = wait(&status);
 			if (pid == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, sf("wait failed: EEE"));
+				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, format2e("wait failed"));
 			}
 			pids.erase(pid);
 			// if something went bad in child, the parent won't return non-zero code too
@@ -950,7 +948,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		auto postCommands = _config->getList("apt::update::post-invoke");
 		FORIT(commandIt, postCommands)
 		{
-			auto errorId = sf("post-invoke action '%s'", commandIt->c_str());
+			auto errorId = format2("post-invoke action '%s'", *commandIt);
 			_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
 		}
 		if (masterExitCode)
@@ -959,7 +957,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			auto postSuccessCommands = _config->getList("apt::update::post-invoke-success");
 			FORIT(commandIt, postSuccessCommands)
 			{
-				auto errorId = sf("post-invoke-success action '%s'", commandIt->c_str());
+				auto errorId = format2("post-invoke-success action '%s'", *commandIt);
 				_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
 			}
 		}

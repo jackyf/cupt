@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -264,8 +264,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	{
 		if (conflictingElementPtr)
 		{
-			fatal("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					solution.id, elementPtr->toString().c_str(), conflictingElementPtr->toString().c_str());
+			fatal2("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
+					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
 		it->second = std::move(packageEntry);
 	}
@@ -346,7 +346,7 @@ void Solution::prepare()
 {
 	if (!__parent)
 	{
-		fatal("internal error: undefined master solution");
+		fatal2("internal error: undefined master solution");
 	}
 
 	if (!__parent->__master_entries)

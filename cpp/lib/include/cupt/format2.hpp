@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -16,51 +16,57 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 
-#include <internal/regex.hpp>
+// only for internal inclusion
+
+/// @cond
+
+#include <common/format2.hpp>
 
 namespace cupt {
-namespace internal {
 
-vector< string > split(const sregex& regex, const string& str)
+CUPT_API void __mwrite_line(const char*, const string&);
+
+template < typename... Args >
+void fatal2(const char* format, const Args&... args)
 {
-	vector< string > result;
-	sregex_token_iterator tokenIterator(str.begin(), str.end(), regex, -1);
-	sregex_token_iterator end;
-	std::copy(tokenIterator, end, std::back_inserter(result));
-	return result;
+	auto errorString = format2(format, args...);
+	__mwrite_line("E: ", errorString);
+	throw Exception(errorString);
 }
 
-string globToRegexString(const string& input)
+template < typename... Args >
+void fatal2e(const char* format, const Args&... args)
 {
-	// quoting all metacharacters
-	static const sregex metaCharRegex = sregex::compile("[^A-Za-z0-9_]");
-	string output = regex_replace(input, metaCharRegex, "\\$&");
-	static const sregex questionSignRegex = sregex::compile("\\\\\\?");
-	output = regex_replace(output, questionSignRegex, ".");
-	static const sregex starSignRegex = sregex::compile("\\\\\\*");
-	output = regex_replace(output, starSignRegex, ".*?");
-
-	return string("^") + output + "$";
+	auto errorString = format2e(format, args...);
+	__mwrite_line("E: ", errorString);
+	throw Exception(errorString);
 }
 
-shared_ptr< sregex > stringToRegex(const string& input)
+template < typename... Args >
+void warn2(const char* format, const Args&... args)
 {
-	shared_ptr< sregex > result;
-	try
-	{
-		result = shared_ptr< sregex >(new sregex(sregex::compile(input)));
-	}
-	catch (regex_error& e)
-	{
-		fatal2("invalid regular expression '%s'", input);
-	}
-	return result;
+	__mwrite_line("W: ", format2(format, args...));
 }
-shared_ptr< sregex > globToRegex(const string& glob)
+
+template < typename... Args >
+void warn2e(const char* format, const Args&... args)
 {
-	return stringToRegex(globToRegexString(glob));
+	__mwrite_line("W: ", format2e(format, args...));
+}
+
+template < typename... Args >
+void debug2(const char* format, const Args&... args)
+{
+	__mwrite_line("D: ", format2(format, args...));
+}
+
+template < typename... Args >
+void simulate2(const char* format, const Args&... args)
+{
+	__mwrite_line("S: ", format2(format, args...));
 }
 
 }
-}
+
+/// @endcond
 

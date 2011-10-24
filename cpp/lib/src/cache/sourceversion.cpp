@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -57,7 +57,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		{
 			if (tagValue.first != tagValue.second)
 			{
-				fatal("unexpected non-empty tag value '%s'", string(tagValue).c_str());
+				fatal2("unexpected non-empty tag value '%s'", string(tagValue));
 			}
 			string block;
 			parser.parseAdditionalLines(block);
@@ -68,7 +68,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 
 				if (!regex_match(line, lineMatch, checksumsLineRegex))
 				{
-					fatal("malformed line '%s'", line.c_str());
+					fatal2("malformed line '%s'", line);
 				}
 				const string name = lineMatch[3];
 
@@ -159,12 +159,12 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal("version string isn't defined");
+		fatal2("version string isn't defined");
 	}
 	if (v->architectures.empty())
 	{
-		warn("source package %s, version %s: architectures aren't defined, setting them to 'all'",
-				v->packageName.c_str(), v->versionString.c_str());
+		warn2("source package %s, version %s: architectures aren't defined, setting them to 'all'",
+				v->packageName, v->versionString);
 		v->architectures.push_back("all");
 	}
 	// no need to verify hash sums for emptyness, it's guarantted by parsing algorithm above
@@ -177,7 +177,7 @@ bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 	shared_ptr< const SourceVersion > o = dynamic_pointer_cast< const SourceVersion >(other);
 	if (!o)
 	{
-		fatal("internal error: areHashesEqual: non-source version parameter");
+		fatal2("internal error: areHashesEqual: non-source version parameter");
 	}
 	for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 	{

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -65,7 +65,7 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 	{
 		if (debugging)
 		{
-			debug("the package '%s' needs a reinstall", packageNameIt->c_str());
+			debug2("the package '%s' needs a reinstall", *packageNameIt);
 		}
 
 		// this also involves creating new entry in __initial_packages
@@ -77,11 +77,11 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 	}
 }
 
-void __mydebug_wrapper(const Solution& solution, const string& message)
+template < typename... Args >
+void __mydebug_wrapper(const Solution& solution, const Args&... args)
 {
 	string levelString(solution.level, ' ');
-	debug("%s(%u:%zd) %s", levelString.c_str(), solution.id,
-			solution.score, message.c_str());
+	debug2("%s(%u:%zd) %s", levelString, solution.id, solution.score, format2(args...));
 }
 
 // installs new version, but does not sticks it
@@ -103,8 +103,7 @@ bool NativeResolverImpl::__prepare_version_no_stick(
 
 	if (__config->getBool("debug::resolver"))
 	{
-		debug("install package '%s', version '%s'", packageName.c_str(),
-				version->versionString.c_str());
+		debug2("install package '%s', version '%s'", packageName, version->versionString);
 	}
 	initialPackageEntry.modified = true;
 	initialPackageEntry.version = version;
@@ -119,7 +118,7 @@ void NativeResolverImpl::installVersion(const shared_ptr< const BinaryVersion >&
 	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
 	if (!__prepare_version_no_stick(version, initialPackageEntry))
 	{
-		fatal("unable to re-schedule package '%s'", packageName.c_str());
+		fatal2("unable to re-schedule package '%s'", packageName);
 	}
 
 	initialPackageEntry.sticked = true;
@@ -131,7 +130,7 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& rel
 	__satisfy_relation_expressions.push_back(relationExpression);
 	if (__config->getBool("debug::resolver"))
 	{
-		debug("strictly satisfying relation '%s'", relationExpression.toString().c_str());
+		debug2("strictly satisfying relation '%s'", relationExpression.toString());
 	}
 }
 
@@ -140,7 +139,7 @@ void NativeResolverImpl::unsatisfyRelationExpression(const RelationExpression& r
 	__unsatisfy_relation_expressions.push_back(relationExpression);
 	if (__config->getBool("debug::resolver"))
 	{
-		debug("strictly unsatisfying relation '%s'", relationExpression.toString().c_str());
+		debug2("strictly unsatisfying relation '%s'", relationExpression.toString());
 	}
 }
 
@@ -149,7 +148,7 @@ void NativeResolverImpl::removePackage(const string& packageName)
 	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
 	if (initialPackageEntry.version && initialPackageEntry.sticked)
 	{
-		fatal("unable to re-schedule package '%s'", packageName.c_str());
+		fatal2("unable to re-schedule package '%s'", packageName);
 	}
 	initialPackageEntry.sticked = true;
 	initialPackageEntry.modified = true;
@@ -158,7 +157,7 @@ void NativeResolverImpl::removePackage(const string& packageName)
 
 	if (__config->getBool("debug::resolver"))
 	{
-		debug("removing package '%s'", packageName.c_str());
+		debug2("removing package '%s'", packageName);
 	}
 }
 
@@ -184,7 +183,7 @@ void NativeResolverImpl::upgrade()
 				(__cache->getPolicyVersion(package));
 		if (!supposedVersion)
 		{
-			fatal("internal error: supposed version doesn't exist");
+			fatal2("internal error: supposed version doesn't exist");
 		}
 
 		__prepare_version_no_stick(supposedVersion, initialPackageEntry);
@@ -288,7 +287,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 			}
 			catch (regex_error&)
 			{
-				fatal("invalid regular expression '%s'", regexStringIt->c_str());
+				fatal2("invalid regular expression '%s'", *regexStringIt);
 			}
 		}
 	}
@@ -397,7 +396,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 
 				if (debugging)
 				{
-					__mydebug_wrapper(solution, sf("auto-removed '%s'", (*elementPtrIt)->toString().c_str()));
+					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
 				}
 				__solution_storage->setPackageEntry(solution, emptyElementPtr,
 						std::move(packageEntry), *elementPtrIt);
@@ -421,7 +420,7 @@ SolutionChooser __select_solution_chooser(const Config& config)
 	}
 	else
 	{
-		fatal("wrong resolver type '%s'", resolverType.c_str());
+		fatal2("wrong resolver type '%s'", resolverType);
 	}
 
 	return result;
@@ -454,7 +453,7 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 {
 	if (originalSolution.finished)
 	{
-		fatal("internal error: an attempt to make changes to already finished solution");
+		fatal2("internal error: an attempt to make changes to already finished solution");
 	}
 
 	auto oldElementPtr = actionToApply->oldElementPtr;
@@ -463,11 +462,9 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	if (__config->getBool("debug::resolver"))
 	{
-		auto message = sf("-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
-				solution.id, __score_manager.getScoreChangeString(profit).c_str(),
-				oldElementPtr ? oldElementPtr->toString().c_str() : "",
-				newElementPtr->toString().c_str());
-		__mydebug_wrapper(originalSolution, message);
+		__mydebug_wrapper(originalSolution, "-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
+				solution.id, __score_manager.getScoreChangeString(profit),
+				oldElementPtr ? oldElementPtr->toString() : "", newElementPtr->toString());
 	}
 
 	solution.level += 1;
@@ -560,7 +557,7 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 		if (!thereWereDrops)
 		{
 			thereWereDrops = true;
-			warn("some solutions were dropped, you may want to increase the value of the '%s' option",
+			warn2("some solutions were dropped, you may want to increase the value of the '%s' option",
 					"cupt::resolver::max-solution-count");
 		}
 	}
@@ -570,7 +567,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 {
 	if (!solution.pendingAction)
 	{
-		fatal("internal error: __post_apply_action: no action to apply");
+		fatal2("internal error: __post_apply_action: no action to apply");
 	}
 	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
 
@@ -615,9 +612,8 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		{
 			if (debugging)
 			{
-				__mydebug_wrapper(solution, sf(
-						"not considering %s: it has the same problem",
-						candidateElementPtr->toString().c_str()));
+				__mydebug_wrapper(solution, "not considering %s: it has the same problem",
+						candidateElementPtr->toString());
 			}
 			return false;
 		}
@@ -657,9 +653,8 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		{
 			if (debugging)
 			{
-				__mydebug_wrapper(solution, sf(
-						"not considering %s: it contains equal or less wide relation expression '%s'",
-						candidateElementPtr->toString().c_str(), (*successorElementPtrIt)->toString().c_str()));
+				__mydebug_wrapper(solution, "not considering %s: it contains equal or less wide relation expression '%s'",
+						candidateElementPtr->toString(), (*successorElementPtrIt)->toString());
 			}
 			return false;
 		}
@@ -885,9 +880,8 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 		{
 			if (!__solution_storage->verifyElement(solution, *successorElementPtrIt))
 			{
-				fatal("internal error: final solution check failed: solution '%u', version '%s', problem '%s'",
-						solution.id, (*elementPtrIt)->toString().c_str(),
-						(*successorElementPtrIt)->toString().c_str());
+				fatal2("internal error: final solution check failed: solution '%u', version '%s', problem '%s'",
+						solution.id, (*elementPtrIt)->toString(), (*successorElementPtrIt)->toString());
 			}
 		}
 	}
@@ -1027,7 +1021,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	if (debugging)
 	{
-		debug("started resolving");
+		debug2("started resolving");
 	}
 	__require_strict_relation_expressions();
 
@@ -1091,11 +1085,9 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 			if (debugging)
 			{
-				auto message = sf("problem (%zu:%zu): %s: %s",
+				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
 						brokenSuccessor.elementPtr->getTypePriority(), brokenSuccessor.priority,
-						versionElementPtr->toString().c_str(),
-						brokenSuccessor.elementPtr->toString().c_str());
-				__mydebug_wrapper(*currentSolution, message);
+						versionElementPtr->toString(), brokenSuccessor.elementPtr->toString());
 			}
 			__generate_possible_actions(&possibleActions, *currentSolution,
 					versionElementPtr, brokenSuccessor.elementPtr, debugging);
@@ -1214,8 +1206,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	if (!__any_solution_was_found)
 	{
 		// no solutions pending, we have a great fail
-		fatal("unable to resolve dependencies, because of:\n\n%s",
-				__decision_fail_tree.toString().c_str());
+		fatal2("unable to resolve dependencies, because of:\n\n%s",
+				__decision_fail_tree.toString());
 	}
 	return false;
 }

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -1206,8 +1206,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 					actionStrings.push_back(it->toString());
 				}
 				logger.loggedFatal(Logger::Subsystem::Packages, 2,
-						sf("internal error: unable to schedule circular actions '%s'",
-						join(", ", actionStrings).c_str()));
+						format2("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings)));
 			}
 
 			// we build a mini-graph with reduced number of edges
@@ -1242,7 +1241,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 								break;
 							default:
 								logger.loggedFatal(Logger::Subsystem::Packages, 2,
-										sf("internal error: worker: a relation '%s' cannot be soft",
+										format2("internal error: worker: a relation '%s' cannot be soft",
 										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]));
 						}
 					}
@@ -1310,8 +1309,8 @@ static string __get_codename_and_component_string(const Version& version, const 
 
 static string __get_long_alias_tail(const Version& version, const string& baseUri)
 {
-	return sf("%s %s %s", __get_codename_and_component_string(version, baseUri).c_str(),
-			version.packageName.c_str(), version.versionString.c_str());
+	return format2("%s %s %s", __get_codename_and_component_string(version, baseUri),
+			version.packageName, version.versionString);
 }
 
 map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker::__prepare_downloads()
@@ -1331,7 +1330,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				if (mkdir(partialDirectory.c_str(), 0755) == -1)
 				{
 					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							sf("unable to create partial directory '%s': EEE", partialDirectory.c_str()));
+							format2e("unable to create partial directory '%s'", partialDirectory));
 				}
 			}
 		}
@@ -1356,7 +1355,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				if (downloadInfo.empty())
 				{
 					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							sf("no available download URIs for %s %s", packageName.c_str(), versionString.c_str()));
+							format2("no available download URIs for %s %s", packageName, versionString));
 				}
 
 				// paths
@@ -1476,8 +1475,7 @@ vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		std::copy(unpackedPackageNames.begin(), unpackedPackageNames.end(),
 				std::back_inserter(unconfiguredPackageNames));
 		logger.loggedFatal(Logger::Subsystem::Packages, 2,
-				sf("internal error: packages stay unconfigured: '%s'",
-				join(" ", unconfiguredPackageNames).c_str()));
+				format2("internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames)));
 	}
 
 	return result;
@@ -1552,9 +1550,9 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					if (!installedRecord)
 					{
 						logger.loggedFatal(Logger::Subsystem::Packages, 2,
-								sf("internal error: worker: __set_force_options_for_removals_if_needed: "
+								format2("internal error: worker: __set_force_options_for_removals_if_needed: "
 								"there is no installed record for the package '%s' which is to be removed",
-								packageName.c_str()));
+								packageName));
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
@@ -1619,7 +1617,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		{
 			// we failed to fit in limit
 			_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-					sf("unable to fit in archives space limit '%zu', best try is '%zu'",
+					format2("unable to fit in archives space limit '%zu', best try is '%zu'",
 					archivesSpaceLimit, maxDownloadAmount));
 		}
 	}
@@ -1659,7 +1657,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 
 void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& commandInput)
 {
-	auto errorId = sf(__("dpkg '%s' action '%s'"), flavor.c_str(), command.c_str());
+	auto errorId = format2(__("dpkg '%s' action '%s'"), flavor, command);
 	_run_external_command(Logger::Subsystem::Packages, command, commandInput, errorId);
 }
 
@@ -1673,17 +1671,17 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 		bool simulating = _config->getBool("cupt::worker::simulate");
 		FORIT(it, changeset.downloads)
 		{
-			const char* targetPath = it->second.c_str();
+			const string& targetPath = it->second;
 			if (simulating)
 			{
-				simulate("removing archive '%s'", targetPath);
+				simulate2("removing archive '%s'", targetPath);
 			}
 			else
 			{
-				if (unlink(targetPath) == -1)
+				if (unlink(targetPath.c_str()) == -1)
 				{
 					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							sf("unable to remove file '%s': EEE", targetPath));
+							format2e("unable to remove file '%s'", targetPath));
 				}
 			}
 		}
@@ -1807,8 +1805,8 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 				}
 			}
 
-			result += sf("%s %s %s %s %s\n", packageName.c_str(), oldVersionString.c_str(),
-					compareVersionStringsSign.c_str(), newVersionString.c_str(), path.c_str());
+			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
+					compareVersionStringsSign, newVersionString, path);
 		}
 	}
 
@@ -1906,8 +1904,8 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 	auto simulating = _config->getBool("cupt::worker::simulate");
 
 	{ // logging
-		auto message = sf("marking '%s' as %s installed",
-				packageName.c_str(), targetStatus ? "automatically" : "manually");
+		auto message = format2("marking '%s' as %s installed",
+				packageName, targetStatus ? "automatically" : "manually");
 		_logger->log(Logger::Subsystem::Packages, 2, message);
 	}
 
@@ -1915,7 +1913,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 	{
 		string prefix = targetStatus ?
 					__("marking as automatically installed") : __("marking as manually installed");
-		simulate("%s: %s", prefix.c_str(), packageName.c_str());
+		simulate2("%s: %s", prefix, packageName);
 	}
 	else
 	{
@@ -1938,13 +1936,13 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				if (!errorString.empty())
 				{
 					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							sf("unable to open temporary file '%s': %s", tempPath.c_str(), errorString.c_str()));
+							format2("unable to open temporary file '%s': %s", tempPath, errorString));
 				}
 
 				// filling new info
 				FORIT(packageNameIt, __auto_installed_package_names)
 				{
-					tempFile.put(sf("Package: %s\nAuto-Installed: 1\n\n", packageNameIt->c_str()));
+					tempFile.put(format2("Package: %s\nAuto-Installed: 1\n\n", *packageNameIt));
 				}
 			}
 
@@ -1952,7 +1950,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 			if (!moveResult.empty())
 			{
 				_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-						sf("unable to renew extended states file: %s", moveResult.c_str()));
+						format2("unable to renew extended states file: %s", moveResult));
 			}
 		}
 		catch (...)

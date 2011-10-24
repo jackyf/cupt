@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -43,7 +43,7 @@ DebdeltaHelper::DebdeltaHelper()
 			}
 			catch (Exception& e)
 			{
-				warn("failed to parse debdelta configuration file '%s'", sourcesPath.c_str());
+				warn2("failed to parse debdelta configuration file '%s'", sourcesPath);
 			}
 		}
 	}
@@ -59,8 +59,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 	auto package = cache->getBinaryPackage(packageName);
 	if (!package)
 	{
-		warn("debdeltahelper: received version without corresponding binary package in the cache: "
-				"package name '%s', version '%s'", packageName.c_str(), version->versionString.c_str());
+		warn2("debdeltahelper: received version without corresponding binary package in the cache: "
+				"package name '%s', version '%s'", packageName, version->versionString);
 		return result;
 	}
 	auto installedVersion = package->getInstalledVersion();
@@ -176,7 +176,7 @@ void DebdeltaHelper::__parse_sources(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal("unable to open file '%s'", path.c_str());
+		fatal2("unable to open file '%s'", path);
 	}
 
 
@@ -210,7 +210,7 @@ void DebdeltaHelper::__parse_sources(const string& path)
 			static const sregex keyValueRegex = sregex::compile("(.*?)=(.*)", regex_constants::optimize);
 			if (!regex_match(line, m, keyValueRegex))
 			{
-				fatal("unable to parse key-value pair '%s' in file '%s'", line.c_str(), path.c_str());
+				fatal2("unable to parse key-value pair '%s' in file '%s'", line, path);
 			}
 			string key = m[1];
 			string value = m[2];

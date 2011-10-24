@@ -91,6 +91,11 @@ inline void __mwrite(const string& output)
 	}
 }
 
+void __mwrite_line(const char* prefix, const string& message)
+{
+	__mwrite(string(prefix) + message + "\n");
+}
+
 void fatal(const char* format, ...)
 {
 	va_list va;
@@ -98,7 +103,7 @@ void fatal(const char* format, ...)
 	auto errorString = __get_formatted_string(format, va);
 	va_end(va);
 
-	__mwrite(string("E: ") + errorString + "\n");
+	__mwrite_line("E: ", errorString);
 
 	throw Exception(errorString);
 }
@@ -110,7 +115,7 @@ void warn(const char* format, ...)
 	auto formattedString = __get_formatted_string(format, va);
 	va_end(va);
 
-	__mwrite(string("W: ") + formattedString + "\n");
+	__mwrite_line("W: ", formattedString);
 }
 
 void debug(const char* format, ...)
@@ -120,7 +125,7 @@ void debug(const char* format, ...)
 	auto formattedString = __get_formatted_string(format, va);
 	va_end(va);
 
-	__mwrite(string("D: ") + formattedString + "\n");
+	__mwrite_line("D: ", formattedString);
 }
 
 void simulate(const char* format, ...)
@@ -130,7 +135,7 @@ void simulate(const char* format, ...)
 	auto formattedString = __get_formatted_string(format, va);
 	va_end(va);
 
-	__mwrite(string("S: ") + formattedString + "\n");
+	__mwrite_line("S: ", formattedString);
 }
 
 string sf(const string& format, ...)

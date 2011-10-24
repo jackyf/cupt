@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -80,7 +80,7 @@ static void unrollFileArguments(vector< string >& arguments)
 			File file(path, "r", openError);
 			if (!openError.empty())
 			{
-				fatal("unable to open file '%s': %s", path.c_str(), openError.c_str());
+				fatal2("unable to open file '%s': %s", path, openError);
 			}
 			string line;
 			while (!file.getLine(line).eof())
@@ -221,7 +221,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
 				!getBinaryPackage(cache, packageExpression, false))
 			{
-				fatal("unable to find binary package/expression '%s'", packageExpression.c_str());
+				fatal2("unable to find binary package/expression '%s'", packageExpression);
 			}
 
 			scheduleRemoval(packageExpression);
@@ -283,11 +283,11 @@ void printUnpackedSizeChanges(const map< string, ssize_t >& unpackedSizesPreview
 	string message;
 	if (totalUnpackedSizeChange >= 0)
 	{
-		message = sf(__("After unpacking %s will be used."),
-				humanReadableSizeString(totalUnpackedSizeChange).c_str());
+		message = format2(__("After unpacking %s will be used."),
+				humanReadableSizeString(totalUnpackedSizeChange));
 	} else {
-		message = sf(__("After unpacking %s will be freed."),
-				humanReadableSizeString(-totalUnpackedSizeChange).c_str());
+		message = format2(__("After unpacking %s will be freed."),
+				humanReadableSizeString(-totalUnpackedSizeChange));
 	}
 
 	cout << message << endl;
@@ -297,9 +297,8 @@ void printDownloadSizes(const pair< size_t, size_t >& downloadSizes)
 {
 	auto total = downloadSizes.first;
 	auto need = downloadSizes.second;
-	cout << sf(__("Need to get %s/%s of archives. "),
-					humanReadableSizeString(need).c_str(),
-					humanReadableSizeString(total).c_str());
+	cout << format2(__("Need to get %s/%s of archives. "),
+			humanReadableSizeString(need), humanReadableSizeString(total));
 }
 
 void showVersion(const shared_ptr< const Cache >& cache, const string& packageName,
@@ -308,7 +307,7 @@ void showVersion(const shared_ptr< const Cache >& cache, const string& packageNa
 	auto package = cache->getBinaryPackage(packageName);
 	if (!package)
 	{
-		fatal("internal error: no binary package '%s' available", packageName.c_str());
+		fatal2("internal error: no binary package '%s' available", packageName);
 	}
 	auto oldVersion = package->getInstalledVersion();
 
@@ -320,15 +319,15 @@ void showVersion(const shared_ptr< const Cache >& cache, const string& packageNa
 	if (!oldVersionString.empty() && !newVersionString.empty() &&
 			(actionType != fakeNotPolicyVersionAction || oldVersionString != newVersionString))
 	{
-		cout << sf(" [%s -> %s]", oldVersionString.c_str(), newVersionString.c_str());
+		cout << format2(" [%s -> %s]", oldVersionString, newVersionString);
 	}
 	else if (!oldVersionString.empty())
 	{
-		cout << sf(" [%s]", oldVersionString.c_str());
+		cout << format2(" [%s]", oldVersionString);
 	}
 	else
 	{
-		cout << sf(" [%s]", newVersionString.c_str());
+		cout << format2(" [%s]", newVersionString);
 	}
 
 	if (actionType == fakeNotPolicyVersionAction)
@@ -522,8 +521,8 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 		if (isDangerous)
 		{
 			const string confirmationForDangerousAction = __("Yes, do as I say!");
-			cout << sf(__("Dangerous actions selected. Type '%s' if you want to continue, or anything else to go back:"),
-					confirmationForDangerousAction.c_str()) << endl;
+			cout << format2(__("Dangerous actions selected. Type '%s' if you want to continue, or anything else to go back:"),
+					confirmationForDangerousAction) << endl;
 			std::getline(std::cin, answer);
 			if (answer != confirmationForDangerousAction)
 			{
@@ -637,8 +636,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				}
 
 				const string& actionName = actionNames.find(actionType)->second;
-				cout << sf(__("The following %u packages %s:"),
-						actionSuggestedPackages.size(), actionName.c_str()) << endl << endl;
+				cout << format2(__("The following %u packages %s:"),
+						actionSuggestedPackages.size(), actionName) << endl << endl;
 
 				FORIT(it, actionSuggestedPackages)
 				{
@@ -829,7 +828,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (packageExpressions.size() != 1)
 		{
-			fatal("exactly one argument (the snapshot name) should be specified");
+			fatal2("exactly one argument (the snapshot name) should be specified");
 		}
 		snapshotName = packageExpressions[0];
 		packageExpressions.clear();
@@ -862,7 +861,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (!config->getString("cupt::resolver::external-command").empty())
 		{
-			fatal("using external resolver is not supported now");
+			fatal2("using external resolver is not supported now");
 		}
 		else
 		{
@@ -934,7 +933,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		}
 		catch (Exception&)
 		{
-			fatal("unable to do requested actions");
+			fatal2("unable to do requested actions");
 		}
 		return 0;
 	}
@@ -954,7 +953,7 @@ int distUpgrade(Context& context)
 		context.unparsed.push_back("cupt");
 		if (managePackages(context, ManagePackages::Install) != 0)
 		{
-			fatal("upgrading of the package management tools failed");
+			fatal2("upgrading of the package management tools failed");
 		}
 	}
 
@@ -972,7 +971,7 @@ int distUpgrade(Context& context)
 			}
 		}
 		execvp(argv[0], argv);
-		fatal("upgrading the system failed: execvp failed: EEE");
+		fatal2e("upgrading the system failed: execvp failed");
 	}
 	return 0; // unreachable due to exec
 }
@@ -1049,17 +1048,17 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		struct stat stat_structure;
 		if (lstat(path.c_str(), &stat_structure))
 		{
-			fatal("lstat() failed: '%s': EEE", path.c_str());
+			fatal2e("lstat() failed: '%s'", path);
 		}
 		else
 		{
 			size_t size = stat_structure.st_size;
 			totalDeletedBytes += size;
-			cout << sf(__("Deleting '%s' <%s>..."), path.c_str(), humanReadableSizeString(size).c_str()) << endl;
+			cout << format2(__("Deleting '%s' <%s>..."), path, humanReadableSizeString(size)) << endl;
 			worker.deleteArchive(path);
 		}
 	}
-	cout << sf(__("Freed %s of disk space."), humanReadableSizeString(totalDeletedBytes).c_str()) << endl;
+	cout << format2(__("Freed %s of disk space."), humanReadableSizeString(totalDeletedBytes)) << endl;
 
 	cout << __("Deleting partial archives...") << endl;
 	worker.deletePartialArchives();

@@ -85,11 +85,11 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	bool statusIsModified = false;
 	if (oldStatus == -1)
 	{
-		warn("unable to get standard error stream status flags: fcntl failed: EEE");
+		warn2e("unable to get standard error stream status flags: fcntl failed");
 	}
 	else if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus | O_NONBLOCK) == -1)
 	{
-		warn("unable to make standard error stream non-blocking: fcntl failed: EEE");
+		warn2e("unable to make standard error stream non-blocking: fcntl failed");
 	}
 	else
 	{
@@ -102,7 +102,7 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	{
 		if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus) == -1)
 		{
-			warn("unable to make standard error stream blocking again: fcntl failed: EEE");
+			warn2e("unable to make standard error stream blocking again: fcntl failed");
 		}
 	}
 }
@@ -207,7 +207,7 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 				return left.record.number < right.record.number;
 			});
 
-	string viewString = sf("%d%% ", overallDownloadPercent);
+	string viewString = format2("%d%% ", overallDownloadPercent);
 
 	FORIT(it, records)
 	{
@@ -218,11 +218,11 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 		}
 		else if (it->record.size != (size_t)-1 && it->record.size != 0 /* no sense for empty files */)
 		{
-			suffix = sf("/%s %.0f%%", humanReadableSizeString(it->record.size).c_str(),
+			suffix = format2("/%s %.0f%%", humanReadableSizeString(it->record.size),
 					(float)it->record.downloadedSize / it->record.size * 100);
 		}
-		viewString += sf("[%u %s %s%s]", it->record.number, it->shortAlias.c_str(),
-				humanReadableSizeString(it->record.downloadedSize).c_str(), suffix.c_str());
+		viewString += format2("[%u %s %s%s]", it->record.number, it->shortAlias,
+				humanReadableSizeString(it->record.downloadedSize), suffix);
 	}
 	auto speedAndTimeAppendage = string("| ") + humanReadableSpeedString(speed) +
 			string(" | ETA: ") + humanReadableDifftimeString(overallEstimatedTime);
@@ -232,8 +232,8 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 void ConsoleProgressImpl::finish(uint64_t size, size_t time)
 {
 	termClean();
-	nonBlockingPrint(sf(__("Fetched %s in %s.\n"),
-			humanReadableSizeString(size).c_str(), humanReadableDifftimeString(time).c_str()));
+	nonBlockingPrint(format2(__("Fetched %s in %s.\n"),
+			humanReadableSizeString(size), humanReadableDifftimeString(time)));
 }
 
 }
@@ -288,8 +288,7 @@ void ConsoleProgress::finishedDownloadHook(const string& uri, const string& resu
 	}
 	else
 	{
-		warn("internal error: console download progress: no existing download record for the uri '%s'",
-				uri.c_str());
+		warn2("internal error: console download progress: no existing download record for the uri '%s'", uri);
 	}
 	__impl->finishedDownload(uri, result, recordNumber);
 }

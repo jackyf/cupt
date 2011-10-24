@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -38,7 +38,7 @@ int snapshot(Context& context)
 	auto variables = parseOptions(context, noOptions, arguments);
 	if (arguments.empty())
 	{
-		fatal("the action is not specified");
+		fatal2("the action is not specified");
 	}
 	string action = arguments[0];
 	arguments.erase(arguments.begin());
@@ -59,7 +59,7 @@ int snapshot(Context& context)
 	{
 		if (arguments.empty())
 		{
-			fatal("no snapshot name specified");
+			fatal2("no snapshot name specified");
 		}
 		string snapshotName = arguments[0];
 
@@ -83,12 +83,12 @@ int snapshot(Context& context)
 	{
 		if (arguments.empty())
 		{
-			fatal("no previous snapshot name specified");
+			fatal2("no previous snapshot name specified");
 		}
 		string oldSnapshotName = arguments[0];
 		if (arguments.size() < 2)
 		{
-			fatal("no new snapshot name specified");
+			fatal2("no new snapshot name specified");
 		}
 		string newSnapshotName = arguments[1];
 
@@ -101,7 +101,7 @@ int snapshot(Context& context)
 	}
 	else
 	{
-		fatal("unsupported action '%s'", action.c_str());
+		fatal2("unsupported action '%s'", action);
 	}
 
 	return 0;

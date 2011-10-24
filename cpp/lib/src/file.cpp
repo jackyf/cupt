@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -33,7 +33,7 @@ static int __guarded_fileno(FILE* handle, const string& path)
 	int fd = fileno(handle);
 	if (fd == -1)
 	{
-		fatal("fileno on file '%s' failed: EEE", path.c_str());
+		fatal2e("fileno on file '%s' failed", path);
 	}
 	return fd;
 }
@@ -61,7 +61,7 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	{
 		if (strlen(mode) != 2)
 		{
-			fatal("pipe specification mode should be exact 2 characters");
+			fatal2("pipe specification mode should be exact 2 characters");
 		}
 		isPipe = true;
 		handle = popen(path.c_str(), mode+1);
@@ -74,7 +74,7 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 
 	if (!handle)
 	{
-		openError = sf("EEE");
+		openError = format2e("").substr(2);
 	}
 	else
 	{
@@ -84,13 +84,13 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 		int oldFdFlags = fcntl(fd, F_GETFD);
 		if (oldFdFlags < 0)
 		{
-			openError = sf("unable to get file descriptor flags: EEE");
+			openError = format2e("unable to get file descriptor flags");
 		}
 		else
 		{
 			if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
 			{
-				openError = sf("unable to set the close-on-exec flag: EEE");
+				openError = format2e("unable to set the close-on-exec flag");
 			}
 		}
 	}
@@ -105,18 +105,18 @@ FileImpl::~FileImpl()
 			auto pcloseResult = pclose(handle);
 			if (pcloseResult == -1)
 			{
-				fatal("unable to close pipe '%s': EEE", path.c_str());
+				fatal2e("unable to close pipe '%s'", path);
 			}
 			else if (pcloseResult)
 			{
-				fatal("pipe '%s' execution failed: %s", path.c_str(), getWaitStatusDescription(pcloseResult).c_str());
+				fatal2("pipe '%s' execution failed: %s", path, getWaitStatusDescription(pcloseResult));
 			}
 		}
 		else
 		{
 			if (fclose(handle))
 			{
-				fatal("unable to close file '%s': EEE", path.c_str());
+				fatal2e("unable to close file '%s'", path);
 			}
 		}
 	}
@@ -128,7 +128,7 @@ void FileImpl::assertFileOpened() const
 	if (!handle)
 	{
 		// file was not properly opened
-		fatal("internal error: file '%s' was not properly opened", path.c_str());
+		fatal2("internal error: file '%s' was not properly opened", path);
 	}
 }
 
@@ -145,7 +145,7 @@ size_t FileImpl::getLineImpl()
 		if (!feof(handle))
 		{
 			// real error
-			fatal("unable to read from file '%s': EEE", path.c_str());
+			fatal2e("unable to read from file '%s'", path);
 		}
 
 		// ok, end of file
@@ -194,7 +194,7 @@ File& File::getBlock(char* buffer, size_t& size)
 		if (!feof(__impl->handle))
 		{
 			// real error
-			fatal("unable to read from file '%s': EEE", __impl->path.c_str());
+			fatal2e("unable to read from file '%s'", __impl->path);
 		}
 	}
 	return *this;
@@ -244,13 +244,13 @@ void File::seek(size_t newPosition)
 {
 	if (__impl->isPipe)
 	{
-		fatal("an attempt to seek on pipe '%s'", __impl->path.c_str());
+		fatal2("an attempt to seek on pipe '%s'", __impl->path);
 	}
 	else
 	{
 		if (fseek(__impl->handle, newPosition, SEEK_SET) == -1)
 		{
-			fatal("unable to seek on file '%s': EEE", __impl->path.c_str());
+			fatal2e("unable to seek on file '%s'", __impl->path);
 		}
 	}
 }
@@ -259,14 +259,14 @@ size_t File::tell() const
 {
 	if (__impl->isPipe)
 	{
-		fatal("an attempt to tell position on pipe '%s'", __impl->path.c_str());
+		fatal2("an attempt to tell position on pipe '%s'", __impl->path);
 	}
 	else
 	{
 		long result = ftell(__impl->handle);
 		if (result == -1)
 		{
-			fatal("unable to tell position on file '%s': EEE", __impl->path.c_str());
+			fatal2e("unable to tell position on file '%s'", __impl->path);
 		}
 		else
 		{
@@ -284,7 +284,7 @@ void File::lock(int flags)
 	if (flock(fd, flags) == -1)
 	{
 		const char* actionName = (flags & LOCK_UN) ? "release" : "obtain";
-		fatal("unable to %s lock on file '%s': EEE", actionName, __impl->path.c_str());
+		fatal2e("unable to %s lock on file '%s'", actionName, __impl->path);
 	}
 }
 
@@ -293,7 +293,7 @@ void File::put(const char* data, size_t size)
 	__impl->assertFileOpened();
 	if (fwrite(data, size, 1, __impl->handle) != 1)
 	{
-		fatal("unable to write to file '%s': EEE", __impl->path.c_str());
+		fatal2e("unable to write to file '%s'", __impl->path);
 	}
 }
 
@@ -319,7 +319,7 @@ void File::unbufferedPut(const char* data, size_t size)
 			}
 			else
 			{
-				fatal("unable to write to file '%s': EEE", __impl->path.c_str());
+				fatal2e("unable to write to file '%s'", __impl->path);
 			}
 		}
 		currentOffset += writeResult;
