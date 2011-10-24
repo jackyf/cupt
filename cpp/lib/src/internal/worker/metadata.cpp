@@ -426,91 +426,111 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			fatal("unable to copy '%s' to '%s'", targetPath.c_str(), patchedPath.c_str());
 		}
 
-		while (currentSha1Sum != wantedHashSum)
-		{
-			auto historyIt = history.find(currentSha1Sum);
-			if (historyIt == history.end())
+		{ // patching
+			auto partialDirectory = fs::dirname(patchedPath);
+			auto patchedPathBasename = fs::filename(patchedPath);
+
+			string edPipeOpenError;
+			string edPipeCommand = sf("cd %s && red -s - %s >/dev/null",
+					partialDirectory.c_str(), patchedPathBasename.c_str());
+			File edPipe(edPipeCommand, "pw", edPipeOpenError);
+			if (!edPipeOpenError.empty())
 			{
-				if (currentSha1Sum == initialSha1Sum)
-				{
-					logger->log(Logger::Subsystem::Metadata, 3, __get_pidded_string(
-							"no matching index patches found, presumably the local index is too old"));
-					cleanUp();
-					return false; // local index is too old
-				}
-				else
-				{
-					fatal("unable to find a patch for the sha1 sum '%s'", currentSha1Sum.c_str());
-				}
+				fatal("unable to open the 'red' pipe: %s", edPipeOpenError.c_str());
 			}
 
-			const string& patchName = historyIt->second.first;
-			auto patchIt = patches.find(patchName);
-			if (patchIt == patches.end())
+			while (currentSha1Sum != wantedHashSum)
 			{
-				fatal("unable to a patch entry for the patch '%s'", patchName.c_str());
-			}
-
-			string patchSuffix = "/" + patchName + ".gz";
-			auto alias = baseAlias + patchSuffix;
-			auto longAlias = baseLongAlias + patchSuffix;
-			logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
-
-			auto unpackedPath = baseDownloadPath + '.' + patchName;
-			auto downloadPath = unpackedPath + ".gz";
-
-			download::Manager::DownloadEntity downloadEntity;
-
-			auto patchUri = baseUri + patchSuffix;
-			download::Manager::ExtendedUri extendedUri(download::Uri(patchUri),
-					alias, longAlias);
-			downloadEntity.extendedUris.push_back(std::move(extendedUri));
-			downloadEntity.targetPath = downloadPath;
-			downloadEntity.size = (size_t)-1;
-
-			HashSums patchHashSums;
-			patchHashSums[HashSums::SHA1] = patchIt->second.first;
-
-			std::function< string () > uncompressingSub;
-			generateUncompressingSub(patchUri, downloadPath, unpackedPath, uncompressingSub);
-
-			downloadEntity.postAction = [&patchHashSums, &subTargetHashSums,
-					&uncompressingSub, &patchedPath, &unpackedPath]() -> string
-			{
-				auto partialDirectory = fs::dirname(patchedPath);
-				auto patchedPathBasename = fs::filename(patchedPath);
-
-				string result = uncompressingSub();
-				if (!result.empty())
+				auto historyIt = history.find(currentSha1Sum);
+				if (historyIt == history.end())
 				{
-					return result; // unpackedPath is not yet created
+					if (currentSha1Sum == initialSha1Sum)
+					{
+						logger->log(Logger::Subsystem::Metadata, 3, __get_pidded_string(
+								"no matching index patches found, presumably the local index is too old"));
+						cleanUp();
+						return false; // local index is too old
+					}
+					else
+					{
+						fatal("unable to find a patch for the sha1 sum '%s'", currentSha1Sum.c_str());
+					}
 				}
 
-				if (!patchHashSums.verify(unpackedPath))
+				const string& patchName = historyIt->second.first;
+				auto patchIt = patches.find(patchName);
+				if (patchIt == patches.end())
 				{
-					result = __("hash sums mismatch");
-					goto out;
+					fatal("unable to a patch entry for the patch '%s'", patchName.c_str());
 				}
-				if (::system(sf("(cat %s && echo w) | (cd %s && red -s - %s >/dev/null)",
-							unpackedPath.c_str(), partialDirectory.c_str(), patchedPathBasename.c_str()).c_str()))
+
+				string patchSuffix = "/" + patchName + ".gz";
+				auto alias = baseAlias + patchSuffix;
+				auto longAlias = baseLongAlias + patchSuffix;
+				logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
+
+				auto downloadPath = baseDownloadPath + '.' + patchName + ".gz";
+
+				download::Manager::DownloadEntity downloadEntity;
+
+				auto patchUri = baseUri + patchSuffix;
+				download::Manager::ExtendedUri extendedUri(download::Uri(patchUri),
+						alias, longAlias);
+				downloadEntity.extendedUris.push_back(std::move(extendedUri));
+				downloadEntity.targetPath = downloadPath;
+				downloadEntity.size = (size_t)-1;
+
+				const string& patchSha1Sum = patchIt->second.first;
+
+				downloadEntity.postAction = [&patchSha1Sum, &subTargetHashSums,
+						&edPipe, &patchedPath, &downloadPath]() -> string
 				{
-					result = __("applying ed script failed");
-					goto out;
-				}
-				subTargetHashSums.fill(patchedPath);
-			 out:
-				if (unlink(unpackedPath.c_str()) == -1)
+					string result;
+					try
+					{
+						string patchContent;
+						{
+							string gunzipPipeOpenError;
+							File gunzipPipe(sf("gunzip %s -c", downloadPath.c_str()), "pr", gunzipPipeOpenError);
+							if (!gunzipPipeOpenError.empty())
+							{
+								result = sf(__("unable to gunzip the file '%s': %s"),
+										downloadPath.c_str(), gunzipPipeOpenError.c_str());
+								goto out;
+							}
+
+							gunzipPipe.getFile(patchContent);
+
+							if (HashSums::getHashOfString(HashSums::SHA1, patchContent) != patchSha1Sum)
+							{
+								result = __("hash sums mismatch");
+								goto out;
+							}
+						}
+
+						edPipe.unbufferedPut(patchContent.c_str(), patchContent.size());
+						edPipe.unbufferedPut("w\n", 2); // save the current buffer
+					}
+					catch (Exception& e)
+					{
+						result = e.what();
+						goto out;
+					}
+					subTargetHashSums.fill(patchedPath);
+				 out:
+					if (unlink(downloadPath.c_str()) == -1)
+					{
+						warn("unable to remove partial index patch file '%s': EEE", downloadPath.c_str());
+					}
+					return result;
+				};
+				auto downloadError = downloadManager.download(
+						vector< download::Manager::DownloadEntity >{ downloadEntity });
+				if (!downloadError.empty())
 				{
-					warn("unable to remove partial index patch file '%s': EEE", unpackedPath.c_str());
+					fail();
+					return false;
 				}
-				return result;
-			};
-			auto downloadError = downloadManager.download(
-					vector< download::Manager::DownloadEntity >{ downloadEntity });
-			if (!downloadError.empty())
-			{
-				fail();
-				return false;
 			}
 		}
 
