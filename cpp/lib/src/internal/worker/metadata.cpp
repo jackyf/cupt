@@ -441,7 +441,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			File edPipe(edPipeCommand, "pw", edPipeOpenError);
 			if (!edPipeOpenError.empty())
 			{
-				fatal2("unable to open the 'red' pipe: %s", edPipeOpenError);
+				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+						__get_pidded_string(format2("unable to open the 'red' pipe: %s", edPipeOpenError)));
 			}
 
 			while (currentSha1Sum != wantedHashSum)
@@ -458,7 +459,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					}
 					else
 					{
-						fatal2("unable to find a patch for the sha1 sum '%s'", currentSha1Sum);
+						logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+								__get_pidded_string(format2("unable to find a patch for the sha1 sum '%s'", currentSha1Sum)));
 					}
 				}
 
@@ -466,7 +468,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				auto patchIt = patches.find(patchName);
 				if (patchIt == patches.end())
 				{
-					fatal("unable to a patch entry for the patch '%s'", patchName.c_str());
+					logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+							__get_pidded_string(format2("unable to a patch entry for the patch '%s'", patchName)));
 				}
 
 				string patchSuffix = "/" + patchName + ".gz";
