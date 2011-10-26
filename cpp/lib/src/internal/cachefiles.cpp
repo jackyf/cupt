@@ -121,11 +121,10 @@ string getPathOfIndexList(const Config& config, const IndexEntry& entry)
 	return basePath + "_" + indexListSuffix;
 }
 
-vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
-		const Config& config, const IndexEntry& indexEntry)
+static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
+		const Config& config, const IndexEntry& indexEntry, const string& suffix)
 {
 	auto baseUri = getUriOfIndexEntry(indexEntry);
-	auto indexListSuffix = getIndexListSuffix(config, indexEntry, '/');
 
 	vector< Cache::IndexDownloadRecord > result;
 	{ // reading
@@ -155,7 +154,7 @@ vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
 			{
 				currentHashSumType = HashSums::SHA256;
 			}
-			else if (line.find(indexListSuffix) != string::npos)
+			else if (line.find(suffix) != string::npos)
 			{
 				if (currentHashSumType == HashSums::Count)
 				{
@@ -169,9 +168,9 @@ vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
 				}
 
 				string name = m[3];
-				if (name.compare(0, indexListSuffix.size(), indexListSuffix) != 0)
+				if (name.compare(0, suffix.size(), suffix) != 0)
 				{
-					continue; // doesn't start with indexListSuffix
+					continue; // doesn't start with suffix
 				}
 
 				// filling result structure
@@ -208,6 +207,13 @@ vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
 	}
 
 	return result;
+}
+
+vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
+		const Config& config, const IndexEntry& indexEntry)
+{
+	return getDownloadInfoFromRelease(config, indexEntry,
+			getIndexListSuffix(config, indexEntry, '/'));
 }
 
 static vector< vector< string > > getChunksOfLocalizedDescriptions(
@@ -285,6 +291,31 @@ vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptio
 		record.localPath = basePath + "_" + join("_", *chunkArrayIt);
 		// yes, somewhy translations are always bzip2'ed
 		record.uri = baseUri + "/" + join("/", *chunkArrayIt) + ".bz2";
+		result.push_back(std::move(record));
+	}
+
+	return result;
+}
+
+vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(const Config& config,
+		const IndexEntry& entry)
+{
+	return getDownloadInfoFromRelease(config, entry, entry.component + "/i18n/Index");
+}
+
+vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
+		const Config& config, const IndexEntry& entry)
+{
+	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
+	auto basePath = getPathOfIndexEntry(config, entry);
+
+	vector< LocalizationDownloadRecord2 > result;
+
+	FORIT(chunkArrayIt, chunkArrays)
+	{
+		LocalizationDownloadRecord2 record;
+		record.localPath = basePath + "_" + join("_", *chunkArrayIt);
+		record.filePart = *(chunkArrayIt->rbegin()); // i.e. 'Translation-xyz' part
 		result.push_back(std::move(record));
 	}
 

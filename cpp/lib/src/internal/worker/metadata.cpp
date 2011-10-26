@@ -29,7 +29,6 @@
 
 #include <internal/filesystem.hpp>
 #include <internal/lock.hpp>
-#include <internal/cachefiles.hpp>
 #include <internal/tagparser.hpp>
 #include <internal/common.hpp>
 
@@ -167,7 +166,7 @@ string __get_download_log_message(const string& longAlias)
 }
 
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
-		const Cache::IndexEntry& indexEntry, bool& releaseFileChanged)
+		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
 	bool simulating = _config->getBool("cupt::worker::simulate");
 	bool runChecks = _config->getBool("cupt::update::check-release-files");
@@ -319,10 +318,14 @@ string getBaseUri(const string& uri)
 	return uri.substr(0, slashPosition);
 }
 
+// TODO: make it common?
+static const sregex checksumsLineRegex = sregex::compile(
+		" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize);
+
 // all this function is just guesses, there are no documentation
 bool __download_and_apply_patches(download::Manager& downloadManager,
-		const Cache::IndexDownloadRecord& downloadRecord,
-		const Cache::IndexEntry& indexEntry, const string& baseDownloadPath,
+		const cachefiles::FileDownloadRecord& downloadRecord,
+		const cachefiles::IndexEntry& indexEntry, const string& baseDownloadPath,
 		const string& diffIndexPath, const string& targetPath,
 		Logger* logger)
 {
@@ -373,9 +376,6 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				{
 					string block;
 					diffIndexParser.parseAdditionalLines(block);
-					// TODO: make it common?
-					static const sregex checksumsLineRegex = sregex::compile(
-							" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize);
 
 					auto lines = internal::split('\n', block);
 					FORIT(lineIt, lines)
@@ -536,23 +536,34 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 }
 
 bool MetadataWorker::__download_index(download::Manager& downloadManager,
-		const Cache::IndexDownloadRecord& downloadRecord, bool isDiff,
-		const Cache::IndexEntry& indexEntry, const string& baseDownloadPath,
-		const string& targetPath, bool releaseFileChanged, bool simulating)
+		const cachefiles::FileDownloadRecord& downloadRecord, IndexType indexType,
+		const cachefiles::IndexEntry& indexEntry, const string& baseDownloadPath,
+		const string& targetPath, bool sourceFileChanged)
 {
-	if (isDiff && !fs::fileExists(targetPath))
+	bool simulating = _config->getBool("cupt::worker::simulate");
+	if (indexType == IndexType::PackagesDiff && !fs::fileExists(targetPath))
 	{
 		return false; // nothing to patch
 	}
 
 	const string& uri = downloadRecord.uri;
-	auto downloadPath = baseDownloadPath +
-			(isDiff ? string(".diffindex") : getFilenameExtension(uri));
+	auto downloadPath = baseDownloadPath;
+	switch (indexType)
+	{
+		case IndexType::Packages:
+		case IndexType::Localization:
+		case IndexType::LocalizationFile:
+			downloadPath += getFilenameExtension(uri);
+			break;
+		case IndexType::PackagesDiff:
+			downloadPath += ".diffindex";
+			break;
+	};
 
 	std::function< string () > uncompressingSub;
-	if (isDiff)
+	if (indexType == IndexType::PackagesDiff || indexType == IndexType::Localization)
 	{
-		uncompressingSub = []() -> string { return ""; }; // diffIndex is not a final file
+		uncompressingSub = []() -> string { return ""; }; // is not a final file
 	}
 	else if (!generateUncompressingSub(uri, downloadPath, targetPath, uncompressingSub))
 	{
@@ -560,18 +571,18 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 	}
 
 	auto alias = indexEntry.distribution + '/' + indexEntry.component +
-			' ' + getUriBasename(uri, isDiff);
+			' ' + getUriBasename(uri, indexType != IndexType::Packages);
 	auto longAlias = indexEntry.uri + ' ' + alias;
 	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
 	if (!simulating)
 	{
 		// here we check for outdated dangling indexes in partial directory
-		if (releaseFileChanged && fs::fileExists(downloadPath))
+		if (sourceFileChanged && fs::fileExists(downloadPath))
 		{
 			if (unlink(downloadPath.c_str()) == -1)
 			{
-				warn2e("unable to remove outdated partial index file '%s'", downloadPath);
+				warn2e("unable to remove an outdated partial file '%s'", downloadPath);
 			}
 		}
 	}
@@ -599,10 +610,19 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 	};
 	auto downloadError = downloadManager.download(
 			vector< download::Manager::DownloadEntity >{ downloadEntity });
-	if (isDiff && !simulating && downloadError.empty())
+	if (indexType != IndexType::Packages && !simulating && downloadError.empty())
 	{
-		return __download_and_apply_patches(downloadManager, downloadRecord,
-				indexEntry, baseDownloadPath, downloadPath, targetPath, _logger);
+		if (indexType == IndexType::PackagesDiff)
+		{
+			return __download_and_apply_patches(downloadManager, downloadRecord,
+					indexEntry, baseDownloadPath, downloadPath, targetPath, _logger);
+		}
+		else if (indexType == IndexType::Localization)
+		{
+			return __download_translations(downloadManager, indexEntry,
+					uri, downloadPath, longAlias, sourceFileChanged, _logger);
+		}
+		return true;
 	}
 	else
 	{
@@ -611,7 +631,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 }
 
 bool MetadataWorker::__update_index(download::Manager& downloadManager,
-		const Cache::IndexEntry& indexEntry, bool releaseFileChanged, bool& indexFileChanged)
+		const cachefiles::IndexEntry& indexEntry, bool releaseFileChanged, bool& indexFileChanged)
 {
 	// downloading Packages/Sources
 	auto targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
@@ -638,7 +658,7 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 	auto baseDownloadPath = getDownloadPath(targetPath);
 
 	{ // sort download files by priority and size
-		auto comparator = [this](const Cache::IndexDownloadRecord& left, const Cache::IndexDownloadRecord& right)
+		auto comparator = [this](const cachefiles::FileDownloadRecord& left, const cachefiles::FileDownloadRecord& right)
 		{
 			auto leftPriority = this->__get_uri_priority(left.uri);
 			auto rightPriority = this->__get_uri_priority(right.uri);
@@ -673,9 +693,10 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 		{
 			continue;
 		}
+		auto indexType = isDiff ? IndexType::PackagesDiff : IndexType::Packages;
 
-		if(__download_index(downloadManager, *downloadRecordIt, isDiff, indexEntry,
-				baseDownloadPath, targetPath, releaseFileChanged, simulating))
+		if(__download_index(downloadManager, *downloadRecordIt, indexType, indexEntry,
+				baseDownloadPath, targetPath, releaseFileChanged))
 		{
 			return true;
 		}
@@ -687,65 +708,135 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 	return false;
 }
 
-void MetadataWorker::__update_translations(download::Manager& downloadManager,
-		const Cache::IndexEntry& indexEntry, bool indexFileChanged)
+bool MetadataWorker::__download_translations(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, const string& localizationIndexUri,
+		const string& localizationIndexPath, const string& localizationIndexLongAlias,
+		bool sourceFileChanged, Logger* logger)
 {
-	bool simulating = _config->getBool("cupt::worker::simulate");
-	// downloading file containing localized descriptions
-	auto downloadInfo = cachefiles::getDownloadInfoOfLocalizedDescriptions(*_config, indexEntry);
-	FORIT(downloadRecordIt, downloadInfo)
-	{
-		const string& uri = downloadRecordIt->uri;
-		const string& targetPath = downloadRecordIt->localPath;
+	auto downloadInfo = cachefiles::getDownloadInfoOfLocalizedDescriptions2(*_config, indexEntry);
 
-		auto downloadPath = getDownloadPath(targetPath) + getFilenameExtension(uri);
+	map< string, cachefiles::FileDownloadRecord > availableLocalizations;
 
-		std::function< string () > uncompressingSub;
-		if (!generateUncompressingSub(uri, downloadPath, targetPath, uncompressingSub))
+	{ // parsing localization index
+		auto cleanUp = [localizationIndexPath]()
 		{
-			continue;
-		}
-
-		auto alias = indexEntry.distribution + '/' + indexEntry.component +
-				' ' + getUriBasename(uri, true);
-		auto longAlias = indexEntry.uri + ' ' + alias;
-		_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
-
-		if (!simulating)
+			unlink(localizationIndexPath.c_str());
+		};
+		auto fail = [localizationIndexLongAlias, &cleanUp]()
 		{
-			// here we check for outdated dangling files in partial directory
-			if (indexFileChanged && fs::fileExists(downloadPath))
+			cleanUp();
+			warn2("failed to parse localization info from '%s'", localizationIndexLongAlias);
+		};
+
+		try
+		{
+			string openError;
+			File localizationIndexFile(localizationIndexPath, "r", openError);
+			if (!openError.empty())
 			{
-				if (unlink(downloadPath.c_str()) == -1)
+				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+						__get_pidded_string(format2e("unable to open the file '%s'", localizationIndexPath)));
+			}
+
+			TagParser localizationIndexParser(&localizationIndexFile);
+			TagParser::StringRange fieldName, fieldValue;
+			smatch m;
+			while (localizationIndexParser.parseNextLine(fieldName, fieldValue))
+			{
+				if (fieldName.equal(BUFFER_AND_SIZE("SHA1")))
 				{
-					warn2e("unable to remove outdated partial index localization file '%s'", downloadPath);
+					string block;
+					localizationIndexParser.parseAdditionalLines(block);
+					auto lines = internal::split('\n', block);
+					FORIT(lineIt, lines)
+					{
+						const string& line = *lineIt;
+						if (!regex_match(line, m, checksumsLineRegex))
+						{
+							logger->loggedFatal(Logger::Subsystem::Metadata, 3,
+									__get_pidded_string(format2("malformed 'hash-size-name' line '%s'", line)));
+						}
+
+						cachefiles::FileDownloadRecord record;
+						record.uri = getBaseUri(localizationIndexUri) + '/' + m[3];
+						record.size = string2uint32(m[2]);
+						record.hashSums[HashSums::SHA1] = m[1];
+
+						string searchKey = m[3];
+						auto filenameExtension = getFilenameExtension(searchKey);
+						if (!filenameExtension.empty())
+						{
+							searchKey.erase(searchKey.size() - filenameExtension.size());
+						}
+
+						availableLocalizations[searchKey] = record;
+					}
 				}
 			}
 		}
-
-		download::Manager::DownloadEntity downloadEntity;
-
-		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, longAlias);
-		downloadEntity.extendedUris.push_back(std::move(extendedUri));
-		downloadEntity.targetPath = downloadPath;
-		downloadEntity.size = (size_t)-1;
-		downloadEntity.postAction = uncompressingSub;
-
-		auto downloadError = downloadManager.download(
-				vector< download::Manager::DownloadEntity >{ downloadEntity });
-		if (downloadError.empty())
+		catch (...)
 		{
+			fail();
+			return false;
+		}
+		cleanUp();
+	}
+
+	FORIT(downloadRecordIt, downloadInfo)
+	{
+		auto it = availableLocalizations.find(downloadRecordIt->filePart);
+		if (it == availableLocalizations.end())
+		{
+			continue; // not found
+		}
+
+		const string& targetPath = downloadRecordIt->localPath;
+		if (__download_index(downloadManager, it->second, IndexType::LocalizationFile, indexEntry,
+				getDownloadPath(targetPath), targetPath, sourceFileChanged))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void MetadataWorker::__update_translations(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool indexFileChanged)
+{
+	if (cachefiles::getDownloadInfoOfLocalizedDescriptions2(*_config, indexEntry).empty())
+	{
+		return;
+	}
+
+	{ // downloading translation index
+		auto localizationIndexDownloadInfo =
+				cachefiles::getDownloadInfoOfLocalizationIndex(*_config, indexEntry);
+		if (localizationIndexDownloadInfo.empty())
+		{
+			_logger->log(Logger::Subsystem::Metadata, 3,
+					"no localization file index was found in the release, skipping downloading localization files");
 			return;
 		}
+		if (localizationIndexDownloadInfo.size() > 1)
+		{
+			_logger->log(Logger::Subsystem::Metadata, 3,
+					"more than one localization file index was found in the release, skipping downloading localization files");
+			return;
+		}
+
+		// downloading file containing localized descriptions
+		auto baseDownloadPath = getDownloadPath(cachefiles::getPathOfIndexList(*_config, indexEntry)) + "_l10n_Index";
+		__download_index(downloadManager, localizationIndexDownloadInfo[0], IndexType::Localization,
+				indexEntry, baseDownloadPath, "" /* unused */, indexFileChanged);
 	}
 }
 
 bool MetadataWorker::__update_release_and_index_data(download::Manager& downloadManager,
-		const Cache::IndexEntry& indexEntry)
+		const cachefiles::IndexEntry& indexEntry)
 {
 	auto indexEntryDescription =
-			string(indexEntry.category == Cache::IndexEntry::Binary ? "deb" : "deb-src") +
+			string(indexEntry.category == cachefiles::IndexEntry::Binary ? "deb" : "deb-src") +
 			' ' + indexEntry.uri + ' ' + indexEntry.distribution + '/' + indexEntry.component;
 	_logger->log(Logger::Subsystem::Metadata, 2,
 			__get_pidded_string(string("updating: ") + indexEntryDescription));

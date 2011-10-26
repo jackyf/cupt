@@ -38,6 +38,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - Downloading package archives: include only those codename/component
         pairs to long descriptions which belong to a selected base
         download URI.
+      - Updating release and index data: use i18n/Index for downloading package
+        description localizations (Closes: #547948).
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
     - 'fatal', 'warn', 'debug', 'simulate': are deprecated now.
