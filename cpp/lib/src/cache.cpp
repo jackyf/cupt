@@ -46,7 +46,7 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 		__impl->packageNameRegexesToReinstall.push_back(internal::globToRegex(*it));
 	}
 
-	{ // ugly hack to copy trusted keyring from APT whenever possible
+	{ // ugly hack to copy trusted keyring from APT whenever possible, see #647001
 		auto cuptKeyringPath = config->getString("gpgv::trustedkeyring");
 		auto aptKeyringPath = "/etc/apt/trusted.gpg";
 		// ignore all errors, let install do its best
