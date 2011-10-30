@@ -108,50 +108,36 @@ int search(Context& context)
 			const string& packageName = *packageNameIt;
 
 			auto package = cache->getBinaryPackage(packageName);
-			bool matched = true;
-			shared_ptr< const BinaryVersion > version;
-
-			FORIT(regexIt, regexes)
+			auto versions = package->getVersions();
+			FORIT(versionIt, versions)
 			{
-				const sregex& regex = *regexIt;
-				if (regex_search(packageName, m, regex))
+				shared_ptr< const BinaryVersion >& v = *versionIt;
+				bool matched = true;
+
+				FORIT(regexIt, regexes)
 				{
-					continue;
-				}
-				else
-				{
-					auto versions = package->getVersions();
-					auto versionCount = versions.size();
-					for (size_t i = 0; i < versionCount; ++i)
+					const sregex& regex = *regexIt;
+					if (regex_search(packageName, m, regex))
 					{
-						shared_ptr< const BinaryVersion >& v = versions[i];
+						continue;
+					}
+					else
+					{
 						if (regex_search(v->shortDescription, m, regex) || regex_search(v->longDescription, m, regex))
 						{
-							version = v;
-							goto next_regex;
+							continue;
 						}
 					}
+					matched = false;
+					break;
 				}
-				matched = false;
-				break;
 
-				next_regex:
-				;
-			}
-
-			if (matched)
-			{
-				if (version)
+				if (matched)
 				{
-					cout << packageName << " - " << version->shortDescription;
+					cout << packageName << " - " << v->shortDescription << endl;
 				}
-				else
-				{
-					cout << packageName;
-				}
-				cout << endl;
 			}
-		};
+		}
 	}
 
 	return 0;
