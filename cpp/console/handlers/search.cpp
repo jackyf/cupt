@@ -109,6 +109,8 @@ int search(Context& context)
 
 			auto package = cache->getBinaryPackage(packageName);
 			auto versions = package->getVersions();
+
+			set< string > printedShortDescriptions;
 			FORIT(versionIt, versions)
 			{
 				shared_ptr< const BinaryVersion >& v = *versionIt;
@@ -132,7 +134,7 @@ int search(Context& context)
 					break;
 				}
 
-				if (matched)
+				if (matched && printedShortDescriptions.insert(v->shortDescription).second)
 				{
 					cout << packageName << " - " << v->shortDescription << endl;
 				}
