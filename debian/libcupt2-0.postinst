@@ -5,7 +5,6 @@ set -e
 if [ ! -e /var/lib/cupt ]; then
 	mkdir /var/lib/cupt
 fi
-install -m644 /etc/apt/trusted.gpg /var/lib/cupt
 
 #DEBHELPER#
 

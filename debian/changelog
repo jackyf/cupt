@@ -1,6 +1,11 @@
 cupt (2.2.2~) UNRELEASED; urgency=low
 
-  * 
+  * debian:
+    - libcupt2-0.postinst:
+      - Don't copy APT GnuPG keyring here anymore. Since 2.1.x Cupt has its
+        own directory for repository caches so no work is possible until
+        the repository lists are generated first time, and at that time
+        the keyring will be copied anyway.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 31 Oct 2011 14:45:03 +0200
 
