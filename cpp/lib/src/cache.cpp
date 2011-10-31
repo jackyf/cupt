@@ -27,6 +27,7 @@
 #include <internal/cacheimpl.hpp>
 #include <internal/regex.hpp>
 #include <internal/cachefiles.hpp>
+#include <internal/filesystem.hpp>
 
 // TODO/API break/: remove deprecated entities
 
@@ -48,10 +49,17 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 
 	{ // ugly hack to copy trusted keyring from APT whenever possible
 		auto cuptKeyringPath = config->getString("gpgv::trustedkeyring");
-		auto aptKeyringPath = "/etc/apt/trusted.gpg";
-		// ignore all errors, let install do its best
-		std::system(sf("install -m644 %s %s >/dev/null 2>/dev/null",
-				aptKeyringPath, cuptKeyringPath.c_str()).c_str());
+		auto tempPath = cuptKeyringPath + ".new.temp";
+
+		auto result = std::system(sf("rm -f %s &&"
+				"(apt-key exportall | gpg --batch --no-default-keyring --keyring %s --import) >/dev/null 2>/dev/null &&"
+				"chmod -f +r %s",
+				tempPath.c_str(), tempPath.c_str(), tempPath.c_str()).c_str());
+		if (result == 0)
+		{
+			internal::fs::move(tempPath, cuptKeyringPath); // ignoring errors
+		}
+		unlink(tempPath.c_str()); // in case of system() or move() above failed
 	}
 
 	__impl->parseSourcesLists();

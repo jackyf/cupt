@@ -6,6 +6,10 @@ cupt (2.2.2~) UNRELEASED; urgency=low
         own directory for repository caches so no work is possible until
         the repository lists are generated first time, and at that time
         the keyring will be copied anyway.
+  * lib:
+    - cache:
+      - Use 'apt-key exportall' in the 'copy the keyring' hack. Thanks to
+        Jonathan Nieder for the report and the patch idea. (Closes: #646993)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 31 Oct 2011 14:45:03 +0200
 
