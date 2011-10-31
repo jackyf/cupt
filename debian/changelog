@@ -1,4 +1,4 @@
-cupt (2.2.2~) UNRELEASED; urgency=low
+cupt (2.2.2) unstable; urgency=low
 
   * debian:
     - libcupt2-0.postinst:
@@ -11,7 +11,7 @@ cupt (2.2.2~) UNRELEASED; urgency=low
       - Use 'apt-key exportall' in the 'copy the keyring' hack. Thanks to
         Jonathan Nieder for the report and the patch idea. (Closes: #646993)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 31 Oct 2011 14:45:03 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 31 Oct 2011 21:40:46 +0200
 
 cupt (2.2.1) unstable; urgency=low
 
