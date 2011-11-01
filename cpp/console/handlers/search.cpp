@@ -80,6 +80,7 @@ int search(Context& context)
 	smatch m;
 
 	vector< string > packageNames = cache->getBinaryPackageNames();
+	std::sort(packageNames.begin(), packageNames.end());
 	if (config->getBool("apt::cache::namesonly"))
 	{
 		// search only in package names
