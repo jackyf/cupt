@@ -73,8 +73,9 @@ to try it if you encountered a bug in other package manager(s).
 
 == Getting started ==
 
-To start working with Cupt just install it using any present package manager,
-for example ``apt-get install cupt`` or ``aptitude install cupt``.
+To start working with Cupt just install it using any present package manager
+(for example, ``apt-get install cupt`` or ``aptitude install cupt``) and run
+``cupt update`` afterwards.
 
 Cupt uses existing APT infrastructure for the work. It should be safe to co-use
 Cupt and any APT-based package managers.

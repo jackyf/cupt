@@ -52,6 +52,21 @@ cupt (2.3.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
 
+cupt (2.2.2) unstable; urgency=low
+
+  * debian:
+    - libcupt2-0.postinst:
+      - Don't copy APT GnuPG keyring here anymore. Since 2.1.x Cupt has its
+        own directory for repository caches so no work is possible until
+        the repository lists are generated first time, and at that time
+        the keyring will be copied anyway.
+  * lib:
+    - cache:
+      - Use 'apt-key exportall' in the 'copy the keyring' hack. Thanks to
+        Jonathan Nieder for the report and the patch idea. (Closes: #646993)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 31 Oct 2011 21:40:46 +0200
+
 cupt (2.2.1) unstable; urgency=low
 
   * console:
