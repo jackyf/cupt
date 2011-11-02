@@ -603,14 +603,14 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		size_t actionCount = 0;
 		{ // print planned actions
 			const map< WA::Type, string > actionNames = {
-				{ WA::Install, __("will be INSTALLED") },
-				{ WA::Remove, __("will be REMOVED") },
-				{ WA::Upgrade, __("will be UPGRADED") },
-				{ WA::Purge, __("will be PURGED") },
-				{ WA::Downgrade, __("will be DOWNGRADED") },
-				{ WA::Configure, __("will be CONFIGURED") },
-				{ WA::Deconfigure, __("will be DECONFIGURED") },
-				{ WA::ProcessTriggers, __("will have TRIGGERS processed") },
+				{ WA::Install, __("will be installed") },
+				{ WA::Remove, __("will be removed") },
+				{ WA::Upgrade, __("will be upgraded") },
+				{ WA::Purge, __("will be purged") },
+				{ WA::Downgrade, __("will be downgraded") },
+				{ WA::Configure, __("will be configured") },
+				{ WA::Deconfigure, __("will be deconfigured") },
+				{ WA::ProcessTriggers, __("will have triggers processed") },
 				{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
 			};
 			cout << endl;
