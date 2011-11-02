@@ -16,6 +16,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         nothing to do.
       - New option '--show-not-preferred'.
       - Don't uppercase action names anymore.
+      - Show also action summary.
     - 'search':
       - Output short description(s) even if all search expressions was found in
         the package name.
