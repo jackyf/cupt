@@ -622,22 +622,23 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				actionTypesInOrder.push_back(fakeNotPolicyVersionAction);
 			}
 
+			auto getSuggestedPackages = [&cache, &offer, &actionsPreview](const WA::Type& actionType)
+			{
+				return actionType == fakeNotPolicyVersionAction ?
+						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
+			};
+
 			FORIT (actionTypeIt, actionTypesInOrder)
 			{
 				const WA::Type& actionType = *actionTypeIt;
-
-				const Resolver::SuggestedPackages& actionSuggestedPackages =
-						actionType == fakeNotPolicyVersionAction ?
-						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
-
+				const Resolver::SuggestedPackages& actionSuggestedPackages = getSuggestedPackages(actionType);
 				if (actionSuggestedPackages.empty())
 				{
-					continue; // don't print empty lists
+					continue;
 				}
 
 				const string& actionName = actionNames.find(actionType)->second;
-				cout << format2(__("The following %u packages %s:"),
-						actionSuggestedPackages.size(), actionName) << endl << endl;
+				cout << format2(__("The following packages %s:"), actionName) << endl << endl;
 
 				FORIT(it, actionSuggestedPackages)
 				{
@@ -686,16 +687,36 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				}
 				cout << endl;
 			}
+
+			showUnsatisfiedSoftDependencies(offer);
+
+			// nothing to do maybe?
+			if (actionCount == 0)
+			{
+				thereIsNothingToDo = true;
+				return Resolver::UserAnswer::Abandon;
+			}
+
+			{ // show summary
+				cout << __("Action summary:") << endl;
+				FORIT(actionTypeIt, actionTypesInOrder)
+				{
+					const Resolver::SuggestedPackages& actionSuggestedPackages = getSuggestedPackages(*actionTypeIt);
+					if (actionSuggestedPackages.empty())
+					{
+						continue;
+					}
+					const string& actionName = actionNames.find(*actionTypeIt)->second;
+					cout << format2(__("  %u packages %s"), actionSuggestedPackages.size(), actionName) << endl;
+				}
+				if (!offer.unresolvedProblems.empty())
+				{
+					cout << format2(__("  %u dependency problems will stay unresolved"),
+							offer.unresolvedProblems.size()) << endl;
+				}
+				cout << endl;
+			}
 		};
-
-		// nothing to do maybe?
-		if (actionCount == 0)
-		{
-			thereIsNothingToDo = true;
-			return Resolver::UserAnswer::Abandon;
-		}
-
-		showUnsatisfiedSoftDependencies(offer);
 
 		bool isDangerousAction = false;
 		if (!config->getBool("cupt::console::allow-untrusted"))
