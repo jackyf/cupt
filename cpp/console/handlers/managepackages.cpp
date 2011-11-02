@@ -467,7 +467,7 @@ void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 	cout << endl;
 }
 
-void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
+void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer, std::stringstream* summaryStreamPtr)
 {
 	vector< string > messages;
 	FORIT(unresolvedProblemIt, offer.unresolvedProblems)
@@ -484,6 +484,9 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer)
 			cout << *messageIt << endl;
 		}
 		cout << endl;
+
+		*summaryStreamPtr << format2(__("  %u dependency problems will stay unresolved"),
+				offer.unresolvedProblems.size()) << endl;
 	}
 }
 
@@ -600,6 +603,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
 
+		std::stringstream summaryStream;
+
 		size_t actionCount = 0;
 		{ // print planned actions
 			const map< WA::Type, string > actionNames = {
@@ -622,22 +627,20 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				actionTypesInOrder.push_back(fakeNotPolicyVersionAction);
 			}
 
-			auto getSuggestedPackages = [&cache, &offer, &actionsPreview](const WA::Type& actionType)
-			{
-				return actionType == fakeNotPolicyVersionAction ?
-						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
-			};
-
 			FORIT (actionTypeIt, actionTypesInOrder)
 			{
 				const WA::Type& actionType = *actionTypeIt;
-				const Resolver::SuggestedPackages& actionSuggestedPackages = getSuggestedPackages(actionType);
+				const Resolver::SuggestedPackages& actionSuggestedPackages =
+						actionType == fakeNotPolicyVersionAction ?
+						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
 				if (actionSuggestedPackages.empty())
 				{
 					continue;
 				}
 
 				const string& actionName = actionNames.find(actionType)->second;
+
+				summaryStream << format2(__("  %u packages %s"), actionSuggestedPackages.size(), actionName) << endl;
 				cout << format2(__("The following packages %s:"), actionName) << endl << endl;
 
 				FORIT(it, actionSuggestedPackages)
@@ -688,35 +691,21 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				cout << endl;
 			}
 
-			showUnsatisfiedSoftDependencies(offer);
-
-			// nothing to do maybe?
-			if (actionCount == 0)
-			{
-				thereIsNothingToDo = true;
-				return Resolver::UserAnswer::Abandon;
-			}
-
-			{ // show summary
-				cout << __("Action summary:") << endl;
-				FORIT(actionTypeIt, actionTypesInOrder)
-				{
-					const Resolver::SuggestedPackages& actionSuggestedPackages = getSuggestedPackages(*actionTypeIt);
-					if (actionSuggestedPackages.empty())
-					{
-						continue;
-					}
-					const string& actionName = actionNames.find(*actionTypeIt)->second;
-					cout << format2(__("  %u packages %s"), actionSuggestedPackages.size(), actionName) << endl;
-				}
-				if (!offer.unresolvedProblems.empty())
-				{
-					cout << format2(__("  %u dependency problems will stay unresolved"),
-							offer.unresolvedProblems.size()) << endl;
-				}
-				cout << endl;
-			}
 		};
+
+		// nothing to do maybe?
+		if (actionCount == 0)
+		{
+			thereIsNothingToDo = true;
+			return Resolver::UserAnswer::Abandon;
+		}
+
+		showUnsatisfiedSoftDependencies(offer, &summaryStream);
+
+		{ // show summary
+			cout << __("Action summary:") << endl << summaryStream.str() << endl;
+			summaryStream.clear();
+		}
 
 		bool isDangerousAction = false;
 		if (!config->getBool("cupt::console::allow-untrusted"))
