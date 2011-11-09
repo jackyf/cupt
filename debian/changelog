@@ -52,6 +52,9 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - Honor 'cupt::cache::limit-releases::*' options.
     - 'fatal', 'warn', 'debug', 'simulate': are deprecated now.
   * doc:
+    - man:
+      - [Jonathan Nieder] Split off a cupt.conf(5) page from cupt(1).
+        Thanks to A. Costa for the idea (Closes: #648012).
     - What was referred as 'candidate version' is really
       the 'preferred version'.
 
