@@ -148,7 +148,7 @@ boolean, don't treat using untrusted packages as dangerous action
 
 =item cupt::console::assume-yes
 
-boolean, see L<--assume-yes|/--assume-yes>
+boolean, see L<cupt(1)> L<--assume-yes|/--assume-yes>
 
 =item cupt::console::actions-preview::show-not-preferred
 
@@ -286,11 +286,11 @@ suggested packages or not. False by default.
 
 =item cupt::resolver::auto-remove
 
-boolean, see L<--no-auto-remove/|--no-auto-remove>
+boolean, see L<cupt(1)> L<--no-auto-remove/|--no-auto-remove>
 
 =item cupt::resolver::max-solution-count
 
-integer, positive, see L<--max-solution-count|/--max-solution-count>
+integer, positive, see L<cupt(1)> L<--max-solution-count|/--max-solution-count>
 
 =item cupt::resolver::external-command
 
@@ -301,7 +301,7 @@ Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cud
 
 =item cupt::resolver::no-remove
 
-boolean, see L<--no-remove|/--no-remove>
+boolean, see L<cupt(1)> L<--no-remove|/--no-remove>
 
 =item cupt::resolver::synchronize-by-source-versions
 
@@ -335,11 +335,11 @@ package cannot be synchronized with the modified one.
 
 =item cupt::resolver::track-reasons
 
-boolean, see L<--show-reasons|/--show-reasons,--show-deps,-D>
+boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 =item cupt::resolver::type
 
-string, see L<--resolver|/--resolver>
+string, see L<cupt(1)> L<--resolver|/--resolver>
 
 =item cupt::resolver::score::<part>
 
@@ -415,7 +415,7 @@ system in the interim trigger state, which can be fixed by manual run of 'dpkg
 
 =item cupt::worker::download-only
 
-boolean, see L<--download-only|/--download-only,-d>
+boolean, see L<cupt(1)> L<--download-only|/--download-only,-d>
 
 =item cupt::worker::log
 
@@ -441,7 +441,7 @@ False by default.
 
 =item cupt::worker::simulate
 
-boolean, see L<--simulate|/--simulate,-s>
+boolean, see L<cupt(1)> L<--simulate|/--simulate,-s>
 
 =item cupt::worker::use-locks
 
