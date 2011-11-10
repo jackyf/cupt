@@ -638,6 +638,11 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 					continue;
 				}
 
+				if (actionType != fakeNotPolicyVersionAction)
+				{
+					actionCount += actionSuggestedPackages.size();
+				}
+
 				const string& actionName = actionNames.find(actionType)->second;
 
 				summaryStream << format2(__("  %u packages %s"), actionSuggestedPackages.size(), actionName) << endl;
@@ -645,11 +650,6 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 				FORIT(it, actionSuggestedPackages)
 				{
-					if (actionType != fakeNotPolicyVersionAction)
-					{
-						++actionCount;
-					}
-
 					const string& packageName = it->first;
 					cout << packageName;
 					if (actionType == WA::Remove || actionType == WA::Purge)
