@@ -435,6 +435,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			auto partialDirectory = fs::dirname(patchedPath);
 			auto patchedPathBasename = fs::filename(patchedPath);
 
+			// FIXME/blocker/: we don't have any guarantee that patches are listed in the order of applying,
+			// so we cannot skip the calculating of "middle" hash sums for now
 			string edPipeOpenError;
 			string edPipeCommand = sf("cd %s && red -s - %s >/dev/null",
 					partialDirectory.c_str(), patchedPathBasename.c_str());
