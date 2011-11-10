@@ -292,13 +292,6 @@ boolean, see L<cupt(1)> L<--no-auto-remove/|--no-auto-remove>
 
 integer, positive, see L<cupt(1)> L<--max-solution-count|/--max-solution-count>
 
-=item cupt::resolver::external-command
-
-string, a preview-only, experimental option to use external resolver using CUDF
-protocol. Don't use it unless you know what you are doing.
-
-Example: C<< cupt -s safe-upgrade -o "cupt::resolver::external-command=cat > cudfout.txt" >>
-
 =item cupt::resolver::no-remove
 
 boolean, see L<cupt(1)> L<--no-remove|/--no-remove>
