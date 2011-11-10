@@ -614,6 +614,8 @@ class DependencyGraph::FillHelper
 
  private:
 
+	// FIXME/API break/blocker: resolver has to learn about interim package
+	// states and their (anti-)dependencies to allow having broken packages
 	void relaxDependencyIfBrokenAndAllowed(const Element* relationExpressionVertexPtr)
 	{
 		if (__broken_relations.count(relationExpressionVertexPtr))
