@@ -943,7 +943,7 @@ option means adding one more string to the existing list.
 
 Cupt has many configuration variables, some of them may be specified/overridden
 using command-line switches, some needs to be modified explicitly. See the full
-variable list and descriptions at //cupt(1)/Configuration variables//.
+variable list and descriptions at //cupt.conf(5)//.
 
 To see the current configuration, use ``config-dump`` subcommand. Examples:
 
@@ -970,7 +970,7 @@ You can distingiush list options there by figure brackets around the values.
 
 Cupt reads configuration first from APT configuration files (conforming to the
 APT documentation (//apt.conf(5)//)), then from Cupt-specific configuration
-files (see //cupt(1)/cupt::directory::configuration//), then applies those
+files (see //cupt.conf(5)/cupt::directory::configuration//), then applies those
 specified in the command line using ``--option`` (or ``-o``) switch or by
 dedicated switches corresponding to the option.
 
@@ -1535,8 +1535,7 @@ very detailed logging
 Logging levels are set for each subsystem independently. By default, the
 logging level for package changes is set to ``2``, other logging levels are set
 to ``1``. To change the logging level for some subsystem, use the option
-``cupt::worker::log::levels::``//subsystem//.
-See //cupt(1)/Configuration variables// for details.
+``cupt::worker::log::levels::``//subsystem//.  See //cupt.conf(5)// for details.
 
 Finally, if you want to disable the logging entirely, set the option
 ``cupt::worker::log`` to ``no``.
@@ -1739,7 +1738,7 @@ Score is an integer (i.e. can positive and negative) and is a sum of version
 pin difference (for uninstalled version, zero pin is assumed) and an action
 modifier. Action modifiers are action type-specific addendums and are
 controlled by the option group ``cupt::resolver::score::``//X// (see the full
-list of them in //cupt(1)/Configuration variables//).
+list of them in //cupt.conf(5)//).
 
 For native resolver, the negative scores indicate "negative" changes, and
 positive scores indicate "positive" changes. When several alternative solutions
