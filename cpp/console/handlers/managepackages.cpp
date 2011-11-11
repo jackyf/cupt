@@ -754,6 +754,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-deps", "")
 		("show-not-preferred", "")
 		("download-only,d", "")
+		("summary", "")
 		("assume-yes", "")
 		("yes,y", "");
 
@@ -807,6 +808,10 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	if (variables.count("no-auto-remove"))
 	{
 		config->setScalar("cupt::resolver::auto-remove", "no");
+	}
+	if (variables.count("summary"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-only-summary", "yes");
 	}
 
 	showVersions = variables.count("show-versions");

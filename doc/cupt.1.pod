@@ -600,6 +600,12 @@ Doesn't require root privileges.
 
 Corresponding configuration option: L<cupt::worker::simulate>
 
+=item --summary
+
+Show only summary of actions without details.
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-only-summary>
+
 =item --resolver=
 
 string, determines type of resolver: can be
