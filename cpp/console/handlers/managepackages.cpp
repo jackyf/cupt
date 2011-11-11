@@ -593,6 +593,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		thereIsNothingToDo = false;
 
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
+		auto summaryOnly = config->getBool("cupt::console::actions-preview::show-only-summary");
 
 		worker->setDesiredState(offer);
 		FORIT(packageNameIt, purgedPackageNames)
@@ -646,6 +647,11 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				const string& actionName = actionNames.find(actionType)->second;
 
 				summaryStream << format2(__("  %u packages %s"), actionSuggestedPackages.size(), actionName) << endl;
+				if (summaryOnly)
+				{
+					continue;
+				}
+
 				cout << format2(__("The following packages %s:"), actionName) << endl << endl;
 
 				FORIT(it, actionSuggestedPackages)

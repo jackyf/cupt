@@ -175,6 +175,11 @@ Show always.
 
 =back
 
+=item cupt::console::actions-preview::show-only-summary
+
+boolean, if set to true, no details of planned actions will be shown in the
+actions preview, only a summary will be shown. False by default.
+
 =item cupt::directory
 
 string, base directory for all cupt::directory::* options
