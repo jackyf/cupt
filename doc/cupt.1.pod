@@ -907,8 +907,6 @@ don't output anything to standard output
 
 See L<cupt.conf(5)>.
 
-=back
-
 =head1 REPORTING
 
 Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
