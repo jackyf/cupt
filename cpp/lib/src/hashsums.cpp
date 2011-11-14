@@ -52,6 +52,7 @@ class GcryptHasher
 		auto binaryResult = gcry_md_read(__gcrypt_handle, 0);
 		string result;
 
+		result.reserve(__digest_size * 2);
 		// converting to hexadecimal string
 		for (size_t i = 0; i < __digest_size; ++i)
 		{
