@@ -75,6 +75,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		gcry_check_version(NULL);
 		gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
 		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+		initialized = true;
 	}
 
 	int gcryptAlgorithm;
