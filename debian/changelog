@@ -24,6 +24,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - Sort packages before the processing. That reduces a program's system
         time by making file reads more linear. As a consequence, an output is
         now sorted too.
+      - Now searches in the localized description if present.
   * lib:
     - system/resolvers/native:
       - Removing automatically installed packages: stopped considering

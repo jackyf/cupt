@@ -117,6 +117,11 @@ int search(Context& context)
 				shared_ptr< const BinaryVersion >& v = *versionIt;
 				bool matched = true;
 
+				// TODO: getLocalizedDescriptions() perfomance fixes
+				auto descriptions = cache->getLocalizedDescriptions(v);
+				const string& shortDescription = descriptions.first.empty() ? v->shortDescription : descriptions.first;
+				const string& longDescription = descriptions.second.empty() ? v->longDescription : descriptions.second;
+
 				FORIT(regexIt, regexes)
 				{
 					const sregex& regex = *regexIt;
@@ -126,7 +131,7 @@ int search(Context& context)
 					}
 					else
 					{
-						if (regex_search(v->shortDescription, m, regex) || regex_search(v->longDescription, m, regex))
+						if (regex_search(shortDescription, m, regex) || regex_search(longDescription, m, regex))
 						{
 							continue;
 						}
@@ -135,9 +140,9 @@ int search(Context& context)
 					break;
 				}
 
-				if (matched && printedShortDescriptions.insert(v->shortDescription).second)
+				if (matched && printedShortDescriptions.insert(shortDescription).second)
 				{
-					cout << packageName << " - " << v->shortDescription << endl;
+					cout << packageName << " - " << shortDescription << endl;
 				}
 			}
 		}
