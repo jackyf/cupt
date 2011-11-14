@@ -55,8 +55,10 @@ class GcryptHasher
 		// converting to hexadecimal string
 		for (size_t i = 0; i < __digest_size; ++i)
 		{
+			static const char fourBitToHex[] = "0123456789abcdef";
 			unsigned int c = binaryResult[i];
-			result += format2("%02x", c);
+			result += fourBitToHex[c >> 4]; // high halfbit
+			result += fourBitToHex[c & 0xf]; // low halfbit
 		}
 
 		return result;

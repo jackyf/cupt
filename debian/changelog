@@ -53,6 +53,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         description localizations (Closes: #547948).
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
+    - hashsums:
+      - Reduce CPU overhead of the calculating hashes of short strings.
     - 'fatal', 'warn', 'debug', 'simulate': are deprecated now.
   * doc:
     - man:
