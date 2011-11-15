@@ -44,6 +44,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         'cupt::cache::limit-releases::by-codename::type'.
       - New option 'cupt::console::actions-preview::show-not-preferred'.
       - New option 'cupt::console::actions-preview::show-only-summary'.
+      - New option 'cupt::cache::pin::addendums::but-automatic-upgrades'.
     - system/worker:
       - Logging: log errors too.
       - Downloading package archives: include only those codename/component
