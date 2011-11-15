@@ -42,6 +42,7 @@ struct CUPT_API ReleaseInfo
 	vector< string> architectures; ///< list of architectures applicable
 	string baseUri; ///< source base URI
 	bool notAutomatic; ///< @c true, if @c NotAutomatic flag is specified in Release file
+	bool butAutomaticUpgrades; ///< @c true, if @c ButAutomaticUpgrades flag is specified in Release file
 };
 
 }

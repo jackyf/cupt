@@ -542,6 +542,7 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 {
 	shared_ptr< cache::ReleaseInfo > result(new cache::ReleaseInfo);
 	result->notAutomatic = false; // default
+	result->butAutomaticUpgrades = false; // default
 
 	string openError;
 	File file(path, "r", openError);
@@ -592,6 +593,10 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 			else if (fieldName == "NotAutomatic")
 			{
 				result->notAutomatic = true;
+			}
+			else if (fieldName == "ButAutomaticUpgrades")
+			{
+				result->butAutomaticUpgrades = true;
 			}
 			else if (fieldName == "Architectures")
 			{
