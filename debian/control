@@ -58,6 +58,7 @@ Description: alternative front-end for dpkg -- library documentation
 Package: cupt
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt2-0 (>= ${binary:Version})
+Breaks: daptup (<< 0.12.2~)
 Suggests: sensible-utils, libreadline6
 Description: alternative front-end for dpkg -- console interface
  This package provides a console interface to Cupt library, which is a
