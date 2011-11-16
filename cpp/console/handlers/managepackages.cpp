@@ -580,37 +580,34 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 	return result;
 }
 
-bool wasOrWillBePackageAutoInstalled(const Cache& cache, WA::Type actionType, const string& packageName,
-		const Worker::ActionsPreview& actionsPreview, const Resolver::SuggestedPackage& suggestedPackage)
+bool wasOrWillBePackageAutoInstalled(const Cache& cache, const string& packageName,
+		const map< string, bool >& autoFlagChanges)
 {
-	bool isNewPackage;
-	if (actionType == fakeNotPolicyVersionAction)
+	if (cache.isAutomaticallyInstalled(packageName))
 	{
-		isNewPackage = actionsPreview.groups[WA::Install].count(packageName);
-	}
-	else
-	{
-		isNewPackage = (actionType == WA::Install);
+		return true;
 	}
 
-	if (isNewPackage)
+	auto autoFlagChangeIt = autoFlagChanges.find(packageName);
+	if (autoFlagChangeIt != autoFlagChanges.end())
 	{
-		return !suggestedPackage.manuallySelected;
+		if (autoFlagChangeIt->second) // "set as autoinstalled"
+		{
+			return true;
+		}
 	}
-	else
-	{
-		return cache.isAutomaticallyInstalled(packageName);
-	}
+
+	return false;
 }
 
-void addActionToSummary(const Cache& cache, WA::Type actionType, const string& actionName,
-		const Worker::ActionsPreview& actionsPreview, const Resolver::SuggestedPackages& suggestedPackages,
+void addActionToSummary(const Cache& cache, const string& actionName,
+		const Resolver::SuggestedPackages& suggestedPackages, const map< string, bool >& autoFlagChanges,
 		std::stringstream* summaryStreamPtr)
 {
 	size_t manuallyInstalledCount = std::count_if(suggestedPackages.begin(), suggestedPackages.end(),
-			[&cache, &actionType, &actionsPreview](const pair< string, Resolver::SuggestedPackage >& arg)
+			[&cache, &autoFlagChanges](const pair< string, Resolver::SuggestedPackage >& arg)
 			{
-				return !wasOrWillBePackageAutoInstalled(cache, actionType, arg.first, actionsPreview, arg.second);
+				return !wasOrWillBePackageAutoInstalled(cache, arg.first, autoFlagChanges);
 			});
 
 	auto total = suggestedPackages.size();
@@ -684,7 +681,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 				const string& actionName = actionNames.find(actionType)->second;
 
-				addActionToSummary(*cache, actionType, actionName, *actionsPreview, actionSuggestedPackages, &summaryStream);
+				addActionToSummary(*cache, actionName, actionSuggestedPackages,
+						actionsPreview->autoFlagChanges, &summaryStream);
 				if (summaryOnly)
 				{
 					continue;
