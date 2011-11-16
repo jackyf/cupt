@@ -580,6 +580,44 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 	return result;
 }
 
+bool wasOrWillBePackageAutoInstalled(const Cache& cache, WA::Type actionType, const string& packageName,
+		const Worker::ActionsPreview& actionsPreview, const Resolver::SuggestedPackage& suggestedPackage)
+{
+	bool isNewPackage;
+	if (actionType == fakeNotPolicyVersionAction)
+	{
+		isNewPackage = actionsPreview.groups[WA::Install].count(packageName);
+	}
+	else
+	{
+		isNewPackage = (actionType == WA::Install);
+	}
+
+	if (isNewPackage)
+	{
+		return !suggestedPackage.manuallySelected;
+	}
+	else
+	{
+		return cache.isAutomaticallyInstalled(packageName);
+	}
+}
+
+void addActionToSummary(const Cache& cache, WA::Type actionType, const string& actionName,
+		const Worker::ActionsPreview& actionsPreview, const Resolver::SuggestedPackages& suggestedPackages,
+		std::stringstream* summaryStreamPtr)
+{
+	size_t manuallyInstalledCount = std::count_if(suggestedPackages.begin(), suggestedPackages.end(),
+			[&cache, &actionType, &actionsPreview](const pair< string, Resolver::SuggestedPackage >& arg)
+			{
+				return !wasOrWillBePackageAutoInstalled(cache, actionType, arg.first, actionsPreview, arg.second);
+			});
+
+	auto total = suggestedPackages.size();
+	*summaryStreamPtr << format2(__("  %u manually installed and %u automatically installed packages %s"),
+			manuallyInstalledCount, total - manuallyInstalledCount, actionName) << endl;
+}
+
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
 		bool showVersions, bool showSizeChanges, bool showNotPreferred,
@@ -646,7 +684,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 				const string& actionName = actionNames.find(actionType)->second;
 
-				summaryStream << format2(__("  %u packages %s"), actionSuggestedPackages.size(), actionName) << endl;
+				addActionToSummary(*cache, actionType, actionName, *actionsPreview, actionSuggestedPackages, &summaryStream);
 				if (summaryOnly)
 				{
 					continue;
