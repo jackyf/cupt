@@ -790,7 +790,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-deps", "")
 		("show-not-preferred", "")
 		("download-only,d", "")
-		("summary", "")
+		("summary-only", "")
 		("assume-yes", "")
 		("yes,y", "");
 
@@ -845,7 +845,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	{
 		config->setScalar("cupt::resolver::auto-remove", "no");
 	}
-	if (variables.count("summary"))
+	if (variables.count("summary-only"))
 	{
 		config->setScalar("cupt::console::actions-preview::show-only-summary", "yes");
 	}

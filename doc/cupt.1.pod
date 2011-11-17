@@ -600,7 +600,7 @@ Doesn't require root privileges.
 
 Corresponding configuration option: L<cupt::worker::simulate>
 
-=item --summary
+=item --summary-only
 
 Show only summary of actions without details.
 
