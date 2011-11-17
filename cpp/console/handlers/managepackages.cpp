@@ -796,6 +796,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-not-preferred", "")
 		("download-only,d", "")
 		("summary-only", "")
+		("no-summary", "")
 		("assume-yes", "")
 		("yes,y", "");
 
@@ -854,6 +855,11 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	{
 		config->setScalar("cupt::console::actions-preview::show-summary", "yes");
 		config->setScalar("cupt::console::actions-preview::show-details", "no");
+	}
+	if (variables.count("no-summary"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-summary", "no");
+		config->setScalar("cupt::console::actions-preview::show-details", "yes");
 	}
 
 	showVersions = variables.count("show-versions");

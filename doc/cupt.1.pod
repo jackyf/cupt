@@ -607,6 +607,13 @@ Show only summary of actions without details.
 Corresponding configuration options: L<cupt::console::actions-preview::show-summary>,
 L<cupt::console::actions-preview::show-details>.
 
+=item --no-summary
+
+Show only details of actions without a summary.
+
+Corresponding configuration options: L<cupt::console::actions-preview::show-summary>,
+L<cupt::console::actions-preview::show-details>.
+
 =item --resolver=
 
 string, determines type of resolver: can be
