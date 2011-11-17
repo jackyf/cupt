@@ -628,7 +628,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		thereIsNothingToDo = false;
 
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
-		auto summaryOnly = config->getBool("cupt::console::actions-preview::show-only-summary");
+		auto showSummary = config->getBool("cupt::console::actions-preview::show-summary");
+		auto showDetails = config->getBool("cupt::console::actions-preview::show-details");
 
 		worker->setDesiredState(offer);
 		FORIT(packageNameIt, purgedPackageNames)
@@ -681,9 +682,12 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 				const string& actionName = actionNames.find(actionType)->second;
 
-				addActionToSummary(*cache, actionName, actionSuggestedPackages,
-						actionsPreview->autoFlagChanges, &summaryStream);
-				if (summaryOnly)
+				if (showSummary)
+				{
+					addActionToSummary(*cache, actionName, actionSuggestedPackages,
+							actionsPreview->autoFlagChanges, &summaryStream);
+				}
+				if (!showDetails)
 				{
 					continue;
 				}
@@ -744,7 +748,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 		showUnsatisfiedSoftDependencies(offer, &summaryStream);
 
-		{ // show summary
+		if (showSummary)
+		{
 			cout << __("Action summary:") << endl << summaryStream.str() << endl;
 			summaryStream.clear();
 		}
@@ -847,7 +852,8 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	}
 	if (variables.count("summary-only"))
 	{
-		config->setScalar("cupt::console::actions-preview::show-only-summary", "yes");
+		config->setScalar("cupt::console::actions-preview::show-summary", "yes");
+		config->setScalar("cupt::console::actions-preview::show-details", "no");
 	}
 
 	showVersions = variables.count("show-versions");

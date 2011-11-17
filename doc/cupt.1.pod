@@ -604,7 +604,8 @@ Corresponding configuration option: L<cupt::worker::simulate>
 
 Show only summary of actions without details.
 
-Corresponding configuration option: L<cupt::console::actions-preview::show-only-summary>
+Corresponding configuration options: L<cupt::console::actions-preview::show-summary>,
+L<cupt::console::actions-preview::show-details>.
 
 =item --resolver=
 
