@@ -879,11 +879,11 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 		addUsedPrefix(cachefiles::getPathOfReleaseList(*_config, *indexEntryIt));
 		addUsedPrefix(cachefiles::getPathOfIndexList(*_config, *indexEntryIt));
 
-		auto translationsDownloadInfo =
-				cachefiles::getDownloadInfoOfLocalizedDescriptions(*_config, *indexEntryIt);
-		FORIT(downloadRecordIt, translationsDownloadInfo)
+		auto translationsPossiblePaths =
+				cachefiles::getPathsOfLocalizedDescriptions(*_config, *indexEntryIt);
+		FORIT(pathIt, translationsPossiblePaths)
 		{
-			addUsedPrefix(downloadRecordIt->localPath);
+			addUsedPrefix(*pathIt);
 		}
 	}
 	addUsedPrefix(lockPath);
