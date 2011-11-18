@@ -605,7 +605,7 @@ void CacheImpl::processTranslationFile(const string& path)
 				fatal2("unable to find translation in a translation record starting at byte '%u'", recordPosition);
 			}
 
-			translations[md5] = translationPosition;
+			translations.insert(make_pair(std::move(md5), translationPosition));
 		}
 	}
 	catch(Exception&)
