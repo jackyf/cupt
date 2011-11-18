@@ -57,6 +57,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         description localizations, not only the first successful one.
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
+      - Process all requested translations, not only the first successful one.
     - cache/releaseinfo:
       - New field 'butAutomaticUpgrades'.
     - hashsums:

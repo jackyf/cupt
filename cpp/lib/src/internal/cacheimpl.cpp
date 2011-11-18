@@ -467,7 +467,6 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 			if (errorString.empty())
 			{
 				processTranslationFile(*pathIt);
-				break;
 			}
 		}
 	}
