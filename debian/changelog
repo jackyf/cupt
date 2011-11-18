@@ -53,6 +53,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
         download URI.
       - Updating release and index data: use i18n/Index for downloading package
         description localizations (Closes: #547948).
+      - Updating release and index data: download all variants of requested
+        description localizations, not only the first successful one.
     - cache:
       - Honor 'cupt::cache::limit-releases::*' options.
     - cache/releaseinfo:

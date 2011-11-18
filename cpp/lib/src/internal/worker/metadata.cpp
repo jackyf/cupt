@@ -782,6 +782,7 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 		cleanUp();
 	}
 
+	bool result = true;
 	FORIT(downloadRecordIt, downloadInfo)
 	{
 		auto it = availableLocalizations.find(downloadRecordIt->filePart);
@@ -791,14 +792,14 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 		}
 
 		const string& targetPath = downloadRecordIt->localPath;
-		if (__download_index(downloadManager, it->second, IndexType::LocalizationFile, indexEntry,
+		if (!__download_index(downloadManager, it->second, IndexType::LocalizationFile, indexEntry,
 				getDownloadPath(targetPath), targetPath, sourceFileChanged))
 		{
-			return true;
+			result = false;
 		}
 	}
 
-	return false;
+	return result;
 }
 
 void MetadataWorker::__update_translations(download::Manager& downloadManager,
