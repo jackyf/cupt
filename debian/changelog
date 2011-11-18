@@ -46,6 +46,8 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - New options 'cupt::console::actions-preview::show-summary',
         'cupt::console::actions-preview::show-details'.
       - New option 'cupt::cache::pin::addendums::but-automatic-upgrades'.
+      - The APT option 'apt::acquire::translations' is no more used.
+      - New option 'cupt::languages::indexes'.
     - system/worker:
       - Logging: log errors too.
       - Downloading package archives: include only those codename/component

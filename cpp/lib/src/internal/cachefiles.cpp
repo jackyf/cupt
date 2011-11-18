@@ -226,38 +226,51 @@ static vector< vector< string > > getChunksOfLocalizedDescriptions(
 		return result;
 	}
 
-	auto translationVariable = config.getString("apt::acquire::translation");
-	auto locale = translationVariable == "environment" ?
-			setlocale(LC_MESSAGES, NULL) : translationVariable;
-	if (locale == "none")
-	{
-		return result;
-	}
-
-	vector< string > chunks;
+	vector< string > chunksBase;
 	if (!entry.component.empty())
 	{
-		chunks.push_back(entry.component);
+		chunksBase.push_back(entry.component);
 	}
-	chunks.push_back("i18n");
+	chunksBase.push_back("i18n");
 
-	result.push_back(chunks);
-	// cutting out an encoding
-	auto dotPosition = locale.rfind('.');
-	if (dotPosition != string::npos)
+	set< string > alreadyAddedTranslations;
+	auto addTranslation = [&chunksBase, &alreadyAddedTranslations, &result](const string& locale)
 	{
-		locale.erase(dotPosition);
-	}
-	result[0].push_back(string("Translation-") + locale);
+		if (alreadyAddedTranslations.insert(locale).second)
+		{
+			auto chunks = chunksBase;
+			chunks.push_back(string("Translation-") + locale);
+			result.push_back(chunks);
+		}
+	};
 
-	result.push_back(chunks);
-	// cutting out an country specificator
-	auto underlinePosition = locale.rfind('_');
-	if (underlinePosition != string::npos)
+	auto translationVariable = config.getString("cupt::languages::indexes");
+	auto translations = split(',', translationVariable);
+	FORIT(translationIt, translations)
 	{
-		locale.erase(underlinePosition);
+		auto locale = (*translationIt == "environment") ?
+				setlocale(LC_MESSAGES, NULL) : *translationIt;
+		if (locale == "none")
+		{
+			continue;
+		}
+
+		// cutting out an encoding
+		auto dotPosition = locale.rfind('.');
+		if (dotPosition != string::npos)
+		{
+			locale.erase(dotPosition);
+		}
+		addTranslation(locale);
+
+		// cutting out an country specificator
+		auto underlinePosition = locale.rfind('_');
+		if (underlinePosition != string::npos)
+		{
+			locale.erase(underlinePosition);
+		}
+		addTranslation(locale);
 	}
-	result[1].push_back(string("Translation-") + locale);
 
 	return result;
 }

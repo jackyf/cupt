@@ -20,7 +20,7 @@ Cupt uses the same configuration syntax as L<apt.conf(5)>, which see.
 Firstly, Cupt uses following APT configuration variables:
 
 acquire::*::timeout, acquire::*::proxy, acquire::http::allowredirect,
-acquire::retries, apt::acquire::translation, apt::cache::allversions,
+acquire::retries, apt::cache::allversions,
 apt::cache::important, apt::cache::namesonly, apt::cache::recursedepends,
 apt::default-release, apt::install-recommends, apt::install-suggests,
 apt::neverautoremove, apt::get::assume-yes, apt::get::allowunauthenticated,
@@ -37,7 +37,7 @@ See L<apt.conf(5)> for their meanings.
 
 Secondly, Cupt recognizes (but doesn't use) following configuration variables:
 
-apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
+apt::acquire::translation, apt::archives::*, acquire::pdiffs, apt::cache-limit, apt::periodic::*,
 dir::log*, dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
 apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
 rpm::post-invoke
@@ -244,6 +244,64 @@ Defaults to 100.
 =item cupt::downloader::protocols::I<protocol>::methods
 
 list, names of the methods available to download protocol I<protocol>
+
+=item cupt::languages::indexes
+
+string, specifies localizations of what languages should be used for repository
+indexes. Defaults to "environment".
+
+The value is comma-delimited (no spaces allowed) list of localization specificators. Localization specificator is either:
+
+=over
+
+=item environment
+
+A special string which is substituted by the current locale (precisely, by a
+value of the environment variable LC_MESSAGES).
+
+=item none
+
+A special string which indicates no localization.
+
+=item I<language_code>[_I<country_code>]
+
+A language code (for example: 'fi', 'fr', 'ru') or a language code with a
+country code (for example, 'pt_BR', 'zh_CN').
+
+=back
+
+If the localization specificator contains a country code, the additional
+specificator without a country code will be implicitly used as fallback.
+
+Localization specificators should be listed in the preference order. Duplicates
+are allowed but ignored.
+
+Examples:
+
+=over
+
+=item fi,ru,fr
+
+Download Finnish, Russian and French translations. For every description, try
+to use Finnish translation; if it's not available, try to use Russian one; if
+it's also not available; try to use French one; else use an original one.
+
+=item pt_BR
+
+Download Portuguese (Brazil) and Portuguese localizations. Use Portuguese
+(Brazil) translation; if it's not available, use Portuguese translation; else
+use an original one.
+
+=item de,environment,fr_FR
+
+(Supposing LC_MESSAGES is 'pl_PL.UTF-8')
+
+Download and use these translations, in the following order: German, Polish
+(Poland), Polish, French (France), French.
+
+=back
+
+=back
 
 =item cupt::update::check-release-files
 

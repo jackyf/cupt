@@ -29,6 +29,11 @@ See L<cupt_tutorial/Disadvantages and advantages>.
 to prioritize compression types, use option 'cupt::update::compression-types',
 not 'acquire::compression-types'
 
+=item
+
+to select repository indexes localizations, use option
+'cupt::languages::indexes', not 'acquire::languages'
+
 =back
 
 =head2 Pinning
