@@ -759,7 +759,8 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 
 						cachefiles::FileDownloadRecord record;
 						record.uri = getBaseUri(localizationIndexUri) + '/' + m[3];
-						record.size = string2uint32(m[2]);
+						// record.size = string2uint32(m[2]);
+						record.size = (size_t)-1; // TODO: this is a workarond to #649150
 						record.hashSums[HashSums::SHA1] = m[1];
 
 						string searchKey = m[3];
