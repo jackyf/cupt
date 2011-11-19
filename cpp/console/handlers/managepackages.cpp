@@ -1015,6 +1015,11 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 int distUpgrade(Context& context)
 {
+	if (shellMode)
+	{
+		fatal2("'dist-upgrade' command cannot be run in the shell mode");
+	}
+
 	{ // 1st stage: upgrading of package management tools
 		cout << __("[ upgrading package management tools ]") << endl;
 		cout << endl;

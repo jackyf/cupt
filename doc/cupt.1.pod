@@ -408,6 +408,8 @@ then upgrades the whole system.
 
 Recommended over L</full-upgrade> for major upgrades.
 
+This subcommand cannot be run under the Cupt shell.
+
 =item reinstall
 
 reinstalls specified binary packages
