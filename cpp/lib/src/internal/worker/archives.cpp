@@ -103,7 +103,8 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				knownArchives[path] = *versionIt;
 
 				// checking for symlinks
-				if (readlink(path.c_str(), &pathBuffer[0], pathMaxLength) == -1)
+				auto readlinkResult = readlink(path.c_str(), &pathBuffer[0], pathMaxLength);
+				if (readlinkResult == -1)
 				{
 					if (errno != EINVAL)
 					{
@@ -114,7 +115,8 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				else
 				{
 					// a symlink (relative)
-					string targetPath(archivesDirectory + '/' + &pathBuffer[0]);
+					string relativePath(pathBuffer.begin(), pathBuffer.begin() + readlinkResult);
+					string targetPath(archivesDirectory + '/' + relativePath);
 					if (fs::fileExists(targetPath))
 					{
 						knownArchives[targetPath] = *versionIt;
