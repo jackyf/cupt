@@ -23,10 +23,13 @@ using std::endl;
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <boost/lexical_cast.hpp>
+
 #include "../common.hpp"
 #include "../handlers.hpp"
 #include "../misc.hpp"
 #include "../selectors.hpp"
+#include "../colorizer.hpp"
 
 #include <cupt/system/state.hpp>
 #include <cupt/system/resolver.hpp>
@@ -584,6 +587,23 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 	return result;
 }
 
+static string colorizeByActionType(const Colorizer& colorizer,
+		const string& input, WA::Type actionType, bool isAutoInstalled)
+{
+	Colorizer::Color color = Colorizer::Default;
+	switch (actionType)
+	{
+		case WA::Install: color = Colorizer::Cyan; break;
+		case WA::Remove: color = Colorizer::Yellow; break;
+		case WA::Upgrade: color = Colorizer::Green; break;
+		case WA::Purge: color = Colorizer::Red; break;
+		case WA::Downgrade: color = Colorizer::Magenta; break;
+		case WA::Configure: color = Colorizer::Blue; break;
+		default: ;
+	}
+	return colorizer.colorize(input, color, !isAutoInstalled /* bold */);
+}
+
 bool wasOrWillBePackageAutoInstalled(const Cache& cache, const string& packageName,
 		const map< string, bool >& autoFlagChanges)
 {
@@ -604,9 +624,37 @@ bool wasOrWillBePackageAutoInstalled(const Cache& cache, const string& packageNa
 	return false;
 }
 
-void addActionToSummary(const Cache& cache, const string& actionName,
+static void printPackageName(const Cache& cache, const Colorizer& colorizer,
+		const string& packageName, WA::Type actionType, const map< string, bool >& autoFlagChanges)
+{
+	bool isAutoInstalled = wasOrWillBePackageAutoInstalled(cache, packageName, autoFlagChanges);
+
+	cout << colorizeByActionType(colorizer, packageName, actionType, isAutoInstalled);
+	if (actionType == WA::Remove || actionType == WA::Purge)
+	{
+		if (isAutoInstalled && !colorizer.enabled())
+		{
+			cout << "(a)";
+		}
+	}
+}
+
+static string colorizeActionName(const Colorizer& colorizer, const string& actionName, WA::Type actionType)
+{
+	if (actionType != WA::Install && actionType != WA::Upgrade &&
+			actionType != WA::Configure && actionType != WA::ProcessTriggers)
+	{
+		return colorizer.makeBold(actionName);
+	}
+	else
+	{
+		return actionName;
+	}
+}
+
+void addActionToSummary(const Cache& cache, WA::Type actionType, const string& actionName,
 		const Resolver::SuggestedPackages& suggestedPackages, const map< string, bool >& autoFlagChanges,
-		std::stringstream* summaryStreamPtr)
+		Colorizer& colorizer, std::stringstream* summaryStreamPtr)
 {
 	size_t manuallyInstalledCount = std::count_if(suggestedPackages.begin(), suggestedPackages.end(),
 			[&cache, &autoFlagChanges](const pair< string, Resolver::SuggestedPackage >& arg)
@@ -615,8 +663,15 @@ void addActionToSummary(const Cache& cache, const string& actionName,
 			});
 
 	auto total = suggestedPackages.size();
-	*summaryStreamPtr << format2(__("  %u manually installed and %u automatically installed packages %s"),
-			manuallyInstalledCount, total - manuallyInstalledCount, actionName) << endl;
+
+	auto manualCountString = boost::lexical_cast< string >(manuallyInstalledCount);
+	auto colorizedManualCountString = colorizeByActionType(colorizer, manualCountString, actionType, false);
+
+	auto autoCountString = boost::lexical_cast< string >(total - manuallyInstalledCount);
+	auto colorizedAutoCountString = colorizeByActionType(colorizer, autoCountString, actionType, true);
+
+	*summaryStreamPtr << format2(__("  %s manually installed and %s automatically installed packages %s"),
+			colorizedManualCountString, colorizedAutoCountString, actionName) << endl;
 }
 
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
@@ -643,6 +698,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
+
+		Colorizer colorizer(*config);
 
 		std::stringstream summaryStream;
 
@@ -688,27 +745,21 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 				if (showSummary)
 				{
-					addActionToSummary(*cache, actionName, actionSuggestedPackages,
-							actionsPreview->autoFlagChanges, &summaryStream);
+					addActionToSummary(*cache, actionType, actionName, actionSuggestedPackages,
+							actionsPreview->autoFlagChanges, colorizer, &summaryStream);
 				}
 				if (!showDetails)
 				{
 					continue;
 				}
 
-				cout << format2(__("The following packages %s:"), actionName) << endl << endl;
+				cout << format2(__("The following packages %s:"),
+						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
 				FORIT(it, actionSuggestedPackages)
 				{
 					const string& packageName = it->first;
-					cout << packageName;
-					if (actionType == WA::Remove || actionType == WA::Purge)
-					{
-						if (cache->isAutomaticallyInstalled(packageName))
-						{
-							cout << "(a)";
-						}
-					}
+					printPackageName(*cache, colorizer, packageName, actionType, actionsPreview->autoFlagChanges);
 
 					if (showVersions)
 					{

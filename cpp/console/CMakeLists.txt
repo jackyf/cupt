@@ -8,6 +8,7 @@ add_executable(cupt.bin
 	handlers/shell.cpp
 	handlers/download.cpp
 	handlers/snapshot.cpp
+	colorizer.cpp
 	selectors.cpp)
 target_link_libraries(cupt.bin cupt2 boost_program_options)
 

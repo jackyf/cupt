@@ -48,6 +48,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - New option 'cupt::cache::pin::addendums::but-automatic-upgrades'.
       - The APT option 'apt::acquire::translations' is no more used.
       - New option 'cupt::languages::indexes'.
+      - New option 'cupt::console::use-colors'.
     - system/worker:
       - Logging: log errors too.
       - Downloading package archives: include only those codename/component

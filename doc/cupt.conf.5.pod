@@ -195,6 +195,32 @@ actions preview. True by default.
 boolean, if true, a summary of planned actions will be shown in the
 actions preview. True by default.
 
+=item cupt::console::use-colors
+
+string, specifies whether to use colors in the console interface. Defaults to
+"auto".
+
+For now concerns only the action preview.
+
+Available values:
+
+=over
+
+=item no
+
+Don't use colors.
+
+=item yes
+
+Use colors.
+
+=item auto
+
+Use colors if the standard output is a terminal and a terminal type seem to
+allow colors.
+
+=back
+
 =item cupt::directory
 
 string, base directory for all cupt::directory::* options
