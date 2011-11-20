@@ -737,6 +737,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				cout << endl;
 			}
 
+			showUnsatisfiedSoftDependencies(offer, &summaryStream);
 		};
 
 		// nothing to do maybe?
@@ -745,8 +746,6 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			thereIsNothingToDo = true;
 			return Resolver::UserAnswer::Abandon;
 		}
-
-		showUnsatisfiedSoftDependencies(offer, &summaryStream);
 
 		if (showSummary)
 		{
