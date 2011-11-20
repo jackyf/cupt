@@ -301,8 +301,6 @@ Download and use these translations, in the following order: German, Polish
 
 =back
 
-=back
-
 =item cupt::update::check-release-files
 
 boolean, if set, Release files will be checked for the validity (including the
