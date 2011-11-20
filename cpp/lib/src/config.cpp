@@ -238,6 +238,7 @@ void ConfigImpl::initializeVariables()
 		// unused APT vars
 		{ "rpm::pre-invoke", vector< string > {} },
 		{ "rpm::post-invoke", vector< string > {} },
+		{ "acquire::languages", vector< string > {} },
 		{ "apt::never-markauto-sections", vector< string > {} },
 
 		// Cupt vars

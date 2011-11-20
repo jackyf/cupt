@@ -49,6 +49,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
       - The APT option 'apt::acquire::translations' is no more used.
       - New option 'cupt::languages::indexes'.
       - New option 'cupt::console::use-colors'.
+      - Recognize (but don't use) the APT option 'acquire::languages'.
     - system/worker:
       - Logging: log errors too.
       - Downloading package archives: include only those codename/component
