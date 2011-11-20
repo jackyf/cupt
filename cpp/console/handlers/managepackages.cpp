@@ -467,7 +467,8 @@ void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 	cout << endl;
 }
 
-void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer, std::stringstream* summaryStreamPtr)
+void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
+		bool showDetails, std::stringstream* summaryStreamPtr)
 {
 	vector< string > messages;
 	FORIT(unresolvedProblemIt, offer.unresolvedProblems)
@@ -477,13 +478,16 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer, std::stringst
 
 	if (!messages.empty())
 	{
-		cout << __("Leave the following dependencies unresolved:") << endl;
-		cout << endl;
-		FORIT(messageIt, messages)
+		if (showDetails)
 		{
-			cout << *messageIt << endl;
+			cout << __("Leave the following dependencies unresolved:") << endl;
+			cout << endl;
+			FORIT(messageIt, messages)
+			{
+				cout << *messageIt << endl;
+			}
+			cout << endl;
 		}
-		cout << endl;
 
 		*summaryStreamPtr << format2(__("  %u dependency problems will stay unresolved"),
 				offer.unresolvedProblems.size()) << endl;
@@ -737,7 +741,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				cout << endl;
 			}
 
-			showUnsatisfiedSoftDependencies(offer, &summaryStream);
+			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
 		};
 
 		// nothing to do maybe?
