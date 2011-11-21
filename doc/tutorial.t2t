@@ -234,41 +234,45 @@ when a package and its configuration files will be removed
 An example of action preview prompt:
 
 ```
- $ cupt install kdm akregator exim4
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
- 
- The following 7 packages will be INSTALLED:
- 
- exim4 exim4-base exim4-config exim4-daemon-light libgnutlsxx26 libntrack-qt4-1
- libntrack0
- 
- The following 32 packages will be UPGRADED:
- 
- akregator kde-window-manager kdebase-workspace-bin kdebase-workspace-data
- kdebase-workspace-kgreet-plugins kdm ksysguard ksysguardd libgnutls-dev
- libgnutls26 libkdecorations4 libkdepim4 libkephal4 libkscreensaver5 libksgrd4
- libksignalplotter4 libkwineffects1a libkworkspace4 libpcre3
- libplasma-geolocation-interface4 libplasmaclock4a libplasmagenericshell4
- libprocesscore4a libprocessui4a libsolidcontrol4 libsolidcontrolifaces4
- libsoup2.4-1 libtaskmanager4a libweather-ion4a plasma-dataengines-workspace
- plasma-desktop plasma-widgets-workspace
- 
- The following 4 packages will be REMOVED:
- 
- libgsasl7(a) libntlm0(a) msmtp(a) msmtp-mta
- 
- Need to get 25.7MiB/83.4MiB of archives. After unpacking 3512KiB will be used.
- Do you want to continue? [y/N/q/a/?]
+$ cupt install kdm akregator exim4
+Building the package cache...
+Initializing package resolver and worker...
+Scheduling requested actions...
+Resolving possible unmet dependencies...
+
+The following packages will be installed:
+
+exim4 exim4-base exim4-config exim4-daemon-light 
+
+The following packages will be upgraded:
+
+kde-window-manager kdebase-workspace-bin kdebase-workspace-data
+kdebase-workspace-kgreet-plugins kdm ksysguard ksysguardd libkdecorations4
+libkephal4abi1 libkscreensaver5 libksgrd4 libksignalplotter4
+libkwineffects1abi1 libkworkspace4 libplasma-geolocation-interface4
+libplasmaclock4abi1 libplasmagenericshell4 libprocesscore4abi1 libprocessui4a
+libsolidcontrol4abi1 libsolidcontrolifaces4abi1 libtaskmanager4abi1
+libweather-ion6 plasma-dataengines-workspace plasma-desktop
+plasma-widgets-workspace 
+
+The following packages will be removed:
+
+libgsasl7(a) libntlm0(a) msmtp(a) msmtp-mta 
+
+Action summary:
+  1 manually installed and 3 automatically installed packages will be installed
+  1 manually installed and 25 automatically installed packages will be upgraded
+  1 manually installed and 3 automatically installed packages will be removed
+
+Need to get 25.7MiB/83.4MiB of archives. After unpacking 3512KiB will be used.
+Do you want to continue? [y/N/q/a/?]
 ```
 
-In the output above you can see: lists of packages to change the state (with a
-total number by each [action #package_actions_terminology], the total
-download amount of packages (83.4MiB), the download amount considering the
-cache of already downloaded archives (25.7MiB), an estimate of difference in
-disk usage after the actions (+3512KiB), a user prompt what to do.
+In the output above you can see: lists of packages to change the state,
+the summary of planned changes, the total download amount of packages (83.4MiB),
+the download amount considering the cache of already downloaded archives
+(25.7MiB), an estimate of difference in disk usage after the actions
+(+3512KiB), a user prompt what to do.
 
 For removed and purged packages, a suffix **(a)** is appended to a package name
 if a package was automatically installed.
