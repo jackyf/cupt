@@ -1734,7 +1734,7 @@ make installed packages set correct after making the changes user demand.
 In the most cases, there are several solutions to a problem. To choose
 amonst them, resolver assign **scores** to all of them.
 
-Score is an integer (i.e. can positive and negative) and is a sum of version
+Score is an integer (positive or negative) and is a sum of version
 pin difference (for uninstalled version, zero pin is assumed) and an action
 modifier. Action modifiers are action type-specific addendums and are
 controlled by the option group ``cupt::resolver::score::``//X// (see the full
