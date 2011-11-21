@@ -1755,43 +1755,33 @@ resolver score variables to different values.
 Examples:
 
 ```
-$ echo 'q' | cupt -s -t experimental full-upgrade | fgrep 'following'
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 202 packages will be INSTALLED:
-The following 710 packages will be UPGRADED:
-The following 55 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=250 | fgrep 'following'
+  0 manually installed and 48 automatically installed packages will be installed
+  129 manually installed and 474 automatically installed packages will be upgraded
+  0 manually installed and 32 automatically installed packages will be removed
+  2 manually installed and 17 automatically installed packages will have a not preferred version
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only -o cupt::resolver::score::unsatisfied-recommends=250 | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 150 packages will be INSTALLED:
-The following 708 packages will be UPGRADED:
-The following 58 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=400 | fgrep 'following'
+  0 manually installed and 43 automatically installed packages will be installed
+  129 manually installed and 473 automatically installed packages will be upgraded
+  0 manually installed and 34 automatically installed packages will be removed
+  2 manually installed and 14 automatically installed packages will have a not preferred version
+  4 dependency problems will stay unresolved
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only -o cupt::resolver::score::new=-1000 | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 149 packages will be INSTALLED:
-The following 708 packages will be UPGRADED:
-The following 58 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=1000 | fgrep 'following'
+  0 manually installed and 30 automatically installed packages will be installed
+  124 manually installed and 429 automatically installed packages will be upgraded
+  3 manually installed and 70 automatically installed packages will be removed
+  9 manually installed and 14 automatically installed packages will have a not preferred version
+  7 dependency problems will stay unresolved
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only -o cupt::resolver::score::new=-1000 -o cupt::resolver::score::downgrade=0 | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 148 packages will be INSTALLED:
-The following 708 packages will be UPGRADED:
-The following 58 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::new=-1000 | fgrep 'following'
-W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 64 packages will be INSTALLED:
-The following 661 packages will be UPGRADED:
-The following 100 packages will be REMOVED:
-Leave the following dependencies unresolved:
-WARNING! The following essential packages will be REMOVED:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::new=-1000 -o cupt::resolver::score::downgrade=0 | fgrep 'following'
-W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 26 packages will be INSTALLED:
-The following 618 packages will be UPGRADED:
-The following 42 packages will be REMOVED:
-Leave the following dependencies unresolved:
+  0 manually installed and 18 automatically installed packages will be installed
+  119 manually installed and 464 automatically installed packages will be upgraded
+  1 manually installed and 20 automatically installed packages will be removed
+  14 manually installed and 37 automatically installed packages will have a not preferred version
+  4 dependency problems will stay unresolved
 ```
 
 === maximum solution count ===
