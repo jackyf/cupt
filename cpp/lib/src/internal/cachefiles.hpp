@@ -26,17 +26,29 @@ namespace internal {
 namespace cachefiles {
 
 typedef Cache::IndexEntry IndexEntry;
+typedef Cache::IndexDownloadRecord FileDownloadRecord;
 
 string getPathOfIndexList(const Config&, const IndexEntry&);
 string getPathOfReleaseList(const Config&, const IndexEntry&);
 string getPathOfExtendedStates(const Config&);
 
 string getDownloadUriOfReleaseList(const IndexEntry&);
-vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
+vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 		const Config&, const IndexEntry&);
 
 vector< string > getPathsOfLocalizedDescriptions(const Config&, const IndexEntry& entry);
+// TODO/API break/: deprecated, delete it
 vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
+		const Config&, const IndexEntry&);
+
+vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(
+		const Config&, const IndexEntry&);
+struct LocalizationDownloadRecord2
+{
+	string filePart;
+	string localPath;
+};
+vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
 		const Config&, const IndexEntry&);
 
 bool verifySignature(const Config&, const string& releaseFilePath);

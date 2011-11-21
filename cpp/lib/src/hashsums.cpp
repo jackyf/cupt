@@ -39,7 +39,7 @@ class GcryptHasher
 		gcry_error_t gcryptError;
 		if ((gcryptError = gcry_md_open(&__gcrypt_handle, gcryptAlgorithm, 0)))
 		{
-			fatal("unable to open gcrypt hash handle: %s", gcry_strerror(gcryptError));
+			fatal2("unable to open gcrypt hash handle: %s", gcry_strerror(gcryptError));
 		}
 		__digest_size = gcry_md_get_algo_dlen(gcryptAlgorithm);
 	}
@@ -52,11 +52,14 @@ class GcryptHasher
 		auto binaryResult = gcry_md_read(__gcrypt_handle, 0);
 		string result;
 
+		result.reserve(__digest_size * 2);
 		// converting to hexadecimal string
 		for (size_t i = 0; i < __digest_size; ++i)
 		{
+			static const char fourBitToHex[] = "0123456789abcdef";
 			unsigned int c = binaryResult[i];
-			result += sf("%02x", c);
+			result += fourBitToHex[c >> 4]; // high halfbit
+			result += fourBitToHex[c & 0xf]; // low halfbit
 		}
 
 		return result;
@@ -75,6 +78,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		gcry_check_version(NULL);
 		gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
 		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+		initialized = true;
 	}
 
 	int gcryptAlgorithm;
@@ -85,7 +89,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		case HashSums::SHA256: gcryptAlgorithm = GCRY_MD_SHA256; break;
 		default:
 			gcryptAlgorithm = 0; // to not see 'maybe used uninitialized' warning
-			fatal("unsupported hash type '%zu'", size_t(hashType));
+			fatal2("unsupported hash type '%zu'", size_t(hashType));
 	}
 
 	string result;
@@ -99,8 +103,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 			File file(source, "r", openError);
 			if (!openError.empty())
 			{
-				fatal("unable to open file '%s': %s",
-						source.c_str(), openError.c_str());
+				fatal2("unable to open file '%s': %s", source, openError);
 			}
 
 			char buffer[8192];
@@ -122,8 +125,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		static string strings[HashSums::Count] = { "md5", "sha1", "sha256" };
 		string description = string(sourceType == Source::File ? "file" : "string") +
 				" '" + source + "'";
-		fatal("unable to compute hash sums '%s' on '%s':",
-				strings[hashType].c_str(), description.c_str());
+		fatal2("unable to compute hash sums '%s' on '%s':", strings[hashType], description);
 	}
 
 	return result;
@@ -133,7 +135,7 @@ void __assert_not_empty(const HashSums* hashSums)
 {
 	if (hashSums->empty())
 	{
-		fatal("no hash sums specified");
+		fatal2("no hash sums specified");
 	}
 }
 

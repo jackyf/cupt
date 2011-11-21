@@ -5,7 +5,7 @@ use strict;
 
 foreach my $pod_file (glob("doc/*.pod")) {
 	# example: doc/cupt.1.pod
-	my ($name, $section) = ($pod_file =~ m{.*/((?:\w|_|-)+)\.(\d)\.pod}) or
+	my ($name, $section) = ($pod_file =~ m{.*/((?:\w|_|-|\.)+)\.(\d)\.pod}) or
 			die "badly formatted POD name $pod_file";
 	my $man_page_name = "$name.$section";
 	my $uppercased_name = uc $name;

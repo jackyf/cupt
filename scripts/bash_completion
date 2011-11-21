@@ -91,11 +91,13 @@ _cupt()
 					--no-install-recommends -R --show-versions -V
 					--show-size-changes -Z --show-reasons --show-deps -D \
 					--no-install-unpacked --download-only -d \
+					--summary-only --no-summary \
 					--assume-yes --yes -y"
 		fi
 	fi
 
 	common_options="-o --option --target-release --default-release -t --purge --quiet -q"
+	common_options="${common_options} --include-archives= --exclude-archives= --include-codenames= --exclude-codenames="
 	arguments="${arguments} ${common_options}"
 	arguments=$(compgen -W "${arguments}" -- ${cur})
 	COMPREPLY=(${arguments} ${package_name_arguments})

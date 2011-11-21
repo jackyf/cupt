@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -61,18 +61,18 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 				}
 				catch (Exception& e)
 				{
-					warn("error while parsing new version entry for package '%s'", initParams.packageName.c_str());
+					warn2("error while parsing new version entry for package '%s'", initParams.packageName);
 				}
 			}
 			if (result.empty())
 			{
-				warn("no valid versions available, discarding the package");
+				warn2("no valid versions available, discarding the package");
 			}
 			__unparsed_versions.swap(newUnparsedVersions);
 		}
 		catch (Exception&)
 		{
-			fatal("error while parsing package info");
+			fatal2("error while parsing package info");
 		}
 
 		if (memoize)
@@ -154,14 +154,14 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 				string info = __("package name") + ": '" + parsedVersion->packageName + "', " +
 						__("version string") + ": '" + parsedVersion->versionString + "', " +
 						__("origin") + ": '" + parsedVersion->sources[0].release->baseUri + "'";
-				warn("throwing away duplicating version with different hash sums: %s", info.c_str());
+				warn2("throwing away duplicating version with different hash sums: %s", info);
 			}
 		}
 	}
 	catch (Exception&)
 	{
-		fatal("error while merging version '%s' for package '%s'",
-				parsedVersion->versionString.c_str(), parsedVersion->packageName.c_str());
+		fatal2("error while merging version '%s' for package '%s'",
+				parsedVersion->versionString, parsedVersion->packageName);
 	};
 }
 

@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -58,8 +58,7 @@ ssize_t Method::getIntegerAcquireSuboptionForUri(const shared_ptr< const Config 
 		}
 		catch (std::exception&)
 		{
-			fatal("the value '%s' of suboption '%s' is not numeric",
-					result.c_str(), suboptionName.c_str());
+			fatal2("the value '%s' of suboption '%s' is not numeric", result, suboptionName);
 		}
 	}
 	return numericResult;

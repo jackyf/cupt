@@ -53,7 +53,7 @@ string move(const string& oldPath, const string& newPath)
 {
 	if (rename(oldPath.c_str(), newPath.c_str()) == -1)
 	{
-		return sf(__("unable to rename '%s' to '%s': EEE"), oldPath.c_str(), newPath.c_str());
+		return format2e(__("unable to rename '%s' to '%s'"), oldPath, newPath);
 	}
 	return "";
 }
@@ -67,7 +67,7 @@ vector< string > glob(const string& param)
 	if (result != 0 && result != GLOB_NOMATCH)
 	{
 		globfree(&glob_result);
-		fatal("glob() failed: '%s': EEE", param.c_str());
+		fatal2e("glob() failed: '%s'", param);
 	}
 	for (size_t i = 0; i < glob_result.gl_pathc; ++i)
 	{
@@ -88,7 +88,7 @@ bool __stat(const string& path, struct stat* result)
 		}
 		else
 		{
-			fatal("stat() failed: '%s': EEE", path.c_str());
+			fatal2e("stat() failed: '%s'", path);
 		}
 	}
 	return true;
@@ -111,11 +111,11 @@ size_t fileSize(const string& path)
 	struct stat s;
 	if (!__stat(path, &s))
 	{
-		fatal("the file '%s' does not exists", path.c_str());
+		fatal2("the file '%s' does not exists", path);
 	}
 	if (!S_ISREG(s.st_mode))
 	{
-		fatal("the file '%s' is not a regular file", path.c_str());
+		fatal2("the file '%s' is not a regular file", path);
 	}
 	return s.st_size;
 }

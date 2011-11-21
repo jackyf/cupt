@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -92,7 +92,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		if (std::find(snapshotNames.begin(), snapshotNames.end(), snapshotName)
 				== snapshotNames.end())
 		{
-			fatal("unable to find snapshot named '%s'", snapshotName.c_str());
+			fatal2("unable to find snapshot named '%s'", snapshotName);
 		}
 	}
 
@@ -106,14 +106,14 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			File file(formatPath, "r", openError);
 			if (!openError.empty())
 			{
-				fatal("unable to open the format file '%s': %s", formatPath.c_str(), openError.c_str());
+				fatal2("unable to open the format file '%s': %s", formatPath, openError);
 			}
 			string content;
 			file.getFile(content);
 			chomp(content);
 			if (content != "1")
 			{
-				fatal("unsupported snapshot format '%s'", content.c_str());
+				fatal2("unsupported snapshot format '%s'", content);
 			}
 		}
 	}
@@ -126,7 +126,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		File file(snapshotPackagesPath, "r", openError);
 		if (!openError.empty())
 		{
-			fatal("unable to open the file '%s': %s", snapshotPackagesPath.c_str(), openError.c_str());
+			fatal2("unable to open the file '%s': %s", snapshotPackagesPath, openError);
 		}
 
 		string packageName;
@@ -135,7 +135,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			auto package = cache.getBinaryPackage(packageName);
 			if (!package)
 			{
-				fatal("internal error: the package '%s' doesn't exist", packageName.c_str());
+				fatal2("internal error: the package '%s' doesn't exist", packageName);
 			}
 
 			toBeInstalledPackageNames.insert(packageName);
@@ -154,7 +154,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			}
 
 			// not found
-			fatal("internal error: unable to find snapshot version for the package '%s'", packageName.c_str());
+			fatal2("internal error: unable to find snapshot version for the package '%s'", packageName);
 
 			next_file_line:
 			;

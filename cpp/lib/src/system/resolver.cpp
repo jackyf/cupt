@@ -52,16 +52,14 @@ string Resolver::RelationExpressionReason::toString() const
 	auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(dependencyType);
 	if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
 	{
-		warn("unsupported reason dependency type '%s'",
-				BinaryVersion::RelationTypes::strings[dependencyType].c_str());
+		warn2("unsupported reason dependency type '%s'",
+				BinaryVersion::RelationTypes::strings[dependencyType]);
 		return string();
 	}
 	else
 	{
-		return sf("%s %s %s '%s'",
-				version->packageName.c_str(), version->versionString.c_str(),
-				dependencyTypeTranslationIt->second.c_str(),
-				relationExpression.toString().c_str());
+		return format2("%s %s %s '%s'", version->packageName, version->versionString,
+				dependencyTypeTranslationIt->second, relationExpression.toString());
 	}
 }
 
@@ -73,8 +71,8 @@ Resolver::SynchronizationReason::SynchronizationReason(
 
 string Resolver::SynchronizationReason::toString() const
 {
-	return sf(__("%s: synchronization with %s %s"), relatedPackageName.c_str(),
-			version->packageName.c_str(), version->versionString.c_str());
+	return format2(__("%s: synchronization with %s %s"), relatedPackageName,
+			version->packageName, version->versionString);
 }
 
 }

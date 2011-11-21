@@ -47,14 +47,14 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 		__impl->packageNameRegexesToReinstall.push_back(internal::globToRegex(*it));
 	}
 
-	{ // ugly hack to copy trusted keyring from APT whenever possible
+	{ // ugly hack to copy trusted keyring from APT whenever possible, see #647001
 		auto cuptKeyringPath = config->getString("gpgv::trustedkeyring");
 		auto tempPath = cuptKeyringPath + ".new.temp";
 
-		auto result = std::system(sf("rm -f %s &&"
+		auto result = std::system(format2("rm -f %s &&"
 				"(apt-key exportall | gpg --batch --no-default-keyring --keyring %s --import) >/dev/null 2>/dev/null &&"
 				"chmod -f +r %s",
-				tempPath.c_str(), tempPath.c_str(), tempPath.c_str()).c_str());
+				tempPath, tempPath, tempPath).c_str());
 		if (result == 0)
 		{
 			internal::fs::move(tempPath, cuptKeyringPath); // ignoring errors
@@ -69,22 +69,7 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 		__impl->systemState.reset(new system::State(config, __impl));
 	}
 
-	FORIT(indexEntryIt, __impl->indexEntries)
-	{
-		const IndexEntry& entry = *indexEntryIt;
-
-		if (entry.category == IndexEntry::Binary && !useBinary)
-		{
-			continue;
-		}
-		if (entry.category == IndexEntry::Source && !useSource)
-		{
-			continue;
-		}
-
-		__impl->processIndexEntry(entry);
-	}
-
+	__impl->processIndexEntries(useBinary, useSource);
 	__impl->parsePreferences();
 	__impl->parseExtendedStates();
 }
@@ -274,12 +259,12 @@ vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
 		auto package = getBinaryPackage(packageName);
 		if (!package)
 		{
-			fatal("internal error: unable to find the package '%s'", packageName.c_str());
+			fatal2("internal error: unable to find the package '%s'", packageName);
 		}
 		auto version = package->getInstalledVersion();
 		if (!version)
 		{
-			fatal("internal error: the package '%s' does not have installed version", packageName.c_str());
+			fatal2("internal error: the package '%s' does not have installed version", packageName);
 		}
 
 		result.push_back(version);

@@ -234,41 +234,45 @@ when a package and its configuration files will be removed
 An example of action preview prompt:
 
 ```
- $ cupt install kdm akregator exim4
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
- 
- The following 7 packages will be INSTALLED:
- 
- exim4 exim4-base exim4-config exim4-daemon-light libgnutlsxx26 libntrack-qt4-1
- libntrack0
- 
- The following 32 packages will be UPGRADED:
- 
- akregator kde-window-manager kdebase-workspace-bin kdebase-workspace-data
- kdebase-workspace-kgreet-plugins kdm ksysguard ksysguardd libgnutls-dev
- libgnutls26 libkdecorations4 libkdepim4 libkephal4 libkscreensaver5 libksgrd4
- libksignalplotter4 libkwineffects1a libkworkspace4 libpcre3
- libplasma-geolocation-interface4 libplasmaclock4a libplasmagenericshell4
- libprocesscore4a libprocessui4a libsolidcontrol4 libsolidcontrolifaces4
- libsoup2.4-1 libtaskmanager4a libweather-ion4a plasma-dataengines-workspace
- plasma-desktop plasma-widgets-workspace
- 
- The following 4 packages will be REMOVED:
- 
- libgsasl7(a) libntlm0(a) msmtp(a) msmtp-mta
- 
- Need to get 25.7MiB/83.4MiB of archives. After unpacking 3512KiB will be used.
- Do you want to continue? [y/N/q/a/?]
+$ cupt install kdm akregator exim4
+Building the package cache...
+Initializing package resolver and worker...
+Scheduling requested actions...
+Resolving possible unmet dependencies...
+
+The following packages will be installed:
+
+exim4 exim4-base exim4-config exim4-daemon-light 
+
+The following packages will be upgraded:
+
+kde-window-manager kdebase-workspace-bin kdebase-workspace-data
+kdebase-workspace-kgreet-plugins kdm ksysguard ksysguardd libkdecorations4
+libkephal4abi1 libkscreensaver5 libksgrd4 libksignalplotter4
+libkwineffects1abi1 libkworkspace4 libplasma-geolocation-interface4
+libplasmaclock4abi1 libplasmagenericshell4 libprocesscore4abi1 libprocessui4a
+libsolidcontrol4abi1 libsolidcontrolifaces4abi1 libtaskmanager4abi1
+libweather-ion6 plasma-dataengines-workspace plasma-desktop
+plasma-widgets-workspace 
+
+The following packages will be removed:
+
+libgsasl7(a) libntlm0(a) msmtp(a) msmtp-mta 
+
+Action summary:
+  1 manually installed and 3 automatically installed packages will be installed
+  1 manually installed and 25 automatically installed packages will be upgraded
+  1 manually installed and 3 automatically installed packages will be removed
+
+Need to get 25.7MiB/83.4MiB of archives. After unpacking 3512KiB will be used.
+Do you want to continue? [y/N/q/a/?]
 ```
 
-In the output above you can see: lists of packages to change the state (with a
-total number by each [action #package_actions_terminology], the total
-download amount of packages (83.4MiB), the download amount considering the
-cache of already downloaded archives (25.7MiB), an estimate of difference in
-disk usage after the actions (+3512KiB), a user prompt what to do.
+In the output above you can see: lists of packages to change the state,
+the summary of planned changes, the total download amount of packages (83.4MiB),
+the download amount considering the cache of already downloaded archives
+(25.7MiB), an estimate of difference in disk usage after the actions
+(+3512KiB), a user prompt what to do.
 
 For removed and purged packages, a suffix **(a)** is appended to a package name
 if a package was automatically installed.
@@ -487,9 +491,11 @@ Example:
 
 === version pinning system ===[pinning]
 
-Each package version has a **pin**, an integer number. Amongst all versions of
-the same binary package, the one who has maximal pin is **policy**, or **candidate**
-version.
+Each package version has a **pin**, an integer number.
+
+Amongst all versions of the same binary package, the one who has maximal pin is
+**policy**, or **preferred** version.  It's also **candidate** in APT
+terminology and in Cupt before 2.3.
 
 Cupt assigns pins to package versions according to the APT documentation
 (//apt_preferences(5)//). Plus, it adds:
@@ -518,7 +524,7 @@ Example:
  $ cupt policy dpkg
  dpkg:
    Installed: 1.15.5.6
-   Candidate: 1.15.8.10
+   Preferred: 1.15.8.10
    Version table:
       1.15.8.10 991
          http://ftp.fi.debian.org/debian testing/main (signed)
@@ -531,7 +537,7 @@ Example:
          http://security.debian.org oldstable/main (signed)
 ```
 
-In the output above we can see: installed version ('1.15.5.6'), candidate version
+In the output above we can see: installed version ('1.15.5.6'), preferred version
 ('1.15.8.10') and a version table. In total, 3 versions of dpkg are available.
 
 For each version in version table we can see (on example of '1.15.8.10'): a version pin ('991'),
@@ -705,6 +711,19 @@ All the command switches described here are also applicable to ``rdepends`` as w
 
 == Action preview prompt (extended) ==
 
+=== summary ===
+
+Starting with Cupt 2.3 an action summary is shown by default.
+
+To remove it, use ``--no-summary`` command-line option. To remove it
+permanently, set the configuration option
+``cupt::console::actions-preview::show-summary`` to ``no``.
+
+Alternatively, you may want to hide details and view only a summary, this can
+be achieved by specifying ``--summary-only`` command-line option. This option
+can be useful in a conjunction with ``--simulate`` command-line option to have
+a quick preview.
+
 === detailed solution preview ===
 
 You can request more information to show in the [action preview prompt #action_preview_prompt]:
@@ -720,7 +739,7 @@ Use ``--show-versions`` (``-V``) option. Example:
  Scheduling requested actions...
  Resolving possible unmet dependencies...
  
- The following 7 packages will be INSTALLED:
+ The following packages will be installed:
  
  cpp-4.6 [4.6.0~rc1-1]
  gcc-4.6 [4.6.0~rc1-1]
@@ -730,7 +749,7 @@ Use ``--show-versions`` (``-V``) option. Example:
  libpwl5 [0.11.2-3]
  libquadmath0 [4.6.0~rc1-1]
  
- The following 4 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  binutils [2.20.1-15 -> 2.21.0.20110302-2]
  libcloog-ppl0 [0.15.9-2 -> 0.15.9-3]
@@ -749,7 +768,7 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  Scheduling requested actions...                   
  Resolving possible unmet dependencies...          
 
- The following 7 packages will be INSTALLED:
+ The following packages will be installed:
  
  cpp-4.6 <+10.6MiB>
  gcc-4.6 <+15.0MiB>
@@ -759,7 +778,7 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  libpwl5 <+100KiB>     
  libquadmath0 <+496KiB>
  
- The following 4 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  binutils <+1300KiB>
  libcloog-ppl0
@@ -779,7 +798,7 @@ Example:
  Scheduling requested actions...
  Resolving possible unmet dependencies...
  
- The following 7 packages will be INSTALLED:
+ The following packages will be installed:
  
  cpp-4.6
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'cpp-4.6 (= 4.6.0~rc1-1)'
@@ -803,7 +822,7 @@ Example:
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'libquadmath0 (>= 4.6.0~rc1-1)'
  
  
- The following 4 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  binutils
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'binutils (>= 2.21~)'
@@ -816,6 +835,40 @@ Example:
  
  libgomp1
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'libgomp1 (>= 4.6.0~rc1-1)'
+```
+
+- show not preferred versions
+
+To show packages which will have a not preferred version (which usually means
+not (enough) upgraded), use ``--show-not-preferred`` option.
+
+This is enabled for upgrades by default.
+
+For non-upgrade example, the next command may be used to determine the
+installed packages which have a better candidate (again, usually that means
+they can be upgraded):
+
+```
+ $ cupt install --no-auto-remove --show-not-preferred -V
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will have a not preferred version:
+ 
+ comerr-dev [2.1-1.41.12-4], preferred: 2.1-1.41.12-4stable1
+ e2fslibs [1.41.12-4], preferred: 1.41.12-4stable1
+ e2fsprogs [1.41.12-4], preferred: 1.41.12-4stable1
+ libcomerr2 [1.41.12-4], preferred: 1.41.12-4stable1
+ libkadm5clnt-mit7 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libkadm5srv-mit7 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libkdb5-4 [1.8.3+dfsg-4], preferred: 1.8.3+dfsg-4squeeze2
+ libss2 [1.41.12-4], preferred: 1.41.12-4stable1
+ linux-image-2.6.32-5-amd64 [2.6.32-34squeeze1], preferred: 2.6.32-38
+ openssh-client [1:5.5p1-6], preferred: 1:5.5p1-6+squeeze1
+ tzdata [2011g-1], preferred: 2011k-0squeeze1
+ 
 ```
 
 
@@ -834,7 +887,7 @@ choice **a**. Example:
  Scheduling requested actions...
  Resolving possible unmet dependencies...
  
- The following 64 packages will be INSTALLED:
+ The following packages will be installed:
  
  dmsetup dosfstools freepats fuse-utils gconf2-common gnash gnash-common
  gstreamer0.10-ffmpeg gstreamer0.10-fluendo-mp3 gstreamer0.10-plugins-bad
@@ -848,13 +901,13 @@ choice **a**. Example:
  libslv2-9 libsoundtouch0 libvisual-0.4-0 libvisual-0.4-plugins libwildmidi1
  libyajl1 libzbar0 mtools ntfs-3g ntfsprogs policykit-1 policykit-1-gnome udisks
  
- The following 12 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  libblkid1 libdbus-glib-1-2 libdevmapper1.02.1 libglib2.0-0
  libgstreamer-plugins-base0.10-0 libgstreamer0.10-0 libpcre3 libpolkit-agent-1-0
  libpolkit-gobject-1-0 librdf0 libschroedinger-1.0-0 libudev0
  
- The following 2 packages will be REMOVED:
+ The following packages will be removed:
  
  libeggdbus-1-0(a) librasqal2(a)
  
@@ -863,7 +916,7 @@ choice **a**. Example:
  Enter a package expression (empty to finish): libgnome-keyring0-
  Enter a package expression (empty to finish):
  
- The following 39 packages will be INSTALLED:
+ The following packages will be installed:
  
  freepats gnash gnash-common gstreamer0.10-ffmpeg gstreamer0.10-fluendo-mp3
  gstreamer0.10-plugins-bad gstreamer0.10-plugins-base libass4
@@ -874,12 +927,12 @@ choice **a**. Example:
  libsoundtouch0 libvisual-0.4-0 libvisual-0.4-plugins libwildmidi1 libyajl1
  libzbar0
  
- The following 7 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  libglib2.0-0 libgstreamer-plugins-base0.10-0 libgstreamer0.10-0 libpcre3
  librdf0 libschroedinger-1.0-0 libudev0
  
- The following 1 packages will be REMOVED:
+ The following packages will be removed:
  
  librasqal2(a)
  
@@ -897,6 +950,16 @@ The effect above is the same as if you specified
 
 in the command line from the start.
 
+=== colors ===
+
+Some parts of the actions preview will be colored if you enable colors by
+setting the option ``cupt::console::use-colors`` to ``auto`` or ``yes`` (see
+//cupt.conf(5)//).
+
+In the colored output different colors specify different actions types.
+Manually installed package names and potentially unsafe actions have bold
+colors.
+
 == Adjusting configuration variables ==
 
 There are two types of configuration variables - **regular** (or **scalar**) and
@@ -907,7 +970,7 @@ option means adding one more string to the existing list.
 
 Cupt has many configuration variables, some of them may be specified/overridden
 using command-line switches, some needs to be modified explicitly. See the full
-variable list and descriptions at //cupt(1)/Configuration variables//.
+variable list and descriptions at //cupt.conf(5)//.
 
 To see the current configuration, use ``config-dump`` subcommand. Examples:
 
@@ -934,7 +997,7 @@ You can distingiush list options there by figure brackets around the values.
 
 Cupt reads configuration first from APT configuration files (conforming to the
 APT documentation (//apt.conf(5)//)), then from Cupt-specific configuration
-files (see //cupt(1)/cupt::directory::configuration//), then applies those
+files (see //cupt.conf(5)/cupt::directory::configuration//), then applies those
 specified in the command line using ``--option`` (or ``-o``) switch or by
 dedicated switches corresponding to the option.
 
@@ -1084,10 +1147,18 @@ Example:
 
 ```
  1: # cupt install cmake
+```
+This is a command line.
+
+```
  2: Building the package cache...
  3: Initializing package resolver and worker...
  4: Scheduling requested actions...
  5: Resolving possible unmet dependencies...
+```
+These are information messages from Cupt.
+
+```
  6:
  7: The following 4 packages will be INSTALLED:
  8:
@@ -1099,13 +1170,29 @@ Example:
  14:
  15: Need to get 5637KiB/6007KiB of archives. After unpacking 1963KiB will be freed.
  16: Do you want to continue? [y/N/q/a/?] y
+```
+This is an action preview prompt.
+
+```
  17: Performing requested actions:
+```
+This is the 'preparation' phase.
+
+```
  18: Get:1 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake-data 2.8.4+dfsg.1-2 [1224KiB]
  19: Get:2 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main cmake 2.8.4+dfsg.1-2 [4102KiB]
  20: Get:3 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libarchive1 2.8.4-1 [149KiB]
  21: Get:4 http://ftp.fi.debian.org/debian wheezy/main,sid/main,wheezy/main,sid/main libxmlrpc-core-c3 1.16.33-2 [162KiB]
  22: Fetched 5637KiB in 1s.
+```
+This is the 'downloading' phase.
+
+```
  23: Reading changelogs... Done
+```
+This is the 'pre-hooks' phase (namely, apt-listchanges in this case).
+
+```
  24: Selecting previously deselected package libarchive1.
  25: (Reading database ... 94022 files and directories currently installed.)
  26: Unpacking libarchive1 (from .../libarchive1_2.8.4-1_i386.deb) ...
@@ -1138,17 +1225,8 @@ Example:
  53: Setting up cmake (2.8.4+dfsg.1-2) ...
  54: Processing triggers for man-db ...
 ```
+This is the 'action themselves' phase, dpkg's output and messages from packages' maintainer scripts.
 
-In the output above:
-
-```
- 2-5: information messages
- 7-16: action preview prompt
- 17: phase 'preparation'
- 18-22: phase 'downloading'
- 23: phase 'pre-hooks' (namely, apt-listchanges)
- 24-54: phase 'action themselves', dpkg's output
-```
 
 In the case the process fails at phase 'action themselves' (either due to bug
 in Cupt, dpkg, or packages), you'll see some error messages from dpkg and then
@@ -1296,7 +1374,7 @@ Example:
  cupt>policy libsoprano4
  libsoprano4:
    Installed: 2.2.2+dfsg.1-1
-   Candidate: 2.3.0+dfsg.1-2
+   Preferred: 2.3.0+dfsg.1-2
    Version table:
       2.3.0+dfsg.1-2 501
         http://debian.org.ua/debian unstable/main (signed)
@@ -1391,6 +1469,71 @@ system. Note that you can override them (by supplying ``-o cupt::worker::simulat
 and ``-o apt::install-recommends=yes``, respectively, for this example).
 
 
+== Limiting used repositories ==
+
+As of Cupt version 2.3, you can limit the used package repositories for each
+package manager invocation without editing the //sources.list(5)//. The
+limiting can be done by [repository archive names or codenames #release_info].
+
+The common syntax is:
+
+//limiting_option//``=``//value//``,``//value//``,``...``,``//value//
+
+Use the option ``--include-archives`` or ``--include-codenames`` to use only
+specified repositories. In other words, no matter how many repositories are
+present in the //sources.list(5)//, only packages from specified repositories
+will be considered.
+
+Examples:
+
+- ``cupt rdepends --include-archives=testing,unstable libffi5``
+
+List reverse-dependencies of ``libffi5`` package in ``testing`` and
+``unstable``.
+
+- ``cupt safe-upgrade --include-archives=stable,stable-updates``
+
+Upgrade the system, considering only packages from archives ``stable`` and
+``stable-updates``.
+
+- ``cupt install xserver-xorg --include-codenames=wheezy``
+
+Install the package ``xserver-xorg``, if its version in the ``wheezy`` is different
+than installed one or there is no such package installed. If any packages need
+to be changed in order to process this query (e.g., installing new dependencies
+or removing conflicting packages), only versions from ``wheezy`` will be
+considered.
+
+- ``cupt search --names-only '.*?-perl' --include-archives=experimental``
+
+Search for Perl module packages in ``experimental``.
+
+
+Use the option ``--exclude-archives`` or ``--exclude-codenames`` to not use
+specified repositories.  If a package version has multiple repositories and at
+least one of them is not excluded, the version will be visible.
+
+Examples:
+
+- ``search -n cupt --exclude-archives=stable``
+
+Search for Cupt-related packages, but ignore packages from ``stable``.
+
+- ``cupt full-upgrade --exclude-codenames=sid,experimental``
+
+Upgrade not using packages which come only from ``sid`` or ``experimental``.
+
+
+Limiting repositories can also be done by modifying the
+``cupt::cache::limit-releases::*`` family of configuration variables directly.
+
+Note: unlike the [pinning settings #pinning] which only set version priorities,
+limiting repositories is an "absolute" tool. For example, if the version has a
+very negative pin, it will be still considered for installation if there is no
+better choices, but if all repositories which contain a version are not used,
+Cupt will forgot about that version from a very start and forever, without
+exceptions.
+
 == Logging ==
 
 As of Cupt version 2.2, most actions that effectively change the state of
@@ -1419,8 +1562,7 @@ very detailed logging
 Logging levels are set for each subsystem independently. By default, the
 logging level for package changes is set to ``2``, other logging levels are set
 to ``1``. To change the logging level for some subsystem, use the option
-``cupt::worker::log::levels::``//subsystem//.
-See //cupt(1)/Configuration variables// for details.
+``cupt::worker::log::levels::``//subsystem//.  See //cupt.conf(5)// for details.
 
 Finally, if you want to disable the logging entirely, set the option
 ``cupt::worker::log`` to ``no``.
@@ -1619,17 +1761,17 @@ make installed packages set correct after making the changes user demand.
 In the most cases, there are several solutions to a problem. To choose
 amonst them, resolver assign **scores** to all of them.
 
-Score is an integer (i.e. can positive and negative) and is a sum of version
+Score is an integer (positive or negative) and is a sum of version
 pin difference (for uninstalled version, zero pin is assumed) and an action
 modifier. Action modifiers are action type-specific addendums and are
 controlled by the option group ``cupt::resolver::score::``//X// (see the full
-list of them in //cupt(1)/Configuration variables//).
+list of them in //cupt.conf(5)//).
 
 For native resolver, the negative scores indicate "negative" changes, and
 positive scores indicate "positive" changes. When several alternative solutions
 for a problem are available, they are considered in the score descending order.
 The ultimate goal of score system to assign positive scores to everything user
-wants and negative scores to everything user don't want. But since "positive"
+wants and negative scores to everything user doesn't want. But since "positive"
 and "negative" is something that varies from user to user and from action to
 action, there is no (and cannot be) a silver bullet.
 
@@ -1640,43 +1782,33 @@ resolver score variables to different values.
 Examples:
 
 ```
-$ echo 'q' | cupt -s -t experimental full-upgrade | fgrep 'following'
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 202 packages will be INSTALLED:
-The following 710 packages will be UPGRADED:
-The following 55 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=250 | fgrep 'following'
+  0 manually installed and 48 automatically installed packages will be installed
+  129 manually installed and 474 automatically installed packages will be upgraded
+  0 manually installed and 32 automatically installed packages will be removed
+  2 manually installed and 17 automatically installed packages will have a not preferred version
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only -o cupt::resolver::score::unsatisfied-recommends=250 | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 150 packages will be INSTALLED:
-The following 708 packages will be UPGRADED:
-The following 58 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=400 | fgrep 'following'
+  0 manually installed and 43 automatically installed packages will be installed
+  129 manually installed and 473 automatically installed packages will be upgraded
+  0 manually installed and 34 automatically installed packages will be removed
+  2 manually installed and 14 automatically installed packages will have a not preferred version
+  4 dependency problems will stay unresolved
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only -o cupt::resolver::score::new=-1000 | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 149 packages will be INSTALLED:
-The following 708 packages will be UPGRADED:
-The following 58 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::unsatisfied-recommends=1000 | fgrep 'following'
+  0 manually installed and 30 automatically installed packages will be installed
+  124 manually installed and 429 automatically installed packages will be upgraded
+  3 manually installed and 70 automatically installed packages will be removed
+  9 manually installed and 14 automatically installed packages will have a not preferred version
+  7 dependency problems will stay unresolved
+$ echo 'q' | cupt -s -t experimental full-upgrade --summary-only -o cupt::resolver::score::new=-1000 -o cupt::resolver::score::downgrade=0 | grep "^  "
 W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 148 packages will be INSTALLED:
-The following 708 packages will be UPGRADED:
-The following 58 packages will be REMOVED:
-Leave the following dependencies unresolved:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::new=-1000 | fgrep 'following'
-W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 64 packages will be INSTALLED:
-The following 661 packages will be UPGRADED:
-The following 100 packages will be REMOVED:
-Leave the following dependencies unresolved:
-WARNING! The following essential packages will be REMOVED:
-$ echo 'q' | cupt -s -t experimental full-upgrade -o cupt::resolver::score::new=-1000 -o cupt::resolver::score::downgrade=0 | fgrep 'following'
-W: some solutions were dropped, you may want to increase the value of the 'cupt::resolver::max-solution-count' option
-The following 26 packages will be INSTALLED:
-The following 618 packages will be UPGRADED:
-The following 42 packages will be REMOVED:
-Leave the following dependencies unresolved:
+  0 manually installed and 18 automatically installed packages will be installed
+  119 manually installed and 464 automatically installed packages will be upgraded
+  1 manually installed and 20 automatically installed packages will be removed
+  14 manually installed and 37 automatically installed packages will have a not preferred version
+  4 dependency problems will stay unresolved
 ```
 
 === maximum solution count ===

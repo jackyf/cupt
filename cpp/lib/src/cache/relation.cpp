@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -127,7 +127,7 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 	{
 		// no package name, bad
 		string unparsed(start, end);
-		fatal("failed to parse package name in relation '%s'", unparsed.c_str());
+		fatal2("failed to parse package name in relation '%s'", unparsed);
 	}
 
 	while (current != end && *current == ' ')
@@ -141,7 +141,7 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 		if (!__parse_versioned_info(current, end))
 		{
 			string unparsed(start, end);
-			fatal("failed to parse versioned info in relation '%s'", unparsed.c_str()); // what else can we do?..
+			fatal2("failed to parse versioned info in relation '%s'", unparsed); // what else can we do?..
 		}
 	}
 	else
@@ -226,7 +226,7 @@ void ArchitecturedRelation::__init(string::const_iterator start, string::const_i
 	}
 	if (*start != '[' || *(end-1) != ']')
 	{
-		fatal("unable to parse architecture filters '%s'", string(start, end).c_str());
+		fatal2("unable to parse architecture filters '%s'", string(start, end));
 	}
 	++start;
 	--end;
@@ -284,7 +284,7 @@ bool __is_architectured_relation_eligible(
 			string architectureFilter = *architectureFilterIt;
 			if (architectureFilter.empty() || architectureFilter[0] != '!')
 			{
-				warn("non-negative architecture filter '%s'", architectureFilter.c_str());
+				warn2("non-negative architecture filter '%s'", architectureFilter);
 			}
 			else
 			{

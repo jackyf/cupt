@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -132,7 +132,7 @@ void __remove_from_cessors(ContainerT& cessors, const ElementT& vertexPtr)
 			return;
 		}
 	}
-	fatal("internal error: graph: the vertex was not found while deleting from cessors list");
+	fatal2("internal error: graph: the vertex was not found while deleting from cessors list");
 }
 
 template< class T, template < class X > class PtrTraitsT >
@@ -369,7 +369,7 @@ void __topological_sort_with_priorities(Graph< vector< T > >&& graph,
 	}
 	if (!graph.getVertices().empty())
 	{
-		fatal("internal error: topologic sort of strongly connected components: cycle detected");
+		fatal2("internal error: topologic sort of strongly connected components: cycle detected");
 	}
 }
 

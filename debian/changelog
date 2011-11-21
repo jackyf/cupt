@@ -1,3 +1,83 @@
+cupt (2.3.0~) UNRELEASED; urgency=low
+
+  * console:
+    - Common options:
+      - New options '--include-archives', '--exclude-archives',
+        '--include-codenames', --exclude-codenames'.
+    - 'policy':
+      - 'Candidate' field name is ambiguous, changed it to 'Preferred'.
+    - 'source':
+      - Downloading source package parts: include only those codename/component
+        pairs to long descriptions which belong to a selected base
+        download URI.
+      - Don't try to re-download already existing (i.e. hash sums match) files.
+    - Managing packages:
+      - Don't print misleading 'Performing requested actions' when there is
+        nothing to do.
+      - New option '--show-not-preferred'.
+      - Don't uppercase action names anymore.
+      - Show also action summary.
+      - New options '--summary-only', '--no-summary'.
+    - 'search':
+      - Output short description(s) even if all search expressions was found in
+        the package name.
+      - Sort packages before the processing. That reduces a program's system
+        time by making file reads more linear. As a consequence, an output is
+        now sorted too.
+      - Now searches in the localized description if present.
+  * lib:
+    - system/resolvers/native:
+      - Removing automatically installed packages: stopped considering
+        those inter-package relations which are satisfied by some
+        non-removable package.
+      - Implemented partially sticked packages. This should get rid of
+        duplicate solutions. (Closes: #641473)
+    - download/progresses/console:
+      - Printing 'download failed' messages: use a download number instead of
+        the download description.
+      - Printing 'download failed' messages: reformatted to have the error
+        string earlier in the string and match the 'Get:<number>' style.
+    - config:
+      - New options 'cupt::cache::limit-releases::by-archive',
+        'cupt::cache::limit-releases::by-archive::type'.
+      - New options 'cupt::cache::limit-releases::by-codename',
+        'cupt::cache::limit-releases::by-codename::type'.
+      - New option 'cupt::console::actions-preview::show-not-preferred'.
+      - New options 'cupt::console::actions-preview::show-summary',
+        'cupt::console::actions-preview::show-details'.
+      - New option 'cupt::cache::pin::addendums::but-automatic-upgrades'.
+      - The APT option 'apt::acquire::translations' is no more used.
+      - New option 'cupt::languages::indexes'.
+      - New option 'cupt::console::use-colors'.
+      - Recognize (but don't use) the APT option 'acquire::languages'.
+    - system/worker:
+      - Logging: log errors too.
+      - Downloading package archives: include only those codename/component
+        pairs to long descriptions which belong to a selected base
+        download URI.
+      - Updating release and index data: use i18n/Index for downloading package
+        description localizations (Closes: #547948).
+      - Updating release and index data: download all variants of requested
+        description localizations, not only the first successful one.
+      - 'getArchivesInfo': fixed an undefined behavior while obtaining the
+        result of readlink(2). (Closes: #638327)
+    - cache:
+      - Honor 'cupt::cache::limit-releases::*' options.
+      - Process all requested translations, not only the first successful one.
+    - cache/releaseinfo:
+      - New field 'butAutomaticUpgrades'.
+    - hashsums:
+      - Reduce CPU overhead of the calculating hashes of short strings.
+    - 'fatal', 'warn', 'debug', 'simulate': are deprecated now.
+  * doc:
+    - man:
+      - [Jonathan Nieder] Split off a cupt.conf(5) page from cupt(1).
+        Thanks to A. Costa for the idea (Closes: #648012).
+    - What was referred as 'candidate version' is really
+      the 'preferred version'.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
+
 cupt (2.2.2) unstable; urgency=low
 
   * debian:

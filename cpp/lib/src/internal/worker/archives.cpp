@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -48,7 +48,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 			// a dangling symlink
 			if (unlink(debPath.c_str()) == -1)
 			{
-				warn("unable to delete dangling APT compatibility symbolic link '%s': EEE", debPath.c_str());
+				warn2e("unable to delete dangling APT compatibility symbolic link '%s'", debPath);
 			}
 		}
 		else
@@ -67,8 +67,8 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 				{
 					if (symlink(pathBasename.c_str(), correctedPath.c_str()) == -1)
 					{
-						fatal("unable to create APT compatibility symbolic link '%s' -> '%s': EEE",
-								correctedPath.c_str(), pathBasename.c_str());
+						fatal2e("unable to create APT compatibility symbolic link '%s' -> '%s'",
+								correctedPath, pathBasename);
 					}
 				}
 			}
@@ -103,18 +103,20 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				knownArchives[path] = *versionIt;
 
 				// checking for symlinks
-				if (readlink(path.c_str(), &pathBuffer[0], pathMaxLength) == -1)
+				auto readlinkResult = readlink(path.c_str(), &pathBuffer[0], pathMaxLength);
+				if (readlinkResult == -1)
 				{
 					if (errno != EINVAL)
 					{
-						warn("readlink on '%s' failed: EEE", path.c_str());
+						warn2e("readlink on '%s' failed", path);
 					}
 					// not a symlink
 				}
 				else
 				{
 					// a symlink (relative)
-					string targetPath(archivesDirectory + '/' + &pathBuffer[0]);
+					string relativePath(pathBuffer.begin(), pathBuffer.begin() + readlinkResult);
+					string targetPath(archivesDirectory + '/' + relativePath);
 					if (fs::fileExists(targetPath))
 					{
 						knownArchives[targetPath] = *versionIt;
@@ -148,25 +150,24 @@ void ArchivesWorker::deleteArchive(const string& path)
 	auto archivesDirectory = _get_archives_directory();
 	if (path.compare(0, archivesDirectory.size(), archivesDirectory))
 	{
-		fatal("path '%s' lies outside archives directory '%s'",
-				path.c_str(), archivesDirectory.c_str());
+		fatal2("path '%s' lies outside archives directory '%s'", path, archivesDirectory);
 	}
 	if (path.find("/../") != string::npos)
 	{
-		fatal("path '%s' contains at least one '/../' substring", path.c_str());
+		fatal2("path '%s' contains at least one '/../' substring", path);
 	}
 
 	if (!_config->getBool("cupt::worker::simulate"))
 	{
 		if (unlink(path.c_str()) == -1)
 		{
-			fatal("unable to delete file '%s': EEE", path.c_str());
+			fatal2e("unable to delete file '%s'", path);
 		}
 	}
 	else
 	{
 		auto filename = fs::filename(path);
-		simulate("deleting an archive '%s'", filename.c_str());
+		simulate2("deleting an archive '%s'", filename);
 	}
 }
 
@@ -187,20 +188,20 @@ void ArchivesWorker::deletePartialArchives()
 		if (simulating)
 		{
 			auto filename = fs::filename(*pathIt);
-			simulate("deleting a partial archive file '%s'", filename.c_str());
+			simulate2("deleting a partial archive file '%s'", filename);
 		}
 		else
 		{
 			if (unlink(pathIt->c_str()) == -1)
 			{
 				success = false;
-				warn("unable to delete file '%s': EEE", pathIt->c_str());
+				warn2e("unable to delete file '%s'", (*pathIt));
 			}
 		}
 	}
 	if (!success)
 	{
-		fatal("unable to delete partial archives");
+		fatal2("unable to delete partial archives");
 	}
 }
 

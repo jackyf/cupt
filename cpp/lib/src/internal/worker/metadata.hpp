@@ -21,22 +21,27 @@
 #include <cupt/cache.hpp>
 
 #include <internal/worker/base.hpp>
+#include <internal/cachefiles.hpp>
 
 namespace cupt {
 namespace internal {
 
 class MetadataWorker: public virtual WorkerBase
 {
+	enum IndexType { Packages, PackagesDiff, Localization, LocalizationFile };
+
 	string __get_indexes_directory() const;
-	bool __update_release_and_index_data(download::Manager&, const Cache::IndexEntry&);
-	bool __update_release(download::Manager&, const Cache::IndexEntry&, bool& releaseFileChanged);
+	bool __update_release_and_index_data(download::Manager&, const cachefiles::IndexEntry&);
+	bool __update_release(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
 	ssize_t __get_uri_priority(const string& uri);
-	bool __download_index(download::Manager&, const Cache::IndexDownloadRecord&, bool,
-			const Cache::IndexEntry&, const string&, const string&, bool, bool);
-	bool __update_index(download::Manager&, const Cache::IndexEntry&,
+	bool __download_index(download::Manager&, const cachefiles::FileDownloadRecord&, IndexType,
+			const cachefiles::IndexEntry&, const string&, const string&, bool);
+	bool __update_index(download::Manager&, const cachefiles::IndexEntry&,
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,
-			const Cache::IndexEntry&, bool indexFileChanged);
+			const cachefiles::IndexEntry&, bool indexFileChanged);
+	bool __download_translations(download::Manager&, const cachefiles::IndexEntry& indexEntry,
+			const string&, const string&, const string&, bool, Logger* logger);
 	void __list_cleanup(const string&);
  public:
 	void updateReleaseAndIndexData(const shared_ptr< download::Progress >&);

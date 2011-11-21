@@ -1,3 +1,17 @@
+2.3
+ - New options '--include-archives', '--exclude-archives',
+   '--include-codenames', --exclude-codenames'.
+ - New option '--show-not-preferred'.
+ - The action summary is now shown by default in the action preview.
+   New related options '--summary-only', '--no-summary'.
+ - 'search' now searches in localized descriptions if they are available.
+ - Metadata updater doesn't attempt to download unexisting index localizations
+   anymore.
+ - Multiple index localizations are now supported (using the option
+   'cupt::languages::indexes').
+ - The action preview can be colored now (using the option
+   'cupt::console::use-colors').
+
 2.2
  - New positional action override options '--install', '--remove', '--purge',
    '--satisfy', '--unsatisfy'.

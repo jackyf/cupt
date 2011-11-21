@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,52 +15,68 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <sys/file.h>
+#include <unistd.h>
 
-#include <cupt/config.hpp>
-#include <cupt/file.hpp>
+#include "colorizer.hpp"
 
-#include <internal/lock.hpp>
+const string noColor = "\e[0m";
 
-namespace cupt {
-namespace internal {
-
-Lock::Lock(const shared_ptr< const Config >& config, const string& path)
-	: __path(path), __file_ptr(NULL)
+Colorizer::Colorizer(const Config& config)
 {
-	__simulating = config->getBool("cupt::worker::simulate") ||
-			!config->getBool("cupt::worker::use-locks");
-	__debugging = config->getBool("debug::worker");
-
-	if (__debugging)
+	string optionName("cupt::console::use-colors");
+	auto stringEnabledValue = config.getString(optionName);
+	if (stringEnabledValue != "auto")
 	{
-		debug("obtaining lock '%s'", __path.c_str());
+		__enabled = config.getBool(optionName);
 	}
-	if (!__simulating)
+	else // guessing...
 	{
-		string errorString;
-		__file_ptr = new File(__path, "w", errorString);
-		if (!errorString.empty())
+		__enabled = false;
+		if (isatty(STDOUT_FILENO))
 		{
-			fatal2("unable to open file '%s': %s", __path, errorString);
+			const char* term = getenv("TERM");
+			if (term)
+			{
+				if (strcmp(term, "xterm") == 0 || strcmp(term, "linux") == 0)
+				{
+					__enabled = true;
+				}
+			}
 		}
-		__file_ptr->lock(LOCK_EX | LOCK_NB);
 	}
 }
 
-Lock::~Lock()
+string Colorizer::makeBold(const string& input) const
 {
-	if (__debugging)
+	if (__enabled)
 	{
-		debug("releasing lock '%s'", __path.c_str());
+		return string("\e[1m") + input + noColor;
 	}
-	if (!__simulating)
+	else
 	{
-		__file_ptr->lock(LOCK_UN);
-		delete __file_ptr;
+		return input;
 	}
 }
 
+string Colorizer::colorize(const string& input, Color color, bool bold) const
+{
+	if (color == Default)
+	{
+		return bold ? makeBold(input) : input;
+	}
+
+	if (__enabled)
+	{
+		return format2("\e[%c;3%cm", bold ? '1' : '0', color) + input + noColor;
+	}
+	else
+	{
+		return input;
+	}
 }
+
+bool Colorizer::enabled() const
+{
+	return __enabled;
 }
 

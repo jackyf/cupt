@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 		{
 			if (argc > 2)
 			{
-				warn("the command '%s' doesn't accept arguments", argv[1]);
+				warn2("the command '%s' doesn't accept arguments", argv[1]);
 			}
 			showOwnVersion();
 			return 0;
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 		{
 			if (argc > 2)
 			{
-				warn("the command '%s' doesn't accept arguments", argv[1]);
+				warn2("the command '%s' doesn't accept arguments", argv[1]);
 			}
 			showHelp(argv[0]);
 			return 0;
@@ -79,7 +79,7 @@ int mainEx(int argc, char* argv[], Context& context, string& command)
 		}
 		catch (Exception&)
 		{
-			fatal("error performing command '%s'", command.c_str());
+			fatal2("error performing command '%s'", command);
 		}
 	}
 	catch (Exception&)
@@ -138,7 +138,7 @@ void showHelp(const char* argv0)
 		{ "snapshot", __("works with system snapshots") },
 	};
 
-	cout << sf(__("Usage: %s <action> [<parameters>]"), argv0) << endl;
+	cout << format2(__("Usage: %s <action> [<parameters>]"), argv0) << endl;
 	cout << endl;
 	cout << __("Actions:") << endl;
 	FORIT(it, actionDescriptions)

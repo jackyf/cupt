@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -19,6 +19,7 @@
 #include <cstring>
 #include <map>
 using std::map;
+#include <sstream>
 
 #include <common/regex.hpp>
 
@@ -27,6 +28,44 @@ using std::map;
 #include "common.hpp"
 #include "misc.hpp"
 #include "handlers.hpp"
+
+void parseReleaseLimit(Config& config, const string& limitName, const string& included, const string& excluded)
+{
+	auto setLimitList = [&config](const string& listOptionName, const string& valuesString)
+	{
+		std::istringstream valueStream(valuesString);
+		string value;
+		while (std::getline(valueStream, value, ','))
+		{
+			config.setList(listOptionName, value);
+		}
+	};
+
+	auto limitOptionName = string("cupt::cache::limit-releases::by-") + limitName;
+	if (!included.empty() && !excluded.empty())
+	{
+		fatal2("options '--include-%ss' and '--exclude-%ss' cannot be specified together",
+				limitName, limitName);
+	}
+	else if (!included.empty())
+	{
+		config.setScalar(limitOptionName + "::type", "include");
+		setLimitList(limitOptionName, included);
+	}
+	else if (!excluded.empty())
+	{
+		config.setScalar(limitOptionName + "::type", "exclude");
+		setLimitList(limitOptionName, excluded);
+	}
+}
+
+void parseReleaseLimits(Config& config, const string& includedArchives, const string& excludedArchives,
+		const string& includedCodenames, const string& excludedCodenames)
+{
+	parseReleaseLimit(config, "archive", includedArchives, excludedArchives);
+	parseReleaseLimit(config, "codename", includedCodenames, excludedCodenames);
+}
+
 
 string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, vector< string >& unparsed)
 {
@@ -44,6 +83,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	bpo::options_description options("Common options");
 	vector< string > directOptions;
 	string targetRelease;
+	string includedArchives, excludedArchives, includedCodenames, excludedCodenames;
 	options.add_options()
 		("important,i", "")
 		("option,o", bpo::value< vector< string > >(&directOptions))
@@ -52,6 +92,10 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		("no-all-versions", "")
 		("target-release", bpo::value< string >(&targetRelease))
 		("default-release,t", bpo::value< string >(&targetRelease))
+		("include-archives", bpo::value< string >(&includedArchives))
+		("exclude-archives", bpo::value< string >(&excludedArchives))
+		("include-codenames", bpo::value< string >(&includedCodenames))
+		("exclude-codenames", bpo::value< string >(&excludedCodenames))
 		("simulate,s", "")
 		("quiet,q", "")
 		("command", bpo::value< string >(&command))
@@ -85,7 +129,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		{ // processing
 			if (command.empty())
 			{
-				fatal("no command specified");
+				fatal2("no command specified");
 			}
 			if (variablesMap.count("important"))
 			{
@@ -116,6 +160,8 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 				config->setScalar("quiet", "yes");
 				handleQuietOption(config);
 			}
+			parseReleaseLimits(*config, includedArchives, excludedArchives,
+					includedCodenames, excludedCodenames);
 		}
 
 		smatch m;
@@ -125,7 +171,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			const string& directOption = *directOptionIt;
 			if (!regex_match(directOption, m, optionRegex))
 			{
-				fatal("invalid option syntax in '%s' (right is '<option>=<value>')", directOption.c_str());
+				fatal2("invalid option syntax in '%s' (right is '<option>=<value>')", directOption);
 			}
 			string key = m[1];
 			string value = m[2];
@@ -145,11 +191,11 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 	}
 	catch (const bpo::error& e)
 	{
-		fatal("failed to parse command-line options: %s", e.what());
+		fatal2("failed to parse command-line options: %s", e.what());
 	}
 	catch (Exception&)
 	{
-		fatal("error while processing command-line options");
+		fatal2("error while processing command-line options");
 	}
 	return command;
 }
@@ -178,11 +224,11 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 	}
 	catch (const bpo::unknown_option& e)
 	{
-		fatal("unknown option '%s'", e.get_option_name().c_str());
+		fatal2("unknown option '%s'", e.get_option_name());
 	}
 	catch (const bpo::error& e)
 	{
-		fatal("failed to parse options: %s", e.what());
+		fatal2("failed to parse options: %s", e.what());
 	}
 	bpo::notify(variablesMap);
 
@@ -228,7 +274,7 @@ std::function< int (Context&) > getHandler(const string& command)
 	auto it = handlerMap.find(command);
 	if (it == handlerMap.end())
 	{
-		fatal("unrecognized command '%s'", command.c_str());
+		fatal2("unrecognized command '%s'", command);
 	}
 	return it->second;
 }
@@ -238,7 +284,7 @@ void checkNoExtraArguments(const vector< string >& arguments)
 	if (!arguments.empty())
 	{
 		auto argumentsString = join(" ", arguments);
-		warn("extra arguments '%s' are not processed", argumentsString.c_str());
+		warn2("extra arguments '%s' are not processed", argumentsString);
 	}
 }
 
@@ -248,7 +294,7 @@ void handleQuietOption(const shared_ptr< Config >& config)
 	{
 		if (!freopen("/dev/null", "w", stdout))
 		{
-			fatal("unable to redirect standard output to '/dev/null': EEE");
+			fatal2e("unable to redirect standard output to '/dev/null'");
 		}
 	}
 }
@@ -268,7 +314,7 @@ shared_ptr< Config > Context::getConfig()
 		}
 		catch (Exception&)
 		{
-			fatal("error while loading config");
+			fatal2("error while loading config");
 		}
 	}
 	return __config;
@@ -296,7 +342,7 @@ shared_ptr< const Cache > Context::getCache(
 		}
 		catch (Exception&)
 		{
-			fatal("error while creating package cache");
+			fatal2("error while creating package cache");
 		}
 	}
 
