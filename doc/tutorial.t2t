@@ -1744,7 +1744,7 @@ For native resolver, the negative scores indicate "negative" changes, and
 positive scores indicate "positive" changes. When several alternative solutions
 for a problem are available, they are considered in the score descending order.
 The ultimate goal of score system to assign positive scores to everything user
-wants and negative scores to everything user don't want. But since "positive"
+wants and negative scores to everything user doesn't want. But since "positive"
 and "negative" is something that varies from user to user and from action to
 action, there is no (and cannot be) a silver bullet.
 
