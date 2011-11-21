@@ -1,4 +1,4 @@
-cupt (2.3.0~) UNRELEASED; urgency=low
+cupt (2.3.0~rc1) experimental; urgency=low
 
   * console:
     - Common options:
@@ -76,7 +76,7 @@ cupt (2.3.0~) UNRELEASED; urgency=low
     - What was referred as 'candidate version' is really
       the 'preferred version'.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2011 11:33:25 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 21 Nov 2011 21:18:47 +0200
 
 cupt (2.2.2) unstable; urgency=low
 
