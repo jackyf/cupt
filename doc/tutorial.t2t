@@ -950,6 +950,16 @@ The effect above is the same as if you specified
 
 in the command line from the start.
 
+=== colors ===
+
+Some parts of the actions preview will be colored if you enable colors by
+setting the option ``cupt::console::use-colors`` to ``auto`` or ``yes`` (see
+//cupt.conf(5)//).
+
+In the colored output different colors specify different actions types.
+Manually installed package names and potentially unsafe actions have bold
+colors.
+
 == Adjusting configuration variables ==
 
 There are two types of configuration variables - **regular** (or **scalar**) and
