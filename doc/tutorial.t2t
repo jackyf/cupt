@@ -711,6 +711,19 @@ All the command switches described here are also applicable to ``rdepends`` as w
 
 == Action preview prompt (extended) ==
 
+=== summary ===
+
+Starting with Cupt 2.3 an action summary is shown by default.
+
+To remove it, use ``--no-summary`` command-line option. To remove it
+permanently, set the configuration option
+``cupt::console::actions-preview::show-summary`` to ``no``.
+
+Alternatively, you may want to hide details and view only a summary, this can
+be achieved by specifying ``--summary-only`` command-line option. This option
+can be useful in a conjunction with ``--simulate`` command-line option to have
+a quick preview.
+
 === detailed solution preview ===
 
 You can request more information to show in the [action preview prompt #action_preview_prompt]:
