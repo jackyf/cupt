@@ -726,7 +726,7 @@ Use ``--show-versions`` (``-V``) option. Example:
  Scheduling requested actions...
  Resolving possible unmet dependencies...
  
- The following 7 packages will be INSTALLED:
+ The following packages will be installed:
  
  cpp-4.6 [4.6.0~rc1-1]
  gcc-4.6 [4.6.0~rc1-1]
@@ -736,7 +736,7 @@ Use ``--show-versions`` (``-V``) option. Example:
  libpwl5 [0.11.2-3]
  libquadmath0 [4.6.0~rc1-1]
  
- The following 4 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  binutils [2.20.1-15 -> 2.21.0.20110302-2]
  libcloog-ppl0 [0.15.9-2 -> 0.15.9-3]
@@ -755,7 +755,7 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  Scheduling requested actions...                   
  Resolving possible unmet dependencies...          
 
- The following 7 packages will be INSTALLED:
+ The following packages will be installed:
  
  cpp-4.6 <+10.6MiB>
  gcc-4.6 <+15.0MiB>
@@ -765,7 +765,7 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  libpwl5 <+100KiB>     
  libquadmath0 <+496KiB>
  
- The following 4 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  binutils <+1300KiB>
  libcloog-ppl0
@@ -785,7 +785,7 @@ Example:
  Scheduling requested actions...
  Resolving possible unmet dependencies...
  
- The following 7 packages will be INSTALLED:
+ The following packages will be installed:
  
  cpp-4.6
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'cpp-4.6 (= 4.6.0~rc1-1)'
@@ -809,7 +809,7 @@ Example:
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'libquadmath0 (>= 4.6.0~rc1-1)'
  
  
- The following 4 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  binutils
    reason: gcc-4.6 4.6.0~rc1-1 depends on 'binutils (>= 2.21~)'
@@ -842,7 +842,7 @@ they can be upgraded):
  Scheduling requested actions... 
  Resolving possible unmet dependencies... 
  
- The following 11 packages will have a not preferred version:
+ The following packages will have a not preferred version:
  
  comerr-dev [2.1-1.41.12-4], preferred: 2.1-1.41.12-4stable1
  e2fslibs [1.41.12-4], preferred: 1.41.12-4stable1
@@ -874,7 +874,7 @@ choice **a**. Example:
  Scheduling requested actions...
  Resolving possible unmet dependencies...
  
- The following 64 packages will be INSTALLED:
+ The following packages will be installed:
  
  dmsetup dosfstools freepats fuse-utils gconf2-common gnash gnash-common
  gstreamer0.10-ffmpeg gstreamer0.10-fluendo-mp3 gstreamer0.10-plugins-bad
@@ -888,13 +888,13 @@ choice **a**. Example:
  libslv2-9 libsoundtouch0 libvisual-0.4-0 libvisual-0.4-plugins libwildmidi1
  libyajl1 libzbar0 mtools ntfs-3g ntfsprogs policykit-1 policykit-1-gnome udisks
  
- The following 12 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  libblkid1 libdbus-glib-1-2 libdevmapper1.02.1 libglib2.0-0
  libgstreamer-plugins-base0.10-0 libgstreamer0.10-0 libpcre3 libpolkit-agent-1-0
  libpolkit-gobject-1-0 librdf0 libschroedinger-1.0-0 libudev0
  
- The following 2 packages will be REMOVED:
+ The following packages will be removed:
  
  libeggdbus-1-0(a) librasqal2(a)
  
@@ -903,7 +903,7 @@ choice **a**. Example:
  Enter a package expression (empty to finish): libgnome-keyring0-
  Enter a package expression (empty to finish):
  
- The following 39 packages will be INSTALLED:
+ The following packages will be installed:
  
  freepats gnash gnash-common gstreamer0.10-ffmpeg gstreamer0.10-fluendo-mp3
  gstreamer0.10-plugins-bad gstreamer0.10-plugins-base libass4
@@ -914,12 +914,12 @@ choice **a**. Example:
  libsoundtouch0 libvisual-0.4-0 libvisual-0.4-plugins libwildmidi1 libyajl1
  libzbar0
  
- The following 7 packages will be UPGRADED:
+ The following packages will be upgraded:
  
  libglib2.0-0 libgstreamer-plugins-base0.10-0 libgstreamer0.10-0 libpcre3
  librdf0 libschroedinger-1.0-0 libudev0
  
- The following 1 packages will be REMOVED:
+ The following packages will be removed:
  
  librasqal2(a)
  
