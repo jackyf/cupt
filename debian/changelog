@@ -1,3 +1,9 @@
+cupt (2.3.0) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 27 Nov 2011 13:14:13 +0200
+
 cupt (2.3.0~rc1) experimental; urgency=low
 
   * console:
