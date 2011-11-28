@@ -561,7 +561,7 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal2("unable to open release file '%s': EEE", path);
+		fatal2("unable to open release file '%s': %s", path, openError);
 	}
 
 	size_t lineNumber = 1;
