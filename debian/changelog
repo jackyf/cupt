@@ -4,6 +4,10 @@ cupt (2.3.1~) unstable; urgency=low
     - cache:
       - Fixed printing an error reason when could not open a release file
         (a regression since 2.3.0~rc1).
+  * doc:
+    - man/cupt.1:
+      - Removed a documentation for option '--no-install-unpacked' which was
+        removed in 0.6.5. (Closes: #650126)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 28 Nov 2011 10:25:18 +0200
 
