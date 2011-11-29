@@ -232,6 +232,38 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 	}
 }
 
+static void processReinstallExpression(const shared_ptr< const Cache >& cache,
+		Resolver& resolver, const string& packageExpression)
+{
+	auto package = getBinaryPackage(cache, packageExpression);
+	auto installedVersion = package->getInstalledVersion();
+	if (!installedVersion)
+	{
+		fatal2("the package '%s' is not installed", packageExpression);
+	}
+	const string& installedVersionString = installedVersion->versionString;
+
+	static const string reinstallVersionSuffix = "~installed";
+	auto reinstallVersionSuffixPosition = installedVersionString.size() - reinstallVersionSuffix.size();
+	if (installedVersionString.size() > reinstallVersionSuffix.size() &&
+			installedVersionString.compare(reinstallVersionSuffixPosition, reinstallVersionSuffix.size(), reinstallVersionSuffix) == 0)
+	{
+		auto targetVersionString = installedVersionString.substr(0, reinstallVersionSuffixPosition);
+		auto targetVersion = package->getSpecificVersion(targetVersionString);
+		if (!targetVersion)
+		{
+			fatal2("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories",
+					packageExpression, targetVersionString);
+		}
+		resolver.installVersion(static_pointer_cast< const BinaryVersion >(targetVersion));
+	}
+	else
+	{
+		fatal2("internal error: the installed version '%s' of the package '%s' has not a reinstall version suffix '%s'",
+				installedVersionString, packageExpression, reinstallVersionSuffix);
+	}
+}
+
 static void processPackageExpressions(const shared_ptr< Config >& config,
 		const shared_ptr< const Cache >& cache, ManagePackages::Mode& mode,
 		Resolver& resolver, const vector< string >& packageExpressions,
@@ -266,6 +298,10 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		else if (mode == ManagePackages::BuildDepends)
 		{
 			processBuildDependsExpression(config, cache, resolver, *packageExpressionIt);
+		}
+		else if (mode == ManagePackages::Reinstall)
+		{
+			processReinstallExpression(cache, resolver, *packageExpressionIt);
 		}
 		else
 		{
@@ -967,7 +1003,6 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		vector< string > packageNameGlobsToReinstall;
 		if (mode == ManagePackages::Reinstall)
 		{
-			mode = ManagePackages::Install;
 			packageNameGlobsToReinstall = packageExpressions;
 		}
 

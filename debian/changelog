@@ -1,5 +1,9 @@
 cupt (2.3.1~) unstable; urgency=low
 
+  * console:
+    - Managing packages:
+      - 'reinstall': always use and enforce the installed version.
+        (Closes: #650214)
   * lib:
     - cache:
       - Fixed printing an error reason when could not open a release file
