@@ -85,7 +85,7 @@ lists, so ``apt-get update``, ``aptitude update`` etc. do not change Cupt index
 data anymore.
 
 When using commands that modify a system, you have to either execute ``cupt`` with
-root priviledes or supply ``--simulate`` (or ``-s``) option.
+root privileges or supply ``--simulate`` (or ``-s``) option.
 
 Use ``cupt help`` to get a list of subcommands and their short descriptions.
 
@@ -142,7 +142,7 @@ or
 
 ``cupt show --installed-only`` //package_name//
 
-A second command is preferrable, for example, when you want to know is this
+A second command is preferable, for example, when you want to know is this
 package automatically installed or not.
 
 === details of available package versions ===
@@ -545,7 +545,7 @@ a list of repositories where this version is available.
 
 Each repository line is:
 
-//basic_URI// //archive//``/``//component// (//signeness//)
+//basic_URI// //archive//``/``//component// (//signedness//)
 
 The repository marked as **signed** if it has a valid and
 verified cryptographic signature, and **unsigned** otherwise.
@@ -993,7 +993,7 @@ To see the current configuration, use ``config-dump`` subcommand. Examples:
  cupt::downloader::protocols::https::methods { "wget"; };
 ```
 
-You can distingiush list options there by figure brackets around the values.
+You can distinguish list options there by figure brackets around the values.
 
 Cupt reads configuration first from APT configuration files (conforming to the
 APT documentation (//apt.conf(5)//)), then from Cupt-specific configuration
@@ -1664,7 +1664,7 @@ Example:
 ``` cupt full-upgrade -o cupt::worker::archives-space-limit=200000000
 
 Once this option is set, an action scheduler will try to divide all the changes
-into smaller consequtive changesets so the following conditions are met:
+into smaller consecutive changesets so the following conditions are met:
 
 - Download amounts for package changes in any changeset won't exceed the declared limit.
 
@@ -1759,7 +1759,7 @@ Cupt's native dependency problem resolver plans system changes, if needed, to
 make installed packages set correct after making the changes user demand.
 
 In the most cases, there are several solutions to a problem. To choose
-amonst them, resolver assign **scores** to all of them.
+amongst them, resolver assign **scores** to all of them.
 
 Score is an integer (positive or negative) and is a sum of version
 pin difference (for uninstalled version, zero pin is assumed) and an action

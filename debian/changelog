@@ -17,6 +17,8 @@ cupt (2.3.1~) unstable; urgency=low
     - man/cupt.1:
       - Removed a documentation for option '--no-install-unpacked' which was
         removed in 0.6.5. (Closes: #650126)
+    - tutorial:
+      - Fixed typos and misspellings found by A. Costa. (Closes: #650372)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 28 Nov 2011 10:25:18 +0200
 
