@@ -130,9 +130,9 @@ vector< string > lglob(const string& directoryPath, const string& shellPattern)
 	}
 }
 
-bool __stat(const string& path, struct stat* result)
+bool __lstat(const string& path, struct stat* result)
 {
-	auto error = stat(path.c_str(), result);
+	auto error = lstat(path.c_str(), result);
 	if (error)
 	{
 		if (errno == ENOENT)
@@ -141,7 +141,7 @@ bool __stat(const string& path, struct stat* result)
 		}
 		else
 		{
-			fatal2e("stat() failed: '%s'", path);
+			fatal2e("lstat() failed: '%s'", path);
 		}
 	}
 	return true;
@@ -150,19 +150,19 @@ bool __stat(const string& path, struct stat* result)
 bool fileExists(const string& path)
 {
 	struct stat s;
-	return __stat(path, &s) && (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode) || S_ISFIFO(s.st_mode));
+	return __lstat(path, &s) && (S_ISREG(s.st_mode) || S_ISLNK(s.st_mode) || S_ISFIFO(s.st_mode));
 }
 
 bool dirExists(const string& path)
 {
 	struct stat s;
-	return __stat(path, &s) && S_ISDIR(s.st_mode);
+	return __lstat(path, &s) && S_ISDIR(s.st_mode);
 }
 
 size_t fileSize(const string& path)
 {
 	struct stat s;
-	if (!__stat(path, &s))
+	if (!__lstat(path, &s))
 	{
 		fatal2("the file '%s' does not exists", path);
 	}
