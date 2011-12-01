@@ -11,6 +11,8 @@ cupt (2.3.1~) unstable; urgency=low
     - system/worker:
       - 'getArchivesInfo': avoid using glob(3) which follows symlinks.
         (Closes: #638327)
+      - Updating release and index data: cleaning obsolete files: avoid using
+        glob(3) which follows symlinks. (Closes: #650128)
   * doc:
     - man/cupt.1:
       - Removed a documentation for option '--no-install-unpacked' which was

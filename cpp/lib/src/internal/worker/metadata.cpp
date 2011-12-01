@@ -891,7 +891,7 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 
 	bool simulating = _config->getBool("cupt::worker::simulate");
 
-	auto allListFiles = fs::glob(__get_indexes_directory() + "/*");
+	auto allListFiles = fs::lglob(__get_indexes_directory(), "*");
 	FORIT(fileIt, allListFiles)
 	{
 		if (!usedPaths.count(*fileIt) && fs::fileExists(*fileIt) /* is a file */)
