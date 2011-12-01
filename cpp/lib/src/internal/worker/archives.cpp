@@ -126,7 +126,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 		}
 	}
 
-	auto paths = fs::glob(archivesDirectory + "/*.deb");
+	auto paths = fs::lglob(archivesDirectory, "*.deb");
 
 	vector< pair< string, shared_ptr< const BinaryVersion > > > result;
 

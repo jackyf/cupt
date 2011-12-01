@@ -8,6 +8,9 @@ cupt (2.3.1~) unstable; urgency=low
     - cache:
       - Fixed printing an error reason when could not open a release file
         (a regression since 2.3.0~rc1).
+    - system/worker:
+      - 'getArchivesInfo': avoid using glob(3) which follows symlinks.
+        (Closes: #638327)
   * doc:
     - man/cupt.1:
       - Removed a documentation for option '--no-install-unpacked' which was
