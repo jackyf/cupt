@@ -1,4 +1,4 @@
-cupt (2.3.1~) unstable; urgency=low
+cupt (2.3.1) unstable; urgency=low
 
   * console:
     - Managing packages:
@@ -20,7 +20,7 @@ cupt (2.3.1~) unstable; urgency=low
     - tutorial:
       - Fixed typos and misspellings found by A. Costa. (Closes: #650372)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 28 Nov 2011 10:25:18 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 04 Dec 2011 11:05:22 +0200
 
 cupt (2.3.0) unstable; urgency=low
 
