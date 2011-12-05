@@ -28,6 +28,7 @@ using std::list;
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
+#include <internal/nativeresolver/autoremoval.hpp>
 
 namespace cupt {
 namespace internal {
@@ -508,6 +509,7 @@ class DependencyGraph::FillHelper
 	const map< string, shared_ptr< const BinaryVersion > >& __old_packages;
 	const map< string, InitialPackageEntry >& __initial_packages;
 	bool __debugging;
+	AutoRemoval __auto_removal;
 
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
@@ -534,7 +536,8 @@ class DependencyGraph::FillHelper
 			const map< string, InitialPackageEntry >& initialPackages)
 		: __dependency_graph(dependencyGraph),
 		__old_packages(oldPackages), __initial_packages(initialPackages),
-		__debugging(__dependency_graph.__config.getBool("debug::resolver"))
+		__debugging(__dependency_graph.__config.getBool("debug::resolver")),
+		__auto_removal(__dependency_graph.__config)
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
@@ -812,7 +815,7 @@ class DependencyGraph::FillHelper
 		if (insertionResult.second)
 		{
 			// this package name is not processed yet
-			if (isAutoRemovalAllowed(packageName))
+			if (__auto_removal.isAllowed(__dependency_graph.__cache, packageName))
 			{
 				auto removedPackagePtr = getVertexPtrForEmptyPackage(packageName);
 				if (removedPackagePtr) // TODO: exchange if's?
