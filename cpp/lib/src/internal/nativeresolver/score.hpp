@@ -33,7 +33,8 @@ class ScoreChange
 	struct SubScore
 	{
 		enum Type { Version, New, Removal, RemovalOfEssential, Upgrade, Downgrade,
-				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
+				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync, AutoRemoval,
+				PositionPenalty, Count };
 	};
 
 	ssize_t __subscores[SubScore::Count];
@@ -60,6 +61,7 @@ class ScoreManager
 	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
 	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
+	ScoreChange getAutoRemovalScoreChange() const;
 	string getScoreChangeString(const ScoreChange&) const;
 };
 

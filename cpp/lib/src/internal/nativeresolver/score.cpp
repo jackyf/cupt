@@ -56,6 +56,8 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 				leafOption = "unsatisfied-suggests"; break;
 			case ScoreChange::SubScore::FailedSync:
 				leafOption = "failed-synchronization"; break;
+			case ScoreChange::SubScore::AutoRemoval:
+				leafOption = "auto-removal"; break;
 			default:
 				fatal2("internal error: missing score multiplier for the score '%zu'", i);
 		}
@@ -126,6 +128,13 @@ ScoreChange ScoreManager::getUnsatisfiedSynchronizationScoreChange() const
 {
 	ScoreChange result;
 	result.__subscores[ScoreChange::SubScore::FailedSync] = 1;
+	return result;
+}
+
+ScoreChange ScoreManager::getAutoRemovalScoreChange() const
+{
+	ScoreChange result;
+	result.__subscores[ScoreChange::SubScore::AutoRemoval] = 1;
 	return result;
 }
 

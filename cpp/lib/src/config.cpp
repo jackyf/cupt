@@ -167,6 +167,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::unsatisfied-recommends", "-240" },
 		{ "cupt::resolver::score::unsatisfied-suggests", "-60" },
 		{ "cupt::resolver::score::failed-synchronization", "-80" },
+		{ "cupt::resolver::score::auto-removal", "5" },
 		{ "cupt::worker::archives-space-limit", "0" },
 		{ "cupt::worker::defer-triggers", "no" },
 		{ "cupt::worker::download-only", "no" },

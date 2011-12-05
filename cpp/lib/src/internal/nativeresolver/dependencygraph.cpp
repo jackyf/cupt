@@ -256,7 +256,7 @@ shared_ptr< const Reason > RemoveAutoInstalledVertex::getReason(const BasicVerte
 
 Unsatisfied::Type RemoveAutoInstalledVertex::getUnsatisfiedType() const
 {
-	return Unsatisfied::None;
+	return Unsatisfied::AutoRemoval;
 }
 
 struct UnsatisfiedVertex: public BasicVertex
@@ -817,18 +817,12 @@ class DependencyGraph::FillHelper
 			// this package name is not processed yet
 			if (__auto_removal.isAllowed(__dependency_graph.__cache, packageName))
 			{
-				auto removedPackagePtr = getVertexPtrForEmptyPackage(packageName);
-				if (removedPackagePtr) // TODO: exchange if's?
-				{
-					removeAutoInstalledVertexPtr = __dependency_graph.addVertex(new RemoveAutoInstalledVertex);
+				removeAutoInstalledVertexPtr = __dependency_graph.addVertex(new RemoveAutoInstalledVertex);
 
-					addEdgeCustom(removeAutoInstalledVertexPtr, removedPackagePtr);
-
-					auto unsatisfiedVertex = new UnsatisfiedVertex;
-					unsatisfiedVertex->parent = removeAutoInstalledVertexPtr;
-					auto unsatisfiedVertexPtr = __dependency_graph.addVertex(unsatisfiedVertex);
-					addEdgeCustom(removeAutoInstalledVertexPtr, unsatisfiedVertexPtr);
-				}
+				auto unsatisfiedVertex = new UnsatisfiedVertex;
+				unsatisfiedVertex->parent = removeAutoInstalledVertexPtr;
+				auto unsatisfiedVertexPtr = __dependency_graph.addVertex(unsatisfiedVertex);
+				addEdgeCustom(removeAutoInstalledVertexPtr, unsatisfiedVertexPtr);
 			}
 		}
 
