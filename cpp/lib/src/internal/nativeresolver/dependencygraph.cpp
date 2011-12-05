@@ -234,6 +234,7 @@ struct RemoveAutoInstalledVertex: public Basic
 	string toString() const;
 	size_t getTypePriority() const;
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
+	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
 string RemoveAutoInstalledVertex::toString() const
@@ -252,6 +253,10 @@ shared_ptr< const Reason > RemoveAutoInstalledVertex::getReason(const BasicVerte
 	return autoRemovalReason;
 }
 
+Unsatisfied::Type RemoveAutoInstalledVertex::getUnsatisfiedType() const
+{
+	return Unsatisfied::None;
+}
 
 struct UnsatisfiedVertex: public BasicVertex
 {
