@@ -321,18 +321,15 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 		return answer;
 	};
 
-				packageEntry.autoremoved = true; // remove?
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt); // remove?
+	packageEntry.autoremoved = true; // remove?
+	auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt); // remove?
 
-				if (debugging)
-				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
-				}
-				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), *elementPtrIt);
-			}
-		}
+	if (debugging)
+	{
+		__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
 	}
+	__solution_storage->setPackageEntry(solution, emptyElementPtr,
+			std::move(packageEntry), *elementPtrIt);
 }
 
 SolutionChooser __select_solution_chooser(const Config& config)
@@ -668,7 +665,6 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	static const Resolver::SuggestedPackage emptySuggestedPackage;
 	static const shared_ptr< system::Resolver::UserReason >
 			userReason(new system::Resolver::UserReason);
-	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
 
 
 	// build "user-frienly" version of solution
@@ -695,21 +691,15 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 			if (trackReasons)
 			{
 				auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
-				if (packageEntryPtr->autoremoved)
+
+				if (!packageEntryPtr->introducedBy.empty())
 				{
-					suggestedPackage.reasons.push_back(autoRemovalReason);
+					suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
 				}
-				else
+				auto initialPackageIt = __initial_packages.find(packageName);
+				if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
 				{
-					if (!packageEntryPtr->introducedBy.empty())
-					{
-						suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
-					}
-					auto initialPackageIt = __initial_packages.find(packageName);
-					if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
-					{
-						suggestedPackage.reasons.push_back(userReason);
-					}
+					suggestedPackage.reasons.push_back(userReason);
 				}
 			}
 			suggestedPackage.manuallySelected = __manually_modified_package_names.count(packageName);

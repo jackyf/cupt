@@ -230,6 +230,27 @@ Unsatisfied::Type SynchronizeVertex::getUnsatisfiedType() const
 
 
 struct RemoveAutoInstalledVertex: public Basic
+{
+	string toString() const;
+	size_t getTypePriority() const;
+	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
+};
+
+string RemoveAutoInstalledVertex::toString() const
+{
+	return "auto-removal";
+}
+
+size_t RemoveAutoInstalledVertex::getTypePriority() const
+{
+	return 0;
+}
+
+shared_ptr< const Reason > RemoveAutoInstalledVertex::getReason(const BasicVertex& parent) const
+{
+	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
+	return autoRemovalReason;
+}
 
 
 struct UnsatisfiedVertex: public BasicVertex
