@@ -58,7 +58,7 @@ struct BasicVertex
 	virtual string toString() const = 0;
 	virtual size_t getTypePriority() const;
 	virtual shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
-	virtual bool isAnti() const;
+	virtual bool isAnti() const; // TODO: remove?
 	virtual const forward_list< const Element* >* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
 };

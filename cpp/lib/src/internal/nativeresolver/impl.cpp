@@ -321,78 +321,8 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 		return answer;
 	};
 
-	Graph< const dg::Element* > dependencyGraph;
-	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
-	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
-	{ // building dependency graph
-		auto elementPtrs = solution.getElements();
-		FORIT(elementPtrIt, elementPtrs)
-		{
-			dependencyGraph.addVertex(*elementPtrIt);
-		}
-		FORIT(elementPtrIt, vertices)
-		{
-			if (!*elementPtrIt)
-			{
-				continue; // main vertex
-			}
-			const GraphCessorListType& successorElementPtrs =
-					__solution_storage->getSuccessorElements(*elementPtrIt);
-			FORIT(successorElementPtrIt, successorElementPtrs)
-			{
-				if ((*successorElementPtrIt)->isAnti())
-				{
-					continue;
-				}
-				const GraphCessorListType& successorSuccessorElementPtrs =
-						__solution_storage->getSuccessorElements(*successorElementPtrIt);
-
-				bool allRightSidesAreAutomatic = true;
-				list< const dg::Element* const* > rightSideVertexPtrs;
-				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
-				{
-					auto it = vertices.find(*successorSuccessorElementPtrIt);
-					if (it != vertices.end())
-					{
-						if (!isCandidateForAutoRemoval(*it))
-						{
-							allRightSidesAreAutomatic = false;
-							break;
-						}
-						else
-						{
-							rightSideVertexPtrs.push_back(&*it);
-						}
-					}
-				}
-				if (allRightSidesAreAutomatic)
-				{
-					FORIT(rightSideVertexPtrIt, rightSideVertexPtrs)
-					{
-						dependencyGraph.addEdgeFromPointers(&*elementPtrIt, *rightSideVertexPtrIt);
-					}
-				}
-			}
-
-			if (!isCandidateForAutoRemoval(*elementPtrIt))
-			{
-				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
-			}
-		}
-	}
-
-	{ // looping through the candidates
-		bool debugging = __config->getBool("debug::resolver");
-
-		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
-
-		FORIT(elementPtrIt, vertices)
-		{
-			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
-			{
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
+				packageEntry.autoremoved = true; // remove?
+				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt); // remove?
 
 				if (debugging)
 				{
