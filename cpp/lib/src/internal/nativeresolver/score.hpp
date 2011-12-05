@@ -61,7 +61,7 @@ class ScoreManager
 	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
 	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
-	ScoreChange getAutoRemovalScoreChange() const;
+	ScoreChange getUnsatisfiedAutoRemovalScoreChange() const;
 	string getScoreChangeString(const ScoreChange&) const;
 };
 

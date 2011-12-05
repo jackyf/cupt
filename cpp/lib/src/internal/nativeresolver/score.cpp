@@ -104,8 +104,15 @@ ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVe
 				supposedVersion->versionString) < 0 ? ScoreChange::SubScore::Upgrade : ScoreChange::SubScore::Downgrade;
 	}
 
-	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
-	scoreChange.__subscores[scoreType] = 1;
+	if (scoreType == ScoreChange::SubScore::Removal && __cache->isAutomaticallyInstalled(originalVersion->packageName))
+	{
+		scoreChange.__subscores[ScoreChange::SubScore::AutoRemoval] = 1;
+	}
+	else
+	{
+		scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
+		scoreChange.__subscores[scoreType] = 1;
+	}
 
 	return scoreChange;
 }
@@ -131,11 +138,10 @@ ScoreChange ScoreManager::getUnsatisfiedSynchronizationScoreChange() const
 	return result;
 }
 
-ScoreChange ScoreManager::getAutoRemovalScoreChange() const
+ScoreChange ScoreManager::getUnsatisfiedAutoRemovalScoreChange() const
 {
 	ScoreChange result;
-	result.__subscores[ScoreChange::SubScore::AutoRemoval] = 1;
-	return result;
+	return result; // 0
 }
 
 ssize_t ScoreManager::getScoreChangeValue(const ScoreChange& scoreChange) const
@@ -203,6 +209,8 @@ string ScoreChange::__to_string() const
 					result << "us"; break;
 				case SubScore::FailedSync:
 					result << "fs"; break;
+				case SubScore::AutoRemoval:
+					result << "ar"; break;
 			}
 		}
 	}

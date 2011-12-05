@@ -335,7 +335,7 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 				action.profit = __score_manager.getUnsatisfiedSynchronizationScoreChange();
 				break;
 			case dg::Unsatisfied::AutoRemoval:
-				action.profit = __score_manager.getAutoRemovalScoreChange();
+				action.profit = __score_manager.getUnsatisfiedAutoRemovalScoreChange();
 				break;
 		}
 		action.profit.setPosition(position);
