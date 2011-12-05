@@ -71,7 +71,6 @@ struct PackageEntry
 	};
 
 	bool sticked;
-	bool autoremoved; // TODO: not needed anymore?
 	forward_list< BrokenSuccessor > brokenSuccessors;
 	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;

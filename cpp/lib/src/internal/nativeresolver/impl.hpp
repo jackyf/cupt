@@ -78,7 +78,6 @@ class NativeResolverImpl
 			const shared_ptr< const BinaryVersion >&) const;
 	bool __is_candidate_for_auto_removal(const dg::Element*,
 		const std::function< bool (const string&) >, bool);
-	void __clean_automatically_installed(Solution&);
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;

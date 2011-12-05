@@ -20,8 +20,6 @@
 #include <queue>
 #include <algorithm>
 
-#include <common/regex.hpp>
-
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
@@ -271,65 +269,6 @@ bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elem
 		return false;
 	}
 	return true;
-}
-
-void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
-{
-	vector< sregex > neverAutoRemoveRegexes;
-	{
-		auto neverAutoRemoveRegexStrings = __config->getList("apt::neverautoremove");
-
-		FORIT(regexStringIt, neverAutoRemoveRegexStrings)
-		{
-			try
-			{
-				neverAutoRemoveRegexes.push_back(sregex::compile(*regexStringIt));
-			}
-			catch (regex_error&)
-			{
-				fatal2("invalid regular expression '%s'", *regexStringIt);
-			}
-		}
-	}
-
-	smatch m;
-	auto isNeverAutoRemove = [&neverAutoRemoveRegexes, &m](const string& packageName) -> bool
-	{
-		FORIT(regexIt, neverAutoRemoveRegexes)
-		{
-			if (regex_match(packageName, m, *regexIt))
-			{
-				return true;
-			}
-		}
-		return false;
-	};
-
-	auto canAutoremove = __config->getBool("cupt::resolver::auto-remove");
-
-	map< const dg::Element*, bool > isCandidateForAutoRemovalCache;
-	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache, &isNeverAutoRemove, canAutoremove]
-			(const dg::Element* elementPtr) -> bool
-	{
-		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert(
-				std::make_pair(elementPtr, false));
-		bool& answer = cacheInsertionResult.first->second;
-		if (cacheInsertionResult.second)
-		{
-			answer = __is_candidate_for_auto_removal(elementPtr, isNeverAutoRemove, canAutoremove);
-		}
-		return answer;
-	};
-
-	packageEntry.autoremoved = true; // remove?
-	auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt); // remove?
-
-	if (debugging)
-	{
-		__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
-	}
-	__solution_storage->setPackageEntry(solution, emptyElementPtr,
-			std::move(packageEntry), *elementPtrIt);
 }
 
 SolutionChooser __select_solution_chooser(const Config& config)

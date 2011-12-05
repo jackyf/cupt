@@ -23,9 +23,14 @@
 namespace cupt {
 namespace internal {
 
+class AutoRemovalImpl;
+
 class AutoRemoval
 {
+	AutoRemovalImpl* __impl;
+ public:
 	AutoRemoval(const Config&);
+	~AutoRemoval();
 	bool isAllowed(const string& packageName) const;
 };
 

@@ -15,6 +15,8 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <common/regex.hpp>
+
 #include <cupt/config.hpp>
 
 #include <internal/nativeresolver/autoremoval.hpp>
@@ -22,9 +24,56 @@
 namespace cupt {
 namespace internal {
 
-AutoRemoval(const Config&)
+class AutoRemovalImpl
 {
+	smatch __m;
+	vector< sregex > __never_regexes;
+	bool __can_autoremove;
 
+	bool isNeverAutoRemove(const string& packageName) const
+	{
+		FORIT(regexIt, __never_regexes)
+		{
+			if (regex_match(packageName, __m, *regexIt))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+ public:
+	AutoRemovalImpl(const Config& config)
+	{
+		__can_autoremove = config.getBool("cupt::resolver::auto-remove");
+
+		auto neverAutoRemoveRegexStrings = config.getList("apt::neverautoremove");
+		FORIT(regexStringIt, neverAutoRemoveRegexStrings)
+		{
+			try
+			{
+				__never_regexes.push_back(sregex::compile(*regexStringIt));
+			}
+			catch (regex_error&)
+			{
+				fatal2("invalid regular expression '%s'", *regexStringIt);
+			}
+		}
+	}
+
+	bool isAllowed(const string& packageName) const
+	{
+
+	}
+}
+
+AutoRemoval::AutoRemoval(const Config& config)
+{
+	__impl = new AutoRemovalImpl;
+}
+
+AutoRemoval::~AutoRemoval()
+{
+	delete __impl;
 }
 
 bool AutoRemoval::isAllowed(const string& packageName) const
