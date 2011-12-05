@@ -30,7 +30,7 @@ class AutoRemovalImpl
 	vector< sregex > __never_regexes;
 	bool __can_autoremove;
 
-	bool isNeverAutoRemove(const string& packageName) const
+	bool __never_autoremove(const string& packageName) const
 	{
 		FORIT(regexIt, __never_regexes)
 		{
@@ -60,9 +60,30 @@ class AutoRemovalImpl
 		}
 	}
 
-	bool isAllowed(const string& packageName) const
+	bool isAllowed(const Cache& cache, const string& packageName) const
 	{
+		if (!__can_autoremove)
+		{
+			return false;
+		}
+		if (!cache.isAutomaticallyInstalled(packageName))
+		{
+			return false;
+		}
+		{ // check for essentialness
+			auto package = cache.getBinaryPackage(packageName);
+			auto installedVersion = package->getInstalledVersion();
+			if (installedVersion && installedVersion->essential)
+			{
+				return false;
+			}
+		}
+		if (__never_autoremove(packageName))
+		{
+			return false;
+		}
 
+		return true;
 	}
 }
 
@@ -76,8 +97,8 @@ AutoRemoval::~AutoRemoval()
 	delete __impl;
 }
 
-bool AutoRemoval::isAllowed(const string& packageName) const
+bool AutoRemoval::isAllowed(const Cache& cache, const string& packageName) const
 {
-
+	return __impl->isAllowed(cache, packageName);
 }
 

@@ -233,42 +233,6 @@ bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elem
 		const std::function< bool (const string&) > isNeverAutoRemove,
 		bool canAutoremove)
 {
-	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
-	if (!versionVertex)
-	{
-		return false;
-	}
-
-	const string& packageName = versionVertex->getPackageName();
-	const shared_ptr< const BinaryVersion >& version = versionVertex->version;
-
-	if (packageName == __dummy_package_name)
-	{
-		return false;
-	}
-	if (!version)
-	{
-		return false;
-	}
-	if (version->essential)
-	{
-		return false;
-	}
-	if (__manually_modified_package_names.count(packageName))
-	{
-		return false;
-	}
-
-	auto canAutoremoveThisPackage = canAutoremove && __cache->isAutomaticallyInstalled(packageName);
-	if (__old_packages.count(packageName) && !canAutoremoveThisPackage)
-	{
-		return false;
-	}
-	if (isNeverAutoRemove(packageName))
-	{
-		return false;
-	}
-	return true;
 }
 
 SolutionChooser __select_solution_chooser(const Config& config)
