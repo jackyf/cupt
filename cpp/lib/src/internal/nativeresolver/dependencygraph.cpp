@@ -228,6 +228,10 @@ Unsatisfied::Type SynchronizeVertex::getUnsatisfiedType() const
 	return Unsatisfied::Sync;
 }
 
+
+struct RemoveAutoInstalledVertex: public Basic
+
+
 struct UnsatisfiedVertex: public BasicVertex
 {
 	const Element* parent;
