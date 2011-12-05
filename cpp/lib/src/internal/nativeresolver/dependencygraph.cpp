@@ -804,6 +804,21 @@ class DependencyGraph::FillHelper
 		}
 	}
 
+	void processRemoveAutoInstalled(const string& packageName, const Element* elementPtr)
+	{
+		if (isAutoRemovalAllowed(packageName))
+		{
+			auto removedPackagePtr = getVertexPtrForEmptyPackage(packageName);
+			if (removedPackagePtr) // TODO: exchange if's?
+			{
+				auto removeAutoInstalledVertex = __depenew RemoveAutoInstalledVertex;
+				addEdgeCustom(elementPtr, removeAutoInstalledVertex);
+
+				addEdgeCustom(removeAutoInstalledVertex, removedPackagePtr);
+			}
+		}
+	}
+
  public:
 	void unfoldElement(const Element* elementPtr)
 	{
@@ -849,6 +864,8 @@ class DependencyGraph::FillHelper
 		{
 			processSynchronizations(version, elementPtr);
 		}
+
+		processRemoveAutoInstalled(version->packageName, elementPtr);
 	}
 };
 
