@@ -517,6 +517,7 @@ class DependencyGraph::FillHelper
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
+	map< string, const Element* > __package_name_to_autoremoval_vertex;
 
 	set< const Element* > __unfolded_elements;
 
@@ -806,16 +807,30 @@ class DependencyGraph::FillHelper
 
 	void processRemoveAutoInstalled(const string& packageName, const Element* elementPtr)
 	{
-		if (isAutoRemovalAllowed(packageName))
+		auto insertionResult = __package_name_to_autoremoval_vertex.insert(make_pair(packageName, NULL));
+		const Element*& removeAutoInstalledVertexPtr = insertionResult.first.second;
+		if (insertionResult.second)
 		{
-			auto removedPackagePtr = getVertexPtrForEmptyPackage(packageName);
-			if (removedPackagePtr) // TODO: exchange if's?
+			// this package name is not processed yet
+			if (isAutoRemovalAllowed(packageName))
 			{
-				auto removeAutoInstalledVertex = __depenew RemoveAutoInstalledVertex;
-				addEdgeCustom(elementPtr, removeAutoInstalledVertex);
+				auto removedPackagePtr = getVertexPtrForEmptyPackage(packageName);
+				if (removedPackagePtr) // TODO: exchange if's?
+				{
+					removeAutoInstalledVertexPtr = __dependency_graph.addVertex(new RemoveAutoInstalledVertex);
 
-				addEdgeCustom(removeAutoInstalledVertex, removedPackagePtr);
+					addEdgeCustom(removeAutoInstalledVertex, removedPackagePtr);
+
+					auto unsatisfiedVertexPtr = __dependency_graph.addVertex(new UnsatisfiedVertex);
+					unsatisfiedVertexPtr->parent = elementPtr;
+					addEdgeCustom(removeAutoInstalledVertex, unsatisfiedVertexPtr);
+				}
 			}
+		}
+
+		if (removeAutoInstalledVertexPtr)
+		{
+			addEdgeCustom(elementPtr, removeAutoInstalledVertexPtr);
 		}
 	}
 
