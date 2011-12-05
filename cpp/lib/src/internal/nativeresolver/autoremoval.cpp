@@ -18,6 +18,9 @@
 #include <common/regex.hpp>
 
 #include <cupt/config.hpp>
+#include <cupt/cache.hpp>
+#include <cupt/cache/binarypackage.hpp>
+#include <cupt/cache/binaryversion.hpp>
 
 #include <internal/nativeresolver/autoremoval.hpp>
 
@@ -26,7 +29,7 @@ namespace internal {
 
 class AutoRemovalImpl
 {
-	smatch __m;
+	mutable smatch __m;
 	vector< sregex > __never_regexes;
 	bool __can_autoremove;
 
@@ -85,11 +88,11 @@ class AutoRemovalImpl
 
 		return true;
 	}
-}
+};
 
 AutoRemoval::AutoRemoval(const Config& config)
 {
-	__impl = new AutoRemovalImpl;
+	__impl = new AutoRemovalImpl(config);
 }
 
 AutoRemoval::~AutoRemoval()
@@ -100,5 +103,8 @@ AutoRemoval::~AutoRemoval()
 bool AutoRemoval::isAllowed(const Cache& cache, const string& packageName) const
 {
 	return __impl->isAllowed(cache, packageName);
+}
+
+}
 }
 

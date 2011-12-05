@@ -31,8 +31,11 @@ class AutoRemoval
  public:
 	AutoRemoval(const Config&);
 	~AutoRemoval();
-	bool isAllowed(const string& packageName) const;
+	bool isAllowed(const Cache&, const string& packageName) const;
 };
+
+}
+}
 
 #endif
 

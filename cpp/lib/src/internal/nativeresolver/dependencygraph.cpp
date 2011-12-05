@@ -230,7 +230,7 @@ Unsatisfied::Type SynchronizeVertex::getUnsatisfiedType() const
 }
 
 
-struct RemoveAutoInstalledVertex: public Basic
+struct RemoveAutoInstalledVertex: public BasicVertex
 {
 	string toString() const;
 	size_t getTypePriority() const;
@@ -248,9 +248,9 @@ size_t RemoveAutoInstalledVertex::getTypePriority() const
 	return 0;
 }
 
-shared_ptr< const Reason > RemoveAutoInstalledVertex::getReason(const BasicVertex& parent) const
+shared_ptr< const Reason > RemoveAutoInstalledVertex::getReason(const BasicVertex&) const
 {
-	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
+	static const shared_ptr< const Reason > autoRemovalReason(new Resolver::AutoRemovalReason);
 	return autoRemovalReason;
 }
 
@@ -810,8 +810,8 @@ class DependencyGraph::FillHelper
 
 	void processRemoveAutoInstalled(const string& packageName, const Element* elementPtr)
 	{
-		auto insertionResult = __package_name_to_autoremoval_vertex.insert(make_pair(packageName, NULL));
-		const Element*& removeAutoInstalledVertexPtr = insertionResult.first.second;
+		auto insertionResult = __package_name_to_autoremoval_vertex.insert(make_pair(packageName, (const Element*)NULL));
+		const Element*& removeAutoInstalledVertexPtr = insertionResult.first->second;
 		if (insertionResult.second)
 		{
 			// this package name is not processed yet
@@ -822,11 +822,12 @@ class DependencyGraph::FillHelper
 				{
 					removeAutoInstalledVertexPtr = __dependency_graph.addVertex(new RemoveAutoInstalledVertex);
 
-					addEdgeCustom(removeAutoInstalledVertex, removedPackagePtr);
+					addEdgeCustom(removeAutoInstalledVertexPtr, removedPackagePtr);
 
-					auto unsatisfiedVertexPtr = __dependency_graph.addVertex(new UnsatisfiedVertex);
-					unsatisfiedVertexPtr->parent = elementPtr;
-					addEdgeCustom(removeAutoInstalledVertex, unsatisfiedVertexPtr);
+					auto unsatisfiedVertex = new UnsatisfiedVertex;
+					unsatisfiedVertex->parent = removeAutoInstalledVertexPtr;
+					auto unsatisfiedVertexPtr = __dependency_graph.addVertex(unsatisfiedVertex);
+					addEdgeCustom(removeAutoInstalledVertexPtr, unsatisfiedVertexPtr);
 				}
 			}
 		}

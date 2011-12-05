@@ -229,12 +229,6 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 	return __fair_chooser(solutions);
 }
 
-bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr,
-		const std::function< bool (const string&) > isNeverAutoRemove,
-		bool canAutoremove)
-{
-}
-
 SolutionChooser __select_solution_chooser(const Config& config)
 {
 	SolutionChooser result;
@@ -978,9 +972,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				continue; // ok, process other solution
 			}
 			solutions.erase(newSelectedSolutionIt);
-
-			// clean up automatically installed by resolver and now unneeded packages
-			__clean_automatically_installed(*currentSolution);
 
 			__final_verify_solution(*currentSolution);
 
