@@ -833,6 +833,13 @@ class DependencyGraph::FillHelper
 	}
 
  public:
+	bool isAutoRemovalAllowed(const string& packageName) const
+	{
+		// this function should not be called for not unfolded package names,
+		// so the entry in the map must exist already
+		return __package_name_to_autoremoval_vertex.find(packageName)->second;
+	}
+
 	void unfoldElement(const Element* elementPtr)
 	{
 		if (!__unfolded_elements.insert(elementPtr).second)
@@ -932,7 +939,8 @@ void DependencyGraph::unfoldElement(const Element* elementPtr)
 	__fill_helper->unfoldElement(elementPtr);
 }
 
-const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
+const Element* DependencyGraph::getCorrespondingEmptyElement(
+		const Element* elementPtr, bool onlyAutoRemovals)
 {
 	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
@@ -940,6 +948,10 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elem
 		fatal2("internal error: getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
+	if (onlyAutoRemovals && !__fill_helper->isAutoRemovalAllowed(packageName))
+	{
+		return NULL;
+	}
 	return __fill_helper->getVertexPtrForEmptyPackage(packageName);
 }
 

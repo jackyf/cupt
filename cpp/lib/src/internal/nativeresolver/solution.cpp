@@ -175,11 +175,26 @@ const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Ele
 }
 
 const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(
-		const dg::Element* elementPtr)
+		const dg::Element* elementPtr, bool onlyAutoRemovals) const
 {
 	static const forward_list< const dg::Element* > nullList;
-	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
-	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
+	// it will be modified, so this function is not thread-safe
+	static forward_list< const dg::Element* > autoRemovalList;
+
+	if (onlyAutoRemovals)
+	{
+		autoRemovalList.clear();
+		if (auto emptyElementPtr = __dependency_graph.getCorrespondingEmptyElement(elementPtr, true))
+		{
+			autoRemovalList.push_front(emptyElementPtr);
+		}
+		return autoRemovalList;
+	}
+	else
+	{
+		auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
+		return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
+	}
 }
 
 bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
@@ -209,7 +224,7 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 		if (versionElement->version)
 		{
 			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
-					(__dependency_graph).getCorrespondingEmptyElement(elementPtr);
+					(__dependency_graph).getCorrespondingEmptyElement(elementPtr, false);
 		}
 	}
 	return true;
@@ -324,7 +339,7 @@ bool SolutionStorage::verifyElement(const Solution& solution,
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
 {
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
+	return __dependency_graph.getCorrespondingEmptyElement(elementPtr, false);
 }
 
 void SolutionStorage::unfoldElement(const dg::Element* elementPtr)

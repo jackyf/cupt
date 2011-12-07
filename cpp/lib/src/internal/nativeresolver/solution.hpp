@@ -98,6 +98,7 @@ class Solution
 	size_t id;
 	size_t level;
 	bool finished;
+	bool isAutoRemovalsStage;
 	ssize_t score;
 	std::unique_ptr< const void > pendingAction;
 	vector< const dg::Element* > insertedElementPtrs; // in time order
@@ -116,7 +117,7 @@ class Solution
 class SolutionStorage
 {
 	size_t __next_free_id;
-	dg::DependencyGraph __dependency_graph;
+	mutable dg::DependencyGraph __dependency_graph;
  public:
 	SolutionStorage(const Config&, const Cache& cache);
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
@@ -129,8 +130,8 @@ class SolutionStorage
 	bool verifyElement(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself
-	static const forward_list< const dg::Element* >&
-			getConflictingElements(const dg::Element*);
+	const forward_list< const dg::Element* >&
+			getConflictingElements(const dg::Element*, bool onlyAutoRemovals = false) const;
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
 	void setRejection(Solution&, const dg::Element*);
