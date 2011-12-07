@@ -612,6 +612,12 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		else
 		{
 			// non-version vertex - unsatisfied one
+
+			if ((*elementPtrIt)->getUnsatisfiedType() == dg::Unsatisfied::AutoRemoval)
+			{
+				continue;
+			}
+
 			const GraphCessorListType& predecessors =
 					__solution_storage->getPredecessorElements(*elementPtrIt);
 			FORIT(predecessorIt, predecessors)
