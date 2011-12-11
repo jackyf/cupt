@@ -48,7 +48,7 @@ struct InitialPackageEntry
 
 struct Unsatisfied
 {
-	enum Type { None, Recommends, Suggests, Sync };
+	enum Type { None, Recommends, Suggests, Sync, PositionPenalty };
 };
 
 struct BasicVertex;

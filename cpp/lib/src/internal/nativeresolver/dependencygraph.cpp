@@ -500,7 +500,9 @@ class DependencyGraph::FillHelper
 	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
-	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
+
+	typedef list< pair< string, const Element* > > MetaElements;
+	unordered_map< string, MetaElements > __meta_relation_expression_vertices;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
 
 	set< const Element* > __unfolded_elements;
@@ -605,18 +607,26 @@ class DependencyGraph::FillHelper
 	}
 
  private:
+	MetaElements& getRelationExpressionMetaVertex(const RelationExpression& relationExpression,
+			BinaryVersion::RelationTypes::Type dependencyType, bool* isNewPtr)
+	{
+		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
+		static const MetaElements emptyList;
+		auto insertResult = __meta_relation_expression_vertices.insert(
+				make_pair(hashKey, emptyList));
+		*isNewPtr = insertResult.second;
+		return insertResult.first->second;
+	}
+
 	void processAntiRelation(const string& packageName,
 			const Element* vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
-		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
-		static const list< pair< string, const Element* > > emptyList;
-		auto insertResult = __meta_anti_relation_expression_vertices.insert(
-				make_pair(hashKey, emptyList));
-		bool isNewRelationExpressionVertex = insertResult.second;
-		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
+		bool isNewMetaVertex;
+		MetaElements& subElementPtrs = getRelationExpressionMetaVertex(
+				relationExpression, dependencyType, &isNewMetaVertex);
 
-		if (isNewRelationExpressionVertex)
+		if (isNewMetaVertex)
 		{
 			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 			// filling sub elements
