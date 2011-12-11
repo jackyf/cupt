@@ -180,6 +180,21 @@ Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
 	}
 }
 
+
+struct PositionPenaltyRelationExpressionVertex: public RelationExpressionVertex
+{
+	const size_t position;
+
+	PositionPenaltyRelationExpressionVertex(size_t position_)
+		: position(position_)
+	{}
+
+	Unsatisfied::Type getUnsatisfiedType() const
+	{
+		return Unsatisfied::PositionPenalty;
+	}
+};
+
 struct SynchronizeVertex: public BasicVertex
 {
 	string targetPackageName;
