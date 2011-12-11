@@ -183,12 +183,6 @@ Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
 
 struct PositionPenaltyRelationExpressionVertex: public RelationExpressionVertex
 {
-	const size_t position;
-
-	PositionPenaltyRelationExpressionVertex(size_t position_)
-		: position(position_)
-	{}
-
 	Unsatisfied::Type getUnsatisfiedType() const
 	{
 		return Unsatisfied::PositionPenalty;
@@ -583,23 +577,6 @@ class DependencyGraph::FillHelper
 		__dependency_graph.addEdgeFromPointers(fromVertexPtr, toVertexPtr);
 	}
 
-	const Element* getVertexPtrForRelationExpression(const RelationExpression* relationExpressionPtr,
-			const RelationType& dependencyType, bool* isNew)
-	{
-		auto hashKey = relationExpressionPtr->getHashString() + char('0' + dependencyType);
-		const Element*& elementPtr = __relation_expression_to_vertex_ptr.insert(
-				make_pair(hashKey, (const Element*)NULL)).first->second;
-		*isNew = !elementPtr;
-		if (!elementPtr)
-		{
-			auto vertex(new RelationExpressionVertex);
-			vertex->dependencyType = dependencyType;
-			vertex->relationExpressionPtr = relationExpressionPtr;
-			elementPtr = __dependency_graph.addVertex(vertex);
-		}
-		return elementPtr;
-	}
-
  public:
 	const Element* getVertexPtrForEmptyPackage(const string& packageName)
 	{
@@ -714,34 +691,64 @@ class DependencyGraph::FillHelper
 			calculatedSatisfyingVersions = true;
 		}
 
-		bool isNewRelationExpressionVertex;
-		auto relationExpressionVertexPtr = getVertexPtrForRelationExpression(
-				&relationExpression, dependencyType, &isNewRelationExpressionVertex);
-		addEdgeCustom(vertexPtr, relationExpressionVertexPtr);
-		if (!isNewRelationExpressionVertex)
-		{
-			return;
-		}
+		bool isNewMetaVertex;
+		MetaElements& subElementPtrs = getRelationExpressionMetaVertex(
+				relationExpression, dependencyType, &isNewMetaVertex);
 
-		if (!calculatedSatisfyingVersions)
+		if (isNewMetaVertex)
 		{
-			satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
-		}
+			auto vertex(new RelationExpressionVertex);
+			vertex->dependencyType = dependencyType;
+			vertex->relationExpressionPtr = relationExpressionPtr;
+			auto relationExpressionVertexPtr = __dependency_graph.addVertex(vertex);
+			subElementPtrs.push_back(relationExpressionVertexPtr);
 
-		FORIT(satisfyingVersionIt, satisfyingVersions)
-		{
-			if (auto queuedVersionPtr = getVertexPtr(*satisfyingVersionIt))
+			// main subvertex
+			if (!calculatedSatisfyingVersions)
 			{
-				addEdgeCustom(relationExpressionVertexPtr, queuedVersionPtr);
+				satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
+			}
+			FORIT(satisfyingVersionIt, satisfyingVersions)
+			{
+				if (auto queuedVersionPtr = getVertexPtr(*satisfyingVersionIt))
+				{
+					addEdgeCustom(relationExpressionVertexPtr, queuedVersionPtr);
+				}
+			}
+			if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
+					dependencyType == BinaryVersion::RelationTypes::Suggests)
+			{
+				auto notSatisfiedVertex(new UnsatisfiedVertex);
+				notSatisfiedVertex->parent = relationExpressionVertexPtr;
+				addEdgeCustom(relationExpressionVertexPtr, __dependency_graph.addVertex(notSatisfiedVertex));
+			}
+
+			// position penalty subvertices, if any
+			//
+			// processing non-last relations of OR expressions
+			for (auto relationIt = relationExpression.begin();
+					relationIt != relationExpression.end() - 1; ++relationIt)
+			{
+				RelationExpression subRelationExpression;
+				subRelationExpression.push_back(*relationIt);
+
+				auto subVertex(new PositionalPenaltyRelationExpressionVertex(*relationExpressionVertexPtr));
+				auto subVertexPtr = __dependency_graph.addVertex(vertex);
+				subElementPtrs.push_back(relationExpressionVertexPtr);
+
+				auto subSatisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(subRelationExpression);
+				FORIT(subSatisfyingVersionIt, subSatisfiedVersions)
+				{
+					if (auto versionVertexPtr = getVertexPtr(*subSatisfyingVersionIt))
+					{
+						addEdgeCustom(subVertexPtr, versionVertexPtr);
+					}
+				}
 			}
 		}
-
-		if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
-				dependencyType == BinaryVersion::RelationTypes::Suggests)
+		FORIT(subElementPtrIt, subElementPtrs)
 		{
-			auto notSatisfiedVertex(new UnsatisfiedVertex);
-			notSatisfiedVertex->parent = relationExpressionVertexPtr;
-			addEdgeCustom(relationExpressionVertexPtr, __dependency_graph.addVertex(notSatisfiedVertex));
+			addEdgeCustom(vertexPtr, subElementPtrIt->second);
 		}
 	}
 
