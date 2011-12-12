@@ -715,10 +715,11 @@ class DependencyGraph::FillHelper
 					addEdgeCustom(relationExpressionVertexPtr, queuedVersionPtr);
 				}
 			}
+			UnsatisfiedVertex* notSatisfiedVertex = NULL;
 			if (dependencyType == BinaryVersion::RelationTypes::Recommends ||
 					dependencyType == BinaryVersion::RelationTypes::Suggests)
 			{
-				auto notSatisfiedVertex(new UnsatisfiedVertex);
+				notSatisfiedVertex = new UnsatisfiedVertex;
 				notSatisfiedVertex->parent = relationExpressionVertexPtr;
 				addEdgeCustom(relationExpressionVertexPtr, __dependency_graph.addVertex(notSatisfiedVertex));
 			}
@@ -743,6 +744,10 @@ class DependencyGraph::FillHelper
 					{
 						addEdgeCustom(subVertexPtr, versionVertexPtr);
 					}
+				}
+				if (notSatisfiedVertex)
+				{
+					addEdgeCustom(subVertexPtr, versionVertexPtr);
 				}
 			}
 		}
