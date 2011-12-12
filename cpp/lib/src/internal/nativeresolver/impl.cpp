@@ -510,6 +510,9 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 			case dg::Unsatisfied::Sync:
 				action.profit = __score_manager.getUnsatisfiedSynchronizationScoreChange();
 				break;
+			case dg::Unsatisfied::PositionPenalty:
+				action.profit = __score_manager.getPositionPenaltyScoreChange();
+				break;
 		}
 		action.profit.setPosition(position);
 		++position;

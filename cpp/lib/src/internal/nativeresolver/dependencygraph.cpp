@@ -183,6 +183,9 @@ Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
 
 struct PositionPenaltyRelationExpressionVertex: public RelationExpressionVertex
 {
+	PositionPenaltyRelationExpressionVertex(const RelationExpressionVertex& base_)
+		: RelationExpressionVertex(base_)
+	{}
 	Unsatisfied::Type getUnsatisfiedType() const
 	{
 		return Unsatisfied::PositionPenalty;
@@ -699,9 +702,9 @@ class DependencyGraph::FillHelper
 		{
 			auto vertex(new RelationExpressionVertex);
 			vertex->dependencyType = dependencyType;
-			vertex->relationExpressionPtr = relationExpressionPtr;
+			vertex->relationExpressionPtr = &relationExpression;
 			auto relationExpressionVertexPtr = __dependency_graph.addVertex(vertex);
-			subElementPtrs.push_back(relationExpressionVertexPtr);
+			subElementPtrs.push_back(make_pair(string(), relationExpressionVertexPtr)); // TODO: distinct container
 
 			// main subvertex
 			if (!calculatedSatisfyingVersions)
@@ -733,12 +736,12 @@ class DependencyGraph::FillHelper
 				RelationExpression subRelationExpression;
 				subRelationExpression.push_back(*relationIt);
 
-				auto subVertex(new PositionalPenaltyRelationExpressionVertex(*relationExpressionVertexPtr));
-				auto subVertexPtr = __dependency_graph.addVertex(vertex);
-				subElementPtrs.push_back(relationExpressionVertexPtr);
+				auto subVertex(new PositionPenaltyRelationExpressionVertex(*vertex));
+				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
+				subElementPtrs.push_back(make_pair(string(), relationExpressionVertexPtr));
 
 				auto subSatisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(subRelationExpression);
-				FORIT(subSatisfyingVersionIt, subSatisfiedVersions)
+				FORIT(subSatisfyingVersionIt, subSatisfyingVersions)
 				{
 					if (auto versionVertexPtr = getVertexPtr(*subSatisfyingVersionIt))
 					{
@@ -747,7 +750,7 @@ class DependencyGraph::FillHelper
 				}
 				if (notSatisfiedVertex)
 				{
-					addEdgeCustom(subVertexPtr, versionVertexPtr);
+					addEdgeCustom(subVertexPtr, notSatisfiedVertex);
 				}
 			}
 		}
