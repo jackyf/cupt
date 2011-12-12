@@ -183,12 +183,18 @@ Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
 
 struct PositionPenaltyRelationExpressionVertex: public RelationExpressionVertex
 {
+	size_t position;
+
 	PositionPenaltyRelationExpressionVertex(const RelationExpressionVertex& base_)
 		: RelationExpressionVertex(base_)
 	{}
 	Unsatisfied::Type getUnsatisfiedType() const
 	{
 		return Unsatisfied::PositionPenalty;
+	}
+	string toString() const
+	{
+		return format2("position penalty #%zu (%s)", position, RelationExpressionVertex::toString());
 	}
 };
 
@@ -737,6 +743,7 @@ class DependencyGraph::FillHelper
 				subRelationExpression.push_back(*relationIt);
 
 				auto subVertex(new PositionPenaltyRelationExpressionVertex(*vertex));
+				subVertex->position = (relationIt - relationExpression.begin());
 				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
 				subElementPtrs.push_back(make_pair(string(), subVertexPtr));
 
