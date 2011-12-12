@@ -490,7 +490,6 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 		return versionVertex->version;
 	};
 
-	size_t position = 0;
 	FORIT(actionIt, actions)
 	{
 		Action& action = **actionIt;
@@ -514,8 +513,6 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 				action.profit = __score_manager.getPositionPenaltyScoreChange();
 				break;
 		}
-		action.profit.setPosition(position);
-		++position;
 	}
 }
 

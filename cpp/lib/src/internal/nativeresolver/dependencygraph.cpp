@@ -738,7 +738,7 @@ class DependencyGraph::FillHelper
 
 				auto subVertex(new PositionPenaltyRelationExpressionVertex(*vertex));
 				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
-				subElementPtrs.push_back(make_pair(string(), relationExpressionVertexPtr));
+				subElementPtrs.push_back(make_pair(string(), subVertexPtr));
 
 				auto subSatisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(subRelationExpression);
 				FORIT(subSatisfyingVersionIt, subSatisfyingVersions)

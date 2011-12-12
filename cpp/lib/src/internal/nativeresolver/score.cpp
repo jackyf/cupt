@@ -129,6 +129,13 @@ ScoreChange ScoreManager::getUnsatisfiedSynchronizationScoreChange() const
 	return result;
 }
 
+ScoreChange ScoreManager::getPositionPenaltyScoreChange() const
+{
+	ScoreChange result;
+	result.__subscores[ScoreChange::SubScore::PositionPenalty] = 1;
+	return result;
+}
+
 ssize_t ScoreManager::getScoreChangeValue(const ScoreChange& scoreChange) const
 {
 	// quality correction makes backtracking more/less possible
@@ -199,11 +206,6 @@ string ScoreChange::__to_string() const
 	}
 
 	return result.str();
-}
-
-void ScoreChange::setPosition(size_t position)
-{
-	__subscores[SubScore::PositionPenalty] = position;
 }
 
 }

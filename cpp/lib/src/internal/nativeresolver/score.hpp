@@ -42,7 +42,6 @@ class ScoreChange
 
  public:
 	ScoreChange();
-	void setPosition(size_t);
 };
 
 class ScoreManager
@@ -60,6 +59,7 @@ class ScoreManager
 	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
 	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
+	ScoreChange getPositionPenaltyScoreChange() const;
 	string getScoreChangeString(const ScoreChange&) const;
 };
 
