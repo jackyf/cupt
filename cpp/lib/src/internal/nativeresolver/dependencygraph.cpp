@@ -752,6 +752,10 @@ class DependencyGraph::FillHelper
 				{
 					addEdgeCustom(subVertexPtr, notSatisfiedVertex);
 				}
+
+				auto positionPenaltyApplyingVertex = new UnsatisfiedVertex;
+				positionPenaltyApplyingVertex->parent = subVertexPtr;
+				addEdgeCustom(subVertexPtr, __dependency_graph.addVertex(positionPenaltyApplyingVertex));
 			}
 		}
 		FORIT(subElementPtrIt, subElementPtrs)
