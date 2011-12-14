@@ -33,7 +33,7 @@
 
 typedef shared_ptr< const Version > (*__version_selector)(shared_ptr< const Cache >,
 		const string& packageName, bool throwOnError);
-typedef std::function< vector< string > () > __package_names_fetcher;
+typedef std::function< vector< string > (shared_ptr< const Cache >) > __package_names_fetcher;
 
 shared_ptr< const BinaryPackage > getBinaryPackage(shared_ptr< const Cache > cache, const string& packageName, bool throwOnError)
 {
@@ -242,7 +242,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 		// handling wildcards
 		const char* packageNameGlob = packageNameExpression.c_str();
 
-		auto packageNames = packageNamesFetcher();
+		auto packageNames = packageNamesFetcher(cache);
 		FORIT(proposedPackageNameIt, packageNames)
 		{
 			const string& proposedPackageName = *proposedPackageNameIt;
@@ -265,13 +265,14 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	return result;
 }
 
+static vector< string > getBinaryPackageNames(shared_ptr< const Cache > cache)
+{
+	return cache->getBinaryPackageNames();
+}
+
 vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	auto packageNamesFetcher = [&cache]() -> vector< string >
-	{
-		return cache->getBinaryPackageNames();
-	};
 	auto versionSelector =
 			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
 			{
@@ -279,7 +280,7 @@ vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(share
 			};
 
 	auto source = __select_versions_wildcarded(cache, packageExpression, versionSelector,
-			packageNamesFetcher, throwOnError);
+			getBinaryPackageNames, throwOnError);
 
 	vector< shared_ptr< const BinaryVersion > > result;
 	for (size_t i = 0; i < source.size(); ++i)
@@ -295,13 +296,14 @@ vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(share
 	return result;
 }
 
+static vector< string > getSourcePackageNames(shared_ptr< const Cache > cache)
+{
+	return cache->getSourcePackageNames();
+}
+
 vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	auto packageNamesFetcher = [&cache]() -> vector< string >
-	{
-		return cache->getSourcePackageNames();
-	};
 	auto versionSelector =
 			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
 			{
@@ -309,7 +311,7 @@ vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(share
 			};
 
 	auto source = __select_versions_wildcarded(cache, packageExpression, versionSelector,
-			packageNamesFetcher, throwOnError);
+			getSourcePackageNames, throwOnError);
 
 	vector< shared_ptr< const SourceVersion > > result;
 	for (size_t i = 0; i < source.size(); ++i)
