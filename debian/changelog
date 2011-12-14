@@ -1,6 +1,8 @@
 cupt (2.3.2~) UNRELEASED; urgency=low
 
-  * 
+  * doc:
+    - man/cupt.1:
+      - Documented the option '--show-not-preferred'. (Closes: #651888)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 14 Dec 2011 09:51:32 +0200
 
