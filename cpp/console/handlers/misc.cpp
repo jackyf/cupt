@@ -102,7 +102,7 @@ int showBinaryVersions(Context& context)
 		vector< shared_ptr< const BinaryVersion > > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
-			versions = getBinaryPackage(cache, packageExpression)->getVersions();
+			versions = selectAllBinaryVersionsWildcarded(cache, packageExpression);
 		}
 		else
 		{
