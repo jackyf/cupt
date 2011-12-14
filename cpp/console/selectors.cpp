@@ -209,6 +209,20 @@ shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > 
 	return sourceVersion;
 }
 
+static vector< string > __select_package_names_wildcarded(shared_ptr< const Cache > cache,
+		const string& packageNameExpression, __package_names_fetcher packageNamesFetcher)
+{
+	vector< string > result = packageNamesFetcher(cache);
+
+	auto notMatch = [&packageNameExpression, &cache](const string& packageName)
+	{
+		return fnmatch(packageNameExpression.c_str(), packageName.c_str(), 0);
+	};
+	result.erase(std::remove_if(result.begin(), result.end(), notMatch), result.end());
+
+	return result;
+}
+
 vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, __version_selector versionSelector,
 		__package_names_fetcher packageNamesFetcher, bool throwOnError)
@@ -240,19 +254,13 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	else
 	{
 		// handling wildcards
-		const char* packageNameGlob = packageNameExpression.c_str();
-
-		auto packageNames = packageNamesFetcher(cache);
-		FORIT(proposedPackageNameIt, packageNames)
+		auto packageNames = __select_package_names_wildcarded(cache, packageNameExpression, packageNamesFetcher);
+		FORIT(packageNameIt, packageNames)
 		{
-			const string& proposedPackageName = *proposedPackageNameIt;
-			if (!fnmatch(packageNameGlob, proposedPackageName.c_str(), 0))
+			auto version = versionSelector(cache, *packageNameIt + remainder, false);
+			if (version)
 			{
-				auto version = versionSelector(cache, proposedPackageName + remainder, false);
-				if (version)
-				{
-					result.push_back(version);
-				}
+				result.push_back(version);
 			}
 		}
 
