@@ -36,6 +36,8 @@ vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(share
 		const string& packageExpression, bool throwOnError = true);
 vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression);
+vector< shared_ptr< const SourceVersion > > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+		const string& packageExpression);
 
 #endif
 

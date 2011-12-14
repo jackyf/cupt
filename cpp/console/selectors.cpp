@@ -354,3 +354,24 @@ vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(sh
 
 	return result;
 }
+
+vector< shared_ptr< const SourceVersion > > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+		const string& packageExpression)
+{
+	vector< shared_ptr< const SourceVersion > > result;
+
+	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, getSourcePackageNames);
+	if (packageNames.empty())
+	{
+		fatal2("no source packages available for the wildcarded expression '%s'", packageExpression);
+	}
+	FORIT(packageNameIt, packageNames)
+	{
+		auto package = getSourcePackage(cache, *packageNameIt);
+		auto versions = package->getVersions();
+		std::move(versions.begin(), versions.end(), std::back_inserter(result));
+	}
+
+	return result;
+}
+

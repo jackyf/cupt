@@ -1,7 +1,7 @@
 cupt (2.3.2~) UNRELEASED; urgency=low
 
   * console:
-    - 'show': package name wildcards now work with '--all-versions'.
+    - 'show', 'showsrc': package name wildcards now work with '--all-versions'.
       (Closes: #651889)
   * doc:
     - man/cupt.1:
