@@ -318,6 +318,11 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 			const PinEntry::Condition& condition = *conditionIt;
 			const shared_ptr< sregex >& regex = condition.value;
 
+			auto getHostNameInAptPreferencesStyle = [](const string& baseUri)
+			{
+				return baseUri.empty() ? "<installed>" : download::Uri(baseUri).getHost();
+			};
+
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
@@ -351,7 +356,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					} \
 					break;
 
-				RELEASE_CASE(HostName, release->baseUri.empty() ? "" : download::Uri(release->baseUri).getHost())
+				RELEASE_CASE(HostName, getHostNameInAptPreferencesStyle(release->baseUri))
 				RELEASE_CASE(ReleaseArchive, release->archive)
 				RELEASE_CASE(ReleaseVendor, release->vendor)
 				RELEASE_CASE(ReleaseVersion, release->version)
