@@ -305,6 +305,26 @@ void PinInfo::loadData(const string& path)
 	}
 }
 
+string getHostNameInAptPreferencesStyle(const string& baseUri)
+{
+	if (baseUri.empty())
+	{
+		return "<installed>";
+	}
+	else
+	{
+		const download::Uri uri(baseUri);
+		if (uri.getProtocol() == "file" || uri.getProtocol() == "copy")
+		{
+			return ""; // "local site"
+		}
+		else
+		{
+			return uri.getHost();
+		}
+	}
+}
+
 void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version, ssize_t& priority) const
 {
 	smatch m;
@@ -317,11 +337,6 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 		{
 			const PinEntry::Condition& condition = *conditionIt;
 			const shared_ptr< sregex >& regex = condition.value;
-
-			auto getHostNameInAptPreferencesStyle = [](const string& baseUri)
-			{
-				return baseUri.empty() ? "<installed>" : download::Uri(baseUri).getHost();
-			};
 
 			switch (condition.type)
 			{
