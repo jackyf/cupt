@@ -6,6 +6,8 @@ cupt (2.3.2~) UNRELEASED; urgency=low
   * lib:
     - cache:
       - Pin preferences: fixed 'origin' pin type support. (Closes: #651890)
+      - Pin preferences: print a more user-friently error message when pin
+        priority is not a valid integer.
   * doc:
     - man/cupt.1:
       - Documented the option '--show-not-preferred'. (Closes: #651888)

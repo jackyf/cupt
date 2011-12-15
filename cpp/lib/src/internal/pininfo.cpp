@@ -297,7 +297,14 @@ void PinInfo::loadData(const string& path)
 				fatal2("invalid priority line at file '%s' line %u", path, lineNumber);
 			}
 
-			pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
+			try
+			{
+				pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
+			}
+			catch (boost::bad_lexical_cast&)
+			{
+				fatal2("invalid integer '%s'", string(m[1]));
+			}
 		}
 
 		// adding to storage
