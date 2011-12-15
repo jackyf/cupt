@@ -3,6 +3,9 @@ cupt (2.3.2~) UNRELEASED; urgency=low
   * console:
     - 'show', 'showsrc': package name wildcards now work with '--all-versions'.
       (Closes: #651889)
+  * lib:
+    - cache:
+      - Pin preferences: fixed 'origin' pin type support. (Closes: #651890)
   * doc:
     - man/cupt.1:
       - Documented the option '--show-not-preferred'. (Closes: #651888)
