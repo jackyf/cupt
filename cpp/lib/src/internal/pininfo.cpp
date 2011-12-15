@@ -270,6 +270,10 @@ void PinInfo::loadData(const string& path)
 			{
 				PinEntry::Condition condition;
 				condition.type = PinEntry::Condition::HostName;
+				if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+				{
+					pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+				}
 				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
