@@ -332,13 +332,13 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 				case PinEntry::Condition::Version:
 					matched = regex_search(version->versionString, m, *regex);
 					break;
-#define RELEASE_CASE(constant, member) \
+#define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \
 					matched = false; \
 					FORIT(sourceIt, version->sources) \
 					{ \
 						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
-						if (regex_search(release->member, m, *regex)) \
+						if (regex_search(expression, m, *regex)) \
 						{ \
 							matched = true; \
 							break; \
@@ -346,13 +346,13 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					} \
 					break;
 
-				RELEASE_CASE(BaseUri, baseUri)
-				RELEASE_CASE(ReleaseArchive, archive)
-				RELEASE_CASE(ReleaseVendor, vendor)
-				RELEASE_CASE(ReleaseVersion, version)
-				RELEASE_CASE(ReleaseComponent, component)
-				RELEASE_CASE(ReleaseCodename, codename)
-				RELEASE_CASE(ReleaseLabel, label)
+				RELEASE_CASE(BaseUri, release->baseUri)
+				RELEASE_CASE(ReleaseArchive, release->archive)
+				RELEASE_CASE(ReleaseVendor, release->vendor)
+				RELEASE_CASE(ReleaseVersion, release->version)
+				RELEASE_CASE(ReleaseComponent, release->component)
+				RELEASE_CASE(ReleaseCodename, release->codename)
+				RELEASE_CASE(ReleaseLabel, release->label)
 #undef RELEASE_CASE
 			}
 			if (!matched)
