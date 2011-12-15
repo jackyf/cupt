@@ -25,6 +25,7 @@
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/state.hpp>
+#include <cupt/download/uri.hpp>
 
 #include <internal/pininfo.hpp>
 #include <internal/filesystem.hpp>
@@ -268,7 +269,7 @@ void PinInfo::loadData(const string& path)
 			else if (pinType == "origin")
 			{
 				PinEntry::Condition condition;
-				condition.type = PinEntry::Condition::BaseUri;
+				condition.type = PinEntry::Condition::HostName;
 				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
@@ -346,7 +347,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					} \
 					break;
 
-				RELEASE_CASE(BaseUri, release->baseUri)
+				RELEASE_CASE(HostName, release->baseUri.empty() ? "" : download::Uri(release->baseUri).getHost())
 				RELEASE_CASE(ReleaseArchive, release->archive)
 				RELEASE_CASE(ReleaseVendor, release->vendor)
 				RELEASE_CASE(ReleaseVersion, release->version)
