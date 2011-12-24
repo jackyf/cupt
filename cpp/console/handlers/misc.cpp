@@ -861,8 +861,7 @@ int findDependencyChain(Context& context)
 				{
 					const shared_ptr< const BinaryVersion >& newVersion = *newVersionIt;
 
-					static const PathEntry dummyPathEntry;
-					auto insertResult = links.insert(make_pair(newVersion, dummyPathEntry));
+					auto insertResult = links.insert(make_pair(newVersion, PathEntry()));
 					if (insertResult.second)
 					{
 						// new element
