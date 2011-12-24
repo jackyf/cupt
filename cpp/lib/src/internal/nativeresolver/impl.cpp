@@ -735,7 +735,6 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
-	static const Resolver::SuggestedPackage emptySuggestedPackage;
 	static const shared_ptr< system::Resolver::UserReason >
 			userReason(new system::Resolver::UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
@@ -757,9 +756,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 				continue;
 			}
 
-			// iterator of inserted element
-			auto it = suggestedPackages.insert(make_pair(packageName, emptySuggestedPackage)).first;
-			Resolver::SuggestedPackage& suggestedPackage = it->second;
+			Resolver::SuggestedPackage& suggestedPackage = suggestedPackages[packageName];
 			suggestedPackage.version = vertex->version;
 
 			if (trackReasons)
