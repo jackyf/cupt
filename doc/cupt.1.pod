@@ -670,6 +670,13 @@ considered to perform
 
 Corresponding configuration option: L<cupt::resolver::track-reasons>
 
+=item --show-not-preferred
+
+when displaying actions preview prompt, display also packages which will have a
+not preferred version after the proposed changes
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-not-preferred>
+
 =item --download-only,-d
 
 stop after download stage, don't modify the system; not applicable for

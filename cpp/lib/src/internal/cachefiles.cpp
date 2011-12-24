@@ -615,13 +615,20 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 			{
 				result->architectures = split(' ', fieldValue);
 			}
+			else if (fieldName == "Version")
+			{
+				result->version = fieldValue;
+			}
 			else if (fieldName == "Description")
 			{
 				result->description = fieldValue;
-				smatch descriptionMatch;
-				if (regex_search(fieldValue, descriptionMatch, sregex::compile("[0-9][0-9a-z._-]*")))
+				if (result->version.empty())
 				{
-					result->version = descriptionMatch[0];
+					smatch descriptionMatch;
+					if (regex_search(fieldValue, descriptionMatch, sregex::compile("[0-9][0-9a-z._-]*")))
+					{
+						result->version = descriptionMatch[0];
+					}
 				}
 			}
 		}

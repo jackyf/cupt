@@ -56,8 +56,10 @@ struct CUPT_API Relation
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
 	explicit Relation(pair< string::const_iterator, string::const_iterator > input);
-	/// constructor from rvalue reference
-	Relation(Relation&&);
+	Relation(Relation&&) = default;
+	Relation(const Relation&) = default;
+	Relation& operator=(Relation&&) = default;
+	Relation& operator=(const Relation&) = default;
 	/// destructor
 	virtual ~Relation();
 	/// gets the string reprentation
@@ -101,7 +103,10 @@ struct CUPT_API ArchitecturedRelation: public Relation
 	 * architectured relation
 	 */
 	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
-	ArchitecturedRelation(ArchitecturedRelation&&);
+	ArchitecturedRelation(ArchitecturedRelation&&) = default;
+	ArchitecturedRelation(const ArchitecturedRelation&) = default;
+	ArchitecturedRelation& operator=(ArchitecturedRelation&&) = default;
+	ArchitecturedRelation& operator=(const ArchitecturedRelation&) = default;
 	string toString() const;
 };
 
@@ -131,8 +136,10 @@ struct CUPT_API RelationExpression: public vector< Relation >
 	 * representation
 	 */
 	explicit RelationExpression(pair< string::const_iterator, string::const_iterator > input);
-	/// copy constructor from rvalue reference
-	RelationExpression(RelationExpression&&);
+	RelationExpression(RelationExpression&&) = default;
+	RelationExpression(const RelationExpression&) = default;
+	RelationExpression& operator=(RelationExpression&&) = default;
+	RelationExpression& operator=(const RelationExpression&) = default;
 	/// destructor
 	virtual ~RelationExpression();
 };
@@ -161,8 +168,10 @@ struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRel
 	 * representation
 	 */
 	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator > input);
-	/// copy constructor from rvalue reference
-	ArchitecturedRelationExpression(ArchitecturedRelationExpression&&);
+	ArchitecturedRelationExpression(ArchitecturedRelationExpression&&) = default;
+	ArchitecturedRelationExpression(const ArchitecturedRelationExpression&) = default;
+	ArchitecturedRelationExpression& operator=(ArchitecturedRelationExpression&&) = default;
+	ArchitecturedRelationExpression& operator=(const ArchitecturedRelationExpression&) = default;
 	/// destructor
 	virtual ~ArchitecturedRelationExpression();
 };
@@ -191,8 +200,10 @@ struct CUPT_API RelationLine: public vector< RelationExpression >
 	 * representation
 	 */
 	explicit RelationLine(pair< string::const_iterator, string::const_iterator > input);
-	/// operator= from the rvalue reference
-	RelationLine& operator=(RelationLine&& other);
+	RelationLine(RelationLine&&) = default;
+	RelationLine(const RelationLine&) = default;
+	RelationLine& operator=(RelationLine&&) = default;
+	RelationLine& operator=(const RelationLine&) = default;
 	/// destructor
 	virtual ~RelationLine();
 };
@@ -221,8 +232,10 @@ struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationE
 	 * representation
 	 */
 	explicit ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
-	/// operator= from the rvalue reference
-	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&);
+	ArchitecturedRelationLine(ArchitecturedRelationLine&&) = default;
+	ArchitecturedRelationLine(const ArchitecturedRelationLine&) = default;
+	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&) = default;
+	ArchitecturedRelationLine& operator=(const ArchitecturedRelationLine&) = default;
 	/// converts to RelationLine given system architecture
 	/**
 	 * Filters ArchitecturedRelationLine using binary system architecture.

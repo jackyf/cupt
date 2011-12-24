@@ -160,12 +160,6 @@ Relation::Relation(const string& unparsed)
 	__init(unparsed.begin(), unparsed.end());
 }
 
-Relation::Relation(Relation&& other)
-	: packageName(std::move(other.packageName)),
-	relationType(other.relationType),
-	versionString(std::move(other.versionString))
-{}
-
 Relation::~Relation()
 {}
 
@@ -247,11 +241,6 @@ ArchitecturedRelation::ArchitecturedRelation(
 {
 	__init(std::find(input.first, input.second, '['), input.second);
 }
-
-ArchitecturedRelation::ArchitecturedRelation(ArchitecturedRelation&& other)
-	: Relation(static_cast< Relation&& >(other)),
-	architectureFilters(std::move(other.architectureFilters))
-{}
 
 string ArchitecturedRelation::toString() const
 {
@@ -416,10 +405,6 @@ RelationExpressionType::RelationExpressionType(const string& expression) \
 { \
 	__init(expression.begin(), expression.end()); \
 } \
-\
-RelationExpressionType::RelationExpressionType(RelationExpressionType&& other) \
-	: vector< UnderlyingElement >(std::move(other)) \
-{} \
 \
 RelationExpressionType::~RelationExpressionType() \
 {} \
