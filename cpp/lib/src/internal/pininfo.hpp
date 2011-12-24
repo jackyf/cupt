@@ -37,7 +37,7 @@ class PinInfo
 		struct Condition
 		{
 			enum Type { SourcePackageName, PackageName, Version, ReleaseArchive, ReleaseCodename,
-					ReleaseVendor, ReleaseVersion, ReleaseComponent, ReleaseLabel, BaseUri };
+					ReleaseVendor, ReleaseVersion, ReleaseComponent, ReleaseLabel, HostName };
 
 			Type type;
 			shared_ptr< sregex > value;
