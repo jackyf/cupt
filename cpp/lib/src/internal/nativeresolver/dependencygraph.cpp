@@ -765,9 +765,16 @@ class DependencyGraph::FillHelper
 				addEdgeCustom(subVertexPtr, __dependency_graph.addVertex(positionPenaltyApplyingVertex));
 			}
 		}
-		FORIT(subElementPtrIt, subElementPtrs)
+		if (version->isInstalled()) // add only main subvertex
 		{
-			addEdgeCustom(vertexPtr, subElementPtrIt->second);
+			addEdgeCustom(vertexPtr, subElementPtrs.begin()->second);
+		}
+		else
+		{
+			FORIT(subElementPtrIt, subElementPtrs)
+			{
+				addEdgeCustom(vertexPtr, subElementPtrIt->second);
+			}
 		}
 	}
 
