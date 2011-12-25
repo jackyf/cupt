@@ -850,6 +850,7 @@ void NativeResolverImpl::__validate_element(
 	}
 	if (!brokenSuccessors.empty())
 	{
+		brokenSuccessors.reverse(); // restore the successors' order
 		PackageEntry packageEntry = *solution.getPackageEntry(elementPtr);
 		packageEntry.brokenSuccessors.swap(brokenSuccessors);
 		__solution_storage->setPackageEntry(solution, elementPtr,
