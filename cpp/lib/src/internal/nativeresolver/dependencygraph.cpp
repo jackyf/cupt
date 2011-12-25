@@ -736,10 +736,10 @@ class DependencyGraph::FillHelper
 			// position penalty subvertices, if any
 			//
 			// processing non-last relations of OR expressions
+			RelationExpression subRelationExpression;
 			for (auto relationIt = relationExpression.begin();
 					relationIt != relationExpression.end() - 1; ++relationIt)
 			{
-				RelationExpression subRelationExpression;
 				subRelationExpression.push_back(*relationIt);
 
 				auto subVertex(new PositionPenaltyRelationExpressionVertex(*vertex));
