@@ -7,6 +7,11 @@ cupt (2.4.0~) UNRELEASED; urgency=low
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
         -2 (was -20).
+      - Adjusted default values of options
+        'cupt::resolver::score::{new,removal,quality-adjustment}' for changes
+        in the score calculation (see below).
+    - system/resolvers/native:
+      - Use normalized version priority in score calculations.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
 
