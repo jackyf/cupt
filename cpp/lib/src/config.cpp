@@ -162,7 +162,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
-		{ "cupt::resolver::score::position-penalty", "-20" },
+		{ "cupt::resolver::score::position-penalty", "-2" },
 		{ "cupt::resolver::score::quality-adjustment", "0" },
 		{ "cupt::resolver::score::unsatisfied-recommends", "-240" },
 		{ "cupt::resolver::score::unsatisfied-suggests", "-60" },
