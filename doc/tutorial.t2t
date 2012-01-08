@@ -1761,11 +1761,12 @@ make installed packages set correct after making the changes user demand.
 In the most cases, there are several solutions to a problem. To choose
 amongst them, resolver assign **scores** to all of them.
 
-Score is an integer (positive or negative) and is a sum of version
-pin difference (for uninstalled version, zero pin is assumed) and an action
-modifier. Action modifiers are action type-specific addendums and are
-controlled by the option group ``cupt::resolver::score::``//X// (see the full
-list of them in //cupt.conf(5)//).
+Score is an integer (positive or negative) and is a sum of version weight
+difference and an action modifier. Version weight, or "normalized version
+priority", is a version pin value minus a default pin for a preferred versions.
+Action modifiers are action type-specific addendums and are controlled by the
+option group ``cupt::resolver::score::``//X// (see the full list of them in
+//cupt.conf(5)//).
 
 For native resolver, the negative scores indicate "negative" changes, and
 positive scores indicate "positive" changes. When several alternative solutions
