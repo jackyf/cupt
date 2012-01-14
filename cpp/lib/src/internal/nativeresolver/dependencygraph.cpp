@@ -371,6 +371,31 @@ bool __is_soft_dependency_ignored(const Config& config,
 	return false;
 }
 
+bool __is_position_penalty_ignored(
+		BinaryVersion::RelationTypes::Type dependencyType,
+		const RelationExpression& relationExpression,
+		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions,
+		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
+{
+	if (__is_version_array_intersects_with_packages(
+				satisfyingVersions, oldPackages)) // was satisfied in the past?
+	{
+		return false;
+	}
+
+	for (const auto& oldPackage: oldPackages)
+	{
+		const auto& oldVersion = oldPackage.second;
+		if (__version_has_relation_expression(oldVersion,
+			dependencyType, relationExpression))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 struct DependencyEntry
 {
 	RelationType type;
@@ -742,12 +767,18 @@ class DependencyGraph::FillHelper
 			{
 				subRelationExpression.push_back(*relationIt);
 
+				auto subSatisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(subRelationExpression);
+				if (__is_position_penalty_ignored(dependencyType, relationExpression,
+							subSatisfyingVersions, __old_packages))
+				{
+					continue;
+				}
+
 				auto subVertex(new PositionPenaltyRelationExpressionVertex(*vertex));
 				subVertex->position = (relationIt - relationExpression.begin());
 				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
 				subElementPtrs.push_back(make_pair(string(), subVertexPtr));
 
-				auto subSatisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(subRelationExpression);
 				FORIT(subSatisfyingVersionIt, subSatisfyingVersions)
 				{
 					if (auto versionVertexPtr = getVertexPtr(*subSatisfyingVersionIt))
@@ -765,16 +796,9 @@ class DependencyGraph::FillHelper
 				addEdgeCustom(subVertexPtr, __dependency_graph.addVertex(positionPenaltyApplyingVertex));
 			}
 		}
-		if (version->isInstalled()) // add only main subvertex
+		FORIT(subElementPtrIt, subElementPtrs)
 		{
-			addEdgeCustom(vertexPtr, subElementPtrs.begin()->second);
-		}
-		else
-		{
-			FORIT(subElementPtrIt, subElementPtrs)
-			{
-				addEdgeCustom(vertexPtr, subElementPtrIt->second);
-			}
+			addEdgeCustom(vertexPtr, subElementPtrIt->second);
 		}
 	}
 
