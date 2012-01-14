@@ -1,8 +1,8 @@
-IF(EXISTS /usr/bin/g++-4.5)
-	set(CMAKE_CXX_COMPILER /usr/bin/g++-4.5)
-ELSE(EXISTS /usr/bin/g++-4.5)
-	message(FATAL_ERROR "g++ 4.5.0 or greater required")
-ENDIF(EXISTS /usr/bin/g++-4.5)
+IF(EXISTS /usr/bin/g++-4.6)
+	set(CMAKE_CXX_COMPILER /usr/bin/g++-4.6)
+ELSE(EXISTS /usr/bin/g++-4.6)
+	message(FATAL_ERROR "g++ 4.6.0 or greater required")
+ENDIF(EXISTS /usr/bin/g++-4.6)
 
 IF(NOT EXISTS /usr/include/boost/xpressive/xpressive_dynamic.hpp)
 	message(FATAL_ERROR "missing Boost.Xpressive library")

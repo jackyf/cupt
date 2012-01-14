@@ -77,8 +77,10 @@ struct PackageEntry
 
 	PackageEntry();
 	PackageEntry(PackageEntry&&);
+	PackageEntry(const PackageEntry&) = default;
 
 	PackageEntry& operator=(PackageEntry&&);
+	PackageEntry& operator=(const PackageEntry&) = default;
 
 	bool isModificationAllowed(const dg::Element*) const;
 };

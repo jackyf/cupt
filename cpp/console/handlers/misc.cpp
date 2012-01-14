@@ -102,7 +102,7 @@ int showBinaryVersions(Context& context)
 		vector< shared_ptr< const BinaryVersion > > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
-			versions = getBinaryPackage(cache, packageExpression)->getVersions();
+			versions = selectAllBinaryVersionsWildcarded(cache, packageExpression);
 		}
 		else
 		{
@@ -254,7 +254,7 @@ int showSourceVersions(Context& context)
 		vector< shared_ptr< const SourceVersion > > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
-			versions = getSourcePackage(cache, packageExpression)->getVersions();
+			versions = selectAllSourceVersionsWildcarded(cache, packageExpression);
 		}
 		else
 		{
@@ -861,8 +861,7 @@ int findDependencyChain(Context& context)
 				{
 					const shared_ptr< const BinaryVersion >& newVersion = *newVersionIt;
 
-					static const PathEntry dummyPathEntry;
-					auto insertResult = links.insert(make_pair(newVersion, dummyPathEntry));
+					auto insertResult = links.insert(make_pair(newVersion, PathEntry()));
 					if (insertResult.second)
 					{
 						// new element

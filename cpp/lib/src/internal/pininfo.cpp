@@ -25,6 +25,7 @@
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/state.hpp>
+#include <cupt/download/uri.hpp>
 
 #include <internal/pininfo.hpp>
 #include <internal/filesystem.hpp>
@@ -268,7 +269,11 @@ void PinInfo::loadData(const string& path)
 			else if (pinType == "origin")
 			{
 				PinEntry::Condition condition;
-				condition.type = PinEntry::Condition::BaseUri;
+				condition.type = PinEntry::Condition::HostName;
+				if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+				{
+					pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+				}
 				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
 				pinEntry.conditions.push_back(condition);
 			}
@@ -292,11 +297,38 @@ void PinInfo::loadData(const string& path)
 				fatal2("invalid priority line at file '%s' line %u", path, lineNumber);
 			}
 
-			pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
+			try
+			{
+				pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
+			}
+			catch (boost::bad_lexical_cast&)
+			{
+				fatal2("invalid integer '%s'", string(m[1]));
+			}
 		}
 
 		// adding to storage
 		settings.push_back(std::move(pinEntry));
+	}
+}
+
+string getHostNameInAptPreferencesStyle(const string& baseUri)
+{
+	if (baseUri.empty())
+	{
+		return "<installed>";
+	}
+	else
+	{
+		const download::Uri uri(baseUri);
+		if (uri.getProtocol() == "file" || uri.getProtocol() == "copy")
+		{
+			return ""; // "local site"
+		}
+		else
+		{
+			return uri.getHost();
+		}
 	}
 }
 
@@ -332,13 +364,13 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 				case PinEntry::Condition::Version:
 					matched = regex_search(version->versionString, m, *regex);
 					break;
-#define RELEASE_CASE(constant, member) \
+#define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \
 					matched = false; \
 					FORIT(sourceIt, version->sources) \
 					{ \
 						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
-						if (regex_search(release->member, m, *regex)) \
+						if (regex_search(expression, m, *regex)) \
 						{ \
 							matched = true; \
 							break; \
@@ -346,13 +378,13 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					} \
 					break;
 
-				RELEASE_CASE(BaseUri, baseUri)
-				RELEASE_CASE(ReleaseArchive, archive)
-				RELEASE_CASE(ReleaseVendor, vendor)
-				RELEASE_CASE(ReleaseVersion, version)
-				RELEASE_CASE(ReleaseComponent, component)
-				RELEASE_CASE(ReleaseCodename, codename)
-				RELEASE_CASE(ReleaseLabel, label)
+				RELEASE_CASE(HostName, getHostNameInAptPreferencesStyle(release->baseUri))
+				RELEASE_CASE(ReleaseArchive, release->archive)
+				RELEASE_CASE(ReleaseVendor, release->vendor)
+				RELEASE_CASE(ReleaseVersion, release->version)
+				RELEASE_CASE(ReleaseComponent, release->component)
+				RELEASE_CASE(ReleaseCodename, release->codename)
+				RELEASE_CASE(ReleaseLabel, release->label)
 #undef RELEASE_CASE
 			}
 			if (!matched)

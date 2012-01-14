@@ -327,9 +327,9 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 		const RelationExpression& relationExpression)
 {
 	auto relationExpressionString = relationExpression.getHashString();
-	FORIT(candidateRelationExpressionIt, version->relations[dependencyType])
+	for (const RelationExpression& candidateRelationExpression: version->relations[dependencyType])
 	{
-		auto candidateString = candidateRelationExpressionIt->getHashString();
+		auto candidateString = candidateRelationExpression.getHashString();
 		if (relationExpressionString == candidateString)
 		{
 			return true;
