@@ -273,7 +273,7 @@ bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elem
 	return true;
 }
 
-void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
+bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 {
 	vector< sregex > neverAutoRemoveRegexes;
 	{
@@ -390,9 +390,19 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 		{
 			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
 			{
+				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
+				auto currentPackageEntryPtr = solution.getPackageEntry(*elementPtrIt);
+				if (!currentPackageEntryPtr->isModificationAllowed(emptyElementPtr))
+				{
+					if (debugging)
+					{
+						__mydebug_wrapper(solution, "no autoremoval allowed for '%s'", (*elementPtrIt)->toString());
+					}
+					return false;
+				}
+
 				PackageEntry packageEntry;
 				packageEntry.autoremoved = true;
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
 
 				if (debugging)
 				{
@@ -403,6 +413,7 @@ void NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 			}
 		}
 	}
+	return true;
 }
 
 SolutionChooser __select_solution_chooser(const Config& config)
@@ -1162,7 +1173,14 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			solutions.erase(newSelectedSolutionIt);
 
 			// clean up automatically installed by resolver and now unneeded packages
-			__clean_automatically_installed(*currentSolution);
+			if (!__clean_automatically_installed(*currentSolution))
+			{
+				if (debugging)
+				{
+					__mydebug_wrapper(*currentSolution, "auto-discarded");
+				}
+				continue;
+			}
 
 			__final_verify_solution(*currentSolution);
 
