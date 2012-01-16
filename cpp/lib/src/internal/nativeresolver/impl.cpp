@@ -730,6 +730,13 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 
 		elementPtrs.push_back((*actionIt)->newElementPtr);
 	}
+	for (auto& actionPtr: actions)
+	{
+		if (actionPtr->newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
+		{
+			actionPtr->elementsToReject = elementPtrs; // all
+		}
+	}
 }
 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(

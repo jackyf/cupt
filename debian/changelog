@@ -12,6 +12,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
         in the score calculation (see below).
     - system/resolvers/native:
       - Use normalized version priority in score calculations.
+      - If a solution to a problem is an "unsatisfied" element, partially
+        stick all competing solution elements, not only preceding ones.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
 
