@@ -16,6 +16,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
         stick all competing solution elements, not only preceding ones.
       - Skip a solution if some element to auto-remove cannot be removed
         due to being (partially) sticked. (Closes: #641473)
+      - Removing automatically installed packages: if several automatically
+        installed packages satisfy the relation, leave only first of them.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
 

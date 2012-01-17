@@ -348,7 +348,7 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 						__solution_storage->getSuccessorElements(*successorElementPtrIt);
 
 				bool allRightSidesAreAutomatic = true;
-				list< const dg::Element* const* > rightSideVertexPtrs;
+				const dg::Element* const* candidateElementPtrPtr = NULL;
 				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
 				{
 					auto it = vertices.find(*successorSuccessorElementPtrIt);
@@ -359,18 +359,15 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 							allRightSidesAreAutomatic = false;
 							break;
 						}
-						else
+						else if (!candidateElementPtrPtr) // not found anything yet
 						{
-							rightSideVertexPtrs.push_back(&*it);
+							candidateElementPtrPtr = &*it;
 						}
 					}
 				}
-				if (allRightSidesAreAutomatic)
+				if (allRightSidesAreAutomatic && candidateElementPtrPtr)
 				{
-					FORIT(rightSideVertexPtrIt, rightSideVertexPtrs)
-					{
-						dependencyGraph.addEdgeFromPointers(&*elementPtrIt, *rightSideVertexPtrIt);
-					}
+					dependencyGraph.addEdgeFromPointers(&*elementPtrIt, candidateElementPtrPtr);
 				}
 			}
 
