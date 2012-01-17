@@ -27,6 +27,7 @@
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/score.hpp>
 #include <internal/nativeresolver/decisionfailtree.hpp>
+#include <internal/nativeresolver/autoremovalpossibility.hpp>
 
 namespace cupt {
 namespace internal {
@@ -60,6 +61,7 @@ class NativeResolverImpl
 	set< string > __manually_modified_package_names;
 	unique_ptr< SolutionStorage > __solution_storage;
 	ScoreManager __score_manager;
+	AutoRemovalPossibility __auto_removal_possibility;
 
 	map< string, shared_ptr< const BinaryVersion > > __old_packages;
 	map< string, dg::InitialPackageEntry > __initial_packages;
@@ -76,8 +78,7 @@ class NativeResolverImpl
 	float __get_version_weight(const shared_ptr< const BinaryVersion >&) const;
 	float __get_action_profit(const shared_ptr< const BinaryVersion >&,
 			const shared_ptr< const BinaryVersion >&) const;
-	bool __is_candidate_for_auto_removal(const dg::Element*,
-		const std::function< bool (const string&) >, bool);
+	bool __is_candidate_for_auto_removal(const dg::Element*);
 	bool __clean_automatically_installed(Solution&);
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);

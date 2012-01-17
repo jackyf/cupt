@@ -20,8 +20,6 @@
 #include <queue>
 #include <algorithm>
 
-#include <common/regex.hpp>
-
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
@@ -36,7 +34,7 @@ namespace internal {
 using std::queue;
 
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
-	: __config(config), __cache(cache), __score_manager(*config, cache)
+	: __config(config), __cache(cache), __score_manager(*config, cache), __auto_removal_possibility(*__config)
 {
 	__import_installed_versions();
 }
@@ -231,9 +229,7 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 	return __fair_chooser(solutions);
 }
 
-bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr,
-		const std::function< bool (const string&) > isNeverAutoRemove,
-		bool canAutoremove)
+bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr)
 {
 	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 	if (!versionVertex)
@@ -252,63 +248,23 @@ bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elem
 	{
 		return false;
 	}
-	if (version->essential)
-	{
-		return false;
-	}
 	if (__manually_modified_package_names.count(packageName))
 	{
 		return false;
 	}
 
-	auto canAutoremoveThisPackage = canAutoremove && __cache->isAutomaticallyInstalled(packageName);
-	if (__old_packages.count(packageName) && !canAutoremoveThisPackage)
+	if (!__auto_removal_possibility.isAllowed(*__cache, version, __old_packages.count(packageName)))
 	{
 		return false;
 	}
-	if (isNeverAutoRemove(packageName))
-	{
-		return false;
-	}
+
 	return true;
 }
 
 bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 {
-	vector< sregex > neverAutoRemoveRegexes;
-	{
-		auto neverAutoRemoveRegexStrings = __config->getList("apt::neverautoremove");
-
-		FORIT(regexStringIt, neverAutoRemoveRegexStrings)
-		{
-			try
-			{
-				neverAutoRemoveRegexes.push_back(sregex::compile(*regexStringIt));
-			}
-			catch (regex_error&)
-			{
-				fatal2("invalid regular expression '%s'", *regexStringIt);
-			}
-		}
-	}
-
-	smatch m;
-	auto isNeverAutoRemove = [&neverAutoRemoveRegexes, &m](const string& packageName) -> bool
-	{
-		FORIT(regexIt, neverAutoRemoveRegexes)
-		{
-			if (regex_match(packageName, m, *regexIt))
-			{
-				return true;
-			}
-		}
-		return false;
-	};
-
-	auto canAutoremove = __config->getBool("cupt::resolver::auto-remove");
-
 	map< const dg::Element*, bool > isCandidateForAutoRemovalCache;
-	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache, &isNeverAutoRemove, canAutoremove]
+	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache]
 			(const dg::Element* elementPtr) -> bool
 	{
 		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert(
@@ -316,7 +272,7 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 		bool& answer = cacheInsertionResult.first->second;
 		if (cacheInsertionResult.second)
 		{
-			answer = __is_candidate_for_auto_removal(elementPtr, isNeverAutoRemove, canAutoremove);
+			answer = __is_candidate_for_auto_removal(elementPtr);
 		}
 		return answer;
 	};
