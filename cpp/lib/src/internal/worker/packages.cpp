@@ -2015,6 +2015,29 @@ string __get_dpkg_action_log(const InnerActionGroup& actionGroup,
 	return join(" & ", subResults);
 }
 
+bool __defer_triggers(const Config& config, const Cache& cache)
+{
+	const string& optionName = "cupt::worker::defer-triggers";
+	if (config.getString(optionName) == "auto")
+	{
+		auto dpkgPackage = cache.getBinaryPackage("dpkg");
+		if (!dpkgPackage)
+		{
+			fatal2("internal error: no 'dpkg' binary package available");
+		}
+		auto dpkgInstalledVersion = dpkgPackage->getInstalledVersion();
+		if (!dpkgInstalledVersion)
+		{
+			fatal2("internal error: no installed version for 'dpkg' binary package");
+		}
+		return (compareVersionStrings(dpkgInstalledVersion->versionString, "1.16.1") != -1); // >=
+	}
+	else
+	{
+		return config.getBool(optionName);
+	}
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2062,7 +2085,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		}
 	}
 
-	auto deferTriggers = _config->getBool("cupt::worker::defer-triggers");
+	bool deferTriggers = __defer_triggers(*_config, *_cache);
 
 	__do_dpkg_pre_actions();
 

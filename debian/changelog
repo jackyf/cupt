@@ -10,6 +10,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - Adjusted default values of options
         'cupt::resolver::score::{new,removal,quality-adjustment}' for changes
         in the score calculation (see below).
+      - New (and default from now on) option value 'auto' for the option
+        'cupt::worker::defer-triggers'.
     - system/resolvers/native:
       - Use normalized version priority in score calculations.
       - If a solution to a problem is an "unsatisfied" element, partially
@@ -18,6 +20,9 @@ cupt (2.4.0~) UNRELEASED; urgency=low
         due to being (partially) sticked. (Closes: #641473)
       - Removing automatically installed packages: if several automatically
         installed packages satisfy the relation, leave only first of them.
+    - system/worker:
+      - If the option 'cupt::worker::defer-triggers' is set to 'auto', check
+        for recent enough version of dpkg (1.16.1).
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
 
