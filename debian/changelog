@@ -2,6 +2,9 @@ cupt (2.3.3~) UNRELEASED; urgency=low
 
   * console:
     - 'tar-metadata': include also Cupt-specific configuration files.
+  * doc:
+    - tutorial:
+      - Explicitly documented what infrastructure Cupt uses.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Jan 2012 13:59:45 +0200
 
