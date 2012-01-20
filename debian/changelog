@@ -2,6 +2,12 @@ cupt (2.3.3~) UNRELEASED; urgency=low
 
   * console:
     - 'tar-metadata': include also Cupt-specific configuration files.
+  * lib:
+    - system/worker:
+      - Generating dpkg package sequence: fixed non-propagating low-level
+        subactions to higher-level subgroups in some cases. This regression
+        was introduced in 2.2.0~rc1. Thanks to Jonathan Nieder for the report.
+        (Closes: #656566)
   * doc:
     - tutorial:
       - Explicitly documented what infrastructure Cupt uses.
