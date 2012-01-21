@@ -26,6 +26,26 @@ cupt (2.4.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
 
+cupt (2.3.3) unstable; urgency=low
+
+  * console:
+    - 'tar-metadata': include also Cupt-specific configuration files.
+  * lib:
+    - system/worker:
+      - Generating dpkg package sequence: fixed non-propagating low-level
+        subactions to higher-level subgroups in some cases. This regression
+        was introduced in 2.2.0~rc1. Thanks to Jonathan Nieder for the report.
+        (Closes: #656566)
+  * doc:
+    - tutorial:
+      - Explicitly documented what infrastructure Cupt uses.
+  * debian:
+    - libcupt2-0.postrm:
+      - Remove '/var/lib/cupt' directory completely on 'purge'.
+        (Closes: #656457)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 21 Jan 2012 12:43:56 +0200
+
 cupt (2.3.2) unstable; urgency=low
 
   * console:

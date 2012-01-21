@@ -1153,17 +1153,27 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 							continue;
 						}
 
+						const auto& potentialEdgeAttribute = edgeToRestoreIt->second.second;
+						if (potentialEdgeAttribute.getLevel() < minimumAttributeLevel)
+						{
+							if (debugging)
+							{
+								debug("  ignoring potential edge '%s' -> '%s'",
+										newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
+							}
+							continue;
+						}
+
 						if (ignoring)
 						{
 							miniGaa.graph.addEdgeFromPointers(newPotentialFromPtr, newPotentialToPtr);
-							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] =
-									edgeToRestoreIt->second.second;
+							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] = potentialEdgeAttribute;
 						}
 						else
 						{
 							miniGaa.potentialEdges.insert(make_pair(
 									InnerActionPtrPair(newFromPtr, newToPtr),
-									make_pair(InnerActionPtrPair(newPotentialFromPtr, newPotentialToPtr), edgeToRestoreIt->second.second)));
+									make_pair(InnerActionPtrPair(newPotentialFromPtr, newPotentialToPtr), potentialEdgeAttribute)));
 						}
 						if (debugging)
 						{

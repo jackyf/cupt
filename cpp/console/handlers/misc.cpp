@@ -918,6 +918,8 @@ int tarMetadata(Context& context)
 	vector< string > pathList = {
 		config->getPath("dir::etc::main"),
 		config->getPath("dir::etc::parts"),
+		config->getPath("cupt::directory::configuration::main"),
+		config->getPath("cupt::directory::configuration::main-parts"),
 		config->getPath("dir::etc::sourcelist"),
 		config->getPath("dir::etc::sourceparts"),
 		config->getPath("dir::etc::preferences"),

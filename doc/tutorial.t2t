@@ -71,18 +71,37 @@ You might want to use Cupt to have these, to my best knowledge, unique features:
 Also, one of Cupt's targets is to have zero non-wishlist bugs. You might want
 to try it if you encountered a bug in other package manager(s).
 
+== Infrastructure ==
+
+Out of existing APT infrastructure, Cupt uses (and shares):
+
+- remote repositories and //sources.list(5)//
+
+- .deb archives' cache
+
+- configuration (//apt.conf(5)//)
+
+- preferences (//apt_preferences(5)//)
+
+- database of automatically installed packages
+
+
+The following infrastructure items are Cupt-specific:
+
+- local cache of repository metadata (since version 2.1.0)
+
+- Cupt-specific configuration (//cupt.conf(5)//)
+
+- system snapshots
+
+
 == Getting started ==
 
 To start working with Cupt just install it using any present package manager
 (for example, ``apt-get install cupt`` or ``aptitude install cupt``) and run
 ``cupt update`` afterwards.
 
-Cupt uses existing APT infrastructure for the work. It should be safe to co-use
-Cupt and any APT-based package managers.
-
-Note: since version 2.1.0, Cupt uses its own directory for repository index
-lists, so ``apt-get update``, ``aptitude update`` etc. do not change Cupt index
-data anymore.
+It should be safe to co-use Cupt and any APT-based package managers.
 
 When using commands that modify a system, you have to either execute ``cupt`` with
 root privileges or supply ``--simulate`` (or ``-s``) option.
