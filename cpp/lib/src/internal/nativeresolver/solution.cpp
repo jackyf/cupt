@@ -39,16 +39,6 @@ PackageEntry::PackageEntry(PackageEntry&& other)
 	rejectedConflictors.swap(other.rejectedConflictors);
 }
 
-PackageEntry& PackageEntry::operator=(PackageEntry&& other)
-{
-	sticked = other.sticked;
-	autoremoved = other.autoremoved;
-	introducedBy = other.introducedBy;
-	brokenSuccessors.swap(other.brokenSuccessors);
-	rejectedConflictors.swap(other.rejectedConflictors);
-	return *this;
-}
-
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
 {
 	auto findResult = std::find(rejectedConflictors.begin(),
