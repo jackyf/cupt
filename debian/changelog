@@ -11,6 +11,10 @@ cupt (2.3.3~) UNRELEASED; urgency=low
   * doc:
     - tutorial:
       - Explicitly documented what infrastructure Cupt uses.
+  * debian:
+    - libcupt2-0.postrm:
+      - Remove '/var/lib/cupt' directory completely on 'purge'.
+        (Closes: #656457)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Jan 2012 13:59:45 +0200
 

@@ -4,9 +4,7 @@ set -e
 
 case "$1" in
 	purge)
-		rm -rf /var/lib/cupt/snapshots
-		rm -rf /var/lib/cupt/lists
-		rm -f /var/lib/cupt/trusted.gpg
+		rm -rf /var/lib/cupt
 		rm -f /var/log/cupt.log*
 		;;
 esac
