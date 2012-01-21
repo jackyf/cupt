@@ -31,14 +31,6 @@ PackageEntry::PackageEntry()
 	: sticked(false), autoremoved(false)
 {}
 
-PackageEntry::PackageEntry(PackageEntry&& other)
-	: sticked(other.sticked), autoremoved(other.autoremoved),
-	introducedBy(other.introducedBy)
-{
-	brokenSuccessors.swap(other.brokenSuccessors);
-	rejectedConflictors.swap(other.rejectedConflictors);
-}
-
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
 {
 	auto findResult = std::find(rejectedConflictors.begin(),

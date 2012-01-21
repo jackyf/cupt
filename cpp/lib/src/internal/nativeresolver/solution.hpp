@@ -77,7 +77,7 @@ struct PackageEntry
 	IntroducedBy introducedBy;
 
 	PackageEntry();
-	PackageEntry(PackageEntry&&);
+	PackageEntry(PackageEntry&&) = default;
 	PackageEntry(const PackageEntry&) = default;
 
 	PackageEntry& operator=(PackageEntry&&) = default;
