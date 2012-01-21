@@ -92,6 +92,7 @@ class PackageEntrySet;
 class Solution
 {
 	friend class SolutionStorage;
+	friend class iterator;
 
 	shared_ptr< const Solution > __parent;
 	shared_ptr< const PackageEntryMap > __master_entries;
@@ -114,6 +115,25 @@ class Solution
 	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > getBrokenPairs() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
+
+	class const_iterator
+	{
+		const pair< const dg::Element, PackageEntry >* __master_it;
+		const dg::Element* const* __added_it;
+		const Solution& __solution;
+		enum class State;
+	    State__ state;
+		friend class Solution;
+	 public:
+		typedef pair< const dg::Element*, PackageEntry > value_t;
+		typedef const_iterator self;
+
+		const_iterator(Solution&);
+		self& operator++();
+		const value_t& operator*() const;
+	};
+	const_iterator begin() const;
+	const_iterator end() const;
 };
 
 class SolutionStorage

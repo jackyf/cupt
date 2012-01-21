@@ -316,7 +316,6 @@ void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 	__dependency_graph.unfoldElement(elementPtr);
 }
 
-
 Solution::Solution()
 	: id(0), level(0), finished(false), score(0)
 {
@@ -440,10 +439,53 @@ vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::ge
 		}
 	};
 
-	auto masterIt = __master_entries ? __master_entries->begin() : __added_entries->end();
-	auto masterEnd = __master_entries ? __master_entries->end() : __added_entries->end();
-	auto ownIt = __added_entries->begin();
-	auto ownEnd = __added_entries->end();
+
+	return result;
+}
+
+const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
+{
+	auto it = __added_entries->find(elementPtr);
+	if (it != __added_entries->end())
+	{
+		return &it->second;
+	}
+	if (__master_entries)
+	{
+		it = __master_entries->find(elementPtr);
+		if (it != __master_entries->end())
+		{
+			if (__removed_entries->find(elementPtr) != __removed_entries->end())
+			{
+				return NULL;
+			}
+			return &it->second;
+		}
+	}
+
+	return NULL; // not found
+}
+
+Solution::const_iterator Solution::begin() const
+{
+	const_iterator result(*this);
+	result.__master_it = __master_entries ? __master_entries->begin() : __added_entries->end();
+	result.__added_it = __added_entries->begin();
+	result.__move();
+	return result;
+}
+
+Solution::const_iterator Solution::end() const
+{
+	const_iterator result;
+	result.__master_it = __master_entries ? __master_entries->end() : __added_entries->end();
+	result.__added_it = __added_entries->end();
+}
+
+enum class Solution::const_iterator::State { Master, Added, Both };
+
+Solution::const_iterator& Solution::const_iterator::operator++()
+{
 
 	// it's, surprisingly, several times faster than std::set_union due to no indirection
 	while (masterIt != masterEnd && ownIt != ownEnd)
@@ -483,31 +525,6 @@ vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::ge
 		processEntry(ownIt);
 		++ownIt;
 	}
-
-	return result;
-}
-
-const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
-{
-	auto it = __added_entries->find(elementPtr);
-	if (it != __added_entries->end())
-	{
-		return &it->second;
-	}
-	if (__master_entries)
-	{
-		it = __master_entries->find(elementPtr);
-		if (it != __master_entries->end())
-		{
-			if (__removed_entries->find(elementPtr) != __removed_entries->end())
-			{
-				return NULL;
-			}
-			return &it->second;
-		}
-	}
-
-	return NULL; // not found
 }
 
 }
