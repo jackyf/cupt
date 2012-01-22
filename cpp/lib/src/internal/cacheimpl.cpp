@@ -494,6 +494,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
 	PrePackageRecord prePackageRecord;
+	prePackageRecord.offset = 0;
 	prePackageRecord.releaseInfoAndFile = &*(releaseInfoAndFileStorage.rbegin());
 
 	try
@@ -505,7 +506,13 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		{
 			const char* buf;
 			size_t size;
-			file->rawGetLine(buf, size);
+			auto getNextLine = [&file, &buf, &size, &prePackageRecord]
+			{
+				file->rawGetLine(buf, size);
+				prePackageRecord.offset += size;
+			};
+
+			getNextLine();
 			if (file->eof())
 			{
 				break;
@@ -528,16 +535,14 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			catch (Exception&)
 			{
 				warn2("discarding this package version from index file '%s'", path);
-				while (file->rawGetLine(buf, size), size > 1) {}
+				while (getNextLine(), size > 1) {}
 				continue;
 			}
-
-			prePackageRecord.offset = file->tell();
 
 			auto it = prePackagesStorage->insert(pairForInsertion).first;
 			it->second.push_back(prePackageRecord);
 
-			while (file->rawGetLine(buf, size), size > 1)
+			while (getNextLine(), size > 1)
 			{
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
 				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
