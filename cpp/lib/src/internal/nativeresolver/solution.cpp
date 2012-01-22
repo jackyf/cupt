@@ -445,43 +445,58 @@ vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::ge
 	auto ownIt = __added_entries->begin();
 	auto ownEnd = __added_entries->end();
 
-	// it's, surprisingly, several times faster than std::set_union due to no indirection
-	while (masterIt != masterEnd && ownIt != ownEnd)
+	--masterIt;
+	--ownIt;
 	{
+		goto both;
+	compare:
 		// speeding up a bit, usually most of masterIt won't be included anyway
 		if (!isEligible(masterIt))
 		{
-			++masterIt;
-			continue;
+			goto master;
 		}
-
 		if (masterIt->first < ownIt->first)
 		{
 			processEntry(masterIt);
-			++masterIt;
+			goto master;
 		}
 		else if (masterIt->first > ownIt->first)
 		{
 			processEntry(ownIt);
-			++ownIt;
+			goto own;
 		}
 		else // equal keys
 		{
 			// own entry overrides master entry
 			processEntry(ownIt);
-			++masterIt;
-			++ownIt;
+			goto both;
 		}
-	}
-	while (masterIt != masterEnd)
-	{
+	both:
+		++masterIt;
+		++ownIt;
+		if (masterIt != masterEnd)
+		{
+			if (ownIt != ownEnd) goto compare; else goto only_master;
+		}
+		else
+		{
+			if (ownIt != ownEnd) goto only_own; else goto end;
+		}
+	master:
+		++masterIt;
+		if (masterIt != masterEnd) goto compare; else goto only_own;
+	own:
+		++ownIt;
+		if (ownIt != ownEnd) goto compare; else goto only_master;
+	only_master:
 		processEntry(masterIt);
 		++masterIt;
-	}
-	while (ownIt != ownEnd)
-	{
+		if (masterIt != masterEnd) goto only_master; else goto end;
+	only_own:
 		processEntry(ownIt);
 		++ownIt;
+		if (ownIt != ownEnd) goto only_own; else goto end;
+	end:;
 	}
 
 	return result;
