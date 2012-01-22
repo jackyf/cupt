@@ -126,9 +126,9 @@ class Solution
 	    State __state;
 		friend class Solution;
 
-		void __init();
-		void __move();
-		bool __is_step_completed() const;
+		inline void __init();
+		inline void __move();
+		inline bool __is_step_completed() const;
 	 public:
 		typedef pair< const dg::Element*, PackageEntry > value_t;
 		typedef const_iterator self;
