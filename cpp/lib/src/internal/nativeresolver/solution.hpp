@@ -112,7 +112,6 @@ class Solution
 
 	void prepare();
 	vector< const dg::Element* > getElements() const;
-	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > getBrokenPairs() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 

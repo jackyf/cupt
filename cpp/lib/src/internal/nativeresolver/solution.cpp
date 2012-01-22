@@ -418,31 +418,6 @@ vector< const dg::Element* > Solution::getElements() const
 	return result;
 }
 
-vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::getBrokenPairs() const
-{
-	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > result;
-	auto isEligible = [](PackageEntryMap::const_iterator_t it) -> bool
-	{
-		return !it->second.brokenSuccessors.empty();
-	};
-	auto processEntry = [this, &result, &isEligible](PackageEntryMap::const_iterator_t it)
-	{
-		if (isEligible(it))
-		{
-			if (__removed_entries->find(it->first) == __removed_entries->end())
-			{
-				FORIT(brokenSuccessorIt, it->second.brokenSuccessors)
-				{
-					result.push_back(make_pair(it->first, *brokenSuccessorIt));
-				}
-			}
-		}
-	};
-
-
-	return result;
-}
-
 const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
 {
 	auto it = __added_entries->find(elementPtr);
