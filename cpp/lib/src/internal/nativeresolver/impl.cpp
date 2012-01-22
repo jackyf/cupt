@@ -925,58 +925,71 @@ void NativeResolverImpl::__validate_changed_package(Solution& solution,
 	}
 }
 
-pair< const dg::Element*, PackageEntry::BrokenSuccessor > __get_broken_pair(
+Solution::BrokenPairType __get_broken_pair(
 		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
 {
-	typedef pair< const dg::Element*, PackageEntry::BrokenSuccessor > BrokenPairType;
-	auto brokenPairs = solution.getBrokenPairs();
-	if (brokenPairs.empty())
-	{
-		static BrokenPairType noPair(NULL, PackageEntry::BrokenSuccessor());
-		return noPair;
-	}
+	typedef Solution::BrokenPairType BrokenPairType;
+
 	auto failValue = [&failCounts](const dg::Element* e) -> size_t
 	{
 		auto it = failCounts.find(e);
 		return it != failCounts.end() ? it->second : 0u;
 	};
-	return *std::max_element(brokenPairs.begin(), brokenPairs.end(),
-			[failValue](const BrokenPairType& left, const BrokenPairType& right)
+	auto compareBrokenPairs = [&failValue](const BrokenPairType& left, const BrokenPairType& right)
+	{
+		auto leftTypePriority = left.second.elementPtr->getTypePriority();
+		auto rightTypePriority = right.second.elementPtr->getTypePriority();
+		if (leftTypePriority < rightTypePriority)
+		{
+			return true;
+		}
+		if (leftTypePriority > rightTypePriority)
+		{
+			return false;
+		}
+
+		if (left.second.priority < right.second.priority)
+		{
+			return true;
+		}
+		if (left.second.priority > right.second.priority)
+		{
+			return false;
+		}
+
+		auto leftFailValue = failValue(left.second.elementPtr);
+		auto rightFailValue = failValue(right.second.elementPtr);
+		if (leftFailValue < rightFailValue)
+		{
+			return true;
+		}
+		if (leftFailValue > rightFailValue)
+		{
+			return false;
+		}
+
+		return static_cast< const dg::VersionVertex* >(left.first)->getPackageName() >
+				static_cast< const dg::VersionVertex* >(right.first)->getPackageName();
+	};
+
+	BrokenPairType result(NULL, PackageEntry::BrokenSuccessor()); // empty
+	auto considerBrokenPair = [&result, &compareBrokenPairs](BrokenPairType&& candidate)
+	{
+		if (!result.first) // empty
+		{
+			result = std::move(candidate);
+		}
+		else
+		{
+			if (compareBrokenPairs(result, candidate))
 			{
-				auto leftTypePriority = left.second.elementPtr->getTypePriority();
-				auto rightTypePriority = right.second.elementPtr->getTypePriority();
-				if (leftTypePriority < rightTypePriority)
-				{
-					return true;
-				}
-				if (leftTypePriority > rightTypePriority)
-				{
-					return false;
-				}
+				result = std::move(candidate);
+			}
+		}
+	};
 
-				if (left.second.priority < right.second.priority)
-				{
-					return true;
-				}
-				if (left.second.priority > right.second.priority)
-				{
-					return false;
-				}
-
-				auto leftFailValue = failValue(left.second.elementPtr);
-				auto rightFailValue = failValue(right.second.elementPtr);
-				if (leftFailValue < rightFailValue)
-				{
-					return true;
-				}
-				if (leftFailValue > rightFailValue)
-				{
-					return false;
-				}
-
-				return static_cast< const dg::VersionVertex* >(left.first)->getPackageName() >
-						static_cast< const dg::VersionVertex* >(right.first)->getPackageName();
-			});
+	solution.getBrokenPairs(considerBrokenPair);
+	return result;
 }
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
