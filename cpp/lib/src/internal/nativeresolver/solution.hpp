@@ -119,16 +119,24 @@ class Solution
 	class const_iterator
 	{
 		const pair< const dg::Element, PackageEntry >* __master_it;
+		typedef (__master_it) __master_end;
 		const dg::Element* const* __added_it;
+		typedef (__added_it) __added_end;
 		const Solution& __solution;
 		enum class State;
 	    State__ state;
 		friend class Solution;
+
+		void __init();
+		void __move();
+		void __is_step_completed() const;
 	 public:
 		typedef pair< const dg::Element*, PackageEntry > value_t;
 		typedef const_iterator self;
 
 		const_iterator(Solution&);
+		bool operator==(const self&) const;
+		bool operator!=(const self&) const;
 		self& operator++();
 		const value_t& operator*() const;
 	};

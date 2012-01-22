@@ -471,7 +471,9 @@ Solution::const_iterator Solution::begin() const
 	const_iterator result(*this);
 	result.__master_it = __master_entries ? __master_entries->begin() : __added_entries->end();
 	result.__added_it = __added_entries->begin();
-	result.__move();
+	result.__master_end = __master_entries ? __master_entries->end() : __added_entries->end();
+	result.__added_end = __added_entries->end();
+	result.__init();
 	return result;
 }
 
@@ -482,49 +484,144 @@ Solution::const_iterator Solution::end() const
 	result.__added_it = __added_entries->end();
 }
 
-enum class Solution::const_iterator::State { Master, Added, Both };
+enum class Solution::const_iterator::State { Master, Added, Both, OnlyMaster, OnlyAdded, End };
+
+bool Solution::const_iterator::operator==(const Solution::const_iterator& other) const
+{
+	return (__master_it == other.__master_it && __added_it == other.__added_it);
+}
+bool Solution::const_iterator::operator!=(const Solution::const_iterator& other) const
+{
+	return !(*this == other);
+}
+
+void Solution::const_iterator::__init()
+{
+	--__master_it;
+	--__added_it;
+
+	do
+	{
+		move();
+	}
+	while (!__is_step_completed())
+}
+
+void Solution::const_iterator::__is_step_completed() const
+{
+	if (__state = State::End)
+	{
+		return true;
+	}
+
+	return (__solution.__removed_entries.find((*this)->first) ==
+			__solution.__removed_entries.end());
+}
+
+void Solution::const_iterator::__move()
+{
+	auto compare = [*this]()
+	{
+		if (__master_it->first < __added_it->first)
+		{
+			__state = State::Master;
+		}
+		else if (__master_it->first > __added_it->first)
+		{
+			__state = State::Added;
+		}
+		else
+		{
+			__state = State::Both;
+		}
+	};
+
+	switch (__state)
+	{
+		case State::Master:
+			++__master_it;
+			if (__master_it == __master_end)
+			{
+				__state = State::OnlyAdded;
+			}
+			else
+			{
+				compare();
+			}
+			break;
+		case State::Added:
+			++__added_it;
+			if (__added_it == __added_end)
+			{
+				__state = State::OnlyMaster;
+			}
+			else
+			{
+				compare();
+			}
+			break;
+		case State::Both:
+			++__master_it;
+			++__added_it;
+			if (__master_it == __master_end)
+			{
+				__state = (__added_it == __added_end ? State::End : State::OnlyAdded);
+			}
+			else
+			{
+				if (__added_it == __added_end)
+				{
+					__state = State::OnlyMaster;
+				}
+				else
+				{
+					compare();
+				}
+			}
+			break;
+		case State::OnlyMaster:
+			++__master_it;
+			if (__master_it == __master_end)
+			{
+				__state = State::End;
+			}
+			break;
+		case State::OnlyAdded:
+			++__added_it;
+			if (__added_it == __added_end)
+			{
+				__state = State::End;
+			}
+			break;
+		case State::End:
+			fatal2("internal error: solution's const iterator: moving beyond the end");
+	};
+}
 
 Solution::const_iterator& Solution::const_iterator::operator++()
 {
+	do
+	{
+		__move();
+	}
+	while (!__is_step_completed())
+}
 
-	// it's, surprisingly, several times faster than std::set_union due to no indirection
-	while (masterIt != masterEnd && ownIt != ownEnd)
+const Solution::const_iterator::value_t& Solution::const_iterator::operator*()
+{
+	switch (__state)
 	{
-		// speeding up a bit, usually most of masterIt won't be included anyway
-		if (!isEligible(masterIt))
-		{
-			++masterIt;
-			continue;
-		}
-
-		if (masterIt->first < ownIt->first)
-		{
-			processEntry(masterIt);
-			++masterIt;
-		}
-		else if (masterIt->first > ownIt->first)
-		{
-			processEntry(ownIt);
-			++ownIt;
-		}
-		else // equal keys
-		{
-			// own entry overrides master entry
-			processEntry(ownIt);
-			++masterIt;
-			++ownIt;
-		}
-	}
-	while (masterIt != masterEnd)
-	{
-		processEntry(masterIt);
-		++masterIt;
-	}
-	while (ownIt != ownEnd)
-	{
-		processEntry(ownIt);
-		++ownIt;
-	}
+		case State::Master:
+		case State::OnlyMaster:
+			return *__master_it;
+		case State::Added:
+		case State::OnlyAdded:
+		case State::Both:
+			return *__added_it;
+		case State::End:
+			fatal2("internal error: solution's const iterator: dereferencing beyond the end");
+			return *__added_it; // unreachable
+	};
 }
 
 }
