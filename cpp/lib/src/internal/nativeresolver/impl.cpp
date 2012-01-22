@@ -973,9 +973,9 @@ pair< const dg::Element*, PackageEntry::BrokenSuccessor > __get_broken_pair(
 	};
 
 	BrokenPairType result(NULL, PackageEntry::BrokenSuccessor()); // empty
-	auto considerBrokenPair = [&result](BrokenPairType&& candidate)
+	auto considerBrokenPair = [&result, &compareBrokenPairs](BrokenPairType&& candidate)
 	{
-		if (result.empty())
+		if (!result.first) // empty
 		{
 			result = std::move(candidate);
 		}
@@ -992,6 +992,7 @@ pair< const dg::Element*, PackageEntry::BrokenSuccessor > __get_broken_pair(
 	{
 		for (const auto& brokenSuccessor: elementAndPackageEntry.second.brokenSuccessors)
 		{
+			using std::make_pair;
 			considerBrokenPair(make_pair(elementAndPackageEntry.first, brokenSuccessor));
 		}
 	}

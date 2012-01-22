@@ -454,13 +454,17 @@ Solution::const_iterator Solution::begin() const
 
 Solution::const_iterator Solution::end() const
 {
-	const_iterator result;
+	const_iterator result(*this);
 	result.__master_it = __master_entries ? __master_entries->end() : __added_entries->end();
 	result.__added_it = __added_entries->end();
+	return result;
 }
 
 enum class Solution::const_iterator::State { Master, Added, Both, OnlyMaster, OnlyAdded, End };
 
+Solution::const_iterator::const_iterator(const Solution& solution)
+	: __solution(solution)
+{}
 bool Solution::const_iterator::operator==(const Solution::const_iterator& other) const
 {
 	return (__master_it == other.__master_it && __added_it == other.__added_it);
@@ -477,25 +481,25 @@ void Solution::const_iterator::__init()
 
 	do
 	{
-		move();
+		__move();
 	}
-	while (!__is_step_completed())
+	while (!__is_step_completed());
 }
 
-void Solution::const_iterator::__is_step_completed() const
+bool Solution::const_iterator::__is_step_completed() const
 {
-	if (__state = State::End)
+	if (__state == State::End)
 	{
 		return true;
 	}
 
-	return (__solution.__removed_entries.find((*this)->first) ==
-			__solution.__removed_entries.end());
+	return (__solution.__removed_entries->find((*this)->first) ==
+			__solution.__removed_entries->end());
 }
 
 void Solution::const_iterator::__move()
 {
-	auto compare = [*this]()
+	auto compare = [this]()
 	{
 		if (__master_it->first < __added_it->first)
 		{
@@ -579,10 +583,11 @@ Solution::const_iterator& Solution::const_iterator::operator++()
 	{
 		__move();
 	}
-	while (!__is_step_completed())
+	while (!__is_step_completed());
+	return *this;
 }
 
-const Solution::const_iterator::value_t& Solution::const_iterator::operator*()
+const Solution::const_iterator::value_t& Solution::const_iterator::operator*() const
 {
 	switch (__state)
 	{
@@ -595,8 +600,13 @@ const Solution::const_iterator::value_t& Solution::const_iterator::operator*()
 			return *__added_it;
 		case State::End:
 			fatal2("internal error: solution's const iterator: dereferencing beyond the end");
-			return *__added_it; // unreachable
 	};
+	return *__added_it; // unreachable
+}
+
+const Solution::const_iterator::value_t* Solution::const_iterator::operator->() const
+{
+	return &(*(*this));
 }
 
 }
