@@ -478,6 +478,7 @@ void Solution::const_iterator::__init()
 {
 	--__master_it;
 	--__added_it;
+	__state = State::Both;
 
 	do
 	{
