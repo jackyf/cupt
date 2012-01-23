@@ -209,9 +209,22 @@ Arguments: list of binary package names.
 
 Given no arguments, prints available Release info for binary packages.
 
+Specific options:
+
+=over
+
+=item --show-dates
+
+Show also publish and expiration dates for each record. Works only for a second
+form (i.e. no arguments).
+
+=back
+
 Examples:
 
 C<cupt policy>
+
+C<cupt policy --show-dates>
 
 C<cupt policy dpkg>
 
@@ -225,9 +238,13 @@ Arguments: list of source package names.
 
 Given no arguments, prints available Release info for source packages.
 
+Same specific options as for L</policy> subcommand.
+
 Examples:
 
 C<cupt policysrc>
+
+C<cupt policysrc --show-dates>
 
 C<cupt policysrc dpkg>
 

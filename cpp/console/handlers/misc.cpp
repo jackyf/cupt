@@ -576,9 +576,15 @@ int policy(Context& context, bool source)
 	}
 
 	vector< string > arguments;
-	bpo::options_description noOptions("");
+	bpo::options_description options("");
+	options.add_options()
+		("show-dates", "");
 
-	parseOptions(context, noOptions, arguments);
+	auto variables = parseOptions(context, options, arguments);
+	if (!arguments.empty() && variables.count("show-dates"))
+	{
+		fatal2("the option '--show-dates' can be used only with no package names supplied");
+	}
 
 	auto cache = context.getCache(/* source */ source, /* binary */ !source,
 			/* installed */ !source);
@@ -659,7 +665,8 @@ int policy(Context& context, bool source)
 	}
 	else
 	{
-		auto sayReleaseInfo = [&config](const shared_ptr< const ReleaseInfo >& releaseInfo)
+		auto showDates = variables.count("show-dates");
+		auto sayReleaseInfo = [&config, &showDates](const shared_ptr< const ReleaseInfo >& releaseInfo)
 		{
 			string origin = releaseInfo->baseUri;
 			if (origin.empty())
@@ -675,6 +682,19 @@ int policy(Context& context, bool source)
 			cout << ",c=" << component;
 			cout << ",v=" << releaseInfo->version;
 			cout << ",n=" << releaseInfo->codename;
+			if (showDates && !releaseInfo->baseUri.empty())
+			{
+				cout << format2(" (%s: %s, ", __("published"), releaseInfo->date);
+				if (releaseInfo->validUntilDate.empty())
+				{
+					cout << __("does not expire");
+				}
+				else
+				{
+					cout << format2("%s: %s", __("expires"), releaseInfo->validUntilDate);
+				}
+				cout << ")";
+			}
 			cout << endl;
 		};
 

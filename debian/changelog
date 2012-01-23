@@ -3,6 +3,9 @@ cupt (2.4.0~) UNRELEASED; urgency=low
   * Switched the compiler from g++ 4.5 to g++ 4.6.
     - The compiler now can generate trivial move-constructors itself.
       Patch by Jonathan Nieder. (Closes: #647142)
+  * console:
+    - 'policy', 'policysrc':
+      - New option '--show-dates'.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
