@@ -6,6 +6,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
   * console:
     - 'policy', 'policysrc':
       - New option '--show-dates'.
+    - 'show':
+      - Don't output 'Description-md5' field.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to

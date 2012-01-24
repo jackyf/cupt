@@ -215,6 +215,10 @@ int showBinaryVersions(Context& context)
 			{
 				FORIT(it, (*(version->others)))
 				{
+					if (it->first == "Description-md5")
+					{
+						continue;
+					}
 					p(it->first, it->second);
 				}
 			}

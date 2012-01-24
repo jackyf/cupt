@@ -645,7 +645,6 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const stri
 
 pair< string, string > CacheImpl::getLocalizedDescriptions(const shared_ptr< const BinaryVersion >& version) const
 {
-	// TODO: console: don't show Description-md5
 	static const string descriptionHashFieldName = "Description-md5";
 
 	const string& sourceHash = (version->others && version->others->count(descriptionHashFieldName)) ?
