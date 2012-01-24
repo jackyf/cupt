@@ -26,6 +26,9 @@ cupt (2.4.0~) UNRELEASED; urgency=low
     - system/worker:
       - If the option 'cupt::worker::defer-triggers' is set to 'auto', check
         for recent enough version of dpkg (1.16.1).
+    - cache:
+      - 'getLocalizedDescriptions': use new 'Description-md5' binary version
+        field if available.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
 

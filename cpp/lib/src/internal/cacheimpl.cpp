@@ -645,8 +645,12 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const stri
 
 pair< string, string > CacheImpl::getLocalizedDescriptions(const shared_ptr< const BinaryVersion >& version) const
 {
-	string source = version->shortDescription + "\n" + version->longDescription;
-	string sourceHash = HashSums::getHashOfString(HashSums::MD5, source);
+	// TODO: console: don't show Description-md5
+	static const string descriptionHashFieldName = "Description-md5";
+
+	const string& sourceHash = (version->others && version->others->count(descriptionHashFieldName)) ?
+			version->others->find(descriptionHashFieldName)->second :
+			HashSums::getHashOfString(HashSums::MD5, version->shortDescription + "\n" + version->longDescription);
 
 	auto it = translations.find(sourceHash);
 	if (it != translations.end())
