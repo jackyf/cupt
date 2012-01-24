@@ -54,7 +54,11 @@ _cupt()
 				subcommand_type='query'
 				arguments='--all-versions -a --no-all-versions --with-release-info'
 				;;
-			why|policy|policysrc|pkgnames|changelog|copyright|screenshots)
+			policy|policysrc)
+				subcommand_type='query'
+				arguments='--show-dates'
+				;;
+			why|pkgnames|changelog|copyright|screenshots)
 				subcommand_type='query'
 				;;
 			search)
