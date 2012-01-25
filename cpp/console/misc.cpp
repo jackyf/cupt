@@ -254,6 +254,7 @@ std::function< int (Context&) > getHandler(const string& command)
 		{ "safe-upgrade", [](Context& c) -> int { return managePackages(c, ManagePackages::SafeUpgrade); } },
 		{ "full-upgrade", [](Context& c) -> int { return managePackages(c, ManagePackages::FullUpgrade); } },
 		{ "reinstall", [](Context& c) -> int { return managePackages(c, ManagePackages::Reinstall); } },
+		{ "iii", [](Context& c) -> int { return managePackages(c, ManagePackages::InstallIfInstalled); } },
 		{ "satisfy", [](Context& c) -> int { return managePackages(c, ManagePackages::Satisfy); } },
 		{ "build-dep", [](Context& c) -> int { return managePackages(c, ManagePackages::BuildDepends); } },
 		{ "dist-upgrade", &distUpgrade },

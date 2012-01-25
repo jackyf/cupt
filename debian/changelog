@@ -8,6 +8,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - New option '--show-dates'.
     - 'show':
       - Don't output 'Description-md5' field.
+    - New subcommand 'iii'.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to

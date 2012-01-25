@@ -437,6 +437,18 @@ Examples:
 
 C<cupt reinstall libc6>
 
+=item iii
+
+"L</install> if installed"
+
+Same as L</install>, but silently ignores packages which are not installed.
+
+Examples:
+
+C<cupt iii gnash>
+
+C<cupt iii xserver* *cupt*>
+
 =item markauto
 
 marks specified packages as automatically installed
@@ -764,6 +776,17 @@ Example:
 C<< cupt install sieve-connect --unsatisfy "iceweasel (<< 3.5.20)" >> - install
 the package 'sieve-connect', upgrade or remove the package 'iceweasel' if it is installed
 and has the version lower than '3.5.20'
+
+=item --iii
+
+"install if installed" (see L</iii> subcommand) the rest of packages
+
+Example:
+
+C<cupt install libv4l-0 cupt --iii libreadline6 vlc*> - install packages
+'libv4l-0' and 'cupt', install the preferred version of 'libreadline6' if it's
+installed already, install the preferred versions of packages which names start
+with 'vlc' and which are installed already 
 
 =back
 

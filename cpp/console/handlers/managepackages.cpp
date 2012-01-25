@@ -181,15 +181,23 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 		}
 	}
 
-	if (mode == ManagePackages::Install)
+	if (mode == ManagePackages::Install || mode == ManagePackages::InstallIfInstalled)
 	{
 		if (versions.empty())
 		{
 			versions = selectBinaryVersionsWildcarded(cache, packageExpression);
 		}
-		FORIT(versionIt, versions)
+		for (const auto& version: versions)
 		{
-			resolver.installVersion(*versionIt);
+			if (mode == ManagePackages::InstallIfInstalled)
+			{
+				auto&& installedInfo = cache->getSystemState()->getInstalledInfo(version->packageName);
+				if (!installedInfo || installedInfo->status == system::State::InstalledRecord::Status::ConfigFiles)
+				{
+					continue;
+				}
+			}
+			resolver.installVersion(version);
 		}
 	}
 	else // ManagePackages::Remove or ManagePackages::Purge
@@ -290,6 +298,10 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		else if (*packageExpressionIt == "--unsatisfy")
 		{
 			mode = ManagePackages::Unsatisfy;
+		}
+		else if (*packageExpressionIt == "--iii")
+		{
+			mode = ManagePackages::InstallIfInstalled;
 		}
 		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
 		{
@@ -894,7 +906,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	auto extraParser = [](const string& input) -> pair< string, string >
 	{
 		const set< string > actionModifierOptionNames = {
-			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy"
+			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii"
 		};
 		if (actionModifierOptionNames.count(input))
 		{
