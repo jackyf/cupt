@@ -27,8 +27,7 @@ The aim of this manual is to describe the all features Cupt package manager has
 to manage the system, from the most basics to very advanced tuning. Please
 submit your proposals/patches when you see some use case is not covered.
 
-This manual was written for the second major version of Cupt (2.x branch). Most
-of it is however applicable to first major version (1.x branch) too.
+This manual was written for the second major version of Cupt (2.x branch).
 
 == Disadvantages and advantages ==
 
