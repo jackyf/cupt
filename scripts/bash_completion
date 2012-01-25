@@ -94,7 +94,7 @@ _cupt()
 					--resolver=fair --resolver=full --max-solution-count= \
 					--no-install-recommends -R --show-versions -V
 					--show-size-changes -Z --show-reasons --show-deps -D \
-					--no-install-unpacked --download-only -d \
+					--download-only -d \
 					--summary-only --no-summary \
 					--assume-yes --yes -y"
 		fi
