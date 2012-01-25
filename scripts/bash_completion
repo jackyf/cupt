@@ -8,7 +8,7 @@ _cupt()
 			depends rdepends why policy policysrc \
 			pkgnames changelog copyright screenshots \
 			snapshot update \
-			install remove full-upgrade safe-upgrade dist-upgrade reinstall \
+			install remove full-upgrade safe-upgrade dist-upgrade reinstall iii \
 			build-dep satisfy source \
 			clean autoclean shell \
 			markauto unmarkauto showauto'
@@ -43,7 +43,7 @@ _cupt()
 		# found subcommand, go case by case then
 		local subcommand_type
 		case "${subcommand}" in
-			install|remove|full-upgrade|safe-upgrade|dist-upgrade|reinstall|build-dep)
+			install|remove|full-upgrade|safe-upgrade|dist-upgrade|reinstall|build-dep|iii)
 				subcommand_type='manage'
 				;;
 			source)
