@@ -647,12 +647,39 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
+== Conditional installation ==
+
+Starting with Cupt 2.4, there is a special subcommand ``iii`` ("install if
+installed") for installing new versions of already installed packages while not
+touching uninstalled packages. It behaves like ``install``, but ignores
+arguments corresponding to not installed packages.
+
+Examples:
+
++ You want to upgrade a certain package (say, ``git``) on multiple
+machines, where some of these machines have that package installed and some
+not. If you have a mechanism to send one command to all machines (say, ssh
+multiplexer), you can send the command
+
+``` cupt update && cupt iii git
+
+The second part of the command will do nothing on the machines where ``git`` is
+not installed and will install the preferred version of the package ``git``
+where this package was installed.
+
++ You have an X server and some X video drivers installed, and you want to
+upgrade all installed drivers. For that you can do
+
+``` cupt iii xserver-xorg-video*
+
+
+
 == Overriding package management actions ==
 
 === Action override options ===
 
 You can use special positional options ``--install``, ``--remove``, ``--purge``,
-``--satisfy`` and ``--unsatisfy`` to override the specified action until the
+``--iii``, ``--satisfy`` and ``--unsatisfy`` to override the specified action until the
 end of the arguments or the next action override option.
 
 Example:
