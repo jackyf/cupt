@@ -722,6 +722,47 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 			colorizedManualCountString, colorizedAutoCountString, actionName) << endl;
 }
 
+void showPackageChanges(const Cache& cache, Colorizer& colorizer, WA::Type actionType,
+		const Resolver::SuggestedPackages& actionSuggestedPackages,
+		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview,
+		bool showVersions, bool showSizeChanges, bool showReasons)
+{
+	for (const auto& it: actionSuggestedPackages)
+	{
+		const string& packageName = it.first;
+		printPackageName(cache, colorizer, packageName, actionType, autoFlagChanges);
+
+		if (showVersions)
+		{
+			showVersion(cache, packageName, it.second, actionType);
+		}
+
+		if (showSizeChanges)
+		{
+			showSizeChange(unpackedSizesPreview.find(packageName)->second);
+		}
+
+		if (showVersions || showSizeChanges || showReasons)
+		{
+			cout << endl; // put newline
+		}
+		else
+		{
+			cout << ' '; // put a space between package names
+		}
+
+		if (showReasons)
+		{
+			showReason(it.second);
+		}
+	}
+	if (!showVersions && !showSizeChanges && !showReasons)
+	{
+		cout << endl;
+	}
+	cout << endl;
+}
+
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
 		bool showVersions, bool showSizeChanges, bool showNotPreferred,
@@ -804,40 +845,9 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				cout << format2(__("The following packages %s:"),
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
-				FORIT(it, actionSuggestedPackages)
-				{
-					const string& packageName = it->first;
-					printPackageName(*cache, colorizer, packageName, actionType, actionsPreview->autoFlagChanges);
-
-					if (showVersions)
-					{
-						showVersion(*cache, packageName, it->second, actionType);
-					}
-
-					if (showSizeChanges)
-					{
-						showSizeChange(unpackedSizesPreview[packageName]);
-					}
-
-					if (showVersions || showSizeChanges || showReasons)
-					{
-						cout << endl; // put newline
-					}
-					else
-					{
-						cout << ' '; // put a space between package names
-					}
-
-					if (showReasons)
-					{
-						showReason(it->second);
-					}
-				}
-				if (!showVersions && !showSizeChanges && !showReasons)
-				{
-					cout << endl;
-				}
-				cout << endl;
+				showPackageChanges(*cache, colorizer, actionType, actionSuggestedPackages,
+						actionsPreview->autoFlagChanges, unpackedSizesPreview,
+						showVersions, showSizeChanges, showReasons);
 			}
 
 			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
