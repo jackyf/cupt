@@ -19,6 +19,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - New (and default from now on) option value 'auto' for the option
         'cupt::worker::defer-triggers'.
       - New option 'cupt::console::actions-preview::show-versions'.
+      - New option 'cupt::console::actions-preview::show-size-changes'.
     - system/resolvers/native:
       - Use normalized version priority in score calculations.
       - If a solution to a problem is an "unsatisfied" element, partially

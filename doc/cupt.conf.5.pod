@@ -191,6 +191,11 @@ Show always.
 boolean, if true, details of planned actions will be shown in the
 actions preview. True by default.
 
+=item cupt::console::actions-preview::show-size-changes
+
+boolean, if true, a change in the disk space usage will be shown for each
+package in the actions preview. False by default.
+
 =item cupt::console::actions-preview::show-summary
 
 boolean, if true, a summary of planned actions will be shown in the
