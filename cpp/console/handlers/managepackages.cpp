@@ -722,32 +722,44 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 			colorizedManualCountString, colorizedAutoCountString, actionName) << endl;
 }
 
+struct PackageChangeInfoFlags
+{
+	bool sizeChange;
+	bool version;
+	bool reasons;
+
+	PackageChangeInfoFlags(const Config& config, WA::Type actionType)
+	{
+		sizeChange = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
+				actionType != fakeNotPolicyVersionAction);
+		version = config.getBool("cupt::console::actions-preview::show-versions");
+		reasons = (config.getBool("cupt::resolver::track-reasons") &&
+				actionType != fakeNotPolicyVersionAction);
+	}
+};
+
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
 		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview)
 {
-	bool showSizeChanges = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
-			actionType != fakeNotPolicyVersionAction);
-	bool showVersions = config.getBool("cupt::console::actions-preview::show-versions");
-	auto showReasons = (config.getBool("cupt::resolver::track-reasons") &&
-			actionType != fakeNotPolicyVersionAction);
+	PackageChangeInfoFlags showFlags(config, actionType);
 
 	for (const auto& it: actionSuggestedPackages)
 	{
 		const string& packageName = it.first;
 		printPackageName(cache, colorizer, packageName, actionType, autoFlagChanges);
 
-		if (showVersions)
+		if (showFlags.version)
 		{
 			showVersion(cache, packageName, it.second, actionType);
 		}
 
-		if (showSizeChanges)
+		if (showFlags.sizeChange)
 		{
 			showSizeChange(unpackedSizesPreview.find(packageName)->second);
 		}
 
-		if (showVersions || showSizeChanges || showReasons)
+		if (showFlags.version || showFlags.sizeChange || showFlags.reasons)
 		{
 			cout << endl; // put newline
 		}
@@ -756,12 +768,12 @@ void showPackageChanges(const Config& config, const Cache& cache, Colorizer& col
 			cout << ' '; // put a space between package names
 		}
 
-		if (showReasons)
+		if (showFlags.reasons)
 		{
 			showReason(it.second);
 		}
 	}
-	if (!showVersions && !showSizeChanges && !showReasons)
+	if (!showFlags.version && !showFlags.sizeChange && !showFlags.reasons)
 	{
 		cout << endl;
 	}
