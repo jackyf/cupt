@@ -92,7 +92,7 @@ _cupt()
 			# manage-specific options
 			arguments="${arguments} --no-remove --no-auto-remove --simulate -s \
 					--resolver=fair --resolver=full --max-solution-count= \
-					--no-install-recommends -R --show-versions -V
+					--no-install-recommends -R --show-archives -A --show-versions -V
 					--show-size-changes -Z --show-reasons --show-deps -D \
 					--download-only -d \
 					--summary-only --no-summary \

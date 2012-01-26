@@ -186,6 +186,11 @@ Show always.
 
 =back
 
+=item cupt::console::actions-preview::show-archives
+
+boolean, if true, release archive(s) will be shown for each package in the
+actions preview. False by default.
+
 =item cupt::console::actions-preview::show-details
 
 boolean, if true, details of planned actions will be shown in the

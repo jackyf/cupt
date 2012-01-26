@@ -12,6 +12,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
     - Actions preview:
       - Don't show size changes for 'not preferred' group.
       - Don't show reasons for 'not preferred' group.
+    - Managing packages:
+      - New option '--show-archives'.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
@@ -23,6 +25,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
         'cupt::worker::defer-triggers'.
       - New option 'cupt::console::actions-preview::show-versions'.
       - New option 'cupt::console::actions-preview::show-size-changes'.
+      - New option 'cupt::console::actions-preview::show-archives'.
     - system/resolvers/native:
       - Use normalized version priority in score calculations.
       - If a solution to a problem is an "unsatisfied" element, partially

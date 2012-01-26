@@ -38,6 +38,7 @@ using std::endl;
 #include <cupt/file.hpp>
 #include <cupt/system/worker.hpp>
 #include <cupt/cache/sourceversion.hpp>
+#include <cupt/cache/releaseinfo.hpp>
 
 typedef Worker::Action WA;
 const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
@@ -352,20 +353,79 @@ void printDownloadSizes(const pair< size_t, size_t >& downloadSizes)
 			humanReadableSizeString(need), humanReadableSizeString(total));
 }
 
-void showVersion(const Cache& cache, const string& packageName,
-		const Resolver::SuggestedPackage& suggestedPackage, WA::Type actionType)
+struct VersionInfoFlags
 {
+	bool versionString;
+	enum class DistributionType { None, Archive };
+	DistributionType distributionType;
+
+	VersionInfoFlags(const Config& config)
+	{
+		versionString = config.getBool("cupt::console::actions-preview::show-versions");
+		if (config.getBool("cupt::console::actions-preview::show-archives"))
+		{
+			distributionType = DistributionType::Archive;
+		}
+		else
+		{
+			distributionType = DistributionType::None;
+		}
+	}
+	bool empty() const
+	{
+		return !versionString && distributionType == DistributionType::None;
+	}
+};
+void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
+		const Resolver::SuggestedPackage& suggestedPackage, WA::Type actionType,
+		VersionInfoFlags flags)
+{
+	if (flags.empty())
+	{
+		return; // nothing to print
+	}
+
+	auto getVersionString = [&flags](const shared_ptr< const Version >& version) -> string
+	{
+		if (!version)
+		{
+			return "";
+		}
+		string result;
+		if (flags.versionString)
+		{
+			result += version->versionString;
+		}
+		if (flags.distributionType != VersionInfoFlags::DistributionType::None)
+		{
+			result += '(';
+			vector< string > chunks;
+			for (const auto& source: version->sources)
+			{
+				string chunk;
+				if (flags.distributionType == VersionInfoFlags::DistributionType::Archive)
+				{
+					chunk += source.release->archive;
+				}
+				if (std::find(chunks.begin(), chunks.end(), chunk) == chunks.end())
+				{
+					chunks.push_back(chunk);
+				}
+			}
+			result += join(",", chunks);
+			result += ')';
+		}
+		return result;
+	};
+
 	auto package = cache.getBinaryPackage(packageName);
 	if (!package)
 	{
 		fatal2("internal error: no binary package '%s' available", packageName);
 	}
-	auto oldVersion = package->getInstalledVersion();
 
-	string oldVersionString = oldVersion ? oldVersion->versionString : "";
-
-	auto newVersion = suggestedPackage.version;
-	string newVersionString = newVersion ? newVersion->versionString : "";
+	string oldVersionString = getVersionString(package->getInstalledVersion());
+	string newVersionString = getVersionString(suggestedPackage.version);
 
 	if (!oldVersionString.empty() && !newVersionString.empty() &&
 			(actionType != fakeNotPolicyVersionAction || oldVersionString != newVersionString))
@@ -383,7 +443,7 @@ void showVersion(const Cache& cache, const string& packageName,
 
 	if (actionType == fakeNotPolicyVersionAction)
 	{
-		cout << ", " << __("preferred") << ": " << cache.getPolicyVersion(package)->versionString;
+		cout << ", " << __("preferred") << ": " << getVersionString(cache.getPolicyVersion(package));
 	}
 }
 
@@ -725,20 +785,20 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 struct PackageChangeInfoFlags
 {
 	bool sizeChange;
-	bool version;
 	bool reasons;
+	VersionInfoFlags versionFlags;
 
 	PackageChangeInfoFlags(const Config& config, WA::Type actionType)
+		: versionFlags(config)
 	{
 		sizeChange = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
 				actionType != fakeNotPolicyVersionAction);
-		version = config.getBool("cupt::console::actions-preview::show-versions");
 		reasons = (config.getBool("cupt::resolver::track-reasons") &&
 				actionType != fakeNotPolicyVersionAction);
 	}
 	bool empty() const
 	{
-		return !version && !sizeChange && !reasons;
+		return versionFlags.empty() && !sizeChange && !reasons;
 	}
 };
 
@@ -753,10 +813,7 @@ void showPackageChanges(const Config& config, const Cache& cache, Colorizer& col
 		const string& packageName = it.first;
 		printPackageName(cache, colorizer, packageName, actionType, autoFlagChanges);
 
-		if (showFlags.version)
-		{
-			showVersion(cache, packageName, it.second, actionType);
-		}
+		showVersionInfoIfNeeded(cache, packageName, it.second, actionType, showFlags.versionFlags);
 
 		if (showFlags.sizeChange)
 		{
@@ -922,6 +979,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-versions,V", "")
 		("show-size-changes,Z", "")
 		("show-reasons,D", "")
+		("show-archives,A", "")
 		("show-deps", "")
 		("show-not-preferred", "")
 		("download-only,d", "")
@@ -998,6 +1056,10 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	if (variables.count("show-size-changes"))
 	{
 		config->setScalar("cupt::console::actions-preview::show-size-changes", "yes");
+	}
+	if (variables.count("show-archives"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-archives", "yes");
 	}
 
 	string showNotPreferredConfigValue = config->getString("cupt::console::actions-preview::show-not-preferred");
