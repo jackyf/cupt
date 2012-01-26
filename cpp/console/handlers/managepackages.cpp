@@ -726,7 +726,8 @@ void showPackageChanges(const Config& config, const Cache& cache, Colorizer& col
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
 		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview)
 {
-	bool showSizeChanges = config.getBool("cupt::console::actions-preview::show-size-changes");
+	bool showSizeChanges = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
+			actionType != fakeNotPolicyVersionAction);
 	bool showVersions = config.getBool("cupt::console::actions-preview::show-versions");
 	auto showReasons = config.getBool("cupt::resolver::track-reasons");
 

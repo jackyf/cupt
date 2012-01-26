@@ -9,6 +9,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
     - 'show':
       - Don't output 'Description-md5' field.
     - New subcommand 'iii'.
+    - Actions preview:
+      - Don't show size changes for 'not preferred' group.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
