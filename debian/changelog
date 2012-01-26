@@ -11,6 +11,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
     - New subcommand 'iii'.
     - Actions preview:
       - Don't show size changes for 'not preferred' group.
+      - Don't show reasons for 'not preferred' group.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
