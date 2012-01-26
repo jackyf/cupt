@@ -736,6 +736,10 @@ struct PackageChangeInfoFlags
 		reasons = (config.getBool("cupt::resolver::track-reasons") &&
 				actionType != fakeNotPolicyVersionAction);
 	}
+	bool empty() const
+	{
+		return !version && !sizeChange && !reasons;
+	}
 };
 
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
@@ -759,7 +763,7 @@ void showPackageChanges(const Config& config, const Cache& cache, Colorizer& col
 			showSizeChange(unpackedSizesPreview.find(packageName)->second);
 		}
 
-		if (showFlags.version || showFlags.sizeChange || showFlags.reasons)
+		if (!showFlags.empty())
 		{
 			cout << endl; // put newline
 		}
@@ -773,7 +777,7 @@ void showPackageChanges(const Config& config, const Cache& cache, Colorizer& col
 			showReason(it.second);
 		}
 	}
-	if (!showFlags.version && !showFlags.sizeChange && !showFlags.reasons)
+	if (showFlags.empty())
 	{
 		cout << endl;
 	}
