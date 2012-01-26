@@ -722,11 +722,14 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 			colorizedManualCountString, colorizedAutoCountString, actionName) << endl;
 }
 
-void showPackageChanges(const Cache& cache, Colorizer& colorizer, WA::Type actionType,
+void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
-		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview,
-		bool showVersions, bool showSizeChanges, bool showReasons)
+		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview)
 {
+	bool showSizeChanges = config.getBool("cupt::console::actions-preview::show-size-changes");
+	bool showVersions = config.getBool("cupt::console::actions-preview::show-versions");
+	auto showReasons = config.getBool("cupt::resolver::track-reasons");
+
 	for (const auto& it: actionSuggestedPackages)
 	{
 		const string& packageName = it.first;
@@ -775,9 +778,6 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		addArgumentsFlag = false;
 		thereIsNothingToDo = false;
 
-		bool showSizeChanges = config->getBool("cupt::console::actions-preview::show-size-changes");
-		bool showVersions = config->getBool("cupt::console::actions-preview::show-versions");
-		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 		auto showSummary = config->getBool("cupt::console::actions-preview::show-summary");
 		auto showDetails = config->getBool("cupt::console::actions-preview::show-details");
 
@@ -847,9 +847,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				cout << format2(__("The following packages %s:"),
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
-				showPackageChanges(*cache, colorizer, actionType, actionSuggestedPackages,
-						actionsPreview->autoFlagChanges, unpackedSizesPreview,
-						showVersions, showSizeChanges, showReasons);
+				showPackageChanges(*config, *cache, colorizer, actionType, actionSuggestedPackages,
+						actionsPreview->autoFlagChanges, unpackedSizesPreview);
 			}
 
 			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
