@@ -204,7 +204,7 @@ actions preview. False by default.
 =item cupt::console::use-colors
 
 string, specifies whether to use colors in the console interface. Defaults to
-"auto".
+"no".
 
 For now concerns only the action preview.
 
