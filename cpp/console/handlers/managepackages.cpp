@@ -352,10 +352,10 @@ void printDownloadSizes(const pair< size_t, size_t >& downloadSizes)
 			humanReadableSizeString(need), humanReadableSizeString(total));
 }
 
-void showVersion(const shared_ptr< const Cache >& cache, const string& packageName,
+void showVersion(const Cache& cache, const string& packageName,
 		const Resolver::SuggestedPackage& suggestedPackage, WA::Type actionType)
 {
-	auto package = cache->getBinaryPackage(packageName);
+	auto package = cache.getBinaryPackage(packageName);
 	if (!package)
 	{
 		fatal2("internal error: no binary package '%s' available", packageName);
@@ -383,7 +383,7 @@ void showVersion(const shared_ptr< const Cache >& cache, const string& packageNa
 
 	if (actionType == fakeNotPolicyVersionAction)
 	{
-		cout << ", " << __("preferred") << ": " << cache->getPolicyVersion(package)->versionString;
+		cout << ", " << __("preferred") << ": " << cache.getPolicyVersion(package)->versionString;
 	}
 }
 
@@ -811,7 +811,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 					if (showVersions)
 					{
-						showVersion(cache, packageName, it->second, actionType);
+						showVersion(*cache, packageName, it->second, actionType);
 					}
 
 					if (showSizeChanges)
