@@ -196,6 +196,11 @@ actions preview. True by default.
 boolean, if true, a summary of planned actions will be shown in the
 actions preview. True by default.
 
+=item cupt::console::actions-preview::show-versions
+
+boolean, if true, a version will be shown for each package in the
+actions preview. False by default.
+
 =item cupt::console::use-colors
 
 string, specifies whether to use colors in the console interface. Defaults to

@@ -765,16 +765,17 @@ void showPackageChanges(const Cache& cache, Colorizer& colorizer, WA::Type actio
 
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showVersions, bool showSizeChanges, bool showNotPreferred,
+		bool showSizeChanges, bool showNotPreferred,
 		const set< string >& purgedPackageNames, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
-	auto result = [&config, &cache, &worker, showVersions, showSizeChanges, showNotPreferred,
+	auto result = [&config, &cache, &worker, showSizeChanges, showNotPreferred,
 			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
 		thereIsNothingToDo = false;
 
+		bool showVersions = config->getBool("cupt::console::actions-preview::show-versions");
 		auto showReasons = config->getBool("cupt::resolver::track-reasons");
 		auto showSummary = config->getBool("cupt::console::actions-preview::show-summary");
 		auto showDetails = config->getBool("cupt::console::actions-preview::show-details");
@@ -892,7 +893,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		vector< string >& packageExpressions,
-		bool& showVersions, bool& showSizeChanges, bool& showNotPreferred)
+		bool& showSizeChanges, bool& showNotPreferred)
 {
 	bpo::options_description options;
 	options.add_options()
@@ -973,8 +974,11 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		config->setScalar("cupt::console::actions-preview::show-summary", "no");
 		config->setScalar("cupt::console::actions-preview::show-details", "yes");
 	}
+	if (variables.count("show-versions"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-versions", "yes");
+	}
 
-	showVersions = variables.count("show-versions");
 	showSizeChanges = variables.count("show-size-changes");
 	string showNotPreferredConfigValue = config->getString("cupt::console::actions-preview::show-not-preferred");
 	showNotPreferred = variables.count("show-not-preferred") ||
@@ -997,9 +1001,9 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	Cache::memoize = true;
 
 	vector< string > packageExpressions;
-	bool showVersions, showSizeChanges, showNotPreferred;
+	bool showSizeChanges, showNotPreferred;
 	parseManagementOptions(context, mode, packageExpressions,
-			showVersions, showSizeChanges, showNotPreferred);
+			showSizeChanges, showNotPreferred);
 
 	unrollFileArguments(packageExpressions);
 
@@ -1068,7 +1072,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	bool addArgumentsFlag, thereIsNothingToDo;
 	auto callback = generateManagementPrompt(config, cache, worker,
-			showVersions, showSizeChanges, showNotPreferred,
+			showSizeChanges, showNotPreferred,
 			purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:

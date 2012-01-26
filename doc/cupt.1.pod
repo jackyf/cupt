@@ -687,6 +687,8 @@ Corresponding configuration option: L<apt::install-recommends>
 
 when displaying actions preview prompt, display also versions of packages
 
+Corresponding configuration option: L<cupt::console::actions-preview::show-versions>
+
 =item --show-size-changes,-Z
 
 when displaying actions preview prompt, display also changes in disk space

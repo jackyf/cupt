@@ -114,6 +114,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
 		{ "cupt::console::actions-preview::show-summary", "yes" },
+		{ "cupt::console::actions-preview::show-versions", "no" },
 		{ "cupt::console::use-colors", "no" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },
