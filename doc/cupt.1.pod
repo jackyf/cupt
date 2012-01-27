@@ -709,6 +709,12 @@ when displaying actions preview prompt, display also versions of packages
 
 Corresponding configuration option: L<cupt::console::actions-preview::show-versions>
 
+=item --show-vendors,-O
+
+when displaying actions preview prompt, display also vendors of packages
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-vendors>
+
 =item --show-size-changes,-Z
 
 when displaying actions preview prompt, display also changes in disk space

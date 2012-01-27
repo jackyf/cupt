@@ -118,6 +118,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::actions-preview::show-details", "yes" },
 		{ "cupt::console::actions-preview::show-size-changes", "no" },
 		{ "cupt::console::actions-preview::show-summary", "yes" },
+		{ "cupt::console::actions-preview::show-vendors", "no" },
 		{ "cupt::console::actions-preview::show-versions", "no" },
 		{ "cupt::console::use-colors", "no" },
 		{ "cupt::directory", "/" },

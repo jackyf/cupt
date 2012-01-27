@@ -16,6 +16,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - New option '--show-archives'.
       - New option '--show-codenames'.
       - New option '--show-components'.
+      - New option '--show-vendors'.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
@@ -30,6 +31,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - New option 'cupt::console::actions-preview::show-archives'.
       - New option 'cupt::console::actions-preview::show-codenames'.
       - New option 'cupt::console::actions-preview::show-components'.
+      - New option 'cupt::console::actions-preview::show-vendors'.
     - system/resolvers/native:
       - Use normalized version priority in score calculations.
       - If a solution to a problem is an "unsatisfied" element, partially

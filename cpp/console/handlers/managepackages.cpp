@@ -359,6 +359,7 @@ struct VersionInfoFlags
 	enum class DistributionType { None, Archive, Codename };
 	DistributionType distributionType;
 	bool component;
+	bool vendor;
 
 	VersionInfoFlags(const Config& config)
 	{
@@ -376,10 +377,11 @@ struct VersionInfoFlags
 			distributionType = DistributionType::None;
 		}
 		component = config.getBool("cupt::console::actions-preview::show-components");
+		vendor = config.getBool("cupt::console::actions-preview::show-vendors");
 	}
 	bool empty() const
 	{
-		return !versionString && distributionType == DistributionType::None && !component;
+		return !versionString && distributionType == DistributionType::None && !component && !vendor;
 	}
 };
 void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
@@ -402,13 +404,19 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 		{
 			result += version->versionString;
 		}
-		if ((flags.distributionType != VersionInfoFlags::DistributionType::None) || flags.component)
+		if ((flags.distributionType != VersionInfoFlags::DistributionType::None)
+				|| flags.component || flags.vendor)
 		{
 			result += '(';
 			vector< string > chunks;
 			for (const auto& source: version->sources)
 			{
 				string chunk;
+				if (flags.vendor && !source.release->vendor.empty())
+				{
+					chunk += source.release->vendor;
+					chunk += ':';
+				}
 				if (flags.distributionType == VersionInfoFlags::DistributionType::Archive)
 				{
 					chunk += source.release->archive;
@@ -999,6 +1007,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-components,C", "")
 		("show-deps", "")
 		("show-not-preferred", "")
+		("show-vendors,O", "")
 		("download-only,d", "")
 		("summary-only", "")
 		("no-summary", "")
@@ -1090,6 +1099,10 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	if (variables.count("show-components"))
 	{
 		config->setScalar("cupt::console::actions-preview::show-components", "yes");
+	}
+	if (variables.count("show-vendors"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-vendors", "yes");
 	}
 
 	string showNotPreferredConfigValue = config->getString("cupt::console::actions-preview::show-not-preferred");
