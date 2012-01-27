@@ -873,6 +873,24 @@ Use ``--show-codenames`` (``-N``) option. Example:
  libstreams0 [(now,squeeze) -> (wheezy,sid)]
 ```
 
+- release components
+
+Use ``--show-components`` (``-C``) option. It's mostly useful in conjunction
+with ``--show-codenames`` or ``--show-archives``. Example:
+
+```
+ $ cupt install libstreams0 -CN
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
+ libstreams0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
+```
+
 - change reasons
 
 To show, why resolver did the change(s), use ``--show-reasons`` (``-D``) option.
