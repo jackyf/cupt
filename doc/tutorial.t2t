@@ -891,6 +891,24 @@ with ``--show-codenames`` or ``--show-archives``. Example:
  libstreams0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
 ```
 
+- release vendors
+
+Use ``--show-vendors`` (``-O``) option. Useful if you have repositories of more
+than one vendor and usually in conjuction with ``-V``, ``-A`` or ``-N``. Example:
+
+```
+ $ cupt install libstreams0 -VNO
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [0.7.2-1+b1(dpkg:now,Debian:squeeze) -> 0.7.7-1(Debian:wheezy,Debian:sid)]
+ libstreams0 [0.7.2-1+b1(dpkg:now,Debian:squeeze) -> 0.7.7-1(Debian:wheezy,Debian:sid)]
+```
+
 - change reasons
 
 To show, why resolver did the change(s), use ``--show-reasons`` (``-D``) option.
