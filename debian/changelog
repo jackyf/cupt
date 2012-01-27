@@ -14,6 +14,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - Don't show reasons for 'not preferred' group.
     - Managing packages:
       - New option '--show-archives'.
+      - New option '--show-codenames'.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to
@@ -26,6 +27,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - New option 'cupt::console::actions-preview::show-versions'.
       - New option 'cupt::console::actions-preview::show-size-changes'.
       - New option 'cupt::console::actions-preview::show-archives'.
+      - New option 'cupt::console::actions-preview::show-codenames'.
     - system/resolvers/native:
       - Use normalized version priority in score calculations.
       - If a solution to a problem is an "unsatisfied" element, partially

@@ -356,7 +356,7 @@ void printDownloadSizes(const pair< size_t, size_t >& downloadSizes)
 struct VersionInfoFlags
 {
 	bool versionString;
-	enum class DistributionType { None, Archive };
+	enum class DistributionType { None, Archive, Codename };
 	DistributionType distributionType;
 
 	VersionInfoFlags(const Config& config)
@@ -365,6 +365,10 @@ struct VersionInfoFlags
 		if (config.getBool("cupt::console::actions-preview::show-archives"))
 		{
 			distributionType = DistributionType::Archive;
+		}
+		else if (config.getBool("cupt::console::actions-preview::show-codenames"))
+		{
+			distributionType = DistributionType::Codename;
 		}
 		else
 		{
@@ -406,6 +410,10 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 				if (flags.distributionType == VersionInfoFlags::DistributionType::Archive)
 				{
 					chunk += source.release->archive;
+				}
+				else
+				{
+					chunk += source.release->codename;
 				}
 				if (std::find(chunks.begin(), chunks.end(), chunk) == chunks.end())
 				{
@@ -980,6 +988,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-size-changes,Z", "")
 		("show-reasons,D", "")
 		("show-archives,A", "")
+		("show-codenames,C", "")
 		("show-deps", "")
 		("show-not-preferred", "")
 		("download-only,d", "")
@@ -1060,6 +1069,15 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	if (variables.count("show-archives"))
 	{
 		config->setScalar("cupt::console::actions-preview::show-archives", "yes");
+	}
+	if (variables.count("show-codenames"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-codenames", "yes");
+	}
+	if (config->getBool("cupt::console::actions-preview::show-archives") &&
+			config->getBool("cupt::console::actions-preview::show-codenames"))
+	{
+		fatal2("options 'cupt::console::actions-preview::show-archives' and 'cupt::console::actions-preview::show-codenames' cannot be used together");
 	}
 
 	string showNotPreferredConfigValue = config->getString("cupt::console::actions-preview::show-not-preferred");

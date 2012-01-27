@@ -112,6 +112,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::console::actions-preview::show-archives", "no" },
+		{ "cupt::console::actions-preview::show-codenames", "no" },
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
 		{ "cupt::console::actions-preview::show-size-changes", "no" },
