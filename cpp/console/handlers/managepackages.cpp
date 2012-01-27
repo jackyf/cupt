@@ -988,7 +988,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-size-changes,Z", "")
 		("show-reasons,D", "")
 		("show-archives,A", "")
-		("show-codenames,C", "")
+		("show-codenames,N", "")
 		("show-deps", "")
 		("show-not-preferred", "")
 		("download-only,d", "")

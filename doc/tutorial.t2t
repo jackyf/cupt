@@ -858,10 +858,10 @@ Use ``--show-archives`` (``-A``) option. Example:
 
 - release codenames
 
-Use ``--show-codenames`` (``-C``) option. Example:
+Use ``--show-codenames`` (``-N``) option. Example:
 
 ```
- $ cupt install libstreams0 -C
+ $ cupt install libstreams0 -N
  Building the package cache... 
  Initializing package resolver and worker... 
  Scheduling requested actions... 

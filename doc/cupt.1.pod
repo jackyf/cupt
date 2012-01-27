@@ -689,7 +689,7 @@ when displaying actions preview prompt, display also release archives for each p
 
 Corresponding configuration option: L<cupt::console::actions-preview::show-archives>
 
-=item --show-codenames,-C
+=item --show-codenames,-N
 
 when displaying actions preview prompt, display also release codenames for each package
 
