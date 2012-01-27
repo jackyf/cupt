@@ -196,6 +196,11 @@ actions preview. False by default.
 boolean, if true, release codename(s) will be shown for each package in the
 actions preview. False by default.
 
+=item cupt::console::actions-preview::show-components
+
+boolean, if true, release component(s) will be shown for each package in the
+actions preview. False by default.
+
 =item cupt::console::actions-preview::show-details
 
 boolean, if true, details of planned actions will be shown in the

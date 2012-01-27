@@ -358,6 +358,7 @@ struct VersionInfoFlags
 	bool versionString;
 	enum class DistributionType { None, Archive, Codename };
 	DistributionType distributionType;
+	bool component;
 
 	VersionInfoFlags(const Config& config)
 	{
@@ -374,10 +375,11 @@ struct VersionInfoFlags
 		{
 			distributionType = DistributionType::None;
 		}
+		component = config.getBool("cupt::console::actions-preview::show-components");
 	}
 	bool empty() const
 	{
-		return !versionString && distributionType == DistributionType::None;
+		return !versionString && distributionType == DistributionType::None && !component;
 	}
 };
 void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
@@ -400,7 +402,7 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 		{
 			result += version->versionString;
 		}
-		if (flags.distributionType != VersionInfoFlags::DistributionType::None)
+		if ((flags.distributionType != VersionInfoFlags::DistributionType::None) || flags.component)
 		{
 			result += '(';
 			vector< string > chunks;
@@ -411,11 +413,16 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 				{
 					chunk += source.release->archive;
 				}
-				else
+				else if (flags.distributionType == VersionInfoFlags::DistributionType::Codename)
 				{
 					chunk += source.release->codename;
 				}
-				if (std::find(chunks.begin(), chunks.end(), chunk) == chunks.end())
+				if (flags.component && !source.release->component.empty())
+				{
+					chunk += "/";
+					chunk += source.release->component;
+				}
+				if (!chunk.empty() && std::find(chunks.begin(), chunks.end(), chunk) == chunks.end())
 				{
 					chunks.push_back(chunk);
 				}
@@ -989,6 +996,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		("show-reasons,D", "")
 		("show-archives,A", "")
 		("show-codenames,N", "")
+		("show-components,C", "")
 		("show-deps", "")
 		("show-not-preferred", "")
 		("download-only,d", "")
@@ -1078,6 +1086,10 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 			config->getBool("cupt::console::actions-preview::show-codenames"))
 	{
 		fatal2("options 'cupt::console::actions-preview::show-archives' and 'cupt::console::actions-preview::show-codenames' cannot be used together");
+	}
+	if (variables.count("show-components"))
+	{
+		config->setScalar("cupt::console::actions-preview::show-components", "yes");
 	}
 
 	string showNotPreferredConfigValue = config->getString("cupt::console::actions-preview::show-not-preferred");

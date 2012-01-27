@@ -113,6 +113,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::assume-yes", "no" },
 		{ "cupt::console::actions-preview::show-archives", "no" },
 		{ "cupt::console::actions-preview::show-codenames", "no" },
+		{ "cupt::console::actions-preview::show-components", "no" },
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
 		{ "cupt::console::actions-preview::show-size-changes", "no" },
