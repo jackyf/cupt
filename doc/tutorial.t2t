@@ -831,6 +831,31 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  libgomp1 <+16.0KiB>
 ```
 
+- release archives
+
+Use ``--show-archives`` (``-A``) option. Example:
+
+```
+ $ cupt install gcc-4.7 -A
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be installed:
+ 
+ cpp-4.7 [(experimental)]
+ gcc-4.7 [(experimental)]
+ gcc-4.7-base [(experimental)]
+ libitm1 [(experimental)]
+ 
+ The following packages will be upgraded:
+ 
+ libgcc1 [(installed,testing) -> (experimental)]
+ libgomp1 [(installed,testing) -> (experimental)]
+ libquadmath0 [(installed,testing) -> (experimental)]
+```
+
 - change reasons
 
 To show, why resolver did the change(s), use ``--show-reasons`` (``-D``) option.
