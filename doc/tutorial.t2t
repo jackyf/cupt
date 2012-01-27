@@ -856,6 +856,23 @@ Use ``--show-archives`` (``-A``) option. Example:
  libquadmath0 [(installed,testing) -> (experimental)]
 ```
 
+- release codenames
+
+Use ``--show-codenames`` (``-C``) option. Example:
+
+```
+ $ cupt install libstreams0 -C
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [(now,squeeze) -> (wheezy,sid)]
+ libstreams0 [(now,squeeze) -> (wheezy,sid)]
+```
+
 - change reasons
 
 To show, why resolver did the change(s), use ``--show-reasons`` (``-D``) option.
