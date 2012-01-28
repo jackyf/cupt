@@ -17,6 +17,8 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - New option '--show-codenames'.
       - New option '--show-components'.
       - New option '--show-vendors'.
+    - 'search':
+      - Switch off processing index translations in 'names-only' mode.
   * lib:
     - config:
       - The option 'cupt::resolver::score::position-penalty' now defaults to

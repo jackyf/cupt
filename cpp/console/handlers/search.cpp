@@ -50,6 +50,10 @@ int search(Context& context)
 	{
 		config->setScalar("apt::cache::namesonly", "yes");
 	}
+	if (!shellMode && config->getBool("apt::cache::namesonly"))
+	{
+		BinaryVersion::parseInfoOnly = false;
+	}
 
 	if (patterns.empty())
 	{
