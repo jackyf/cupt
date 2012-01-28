@@ -456,23 +456,26 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		warn2("skipped the index '%s'", indexAlias);
 	}
 
-	try  // processing translations if any
+	if (Version::parseInfoOnly) // description is info-only field
 	{
-		auto descriptionTranslationPaths =
-				cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
-		FORIT(pathIt, descriptionTranslationPaths)
+		try  // processing translations if any
 		{
-			string errorString;
-			File file(*pathIt, "r", errorString);
-			if (errorString.empty())
+			auto descriptionTranslationPaths =
+					cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
+			FORIT(pathIt, descriptionTranslationPaths)
 			{
-				processTranslationFile(*pathIt);
+				string errorString;
+				File file(*pathIt, "r", errorString);
+				if (errorString.empty())
+				{
+					processTranslationFile(*pathIt);
+				}
 			}
 		}
-	}
-	catch (Exception&)
-	{
-		warn2("skipped translations of the index '%s'", indexAlias);
+		catch (Exception&)
+		{
+			warn2("skipped translations of the index '%s'", indexAlias);
+		}
 	}
 }
 
