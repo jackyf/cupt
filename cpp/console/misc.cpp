@@ -66,6 +66,7 @@ void parseReleaseLimits(Config& config, const string& includedArchives, const st
 	parseReleaseLimit(config, "codename", includedCodenames, excludedCodenames);
 }
 
+void handleQuietOption(const Config&);
 
 string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, vector< string >& unparsed)
 {
