@@ -174,7 +174,7 @@ int downloadSourcePackage(Context& context)
 
 
 	{ // downloading
-		auto downloadProgress = getDownloadProgress(config);
+		auto downloadProgress = getDownloadProgress(*config);
 		Manager downloadManager(config, downloadProgress);
 		auto downloadError = downloadManager.download(downloadEntities);
 		if (!downloadError.empty())
@@ -340,7 +340,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 
 						string downloadError;
 						{ // downloading
-							auto downloadProgress = getDownloadProgress(config);
+							auto downloadProgress = getDownloadProgress(*config);
 							Manager downloadManager(config, downloadProgress);
 							downloadError = downloadManager.download(
 									vector< Manager::DownloadEntity >{ downloadEntity });

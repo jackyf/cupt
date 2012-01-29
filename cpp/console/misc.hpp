@@ -55,7 +55,7 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 
 void checkNoExtraArguments(const vector< string >& arguments);
 
-shared_ptr< Progress > getDownloadProgress(const shared_ptr< const Config >&);
+shared_ptr< Progress > getDownloadProgress(const Config&);
 
 #endif
 

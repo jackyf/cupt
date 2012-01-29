@@ -301,9 +301,9 @@ void handleQuietOption(const Config& config)
 	}
 }
 
-shared_ptr< Progress > getDownloadProgress(const shared_ptr< const Config >& config)
+shared_ptr< Progress > getDownloadProgress(const Config& config)
 {
-	return shared_ptr< Progress >(config->getBool("quiet") ? new Progress : new ConsoleProgress);
+	return shared_ptr< Progress >(config.getBool("quiet") ? new Progress : new ConsoleProgress);
 }
 
 shared_ptr< Config > Context::getConfig()

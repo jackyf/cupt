@@ -1232,7 +1232,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		// if some solution was found and user has accepted it
 
-		auto downloadProgress = getDownloadProgress(config);
+		auto downloadProgress = getDownloadProgress(*config);
 		cout << __("Performing requested actions:") << endl;
 		try
 		{
@@ -1299,7 +1299,7 @@ int updateReleaseAndIndexData(Context& context)
 
 	auto cache = context.getCache(false, false, false);
 
-	auto downloadProgress = getDownloadProgress(config);
+	auto downloadProgress = getDownloadProgress(*config);
 	Worker worker(config, cache);
 
 	// may throw exception
