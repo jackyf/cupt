@@ -68,7 +68,7 @@ void parseReleaseLimits(Config& config, const string& includedArchives, const st
 
 void handleQuietOption(const Config&);
 
-string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, vector< string >& unparsed)
+string parseCommonOptions(int argc, char** argv, Config& config, vector< string >& unparsed)
 {
 	if (argc == 3)
 	{
@@ -134,34 +134,34 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			}
 			if (variablesMap.count("important"))
 			{
-				config->setScalar("apt::cache::important", "yes");
+				config.setScalar("apt::cache::important", "yes");
 			}
 			if (variablesMap.count("recurse"))
 			{
-				config->setScalar("apt::cache::recursedepends", "yes");
+				config.setScalar("apt::cache::recursedepends", "yes");
 			}
 			if (!targetRelease.empty())
 			{
-				config->setScalar("apt::default-release", targetRelease);
+				config.setScalar("apt::default-release", targetRelease);
 			}
 			if (variablesMap.count("all-versions"))
 			{
-				config->setScalar("apt::cache::allversions", "yes");
+				config.setScalar("apt::cache::allversions", "yes");
 			}
 			if (variablesMap.count("no-all-versions"))
 			{
-				config->setScalar("apt::cache::allversions", "no");
+				config.setScalar("apt::cache::allversions", "no");
 			}
 			if (variablesMap.count("simulate"))
 			{
-				config->setScalar("cupt::worker::simulate", "yes");
+				config.setScalar("cupt::worker::simulate", "yes");
 			}
 			if (variablesMap.count("quiet"))
 			{
-				config->setScalar("quiet", "yes");
-				handleQuietOption(*config);
+				config.setScalar("quiet", "yes");
+				handleQuietOption(config);
 			}
-			parseReleaseLimits(*config, includedArchives, excludedArchives,
+			parseReleaseLimits(config, includedArchives, excludedArchives,
 					includedCodenames, excludedCodenames);
 		}
 
@@ -181,12 +181,12 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			if (regex_match(key, m, listOptionNameRegex))
 			{
 				// this is list option
-				config->setList(m[1], value);
+				config.setList(m[1], value);
 			}
 			else
 			{
 				// regular option
-				config->setScalar(key, value);
+				config.setScalar(key, value);
 			}
 		}
 	}

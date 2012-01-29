@@ -68,7 +68,7 @@ int mainEx(int argc, char* argv[], Context& context, string& command)
 	setlocale(LC_ALL, "");
 	try
 	{
-		command = parseCommonOptions(argc, argv, /* in */ context.getConfig(),
+		command = parseCommonOptions(argc, argv, /* in */ *context.getConfig(),
 				/* out */ context.unparsed);
 		context.argc = argc;
 		context.argv = argv;
