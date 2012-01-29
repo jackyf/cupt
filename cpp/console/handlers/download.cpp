@@ -102,10 +102,8 @@ int downloadSourcePackage(Context& context)
 	{
 		auto versions = selectSourceVersionsWildcarded(cache, *argumentIt);
 
-		FORIT(it, versions)
+		for (const auto& version: versions)
 		{
-			const shared_ptr< const SourceVersion >& version = *it;
-
 			const string& packageName = version->packageName;
 			const string& versionString = version->versionString;
 
