@@ -158,7 +158,7 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			if (variablesMap.count("quiet"))
 			{
 				config->setScalar("quiet", "yes");
-				handleQuietOption(config);
+				handleQuietOption(*config);
 			}
 			parseReleaseLimits(*config, includedArchives, excludedArchives,
 					includedCodenames, excludedCodenames);
@@ -289,9 +289,9 @@ void checkNoExtraArguments(const vector< string >& arguments)
 	}
 }
 
-void handleQuietOption(const shared_ptr< Config >& config)
+void handleQuietOption(const Config& config)
 {
-	if (config->getBool("quiet"))
+	if (config.getBool("quiet"))
 	{
 		if (!freopen("/dev/null", "w", stdout))
 		{
