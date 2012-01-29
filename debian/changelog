@@ -47,7 +47,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
         for recent enough version of dpkg (1.16.1).
     - cache:
       - 'getLocalizedDescriptions': use new 'Description-md5' binary version
-        field if available.
+        field if available. (Closes: #657872)
       - Don't preprocess index localization files when Version::parseInfoOnly
         variable is false.
 
