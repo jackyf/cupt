@@ -257,9 +257,8 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 	{
 		auto versions = selectBinaryVersionsWildcarded(cache, *argumentIt);
 
-		FORIT(versionIt, versions)
+		for (const auto& version: versions)
 		{
-			const shared_ptr< const BinaryVersion >& version = *versionIt;
 			string localTargetPath;
 			if (type == ChangelogOrCopyright::Changelog)
 			{
