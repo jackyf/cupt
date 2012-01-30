@@ -138,9 +138,8 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 
 	auto versions = selectSourceVersionsWildcarded(cache, packageExpression);
 
-	FORIT(versionIt, versions)
+	for (const auto& version: versions)
 	{
-		const shared_ptr< const SourceVersion >& version = *versionIt;
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
 				.toRelationLine(architecture), ManagePackages::Satisfy);
 		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
