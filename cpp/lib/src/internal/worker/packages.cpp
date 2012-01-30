@@ -548,9 +548,8 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	}
 
 	auto installedVersions = cache->getInstalledVersions();
-	FORIT(installedVersionIt, installedVersions)
+	for (const auto& installedVersion: installedVersions)
 	{
-		const shared_ptr< const BinaryVersion > installedVersion = *installedVersionIt;
 		const string& packageName = installedVersion->packageName;
 		if (blacklistedPackageNames.count(packageName))
 		{
