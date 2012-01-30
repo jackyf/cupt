@@ -880,10 +880,8 @@ int findDependencyChain(Context& context)
 			{
 				// insert recursive depends into queue
 				auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
-				FORIT(newVersionIt, satisfyingVersions)
+				for (const auto& newVersion: satisfyingVersions)
 				{
-					const shared_ptr< const BinaryVersion >& newVersion = *newVersionIt;
-
 					auto insertResult = links.insert(make_pair(newVersion, PathEntry()));
 					if (insertResult.second)
 					{
