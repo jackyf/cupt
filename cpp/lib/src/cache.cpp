@@ -189,10 +189,8 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< 
 		}
 	}
 
-	size_t versionCount = versions.size();
-	for (size_t i = 0; i < versionCount; ++i)
+	for (const auto& version: versions)
 	{
-		shared_ptr< const Version >& version = versions[i];
 		result.push_back(PinnedVersion(version, __impl->getPin(version, installedVersionString)));
 	}
 
