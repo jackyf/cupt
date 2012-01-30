@@ -1,4 +1,4 @@
-cupt (2.4.0~) UNRELEASED; urgency=low
+cupt (2.4.0) unstable; urgency=low
 
   * Switched the compiler from g++ 4.5 to g++ 4.6.
     - The compiler now can generate trivial move-constructors itself.
@@ -51,7 +51,7 @@ cupt (2.4.0~) UNRELEASED; urgency=low
       - Don't preprocess index localization files when Version::parseInfoOnly
         variable is false.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 30 Jan 2012 21:37:15 +0200
 
 cupt (2.3.3) unstable; urgency=low
 
