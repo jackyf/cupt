@@ -42,11 +42,9 @@ NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config,
 void NativeResolverImpl::__import_installed_versions()
 {
 	auto versions = __cache->getInstalledVersions();
-	FORIT(versionIt, versions)
+	for (const auto& version: versions)
 	{
 		// just moving versions, don't try to install or remove some dependencies
-		const shared_ptr< const BinaryVersion >& version = *versionIt;
-
 		__old_packages[version->packageName] = version;
 		__initial_packages[version->packageName].version = version;
 	}
