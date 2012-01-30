@@ -39,7 +39,7 @@ WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_pt
 	__umask = umask(0022);
 
 	string lockPath = _config->getPath("cupt::directory::state") + "/lock";
-	__lock = new Lock(_config, lockPath);
+	__lock = new Lock(*_config, lockPath);
 }
 
 WorkerBase::~WorkerBase()

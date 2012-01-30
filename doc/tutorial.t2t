@@ -27,8 +27,7 @@ The aim of this manual is to describe the all features Cupt package manager has
 to manage the system, from the most basics to very advanced tuning. Please
 submit your proposals/patches when you see some use case is not covered.
 
-This manual was written for the second major version of Cupt (2.x branch). Most
-of it is however applicable to first major version (1.x branch) too.
+This manual was written for the second major version of Cupt (2.x branch).
 
 == Disadvantages and advantages ==
 
@@ -647,12 +646,39 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
+== Conditional installation ==
+
+Starting with Cupt 2.4, there is a special subcommand ``iii`` ("install if
+installed") for installing new versions of already installed packages while not
+touching uninstalled packages. It behaves like ``install``, but ignores
+arguments corresponding to not installed packages.
+
+Examples:
+
++ You want to upgrade a certain package (say, ``git``) on multiple
+machines, where some of these machines have that package installed and some
+not. If you have a mechanism to send one command to all machines (say, ssh
+multiplexer), you can send the command
+
+``` cupt update && cupt iii git
+
+The second part of the command will do nothing on the machines where ``git`` is
+not installed and will install the preferred version of the package ``git``
+where this package was installed.
+
++ You have an X server and some X video drivers installed, and you want to
+upgrade all installed drivers. For that you can do
+
+``` cupt iii xserver-xorg-video*
+
+
+
 == Overriding package management actions ==
 
 === Action override options ===
 
 You can use special positional options ``--install``, ``--remove``, ``--purge``,
-``--satisfy`` and ``--unsatisfy`` to override the specified action until the
+``--iii``, ``--satisfy`` and ``--unsatisfy`` to override the specified action until the
 end of the arguments or the next action override option.
 
 Example:
@@ -803,6 +829,84 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  libcloog-ppl0
  libgcc1 <+8192B>
  libgomp1 <+16.0KiB>
+```
+
+- release archives
+
+Use ``--show-archives`` (``-A``) option. Example:
+
+```
+ $ cupt install gcc-4.7 -A
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be installed:
+ 
+ cpp-4.7 [(experimental)]
+ gcc-4.7 [(experimental)]
+ gcc-4.7-base [(experimental)]
+ libitm1 [(experimental)]
+ 
+ The following packages will be upgraded:
+ 
+ libgcc1 [(installed,testing) -> (experimental)]
+ libgomp1 [(installed,testing) -> (experimental)]
+ libquadmath0 [(installed,testing) -> (experimental)]
+```
+
+- release codenames
+
+Use ``--show-codenames`` (``-N``) option. Example:
+
+```
+ $ cupt install libstreams0 -N
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [(now,squeeze) -> (wheezy,sid)]
+ libstreams0 [(now,squeeze) -> (wheezy,sid)]
+```
+
+- release components
+
+Use ``--show-components`` (``-C``) option. It's mostly useful in conjunction
+with ``--show-codenames`` or ``--show-archives``. Example:
+
+```
+ $ cupt install libstreams0 -CN
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
+ libstreams0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
+```
+
+- release vendors
+
+Use ``--show-vendors`` (``-O``) option. Useful if you have repositories of more
+than one vendor and usually in conjuction with ``-V``, ``-A`` or ``-N``. Example:
+
+```
+ $ cupt install libstreams0 -VNO
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [0.7.2-1+b1(dpkg:now,Debian:squeeze) -> 0.7.7-1(Debian:wheezy,Debian:sid)]
+ libstreams0 [0.7.2-1+b1(dpkg:now,Debian:squeeze) -> 0.7.7-1(Debian:wheezy,Debian:sid)]
 ```
 
 - change reasons
@@ -1780,11 +1884,12 @@ make installed packages set correct after making the changes user demand.
 In the most cases, there are several solutions to a problem. To choose
 amongst them, resolver assign **scores** to all of them.
 
-Score is an integer (positive or negative) and is a sum of version
-pin difference (for uninstalled version, zero pin is assumed) and an action
-modifier. Action modifiers are action type-specific addendums and are
-controlled by the option group ``cupt::resolver::score::``//X// (see the full
-list of them in //cupt.conf(5)//).
+Score is an integer (positive or negative) and is a sum of version weight
+difference and an action modifier. Version weight, or "normalized version
+priority", is a version pin value minus a default pin for a preferred versions.
+Action modifiers are action type-specific addendums and are controlled by the
+option group ``cupt::resolver::score::``//X// (see the full list of them in
+//cupt.conf(5)//).
 
 For native resolver, the negative scores indicate "negative" changes, and
 positive scores indicate "positive" changes. When several alternative solutions

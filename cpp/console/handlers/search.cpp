@@ -50,6 +50,10 @@ int search(Context& context)
 	{
 		config->setScalar("apt::cache::namesonly", "yes");
 	}
+	if (!shellMode && config->getBool("apt::cache::namesonly"))
+	{
+		BinaryVersion::parseInfoOnly = false;
+	}
 
 	if (patterns.empty())
 	{
@@ -112,9 +116,8 @@ int search(Context& context)
 			auto versions = package->getVersions();
 
 			set< string > printedShortDescriptions;
-			FORIT(versionIt, versions)
+			for (const auto& v: versions)
 			{
-				shared_ptr< const BinaryVersion >& v = *versionIt;
 				bool matched = true;
 
 				// TODO: getLocalizedDescriptions() perfomance fixes

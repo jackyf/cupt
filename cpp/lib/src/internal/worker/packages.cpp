@@ -548,9 +548,8 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	}
 
 	auto installedVersions = cache->getInstalledVersions();
-	FORIT(installedVersionIt, installedVersions)
+	for (const auto& installedVersion: installedVersions)
 	{
-		const shared_ptr< const BinaryVersion > installedVersion = *installedVersionIt;
 		const string& packageName = installedVersion->packageName;
 		if (blacklistedPackageNames.count(packageName))
 		{
@@ -1676,7 +1675,7 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 	_logger->log(Logger::Subsystem::Packages, 2, "cleaning downloaded archives");
 	try
 	{
-		internal::Lock archivesLock(_config, _get_archives_directory() + "/lock");
+		internal::Lock archivesLock(*_config, _get_archives_directory() + "/lock");
 
 		bool simulating = _config->getBool("cupt::worker::simulate");
 		FORIT(it, changeset.downloads)
@@ -1982,7 +1981,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		string downloadResult;
 		{
-			Lock lock(_config, archivesDirectory + "/lock");
+			Lock lock(*_config, archivesDirectory + "/lock");
 
 			uint64_t totalDownloadSize = 0;
 			FORIT(it, downloads)
@@ -2023,6 +2022,29 @@ string __get_dpkg_action_log(const InnerActionGroup& actionGroup,
 		}
 	}
 	return join(" & ", subResults);
+}
+
+bool __defer_triggers(const Config& config, const Cache& cache)
+{
+	const string& optionName = "cupt::worker::defer-triggers";
+	if (config.getString(optionName) == "auto")
+	{
+		auto dpkgPackage = cache.getBinaryPackage("dpkg");
+		if (!dpkgPackage)
+		{
+			fatal2("internal error: no 'dpkg' binary package available");
+		}
+		auto dpkgInstalledVersion = dpkgPackage->getInstalledVersion();
+		if (!dpkgInstalledVersion)
+		{
+			fatal2("internal error: no installed version for 'dpkg' binary package");
+		}
+		return (compareVersionStrings(dpkgInstalledVersion->versionString, "1.16.1") != -1); // >=
+	}
+	else
+	{
+		return config.getBool(optionName);
+	}
 }
 
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
@@ -2072,7 +2094,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		}
 	}
 
-	auto deferTriggers = _config->getBool("cupt::worker::defer-triggers");
+	bool deferTriggers = __defer_triggers(*_config, *_cache);
 
 	__do_dpkg_pre_actions();
 

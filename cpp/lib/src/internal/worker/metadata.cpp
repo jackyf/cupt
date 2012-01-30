@@ -937,7 +937,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 
 		if (!simulating)
 		{
-			lock.reset(new internal::Lock(_config, lockFilePath));
+			lock.reset(new internal::Lock(*_config, lockFilePath));
 		}
 
 		{ // run pre-actions

@@ -31,24 +31,6 @@ PackageEntry::PackageEntry()
 	: sticked(false), autoremoved(false)
 {}
 
-PackageEntry::PackageEntry(PackageEntry&& other)
-	: sticked(other.sticked), autoremoved(other.autoremoved),
-	introducedBy(other.introducedBy)
-{
-	brokenSuccessors.swap(other.brokenSuccessors);
-	rejectedConflictors.swap(other.rejectedConflictors);
-}
-
-PackageEntry& PackageEntry::operator=(PackageEntry&& other)
-{
-	sticked = other.sticked;
-	autoremoved = other.autoremoved;
-	introducedBy = other.introducedBy;
-	brokenSuccessors.swap(other.brokenSuccessors);
-	rejectedConflictors.swap(other.rejectedConflictors);
-	return *this;
-}
-
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
 {
 	auto findResult = std::find(rejectedConflictors.begin(),
@@ -437,23 +419,19 @@ vector< const dg::Element* > Solution::getElements() const
 	return result;
 }
 
-vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::getBrokenPairs() const
+void Solution::getBrokenPairs(const std::function< void (BrokenPairType&&) >& callback) const
 {
-	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > result;
 	auto isEligible = [](PackageEntryMap::const_iterator_t it) -> bool
 	{
 		return !it->second.brokenSuccessors.empty();
 	};
-	auto processEntry = [this, &result, &isEligible](PackageEntryMap::const_iterator_t it)
+	auto processEntry = [this, &isEligible, &callback](PackageEntryMap::const_iterator_t it)
 	{
-		if (isEligible(it))
+		if (__removed_entries->find(it->first) == __removed_entries->end())
 		{
-			if (__removed_entries->find(it->first) == __removed_entries->end())
+			FORIT(brokenSuccessorIt, it->second.brokenSuccessors)
 			{
-				FORIT(brokenSuccessorIt, it->second.brokenSuccessors)
-				{
-					result.push_back(make_pair(it->first, *brokenSuccessorIt));
-				}
+				callback(make_pair(it->first, *brokenSuccessorIt));
 			}
 		}
 	};
@@ -463,46 +441,59 @@ vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::ge
 	auto ownIt = __added_entries->begin();
 	auto ownEnd = __added_entries->end();
 
-	// it's, surprisingly, several times faster than std::set_union due to no indirection
-	while (masterIt != masterEnd && ownIt != ownEnd)
+	--masterIt;
+	--ownIt;
 	{
+		goto both;
+	compare:
 		// speeding up a bit, usually most of masterIt won't be included anyway
 		if (!isEligible(masterIt))
 		{
-			++masterIt;
-			continue;
+			goto master;
 		}
-
 		if (masterIt->first < ownIt->first)
 		{
 			processEntry(masterIt);
-			++masterIt;
+			goto master;
 		}
 		else if (masterIt->first > ownIt->first)
 		{
 			processEntry(ownIt);
-			++ownIt;
+			goto own;
 		}
 		else // equal keys
 		{
 			// own entry overrides master entry
 			processEntry(ownIt);
-			++masterIt;
-			++ownIt;
+			goto both;
 		}
-	}
-	while (masterIt != masterEnd)
-	{
+	both:
+		++masterIt;
+		++ownIt;
+		if (masterIt != masterEnd)
+		{
+			if (ownIt != ownEnd) goto compare; else goto only_master;
+		}
+		else
+		{
+			if (ownIt != ownEnd) goto only_own; else goto end;
+		}
+	master:
+		++masterIt;
+		if (masterIt != masterEnd) goto compare; else goto only_own;
+	own:
+		++ownIt;
+		if (ownIt != ownEnd) goto compare; else goto only_master;
+	only_master:
 		processEntry(masterIt);
 		++masterIt;
-	}
-	while (ownIt != ownEnd)
-	{
+		if (masterIt != masterEnd) goto only_master; else goto end;
+	only_own:
 		processEntry(ownIt);
 		++ownIt;
+		if (ownIt != ownEnd) goto only_own; else goto end;
+	end:;
 	}
-
-	return result;
 }
 
 const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const

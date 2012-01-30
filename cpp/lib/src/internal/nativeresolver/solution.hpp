@@ -77,9 +77,11 @@ struct PackageEntry
 	IntroducedBy introducedBy;
 
 	PackageEntry();
-	PackageEntry(PackageEntry&&);
+	PackageEntry(PackageEntry&&) = default;
+	PackageEntry(const PackageEntry&) = default;
 
-	PackageEntry& operator=(PackageEntry&&);
+	PackageEntry& operator=(PackageEntry&&) = default;
+	PackageEntry& operator=(const PackageEntry&) = default;
 
 	bool isModificationAllowed(const dg::Element*) const;
 };
@@ -109,7 +111,9 @@ class Solution
 
 	void prepare();
 	vector< const dg::Element* > getElements() const;
-	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > getBrokenPairs() const;
+
+	typedef pair< const dg::Element*, PackageEntry::BrokenSuccessor > BrokenPairType;
+	void getBrokenPairs(const std::function< void (BrokenPairType&&) >&) const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 };

@@ -271,12 +271,9 @@ bool __is_version_array_intersects_with_packages(
 		const vector< shared_ptr< const BinaryVersion > >& versions,
 		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
 {
-	FORIT(versionIt, versions)
+	for (const auto& version: versions)
 	{
-		const shared_ptr< const BinaryVersion >& version = *versionIt;
-		const string& packageName = version->packageName;
-
-		auto oldPackageIt = oldPackages.find(packageName);
+		auto oldPackageIt = oldPackages.find(version->packageName);
 		if (oldPackageIt == oldPackages.end())
 		{
 			continue;
@@ -296,9 +293,9 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 		const RelationExpression& relationExpression)
 {
 	auto relationExpressionString = relationExpression.getHashString();
-	FORIT(candidateRelationExpressionIt, version->relations[dependencyType])
+	for (const RelationExpression& candidateRelationExpression: version->relations[dependencyType])
 	{
-		auto candidateString = candidateRelationExpressionIt->getHashString();
+		auto candidateString = candidateRelationExpression.getHashString();
 		if (relationExpressionString == candidateString)
 		{
 			return true;

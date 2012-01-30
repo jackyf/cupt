@@ -68,7 +68,7 @@ int mainEx(int argc, char* argv[], Context& context, string& command)
 	setlocale(LC_ALL, "");
 	try
 	{
-		command = parseCommonOptions(argc, argv, /* in */ context.getConfig(),
+		command = parseCommonOptions(argc, argv, /* in */ *context.getConfig(),
 				/* out */ context.unparsed);
 		context.argc = argc;
 		context.argv = argv;
@@ -123,6 +123,7 @@ void showHelp(const char* argv0)
 		{ "reinstall", __("reinstalls binary packages(s)") },
 		{ "remove", __("removes binary package(s)") },
 		{ "purge", __("removes binary package(s) along with their configuration files") },
+		{ "iii", __("\"install if installed\": upgrades/downgrades binary packages(s)") },
 		{ "satisfy", __("performs actions to make relation expressions satisfied") },
 		{ "safe-upgrade", __("upgrades the system without removing non-automatically installed packages") },
 		{ "full-upgrade", __("upgrades the system with possible removal of some packages") },

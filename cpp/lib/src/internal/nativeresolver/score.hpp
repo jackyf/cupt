@@ -50,6 +50,7 @@ class ScoreManager
 	shared_ptr< const Cache > __cache;
 	ssize_t __subscore_multipliers[ScoreChange::SubScore::Count];
 	ssize_t __quality_adjustment;
+	ssize_t __preferred_version_default_pin;
 
 	ssize_t __get_version_weight(const shared_ptr< const BinaryVersion >& version) const;
  public:

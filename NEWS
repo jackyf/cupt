@@ -1,3 +1,14 @@
+2.4
+ - New subcommand 'iii'.
+ - New options '--show-archives', '--show-codenames', '--show-components',
+   '--show-vendors' for package management actions.
+ - New option '--show-dates' for 'policy' and 'policysrc' subcommands.
+ - Use normalized version priority in resolver score calculations.
+ - Enable deferring dpkg triggers (by default) if dpkg 1.16.1 or later is
+   detected.
+ - Support new index localization scheme (new 'Description-md5' field in
+   binary package indexes).
+
 2.3
  - New options '--include-archives', '--exclude-archives',
    '--include-codenames', --exclude-codenames'.

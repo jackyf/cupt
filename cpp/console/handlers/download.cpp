@@ -102,10 +102,8 @@ int downloadSourcePackage(Context& context)
 	{
 		auto versions = selectSourceVersionsWildcarded(cache, *argumentIt);
 
-		FORIT(it, versions)
+		for (const auto& version: versions)
 		{
-			const shared_ptr< const SourceVersion >& version = *it;
-
 			const string& packageName = version->packageName;
 			const string& versionString = version->versionString;
 
@@ -174,7 +172,7 @@ int downloadSourcePackage(Context& context)
 
 
 	{ // downloading
-		auto downloadProgress = getDownloadProgress(config);
+		auto downloadProgress = getDownloadProgress(*config);
 		Manager downloadManager(config, downloadProgress);
 		auto downloadError = downloadManager.download(downloadEntities);
 		if (!downloadError.empty())
@@ -259,9 +257,8 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 	{
 		auto versions = selectBinaryVersionsWildcarded(cache, *argumentIt);
 
-		FORIT(versionIt, versions)
+		for (const auto& version: versions)
 		{
-			const shared_ptr< const BinaryVersion >& version = *versionIt;
 			string localTargetPath;
 			if (type == ChangelogOrCopyright::Changelog)
 			{
@@ -340,7 +337,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 
 						string downloadError;
 						{ // downloading
-							auto downloadProgress = getDownloadProgress(config);
+							auto downloadProgress = getDownloadProgress(*config);
 							Manager downloadManager(config, downloadProgress);
 							downloadError = downloadManager.download(
 									vector< Manager::DownloadEntity >{ downloadEntity });

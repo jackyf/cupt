@@ -456,23 +456,26 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		warn2("skipped the index '%s'", indexAlias);
 	}
 
-	try  // processing translations if any
+	if (Version::parseInfoOnly) // description is info-only field
 	{
-		auto descriptionTranslationPaths =
-				cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
-		FORIT(pathIt, descriptionTranslationPaths)
+		try  // processing translations if any
 		{
-			string errorString;
-			File file(*pathIt, "r", errorString);
-			if (errorString.empty())
+			auto descriptionTranslationPaths =
+					cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
+			FORIT(pathIt, descriptionTranslationPaths)
 			{
-				processTranslationFile(*pathIt);
+				string errorString;
+				File file(*pathIt, "r", errorString);
+				if (errorString.empty())
+				{
+					processTranslationFile(*pathIt);
+				}
 			}
 		}
-	}
-	catch (Exception&)
-	{
-		warn2("skipped translations of the index '%s'", indexAlias);
+		catch (Exception&)
+		{
+			warn2("skipped translations of the index '%s'", indexAlias);
+		}
 	}
 }
 
@@ -494,6 +497,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
 	PrePackageRecord prePackageRecord;
+	prePackageRecord.offset = 0;
 	prePackageRecord.releaseInfoAndFile = &*(releaseInfoAndFileStorage.rbegin());
 
 	try
@@ -505,7 +509,13 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		{
 			const char* buf;
 			size_t size;
-			file->rawGetLine(buf, size);
+			auto getNextLine = [&file, &buf, &size, &prePackageRecord]
+			{
+				file->rawGetLine(buf, size);
+				prePackageRecord.offset += size;
+			};
+
+			getNextLine();
 			if (file->eof())
 			{
 				break;
@@ -528,16 +538,14 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			catch (Exception&)
 			{
 				warn2("discarding this package version from index file '%s'", path);
-				while (file->rawGetLine(buf, size), size > 1) {}
+				while (getNextLine(), size > 1) {}
 				continue;
 			}
-
-			prePackageRecord.offset = file->tell();
 
 			auto it = prePackagesStorage->insert(pairForInsertion).first;
 			it->second.push_back(prePackageRecord);
 
-			while (file->rawGetLine(buf, size), size > 1)
+			while (getNextLine(), size > 1)
 			{
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
 				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
@@ -640,8 +648,11 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const stri
 
 pair< string, string > CacheImpl::getLocalizedDescriptions(const shared_ptr< const BinaryVersion >& version) const
 {
-	string source = version->shortDescription + "\n" + version->longDescription;
-	string sourceHash = HashSums::getHashOfString(HashSums::MD5, source);
+	static const string descriptionHashFieldName = "Description-md5";
+
+	const string& sourceHash = (version->others && version->others->count(descriptionHashFieldName)) ?
+			version->others->find(descriptionHashFieldName)->second :
+			HashSums::getHashOfString(HashSums::MD5, version->shortDescription + "\n" + version->longDescription);
 
 	auto it = translations.find(sourceHash);
 	if (it != translations.end())

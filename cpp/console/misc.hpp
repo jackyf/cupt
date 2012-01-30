@@ -47,7 +47,7 @@ class Context
 };
 std::function< int (Context&) > getHandler(const string&);
 
-string parseCommonOptions(int argc, char** argv, shared_ptr< Config >, vector< string >& unparsed);
+string parseCommonOptions(int argc, char** argv, Config&, vector< string >& unparsed);
 bpo::variables_map parseOptions(const Context& context, bpo::options_description options,
 		vector< string >& arguments,
 		std::function< pair< string, string > (const string&) > extraParser =
@@ -55,9 +55,7 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 
 void checkNoExtraArguments(const vector< string >& arguments);
 
-void handleQuietOption(const shared_ptr< Config >& config);
-
-shared_ptr< Progress > getDownloadProgress(const shared_ptr< const Config >&);
+shared_ptr< Progress > getDownloadProgress(const Config&);
 
 #endif
 

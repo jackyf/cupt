@@ -1,3 +1,58 @@
+cupt (2.4.0~) UNRELEASED; urgency=low
+
+  * Switched the compiler from g++ 4.5 to g++ 4.6.
+    - The compiler now can generate trivial move-constructors itself.
+      Patch by Jonathan Nieder. (Closes: #647142)
+  * console:
+    - 'policy', 'policysrc':
+      - New option '--show-dates'.
+    - 'show':
+      - Don't output 'Description-md5' field.
+    - New subcommand 'iii'.
+    - Actions preview:
+      - Don't show size changes for 'not preferred' group.
+      - Don't show reasons for 'not preferred' group.
+    - Managing packages:
+      - New option '--show-archives'.
+      - New option '--show-codenames'.
+      - New option '--show-components'.
+      - New option '--show-vendors'.
+    - 'search':
+      - Switch off processing index translations in 'names-only' mode.
+  * lib:
+    - config:
+      - The option 'cupt::resolver::score::position-penalty' now defaults to
+        -2 (was -20).
+      - Adjusted default values of options
+        'cupt::resolver::score::{new,removal,quality-adjustment}' for changes
+        in the score calculation (see below).
+      - New (and default from now on) option value 'auto' for the option
+        'cupt::worker::defer-triggers'.
+      - New option 'cupt::console::actions-preview::show-versions'.
+      - New option 'cupt::console::actions-preview::show-size-changes'.
+      - New option 'cupt::console::actions-preview::show-archives'.
+      - New option 'cupt::console::actions-preview::show-codenames'.
+      - New option 'cupt::console::actions-preview::show-components'.
+      - New option 'cupt::console::actions-preview::show-vendors'.
+    - system/resolvers/native:
+      - Use normalized version priority in score calculations.
+      - If a solution to a problem is an "unsatisfied" element, partially
+        stick all competing solution elements, not only preceding ones.
+      - Skip a solution if some element to auto-remove cannot be removed
+        due to being (partially) sticked. (Closes: #641473)
+      - Removing automatically installed packages: if several automatically
+        installed packages satisfy the relation, leave only first of them.
+    - system/worker:
+      - If the option 'cupt::worker::defer-triggers' is set to 'auto', check
+        for recent enough version of dpkg (1.16.1).
+    - cache:
+      - 'getLocalizedDescriptions': use new 'Description-md5' binary version
+        field if available. (Closes: #657872)
+      - Don't preprocess index localization files when Version::parseInfoOnly
+        variable is false.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Dec 2011 11:02:17 +0200
+
 cupt (2.3.3) unstable; urgency=low
 
   * console:

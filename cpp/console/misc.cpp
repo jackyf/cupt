@@ -66,8 +66,9 @@ void parseReleaseLimits(Config& config, const string& includedArchives, const st
 	parseReleaseLimit(config, "codename", includedCodenames, excludedCodenames);
 }
 
+void handleQuietOption(const Config&);
 
-string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, vector< string >& unparsed)
+string parseCommonOptions(int argc, char** argv, Config& config, vector< string >& unparsed)
 {
 	if (argc == 3)
 	{
@@ -133,34 +134,34 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			}
 			if (variablesMap.count("important"))
 			{
-				config->setScalar("apt::cache::important", "yes");
+				config.setScalar("apt::cache::important", "yes");
 			}
 			if (variablesMap.count("recurse"))
 			{
-				config->setScalar("apt::cache::recursedepends", "yes");
+				config.setScalar("apt::cache::recursedepends", "yes");
 			}
 			if (!targetRelease.empty())
 			{
-				config->setScalar("apt::default-release", targetRelease);
+				config.setScalar("apt::default-release", targetRelease);
 			}
 			if (variablesMap.count("all-versions"))
 			{
-				config->setScalar("apt::cache::allversions", "yes");
+				config.setScalar("apt::cache::allversions", "yes");
 			}
 			if (variablesMap.count("no-all-versions"))
 			{
-				config->setScalar("apt::cache::allversions", "no");
+				config.setScalar("apt::cache::allversions", "no");
 			}
 			if (variablesMap.count("simulate"))
 			{
-				config->setScalar("cupt::worker::simulate", "yes");
+				config.setScalar("cupt::worker::simulate", "yes");
 			}
 			if (variablesMap.count("quiet"))
 			{
-				config->setScalar("quiet", "yes");
+				config.setScalar("quiet", "yes");
 				handleQuietOption(config);
 			}
-			parseReleaseLimits(*config, includedArchives, excludedArchives,
+			parseReleaseLimits(config, includedArchives, excludedArchives,
 					includedCodenames, excludedCodenames);
 		}
 
@@ -180,12 +181,12 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			if (regex_match(key, m, listOptionNameRegex))
 			{
 				// this is list option
-				config->setList(m[1], value);
+				config.setList(m[1], value);
 			}
 			else
 			{
 				// regular option
-				config->setScalar(key, value);
+				config.setScalar(key, value);
 			}
 		}
 	}
@@ -254,6 +255,7 @@ std::function< int (Context&) > getHandler(const string& command)
 		{ "safe-upgrade", [](Context& c) -> int { return managePackages(c, ManagePackages::SafeUpgrade); } },
 		{ "full-upgrade", [](Context& c) -> int { return managePackages(c, ManagePackages::FullUpgrade); } },
 		{ "reinstall", [](Context& c) -> int { return managePackages(c, ManagePackages::Reinstall); } },
+		{ "iii", [](Context& c) -> int { return managePackages(c, ManagePackages::InstallIfInstalled); } },
 		{ "satisfy", [](Context& c) -> int { return managePackages(c, ManagePackages::Satisfy); } },
 		{ "build-dep", [](Context& c) -> int { return managePackages(c, ManagePackages::BuildDepends); } },
 		{ "dist-upgrade", &distUpgrade },
@@ -288,9 +290,9 @@ void checkNoExtraArguments(const vector< string >& arguments)
 	}
 }
 
-void handleQuietOption(const shared_ptr< Config >& config)
+void handleQuietOption(const Config& config)
 {
-	if (config->getBool("quiet"))
+	if (config.getBool("quiet"))
 	{
 		if (!freopen("/dev/null", "w", stdout))
 		{
@@ -299,9 +301,9 @@ void handleQuietOption(const shared_ptr< Config >& config)
 	}
 }
 
-shared_ptr< Progress > getDownloadProgress(const shared_ptr< const Config >& config)
+shared_ptr< Progress > getDownloadProgress(const Config& config)
 {
-	return shared_ptr< Progress >(config->getBool("quiet") ? new Progress : new ConsoleProgress);
+	return shared_ptr< Progress >(config.getBool("quiet") ? new Progress : new ConsoleProgress);
 }
 
 shared_ptr< Config > Context::getConfig()
