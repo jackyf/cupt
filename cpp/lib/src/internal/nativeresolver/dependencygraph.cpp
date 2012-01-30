@@ -273,9 +273,7 @@ bool __is_version_array_intersects_with_packages(
 {
 	for (const auto& version: versions)
 	{
-		const string& packageName = version->packageName;
-
-		auto oldPackageIt = oldPackages.find(packageName);
+		auto oldPackageIt = oldPackages.find(version->packageName);
 		if (oldPackageIt == oldPackages.end())
 		{
 			continue;
