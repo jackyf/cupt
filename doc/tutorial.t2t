@@ -894,7 +894,7 @@ with ``--show-codenames`` or ``--show-archives``. Example:
 - release vendors
 
 Use ``--show-vendors`` (``-O``) option. Useful if you have repositories of more
-than one vendor and usually in conjuction with ``-V``, ``-A`` or ``-N``. Example:
+than one vendor and usually in conjunction with ``-V``, ``-A`` or ``-N``. Example:
 
 ```
  $ cupt install libstreams0 -VNO
