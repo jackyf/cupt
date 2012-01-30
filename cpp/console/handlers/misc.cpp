@@ -123,10 +123,8 @@ int showBinaryVersions(Context& context)
 			}
 		}
 
-		FORIT(it, versions)
+		for (const auto& version: versions)
 		{
-			const shared_ptr< const BinaryVersion >& version = *it;
-
 			auto packageName = version->packageName;
 			p(__("Package"), packageName);
 			p(__("Version"), version->versionString);
