@@ -271,9 +271,8 @@ bool __is_version_array_intersects_with_packages(
 		const vector< shared_ptr< const BinaryVersion > >& versions,
 		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
 {
-	FORIT(versionIt, versions)
+	for (const auto& version: versions)
 	{
-		const shared_ptr< const BinaryVersion >& version = *versionIt;
 		const string& packageName = version->packageName;
 
 		auto oldPackageIt = oldPackages.find(packageName);
