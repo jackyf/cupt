@@ -819,9 +819,8 @@ int findDependencyChain(Context& context)
 	{
 		// the whole system
 		auto installedVersions = cache->getInstalledVersions();
-		FORIT(installedVersionIt, installedVersions)
+		for (const auto& installedVersion: installedVersions)
 		{
-			const shared_ptr< const BinaryVersion >& installedVersion = *installedVersionIt;
 			if (!cache->isAutomaticallyInstalled(installedVersion->packageName))
 			{
 				addStartingVersion(installedVersion);
