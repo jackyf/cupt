@@ -44,14 +44,13 @@ typedef Worker::Action WA;
 const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
 
 
-static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config >& config,
-		Resolver& resolver)
+static void preProcessMode(ManagePackages::Mode& mode, Config& config, Resolver& resolver)
 {
 	if (mode == ManagePackages::FullUpgrade || mode == ManagePackages::SafeUpgrade)
 	{
 		if (mode == ManagePackages::SafeUpgrade)
 		{
-			config->setScalar("cupt::resolver::no-remove", "yes");
+			config.setScalar("cupt::resolver::no-remove", "yes");
 		}
 		resolver.upgrade();
 
@@ -61,8 +60,8 @@ static void preProcessMode(ManagePackages::Mode& mode, const shared_ptr< Config 
 	}
 	else if (mode == ManagePackages::Satisfy || mode == ManagePackages::BuildDepends)
 	{
-		config->setScalar("apt::install-recommends", "no");
-		config->setScalar("apt::install-suggests", "no");
+		config.setScalar("apt::install-recommends", "no");
+		config.setScalar("apt::install-suggests", "no");
 	}
 	else if (mode == ManagePackages::BuildDepends)
 	{
@@ -1187,7 +1186,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	cout << __("Scheduling requested actions... ") << endl;
 
-	preProcessMode(mode, config, *resolver);
+	preProcessMode(mode, *config, *resolver);
 
 	set< string > purgedPackageNames;
 	processPackageExpressions(config, cache, mode, *resolver, packageExpressions, purgedPackageNames);
