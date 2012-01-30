@@ -263,10 +263,8 @@ int showSourceVersions(Context& context)
 			versions = selectSourceVersionsWildcarded(cache, packageExpression);
 		}
 
-		FORIT(it, versions)
+		for (const auto& version: versions)
 		{
-			const shared_ptr< const SourceVersion >& version = *it;
-
 			auto packageName = version->packageName;
 			p(__("Package"), packageName);
 			p(__("Binary"), join(", ", version->binaryPackageNames));
