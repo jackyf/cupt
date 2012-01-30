@@ -482,15 +482,13 @@ int showRelations(Context& context, bool reverse)
 						auto packageCandidate = cache->getBinaryPackage(*packageCandidateNameIt);
 						auto candidateVersions = packageCandidate->getVersions();
 
-						FORIT(candidateVersionIt, candidateVersions)
+						for (const auto& candidateVersion: candidateVersions)
 						{
-							const shared_ptr< const BinaryVersion > candidateVersion = *candidateVersionIt;
 							FORIT(relationExpressionIt, candidateVersion->relations[*relationGroupIt])
 							{
 								auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
-								FORIT(satisfyingVersionIt, satisfyingVersions)
+								for (const auto& satisfyingVersion: satisfyingVersions)
 								{
-									const shared_ptr< const BinaryVersion >& satisfyingVersion = *satisfyingVersionIt;
 									if (*satisfyingVersion == *version)
 									{
 										// positive result
