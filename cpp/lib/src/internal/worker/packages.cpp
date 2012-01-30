@@ -1676,7 +1676,7 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 	_logger->log(Logger::Subsystem::Packages, 2, "cleaning downloaded archives");
 	try
 	{
-		internal::Lock archivesLock(_config, _get_archives_directory() + "/lock");
+		internal::Lock archivesLock(*_config, _get_archives_directory() + "/lock");
 
 		bool simulating = _config->getBool("cupt::worker::simulate");
 		FORIT(it, changeset.downloads)
@@ -1982,7 +1982,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		string downloadResult;
 		{
-			Lock lock(_config, archivesDirectory + "/lock");
+			Lock lock(*_config, archivesDirectory + "/lock");
 
 			uint64_t totalDownloadSize = 0;
 			FORIT(it, downloads)
