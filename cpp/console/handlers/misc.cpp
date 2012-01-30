@@ -390,9 +390,8 @@ int showRelations(Context& context, bool reverse)
 			const string& packageName = *packageNameIt;
 			auto package = cache->getBinaryPackage(packageName);
 			auto versions = package->getVersions();
-			FORIT(versionIt, versions)
+			for (const auto& version: versions)
 			{
-				const shared_ptr< const BinaryVersion >& version = *versionIt;
 				FORIT(relationGroupIt, relationGroups)
 				{
 					const RelationLine& relationLine = version->relations[*relationGroupIt];
