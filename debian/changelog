@@ -1,3 +1,9 @@
+cupt (2.5.0~) UNRELEASED; urgency=low
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
+
 cupt (2.4.0) unstable; urgency=low
 
   * Switched the compiler from g++ 4.5 to g++ 4.6.
