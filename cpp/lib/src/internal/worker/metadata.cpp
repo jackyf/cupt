@@ -630,32 +630,49 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 	}
 }
 
-bool MetadataWorker::__update_index(download::Manager& downloadManager,
-		const cachefiles::IndexEntry& indexEntry, bool releaseFileChanged, bool& indexFileChanged)
+
+struct MetadataWorker::IndexUpdateInfo
+{
+	IndexType type;
+	string targetPath;
+	vector< cachefiles::FileDownloadRecord > downloadInfo;
+	string label;
+};
+
+bool MetadataWorker::__update_main_index(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool releaseFileChanged, bool& mainIndexFileChanged)
 {
 	// downloading Packages/Sources
-	auto targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
+	IndexUpdateInfo info;
+	info.type = IndexType::Packages;
+	info.targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
+	info.downloadInfo = cachefiles::getDownloadInfoOfIndexList(*_config, indexEntry);
+	info.label = __("index");
+	return __update_index(downloadManager, indexEntry,
+			std::move(info), releaseFileChanged, mainIndexFileChanged);
+}
 
-	auto downloadInfo = cachefiles::getDownloadInfoOfIndexList(*_config, indexEntry);
-
-	indexFileChanged = true;
+bool MetadataWorker::__update_index(download::Manager& downloadManager, const cachefiles::IndexEntry& indexEntry,
+		IndexUpdateInfo&& info, bool sourceFileChanged, bool& thisFileChanged)
+{
+	thisFileChanged = true;
 
 	// checking maybe there is no difference between the local and the remote?
 	bool simulating = _config->getBool("cupt::worker::simulate");
-	if (!simulating && fs::fileExists(targetPath))
+	if (!simulating && fs::fileExists(info.targetPath))
 	{
-		FORIT(downloadRecordIt, downloadInfo)
+		FORIT(downloadRecordIt, info.downloadInfo)
 		{
-			if (downloadRecordIt->hashSums.verify(targetPath))
+			if (downloadRecordIt->hashSums.verify(info.targetPath))
 			{
 				// yeah, really
-				indexFileChanged = false;
+				thisFileChanged = false;
 				return true;
 			}
 		}
 	}
 
-	auto baseDownloadPath = getDownloadPath(targetPath);
+	auto baseDownloadPath = getDownloadPath(info.targetPath);
 
 	{ // sort download files by priority and size
 		auto comparator = [this](const cachefiles::FileDownloadRecord& left, const cachefiles::FileDownloadRecord& right)
@@ -671,7 +688,7 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 				return (leftPriority > rightPriority);
 			}
 		};
-		std::sort(downloadInfo.begin(), downloadInfo.end(), comparator);
+		std::sort(info.downloadInfo.begin(), info.downloadInfo.end(), comparator);
 	}
 
 	bool useIndexDiffs = _config->getBool("cupt::update::use-index-diffs");
@@ -684,27 +701,30 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager,
 
 	const string diffIndexSuffix = ".diff/Index";
 	auto diffIndexSuffixSize = diffIndexSuffix.size();
-	FORIT(downloadRecordIt, downloadInfo)
+	FORIT(downloadRecordIt, info.downloadInfo)
 	{
 		const string& uri = downloadRecordIt->uri;
 		bool isDiff = (uri.size() >= diffIndexSuffixSize &&
 				!uri.compare(uri.size() - diffIndexSuffixSize, diffIndexSuffixSize, diffIndexSuffix));
-		if (isDiff && !useIndexDiffs)
+		if (isDiff)
 		{
-			continue;
+			if (!useIndexDiffs || info.type == IndexType::LocalizationFile)
+			{
+				continue;
+			}
+			info.type = IndexType::PackagesDiff;
 		}
-		auto indexType = isDiff ? IndexType::PackagesDiff : IndexType::Packages;
 
-		if(__download_index(downloadManager, *downloadRecordIt, indexType, indexEntry,
-				baseDownloadPath, targetPath, releaseFileChanged))
+		if(__download_index(downloadManager, *downloadRecordIt, info.type, indexEntry,
+				baseDownloadPath, info.targetPath, sourceFileChanged))
 		{
 			return true;
 		}
 	}
 
 	// we reached here if neither download URI succeeded
-	warn2("failed to download index for '%s/%s'",
-			indexEntry.distribution, indexEntry.component);
+	warn2("failed to download %s for '%s/%s'",
+			info.label, indexEntry.distribution, indexEntry.component);
 	return false;
 }
 
@@ -805,6 +825,22 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool indexFileChanged)
 {
+	auto downloadInfoV3 = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*_config, indexEntry);
+	if (!downloadInfoV3.empty()) // full info is available directly in Release file
+	{
+		for (const auto& record: downloadInfoV3)
+		{
+			IndexUpdateInfo info;
+			info.type = IndexType::LocalizationFile;
+			info.label = format2(__("'%s' descriptions localization"), record.language);
+			info.targetPath = record.localPath;
+			info.downloadInfo = record.fileDownloadRecords;
+			bool unused;
+			__update_index(downloadManager, indexEntry, std::move(info), indexFileChanged, unused);
+		}
+		return;
+	}
+
 	if (cachefiles::getDownloadInfoOfLocalizedDescriptions2(*_config, indexEntry).empty())
 	{
 		return;
@@ -851,7 +887,7 @@ bool MetadataWorker::__update_release_and_index_data(download::Manager& download
 
 	// phase 2
 	bool indexFileChanged;
-	if (!__update_index(downloadManager, indexEntry, releaseFileChanged, indexFileChanged))
+	if (!__update_main_index(downloadManager, indexEntry, releaseFileChanged, indexFileChanged))
 	{
 		return false;
 	}

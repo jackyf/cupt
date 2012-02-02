@@ -1,6 +1,9 @@
 cupt (2.5.0~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - system/worker:
+      - Updating release and index data: use the information about Translation
+        files from Release files if provided.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
 

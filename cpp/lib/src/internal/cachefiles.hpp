@@ -48,7 +48,17 @@ struct LocalizationDownloadRecord2
 	string filePart;
 	string localPath;
 };
+// TODO: remove when oldstable >> wheezy
 vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
+		const Config&, const IndexEntry&);
+
+struct LocalizationDownloadRecord3: public FileDownloadRecord
+{
+	string localPath;
+	string language;
+	vector< FileDownloadRecord > fileDownloadRecords;
+};
+vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
 		const Config&, const IndexEntry&);
 
 bool verifySignature(const Config&, const string& releaseFilePath);

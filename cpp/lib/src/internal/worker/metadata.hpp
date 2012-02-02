@@ -29,6 +29,7 @@ namespace internal {
 class MetadataWorker: public virtual WorkerBase
 {
 	enum IndexType { Packages, PackagesDiff, Localization, LocalizationFile };
+	struct IndexUpdateInfo;
 
 	string __get_indexes_directory() const;
 	bool __update_release_and_index_data(download::Manager&, const cachefiles::IndexEntry&);
@@ -37,6 +38,8 @@ class MetadataWorker: public virtual WorkerBase
 	bool __download_index(download::Manager&, const cachefiles::FileDownloadRecord&, IndexType,
 			const cachefiles::IndexEntry&, const string&, const string&, bool);
 	bool __update_index(download::Manager&, const cachefiles::IndexEntry&,
+			IndexUpdateInfo&&, bool, bool&);
+	bool __update_main_index(download::Manager&, const cachefiles::IndexEntry&,
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,
 			const cachefiles::IndexEntry&, bool indexFileChanged);

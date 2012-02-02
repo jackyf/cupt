@@ -335,6 +335,38 @@ vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
 	return result;
 }
 
+vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
+		const Config& config, const IndexEntry& entry)
+{
+	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
+	auto basePath = getPathOfIndexEntry(config, entry);
+
+	vector< LocalizationDownloadRecord3 > result;
+
+	for (const auto& chunkArray: chunkArrays)
+	{
+		LocalizationDownloadRecord3 record;
+		record.fileDownloadRecords = getDownloadInfoFromRelease(config, entry,
+				entry.component + "/i18n/" + chunkArray.back());
+		if (record.fileDownloadRecords.empty())
+		{
+			continue;
+		}
+		record.localPath = basePath + "_" + join("_", chunkArray);
+
+		record.language = chunkArray.back();
+		auto slashPosition = record.language.find('-');
+		if (slashPosition != string::npos)
+		{
+			record.language.erase(0, slashPosition + 1);
+		}
+
+		result.push_back(std::move(record));
+	}
+
+	return result;
+}
+
 string getPathOfExtendedStates(const Config& config)
 {
 	return config.getPath("dir::state::extendedstates");
