@@ -62,7 +62,7 @@ shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) con
 		}
 	}
 
-	return shared_ptr< Package >(new BinaryPackage(binaryArchitecture, needsReinstall));
+	return std::make_shared< BinaryPackage >(binaryArchitecture, needsReinstall);
 }
 
 shared_ptr< Package > CacheImpl::newSourcePackage(const string& /* packageName */) const
