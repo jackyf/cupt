@@ -135,7 +135,7 @@ SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 
 shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution >& source)
 {
-	shared_ptr< Solution > cloned(new Solution);
+	auto cloned = std::make_shared< Solution >();
 	cloned->score = source->score;
 	cloned->level = source->level;
 	cloned->id = __next_free_id++;
