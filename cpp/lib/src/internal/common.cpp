@@ -129,8 +129,7 @@ template < class IterType, char symbol >
 inline bool __find_space_symbol_space(const IterType& begin, const IterType& end,
 		IterType& resultBegin, IterType& resultEnd)
 {
-	IterType current = begin;
-	while (current != end)
+	for (auto current = begin; current != end; ++current)
 	{
 		if (*current == symbol)
 		{
@@ -147,7 +146,6 @@ inline bool __find_space_symbol_space(const IterType& begin, const IterType& end
 			}
 			return true;
 		}
-		++current;
 	}
 	return false;
 }
