@@ -594,7 +594,7 @@ class DependencyGraph::FillHelper
 		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
 		static const list< pair< string, const Element* > > emptyList;
 		auto insertResult = __meta_anti_relation_expression_vertices.insert(
-				make_pair(hashKey, emptyList));
+				make_pair(std::move(hashKey), emptyList));
 		bool isNewRelationExpressionVertex = insertResult.second;
 		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
 
