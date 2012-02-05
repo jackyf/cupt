@@ -208,7 +208,7 @@ void StateData::parseDpkgStatus()
 			{
 				fatal2("no package name in the record");
 			}
-			shared_ptr< InstalledRecord > installedRecord(new InstalledRecord);
+			auto installedRecord = std::make_shared< InstalledRecord >();
 			parseStatusSubstrings(packageName, status, installedRecord);
 
 			if (packageHasFullEntryInfo(*installedRecord))
