@@ -568,7 +568,7 @@ class DependencyGraph::FillHelper
 	{
 		auto hashKey = relationExpressionPtr->getHashString() + char('0' + dependencyType);
 		const Element*& elementPtr = __relation_expression_to_vertex_ptr.insert(
-				make_pair(hashKey, (const Element*)NULL)).first->second;
+				make_pair(std::move(hashKey), (const Element*)NULL)).first->second;
 		*isNew = !elementPtr;
 		if (!elementPtr)
 		{
