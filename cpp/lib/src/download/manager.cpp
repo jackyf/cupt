@@ -116,9 +116,9 @@ static vector< string > receiveSocketMessage(int socket)
 		{
 			fatal2("unable to receive socket message: partial message arrived");
 		}
-	}
 
-	return split('\1', compactedMessage, true);
+		return split('\1', compactedMessage, true);
+	}
 }
 
 struct InnerDownloadElement
