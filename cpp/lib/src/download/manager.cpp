@@ -97,7 +97,7 @@ static vector< string > receiveSocketMessage(int socket)
 
 	if (readResult == 0 || readResult == -1 /* connection reset */)
 	{
-		compactedMessage = "eof";
+		return { "eof" };
 	}
 	else
 	{
