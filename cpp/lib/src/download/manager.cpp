@@ -101,10 +101,9 @@ static vector< string > receiveSocketMessage(int socket)
 	}
 	else
 	{
-		char* buf = new char[len];
+		char buf[0xFFFF]; // must be enough for reading max(uint16) bytes
 		readResult = read(socket, buf, len);
 		compactedMessage.assign(buf, len);
-		delete[] buf;
 		if (readResult == -1)
 		{
 			fatal2e("unable to receive socket message");
