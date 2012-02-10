@@ -79,8 +79,6 @@ static void sendSocketMessage(Pipe& pipe, const vector< string >& message)
 
 static vector< string > receiveSocketMessage(int socket)
 {
-	string compactedMessage;
-
 	uint16_t len;
 	auto readResult = read(socket, &len, sizeof(len));
 	if (readResult == -1)
@@ -103,7 +101,7 @@ static vector< string > receiveSocketMessage(int socket)
 	{
 		char buf[0xFFFF]; // must be enough for reading max(uint16) bytes
 		readResult = read(socket, buf, len);
-		compactedMessage.assign(buf, len);
+		string compactedMessage(buf, len);
 		if (readResult == -1)
 		{
 			fatal2e("unable to receive socket message");
