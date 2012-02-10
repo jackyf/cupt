@@ -118,12 +118,7 @@ static vector< string > receiveSocketMessage(int socket)
 		}
 	}
 
-	auto result = split('\1', compactedMessage, true);
-	if (result.empty())
-	{
-		fatal2("received an empty message from socket");
-	}
-	return result;
+	return split('\1', compactedMessage, true);
 }
 
 struct InnerDownloadElement
