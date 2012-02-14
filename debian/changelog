@@ -6,6 +6,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         files from Release files if provided.
     - download/manager:
       - Avoid using new[]() in processing socket messages.
+      - Use std::queue instead of system pipe for the worker's internal
+        message queue.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
 
