@@ -78,7 +78,7 @@ class NativeResolverImpl
 	float __get_version_weight(const shared_ptr< const BinaryVersion >&) const;
 	float __get_action_profit(const shared_ptr< const BinaryVersion >&,
 			const shared_ptr< const BinaryVersion >&) const;
-	bool __is_candidate_for_auto_removal(const dg::Element*);
+	AutoRemovalPossibility::Allow __is_candidate_for_auto_removal(const dg::Element*);
 	bool __clean_automatically_installed(Solution&);
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&);

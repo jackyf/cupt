@@ -8,6 +8,9 @@ cupt (2.5.0~) UNRELEASED; urgency=low
       - Avoid using new[]() in processing socket messages.
       - Use std::queue instead of system pipe for the worker's internal
         message queue.
+    - config:
+      - New option 'cupt::resolver::no-autoremove-if-rdepends-exist'.
+        (Closes: #658981)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
 

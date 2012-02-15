@@ -256,6 +256,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::http::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::ftp::methods", vector< string > { "curl", "wget" } },
+		{ "cupt::resolver::no-autoremove-if-rdepends-exist", {} },
 	};
 }
 

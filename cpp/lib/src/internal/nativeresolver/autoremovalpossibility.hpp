@@ -31,7 +31,9 @@ class AutoRemovalPossibility
  public:
 	AutoRemovalPossibility(const Config&);
 	~AutoRemovalPossibility();
-	bool isAllowed(const Cache&, const shared_ptr< const BinaryVersion >& version, bool) const;
+
+	enum class Allow { Yes, No, YesIfNoRDepends };
+	Allow isAllowed(const Cache&, const shared_ptr< const BinaryVersion >& version, bool) const;
 };
 
 }

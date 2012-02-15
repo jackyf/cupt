@@ -227,12 +227,14 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 	return __fair_chooser(solutions);
 }
 
-bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr)
+AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr)
 {
+	typedef AutoRemovalPossibility::Allow Allow;
+
 	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 	if (!versionVertex)
 	{
-		return false;
+		return Allow::No;
 	}
 
 	const string& packageName = versionVertex->getPackageName();
@@ -240,34 +242,30 @@ bool NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elem
 
 	if (packageName == __dummy_package_name)
 	{
-		return false;
+		return Allow::No;
 	}
 	if (!version)
 	{
-		return false;
+		return Allow::No;
 	}
 	if (__manually_modified_package_names.count(packageName))
 	{
-		return false;
+		return Allow::No;
 	}
 
-	if (!__auto_removal_possibility.isAllowed(*__cache, version, __old_packages.count(packageName)))
-	{
-		return false;
-	}
-
-	return true;
+	return __auto_removal_possibility.isAllowed(*__cache, version, __old_packages.count(packageName));
 }
 
 bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 {
-	map< const dg::Element*, bool > isCandidateForAutoRemovalCache;
+	typedef AutoRemovalPossibility::Allow Allow;
+
+	map< const dg::Element*, Allow > isCandidateForAutoRemovalCache;
 	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache]
-			(const dg::Element* elementPtr) -> bool
+			(const dg::Element* elementPtr) -> Allow
 	{
-		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert(
-				std::make_pair(elementPtr, false));
-		bool& answer = cacheInsertionResult.first->second;
+		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert( { elementPtr, {}});
+		auto& answer = cacheInsertionResult.first->second;
 		if (cacheInsertionResult.second)
 		{
 			answer = __is_candidate_for_auto_removal(elementPtr);
@@ -308,14 +306,19 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 					auto it = vertices.find(*successorSuccessorElementPtrIt);
 					if (it != vertices.end())
 					{
-						if (!isCandidateForAutoRemoval(*it))
+						switch (isCandidateForAutoRemoval(*it))
 						{
-							allRightSidesAreAutomatic = false;
-							break;
-						}
-						else if (!candidateElementPtrPtr) // not found anything yet
-						{
-							candidateElementPtrPtr = &*it;
+							case Allow::No:
+								allRightSidesAreAutomatic = false;
+								break;
+							case Allow::YesIfNoRDepends:
+								dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
+							case Allow::Yes:
+								if (!candidateElementPtrPtr) // not found yet
+								{
+									candidateElementPtrPtr = &*it;
+								}
+								break;
 						}
 					}
 				}
@@ -325,7 +328,7 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 				}
 			}
 
-			if (!isCandidateForAutoRemoval(*elementPtrIt))
+			if (isCandidateForAutoRemoval(*elementPtrIt) == Allow::No)
 			{
 				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
 			}

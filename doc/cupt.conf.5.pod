@@ -425,6 +425,36 @@ boolean, see L<cupt(1)> L<--no-auto-remove/|--no-auto-remove>
 
 integer, positive, see L<cupt(1)> L<--max-solution-count|/--max-solution-count>
 
+=item cupt::resolver::no-autoremove-if-rdepends-exist
+
+list of regular expressions; if the package name matches to any of those
+regular expressions it will be not considered for auto-removal if there are any
+reverse dependencies installed. Empty by default.
+
+Example (simplified real situation):
+
+ Package: xserver-xorg
+ Depends: xserver-xorg-video-all | xorg-driver-video
+ 
+ Package: xserver-xorg-video-nv
+ Provides: xorg-driver-video
+ 
+ Package: xserver-xorg-video-radeon
+ Provides: xorg-driver-video
+ 
+ You have:
+ xserver-xorg: manually installed
+ xserver-xorg-video-all: not installed
+ xserver-xorg-video-nv: automatically installed
+ xserver-xorg-video-radeon: automatically installed
+
+Both xserver-xorg-video-nv and xserver-xorg-video-radeon satisfy the dependency
+of xserver-xorg, so only one of them is needed in the system. Therefore, by
+default one of these two will be considered for auto-removal. If you add a
+regular expression 'xserver-xorg-video.*' to the value of this option, none of
+packages providing xorg-driver-video will be considered for auto-removal as
+long as xserver-xorg is installed.
+
 =item cupt::resolver::no-remove
 
 boolean, see L<cupt(1)> L<--no-remove|/--no-remove>
