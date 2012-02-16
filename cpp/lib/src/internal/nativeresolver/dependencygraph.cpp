@@ -857,7 +857,7 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 			auto elementPtr = __fill_helper->getVertexPtr(it->first, it->second.version);
 			PackageEntry packageEntry;
 			packageEntry.sticked = it->second.sticked;
-			result.push_back(make_pair(elementPtr, packageEntry));
+			result.push_back({ elementPtr, std::move(packageEntry) });
 		}
 	}
 	return result;
