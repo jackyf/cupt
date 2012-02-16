@@ -641,7 +641,7 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const stri
 	auto result = pinInfo->getPin(version, installedVersionString);
 	if (Cache::memoize)
 	{
-		pinCache.insert(std::make_pair(version, result));
+		pinCache.insert({ version, result });
 	}
 	return result;
 }
