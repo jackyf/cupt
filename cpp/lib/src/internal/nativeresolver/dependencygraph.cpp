@@ -539,8 +539,7 @@ class DependencyGraph::FillHelper
 		};
 
 		string versionHashString = packageName + ' ' + (version ? version->versionString : "");
-		auto insertResult = __version_to_vertex_ptr.insert(
-				make_pair(std::move(versionHashString), (const VersionVertex*)NULL));
+		auto insertResult = __version_to_vertex_ptr.insert({ std::move(versionHashString), NULL });
 		bool isNew = insertResult.second;
 		const VersionVertex** elementPtrPtr = &insertResult.first->second;
 
