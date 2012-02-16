@@ -786,7 +786,7 @@ int findDependencyChain(Context& context)
 	{
 		shared_ptr< const BinaryVersion > version;
 		BinaryVersion::RelationTypes::Type dependencyType;
-		RelationExpression relationExpression;
+		const RelationExpression* relationExpressionPtr;
 	};
 	map< shared_ptr< const BinaryVersion >, PathEntry, PointerLess< const BinaryVersion > > links;
 
@@ -860,7 +860,7 @@ int findDependencyChain(Context& context)
 				cout << format2("%s %s: %s: %s",
 						pathEntry.version->packageName, pathEntry.version->versionString,
 						BinaryVersion::RelationTypes::strings[pathEntry.dependencyType],
-						pathEntry.relationExpression.toString()) << endl;
+						pathEntry.relationExpressionPtr->toString()) << endl;
 			}
 			break;
 		}
@@ -882,7 +882,8 @@ int findDependencyChain(Context& context)
 						PathEntry& newPathEntry = insertResult.first->second;
 						newPathEntry.version = version;
 						newPathEntry.dependencyType = dependencyType;
-						newPathEntry.relationExpression = *relationExpressionIt;
+						// the pointer is valid because .version is alive
+						newPathEntry.relationExpressionPtr = &*relationExpressionIt;
 
 						versions.push(newVersion);
 					}
