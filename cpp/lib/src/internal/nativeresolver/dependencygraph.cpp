@@ -530,7 +530,7 @@ class DependencyGraph::FillHelper
 		{
 			static const forward_list< const Element* > nullElementList;
 			auto relatedVertexPtrsIt = __package_name_to_vertex_ptrs.insert(
-					make_pair(packageName, nullElementList)).first;
+					{ packageName, nullElementList }).first;
 			auto vertexPtr(new VersionVertex(relatedVertexPtrsIt));
 			vertexPtr->version = version;
 			__dependency_graph.addVertex(vertexPtr);
