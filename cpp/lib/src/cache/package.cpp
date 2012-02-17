@@ -124,7 +124,7 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 		else
 		{
 			// there is such version string
-			auto foundVersion = *foundItem;
+			const auto& foundVersion = *foundItem;
 
 			auto binaryVersion = dynamic_pointer_cast< BinaryVersion >(foundVersion);
 			if ((binaryVersion && binaryVersion->isInstalled()) || foundVersion->areHashesEqual(parsedVersion))
