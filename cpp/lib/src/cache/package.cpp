@@ -110,7 +110,7 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 	// merging
 	try
 	{
-		auto parsedVersionString = parsedVersion->versionString;
+		const auto& parsedVersionString = parsedVersion->versionString;
 		auto foundItem = std::find_if(result.begin(), result.end(), [&parsedVersionString](shared_ptr< const Version > elem) -> bool
 		{
 			return (elem->versionString == parsedVersionString);
