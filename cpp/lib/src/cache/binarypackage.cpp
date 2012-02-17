@@ -29,7 +29,7 @@ BinaryPackage::BinaryPackage(const shared_ptr< const string >& binaryArchitectur
 shared_ptr< Version > BinaryPackage::_parse_version(const Version::InitializationParameters& initParams) const
 {
 	auto version = BinaryVersion::parseFromFile(initParams);
-	if (version->isInstalled() and __allow_reinstall)
+	if (__allow_reinstall && version->isInstalled())
 	{
 		version->versionString += "~installed";
 	}
