@@ -62,10 +62,8 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 			string block;
 			parser.parseAdditionalLines(block);
 			auto lines = internal::split('\n', block);
-			FORIT(lineIt, lines)
+			for (const string& line: lines)
 			{
-				const string& line = *lineIt;
-
 				if (!regex_match(line, lineMatch, checksumsLineRegex))
 				{
 					fatal2("malformed line '%s'", line);
