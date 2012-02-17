@@ -52,8 +52,7 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 				Version::InitializationParameters& initParams = *unparsedVersionIt;
 				try
 				{
-					shared_ptr< Version > parsedVersion = _parse_version(initParams);
-					__merge_version(parsedVersion, result);
+					__merge_version(_parse_version(initParams), result);
 					if (!memoize)
 					{
 						newUnparsedVersions.push_back(initParams);
@@ -100,7 +99,7 @@ vector< shared_ptr< const Version > > Package::getVersions() const
 	return result;
 }
 
-void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector< shared_ptr< Version > >& result) const
+void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< shared_ptr< Version > >& result) const
 {
 	if (!_is_architecture_appropriate(parsedVersion))
 	{
@@ -119,7 +118,7 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 		if (foundItem == result.end())
 		{
 			// no such version before, just add it
-			result.push_back(parsedVersion);
+			result.push_back(std::move(parsedVersion));
 		}
 		else
 		{
