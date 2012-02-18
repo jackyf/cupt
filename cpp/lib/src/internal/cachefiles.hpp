@@ -52,7 +52,7 @@ struct LocalizationDownloadRecord2
 vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
 		const Config&, const IndexEntry&);
 
-struct LocalizationDownloadRecord3: public FileDownloadRecord
+struct LocalizationDownloadRecord3
 {
 	string localPath;
 	string language;
