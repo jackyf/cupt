@@ -166,10 +166,9 @@ string parseCommonOptions(int argc, char** argv, Config& config, vector< string 
 		}
 
 		smatch m;
-		FORIT(directOptionIt, directOptions)
+		for (const string& directOption: directOptions)
 		{
 			static const sregex optionRegex = sregex::compile("(.*?)=(.*)");
-			const string& directOption = *directOptionIt;
 			if (!regex_match(directOption, m, optionRegex))
 			{
 				fatal2("invalid option syntax in '%s' (right is '<option>=<value>')", directOption);
