@@ -706,16 +706,17 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager, const ca
 		const string& uri = downloadRecordIt->uri;
 		bool isDiff = (uri.size() >= diffIndexSuffixSize &&
 				!uri.compare(uri.size() - diffIndexSuffixSize, diffIndexSuffixSize, diffIndexSuffix));
+		auto indexType = info.type;
 		if (isDiff)
 		{
 			if (!useIndexDiffs || info.type == IndexType::LocalizationFile)
 			{
 				continue;
 			}
-			info.type = IndexType::PackagesDiff;
+			indexType = IndexType::PackagesDiff;
 		}
 
-		if(__download_index(downloadManager, *downloadRecordIt, info.type, indexEntry,
+		if(__download_index(downloadManager, *downloadRecordIt, indexType, indexEntry,
 				baseDownloadPath, info.targetPath, sourceFileChanged))
 		{
 			return true;
