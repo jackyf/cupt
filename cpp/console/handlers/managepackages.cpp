@@ -911,9 +911,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				actionTypesInOrder.push_back(fakeNotPolicyVersionAction);
 			}
 
-			FORIT (actionTypeIt, actionTypesInOrder)
+			for (const WA::Type& actionType: actionTypesInOrder)
 			{
-				const WA::Type& actionType = *actionTypeIt;
 				const Resolver::SuggestedPackages& actionSuggestedPackages =
 						actionType == fakeNotPolicyVersionAction ?
 						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
