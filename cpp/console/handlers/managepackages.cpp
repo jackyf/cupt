@@ -72,9 +72,8 @@ static void preProcessMode(ManagePackages::Mode& mode, Config& config, Resolver&
 static void unrollFileArguments(vector< string >& arguments)
 {
 	vector< string > newArguments;
-	FORIT(argumentIt, arguments)
+	for (const string& argument: arguments)
 	{
-		const string& argument = *argumentIt;
 		if (!argument.empty() && argument[0] == '@')
 		{
 			const string path = argument.substr(1);
