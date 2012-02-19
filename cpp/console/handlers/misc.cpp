@@ -381,10 +381,8 @@ int showRelations(Context& context, bool reverse)
 	unordered_map< string, set< string > > reverseDependsIndex;
 	if (reverse)
 	{
-		auto packageNames = cache->getBinaryPackageNames();
-		FORIT(packageNameIt, packageNames)
+		for (const string& packageName: cache->getBinaryPackageNames())
 		{
-			const string& packageName = *packageNameIt;
 			auto package = cache->getBinaryPackage(packageName);
 			auto versions = package->getVersions();
 			for (const auto& version: versions)
