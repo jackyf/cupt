@@ -429,10 +429,8 @@ int showRelations(Context& context, bool reverse)
 			if (!reverse)
 			{
 				// just plain normal dependencies
-				FORIT(relationExpressionIt, version->relations[*relationGroupIt])
+				for (const auto& relationExpression: version->relations[*relationGroupIt])
 				{
-					const RelationExpression& relationExpression = *relationExpressionIt;
-
 					cout << "  " << caption << ": " << relationExpression.toString() << endl;
 					if (recurse)
 					{
