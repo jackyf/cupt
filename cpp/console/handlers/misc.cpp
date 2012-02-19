@@ -292,11 +292,8 @@ int showSourceVersions(Context& context)
 			{ // download info
 				for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 				{
-					const vector< Version::FileRecord >& fileRecords = version->files[i];
-					FORIT(fileRecordIt, fileRecords)
+					for (const Version::FileRecord& fileRecord: version->files[i])
 					{
-						const Version::FileRecord& fileRecord = *fileRecordIt;
-
 						cout << SourceVersion::FileParts::strings[i] << ':' << endl;
 						p(string("  ") + __("Size"), humanReadableSizeString(fileRecord.size));
 						p("  MD5", fileRecord.hashSums[HashSums::MD5]);
