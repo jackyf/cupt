@@ -332,7 +332,7 @@ string RelationExpression::getHashString() const
 		targetLength += 1 + relation.packageName.size();
 		if (relation.relationType != Relation::Types::None)
 		{
-			targetLength += relation.versionString.size() + 2;
+			targetLength += relation.versionString.size() + 1;
 		}
 	}
 	if (targetLength) // not empty relation expression
@@ -355,8 +355,11 @@ string RelationExpression::getHashString() const
 
 		if (relation.relationType != Relation::Types::None)
 		{
-			*(p++) = ' ';
-			*(p++) = ('0' + relation.relationType);
+			// this assertion assures that '\1' + relation.relationType is a
+			// non-printable character which cannot be a part of packageName
+			static_assert(Relation::Types::None < 16, "internal error: Relation::Types::None >= 16'");
+			*(p++) = ('\1' + relation.relationType);
+
 			p = std::copy(relation.versionString.begin(), relation.versionString.end(), p);
 		}
 	}
