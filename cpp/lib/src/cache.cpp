@@ -250,10 +250,8 @@ vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
 	vector< shared_ptr< const BinaryVersion > > result;
 
 	auto packageNames = __impl->systemState->getInstalledPackageNames();
-	FORIT(packageNameIt, packageNames)
+	for (const string& packageName: packageNames)
 	{
-		const string& packageName = *packageNameIt;
-
 		auto package = getBinaryPackage(packageName);
 		if (!package)
 		{
