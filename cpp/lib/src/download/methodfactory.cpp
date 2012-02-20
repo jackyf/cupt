@@ -141,9 +141,8 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 
 	// not very effective, but readable and we hardly ever get >10 handlers for same protocol
 	multimap< int, string, std::greater< int > > prioritizedHandlerNames;
-	FORIT(handlerNameIt, availableHandlerNames)
+	for (const string& handlerName: availableHandlerNames)
 	{
-		const string& handlerName = *handlerNameIt;
 		prioritizedHandlerNames.insert(
 				make_pair(__get_method_priority(protocol, handlerName), handlerName));
 	}
