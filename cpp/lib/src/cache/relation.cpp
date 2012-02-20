@@ -268,9 +268,8 @@ bool __is_architectured_relation_eligible(
 	if (!architectureFilters[0].empty() && architectureFilters[0][0] == '!')
 	{
 		// negative architecture specifications, see Debian Policy §7.1
-		FORIT(architectureFilterIt, architectureFilters)
+		for (string architectureFilter: architectureFilters)
 		{
-			string architectureFilter = *architectureFilterIt;
 			if (architectureFilter.empty() || architectureFilter[0] != '!')
 			{
 				warn2("non-negative architecture filter '%s'", architectureFilter);
@@ -289,9 +288,8 @@ bool __is_architectured_relation_eligible(
 	else
 	{
 		// positive architecture specifications, see Debian Policy §7.1
-		FORIT(architectureFilterIt, architectureFilters)
+		for (const string& architectureFilter: architectureFilters)
 		{
-			const string& architectureFilter = *architectureFilterIt;
 			if (internal::architectureMatch(currentArchitecture, architectureFilter))
 			{
 				return true; // our case
