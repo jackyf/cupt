@@ -327,10 +327,8 @@ RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArch
 string RelationExpression::getHashString() const
 {
 	size_t targetLength = 0;
-	FORIT(relationIt, *this)
+	for (const Relation& relation: *this)
 	{
-		const Relation& relation = *relationIt;
-
 		targetLength += 1 + relation.packageName.size();
 		if (relation.relationType != Relation::Types::None)
 		{
@@ -346,10 +344,8 @@ string RelationExpression::getHashString() const
 	auto p = result.begin();
 	auto beginIt = p;
 
-	FORIT(relationIt, *this)
+	for (const Relation& relation: *this)
 	{
-		const Relation& relation = *relationIt;
-
 		if (p != beginIt) // not a start
 		{
 			*(p++) = '|';
