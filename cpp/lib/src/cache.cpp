@@ -264,7 +264,7 @@ vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
 			fatal2("internal error: the package '%s' does not have installed version", packageName);
 		}
 
-		result.push_back(version);
+		result.push_back(std::move(version));
 	}
 
 	return result;
