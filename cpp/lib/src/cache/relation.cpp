@@ -303,13 +303,12 @@ RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArch
 {
 	RelationLine result;
 
-	FORIT(architecturedRelationExpressionIt, *this)
+	for (const auto& architecturedRelationExpression: *this)
 	{
 		RelationExpression newRelationExpression;
 
-		FORIT(architecturedRelationIt, *architecturedRelationExpressionIt)
+		for (const auto& architecturedRelation: architecturedRelationExpression)
 		{
-			const ArchitecturedRelation& architecturedRelation = *architecturedRelationIt;
 			if (__is_architectured_relation_eligible(architecturedRelation, currentArchitecture))
 			{
 				newRelationExpression.push_back(Relation(architecturedRelation));
