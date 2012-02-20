@@ -250,6 +250,7 @@ vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
 	vector< shared_ptr< const BinaryVersion > > result;
 
 	auto packageNames = __impl->systemState->getInstalledPackageNames();
+	result.reserve(packageNames.size());
 	for (const string& packageName: packageNames)
 	{
 		auto package = getBinaryPackage(packageName);
