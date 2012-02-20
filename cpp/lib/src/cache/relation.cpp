@@ -317,7 +317,7 @@ RelationLine ArchitecturedRelationLine::toRelationLine(const string& currentArch
 
 		if (!newRelationExpression.empty())
 		{
-			result.push_back(newRelationExpression);
+			result.push_back(std::move(newRelationExpression));
 		}
 	}
 
