@@ -11,6 +11,9 @@ cupt (2.5.0~) UNRELEASED; urgency=low
     - config:
       - New option 'cupt::resolver::no-autoremove-if-rdepends-exist'.
         (Closes: #658981)
+  * debian:
+    - libcupt2-0.shlibs: added with an initial value of 2.3.0~rc1.
+    - shlibs.local: added as an alias to above.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
 
