@@ -51,12 +51,12 @@ void enableSigTermHandler()
 	action.sa_handler = sigTermHandler;
 	if (sigemptyset(&action.sa_mask) == -1)
 	{
-		fatal("sigemptyset failed: EEE");
+		fatal2("sigemptyset failed");
 	}
 	action.sa_flags = SA_RESETHAND;
 	if (sigaction(SIGTERM, &action, &oldSigAction) == -1)
 	{
-		fatal("wget download method: unable to setup SIGTERM handler: sigaction failed: EEE");
+		fatal2("wget download method: unable to setup SIGTERM handler: sigaction failed");
 	}
 }
 
@@ -64,7 +64,7 @@ void disableSigTermHanlder()
 {
 	if (sigaction(SIGTERM, &oldSigAction, NULL) == -1)
 	{
-		fatal("wget download method: unable to reset SIGTERM handler: sigaction failed: EEE");
+		fatal2("wget download method: unable to reset SIGTERM handler: sigaction failed");
 	}
 }
 
@@ -79,7 +79,7 @@ class WgetMethod: public cupt::download::Method
 		auto workerPid = fork();
 		if (workerPid == -1)
 		{
-			fatal("unable to fork: EEE");
+			fatal2("unable to fork");
 		}
 		if (workerPid)
 		{
@@ -90,7 +90,7 @@ class WgetMethod: public cupt::download::Method
 			FILE* inputHandle = fdopen(wgetErrorStream.getReaderFd(), "r");
 			if (!inputHandle)
 			{
-				fatal("unable to fdopen wget error stream: EEE"); 
+				fatal2("unable to fdopen wget error stream");
 			}
 			char buf[1024];
 			while (fgets(buf, sizeof(buf), inputHandle), !feof(inputHandle))
@@ -100,11 +100,11 @@ class WgetMethod: public cupt::download::Method
 			int workerStatus;
 			if (waitpid(workerPid, &workerStatus, 0) == -1)
 			{
-				fatal("waitpid failed: EEE");
+				fatal2("waitpid failed");
 			}
 			if (!WIFEXITED(workerStatus))
 			{
-				fatal("wget wrapper process exited abnormally");
+				fatal2("wget wrapper process exited abnormally");
 			}
 			disableSigTermHanlder(); // we about to exit, restore it
 			if (WEXITSTATUS(workerStatus) != 0)
@@ -129,7 +129,7 @@ class WgetMethod: public cupt::download::Method
 					{
 						if (errno != ENOENT)
 						{
-							fatal("stat on file '%s' failed: EEE", targetPath.c_str());
+							fatal2("stat on file '%s' failed", targetPath);
 						}
 					}
 					else
@@ -143,7 +143,7 @@ class WgetMethod: public cupt::download::Method
 				auto wgetPid = fork();
 				if (wgetPid == -1)
 				{
-					fatal("unable to fork: EEE");
+					fatal2("unable to fork");
 				}
 				if (wgetPid)
 				{
@@ -160,7 +160,7 @@ class WgetMethod: public cupt::download::Method
 						{
 							if (errno != EINTR)
 							{
-								fatal("nanosleep failed: EEE");
+								fatal2("nanosleep failed");
 							}
 						}
 						struct stat st;
@@ -168,7 +168,7 @@ class WgetMethod: public cupt::download::Method
 						{
 							if (errno != ENOENT) // wget haven't created the file yet
 							{
-								fatal("stat on file '%s' failed: EEE", targetPath.c_str());
+								fatal2("stat on file '%s' failed", targetPath);
 							}
 						}
 						else
@@ -185,7 +185,7 @@ class WgetMethod: public cupt::download::Method
 					}
 					if (waitResult == -1)
 					{
-						fatal("waitpid failed: EEE");
+						fatal2("waitpid failed");
 					}
 					if (!WIFEXITED(childStatus) || WEXITSTATUS(childStatus) != 0)
 					{
@@ -237,15 +237,15 @@ class WgetMethod: public cupt::download::Method
 
 					if (dup2(wgetErrorStream.getWriterFd(), STDOUT_FILENO) == -1) // redirecting stdout
 					{
-						fatal("unable to redirect wget standard output: dup2 failed: EEE");
+						fatal2("unable to redirect wget standard output: dup2 failed");
 					}
 					if (dup2(wgetErrorStream.getWriterFd(), STDERR_FILENO) == -1) // redirecting stderr
 					{
-						fatal("unable to redirect wget error stream: dup2 failed: EEE");
+						fatal2("unable to redirect wget error stream: dup2 failed");
 					}
 					execv("/usr/bin/env", &params[0]);
 					// if we are here, exec returned an error
-					fatal("unable to launch wget process: EEE");
+					fatal2("unable to launch wget process");
 				}
 			}
 			catch (Exception& e)
