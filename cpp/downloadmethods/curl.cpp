@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2012 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -40,7 +40,7 @@ class CurlWrapper
 		__handle = curl_easy_init();
 		if (!__handle)
 		{
-			fatal("unable to create Curl handle");
+			fatal2("unable to create Curl handle");
 		}
 		__init();
 	}
@@ -49,7 +49,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value);
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set long Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2("unable to set long Curl option '%s': curl_easy_setopt failed: %s",
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -58,7 +58,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value);
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set object Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2("unable to set object Curl option '%s': curl_easy_setopt failed: %s",
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -67,7 +67,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value.c_str());
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set string Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2("unable to set string Curl option '%s': curl_easy_setopt failed: %s",
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -76,7 +76,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value);
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set large Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2("unable to set large Curl option '%s': curl_easy_setopt failed: %s",
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -200,7 +200,7 @@ class CurlMethod: public cupt::download::Method
 			File file(targetPath, "a", openError);
 			if (!openError.empty())
 			{
-				fatal("unable to open file '%s': %s", targetPath.c_str(), openError.c_str());
+				fatal2("unable to open file '%s': %s", targetPath, openError);
 			}
 
 			start:
