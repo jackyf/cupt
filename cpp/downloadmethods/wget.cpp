@@ -31,6 +31,25 @@ using boost::lexical_cast;
 
 namespace cupt {
 
+// returns true if succeeded
+static bool __get_file_size(const string& path, ssize_t* result)
+{
+	struct stat st;
+	if (lstat(path.c_str(), &st) == -1)
+	{
+		if (errno != ENOENT)
+		{
+			fatal2("stat on file '%s' failed", path);
+		}
+		return false;
+	}
+	else
+	{
+		*result = st.st_size;
+		return true;
+	}
+}
+
 class WgetMethod: public cupt::download::Method
 {
 	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
@@ -43,21 +62,10 @@ class WgetMethod: public cupt::download::Method
 		try
 		{
 			ssize_t totalBytes = 0;
+			if (__get_file_size(targetPath, &totalBytes))
 			{
-				struct stat st;
-				if (lstat(targetPath.c_str(), &st) == -1)
-				{
-					if (errno != ENOENT)
-					{
-						fatal2("stat on file '%s' failed", targetPath);
-					}
-				}
-				else
-				{
-					totalBytes = st.st_size;
-					callback(vector< string > { "downloading",
-							lexical_cast< string >(totalBytes), lexical_cast< string >(0)});
-				}
+				callback(vector< string > { "downloading",
+						lexical_cast< string >(totalBytes), lexical_cast< string >(0)});
 			}
 
 			// wget executor
@@ -102,17 +110,9 @@ class WgetMethod: public cupt::download::Method
 				while (!wgetProcessFinishedCV.wait_for(conditionMutexLock, std::chrono::milliseconds(100),
 						[&wgetProcessFinished](){ return wgetProcessFinished; }))
 				{
-					struct stat st;
-					if (lstat(targetPath.c_str(), &st) == -1)
+					decltype(totalBytes) newTotalBytes;
+					if (__get_file_size(targetPath, &newTotalBytes))
 					{
-						if (errno != ENOENT) // wget haven't created the file yet
-						{
-							fatal2("stat on file '%s' failed", targetPath);
-						}
-					}
-					else
-					{
-						auto newTotalBytes = st.st_size;
 						if (newTotalBytes != totalBytes)
 						{
 							callback(vector< string >{ "downloading",
