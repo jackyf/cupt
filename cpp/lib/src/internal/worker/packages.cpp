@@ -136,8 +136,7 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 				{
 					if (debugging)
 					{
-						debug("detected pseudo-essential package '%s'",
-								(*satisfyingVersionIt)->packageName.c_str());
+						debug2("detected pseudo-essential package '%s'", (*satisfyingVersionIt)->packageName);
 					}
 					toProcess.push(*satisfyingVersionIt);
 				}
@@ -408,9 +407,9 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 
 			if (gi.debugging)
 			{
-				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString().c_str(),
-						masterActionPtr->toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
-						relationExpressionIt->toString().c_str());
+				debug2("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString(),
+						masterActionPtr->toString(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
+						relationExpressionIt->toString());
 			}
 		}
 	}
@@ -626,9 +625,9 @@ void __move_edge(GraphAndAttributes& gaa,
 {
 	if (debugging)
 	{
-		debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
-				fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
-				toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
+		debug2("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
+				fromPredecessorPtr->toString(), fromSuccessorPtr->toString(),
+				toPredecessorPtr->toString(), toSuccessorPtr->toString());
 	}
 
 	GraphAndAttributes::Attribute& toAttribute = gaa.attributes[make_pair(toPredecessorPtr, toSuccessorPtr)];
@@ -680,9 +679,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
-					debug("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
-							(*predecessorVertexPtrIt)->toString().c_str(), (*successorVertexPtrIt)->toString().c_str(),
-							mediatorPackageName.c_str());
+					debug2("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
+							(*predecessorVertexPtrIt)->toString(), (*successorVertexPtrIt)->toString(), mediatorPackageName);
 				}
 
 			}
@@ -746,8 +744,8 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		gaa.graph.deleteEdgeFromPointers(fromPredecessorPtr, fromSuccessorPtr);
 		if (debugging)
 		{
-			debug("deleting the edge '%s' -> '%s'",
-					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str());
+			debug2("deleting the edge '%s' -> '%s'",
+					fromPredecessorPtr->toString(), fromSuccessorPtr->toString());
 		}
 	};
 
@@ -833,8 +831,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 		}
 		if (debugging)
 		{
-			debug("adjusting the pair '%s' -> '%s':",
-					fromPtr->toString().c_str(), toPtr->toString().c_str());
+			debug2("adjusting the pair '%s' -> '%s':", fromPtr->toString(), toPtr->toString());
 		}
 
 		std::list< const InnerAction* > notFirstActions = { toPtr };
@@ -857,8 +854,8 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 					gaa.graph.addEdgeFromPointers(*predecessorIt, fromPtr);
 					if (debugging)
 					{
-						debug("setting priority link: '%s' -> '%s'",
-								(*predecessorIt)->toString().c_str(), fromPtr->toString().c_str());
+						debug2("setting priority link: '%s' -> '%s'",
+								(*predecessorIt)->toString(), fromPtr->toString());
 					}
 				}
 			}
@@ -898,8 +895,8 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			if (!s.empty())
 			{
 				auto priority = __get_action_group_priority(preActionGroup);
-				debug("toposort: %s action group: '%s' (priority: %zd)",
-						(closing ? "selected" : "opened"), join(", ", s).c_str(), priority);
+				debug2("toposort: %s action group: '%s' (priority: %zd)",
+						(closing ? "selected" : "opened"), join(", ", s), priority);
 			}
 		}
 	};
@@ -927,8 +924,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 				linkedSomething = true;
 				if (debugging)
 				{
-					debug("new link: '%s' -> '%s'",
-							fromPtr->toString().c_str(), toPtr->toString().c_str());
+					debug2("new link: '%s' -> '%s'", fromPtr->toString(), toPtr->toString());
 				}
 				gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
 			}
@@ -983,13 +979,13 @@ void __iterate_over_graph(const Cache& cache, GraphAndAttributes& gaa,
 	{
 		if (debugging)
 		{
-			debug("building %saction graph: next iteration", maybeMini);
+			debug2("building %saction graph: next iteration", maybeMini);
 		}
 		__expand_linked_actions(cache, gaa, debugging);
 	} while (__link_actions(gaa, debugging));
 	if (debugging)
 	{
-		debug("building %saction graph: finished", maybeMini);
+		debug2("building %saction graph: finished", maybeMini);
 	}
 }
 
@@ -1034,8 +1030,8 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		FORIT(edgeIt, edges)
 		{
 			auto attributeLevel = gaa.attributes[make_pair(edgeIt->first, edgeIt->second)].getLevel();
-			debug("the present action dependency: '%s' -> '%s', %s",
-					edgeIt->first->toString().c_str(), edgeIt->second->toString().c_str(),
+			debug2("the present action dependency: '%s' -> '%s', %s",
+					edgeIt->first->toString(), edgeIt->second->toString(),
 					GraphAndAttributes::Attribute::levelStrings[attributeLevel]);
 		}
 	}
@@ -1120,8 +1116,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						}
 						if (debugging)
 						{
-							debug("ignoring edge '%s' -> '%s'",
-									oldFromPtr->toString().c_str(), oldToPtr->toString().c_str());
+							debug2("ignoring edge '%s' -> '%s'", oldFromPtr->toString(), oldToPtr->toString());
 						}
 					}
 					else
@@ -1130,8 +1125,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
 						if (debugging)
 						{
-							debug("adding edge '%s' -> '%s'",
-									newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+							debug2("adding edge '%s' -> '%s'", newFromPtr->toString(), newToPtr->toString());
 						}
 					}
 
@@ -1157,8 +1151,8 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						{
 							if (debugging)
 							{
-								debug("  ignoring potential edge '%s' -> '%s'",
-										newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
+								debug2("  ignoring potential edge '%s' -> '%s'",
+										newPotentialFromPtr->toString(), newPotentialToPtr->toString());
 							}
 							continue;
 						}
@@ -1176,8 +1170,8 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						}
 						if (debugging)
 						{
-							debug("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
-									newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
+							debug2("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
+									newPotentialFromPtr->toString(), newPotentialToPtr->toString());
 						}
 					}
 				}
@@ -1194,7 +1188,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 	typedef GraphAndAttributes::Attribute Attribute;
 	if (debugging)
 	{
-		debug("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
+		debug2("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
 	}
 
 	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
@@ -1294,7 +1288,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 			{
 				strings.push_back(it->toString());
 			}
-			debug("split action group: %s", join(", ", strings).c_str());
+			debug2("split action group: %s", join(", ", strings));
 		}
 	}
 
@@ -1522,8 +1516,8 @@ size_t __get_max_download_amount(const vector< Changeset >& changesets, bool deb
 	}
 	if (debugging)
 	{
-		debug("the changeset download amounts: maximum: %s, all: %s",
-				humanReadableSizeString(result).c_str(), join(", ", amounts).c_str());
+		debug2("the changeset download amounts: maximum: %s, all: %s",
+				humanReadableSizeString(result), join(", ", amounts));
 	}
 
 	return result;
@@ -1619,8 +1613,8 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		auto maxDownloadAmount = __get_max_download_amount(changesets, debugging);
 		if (debugging)
 		{
-			debug("the changeset download amounts: maximum: %s",
-					humanReadableSizeString(maxDownloadAmount).c_str());
+			debug2("the changeset download amounts: maximum: %s",
+					humanReadableSizeString(maxDownloadAmount));
 		}
 		if (maxDownloadAmount > archivesSpaceLimit)
 		{
@@ -2112,7 +2106,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 		if (debugging)
 		{
-			debug("started changeset");
+			debug2("started changeset");
 		}
 		/* usually, all downloads are done before any install actions (first
 		   and only changeset) however, if 'cupt::worker::archives-space-limit'
@@ -2215,7 +2209,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 							stringifiedActions.push_back(actionIt->toString());
 						}
 						auto actionsString = join(" & ", stringifiedActions);
-						debug("do: (%s) %s%s", actionsString.c_str(), requestedDpkgOptions.c_str(),
+						debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
 								actionGroupIt->continued ? " (continued)" : "");
 					}
 					_logger->log(Logger::Subsystem::Packages, 2,
@@ -2232,7 +2226,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			string command = dpkgBinary + " --triggers-only --pending";
 			if (debugging)
 			{
-				debug("running triggers");
+				debug2("running triggers");
 			}
 			__run_dpkg_command("triggers", command, "");
 		}
@@ -2243,7 +2237,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		}
 		if (debugging)
 		{
-			debug("finished changeset");
+			debug2("finished changeset");
 		}
 	}
 
