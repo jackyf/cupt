@@ -243,7 +243,7 @@ class CurlMethod: public cupt::download::Method
 				{
 					if (config->getBool("debug::downloader"))
 					{
-						debug("transient error while downloading '%s'", string(uri).c_str());
+						debug2("transient error while downloading '%s'", string(uri));
 					}
 					--transientErrorsLeft;
 					goto start;
@@ -253,8 +253,7 @@ class CurlMethod: public cupt::download::Method
 				{
 					if (config->getBool("debug::downloader"))
 					{
-						debug("range command failed, need to restart from beginning while downloading '%s'",
-								string(uri).c_str());
+						debug2("range command failed, need to restart from beginning while downloading '%s'", string(uri));
 					}
 					if (unlink(targetPath.c_str()) == -1)
 					{
