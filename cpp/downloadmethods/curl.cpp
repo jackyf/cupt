@@ -258,7 +258,7 @@ class CurlMethod: public cupt::download::Method
 					}
 					if (unlink(targetPath.c_str()) == -1)
 					{
-						return sf(__("unable to delete target file for re-downloading: EEE"));
+						return format2e(__("unable to delete target file for re-downloading"));
 					}
 					goto start;
 				}
@@ -268,7 +268,7 @@ class CurlMethod: public cupt::download::Method
 		}
 		catch (Exception& e)
 		{
-			return sf(__("download method error: %s"), e.what());
+			return format2(__("download method error: %s"), e.what());
 		}
 	}
 };
