@@ -49,7 +49,7 @@ class FileMethod: public download::Method
 			struct stat st;
 			if (::stat(sourcePath.c_str(), &st) == -1)
 			{
-				fatal("unable to stat() file '%s': EEE", sourcePath.c_str());
+				fatal2e("unable to stat() file '%s'", sourcePath);
 			}
 			callback(vector< string > { "expected-size",
 					lexical_cast< string >(st.st_size) });
@@ -99,7 +99,7 @@ class FileMethod: public download::Method
 		}
 		else
 		{
-			fatal("internal error: a wrong scheme '%s' for the 'file' download method", protocol.c_str());
+			fatal2("internal error: a wrong scheme '%s' for the 'file' download method", protocol);
 			return string(); // unreachable
 		}
 	}
