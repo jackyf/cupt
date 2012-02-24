@@ -265,7 +265,7 @@ static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 	}
 	else
 	{
-		fatal2("internal error: the installed version '%s' of the package '%s' has not a reinstall version suffix '%s'",
+		fatal2i("the installed version '%s' of the package '%s' has not a reinstall version suffix '%s'",
 				installedVersionString, packageExpression, reinstallVersionSuffix);
 	}
 }
@@ -441,7 +441,7 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 	auto package = cache.getBinaryPackage(packageName);
 	if (!package)
 	{
-		fatal2("internal error: no binary package '%s' available", packageName);
+		fatal2i("no binary package '%s' available", packageName);
 	}
 
 	string oldVersionString = getVersionString(package->getInstalledVersion());

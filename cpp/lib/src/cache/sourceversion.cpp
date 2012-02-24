@@ -175,7 +175,7 @@ bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 	shared_ptr< const SourceVersion > o = dynamic_pointer_cast< const SourceVersion >(other);
 	if (!o)
 	{
-		fatal2("internal error: areHashesEqual: non-source version parameter");
+		fatal2i("areHashesEqual: non-source version parameter");
 	}
 	for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 	{

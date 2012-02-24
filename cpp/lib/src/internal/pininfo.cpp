@@ -106,7 +106,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 		auto installedInfo = systemState->getInstalledInfo(version->packageName);
 		if (!installedInfo)
 		{
-			fatal2("internal error: missing installed info for package '%s'", version->packageName);
+			fatal2i("missing installed info for package '%s'", version->packageName);
 		}
 
 		if (compareVersionStrings(installedVersionString, version->versionString) > 0)
@@ -117,7 +117,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 		auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
 		if (!binaryVersion)
 		{
-			fatal2("internal error: version is not binary");
+			fatal2i("version is not binary");
 		}
 		if (installedInfo->want == system::State::InstalledRecord::Want::Hold && binaryVersion->isInstalled())
 		{

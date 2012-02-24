@@ -179,7 +179,7 @@ void NativeResolverImpl::upgrade()
 				(__cache->getPolicyVersion(package));
 		if (!supposedVersion)
 		{
-			fatal2("internal error: supposed version doesn't exist");
+			fatal2i("supposed version doesn't exist");
 		}
 
 		__prepare_version_no_stick(supposedVersion, initialPackageEntry);
@@ -418,7 +418,7 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 {
 	if (originalSolution.finished)
 	{
-		fatal2("internal error: an attempt to make changes to already finished solution");
+		fatal2i("an attempt to make changes to already finished solution");
 	}
 
 	auto oldElementPtr = actionToApply->oldElementPtr;
@@ -532,7 +532,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 {
 	if (!solution.pendingAction)
 	{
-		fatal2("internal error: __post_apply_action: no action to apply");
+		fatal2i("__post_apply_action: no action to apply");
 	}
 	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
 
@@ -850,7 +850,7 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 		{
 			if (!__solution_storage->verifyElement(solution, *successorElementPtrIt))
 			{
-				fatal2("internal error: final solution check failed: solution '%u', version '%s', problem '%s'",
+				fatal2i("final solution check failed: solution '%u', version '%s', problem '%s'",
 						solution.id, (*elementPtrIt)->toString(), (*successorElementPtrIt)->toString());
 			}
 		}

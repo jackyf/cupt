@@ -256,12 +256,12 @@ vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
 		auto package = getBinaryPackage(packageName);
 		if (!package)
 		{
-			fatal2("internal error: unable to find the package '%s'", packageName);
+			fatal2i("unable to find the package '%s'", packageName);
 		}
 		auto version = package->getInstalledVersion();
 		if (!version)
 		{
-			fatal2("internal error: the package '%s' does not have installed version", packageName);
+			fatal2i("the package '%s' does not have installed version", packageName);
 		}
 
 		result.push_back(std::move(version));

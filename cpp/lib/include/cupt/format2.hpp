@@ -35,6 +35,12 @@ void fatal2(const char* format, const Args&... args)
 }
 
 template < typename... Args >
+void fatal2i(const char* format, const Args&... args)
+{
+	fatal2((string("internal error: ") + format).c_str(), args...);
+}
+
+template < typename... Args >
 void fatal2e(const char* format, const Args&... args)
 {
 	auto errorString = format2e(format, args...);

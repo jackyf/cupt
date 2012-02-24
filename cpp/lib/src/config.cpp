@@ -283,7 +283,7 @@ void ConfigImpl::readConfigs(Config* config)
 	{
 		if (value.size() < 2)
 		{
-			fatal2("internal error: unquoted simple value '%s'", value);
+			fatal2i("unquoted simple value '%s'", value);
 		}
 		return string(value.begin() + 1, value.end() - 1);
 	};

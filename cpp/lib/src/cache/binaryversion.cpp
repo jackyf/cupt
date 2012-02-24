@@ -173,7 +173,7 @@ bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 	shared_ptr< const BinaryVersion > o = dynamic_pointer_cast< const BinaryVersion >(other);
 	if (!o)
 	{
-		fatal2("internal error: areHashesEqual: non-binary version parameter");
+		fatal2i("areHashesEqual: non-binary version parameter");
 	}
 	return file.hashSums.match(o->file.hashSums);
 }

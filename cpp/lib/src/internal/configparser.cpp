@@ -265,7 +265,7 @@ string ConfigParser::__get_lexem_description(Lexem::Type type)
 		case Lexem::Value: return __("option value (quoted string)");
 		case Lexem::Name: return __("option name (letters, numbers, slashes, points, dashes, double colons allowed)");
 		default:
-			fatal2("internal error: no description for lexem #%d", int(type));
+			fatal2i("no description for lexem #%d", int(type));
 	}
 	return string(); // unreachable
 }

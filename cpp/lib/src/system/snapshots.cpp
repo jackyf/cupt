@@ -135,7 +135,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			auto package = cache.getBinaryPackage(packageName);
 			if (!package)
 			{
-				fatal2("internal error: the package '%s' doesn't exist", packageName);
+				fatal2i("the package '%s' doesn't exist", packageName);
 			}
 
 			toBeInstalledPackageNames.insert(packageName);
@@ -154,7 +154,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			}
 
 			// not found
-			fatal2("internal error: unable to find snapshot version for the package '%s'", packageName);
+			fatal2i("unable to find snapshot version for the package '%s'", packageName);
 
 			next_file_line:
 			;

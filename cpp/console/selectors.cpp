@@ -296,7 +296,7 @@ vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(share
 		auto version = dynamic_pointer_cast< const BinaryVersion >(source[i]);
 		if (!version)
 		{
-			fatal2("internal error: version is not binary");
+			fatal2i("version is not binary");
 		}
 		result.push_back(version);
 	}
@@ -327,7 +327,7 @@ vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(share
 		auto version = dynamic_pointer_cast< const SourceVersion >(source[i]);
 		if (!version)
 		{
-			fatal2("internal error: version is not source");
+			fatal2i("version is not source");
 		}
 		result.push_back(version);
 	}

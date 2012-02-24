@@ -117,7 +117,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 		}
 		else
 		{
-			fatal2("internal error: extension '%s' has no uncompressor", filenameExtension);
+			fatal2i("extension '%s' has no uncompressor", filenameExtension);
 		}
 
 		if (::system(format2("which %s >/dev/null", uncompressorName).c_str()))

@@ -128,7 +128,7 @@ void FileImpl::assertFileOpened() const
 	if (!handle)
 	{
 		// file was not properly opened
-		fatal2("internal error: file '%s' was not properly opened", path);
+		fatal2i("file '%s' was not properly opened", path);
 	}
 }
 

@@ -603,7 +603,7 @@ int policy(Context& context, bool source)
 				auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package);
 				if (!binaryPackage)
 				{
-					fatal2("internal error: binary package expected");
+					fatal2i("binary package expected");
 				}
 				auto installedVersion = binaryPackage->getInstalledVersion();
 				if (installedVersion)

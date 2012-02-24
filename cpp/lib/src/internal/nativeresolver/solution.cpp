@@ -246,7 +246,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	{
 		if (conflictingElementPtr)
 		{
-			fatal2("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
+			fatal2i("conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
 					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
 		it->second = std::move(packageEntry);
@@ -328,7 +328,7 @@ void Solution::prepare()
 {
 	if (!__parent)
 	{
-		fatal2("internal error: undefined master solution");
+		fatal2i("undefined master solution");
 	}
 
 	if (!__parent->__master_entries)

@@ -2026,12 +2026,12 @@ bool __defer_triggers(const Config& config, const Cache& cache)
 		auto dpkgPackage = cache.getBinaryPackage("dpkg");
 		if (!dpkgPackage)
 		{
-			fatal2("internal error: no 'dpkg' binary package available");
+			fatal2i("no 'dpkg' binary package available");
 		}
 		auto dpkgInstalledVersion = dpkgPackage->getInstalledVersion();
 		if (!dpkgInstalledVersion)
 		{
-			fatal2("internal error: no installed version for 'dpkg' binary package");
+			fatal2i("no installed version for 'dpkg' binary package");
 		}
 		return (compareVersionStrings(dpkgInstalledVersion->versionString, "1.16.1") != -1); // >=
 	}

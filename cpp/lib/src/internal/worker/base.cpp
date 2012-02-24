@@ -28,7 +28,7 @@ namespace internal {
 
 WorkerBase::WorkerBase()
 {
-	fatal2("internal error: WorkerBase::WorkerBase shouldn't be ever called");
+	fatal2i("WorkerBase::WorkerBase shouldn't be ever called");
 }
 
 WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)

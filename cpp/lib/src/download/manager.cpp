@@ -69,7 +69,7 @@ static void sendSocketMessage(int socket, const vector< string >& message)
 	auto compactedMessage = join("\1", message);
 	if (message.size() >= 0xFFFF)
 	{
-		fatal2("internal error: sendSocketMessage: message size exceeded 64K");
+		fatal2i("sendSocketMessage: message size exceeded 64K");
 	}
 	uint16_t len = compactedMessage.size();
 
@@ -387,7 +387,7 @@ void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 {
 	if (params.size() != 2) // uri, result
 	{
-		fatal2("internal error: download manager: wrong parameter count for 'done' message");
+		fatal2i("download manager: wrong parameter count for 'done' message");
 	}
 	const string& uri = params[0];
 	const string& result = params[1];
@@ -401,7 +401,7 @@ void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 	auto downloadInfoIt = activeDownloads.find(uri);
 	if (downloadInfoIt == activeDownloads.end())
 	{
-		fatal2("internal error: download manager: received preliminary result for unexistent download, uri '%s'", uri);
+		fatal2i("download manager: received preliminary result for unexistent download, uri '%s'", uri);
 	}
 	ActiveDownloadInfo& downloadInfo = downloadInfoIt->second;
 	sendSocketMessage(downloadInfo.waiterSocket,
@@ -441,7 +441,7 @@ void ManagerImpl::processFinalResult(MessageQueue& workerQueue,
 {
 	if (params.size() != 2) // uri, result
 	{
-		fatal2("internal error: download manager: wrong parameter count for 'done-ack' message");
+		fatal2i("download manager: wrong parameter count for 'done-ack' message");
 	}
 
 	const string& uri = params[0];
@@ -475,7 +475,7 @@ void ManagerImpl::processFinalResult(MessageQueue& workerQueue,
 	auto downloadInfoIt = activeDownloads.find(uri);
 	if (downloadInfoIt == activeDownloads.end())
 	{
-		fatal2("internal error: download manager: received final result for unexistent download, uri '%s'", uri);
+		fatal2i("download manager: received final result for unexistent download, uri '%s'", uri);
 	}
 	activeDownloads.erase(downloadInfoIt);
 
@@ -493,7 +493,7 @@ void ManagerImpl::killPerformerBecauseOfWrongSize(MessageQueue& workerQueue,
 	auto downloadInfoIt = activeDownloads.find(uri);
 	if (downloadInfoIt == activeDownloads.end())
 	{
-		fatal2("internal error: download manager: received '%s' submessage for unexistent download, uri '%s'",
+		fatal2i("download manager: received '%s' submessage for unexistent download, uri '%s'",
 				actionName, uri);
 	}
 	ActiveDownloadInfo& downloadInfo = downloadInfoIt->second;
@@ -516,7 +516,7 @@ void ManagerImpl::processProgressMessage(MessageQueue& workerQueue, const vector
 {
 	if (params.size() < 2) // uri, action name
 	{
-		fatal2("internal error: download manager: wrong parameter count for 'progress' message");
+		fatal2i("download manager: wrong parameter count for 'progress' message");
 	}
 
 	const string& uri = params[0];
@@ -529,7 +529,7 @@ void ManagerImpl::processProgressMessage(MessageQueue& workerQueue, const vector
 		// now compare them strictly
 		if (params.size() != 3)
 		{
-			fatal2("internal error: download manager: wrong parameter count for 'progress' message, 'expected-size' submessage");
+			fatal2i("download manager: wrong parameter count for 'progress' message, 'expected-size' submessage");
 		}
 
 		auto expectedSize = lexical_cast< size_t >(params[2]);
@@ -547,7 +547,7 @@ void ManagerImpl::processProgressMessage(MessageQueue& workerQueue, const vector
 			// checking for overflows
 			if (params.size() != 4)
 			{
-				fatal2("internal error: download manager: wrong parameter count for 'progress' message, 'downloading' submessage");
+				fatal2i("download manager: wrong parameter count for 'progress' message, 'downloading' submessage");
 			}
 			auto currentSize = lexical_cast< size_t >(params[2]);
 			if (currentSize > downloadSizeIt->second)
@@ -567,7 +567,7 @@ void ManagerImpl::proceedDownload(MessageQueue& workerQueue, const vector< strin
 {
 	if (params.size() != 3) // uri, targetPath, waiterSocket
 	{
-		fatal2("internal error: download manager: wrong parameter count for 'progress' message");
+		fatal2i("download manager: wrong parameter count for 'progress' message");
 	}
 	const string& uri = params[0];
 	if (debugging)
@@ -854,7 +854,7 @@ void ManagerImpl::worker()
 			// new query appeared
 			if (params.size() != 2) // uri, target path
 			{
-				fatal2("internal error: download manager: wrong parameter count for 'download' message");
+				fatal2i("download manager: wrong parameter count for 'download' message");
 			}
 			const string& uri = params[0];
 			if (debugging)
@@ -867,7 +867,7 @@ void ManagerImpl::worker()
 		{
 			if (params.size() != 2) // uri, size
 			{
-				fatal2("internal error: download manager: wrong parameter count for 'set-download-size' message");
+				fatal2i("download manager: wrong parameter count for 'set-download-size' message");
 			}
 			const string& uri = params[0];
 			const size_t size = lexical_cast< size_t >(params[1]);
@@ -937,7 +937,7 @@ void ManagerImpl::worker()
 		{
 			if (params.size() != 2)
 			{
-				fatal2("internal error: download manager: wrong parameter count for 'set-long-alias' message");
+				fatal2i("download manager: wrong parameter count for 'set-long-alias' message");
 			}
 			progress->setLongAliasForUri(params[0], params[1]);
 		}
@@ -945,7 +945,7 @@ void ManagerImpl::worker()
 		{
 			if (params.size() != 2)
 			{
-				fatal2("internal error: download manager: wrong parameter count for 'set-short-alias' message");
+				fatal2i("download manager: wrong parameter count for 'set-short-alias' message");
 			}
 			progress->setShortAliasForUri(params[0], params[1]);
 		}
@@ -955,7 +955,7 @@ void ManagerImpl::worker()
 		}
 		else
 		{
-			fatal2("internal error: download manager: invalid worker command '%s'", command);
+			fatal2i("download manager: invalid worker command '%s'", command);
 		}
 	}
 	disablePingTimer();
@@ -1119,14 +1119,14 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 		}
 		if (params.size() != 3)
 		{
-			fatal2("internal error: download client: wrong parameter count for download result message");
+			fatal2i("download client: wrong parameter count for download result message");
 		}
 		const string& uri = params[0];
 
 		auto waitedUriIt = waitedUriToTargetPath.find(uri);
 		if (waitedUriIt == waitedUriToTargetPath.end())
 		{
-			fatal2("internal error: download client: received unknown uri '%s'", uri);
+			fatal2i("download client: received unknown uri '%s'", uri);
 		}
 
 		const string targetPath = waitedUriIt->second;

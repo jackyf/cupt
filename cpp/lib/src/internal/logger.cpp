@@ -87,7 +87,7 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 {
 	if (level == 0)
 	{
-		fatal2("internal error: logger: log: level should be >= 1");
+		fatal2i("logger: log: level should be >= 1");
 	}
 
 	if (!__enabled)

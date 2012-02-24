@@ -99,7 +99,7 @@ class FileMethod: public download::Method
 		}
 		else
 		{
-			fatal2("internal error: a wrong scheme '%s' for the 'file' download method", protocol);
+			fatal2i("a wrong scheme '%s' for the 'file' download method", protocol);
 			return string(); // unreachable
 		}
 	}

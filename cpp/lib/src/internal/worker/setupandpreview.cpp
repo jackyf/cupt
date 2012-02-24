@@ -52,7 +52,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			auto package = _cache->getBinaryPackage(packageName);
 			if (!package)
 			{
-				fatal2("internal error: the binary package '%s' does not exist", packageName);
+				fatal2i("the binary package '%s' does not exist", packageName);
 			}
 			auto installedVersion = package->getInstalledVersion();
 

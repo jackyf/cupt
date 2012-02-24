@@ -42,25 +42,25 @@ InitialPackageEntry::InitialPackageEntry()
 
 size_t BasicVertex::getTypePriority() const
 {
-	fatal2("internal error: getting priority of '%s'", toString());
+	fatal2i("getting priority of '%s'", toString());
 	return 0; // unreachable
 }
 
 bool BasicVertex::isAnti() const
 {
-	fatal2("internal error: getting isAnti of '%s'", toString());
+	fatal2i("getting isAnti of '%s'", toString());
 	return false; // unreachable
 }
 
 shared_ptr< const Reason > BasicVertex::getReason(const BasicVertex&) const
 {
-	fatal2("internal error: getting reason of '%s'", toString());
+	fatal2i("getting reason of '%s'", toString());
 	return shared_ptr< const Reason >(); // unreachable
 }
 
 const forward_list< const Element* >* BasicVertex::getRelatedElements() const
 {
-	fatal2("internal error: getting related elements of '%s'", toString());
+	fatal2i("getting related elements of '%s'", toString());
 	return NULL; // unreachable
 }
 
@@ -142,7 +142,7 @@ size_t RelationExpressionVertex::getTypePriority() const
 		case BinaryVersion::RelationTypes::Suggests:
 			return 1;
 		default:
-			fatal2("internal error: unsupported dependency type '%d'", int(dependencyType));
+			fatal2i("unsupported dependency type '%d'", int(dependencyType));
 	}
 	return 0; // unreacahble
 }
@@ -160,7 +160,7 @@ shared_ptr< const Reason > RelationExpressionVertex::getReason(const BasicVertex
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal2("internal error: a parent of relation expression vertex is not a version vertex");
+		fatal2i("a parent of relation expression vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new OurReason(versionParent->version,
@@ -212,7 +212,7 @@ shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& paren
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal2("internal error: a parent of relation expression vertex is not a version vertex");
+		fatal2i("a parent of relation expression vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new system::Resolver::SynchronizationReason(versionParent->version, targetPackageName));
@@ -622,7 +622,7 @@ class DependencyGraph::FillHelper
 				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
 				if (!package)
 				{
-					fatal2("internal error: the binary package '%s' doesn't exist", packageName);
+					fatal2i("the binary package '%s' doesn't exist", packageName);
 				}
 				auto packageVersions = package->getVersions();
 				const list< const BinaryVersion* >& subSatisfiedVersions = groupIt->second;
@@ -873,7 +873,7 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elem
 	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
 	{
-		fatal2("internal error: getting corresponding empty element for non-version vertex");
+		fatal2i("getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
 	return __fill_helper->getVertexPtrForEmptyPackage(packageName);
