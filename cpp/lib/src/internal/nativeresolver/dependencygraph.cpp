@@ -212,7 +212,7 @@ shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& paren
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal2i("a parent of relation expression vertex is not a version vertex");
+		fatal2i("a parent of synchronize vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new system::Resolver::SynchronizationReason(versionParent->version, targetPackageName));
