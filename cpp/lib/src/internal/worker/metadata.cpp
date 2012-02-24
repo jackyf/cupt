@@ -122,7 +122,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 		if (::system(format2("which %s >/dev/null", uncompressorName).c_str()))
 		{
-			warn2("'%s' uncompressor is not available, not downloading '%s'",
+			warn2(__("'%s' uncompressor is not available, not downloading '%s'"),
 					uncompressorName, string(uri));
 			return false;
 		}
@@ -150,7 +150,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 	}
 	else
 	{
-		warn2("unknown file extension '%s', not downloading '%s'",
+		warn2(__("unknown file extension '%s', not downloading '%s'"),
 					filenameExtension, string(uri));
 		return false;
 	}
@@ -263,14 +263,14 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 			if (!cachefiles::verifySignature(*_config, targetPath))
 			{
-				warn2("signature verification for '%s' failed", longAlias);
+				warn2(__("signature verification for '%s' failed"), longAlias);
 
 				if (!_config->getBool("cupt::update::keep-bad-signatures"))
 				{
 					// for compatibility with APT tools delete the downloaded file
 					if (unlink(signatureTargetPath.c_str()) == -1)
 					{
-						warn2e("unable to delete file '%s'", signatureTargetPath);
+						warn2e(__("unable to delete file '%s'"), signatureTargetPath);
 					}
 				}
 			}
@@ -351,7 +351,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 	auto fail = [baseLongAlias, &cleanUp]()
 	{
 		cleanUp();
-		warn2("%s: failed to proceed", baseLongAlias);
+		warn2(__("%s: failed to proceed"), baseLongAlias);
 	};
 
 	try
@@ -416,7 +416,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 		}
 		if (unlink(diffIndexPath.c_str()) == -1)
 		{
-			warn2("unable to delete a temporary index file '%s'", diffIndexPath);
+			warn2(__("unable to delete a temporary index file '%s'"), diffIndexPath);
 		}
 
 		HashSums subTargetHashSums;
@@ -508,7 +508,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			 out:
 				if (unlink(unpackedPath.c_str()) == -1)
 				{
-					warn2e("unable to remove partial index patch file '%s'", unpackedPath);
+					warn2e(__("unable to remove partial index patch file '%s'"), unpackedPath);
 				}
 				return result;
 			};
@@ -582,7 +582,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 		{
 			if (unlink(downloadPath.c_str()) == -1)
 			{
-				warn2e("unable to remove an outdated partial file '%s'", downloadPath);
+				warn2e(__("unable to remove an outdated partial file '%s'"), downloadPath);
 			}
 		}
 	}
@@ -602,7 +602,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 		{
 			if (unlink(downloadPath.c_str()) == -1)
 			{
-				warn2e("unable to remove partial index file '%s'", downloadPath);
+				warn2e(__("unable to remove partial index file '%s'"), downloadPath);
 			}
 			return __("hash sums mismatch");
 		}
@@ -724,7 +724,7 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager, const ca
 	}
 
 	// we reached here if neither download URI succeeded
-	warn2("failed to download %s for '%s/%s'",
+	warn2(__("failed to download %s for '%s/%s'"),
 			info.label, indexEntry.distribution, indexEntry.component);
 	return false;
 }
@@ -746,7 +746,7 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 		auto fail = [localizationIndexLongAlias, &cleanUp]()
 		{
 			cleanUp();
-			warn2("failed to parse localization info from '%s'", localizationIndexLongAlias);
+			warn2(__("failed to parse localization info from '%s'"), localizationIndexLongAlias);
 		};
 
 		try
@@ -942,7 +942,7 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 			{
 				if (unlink(fileIt->c_str()) == -1)
 				{
-					warn2e("unable to delete '%s'", *fileIt);
+					warn2e(__("unable to delete '%s'"), *fileIt);
 				}
 			}
 		}

@@ -33,7 +33,7 @@ void ConfigParser::parse(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal2("unable to open file '%s': %s", path, openError);
+		fatal2(__("unable to open file '%s': %s"), path, openError);
 	}
 
 	string block;
@@ -50,7 +50,7 @@ void ConfigParser::parse(const string& path)
 	}
 	catch (Exception&)
 	{
-		fatal2("unable to parse config file '%s'", path);
+		fatal2(__("unable to parse config file '%s'"), path);
 	}
 }
 
@@ -284,7 +284,7 @@ void ConfigParser::__error_out()
 	}
 	string context(__current, __current + contextLength);
 
-	fatal2("a syntax error: expected: %s before '%s'", errorDescription, context);
+	fatal2(__("a syntax error: expected: %s before '%s'"), errorDescription, context);
 }
 
 } // namespace

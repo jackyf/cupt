@@ -57,7 +57,7 @@ int search(Context& context)
 
 	if (patterns.empty())
 	{
-		fatal2("no search patterns specified");
+		fatal2(__("no search patterns specified"));
 	}
 
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
@@ -77,7 +77,7 @@ int search(Context& context)
 		}
 		catch (regex_error&)
 		{
-			fatal2("regular expression '%s' is not valid", pattern);
+			fatal2(__("regular expression '%s' is not valid"), pattern);
 		}
 	});
 

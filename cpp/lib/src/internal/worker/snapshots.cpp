@@ -217,18 +217,18 @@ void checkSnapshotName(const Snapshots& snapshots, const string& name)
 {
 	if (name.empty())
 	{
-		fatal2("the system snapshot name cannot be empty");
+		fatal2(__("the system snapshot name cannot be empty"));
 	}
 	if (name[0] == '.')
 	{
-		fatal2("the system snapshot name '%s' cannot start with a '.'", name);
+		fatal2(__("the system snapshot name '%s' cannot start with a '.'"), name);
 	}
 
 	{
 		auto existingNames = snapshots.getSnapshotNames();
 		if (std::find(existingNames.begin(), existingNames.end(), name) != existingNames.end())
 		{
-			fatal2("the system snapshot named '%s' already exists", name);
+			fatal2(__("the system snapshot named '%s' already exists"), name);
 		}
 	}
 }
@@ -238,11 +238,11 @@ void checkSnapshotSavingTools()
 	// ensuring needed tools is available
 	if (::system("which dpkg-repack >/dev/null 2>/dev/null"))
 	{
-		fatal2("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'");
+		fatal2(__("the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'"));
 	}
 	if (::system("which dpkg-scanpackages >/dev/null 2>/dev/null"))
 	{
-		fatal2("the 'dpkg-scanpackages' binary is not available, install the package 'dpkg-dev'");
+		fatal2(__("the 'dpkg-scanpackages' binary is not available, install the package 'dpkg-dev'"));
 	}
 
 }
@@ -355,7 +355,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		// deleting partially constructed snapshot (try)
 		if (chdir(snapshotsDirectory.c_str()) == -1)
 		{
-			warn2e("unable to set current directory to '%s'", snapshotsDirectory);
+			warn2e(__("unable to set current directory to '%s'"), snapshotsDirectory);
 		}
 
 		try
@@ -365,7 +365,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		}
 		catch (...)
 		{
-			warn2("unable to delete partial snapshot directory '%s'",
+			warn2(__("unable to delete partial snapshot directory '%s'"),
 					temporarySnapshotDirectory);
 		}
 
@@ -381,12 +381,12 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), previousName)
 			== snapshotNames.end())
 	{
-		fatal2("unable to find snapshot named '%s'", previousName);
+		fatal2(__("unable to find snapshot named '%s'"), previousName);
 	}
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), newName)
 			!= snapshotNames.end())
 	{
-		fatal2("the snapshot named '%s' already exists", newName);
+		fatal2(__("the snapshot named '%s' already exists"), newName);
 	}
 
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
@@ -402,7 +402,7 @@ void checkLooksLikeSnapshot(const string& directory)
 {
 	if (!fs::fileExists(directory + '/' + Snapshots::installedPackageNamesFilename))
 	{
-		fatal2("'%s' is not a valid snapshot", directory);
+		fatal2(__("'%s' is not a valid snapshot"), directory);
 	}
 }
 
@@ -412,7 +412,7 @@ void SnapshotsWorker::removeSnapshot(const Snapshots& snapshots, const string& n
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), name)
 			== snapshotNames.end())
 	{
-		fatal2("unable to find snapshot named '%s'", name);
+		fatal2(__("unable to find snapshot named '%s'"), name);
 	}
 
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);

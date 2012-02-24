@@ -57,7 +57,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		{
 			if (tagValue.first != tagValue.second)
 			{
-				fatal2("unexpected non-empty tag value '%s'", string(tagValue));
+				fatal2(__("unexpected non-empty tag value '%s'"), string(tagValue));
 			}
 			string block;
 			parser.parseAdditionalLines(block);
@@ -66,7 +66,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 			{
 				if (!regex_match(line, lineMatch, checksumsLineRegex))
 				{
-					fatal2("malformed line '%s'", line);
+					fatal2(__("malformed line '%s'"), line);
 				}
 				const string name = lineMatch[3];
 
@@ -157,11 +157,11 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal2("version string isn't defined");
+		fatal2(__("version string isn't defined"));
 	}
 	if (v->architectures.empty())
 	{
-		warn2("source package %s, version %s: architectures aren't defined, setting them to 'all'",
+		warn2(__("source package %s, version %s: architectures aren't defined, setting them to 'all'"),
 				v->packageName, v->versionString);
 		v->architectures.push_back("all");
 	}

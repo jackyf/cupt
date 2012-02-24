@@ -76,7 +76,7 @@ static void sendSocketMessage(int socket, const vector< string >& message)
 	if (write(socket, &len, sizeof(len)) == -1 ||
 			write(socket, compactedMessage.c_str(), len) == -1)
 	{
-		fatal2e("unable to send socket message");
+		fatal2e(__("unable to send socket message"));
 	}
 }
 
@@ -93,12 +93,12 @@ static vector< string > receiveSocketMessage(int socket)
 	{
 		if (errno != ECONNRESET /* handled under */)
 		{
-			fatal2e("unable to receive socket message length");
+			fatal2e(__("unable to receive socket message length"));
 		}
 	}
 	else if (readResult != sizeof(len) && readResult != 0)
 	{
-		fatal2("unable to receive socket message length: partial message arrived");
+		fatal2(__("unable to receive socket message length: partial message arrived"));
 	}
 
 	if (readResult == 0 || readResult == -1 /* connection reset */)
@@ -111,15 +111,15 @@ static vector< string > receiveSocketMessage(int socket)
 		readResult = read(socket, buf, len);
 		if (readResult == -1)
 		{
-			fatal2e("unable to receive socket message");
+			fatal2e(__("unable to receive socket message"));
 		}
 		else if (readResult == 0)
 		{
-			fatal2("unable to receive socket message: unexpected end of stream");
+			fatal2(__("unable to receive socket message: unexpected end of stream"));
 		}
 		else if (readResult != len)
 		{
-			fatal2("unable to receive socket message: partial message arrived");
+			fatal2(__("unable to receive socket message: partial message arrived"));
 		}
 
 		string compactedMessage(buf, len);
@@ -214,17 +214,17 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 	serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (serverSocket == -1)
 	{
-		fatal2e("unable to open server socket");
+		fatal2e(__("unable to open server socket"));
 	}
 	serverSocketAddress.sun_family = AF_UNIX;
 	strcpy(serverSocketAddress.sun_path, serverSocketPath.c_str());
 	if (bind(serverSocket, (sockaddr*)&serverSocketAddress, sizeof(sockaddr_un)) == -1)
 	{
-		fatal2e("unable to bind server socket to file '%s'", serverSocketPath);
+		fatal2e(__("unable to bind server socket to file '%s'"), serverSocketPath);
 	}
 	if (listen(serverSocket, SOMAXCONN) == -1)
 	{
-		fatal2e("unable to make server socket on file '%s' listen for connections", serverSocketPath);
+		fatal2e(__("unable to make server socket on file '%s' listen for connections"), serverSocketPath);
 	}
 
 	parentPipe.reset(new Pipe("parent"));
@@ -232,7 +232,7 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 	auto pid = fork();
 	if (pid == -1)
 	{
-		fatal2e("unable to create download worker process: fork failed");
+		fatal2e(__("unable to create download worker process: fork failed"));
 	}
 
 	if (pid)
@@ -278,28 +278,28 @@ ManagerImpl::~ManagerImpl()
 			int childExitStatus;
 			if (waitpid(workerPid, &childExitStatus, 0) == -1)
 			{
-				warn2e("unable to shutdown download worker process: waitpid failed");
+				warn2e(__("unable to shutdown download worker process: waitpid failed"));
 			}
 			else if (childExitStatus != 0)
 			{
-				warn2("download worker process exited abnormally: %s",
+				warn2(__("download worker process exited abnormally: %s"),
 						getWaitStatusDescription(childExitStatus));
 			}
 		}
 		else
 		{
-			warn2("download worker process aborted unexpectedly");
+			warn2(__("download worker process aborted unexpectedly"));
 		}
 
 		// cleaning server socket
 		if (close(serverSocket) == -1)
 		{
-			warn2e("unable to close download server socket");
+			warn2e(__("unable to close download server socket"));
 		}
 
 		if (unlink(serverSocketPath.c_str()) == -1)
 		{
-			warn2e("unable to delete download server socket file '%s'", serverSocketPath);
+			warn2e(__("unable to delete download server socket file '%s'"), serverSocketPath);
 		}
 	}
 }
@@ -313,7 +313,7 @@ void ManagerImpl::terminateDownloadProcesses()
 		{
 			if (errno != ESRCH)
 			{
-				warn2("download manager: unable to terminate a performer process (pid '%d')", pid);
+				warn2(__("download manager: unable to terminate a performer process (pid '%d')"), pid);
 			}
 		}
 	}
@@ -338,12 +338,12 @@ void enablePingTimer()
 	newAction.sa_handler = sendPingMessage;
 	if (sigfillset(&newAction.sa_mask) == -1)
 	{
-		fatal2e("sigfillset failed");
+		fatal2e(__("sigfillset failed"));
 	}
 	newAction.sa_flags = SA_RESTART;
 	if (sigaction(SIGALRM, &newAction, NULL) == -1)
 	{
-		fatal2e("unable to set up ALRM signal handler: sigaction failed");
+		fatal2e(__("unable to set up ALRM signal handler: sigaction failed"));
 	}
 
 	struct itimerval timerStruct;
@@ -353,7 +353,7 @@ void enablePingTimer()
 	timerStruct.it_value.tv_usec = timerStruct.it_interval.tv_usec;
 	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
 	{
-		fatal2e("unable to enable ALRM signal: setitimer failed");
+		fatal2e(__("unable to enable ALRM signal: setitimer failed"));
 	}
 }
 
@@ -363,12 +363,12 @@ void disablePingTimer()
 	defaultAction.sa_handler = SIG_DFL;
 	if (sigemptyset(&defaultAction.sa_mask) == -1)
 	{
-		fatal2e("sigemptyset failed");
+		fatal2e(__("sigemptyset failed"));
 	}
 	defaultAction.sa_flags = 0;
 	if (sigaction(SIGALRM, &defaultAction, NULL) == -1)
 	{
-		fatal2e("unable to clear ALRM signal handler: sigaction failed");
+		fatal2e(__("unable to clear ALRM signal handler: sigaction failed"));
 	}
 
 	struct itimerval timerStruct;
@@ -378,7 +378,7 @@ void disablePingTimer()
 	timerStruct.it_value.tv_usec = 0;
 	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
 	{
-		fatal2e("unable to disable ALRM signal: setitimer failed");
+		fatal2e(__("unable to disable ALRM signal: setitimer failed"));
 	}
 }
 
@@ -410,7 +410,7 @@ void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 	// cleanup after child
 	if (waitpid(downloadInfo.performerPid, NULL, 0) == -1)
 	{
-		fatal2e("waitpid on performer process failed");
+		fatal2e(__("waitpid on performer process failed"));
 	}
 	downloadInfo.performerPipe.reset();
 
@@ -500,7 +500,7 @@ void ManagerImpl::killPerformerBecauseOfWrongSize(MessageQueue& workerQueue,
 	// rest in peace, young process
 	if (kill(downloadInfo.performerPid, SIGTERM) == -1)
 	{
-		fatal2e("unable to kill process %u", downloadInfo.performerPid);
+		fatal2e(__("unable to kill process %u"), downloadInfo.performerPid);
 	}
 	// process it as failed
 	workerQueue.push({ "done", uri, errorString });
@@ -508,7 +508,7 @@ void ManagerImpl::killPerformerBecauseOfWrongSize(MessageQueue& workerQueue,
 	const string& path = downloadInfo.targetPath;
 	if (unlink(path.c_str()) == -1)
 	{
-		warn2e("unable to delete file '%s'", path);
+		warn2e(__("unable to delete file '%s'"), path);
 	}
 }
 
@@ -636,7 +636,7 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 	auto downloadPid = fork();
 	if (downloadPid == -1)
 	{
-		fatal2e("unable to create performer process: fork failed");
+		fatal2e(__("unable to create performer process: fork failed"));
 	}
 	downloadInfo.performerPid = downloadPid;
 
@@ -717,7 +717,7 @@ InputMessage ManagerImpl::pollAllInput(MessageQueue& workerQueue,
 		}
 		else
 		{
-			fatal2e("unable to poll worker loop sockets");
+			fatal2e(__("unable to poll worker loop sockets"));
 		}
 	}
 
@@ -735,7 +735,7 @@ InputMessage ManagerImpl::pollAllInput(MessageQueue& workerQueue,
 			sock = accept(sock, NULL, NULL);
 			if (sock == -1)
 			{
-				fatal2e("unable to accept new socket connection");
+				fatal2e(__("unable to accept new socket connection"));
 			}
 			if (debugging)
 			{
@@ -760,12 +760,12 @@ void makeSyscallsRestartable()
 	action.sa_handler = doNothing;
 	if (sigemptyset(&action.sa_mask) == -1)
 	{
-		fatal2e("sigemptyset failed");
+		fatal2e(__("sigemptyset failed"));
 	}
 	action.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &action, NULL) == -1)
 	{
-		fatal2e("download worker: making system calls restartable: sigaction failed");
+		fatal2e(__("download worker: making system calls restartable: sigaction failed"));
 	}
 }
 
@@ -845,7 +845,7 @@ void ManagerImpl::worker()
 				clientSockets.erase(sock); // if it is a client socket
 				if (close(sock) == -1)
 				{
-					fatal2e("unable to close socket");
+					fatal2e(__("unable to close socket"));
 				}
 			}
 		}
@@ -909,7 +909,7 @@ void ManagerImpl::worker()
 					{
 						goto do_poll;
 					}
-					fatal2e("download worker: polling waiter socket failed");
+					fatal2e(__("download worker: polling waiter socket failed"));
 				}
 				if (!pollResult)
 				{
@@ -988,11 +988,11 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 		const string& targetPath = entityIt->targetPath;
 		if (targetPath.empty())
 		{
-			fatal2("passed a download entity with empty target path");
+			fatal2(__("passed a download entity with empty target path"));
 		}
 		if (result.count(targetPath))
 		{
-			fatal2("passed distinct download entities with the same target path '%s'", targetPath);
+			fatal2(__("passed distinct download entities with the same target path '%s'"), targetPath);
 		}
 		InnerDownloadElement& element = result[targetPath];
 
@@ -1034,12 +1034,12 @@ static void checkSocketForTimeout(int sock)
 		}
 		else
 		{
-			fatal2e("download client: polling client socket failed");
+			fatal2e(__("download client: polling client socket failed"));
 		}
 	}
 	else if (!pollResult)
 	{
-		fatal2("download client: download server socket is timed out");
+		fatal2(__("download client: download server socket is timed out"));
 	}
 }
 
@@ -1067,11 +1067,11 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	auto sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1)
 	{
-		fatal2e("unable to open client socket");
+		fatal2e(__("unable to open client socket"));
 	}
 	if (connect(sock, (sockaddr*)&serverSocketAddress, sizeof(sockaddr_un)) == -1)
 	{
-		fatal2e("unable to connect to server socket");
+		fatal2e(__("unable to connect to server socket"));
 	}
 
 	auto scheduleDownload = [&sock, &downloads, &waitedUriToTargetPath](const string& targetPath)
@@ -1180,7 +1180,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 
 	if (close(sock) == -1)
 	{
-		fatal2e("unable to close client socket");
+		fatal2e(__("unable to close client socket"));
 	}
 
 	return result;

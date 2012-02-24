@@ -58,7 +58,7 @@ int downloadSourcePackage(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no source package expressions specified");
+		fatal2(__("no source package expressions specified"));
 	}
 
 	if (!shellMode)
@@ -157,7 +157,7 @@ int downloadSourcePackage(Context& context)
 						{
 							if (unlink(filename.c_str()) == -1)
 							{
-								warn2e("unable to delete file '%s'", filename);
+								warn2e(__("unable to delete file '%s'"), filename);
 							}
 							return __("hash sums mismatch");
 						}
@@ -177,7 +177,7 @@ int downloadSourcePackage(Context& context)
 		auto downloadError = downloadManager.download(downloadEntities);
 		if (!downloadError.empty())
 		{
-			fatal2("there were download errors");
+			fatal2(__("there were download errors"));
 		}
 	}; // make sure that download manager is already destroyed at this point
 
@@ -189,7 +189,7 @@ int downloadSourcePackage(Context& context)
 			string command = "dpkg-source -x " + *filenameIt;
 			if (::system(command.c_str()))
 			{
-				warn2("dpkg-source on file '%s' failed", *filenameIt);
+				warn2(__("dpkg-source on file '%s' failed"), *filenameIt);
 			}
 		}
 	}
@@ -216,7 +216,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package expressions specified");
+		fatal2(__("no binary package expressions specified"));
 	}
 
 	auto cache = context.getCache(false, !variables.count("installed-only"), true);
@@ -324,7 +324,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 					char tempFilename[] = "cupt-download-XXXXXX";
 					if (mkstemp(tempFilename) == -1)
 					{
-						fatal2e("unable to create a temporary file: mkstemp failed");
+						fatal2e(__("unable to create a temporary file: mkstemp failed"));
 					}
 
 					try
@@ -345,7 +345,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 						}
 						if (!downloadError.empty())
 						{
-							fatal2("there were download errors");
+							fatal2(__("there were download errors"));
 						}
 
 						auto viewResult = ::system((pagerProgram + ' ' + tempFilename).c_str());
@@ -353,7 +353,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 						// remove the file
 						if (unlink(tempFilename) == -1)
 						{
-							fatal2e("unable to delete file '%s'", tempFilename);
+							fatal2e(__("unable to delete file '%s'"), tempFilename);
 						}
 
 						// return non-zero code in case of some error
@@ -370,7 +370,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 				}
 				else
 				{
-					fatal2("no info where to acquire %s for version '%s' of package '%s'",
+					fatal2(__("no info where to acquire %s for version '%s' of package '%s'"),
 							typeString, version->versionString, version->packageName);
 				}
 			}

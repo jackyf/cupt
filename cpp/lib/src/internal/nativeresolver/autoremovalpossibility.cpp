@@ -44,7 +44,7 @@ class AutoRemovalPossibilityImpl
 			}
 			catch (regex_error&)
 			{
-				fatal2("invalid regular expression '%s'", regexString);
+				fatal2(__("invalid regular expression '%s'"), regexString);
 			}
 		}
 	}

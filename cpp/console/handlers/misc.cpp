@@ -60,7 +60,7 @@ int showBinaryVersions(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package expressions specified");
+		fatal2(__("no binary package expressions specified"));
 	}
 
 	if (!shellMode)
@@ -239,7 +239,7 @@ int showSourceVersions(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no source package expressions specified");
+		fatal2(__("no source package expressions specified"));
 	}
 
 	if (!shellMode)
@@ -341,7 +341,7 @@ int showRelations(Context& context, bool reverse)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package expressions specified");
+		fatal2(__("no binary package expressions specified"));
 	}
 
 	if (reverse)
@@ -573,7 +573,7 @@ int policy(Context& context, bool source)
 	auto variables = parseOptions(context, options, arguments);
 	if (!arguments.empty() && variables.count("show-dates"))
 	{
-		fatal2("the option '--show-dates' can be used only with no package names supplied");
+		fatal2(__("the option '--show-dates' can be used only with no package names supplied"));
 	}
 
 	auto cache = context.getCache(/* source */ source, /* binary */ !source,
@@ -592,7 +592,7 @@ int policy(Context& context, bool source)
 			auto policyVersion = cache->getPolicyVersion(package);
 			if (!policyVersion)
 			{
-				fatal2("no versions available for package '%s'", packageName);
+				fatal2(__("no versions available for package '%s'"), packageName);
 			}
 
 			cout << packageName << ':' << endl;
@@ -762,7 +762,7 @@ int findDependencyChain(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary packages specified");
+		fatal2(__("no binary packages specified"));
 	}
 
 	bool installedOnly = variables.count("installed-only") || (arguments.size() == 1);
@@ -896,7 +896,7 @@ int showScreenshotUris(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package names specified");
+		fatal2(__("no binary package names specified"));
 	}
 
 	auto cache = context.getCache(false, true, true); // binary and installed

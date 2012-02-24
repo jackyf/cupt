@@ -85,11 +85,11 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	bool statusIsModified = false;
 	if (oldStatus == -1)
 	{
-		warn2e("unable to get standard error stream status flags: fcntl failed");
+		warn2e(__("unable to get standard error stream status flags: fcntl failed"));
 	}
 	else if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus | O_NONBLOCK) == -1)
 	{
-		warn2e("unable to make standard error stream non-blocking: fcntl failed");
+		warn2e(__("unable to make standard error stream non-blocking: fcntl failed"));
 	}
 	else
 	{
@@ -102,7 +102,7 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	{
 		if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus) == -1)
 		{
-			warn2e("unable to make standard error stream blocking again: fcntl failed");
+			warn2e(__("unable to make standard error stream blocking again: fcntl failed"));
 		}
 	}
 }
@@ -288,7 +288,7 @@ void ConsoleProgress::finishedDownloadHook(const string& uri, const string& resu
 	}
 	else
 	{
-		warn2("internal error: console download progress: no existing download record for the uri '%s'", uri);
+		warn2(__("internal error: console download progress: no existing download record for the uri '%s'"), uri);
 	}
 	__impl->finishedDownload(uri, result, recordNumber);
 }

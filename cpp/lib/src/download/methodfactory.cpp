@@ -59,7 +59,7 @@ MethodFactoryImpl::~MethodFactoryImpl()
 	{
 		if (dlclose(*dlHandleIt))
 		{
-			warn2("unable to unload dl handle '%p': %s", *dlHandleIt, dlerror());
+			warn2(__("unable to unload dl handle '%p': %s"), *dlHandleIt, dlerror());
 		}
 	}
 }
@@ -80,7 +80,7 @@ void MethodFactoryImpl::__load_methods()
 	auto paths = fs::glob(downloadMethodPath + "*.so");
 	if (paths.empty())
 	{
-		warn2("no download methods found");
+		warn2(__("no download methods found"));
 	}
 	FORIT(pathIt, paths)
 	{
@@ -99,23 +99,23 @@ void MethodFactoryImpl::__load_methods()
 
 		if (__method_builders.count(methodName))
 		{
-			warn2("not loading another copy of download method '%s'", methodName);
+			warn2(__("not loading another copy of download method '%s'"), methodName);
 			continue;
 		}
 
 		auto dlHandle = dlopen(pathIt->c_str(), RTLD_NOW | RTLD_LOCAL);
 		if (!dlHandle)
 		{
-			warn2("unable to load download method '%s': dlopen: %s", methodName, dlerror());
+			warn2(__("unable to load download method '%s': dlopen: %s"), methodName, dlerror());
 			continue;
 		}
 		MethodBuilder methodBuilder = reinterpret_cast< MethodBuilder >(dlsym(dlHandle, "construct"));
 		if (!methodBuilder)
 		{
-			warn2("unable to load download method '%s': dlsym: %s", methodName, dlerror());
+			warn2(__("unable to load download method '%s': dlsym: %s"), methodName, dlerror());
 			if (dlclose(dlHandle))
 			{
-				warn2("unable to unload dl handle '%p': %s", dlHandle, dlerror());
+				warn2(__("unable to unload dl handle '%p': %s"), dlHandle, dlerror());
 			}
 			continue;
 		}
@@ -136,7 +136,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 	auto availableHandlerNames = __config->getList(optionName);
 	if (availableHandlerNames.empty())
 	{
-		fatal2("no download handlers defined for '%s' protocol", protocol);
+		fatal2(__("no download handlers defined for '%s' protocol"), protocol);
 	}
 
 	// not very effective, but readable and we hardly ever get >10 handlers for same protocol
@@ -170,7 +170,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 		return (methodBuilderIt->second)();
 	}
 
-	fatal2("no download handlers available");
+	fatal2(__("no download handlers available"));
 	return NULL; // unreachable
 }
 

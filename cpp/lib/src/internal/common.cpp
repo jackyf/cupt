@@ -105,22 +105,22 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 	size_t inputLength = input.second - input.first;
 	if (inputLength >= sizeof(buf))
 	{
-		fatal2("too long number string");
+		fatal2(__("too long number string"));
 	}
 	memcpy(buf, &(*input.first), inputLength);
 	errno = 0;
 	long long number = strtoll(buf, NULL, 10);
 	if (errno)
 	{
-		fatal2e("invalid number '%s'", buf);
+		fatal2e(__("invalid number '%s'"), buf);
 	}
 	if (number < 0)
 	{
-		fatal2("negative number '%s'", buf);
+		fatal2(__("negative number '%s'"), buf);
 	}
 	if (number >= 0x100000000LL) // uint32_t upper limit
 	{
-		fatal2("too big number '%s'", buf);
+		fatal2(__("too big number '%s'"), buf);
 	}
 	return uint32_t(number);
 }

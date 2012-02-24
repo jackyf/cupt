@@ -95,20 +95,20 @@ class Readline
 		auto handle = dlopen("libreadline.so.6", RTLD_NOW);
 		if (!handle)
 		{
-			warn2("unable to dynamically find libreadline.so.6: dlopen: %s", dlerror());
+			warn2(__("unable to dynamically find libreadline.so.6: dlopen: %s"), dlerror());
 			return;
 		}
 
 		__dl_readline = reinterpret_cast< decltype(__dl_readline) >(dlsym(handle, "readline"));
 		if (!__dl_readline)
 		{
-			warn2("unable to dynamically bind symbol 'readline': %s", dlerror());
+			warn2(__("unable to dynamically bind symbol 'readline': %s"), dlerror());
 		}
 
 		__dl_add_history = reinterpret_cast< decltype(__dl_add_history) >(dlsym(handle, "add_history"));
 		if (!__dl_add_history)
 		{
-			warn2("unable to dynamically bind symbol 'add_history': %s", dlerror());
+			warn2(__("unable to dynamically bind symbol 'add_history': %s"), dlerror());
 		}
 	}
 };
@@ -128,7 +128,7 @@ void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
 	File pipe(shellCommand, "pr", errorString);
 	if (!errorString.empty())
 	{
-		fatal2("unable to open internal shell pipe: %s", errorString);
+		fatal2(__("unable to open internal shell pipe: %s"), errorString);
 	}
 
 	string argument;

@@ -70,7 +70,7 @@ vector< string > glob(const string& param)
 	if (result != 0 && result != GLOB_NOMATCH)
 	{
 		globfree(&glob_result);
-		fatal2e("glob() failed: '%s'", param);
+		fatal2e(__("glob() failed: '%s'"), param);
 	}
 	for (size_t i = 0; i < glob_result.gl_pathc; ++i)
 	{
@@ -85,7 +85,7 @@ vector< string > lglob(const string& directoryPath, const string& shellPattern)
 	auto dirPtr = opendir(directoryPath.c_str());
 	if (!dirPtr)
 	{
-		fatal2e("unable to open the directory '%s'", directoryPath);
+		fatal2e(__("unable to open the directory '%s'"), directoryPath);
 	}
 
 	vector< string > strings;
@@ -99,7 +99,7 @@ vector< string > lglob(const string& directoryPath, const string& shellPattern)
 		free(directoryEntryPtr);
 		if (closedir(dirPtr) == -1)
 		{
-			fatal2e("unable to close the directory '%s'", directoryPath);
+			fatal2e(__("unable to close the directory '%s'"), directoryPath);
 		}
 	};
 
@@ -109,7 +109,7 @@ vector< string > lglob(const string& directoryPath, const string& shellPattern)
 		if (readdirrResult)
 		{
 			freeResources();
-			fatal2("readdir_r failed on '%s'", directoryPath);
+			fatal2(__("readdir_r failed on '%s'"), directoryPath);
 		}
 
 		if (!resultDirectoryEntryPtr)
@@ -142,7 +142,7 @@ bool __lstat(const string& path, struct stat* result)
 		}
 		else
 		{
-			fatal2e("lstat() failed: '%s'", path);
+			fatal2e(__("lstat() failed: '%s'"), path);
 		}
 	}
 	return true;
@@ -165,11 +165,11 @@ size_t fileSize(const string& path)
 	struct stat s;
 	if (!__lstat(path, &s))
 	{
-		fatal2("the file '%s' does not exists", path);
+		fatal2(__("the file '%s' does not exists"), path);
 	}
 	if (!S_ISREG(s.st_mode))
 	{
-		fatal2("the file '%s' is not a regular file", path);
+		fatal2(__("the file '%s' is not a regular file"), path);
 	}
 	return s.st_size;
 }

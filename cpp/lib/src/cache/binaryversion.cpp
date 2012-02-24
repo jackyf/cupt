@@ -146,18 +146,18 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal2("version string isn't defined");
+		fatal2(__("version string isn't defined"));
 	}
 	if (v->architecture.empty())
 	{
-		warn2("package %s, version %s: architecture isn't defined, setting it to 'all'",
+		warn2(__("package %s, version %s: architecture isn't defined, setting it to 'all'"),
 				v->packageName, v->versionString);
 		v->architecture = "all";
 	}
 	v->sources.push_back(source);
 	if (!v->isInstalled() && v->file.hashSums.empty())
 	{
-		fatal2("no hash sums specified");
+		fatal2(__("no hash sums specified"));
 	}
 
 	return shared_ptr< BinaryVersion >(v);

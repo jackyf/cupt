@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 		{
 			if (argc > 2)
 			{
-				warn2("the command '%s' doesn't accept arguments", argv[1]);
+				warn2(__("the command '%s' doesn't accept arguments"), argv[1]);
 			}
 			showOwnVersion();
 			return 0;
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 		{
 			if (argc > 2)
 			{
-				warn2("the command '%s' doesn't accept arguments", argv[1]);
+				warn2(__("the command '%s' doesn't accept arguments"), argv[1]);
 			}
 			showHelp(argv[0]);
 			return 0;
@@ -79,7 +79,7 @@ int mainEx(int argc, char* argv[], Context& context, string& command)
 		}
 		catch (Exception&)
 		{
-			fatal2("error performing command '%s'", command);
+			fatal2(__("error performing command '%s'"), command);
 		}
 	}
 	catch (Exception&)

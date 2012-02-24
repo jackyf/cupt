@@ -48,7 +48,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 			// a dangling symlink
 			if (unlink(debPath.c_str()) == -1)
 			{
-				warn2e("unable to delete dangling APT compatibility symbolic link '%s'", debPath);
+				warn2e(__("unable to delete dangling APT compatibility symbolic link '%s'"), debPath);
 			}
 		}
 		else
@@ -67,7 +67,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 				{
 					if (symlink(pathBasename.c_str(), correctedPath.c_str()) == -1)
 					{
-						fatal2e("unable to create APT compatibility symbolic link '%s' -> '%s'",
+						fatal2e(__("unable to create APT compatibility symbolic link '%s' -> '%s'"),
 								correctedPath, pathBasename);
 					}
 				}
@@ -108,7 +108,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				{
 					if (errno != EINVAL)
 					{
-						warn2e("readlink on '%s' failed", path);
+						warn2e(__("readlink on '%s' failed"), path);
 					}
 					// not a symlink
 				}
@@ -150,18 +150,18 @@ void ArchivesWorker::deleteArchive(const string& path)
 	auto archivesDirectory = _get_archives_directory();
 	if (path.compare(0, archivesDirectory.size(), archivesDirectory))
 	{
-		fatal2("path '%s' lies outside archives directory '%s'", path, archivesDirectory);
+		fatal2(__("path '%s' lies outside archives directory '%s'"), path, archivesDirectory);
 	}
 	if (path.find("/../") != string::npos)
 	{
-		fatal2("path '%s' contains at least one '/../' substring", path);
+		fatal2(__("path '%s' contains at least one '/../' substring"), path);
 	}
 
 	if (!_config->getBool("cupt::worker::simulate"))
 	{
 		if (unlink(path.c_str()) == -1)
 		{
-			fatal2e("unable to delete file '%s'", path);
+			fatal2e(__("unable to delete file '%s'"), path);
 		}
 	}
 	else
@@ -195,13 +195,13 @@ void ArchivesWorker::deletePartialArchives()
 			if (unlink(pathIt->c_str()) == -1)
 			{
 				success = false;
-				warn2e("unable to delete file '%s'", (*pathIt));
+				warn2e(__("unable to delete file '%s'"), (*pathIt));
 			}
 		}
 	}
 	if (!success)
 	{
-		fatal2("unable to delete partial archives");
+		fatal2(__("unable to delete partial archives"));
 	}
 }
 

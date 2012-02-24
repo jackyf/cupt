@@ -39,7 +39,7 @@ static bool __get_file_size(const string& path, ssize_t* result)
 	{
 		if (errno != ENOENT)
 		{
-			fatal2e("stat on file '%s' failed", path);
+			fatal2e(__("stat on file '%s' failed"), path);
 		}
 		return false;
 	}
@@ -133,7 +133,7 @@ class WgetMethod: public cupt::download::Method
 				File wgetOutputFile(join(" ", p), "pr", openError);
 				if (!openError.empty())
 				{
-					fatal2("unable to launch a wget process: %s", openError);
+					fatal2(__("unable to launch a wget process: %s"), openError);
 				}
 
 				string line;

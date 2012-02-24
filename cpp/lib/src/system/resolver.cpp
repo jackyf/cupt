@@ -52,7 +52,7 @@ string Resolver::RelationExpressionReason::toString() const
 	auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(dependencyType);
 	if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
 	{
-		warn2("unsupported reason dependency type '%s'",
+		warn2(__("unsupported reason dependency type '%s'"),
 				BinaryVersion::RelationTypes::strings[dependencyType]);
 		return string();
 	}

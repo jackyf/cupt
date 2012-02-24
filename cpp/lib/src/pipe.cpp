@@ -39,7 +39,7 @@ void PipeData::close(int fd)
 	const char* part = (fd == inputFd ? "input" : "output");
 	if (::close(fd) == -1)
 	{
-		warn2e("unable to close %s part of '%s' pipe", part, name);
+		warn2e(__("unable to close %s part of '%s' pipe"), part, name);
 	}
 }
 
@@ -53,7 +53,7 @@ Pipe::Pipe(const string& name_)
 	int pipeFdPair[2];
 	if (pipe(pipeFdPair) == -1)
 	{
-		fatal2e("unable to create '%s' pipe", __data->name);
+		fatal2e(__("unable to create '%s' pipe"), __data->name);
 	}
 
 	// setting FD_CLOEXEC flags
@@ -63,11 +63,11 @@ Pipe::Pipe(const string& name_)
 		int oldFdFlags = fcntl(fd, F_GETFD);
 		if (oldFdFlags < 0)
 		{
-			fatal2e("unable to create '%s' pipe: unable to get file descriptor flags", __data->name);
+			fatal2e(__("unable to create '%s' pipe: unable to get file descriptor flags"), __data->name);
 		}
 		if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
 		{
-			fatal2e("unable to create '%s' pipe: unable to set the close-on-exec flag", __data->name);
+			fatal2e(__("unable to create '%s' pipe: unable to set the close-on-exec flag"), __data->name);
 		}
 	}
 

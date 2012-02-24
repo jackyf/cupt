@@ -114,7 +114,7 @@ void NativeResolverImpl::installVersion(const shared_ptr< const BinaryVersion >&
 	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
 	if (!__prepare_version_no_stick(version, initialPackageEntry))
 	{
-		fatal2("unable to re-schedule package '%s'", packageName);
+		fatal2(__("unable to re-schedule package '%s'"), packageName);
 	}
 
 	initialPackageEntry.sticked = true;
@@ -144,7 +144,7 @@ void NativeResolverImpl::removePackage(const string& packageName)
 	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
 	if (initialPackageEntry.version && initialPackageEntry.sticked)
 	{
-		fatal2("unable to re-schedule package '%s'", packageName);
+		fatal2(__("unable to re-schedule package '%s'"), packageName);
 	}
 	initialPackageEntry.sticked = true;
 	initialPackageEntry.modified = true;
@@ -385,7 +385,7 @@ SolutionChooser __select_solution_chooser(const Config& config)
 	}
 	else
 	{
-		fatal2("wrong resolver type '%s'", resolverType);
+		fatal2(__("wrong resolver type '%s'"), resolverType);
 	}
 
 	return result;
@@ -522,7 +522,7 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 		if (!thereWereDrops)
 		{
 			thereWereDrops = true;
-			warn2("some solutions were dropped, you may want to increase the value of the '%s' option",
+			warn2(__("some solutions were dropped, you may want to increase the value of the '%s' option"),
 					"cupt::resolver::max-solution-count");
 		}
 	}
@@ -1196,7 +1196,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	if (!__any_solution_was_found)
 	{
 		// no solutions pending, we have a great fail
-		fatal2("unable to resolve dependencies, because of:\n\n%s",
+		fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
 				__decision_fail_tree.toString());
 	}
 	return false;

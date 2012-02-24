@@ -57,7 +57,7 @@ class DebdeltaMethod: public download::Method
 		// remove delta anyway
 		if (unlink(deltaDownloadPath.c_str()) == -1)
 		{
-			warn2e("unable to remove file '%s'", deltaDownloadPath);
+			warn2e(__("unable to remove file '%s'"), deltaDownloadPath);
 		}
 
 		if (patchResult != 0)

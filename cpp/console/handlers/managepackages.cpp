@@ -82,7 +82,7 @@ static void unrollFileArguments(vector< string >& arguments)
 			File file(path, "r", openError);
 			if (!openError.empty())
 			{
-				fatal2("unable to open file '%s': %s", path, openError);
+				fatal2(__("unable to open file '%s': %s"), path, openError);
 			}
 			string line;
 			while (!file.getLine(line).eof())
@@ -230,7 +230,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
 				!getBinaryPackage(cache, packageExpression, false))
 			{
-				fatal2("unable to find binary package/expression '%s'", packageExpression);
+				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
 
 			scheduleRemoval(packageExpression);
@@ -245,7 +245,7 @@ static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 	auto installedVersion = package->getInstalledVersion();
 	if (!installedVersion)
 	{
-		fatal2("the package '%s' is not installed", packageExpression);
+		fatal2(__("the package '%s' is not installed"), packageExpression);
 	}
 	const string& installedVersionString = installedVersion->versionString;
 
@@ -258,7 +258,7 @@ static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 		auto targetVersion = package->getSpecificVersion(targetVersionString);
 		if (!targetVersion)
 		{
-			fatal2("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories",
+			fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
 					packageExpression, targetVersionString);
 		}
 		resolver.installVersion(static_pointer_cast< const BinaryVersion >(targetVersion));
@@ -1090,7 +1090,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	if (config->getBool("cupt::console::actions-preview::show-archives") &&
 			config->getBool("cupt::console::actions-preview::show-codenames"))
 	{
-		fatal2("options 'cupt::console::actions-preview::show-archives' and 'cupt::console::actions-preview::show-codenames' cannot be used together");
+		fatal2(__("options 'cupt::console::actions-preview::show-archives' and 'cupt::console::actions-preview::show-codenames' cannot be used together"));
 	}
 	if (variables.count("show-components"))
 	{
@@ -1133,7 +1133,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (packageExpressions.size() != 1)
 		{
-			fatal2("exactly one argument (the snapshot name) should be specified");
+			fatal2(__("exactly one argument (the snapshot name) should be specified"));
 		}
 		snapshotName = packageExpressions[0];
 		packageExpressions.clear();
@@ -1165,7 +1165,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (!config->getString("cupt::resolver::external-command").empty())
 		{
-			fatal2("using external resolver is not supported now");
+			fatal2(__("using external resolver is not supported now"));
 		}
 		else
 		{
@@ -1236,7 +1236,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		}
 		catch (Exception&)
 		{
-			fatal2("unable to do requested actions");
+			fatal2(__("unable to do requested actions"));
 		}
 		return 0;
 	}
@@ -1251,7 +1251,7 @@ int distUpgrade(Context& context)
 {
 	if (shellMode)
 	{
-		fatal2("'dist-upgrade' command cannot be run in the shell mode");
+		fatal2(__("'dist-upgrade' command cannot be run in the shell mode"));
 	}
 
 	{ // 1st stage: upgrading of package management tools
@@ -1261,7 +1261,7 @@ int distUpgrade(Context& context)
 		context.unparsed.push_back("cupt");
 		if (managePackages(context, ManagePackages::Install) != 0)
 		{
-			fatal2("upgrading of the package management tools failed");
+			fatal2(__("upgrading of the package management tools failed"));
 		}
 	}
 
@@ -1279,7 +1279,7 @@ int distUpgrade(Context& context)
 			}
 		}
 		execvp(argv[0], argv);
-		fatal2e("upgrading the system failed: execvp failed");
+		fatal2e(__("upgrading the system failed: execvp failed"));
 	}
 	return 0; // unreachable due to exec
 }
@@ -1356,7 +1356,7 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		struct stat stat_structure;
 		if (lstat(path.c_str(), &stat_structure))
 		{
-			fatal2e("lstat() failed: '%s'", path);
+			fatal2e(__("lstat() failed: '%s'"), path);
 		}
 		else
 		{

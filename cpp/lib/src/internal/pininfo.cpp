@@ -163,7 +163,7 @@ void PinInfo::loadData(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal2("unable to open file '%s': %s", path, openError);
+		fatal2(__("unable to open file '%s': %s"), path, openError);
 	}
 
 	string line;
@@ -195,7 +195,7 @@ void PinInfo::loadData(const string& path)
 			static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
 			if (!regex_match(line, m, packageOrSourceRegex))
 			{
-				fatal2("invalid package/source line at file '%s', line %u", path, lineNumber);
+				fatal2(__("invalid package/source line at file '%s', line %u"), path, lineNumber);
 			}
 
 			condition.type = (string(m[1]) == "Package" ?
@@ -214,13 +214,13 @@ void PinInfo::loadData(const string& path)
 			file.getLine(line);
 			if (file.eof())
 			{
-				fatal2("no pin line at file '%s' line %u", path, lineNumber);
+				fatal2(__("no pin line at file '%s' line %u"), path, lineNumber);
 			}
 
 			static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
 			if (!regex_match(line, m, pinRegex))
 			{
-				fatal2("invalid pin line at file '%s' line %u", path, lineNumber);
+				fatal2(__("invalid pin line at file '%s' line %u"), path, lineNumber);
 			}
 
 			string pinType = m[1];
@@ -237,7 +237,7 @@ void PinInfo::loadData(const string& path)
 					static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
 					if (!regex_match(*subExpressionIt, m, subExpressionRegex))
 					{
-						fatal2("invalid condition '%s' in release expression at file '%s' line %u",
+						fatal2(__("invalid condition '%s' in release expression at file '%s' line %u"),
 								(*subExpressionIt), path, lineNumber);
 					}
 
@@ -251,8 +251,8 @@ void PinInfo::loadData(const string& path)
 						case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
 						case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
 						default:
-							fatal2("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l') "
-									"in release expression at file '%s' line %u",
+							fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l') "
+									"in release expression at file '%s' line %u"),
 									subExpressionType, path, lineNumber);
 					}
 					condition.value = stringToRegex(pinStringToRegexString(m[2]));
@@ -279,8 +279,8 @@ void PinInfo::loadData(const string& path)
 			}
 			else
 			{
-				fatal2("invalid pin type '%s' (should be one of 'release', 'version', 'origin') "
-						"at file '%s' line %u", pinType, path, lineNumber);
+				fatal2(__("invalid pin type '%s' (should be one of 'release', 'version', 'origin') "
+						"at file '%s' line %u"), pinType, path, lineNumber);
 			}
 		}
 
@@ -288,13 +288,13 @@ void PinInfo::loadData(const string& path)
 			file.getLine(line);
 			if (file.eof())
 			{
-				fatal2("no priority line at file '%s' line %u", path, lineNumber);
+				fatal2(__("no priority line at file '%s' line %u"), path, lineNumber);
 			}
 
 			static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
 			if (!regex_match(line, m, priorityRegex))
 			{
-				fatal2("invalid priority line at file '%s' line %u", path, lineNumber);
+				fatal2(__("invalid priority line at file '%s' line %u"), path, lineNumber);
 			}
 
 			try
@@ -303,7 +303,7 @@ void PinInfo::loadData(const string& path)
 			}
 			catch (boost::bad_lexical_cast&)
 			{
-				fatal2("invalid integer '%s'", string(m[1]));
+				fatal2(__("invalid integer '%s'"), string(m[1]));
 			}
 		}
 
@@ -452,7 +452,7 @@ void PinInfo::init()
 	}
 	catch (Exception&)
 	{
-		fatal2("error while parsing preferences");
+		fatal2(__("error while parsing preferences"));
 	}
 }
 

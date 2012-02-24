@@ -60,18 +60,18 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 				}
 				catch (Exception& e)
 				{
-					warn2("error while parsing new version entry for package '%s'", initParams.packageName);
+					warn2(__("error while parsing new version entry for package '%s'"), initParams.packageName);
 				}
 			}
 			if (result.empty())
 			{
-				warn2("no valid versions available, discarding the package");
+				warn2(__("no valid versions available, discarding the package"));
 			}
 			__unparsed_versions.swap(newUnparsedVersions);
 		}
 		catch (Exception&)
 		{
-			fatal2("error while parsing package info");
+			fatal2(__("error while parsing package info"));
 		}
 
 		if (memoize)
@@ -153,13 +153,13 @@ void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< sha
 				string info = __("package name") + ": '" + parsedVersion->packageName + "', " +
 						__("version string") + ": '" + parsedVersion->versionString + "', " +
 						__("origin") + ": '" + parsedVersion->sources[0].release->baseUri + "'";
-				warn2("throwing away duplicating version with different hash sums: %s", info);
+				warn2(__("throwing away duplicating version with different hash sums: %s"), info);
 			}
 		}
 	}
 	catch (Exception&)
 	{
-		fatal2("error while merging version '%s' for package '%s'",
+		fatal2(__("error while merging version '%s' for package '%s'"),
 				parsedVersion->versionString, parsedVersion->packageName);
 	};
 }

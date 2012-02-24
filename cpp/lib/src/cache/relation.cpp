@@ -127,7 +127,7 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 	{
 		// no package name, bad
 		string unparsed(start, end);
-		fatal2("failed to parse package name in relation '%s'", unparsed);
+		fatal2(__("failed to parse package name in relation '%s'"), unparsed);
 	}
 
 	while (current != end && *current == ' ')
@@ -141,7 +141,7 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 		if (!__parse_versioned_info(current, end))
 		{
 			string unparsed(start, end);
-			fatal2("failed to parse versioned info in relation '%s'", unparsed); // what else can we do?..
+			fatal2(__("failed to parse versioned info in relation '%s'"), unparsed); // what else can we do?..
 		}
 	}
 	else
@@ -220,7 +220,7 @@ void ArchitecturedRelation::__init(string::const_iterator start, string::const_i
 	}
 	if (*start != '[' || *(end-1) != ']')
 	{
-		fatal2("unable to parse architecture filters '%s'", string(start, end));
+		fatal2(__("unable to parse architecture filters '%s'"), string(start, end));
 	}
 	++start;
 	--end;
@@ -272,7 +272,7 @@ bool __is_architectured_relation_eligible(
 		{
 			if (architectureFilter.empty() || architectureFilter[0] != '!')
 			{
-				warn2("non-negative architecture filter '%s'", architectureFilter);
+				warn2(__("non-negative architecture filter '%s'"), architectureFilter);
 			}
 			else
 			{

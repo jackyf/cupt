@@ -363,7 +363,7 @@ vector< DependencyEntry > __get_dependency_groups(const Config& config)
 		auto installOptionName = string("apt::install-") + subname;
 		if (config.getBool(installOptionName))
 		{
-			warn2("a positive value of the option '%s' has no effect without a positive value of the option '%s'",
+			warn2(__("a positive value of the option '%s' has no effect without a positive value of the option '%s'"),
 					installOptionName, string("cupt::resolver::keep-") + subname);
 		}
 	};
@@ -465,7 +465,7 @@ short __get_synchronize_level(const Config& config)
 	{
 		return 2;
 	}
-	fatal2("the option '%s' can have only values 'none', 'soft' or 'hard'", optionName);
+	fatal2(__("the option '%s' can have only values 'none', 'soft' or 'hard'"), optionName);
 	return 0; // unreachable
 }
 
