@@ -176,7 +176,7 @@ void DebdeltaHelper::__parse_sources(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal2(__("unable to open file '%s'"), path);
+		fatal2(__("unable to open the file '%s'"), path);
 	}
 
 

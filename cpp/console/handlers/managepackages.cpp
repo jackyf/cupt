@@ -82,7 +82,7 @@ static void unrollFileArguments(vector< string >& arguments)
 			File file(path, "r", openError);
 			if (!openError.empty())
 			{
-				fatal2(__("unable to open file '%s': %s"), path, openError);
+				fatal2(__("unable to open the file '%s': %s"), path, openError);
 			}
 			string line;
 			while (!file.getLine(line).eof())

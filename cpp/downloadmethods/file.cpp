@@ -39,7 +39,7 @@ class FileMethod: public download::Method
 		File targetFile(targetPath, "a", openError);
 		if (!openError.empty())
 		{
-			return format2("unable to open file '%s' for appending: %s", targetPath, openError);
+			return format2("unable to open the file '%s' for appending: %s", targetPath, openError);
 		}
 		auto totalBytes = targetFile.tell();
 		callback(vector< string > { "downloading",
@@ -80,7 +80,7 @@ class FileMethod: public download::Method
 		File sourceFile(sourcePath, "r", openError);
 		if (!openError.empty())
 		{
-			return format2("unable to open file '%s' for reading: %s", sourcePath, openError);
+			return format2("unable to open the file '%s' for reading: %s", sourcePath, openError);
 		}
 
 		if (protocol == "copy")

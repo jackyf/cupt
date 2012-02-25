@@ -33,7 +33,7 @@ void ConfigParser::parse(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal2(__("unable to open file '%s': %s"), path, openError);
+		fatal2(__("unable to open the file '%s': %s"), path, openError);
 	}
 
 	string block;

@@ -103,7 +103,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 			File file(source, "r", openError);
 			if (!openError.empty())
 			{
-				fatal2(__("unable to open file '%s': %s"), source, openError);
+				fatal2(__("unable to open the file '%s': %s"), source, openError);
 			}
 
 			char buffer[8192];

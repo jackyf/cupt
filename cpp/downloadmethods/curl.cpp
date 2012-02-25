@@ -200,7 +200,7 @@ class CurlMethod: public cupt::download::Method
 			File file(targetPath, "a", openError);
 			if (!openError.empty())
 			{
-				fatal2(__("unable to open file '%s': %s"), targetPath, openError);
+				fatal2(__("unable to open the file '%s': %s"), targetPath, openError);
 			}
 
 			start:
