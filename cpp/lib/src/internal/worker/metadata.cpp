@@ -160,6 +160,17 @@ string __get_pidded_string(const string& input)
 {
 	return format2("(%d): %s", getpid(), input);
 }
+template < typename... Args >
+string piddedFormat2(const string& format, const Args&... args)
+{
+	return __get_pidded_string(format2(format, args...));
+}
+template < typename... Args >
+string piddedFormat2e(const string& format, const Args&... args)
+{
+	return __get_pidded_string(format2e(format, args...));
+}
+
 string __get_download_log_message(const string& longAlias)
 {
 	return __get_pidded_string(string("downloading: ") + longAlias);
@@ -361,8 +372,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			File diffIndexFile(diffIndexPath, "r", openError);
 			if (!openError.empty())
 			{
-				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-						__get_pidded_string(format2e("unable to open the file '%s'", diffIndexPath)));
+				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+						piddedFormat2e, "unable to open the file '%s'", diffIndexPath);
 			}
 
 			TagParser diffIndexParser(&diffIndexFile);
@@ -383,8 +394,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 						const string& line = *lineIt;
 						if (!regex_match(line, m, checksumsLineRegex))
 						{
-							logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-									__get_pidded_string(format2("malformed 'hash-size-name' line '%s'", line)));
+							logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+									piddedFormat2, "malformed 'hash-size-name' line '%s'", line);
 						}
 
 						if (isHistory)
@@ -402,16 +413,16 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					auto values = internal::split(' ', string(fieldValue));
 					if (values.size() != 2)
 					{
-						logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-								__get_pidded_string(format2("malformed 'hash-size' line '%s'", string(fieldValue))));
+						logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+								piddedFormat2, "malformed 'hash-size' line '%s'", string(fieldValue));
 					}
 					wantedHashSum = values[0];
 				}
 			}
 			if (wantedHashSum.empty())
 			{
-				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-						__get_pidded_string("failed to find wanted hash sum"));
+				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+						piddedFormat2, "failed to find wanted hash sum");
 			}
 		}
 		if (unlink(diffIndexPath.c_str()) == -1)
@@ -427,8 +438,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 
 		if (::system(format2("cp %s %s", targetPath, patchedPath).c_str()))
 		{
-			logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-					__get_pidded_string(format2("unable to copy '%s' to '%s'", targetPath, patchedPath)));
+			logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+					piddedFormat2, "unable to copy '%s' to '%s'", targetPath, patchedPath);
 		}
 
 		while (currentSha1Sum != wantedHashSum)
@@ -445,8 +456,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				}
 				else
 				{
-					logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-							__get_pidded_string(format2("unable to find a patch for the sha1 sum '%s'", currentSha1Sum)));
+					logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+							piddedFormat2, "unable to find a patch for the sha1 sum '%s'", currentSha1Sum);
 				}
 			}
 
@@ -454,8 +465,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			auto patchIt = patches.find(patchName);
 			if (patchIt == patches.end())
 			{
-				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-						__get_pidded_string(format2("unable to a patch entry for the patch '%s'", patchName)));
+				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+						piddedFormat2, "unable to a patch entry for the patch '%s'", patchName);
 			}
 
 			string patchSuffix = "/" + patchName + ".gz";
@@ -521,10 +532,11 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			}
 		}
 
+		// FIXME: rework fs::move() to have an untranslated error message
 		auto moveError = fs::move(patchedPath, targetPath);
 		if (!moveError.empty())
 		{
-			logger->loggedFatal(Logger::Subsystem::Metadata, 3, __get_pidded_string(moveError));
+			logger->loggedFatal2(Logger::Subsystem::Metadata, 3, piddedFormat2, "%s", moveError);
 		}
 		return true;
 	}
@@ -755,8 +767,8 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 			File localizationIndexFile(localizationIndexPath, "r", openError);
 			if (!openError.empty())
 			{
-				logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-						__get_pidded_string(format2e("unable to open the file '%s'", localizationIndexPath)));
+				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+						piddedFormat2e, "unable to open the file '%s'", localizationIndexPath);
 			}
 
 			TagParser localizationIndexParser(&localizationIndexFile);
@@ -774,8 +786,8 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 						const string& line = *lineIt;
 						if (!regex_match(line, m, checksumsLineRegex))
 						{
-							logger->loggedFatal(Logger::Subsystem::Metadata, 3,
-									__get_pidded_string(format2("malformed 'hash-size-name' line '%s'", line)));
+							logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+									piddedFormat2, "malformed 'hash-size-name' line '%s'", line);
 						}
 
 						cachefiles::FileDownloadRecord record;
@@ -966,8 +978,8 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			{
 				if (mkdir(indexesDirectory.c_str(), 0755) == -1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Metadata, 2,
-							format2e("unable to create the lists directory '%s'", indexesDirectory));
+					_logger->loggedFatal2(Logger::Subsystem::Metadata, 2,
+							format2e, "unable to create the lists directory '%s'", indexesDirectory);
 				}
 			}
 		}
@@ -1002,15 +1014,15 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			{
 				if (mkdir(partialIndexesDirectory.c_str(), 0755) == -1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Metadata, 2,
-							format2e("unable to create partial directory '%s'", partialIndexesDirectory));
+					_logger->loggedFatal2(Logger::Subsystem::Metadata, 2,
+							format2e, "unable to create partial directory '%s'", partialIndexesDirectory);
 				}
 			}
 		}
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Metadata, 1, "aborted downloading release and index data");
+		_logger->loggedFatal2(Logger::Subsystem::Metadata, 1, format2, "aborted downloading release and index data");
 	}
 
 	int masterExitCode = true;
@@ -1025,7 +1037,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			auto pid = fork();
 			if (pid == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, format2e("fork failed"));
+				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "fork failed");
 			}
 
 			if (pid)
@@ -1056,7 +1068,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			pid_t pid = wait(&status);
 			if (pid == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Metadata, 2, format2e("wait failed"));
+				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "wait failed");
 			}
 			pids.erase(pid);
 			// if something went bad in child, the parent won't return non-zero code too
@@ -1096,8 +1108,8 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 
 	if (!masterExitCode)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Metadata, 1,
-				"there were errors while downloading release and index data");
+		_logger->loggedFatal2(Logger::Subsystem::Metadata, 1,
+				format2, "there were errors while downloading release and index data");
 	}
 }
 

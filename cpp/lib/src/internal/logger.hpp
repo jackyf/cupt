@@ -32,7 +32,15 @@ class Logger
 	Logger(const Config& config);
 	~Logger();
 	void log(Subsystem, Level, const string& message);
-	void loggedFatal(Subsystem, Level, const string& message);
+
+	template< typename... Args >
+	void loggedFatal2(Subsystem subsystem, Level level,
+			string (*formatFunc)(const string&, const Args&...),
+			const string& format, const Args&... args)
+	{
+		this->log(subsystem, level, string("error: ") + formatFunc(format, args...));
+		fatal2("%s", formatFunc(__(format.c_str()), args...));
+	}
  private:
 	Level __levels[4];
 	File* __file;

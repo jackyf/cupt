@@ -47,14 +47,14 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	}
 	catch (Exception&)
 	{
-		auto message = format2("unable to delete partial snapshot directory '%s'", directory);
 		if (warnOnly)
 		{
-			warn2("%s", message);
+			warn2("unable to delete partial snapshot directory '%s'", directory);
 		}
 		else
 		{
-			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2, message);
+			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+					format2, "unable to delete partial snapshot directory '%s'", directory);
 		}
 	}
 }
@@ -74,8 +74,8 @@ void createTextFile(const string& path, const vector< string >& lines,
 		File file(path, "w", openError);
 		if (!openError.empty())
 		{
-			logger->loggedFatal(Logger::Subsystem::Snapshots, 3,
-					format2("unable to open the file '%s' for writing: %s", path, openError));
+			logger->loggedFatal2(Logger::Subsystem::Snapshots, 3,
+					format2, "unable to open the file '%s' for writing: %s", path, openError);
 		}
 
 		FORIT(lineIt, lines)
@@ -101,14 +101,14 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 			auto package = _cache->getBinaryPackage(packageName);
 			if (!package)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						format2("internal error: no binary package '%s'", packageName));
+				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+						format2, "internal error: no binary package '%s'", packageName);
 			}
 			auto version = package->getInstalledVersion();
 			if (!version)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						format2("internal error: no installed version for the installed package '%s'", packageName));
+				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+						format2, "internal error: no installed version for the installed package '%s'", packageName);
 			}
 			const string& architecture = version->architecture;
 
@@ -128,9 +128,9 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				auto files = fs::glob(packageName + "_*.deb");
 				if (files.size() != 1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-							format2("dpkg-repack produced either no or more than one Debian archive for the package '%s'",
-							packageName));
+					_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+							format2, "dpkg-repack produced either no or more than one Debian archive for the package '%s'",
+							packageName);
 				}
 				const string& badFilename = files[0];
 				auto goodFilename = format2("%s_%s_%s.deb", packageName,
@@ -139,15 +139,15 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				auto moveError = fs::move(badFilename, goodFilename);
 				if (!moveError.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Snapshots, 3,
-							format2("unable to move '%s' to '%s': %s", badFilename, goodFilename, moveError));
+					_logger->loggedFatal2(Logger::Subsystem::Snapshots, 3,
+							format2, "unable to move '%s' to '%s': %s", badFilename, goodFilename, moveError);
 				}
 			}
 		}
 		catch (...)
 		{
-			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					format2("failed to repack the package '%s'", packageName));
+			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+					format2, "failed to repack the package '%s'", packageName);
 		}
 	}
 }
@@ -182,7 +182,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 		char timeBuf[128];
 		if (!strftime(timeBuf, sizeof(timeBuf), "%a, %d %b %Y %H:%M:%S UTC", gmtime_r(&unixTime, &brokenDownTime)))
 		{
-			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2, format2e("strftime failed"));
+			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2, format2e, "strftime failed");
 		}
 		LL(string("Date: ") + timeBuf);
 
@@ -268,8 +268,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		{
 			if (mkdir(snapshotsDirectory.c_str(), 0755) == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						format2e("unable to create the snapshots directory '%s'", snapshotsDirectory));
+				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+						format2e, "unable to create the snapshots directory '%s'", snapshotsDirectory);
 			}
 		}
 		if (fs::dirExists(temporarySnapshotDirectory))
@@ -279,8 +279,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		}
 		if (mkdir(temporarySnapshotDirectory.c_str(), 0755) == -1)
 		{
-			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					format2e("unable to create a temporary snapshot directory '%s'", temporarySnapshotDirectory));
+			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+					format2e, "unable to create a temporary snapshot directory '%s'", temporarySnapshotDirectory);
 		}
 	}
 
@@ -308,16 +308,16 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		auto currentDirectoryFd = open(".", O_RDONLY);
 		if (currentDirectoryFd == -1)
 		{
-			_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-					format2e("unable to open the current directory"));
+			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+					format2e, "unable to open the current directory");
 		}
 
 		if (!simulating)
 		{
 			if (chdir(temporarySnapshotDirectory.c_str()) == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						format2e("unable to set current directory to '%s'", temporarySnapshotDirectory));
+				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+						format2e, "unable to set current directory to '%s'", temporarySnapshotDirectory);
 			}
 		}
 
@@ -336,17 +336,17 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		{
 			if (fchdir(currentDirectoryFd) == -1)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						format2e("unable to return to previous working directory"));
+				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+						format2e, "unable to return to previous working directory");
 			}
 
 			// all done, do final move
 			auto moveError = fs::move(temporarySnapshotDirectory, snapshotDirectory);
 			if (!moveError.empty())
 			{
-				_logger->loggedFatal(Logger::Subsystem::Snapshots, 2,
-						format2("unable to move directory '%s' to '%s': %s",
-						temporarySnapshotDirectory, snapshotDirectory, moveError));
+				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
+						format2, "unable to move directory '%s' to '%s': %s",
+						temporarySnapshotDirectory, snapshotDirectory, moveError);
 			}
 		}
 	}
@@ -369,8 +369,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 					temporarySnapshotDirectory);
 		}
 
-		_logger->loggedFatal(Logger::Subsystem::Snapshots, 1,
-				format2("error constructing system snapshot named '%s'", name));
+		_logger->loggedFatal2(Logger::Subsystem::Snapshots, 1,
+				format2, "error constructing system snapshot named '%s'", name);
 	}
 }
 

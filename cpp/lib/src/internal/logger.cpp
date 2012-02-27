@@ -111,11 +111,6 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 	}
 }
 
-void Logger::loggedFatal(Subsystem subsystem, Level level, const string& message)
-{
-	this->log(subsystem, level, string("error: ") + message);
-	fatal2("%s", message);
-}
 
 }
 }

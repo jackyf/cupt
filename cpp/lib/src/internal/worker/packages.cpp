@@ -993,7 +993,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "worker desired state is not given");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "worker desired state is not given");
 	}
 
 	bool debugging = _config->getBool("debug::worker");
@@ -1208,8 +1208,8 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 				{
 					actionStrings.push_back(it->toString());
 				}
-				logger.loggedFatal(Logger::Subsystem::Packages, 2,
-						format2("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings)));
+				logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+						format2, "internal error: unable to schedule circular actions '%s'", join(", ", actionStrings));
 			}
 
 			// we build a mini-graph with reduced number of edges
@@ -1243,9 +1243,9 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 								actionSubgroup.dpkgFlags.insert("--force-breaks");
 								break;
 							default:
-								logger.loggedFatal(Logger::Subsystem::Packages, 2,
-										format2("internal error: worker: a relation '%s' cannot be soft",
-										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]));
+								logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+										format2, "internal error: worker: a relation '%s' cannot be soft",
+										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]);
 						}
 					}
 				}
@@ -1332,8 +1332,8 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 			{
 				if (mkdir(partialDirectory.c_str(), 0755) == -1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2e("unable to create partial directory '%s'", partialDirectory));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2e, "unable to create partial directory '%s'", partialDirectory);
 				}
 			}
 		}
@@ -1357,8 +1357,8 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				// we need at least one real URI
 				if (downloadInfo.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2("no available download URIs for %s %s", packageName, versionString));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2, "no available download URIs for %s %s", packageName, versionString);
 				}
 
 				// paths
@@ -1423,7 +1423,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to prepare downloads");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "failed to prepare downloads");
 	}
 
 	return downloads;
@@ -1477,8 +1477,8 @@ vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		vector< string > unconfiguredPackageNames;
 		std::copy(unpackedPackageNames.begin(), unpackedPackageNames.end(),
 				std::back_inserter(unconfiguredPackageNames));
-		logger.loggedFatal(Logger::Subsystem::Packages, 2,
-				format2("internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames)));
+		logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+				format2, "internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames));
 	}
 
 	return result;
@@ -1552,10 +1552,10 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					auto installedRecord = systemState->getInstalledInfo(packageName);
 					if (!installedRecord)
 					{
-						logger.loggedFatal(Logger::Subsystem::Packages, 2,
-								format2("internal error: worker: __set_force_options_for_removals_if_needed: "
+						logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+								format2, "internal error: worker: __set_force_options_for_removals_if_needed: "
 								"there is no installed record for the package '%s' which is to be removed",
-								packageName));
+								packageName);
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
@@ -1619,9 +1619,9 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		if (maxDownloadAmount > archivesSpaceLimit)
 		{
 			// we failed to fit in limit
-			_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-					format2("unable to fit in archives space limit '%zu', best try is '%zu'",
-					archivesSpaceLimit, maxDownloadAmount));
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+					format2, "unable to fit in archives space limit '%zu', best try is '%zu'",
+					archivesSpaceLimit, maxDownloadAmount);
 		}
 	}
 
@@ -1683,15 +1683,15 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 			{
 				if (unlink(targetPath.c_str()) == -1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2e("unable to remove file '%s'", targetPath));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2e, "unable to remove file '%s'", targetPath);
 				}
 			}
 		}
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to clean downloaded archives");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "failed to clean downloaded archives");
 	}
 }
 
@@ -1938,8 +1938,8 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				File tempFile(tempPath, "w", errorString);
 				if (!errorString.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2("unable to open temporary file '%s': %s", tempPath, errorString));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2, "unable to open temporary file '%s': %s", tempPath, errorString);
 				}
 
 				// filling new info
@@ -1952,14 +1952,14 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 			auto moveResult = fs::move(tempPath, extendedInfoPath);
 			if (!moveResult.empty())
 			{
-				_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-						format2("unable to renew extended states file: %s", moveResult));
+				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+						format2, "unable to renew extended states file: %s", moveResult);
 			}
 		}
 		catch (...)
 		{
-			_logger->loggedFatal(Logger::Subsystem::Packages, 2,
-					"failed to change the 'automatically installed' flag");
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 2,
+					format2, "failed to change the 'automatically installed' flag");
 		}
 	}
 }
@@ -1998,7 +1998,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		if (!downloadResult.empty())
 		{
-			_logger->loggedFatal(Logger::Subsystem::Packages, 2, "there were download errors");
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "there were download errors");
 		}
 	}
 }
