@@ -92,6 +92,7 @@ CUPT_API string join(const string& joiner, const vector< string >& parts);
 CUPT_API string humanReadableSizeString(uint64_t bytes);
 /// @endcond
 
+// TODO/API break/: should return const char*
 /// localizes message
 /**
  * @param message input string
