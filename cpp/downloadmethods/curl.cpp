@@ -257,7 +257,7 @@ class CurlMethod: public cupt::download::Method
 					}
 					if (unlink(targetPath.c_str()) == -1)
 					{
-						return format2e(__("unable to delete target file for re-downloading"));
+						return format2e(__("unable to remove target file for re-downloading"));
 					}
 					goto start;
 				}

@@ -281,7 +281,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 					// for compatibility with APT tools delete the downloaded file
 					if (unlink(signatureTargetPath.c_str()) == -1)
 					{
-						warn2e(__("unable to delete file '%s'"), signatureTargetPath);
+						warn2e(__("unable to remove file '%s'"), signatureTargetPath);
 					}
 				}
 			}
@@ -427,7 +427,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 		}
 		if (unlink(diffIndexPath.c_str()) == -1)
 		{
-			warn2(__("unable to delete a temporary index file '%s'"), diffIndexPath);
+			warn2(__("unable to remove a temporary index file '%s'"), diffIndexPath);
 		}
 
 		HashSums subTargetHashSums;
@@ -954,7 +954,7 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 			{
 				if (unlink(fileIt->c_str()) == -1)
 				{
-					warn2e(__("unable to delete '%s'"), *fileIt);
+					warn2e(__("unable to remove '%s'"), *fileIt);
 				}
 			}
 		}

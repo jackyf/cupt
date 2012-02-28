@@ -157,7 +157,7 @@ int downloadSourcePackage(Context& context)
 						{
 							if (unlink(filename.c_str()) == -1)
 							{
-								warn2e(__("unable to delete file '%s'"), filename);
+								warn2e(__("unable to remove file '%s'"), filename);
 							}
 							return __("hash sums mismatch");
 						}
@@ -353,7 +353,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 						// remove the file
 						if (unlink(tempFilename) == -1)
 						{
-							fatal2e(__("unable to delete file '%s'"), tempFilename);
+							fatal2e(__("unable to remove file '%s'"), tempFilename);
 						}
 
 						// return non-zero code in case of some error

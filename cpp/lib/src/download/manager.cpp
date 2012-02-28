@@ -299,7 +299,7 @@ ManagerImpl::~ManagerImpl()
 
 		if (unlink(serverSocketPath.c_str()) == -1)
 		{
-			warn2e(__("unable to delete download server socket file '%s'"), serverSocketPath);
+			warn2e(__("unable to remove download server socket file '%s'"), serverSocketPath);
 		}
 	}
 }
@@ -508,7 +508,7 @@ void ManagerImpl::killPerformerBecauseOfWrongSize(MessageQueue& workerQueue,
 	const string& path = downloadInfo.targetPath;
 	if (unlink(path.c_str()) == -1)
 	{
-		warn2e(__("unable to delete file '%s'"), path);
+		warn2e(__("unable to remove file '%s'"), path);
 	}
 }
 

@@ -49,12 +49,12 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	{
 		if (warnOnly)
 		{
-			warn2("unable to delete partial snapshot directory '%s'", directory);
+			warn2("unable to remove partial snapshot directory '%s'", directory);
 		}
 		else
 		{
 			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
-					format2, "unable to delete partial snapshot directory '%s'", directory);
+					format2, "unable to remove partial snapshot directory '%s'", directory);
 		}
 	}
 }
@@ -365,7 +365,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		}
 		catch (...)
 		{
-			warn2(__("unable to delete partial snapshot directory '%s'"),
+			warn2(__("unable to remove partial snapshot directory '%s'"),
 					temporarySnapshotDirectory);
 		}
 
