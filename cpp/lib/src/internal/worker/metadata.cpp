@@ -373,7 +373,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			if (!openError.empty())
 			{
 				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-						piddedFormat2e, "unable to open the file '%s'", diffIndexPath);
+						piddedFormat2e, "unable to open the file '%s': %s", diffIndexPath, openError);
 			}
 
 			TagParser diffIndexParser(&diffIndexFile);
@@ -768,7 +768,7 @@ bool MetadataWorker::__download_translations(download::Manager& downloadManager,
 			if (!openError.empty())
 			{
 				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-						piddedFormat2e, "unable to open the file '%s'", localizationIndexPath);
+						piddedFormat2e, "unable to open the file '%s': %s", localizationIndexPath, openError);
 			}
 
 			TagParser localizationIndexParser(&localizationIndexFile);
