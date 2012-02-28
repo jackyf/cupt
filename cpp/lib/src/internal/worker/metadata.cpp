@@ -466,7 +466,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			if (patchIt == patches.end())
 			{
 				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-						piddedFormat2, "unable to a patch entry for the patch '%s'", patchName);
+						piddedFormat2, "unable to find a patch entry for the patch '%s'", patchName);
 			}
 
 			string patchSuffix = "/" + patchName + ".gz";
