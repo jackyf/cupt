@@ -11,6 +11,10 @@ cupt (2.5.0~) UNRELEASED; urgency=low
     - config:
       - New option 'cupt::resolver::no-autoremove-if-rdepends-exist'.
         (Closes: #658981)
+    - download/progresses/console:
+      - Status line: leave the cursor at the end of line so anynchronous
+        warning and error messages are printed on the next line, not over the
+        status line.
   * downloadmethods:
     - wget:
       - Use threads instead of explicit fork()s.

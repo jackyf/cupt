@@ -109,7 +109,7 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 
 void ConsoleProgressImpl::termClean()
 {
-	nonBlockingPrint(string(getTerminalWidth(), ' ') + "\r");
+	nonBlockingPrint(string("\r") + string(getTerminalWidth(), ' ') + "\r");
 }
 
 void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendage)
@@ -125,7 +125,6 @@ void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendag
 		outputString += s + string(allowedWidth - s.size(), ' ');
 	}
 	outputString += rightAppendage;
-	outputString += "\r";
 	nonBlockingPrint(outputString);
 }
 
