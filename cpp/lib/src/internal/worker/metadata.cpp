@@ -281,7 +281,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 					// for compatibility with APT tools delete the downloaded file
 					if (unlink(signatureTargetPath.c_str()) == -1)
 					{
-						warn2e(__("unable to remove file '%s'"), signatureTargetPath);
+						warn2e(__("unable to remove the file '%s'"), signatureTargetPath);
 					}
 				}
 			}

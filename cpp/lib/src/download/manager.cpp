@@ -508,7 +508,7 @@ void ManagerImpl::killPerformerBecauseOfWrongSize(MessageQueue& workerQueue,
 	const string& path = downloadInfo.targetPath;
 	if (unlink(path.c_str()) == -1)
 	{
-		warn2e(__("unable to remove file '%s'"), path);
+		warn2e(__("unable to remove the file '%s'"), path);
 	}
 }
 

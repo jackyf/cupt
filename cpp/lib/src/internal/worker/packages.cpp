@@ -1684,7 +1684,7 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 				if (unlink(targetPath.c_str()) == -1)
 				{
 					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-							format2e, "unable to remove file '%s'", targetPath);
+							format2e, "unable to remove the file '%s'", targetPath);
 				}
 			}
 		}

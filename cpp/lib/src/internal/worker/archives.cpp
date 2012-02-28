@@ -161,7 +161,7 @@ void ArchivesWorker::deleteArchive(const string& path)
 	{
 		if (unlink(path.c_str()) == -1)
 		{
-			fatal2e(__("unable to remove file '%s'"), path);
+			fatal2e(__("unable to remove the file '%s'"), path);
 		}
 	}
 	else
@@ -195,7 +195,7 @@ void ArchivesWorker::deletePartialArchives()
 			if (unlink(pathIt->c_str()) == -1)
 			{
 				success = false;
-				warn2e(__("unable to remove file '%s'"), (*pathIt));
+				warn2e(__("unable to remove the file '%s'"), (*pathIt));
 			}
 		}
 	}
