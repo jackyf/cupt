@@ -39,7 +39,7 @@ static bool __get_file_size(const string& path, ssize_t* result)
 	{
 		if (errno != ENOENT)
 		{
-			fatal2e(__("stat on file '%s' failed"), path);
+			fatal2e(__("lstat() failed: '%s'"), path);
 		}
 		return false;
 	}
