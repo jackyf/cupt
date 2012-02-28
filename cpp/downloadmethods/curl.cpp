@@ -40,7 +40,7 @@ class CurlWrapper
 		__handle = curl_easy_init();
 		if (!__handle)
 		{
-			fatal2(__("unable to create Curl handle"));
+			fatal2(__("unable to create a Curl handle"));
 		}
 		__init();
 	}
