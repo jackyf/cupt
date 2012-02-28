@@ -984,10 +984,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			}
 		}
 
-		if (!simulating)
-		{
-			lock.reset(new internal::Lock(*_config, lockFilePath));
-		}
+		lock.reset(new internal::Lock(*_config, lockFilePath));
 
 		{ // run pre-actions
 			_logger->log(Logger::Subsystem::Metadata, 2, "running apt pre-invoke hooks");
