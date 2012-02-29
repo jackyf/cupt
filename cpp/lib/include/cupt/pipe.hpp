@@ -32,6 +32,7 @@ struct PipeData;
 
 }
 
+// TODO/API break/: not used externally anymore, make it internal
 class CUPT_API Pipe
 {
 	internal::PipeData* __data;
