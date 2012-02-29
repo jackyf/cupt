@@ -15,6 +15,9 @@ cupt (2.5.0~) UNRELEASED; urgency=low
       - Status line: leave the cursor at the end of line so anynchronous
         warning and error messages are printed on the next line, not over the
         status line.
+   - Don't include a not exported header from cupt/common.hpp, making a
+     development binary package usable again. Fixes a regression since
+     2.3.0~rc1.
   * downloadmethods:
     - wget:
       - Use threads instead of explicit fork()s.
