@@ -18,6 +18,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
    - Don't include a not exported header from cupt/common.hpp, making a
      development binary package usable again. Fixes a regression since
      2.3.0~rc1.
+   - Remove accidentally included 'using std::string' from a global namespace.
+     Fixes a regression since 2.3.0~rc1.
   * downloadmethods:
     - wget:
       - Use threads instead of explicit fork()s.

@@ -23,9 +23,11 @@
 #include <cstring>
 
 #include <string>
-using std::string;
 
 namespace cupt {
+
+using std::string;
+
 namespace internal {
 namespace format2impl {
 
