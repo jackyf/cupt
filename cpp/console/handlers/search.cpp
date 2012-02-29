@@ -120,7 +120,6 @@ int search(Context& context)
 			{
 				bool matched = true;
 
-				// TODO: getLocalizedDescriptions() perfomance fixes
 				auto descriptions = cache->getLocalizedDescriptions(v);
 				const string& shortDescription = descriptions.first.empty() ? v->shortDescription : descriptions.first;
 				const string& longDescription = descriptions.second.empty() ? v->longDescription : descriptions.second;
