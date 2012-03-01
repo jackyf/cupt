@@ -60,7 +60,7 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 				}
 				catch (Exception& e)
 				{
-					warn2(__("error while parsing new version entry for package '%s'"), initParams.packageName);
+					warn2(__("error while parsing a version for the package '%s'"), initParams.packageName);
 				}
 			}
 			if (result.empty())
