@@ -152,7 +152,7 @@ void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< sha
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error while merging version '%s' for package '%s'"),
+		fatal2(__("error while merging the version '%s' for the package '%s'"),
 				parsedVersion->versionString, parsedVersion->packageName);
 	};
 }
