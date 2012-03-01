@@ -52,7 +52,7 @@ Pipe::Pipe(const string& name_)
 	int pipeFdPair[2];
 	if (pipe(pipeFdPair) == -1)
 	{
-		fatal2e(__("unable to create '%s' pipe"), __data->name);
+		fatal2e(__("unable to create the '%s' pipe"), __data->name);
 	}
 
 	// setting FD_CLOEXEC flags
@@ -62,11 +62,11 @@ Pipe::Pipe(const string& name_)
 		int oldFdFlags = fcntl(fd, F_GETFD);
 		if (oldFdFlags < 0)
 		{
-			fatal2e(__("unable to create '%s' pipe: unable to get file descriptor flags"), __data->name);
+			fatal2e(__("unable to create the '%s' pipe: unable to get file descriptor flags"), __data->name);
 		}
 		if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
 		{
-			fatal2e(__("unable to create '%s' pipe: unable to set the close-on-exec flag"), __data->name);
+			fatal2e(__("unable to create the '%s' pipe: unable to set the close-on-exec flag"), __data->name);
 		}
 	}
 
