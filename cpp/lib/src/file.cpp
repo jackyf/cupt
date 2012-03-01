@@ -33,7 +33,7 @@ static int __guarded_fileno(FILE* handle, const string& path)
 	int fd = fileno(handle);
 	if (fd == -1)
 	{
-		fatal2e(__("fileno on file '%s' failed"), path);
+		fatal2e(__("fileno failed: '%s'"), path);
 	}
 	return fd;
 }
