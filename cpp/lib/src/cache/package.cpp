@@ -44,35 +44,28 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 		// versions were either not parsed or parsed, but not saved
 		vector< shared_ptr< Version > > result;
 
-		try
+		vector< Version::InitializationParameters > newUnparsedVersions;
+		FORIT(unparsedVersionIt, __unparsed_versions)
 		{
-			vector< Version::InitializationParameters > newUnparsedVersions;
-			FORIT(unparsedVersionIt, __unparsed_versions)
+			Version::InitializationParameters& initParams = *unparsedVersionIt;
+			try
 			{
-				Version::InitializationParameters& initParams = *unparsedVersionIt;
-				try
+				__merge_version(_parse_version(initParams), result);
+				if (!memoize)
 				{
-					__merge_version(_parse_version(initParams), result);
-					if (!memoize)
-					{
-						newUnparsedVersions.push_back(initParams);
-					}
-				}
-				catch (Exception& e)
-				{
-					warn2(__("error while parsing a version for the package '%s'"), initParams.packageName);
+					newUnparsedVersions.push_back(initParams);
 				}
 			}
-			if (result.empty())
+			catch (Exception& e)
 			{
-				warn2(__("no valid versions available, discarding the package"));
+				warn2(__("error while parsing a version for the package '%s'"), initParams.packageName);
 			}
-			__unparsed_versions.swap(newUnparsedVersions);
 		}
-		catch (Exception&)
+		if (result.empty())
 		{
-			fatal2(__("error while parsing package info"));
+			warn2(__("no valid versions available, discarding the package"));
 		}
+		__unparsed_versions.swap(newUnparsedVersions);
 
 		if (memoize)
 		{
