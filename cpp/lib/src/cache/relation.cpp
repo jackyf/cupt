@@ -141,7 +141,7 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 		if (!__parse_versioned_info(current, end))
 		{
 			string unparsed(start, end);
-			fatal2(__("failed to parse a version part in the relation '%s'"), unparsed); // what else can we do?..
+			fatal2(__("failed to parse a version part in the relation '%s'"), unparsed);
 		}
 	}
 	else
