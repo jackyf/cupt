@@ -36,10 +36,9 @@ struct PipeData
 
 void PipeData::close(int fd)
 {
-	const char* part = (fd == inputFd ? "input" : "output");
 	if (::close(fd) == -1)
 	{
-		warn2e(__("unable to close %s part of '%s' pipe"), part, name);
+		warn2e(__("unable to close a part of the '%s' pipe"), name);
 	}
 }
 
