@@ -92,7 +92,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		if (std::find(snapshotNames.begin(), snapshotNames.end(), snapshotName)
 				== snapshotNames.end())
 		{
-			fatal2(__("unable to find snapshot named '%s'"), snapshotName);
+			fatal2(__("unable to find a snapshot named '%s'"), snapshotName);
 		}
 	}
 

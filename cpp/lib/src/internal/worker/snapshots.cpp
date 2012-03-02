@@ -381,7 +381,7 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), previousName)
 			== snapshotNames.end())
 	{
-		fatal2(__("unable to find snapshot named '%s'"), previousName);
+		fatal2(__("unable to find a snapshot named '%s'"), previousName);
 	}
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), newName)
 			!= snapshotNames.end())
@@ -412,7 +412,7 @@ void SnapshotsWorker::removeSnapshot(const Snapshots& snapshots, const string& n
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), name)
 			== snapshotNames.end())
 	{
-		fatal2(__("unable to find snapshot named '%s'"), name);
+		fatal2(__("unable to find a snapshot named '%s'"), name);
 	}
 
 	auto snapshotDirectory = snapshots.getSnapshotDirectory(name);
