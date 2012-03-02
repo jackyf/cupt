@@ -39,7 +39,7 @@ class GcryptHasher
 		gcry_error_t gcryptError;
 		if ((gcryptError = gcry_md_open(&__gcrypt_handle, gcryptAlgorithm, 0)))
 		{
-			fatal2(__("unable to open gcrypt hash handle: %s"), gcry_strerror(gcryptError));
+			fatal2(__("unable to open a gcrypt hash handle: %s"), gcry_strerror(gcryptError));
 		}
 		__digest_size = gcry_md_get_algo_dlen(gcryptAlgorithm);
 	}
@@ -125,7 +125,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		static string strings[HashSums::Count] = { "md5", "sha1", "sha256" };
 		string description = string(sourceType == Source::File ? "file" : "string") +
 				" '" + source + "'";
-		fatal2(__("unable to compute hash sums '%s' on '%s':"), strings[hashType], description);
+		fatal2(__("unable to compute hash sums '%s' on '%s'"), strings[hashType], description);
 	}
 
 	return result;
