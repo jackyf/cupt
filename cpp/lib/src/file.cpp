@@ -145,7 +145,7 @@ size_t FileImpl::getLineImpl()
 		if (!feof(handle))
 		{
 			// real error
-			fatal2e(__("unable to read from file '%s'"), path);
+			fatal2e(__("unable to read from the file '%s'"), path);
 		}
 
 		// ok, end of file
@@ -194,7 +194,7 @@ File& File::getBlock(char* buffer, size_t& size)
 		if (!feof(__impl->handle))
 		{
 			// real error
-			fatal2e(__("unable to read from file '%s'"), __impl->path);
+			fatal2e(__("unable to read from the file '%s'"), __impl->path);
 		}
 	}
 	return *this;
@@ -244,13 +244,13 @@ void File::seek(size_t newPosition)
 {
 	if (__impl->isPipe)
 	{
-		fatal2(__("an attempt to seek on pipe '%s'"), __impl->path);
+		fatal2(__("an attempt to seek on the pipe '%s'"), __impl->path);
 	}
 	else
 	{
 		if (fseek(__impl->handle, newPosition, SEEK_SET) == -1)
 		{
-			fatal2e(__("unable to seek on file '%s'"), __impl->path);
+			fatal2e(__("unable to seek on the file '%s'"), __impl->path);
 		}
 	}
 }
@@ -259,14 +259,14 @@ size_t File::tell() const
 {
 	if (__impl->isPipe)
 	{
-		fatal2(__("an attempt to tell position on pipe '%s'"), __impl->path);
+		fatal2(__("an attempt to tell a position on the pipe '%s'"), __impl->path);
 	}
 	else
 	{
 		long result = ftell(__impl->handle);
 		if (result == -1)
 		{
-			fatal2e(__("unable to tell position on file '%s'"), __impl->path);
+			fatal2e(__("unable to tell a position on the file '%s'"), __impl->path);
 		}
 		else
 		{
@@ -284,7 +284,7 @@ void File::lock(int flags)
 	if (flock(fd, flags) == -1)
 	{
 		const char* actionName = (flags & LOCK_UN) ? "release" : "obtain";
-		fatal2e(__("unable to %s lock on file '%s'"), actionName, __impl->path);
+		fatal2e(__("unable to %s lock on the file '%s'"), actionName, __impl->path);
 	}
 }
 
@@ -293,7 +293,7 @@ void File::put(const char* data, size_t size)
 	__impl->assertFileOpened();
 	if (fwrite(data, size, 1, __impl->handle) != 1)
 	{
-		fatal2e(__("unable to write to file '%s'"), __impl->path);
+		fatal2e(__("unable to write to the file '%s'"), __impl->path);
 	}
 }
 
@@ -319,7 +319,7 @@ void File::unbufferedPut(const char* data, size_t size)
 			}
 			else
 			{
-				fatal2e(__("unable to write to file '%s'"), __impl->path);
+				fatal2e(__("unable to write to the file '%s'"), __impl->path);
 			}
 		}
 		currentOffset += writeResult;
