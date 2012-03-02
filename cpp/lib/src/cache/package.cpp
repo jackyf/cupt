@@ -143,10 +143,10 @@ void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< sha
 			else
 			{
 				// err, no, this is different version :(
-				string info = __("package name") + ": '" + parsedVersion->packageName + "', " +
-						__("version string") + ": '" + parsedVersion->versionString + "', " +
-						__("origin") + ": '" + parsedVersion->sources[0].release->baseUri + "'";
-				warn2(__("throwing away the duplicate version with different hash sums: %s"), info);
+				warn2(__("throwing away the duplicate version with different hash sums: "
+						"package name: '%s', version string: '%s', origin: '%s'"),
+						parsedVersion->packageName, parsedVersion->versionString,
+						parsedVersion->sources[0].release->baseUri);
 			}
 		}
 	}
