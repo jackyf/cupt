@@ -105,18 +105,18 @@ FileImpl::~FileImpl()
 			auto pcloseResult = pclose(handle);
 			if (pcloseResult == -1)
 			{
-				fatal2e(__("unable to close pipe '%s'"), path);
+				fatal2e(__("unable to close the pipe '%s'"), path);
 			}
 			else if (pcloseResult)
 			{
-				fatal2(__("pipe '%s' execution failed: %s"), path, getWaitStatusDescription(pcloseResult));
+				fatal2(__("execution of the pipe '%s' failed: %s"), path, getWaitStatusDescription(pcloseResult));
 			}
 		}
 		else
 		{
 			if (fclose(handle))
 			{
-				fatal2e(__("unable to close file '%s'"), path);
+				fatal2e(__("unable to close the file '%s'"), path);
 			}
 		}
 	}
