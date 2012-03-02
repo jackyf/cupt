@@ -67,14 +67,14 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 		CHECK_WANT("hold", Hold)
 		CHECK_WANT("purge", Purge)
 		{ // else
-			fatal2(__("malformed '%s' status indicator (for package '%s')"), "desired", packageName);
+			fatal2(__("malformed '%s' status indicator (for the package '%s')"), "desired", packageName);
 		}
 #undef CHECK_WANT
 	}
 
 	if (current.second == end)
 	{
-		fatal2(__("no '%s' status indicator (for package '%s')"), "error", packageName);
+		fatal2(__("no '%s' status indicator (for the package '%s')"), "error", packageName);
 	}
 	current.first = ++current.second;
 	while (current.second != end && *current.second != ' ')
@@ -88,14 +88,14 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 		CHECK_FLAG("hold", Hold)
 		CHECK_FLAG("hold-reinstreq", HoldAndReinstreq)
 		{ // else
-			fatal2(__("malformed '%s' status indicator (for package '%s')"), "error", packageName);
+			fatal2(__("malformed '%s' status indicator (for the package '%s')"), "error", packageName);
 		}
 #undef CHECK_FLAG
 	}
 
 	if (current.second == end)
 	{
-		fatal2(__("no '%s' status indicator (for package '%s')"), "status", packageName);
+		fatal2(__("no '%s' status indicator (for the package '%s')"), "status", packageName);
 	}
 	current.first = current.second + 1;
 	current.second = end;
@@ -112,7 +112,7 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 		CHECK_STATUS("triggers-pending", TriggersPending)
 		CHECK_STATUS("triggers-awaited", TriggersAwaited)
 		{ // else
-			fatal2(__("malformed '%s' status indicator (for package '%s')"), "status", packageName);
+			fatal2(__("malformed '%s' status indicator (for the package '%s')"), "status", packageName);
 		}
 	}
 }
@@ -149,7 +149,7 @@ void StateData::parseDpkgStatus()
 	shared_ptr< File > file(new File(path, "r", openError));
 	if (!openError.empty())
 	{
-		fatal2(__("unable to open dpkg status file '%s': %s"), path, openError);
+		fatal2(__("unable to open the dpkg status file '%s': %s"), path, openError);
 	}
 
 	/*
@@ -236,7 +236,7 @@ void StateData::parseDpkgStatus()
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error parsing system status file '%s'"), path);
+		fatal2(__("error parsing the dpkg status file '%s'"), path);
 	}
 }
 
