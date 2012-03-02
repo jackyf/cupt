@@ -283,7 +283,7 @@ void File::lock(int flags)
 	// TODO/API break/: provide only lock(void) and unlock(void) methods, consider using fcntl
 	if (flock(fd, flags) == -1)
 	{
-		const char* actionName = (flags & LOCK_UN) ? "release" : "obtain";
+		auto actionName = (flags & LOCK_UN) ? __("release") : __("obtain");
 		fatal2e(__("unable to %s lock on the file '%s'"), actionName, __impl->path);
 	}
 }
