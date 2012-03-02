@@ -354,7 +354,7 @@ void ConfigImpl::readConfigs(Config* config)
 			}
 			catch (Exception&)
 			{
-				warn2(__("skipped configuration file '%s'"), *configFileIt);
+				warn2(__("skipped the configuration file '%s'"), *configFileIt);
 			}
 		}
 	}
@@ -368,7 +368,7 @@ static string qx(const string& shellCommand)
 	File file(shellCommand, "pr", openError); // reading from pipe
 	if (!openError.empty())
 	{
-		fatal2(__("unable to open pipe '%s': %s"), shellCommand, openError);
+		fatal2(__("unable to open the pipe '%s': %s"), shellCommand, openError);
 	}
 	string result;
 	string block;
@@ -445,7 +445,7 @@ string Config::getString(const string& optionName) const
 	}
 	else
 	{
-		fatal2(__("an attempt to get wrong scalar option '%s'"), optionName);
+		fatal2(__("an attempt to get the wrong scalar option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -501,7 +501,7 @@ ssize_t Config::getInteger(const string& optionName) const
 		}
 		catch (boost::bad_lexical_cast&)
 		{
-			fatal2(__("unable to convert '%s' to number"), source);
+			fatal2(__("unable to convert '%s' to a number"), source);
 		}
 		return result; // we'll never return default value here
 	}
@@ -520,7 +520,7 @@ vector< string > Config::getList(const string& optionName) const
 	}
 	else
 	{
-		fatal2(__("an attempt to get wrong list option '%s'"), optionName);
+		fatal2(__("an attempt to get the wrong list option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -550,7 +550,7 @@ void Config::setScalar(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2(__("an attempt to set wrong scalar option '%s'"), optionName);
+		warn2(__("an attempt to set the wrong scalar option '%s'"), optionName);
 	}
 }
 
@@ -568,7 +568,7 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2(__("an attempt to set wrong list option '%s'"), optionName);
+		warn2(__("an attempt to set the wrong list option '%s'"), optionName);
 	}
 }
 
