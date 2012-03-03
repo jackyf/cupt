@@ -284,7 +284,7 @@ void ConfigParser::__error_out()
 	}
 	string context(__current, __current + contextLength);
 
-	fatal2(__("a syntax error: expected: %s before '%s'"), errorDescription, context);
+	fatal2(__("syntax error: expected: %s before '%s'"), errorDescription, context);
 }
 
 } // namespace
