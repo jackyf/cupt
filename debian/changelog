@@ -1,6 +1,10 @@
 cupt (2.4.1~) UNRELEASED; urgency=low
 
-  * 
+  * console:
+    - Managing packages:
+      - Fixed possible spontaneous 'Enter a package expression' messages while
+        resolving problems when no solutions were found and no exception was
+        thrown. This regression was introduced in 2.0.0~rc1.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
 
