@@ -5,6 +5,14 @@ cupt (2.4.1~) UNRELEASED; urgency=low
       - Fixed possible spontaneous 'Enter a package expression' messages while
         resolving problems when no solutions were found and no exception was
         thrown. This regression was introduced in 2.0.0~rc1.
+  * lib:
+    - system/resolvers/native:
+      - Fixed throwing an exception when some solutions were found but all of
+        them were autorejected. This can happen only if some solutions were
+        dropped due to a solution count requirement (the option
+        'cupt::resolver::max-solution-count'). This regression was introduced
+        in 2.4.0 and also made the 'Enter a package expression' regression
+        above able to show itself.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
 
