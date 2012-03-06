@@ -518,6 +518,10 @@ removal of an existing package
 
 removal of an existing essential package (a general B<removal> option is applied as well)
 
+=item removal-of-autoinstalled
+
+removal of an automatically installed package (a general B<removal> option is applied as well)
+
 =item upgrade
 
 installing a higher version of an existing package

@@ -32,7 +32,7 @@ class ScoreChange
 
 	struct SubScore
 	{
-		enum Type { Version, New, Removal, RemovalOfEssential, Upgrade, Downgrade,
+		enum Type { Version, New, Removal, RemovalOfEssential, RemovalOfAuto, Upgrade, Downgrade,
 				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
 	};
 
