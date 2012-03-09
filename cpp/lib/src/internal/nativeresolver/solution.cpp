@@ -39,8 +39,7 @@ bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
 }
 
 template < class data_t, class Comparator, class KeyGetter >
-// TODO: rename to VectorBasedMap
-class PackageEntryMapBase
+class VectorBasedMap
 {
  public:
 	typedef const dg::Element* key_t;
@@ -65,7 +64,7 @@ class PackageEntryMapBase
 	}
 	iterator_t lower_bound(const key_t& key)
 	{
-		return const_cast< iterator_t >(((const PackageEntryMapBase*)this)->lower_bound(key));
+		return const_cast< iterator_t >(((const VectorBasedMap*)this)->lower_bound(key));
 	}
 	const_iterator_t find(const key_t& key) const
 	{
@@ -107,7 +106,7 @@ struct PackageEntryMapKeyGetter
 	const dg::Element* operator()(const pair< const dg::Element*, PackageEntry >& data)
 	{ return data.first; }
 };
-class PackageEntryMap: public PackageEntryMapBase<
+class PackageEntryMap: public VectorBasedMap<
 		pair< const dg::Element*, PackageEntry >,
 		PackageEntryMapComparator, PackageEntryMapKeyGetter >
 {
@@ -130,7 +129,7 @@ struct PackageEntrySetKeyGetter
 	const dg::Element* operator()(const dg::Element* data) { return data; }
 };
 // TODO: rename to ElementSet
-class PackageEntrySet: public PackageEntryMapBase< const dg::Element*,
+class PackageEntrySet: public VectorBasedMap< const dg::Element*,
 		PackageEntrySetComparator, PackageEntrySetKeyGetter >
 {};
 
@@ -143,7 +142,7 @@ struct BrokenSuccessorMapKeyGetter
 {
 	const dg::Element* operator()(const BrokenSuccessor& data) { return data.elementPtr; }
 };
-class BrokenSuccessorMap: public PackageEntryMapBase< BrokenSuccessor,
+class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor,
 		BrokenSuccessorMapComparator, BrokenSuccessorMapKeyGetter >
 {};
 
