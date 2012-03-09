@@ -567,10 +567,6 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 			__solution_storage->getSuccessorElements(candidateElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
-		if ((*successorElementPtrIt)->getTypePriority() < brokenElementTypePriority)
-		{
-			continue;
-		}
 		if (*successorElementPtrIt == brokenElementPtr)
 		{
 			if (debugging)
