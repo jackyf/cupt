@@ -557,9 +557,6 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 		const dg::Element* candidateElementPtr, const dg::Element* brokenElementPtr,
 		bool debugging)
 {
-	/* we check only successors with the same or bigger priority than
-	   currently broken one */
-	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
 
 	__solution_storage->unfoldElement(candidateElementPtr);
 
@@ -579,10 +576,13 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 	}
 
 	// let's try even harder to find if this candidate is really appropriate for us
+	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
 	const GraphCessorListType& brokenElementSuccessorElementPtrs =
 			__solution_storage->getSuccessorElements(brokenElementPtr);
 	FORIT(successorElementPtrIt, successorElementPtrs)
 	{
+		/* we check only successors with the same or bigger priority than
+		   currently broken one */
 		if ((*successorElementPtrIt)->getTypePriority() < brokenElementTypePriority)
 		{
 			continue;
