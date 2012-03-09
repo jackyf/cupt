@@ -969,8 +969,16 @@ Solution::BrokenPairType __get_broken_pair(
 			return false;
 		}
 
-		return static_cast< const dg::VersionVertex* >(left.first)->getPackageName() >
-				static_cast< const dg::VersionVertex* >(right.first)->getPackageName();
+		if (left.second.elementPtr->id < right.second.elementPtr->id)
+		{
+			return true;
+		}
+		if (left.second.elementPtr->id > right.second.elementPtr->id)
+		{
+			return false;
+		}
+
+		return left.first->id < right.first->id;
 	};
 
 	BrokenPairType result(NULL, PackageEntry::BrokenSuccessor()); // empty

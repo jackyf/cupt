@@ -46,6 +46,12 @@ size_t BasicVertex::getTypePriority() const
 	return 0; // unreachable
 }
 
+uint32_t BasicVertex::__next_id = 0;
+
+BasicVertex::BasicVertex()
+	: id(__next_id++)
+{}
+
 bool BasicVertex::isAnti() const
 {
 	fatal2i("getting isAnti of '%s'", toString());
