@@ -58,21 +58,9 @@ struct PackageEntry
 			return brokenElementPtr->getReason(*versionElementPtr);
 		}
 	};
-	struct BrokenSuccessor
-	{
-		const dg::Element* elementPtr;
-		size_t priority;
-
-		BrokenSuccessor()
-		{}
-		BrokenSuccessor(const dg::Element* elementPtr_, size_t priority_)
-			: elementPtr(elementPtr_), priority(priority_)
-		{}
-	};
 
 	bool sticked;
 	bool autoremoved;
-	forward_list< BrokenSuccessor > brokenSuccessors;
 	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
 
@@ -88,6 +76,19 @@ struct PackageEntry
 
 class PackageEntryMap;
 class PackageEntrySet;
+class BrokenSuccessorMap;
+
+struct BrokenSuccessor
+{
+	const dg::Element* elementPtr;
+	size_t priority;
+
+	BrokenSuccessor()
+	{}
+	BrokenSuccessor(const dg::Element* elementPtr_, size_t priority_)
+		: elementPtr(elementPtr_), priority(priority_)
+	{}
+};
 
 class Solution
 {
@@ -97,6 +98,7 @@ class Solution
 	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
 	shared_ptr< PackageEntrySet > __removed_entries;
+	BrokenSuccessorMap*  __broken_successors;
  public:
 	size_t id;
 	size_t level;
@@ -108,12 +110,12 @@ class Solution
 	Solution();
 	Solution(const Solution&) = delete;
 	Solution& operator=(const Solution&) = delete;
+	~Solution();
 
 	void prepare();
 	vector< const dg::Element* > getElements() const;
 
-	typedef pair< const dg::Element*, PackageEntry::BrokenSuccessor > BrokenPairType;
-	void getBrokenPairs(const std::function< void (BrokenPairType&&) >&) const;
+	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 };
@@ -122,6 +124,9 @@ class SolutionStorage
 {
 	size_t __next_free_id;
 	dg::DependencyGraph __dependency_graph;
+
+	void __update_broken_successors(Solution&,
+			const dg::Element*, const dg::Element*, size_t priority);
  public:
 	SolutionStorage(const Config&, const Cache& cache);
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
@@ -140,7 +145,7 @@ class SolutionStorage
 			const dg::Element*, const dg::Element**) const;
 	void setRejection(Solution&, const dg::Element*);
 	void setPackageEntry(Solution&, const dg::Element*,
-			PackageEntry&&, const dg::Element*);
+			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 };
 
