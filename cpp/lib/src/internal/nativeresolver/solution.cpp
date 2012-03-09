@@ -38,7 +38,7 @@ bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
 	return (findResult == rejectedConflictors.end());
 }
 
-template < class data_t, class Comparator, class KeyGetter >
+template < class data_t, class KeyGetter >
 class VectorBasedMap
 {
  public:
@@ -53,6 +53,13 @@ class VectorBasedMap
 	{
 		return static_cast< typename container_t::iterator >(const_cast< iterator_t >(position));
 	}
+	struct __comparator
+	{
+		bool operator()(const data_t& data, const key_t& key) const
+		{
+			return KeyGetter()(data) < key;
+		}
+	};
  public:
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
@@ -60,7 +67,7 @@ class VectorBasedMap
 	const_iterator_t end() const { return &*__container.end(); }
 	const_iterator_t lower_bound(const key_t& key) const
 	{
-		return std::lower_bound(begin(), end(), key, Comparator());
+		return std::lower_bound(begin(), end(), key, __comparator());
 	}
 	iterator_t lower_bound(const key_t& key)
 	{
@@ -96,19 +103,13 @@ class VectorBasedMap
 	}
 };
 
-struct PackageEntryMapComparator
-{
-	bool operator()(const pair< const dg::Element*, PackageEntry >& data, const dg::Element* key) const
-	{ return data.first < key; }
-};
 struct PackageEntryMapKeyGetter
 {
 	const dg::Element* operator()(const pair< const dg::Element*, PackageEntry >& data)
 	{ return data.first; }
 };
 class PackageEntryMap: public VectorBasedMap<
-		pair< const dg::Element*, PackageEntry >,
-		PackageEntryMapComparator, PackageEntryMapKeyGetter >
+		pair< const dg::Element*, PackageEntry >, PackageEntryMapKeyGetter >
 {
  public:
 	mutable size_t forkedCount;
@@ -118,31 +119,18 @@ class PackageEntryMap: public VectorBasedMap<
 	{}
 };
 
-
-struct PackageEntrySetComparator
-{
-	bool operator()(const dg::Element* data, const dg::Element* key) const
-	{ return data < key; }
-};
 struct PackageEntrySetKeyGetter
 {
 	const dg::Element* operator()(const dg::Element* data) { return data; }
 };
-class ElementSet: public VectorBasedMap< const dg::Element*,
-		PackageEntrySetComparator, PackageEntrySetKeyGetter >
+class ElementSet: public VectorBasedMap< const dg::Element*, PackageEntrySetKeyGetter >
 {};
 
-struct BrokenSuccessorMapComparator
-{
-	bool operator()(const BrokenSuccessor& data, const dg::Element* key) const
-	{ return data.elementPtr < key; }
-};
 struct BrokenSuccessorMapKeyGetter
 {
 	const dg::Element* operator()(const BrokenSuccessor& data) { return data.elementPtr; }
 };
-class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor,
-		BrokenSuccessorMapComparator, BrokenSuccessorMapKeyGetter >
+class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor, BrokenSuccessorMapKeyGetter >
 {};
 
 
