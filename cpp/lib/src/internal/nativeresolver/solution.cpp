@@ -128,8 +128,7 @@ struct PackageEntrySetKeyGetter
 {
 	const dg::Element* operator()(const dg::Element* data) { return data; }
 };
-// TODO: rename to ElementSet
-class PackageEntrySet: public VectorBasedMap< const dg::Element*,
+class ElementSet: public VectorBasedMap< const dg::Element*,
 		PackageEntrySetComparator, PackageEntrySetKeyGetter >
 {};
 
@@ -439,7 +438,7 @@ Solution::Solution()
 	: id(0), level(0), finished(false), score(0)
 {
 	__added_entries.reset(new PackageEntryMap);
-	__removed_entries.reset(new PackageEntrySet);
+	__removed_entries.reset(new ElementSet);
 	__broken_successors = new BrokenSuccessorMap;
 }
 
@@ -477,9 +476,9 @@ void Solution::prepare()
 			class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
 			{
 				PackageEntryMap& __target;
-				PackageEntrySet& __exceptions;
+				ElementSet& __exceptions;
 			 public:
-				RepackInsertIterator(PackageEntryMap& target, PackageEntrySet& exceptions)
+				RepackInsertIterator(PackageEntryMap& target, ElementSet& exceptions)
 					: __target(target), __exceptions(exceptions) {}
 				RepackInsertIterator& operator++() { return *this; }
 				RepackInsertIterator& operator*() { return *this; }
