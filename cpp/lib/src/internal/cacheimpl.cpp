@@ -627,7 +627,8 @@ void CacheImpl::parsePreferences()
 	pinInfo.reset(new PinInfo(config, systemState));
 }
 
-ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const string& installedVersionString) const
+ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version,
+		const std::function< string () >& getInstalledVersionString) const
 {
 	if (Cache::memoize)
 	{
@@ -638,7 +639,7 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const stri
 		}
 	}
 
-	auto result = pinInfo->getPin(version, installedVersionString);
+	auto result = pinInfo->getPin(version, getInstalledVersionString());
 	if (Cache::memoize)
 	{
 		pinCache.insert({ version, result });

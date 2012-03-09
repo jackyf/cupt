@@ -156,21 +156,24 @@ shared_ptr< const SourcePackage > Cache::getSourcePackage(const string& packageN
 
 ssize_t Cache::getPin(const shared_ptr< const Version >& version) const
 {
-	string installedVersionString;
-	if (dynamic_pointer_cast< const BinaryVersion >(version))
+	auto getInstalledVersionString = [this, &version]()
 	{
-		auto package = getBinaryPackage(version->packageName);
-		if (package)
+		if (dynamic_pointer_cast< const BinaryVersion >(version))
 		{
-			auto installedVersion = package->getInstalledVersion();
-			if (installedVersion)
+			auto package = getBinaryPackage(version->packageName);
+			if (package)
 			{
-				installedVersionString = installedVersion->versionString;
+				auto installedVersion = package->getInstalledVersion();
+				if (installedVersion)
+				{
+					return installedVersion->versionString;
+				}
 			}
 		}
-	}
+		return string();
+	};
 
-	return __impl->getPin(version, installedVersionString);
+	return __impl->getPin(version, getInstalledVersionString);
 }
 
 vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< const Package >& package) const
@@ -180,18 +183,27 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< 
 	auto versions = package->getVersions();
 
 	string installedVersionString;
-	if (auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package))
+	bool ivsIsSet = false;
+	auto getInstalledVersionString = [&installedVersionString, &ivsIsSet, &package]()
 	{
-		auto installedVersion = binaryPackage->getInstalledVersion();
-		if (installedVersion)
+		if (!ivsIsSet)
 		{
-			installedVersionString = installedVersion->versionString;
+			if (auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package))
+			{
+				auto installedVersion = binaryPackage->getInstalledVersion();
+				if (installedVersion)
+				{
+					installedVersionString = installedVersion->versionString;
+				}
+			}
+			ivsIsSet = true;
 		}
-	}
+		return installedVersionString;
+	};
 
 	for (const auto& version: versions)
 	{
-		result.push_back(PinnedVersion(version, __impl->getPin(version, installedVersionString)));
+		result.push_back(PinnedVersion(version, __impl->getPin(version, getInstalledVersionString)));
 	}
 
 	auto sorter = [](const PinnedVersion& left, const PinnedVersion& right) -> bool
