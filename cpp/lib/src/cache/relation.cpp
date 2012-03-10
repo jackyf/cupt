@@ -378,7 +378,7 @@ void RelationExpressionType::__init(string::const_iterator begin, string::const_
 			/* split OR groups */ \
 			auto callback = [this](string::const_iterator begin, string::const_iterator end) \
 			{ \
-				this->push_back(UnderlyingElement(make_pair(begin, end))); \
+				this->emplace_back(make_pair(begin, end)); \
 			}; \
 			internal::processSpacePipeSpaceDelimitedStrings(begin, end, callback); \
 			return; \
@@ -386,7 +386,7 @@ void RelationExpressionType::__init(string::const_iterator begin, string::const_
 	} \
  \
 	/* if we reached here, we didn't find OR groups */ \
-	push_back(UnderlyingElement(make_pair(begin, end))); \
+	emplace_back(make_pair(begin, end)); \
 } \
  \
 RelationExpressionType::RelationExpressionType() \
