@@ -427,7 +427,7 @@ void RelationLineType::__init(string::const_iterator begin, string::const_iterat
 { \
 	auto callback = [this](string::const_iterator begin, string::const_iterator end) \
 	{ \
-		this->push_back(UnderlyingElement(make_pair(begin, end))); \
+		this->emplace_back(make_pair(begin, end)); \
 	}; \
  \
 	internal::processSpaceCommaSpaceDelimitedStrings(begin, end, callback); \
