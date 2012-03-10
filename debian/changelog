@@ -22,6 +22,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
     - system/resolvers/native:
       - Score calculation: for removals of packages which are not manually
         installed, apply also the 'removal-of-autoinstalled' score.
+    - cache:
+      - Constructor: don't parse release files more than once.
    - Don't include a not exported header from cupt/common.hpp, making a
      development binary package usable again. Fixes a regression since
      2.3.0~rc1.

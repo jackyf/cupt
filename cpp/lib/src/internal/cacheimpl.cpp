@@ -418,6 +418,22 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 	}
 }
 
+shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const string& path)
+{
+	auto insertResult = releaseInfoCache.insert({ path, {} });
+	auto& cachedValue = insertResult.first->second;
+	if (insertResult.second)
+	{
+		cachedValue = cachefiles::getReleaseInfo(config, path);
+		cachedValue->verified = cachefiles::verifySignature(config, path);
+	}
+	if (!cachedValue)
+	{
+		throw Exception(""); // !cachedValue means that getReleaseInfo has failed before
+	}
+	return shared_ptr< ReleaseInfo > (new ReleaseInfo(*cachedValue));
+}
+
 void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		const ReleaseLimits& releaseLimits)
 {
@@ -430,10 +446,9 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 	try
 	{
 		auto releaseFilePath = cachefiles::getPathOfReleaseList(*config, indexEntry);
-		auto releaseInfo = cachefiles::getReleaseInfo(*config, releaseFilePath);
+		auto releaseInfo = getReleaseInfo(*config, releaseFilePath);
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
-		releaseInfo->verified = cachefiles::verifySignature(*config, releaseFilePath);
 
 		if (releaseLimits.isExcluded(*releaseInfo))
 		{

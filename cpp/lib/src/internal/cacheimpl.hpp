@@ -63,12 +63,14 @@ class CacheImpl
 	mutable unordered_map< string, vector< shared_ptr< const BinaryVersion > > > getSatisfyingVersionsCache;
 	shared_ptr< PinInfo > pinInfo;
 	mutable map< shared_ptr< const Version >, ssize_t > pinCache;
+	map< string, shared_ptr< ReleaseInfo > > releaseInfoCache;
 
 	shared_ptr< Package > newSourcePackage(const string&) const;
 	shared_ptr< Package > newBinaryPackage(const string&) const;
 	shared_ptr< Package > preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
 			unordered_map< string, shared_ptr< Package > >&, const string&,
 			decltype(&CacheImpl::newBinaryPackage)) const;
+	shared_ptr< ReleaseInfo > getReleaseInfo(const Config&, const string& path);
 	void parseSourceList(const string& path);
 	void processIndexEntry(const IndexEntry&, const ReleaseLimits&);
 	void processIndexFile(const string& path, IndexEntry::Type category,
