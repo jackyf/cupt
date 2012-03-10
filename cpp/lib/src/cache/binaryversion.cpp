@@ -28,7 +28,7 @@ namespace cache {
 
 shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
-	auto v = new BinaryVersion;
+	auto v = std::make_shared< BinaryVersion >();
 
 	Source source;
 
@@ -160,7 +160,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 		fatal2(__("no hash sums specified"));
 	}
 
-	return shared_ptr< BinaryVersion >(v);
+	return v;
 }
 
 bool BinaryVersion::isInstalled() const
