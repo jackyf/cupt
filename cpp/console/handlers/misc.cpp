@@ -347,6 +347,7 @@ int showRelations(Context& context, bool reverse)
 	if (reverse)
 	{
 		Package::memoize = true;
+		Cache::memoize = true;
 	}
 
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,

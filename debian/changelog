@@ -1,5 +1,8 @@
 cupt (2.5.0~) UNRELEASED; urgency=low
 
+  * console:
+    - 'rdepends':
+      - Small speed-up by using more aggressive caching.
   * lib:
     - system/worker:
       - Updating release and index data: use the information about Translation
