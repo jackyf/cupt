@@ -70,7 +70,7 @@ class CacheImpl
 	shared_ptr< Package > preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
 			unordered_map< string, shared_ptr< Package > >&, const string&,
 			decltype(&CacheImpl::newBinaryPackage)) const;
-	shared_ptr< ReleaseInfo > getReleaseInfo(const Config&, const string& path);
+	shared_ptr< ReleaseInfo > getReleaseInfo(const Config&, const IndexEntry&);
 	void parseSourceList(const string& path);
 	void processIndexEntry(const IndexEntry&, const ReleaseLimits&);
 	void processIndexFile(const string& path, IndexEntry::Type category,

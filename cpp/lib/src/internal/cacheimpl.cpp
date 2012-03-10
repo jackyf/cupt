@@ -418,8 +418,9 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 	}
 }
 
-shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const string& path)
+shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
 {
+	auto path = cachefiles::getPathOfReleaseList(config, indexEntry);
 	auto insertResult = releaseInfoCache.insert({ path, {} });
 	auto& cachedValue = insertResult.first->second;
 	if (insertResult.second)
@@ -445,8 +446,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 
 	try
 	{
-		auto releaseFilePath = cachefiles::getPathOfReleaseList(*config, indexEntry);
-		auto releaseInfo = getReleaseInfo(*config, releaseFilePath);
+		auto releaseInfo = getReleaseInfo(*config, indexEntry);
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
 
