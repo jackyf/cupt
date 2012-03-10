@@ -38,6 +38,15 @@
 namespace cupt {
 namespace internal {
 
+CacheImpl::CacheImpl()
+	: __smatch_ptr(new smatch)
+{}
+
+CacheImpl::~CacheImpl()
+{
+	delete __smatch_ptr;
+}
+
 void CacheImpl::processProvides(const string* packageNamePtr,
 		const char* providesStringStart, const char* providesStringEnd)
 {
@@ -52,10 +61,9 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) const
 {
 	bool needsReinstall = false;
-	smatch m;
 	FORIT(regexPtrIt, packageNameRegexesToReinstall)
 	{
-		if (regex_search(packageName, m, **regexPtrIt))
+		if (regex_search(packageName, *__smatch_ptr, **regexPtrIt))
 		{
 			needsReinstall = true;
 			break;

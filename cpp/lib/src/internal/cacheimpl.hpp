@@ -37,6 +37,7 @@ using std::list;
 using std::unordered_map;
 
 using boost::xpressive::sregex;
+using boost::xpressive::smatch;
 
 // this struct is solely for system::State
 class CacheImpl
@@ -64,6 +65,7 @@ class CacheImpl
 	shared_ptr< PinInfo > pinInfo;
 	mutable map< shared_ptr< const Version >, ssize_t > pinCache;
 	map< string, shared_ptr< ReleaseInfo > > releaseInfoCache;
+	smatch* __smatch_ptr;
 
 	shared_ptr< Package > newSourcePackage(const string&) const;
 	shared_ptr< Package > newBinaryPackage(const string&) const;
@@ -91,6 +93,8 @@ class CacheImpl
 			releaseInfoAndFileStorage;
 	ExtendedInfo extendedInfo;
 
+	CacheImpl();
+	~CacheImpl();
 	void parseSourcesLists();
 	void processIndexEntries(bool, bool);
 	void parsePreferences();
