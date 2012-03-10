@@ -31,7 +31,7 @@ namespace cache {
 
 shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
-	auto v = new SourceVersion;
+	auto v = std::make_shared< SourceVersion >();
 
 	Source source;
 
@@ -167,7 +167,7 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 	}
 	// no need to verify hash sums for emptyness, it's guarantted by parsing algorithm above
 
-	return shared_ptr< SourceVersion >(v);
+	return v;
 }
 
 bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) const
