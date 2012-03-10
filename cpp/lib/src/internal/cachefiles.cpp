@@ -583,7 +583,8 @@ bool verifySignature(const Config& config, const string& path)
 	return verifyResult;
 }
 
-shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const string& path)
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
+		const string& path, const string& alias)
 {
 	shared_ptr< cache::ReleaseInfo > result(new cache::ReleaseInfo);
 	result->notAutomatic = false; // default
@@ -668,16 +669,16 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error parsing release file '%s', line %u"), path, lineNumber);
+		fatal2(__("error parsing release '%s', line %u"), alias, lineNumber);
 	}
 
 	if (result->vendor.empty())
 	{
-		warn2(__("no vendor specified in release file '%s'"), path);
+		warn2(__("no vendor specified in release '%s'"), alias);
 	}
 	if (result->archive.empty())
 	{
-		warn2(__("no archive specified in release file '%s'"), path);
+		warn2(__("no archive specified in release '%s'"), alias);
 	}
 
 	{ // checking Valid-Until
@@ -700,13 +701,13 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 				{
 					bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
 					(warnOnly ? warn2< string, string > : fatal2< string, string >)
-							(__("release file '%s' has expired (expiry time '%s')"), path, result->validUntilDate);
+							(__("release '%s' has expired (expiry time '%s')"), alias, result->validUntilDate);
 				}
 			}
 			else
 			{
-				warn2(__("unable to parse expiry time '%s' in release file '%s'"),
-						result->validUntilDate, path);
+				warn2(__("unable to parse expiry time '%s' in release '%s'"),
+						result->validUntilDate, alias);
 			}
 		}
 	}

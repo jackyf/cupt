@@ -228,7 +228,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 				try
 				{
-					cachefiles::getReleaseInfo(*_config, targetPath);
+					cachefiles::getReleaseInfo(*_config, targetPath, targetPath);
 				}
 				catch (Exception& e)
 				{

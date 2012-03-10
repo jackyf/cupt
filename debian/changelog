@@ -24,6 +24,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         installed, apply also the 'removal-of-autoinstalled' score.
     - cache:
       - Constructor: don't parse release files more than once.
+      - Constructor: parsing release files: use an alias instead of the full
+        path in error messages.
    - Don't include a not exported header from cupt/common.hpp, making a
      development binary package usable again. Fixes a regression since
      2.3.0~rc1.
