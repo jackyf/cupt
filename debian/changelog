@@ -13,6 +13,9 @@ cupt (2.4.1~) UNRELEASED; urgency=low
         'cupt::resolver::max-solution-count'). This regression was introduced
         in 2.4.0 and also made the 'Enter a package expression' regression
         above able to show itself.
+    - cache:
+      - Constructor: don't error out if an extended states file is not
+        present, print a warning instead. (Closes: #663382)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
 
