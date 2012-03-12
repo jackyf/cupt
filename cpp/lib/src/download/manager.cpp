@@ -93,12 +93,12 @@ static vector< string > receiveSocketMessage(int socket)
 	{
 		if (errno != ECONNRESET /* handled under */)
 		{
-			fatal2e(__("unable to receive socket message length"));
+			fatal2e(__("unable to receive a socket message length"));
 		}
 	}
 	else if (readResult != sizeof(len) && readResult != 0)
 	{
-		fatal2(__("unable to receive socket message length: partial message arrived"));
+		fatal2(__("unable to receive a socket message length: %s"), __("partial message arrived"));
 	}
 
 	if (readResult == 0 || readResult == -1 /* connection reset */)
@@ -111,15 +111,15 @@ static vector< string > receiveSocketMessage(int socket)
 		readResult = read(socket, buf, len);
 		if (readResult == -1)
 		{
-			fatal2e(__("unable to receive socket message"));
+			fatal2e(__("unable to receive a socket message"));
 		}
 		else if (readResult == 0)
 		{
-			fatal2(__("unable to receive socket message: unexpected end of stream"));
+			fatal2(__("unable to receive a socket message: %s"), __("unexpected end of stream"));
 		}
 		else if (readResult != len)
 		{
-			fatal2(__("unable to receive socket message: partial message arrived"));
+			fatal2(__("unable to receive socket message: %s"), __("partial message arrived"));
 		}
 
 		string compactedMessage(buf, len);
