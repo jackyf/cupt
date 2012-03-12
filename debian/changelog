@@ -16,6 +16,8 @@ cupt (2.4.1~) UNRELEASED; urgency=low
     - cache:
       - Constructor: don't error out if an extended states file is not
         present, print a warning instead. (Closes: #663382)
+      - Reading APT pin preferences: fixed incorrect line numbers in error
+        messages.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
 
