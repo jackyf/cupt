@@ -79,7 +79,7 @@ int mainEx(int argc, char* argv[], Context& context, string& command)
 		}
 		catch (Exception&)
 		{
-			fatal2(__("error performing command '%s'"), command);
+			fatal2(__("error performing the command '%s'"), command);
 		}
 	}
 	catch (Exception&)
