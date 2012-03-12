@@ -493,16 +493,14 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 						< this->__score_manager.getScoreChangeValue(left->profit);
 			});
 
-	// fork the solution entry and apply all the solutions by one
+	// apply all the solutions by one
+	bool onlyOneAction = (actions.size() == 1);
 	FORIT(actionIt, actions)
 	{
-		// clone the current stack to form a new one
-		auto clonedSolution = __solution_storage->cloneSolution(currentSolution);
-
-		// apply the solution
-		__pre_apply_action(*currentSolution, *clonedSolution, std::move(*actionIt));
-
-		callback(clonedSolution);
+		auto newSolution = onlyOneAction ? currentSolution
+				: __solution_storage->cloneSolution(currentSolution);
+		__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt));
+		callback(newSolution);
 	}
 }
 
@@ -939,15 +937,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			__post_apply_action(*currentSolution);
 		}
 
-		// for the speed reasons, we will correct one-solution problems directly in MAIN_LOOP
-		// so, when an intermediate problem was solved, maybe it breaks packages
-		// we have checked earlier in the loop, so we schedule a recheck
-		//
-		// once two or more solutions are available, loop will be ended immediately
-		bool recheckNeeded = true;
-		while (recheckNeeded)
+		do
 		{
-			recheckNeeded = false;
 			checkFailed = false;
 
 			const dg::Element* versionElementPtr;
@@ -998,17 +989,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 			// mark package as failed one more time
 			failCounts[brokenSuccessor.elementPtr] += 1;
-
-			if (possibleActions.size() == 1)
-			{
-				__calculate_profits(possibleActions);
-				__pre_apply_action(*currentSolution, *currentSolution, std::move(possibleActions[0]));
-				__post_apply_action(*currentSolution);
-				possibleActions.clear();
-
-				recheckNeeded = true;
-			}
 		}
+		while (false);
 
 		if (!checkFailed)
 		{

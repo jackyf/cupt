@@ -439,7 +439,7 @@ void Solution::prepare()
 {
 	if (!__parent)
 	{
-		fatal2i("undefined master solution");
+		return; // prepared already
 	}
 
 	if (!__parent->__master_entries)
