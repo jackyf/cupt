@@ -76,7 +76,7 @@ static void sendSocketMessage(int socket, const vector< string >& message)
 	if (write(socket, &len, sizeof(len)) == -1 ||
 			write(socket, compactedMessage.c_str(), len) == -1)
 	{
-		fatal2e(__("unable to send socket message"));
+		fatal2e(__("unable to send a socket message"));
 	}
 }
 
