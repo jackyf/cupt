@@ -37,6 +37,8 @@
 namespace cupt {
 namespace internal {
 
+enum class MetadataWorker::IndexType { Packages, PackagesDiff, Localization, LocalizationFile };
+
 string MetadataWorker::__get_indexes_directory() const
 {
 	return _config->getPath("cupt::directory::state::lists");

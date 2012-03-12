@@ -28,7 +28,7 @@ namespace internal {
 
 class MetadataWorker: public virtual WorkerBase
 {
-	enum IndexType { Packages, PackagesDiff, Localization, LocalizationFile };
+	enum class IndexType;
 	struct IndexUpdateInfo;
 
 	string __get_indexes_directory() const;
