@@ -1047,7 +1047,14 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		{
 			__prepare_reject_requests(possibleActions);
 
-			if (!possibleActions.empty())
+			if (possibleActions.empty())
+			{
+				if (debugging)
+				{
+					__mydebug_wrapper(*currentSolution, "no solutions");
+				}
+			}
+			else
 			{
 				__calculate_profits(possibleActions);
 
@@ -1056,18 +1063,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					solutions.insert(solution);
 				};
 				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
-			}
-			else
-			{
-				if (debugging)
-				{
-					__mydebug_wrapper(*currentSolution, "no solutions");
-				}
-			}
 
-			if (!possibleActions.empty())
-			{
-				// some new solutions were added
 				__erase_worst_solutions(solutions, maxSolutionCount, debugging, thereWereSolutionsDropped);
 			}
 		}
