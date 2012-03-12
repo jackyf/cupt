@@ -1,4 +1,4 @@
-cupt (2.4.1~) UNRELEASED; urgency=low
+cupt (2.4.1~) UNRELEASED; urgency=medium
 
   * console:
     - Managing packages:
