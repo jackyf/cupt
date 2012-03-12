@@ -31,6 +31,7 @@ class MetadataWorker: public virtual WorkerBase
 	enum class IndexType;
 	struct IndexUpdateInfo;
 
+	static bool __is_diff_type(const IndexType&);
 	string __get_indexes_directory() const;
 	bool __update_release_and_index_data(download::Manager&, const cachefiles::IndexEntry&);
 	bool __update_release(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);

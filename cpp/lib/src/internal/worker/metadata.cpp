@@ -37,7 +37,12 @@
 namespace cupt {
 namespace internal {
 
-enum class MetadataWorker::IndexType { Packages, PackagesDiff, Localization, LocalizationFile };
+enum class MetadataWorker::IndexType { Packages, PackagesDiff, Localization, LocalizationFile, LocalizationFileDiff };
+
+bool MetadataWorker::__is_diff_type(const IndexType& indexType)
+{
+	return indexType == IndexType::PackagesDiff || indexType == IndexType::LocalizationFileDiff;
+}
 
 string MetadataWorker::__get_indexes_directory() const
 {
@@ -555,27 +560,24 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 		const string& targetPath, bool sourceFileChanged)
 {
 	bool simulating = _config->getBool("cupt::worker::simulate");
-	if (indexType == IndexType::PackagesDiff && !fs::fileExists(targetPath))
+	if (__is_diff_type(indexType) && !fs::fileExists(targetPath))
 	{
 		return false; // nothing to patch
 	}
 
 	const string& uri = downloadRecord.uri;
 	auto downloadPath = baseDownloadPath;
-	switch (indexType)
+	if (__is_diff_type(indexType))
 	{
-		case IndexType::Packages:
-		case IndexType::Localization:
-		case IndexType::LocalizationFile:
-			downloadPath += getFilenameExtension(uri);
-			break;
-		case IndexType::PackagesDiff:
-			downloadPath += ".diffindex";
-			break;
-	};
+		downloadPath += ".diffindex";
+	}
+	else
+	{
+		downloadPath += getFilenameExtension(uri);
+	}
 
 	std::function< string () > uncompressingSub;
-	if (indexType == IndexType::PackagesDiff || indexType == IndexType::Localization)
+	if (__is_diff_type(indexType) || indexType == IndexType::Localization)
 	{
 		uncompressingSub = []() -> string { return ""; }; // is not a final file
 	}
@@ -626,7 +628,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 			vector< download::Manager::DownloadEntity >{ downloadEntity });
 	if (indexType != IndexType::Packages && !simulating && downloadError.empty())
 	{
-		if (indexType == IndexType::PackagesDiff)
+		if (__is_diff_type(indexType))
 		{
 			return __download_and_apply_patches(downloadManager, downloadRecord,
 					indexEntry, baseDownloadPath, downloadPath, targetPath, _logger);
@@ -723,11 +725,22 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager, const ca
 		auto indexType = info.type;
 		if (isDiff)
 		{
-			if (!useIndexDiffs || info.type == IndexType::LocalizationFile)
+			if (!useIndexDiffs)
 			{
 				continue;
 			}
-			indexType = IndexType::PackagesDiff;
+			if (indexType == IndexType::Packages)
+			{
+				indexType = IndexType::PackagesDiff;
+			}
+			else if (indexType == IndexType::LocalizationFile)
+			{
+				indexType = IndexType::LocalizationFileDiff;
+			}
+			else
+			{
+				continue; // unknown diff type
+			}
 		}
 
 		if(__download_index(downloadManager, *downloadRecordIt, indexType, indexEntry,
