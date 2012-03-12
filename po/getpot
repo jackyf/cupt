@@ -4,5 +4,6 @@ xgettext -k__ -k__x -k__n:1,2 -k__nx:1,2 -k__xn:1,2 -kN__ \
 	--keyword=loggedFatal2:4 --from-code=UTF-8 \
 	--language='C++' --copyright-holder='Eugene V. Lyubimkin' \
 	--package-name='cupt' --msgid-bugs-address="jackyf@debian.org" \
-	--output='../po/messages.pot' `find . -type f -name "*.cpp" -or -name "*.tpp" -or -name ".hpp"`
+	--output='../po/messages.pot' \
+	`find console downloadmethods lib  -type f -name "*.cpp" -or -name "*.tpp" -or -name ".hpp"`
 
