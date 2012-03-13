@@ -28,6 +28,7 @@ cupt (2.5.0~) UNRELEASED; urgency=low
     - system/resolvers/native:
       - Score calculation: for removals of packages which are not manually
         installed, apply also the 'removal-of-autoinstalled' score.
+        (Closes: #662027)
     - cache:
       - Constructor: don't parse release files more than once.
       - Constructor: parsing release files: use an alias instead of the full
