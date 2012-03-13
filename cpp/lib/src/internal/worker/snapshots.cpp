@@ -136,11 +136,10 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				auto goodFilename = format2("%s_%s_%s.deb", packageName,
 						version->versionString, architecture);
 
-				auto moveError = fs::move(badFilename, goodFilename);
-				if (!moveError.empty())
+				if (!fs::move(badFilename, goodFilename))
 				{
 					_logger->loggedFatal2(Logger::Subsystem::Snapshots, 3,
-							format2, "unable to move '%s' to '%s': %s", badFilename, goodFilename, moveError);
+							format2e, "unable to rename '%s' to '%s'", badFilename, goodFilename);
 				}
 			}
 		}
@@ -341,12 +340,11 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			}
 
 			// all done, do final move
-			auto moveError = fs::move(temporarySnapshotDirectory, snapshotDirectory);
-			if (!moveError.empty())
+			if (!fs::move(temporarySnapshotDirectory, snapshotDirectory))
 			{
 				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
-						format2, "unable to move directory '%s' to '%s': %s",
-						temporarySnapshotDirectory, snapshotDirectory, moveError);
+						format2e, "unable to rename '%s' to '%s'",
+						temporarySnapshotDirectory, snapshotDirectory);
 			}
 		}
 	}

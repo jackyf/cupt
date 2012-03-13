@@ -26,7 +26,7 @@ namespace fs {
 
 string filename(const string& path);
 string dirname(const string& path);
-string move(const string& oldPath, const string& newPath);
+bool move(const string& oldPath, const string& newPath);
 vector< string > glob(const string& param);
 // this version don't follow symbolic links
 vector< string > lglob(const string& directoryPath, const string& shellPattern);

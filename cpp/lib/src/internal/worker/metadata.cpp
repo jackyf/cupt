@@ -93,7 +93,14 @@ std::function< string () > generateMovingSub(const string& downloadPath, const s
 {
 	return [downloadPath, targetPath]() -> string
 	{
-		return fs::move(downloadPath, targetPath);
+		if (fs::move(downloadPath, targetPath))
+		{
+			return "";
+		}
+		else
+		{
+			return format2e(__("unable to rename '%s' to '%s'"), downloadPath, targetPath);
+		}
 	};
 };
 
@@ -539,11 +546,10 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			}
 		}
 
-		// FIXME: rework fs::move() to have an untranslated error message
-		auto moveError = fs::move(patchedPath, targetPath);
-		if (!moveError.empty())
+		if (!fs::move(patchedPath, targetPath))
 		{
-			logger->loggedFatal2(Logger::Subsystem::Metadata, 3, piddedFormat2, "%s", moveError);
+			logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
+					piddedFormat2e, "unable to rename '%s' to '%s'", patchedPath, targetPath);
 		}
 		return true;
 	}

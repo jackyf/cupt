@@ -52,13 +52,9 @@ string dirname(const string& path)
 	return result;
 }
 
-string move(const string& oldPath, const string& newPath)
+bool move(const string& oldPath, const string& newPath)
 {
-	if (rename(oldPath.c_str(), newPath.c_str()) == -1)
-	{
-		return format2e(__("unable to rename '%s' to '%s'"), oldPath, newPath);
-	}
-	return "";
+	return (rename(oldPath.c_str(), newPath.c_str()) != -1);
 }
 
 vector< string > glob(const string& param)
