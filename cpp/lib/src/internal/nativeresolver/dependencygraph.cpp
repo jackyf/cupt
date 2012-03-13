@@ -40,6 +40,9 @@ InitialPackageEntry::InitialPackageEntry()
 	: sticked(false), modified(false)
 {}
 
+BasicVertex::~BasicVertex()
+{}
+
 size_t BasicVertex::getTypePriority() const
 {
 	fatal2i("getting priority of '%s'", toString());

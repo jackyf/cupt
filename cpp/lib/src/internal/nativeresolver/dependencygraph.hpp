@@ -67,6 +67,7 @@ struct BasicVertex
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
 
 	BasicVertex();
+	virtual ~BasicVertex();
 };
 struct VersionVertex: public BasicVertex
 {
