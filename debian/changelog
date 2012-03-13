@@ -16,6 +16,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
       - New option 'cupt::resolver::no-autoremove-if-rdepends-exist'.
         (Closes: #658981)
       - New option 'cupt::resolver::score::removal-of-autoinstalled'.
+      - Lowed a bit the default value of the option
+        'cupt::resolver::score::removal'.
     - download/progresses/console:
       - Status line: leave the cursor at the end of line so anynchronous
         warning and error messages are printed on the next line, not over the
