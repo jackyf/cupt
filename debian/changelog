@@ -18,6 +18,8 @@ cupt (2.4.1~) UNRELEASED; urgency=medium
         present, print a warning instead. (Closes: #663382)
       - Reading APT pin preferences: fixed incorrect line numbers in error
         messages.
+    - system/worker:
+      - Create the main archives directory if it doesn't exist.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
 

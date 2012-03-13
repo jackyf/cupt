@@ -1333,6 +1333,14 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 		if (!_config->getBool("cupt::worker::simulate"))
 		{
+			if (!fs::dirExists(archivesDirectory))
+			{
+				if (mkdir(archivesDirectory.c_str(), 0755) == -1)
+				{
+					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
+							format2e("unable to create the archives directory '%s'", archivesDirectory));
+				}
+			}
 			string partialDirectory = archivesDirectory + partialDirectorySuffix;
 			if (! fs::dirExists(partialDirectory))
 			{
