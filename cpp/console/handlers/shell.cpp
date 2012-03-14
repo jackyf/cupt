@@ -128,7 +128,7 @@ void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
 	File pipe(shellCommand, "pr", errorString);
 	if (!errorString.empty())
 	{
-		fatal2(__("unable to open internal shell pipe: %s"), errorString);
+		fatal2(__("unable to open an internal shell pipe: %s"), errorString);
 	}
 
 	string argument;
