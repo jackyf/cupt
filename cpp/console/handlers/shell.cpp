@@ -102,13 +102,13 @@ class Readline
 		__dl_readline = reinterpret_cast< decltype(__dl_readline) >(dlsym(handle, "readline"));
 		if (!__dl_readline)
 		{
-			warn2(__("unable to dynamically bind symbol 'readline': %s"), dlerror());
+			warn2(__("unable to dynamically bind the symbol '%s': %s"), "readline", dlerror());
 		}
 
 		__dl_add_history = reinterpret_cast< decltype(__dl_add_history) >(dlsym(handle, "add_history"));
 		if (!__dl_add_history)
 		{
-			warn2(__("unable to dynamically bind symbol 'add_history': %s"), dlerror());
+			warn2(__("unable to dynamically bind the symbol '%s': %s"), "add_history", dlerror());
 		}
 	}
 };
