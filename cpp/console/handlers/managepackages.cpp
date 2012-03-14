@@ -1165,7 +1165,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	{
 		if (!config->getString("cupt::resolver::external-command").empty())
 		{
-			fatal2(__("using external resolver is not supported now"));
+			fatal2(__("using an external resolver is not supported now"));
 		}
 		else
 		{
