@@ -77,7 +77,7 @@ int search(Context& context)
 		}
 		catch (regex_error&)
 		{
-			fatal2(__("regular expression '%s' is not valid"), pattern);
+			fatal2(__("invalid regular expression '%s'"), pattern);
 		}
 	});
 
