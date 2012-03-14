@@ -189,7 +189,7 @@ int downloadSourcePackage(Context& context)
 			string command = "dpkg-source -x " + *filenameIt;
 			if (::system(command.c_str()))
 			{
-				warn2(__("dpkg-source on file '%s' failed"), *filenameIt);
+				warn2(__("dpkg-source on the file '%s' failed"), *filenameIt);
 			}
 		}
 	}
