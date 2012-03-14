@@ -593,7 +593,7 @@ int policy(Context& context, bool source)
 			auto policyVersion = cache->getPolicyVersion(package);
 			if (!policyVersion)
 			{
-				fatal2(__("no versions available for package '%s'"), packageName);
+				fatal2(__("no versions available for the package '%s'"), packageName);
 			}
 
 			cout << packageName << ':' << endl;

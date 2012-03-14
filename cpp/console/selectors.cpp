@@ -171,7 +171,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		auto version = cache->getPolicyVersion(package);
 		if (!version && throwOnError)
 		{
-			fatal2(__("no versions available for package '%s'"), packageName);
+			fatal2(__("no versions available for the package '%s'"), packageName);
 		}
 		return version;
 	}
