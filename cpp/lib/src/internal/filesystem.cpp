@@ -174,6 +174,27 @@ size_t fileSize(const string& path)
 	return s.st_size;
 }
 
+void mkpath(const string& path)
+{
+	auto ensureDirectoryExist = [](const string& pathPart)
+	{
+		if (mkdir(pathPart.c_str(), 0755) == -1)
+		{
+			if (errno != EEXIST)
+			{
+				fatal2e("unable to create the directory '%s'", pathPart);
+			}
+		}
+	};
+
+	size_t position = 0;
+	while (position = path.find('/', ++position), position != string::npos)
+	{
+		ensureDirectoryExist(path.substr(0, position));
+	}
+	ensureDirectoryExist(path);
+}
+
 }
 }
 }
