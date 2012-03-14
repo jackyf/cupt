@@ -551,7 +551,7 @@ void checkForRemovalOfEssentialPackages(const shared_ptr< const Cache >& cache,
 	if (!essentialPackageNames.empty())
 	{
 		isDangerous = true;
-		cout << __("WARNING! The following essential packages will be REMOVED:") << endl;
+		cout << __("WARNING! The following essential packages will be removed:") << endl;
 		printPackageNamesByLine(essentialPackageNames);
 	}
 }
@@ -584,7 +584,7 @@ void checkForIgnoredHolds(const shared_ptr< const Cache >& cache,
 	if (!ignoredHoldsPackageNames.empty())
 	{
 		isDangerous = true;
-		cout << __("WARNING! The following packages ON HOLD will change their state:") << endl;
+		cout << __("WARNING! The following packages on hold will change their state:") << endl;
 		printPackageNamesByLine(ignoredHoldsPackageNames);
 	}
 }
