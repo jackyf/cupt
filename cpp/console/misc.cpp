@@ -315,7 +315,7 @@ shared_ptr< Config > Context::getConfig()
 		}
 		catch (Exception&)
 		{
-			fatal2(__("error while loading config"));
+			fatal2(__("error while loading the configuration"));
 		}
 	}
 	return __config;
@@ -343,7 +343,7 @@ shared_ptr< const Cache > Context::getCache(
 		}
 		catch (Exception&)
 		{
-			fatal2(__("error while creating package cache"));
+			fatal2(__("error while creating the package cache"));
 		}
 	}
 
