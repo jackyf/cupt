@@ -83,7 +83,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 
 		if (!version && throwOnError)
 		{
-			fatal2(__("unable to find version '%s' for package '%s'"), versionString, packageName);
+			fatal2(__("unable to find the version '%s' for the package '%s'"), versionString, packageName);
 		}
 		return version;
 	}
@@ -136,7 +136,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			// not found
 			if (throwOnError)
 			{
-				fatal2(__("cannot find distribution '%s' for package '%s'"),
+				fatal2(__("cannot find the distribution '%s' for the package '%s'"),
 						distributionExpression, packageName);
 			}
 			return ReturnType();
@@ -204,7 +204,7 @@ shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > 
 	}
 	else if (throwOnError)
 	{
-		fatal2(__("unable to find appropriate source or binary version for '%s'"), packageExpression);
+		fatal2(__("unable to find an appropriate source or binary version for '%s'"), packageExpression);
 	}
 	return sourceVersion;
 }
@@ -232,7 +232,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	smatch m;
 	if (!regex_match(packageExpression, m, packageAndRemainderRegex))
 	{
-		fatal2(__("bad package name in package expression '%s'"), packageExpression);
+		fatal2(__("bad package name in the package expression '%s'"), packageExpression);
 	}
 	string packageNameExpression = m[1];
 	string remainder;
@@ -266,7 +266,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 
 		if (result.empty() && throwOnError)
 		{
-			fatal2(__("no appropriate versions available for wildcarded version expression '%s'"), packageExpression);
+			fatal2(__("no appropriate versions available for the wildcarded version expression '%s'"), packageExpression);
 		}
 	}
 
