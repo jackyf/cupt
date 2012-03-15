@@ -20,6 +20,8 @@ cupt (2.4.1~) UNRELEASED; urgency=medium
         messages.
     - system/worker:
       - Create the main archives directory if it doesn't exist.
+      - 'setAutomaticallyInstalledFlag': create the directory chain (if needed)
+        for creating the extended states file.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
 

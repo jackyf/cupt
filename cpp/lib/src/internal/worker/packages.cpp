@@ -1939,6 +1939,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				__auto_installed_package_names.erase(packageName);
 			}
 			auto extendedInfoPath = _cache->getPathOfExtendedStates();
+			fs::mkpath(fs::dirname(extendedInfoPath));
 			auto tempPath = extendedInfoPath + ".cupt.tmp";
 
 			{
