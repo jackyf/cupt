@@ -1,4 +1,4 @@
-cupt (2.4.1~) UNRELEASED; urgency=medium
+cupt (2.4.1) unstable; urgency=medium
 
   * console:
     - Managing packages:
@@ -23,7 +23,7 @@ cupt (2.4.1~) UNRELEASED; urgency=medium
       - 'setAutomaticallyInstalledFlag': create the directory chain (if needed)
         for creating the extended states file.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 05 Mar 2012 13:45:07 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 15 Mar 2012 20:22:15 +0200
 
 cupt (2.4.0) unstable; urgency=low
 
