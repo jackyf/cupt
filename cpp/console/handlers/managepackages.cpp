@@ -114,7 +114,7 @@ void __satisfy_or_unsatisfy(Resolver& resolver,
 	}
 }
 
-static void processSatisfyExpression(const shared_ptr< Config >& config,
+static void processSatisfyExpression(const Config& config,
 		Resolver& resolver, string packageExpression, ManagePackages::Mode mode)
 {
 	if (mode == ManagePackages::Satisfy && !packageExpression.empty() && *(packageExpression.rbegin()) == '-')
@@ -124,7 +124,7 @@ static void processSatisfyExpression(const shared_ptr< Config >& config,
 	}
 
 	auto relationLine = ArchitecturedRelationLine(packageExpression)
-			.toRelationLine(config->getString("apt::architecture"));
+			.toRelationLine(config.getString("apt::architecture"));
 
 	__satisfy_or_unsatisfy(resolver, relationLine, mode);
 }
@@ -303,7 +303,7 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		}
 		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
 		{
-			processSatisfyExpression(config, resolver, *packageExpressionIt, mode);
+			processSatisfyExpression(*config, resolver, *packageExpressionIt, mode);
 		}
 		else if (mode == ManagePackages::BuildDepends)
 		{
