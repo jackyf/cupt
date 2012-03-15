@@ -228,7 +228,7 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 	}
 	catch (const bpo::error& e)
 	{
-		fatal2(__("failed to parse options: %s"), e.what());
+		fatal2(__("failed to parse command-line options: %s"), e.what());
 	}
 	bpo::notify(variablesMap);
 
