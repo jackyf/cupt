@@ -82,12 +82,6 @@ struct BrokenSuccessor
 {
 	const dg::Element* elementPtr;
 	size_t priority;
-
-	BrokenSuccessor()
-	{}
-	BrokenSuccessor(const dg::Element* elementPtr_, size_t priority_)
-		: elementPtr(elementPtr_), priority(priority_)
-	{}
 };
 
 class Solution

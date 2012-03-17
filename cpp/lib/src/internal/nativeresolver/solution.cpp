@@ -276,7 +276,7 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 		{
 			if (!verifyElement(solution, successorPtr))
 			{
-				bss.insert(it, BrokenSuccessor(successorPtr, priority));
+				bss.insert(it, BrokenSuccessor { successorPtr, priority });
 			}
 		}
 		else
@@ -299,7 +299,8 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 				// here we assume brokenSuccessors didn't
 				// contain predecessorElementPtr, since as old element was
 				// present, predecessorElementPtr was not broken
-				bss.insert(bss.lower_bound(predecessorElementPtr), BrokenSuccessor(predecessorElementPtr, priority));
+				bss.insert(bss.lower_bound(predecessorElementPtr),
+						BrokenSuccessor { predecessorElementPtr, priority });
 			}
 		}
 	}

@@ -867,7 +867,7 @@ BrokenPairType __get_broken_pair(const SolutionStorage& solutionStorage,
 			brokenSuccessors.begin(), brokenSuccessors.end(), compareBrokenSuccessors);
 	if (bestBrokenSuccessorIt == brokenSuccessors.end())
 	{
-		return BrokenPairType{ NULL, {} };
+		return BrokenPairType{ NULL, { NULL, 0 } };
 	}
 	BrokenPairType result(NULL, *bestBrokenSuccessorIt);
 	for (auto reverseDependencyPtr: solutionStorage.getPredecessorElements(bestBrokenSuccessorIt->elementPtr))
