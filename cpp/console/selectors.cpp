@@ -298,19 +298,21 @@ vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(share
 			selectSourceVersion, getSourcePackageNames, throwOnError);
 }
 
-vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
-		const string& packageExpression)
+template < typename VersionType, typename PackageSelector >
+static vector< shared_ptr< const VersionType > > __select_all_versions_wildcarded(
+		shared_ptr< const Cache > cache, const string& packageExpression,
+		__package_names_fetcher packageNamesFetcher, PackageSelector packageSelector)
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	vector< shared_ptr< const VersionType > > result;
 
-	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, getBinaryPackageNames);
+	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, packageNamesFetcher);
 	if (packageNames.empty())
 	{
-		fatal2(__("no binary packages available for the wildcarded expression '%s'"), packageExpression);
+		fatal2(__("no packages available for the wildcarded expression '%s'"), packageExpression);
 	}
 	FORIT(packageNameIt, packageNames)
 	{
-		auto package = getBinaryPackage(cache, *packageNameIt);
+		auto package = packageSelector(cache, *packageNameIt, false);
 		auto versions = package->getVersions();
 		std::move(versions.begin(), versions.end(), std::back_inserter(result));
 	}
@@ -318,23 +320,17 @@ vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(sh
 	return result;
 }
 
+vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+		const string& packageExpression)
+{
+	return __select_all_versions_wildcarded< BinaryVersion >(cache, packageExpression,
+			getBinaryPackageNames, getBinaryPackage);
+}
+
 vector< shared_ptr< const SourceVersion > > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression)
 {
-	vector< shared_ptr< const SourceVersion > > result;
-
-	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, getSourcePackageNames);
-	if (packageNames.empty())
-	{
-		fatal2(__("no source packages available for the wildcarded expression '%s'"), packageExpression);
-	}
-	FORIT(packageNameIt, packageNames)
-	{
-		auto package = getSourcePackage(cache, *packageNameIt);
-		auto versions = package->getVersions();
-		std::move(versions.begin(), versions.end(), std::back_inserter(result));
-	}
-
-	return result;
+	return __select_all_versions_wildcarded< SourceVersion >(cache, packageExpression,
+			getSourcePackageNames, getSourcePackage);
 }
 
