@@ -1003,11 +1003,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				}
 				currentSolution->finished = 1;
 			}
-			if (!__any_solution_was_found)
-			{
-				__any_solution_was_found = true;
-				__decision_fail_tree.clear(); // no need to store this tree anymore
-			}
 
 			// resolver can refuse the solution
 			solutions.insert(currentSolution);
@@ -1026,6 +1021,12 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					__mydebug_wrapper(*currentSolution, "auto-discarded");
 				}
 				continue;
+			}
+
+			if (!__any_solution_was_found)
+			{
+				__any_solution_was_found = true;
+				__decision_fail_tree.clear(); // no need to store this tree anymore
 			}
 
 			__final_verify_solution(*currentSolution);

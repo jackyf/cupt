@@ -1195,6 +1195,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 			purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
+	addArgumentsFlag = false;
+	thereIsNothingToDo = false;
 	bool resolved = resolver->resolve(callback);
 	if (addArgumentsFlag && std::cin)
 	{
