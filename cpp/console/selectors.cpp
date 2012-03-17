@@ -223,8 +223,9 @@ static vector< string > __select_package_names_wildcarded(shared_ptr< const Cach
 	return result;
 }
 
-vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< const Cache > cache,
-		const string& packageExpression, __version_selector versionSelector,
+template < typename VersionType, typename VersionSelector >
+vector< shared_ptr< const VersionType > > __select_versions_wildcarded(shared_ptr< const Cache > cache,
+		const string& packageExpression, VersionSelector versionSelector,
 		__package_names_fetcher packageNamesFetcher, bool throwOnError)
 {
 	static sregex packageAndRemainderRegex = sregex::compile("([^=/]+)((?:=|/).*)?");
@@ -241,7 +242,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 		remainder = m[2];
 	}
 
-	vector< shared_ptr< const Version > > result;
+	vector< shared_ptr< const VersionType > > result;
 	if (packageNameExpression.find('?') == string::npos && packageNameExpression.find('*') == string::npos)
 	{
 		// there are no wildcards
@@ -281,27 +282,8 @@ static vector< string > getBinaryPackageNames(shared_ptr< const Cache > cache)
 vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	auto versionSelector =
-			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
-			{
-				return static_pointer_cast< const Version >(selectBinaryVersion(cache, packageName, throwOnError));
-			};
-
-	auto source = __select_versions_wildcarded(cache, packageExpression, versionSelector,
-			getBinaryPackageNames, throwOnError);
-
-	vector< shared_ptr< const BinaryVersion > > result;
-	for (size_t i = 0; i < source.size(); ++i)
-	{
-		auto version = dynamic_pointer_cast< const BinaryVersion >(source[i]);
-		if (!version)
-		{
-			fatal2i("version is not binary");
-		}
-		result.push_back(version);
-	}
-
-	return result;
+	return __select_versions_wildcarded< BinaryVersion >(cache, packageExpression,
+			selectBinaryVersion, getBinaryPackageNames, throwOnError);
 }
 
 static vector< string > getSourcePackageNames(shared_ptr< const Cache > cache)
@@ -312,27 +294,8 @@ static vector< string > getSourcePackageNames(shared_ptr< const Cache > cache)
 vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError)
 {
-	auto versionSelector =
-			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
-			{
-				return static_pointer_cast< const Version >(selectSourceVersion(cache, packageName, throwOnError));
-			};
-
-	auto source = __select_versions_wildcarded(cache, packageExpression, versionSelector,
-			getSourcePackageNames, throwOnError);
-
-	vector< shared_ptr< const SourceVersion > > result;
-	for (size_t i = 0; i < source.size(); ++i)
-	{
-		auto version = dynamic_pointer_cast< const SourceVersion >(source[i]);
-		if (!version)
-		{
-			fatal2i("version is not source");
-		}
-		result.push_back(version);
-	}
-
-	return result;
+	return __select_versions_wildcarded< SourceVersion >(cache, packageExpression,
+			selectSourceVersion, getSourcePackageNames, throwOnError);
 }
 
 vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
