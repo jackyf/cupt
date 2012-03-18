@@ -99,7 +99,6 @@ class Solution
 	bool finished;
 	ssize_t score;
 	std::unique_ptr< const void > pendingAction;
-	vector< const dg::Element* > insertedElementPtrs; // in time order
 
 	Solution();
 	Solution(const Solution&) = delete;
@@ -117,13 +116,28 @@ class Solution
 class SolutionStorage
 {
 	size_t __next_free_id;
+	size_t __get_new_solution_id(const Solution& parent);
+
 	dg::DependencyGraph __dependency_graph;
 
 	void __update_broken_successors(Solution&,
 			const dg::Element*, const dg::Element*, size_t priority);
+
+	struct Change
+	{
+		const dg::Element* insertedElementPtr;
+		size_t parentSolutionId;
+
+		explicit Change(size_t);
+	};
+	vector< Change > __change_index;
+	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
  public:
 	SolutionStorage(const Config&, const Cache& cache);
+
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
+	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< Solution >&);
+
 	void prepareForResolving(Solution&,
 			const map< string, shared_ptr< const BinaryVersion > >&,
 			const map< string, dg::InitialPackageEntry >&);
@@ -141,6 +155,8 @@ class SolutionStorage
 	void setPackageEntry(Solution&, const dg::Element*,
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
+
+	vector< const dg::Element* > getInsertedElements(const Solution& solution) const;
 };
 
 }

@@ -133,17 +133,32 @@ struct BrokenSuccessorMapKeyGetter
 class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor, BrokenSuccessorMapKeyGetter >
 {};
 
+SolutionStorage::Change::Change(size_t parentSolutionId_)
+	: parentSolutionId(parentSolutionId_)
+{}
 
 SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 	: __next_free_id(1), __dependency_graph(config, cache)
 {}
+
+size_t SolutionStorage::__get_new_solution_id(const Solution& parent)
+{
+	__change_index.emplace_back(parent.id);
+	return __next_free_id++;
+}
+
+shared_ptr< Solution > SolutionStorage::fakeCloneSolution(const shared_ptr< Solution >& source)
+{
+	source->id = __get_new_solution_id(*source);
+	return source;
+}
 
 shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution >& source)
 {
 	auto cloned = std::make_shared< Solution >();
 	cloned->score = source->score;
 	cloned->level = source->level;
-	cloned->id = __next_free_id++;
+	cloned->id = __get_new_solution_id(*source);
 	cloned->finished = false;
 
 	cloned->__parent = source;
@@ -317,11 +332,23 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 	}
 }
 
+void SolutionStorage::__update_change_index(size_t solutionId,
+		const dg::Element* newElementPtr, const PackageEntry& packageEntry)
+{
+	if (!packageEntry.sticked)
+	{
+		return; // not a "main" change
+	}
+
+	__change_index[solutionId].insertedElementPtr = newElementPtr;
+}
+
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr, size_t priority)
 {
 	__dependency_graph.unfoldElement(elementPtr);
+	__update_change_index(solution.id, elementPtr, packageEntry);
 
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
@@ -378,6 +405,8 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	{
 		__update_broken_successors(initialSolution, NULL, entry.first, 0);
 	}
+
+	__change_index.emplace_back(0);
 }
 
 bool SolutionStorage::verifyElement(const Solution& solution,
@@ -422,6 +451,20 @@ void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 	__dependency_graph.unfoldElement(elementPtr);
 }
 
+vector< const dg::Element* > SolutionStorage::getInsertedElements(const Solution& solution) const
+{
+	vector< const dg::Element* > result;
+
+	auto solutionId = solution.id;
+	while (solutionId != 0)
+	{
+		const auto& change = __change_index[solutionId];
+		result.push_back(change.insertedElementPtr);
+		solutionId = change.parentSolutionId;
+	}
+	std::reverse(result.begin(), result.end());
+	return result;
+}
 
 Solution::Solution()
 	: id(0), level(0), finished(false), score(0)
@@ -501,7 +544,6 @@ void Solution::prepare()
 		}
 	}
 
-	insertedElementPtrs = __parent->insertedElementPtrs;
 	__broken_successors = new BrokenSuccessorMap(*__parent->__broken_successors);
 	__parent.reset();
 }

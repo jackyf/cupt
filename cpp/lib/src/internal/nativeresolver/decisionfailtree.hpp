@@ -46,7 +46,7 @@ class DecisionFailTree
 	static string __decisions_to_string(const vector< Decision >&);
 	static vector< Decision > __get_decisions(
 			const SolutionStorage& solutionStorage, const Solution& solution,
-			const PackageEntry::IntroducedBy&);
+			const PackageEntry::IntroducedBy&, const vector< const dg::Element* >&);
 	static bool __is_dominant(const FailItem&, size_t);
  public:
 	string toString() const;

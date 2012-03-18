@@ -67,7 +67,8 @@ string DecisionFailTree::toString() const
 
 vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		const SolutionStorage& solutionStorage, const Solution& solution,
-		const PackageEntry::IntroducedBy& lastIntroducedBy)
+		const PackageEntry::IntroducedBy& lastIntroducedBy,
+		const vector< const dg::Element* >& insertedElementPtrs)
 {
 	vector< Decision > result;
 
@@ -118,16 +119,15 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 					// verifying that conflicting element was added to a
 					// solution earlier than currently processed item
 					auto conflictingElementInsertedPosition =
-							std::find(solution.insertedElementPtrs.begin(), solution.insertedElementPtrs.end(),
-							conflictingElementPtr);
-					if (conflictingElementInsertedPosition == solution.insertedElementPtrs.end())
+							std::find(insertedElementPtrs.begin(), insertedElementPtrs.end(), conflictingElementPtr);
+					if (conflictingElementInsertedPosition == insertedElementPtrs.end())
 					{
 						// conflicting element was not a resolver decision, so it can't
 						// have valid 'introducedBy' anyway
 						continue;
 					}
 					auto currentElementInsertedPosition =
-							std::find(solution.insertedElementPtrs.begin(), conflictingElementInsertedPosition + 1,
+							std::find(insertedElementPtrs.begin(), conflictingElementInsertedPosition + 1,
 							item.insertedElementPtr);
 					if (currentElementInsertedPosition <= conflictingElementInsertedPosition)
 					{
@@ -178,8 +178,9 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 	};
 
 	FailItem failItem;
-	failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
-	failItem.insertedElementPtrs = solution.insertedElementPtrs;
+	failItem.insertedElementPtrs = solutionStorage.getInsertedElements(solution);
+	failItem.decisions = __get_decisions(solutionStorage, solution,
+			lastIntroducedBy, failItem.insertedElementPtrs);
 	bool willBeAdded = true;
 
 	auto it = __fail_items.begin();
