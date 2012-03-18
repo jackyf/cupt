@@ -351,8 +351,9 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
 			{
 				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
-				auto currentPackageEntryPtr = solution.getPackageEntry(*elementPtrIt);
-				if (!currentPackageEntryPtr->isModificationAllowed(emptyElementPtr))
+
+				const dg::Element* dummyPtr;
+				if (!__solution_storage->simulateSetPackageEntry(solution, emptyElementPtr, &dummyPtr))
 				{
 					if (debugging)
 					{
