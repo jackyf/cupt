@@ -546,7 +546,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	{ // process elements to reject
 		FORIT(elementPtrIt, action.elementsToReject)
 		{
-			__solution_storage->setRejection(solution, *elementPtrIt);
+			__solution_storage->setRejection(solution, *elementPtrIt, action.newElementPtr);
 		}
 	};
 

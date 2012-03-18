@@ -219,11 +219,12 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 	return true;
 }
 
-void SolutionStorage::setRejection(Solution& solution, const dg::Element* elementPtr)
+void SolutionStorage::setRejection(Solution& solution,
+		const dg::Element* elementPtr, const dg::Element* dontChangePtr)
 {
 	const dg::Element* conflictingElementPtr;
 	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
-	if (!conflictingElementPtr)
+	if (!conflictingElementPtr || conflictingElementPtr == dontChangePtr)
 	{
 		return;
 	}
