@@ -75,7 +75,6 @@ struct PackageEntry
 };
 
 class PackageEntryMap;
-class ElementSet;
 class BrokenSuccessorMap;
 
 struct BrokenSuccessor
@@ -91,7 +90,6 @@ class Solution
 	shared_ptr< const Solution > __parent;
 	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
-	shared_ptr< ElementSet > __removed_entries;
 	BrokenSuccessorMap*  __broken_successors;
  public:
 	size_t id;

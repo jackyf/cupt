@@ -121,13 +121,6 @@ class PackageEntryMap: public VectorBasedMap<
 	{}
 };
 
-struct PackageEntrySetKeyGetter
-{
-	const dg::Element* operator()(const dg::Element* data) { return data; }
-};
-class ElementSet: public VectorBasedMap< const dg::Element*, PackageEntrySetKeyGetter >
-{};
-
 struct BrokenSuccessorMapKeyGetter
 {
 	const dg::Element* operator()(const BrokenSuccessor& data) { return data.elementPtr; }
@@ -362,15 +355,15 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 
 		if (conflictingElementPtr)
 		{
-			auto forRemovalIt = solution.__added_entries->find(conflictingElementPtr);
-			if (forRemovalIt != solution.__added_entries->end())
+			auto forRemovalIt = solution.__added_entries->lower_bound(conflictingElementPtr);
+			if (forRemovalIt != solution.__added_entries->end() && forRemovalIt->first == conflictingElementPtr)
 			{
-				solution.__added_entries->erase(forRemovalIt);
+				forRemovalIt->second.reset();
 			}
-			// may be present in master too, act safe
-			solution.__removed_entries->insert(
-					solution.__removed_entries->lower_bound(conflictingElementPtr),
-					(const dg::Element*)conflictingElementPtr);
+			else
+			{
+				solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
+			}
 		}
 	}
 	else
@@ -474,13 +467,45 @@ Solution::Solution()
 	: id(0), level(0), finished(false), score(0)
 {
 	__added_entries.reset(new PackageEntryMap);
-	__removed_entries.reset(new ElementSet);
 	__broken_successors = new BrokenSuccessorMap;
 }
 
 Solution::~Solution()
 {
 	delete __broken_successors;
+}
+
+template < typename CallbackType >
+void __foreach_solution_element(const PackageEntryMap& masterEntries, const PackageEntryMap& addedEntries,
+		CallbackType callback)
+{
+	class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
+	{
+		const CallbackType& __callback;
+	 public:
+		RepackInsertIterator(const CallbackType& callback_)
+			: __callback(callback_) {}
+		RepackInsertIterator& operator++() { return *this; }
+		RepackInsertIterator& operator*() { return *this; }
+		void operator=(const PackageEntryMap::value_type& data)
+		{
+			if (data.second)
+			{
+				__callback(data);
+			}
+		}
+	};
+	struct Comparator
+	{
+		bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
+		{ return left.first < right.first; }
+	};
+	// it's important that parent's __added_entries come first,
+	// if two elements are present in both (i.e. an element is overriden)
+	// the new version of an element will be considered
+	std::set_union(addedEntries.begin(), addedEntries.end(),
+			masterEntries.begin(), masterEntries.end(),
+			RepackInsertIterator(callback), Comparator());
 }
 
 void Solution::prepare()
@@ -494,7 +519,6 @@ void Solution::prepare()
 	{
 		// parent solution is a master solution, build a slave on top of it
 		__master_entries = __parent->__added_entries;
-		*__removed_entries = (*__parent->__removed_entries);
 	}
 	else
 	{
@@ -509,42 +533,14 @@ void Solution::prepare()
 			__added_entries->reserve(__parent->__added_entries->size() +
 					__parent->__master_entries->size());
 
-			class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
-			{
-				PackageEntryMap& __target;
-				ElementSet& __exceptions;
-			 public:
-				RepackInsertIterator(PackageEntryMap& target, ElementSet& exceptions)
-					: __target(target), __exceptions(exceptions) {}
-				RepackInsertIterator& operator++() { return *this; }
-				RepackInsertIterator& operator*() { return *this; }
-				void operator=(const PackageEntryMap::value_type& data)
-				{
-					auto presentIt = __exceptions.find(data.first);
-					if (presentIt == __exceptions.end())
-					{
-						__target.push_back(data);
-					}
-				}
-			};
-			struct Comparator
-			{
-				bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
-				{ return left.first < right.first; }
-			};
-			// it's important that parent's __added_entries come first,
-			// if two elements are present in both (i.e. an element is overriden)
-			// the new version of an element will be written
-			std::set_union(__parent->__added_entries->begin(), __parent->__added_entries->end(),
-					__parent->__master_entries->begin(), __parent->__master_entries->end(),
-					RepackInsertIterator(*__added_entries, *__parent->__removed_entries), Comparator());
+			__foreach_solution_element(*__parent->__master_entries, *__parent->__added_entries,
+					[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
 		}
 		else
 		{
 			// build new slave solution from current
 			__master_entries = __parent->__master_entries;
 			*__added_entries = *(__parent->__added_entries);
-			*__removed_entries = *(__parent->__removed_entries);
 		}
 	}
 
@@ -556,24 +552,11 @@ vector< const dg::Element* > Solution::getElements() const
 {
 	vector< const dg::Element* > result;
 
-	if (__master_entries)
-	{
-		FORIT(it, *__master_entries)
-		{
-			if (__removed_entries->find(it->first) == __removed_entries->end())
-			{
-				result.push_back(it->first);
-			}
-		}
-	}
-	auto middleSize = result.size();
-	FORIT(it, *__added_entries)
-	{
-		result.push_back(it->first);
-	}
+	static const PackageEntryMap nullPackageEntryMap;
+	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
 
-	std::inplace_merge(result.begin(), result.begin() + middleSize, result.end());
-	result.erase(std::unique(result.begin(), result.end()), result.end());
+	__foreach_solution_element(masterEntries, *__added_entries,
+			[&result](const PackageEntryMap::value_type& data) { result.push_back(data.first); });
 
 	return result;
 }
@@ -595,10 +578,6 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 		it = __master_entries->find(elementPtr);
 		if (it != __master_entries->end())
 		{
-			if (__removed_entries->find(elementPtr) != __removed_entries->end())
-			{
-				return NULL;
-			}
 			return it->second.get();
 		}
 	}
