@@ -103,13 +103,15 @@ class VectorBasedMap
 	}
 };
 
+typedef shared_ptr< const PackageEntry > SPPE;
+
 struct PackageEntryMapKeyGetter
 {
-	const dg::Element* operator()(const pair< const dg::Element*, PackageEntry >& data)
+	const dg::Element* operator()(const pair< const dg::Element*, SPPE >& data)
 	{ return data.first; }
 };
 class PackageEntryMap: public VectorBasedMap<
-		pair< const dg::Element*, PackageEntry >, PackageEntryMapKeyGetter >
+		pair< const dg::Element*, SPPE >, PackageEntryMapKeyGetter >
 {
  public:
 	mutable size_t forkedCount;
@@ -355,7 +357,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
 	{
 		// there is no modifiable element in this solution
-		solution.__added_entries->insert(it, make_pair(elementPtr, std::move(packageEntry)));
+		solution.__added_entries->insert(it,
+				make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
 
 		if (conflictingElementPtr)
 		{
@@ -377,7 +380,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 			fatal2i("conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
 					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
-		it->second = std::move(packageEntry);
+		it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
 	}
 
 	__update_broken_successors(solution, conflictingElementPtr, elementPtr, priority);
@@ -389,8 +392,8 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
 
-	auto comparator = [](const pair< const dg::Element*, PackageEntry >& left,
-			const pair< const dg::Element*, PackageEntry >& right)
+	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
+			const pair< const dg::Element*, SPPE >& right)
 	{
 		return left.first < right.first;
 	};
@@ -585,7 +588,7 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 	auto it = __added_entries->find(elementPtr);
 	if (it != __added_entries->end())
 	{
-		return &it->second;
+		return it->second.get();
 	}
 	if (__master_entries)
 	{
@@ -596,7 +599,7 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 			{
 				return NULL;
 			}
-			return &it->second;
+			return it->second.get();
 		}
 	}
 
