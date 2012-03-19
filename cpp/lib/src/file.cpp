@@ -284,7 +284,7 @@ void File::lock(int flags)
 	if (flock(fd, flags) == -1)
 	{
 		auto actionName = (flags & LOCK_UN) ? __("release") : __("obtain");
-		fatal2e(__("unable to %s lock on the file '%s'"), actionName, __impl->path);
+		fatal2e(__("unable to %s a lock on the file '%s'"), actionName, __impl->path);
 	}
 }
 
