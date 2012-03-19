@@ -3,6 +3,9 @@ cupt (2.5.0~) UNRELEASED; urgency=low
   * console:
     - 'rdepends':
       - Small speed-up by using more aggressive caching.
+    - Managing packages:
+      - Action preview prompt: moved auto-removed packages to a new
+        'no longer needed' section.
   * lib:
     - system/worker:
       - Updating release and index data: use the information about Translation

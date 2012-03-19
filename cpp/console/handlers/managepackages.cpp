@@ -42,6 +42,8 @@ using std::endl;
 
 typedef Worker::Action WA;
 const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
+const WA::Type fakeAutoRemove = WA::Type(1000);
+const WA::Type fakeAutoPurge = WA::Type(1001);
 
 
 static void preProcessMode(ManagePackages::Mode& mode, Config& config, Resolver& resolver)
@@ -808,13 +810,12 @@ struct PackageChangeInfoFlags
 	bool reasons;
 	VersionInfoFlags versionFlags;
 
-	PackageChangeInfoFlags(const Config& config, WA::Type actionType)
+	PackageChangeInfoFlags(const Config& config, WA::Type actionType, bool showReasons)
 		: versionFlags(config)
 	{
 		sizeChange = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
 				actionType != fakeNotPolicyVersionAction);
-		reasons = (config.getBool("cupt::resolver::track-reasons") &&
-				actionType != fakeNotPolicyVersionAction);
+		reasons = (showReasons && actionType != fakeNotPolicyVersionAction);
 	}
 	bool empty() const
 	{
@@ -824,9 +825,10 @@ struct PackageChangeInfoFlags
 
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
-		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview)
+		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview,
+		bool showReasons)
 {
-	PackageChangeInfoFlags showFlags(config, actionType);
+	PackageChangeInfoFlags showFlags(config, actionType, showReasons);
 
 	for (const auto& it: actionSuggestedPackages)
 	{
@@ -861,13 +863,58 @@ void showPackageChanges(const Config& config, const Cache& cache, Colorizer& col
 	cout << endl;
 }
 
+Resolver::SuggestedPackages filterNoLongerNeeded(const Resolver::SuggestedPackages& source, bool invert)
+{
+	Resolver::SuggestedPackages result;
+	for (const auto& suggestedPackage: source)
+	{
+		bool isNoLongerNeeded = false;
+		for (const auto& reasonPtr: suggestedPackage.second.reasons)
+		{
+			if (dynamic_pointer_cast< const Resolver::AutoRemovalReason >(reasonPtr))
+			{
+				isNoLongerNeeded = true;
+				break;
+			}
+		}
+		if (isNoLongerNeeded != invert)
+		{
+			result.insert(result.end(), suggestedPackage);
+		}
+	}
+	return result;
+}
+
+Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const Cache >& cache,
+		const Resolver::Offer& offer,
+		const shared_ptr< const Worker::ActionsPreview >& actionsPreview, WA::Type actionType)
+{
+	switch (actionType)
+	{
+		#pragma GCC diagnostic ignored "-Wswitch"
+		case fakeNotPolicyVersionAction:
+			return generateNotPolicyVersionList(cache, offer.suggestedPackages);
+		case fakeAutoRemove:
+			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], false);
+		case fakeAutoPurge:
+			return filterNoLongerNeeded(actionsPreview->groups[WA::Purge], false);
+		#pragma GCC diagnostic pop
+		case WA::Remove:
+			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], true);
+		case WA::Purge:
+			return filterNoLongerNeeded(actionsPreview->groups[WA::Purge], true);
+		default:
+			return actionsPreview->groups[actionType];
+	}
+}
+
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showNotPreferred,
+		bool showNotPreferred, bool showReasons,
 		const set< string >& purgedPackageNames, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
 	auto result = [&config, &cache, &worker, showNotPreferred,
-			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo]
+			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo, showReasons]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
@@ -901,6 +948,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				{ WA::Deconfigure, __("will be deconfigured") },
 				{ WA::ProcessTriggers, __("will have triggers processed") },
 				{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
+				{ fakeAutoRemove, __("are no longer needed and thus will be auto-removed") },
+				{ fakeAutoPurge, __("are no longer needed and thus will be auto-purged") },
 			};
 			cout << endl;
 
@@ -910,12 +959,13 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			{
 				actionTypesInOrder.push_back(fakeNotPolicyVersionAction);
 			}
+			actionTypesInOrder.push_back(fakeAutoRemove);
+			actionTypesInOrder.push_back(fakeAutoPurge);
 
 			for (const WA::Type& actionType: actionTypesInOrder)
 			{
-				const Resolver::SuggestedPackages& actionSuggestedPackages =
-						actionType == fakeNotPolicyVersionAction ?
-						generateNotPolicyVersionList(cache, offer.suggestedPackages) : actionsPreview->groups[actionType];
+				auto actionSuggestedPackages = getSuggestedPackagesByAction(cache,
+						offer, actionsPreview, actionType);
 				if (actionSuggestedPackages.empty())
 				{
 					continue;
@@ -942,7 +992,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
 				showPackageChanges(*config, *cache, colorizer, actionType, actionSuggestedPackages,
-						actionsPreview->autoFlagChanges, unpackedSizesPreview);
+						actionsPreview->autoFlagChanges, unpackedSizesPreview, showReasons);
 			}
 
 			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
@@ -986,7 +1036,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 }
 
 void parseManagementOptions(Context& context, ManagePackages::Mode mode,
-		vector< string >& packageExpressions, bool& showNotPreferred)
+		vector< string >& packageExpressions, bool& showNotPreferred, bool& showReasons)
 {
 	bpo::options_description options;
 	options.add_options()
@@ -1041,10 +1091,20 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	{
 		config->setScalar("cupt::console::assume-yes", "yes");
 	}
+
+	showReasons = false;
+	// TODO/API break/: use a dedicated console option for that
 	if (variables.count("show-reasons") || variables.count("show-deps"))
 	{
-		config->setScalar("cupt::resolver::track-reasons", "yes");
+		showReasons = true;
 	}
+	if (config->getBool("cupt::resolver::track-reasons"))
+	{
+		showReasons = true;
+	}
+	// we now always need reason tracking
+	config->setScalar("cupt::resolver::track-reasons", "yes");
+
 	if (variables.count("no-install-recommends"))
 	{
 		config->setScalar("apt::install-recommends", "no");
@@ -1122,8 +1182,9 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	Cache::memoize = true;
 
 	vector< string > packageExpressions;
-	bool showNotPreferred;
-	parseManagementOptions(context, mode, packageExpressions, showNotPreferred);
+	bool showNotPreferred, showReasons;
+	parseManagementOptions(context, mode, packageExpressions,
+			showNotPreferred, showReasons);
 
 	unrollFileArguments(packageExpressions);
 
@@ -1191,7 +1252,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
 	bool addArgumentsFlag, thereIsNothingToDo;
-	auto callback = generateManagementPrompt(config, cache, worker, showNotPreferred,
+	auto callback = generateManagementPrompt(config, cache, worker,
+			showNotPreferred, showReasons,
 			purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
