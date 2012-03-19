@@ -136,7 +136,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 	auto availableHandlerNames = __config->getList(optionName);
 	if (availableHandlerNames.empty())
 	{
-		fatal2(__("no download handlers defined for '%s' protocol"), protocol);
+		fatal2(__("no download handlers defined for the protocol '%s'"), protocol);
 	}
 
 	// not very effective, but readable and we hardly ever get >10 handlers for same protocol
@@ -157,14 +157,14 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 		{
 			if (debugging)
 			{
-				debug2("download handler '%s' (priority %d) for uri '%s' is not available",
+				debug2("the download handler '%s' (priority %d) for the uri '%s' is not available",
 						handlerName, handlerIt->first, (string)uri);
 			}
 			continue;
 		}
 		if (debugging)
 		{
-			debug2("selected download handler '%s' for uri '%s'", handlerName, (string)uri);
+			debug2("selected download handler '%s' for the uri '%s'", handlerName, (string)uri);
 		}
 
 		return (methodBuilderIt->second)();
