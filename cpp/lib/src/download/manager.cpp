@@ -119,7 +119,7 @@ static vector< string > receiveSocketMessage(int socket)
 		}
 		else if (readResult != len)
 		{
-			fatal2(__("unable to receive socket message: %s"), __("partial message arrived"));
+			fatal2(__("unable to receive a socket message: %s"), __("partial message arrived"));
 		}
 
 		string compactedMessage(buf, len);
@@ -214,17 +214,17 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 	serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (serverSocket == -1)
 	{
-		fatal2e(__("unable to open server socket"));
+		fatal2e(__("unable to open the server socket"));
 	}
 	serverSocketAddress.sun_family = AF_UNIX;
 	strcpy(serverSocketAddress.sun_path, serverSocketPath.c_str());
 	if (bind(serverSocket, (sockaddr*)&serverSocketAddress, sizeof(sockaddr_un)) == -1)
 	{
-		fatal2e(__("unable to bind server socket to file '%s'"), serverSocketPath);
+		fatal2e(__("unable to bind the server socket to the file '%s'"), serverSocketPath);
 	}
 	if (listen(serverSocket, SOMAXCONN) == -1)
 	{
-		fatal2e(__("unable to make server socket on file '%s' listen for connections"), serverSocketPath);
+		fatal2e(__("unable to make the server socket on the file '%s' listen for connections"), serverSocketPath);
 	}
 
 	parentPipe.reset(new Pipe("parent"));
@@ -232,7 +232,7 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 	auto pid = fork();
 	if (pid == -1)
 	{
-		fatal2e(__("unable to create download worker process: fork failed"));
+		fatal2e(__("unable to create the download worker process: fork failed"));
 	}
 
 	if (pid)
@@ -256,7 +256,7 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 
 			if (config->getBool("debug::downloader"))
 			{
-				debug2("aborting download worker process because of exception");
+				debug2("aborting the download worker process because of the exception");
 			}
 
 			terminateDownloadProcesses();
@@ -278,28 +278,28 @@ ManagerImpl::~ManagerImpl()
 			int childExitStatus;
 			if (waitpid(workerPid, &childExitStatus, 0) == -1)
 			{
-				warn2e(__("unable to shutdown download worker process: waitpid failed"));
+				warn2e(__("unable to shutdown the download worker process: waitpid failed"));
 			}
 			else if (childExitStatus != 0)
 			{
-				warn2(__("download worker process exited abnormally: %s"),
+				warn2(__("the download worker process exited abnormally: %s"),
 						getWaitStatusDescription(childExitStatus));
 			}
 		}
 		else
 		{
-			warn2(__("download worker process aborted unexpectedly"));
+			warn2(__("the download worker process aborted unexpectedly"));
 		}
 
 		// cleaning server socket
 		if (close(serverSocket) == -1)
 		{
-			warn2e(__("unable to close download server socket"));
+			warn2e(__("unable to close the download server socket"));
 		}
 
 		if (unlink(serverSocketPath.c_str()) == -1)
 		{
-			warn2e(__("unable to remove download server socket file '%s'"), serverSocketPath);
+			warn2e(__("unable to remove the download server socket file '%s'"), serverSocketPath);
 		}
 	}
 }
@@ -410,7 +410,7 @@ void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 	// cleanup after child
 	if (waitpid(downloadInfo.performerPid, NULL, 0) == -1)
 	{
-		fatal2e(__("waitpid on performer process failed"));
+		fatal2e(__("waitpid on the performer process failed"));
 	}
 	downloadInfo.performerPipe.reset();
 
@@ -427,7 +427,7 @@ void ManagerImpl::finishPendingDownload(multimap< string, int >::iterator pendin
 
 	if (debugging)
 	{
-		debug2("final download result for duplicated request: '%s': %s", uri, result);
+		debug2("final download result for a duplicated request: '%s': %s", uri, result);
 	}
 	auto waiterSocket = pendingDownloadIt->second;
 	sendSocketMessage(waiterSocket,
@@ -500,7 +500,7 @@ void ManagerImpl::killPerformerBecauseOfWrongSize(MessageQueue& workerQueue,
 	// rest in peace, young process
 	if (kill(downloadInfo.performerPid, SIGTERM) == -1)
 	{
-		fatal2e(__("unable to kill process %u"), downloadInfo.performerPid);
+		fatal2e(__("unable to kill the process %u"), downloadInfo.performerPid);
 	}
 	// process it as failed
 	workerQueue.push({ "done", uri, errorString });
@@ -636,7 +636,7 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 	auto downloadPid = fork();
 	if (downloadPid == -1)
 	{
-		fatal2e(__("unable to create performer process: fork failed"));
+		fatal2e(__("unable to create a performer process: fork failed"));
 	}
 	downloadInfo.performerPid = downloadPid;
 
@@ -845,7 +845,7 @@ void ManagerImpl::worker()
 				clientSockets.erase(sock); // if it is a client socket
 				if (close(sock) == -1)
 				{
-					fatal2e(__("unable to close socket"));
+					fatal2e(__("unable to close the client socket"));
 				}
 			}
 		}
@@ -909,7 +909,7 @@ void ManagerImpl::worker()
 					{
 						goto do_poll;
 					}
-					fatal2e(__("download worker: polling waiter socket failed"));
+					fatal2e(__("download worker: polling the waiter socket failed"));
 				}
 				if (!pollResult)
 				{
@@ -988,7 +988,7 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 		const string& targetPath = entityIt->targetPath;
 		if (targetPath.empty())
 		{
-			fatal2(__("passed a download entity with empty target path"));
+			fatal2(__("passed a download entity with an empty target path"));
 		}
 		if (result.count(targetPath))
 		{
@@ -1034,12 +1034,12 @@ static void checkSocketForTimeout(int sock)
 		}
 		else
 		{
-			fatal2e(__("download client: polling client socket failed"));
+			fatal2e(__("download client: polling the client socket failed"));
 		}
 	}
 	else if (!pollResult)
 	{
-		fatal2(__("download client: download server socket is timed out"));
+		fatal2(__("download client: the download server socket is timed out"));
 	}
 }
 
@@ -1067,11 +1067,11 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	auto sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1)
 	{
-		fatal2e(__("unable to open client socket"));
+		fatal2e(__("unable to open a client socket"));
 	}
 	if (connect(sock, (sockaddr*)&serverSocketAddress, sizeof(sockaddr_un)) == -1)
 	{
-		fatal2e(__("unable to connect to server socket"));
+		fatal2e(__("unable to connect to the server socket"));
 	}
 
 	auto scheduleDownload = [&sock, &downloads, &waitedUriToTargetPath](const string& targetPath)
@@ -1147,11 +1147,11 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 			}
 			catch (std::exception& e)
 			{
-				errorString = format2(__("postaction raised an exception '%s'"), e.what());
+				errorString = format2(__("the postprocessing action raised an exception '%s'"), e.what());
 			}
 			catch (...)
 			{
-				errorString = __("postaction raised an exception");
+				errorString = __("the postprocessing action raised an exception");
 			}
 		}
 
@@ -1180,7 +1180,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 
 	if (close(sock) == -1)
 	{
-		fatal2e(__("unable to close client socket"));
+		fatal2e(__("unable to close the client socket"));
 	}
 
 	return result;
