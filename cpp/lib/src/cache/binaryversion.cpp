@@ -150,7 +150,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 	}
 	if (v->architecture.empty())
 	{
-		warn2(__("package %s, version %s: architecture isn't defined, setting it to 'all'"),
+		warn2(__("binary package %s, version %s: architecture isn't defined, setting it to 'all'"),
 				v->packageName, v->versionString);
 		v->architecture = "all";
 	}
