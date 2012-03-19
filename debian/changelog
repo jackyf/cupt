@@ -33,8 +33,9 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         installed, apply also the 'removal-of-autoinstalled' score.
         (Closes: #662027)
       - Fixed the memory leak. It was introduced in 2.0.0~alpha4.
-      - Fixed skipping solutions in some cases if some element cannot be
-        auto-removed if it is strictly sticked.
+      - Reverted skipping solutions if an auto-removed element is (partially)
+        sticked. It could introduce very long delays in the solution
+        calculations in some rare cases.
     - cache:
       - Constructor: don't parse release files more than once.
       - Constructor: parsing release files: use an alias instead of the full

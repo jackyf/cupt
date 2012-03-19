@@ -352,16 +352,6 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 			{
 				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
 
-				const dg::Element* dummyPtr;
-				if (!__solution_storage->simulateSetPackageEntry(solution, emptyElementPtr, &dummyPtr))
-				{
-					if (debugging)
-					{
-						__mydebug_wrapper(solution, "no autoremoval allowed for '%s'", (*elementPtrIt)->toString());
-					}
-					return false;
-				}
-
 				PackageEntry packageEntry;
 				packageEntry.autoremoved = true;
 
