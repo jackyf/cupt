@@ -59,7 +59,7 @@ MethodFactoryImpl::~MethodFactoryImpl()
 	{
 		if (dlclose(*dlHandleIt))
 		{
-			warn2(__("unable to unload dl handle '%p': %s"), *dlHandleIt, dlerror());
+			warn2(__("unable to unload the dl handle '%p': %s"), *dlHandleIt, dlerror());
 		}
 	}
 }
@@ -92,30 +92,30 @@ void MethodFactoryImpl::__load_methods()
 			// also, it should start with 'lib'
 			if (methodName.size() < 4 || methodName.compare(0, 3, "lib"))
 			{
-				debug2("method filename '%s' does not start with 'lib', discarding it", methodName);
+				debug2("the method filename '%s' does not start with 'lib', discarding it", methodName);
 			}
 			methodName = methodName.substr(3);
 		}
 
 		if (__method_builders.count(methodName))
 		{
-			warn2(__("not loading another copy of download method '%s'"), methodName);
+			warn2(__("not loading another copy of the download method '%s'"), methodName);
 			continue;
 		}
 
 		auto dlHandle = dlopen(pathIt->c_str(), RTLD_NOW | RTLD_LOCAL);
 		if (!dlHandle)
 		{
-			warn2(__("unable to load download method '%s': dlopen: %s"), methodName, dlerror());
+			warn2(__("unable to load the download method '%s': %s: %s"), methodName, "dlopen", dlerror());
 			continue;
 		}
 		MethodBuilder methodBuilder = reinterpret_cast< MethodBuilder >(dlsym(dlHandle, "construct"));
 		if (!methodBuilder)
 		{
-			warn2(__("unable to load download method '%s': dlsym: %s"), methodName, dlerror());
+			warn2(__("unable to load the download method '%s': %s: %s"), methodName, "dlsym", dlerror());
 			if (dlclose(dlHandle))
 			{
-				warn2(__("unable to unload dl handle '%p': %s"), dlHandle, dlerror());
+				warn2(__("unable to unload the dl handle '%p': %s"), dlHandle, dlerror());
 			}
 			continue;
 		}
@@ -123,7 +123,7 @@ void MethodFactoryImpl::__load_methods()
 		__method_builders[methodName] = methodBuilder;
 		if (debugging)
 		{
-			debug2("loaded download method '%s'", methodName);
+			debug2("loaded the download method '%s'", methodName);
 		}
 	}
 }
