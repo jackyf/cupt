@@ -30,6 +30,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         installed, apply also the 'removal-of-autoinstalled' score.
         (Closes: #662027)
       - Fixed the memory leak. It was introduced in 2.0.0~alpha4.
+      - Fixed skipping solutions in some cases if some element cannot be
+        auto-removed if it is strictly sticked.
     - cache:
       - Constructor: don't parse release files more than once.
       - Constructor: parsing release files: use an alias instead of the full
@@ -47,6 +49,33 @@ cupt (2.5.0~) UNRELEASED; urgency=low
     - shlibs.local: added as an alias to above.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
+
+cupt (2.4.1) unstable; urgency=medium
+
+  * console:
+    - Managing packages:
+      - Fixed possible spontaneous 'Enter a package expression' messages while
+        resolving problems when no solutions were found and no exception was
+        thrown. This regression was introduced in 2.0.0~rc1.
+  * lib:
+    - system/resolvers/native:
+      - Fixed throwing an exception when some solutions were found but all of
+        them were autorejected. This can happen only if some solutions were
+        dropped due to a solution count requirement (the option
+        'cupt::resolver::max-solution-count'). This regression was introduced
+        in 2.4.0 and also made the 'Enter a package expression' regression
+        above able to show itself.
+    - cache:
+      - Constructor: don't error out if an extended states file is not
+        present, print a warning instead. (Closes: #663382)
+      - Reading APT pin preferences: fixed incorrect line numbers in error
+        messages.
+    - system/worker:
+      - Create the main archives directory if it doesn't exist.
+      - 'setAutomaticallyInstalledFlag': create the directory chain (if needed)
+        for creating the extended states file.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 15 Mar 2012 20:22:15 +0200
 
 cupt (2.4.0) unstable; urgency=low
 

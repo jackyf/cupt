@@ -166,13 +166,18 @@ void PinInfo::loadData(const string& path)
 		fatal2(__("unable to open the file '%s': %s"), path, openError);
 	}
 
-	string line;
 	smatch m;
-	size_t lineNumber = 0;
-	while (!file.getLine(line).eof())
-	{
-		++lineNumber;
 
+	string line;
+	size_t lineNumber = 0;
+	auto getNextLine = [&file, &line, &lineNumber]() -> File&
+	{
+		file.getLine(line);
+		++lineNumber;
+		return file;
+	};
+	while (!getNextLine().eof())
+	{
 		// skip all empty lines and lines with comments
 		static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
 		if (regex_match(line, m, commentRegex))
@@ -211,7 +216,7 @@ void PinInfo::loadData(const string& path)
 		}
 
 		{ // processing second line
-			file.getLine(line);
+			getNextLine();
 			if (file.eof())
 			{
 				fatal2(__("no pin line at file '%s' line %u"), path, lineNumber);
@@ -285,7 +290,7 @@ void PinInfo::loadData(const string& path)
 		}
 
 		{ // processing third line
-			file.getLine(line);
+			getNextLine();
 			if (file.eof())
 			{
 				fatal2(__("no priority line at file '%s' line %u"), path, lineNumber);

@@ -1327,14 +1327,16 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 		if (!_config->getBool("cupt::worker::simulate"))
 		{
-			string partialDirectory = archivesDirectory + partialDirectorySuffix;
-			if (! fs::dirExists(partialDirectory))
+			try
 			{
-				if (mkdir(partialDirectory.c_str(), 0755) == -1)
-				{
-					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-							format2e, "unable to create partial directory '%s'", partialDirectory);
-				}
+				fs::mkpath(archivesDirectory);
+				string partialDirectory = archivesDirectory + partialDirectorySuffix;
+				fs::mkpath(partialDirectory);
+			}
+			catch (...)
+			{
+				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+						format2, "unable to create the archive downloads directory");
 			}
 		}
 
@@ -1934,6 +1936,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				__auto_installed_package_names.erase(packageName);
 			}
 			auto extendedInfoPath = _cache->getPathOfExtendedStates();
+			fs::mkpath(fs::dirname(extendedInfoPath));
 			auto tempPath = extendedInfoPath + ".cupt.tmp";
 
 			{

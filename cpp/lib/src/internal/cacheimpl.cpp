@@ -712,7 +712,8 @@ void CacheImpl::parseExtendedStates()
 		File file(path, "r", openError);
 		if (!openError.empty())
 		{
-			fatal2(__("unable to open the file '%s': %s"), path, openError);
+			warn2(__("unable to open the extended states file '%s': %s"), path, openError);
+			return;
 		}
 
 		internal::TagParser parser(&file);

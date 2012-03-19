@@ -827,7 +827,7 @@ class DependencyGraph::FillHelper
 	}
 };
 
-vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
+vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
 		const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
 {
@@ -859,13 +859,13 @@ vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
 		}
 	}
 
-	vector< pair< const Element*, PackageEntry > > result;
+	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
 	{ // generating solution elements
 		FORIT(it, initialPackages)
 		{
 			auto elementPtr = __fill_helper->getVertexPtr(it->first, it->second.version);
-			PackageEntry packageEntry;
-			packageEntry.sticked = it->second.sticked;
+			auto packageEntry = std::make_shared< PackageEntry >();
+			packageEntry->sticked = it->second.sticked;
 			result.push_back({ elementPtr, std::move(packageEntry) });
 		}
 	}

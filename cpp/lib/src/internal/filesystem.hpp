@@ -33,6 +33,7 @@ vector< string > lglob(const string& directoryPath, const string& shellPattern);
 bool fileExists(const string& path);
 bool dirExists(const string& path);
 size_t fileSize(const string& path);
+void mkpath(const string& path);
 
 }
 }
