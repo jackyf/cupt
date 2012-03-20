@@ -103,11 +103,11 @@ string VersionVertex::toLocalizedString() const
 	const string& packageName = getPackageName();
 	if (version)
 	{
-		return __("installed ") + packageName + ' ' + version->versionString;
+		return __("installed") + ' ' + packageName + ' ' + version->versionString;
 	}
 	else
 	{
-		return __("removed ") + packageName;
+		return __("removed") + ' ' + packageName;
 	}
 }
 
