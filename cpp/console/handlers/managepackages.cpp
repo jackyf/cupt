@@ -805,8 +805,23 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 		return colorizeByActionType(colorizer, s, actionType, true);
 	};
 
-	*summaryStreamPtr << format2(__("  %s manually installed and %s automatically installed packages %s"),
-			getManualCountString(), getAutoCountString(), actionName) << endl;
+	*summaryStreamPtr << "  ";
+	if (!manuallyInstalledCount)
+	{
+		*summaryStreamPtr << format2(__("%s automatically installed packages %s"),
+				getAutoCountString(), actionName);
+	}
+	else if (!autoInstalledCount)
+	{
+		*summaryStreamPtr << format2(__("%s manually installed packages %s"),
+				getManualCountString(), actionName);
+	}
+	else
+	{
+		*summaryStreamPtr << format2(__("%s manually installed and %s automatically installed packages %s"),
+				getManualCountString(), getAutoCountString(), actionName);
+	}
+	*summaryStreamPtr << endl;
 }
 
 struct PackageChangeInfoFlags

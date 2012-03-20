@@ -6,6 +6,7 @@ cupt (2.5.0~) UNRELEASED; urgency=low
     - Managing packages:
       - Action preview prompt: moved auto-removed packages to a new
         'no longer needed' section.
+      - Action summary: don't print zero-sized parts.
   * lib:
     - system/worker:
       - Updating release and index data: use the information about Translation
