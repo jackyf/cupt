@@ -58,7 +58,7 @@ ssize_t Method::getIntegerAcquireSuboptionForUri(const shared_ptr< const Config 
 		}
 		catch (std::exception&)
 		{
-			fatal2(__("the value '%s' of suboption '%s' is not numeric"), result, suboptionName);
+			fatal2(__("the value '%s' of the suboption '%s' is not numeric"), result, suboptionName);
 		}
 	}
 	return numericResult;
