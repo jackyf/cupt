@@ -120,7 +120,7 @@ void NativeResolverImpl::installVersion(const shared_ptr< const BinaryVersion >&
 	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
 	if (!__prepare_version_no_stick(version, initialPackageEntry))
 	{
-		fatal2(__("unable to re-schedule package '%s'"), packageName);
+		fatal2(__("unable to re-schedule the package '%s'"), packageName);
 	}
 
 	initialPackageEntry.sticked = true;
@@ -150,7 +150,7 @@ void NativeResolverImpl::removePackage(const string& packageName)
 	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
 	if (initialPackageEntry.version && initialPackageEntry.sticked)
 	{
-		fatal2(__("unable to re-schedule package '%s'"), packageName);
+		fatal2(__("unable to re-schedule the package '%s'"), packageName);
 	}
 	initialPackageEntry.sticked = true;
 	initialPackageEntry.modified = true;
