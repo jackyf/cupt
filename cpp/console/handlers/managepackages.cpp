@@ -772,7 +772,8 @@ static void printPackageName(const Cache& cache, const Colorizer& colorizer,
 static string colorizeActionName(const Colorizer& colorizer, const string& actionName, WA::Type actionType)
 {
 	if (actionType != WA::Install && actionType != WA::Upgrade &&
-			actionType != WA::Configure && actionType != WA::ProcessTriggers)
+			actionType != WA::Configure && actionType != WA::ProcessTriggers &&
+			actionType != fakeAutoRemove && actionType != fakeAutoPurge)
 	{
 		return colorizer.makeBold(actionName);
 	}
