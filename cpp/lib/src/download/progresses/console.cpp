@@ -287,7 +287,7 @@ void ConsoleProgress::finishedDownloadHook(const string& uri, const string& resu
 	}
 	else
 	{
-		warn2(__("internal error: console download progress: no existing download record for the uri '%s'"), uri);
+		warn2("internal error: console download progress: no existing download record for the uri '%s'", uri);
 	}
 	__impl->finishedDownload(uri, result, recordNumber);
 }
