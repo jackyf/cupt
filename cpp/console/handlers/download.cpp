@@ -324,7 +324,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 					char tempFilename[] = "cupt-download-XXXXXX";
 					if (mkstemp(tempFilename) == -1)
 					{
-						fatal2e(__("unable to create a temporary file: mkstemp failed"));
+						fatal2e(__("%s() failed"), "mkstemp");
 					}
 
 					try

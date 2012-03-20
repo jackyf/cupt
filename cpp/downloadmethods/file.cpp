@@ -49,7 +49,7 @@ class FileMethod: public download::Method
 			struct stat st;
 			if (::stat(sourcePath.c_str(), &st) == -1)
 			{
-				fatal2e(__("stat() failed: '%s'"), sourcePath);
+				fatal2e(__("%s() failed: '%s'"), "stat", sourcePath);
 			}
 			callback(vector< string > { "expected-size",
 					lexical_cast< string >(st.st_size) });

@@ -66,7 +66,7 @@ vector< string > glob(const string& param)
 	if (result != 0 && result != GLOB_NOMATCH)
 	{
 		globfree(&glob_result);
-		fatal2e(__("glob() failed: '%s'"), param);
+		fatal2e(__("%s() failed: '%s'"), "glob", param);
 	}
 	for (size_t i = 0; i < glob_result.gl_pathc; ++i)
 	{
@@ -105,7 +105,7 @@ vector< string > lglob(const string& directoryPath, const string& shellPattern)
 		if (readdirrResult)
 		{
 			freeResources();
-			fatal2(__("readdir_r failed on '%s'"), directoryPath);
+			fatal2(__("%s() failed: '%s'"), "readdir_r", directoryPath);
 		}
 
 		if (!resultDirectoryEntryPtr)
@@ -138,7 +138,7 @@ bool __lstat(const string& path, struct stat* result)
 		}
 		else
 		{
-			fatal2e(__("lstat() failed: '%s'"), path);
+			fatal2e(__("%s() failed: '%s'"), "lstat", path);
 		}
 	}
 	return true;

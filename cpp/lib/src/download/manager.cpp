@@ -232,7 +232,7 @@ ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared
 	auto pid = fork();
 	if (pid == -1)
 	{
-		fatal2e(__("unable to create the download worker process: fork failed"));
+		fatal2e(__("unable to create the download worker process: fork() failed"));
 	}
 
 	if (pid)
@@ -278,7 +278,7 @@ ManagerImpl::~ManagerImpl()
 			int childExitStatus;
 			if (waitpid(workerPid, &childExitStatus, 0) == -1)
 			{
-				warn2e(__("unable to shutdown the download worker process: waitpid failed"));
+				warn2e(__("unable to shutdown the download worker process: waitpid() failed"));
 			}
 			else if (childExitStatus != 0)
 			{
@@ -338,12 +338,12 @@ void enablePingTimer()
 	newAction.sa_handler = sendPingMessage;
 	if (sigfillset(&newAction.sa_mask) == -1)
 	{
-		fatal2e(__("sigfillset failed"));
+		fatal2e(__("%s() failed"), "sigfillset");
 	}
 	newAction.sa_flags = SA_RESTART;
 	if (sigaction(SIGALRM, &newAction, NULL) == -1)
 	{
-		fatal2e(__("unable to set up ALRM signal handler: sigaction failed"));
+		fatal2e(__("%s() failed"), "sigaction");
 	}
 
 	struct itimerval timerStruct;
@@ -353,7 +353,7 @@ void enablePingTimer()
 	timerStruct.it_value.tv_usec = timerStruct.it_interval.tv_usec;
 	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
 	{
-		fatal2e(__("unable to enable ALRM signal: setitimer failed"));
+		fatal2e(__("%s() failed"), "setitimer");
 	}
 }
 
@@ -363,12 +363,12 @@ void disablePingTimer()
 	defaultAction.sa_handler = SIG_DFL;
 	if (sigemptyset(&defaultAction.sa_mask) == -1)
 	{
-		fatal2e(__("sigemptyset failed"));
+		fatal2e(__("%s() failed"), "sigemptyset");
 	}
 	defaultAction.sa_flags = 0;
 	if (sigaction(SIGALRM, &defaultAction, NULL) == -1)
 	{
-		fatal2e(__("unable to clear ALRM signal handler: sigaction failed"));
+		fatal2e(__("%s() failed"), "sigaction");
 	}
 
 	struct itimerval timerStruct;
@@ -378,7 +378,7 @@ void disablePingTimer()
 	timerStruct.it_value.tv_usec = 0;
 	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
 	{
-		fatal2e(__("unable to disable ALRM signal: setitimer failed"));
+		fatal2e(__("%s() failed"), "setitimer");
 	}
 }
 
@@ -636,7 +636,7 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 	auto downloadPid = fork();
 	if (downloadPid == -1)
 	{
-		fatal2e(__("unable to create a performer process: fork failed"));
+		fatal2e(__("unable to create a performer process: fork() failed"));
 	}
 	downloadInfo.performerPid = downloadPid;
 
@@ -760,12 +760,12 @@ void makeSyscallsRestartable()
 	action.sa_handler = doNothing;
 	if (sigemptyset(&action.sa_mask) == -1)
 	{
-		fatal2e(__("sigemptyset failed"));
+		fatal2e(__("%s() failed"), "sigemptyset");
 	}
 	action.sa_flags = SA_RESTART;
 	if (sigaction(SIGCHLD, &action, NULL) == -1)
 	{
-		fatal2e(__("download worker: making system calls restartable: sigaction failed"));
+		fatal2e(__("%s() failed"), "sigaction");
 	}
 }
 

@@ -181,7 +181,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 		char timeBuf[128];
 		if (!strftime(timeBuf, sizeof(timeBuf), "%a, %d %b %Y %H:%M:%S UTC", gmtime_r(&unixTime, &brokenDownTime)))
 		{
-			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2, format2e, "strftime failed");
+			_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2, format2e, "%s() failed", "strftime");
 		}
 		LL(string("Date: ") + timeBuf);
 

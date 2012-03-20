@@ -1055,7 +1055,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			auto pid = fork();
 			if (pid == -1)
 			{
-				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "fork failed");
+				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "%s() failed", "fork");
 			}
 
 			if (pid)
@@ -1086,7 +1086,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			pid_t pid = wait(&status);
 			if (pid == -1)
 			{
-				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "wait failed");
+				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "%s() failed", "wait");
 			}
 			pids.erase(pid);
 			// if something went bad in child, the parent won't return non-zero code too

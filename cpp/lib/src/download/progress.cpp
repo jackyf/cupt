@@ -72,7 +72,7 @@ struct timespec getCurrentTimeSpec()
 	struct timespec currentTimeSpec;
 	if (clock_gettime(CLOCK_REALTIME, &currentTimeSpec) == -1)
 	{
-		warn2e(__("unable to get system clock time: clock_gettime failed"));
+		warn2e(__("%s() failed"), "clock_gettime");
 		currentTimeSpec.tv_sec = time(NULL);
 		currentTimeSpec.tv_nsec = 0;
 	}

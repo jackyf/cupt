@@ -108,7 +108,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				{
 					if (errno != EINVAL)
 					{
-						warn2e(__("readlink on '%s' failed"), path);
+						warn2e(__("%s() failed: '%s'"), "readlink", path);
 					}
 					// not a symlink
 				}

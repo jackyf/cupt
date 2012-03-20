@@ -1363,7 +1363,7 @@ int distUpgrade(Context& context)
 			}
 		}
 		execvp(argv[0], argv);
-		fatal2e(__("upgrading the system failed: execvp failed"));
+		fatal2e(__("%s() failed"), "execvp");
 	}
 	return 0; // unreachable due to exec
 }
@@ -1440,7 +1440,7 @@ int cleanArchives(Context& context, bool leaveAvailable)
 		struct stat stat_structure;
 		if (lstat(path.c_str(), &stat_structure))
 		{
-			fatal2e(__("lstat() failed: '%s'"), path);
+			fatal2e(__("%s() failed: '%s'"), "lstat", path);
 		}
 		else
 		{
