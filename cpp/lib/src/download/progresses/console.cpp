@@ -85,11 +85,11 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	bool statusIsModified = false;
 	if (oldStatus == -1)
 	{
-		warn2e(__("unable to get standard error stream status flags: fcntl failed"));
+		warn2e(__("fcntl() failed"));
 	}
 	else if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus | O_NONBLOCK) == -1)
 	{
-		warn2e(__("unable to make standard error stream non-blocking: fcntl failed"));
+		warn2e(__("fcntl() failed"));
 	}
 	else
 	{
@@ -102,7 +102,7 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	{
 		if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus) == -1)
 		{
-			warn2e(__("unable to make standard error stream blocking again: fcntl failed"));
+			warn2e(__("fcntl() failed"));
 		}
 	}
 }
