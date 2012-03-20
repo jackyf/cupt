@@ -794,14 +794,19 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 			});
 	size_t autoInstalledCount = suggestedPackages.size() - manuallyInstalledCount;
 
-	auto manualCountString = boost::lexical_cast< string >(manuallyInstalledCount);
-	auto colorizedManualCountString = colorizeByActionType(colorizer, manualCountString, actionType, false);
-
-	auto autoCountString = boost::lexical_cast< string >(autoInstalledCount);
-	auto colorizedAutoCountString = colorizeByActionType(colorizer, autoCountString, actionType, true);
+	auto getManualCountString = [manuallyInstalledCount, actionType, &colorizer]()
+	{
+		auto s = boost::lexical_cast< string >(manuallyInstalledCount);
+		return colorizeByActionType(colorizer, s, actionType, false);
+	};
+	auto getAutoCountString = [autoInstalledCount, actionType, &colorizer]()
+	{
+		auto s = boost::lexical_cast< string >(autoInstalledCount);
+		return colorizeByActionType(colorizer, s, actionType, true);
+	};
 
 	*summaryStreamPtr << format2(__("  %s manually installed and %s automatically installed packages %s"),
-			colorizedManualCountString, colorizedAutoCountString, actionName) << endl;
+			getManualCountString(), getAutoCountString(), actionName) << endl;
 }
 
 struct PackageChangeInfoFlags
