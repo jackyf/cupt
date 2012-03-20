@@ -792,13 +792,12 @@ void addActionToSummary(const Cache& cache, WA::Type actionType, const string& a
 			{
 				return !wasOrWillBePackageAutoInstalled(cache, arg.first, autoFlagChanges);
 			});
-
-	auto total = suggestedPackages.size();
+	size_t autoInstalledCount = suggestedPackages.size() - manuallyInstalledCount;
 
 	auto manualCountString = boost::lexical_cast< string >(manuallyInstalledCount);
 	auto colorizedManualCountString = colorizeByActionType(colorizer, manualCountString, actionType, false);
 
-	auto autoCountString = boost::lexical_cast< string >(total - manuallyInstalledCount);
+	auto autoCountString = boost::lexical_cast< string >(autoInstalledCount);
 	auto colorizedAutoCountString = colorizeByActionType(colorizer, autoCountString, actionType, true);
 
 	*summaryStreamPtr << format2(__("  %s manually installed and %s automatically installed packages %s"),
