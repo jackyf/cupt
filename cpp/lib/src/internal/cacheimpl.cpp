@@ -478,7 +478,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 			sourceReleaseData.push_back(releaseInfo);
 		}
 
-		processIndexFile(indexFileToParse, indexEntry.category, releaseInfo);
+		processIndexFile(indexFileToParse, indexEntry.category, releaseInfo, indexAlias);
 	}
 	catch (Exception&)
 	{
@@ -511,7 +511,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 
 
 void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
-		shared_ptr< const ReleaseInfo > releaseInfo)
+		shared_ptr< const ReleaseInfo > releaseInfo, const string& alias)
 {
 	using std::make_pair;
 	auto prePackagesStorage = (category == IndexEntry::Binary ?
@@ -566,7 +566,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			}
 			catch (Exception&)
 			{
-				warn2(__("discarding this package version from index file '%s'"), path);
+				warn2(__("discarding this package version from the index '%s'"), alias);
 				while (getNextLine(), size > 1) {}
 				continue;
 			}
@@ -586,7 +586,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error parsing index file '%s'"), path);
+		fatal2(__("error parsing the index '%s'"), alias);
 	}
 }
 
