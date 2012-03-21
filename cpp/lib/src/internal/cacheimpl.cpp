@@ -557,7 +557,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			}
 			else
 			{
-				fatal2(__("unable to find correct Package line"));
+				fatal2(__("unable to find a Package line"));
 			}
 
 			try
