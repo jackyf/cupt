@@ -521,7 +521,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	shared_ptr< File > file(new File(path, "r", openError));
 	if (!openError.empty())
 	{
-		fatal2(__("unable to open index file '%s': %s"), path, openError);
+		fatal2(__("unable to open the file '%s': %s"), path, openError);
 	}
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
