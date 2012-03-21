@@ -586,7 +586,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error parsing the index '%s'"), alias);
+		fatal2(__("unable to parse the index '%s'"), alias);
 	}
 }
 
