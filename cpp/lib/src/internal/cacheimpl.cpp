@@ -246,9 +246,10 @@ void CacheImpl::parseSourceList(const string& path)
 
 	string line;
 	static sregex toSkip = sregex::compile("^\\s*(?:#.*)?$");
+	size_t lineNumber = 0;
 
+	try
 	{
-		size_t lineNumber = 0;
 		while (! file.getLine(line).eof())
 		{
 			++lineNumber;
@@ -266,7 +267,7 @@ void CacheImpl::parseSourceList(const string& path)
 			// type
 			if (tokens.empty())
 			{
-				fatal2(__("undefined source type at file '%s', line %u"), path, lineNumber);
+				fatal2(__("undefined source type"));
 			}
 			else
 			{
@@ -280,14 +281,14 @@ void CacheImpl::parseSourceList(const string& path)
 				}
 				else
 				{
-					fatal2(__("incorrect source type at file '%s', line %u"), path, lineNumber);
+					fatal2(__("incorrect source type"));
 				}
 			}
 
 			// uri
 			if (tokens.size() < 2)
 			{
-				fatal2(__("undefined source uri at file '%s', line %u"), path, lineNumber);
+				fatal2(__("undefined source uri"));
 			}
 			else
 			{
@@ -296,7 +297,7 @@ void CacheImpl::parseSourceList(const string& path)
 
 			if (tokens.size() < 3)
 			{
-				fatal2(__("undefined source distribution at file '%s', line %u"), path, lineNumber);
+				fatal2(__("undefined source distribution"));
 			}
 			else
 			{
@@ -329,10 +330,14 @@ void CacheImpl::parseSourceList(const string& path)
 				}
 				else
 				{
-					fatal2(__("distribution doesn't end with a slash at file '%s', line %u"), path, lineNumber);
+					fatal2(__("distribution doesn't end with a slash"));
 				}
 			}
 		}
+	}
+	catch (Exception&)
+	{
+		fatal2(__("(at the file '%s', line %u)"), path, lineNumber);
 	}
 }
 
