@@ -231,7 +231,7 @@ void CacheImpl::parseSourcesLists()
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error while parsing sources list"));
+		fatal2(__("unable to parse the sources list"));
 	}
 }
 
