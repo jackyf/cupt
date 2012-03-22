@@ -594,7 +594,7 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 	shared_ptr< File > file(new File(path, "r", errorString));
 	if (!errorString.empty())
 	{
-		fatal2(__("unable to open translation file '%s': %s"), path, errorString);
+		fatal2(__("unable to open the file '%s': %s"), path, errorString);
 	}
 
 	try
