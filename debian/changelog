@@ -39,10 +39,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         calculations in some rare cases.
     - cache:
       - Constructor: don't parse release files more than once.
-      - Constructor: parsing release files: use an alias instead of the full
-        path in error messages.
-      - Constructor: parsing index files: use an alias instead of the full path
-        in the error and warning messages.
+      - Constructor: parsing release, index and localization files: use
+        an alias instead of the full path in the error and warning messages.
       - Constructor: parsing index localization files: print an error when
         the file exists but can't be opened.
     - Don't include a not exported header from cupt/common.hpp, making a

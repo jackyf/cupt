@@ -490,16 +490,17 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		auto localizationRecords = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*config, indexEntry);
 		for (const auto& record: localizationRecords)
 		{
+			auto localizationAlias = format2(__("'%s' descriptions localization for '%s'"), record.language, indexAlias);
 			try
 			{
 				if (fs::fileExists(record.localPath))
 				{
-					processTranslationFile(record.localPath);
+					processTranslationFile(record.localPath, localizationAlias);
 				}
 			}
 			catch (Exception&)
 			{
-				warn2(__("skipped the translation of the index '%s'"), indexAlias);
+				warn2(__("skipped the index '%s'"), localizationAlias);
 			}
 		}
 	}
@@ -587,7 +588,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	}
 }
 
-void CacheImpl::processTranslationFile(const string& path)
+void CacheImpl::processTranslationFile(const string& path, const string& alias)
 {
 	string errorString;
 	shared_ptr< File > file(new File(path, "r", errorString));
@@ -644,7 +645,7 @@ void CacheImpl::processTranslationFile(const string& path)
 	}
 	catch(Exception&)
 	{
-		fatal2(__("error parsing translation file '%s'"), path);
+		fatal2(__("unable to parse the index '%s'"), alias);
 	}
 }
 
