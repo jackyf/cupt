@@ -125,15 +125,19 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 		const Config& config, const IndexEntry& indexEntry, const string& suffix)
 {
 	auto baseUri = getUriOfIndexEntry(indexEntry);
+	// TODO: make cachefiles::getAlias* functions
+	auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
 
 	vector< Cache::IndexDownloadRecord > result;
-	{ // reading
+
+	try
+	{
 		string openError;
 		auto releaseFilePath = getPathOfReleaseList(config, indexEntry);
 		File releaseFile(releaseFilePath, "r", openError);
 		if (!openError.empty())
 		{
-			fatal2(__("unable to open release file '%s': %s"), releaseFilePath, openError);
+			fatal2(__("unable to open the file '%s': %s"), releaseFilePath, openError);
 		}
 
 		HashSums::Type currentHashSumType = HashSums::Count;
@@ -158,13 +162,12 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 			{
 				if (currentHashSumType == HashSums::Count)
 				{
-					fatal2(__("release line '%s' without previous hash sum declaration at release file '%s'"),
-								line, releaseFilePath);
+					fatal2(__("no hash sum declarations before the line '%s'"), line);
 				}
 				static sregex hashSumsLineRegex = sregex::compile("\\s([[:xdigit:]]+)\\s+(\\d+)\\s+(.*)");
 				if (!regex_match(line, m, hashSumsLineRegex))
 				{
-					fatal2(__("malformed release line '%s' at file '%s'"), line, releaseFilePath);
+					fatal2(__("malformed line '%s'"), line);
 				}
 
 				string name = m[3];
@@ -195,15 +198,18 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 				}
 			}
 		}
-	}
-
-	// checks
-	FORIT(recordIt, result)
-	{
-		if (recordIt->hashSums.empty())
+		// checks
+		FORIT(recordIt, result)
 		{
-			fatal2(__("no hash sums defined for index list URI '%s'"), recordIt->uri);
+			if (recordIt->hashSums.empty())
+			{
+				fatal2(__("no hash sums defined for the index uri '%s'"), recordIt->uri);
+			}
 		}
+	}
+	catch (Exception&)
+	{
+		fatal2("unable to parse the release '%s'", alias);
 	}
 
 	return result;
