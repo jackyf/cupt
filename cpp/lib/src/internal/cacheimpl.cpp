@@ -726,7 +726,7 @@ void CacheImpl::parseExtendedStates()
 		{
 			if (!tagName.equal("Package", 7))
 			{
-				fatal2(__("wrong tag: expected 'Package', got '%s' at file '%s'"), string(tagName), path);
+				fatal2(__("wrong tag: expected 'Package', got '%s'"), string(tagName));
 			}
 
 			string packageName = tagValue;
@@ -744,21 +744,21 @@ void CacheImpl::parseExtendedStates()
 					}
 					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{
-						fatal2(__("bad value '%s' (should be 0 or 1) for the package '%s' at file '%s'"),
-								string(tagValue), packageName, path);
+						fatal2(__("bad value '%s' (should be 0 or 1) for the package '%s'"),
+								string(tagValue), packageName);
 					}
 				}
 			}
 
 			if (!valueFound)
 			{
-				fatal2(__("no 'Auto-Installed' tag for the package '%s' at file '%s'"), packageName, path);
+				fatal2(__("didn't found the 'Auto-Installed' tag for the package '%s'"), packageName);
 			}
 		}
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error while parsing extended states"));
+		fatal2(__("unable to parse extended states"));
 	}
 }
 
