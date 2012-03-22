@@ -487,21 +487,20 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 
 	if (Version::parseInfoOnly) // description is info-only field
 	{
-		try  // processing translations if any
+		auto localizationRecords = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*config, indexEntry);
+		for (const auto& record: localizationRecords)
 		{
-			auto descriptionTranslationPaths =
-					cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
-			for (const auto& path: descriptionTranslationPaths)
+			try
 			{
-				if (fs::fileExists(path))
+				if (fs::fileExists(record.localPath))
 				{
-					processTranslationFile(path);
+					processTranslationFile(record.localPath);
 				}
 			}
-		}
-		catch (Exception&)
-		{
-			warn2(__("skipped translations of the index '%s'"), indexAlias);
+			catch (Exception&)
+			{
+				warn2(__("skipped the translation of the index '%s'"), indexAlias);
+			}
 		}
 	}
 }
