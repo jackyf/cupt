@@ -491,13 +491,11 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		{
 			auto descriptionTranslationPaths =
 					cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
-			FORIT(pathIt, descriptionTranslationPaths)
+			for (const auto& path: descriptionTranslationPaths)
 			{
-				string errorString;
-				File file(*pathIt, "r", errorString);
-				if (errorString.empty())
+				if (fs::fileExists(path))
 				{
-					processTranslationFile(*pathIt);
+					processTranslationFile(path);
 				}
 			}
 		}
