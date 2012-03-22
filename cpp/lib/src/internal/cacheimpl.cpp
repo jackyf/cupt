@@ -633,11 +633,11 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 
 			if (!hashSumFound)
 			{
-				fatal2(__("unable to find md5 hash in a translation record starting at byte '%u'"), recordPosition);
+				fatal2(__("unable to find the md5 hash in the record starting at byte '%u'"), recordPosition);
 			}
 			if (!translationFound)
 			{
-				fatal2(__("unable to find translation in a translation record starting at byte '%u'"), recordPosition);
+				fatal2(__("unable to find the translation in the record starting at byte '%u'"), recordPosition);
 			}
 
 			translations.insert({ std::move(md5), translationPosition });
