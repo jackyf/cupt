@@ -442,7 +442,7 @@ bool verifySignature(const Config& config, const string& path)
 		File gpgPipe(gpgCommand, "pr", openError);
 		if (!openError.empty())
 		{
-			fatal2(__("unable to open gpg pipe: %s"), openError);
+			fatal2(__("unable to open the pipe '%s': %s"), gpgCommand, openError);
 		}
 
 		smatch m;
