@@ -493,11 +493,6 @@ bool verifySignature(const Config& config, const string& path)
 		if (messageType == "GOODSIG")
 		{
 			string furtherInfo = gpgGetLine();
-			if (furtherInfo.empty())
-			{
-				fatal2(__("gpg: '%s': error: unfinished status"), path);
-			}
-
 			if (!regex_match(furtherInfo, m, messageRegex))
 			{
 				fatal2(__("gpg: '%s': invalid further info string '%s'"), path, furtherInfo);
