@@ -477,7 +477,7 @@ bool verifySignature(const Config& config, const string& path)
 		if (status.empty())
 		{
 			// no info from gpg at all
-			fatal2(__("gpg: '%s': no info received"), path);
+			fatal2(__("gpg: '%s': no information"), path);
 		}
 
 		// first line ought to be validness indicator
@@ -495,7 +495,7 @@ bool verifySignature(const Config& config, const string& path)
 			string furtherInfo = gpgGetLine();
 			if (!regex_match(furtherInfo, m, messageRegex))
 			{
-				fatal2(__("gpg: '%s': invalid further info string '%s'"), path, furtherInfo);
+				fatal2(__("gpg: '%s': invalid detailed information string '%s'"), path, furtherInfo);
 			}
 
 			string furtherInfoType = m[1];
@@ -537,7 +537,7 @@ bool verifySignature(const Config& config, const string& path)
 			{
 				if (!regex_match(detail, m, messageRegex))
 				{
-					fatal2(__("gpg: '%s': invalid detailed info string '%s'"), path, detail);
+					fatal2(__("gpg: '%s': invalid detailed information string '%s'"), path, detail);
 				}
 				string detailType = m[1];
 				string detailMessage = m[2];
@@ -549,13 +549,13 @@ bool verifySignature(const Config& config, const string& path)
 					//
 					// NO_PUBKEY D4F5CE00FA0E9B9D
 					//
-					warn2(__("gpg: '%s': public key '%s' not found"), path, detailMessage);
+					warn2(__("gpg: '%s': public key '%s' is not found"), path, detailMessage);
 				}
 			}
 
 			if (!publicKeyWasNotFound)
 			{
-				warn2(__("gpg: '%s': could not verify signature: %s"), path, message);
+				warn2(__("gpg: '%s': could not verify a signature: %s"), path, message);
 			}
 		}
 		else if (messageType == "NODATA")
@@ -569,12 +569,12 @@ bool verifySignature(const Config& config, const string& path)
 		}
 		else
 		{
-			warn2(__("gpg: '%s': unknown message received: %s %s"), path, messageType, message);
+			warn2(__("gpg: '%s': unknown message: %s %s"), path, messageType, message);
 		}
 	}
 	catch (Exception&)
 	{
-		warn2(__("error while verifying signature for file '%s'"), path);
+		warn2(__("unable to verify a signature for the file '%s'"), path);
 	}
 
 	if (debugging)
