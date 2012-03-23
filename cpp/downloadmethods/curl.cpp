@@ -84,6 +84,7 @@ class CurlWrapper
 	{
 		setOption(CURLOPT_FAILONERROR, 1, "fail on error");
 		setOption(CURLOPT_NETRC, CURL_NETRC_OPTIONAL, "netrc");
+		setOption(CURLOPT_USERAGENT, format2("Curl (libcupt/%s)", cupt::libraryVersion), "user-agent");
 		curl_easy_setopt(__handle, CURLOPT_ERRORBUFFER, __error_buffer);
 	}
 	ssize_t getExpectedDownloadSize() const
