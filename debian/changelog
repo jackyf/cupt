@@ -51,6 +51,7 @@ cupt (2.5.0~) UNRELEASED; urgency=low
   * downloadmethods:
     - wget:
       - Use threads instead of explicit fork()s.
+      - User-Agent now has a libcupt-specific suffix.
   * debian:
     - libcupt2-0.shlibs: added with an initial value of 2.3.0~rc1.
     - shlibs.local: added as an alias to above.

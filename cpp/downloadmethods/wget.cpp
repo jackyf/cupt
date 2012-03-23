@@ -100,6 +100,7 @@ class WgetMethod: public cupt::download::Method
 				}
 				p.push_back(string(uri));
 				p.push_back(string("--output-document=") + targetPath);
+				p.push_back(format2("--user-agent=\"Wget (libcupt/%s)\"", cupt::libraryVersion));
 				p.push_back("2>&1");
 			}
 
