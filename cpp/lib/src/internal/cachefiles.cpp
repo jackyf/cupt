@@ -591,18 +591,17 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 	result->notAutomatic = false; // default
 	result->butAutomaticUpgrades = false; // default
 
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open release file '%s': %s"), path, openError);
-	}
-
-	size_t lineNumber = 1;
 	static sregex fieldRegex = sregex::compile("^((?:\\w|-)+?): (.*)"); // $ implied in regex
 	smatch matches;
 	try
 	{
+		string openError;
+		File file(path, "r", openError);
+		if (!openError.empty())
+		{
+			fatal2(__("unable to open the file '%s': %s"), path, openError);
+		}
+
 		string line;
 		while (! file.getLine(line).eof())
 		{
@@ -666,11 +665,10 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 				}
 			}
 		}
-		++lineNumber;
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error parsing release '%s', line %u"), alias, lineNumber);
+		fatal2(__("unable to parse the release '%s'"), alias);
 	}
 
 	if (result->vendor.empty())
