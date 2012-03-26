@@ -176,144 +176,148 @@ void PinInfo::loadData(const string& path)
 		++lineNumber;
 		return file;
 	};
-	while (!getNextLine().eof())
+	try
 	{
-		// skip all empty lines and lines with comments
-		static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
-		if (regex_match(line, m, commentRegex))
+		while (!getNextLine().eof())
 		{
-			continue;
-		}
-
-		// skip special explanation lines, they are just comments
-		static const sregex explanationRegex = sregex::compile("Explanation:");
-		if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
-		{
-			continue;
-		}
-
-		// ok, real triad should be here
-		PinEntry pinEntry;
-
-		{ // processing first line
-			PinEntry::Condition condition;
-			static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
-			if (!regex_match(line, m, packageOrSourceRegex))
+			// skip all empty lines and lines with comments
+			static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
+			if (regex_match(line, m, commentRegex))
 			{
-				fatal2(__("invalid package/source line at file '%s', line %u"), path, lineNumber);
+				continue;
 			}
 
-			condition.type = (string(m[1]) == "Package" ?
-					PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
-
-			vector< string > parts = split(' ', m[2]);
-			FORIT(it, parts)
+			// skip special explanation lines, they are just comments
+			static const sregex explanationRegex = sregex::compile("Explanation:");
+			if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
 			{
-				*it = pinStringToRegexString(*it);
-			}
-			condition.value = stringToRegex(join("|", parts));
-			pinEntry.conditions.push_back(std::move(condition));
-		}
-
-		{ // processing second line
-			getNextLine();
-			if (file.eof())
-			{
-				fatal2(__("no pin line at file '%s' line %u"), path, lineNumber);
+				continue;
 			}
 
-			static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
-			if (!regex_match(line, m, pinRegex))
-			{
-				fatal2(__("invalid pin line at file '%s' line %u"), path, lineNumber);
+			// ok, real triad should be here
+			PinEntry pinEntry;
+
+			{ // processing first line
+				PinEntry::Condition condition;
+				static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
+				if (!regex_match(line, m, packageOrSourceRegex))
+				{
+					fatal2(__("invalid package/source line"));
+				}
+
+				condition.type = (string(m[1]) == "Package" ?
+						PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
+
+				vector< string > parts = split(' ', m[2]);
+				FORIT(it, parts)
+				{
+					*it = pinStringToRegexString(*it);
+				}
+				condition.value = stringToRegex(join("|", parts));
+				pinEntry.conditions.push_back(std::move(condition));
 			}
 
-			string pinType = m[1];
-			string pinExpression = m[2];
-			if (pinType == "release")
-			{
-				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
-				auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
+			{ // processing second line
+				getNextLine();
+				if (file.eof())
+				{
+					fatal2(__("no pin line"));
+				}
 
-				FORIT(subExpressionIt, subExpressions)
+				static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
+				if (!regex_match(line, m, pinRegex))
+				{
+					fatal2(__("invalid pin line"));
+				}
+
+				string pinType = m[1];
+				string pinExpression = m[2];
+				if (pinType == "release")
+				{
+					static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
+					auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
+
+					FORIT(subExpressionIt, subExpressions)
+					{
+						PinEntry::Condition condition;
+
+						static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
+						if (!regex_match(*subExpressionIt, m, subExpressionRegex))
+						{
+							fatal2(__("invalid condition '%s'"), *subExpressionIt);
+						}
+
+						char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
+						switch (subExpressionType)
+						{
+							case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
+							case 'v': condition.type = PinEntry::Condition::ReleaseVersion; break;
+							case 'c': condition.type = PinEntry::Condition::ReleaseComponent; break;
+							case 'n': condition.type = PinEntry::Condition::ReleaseCodename; break;
+							case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
+							case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
+							default:
+								fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"),
+										subExpressionType);
+						}
+						condition.value = stringToRegex(pinStringToRegexString(m[2]));
+						pinEntry.conditions.push_back(std::move(condition));
+					}
+				}
+				else if (pinType == "version")
 				{
 					PinEntry::Condition condition;
-
-					static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
-					if (!regex_match(*subExpressionIt, m, subExpressionRegex))
-					{
-						fatal2(__("invalid condition '%s' in release expression at file '%s' line %u"),
-								(*subExpressionIt), path, lineNumber);
-					}
-
-					char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
-					switch (subExpressionType)
-					{
-						case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
-						case 'v': condition.type = PinEntry::Condition::ReleaseVersion; break;
-						case 'c': condition.type = PinEntry::Condition::ReleaseComponent; break;
-						case 'n': condition.type = PinEntry::Condition::ReleaseCodename; break;
-						case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
-						case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
-						default:
-							fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l') "
-									"in release expression at file '%s' line %u"),
-									subExpressionType, path, lineNumber);
-					}
-					condition.value = stringToRegex(pinStringToRegexString(m[2]));
-					pinEntry.conditions.push_back(std::move(condition));
+					condition.type = PinEntry::Condition::Version;
+					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+					pinEntry.conditions.push_back(condition);
 				}
-			}
-			else if (pinType == "version")
-			{
-				PinEntry::Condition condition;
-				condition.type = PinEntry::Condition::Version;
-				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-				pinEntry.conditions.push_back(condition);
-			}
-			else if (pinType == "origin")
-			{
-				PinEntry::Condition condition;
-				condition.type = PinEntry::Condition::HostName;
-				if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+				else if (pinType == "origin")
 				{
-					pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+					PinEntry::Condition condition;
+					condition.type = PinEntry::Condition::HostName;
+					if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+					{
+						pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+					}
+					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+					pinEntry.conditions.push_back(condition);
 				}
-				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-				pinEntry.conditions.push_back(condition);
+				else
+				{
+					fatal2(__("invalid pin type '%s' (should be one of 'release', 'version', 'origin')"), pinType);
+				}
 			}
-			else
-			{
-				fatal2(__("invalid pin type '%s' (should be one of 'release', 'version', 'origin') "
-						"at file '%s' line %u"), pinType, path, lineNumber);
+
+			{ // processing third line
+				getNextLine();
+				if (file.eof())
+				{
+					fatal2(__("no priority line"));
+				}
+
+				static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
+				if (!regex_match(line, m, priorityRegex))
+				{
+					fatal2(__("invalid priority line"));
+				}
+
+				try
+				{
+					pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
+				}
+				catch (boost::bad_lexical_cast&)
+				{
+					fatal2(__("invalid integer '%s'"), string(m[1]));
+				}
 			}
+
+			// adding to storage
+			settings.push_back(std::move(pinEntry));
 		}
-
-		{ // processing third line
-			getNextLine();
-			if (file.eof())
-			{
-				fatal2(__("no priority line at file '%s' line %u"), path, lineNumber);
-			}
-
-			static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
-			if (!regex_match(line, m, priorityRegex))
-			{
-				fatal2(__("invalid priority line at file '%s' line %u"), path, lineNumber);
-			}
-
-			try
-			{
-				pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
-			}
-			catch (boost::bad_lexical_cast&)
-			{
-				fatal2(__("invalid integer '%s'"), string(m[1]));
-			}
-		}
-
-		// adding to storage
-		settings.push_back(std::move(pinEntry));
+	}
+	catch (Exception&)
+	{
+		fatal2(__("(at the file '%s', line %u)"), path, lineNumber);
 	}
 }
 
