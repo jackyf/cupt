@@ -691,12 +691,12 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 				{
 					bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
 					(warnOnly ? warn2< string, string > : fatal2< string, string >)
-							(__("release '%s' has expired (expiry time '%s')"), alias, result->validUntilDate);
+							(__("the release '%s' has expired (expiry time '%s')"), alias, result->validUntilDate);
 				}
 			}
 			else
 			{
-				warn2(__("unable to parse expiry time '%s' in release '%s'"),
+				warn2(__("unable to parse the expiry time '%s' in the release '%s'"),
 						result->validUntilDate, alias);
 			}
 		}
