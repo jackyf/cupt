@@ -724,9 +724,11 @@ static string colorizeByActionType(const Colorizer& colorizer,
 	switch (actionType)
 	{
 		case WA::Install: color = Colorizer::Cyan; break;
-		case WA::Remove: color = Colorizer::Yellow; break;
+		#pragma GCC diagnostic ignored "-Wswitch"
+		case WA::Remove: case fakeAutoRemove: color = Colorizer::Yellow; break;
 		case WA::Upgrade: color = Colorizer::Green; break;
-		case WA::Purge: color = Colorizer::Red; break;
+		case WA::Purge: case fakeAutoPurge: color = Colorizer::Red; break;
+		#pragma GCC diagnostic pop
 		case WA::Downgrade: color = Colorizer::Magenta; break;
 		case WA::Configure: color = Colorizer::Blue; break;
 		default: ;
