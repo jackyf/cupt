@@ -461,7 +461,7 @@ void PinInfo::init()
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error while parsing preferences"));
+		fatal2(__("unable to parse preferences"));
 	}
 }
 
