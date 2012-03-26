@@ -671,15 +671,6 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 		fatal2(__("unable to parse the release '%s'"), alias);
 	}
 
-	if (result->vendor.empty())
-	{
-		warn2(__("no vendor specified in release '%s'"), alias);
-	}
-	if (result->archive.empty())
-	{
-		warn2(__("no archive specified in release '%s'"), alias);
-	}
-
 	{ // checking Valid-Until
 		if (!result->validUntilDate.empty())
 		{
