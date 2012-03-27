@@ -49,7 +49,7 @@ void SnapshotsWorker::__delete_temporary(const string& directory, bool warnOnly)
 	{
 		if (warnOnly)
 		{
-			warn2("unable to remove partial snapshot directory '%s'", directory);
+			warn2(__("unable to remove partial snapshot directory '%s'"), directory);
 		}
 		else
 		{
