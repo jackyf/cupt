@@ -50,7 +50,7 @@ void ConfigParser::parse(const string& path)
 	}
 	catch (Exception&)
 	{
-		fatal2(__("unable to parse config file '%s'"), path);
+		fatal2(__("unable to parse the config file '%s'"), path);
 	}
 }
 
