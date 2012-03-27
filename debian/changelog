@@ -22,6 +22,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
       - New option 'cupt::resolver::score::removal-of-autoinstalled'.
       - Lowed a bit the default value of the option
         'cupt::resolver::score::removal'.
+      - Parsing configuration files: fixed ignoring the incorrect syntax
+        before the end of file in some cases.
     - download/progresses/console:
       - Status line: leave the cursor at the end of line so anynchronous
         warning and error messages are printed on the next line, not over the

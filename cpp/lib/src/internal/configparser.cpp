@@ -47,6 +47,10 @@ void ConfigParser::parse(const string& path)
 	try
 	{
 		__statements();
+		if (__current != __end)
+		{
+			__error_out();
+		}
 	}
 	catch (Exception&)
 	{
