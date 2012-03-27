@@ -288,8 +288,6 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 			if (!cachefiles::verifySignature(*_config, targetPath, longAlias))
 			{
-				warn2(__("signature verification for '%s' failed"), longAlias);
-
 				if (!_config->getBool("cupt::update::keep-bad-signatures"))
 				{
 					// for compatibility with APT tools delete the downloaded file
