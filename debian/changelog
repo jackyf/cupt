@@ -24,6 +24,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         'cupt::resolver::score::removal'.
       - Parsing configuration files: fixed ignoring the incorrect syntax
         before the end of file in some cases.
+      - Parsing configuration files: in the case of a syntax error print the
+        line number and character number instead of the part of context string.
     - download/progresses/console:
       - Status line: leave the cursor at the end of line so anynchronous
         warning and error messages are printed on the next line, not over the

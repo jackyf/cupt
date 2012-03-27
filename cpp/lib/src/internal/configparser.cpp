@@ -41,7 +41,7 @@ void ConfigParser::parse(const string& path)
 
 	__option_prefix = "";
 	__errors.clear();
-	__current = block.begin();
+	__current = __begin = block.begin();
 	__end = block.end();
 	__skip_spaces_and_comments();
 	try
@@ -281,14 +281,16 @@ void ConfigParser::__error_out()
 			std::back_inserter(lexemDescriptions), __get_lexem_description);
 	string errorDescription = join(" or ", lexemDescriptions);
 
-	ssize_t contextLength = 40;
-	if (__end - __current < contextLength)
+	size_t lineNumber = std::count(__begin, __current, '\n') + 1;
+	auto lastEndLine = __current;
+	while (lastEndLine >= __begin && *lastEndLine != '\n')
 	{
-		contextLength = __end - __current;
+		--lastEndLine;
 	}
-	string context(__current, __current + contextLength);
+	size_t charNumber = __current - lastEndLine;
 
-	fatal2(__("syntax error: expected: %s before '%s'"), errorDescription, context);
+	fatal2(__("syntax error: line %u, character %u: expected: %s"),
+			lineNumber, charNumber, errorDescription);
 }
 
 } // namespace
