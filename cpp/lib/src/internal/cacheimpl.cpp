@@ -440,7 +440,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const 
 	{
 		auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
 		cachedValue = cachefiles::getReleaseInfo(config, path, alias);
-		cachedValue->verified = cachefiles::verifySignature(config, path);
+		cachedValue->verified = cachefiles::verifySignature(config, path, alias);
 	}
 	if (!cachedValue)
 	{

@@ -286,7 +286,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 				return moveError;
 			}
 
-			if (!cachefiles::verifySignature(*_config, targetPath))
+			if (!cachefiles::verifySignature(*_config, targetPath, longAlias))
 			{
 				warn2(__("signature verification for '%s' failed"), longAlias);
 

@@ -295,7 +295,7 @@ pair< string, string > Cache::getLocalizedDescriptions(const shared_ptr< const B
 // static
 bool Cache::verifySignature(const shared_ptr< const Config >& config, const string& path)
 {
-	return internal::cachefiles::verifySignature(*config, path);
+	return internal::cachefiles::verifySignature(*config, path, path);
 }
 
 string Cache::getPathOfCopyright(const shared_ptr< const BinaryVersion >& version)
