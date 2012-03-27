@@ -56,7 +56,7 @@ Logger::Logger(const Config& config)
 		__file = new File(path, "a", openError);
 		if (!openError.empty())
 		{
-			fatal2(__("unable to open the log file '%s': %s"), path, openError);
+			fatal2(__("unable to open the file '%s': %s"), path, openError);
 		}
 	}
 
