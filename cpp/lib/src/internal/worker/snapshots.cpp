@@ -356,16 +356,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			warn2e(__("unable to set current directory to '%s'"), snapshotsDirectory);
 		}
 
-		try
-		{
-			_run_external_command(Logger::Subsystem::Snapshots,
-					string("rm -r " + temporarySnapshotDirectory));
-		}
-		catch (...)
-		{
-			warn2(__("unable to remove the partial snapshot directory '%s'"),
-					temporarySnapshotDirectory);
-		}
+		__delete_temporary(temporarySnapshotDirectory, true);
 
 		_logger->loggedFatal2(Logger::Subsystem::Snapshots, 1,
 				format2, "error constructing system snapshot named '%s'", name);
