@@ -316,7 +316,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			if (chdir(temporarySnapshotDirectory.c_str()) == -1)
 			{
 				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
-						format2e, "unable to set current directory to '%s'", temporarySnapshotDirectory);
+						format2e, "unable to set the current directory to '%s'", temporarySnapshotDirectory);
 			}
 		}
 
@@ -336,7 +336,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			if (fchdir(currentDirectoryFd) == -1)
 			{
 				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
-						format2e, "unable to return to previous working directory");
+						format2e, "unable to return to a previous working directory");
 			}
 
 			// all done, do final move
@@ -353,13 +353,13 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		// deleting partially constructed snapshot (try)
 		if (chdir(snapshotsDirectory.c_str()) == -1)
 		{
-			warn2e(__("unable to set current directory to '%s'"), snapshotsDirectory);
+			warn2e(__("unable to set the current directory to '%s'"), snapshotsDirectory);
 		}
 
 		__delete_temporary(temporarySnapshotDirectory, true);
 
 		_logger->loggedFatal2(Logger::Subsystem::Snapshots, 1,
-				format2, "error constructing system snapshot named '%s'", name);
+				format2, "unable to construct the system snapshot '%s'", name);
 	}
 }
 
@@ -375,7 +375,7 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), newName)
 			!= snapshotNames.end())
 	{
-		fatal2(__("the snapshot named '%s' already exists"), newName);
+		fatal2(__("the snapshot '%s' already exists"), newName);
 	}
 
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
