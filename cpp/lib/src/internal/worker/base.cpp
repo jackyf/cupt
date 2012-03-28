@@ -89,12 +89,12 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			if (result == -1)
 			{
 				_logger->loggedFatal2(subsystem, level,
-						format2e, "unable to launch command '%s'", command);
+						format2e, "unable to launch the command '%s'", command);
 			}
 			else if (result)
 			{
 				_logger->loggedFatal2(subsystem, level,
-						format2, "command '%s' execution failed: %s", command, getWaitStatusDescription(result));
+						format2, "the command '%s' failed: %s", command, getWaitStatusDescription(result));
 			}
 		}
 		else try
@@ -105,7 +105,7 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			if (!errorString.empty())
 			{
 				_logger->loggedFatal2(subsystem, level,
-						format2, "unable to launch a pipe to the command '%s': %s", command, errorString);
+						format2, "unable to open the pipe '%s': %s", command, errorString);
 			}
 
 			pipeFile.put(commandInput);
