@@ -526,6 +526,11 @@ vector< string > Config::getList(const string& optionName) const
 	__builtin_unreachable();
 }
 
+bool __is_cupt_option(const string& optionName)
+{
+	return optionName.size() >= 6 && optionName.compare(0, 6, "cupt::") == 0;
+}
+
 void Config::setScalar(const string& optionName, const string& value)
 {
 	string normalizedOptionName = optionName;
@@ -551,7 +556,10 @@ void Config::setScalar(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2(__("an attempt to set the wrong scalar option '%s'"), optionName);
+		if (__is_cupt_option(optionName))
+		{
+			warn2(__("an attempt to set the wrong scalar option '%s'"), optionName);
+		}
 	}
 }
 
@@ -569,7 +577,10 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2(__("an attempt to set the wrong list option '%s'"), optionName);
+		if (__is_cupt_option(optionName))
+		{
+			warn2(__("an attempt to set the wrong list option '%s'"), optionName);
+		}
 	}
 }
 

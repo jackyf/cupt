@@ -26,6 +26,8 @@ cupt (2.5.0~) UNRELEASED; urgency=low
         before the end of file in some cases.
       - Parsing configuration files: in the case of a syntax error print the
         line number and character number instead of the part of context string.
+      - 'setScalar', 'setList': don't print warnings anymore for unknown
+        non-Cupt-specific options (those which names don't start with 'cupt::')
     - download/progresses/console:
       - Status line: leave the cursor at the end of line so anynchronous
         warning and error messages are printed on the next line, not over the
