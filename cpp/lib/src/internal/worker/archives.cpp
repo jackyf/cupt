@@ -48,7 +48,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 			// a dangling symlink
 			if (unlink(debPath.c_str()) == -1)
 			{
-				warn2e(__("unable to remove dangling APT compatibility symbolic link '%s'"), debPath);
+				warn2e(__("unable to remove the dangling APT compatibility symbolic link '%s'"), debPath);
 			}
 		}
 		else
@@ -67,7 +67,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 				{
 					if (symlink(pathBasename.c_str(), correctedPath.c_str()) == -1)
 					{
-						fatal2e(__("unable to create APT compatibility symbolic link '%s' -> '%s'"),
+						fatal2e(__("unable to create the APT compatibility symbolic link '%s' -> '%s'"),
 								correctedPath, pathBasename);
 					}
 				}
@@ -150,11 +150,11 @@ void ArchivesWorker::deleteArchive(const string& path)
 	auto archivesDirectory = _get_archives_directory();
 	if (path.compare(0, archivesDirectory.size(), archivesDirectory))
 	{
-		fatal2(__("path '%s' lies outside archives directory '%s'"), path, archivesDirectory);
+		fatal2(__("the path '%s' lies outside the archives directory '%s'"), path, archivesDirectory);
 	}
 	if (path.find("/../") != string::npos)
 	{
-		fatal2(__("path '%s' contains at least one '/../' substring"), path);
+		fatal2(__("the path '%s' contains at least one '/../' substring"), path);
 	}
 
 	if (!_config->getBool("cupt::worker::simulate"))
