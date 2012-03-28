@@ -162,7 +162,7 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 
 	if (!__desired_state)
 	{
-		fatal2(__("worker desired state is not given"));
+		fatal2(__("worker: the desired state is not given"));
 	}
 
 	const bool purge = _config->getBool("cupt::worker::purge");

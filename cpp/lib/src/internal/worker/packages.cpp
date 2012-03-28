@@ -993,7 +993,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
 	{
-		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "worker desired state is not given");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "worker: the desired state is not given");
 	}
 
 	bool debugging = _config->getBool("debug::worker");
