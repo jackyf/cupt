@@ -75,7 +75,7 @@ void createTextFile(const string& path, const vector< string >& lines,
 		if (!openError.empty())
 		{
 			logger->loggedFatal2(Logger::Subsystem::Snapshots, 3,
-					format2, "unable to open the file '%s' for writing: %s", path, openError);
+					format2, "unable to open the file '%s': %s", path, openError);
 		}
 
 		FORIT(lineIt, lines)
