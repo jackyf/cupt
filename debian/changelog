@@ -62,6 +62,7 @@ cupt (2.5.0~) UNRELEASED; urgency=low
       - User-Agent now has a libcupt-specific suffix.
     - curl:
       - User-Agent now has a libcupt-specific suffix. (Closes: #663381)
+  * Improvements in the error and warning messages.
   * debian:
     - libcupt2-0.shlibs: added with an initial value of 2.3.0~rc1.
     - shlibs.local: added as an alias to above.
