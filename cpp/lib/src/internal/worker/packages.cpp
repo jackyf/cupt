@@ -1356,11 +1356,11 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 				auto downloadInfo = version->getDownloadInfo();
 
-				// we need at least one real URI
+				// we need at least one real uri
 				if (downloadInfo.empty())
 				{
 					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-							format2, "no available download URIs for %s %s", packageName, versionString);
+							format2, "no available download uris for %s %s", packageName, versionString);
 				}
 
 				// paths
@@ -1407,7 +1407,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				{
 					if (!fs::fileExists(downloadPath))
 					{
-						return __("unable to find downloaded file");
+						return __("unable to find the downloaded file");
 					}
 					if (!version->file.hashSums.verify(downloadPath))
 					{
@@ -1625,7 +1625,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		{
 			// we failed to fit in limit
 			_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-					format2, "unable to fit in archives space limit '%zu', best try is '%zu'",
+					format2, "unable to fit in the archives space limit '%zu', best try is '%zu'",
 					archivesSpaceLimit, maxDownloadAmount);
 		}
 	}
@@ -1945,7 +1945,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				if (!errorString.empty())
 				{
 					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-							format2, "unable to open temporary file '%s': %s", tempPath, errorString);
+							format2, "unable to open the file '%s': %s", tempPath, errorString);
 				}
 
 				// filling new info
