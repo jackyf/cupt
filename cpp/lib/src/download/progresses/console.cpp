@@ -85,11 +85,11 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	bool statusIsModified = false;
 	if (oldStatus == -1)
 	{
-		warn2e("unable to get standard error stream status flags: fcntl failed");
+		warn2e(__("%s() failed"), "fcntl");
 	}
 	else if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus | O_NONBLOCK) == -1)
 	{
-		warn2e("unable to make standard error stream non-blocking: fcntl failed");
+		warn2e(__("%s() failed"), "fcntl");
 	}
 	else
 	{
@@ -102,14 +102,14 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	{
 		if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus) == -1)
 		{
-			warn2e("unable to make standard error stream blocking again: fcntl failed");
+			warn2e(__("%s() failed"), "fcntl");
 		}
 	}
 }
 
 void ConsoleProgressImpl::termClean()
 {
-	nonBlockingPrint(string(getTerminalWidth(), ' ') + "\r");
+	nonBlockingPrint(string("\r") + string(getTerminalWidth(), ' ') + "\r");
 }
 
 void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendage)
@@ -125,7 +125,6 @@ void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendag
 		outputString += s + string(allowedWidth - s.size(), ' ');
 	}
 	outputString += rightAppendage;
-	outputString += "\r";
 	nonBlockingPrint(outputString);
 }
 

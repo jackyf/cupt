@@ -28,7 +28,7 @@ namespace cache {
 
 shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
-	auto v = new BinaryVersion;
+	auto v = std::make_shared< BinaryVersion >();
 
 	Source source;
 
@@ -146,21 +146,21 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal2("version string isn't defined");
+		fatal2(__("version string isn't defined"));
 	}
 	if (v->architecture.empty())
 	{
-		warn2("package %s, version %s: architecture isn't defined, setting it to 'all'",
+		warn2(__("binary package %s, version %s: architecture isn't defined, setting it to 'all'"),
 				v->packageName, v->versionString);
 		v->architecture = "all";
 	}
 	v->sources.push_back(source);
 	if (!v->isInstalled() && v->file.hashSums.empty())
 	{
-		fatal2("no hash sums specified");
+		fatal2(__("no hash sums specified"));
 	}
 
-	return shared_ptr< BinaryVersion >(v);
+	return v;
 }
 
 bool BinaryVersion::isInstalled() const
@@ -173,7 +173,7 @@ bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 	shared_ptr< const BinaryVersion > o = dynamic_pointer_cast< const BinaryVersion >(other);
 	if (!o)
 	{
-		fatal2("internal error: areHashesEqual: non-binary version parameter");
+		fatal2i("areHashesEqual: non-binary version parameter");
 	}
 	return file.hashSums.match(o->file.hashSums);
 }

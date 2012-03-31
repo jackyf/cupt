@@ -1,3 +1,74 @@
+cupt (2.5.0~) UNRELEASED; urgency=low
+
+  * console:
+    - 'rdepends':
+      - Small speed-up by using more aggressive caching.
+    - Managing packages:
+      - Action preview prompt: moved auto-removed packages to a new
+        'no longer needed' section.
+      - Action summary: don't print zero-sized parts.
+  * lib:
+    - system/worker:
+      - Updating release and index data: use the information about Translation
+        files from Release files if provided.
+      - Support Translation diffs.
+    - download/manager:
+      - Avoid using new[]() in processing socket messages.
+      - Use std::queue instead of system pipe for the worker's internal
+        message queue.
+    - config:
+      - New option 'cupt::resolver::no-autoremove-if-rdepends-exist'.
+        (Closes: #658981)
+      - New option 'cupt::resolver::score::removal-of-autoinstalled'.
+      - Lowed a bit the default value of the option
+        'cupt::resolver::score::removal'.
+      - Parsing configuration files: fixed ignoring the incorrect syntax
+        before the end of file in some cases.
+      - Parsing configuration files: in the case of a syntax error print the
+        line number and character number instead of the part of context string.
+      - 'setScalar', 'setList': don't print warnings anymore for unknown
+        non-Cupt-specific options (those which names don't start with 'cupt::')
+    - download/progresses/console:
+      - Status line: leave the cursor at the end of line so anynchronous
+        warning and error messages are printed on the next line, not over the
+        status line.
+    - cache/package:
+      - When throwing away a duplicate version with different hash sums, show
+        also left origins in the warning message.
+    - system/resolvers/native:
+      - Score calculation: for removals of packages which are not manually
+        installed, apply also the 'removal-of-autoinstalled' score.
+        (Closes: #662027)
+      - Fixed the memory leak. It was introduced in 2.0.0~alpha4.
+      - Reverted skipping solutions if an auto-removed element is (partially)
+        sticked. It could introduce very long delays in the solution
+        calculations in some rare cases.
+    - cache:
+      - Constructor: don't parse release files more than once.
+      - Constructor: parsing release, index and localization files: use
+        an alias instead of the full path in the error and warning messages.
+      - Constructor: parsing index localization files: print an error when
+        the file exists but can't be opened.
+      - Parsing release files: don't warn anymore if the 'archive' or 'vendor'
+        fields are missing.
+    - Don't include a not exported header from cupt/common.hpp, making a
+      development binary package usable again. Fixes a regression since
+      2.3.0~rc1.
+    - Remove accidentally included 'using std::string' from a global namespace.
+      Fixes a regression since 2.3.0~rc1.
+  * downloadmethods:
+    - wget:
+      - Use threads instead of explicit fork()s.
+      - User-Agent now has a libcupt-specific suffix.
+    - curl:
+      - User-Agent now has a libcupt-specific suffix. (Closes: #663381)
+  * Improvements in the error and warning messages.
+  * debian:
+    - libcupt2-0.shlibs: added with an initial value of 2.3.0~rc1.
+    - shlibs.local: added as an alias to above.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 02 Feb 2012 11:26:19 +0200
+
 cupt (2.4.1) unstable; urgency=medium
 
   * console:

@@ -48,11 +48,22 @@ struct LocalizationDownloadRecord2
 	string filePart;
 	string localPath;
 };
+// TODO: remove when oldstable >> wheezy
 vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
 		const Config&, const IndexEntry&);
 
-bool verifySignature(const Config&, const string& releaseFilePath);
-shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config&, const string& path);
+struct LocalizationDownloadRecord3
+{
+	string localPath;
+	string language;
+	vector< FileDownloadRecord > fileDownloadRecords;
+};
+vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
+		const Config&, const IndexEntry&);
+
+bool verifySignature(const Config&, const string& path, const string& alias);
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config&,
+		const string& path, const string& alias);
 
 }
 }

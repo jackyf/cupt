@@ -38,7 +38,7 @@ int snapshot(Context& context)
 	auto variables = parseOptions(context, noOptions, arguments);
 	if (arguments.empty())
 	{
-		fatal2("the action is not specified");
+		fatal2(__("the action is not specified"));
 	}
 	string action = arguments[0];
 	arguments.erase(arguments.begin());
@@ -59,7 +59,7 @@ int snapshot(Context& context)
 	{
 		if (arguments.empty())
 		{
-			fatal2("no snapshot name specified");
+			fatal2(__("no snapshot name specified"));
 		}
 		string snapshotName = arguments[0];
 
@@ -83,12 +83,12 @@ int snapshot(Context& context)
 	{
 		if (arguments.empty())
 		{
-			fatal2("no previous snapshot name specified");
+			fatal2(__("no previous snapshot name specified"));
 		}
 		string oldSnapshotName = arguments[0];
 		if (arguments.size() < 2)
 		{
-			fatal2("no new snapshot name specified");
+			fatal2(__("no new snapshot name specified"));
 		}
 		string newSnapshotName = arguments[1];
 
@@ -101,7 +101,7 @@ int snapshot(Context& context)
 	}
 	else
 	{
-		fatal2("unsupported action '%s'", action);
+		fatal2(__("unsupported action '%s'"), action);
 	}
 
 	return 0;

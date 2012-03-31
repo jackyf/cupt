@@ -57,7 +57,7 @@ int search(Context& context)
 
 	if (patterns.empty())
 	{
-		fatal2("no search patterns specified");
+		fatal2(__("no search patterns specified"));
 	}
 
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
@@ -77,7 +77,7 @@ int search(Context& context)
 		}
 		catch (regex_error&)
 		{
-			fatal2("regular expression '%s' is not valid", pattern);
+			fatal2(__("invalid regular expression '%s'"), pattern);
 		}
 	});
 
@@ -120,7 +120,6 @@ int search(Context& context)
 			{
 				bool matched = true;
 
-				// TODO: getLocalizedDescriptions() perfomance fixes
 				auto descriptions = cache->getLocalizedDescriptions(v);
 				const string& shortDescription = descriptions.first.empty() ? v->shortDescription : descriptions.first;
 				const string& longDescription = descriptions.second.empty() ? v->longDescription : descriptions.second;

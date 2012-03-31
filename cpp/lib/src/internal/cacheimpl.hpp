@@ -37,6 +37,7 @@ using std::list;
 using std::unordered_map;
 
 using boost::xpressive::sregex;
+using boost::xpressive::smatch;
 
 // this struct is solely for system::State
 class CacheImpl
@@ -63,17 +64,20 @@ class CacheImpl
 	mutable unordered_map< string, vector< shared_ptr< const BinaryVersion > > > getSatisfyingVersionsCache;
 	shared_ptr< PinInfo > pinInfo;
 	mutable map< shared_ptr< const Version >, ssize_t > pinCache;
+	map< string, shared_ptr< ReleaseInfo > > releaseInfoCache;
+	smatch* __smatch_ptr;
 
 	shared_ptr< Package > newSourcePackage(const string&) const;
 	shared_ptr< Package > newBinaryPackage(const string&) const;
 	shared_ptr< Package > preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
 			unordered_map< string, shared_ptr< Package > >&, const string&,
 			decltype(&CacheImpl::newBinaryPackage)) const;
+	shared_ptr< ReleaseInfo > getReleaseInfo(const Config&, const IndexEntry&);
 	void parseSourceList(const string& path);
 	void processIndexEntry(const IndexEntry&, const ReleaseLimits&);
 	void processIndexFile(const string& path, IndexEntry::Type category,
-			shared_ptr< const ReleaseInfo >);
-	void processTranslationFile(const string& path);
+			shared_ptr< const ReleaseInfo >, const string&);
+	void processTranslationFile(const string& path, const string&);
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const Relation&) const;
  public:
 	shared_ptr< const Config > config;
@@ -89,13 +93,15 @@ class CacheImpl
 			releaseInfoAndFileStorage;
 	ExtendedInfo extendedInfo;
 
+	CacheImpl();
+	~CacheImpl();
 	void parseSourcesLists();
 	void processIndexEntries(bool, bool);
 	void parsePreferences();
 	void parseExtendedStates();
 	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;
 	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
-	ssize_t getPin(const shared_ptr< const Version >&, const string& installedVersionString) const;
+	ssize_t getPin(const shared_ptr< const Version >&, const std::function< string () >&) const;
 	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
 	void processProvides(const string*, const char*, const char*);
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const RelationExpression&) const;

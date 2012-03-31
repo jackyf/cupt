@@ -55,12 +55,19 @@ struct BasicVertex;
 typedef BasicVertex Element;
 struct BasicVertex
 {
+ private:
+	static uint32_t __next_id;
+ public:
+	const uint32_t id;
 	virtual string toString() const = 0;
 	virtual size_t getTypePriority() const;
 	virtual shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	virtual bool isAnti() const;
 	virtual const forward_list< const Element* >* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
+
+	BasicVertex();
+	virtual ~BasicVertex();
 };
 struct VersionVertex: public BasicVertex
 {
@@ -105,7 +112,7 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
-	vector< pair< const Element*, PackageEntry > > fill(
+	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
 			const map< string, shared_ptr< const BinaryVersion > >&,
 			const map< string, InitialPackageEntry >&);
 

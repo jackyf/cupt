@@ -34,7 +34,7 @@ Lock::Lock(const Config& config, const string& path)
 
 	if (__debugging)
 	{
-		debug("obtaining lock '%s'", __path.c_str());
+		debug2("obtaining lock '%s'", __path);
 	}
 	if (!__simulating)
 	{
@@ -42,7 +42,7 @@ Lock::Lock(const Config& config, const string& path)
 		__file_ptr = new File(__path, "w", errorString);
 		if (!errorString.empty())
 		{
-			fatal2("unable to open file '%s': %s", __path, errorString);
+			fatal2(__("unable to open the file '%s': %s"), __path, errorString);
 		}
 		__file_ptr->lock(LOCK_EX | LOCK_NB);
 	}
@@ -52,7 +52,7 @@ Lock::~Lock()
 {
 	if (__debugging)
 	{
-		debug("releasing lock '%s'", __path.c_str());
+		debug2("releasing lock '%s'", __path);
 	}
 	if (!__simulating)
 	{

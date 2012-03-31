@@ -56,7 +56,7 @@ Logger::Logger(const Config& config)
 		__file = new File(path, "a", openError);
 		if (!openError.empty())
 		{
-			fatal2("unable to open the log file '%s': %s", path, openError);
+			fatal2(__("unable to open the file '%s': %s"), path, openError);
 		}
 	}
 
@@ -87,7 +87,7 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 {
 	if (level == 0)
 	{
-		fatal2("internal error: logger: log: level should be >= 1");
+		fatal2i("logger: log: level should be >= 1");
 	}
 
 	if (!__enabled)
@@ -111,11 +111,6 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 	}
 }
 
-void Logger::loggedFatal(Subsystem subsystem, Level level, const string& message)
-{
-	this->log(subsystem, level, string("error: ") + message);
-	fatal2("%s", message);
-}
 
 }
 }

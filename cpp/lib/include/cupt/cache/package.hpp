@@ -31,7 +31,7 @@ class CUPT_API Package
 	mutable vector< Version::InitializationParameters > __unparsed_versions;
 	mutable vector< shared_ptr< Version > >* __parsed_versions;
 
-	CUPT_LOCAL void __merge_version(const shared_ptr< Version >&, vector< shared_ptr< Version > >& result) const;
+	CUPT_LOCAL void __merge_version(shared_ptr< Version >&&, vector< shared_ptr< Version > >& result) const;
 
 	Package(const Package&);
 	Package& operator=(const Package&);

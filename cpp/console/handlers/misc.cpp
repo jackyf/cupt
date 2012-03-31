@@ -60,7 +60,7 @@ int showBinaryVersions(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package expressions specified");
+		fatal2(__("no binary package expressions specified"));
 	}
 
 	if (!shellMode)
@@ -239,7 +239,7 @@ int showSourceVersions(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no source package expressions specified");
+		fatal2(__("no source package expressions specified"));
 	}
 
 	if (!shellMode)
@@ -292,11 +292,8 @@ int showSourceVersions(Context& context)
 			{ // download info
 				for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 				{
-					const vector< Version::FileRecord >& fileRecords = version->files[i];
-					FORIT(fileRecordIt, fileRecords)
+					for (const Version::FileRecord& fileRecord: version->files[i])
 					{
-						const Version::FileRecord& fileRecord = *fileRecordIt;
-
 						cout << SourceVersion::FileParts::strings[i] << ':' << endl;
 						p(string("  ") + __("Size"), humanReadableSizeString(fileRecord.size));
 						p("  MD5", fileRecord.hashSums[HashSums::MD5]);
@@ -344,12 +341,13 @@ int showRelations(Context& context, bool reverse)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package expressions specified");
+		fatal2(__("no binary package expressions specified"));
 	}
 
 	if (reverse)
 	{
 		Package::memoize = true;
+		Cache::memoize = true;
 	}
 
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
@@ -384,10 +382,8 @@ int showRelations(Context& context, bool reverse)
 	unordered_map< string, set< string > > reverseDependsIndex;
 	if (reverse)
 	{
-		auto packageNames = cache->getBinaryPackageNames();
-		FORIT(packageNameIt, packageNames)
+		for (const string& packageName: cache->getBinaryPackageNames())
 		{
-			const string& packageName = *packageNameIt;
 			auto package = cache->getBinaryPackage(packageName);
 			auto versions = package->getVersions();
 			for (const auto& version: versions)
@@ -434,10 +430,8 @@ int showRelations(Context& context, bool reverse)
 			if (!reverse)
 			{
 				// just plain normal dependencies
-				FORIT(relationExpressionIt, version->relations[*relationGroupIt])
+				for (const auto& relationExpression: version->relations[*relationGroupIt])
 				{
-					const RelationExpression& relationExpression = *relationExpressionIt;
-
 					cout << "  " << caption << ": " << relationExpression.toString() << endl;
 					if (recurse)
 					{
@@ -580,7 +574,7 @@ int policy(Context& context, bool source)
 	auto variables = parseOptions(context, options, arguments);
 	if (!arguments.empty() && variables.count("show-dates"))
 	{
-		fatal2("the option '--show-dates' can be used only with no package names supplied");
+		fatal2(__("the option '--show-dates' can be used only with no package names supplied"));
 	}
 
 	auto cache = context.getCache(/* source */ source, /* binary */ !source,
@@ -599,7 +593,7 @@ int policy(Context& context, bool source)
 			auto policyVersion = cache->getPolicyVersion(package);
 			if (!policyVersion)
 			{
-				fatal2("no versions available for package '%s'", packageName);
+				fatal2(__("no versions available for the package '%s'"), packageName);
 			}
 
 			cout << packageName << ':' << endl;
@@ -610,7 +604,7 @@ int policy(Context& context, bool source)
 				auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package);
 				if (!binaryPackage)
 				{
-					fatal2("internal error: binary package expected");
+					fatal2i("binary package expected");
 				}
 				auto installedVersion = binaryPackage->getInstalledVersion();
 				if (installedVersion)
@@ -769,7 +763,7 @@ int findDependencyChain(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary packages specified");
+		fatal2(__("no binary package expressions specified"));
 	}
 
 	bool installedOnly = variables.count("installed-only") || (arguments.size() == 1);
@@ -786,7 +780,7 @@ int findDependencyChain(Context& context)
 	{
 		shared_ptr< const BinaryVersion > version;
 		BinaryVersion::RelationTypes::Type dependencyType;
-		RelationExpression relationExpression;
+		const RelationExpression* relationExpressionPtr;
 	};
 	map< shared_ptr< const BinaryVersion >, PathEntry, PointerLess< const BinaryVersion > > links;
 
@@ -860,7 +854,7 @@ int findDependencyChain(Context& context)
 				cout << format2("%s %s: %s: %s",
 						pathEntry.version->packageName, pathEntry.version->versionString,
 						BinaryVersion::RelationTypes::strings[pathEntry.dependencyType],
-						pathEntry.relationExpression.toString()) << endl;
+						pathEntry.relationExpressionPtr->toString()) << endl;
 			}
 			break;
 		}
@@ -882,7 +876,8 @@ int findDependencyChain(Context& context)
 						PathEntry& newPathEntry = insertResult.first->second;
 						newPathEntry.version = version;
 						newPathEntry.dependencyType = dependencyType;
-						newPathEntry.relationExpression = *relationExpressionIt;
+						// the pointer is valid because .version is alive
+						newPathEntry.relationExpressionPtr = &*relationExpressionIt;
 
 						versions.push(newVersion);
 					}
@@ -902,7 +897,7 @@ int showScreenshotUris(Context& context)
 
 	if (arguments.empty())
 	{
-		fatal2("no binary package names specified");
+		fatal2(__("no binary package names specified"));
 	}
 
 	auto cache = context.getCache(false, true, true); // binary and installed

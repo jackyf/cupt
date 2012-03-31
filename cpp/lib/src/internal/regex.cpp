@@ -52,7 +52,7 @@ shared_ptr< sregex > stringToRegex(const string& input)
 	}
 	catch (regex_error& e)
 	{
-		fatal2("invalid regular expression '%s'", input);
+		fatal2(__("invalid regular expression '%s'"), input);
 	}
 	return result;
 }

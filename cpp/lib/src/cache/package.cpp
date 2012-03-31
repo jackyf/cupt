@@ -44,36 +44,28 @@ vector< shared_ptr< Version > > Package::_get_versions() const
 		// versions were either not parsed or parsed, but not saved
 		vector< shared_ptr< Version > > result;
 
-		try
+		vector< Version::InitializationParameters > newUnparsedVersions;
+		FORIT(unparsedVersionIt, __unparsed_versions)
 		{
-			vector< Version::InitializationParameters > newUnparsedVersions;
-			FORIT(unparsedVersionIt, __unparsed_versions)
+			Version::InitializationParameters& initParams = *unparsedVersionIt;
+			try
 			{
-				Version::InitializationParameters& initParams = *unparsedVersionIt;
-				try
+				__merge_version(_parse_version(initParams), result);
+				if (!memoize)
 				{
-					shared_ptr< Version > parsedVersion = _parse_version(initParams);
-					__merge_version(parsedVersion, result);
-					if (!memoize)
-					{
-						newUnparsedVersions.push_back(initParams);
-					}
-				}
-				catch (Exception& e)
-				{
-					warn2("error while parsing new version entry for package '%s'", initParams.packageName);
+					newUnparsedVersions.push_back(initParams);
 				}
 			}
-			if (result.empty())
+			catch (Exception& e)
 			{
-				warn2("no valid versions available, discarding the package");
+				warn2(__("error while parsing a version for the package '%s'"), initParams.packageName);
 			}
-			__unparsed_versions.swap(newUnparsedVersions);
 		}
-		catch (Exception&)
+		if (result.empty())
 		{
-			fatal2("error while parsing package info");
+			warn2(__("no valid versions available, discarding the package"));
 		}
+		__unparsed_versions.swap(newUnparsedVersions);
 
 		if (memoize)
 		{
@@ -100,7 +92,7 @@ vector< shared_ptr< const Version > > Package::getVersions() const
 	return result;
 }
 
-void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector< shared_ptr< Version > >& result) const
+void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< shared_ptr< Version > >& result) const
 {
 	if (!_is_architecture_appropriate(parsedVersion))
 	{
@@ -110,7 +102,7 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 	// merging
 	try
 	{
-		auto parsedVersionString = parsedVersion->versionString;
+		const auto& parsedVersionString = parsedVersion->versionString;
 		auto foundItem = std::find_if(result.begin(), result.end(), [&parsedVersionString](shared_ptr< const Version > elem) -> bool
 		{
 			return (elem->versionString == parsedVersionString);
@@ -119,12 +111,12 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 		if (foundItem == result.end())
 		{
 			// no such version before, just add it
-			result.push_back(parsedVersion);
+			result.push_back(std::move(parsedVersion));
 		}
 		else
 		{
 			// there is such version string
-			auto foundVersion = *foundItem;
+			const auto& foundVersion = *foundItem;
 
 			auto binaryVersion = dynamic_pointer_cast< BinaryVersion >(foundVersion);
 			if ((binaryVersion && binaryVersion->isInstalled()) || foundVersion->areHashesEqual(parsedVersion))
@@ -151,16 +143,21 @@ void Package::__merge_version(const shared_ptr< Version >& parsedVersion, vector
 			else
 			{
 				// err, no, this is different version :(
-				string info = __("package name") + ": '" + parsedVersion->packageName + "', " +
-						__("version string") + ": '" + parsedVersion->versionString + "', " +
-						__("origin") + ": '" + parsedVersion->sources[0].release->baseUri + "'";
-				warn2("throwing away duplicating version with different hash sums: %s", info);
+				vector< string > foundOrigins;
+				for (const auto& foundSource: foundVersion->sources)
+				{
+					foundOrigins.emplace_back(foundSource.release->baseUri);
+				}
+				warn2(__("throwing away the duplicate version with different hash sums: "
+						"package name: '%s', version: '%s', thrown origin: '%s', origins left: '%s'"),
+						parsedVersion->packageName, parsedVersion->versionString,
+						parsedVersion->sources[0].release->baseUri, join(", ", foundOrigins));
 			}
 		}
 	}
 	catch (Exception&)
 	{
-		fatal2("error while merging version '%s' for package '%s'",
+		fatal2(__("error while merging the version '%s' for the package '%s'"),
 				parsedVersion->versionString, parsedVersion->packageName);
 	};
 }

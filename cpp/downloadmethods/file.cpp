@@ -39,8 +39,7 @@ class FileMethod: public download::Method
 		File targetFile(targetPath, "a", openError);
 		if (!openError.empty())
 		{
-			return sf("unable to open file '%s' for appending: %s",
-					targetPath.c_str(), openError.c_str());
+			return format2("unable to open the file '%s' for appending: %s", targetPath, openError);
 		}
 		auto totalBytes = targetFile.tell();
 		callback(vector< string > { "downloading",
@@ -50,7 +49,7 @@ class FileMethod: public download::Method
 			struct stat st;
 			if (::stat(sourcePath.c_str(), &st) == -1)
 			{
-				fatal("unable to stat() file '%s': EEE", sourcePath.c_str());
+				fatal2e(__("%s() failed: '%s'"), "stat", sourcePath);
 			}
 			callback(vector< string > { "expected-size",
 					lexical_cast< string >(st.st_size) });
@@ -81,8 +80,7 @@ class FileMethod: public download::Method
 		File sourceFile(sourcePath, "r", openError);
 		if (!openError.empty())
 		{
-			return sf("unable to open file '%s' for reading: %s",
-					sourcePath.c_str(), openError.c_str());
+			return format2("unable to open the file '%s' for reading: %s", sourcePath, openError);
 		}
 
 		if (protocol == "copy")
@@ -95,14 +93,13 @@ class FileMethod: public download::Method
 			unlink(targetPath.c_str()); // yep, no error handling;
 			if (symlink(sourcePath.c_str(), targetPath.c_str()) == -1)
 			{
-				return sf("unable to create symbolic link '%s' -> '%s': EEE",
-						targetPath.c_str(), sourcePath.c_str());
+				return format2e("unable to create symbolic link '%s' -> '%s'", targetPath, sourcePath);
 			}
 			return string();
 		}
 		else
 		{
-			fatal("internal error: a wrong scheme '%s' for the 'file' download method", protocol.c_str());
+			fatal2i("a wrong scheme '%s' for the 'file' download method", protocol);
 			return string(); // unreachable
 		}
 	}

@@ -31,7 +31,7 @@ namespace cache {
 
 shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
-	auto v = new SourceVersion;
+	auto v = std::make_shared< SourceVersion >();
 
 	Source source;
 
@@ -57,18 +57,16 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 		{
 			if (tagValue.first != tagValue.second)
 			{
-				fatal2("unexpected non-empty tag value '%s'", string(tagValue));
+				fatal2(__("unexpected non-empty tag value '%s'"), string(tagValue));
 			}
 			string block;
 			parser.parseAdditionalLines(block);
 			auto lines = internal::split('\n', block);
-			FORIT(lineIt, lines)
+			for (const string& line: lines)
 			{
-				const string& line = *lineIt;
-
 				if (!regex_match(line, lineMatch, checksumsLineRegex))
 				{
-					fatal2("malformed line '%s'", line);
+					fatal2(__("malformed line '%s'"), line);
 				}
 				const string name = lineMatch[3];
 
@@ -159,17 +157,17 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal2("version string isn't defined");
+		fatal2(__("version string isn't defined"));
 	}
 	if (v->architectures.empty())
 	{
-		warn2("source package %s, version %s: architectures aren't defined, setting them to 'all'",
+		warn2(__("source package %s, version %s: architectures aren't defined, setting them to 'all'"),
 				v->packageName, v->versionString);
 		v->architectures.push_back("all");
 	}
 	// no need to verify hash sums for emptyness, it's guarantted by parsing algorithm above
 
-	return shared_ptr< SourceVersion >(v);
+	return v;
 }
 
 bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) const
@@ -177,7 +175,7 @@ bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 	shared_ptr< const SourceVersion > o = dynamic_pointer_cast< const SourceVersion >(other);
 	if (!o)
 	{
-		fatal2("internal error: areHashesEqual: non-source version parameter");
+		fatal2i("areHashesEqual: non-source version parameter");
 	}
 	for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 	{

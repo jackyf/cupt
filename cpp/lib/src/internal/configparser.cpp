@@ -33,7 +33,7 @@ void ConfigParser::parse(const string& path)
 	File file(path, "r", openError);
 	if (!openError.empty())
 	{
-		fatal2("unable to open file '%s': %s", path, openError);
+		fatal2(__("unable to open the file '%s': %s"), path, openError);
 	}
 
 	string block;
@@ -41,16 +41,20 @@ void ConfigParser::parse(const string& path)
 
 	__option_prefix = "";
 	__errors.clear();
-	__current = block.begin();
+	__current = __begin = block.begin();
 	__end = block.end();
 	__skip_spaces_and_comments();
 	try
 	{
 		__statements();
+		if (__current != __end)
+		{
+			__error_out();
+		}
 	}
 	catch (Exception&)
 	{
-		fatal2("unable to parse config file '%s'", path);
+		fatal2(__("unable to parse the config file '%s'"), path);
 	}
 }
 
@@ -265,7 +269,7 @@ string ConfigParser::__get_lexem_description(Lexem::Type type)
 		case Lexem::Value: return __("option value (quoted string)");
 		case Lexem::Name: return __("option name (letters, numbers, slashes, points, dashes, double colons allowed)");
 		default:
-			fatal2("internal error: no description for lexem #%d", int(type));
+			fatal2i("no description for lexem #%d", int(type));
 	}
 	return string(); // unreachable
 }
@@ -277,14 +281,16 @@ void ConfigParser::__error_out()
 			std::back_inserter(lexemDescriptions), __get_lexem_description);
 	string errorDescription = join(" or ", lexemDescriptions);
 
-	ssize_t contextLength = 40;
-	if (__end - __current < contextLength)
+	size_t lineNumber = std::count(__begin, __current, '\n') + 1;
+	auto lastEndLine = __current;
+	while (lastEndLine >= __begin && *lastEndLine != '\n')
 	{
-		contextLength = __end - __current;
+		--lastEndLine;
 	}
-	string context(__current, __current + contextLength);
+	size_t charNumber = __current - lastEndLine;
 
-	fatal2("a syntax error: expected: %s before '%s'", errorDescription, context);
+	fatal2(__("syntax error: line %u, character %u: expected: %s"),
+			lineNumber, charNumber, errorDescription);
 }
 
 } // namespace

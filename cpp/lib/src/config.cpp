@@ -92,6 +92,8 @@ void ConfigImpl::initializeVariables()
 		{ "gpgv::trustedkeyring", "/var/lib/cupt/trusted.gpg" },
 		{ "quiet", "0" }, // bool, '0' instead of 'no' for apt-listchanges (#604130)
 
+		// TODO/API break/: remove unused APT scalar&list variables as don't
+		// warn about unknown variables anymore
 		// unused APT vars
 		{ "apt::cache-limit", "0" },
 		{ "apt::get::show-upgraded", "no" },
@@ -164,7 +166,8 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::track-reasons", "no" },
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "-5" },
-		{ "cupt::resolver::score::removal", "-1500" },
+		{ "cupt::resolver::score::removal", "-1800" },
+		{ "cupt::resolver::score::removal-of-autoinstalled", "1200" },
 		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
@@ -256,6 +259,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::http::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::ftp::methods", vector< string > { "curl", "wget" } },
+		{ "cupt::resolver::no-autoremove-if-rdepends-exist", {} },
 	};
 }
 
@@ -282,7 +286,7 @@ void ConfigImpl::readConfigs(Config* config)
 	{
 		if (value.size() < 2)
 		{
-			fatal2("internal error: unquoted simple value '%s'", value);
+			fatal2i("unquoted simple value '%s'", value);
 		}
 		return string(value.begin() + 1, value.end() - 1);
 	};
@@ -353,7 +357,7 @@ void ConfigImpl::readConfigs(Config* config)
 			}
 			catch (Exception&)
 			{
-				warn2("skipped configuration file '%s'", *configFileIt);
+				warn2(__("skipped the configuration file '%s'"), *configFileIt);
 			}
 		}
 	}
@@ -367,7 +371,7 @@ static string qx(const string& shellCommand)
 	File file(shellCommand, "pr", openError); // reading from pipe
 	if (!openError.empty())
 	{
-		fatal2("unable to open pipe '%s': %s", shellCommand, openError);
+		fatal2(__("unable to open the pipe '%s': %s"), shellCommand, openError);
 	}
 	string result;
 	string block;
@@ -444,7 +448,7 @@ string Config::getString(const string& optionName) const
 	}
 	else
 	{
-		fatal2("an attempt to get wrong scalar option '%s'", optionName);
+		fatal2(__("an attempt to get the wrong scalar option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -500,7 +504,7 @@ ssize_t Config::getInteger(const string& optionName) const
 		}
 		catch (boost::bad_lexical_cast&)
 		{
-			fatal2("unable to convert '%s' to number", source);
+			fatal2(__("unable to convert '%s' to a number"), source);
 		}
 		return result; // we'll never return default value here
 	}
@@ -519,9 +523,14 @@ vector< string > Config::getList(const string& optionName) const
 	}
 	else
 	{
-		fatal2("an attempt to get wrong list option '%s'", optionName);
+		fatal2(__("an attempt to get the wrong list option '%s'"), optionName);
 	}
 	__builtin_unreachable();
+}
+
+bool __is_cupt_option(const string& optionName)
+{
+	return optionName.size() >= 6 && optionName.compare(0, 6, "cupt::") == 0;
 }
 
 void Config::setScalar(const string& optionName, const string& value)
@@ -549,7 +558,10 @@ void Config::setScalar(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2("an attempt to set wrong scalar option '%s'", optionName);
+		if (__is_cupt_option(optionName))
+		{
+			warn2(__("an attempt to set the wrong scalar option '%s'"), optionName);
+		}
 	}
 }
 
@@ -567,7 +579,10 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2("an attempt to set wrong list option '%s'", optionName);
+		if (__is_cupt_option(optionName))
+		{
+			warn2(__("an attempt to set the wrong list option '%s'"), optionName);
+		}
 	}
 }
 

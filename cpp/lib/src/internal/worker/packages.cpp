@@ -136,8 +136,7 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 				{
 					if (debugging)
 					{
-						debug("detected pseudo-essential package '%s'",
-								(*satisfyingVersionIt)->packageName.c_str());
+						debug2("detected pseudo-essential package '%s'", (*satisfyingVersionIt)->packageName);
 					}
 					toProcess.push(*satisfyingVersionIt);
 				}
@@ -408,9 +407,9 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 
 			if (gi.debugging)
 			{
-				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString().c_str(),
-						masterActionPtr->toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
-						relationExpressionIt->toString().c_str());
+				debug2("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString(),
+						masterActionPtr->toString(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
+						relationExpressionIt->toString());
 			}
 		}
 	}
@@ -626,9 +625,9 @@ void __move_edge(GraphAndAttributes& gaa,
 {
 	if (debugging)
 	{
-		debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
-				fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
-				toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
+		debug2("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
+				fromPredecessorPtr->toString(), fromSuccessorPtr->toString(),
+				toPredecessorPtr->toString(), toSuccessorPtr->toString());
 	}
 
 	GraphAndAttributes::Attribute& toAttribute = gaa.attributes[make_pair(toPredecessorPtr, toSuccessorPtr)];
@@ -680,9 +679,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
-					debug("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
-							(*predecessorVertexPtrIt)->toString().c_str(), (*successorVertexPtrIt)->toString().c_str(),
-							mediatorPackageName.c_str());
+					debug2("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
+							(*predecessorVertexPtrIt)->toString(), (*successorVertexPtrIt)->toString(), mediatorPackageName);
 				}
 
 			}
@@ -746,8 +744,8 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		gaa.graph.deleteEdgeFromPointers(fromPredecessorPtr, fromSuccessorPtr);
 		if (debugging)
 		{
-			debug("deleting the edge '%s' -> '%s'",
-					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str());
+			debug2("deleting the edge '%s' -> '%s'",
+					fromPredecessorPtr->toString(), fromSuccessorPtr->toString());
 		}
 	};
 
@@ -833,8 +831,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 		}
 		if (debugging)
 		{
-			debug("adjusting the pair '%s' -> '%s':",
-					fromPtr->toString().c_str(), toPtr->toString().c_str());
+			debug2("adjusting the pair '%s' -> '%s':", fromPtr->toString(), toPtr->toString());
 		}
 
 		std::list< const InnerAction* > notFirstActions = { toPtr };
@@ -857,8 +854,8 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 					gaa.graph.addEdgeFromPointers(*predecessorIt, fromPtr);
 					if (debugging)
 					{
-						debug("setting priority link: '%s' -> '%s'",
-								(*predecessorIt)->toString().c_str(), fromPtr->toString().c_str());
+						debug2("setting priority link: '%s' -> '%s'",
+								(*predecessorIt)->toString(), fromPtr->toString());
 					}
 				}
 			}
@@ -898,8 +895,8 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			if (!s.empty())
 			{
 				auto priority = __get_action_group_priority(preActionGroup);
-				debug("toposort: %s action group: '%s' (priority: %zd)",
-						(closing ? "selected" : "opened"), join(", ", s).c_str(), priority);
+				debug2("toposort: %s action group: '%s' (priority: %zd)",
+						(closing ? "selected" : "opened"), join(", ", s), priority);
 			}
 		}
 	};
@@ -927,8 +924,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 				linkedSomething = true;
 				if (debugging)
 				{
-					debug("new link: '%s' -> '%s'",
-							fromPtr->toString().c_str(), toPtr->toString().c_str());
+					debug2("new link: '%s' -> '%s'", fromPtr->toString(), toPtr->toString());
 				}
 				gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
 			}
@@ -983,13 +979,13 @@ void __iterate_over_graph(const Cache& cache, GraphAndAttributes& gaa,
 	{
 		if (debugging)
 		{
-			debug("building %saction graph: next iteration", maybeMini);
+			debug2("building %saction graph: next iteration", maybeMini);
 		}
 		__expand_linked_actions(cache, gaa, debugging);
 	} while (__link_actions(gaa, debugging));
 	if (debugging)
 	{
-		debug("building %saction graph: finished", maybeMini);
+		debug2("building %saction graph: finished", maybeMini);
 	}
 }
 
@@ -997,7 +993,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "worker desired state is not given");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "worker: the desired state is not given");
 	}
 
 	bool debugging = _config->getBool("debug::worker");
@@ -1034,8 +1030,8 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		FORIT(edgeIt, edges)
 		{
 			auto attributeLevel = gaa.attributes[make_pair(edgeIt->first, edgeIt->second)].getLevel();
-			debug("the present action dependency: '%s' -> '%s', %s",
-					edgeIt->first->toString().c_str(), edgeIt->second->toString().c_str(),
+			debug2("the present action dependency: '%s' -> '%s', %s",
+					edgeIt->first->toString(), edgeIt->second->toString(),
 					GraphAndAttributes::Attribute::levelStrings[attributeLevel]);
 		}
 	}
@@ -1120,8 +1116,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						}
 						if (debugging)
 						{
-							debug("ignoring edge '%s' -> '%s'",
-									oldFromPtr->toString().c_str(), oldToPtr->toString().c_str());
+							debug2("ignoring edge '%s' -> '%s'", oldFromPtr->toString(), oldToPtr->toString());
 						}
 					}
 					else
@@ -1130,8 +1125,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
 						if (debugging)
 						{
-							debug("adding edge '%s' -> '%s'",
-									newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+							debug2("adding edge '%s' -> '%s'", newFromPtr->toString(), newToPtr->toString());
 						}
 					}
 
@@ -1157,8 +1151,8 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						{
 							if (debugging)
 							{
-								debug("  ignoring potential edge '%s' -> '%s'",
-										newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
+								debug2("  ignoring potential edge '%s' -> '%s'",
+										newPotentialFromPtr->toString(), newPotentialToPtr->toString());
 							}
 							continue;
 						}
@@ -1176,8 +1170,8 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						}
 						if (debugging)
 						{
-							debug("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
-									newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
+							debug2("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
+									newPotentialFromPtr->toString(), newPotentialToPtr->toString());
 						}
 					}
 				}
@@ -1194,7 +1188,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 	typedef GraphAndAttributes::Attribute Attribute;
 	if (debugging)
 	{
-		debug("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
+		debug2("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
 	}
 
 	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
@@ -1214,8 +1208,8 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 				{
 					actionStrings.push_back(it->toString());
 				}
-				logger.loggedFatal(Logger::Subsystem::Packages, 2,
-						format2("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings)));
+				logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+						format2, "internal error: unable to schedule circular actions '%s'", join(", ", actionStrings));
 			}
 
 			// we build a mini-graph with reduced number of edges
@@ -1249,9 +1243,9 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 								actionSubgroup.dpkgFlags.insert("--force-breaks");
 								break;
 							default:
-								logger.loggedFatal(Logger::Subsystem::Packages, 2,
-										format2("internal error: worker: a relation '%s' cannot be soft",
-										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]));
+								logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+										format2, "internal error: worker: a relation '%s' cannot be soft",
+										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]);
 						}
 					}
 				}
@@ -1294,7 +1288,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 			{
 				strings.push_back(it->toString());
 			}
-			debug("split action group: %s", join(", ", strings).c_str());
+			debug2("split action group: %s", join(", ", strings));
 		}
 	}
 
@@ -1341,8 +1335,8 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 			}
 			catch (...)
 			{
-				_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-						format2("unable to create the archive downloads directory"));
+				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+						format2, "unable to create the archive downloads directory");
 			}
 		}
 
@@ -1362,11 +1356,11 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 				auto downloadInfo = version->getDownloadInfo();
 
-				// we need at least one real URI
+				// we need at least one real uri
 				if (downloadInfo.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2("no available download URIs for %s %s", packageName, versionString));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2, "no available download uris for %s %s", packageName, versionString);
 				}
 
 				// paths
@@ -1413,15 +1407,18 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				{
 					if (!fs::fileExists(downloadPath))
 					{
-						return __("unable to find downloaded file");
+						return __("unable to find the downloaded file");
 					}
 					if (!version->file.hashSums.verify(downloadPath))
 					{
 						unlink(downloadPath.c_str()); // intentionally ignore errors if any
 						return __("hash sums mismatch");
 					}
-
-					return fs::move(downloadPath, targetPath);
+					if (!fs::move(downloadPath, targetPath))
+					{
+						return format2e(__("unable to rename '%s' to '%s'"), downloadPath, targetPath);
+					}
+					return string();
 				};
 
 				auto downloadValue = std::make_pair(std::move(downloadEntity), targetPath);
@@ -1431,7 +1428,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to prepare downloads");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "failed to prepare downloads");
 	}
 
 	return downloads;
@@ -1485,8 +1482,8 @@ vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		vector< string > unconfiguredPackageNames;
 		std::copy(unpackedPackageNames.begin(), unpackedPackageNames.end(),
 				std::back_inserter(unconfiguredPackageNames));
-		logger.loggedFatal(Logger::Subsystem::Packages, 2,
-				format2("internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames)));
+		logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+				format2, "internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames));
 	}
 
 	return result;
@@ -1524,8 +1521,8 @@ size_t __get_max_download_amount(const vector< Changeset >& changesets, bool deb
 	}
 	if (debugging)
 	{
-		debug("the changeset download amounts: maximum: %s, all: %s",
-				humanReadableSizeString(result).c_str(), join(", ", amounts).c_str());
+		debug2("the changeset download amounts: maximum: %s, all: %s",
+				humanReadableSizeString(result), join(", ", amounts));
 	}
 
 	return result;
@@ -1560,10 +1557,10 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					auto installedRecord = systemState->getInstalledInfo(packageName);
 					if (!installedRecord)
 					{
-						logger.loggedFatal(Logger::Subsystem::Packages, 2,
-								format2("internal error: worker: __set_force_options_for_removals_if_needed: "
+						logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+								format2, "internal error: worker: __set_force_options_for_removals_if_needed: "
 								"there is no installed record for the package '%s' which is to be removed",
-								packageName));
+								packageName);
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
@@ -1621,15 +1618,15 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		auto maxDownloadAmount = __get_max_download_amount(changesets, debugging);
 		if (debugging)
 		{
-			debug("the changeset download amounts: maximum: %s",
-					humanReadableSizeString(maxDownloadAmount).c_str());
+			debug2("the changeset download amounts: maximum: %s",
+					humanReadableSizeString(maxDownloadAmount));
 		}
 		if (maxDownloadAmount > archivesSpaceLimit)
 		{
 			// we failed to fit in limit
-			_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-					format2("unable to fit in archives space limit '%zu', best try is '%zu'",
-					archivesSpaceLimit, maxDownloadAmount));
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+					format2, "unable to fit in the archives space limit '%zu', best try is '%zu'",
+					archivesSpaceLimit, maxDownloadAmount);
 		}
 	}
 
@@ -1691,15 +1688,15 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 			{
 				if (unlink(targetPath.c_str()) == -1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2e("unable to remove file '%s'", targetPath));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2e, "unable to remove the file '%s'", targetPath);
 				}
 			}
 		}
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to clean downloaded archives");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "failed to clean downloaded archives");
 	}
 }
 
@@ -1947,8 +1944,8 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				File tempFile(tempPath, "w", errorString);
 				if (!errorString.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2("unable to open temporary file '%s': %s", tempPath, errorString));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2, "unable to open the file '%s': %s", tempPath, errorString);
 				}
 
 				// filling new info
@@ -1958,17 +1955,17 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				}
 			}
 
-			auto moveResult = fs::move(tempPath, extendedInfoPath);
-			if (!moveResult.empty())
+			if (!fs::move(tempPath, extendedInfoPath))
 			{
-				_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-						format2("unable to renew extended states file: %s", moveResult));
+				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+						format2e, "unable to renew extended states file: unable to rename '%s' to '%s'",
+						tempPath, extendedInfoPath);
 			}
 		}
 		catch (...)
 		{
-			_logger->loggedFatal(Logger::Subsystem::Packages, 2,
-					"failed to change the 'automatically installed' flag");
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 2,
+					format2, "failed to change the 'automatically installed' flag");
 		}
 	}
 }
@@ -2007,7 +2004,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		if (!downloadResult.empty())
 		{
-			_logger->loggedFatal(Logger::Subsystem::Packages, 2, "there were download errors");
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "there were download errors");
 		}
 	}
 }
@@ -2035,12 +2032,12 @@ bool __defer_triggers(const Config& config, const Cache& cache)
 		auto dpkgPackage = cache.getBinaryPackage("dpkg");
 		if (!dpkgPackage)
 		{
-			fatal2("internal error: no 'dpkg' binary package available");
+			fatal2i("no 'dpkg' binary package available");
 		}
 		auto dpkgInstalledVersion = dpkgPackage->getInstalledVersion();
 		if (!dpkgInstalledVersion)
 		{
-			fatal2("internal error: no installed version for 'dpkg' binary package");
+			fatal2i("no installed version for 'dpkg' binary package");
 		}
 		return (compareVersionStrings(dpkgInstalledVersion->versionString, "1.16.1") != -1); // >=
 	}
@@ -2115,7 +2112,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 		if (debugging)
 		{
-			debug("started changeset");
+			debug2("started changeset");
 		}
 		/* usually, all downloads are done before any install actions (first
 		   and only changeset) however, if 'cupt::worker::archives-space-limit'
@@ -2218,7 +2215,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 							stringifiedActions.push_back(actionIt->toString());
 						}
 						auto actionsString = join(" & ", stringifiedActions);
-						debug("do: (%s) %s%s", actionsString.c_str(), requestedDpkgOptions.c_str(),
+						debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
 								actionGroupIt->continued ? " (continued)" : "");
 					}
 					_logger->log(Logger::Subsystem::Packages, 2,
@@ -2235,7 +2232,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			string command = dpkgBinary + " --triggers-only --pending";
 			if (debugging)
 			{
-				debug("running triggers");
+				debug2("running triggers");
 			}
 			__run_dpkg_command("triggers", command, "");
 		}
@@ -2246,7 +2243,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		}
 		if (debugging)
 		{
-			debug("finished changeset");
+			debug2("finished changeset");
 		}
 	}
 

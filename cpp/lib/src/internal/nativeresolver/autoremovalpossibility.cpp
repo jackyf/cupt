@@ -31,11 +31,27 @@ class AutoRemovalPossibilityImpl
 {
 	mutable smatch __m;
 	vector< sregex > __never_regexes;
+	vector< sregex > __no_if_rdepends_regexes;
 	bool __can_autoremove;
 
-	bool __never_autoremove(const string& packageName) const
+	void __fill_regexes(const Config& config, const string& optionName, vector< sregex >& regexes)
 	{
-		FORIT(regexIt, __never_regexes)
+		for (const auto& regexString: config.getList(optionName))
+		{
+			try
+			{
+				regexes.push_back(sregex::compile(regexString));
+			}
+			catch (regex_error&)
+			{
+				fatal2(__("invalid regular expression '%s'"), regexString);
+			}
+		}
+	}
+
+	bool __matches_regexes(const string& packageName, const vector< sregex >& regexes) const
+	{
+		FORIT(regexIt, regexes)
 		{
 			if (regex_match(packageName, __m, *regexIt))
 			{
@@ -48,41 +64,35 @@ class AutoRemovalPossibilityImpl
 	AutoRemovalPossibilityImpl(const Config& config)
 	{
 		__can_autoremove = config.getBool("cupt::resolver::auto-remove");
-
-		auto neverAutoRemoveRegexStrings = config.getList("apt::neverautoremove");
-		FORIT(regexStringIt, neverAutoRemoveRegexStrings)
-		{
-			try
-			{
-				__never_regexes.push_back(sregex::compile(*regexStringIt));
-			}
-			catch (regex_error&)
-			{
-				fatal2("invalid regular expression '%s'", *regexStringIt);
-			}
-		}
+		__fill_regexes(config, "apt::neverautoremove", __never_regexes);
+		__fill_regexes(config, "cupt::resolver::no-autoremove-if-rdepends-exist", __no_if_rdepends_regexes);
 	}
 
-	bool isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
+	typedef AutoRemovalPossibility::Allow Allow;
+	Allow isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
 			bool wasInstalledBefore) const
 	{
 		const string& packageName = version->packageName;
 
 		if (version->essential)
 		{
-			return false;
+			return Allow::No;
 		}
 		auto canAutoremoveThisPackage = __can_autoremove && cache.isAutomaticallyInstalled(packageName);
 		if (wasInstalledBefore && !canAutoremoveThisPackage)
 		{
-			return false;
+			return Allow::No;
 		}
-		if (__never_autoremove(packageName))
+		if (__matches_regexes(packageName, __never_regexes))
 		{
-			return false;
+			return Allow::No;
+		}
+		if (__matches_regexes(packageName, __no_if_rdepends_regexes))
+		{
+			return Allow::YesIfNoRDepends;
 		}
 
-		return true;
+		return Allow::Yes;
 	}
 };
 
@@ -96,7 +106,7 @@ AutoRemovalPossibility::~AutoRemovalPossibility()
 	delete __impl;
 }
 
-bool AutoRemovalPossibility::isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
+AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
 		bool wasInstalledBefore) const
 {
 	return __impl->isAllowed(cache, version, wasInstalledBefore);

@@ -52,7 +52,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			auto package = _cache->getBinaryPackage(packageName);
 			if (!package)
 			{
-				fatal2("internal error: the binary package '%s' does not exist", packageName);
+				fatal2i("the binary package '%s' does not exist", packageName);
 			}
 			auto installedVersion = package->getInstalledVersion();
 
@@ -162,7 +162,7 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 
 	if (!__desired_state)
 	{
-		fatal2("worker desired state is not given");
+		fatal2(__("worker: the desired state is not given"));
 	}
 
 	const bool purge = _config->getBool("cupt::worker::purge");
@@ -187,7 +187,7 @@ void SetupAndPreviewWorker::setPackagePurgeFlag(const string& packageName, bool 
 	auto desiredIt = __desired_state->find(packageName);
 	if (desiredIt == __desired_state->end())
 	{
-		fatal2("there is no package '%s' in the desired state", packageName);
+		fatal2(__("there is no package '%s' in the desired state"), packageName);
 	}
 	auto sourceActionType = value ? Action::Remove : Action::Purge;
 	__actions_preview->groups[sourceActionType].erase(packageName);

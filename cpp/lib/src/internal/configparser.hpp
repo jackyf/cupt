@@ -43,6 +43,7 @@ class ConfigParser
 	Handler __list_handler;
 	Handler __clear_handler;
 
+	sci __begin;
 	sci __end;
 	sci __current;
 	vector< Lexem::Type > __errors;
