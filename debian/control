@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 7.4.10), g++-4.6,
   cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.9.2
+Standards-Version: 3.9.3
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
