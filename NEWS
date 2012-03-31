@@ -1,3 +1,11 @@
+2.5
+ - New 'no longer needed' section in the actions preview.
+ - Translation diffs are supported now.
+ - Score calculation: for removals of packages which are not manually
+   installed, apply also the new 'removal-of-autoinstalled' score.
+ - Many improvements in the error and warning messages.
+ - Warnings about unknown non-Cupt-specific options are not printed anymore.
+
 2.4
  - New subcommand 'iii'.
  - New options '--show-archives', '--show-codenames', '--show-components',
