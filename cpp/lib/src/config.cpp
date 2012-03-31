@@ -92,6 +92,8 @@ void ConfigImpl::initializeVariables()
 		{ "gpgv::trustedkeyring", "/var/lib/cupt/trusted.gpg" },
 		{ "quiet", "0" }, // bool, '0' instead of 'no' for apt-listchanges (#604130)
 
+		// TODO/API break/: remove unused APT scalar&list variables as don't
+		// warn about unknown variables anymore
 		// unused APT vars
 		{ "apt::cache-limit", "0" },
 		{ "apt::get::show-upgraded", "no" },
