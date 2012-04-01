@@ -458,9 +458,10 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 			indexEntry.component + ' ' +
 			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "source");
 
+	shared_ptr< ReleaseInfo > releaseInfo;
 	try
 	{
-		auto releaseInfo = getReleaseInfo(*config, indexEntry);
+		releaseInfo = getReleaseInfo(*config, indexEntry);
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
 
@@ -485,7 +486,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		warn2(__("skipped the index '%s'"), indexAlias);
 	}
 
-	if (Version::parseInfoOnly) // description is info-only field
+	if (releaseInfo && Version::parseInfoOnly) // description is info-only field
 	{
 		auto localizationRecords = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*config, indexEntry);
 		for (const auto& record: localizationRecords)

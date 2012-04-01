@@ -1,3 +1,13 @@
+cupt (2.5.1~) UNRELEASED; urgency=low
+
+  * lib:
+    - cache:
+      - Fixed the error, when the actions which need package descriptions
+        stopped to work when any needed Release file cannot be opened or
+        parsed. This regression was introduced in 2.5.0.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 01 Apr 2012 15:42:25 +0300
+
 cupt (2.5.0) unstable; urgency=low
 
   * console:
