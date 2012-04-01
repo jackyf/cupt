@@ -1,4 +1,4 @@
-cupt (2.5.1~) UNRELEASED; urgency=low
+cupt (2.5.1) unstable; urgency=low
 
   * lib:
     - cache:
@@ -7,7 +7,7 @@ cupt (2.5.1~) UNRELEASED; urgency=low
         parsed. This regression was introduced in 2.5.0.
         (Closes: #666762)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 01 Apr 2012 15:42:25 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 01 Apr 2012 18:34:14 +0300
 
 cupt (2.5.0) unstable; urgency=low
 
