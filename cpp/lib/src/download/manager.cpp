@@ -1039,7 +1039,7 @@ static void checkSocketForTimeout(int sock)
 	}
 	else if (!pollResult)
 	{
-		fatal2(__("download client: the download server socket is timed out"));
+		fatal2(__("download client: the download server socket timed out"));
 	}
 }
 

@@ -1,6 +1,6 @@
 cupt (2.5.2~) UNRELEASED; urgency=low
 
-  * 
+  * Grammar and style fixes for translatable messages by Justin B Rye.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 04 Apr 2012 09:12:15 +0300
 

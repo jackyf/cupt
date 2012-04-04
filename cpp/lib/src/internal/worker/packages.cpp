@@ -1360,7 +1360,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				if (downloadInfo.empty())
 				{
 					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-							format2, "no available download uris for %s %s", packageName, versionString);
+							format2, "no available download URIs for %s %s", packageName, versionString);
 				}
 
 				// paths
@@ -1483,7 +1483,7 @@ vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		std::copy(unpackedPackageNames.begin(), unpackedPackageNames.end(),
 				std::back_inserter(unconfiguredPackageNames));
 		logger.loggedFatal2(Logger::Subsystem::Packages, 2,
-				format2, "internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames));
+				format2, "internal error: packages have been left unconfigured: '%s'", join(" ", unconfiguredPackageNames));
 	}
 
 	return result;

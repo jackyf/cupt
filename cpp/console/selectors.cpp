@@ -152,7 +152,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			{
 				versionStrings.push_back((*it)->versionString);
 			}
-			fatal2(__("for the package '%s' and the distribution '%s' several versions found: %s;"
+			fatal2(__("several versions found for the package '%s' and the distribution '%s': %s; "
 					" you should explicitly select by version"), packageName,
 					distributionExpression, join(", ", versionStrings));
 			return ReturnType(); // unreachable

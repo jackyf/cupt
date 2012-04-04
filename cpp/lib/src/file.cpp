@@ -61,7 +61,7 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	{
 		if (strlen(mode) != 2)
 		{
-			fatal2(__("pipe specification mode should be exact 2 characters"));
+			fatal2(__("pipe specification mode should be exactly 2 characters"));
 		}
 		isPipe = true;
 		handle = popen(path.c_str(), mode+1);

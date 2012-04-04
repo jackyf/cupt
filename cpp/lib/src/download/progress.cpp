@@ -230,7 +230,7 @@ void Progress::progress(const vector< string >& params)
 		auto recordIt = __impl->nowDownloading.find(uri);
 		if (recordIt == __impl->nowDownloading.end())
 		{
-			fatal2(__("download progress: received an info for a not started download, uri '%s'"), uri);
+			fatal2(__("download progress: received an info for a not started download, URI '%s'"), uri);
 		}
 		DownloadRecord& record = recordIt->second;
 		if (action == "downloading")
@@ -281,7 +281,7 @@ void Progress::progress(const vector< string >& params)
 		}
 		else
 		{
-			fatal2(__("download progress: received the wrong action '%s'"), action);
+			fatal2(__("download progress: received the invalid action '%s'"), action);
 		}
 	}
 }

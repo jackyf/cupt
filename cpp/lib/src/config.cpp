@@ -448,7 +448,7 @@ string Config::getString(const string& optionName) const
 	}
 	else
 	{
-		fatal2(__("an attempt to get the wrong scalar option '%s'"), optionName);
+		fatal2(__("an attempt to get the invalid scalar option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -523,7 +523,7 @@ vector< string > Config::getList(const string& optionName) const
 	}
 	else
 	{
-		fatal2(__("an attempt to get the wrong list option '%s'"), optionName);
+		fatal2(__("an attempt to get the invalid list option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -560,7 +560,7 @@ void Config::setScalar(const string& optionName, const string& value)
 	{
 		if (__is_cupt_option(optionName))
 		{
-			warn2(__("an attempt to set the wrong scalar option '%s'"), optionName);
+			warn2(__("an attempt to set the invalid scalar option '%s'"), optionName);
 		}
 	}
 }
@@ -581,7 +581,7 @@ void Config::setList(const string& optionName, const string& value)
 	{
 		if (__is_cupt_option(optionName))
 		{
-			warn2(__("an attempt to set the wrong list option '%s'"), optionName);
+			warn2(__("an attempt to set the invalid list option '%s'"), optionName);
 		}
 	}
 }

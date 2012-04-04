@@ -161,7 +161,7 @@ size_t fileSize(const string& path)
 	struct stat s;
 	if (!__lstat(path, &s))
 	{
-		fatal2(__("the file '%s' does not exists"), path);
+		fatal2(__("the file '%s' does not exist"), path);
 	}
 	if (!S_ISREG(s.st_mode))
 	{

@@ -203,7 +203,7 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 		{
 			if (recordIt->hashSums.empty())
 			{
-				fatal2(__("no hash sums defined for the index uri '%s'"), recordIt->uri);
+				fatal2(__("no hash sums defined for the index URI '%s'"), recordIt->uri);
 			}
 		}
 	}

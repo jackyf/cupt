@@ -39,7 +39,7 @@ Uri::Uri(const string& uri)
 	__data->colonPosition = uri.find(':');
 	if (__data->colonPosition == string::npos || __data->colonPosition == uri.size() - 1)
 	{
-		fatal2(__("unable to find a scheme (protocol) in the uri '%s'"), uri);
+		fatal2(__("unable to find a scheme (protocol) in the URI '%s'"), uri);
 	}
 
 	// a valid position since colonPosition is verified to be not last
@@ -50,7 +50,7 @@ Uri::Uri(const string& uri)
 		// "//" is dropped
 		if (uri.size() < __data->hostStartPosition + 2 || uri[__data->hostStartPosition+1] != '/')
 		{
-			fatal2(__("there should be no or two slashes after a colon in the uri '%s'"), uri);
+			fatal2(__("there should be no or two slashes after a colon in the URI '%s'"), uri);
 		}
 		__data->hostStartPosition += 2;
 	}
