@@ -4,6 +4,9 @@ cupt (2.5.2~) UNRELEASED; urgency=low
     - cache:
       - Constructor: source index alias: fixed placing the square brackets
         around the suffix "source".
+      - Constructor: parsing index localization files: support the old index
+        localization files scheme again. This regression was introduced in
+        2.5.0.
   * Grammar and style fixes for translatable messages by Justin B Rye.
   * debian/control:
     - Changed the maintainer address to 'cupt-devel@lists.alioth.debian.org'.
