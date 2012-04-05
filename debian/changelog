@@ -7,6 +7,9 @@ cupt (2.5.2~) UNRELEASED; urgency=low
       - Constructor: parsing index localization files: support the old index
         localization files scheme again. This regression was introduced in
         2.5.0.
+      - Constructor: parsing index localization files: don't skip silently
+        the rest of the file if a distance between records is more than one
+        empty line. This regression was introduced in 2.0.0~alpha3.
   * Grammar and style fixes for translatable messages by Justin B Rye.
   * debian/control:
     - Changed the maintainer address to 'cupt-devel@lists.alioth.debian.org'.

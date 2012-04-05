@@ -631,8 +631,14 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 		TranslationPosition translationPosition;
 		translationPosition.file = file;
 
-		while ((recordPosition = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
+		while (true)
 		{
+			recordPosition = file->tell();
+			if (!parser.parseNextLine(tagName, tagValue))
+			{
+				if (file->eof()) break; else continue;
+			}
+
 			bool hashSumFound = false;
 			bool translationFound = false;
 
