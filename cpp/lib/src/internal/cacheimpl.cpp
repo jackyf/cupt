@@ -456,7 +456,7 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 
 	string indexAlias = indexEntry.uri + ' ' + indexEntry.distribution + ' ' +
 			indexEntry.component + ' ' +
-			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "source");
+			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "(source)");
 
 	shared_ptr< ReleaseInfo > releaseInfo;
 	try

@@ -1,5 +1,9 @@
 cupt (2.5.2~) UNRELEASED; urgency=low
 
+  * lib:
+    - cache:
+      - Constructor: source index alias: fixed placing the square brackets
+        around the suffix "source".
   * Grammar and style fixes for translatable messages by Justin B Rye.
   * debian/control:
     - Changed the maintainer address to 'cupt-devel@lists.alioth.debian.org'.
