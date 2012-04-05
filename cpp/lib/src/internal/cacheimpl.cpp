@@ -488,26 +488,30 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 
 	if (releaseInfo && Version::parseInfoOnly) // description is info-only field
 	{
-		auto localizationRecords = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*config, indexEntry);
-		for (const auto& record: localizationRecords)
-		{
-			auto localizationAlias = format2(__("'%s' descriptions localization for '%s'"), record.language, indexAlias);
-			try
-			{
-				if (fs::fileExists(record.localPath))
-				{
-					processTranslationFile(record.localPath, localizationAlias);
-				}
-			}
-			catch (Exception&)
-			{
-				warn2(__("skipped the index '%s'"), localizationAlias);
-			}
-		}
+		processTranslationFiles(indexEntry, indexAlias);
 	}
 }
 
-
+void CacheImpl::processTranslationFiles(const IndexEntry& indexEntry,
+		const string& indexAlias)
+{
+	auto localizationRecords = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*config, indexEntry);
+	for (const auto& record: localizationRecords)
+	{
+		auto localizationAlias = format2(__("'%s' descriptions localization for '%s'"), record.language, indexAlias);
+		try
+		{
+			if (fs::fileExists(record.localPath))
+			{
+				processTranslationFile(record.localPath, localizationAlias);
+			}
+		}
+		catch (Exception&)
+		{
+			warn2(__("skipped the index '%s'"), localizationAlias);
+		}
+	}
+}
 
 void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		shared_ptr< const ReleaseInfo > releaseInfo, const string& alias)

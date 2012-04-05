@@ -77,6 +77,7 @@ class CacheImpl
 	void processIndexEntry(const IndexEntry&, const ReleaseLimits&);
 	void processIndexFile(const string& path, IndexEntry::Type category,
 			shared_ptr< const ReleaseInfo >, const string&);
+	void processTranslationFiles(const IndexEntry&, const string&);
 	void processTranslationFile(const string& path, const string&);
 	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const Relation&) const;
  public:
