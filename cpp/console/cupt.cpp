@@ -111,7 +111,7 @@ void showHelp(const char* argv0)
 		{ "search", __("searches for packages using regular expression(s)") },
 		{ "depends", __("prints dependencies of binary package(s)") },
 		{ "rdepends", __("print reverse-dependencies of binary package(s)") },
-		{ "why", __("finds a dependency path between system/package(s) and a package") },
+		{ "why", __("finds a dependency path between a package set and a package") },
 		{ "policy", __("prints the pin info for the binary package(s)") },
 		{ "policysrc", __("prints the pin info for the source package(s)") },
 		{ "pkgnames", __("prints available package names") },

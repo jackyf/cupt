@@ -148,8 +148,8 @@ void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< sha
 				{
 					foundOrigins.emplace_back(foundSource.release->baseUri);
 				}
-				warn2(__("throwing away the duplicate version with different hash sums: "
-						"package: '%s', version: '%s', thrown origin: '%s', origins left: '%s'"),
+				warn2(__("discarding a duplicate version with different hash sums: package: '%s', "
+						"version: '%s', origin of discarded version: '%s', origins left: '%s'"),
 						parsedVersion->packageName, parsedVersion->versionString,
 						parsedVersion->sources[0].release->baseUri, join(", ", foundOrigins));
 			}

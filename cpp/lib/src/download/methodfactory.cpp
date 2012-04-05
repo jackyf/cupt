@@ -59,7 +59,7 @@ MethodFactoryImpl::~MethodFactoryImpl()
 	{
 		if (dlclose(*dlHandleIt))
 		{
-			warn2(__("unable to unload the dl handle '%p': %s"), *dlHandleIt, dlerror());
+			warn2(__("unable to unload the dynamic library handle '%p': %s"), *dlHandleIt, dlerror());
 		}
 	}
 }
@@ -115,7 +115,7 @@ void MethodFactoryImpl::__load_methods()
 			warn2(__("unable to load the download method '%s': %s: %s"), methodName, "dlsym", dlerror());
 			if (dlclose(dlHandle))
 			{
-				warn2(__("unable to unload the dl handle '%p': %s"), dlHandle, dlerror());
+				warn2(__("unable to unload the dynamic library handle '%p': %s"), dlHandle, dlerror());
 			}
 			continue;
 		}
