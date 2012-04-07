@@ -281,6 +281,17 @@ static vector< vector< string > > getChunksOfLocalizedDescriptions(
 	return result;
 }
 
+static string extractLocalizationLanguage(const string& lastChunk)
+{
+	string result = lastChunk;
+	auto dashPosition = result.find('-');
+	if (dashPosition != string::npos)
+	{
+		result.erase(0, dashPosition + 1);
+	}
+	return result;
+}
+
 vector< string > getPathsOfLocalizedDescriptions(const Config& config, const IndexEntry& entry)
 {
 	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
@@ -359,13 +370,7 @@ vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
 			continue;
 		}
 		record.localPath = basePath + "_" + join("_", chunkArray);
-
-		record.language = chunkArray.back();
-		auto slashPosition = record.language.find('-');
-		if (slashPosition != string::npos)
-		{
-			record.language.erase(0, slashPosition + 1);
-		}
+		record.language = extractLocalizationLanguage(chunkArray.back());
 
 		result.push_back(std::move(record));
 	}
