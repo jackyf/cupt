@@ -952,7 +952,7 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 				cachefiles::getPathsOfLocalizedDescriptions(*_config, *indexEntryIt);
 		FORIT(pathIt, translationsPossiblePaths)
 		{
-			addUsedPrefix(*pathIt);
+			addUsedPrefix(pathIt->second);
 		}
 	}
 	addUsedPrefix(lockPath);

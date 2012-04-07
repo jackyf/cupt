@@ -510,21 +510,12 @@ void CacheImpl::processTranslationFiles(const IndexEntry& indexEntry,
 		}
 	};
 
-	auto localizationRecords = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*config, indexEntry);
+	auto localizationRecords = cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
 	for (const auto& record: localizationRecords)
 	{
-		auto description = format2(__("'%s' descriptions localization"), record.language);
+		auto description = format2(__("'%s' descriptions localization"), record.first);
 		auto localizationAlias = format2(__("%s for '%s'"), description, indexAlias);
-		process(record.localPath, localizationAlias);
-	}
-
-	if (localizationRecords.empty())
-	{
-		// try old-style translation index system (without direct records in the Release file)
-		for (const auto& record: cachefiles::getDownloadInfoOfLocalizedDescriptions2(*config, indexEntry))
-		{
-			process(record.localPath, format2(__("%s for '%s'"), record.filePart, indexAlias));
-		}
+		process(record.second, localizationAlias);
 	}
 }
 

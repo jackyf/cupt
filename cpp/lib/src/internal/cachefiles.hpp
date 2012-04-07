@@ -36,7 +36,8 @@ string getDownloadUriOfReleaseList(const IndexEntry&);
 vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 		const Config&, const IndexEntry&);
 
-vector< string > getPathsOfLocalizedDescriptions(const Config&, const IndexEntry& entry);
+vector< pair< string, string > > getPathsOfLocalizedDescriptions(
+		const Config&, const IndexEntry& entry);
 // TODO/API break/: deprecated, delete it
 vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
 		const Config&, const IndexEntry&);

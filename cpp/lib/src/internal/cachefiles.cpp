@@ -292,15 +292,17 @@ static string extractLocalizationLanguage(const string& lastChunk)
 	return result;
 }
 
-vector< string > getPathsOfLocalizedDescriptions(const Config& config, const IndexEntry& entry)
+vector< pair< string, string > > getPathsOfLocalizedDescriptions(
+		const Config& config, const IndexEntry& entry)
 {
 	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
 	auto basePath = getPathOfIndexEntry(config, entry);
 
-	vector< string > result;
-	FORIT(chunkArrayIt, chunkArrays)
+	vector< pair< string, string > > result;
+	for (const auto& chunkArray: chunkArrays)
 	{
-		result.push_back(basePath + "_" + join("_", *chunkArrayIt));
+		auto path = basePath + "_" + join("_", chunkArray);
+		result.push_back({ extractLocalizationLanguage(chunkArray.back()), std::move(path) });
 	}
 
 	return result;
