@@ -554,9 +554,9 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			};
 
 			getNextLine();
-			if (file->eof())
+			if (size == 0)
 			{
-				break;
+				break; // eof
 			}
 
 			static const size_t packageAnchorLength = sizeof("Package: ") - 1;
