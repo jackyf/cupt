@@ -31,6 +31,8 @@
 
 // TODO/API break/: remove deprecated entities
 
+// TODO/API break/: remove Cache::PinnedVersion constructor
+
 namespace cupt {
 
 typedef internal::CacheImpl::PrePackageRecord PrePackageRecord;
