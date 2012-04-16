@@ -531,11 +531,6 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	   which goes into
 
 	   'install y' -> 'remove x'
-
-	   moreover, we split the installed version into virtual version by one
-	   relation expression, so different relation expressions of the same real
-	   version don't interact with each other, otherwise we'd get a full cyclic
-	   mess
 	*/
 	vector< pair< InnerAction, InnerAction > > virtualEdges;
 
