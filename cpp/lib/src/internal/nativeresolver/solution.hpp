@@ -26,6 +26,7 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
 
+#include <internal/nativeresolver/score.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
 
 namespace cupt {
@@ -92,11 +93,22 @@ class Solution
 	shared_ptr< PackageEntryMap > __added_entries;
 	BrokenSuccessorMap*  __broken_successors;
  public:
+	struct Action
+	{
+		const dg::Element* oldElementPtr; // may be NULL
+		const dg::Element* newElementPtr; // many not be NULL
+		vector< const dg::Element* > elementsToReject;
+		shared_ptr< const Reason > reason;
+		ScoreChange profit;
+		PackageEntry::IntroducedBy introducedBy;
+		size_t brokenElementPriority;
+	};
+
 	size_t id;
 	size_t level;
 	bool finished;
 	ssize_t score;
-	std::unique_ptr< const void > pendingAction;
+	std::unique_ptr< const Action > pendingAction;
 
 	Solution();
 	Solution(const Solution&) = delete;

@@ -44,17 +44,7 @@ class NativeResolverImpl
 	typedef Resolver::AutoRemovalReason AutoRemovalReason;
 	typedef Resolver::SynchronizationReason SynchronizationReason;
 	typedef Resolver::RelationExpressionReason RelationExpressionReason;
-
-	struct Action
-	{
-		const dg::Element* oldElementPtr; // may be NULL
-		const dg::Element* newElementPtr; // many not be NULL
-		vector< const dg::Element* > elementsToReject;
-		shared_ptr< const Reason > reason;
-		ScoreChange profit;
-		PackageEntry::IntroducedBy introducedBy;
-		size_t brokenElementPriority;
-	};
+	typedef Solution::Action Action;
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
