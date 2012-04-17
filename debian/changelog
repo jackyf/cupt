@@ -7,6 +7,9 @@ cupt (2.5.3~) UNRELEASED; urgency=low
       - Fixed another small memory leak, introduced in 2.5.0.
     - config:
       - Added a support for the '/* ... */'-comments.
+  * po:
+    - getpot:
+      - Set 'report msgid bugs to' field to the development mailing list.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 17 Apr 2012 15:08:41 +0300
 
