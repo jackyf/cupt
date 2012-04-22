@@ -339,6 +339,13 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
 		Direction::Type direction)
 {
+	typedef BinaryVersion::RelationTypes RT;
+	if (gi.innerActionPtr->fake &&
+			(dependencyType != RT::PreDepends && dependencyType != RT::Depends))
+	{
+		return;
+	}
+
 	const set< InnerAction >& verticesMap = gi.gaaPtr->graph.getVertices();
 
 	InnerAction candidateAction;
@@ -481,20 +488,6 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 	}
 }
 
-const shared_ptr< const BinaryVersion > __create_virtual_version(
-		const shared_ptr< const BinaryVersion >& version)
-{
-	typedef BinaryVersion::RelationTypes RT;
-
-	shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
-	virtualVersion->packageName = version->packageName;
-	virtualVersion->versionString = version->versionString;
-	virtualVersion->relations[RT::PreDepends] = version->relations[RT::PreDepends];
-	virtualVersion->relations[RT::Depends] = version->relations[RT::Depends];
-	virtualVersion->essential = false;
-	return virtualVersion;
-}
-
 void __create_virtual_edge(
 		const shared_ptr< const BinaryVersion >& fromVirtualVersion,
 		const shared_ptr< const BinaryVersion >& toVirtualVersion,
@@ -550,8 +543,7 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 			continue;
 		}
 
-		auto virtualVersion = __create_virtual_version(installedVersion);
-		__create_virtual_edge(virtualVersion, virtualVersion, &virtualEdges);
+		__create_virtual_edge(installedVersion, installedVersion, &virtualEdges);
 	}
 
 	return virtualEdges;
