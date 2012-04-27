@@ -248,9 +248,8 @@ void ConfigParser::__skip_spaces_and_comments()
 			"(?:"
 				"\\s+" // empty line
 				"|" // ... or ...
-				"(?:#\\s|//).*$" // single comment line
-			")+",
-			regex_constants::not_dot_newline);
+				"(?:#\\s|//)[^\\n]*$" // single comment line
+			")+");
 	smatch m;
 	if (regex_search(__current, __end, m, skipRegex, regex_constants::match_continuous))
 	{
