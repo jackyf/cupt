@@ -245,7 +245,12 @@ bool ConfigParser::__string(const char* str)
 void ConfigParser::__skip_spaces_and_comments()
 {
 	static const sregex skipRegex = sregex::compile(
-			"(?:" "\\s+" "|" "(?:#\\s|//).*$" ")+", regex_constants::not_dot_newline);
+			"(?:"
+				"\\s+" // empty line
+				"|" // ... or ...
+				"(?:#\\s|//).*$" // single comment line
+			")+",
+			regex_constants::not_dot_newline);
 	smatch m;
 	if (regex_search(__current, __end, m, skipRegex, regex_constants::match_continuous))
 	{
