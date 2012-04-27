@@ -249,6 +249,8 @@ void ConfigParser::__skip_spaces_and_comments()
 				"\\s+" // empty line
 				"|" // ... or ...
 				"(?:#\\s|//)[^\\n]*$" // single comment line
+				"|" // ... or ...
+				"/\\*.*?\\*/" // C++-like multiline comment
 			")+");
 	smatch m;
 	if (regex_search(__current, __end, m, skipRegex, regex_constants::match_continuous))

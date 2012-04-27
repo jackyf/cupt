@@ -5,6 +5,8 @@ cupt (2.5.3~) UNRELEASED; urgency=low
       - Stopped using unique_ptr<void>, fixing a small memory leak. This
         regression was introduced in 2.0.0~alpha3.
       - Fixed another small memory leak, introduced in 2.5.0.
+    - config:
+      - Added a support for the '/* ... */'-comments.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 17 Apr 2012 15:08:41 +0300
 
