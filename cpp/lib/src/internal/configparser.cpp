@@ -285,7 +285,7 @@ void ConfigParser::__error_out()
 	vector< string > lexemDescriptions;
 	std::transform(__errors.begin(), __errors.end(),
 			std::back_inserter(lexemDescriptions), __get_lexem_description);
-	string errorDescription = join(" or ", lexemDescriptions);
+	string errorDescription = join(__(" or "), lexemDescriptions);
 
 	size_t lineNumber = std::count(__begin, __current, '\n') + 1;
 	auto lastEndLine = __current;
