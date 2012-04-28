@@ -153,7 +153,7 @@ int showBinaryVersions(Context& context)
 			{
 				p(__("Essential"), __("yes"));
 			}
-			p(__("Priority"), Version::Priorities::strings[version->priority]);
+			p(__("Priority"), __(Version::Priorities::strings[version->priority].c_str()));
 			p(__("Section"), version->section);
 			if (version->file.size)
 			{
@@ -269,7 +269,7 @@ int showSourceVersions(Context& context)
 			p(__("Package"), packageName);
 			p(__("Binary"), join(", ", version->binaryPackageNames));
 			p(__("Version"), version->versionString);
-			p(__("Priority"), Version::Priorities::strings[version->priority]);
+			p(__("Priority"), __(Version::Priorities::strings[version->priority].c_str()));
 			p(__("Section"), version->section);
 			p(__("Maintainer"), version->maintainer);
 			if (!version->uploaders.empty())
