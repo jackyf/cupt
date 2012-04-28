@@ -131,7 +131,7 @@ int showBinaryVersions(Context& context)
 			if (version->isInstalled())
 			{
 				auto installedInfo = cache->getSystemState()->getInstalledInfo(packageName);
-				string status = system::State::InstalledRecord::Status::strings[installedInfo->status];
+				string status = __(system::State::InstalledRecord::Status::strings[installedInfo->status].c_str());
 				if (installedInfo->want == system::State::InstalledRecord::Want::Hold)
 				{
 					status += string(" (") + __("on hold") + ")";
