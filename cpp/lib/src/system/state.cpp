@@ -313,8 +313,8 @@ vector< string > State::getReinstallRequiredPackageNames() const
 }
 
 const string State::InstalledRecord::Status::strings[] = {
-	__("not installed"), __("unpacked"), __("half-configured"), __("half-installed"),
-	__("config files"), __("postinst failed"), __("removal failed"), __("installed")
+	N__("not installed"), N__("unpacked"), N__("half-configured"), N__("half-installed"),
+	N__("config files"), N__("postinst failed"), N__("removal failed"), N__("installed")
 };
 
 }

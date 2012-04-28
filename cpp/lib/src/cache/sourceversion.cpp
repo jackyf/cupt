@@ -198,10 +198,10 @@ bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 }
 
 const string SourceVersion::FileParts::strings[] = {
-	__("Tarball"), __("Diff"), __("Dsc")
+	N__("Tarball"), N__("Diff"), N__("Dsc")
 };
 const string SourceVersion::RelationTypes::strings[] = {
-	__("Build-Depends"), __("Build-Depends-Indep"), __("Build-Conflicts"), __("Build-Conflicts-Indep"),
+	N__("Build-Depends"), N__("Build-Depends-Indep"), N__("Build-Conflicts"), N__("Build-Conflicts-Indep"),
 };
 const char* SourceVersion::RelationTypes::rawStrings[] = {
 	"build-depends", "build-depend-indep", "build-conflicts", "build-conflicts-indep",
