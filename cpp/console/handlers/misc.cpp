@@ -294,7 +294,7 @@ int showSourceVersions(Context& context)
 				{
 					for (const Version::FileRecord& fileRecord: version->files[i])
 					{
-						cout << SourceVersion::FileParts::strings[i] << ':' << endl;
+						cout << __(SourceVersion::FileParts::strings[i].c_str()) << ':' << endl;
 						p(string("  ") + __("Size"), humanReadableSizeString(fileRecord.size));
 						p("  MD5", fileRecord.hashSums[HashSums::MD5]);
 						p("  SHA1", fileRecord.hashSums[HashSums::SHA1]);
