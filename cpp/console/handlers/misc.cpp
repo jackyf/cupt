@@ -287,7 +287,7 @@ int showSourceVersions(Context& context)
 			}
 			for (size_t i = 0; i < SourceVersion::RelationTypes::Count; ++i)
 			{
-				p(SourceVersion::RelationTypes::strings[i], version->relations[i].toString());
+				p(__(SourceVersion::RelationTypes::strings[i].c_str()), version->relations[i].toString());
 			}
 			{ // download info
 				for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
