@@ -425,7 +425,7 @@ int showRelations(Context& context, bool reverse)
 
 		FORIT(relationGroupIt, relationGroups)
 		{
-			const string& caption = BinaryVersion::RelationTypes::strings[*relationGroupIt];
+			const string& caption = __(BinaryVersion::RelationTypes::strings[*relationGroupIt].c_str());
 
 			if (!reverse)
 			{
