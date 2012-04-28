@@ -172,7 +172,7 @@ int showBinaryVersions(Context& context)
 			}
 			for (size_t i = 0; i < BinaryVersion::RelationTypes::Count; ++i)
 			{
-				p(BinaryVersion::RelationTypes::strings[i], version->relations[i].toString());
+				p(__(BinaryVersion::RelationTypes::strings[i].c_str()), version->relations[i].toString());
 			}
 			p(__("Provides"), join(", ", version->provides));
 			auto reverseProvides = getReverseProvides(packageName);
