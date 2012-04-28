@@ -10,7 +10,7 @@ cupt (2.5.3~) UNRELEASED; urgency=low
       - Use localized installed state strings.
     - 'showrc':
       - Use localized source package part strings.
-    - 'depends', 'rdepends':
+    - 'depends', 'rdepends', 'why':
       - Use localized binary relation strings.
   * lib:
     - system/resolvers/native:

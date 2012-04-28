@@ -853,7 +853,7 @@ int findDependencyChain(Context& context)
 				path.pop();
 				cout << format2("%s %s: %s: %s",
 						pathEntry.version->packageName, pathEntry.version->versionString,
-						BinaryVersion::RelationTypes::strings[pathEntry.dependencyType],
+						__(BinaryVersion::RelationTypes::strings[pathEntry.dependencyType].c_str()),
 						pathEntry.relationExpressionPtr->toString()) << endl;
 			}
 			break;
