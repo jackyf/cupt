@@ -21,6 +21,8 @@
 #include <cupt/cache/version.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 
+#include <internal/common.hpp>
+
 namespace cupt {
 namespace cache {
 
@@ -95,7 +97,7 @@ vector< Version::DownloadRecord > Version::getDownloadInfo() const
 }
 
 const string Version::Priorities::strings[] = {
-	__("required"), __("important"), __("standard"), __("optional"), __("extra")
+	N__("required"), N__("important"), N__("standard"), N__("optional"), N__("extra")
 };
 
 Version::~Version()
