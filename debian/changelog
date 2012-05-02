@@ -23,6 +23,9 @@ cupt (2.5.3~) UNRELEASED; urgency=low
     - Added Polish translation by Karol Kozłowski. (Closes: #671092)
     - getpot:
       - Set 'report msgid bugs to' field to the development mailing list.
+  * debian:
+    - control:
+      - Added build-dependency on gettext.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 17 Apr 2012 15:08:41 +0300
 
