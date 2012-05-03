@@ -24,6 +24,9 @@ cupt (2.5.3~) UNRELEASED; urgency=low
     - Added partial Danish translation by Joe Dalton. (Closes: #671119)
     - getpot:
       - Set 'report msgid bugs to' field to the development mailing list.
+  * doc:
+    - reference:
+      - Disable jquery-based search.
   * debian:
     - control:
       - Added build-dependency on gettext.
