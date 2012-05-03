@@ -1,4 +1,4 @@
-cupt (2.5.3~) UNRELEASED; urgency=low
+cupt (2.5.3) unstable; urgency=low
 
   * console:
     - Enable message translations as early as possible. Enables translations
@@ -31,7 +31,7 @@ cupt (2.5.3~) UNRELEASED; urgency=low
     - control:
       - Added build-dependency on gettext.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 17 Apr 2012 15:08:41 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 03 May 2012 22:54:26 +0300
 
 cupt (2.5.2) unstable; urgency=low
 
