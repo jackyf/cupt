@@ -21,6 +21,7 @@ cupt (2.5.3~) UNRELEASED; urgency=low
       - Added a support for the '/* ... */'-comments.
   * po:
     - Added Polish translation by Karol Kozłowski. (Closes: #671092)
+    - Added partial Danish translation by Joe Dalton. (Closes: #671119)
     - getpot:
       - Set 'report msgid bugs to' field to the development mailing list.
   * debian:
