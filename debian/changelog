@@ -1,6 +1,7 @@
 cupt (2.5.4~) UNRELEASED; urgency=low
 
-  * 
+  * po:
+    - Added Slovak translation by Ivan Masár. (Closes: #671793)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 07 May 2012 19:00:38 +0300
 
