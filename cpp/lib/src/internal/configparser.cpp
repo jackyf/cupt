@@ -245,7 +245,13 @@ bool ConfigParser::__string(const char* str)
 void ConfigParser::__skip_spaces_and_comments()
 {
 	static const sregex skipRegex = sregex::compile(
-			"(?:" "\\s+" "|" "(?:#\\s|//).*$" ")+", regex_constants::not_dot_newline);
+			"(?:"
+				"\\s+" // empty line
+				"|" // ... or ...
+				"(?:#\\s|//)[^\\n]*$" // single comment line
+				"|" // ... or ...
+				"/\\*.*?\\*/" // C++-like multiline comment
+			")+");
 	smatch m;
 	if (regex_search(__current, __end, m, skipRegex, regex_constants::match_continuous))
 	{
@@ -279,7 +285,7 @@ void ConfigParser::__error_out()
 	vector< string > lexemDescriptions;
 	std::transform(__errors.begin(), __errors.end(),
 			std::back_inserter(lexemDescriptions), __get_lexem_description);
-	string errorDescription = join(" or ", lexemDescriptions);
+	string errorDescription = join(__(" or "), lexemDescriptions);
 
 	size_t lineNumber = std::count(__begin, __current, '\n') + 1;
 	auto lastEndLine = __current;

@@ -131,7 +131,7 @@ int showBinaryVersions(Context& context)
 			if (version->isInstalled())
 			{
 				auto installedInfo = cache->getSystemState()->getInstalledInfo(packageName);
-				string status = system::State::InstalledRecord::Status::strings[installedInfo->status];
+				string status = __(system::State::InstalledRecord::Status::strings[installedInfo->status].c_str());
 				if (installedInfo->want == system::State::InstalledRecord::Want::Hold)
 				{
 					status += string(" (") + __("on hold") + ")";
@@ -153,7 +153,7 @@ int showBinaryVersions(Context& context)
 			{
 				p(__("Essential"), __("yes"));
 			}
-			p(__("Priority"), Version::Priorities::strings[version->priority]);
+			p(__("Priority"), __(Version::Priorities::strings[version->priority].c_str()));
 			p(__("Section"), version->section);
 			if (version->file.size)
 			{
@@ -172,7 +172,7 @@ int showBinaryVersions(Context& context)
 			}
 			for (size_t i = 0; i < BinaryVersion::RelationTypes::Count; ++i)
 			{
-				p(BinaryVersion::RelationTypes::strings[i], version->relations[i].toString());
+				p(__(BinaryVersion::RelationTypes::strings[i].c_str()), version->relations[i].toString());
 			}
 			p(__("Provides"), join(", ", version->provides));
 			auto reverseProvides = getReverseProvides(packageName);
@@ -269,7 +269,7 @@ int showSourceVersions(Context& context)
 			p(__("Package"), packageName);
 			p(__("Binary"), join(", ", version->binaryPackageNames));
 			p(__("Version"), version->versionString);
-			p(__("Priority"), Version::Priorities::strings[version->priority]);
+			p(__("Priority"), __(Version::Priorities::strings[version->priority].c_str()));
 			p(__("Section"), version->section);
 			p(__("Maintainer"), version->maintainer);
 			if (!version->uploaders.empty())
@@ -287,14 +287,14 @@ int showSourceVersions(Context& context)
 			}
 			for (size_t i = 0; i < SourceVersion::RelationTypes::Count; ++i)
 			{
-				p(SourceVersion::RelationTypes::strings[i], version->relations[i].toString());
+				p(__(SourceVersion::RelationTypes::strings[i].c_str()), version->relations[i].toString());
 			}
 			{ // download info
 				for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 				{
 					for (const Version::FileRecord& fileRecord: version->files[i])
 					{
-						cout << SourceVersion::FileParts::strings[i] << ':' << endl;
+						cout << __(SourceVersion::FileParts::strings[i].c_str()) << ':' << endl;
 						p(string("  ") + __("Size"), humanReadableSizeString(fileRecord.size));
 						p("  MD5", fileRecord.hashSums[HashSums::MD5]);
 						p("  SHA1", fileRecord.hashSums[HashSums::SHA1]);
@@ -425,7 +425,7 @@ int showRelations(Context& context, bool reverse)
 
 		FORIT(relationGroupIt, relationGroups)
 		{
-			const string& caption = BinaryVersion::RelationTypes::strings[*relationGroupIt];
+			const string& caption = __(BinaryVersion::RelationTypes::strings[*relationGroupIt].c_str());
 
 			if (!reverse)
 			{
@@ -853,7 +853,7 @@ int findDependencyChain(Context& context)
 				path.pop();
 				cout << format2("%s %s: %s: %s",
 						pathEntry.version->packageName, pathEntry.version->versionString,
-						BinaryVersion::RelationTypes::strings[pathEntry.dependencyType],
+						__(BinaryVersion::RelationTypes::strings[pathEntry.dependencyType].c_str()),
 						pathEntry.relationExpressionPtr->toString()) << endl;
 			}
 			break;

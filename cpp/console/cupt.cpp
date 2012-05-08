@@ -29,6 +29,7 @@ void showHelp(const char*);
 
 int main(int argc, char* argv[])
 {
+	setlocale(LC_ALL, "");
 	cupt::messageFd = STDERR_FILENO;
 
 	if (argc > 1)
@@ -65,7 +66,6 @@ int main(int argc, char* argv[])
 
 int mainEx(int argc, char* argv[], Context& context, string& command)
 {
-	setlocale(LC_ALL, "");
 	try
 	{
 		command = parseCommonOptions(argc, argv, /* in */ *context.getConfig(),

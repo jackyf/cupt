@@ -179,8 +179,8 @@ bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 }
 
 const string BinaryVersion::RelationTypes::strings[] = {
-	__("Pre-Depends"), __("Depends"), __("Recommends"), __("Suggests"),
-	__("Enhances"), __("Conflicts"), __("Breaks"), __("Replaces")
+	N__("Pre-Depends"), N__("Depends"), N__("Recommends"), N__("Suggests"),
+	N__("Enhances"), N__("Conflicts"), N__("Breaks"), N__("Replaces")
 };
 const char* BinaryVersion::RelationTypes::rawStrings[] = {
 	"pre-depends", "depends", "recommends", "suggests",

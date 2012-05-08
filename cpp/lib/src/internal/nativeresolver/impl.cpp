@@ -531,7 +531,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	{
 		fatal2i("__post_apply_action: no action to apply");
 	}
-	const Action& action = *(static_cast< const Action* >(solution.pendingAction.get()));
+	const Action& action = *solution.pendingAction;
 
 	{ // process elements to reject
 		FORIT(elementPtrIt, action.elementsToReject)

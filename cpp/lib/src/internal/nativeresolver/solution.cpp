@@ -544,7 +544,7 @@ void Solution::prepare()
 		}
 	}
 
-	__broken_successors = new BrokenSuccessorMap(*__parent->__broken_successors);
+	*__broken_successors = *__parent->__broken_successors;
 	__parent.reset();
 }
 

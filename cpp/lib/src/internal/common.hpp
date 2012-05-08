@@ -46,5 +46,7 @@ void processSpacePipeSpaceDelimitedStrings(string::const_iterator begin, string:
 } // namespace
 } // namespace
 
+#define N__(arg) arg
+
 #endif
 
