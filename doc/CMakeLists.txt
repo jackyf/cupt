@@ -9,7 +9,7 @@ ENDIF(NOT EXISTS /usr/bin/txt2tags)
 set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/reference")
 add_custom_command(
 	OUTPUT doxygen-stamp
-	DEPENDS cupt2
+	DEPENDS cupt3
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/reference"
 
 	COMMAND mkdir -p ${DOXYGEN_OUTPUT_DIRECTORY}

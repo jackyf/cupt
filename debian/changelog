@@ -1,6 +1,8 @@
 cupt (2.6.0~) UNRELEASED; urgency=low
 
-  * 
+  * debian:
+    - control:
+      - Bumped the library API version.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 

@@ -12,13 +12,12 @@ Standards-Version: 3.9.3
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
-Package: libcupt2-0
+Package: libcupt3-0
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Conflicts: libcupt2-0-experimental
-Breaks: debdelta (<< 0.31), libcupt2-0-downloadmethod-curl (<< 2.2.0~rc1),
-  libcupt2-0-downloadmethod-wget (<< 2.2.0~rc1)
-Recommends: libcupt2-0-downloadmethod-curl | libcupt2-0-downloadmethod-wget, bzip2, gpgv, ed
+Conflicts: libcupt2-0
+Breaks: debdelta (<< 0.31)
+Recommends: libcupt3-0-downloadmethod-curl | libcupt3-0-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
 Description: alternative front-end for dpkg -- runtime library
  This is a Cupt library implementing front-end to dpkg.
@@ -36,29 +35,29 @@ Description: alternative front-end for dpkg -- runtime library
  .
  See also description of 'cupt' package for more information.
 
-Package: libcupt2-dev
+Package: libcupt3-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends}, libcupt2-0 (= ${binary:Version})
-Conflicts: libcupt2-dev-experimental
-Suggests: libcupt2-doc
+Depends: ${misc:Depends}, libcupt3-0 (= ${binary:Version})
+Conflicts: libcupt2-dev
+Suggests: libcupt3-doc
 Description: alternative front-end for dpkg -- development files
  This package provides headers for Cupt library.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
 
-Package: libcupt2-doc
+Package: libcupt3-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}
 Description: alternative front-end for dpkg -- library documentation
  This package provides documentation for Cupt library.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
 
 Package: cupt
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt2-0 (>= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt3-0 (>= ${binary:Version})
 Breaks: daptup (<< 0.12.2~)
 Suggests: sensible-utils, libreadline6
 Description: alternative front-end for dpkg -- console interface
@@ -87,20 +86,20 @@ Description: alternative front-end for dpkg -- console interface
  .
  Its interface is mostly like apt-get/aptitude console interface.
 
-Package: libcupt2-0-downloadmethod-curl
+Package: libcupt3-0-downloadmethod-curl
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: alternative front-end for dpkg -- libcurl download method
  This package provides http(s) and ftp download handlers for Cupt library
  using libcurl.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
 
-Package: libcupt2-0-downloadmethod-wget
+Package: libcupt3-0-downloadmethod-wget
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, wget
 Description: alternative front-end for dpkg -- wget download method
  This package provides http(s) and ftp download handlers for Cupt library
  using wget.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
