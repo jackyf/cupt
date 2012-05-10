@@ -69,7 +69,7 @@ MethodFactoryImpl::~MethodFactoryImpl()
 #else
 	#define QUOTED(x) QUOTED_(x)
 	#define QUOTED_(x) # x
-	const string downloadMethodPath = "/usr/lib/cupt2-" QUOTED(SOVERSION) "/downloadmethods/";
+	const string downloadMethodPath = "/usr/lib/cupt3-" QUOTED(SOVERSION) "/downloadmethods/";
 	#undef QUOTED
 	#undef QUOTED_
 #endif
