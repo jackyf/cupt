@@ -8,7 +8,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] PinnedVersion: removed explicit constructor.
       - [API break] Removed deprecated methods.
     - cache/relation:
-      - [API break] ArchitecuturedRelation, ArchitecturedRelationExpression:
+      - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
         constructor from string subrange is now explicit.
     - pipe:
       - [API break] Removed.
