@@ -6,6 +6,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         and unique. Thus shared pointers to those objects are no more used in
         public interfaces.
       - [API break] PinnedVersion: removed explicit constructor.
+    - cache/relation:
+      - [API break] ArchitecturedRelationExpression: constructor from string
+        subrange is now explicit.
   * debian:
     - control:
       - Bumped the library API version.

@@ -167,7 +167,7 @@ struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRel
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	explicit ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator > input);
 	ArchitecturedRelationExpression(ArchitecturedRelationExpression&&) = default;
 	ArchitecturedRelationExpression(const ArchitecturedRelationExpression&) = default;
 	ArchitecturedRelationExpression& operator=(ArchitecturedRelationExpression&&) = default;
