@@ -121,14 +121,14 @@ string getPathOfIndexList(const Config& config, const IndexEntry& entry)
 	return basePath + "_" + indexListSuffix;
 }
 
-static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
+static vector< FileDownloadRecord > getDownloadInfoFromRelease(
 		const Config& config, const IndexEntry& indexEntry, const string& suffix)
 {
 	auto baseUri = getUriOfIndexEntry(indexEntry);
 	// TODO: make cachefiles::getAlias* functions
 	auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
 
-	vector< Cache::IndexDownloadRecord > result;
+	vector< FileDownloadRecord > result;
 
 	try
 	{
@@ -190,8 +190,8 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 				}
 				if (!foundRecord)
 				{
-					Cache::IndexDownloadRecord& record =
-							(result.push_back(Cache::IndexDownloadRecord()), *(result.rbegin()));
+					FileDownloadRecord& record =
+							(result.push_back(FileDownloadRecord()), *(result.rbegin()));
 					record.uri = uri;
 					record.size = string2uint32(m[2]);
 					record.hashSums[currentHashSumType] = m[1];
@@ -215,7 +215,7 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 	return result;
 }
 
-vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
+vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 		const Config& config, const IndexEntry& indexEntry)
 {
 	return getDownloadInfoFromRelease(config, indexEntry,
