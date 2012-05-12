@@ -26,6 +26,7 @@
 #include <internal/filesystem.hpp>
 #include <internal/debdeltahelper.hpp>
 #include <internal/lock.hpp>
+#include <internal/cachefiles.hpp>
 
 #include <internal/worker/packages.hpp>
 
@@ -1931,7 +1932,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 			{
 				__auto_installed_package_names.erase(packageName);
 			}
-			auto extendedInfoPath = _cache->getPathOfExtendedStates();
+			auto extendedInfoPath = cachefiles::getPathOfExtendedStates(*_config);
 			fs::mkpath(fs::dirname(extendedInfoPath));
 			auto tempPath = extendedInfoPath + ".cupt.tmp";
 
