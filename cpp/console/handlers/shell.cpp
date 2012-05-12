@@ -158,7 +158,6 @@ void freeArgcArgv(int argc, char** argv)
 int shell(Context& context)
 {
 	shellMode = true;
-	Package::memoize = true;
 
 	vector< string > arguments;
 	bpo::options_description noOptions;

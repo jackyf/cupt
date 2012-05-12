@@ -146,21 +146,21 @@ vector< string > Cache::getSourcePackageNames() const
 	return result;
 }
 
-shared_ptr< const BinaryPackage > Cache::getBinaryPackage(const string& packageName) const
+const BinaryPackage* Cache::getBinaryPackage(const string& packageName) const
 {
 	return __impl->getBinaryPackage(packageName);
 }
 
-shared_ptr< const SourcePackage > Cache::getSourcePackage(const string& packageName) const
+const SourcePackage* Cache::getSourcePackage(const string& packageName) const
 {
 	return __impl->getSourcePackage(packageName);
 }
 
-ssize_t Cache::getPin(const shared_ptr< const Version >& version) const
+ssize_t Cache::getPin(const Version* version) const
 {
 	auto getInstalledVersionString = [this, &version]()
 	{
-		if (dynamic_pointer_cast< const BinaryVersion >(version))
+		if (dynamic_cast< const BinaryVersion* >(version))
 		{
 			auto package = getBinaryPackage(version->packageName);
 			if (package)
@@ -178,7 +178,7 @@ ssize_t Cache::getPin(const shared_ptr< const Version >& version) const
 	return __impl->getPin(version, getInstalledVersionString);
 }
 
-vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< const Package >& package) const
+vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* package) const
 {
 	vector< Cache::PinnedVersion > result;
 
@@ -190,7 +190,7 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< 
 	{
 		if (!ivsIsSet)
 		{
-			if (auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package))
+			if (auto binaryPackage = dynamic_cast< const BinaryPackage* >(package))
 			{
 				auto installedVersion = binaryPackage->getInstalledVersion();
 				if (installedVersion)
@@ -205,7 +205,7 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< 
 
 	for (const auto& version: versions)
 	{
-		result.push_back(PinnedVersion(version, __impl->getPin(version, getInstalledVersionString)));
+		result.push_back(PinnedVersion { version, __impl->getPin(version, getInstalledVersionString) });
 	}
 
 	auto sorter = [](const PinnedVersion& left, const PinnedVersion& right) -> bool
@@ -228,13 +228,13 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const shared_ptr< 
 	return result;
 }
 
-shared_ptr< const Version > Cache::getPolicyVersion(const shared_ptr< const Package >& package) const
+const Version* Cache::getPolicyVersion(const Package* package) const
 {
 	auto sortedPinnedVersions = getSortedPinnedVersions(package);
 	// not assuming the package have at least valid version...
 	if (sortedPinnedVersions.empty())
 	{
-		return shared_ptr< const Version >();
+		return nullptr;
 	}
 	else
 	{
@@ -253,15 +253,15 @@ bool Cache::isAutomaticallyInstalled(const string& packageName) const
 	return __impl->extendedInfo.automaticallyInstalled.count(packageName);
 }
 
-vector< shared_ptr< const BinaryVersion > >
+vector< const BinaryVersion* >
 Cache::getSatisfyingVersions(const RelationExpression& relationExpression) const
 {
 	return __impl->getSatisfyingVersions(relationExpression);
 }
 
-vector< shared_ptr< const BinaryVersion > > Cache::getInstalledVersions() const
+vector< const BinaryVersion* > Cache::getInstalledVersions() const
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	vector< const BinaryVersion* > result;
 
 	auto packageNames = __impl->systemState->getInstalledPackageNames();
 	result.reserve(packageNames.size());
@@ -289,7 +289,7 @@ const Cache::ExtendedInfo& Cache::getExtendedInfo() const
 	return __impl->extendedInfo;
 }
 
-pair< string, string > Cache::getLocalizedDescriptions(const shared_ptr< const BinaryVersion >& version) const
+pair< string, string > Cache::getLocalizedDescriptions(const BinaryVersion* version) const
 {
 	return __impl->getLocalizedDescriptions(version);
 }
@@ -300,7 +300,7 @@ bool Cache::verifySignature(const shared_ptr< const Config >& config, const stri
 	return internal::cachefiles::verifySignature(*config, path, path);
 }
 
-string Cache::getPathOfCopyright(const shared_ptr< const BinaryVersion >& version)
+string Cache::getPathOfCopyright(const BinaryVersion* version)
 {
 	if (!version->isInstalled())
 	{
@@ -310,7 +310,7 @@ string Cache::getPathOfCopyright(const shared_ptr< const BinaryVersion >& versio
 	return string("/usr/share/doc/") + version->packageName + "/copyright";
 }
 
-string Cache::getPathOfChangelog(const shared_ptr< const BinaryVersion >& version)
+string Cache::getPathOfChangelog(const BinaryVersion* version)
 {
 	if (!version->isInstalled())
 	{

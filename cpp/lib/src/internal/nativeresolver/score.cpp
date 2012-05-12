@@ -69,13 +69,13 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 	}
 }
 
-ssize_t ScoreManager::__get_version_weight(const shared_ptr< const BinaryVersion >& version) const
+ssize_t ScoreManager::__get_version_weight(const BinaryVersion* version) const
 {
 	return version ? (__cache->getPin(version) - __preferred_version_default_pin) : 0;
 }
 
-ScoreChange ScoreManager::getVersionScoreChange(const shared_ptr< const BinaryVersion >& originalVersion,
-		const shared_ptr< const BinaryVersion >& supposedVersion) const
+ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVersion,
+		const BinaryVersion* supposedVersion) const
 {
 	auto supposedVersionWeight = __get_version_weight(supposedVersion);
 	auto originalVersionWeight = __get_version_weight(originalVersion);

@@ -1,5 +1,10 @@
 cupt (2.6.0~) UNRELEASED; urgency=low
 
+  * lib:
+    - cache:
+      - [API break] Pointers to Package and Version objects are now persistent
+        and unique. Thus shared pointers to those objects are no more used in
+        public interfaces.
   * debian:
     - control:
       - Bumped the library API version.

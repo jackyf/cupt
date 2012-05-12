@@ -69,7 +69,7 @@ class AutoRemovalPossibilityImpl
 	}
 
 	typedef AutoRemovalPossibility::Allow Allow;
-	Allow isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
+	Allow isAllowed(const Cache& cache, const BinaryVersion* version,
 			bool wasInstalledBefore) const
 	{
 		const string& packageName = version->packageName;
@@ -106,7 +106,7 @@ AutoRemovalPossibility::~AutoRemovalPossibility()
 	delete __impl;
 }
 
-AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
+AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const Cache& cache, const BinaryVersion* version,
 		bool wasInstalledBefore) const
 {
 	return __impl->isAllowed(cache, version, wasInstalledBefore);

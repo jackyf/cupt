@@ -29,9 +29,9 @@
 namespace cupt {
 namespace cache {
 
-shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::InitializationParameters& initParams)
+SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
-	auto v = std::make_shared< SourceVersion >();
+	auto v = new SourceVersion;
 
 	Source source;
 
@@ -170,9 +170,9 @@ shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::Initiali
 	return v;
 }
 
-bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) const
+bool SourceVersion::areHashesEqual(const Version* other) const
 {
-	shared_ptr< const SourceVersion > o = dynamic_pointer_cast< const SourceVersion >(other);
+	auto o = dynamic_cast< const SourceVersion* >(other);
 	if (!o)
 	{
 		fatal2i("areHashesEqual: non-source version parameter");

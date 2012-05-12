@@ -52,12 +52,11 @@ class ScoreManager
 	ssize_t __quality_adjustment;
 	ssize_t __preferred_version_default_pin;
 
-	ssize_t __get_version_weight(const shared_ptr< const BinaryVersion >& version) const;
+	ssize_t __get_version_weight(const BinaryVersion* version) const;
  public:
 	ScoreManager(const Config&, const shared_ptr< const Cache >&);
 	ssize_t getScoreChangeValue(const ScoreChange&) const;
-	ScoreChange getVersionScoreChange(const shared_ptr< const BinaryVersion >&,
-			const shared_ptr< const BinaryVersion >&) const;
+	ScoreChange getVersionScoreChange(const BinaryVersion*, const BinaryVersion*) const;
 	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
 	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;

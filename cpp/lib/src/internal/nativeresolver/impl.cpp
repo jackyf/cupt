@@ -65,8 +65,8 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 		}
 
 		// this also involves creating new entry in __initial_packages
-		shared_ptr< const BinaryVersion >& targetVersion = __initial_packages[*packageNameIt].version;
-		targetVersion.reset(); // removed by default
+		auto& targetVersion = __initial_packages[*packageNameIt].version;
+		targetVersion = nullptr; // removed by default
 
 		// = this package was not installed by resolver
 		__manually_modified_package_names.insert(*packageNameIt);
@@ -88,8 +88,7 @@ void __mydebug_wrapper(const Solution& solution, size_t id, const Args&... args)
 
 // installs new version, but does not sticks it
 bool NativeResolverImpl::__prepare_version_no_stick(
-		const shared_ptr< const BinaryVersion >& version,
-		dg::InitialPackageEntry& initialPackageEntry)
+		const BinaryVersion* version, dg::InitialPackageEntry& initialPackageEntry)
 {
 	const string& packageName = version->packageName;
 	if (initialPackageEntry.version &&
@@ -113,7 +112,7 @@ bool NativeResolverImpl::__prepare_version_no_stick(
 	return true;
 }
 
-void NativeResolverImpl::installVersion(const shared_ptr< const BinaryVersion >& version)
+void NativeResolverImpl::installVersion(const BinaryVersion* version)
 {
 	const string& packageName = version->packageName;
 
@@ -154,7 +153,7 @@ void NativeResolverImpl::removePackage(const string& packageName)
 	}
 	initialPackageEntry.sticked = true;
 	initialPackageEntry.modified = true;
-	initialPackageEntry.version.reset();
+	initialPackageEntry.version = nullptr;
 	__manually_modified_package_names.insert(packageName);
 
 	if (__config->getBool("debug::resolver"))
@@ -181,7 +180,7 @@ void NativeResolverImpl::upgrade()
 		auto package = __cache->getBinaryPackage(packageName);
 
 		// if there is original version, then at least one policy version should exist
-		auto supposedVersion = static_pointer_cast< const BinaryVersion >
+		auto supposedVersion = static_cast< const BinaryVersion* >
 				(__cache->getPolicyVersion(package));
 		if (!supposedVersion)
 		{
@@ -244,7 +243,7 @@ AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_remova
 	}
 
 	const string& packageName = versionVertex->getPackageName();
-	const shared_ptr< const BinaryVersion >& version = versionVertex->version;
+	auto& version = versionVertex->version;
 
 	if (packageName == __dummy_package_name)
 	{
@@ -391,7 +390,7 @@ SolutionChooser __select_solution_chooser(const Config& config)
 void NativeResolverImpl::__require_strict_relation_expressions()
 {
 	// "installing" virtual package, which will be used for strict '(un)satisfy' requests
-	shared_ptr< BinaryVersion > version(new BinaryVersion);
+	auto version = &__custom_relations_version;
 
 	version->packageName = __dummy_package_name;
 	version->sourcePackageName = __dummy_package_name;
@@ -437,17 +436,16 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& actions) const
 {
-	auto getVersion = [](const dg::Element* elementPtr) -> shared_ptr< const BinaryVersion >
+	auto getVersion = [](const dg::Element* elementPtr) -> const BinaryVersion*
 	{
-		static shared_ptr< const BinaryVersion > emptyVersion;
 		if (!elementPtr)
 		{
-			return emptyVersion;
+			return nullptr;
 		}
 		auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 		if (!versionVertex)
 		{
-			return emptyVersion;
+			return nullptr;
 		}
 		return versionVertex->version;
 	};

@@ -17,9 +17,13 @@ struct PointerLess
 	}
 };
 template < class T >
-struct PointerEqual: public std::binary_function< shared_ptr< T >, shared_ptr< T >, bool >
+struct PointerEqual
 {
 	bool operator()(const shared_ptr< T >& left, const shared_ptr< T >& right) const
+	{
+		return *left == *right;
+	}
+	bool operator()(const T* left, const T* right) const
 	{
 		return *left == *right;
 	}

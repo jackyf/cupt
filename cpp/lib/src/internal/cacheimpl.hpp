@@ -35,6 +35,7 @@ class ReleaseLimits;
 
 using std::list;
 using std::unordered_map;
+using std::unique_ptr;
 
 using boost::xpressive::sregex;
 using boost::xpressive::smatch;
@@ -58,20 +59,20 @@ class CacheImpl
 	};
 
 	map< string, set< const string* > > canProvide;
-	mutable unordered_map< string, shared_ptr< Package > > binaryPackages;
-	mutable unordered_map< string, shared_ptr< Package > > sourcePackages;
+	mutable unordered_map< string, unique_ptr< Package > > binaryPackages;
+	mutable unordered_map< string, unique_ptr< Package > > sourcePackages;
 	map< string, TranslationPosition > translations;
-	mutable unordered_map< string, vector< shared_ptr< const BinaryVersion > > > getSatisfyingVersionsCache;
+	mutable unordered_map< string, vector< const BinaryVersion* > > getSatisfyingVersionsCache;
 	shared_ptr< PinInfo > pinInfo;
-	mutable map< shared_ptr< const Version >, ssize_t > pinCache;
+	mutable map< const Version*, ssize_t > pinCache;
 	map< string, shared_ptr< ReleaseInfo > > releaseInfoCache;
 	list< File > translationFileStorage;
 	smatch* __smatch_ptr;
 
-	shared_ptr< Package > newSourcePackage(const string&) const;
-	shared_ptr< Package > newBinaryPackage(const string&) const;
-	shared_ptr< Package > preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
-			unordered_map< string, shared_ptr< Package > >&, const string&,
+	Package* newSourcePackage(const string&) const;
+	Package* newBinaryPackage(const string&) const;
+	Package* preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
+			unordered_map< string, unique_ptr< Package > >&, const string&,
 			decltype(&CacheImpl::newBinaryPackage)) const;
 	shared_ptr< ReleaseInfo > getReleaseInfo(const Config&, const IndexEntry&);
 	void parseSourceList(const string& path);
@@ -80,10 +81,10 @@ class CacheImpl
 			shared_ptr< const ReleaseInfo >, const string&);
 	void processTranslationFiles(const IndexEntry&, const string&);
 	void processTranslationFile(const string& path, const string&);
-	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const Relation&) const;
+	vector< const BinaryVersion* > getSatisfyingVersions(const Relation&) const;
  public:
 	shared_ptr< const Config > config;
-	shared_ptr< const string > binaryArchitecture;
+	unique_ptr< const string > binaryArchitecture;
 	vector< shared_ptr< sregex > > packageNameRegexesToReinstall;
 	shared_ptr< const system::State > systemState;
 	vector< IndexEntry > indexEntries;
@@ -101,12 +102,12 @@ class CacheImpl
 	void processIndexEntries(bool, bool);
 	void parsePreferences();
 	void parseExtendedStates();
-	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;
-	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
-	ssize_t getPin(const shared_ptr< const Version >&, const std::function< string () >&) const;
-	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
+	const BinaryPackage* getBinaryPackage(const string& packageName) const;
+	const SourcePackage* getSourcePackage(const string& packageName) const;
+	ssize_t getPin(const Version*, const std::function< string () >&) const;
+	pair< string, string > getLocalizedDescriptions(const BinaryVersion*) const;
 	void processProvides(const string*, const char*, const char*);
-	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const RelationExpression&) const;
+	vector< const BinaryVersion* > getSatisfyingVersions(const RelationExpression&) const;
 };
 
 }

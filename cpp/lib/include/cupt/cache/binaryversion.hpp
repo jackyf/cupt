@@ -51,10 +51,10 @@ struct CUPT_API BinaryVersion: public Version
 	FileRecord file; ///< Version::FileRecord
 
 	bool isInstalled() const; ///< is version installed?
-	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
+	virtual bool areHashesEqual(const Version* other) const;
 
 	/// parse version
-	static shared_ptr< BinaryVersion > parseFromFile(const Version::InitializationParameters&);
+	static BinaryVersion* parseFromFile(const Version::InitializationParameters&);
 };
 
 } // namespace

@@ -76,9 +76,9 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 	}
 }
 
-vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getArchivesInfo() const
+vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo() const
 {
-	map< string, shared_ptr< const BinaryVersion > > knownArchives;
+	map< string, const BinaryVersion* > knownArchives;
 
 	auto archivesDirectory = _get_archives_directory();
 
@@ -128,11 +128,11 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 
 	auto paths = fs::lglob(archivesDirectory, "*.deb");
 
-	vector< pair< string, shared_ptr< const BinaryVersion > > > result;
+	vector< pair< string, const BinaryVersion* > > result;
 
 	FORIT(pathIt, paths)
 	{
-		shared_ptr< const BinaryVersion > version; // empty by default
+		const BinaryVersion* version = nullptr;
 		auto knownPathIt = knownArchives.find(*pathIt);
 		if (knownPathIt != knownArchives.end())
 		{

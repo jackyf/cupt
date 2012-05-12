@@ -99,7 +99,7 @@ int showBinaryVersions(Context& context)
 	for (size_t i = 0; i < arguments.size(); ++i)
 	{
 		const string& packageExpression = arguments[i];
-		vector< shared_ptr< const BinaryVersion > > versions;
+		vector< const BinaryVersion* > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
 			versions = selectAllBinaryVersionsWildcarded(cache, packageExpression);
@@ -253,7 +253,7 @@ int showSourceVersions(Context& context)
 	for (size_t i = 0; i < arguments.size(); ++i)
 	{
 		const string& packageExpression = arguments[i];
-		vector< shared_ptr< const SourceVersion > > versions;
+		vector< const SourceVersion* > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
 			versions = selectAllSourceVersionsWildcarded(cache, packageExpression);
@@ -346,14 +346,13 @@ int showRelations(Context& context, bool reverse)
 
 	if (reverse)
 	{
-		Package::memoize = true;
 		Cache::memoize = true;
 	}
 
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
 			/* installed */ true);
 
-	queue< shared_ptr< const BinaryVersion > > versions;
+	queue< const BinaryVersion* > versions;
 	FORIT(it, arguments)
 	{
 		auto selectedVersions = selectBinaryVersionsWildcarded(cache, *it);
@@ -376,7 +375,7 @@ int showRelations(Context& context, bool reverse)
 	}
 
 	// don't output the same version more than one time
-	set< shared_ptr< const BinaryVersion >, PointerLess< const BinaryVersion > > processedVersions;
+	set< const BinaryVersion* > processedVersions;
 
 	// used only by rdepends
 	unordered_map< string, set< string > > reverseDependsIndex;
@@ -587,9 +586,9 @@ int policy(Context& context, bool source)
 		FORIT(packageNameIt, arguments)
 		{
 			const string& packageName = *packageNameIt;
-			shared_ptr< const Package > package = (!source ?
-					shared_ptr< const Package >(getBinaryPackage(cache, packageName)) :
-					shared_ptr< const Package >(getSourcePackage(cache, packageName)));
+			const Package* package = (!source ?
+					(const Package*)getBinaryPackage(cache, packageName) :
+					(const Package*)getSourcePackage(cache, packageName));
 			auto policyVersion = cache->getPolicyVersion(package);
 			if (!policyVersion)
 			{
@@ -601,7 +600,7 @@ int policy(Context& context, bool source)
 			string installedVersionString;
 			if (!source)
 			{
-				auto binaryPackage = dynamic_pointer_cast< const BinaryPackage >(package);
+				auto binaryPackage = dynamic_cast< const BinaryPackage* >(package);
 				if (!binaryPackage)
 				{
 					fatal2i("binary package expected");
@@ -624,7 +623,7 @@ int policy(Context& context, bool source)
 
 			FORIT(pinnedVersionIt, pinnedVersions)
 			{
-				const shared_ptr< const Version >& version = pinnedVersionIt->version;
+				const auto& version = pinnedVersionIt->version;
 				auto pin = pinnedVersionIt->pin;
 
 				if (version->versionString == installedVersionString)
@@ -775,16 +774,16 @@ int findDependencyChain(Context& context)
 	arguments.erase(arguments.end() - 1);
 	auto leafVersion = selectBinaryVersion(cache, leafPackageExpression, true);
 
-	queue< shared_ptr< const BinaryVersion > > versions;
+	queue< const BinaryVersion* > versions;
 	struct PathEntry
 	{
-		shared_ptr< const BinaryVersion > version;
+		const BinaryVersion* version;
 		BinaryVersion::RelationTypes::Type dependencyType;
 		const RelationExpression* relationExpressionPtr;
 	};
-	map< shared_ptr< const BinaryVersion >, PathEntry, PointerLess< const BinaryVersion > > links;
+	map< const BinaryVersion*, PathEntry  > links;
 
-	auto addStartingVersion = [&versions, &links](const shared_ptr< const BinaryVersion >& version)
+	auto addStartingVersion = [&versions, &links](const BinaryVersion* version)
 	{
 		versions.push(version);
 		links[version]; // create empty PathEntry for version
@@ -838,7 +837,7 @@ int findDependencyChain(Context& context)
 		{
 			// we found a path, re-walk it
 			stack< PathEntry > path;
-			shared_ptr< const BinaryVersion > currentVersion = version;
+			const BinaryVersion* currentVersion = version;
 
 			decltype(links.find(currentVersion)) it;
 			while ((it = links.find(currentVersion)), it->second.version)
@@ -869,7 +868,7 @@ int findDependencyChain(Context& context)
 				auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
 				for (const auto& newVersion: satisfyingVersions)
 				{
-					auto insertResult = links.insert(make_pair(newVersion, PathEntry()));
+					auto insertResult = links.insert({ newVersion, PathEntry() });
 					if (insertResult.second)
 					{
 						// new element

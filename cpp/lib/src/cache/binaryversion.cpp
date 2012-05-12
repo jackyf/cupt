@@ -26,9 +26,9 @@
 namespace cupt {
 namespace cache {
 
-shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::InitializationParameters& initParams)
+BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
-	auto v = std::make_shared< BinaryVersion >();
+	auto v = new BinaryVersion;
 
 	Source source;
 
@@ -168,9 +168,9 @@ bool BinaryVersion::isInstalled() const
 	return sources.empty() ? false : sources[0].release->baseUri.empty();
 }
 
-bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) const
+bool BinaryVersion::areHashesEqual(const Version* other) const
 {
-	shared_ptr< const BinaryVersion > o = dynamic_pointer_cast< const BinaryVersion >(other);
+	auto o = dynamic_cast< const BinaryVersion* >(other);
 	if (!o)
 	{
 		fatal2i("areHashesEqual: non-binary version parameter");

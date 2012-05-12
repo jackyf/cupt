@@ -94,7 +94,7 @@ void Worker::updateReleaseAndIndexData(const shared_ptr< download::Progress >& p
 	__impl->updateReleaseAndIndexData(progress);
 }
 
-vector< pair< string, shared_ptr< const BinaryVersion > > > Worker::getArchivesInfo() const
+vector< pair< string, const BinaryVersion* > > Worker::getArchivesInfo() const
 {
 	return __impl->getArchivesInfo();
 }

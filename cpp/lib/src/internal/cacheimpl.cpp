@@ -58,7 +58,7 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 			providesStringStart, providesStringEnd, callback);
 }
 
-shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) const
+Package* CacheImpl::newBinaryPackage(const string& packageName) const
 {
 	bool needsReinstall = false;
 	FORIT(regexPtrIt, packageNameRegexesToReinstall)
@@ -70,27 +70,27 @@ shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) con
 		}
 	}
 
-	return std::make_shared< BinaryPackage >(binaryArchitecture, needsReinstall);
+	return new BinaryPackage(binaryArchitecture.get(), needsReinstall);
 }
 
-shared_ptr< Package > CacheImpl::newSourcePackage(const string& /* packageName */) const
+Package* CacheImpl::newSourcePackage(const string& /* packageName */) const
 {
-	return shared_ptr< Package >(new SourcePackage(binaryArchitecture));
+	return new SourcePackage(binaryArchitecture.get());
 }
 
-shared_ptr< Package > CacheImpl::preparePackage(unordered_map< string, vector< PrePackageRecord > >& pre,
-		unordered_map< string, shared_ptr< Package > >& target, const string& packageName,
+Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageRecord > >& pre,
+		unordered_map< string, unique_ptr< Package > >& target, const string& packageName,
 		decltype(&CacheImpl::newBinaryPackage) packageBuilderMethod) const
 {
 	auto preIt = pre.find(packageName);
 	if (preIt != pre.end())
 	{
-		shared_ptr< Package >& package = target[packageName];
+		auto& package = target[packageName];
 		if (!package)
 		{
 			// there was no such package before, and an insertion occured
 			// so, we need to create the package
-			package = (this->*packageBuilderMethod)(packageName);
+			package.reset( (this->*packageBuilderMethod)(packageName) );
 		}
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)
@@ -103,18 +103,18 @@ shared_ptr< Package > CacheImpl::preparePackage(unordered_map< string, vector< P
 			package->addEntry(versionInitParams);
 		}
 		preRecord.clear();
-		return package;
+		return package.get();
 	}
 	else
 	{
-		return shared_ptr< Package >();
+		return nullptr;
 	}
 }
 
-vector< shared_ptr< const BinaryVersion > >
+vector< const BinaryVersion* >
 CacheImpl::getSatisfyingVersions(const Relation& relation) const
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	vector< const BinaryVersion* > result;
 
 	const string& packageName = relation.packageName;
 
@@ -179,7 +179,7 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 	return result;
 }
 
-shared_ptr< const BinaryPackage > CacheImpl::getBinaryPackage(const string& packageName) const
+const BinaryPackage* CacheImpl::getBinaryPackage(const string& packageName) const
 {
 	auto it = binaryPackages.find(packageName);
 	if (it == binaryPackages.end())
@@ -187,15 +187,15 @@ shared_ptr< const BinaryPackage > CacheImpl::getBinaryPackage(const string& pack
 		auto prepareResult = preparePackage(preBinaryPackages,
 				binaryPackages, packageName, &CacheImpl::newBinaryPackage);
 		// can be empty/NULL also
-		return static_pointer_cast< const BinaryPackage >(prepareResult);
+		return static_cast< const BinaryPackage* >(prepareResult);
 	}
 	else
 	{
-		return static_pointer_cast< const BinaryPackage >(it->second);
+		return static_cast< const BinaryPackage* >(it->second.get());
 	}
 }
 
-shared_ptr< const SourcePackage > CacheImpl::getSourcePackage(const string& packageName) const
+const SourcePackage* CacheImpl::getSourcePackage(const string& packageName) const
 {
 	auto it = sourcePackages.find(packageName);
 	if (it == sourcePackages.end())
@@ -203,11 +203,11 @@ shared_ptr< const SourcePackage > CacheImpl::getSourcePackage(const string& pack
 		auto prepareResult = preparePackage(preSourcePackages,
 				sourcePackages, packageName, &CacheImpl::newSourcePackage);
 		// can be empty/NULL also
-		return static_pointer_cast< const SourcePackage >(prepareResult);
+		return static_cast< const SourcePackage* >(prepareResult);
 	}
 	else
 	{
-		return static_pointer_cast< const SourcePackage >(it->second);
+		return static_cast< const SourcePackage* >(it->second.get());
 	}
 }
 
@@ -672,7 +672,7 @@ void CacheImpl::parsePreferences()
 	pinInfo.reset(new PinInfo(config, systemState));
 }
 
-ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version,
+ssize_t CacheImpl::getPin(const Version* version,
 		const std::function< string () >& getInstalledVersionString) const
 {
 	if (Cache::memoize)
@@ -692,7 +692,7 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version,
 	return result;
 }
 
-pair< string, string > CacheImpl::getLocalizedDescriptions(const shared_ptr< const BinaryVersion >& version) const
+pair< string, string > CacheImpl::getLocalizedDescriptions(const BinaryVersion* version) const
 {
 	static const string descriptionHashFieldName = "Description-md5";
 
@@ -780,7 +780,7 @@ void CacheImpl::parseExtendedStates()
 	}
 }
 
-vector< shared_ptr< const BinaryVersion > >
+vector< const BinaryVersion* >
 CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) const
 {
 	string memoizeKey;
@@ -804,12 +804,11 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 		relationIt != relationExpression.end(); ++relationIt)
 	{
 		auto source = getSatisfyingVersions(*relationIt);
-		FORIT(versionIt, source)
+		for (const auto& version: source)
 		{
-			auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), *versionIt);
-			if (std::find_if(result.begin(), result.end(), predicate) == result.end())
+			if (std::find(result.begin(), result.end(), version) == result.end())
 			{
-				result.push_back(*versionIt);
+				result.push_back(version);
 			}
 		}
 	}

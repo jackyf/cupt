@@ -31,16 +31,16 @@ class CUPT_API SourcePackage: public Package
 {
  protected:
 	/// @cond
-	CUPT_LOCAL virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
-	CUPT_LOCAL virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const;
+	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
+	CUPT_LOCAL virtual bool _is_architecture_appropriate(const Version*) const;
 	/// @endcond
  public:
 	/// constructor
 	/**
 	 * @param binaryArchitecture system binary architecture
 	 */
-	SourcePackage(const shared_ptr< const string >& binaryArchitecture);
-	vector< shared_ptr< const SourceVersion > > getVersions() const;
+	SourcePackage(const string* binaryArchitecture);
+	vector< const SourceVersion* > getVersions() const;
 };
 
 }

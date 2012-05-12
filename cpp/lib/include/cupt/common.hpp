@@ -68,6 +68,7 @@ using std::pair;
 using std::shared_ptr;
 using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
+using std::unique_ptr;
 
 /// message file descriptor
 /**

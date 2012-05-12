@@ -24,19 +24,19 @@
 
 #include "common.hpp"
 
-shared_ptr< const BinaryPackage > getBinaryPackage(shared_ptr< const Cache > cache,
+const BinaryPackage* getBinaryPackage(shared_ptr< const Cache > cache,
 		const string& packageName, bool throwOnError = true);
-shared_ptr< const SourcePackage > getSourcePackage(shared_ptr< const Cache > cache,
+const SourcePackage* getSourcePackage(shared_ptr< const Cache > cache,
 		const string& packageName, bool throwOnError = true);
-shared_ptr< const BinaryVersion > selectBinaryVersion(shared_ptr< const Cache > cache,
+const BinaryVersion* selectBinaryVersion(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError);
-vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError = true);
-vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const SourceVersion* > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression, bool throwOnError = true);
-vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression);
-vector< shared_ptr< const SourceVersion > > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const SourceVersion* > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
 		const string& packageExpression);
 
 #endif

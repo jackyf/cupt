@@ -123,7 +123,7 @@ PackagesWorker::PackagesWorker()
 set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debugging)
 {
 	set< string > result;
-	queue< shared_ptr< const BinaryVersion > > toProcess;
+	queue< const BinaryVersion* > toProcess;
 
 	auto processRelationExpression = [&cache, &result, &toProcess, &debugging](const RelationExpression& relationExpression)
 	{
@@ -177,6 +177,20 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 	}
 
 	return result;
+}
+
+const BinaryVersion* PackagesWorker::__get_fake_version_for_purge(const string& packageName)
+{
+	auto& versionPtr = __fake_versions_for_purge[packageName];
+	if (!versionPtr)
+	{
+		versionPtr.reset(new BinaryVersion);
+		versionPtr->packageName = packageName;
+		versionPtr->versionString = "<dummy>";
+		versionPtr->essential = false;
+	}
+
+	return versionPtr.get();
 }
 
 void __set_action_priority(const InnerAction* actionPtr, const InnerAction* previousActionPtr)
@@ -258,7 +272,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 			{
 				const IA::Type& innerActionType = *innerActionTypeIt;
 
-				shared_ptr< const BinaryVersion > version;
+				const BinaryVersion* version;
 				if (innerActionType == IA::Remove)
 				{
 					auto package = _cache->getBinaryPackage(packageName);
@@ -273,11 +287,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 				}
 				if (!version)
 				{
-					auto versionPtr = new BinaryVersion;
-					versionPtr->packageName = packageName;
-					versionPtr->versionString = "<dummy>";
-					versionPtr->essential = false;
-					version.reset(versionPtr);
+					version = __get_fake_version_for_purge(packageName);
 				}
 
 				if (innerActionType != IA::Unpack)
@@ -489,8 +499,8 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 }
 
 void __create_virtual_edge(
-		const shared_ptr< const BinaryVersion >& fromVirtualVersion,
-		const shared_ptr< const BinaryVersion >& toVirtualVersion,
+		const BinaryVersion* fromVirtualVersion,
+		const BinaryVersion* toVirtualVersion,
 		vector< pair< InnerAction, InnerAction > >* virtualEdgesPtr)
 {
 	InnerAction from;
@@ -697,9 +707,8 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 			if (relationRecordIt->reverse == neededValueOfReverse)
 			{
 				auto satisfyingVersions = cache.getSatisfyingVersions(relationRecordIt->relationExpression);
-				auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticPtr->version);
-				if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-						predicate) == satisfyingVersions.end())
+				if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
+						antagonisticPtr->version) == satisfyingVersions.end())
 				{
 					return false;
 				}
@@ -1336,7 +1345,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 			const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
 			FORIT(it, suggestedPackages)
 			{
-				const shared_ptr< const BinaryVersion >& version = it->second.version;
+				const auto& version = it->second.version;
 
 				const string& packageName = version->packageName;
 				const string& versionString = version->versionString;
@@ -1741,7 +1750,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		FORIT(actionIt, *actionGroupIt)
 		{
 			auto actionType = actionIt->type;
-			const shared_ptr< const BinaryVersion >& version = actionIt->version;
+			const auto& version = actionIt->version;
 			string path;
 			switch (actionType)
 			{
@@ -2183,7 +2192,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 					string actionExpression;
 					if (actionName == "unpack" || actionName == "install")
 					{
-						const shared_ptr< const BinaryVersion > version = actionIt->version;
+						const auto& version = actionIt->version;
 						actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
 					}
 					else

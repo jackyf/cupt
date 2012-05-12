@@ -149,7 +149,7 @@ class SolutionStorage
 	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< Solution >&);
 
 	void prepareForResolving(Solution&,
-			const map< string, shared_ptr< const BinaryVersion > >&,
+			const map< string, const BinaryVersion* >&,
 			const map< string, dg::InitialPackageEntry >&);
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;

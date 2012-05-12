@@ -53,12 +53,12 @@ class PinInfo
 
 	void init();
 	void loadData(const string& path);
-	ssize_t getOriginalAptPin(const shared_ptr< const Version >&) const;
-	void adjustUsingPinSettings(const shared_ptr< const Version >&, ssize_t& priority) const;
+	ssize_t getOriginalAptPin(const Version*) const;
+	void adjustUsingPinSettings(const Version*, ssize_t& priority) const;
  public:
 	PinInfo(const shared_ptr< const Config >&, const shared_ptr< const system::State >&);
 
-	ssize_t getPin(const shared_ptr< const Version >&, const string& installedVersionString) const;
+	ssize_t getPin(const Version*, const string& installedVersionString) const;
 };
 
 }

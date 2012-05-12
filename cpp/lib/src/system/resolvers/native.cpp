@@ -32,7 +32,7 @@ NativeResolver::~NativeResolver()
 	delete __impl;
 }
 
-void NativeResolver::installVersion(const shared_ptr< const BinaryVersion >& version)
+void NativeResolver::installVersion(const BinaryVersion* version)
 {
 	__impl->installVersion(version);
 }

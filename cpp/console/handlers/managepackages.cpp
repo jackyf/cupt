@@ -263,7 +263,7 @@ static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 			fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
 					packageExpression, targetVersionString);
 		}
-		resolver.installVersion(static_pointer_cast< const BinaryVersion >(targetVersion));
+		resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
 	}
 	else
 	{
@@ -392,7 +392,7 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 		return; // nothing to print
 	}
 
-	auto getVersionString = [&flags](const shared_ptr< const Version >& version) -> string
+	auto getVersionString = [&flags](const Version* version) -> string
 	{
 		if (!version)
 		{
@@ -703,7 +703,7 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 	Resolver::SuggestedPackages result;
 	FORIT(suggestedPackageIt, packages)
 	{
-		const shared_ptr< const BinaryVersion >& suggestedVersion = suggestedPackageIt->second.version;
+		const auto& suggestedVersion = suggestedPackageIt->second.version;
 		if (suggestedVersion)
 		{
 			auto policyVersion = cache->getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
@@ -1200,7 +1200,6 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		Version::parseInfoOnly = false;
 	}
 
-	Package::memoize = true;
 	Cache::memoize = true;
 
 	vector< string > packageExpressions;

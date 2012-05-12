@@ -46,7 +46,7 @@ PinInfo::PinInfo(const shared_ptr< const Config >& config,
 	init();
 }
 
-ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) const
+ssize_t PinInfo::getOriginalAptPin(const Version* version) const
 {
 	static const ssize_t defaultReleasePriority = 990;
 	static const ssize_t notAutomaticReleasePriority = 1;
@@ -95,8 +95,7 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 	return result;
 }
 
-ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
-		const string& installedVersionString) const
+ssize_t PinInfo::getPin(const Version* version, const string& installedVersionString) const
 {
 	auto result = getOriginalAptPin(version);
 
@@ -114,7 +113,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 			result += config->getInteger("cupt::cache::pin::addendums::downgrade");
 		}
 
-		auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
+		auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 		if (!binaryVersion)
 		{
 			fatal2i("version is not binary");
@@ -341,7 +340,7 @@ string getHostNameInAptPreferencesStyle(const string& baseUri)
 	}
 }
 
-void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version, ssize_t& priority) const
+void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) const
 {
 	smatch m;
 
@@ -361,7 +360,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
-						auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
+						auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 						if (!binaryVersion)
 						{
 							matched = false;

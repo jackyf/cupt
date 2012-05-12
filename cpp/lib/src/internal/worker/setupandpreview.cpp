@@ -33,7 +33,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 {
 	Action::Type action = Action::Count; // invalid
 
-	const shared_ptr< const BinaryVersion >& supposedVersion = suggestedPackage.version;
+	const auto& supposedVersion = suggestedPackage.version;
 	auto installedInfo = _cache->getSystemState()->getInstalledInfo(packageName);
 
 	if (supposedVersion)
@@ -224,7 +224,7 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 		auto oldPackage = _cache->getBinaryPackage(packageName);
 		if (oldPackage)
 		{
-			const shared_ptr< const BinaryVersion >& oldVersion = oldPackage->getInstalledVersion();
+			const auto& oldVersion = oldPackage->getInstalledVersion();
 			if (oldVersion)
 			{
 				oldInstalledSize = oldVersion->installedSize;
@@ -233,7 +233,7 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 
 		// new part
 		ssize_t newInstalledSize = 0;
-		const shared_ptr< const BinaryVersion >& newVersion = __desired_state->find(packageName)->second.version;
+		const auto& newVersion = __desired_state->find(packageName)->second.version;
 		if (newVersion)
 		{
 			newInstalledSize = newVersion->installedSize;
@@ -261,7 +261,7 @@ pair< size_t, size_t > SetupAndPreviewWorker::getDownloadSizesPreview() const
 
 		FORIT(it, suggestedPackages)
 		{
-			const shared_ptr< const BinaryVersion >& version = it->second.version;
+			const auto& version = it->second.version;
 			auto size = version->file.size;
 
 			totalBytes += size;

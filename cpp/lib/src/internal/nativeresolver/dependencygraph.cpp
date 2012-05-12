@@ -37,7 +37,7 @@ using cache::RelationExpression;
 using std::make_pair;
 
 InitialPackageEntry::InitialPackageEntry()
-	: sticked(false), modified(false)
+	: version(NULL), sticked(false), modified(false)
 {}
 
 BasicVertex::~BasicVertex()
@@ -263,8 +263,7 @@ Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
 }
 
 
-bool __are_versions_equal(const shared_ptr< const BinaryVersion >& left,
-		const shared_ptr< const BinaryVersion >& right)
+bool __are_versions_equal(const BinaryVersion* left, const BinaryVersion* right)
 {
 	if (left)
 	{
@@ -277,8 +276,8 @@ bool __are_versions_equal(const shared_ptr< const BinaryVersion >& left,
 }
 
 bool __is_version_array_intersects_with_packages(
-		const vector< shared_ptr< const BinaryVersion > >& versions,
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
+		const vector< const BinaryVersion* >& versions,
+		const map< string, const BinaryVersion* >& oldPackages)
 {
 	for (const auto& version: versions)
 	{
@@ -297,7 +296,7 @@ bool __is_version_array_intersects_with_packages(
 	return false;
 }
 
-bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& version,
+bool __version_has_relation_expression(const BinaryVersion* version,
 		BinaryVersion::RelationTypes::Type dependencyType,
 		const RelationExpression& relationExpression)
 {
@@ -314,11 +313,11 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 }
 
 bool __is_soft_dependency_ignored(const Config& config,
-		const shared_ptr< const BinaryVersion >& version,
+		const BinaryVersion* version,
 		BinaryVersion::RelationTypes::Type dependencyType,
 		const RelationExpression& relationExpression,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions,
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
+		const vector< const BinaryVersion* >& satisfyingVersions,
+		const map< string, const BinaryVersion* >& oldPackages)
 {
 	auto wasSatisfiedInPast = __is_version_array_intersects_with_packages(
 				satisfyingVersions, oldPackages);
@@ -345,7 +344,7 @@ bool __is_soft_dependency_ignored(const Config& config,
 	auto oldPackageIt = oldPackages.find(version->packageName);
 	if (oldPackageIt != oldPackages.end())
 	{
-		const shared_ptr< const BinaryVersion >& oldVersion = oldPackageIt->second;
+		auto& oldVersion = oldPackageIt->second;
 		if (__version_has_relation_expression(oldVersion,
 			dependencyType, relationExpression))
 		{
@@ -418,15 +417,14 @@ DependencyGraph::~DependencyGraph()
 	}
 }
 
-vector< string > __get_related_binary_package_names(const Cache& cache,
-		const shared_ptr< const BinaryVersion >& version)
+vector< string > __get_related_binary_package_names(const Cache& cache, const BinaryVersion* version)
 {
 	const string& sourcePackageName = version->sourcePackageName;
 
 	auto sourcePackage = cache.getSourcePackage(sourcePackageName);
 	if (sourcePackage)
 	{
-		auto sourceVersion = static_pointer_cast< const SourceVersion >(
+		auto sourceVersion = static_cast< const SourceVersion* >(
 				sourcePackage->getSpecificVersion(version->sourceVersionString));
 		if (sourceVersion)
 		{
@@ -439,10 +437,10 @@ vector< string > __get_related_binary_package_names(const Cache& cache,
 	return vector< string >();
 }
 
-vector< shared_ptr< const BinaryVersion > > __get_versions_by_source_version_string(const Cache& cache,
+vector< const BinaryVersion* > __get_versions_by_source_version_string(const Cache& cache,
 		const string& packageName, const string& sourceVersionString)
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	vector< const BinaryVersion* > result;
 	if (auto package = cache.getBinaryPackage(packageName))
 	{
 		auto versions = package->getVersions();
@@ -481,7 +479,7 @@ short __get_synchronize_level(const Config& config)
 class DependencyGraph::FillHelper
 {
 	DependencyGraph& __dependency_graph;
-	const map< string, shared_ptr< const BinaryVersion > >& __old_packages;
+	const map< string, const BinaryVersion* >& __old_packages;
 	const map< string, InitialPackageEntry >& __initial_packages;
 	bool __debugging;
 
@@ -505,7 +503,7 @@ class DependencyGraph::FillHelper
 
  public:
 	FillHelper(DependencyGraph& dependencyGraph,
-			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
+			const map< string, const BinaryVersion* >& oldPackages,
 			const map< string, InitialPackageEntry >& initialPackages)
 		: __dependency_graph(dependencyGraph),
 		__old_packages(oldPackages), __initial_packages(initialPackages),
@@ -515,7 +513,7 @@ class DependencyGraph::FillHelper
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
 	}
 
-	const VersionVertex* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
+	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version)
 	{
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
@@ -560,7 +558,7 @@ class DependencyGraph::FillHelper
 		return *elementPtrPtr;
 	}
 
-	const VersionElement* getVertexPtr(const shared_ptr< const BinaryVersion >& version)
+	const VersionElement* getVertexPtr(const BinaryVersion* version)
 	{
 		return getVertexPtr(version->packageName, version);
 	}
@@ -591,7 +589,7 @@ class DependencyGraph::FillHelper
  public:
 	const Element* getVertexPtrForEmptyPackage(const string& packageName)
 	{
-		return getVertexPtr(packageName, shared_ptr< const BinaryVersion >());
+		return getVertexPtr(packageName, nullptr);
 	}
 
  private:
@@ -614,7 +612,7 @@ class DependencyGraph::FillHelper
 			FORIT(satisfyingVersionIt, satisfyingVersions)
 			{
 				groupedSatisfiedVersions[(*satisfyingVersionIt)->packageName].push_back(
-						satisfyingVersionIt->get());
+						*satisfyingVersionIt);
 			}
 
 			FORIT(groupIt, groupedSatisfiedVersions)
@@ -667,11 +665,11 @@ class DependencyGraph::FillHelper
 		}
 	}
 
-	void processForwardRelation(const shared_ptr< const BinaryVersion >& version,
+	void processForwardRelation(const BinaryVersion* version,
 			const Element* vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
-		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
+		vector< const BinaryVersion* > satisfyingVersions;
 		// very expensive, delay calculation as possible
 		bool calculatedSatisfyingVersions = false;
 
@@ -725,8 +723,7 @@ class DependencyGraph::FillHelper
 		}
 	}
 
-	void processSynchronizations(const shared_ptr< const BinaryVersion >& version,
-			const Element* vertexPtr)
+	void processSynchronizations(const BinaryVersion*& version, const Element* vertexPtr)
 	{
 		auto hashKey = version->sourcePackageName + ' ' + version->sourceVersionString;
 		static const list< pair< string, const Element* > > emptyList;
@@ -828,7 +825,7 @@ class DependencyGraph::FillHelper
 };
 
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
+		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
 {
 	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages, initialPackages));
@@ -837,7 +834,7 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 		FORIT(it, initialPackages)
 		{
 			const InitialPackageEntry& initialPackageEntry = it->second;
-			const shared_ptr< const BinaryVersion >& initialVersion = initialPackageEntry.version;
+			const auto& initialVersion = initialPackageEntry.version;
 
 			if (initialVersion)
 			{

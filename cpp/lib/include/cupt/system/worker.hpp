@@ -157,7 +157,7 @@ class CUPT_API Worker
 	 *
 	 * @return array of pairs < package name, pointer to binary version >
 	 */
-	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
+	vector< pair< string, const BinaryVersion* > > getArchivesInfo() const;
 	/**
 	 * Deletes an archive file (it may be a symlink). Verifies that deleted file is
 	 * located under archives path directory.

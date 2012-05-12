@@ -54,7 +54,7 @@ string WorkerBase::_get_archives_directory() const
 	return _config->getPath("dir::cache::archives");
 }
 
-string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >& version)
+string WorkerBase::_get_archive_basename(const BinaryVersion* version)
 {
 	return version->packageName + '_' + version->versionString + '_' +
 			version->architecture + ".deb";

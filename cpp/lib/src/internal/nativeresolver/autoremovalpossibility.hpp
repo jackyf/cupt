@@ -33,7 +33,7 @@ class AutoRemovalPossibility
 	~AutoRemovalPossibility();
 
 	enum class Allow { Yes, No, YesIfNoRDepends };
-	Allow isAllowed(const Cache&, const shared_ptr< const BinaryVersion >& version, bool) const;
+	Allow isAllowed(const Cache&, const BinaryVersion*, bool) const;
 };
 
 }
