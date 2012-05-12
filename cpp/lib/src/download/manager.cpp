@@ -38,9 +38,9 @@
 #include <cupt/download/progress.hpp>
 #include <cupt/download/method.hpp>
 #include <cupt/download/methodfactory.hpp>
-#include <cupt/pipe.hpp>
 
 #include <internal/common.hpp>
+#include <internal/pipe.hpp>
 
 namespace cupt {
 namespace internal {

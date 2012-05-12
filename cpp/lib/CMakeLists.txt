@@ -26,6 +26,7 @@ add_library(cupt3 SHARED
 	./src/internal/regex.cpp
 	./src/internal/cachefiles.cpp
 	./src/internal/logger.cpp
+	./src/internal/pipe.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
@@ -51,7 +52,6 @@ add_library(cupt3 SHARED
 	./src/common/consumers.cpp
 	./src/file.cpp
 	./src/hashsums.cpp
-	./src/pipe.cpp
 )
 set_target_properties(cupt3 PROPERTIES VERSION 3 SOVERSION ${CUPT_SOVERSION})
 target_link_libraries(cupt3 dl rt gcrypt)

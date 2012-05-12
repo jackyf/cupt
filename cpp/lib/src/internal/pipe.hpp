@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2012 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -18,21 +18,15 @@
 #ifndef CUPT_PIPE_SEEN
 #define CUPT_PIPE_SEEN
 
-/// @cond
-
 #include <unistd.h>
 
 #include <cupt/common.hpp>
 
 namespace cupt {
-
 namespace internal {
 
 struct PipeData;
 
-}
-
-// TODO/API break/: not used externally anymore, make it internal
 class CUPT_API Pipe
 {
 	internal::PipeData* __data;
@@ -47,8 +41,7 @@ class CUPT_API Pipe
 };
 
 }
-
-/// @endcond
+}
 
 #endif
 
