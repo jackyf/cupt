@@ -38,9 +38,6 @@ vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 
 vector< pair< string, string > > getPathsOfLocalizedDescriptions(
 		const Config&, const IndexEntry& entry);
-// TODO/API break/: deprecated, delete it
-vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
-		const Config&, const IndexEntry&);
 
 vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(
 		const Config&, const IndexEntry&);
