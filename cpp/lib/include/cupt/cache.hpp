@@ -57,19 +57,6 @@ class CUPT_API Cache
 		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
 		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
 	};
-	/// @deprecated an internal structure, should not be used
-	struct IndexDownloadRecord
-	{
-		string uri;
-		uint32_t size;
-		HashSums hashSums;
-	};
-	/// @copydoc IndexDownloadRecord
-	struct LocalizationDownloadRecord
-	{
-		string uri;
-		string localPath;
-	};
 	/// extended package information
 	struct ExtendedInfo
 	{

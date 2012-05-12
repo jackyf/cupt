@@ -29,8 +29,6 @@
 #include <internal/cachefiles.hpp>
 #include <internal/filesystem.hpp>
 
-// TODO/API break/: remove deprecated entities
-
 namespace cupt {
 
 typedef internal::CacheImpl::PrePackageRecord PrePackageRecord;

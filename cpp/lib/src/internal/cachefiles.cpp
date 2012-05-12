@@ -308,27 +308,6 @@ vector< pair< string, string > > getPathsOfLocalizedDescriptions(
 	return result;
 }
 
-vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
-		const Config& config, const IndexEntry& entry)
-{
-	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
-	auto basePath = getPathOfIndexEntry(config, entry);
-	auto baseUri = getUriOfIndexEntry(entry);
-
-	vector< Cache::LocalizationDownloadRecord > result;
-
-	FORIT(chunkArrayIt, chunkArrays)
-	{
-		Cache::LocalizationDownloadRecord record;
-		record.localPath = basePath + "_" + join("_", *chunkArrayIt);
-		// yes, somewhy translations are always bzip2'ed
-		record.uri = baseUri + "/" + join("/", *chunkArrayIt) + ".bz2";
-		result.push_back(std::move(record));
-	}
-
-	return result;
-}
-
 vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(const Config& config,
 		const IndexEntry& entry)
 {
