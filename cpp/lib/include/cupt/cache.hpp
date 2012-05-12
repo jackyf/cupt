@@ -131,20 +131,6 @@ class CUPT_API Cache
 	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;
 
-	/// @deprecated an internal method, should not be used
-	string getPathOfReleaseList(const IndexEntry& entry) const;
-	/// @copydoc getPathOfReleaseList
-	string getPathOfIndexList(const IndexEntry& entry) const;
-	/// @copydoc getPathOfReleaseList
-	string getPathOfExtendedStates() const;
-
-	/// @copydoc getPathOfReleaseList
-	string getDownloadUriOfReleaseList(const IndexEntry&) const;
-	/// @copydoc getPathOfReleaseList
-	vector< IndexDownloadRecord > getDownloadInfoOfIndexList(const IndexEntry&) const;
-	/// @copydoc getPathOfReleaseList
-	vector< LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(const IndexEntry&) const;
-
 	/// gets system state
 	shared_ptr< const system::State > getSystemState() const;
 

@@ -94,36 +94,6 @@ vector< Cache::IndexEntry > Cache::getIndexEntries() const
 	return __impl->indexEntries;
 }
 
-string Cache::getPathOfIndexList(const IndexEntry& entry) const
-{
-	return internal::cachefiles::getPathOfIndexList(*__impl->config, entry);
-}
-
-string Cache::getPathOfReleaseList(const IndexEntry& entry) const
-{
-	return internal::cachefiles::getPathOfReleaseList(*__impl->config, entry);
-}
-
-string Cache::getPathOfExtendedStates() const
-{
-	return internal::cachefiles::getPathOfExtendedStates(*__impl->config);
-}
-
-string Cache::getDownloadUriOfReleaseList(const IndexEntry& entry) const
-{
-	return internal::cachefiles::getDownloadUriOfReleaseList(entry);
-}
-
-vector< Cache::IndexDownloadRecord > Cache::getDownloadInfoOfIndexList(const IndexEntry& entry) const
-{
-	return internal::cachefiles::getDownloadInfoOfIndexList(*__impl->config, entry);
-}
-
-vector< Cache::LocalizationDownloadRecord > Cache::getDownloadInfoOfLocalizedDescriptions(const IndexEntry& entry) const
-{
-	return internal::cachefiles::getDownloadInfoOfLocalizedDescriptions(*__impl->config, entry);
-}
-
 vector< string > Cache::getBinaryPackageNames() const
 {
 	vector< string > result;
