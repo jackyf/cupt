@@ -10,8 +10,6 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/relation:
       - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
         constructor from string subrange is now explicit.
-    - pipe:
-      - [API break] Removed.
   * debian:
     - control:
       - Bumped the library API version.
