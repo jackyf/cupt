@@ -18,8 +18,6 @@
 #ifndef CUPT_PIPE_SEEN
 #define CUPT_PIPE_SEEN
 
-#include <unistd.h>
-
 #include <cupt/common.hpp>
 
 namespace cupt {
