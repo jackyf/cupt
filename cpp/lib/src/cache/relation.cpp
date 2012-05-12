@@ -234,7 +234,6 @@ ArchitecturedRelation::ArchitecturedRelation(const string& unparsed)
 	__init(std::find(unparsed.begin(), unparsed.end(), '['), unparsed.end());
 }
 
-// TODO/API break/: make this constructor explicit too
 ArchitecturedRelation::ArchitecturedRelation(
 		pair< string::const_iterator, string::const_iterator > input)
 	: Relation(make_pair(input.first, std::find(input.first, input.second, '[')))

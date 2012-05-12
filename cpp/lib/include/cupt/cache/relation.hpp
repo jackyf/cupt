@@ -102,7 +102,7 @@ struct CUPT_API ArchitecturedRelation: public Relation
 	 * @param input pair of begin iterator and end iterator of stringified
 	 * architectured relation
 	 */
-	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
+	explicit ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
 	ArchitecturedRelation(ArchitecturedRelation&&) = default;
 	ArchitecturedRelation(const ArchitecturedRelation&) = default;
 	ArchitecturedRelation& operator=(ArchitecturedRelation&&) = default;
