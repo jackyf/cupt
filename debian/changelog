@@ -1,6 +1,7 @@
 cupt (2.6.0~) UNRELEASED; urgency=low
 
   * lib:
+    - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
     - cache:
       - [API break] Pointers to Package and Version objects are now persistent
         and unique. Thus shared pointers to those objects are no more used in

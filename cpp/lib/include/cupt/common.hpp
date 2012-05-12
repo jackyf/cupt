@@ -77,18 +77,7 @@ using std::unique_ptr;
  */
 CUPT_API extern int messageFd;
 
-// TODO/API break/: remove fatal, warn, debug, simulate, sf
-/// @deprecated an internal method, should not be used
-void CUPT_API fatal(const char* format, ...);
-/// @deprecated an internal method, should not be used
-void CUPT_API warn(const char* format, ...);
-/// @deprecated an internal method, should not be used
-void CUPT_API debug(const char* format, ...);
-/// @deprecated an internal method, should not be used
-void CUPT_API simulate(const char* format, ...);
-
 /// @cond
-CUPT_API string sf(const string& format, ...);
 CUPT_API string join(const string& joiner, const vector< string >& parts);
 CUPT_API string humanReadableSizeString(uint64_t bytes);
 /// @endcond
