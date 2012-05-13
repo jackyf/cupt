@@ -1,5 +1,11 @@
 cupt (2.5.4~) UNRELEASED; urgency=low
 
+  * lib:
+    - system/resolvers/native:
+      - Fixed an internal error when a not installed package was considered
+        but then autoremoved (under certain conditions). This regression was
+        introduced in 2.5.0. Thanks to Karol Kozłowski for the report.
+        (Closes: #672693)
   * po:
     - Added Slovak translation by Ivan Masár. (Closes: #671793)
 
