@@ -136,8 +136,7 @@ void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string
 		sizeSuffix = string(" [") + humanReadableSizeString(record.size) + "]";
 	}
 	termClean();
-	nonBlockingPrint(__("Get") + ":" + lexical_cast< string >(record.number) + " " +
-			longAlias + sizeSuffix + "\n");
+	nonBlockingPrint(format2("Get:%zu %s%s\n", record.number, longAlias, sizeSuffix));
 }
 
 void ConsoleProgressImpl::finishedDownload(const string& uri,
@@ -147,8 +146,7 @@ void ConsoleProgressImpl::finishedDownload(const string& uri,
 	{
 		// some error occured, output it
 		termClean();
-		nonBlockingPrint(__("Fail") + ":" + lexical_cast< string >(number) + " " +
-				result + " (uri '" + uri + "')\n");
+		nonBlockingPrint(format2("Fail:%zu %s (uri '%s')\n", number, result, uri));
 	}
 }
 
