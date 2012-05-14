@@ -25,7 +25,7 @@ namespace internal {
 string DecisionFailTree::__decisions_to_string(
 		const vector< Decision >& decisions)
 {
-	auto insertedElementPtrToString = [](const dg::Element* elementPtr)
+	auto insertedElementPtrToString = [](const dg::Element* elementPtr) -> string
 	{
 		if (!elementPtr)
 		{
