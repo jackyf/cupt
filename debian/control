@@ -86,6 +86,10 @@ Description: alternative front-end for dpkg -- console interface
   - system snapshots (needs packages 'dpkg-dev' and 'dpkg-repack').
  .
  Its interface is mostly like apt-get/aptitude console interface.
+ .
+ Cupt has built-in support for APT repositories using the file:// or copy://
+ URL schemas. For access to remote repositories using HTTP or FTP, install a
+ download method such as libcupt2-0-downloadmethod-curl.
 
 Package: libcupt2-0-downloadmethod-curl
 Architecture: any
