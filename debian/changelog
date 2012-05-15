@@ -1,4 +1,4 @@
-cupt (2.5.4~) UNRELEASED; urgency=low
+cupt (2.5.4) unstable; urgency=low
 
   * lib:
     - system/resolvers/native:
@@ -17,7 +17,7 @@ cupt (2.5.4~) UNRELEASED; urgency=low
         package description. Thanks to Manuel A. Fernandez Montecelo for the
         report. (Closes: #672804)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 07 May 2012 19:00:38 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 15 May 2012 20:32:36 +0300
 
 cupt (2.5.3) unstable; urgency=low
 
