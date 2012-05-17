@@ -635,12 +635,8 @@ class DependencyGraph::FillHelper
 				const list< const BinaryVersion* >& subSatisfiedVersions = groupIt->second;
 				FORIT(packageVersionIt, packageVersions)
 				{
-					auto predicate = [&packageVersionIt](const BinaryVersion* left) -> bool
-					{
-						return *left == **packageVersionIt;
-					};
-					if (std::find_if(subSatisfiedVersions.begin(), subSatisfiedVersions.end(),
-								predicate) == subSatisfiedVersions.end())
+					if (std::find(subSatisfiedVersions.begin(), subSatisfiedVersions.end(),
+								*packageVersionIt) == subSatisfiedVersions.end())
 					{
 						if (auto queuedVersionPtr = getVertexPtr(*packageVersionIt))
 						{
