@@ -727,7 +727,7 @@ Corresponding configuration option: L<cupt::console::actions-preview::show-size-
 when displaying actions preview prompt, display also reasons why this action was
 considered to perform
 
-Corresponding configuration option: L<cupt::resolver::track-reasons>
+Corresponding configuration option: L<cupt::console::actions-preview::show-reasons>
 
 =item --show-not-preferred
 

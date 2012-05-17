@@ -1,5 +1,9 @@
 cupt (2.6.0~) UNRELEASED; urgency=low
 
+  * console:
+    - Managing packages:
+      - The option 'cupt::resolver::track-reasons' does not correspond to the
+        console '--show-reasons' option anymore.
   * lib:
     - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
     - [API break] '__': now returns 'const char*' instead of 'string'.
@@ -14,6 +18,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         constructor from string subrange is now explicit.
     - config:
       - Don't store unused APT variables anymore.
+      - New option 'cupt::console::actions-preview::show-reasons'.
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.

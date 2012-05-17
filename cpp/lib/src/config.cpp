@@ -107,6 +107,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::actions-preview::show-components", "no" },
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
+		{ "cupt::console::actions-preview::show-reasons", "no" },
 		{ "cupt::console::actions-preview::show-size-changes", "no" },
 		{ "cupt::console::actions-preview::show-summary", "yes" },
 		{ "cupt::console::actions-preview::show-vendors", "no" },

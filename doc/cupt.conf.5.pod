@@ -203,6 +203,10 @@ actions preview. True by default.
 boolean, if true, a change in the disk space usage will be shown for each
 package in the actions preview. False by default.
 
+=item cupt::console::actions-preview::show-reasons
+
+boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
+
 =item cupt::console::actions-preview::show-summary
 
 boolean, if true, a summary of planned actions will be shown in the
@@ -483,7 +487,7 @@ package cannot be synchronized with the modified one.
 
 =item cupt::resolver::track-reasons
 
-boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
+boolean, specifies whether 'suggestedPackages::reasons' is filled in the Resolver::Offer. False by default.
 
 =item cupt::resolver::type
 

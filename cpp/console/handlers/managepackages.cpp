@@ -832,12 +832,13 @@ struct PackageChangeInfoFlags
 	bool reasons;
 	VersionInfoFlags versionFlags;
 
-	PackageChangeInfoFlags(const Config& config, WA::Type actionType, bool showReasons)
+	PackageChangeInfoFlags(const Config& config, WA::Type actionType)
 		: versionFlags(config)
 	{
 		sizeChange = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
 				actionType != fakeNotPolicyVersionAction);
-		reasons = (showReasons && actionType != fakeNotPolicyVersionAction);
+		reasons = (config.getBool("cupt::console::actions-preview::show-reasons") &&
+				actionType != fakeNotPolicyVersionAction);
 	}
 	bool empty() const
 	{
@@ -847,10 +848,9 @@ struct PackageChangeInfoFlags
 
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
-		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview,
-		bool showReasons)
+		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview)
 {
-	PackageChangeInfoFlags showFlags(config, actionType, showReasons);
+	PackageChangeInfoFlags showFlags(config, actionType);
 
 	for (const auto& it: actionSuggestedPackages)
 	{
@@ -932,11 +932,11 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const
 
 Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
 		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
-		bool showNotPreferred, bool showReasons,
+		bool showNotPreferred,
 		const set< string >& purgedPackageNames, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
 	auto result = [&config, &cache, &worker, showNotPreferred,
-			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo, showReasons]
+			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
@@ -1014,7 +1014,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
 				showPackageChanges(*config, *cache, colorizer, actionType, actionSuggestedPackages,
-						actionsPreview->autoFlagChanges, unpackedSizesPreview, showReasons);
+						actionsPreview->autoFlagChanges, unpackedSizesPreview);
 			}
 
 			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
@@ -1058,7 +1058,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 }
 
 void parseManagementOptions(Context& context, ManagePackages::Mode mode,
-		vector< string >& packageExpressions, bool& showNotPreferred, bool& showReasons)
+		vector< string >& packageExpressions, bool& showNotPreferred)
 {
 	bpo::options_description options;
 	options.add_options()
@@ -1114,15 +1114,9 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 		config->setScalar("cupt::console::assume-yes", "yes");
 	}
 
-	showReasons = false;
-	// TODO/API break/: use a dedicated console option for that
 	if (variables.count("show-reasons") || variables.count("show-deps"))
 	{
-		showReasons = true;
-	}
-	if (config->getBool("cupt::resolver::track-reasons"))
-	{
-		showReasons = true;
+		config->setScalar("cupt::console::actions-preview::show-reasons", "yes");
 	}
 	// we now always need reason tracking
 	config->setScalar("cupt::resolver::track-reasons", "yes");
@@ -1203,9 +1197,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	Cache::memoize = true;
 
 	vector< string > packageExpressions;
-	bool showNotPreferred, showReasons;
-	parseManagementOptions(context, mode, packageExpressions,
-			showNotPreferred, showReasons);
+	bool showNotPreferred;
+	parseManagementOptions(context, mode, packageExpressions, showNotPreferred);
 
 	unrollFileArguments(packageExpressions);
 
@@ -1274,8 +1267,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	bool addArgumentsFlag, thereIsNothingToDo;
 	auto callback = generateManagementPrompt(config, cache, worker,
-			showNotPreferred, showReasons,
-			purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
+			showNotPreferred, purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
 	addArgumentsFlag = false;
