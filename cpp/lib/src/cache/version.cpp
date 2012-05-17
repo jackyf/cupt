@@ -64,11 +64,6 @@ bool Version::operator<(const Version& other) const
 	return (versionString < other.versionString);
 }
 
-bool Version::operator==(const Version& other) const
-{
-	return packageName == other.packageName && versionString == other.versionString;
-}
-
 vector< Version::DownloadRecord > Version::getDownloadInfo() const
 {
 	set< string > seenFullDirs;

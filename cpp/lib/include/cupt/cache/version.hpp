@@ -103,11 +103,6 @@ struct CUPT_API Version
 	 * Uses pair @ref packageName, @ref versionString for comparison
 	 */
 	bool operator<(const Version&) const;
-	/// equality operator
-	/**
-	 * Uses pair @ref packageName, @ref versionString for comparison
-	 */
-	bool operator==(const Version&) const;
 
 	/// enables parsing relation fields in versions, @c true by default
 	static bool parseRelations;
