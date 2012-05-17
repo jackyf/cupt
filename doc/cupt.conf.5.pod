@@ -35,15 +35,7 @@ gpgv::trustedkeyring, quiet
 
 See L<apt.conf(5)> for their meanings.
 
-Secondly, Cupt recognizes (but doesn't use) following configuration variables:
-
-apt::acquire::translation, apt::archives::*, acquire::pdiffs,
-acquire::languages, apt::cache-limit, apt::periodic::*, dir::log*,
-dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
-apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
-rpm::post-invoke
-
-Thirdly, Cupt introduces cupt-specific configuration variables.
+Secondly, Cupt introduces cupt-specific configuration variables.
 
 =head2 variable types
 
