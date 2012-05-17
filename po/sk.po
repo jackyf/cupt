@@ -1,0 +1,2218 @@
+# Slovak translation of cupt
+# Copyright (C) YEAR Eugene V. Lyubimkin
+# This file is distributed under the same license as the cupt package.
+# Ivan Masár <helix84@centrum.sk>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cupt\n"
+"Report-Msgid-Bugs-To: cupt-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2012-04-17 20:41+0300\n"
+"PO-Revision-Date: 2012-05-07 00:39+0100\n"
+"Last-Translator: Ivan Masár <helix84@centrum.sk>\n"
+"Language-Team: debian-l10n-slovak <debian-l10n-slovak@lists.debian.org>\n"
+"Language: sk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: console/cupt.cpp:40
+#: console/cupt.cpp:49
+#, c-format
+msgid "the command '%s' doesn't accept arguments"
+msgstr "príkaz „%s“ neprijíma argumenty"
+
+#: console/cupt.cpp:82
+#, c-format
+msgid "error performing the command '%s'"
+msgstr "chyba pri vykonávaní príkazu „%s“"
+
+#: console/cupt.cpp:106
+msgid "prints a short help"
+msgstr "vypíše krátky text pomocníka"
+
+#: console/cupt.cpp:107
+msgid "prints versions of this program and the underlying library"
+msgstr "vypíše verzie tohto programu a použitej knižnice"
+
+#: console/cupt.cpp:108
+msgid "prints values of configuration variables"
+msgstr "vypíše hodnoty konfiguračných premenných"
+
+#: console/cupt.cpp:109
+msgid "prints the info about binary package(s)"
+msgstr "vypíše informácie o binárnych balíkoch"
+
+#: console/cupt.cpp:110
+msgid "prints the info about source packages(s)"
+msgstr "vypíše informácie o zdrojových balíkoch"
+
+#: console/cupt.cpp:111
+msgid "searches for packages using regular expression(s)"
+msgstr "vyhľadá balíky pomocou regulárnych výrazov"
+
+#: console/cupt.cpp:112
+msgid "prints dependencies of binary package(s)"
+msgstr "vypíše závislosti binárnych balíkov"
+
+#: console/cupt.cpp:113
+msgid "print reverse-dependencies of binary package(s)"
+msgstr "vypíše reverzné závislosti binárnych balíkov"
+
+#: console/cupt.cpp:114
+msgid "finds a dependency path between a package set and a package"
+msgstr "nájde cestu závislostí medzi množinou balíkov a balíkom"
+
+#: console/cupt.cpp:115
+msgid "prints the pin info for the binary package(s)"
+msgstr "vypíše informácie o podržaní binárnych balíkov"
+
+#: console/cupt.cpp:116
+msgid "prints the pin info for the source package(s)"
+msgstr "vypíše informácie o podržaní zdrojových balíkov"
+
+#: console/cupt.cpp:117
+msgid "prints available package names"
+msgstr "vypíše názvy dostupných balíkov"
+
+#: console/cupt.cpp:118
+msgid "views the Debian changelog(s) of binary package(s)"
+msgstr "zobrazí záznam zmien Debianu binárnych balíkov"
+
+#: console/cupt.cpp:119
+msgid "views the Debian copyright(s) info of binary package(s)"
+msgstr "zobrazí informácie o autorských právach binárnych balíkov"
+
+#: console/cupt.cpp:120
+msgid "views Debian screenshot web pages for binary package(s)"
+msgstr "zobrazí snímky obrazovky zo stránok Debianu binárnych balíkov"
+
+#: console/cupt.cpp:121
+msgid "updates repository metadata"
+msgstr "aktualizuje údaje o zdrojoch softvéru"
+
+#: console/cupt.cpp:122
+msgid "installs/upgrades/downgrades binary package(s)"
+msgstr "nainštaluje/aktualizuje/degraduje binárne balíky"
+
+#: console/cupt.cpp:123
+msgid "reinstalls binary packages(s)"
+msgstr "znovu nainštaluje binárne balíky"
+
+#: console/cupt.cpp:124
+msgid "removes binary package(s)"
+msgstr "odstráni binárne balíky"
+
+#: console/cupt.cpp:125
+msgid "removes binary package(s) along with their configuration files"
+msgstr "odstráni binárne balíky aj s ich konfiguračnými súbormi"
+
+#: console/cupt.cpp:126
+msgid "\"install if installed\": upgrades/downgrades binary packages(s)"
+msgstr "„nainštalovať ak je nainštalované“: aktualizuje/degraduje binárne balíky"
+
+#: console/cupt.cpp:127
+msgid "performs actions to make relation expressions satisfied"
+msgstr "vykoná operácie, aby boli uspokojené relačné výrazy"
+
+#: console/cupt.cpp:128
+msgid "upgrades the system without removing non-automatically installed packages"
+msgstr "aktualizuje systém bez odstraňovania balíkov, ktoré neboli nainštalované automaticky"
+
+#: console/cupt.cpp:129
+msgid "upgrades the system"
+msgstr "aktualizuje systém"
+
+#: console/cupt.cpp:130
+msgid "does a two-stage full upgrade"
+msgstr "vykoná dvojfázovú úplnú aktualizáciu"
+
+#: console/cupt.cpp:131
+msgid "satisfies build dependencies for source package(s)"
+msgstr "uspokojí závislosti na zostavenie zdrojových balíkov"
+
+#: console/cupt.cpp:132
+msgid "fetches and unpacks source package(s)"
+msgstr "stiahne a rozbalí zdrojové balíky"
+
+#: console/cupt.cpp:133
+msgid "cleans the whole binary package cache"
+msgstr "vyčistí celú vyrovnávaciu pamäť binárnych balíkov"
+
+#: console/cupt.cpp:134
+msgid "cleans packages from the binary package cache if not available from repositories"
+msgstr "vyčistí balíky z vyrovnávacej pamäte ak nie sú dostupné zo zdrojov softvéru"
+
+#: console/cupt.cpp:135
+msgid "marks binary package(s) as automatically installed"
+msgstr "označí binárne balíky ako automaticky nainštalované"
+
+#: console/cupt.cpp:136
+msgid "marks binary package(s) as manually installed"
+msgstr "označí binárne balíky ako ručne nainštalované"
+
+#: console/cupt.cpp:137
+msgid "shows the list of manually or automatically installed packages"
+msgstr "zobrazí zoznam ručne alebo automaticky nainštalovaných balíkkov"
+
+#: console/cupt.cpp:138
+msgid "starts an interactive package manager shell"
+msgstr "spustí interaktívny shell správcu balíkov"
+
+#: console/cupt.cpp:139
+msgid "works with system snapshots"
+msgstr "pracuje so snímkami systému"
+
+#: console/cupt.cpp:142
+#, c-format
+msgid "Usage: %s <action> [<parameters>]"
+msgstr "Použitie: %s <operácia> [<parametre>]"
+
+#: console/cupt.cpp:144
+msgid "Actions:"
+msgstr "Operácie:"
+
+#: console/misc.cpp:47
+#, c-format
+msgid "options '--include-%ss' and '--exclude-%ss' cannot be specified together"
+msgstr "voľby „--include-%ss“ a „--exclude-%ss“ nemožno uviesť zároveň"
+
+#: console/misc.cpp:133
+msgid "no command specified"
+msgstr "nebol zadaný príkaz"
+
+#: console/misc.cpp:174
+#, c-format
+msgid "invalid option syntax in '%s' (right is '<option>=<value>')"
+msgstr "neplatná syntax voľby v „%s“ (správne je „<voľba>=<hodnota>“)"
+
+#: console/misc.cpp:194
+#: console/misc.cpp:231
+#, c-format
+msgid "failed to parse command-line options: %s"
+msgstr "nepodarilo sa spracovať voľby príkazového riadka: %s"
+
+#: console/misc.cpp:198
+msgid "error while processing command-line options"
+msgstr "chyba počas spracovania volieb príkazového riadka"
+
+#: console/misc.cpp:227
+#, c-format
+msgid "unknown option '%s'"
+msgstr "neznáma voľba „%s“"
+
+#: console/misc.cpp:278
+#, c-format
+msgid "unrecognized command '%s'"
+msgstr "nerozpoznaný príkaz „%s“"
+
+#: console/misc.cpp:288
+#, c-format
+msgid "extra arguments '%s' are not processed"
+msgstr "argumenty naviac „%s“ nie sú spracované"
+
+#: console/misc.cpp:298
+msgid "unable to redirect standard output to '/dev/null'"
+msgstr "nie je možné presmerovať štandardný výstup do „/dev/null“"
+
+#: console/misc.cpp:318
+msgid "error while loading the configuration"
+msgstr "chyba počas načítavania konfigurácie"
+
+#: console/misc.cpp:346
+msgid "error while creating the package cache"
+msgstr "chyba počas vytvárania vyrovnávacej pamäti balíkov"
+
+#: console/handlers/download.cpp:61
+#: console/handlers/misc.cpp:242
+msgid "no source package expressions specified"
+msgstr "neboli zadané žiadne výrazy zdrojových balíkov"
+
+#: console/handlers/download.cpp:160
+#: console/handlers/download.cpp:356
+#: downloadmethods/debdelta.cpp:60
+#: lib/src/internal/worker/metadata.cpp:296
+#: lib/src/internal/worker/metadata.cpp:442
+#: lib/src/internal/worker/metadata.cpp:534
+#: lib/src/internal/worker/metadata.cpp:625
+#: lib/src/internal/worker/metadata.cpp:976
+#: lib/src/internal/worker/packages.cpp:1692
+#: lib/src/internal/worker/archives.cpp:164
+#: lib/src/internal/worker/archives.cpp:198
+#: lib/src/download/manager.cpp:511
+#, c-format
+msgid "unable to remove the file '%s'"
+msgstr "nie je možné odstrániť súbor „%s“"
+
+#: console/handlers/download.cpp:162
+#: lib/src/internal/worker/metadata.cpp:521
+#: lib/src/internal/worker/metadata.cpp:627
+#: lib/src/internal/worker/packages.cpp:1415
+msgid "hash sums mismatch"
+msgstr "nezhodujú sa kontrolné súčty"
+
+#: console/handlers/download.cpp:180
+#: console/handlers/download.cpp:348
+#: lib/src/internal/worker/packages.cpp:2007
+msgid "there were download errors"
+msgstr "vyskytli sa chyby počas sťahovania"
+
+#: console/handlers/download.cpp:192
+#, c-format
+msgid "dpkg-source on the file '%s' failed"
+msgstr "dpkg-source na súbore „%s“ zlyhal"
+
+#: console/handlers/download.cpp:219
+#: console/handlers/misc.cpp:63
+#: console/handlers/misc.cpp:344
+#: console/handlers/misc.cpp:766
+msgid "no binary package expressions specified"
+msgstr "neboli zadané žiadne výrazy binárnych balíkov"
+
+#: console/handlers/download.cpp:327
+#: console/handlers/managepackages.cpp:1368
+#: lib/src/internal/worker/snapshots.cpp:184
+#: lib/src/internal/worker/metadata.cpp:1056
+#: lib/src/internal/worker/metadata.cpp:1087
+#: lib/src/download/progresses/console.cpp:88
+#: lib/src/download/progresses/console.cpp:92
+#: lib/src/download/progresses/console.cpp:105
+#: lib/src/download/manager.cpp:341
+#: lib/src/download/manager.cpp:346
+#: lib/src/download/manager.cpp:356
+#: lib/src/download/manager.cpp:366
+#: lib/src/download/manager.cpp:371
+#: lib/src/download/manager.cpp:381
+#: lib/src/download/manager.cpp:763
+#: lib/src/download/manager.cpp:768
+#: lib/src/download/progress.cpp:75
+#, c-format
+msgid "%s() failed"
+msgstr "%s() zlyhal"
+
+#: console/handlers/download.cpp:373
+#, c-format
+msgid "no info where to acquire %s for version '%s' of package '%s'"
+msgstr "žiadne informácie, kde získať %s pre verziu „%s“ balíka „%s“"
+
+#: console/handlers/managepackages.cpp:87
+#: downloadmethods/curl.cpp:204
+#: lib/src/hashsums.cpp:106
+#: lib/src/internal/cachefiles.cpp:140
+#: lib/src/internal/cachefiles.cpp:609
+#: lib/src/internal/logger.cpp:59
+#: lib/src/internal/cacheimpl.cpp:244
+#: lib/src/internal/cacheimpl.cpp:533
+#: lib/src/internal/cacheimpl.cpp:608
+#: lib/src/internal/debdeltahelper.cpp:179
+#: lib/src/internal/pininfo.cpp:166
+#: lib/src/internal/lock.cpp:45
+#: lib/src/internal/configparser.cpp:36
+#: lib/src/internal/worker/snapshots.cpp:78
+#: lib/src/internal/worker/metadata.cpp:388
+#: lib/src/internal/worker/metadata.cpp:790
+#: lib/src/internal/worker/packages.cpp:1948
+#: lib/src/system/snapshots.cpp:129
+#, c-format
+msgid "unable to open the file '%s': %s"
+msgstr "nie je možné otvoriť súbor „%s“: %s"
+
+#: console/handlers/managepackages.cpp:235
+#, c-format
+msgid "unable to find binary package/expression '%s'"
+msgstr "nie je možné nájsť binárny balík/výraz „%s“"
+
+#: console/handlers/managepackages.cpp:250
+#, c-format
+msgid "the package '%s' is not installed"
+msgstr "balík „%s“ nie je nainštalovaný"
+
+#: console/handlers/managepackages.cpp:263
+#, c-format
+msgid "the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"
+msgstr "balík „%s“ nie je možné znova nainštalovať, pretože neexistuje zodpovedajúca verzia (%s) dostupná v zdrojoch softvéru"
+
+#: console/handlers/managepackages.cpp:337
+#, c-format
+msgid "After unpacking %s will be used."
+msgstr "Po rozbalení sa použije %s."
+
+#: console/handlers/managepackages.cpp:340
+#, c-format
+msgid "After unpacking %s will be freed."
+msgstr "Po rozbalení sa uvoľní %s."
+
+#: console/handlers/managepackages.cpp:351
+#, c-format
+msgid "Need to get %s/%s of archives. "
+msgstr "Treba stiahnuť %s/%s archívov. "
+
+#: console/handlers/managepackages.cpp:468
+msgid "preferred"
+msgstr "uprednostňovaný"
+
+#: console/handlers/managepackages.cpp:517
+msgid "WARNING! The untrusted versions of the following packages will be used:"
+msgstr "UPOZORNENIE! Použijú sa nedôveryhodné verzie nasledovných balíkov:"
+
+#: console/handlers/managepackages.cpp:556
+msgid "WARNING! The following essential packages will be removed:"
+msgstr "UPOZORNENIE! Odstránia sa nasledovné nevyhnutné balíky:"
+
+#: console/handlers/managepackages.cpp:589
+msgid "WARNING! The following packages on hold will change their state:"
+msgstr "UPOZORNENIE! Nasledovné podržané balíky zmenia stav:"
+
+#: console/handlers/managepackages.cpp:598
+msgid "reason: "
+msgstr "dôvod:"
+
+#: console/handlers/managepackages.cpp:616
+msgid "Leave the following dependencies unresolved:"
+msgstr "Ponechať nasledovné závislosti nevyriešené:"
+
+#: console/handlers/managepackages.cpp:625
+#, c-format
+msgid "  %u dependency problems will stay unresolved"
+msgstr "  %u problémov so závislosťami zostane nevyriešených"
+
+#: console/handlers/managepackages.cpp:640
+msgid "Didn't confirm dangerous actions."
+msgstr "Neboli potvrdené nebezpečné operácie."
+
+#: console/handlers/managepackages.cpp:646
+msgid "Do you want to continue? [y/N/q/a/?] "
+msgstr "Chcete pokračovať? [y/N/q/a/?] "
+
+#: console/handlers/managepackages.cpp:663
+msgid "Yes, do as I say!"
+msgstr "Áno, rob ako hovorím!"
+
+#: console/handlers/managepackages.cpp:664
+#, c-format
+msgid "Dangerous actions selected. Type '%s' if you want to continue, or anything else to go back:"
+msgstr "Vybrané nebezpečné operácie. Napíšte „%s“ ak chcete pokračovať alebo čokoľvek iné ak sa chcete vrátiť späť:"
+
+#: console/handlers/managepackages.cpp:685
+msgid "y: accept the solution"
+msgstr "y: prijať riešenie"
+
+#: console/handlers/managepackages.cpp:686
+msgid "n: reject the solution, try to find other ones"
+msgstr "n: odmietnuť riešenie, pokúsiť sa nájsť ďalšie"
+
+#: console/handlers/managepackages.cpp:687
+msgid "q: reject the solution and exit"
+msgstr "q: odmietnuť riešenie a skončiť"
+
+#: console/handlers/managepackages.cpp:688
+msgid "a: specify an additional binary package expression"
+msgstr "a: určiť ďalší výraz binárnych balíkov"
+
+#: console/handlers/managepackages.cpp:689
+msgid "?: output this help"
+msgstr "?: vypísať tento text pomocníka"
+
+#: console/handlers/managepackages.cpp:695
+msgid "Resolving further... "
+msgstr "Hľadajú sa ďalšie riešenia..."
+
+#: console/handlers/managepackages.cpp:813
+#, c-format
+msgid "%s automatically installed packages %s"
+msgstr "%s automaticky nainštaloval balíky %s"
+
+#: console/handlers/managepackages.cpp:818
+#, c-format
+msgid "%s manually installed packages %s"
+msgstr "%s ručne nainštaloval balíky %s"
+
+#: console/handlers/managepackages.cpp:823
+#, c-format
+msgid "%s manually installed and %s automatically installed packages %s"
+msgstr "%s ručne nainštaloval a %s automaticky nainštaloval balíky %s"
+
+#: console/handlers/managepackages.cpp:964
+msgid "will be installed"
+msgstr "sa nainštaluje"
+
+#: console/handlers/managepackages.cpp:965
+msgid "will be removed"
+msgstr "sa odstráni"
+
+#: console/handlers/managepackages.cpp:966
+msgid "will be upgraded"
+msgstr "sa aktualizuje"
+
+#: console/handlers/managepackages.cpp:967
+msgid "will be purged"
+msgstr "sa vyčistí"
+
+#: console/handlers/managepackages.cpp:968
+msgid "will be downgraded"
+msgstr "sa zníži verzia"
+
+#: console/handlers/managepackages.cpp:969
+msgid "will be configured"
+msgstr "sa nakonfiguruje"
+
+#: console/handlers/managepackages.cpp:970
+msgid "will be deconfigured"
+msgstr "sa dekonfiguruje"
+
+#: console/handlers/managepackages.cpp:971
+msgid "will have triggers processed"
+msgstr "sa spracujú spúšťače"
+
+#: console/handlers/managepackages.cpp:972
+msgid "will have a not preferred version"
+msgstr "nebude mať preferovanú verziu"
+
+#: console/handlers/managepackages.cpp:973
+msgid "are no longer needed and thus will be auto-removed"
+msgstr "už nie sú potrebné a preto sa automaticky odstránia"
+
+#: console/handlers/managepackages.cpp:974
+msgid "are no longer needed and thus will be auto-purged"
+msgstr "už nie sú potrebné a preto sa automaticky vyčistia"
+
+#: console/handlers/managepackages.cpp:1013
+#, c-format
+msgid "The following packages %s:"
+msgstr "Nasledovné balíky %s:"
+
+#: console/handlers/managepackages.cpp:1032
+msgid "Action summary:"
+msgstr "Zhrnutie operácií:"
+
+#: console/handlers/managepackages.cpp:1175
+msgid "options 'cupt::console::actions-preview::show-archives' and 'cupt::console::actions-preview::show-codenames' cannot be used together"
+msgstr "voľby „cupt::console::actions-preview::show-archives“ a „cupt::console::actions-preview::show-codenames“ nemožno použiť spolu"
+
+#: console/handlers/managepackages.cpp:1219
+msgid "exactly one argument (the snapshot name) should be specified"
+msgstr "mal by byť zadaný práve jeden argument (názov snímky)"
+
+#: console/handlers/managepackages.cpp:1242
+msgid "Building the package cache... "
+msgstr "Buduje sa vyrovnávacia pamäť balíkov..."
+
+#: console/handlers/managepackages.cpp:1246
+msgid "Initializing package resolver and worker... "
+msgstr "Inicialuzuje sa riešiteľ balíkov..."
+
+#: console/handlers/managepackages.cpp:1251
+msgid "using an external resolver is not supported now"
+msgstr "použitie externého riešiteľa nie je momentálne podporované"
+
+#: console/handlers/managepackages.cpp:1267
+msgid "Scheduling requested actions... "
+msgstr "Plánujú sa požadované operácie..."
+
+#: console/handlers/managepackages.cpp:1274
+msgid "Resolving possible unmet dependencies... "
+msgstr "Riešia sa možné nesplnené závislosti..."
+
+#: console/handlers/managepackages.cpp:1290
+msgid "Enter a package expression (empty to finish): "
+msgstr "Zadajte výraz balíka (skončíte zadaním prázdneho):"
+
+#: console/handlers/managepackages.cpp:1310
+msgid "Nothing to do."
+msgstr "Niet čo vykonať."
+
+#: console/handlers/managepackages.cpp:1318
+msgid "Performing requested actions:"
+msgstr "Vykonávajú sa požadované operácie:"
+
+#: console/handlers/managepackages.cpp:1325
+msgid "unable to do requested actions"
+msgstr "nebolo možné vykonať požadované operácie"
+
+#: console/handlers/managepackages.cpp:1331
+msgid "Abandoned or no more solutions."
+msgstr "Opustené alebo žiadne ďalšie riešenia."
+
+#: console/handlers/managepackages.cpp:1340
+msgid "'dist-upgrade' command cannot be run in the shell mode"
+msgstr "príkaz „dist-upgrade“ nemožno spustiť v režime shellu"
+
+#: console/handlers/managepackages.cpp:1344
+msgid "[ upgrading package management tools ]"
+msgstr "[ aktualizujú sa nástroje na správu balíkov ]"
+
+#: console/handlers/managepackages.cpp:1350
+msgid "upgrading of the package management tools failed"
+msgstr "aktualizácia nástrojov na správu balíkov zlyhala"
+
+#: console/handlers/managepackages.cpp:1356
+msgid "[ upgrading the system ]"
+msgstr "[ aktualizuje sa systém ]"
+
+#: console/handlers/managepackages.cpp:1445
+#: downloadmethods/file.cpp:52
+#: downloadmethods/wget.cpp:42
+#: lib/src/file.cpp:36
+#: lib/src/internal/filesystem.cpp:69
+#: lib/src/internal/filesystem.cpp:108
+#: lib/src/internal/filesystem.cpp:141
+#: lib/src/internal/worker/archives.cpp:111
+#, c-format
+msgid "%s() failed: '%s'"
+msgstr "%s() zlyhalo: „%s“"
+
+#: console/handlers/managepackages.cpp:1451
+#, c-format
+msgid "Deleting '%s' <%s>..."
+msgstr "Maže sa „%s“ <%s>..."
+
+#: console/handlers/managepackages.cpp:1455
+#, c-format
+msgid "Freed %s of disk space."
+msgstr "Uvoľnených %s miesta na disku."
+
+#: console/handlers/managepackages.cpp:1457
+msgid "Deleting partial archives..."
+msgstr "Mažú sa neúplné archívy..."
+
+#: console/handlers/snapshot.cpp:41
+msgid "the action is not specified"
+msgstr "operácia nie je uvedená"
+
+#: console/handlers/snapshot.cpp:62
+msgid "no snapshot name specified"
+msgstr "nie je uvedený názov snímky"
+
+#: console/handlers/snapshot.cpp:86
+msgid "no previous snapshot name specified"
+msgstr "nie je uvedený názov predošlej snímky"
+
+#: console/handlers/snapshot.cpp:91
+msgid "no new snapshot name specified"
+msgstr "nie je uvedený názov novej snímky"
+
+#: console/handlers/snapshot.cpp:104
+#, c-format
+msgid "unsupported action '%s'"
+msgstr "nepodporovaná operácia „%s“"
+
+#: console/handlers/misc.cpp:116
+msgid "Pure virtual package, provided by"
+msgstr "Čisto virtuálny balík, poskytovaný balíkom "
+
+#: console/handlers/misc.cpp:129
+#: console/handlers/misc.cpp:269
+msgid "Package"
+msgstr "Balík"
+
+#: console/handlers/misc.cpp:130
+#: console/handlers/misc.cpp:271
+msgid "Version"
+msgstr "Verzia"
+
+#: console/handlers/misc.cpp:137
+msgid "on hold"
+msgstr "podržaný"
+
+#: console/handlers/misc.cpp:139
+#: console/handlers/misc.cpp:145
+msgid "Status"
+msgstr "Stav"
+
+#: console/handlers/misc.cpp:141
+msgid "Automatically installed"
+msgstr "Automaticky nainštalovaný"
+
+#: console/handlers/misc.cpp:141
+#: console/handlers/misc.cpp:154
+msgid "yes"
+msgstr "áno"
+
+#: console/handlers/misc.cpp:141
+msgid "no"
+msgstr "nie"
+
+#: console/handlers/misc.cpp:145
+#: lib/src/system/state.cpp:316
+msgid "not installed"
+msgstr "nenainštalovaný"
+
+#: console/handlers/misc.cpp:147
+msgid "Source"
+msgstr "Zdroj"
+
+#: console/handlers/misc.cpp:150
+msgid "Source version"
+msgstr "Verzia zdroja"
+
+#: console/handlers/misc.cpp:154
+msgid "Essential"
+msgstr "Nevyhnutný"
+
+#: console/handlers/misc.cpp:156
+#: console/handlers/misc.cpp:272
+msgid "Priority"
+msgstr "Priorita"
+
+#: console/handlers/misc.cpp:157
+#: console/handlers/misc.cpp:273
+msgid "Section"
+msgstr "Sekcia"
+
+#: console/handlers/misc.cpp:160
+#: console/handlers/misc.cpp:298
+msgid "Size"
+msgstr "Veľkosť"
+
+#: console/handlers/misc.cpp:162
+msgid "Uncompressed size"
+msgstr "Nekomprimovaná veľkosť"
+
+#: console/handlers/misc.cpp:163
+#: console/handlers/misc.cpp:274
+msgid "Maintainer"
+msgstr "Správca"
+
+#: console/handlers/misc.cpp:164
+msgid "Architecture"
+msgstr "Architektúra"
+
+#: console/handlers/misc.cpp:170
+#: console/handlers/misc.cpp:285
+msgid "Release"
+msgstr "Vydanie"
+
+#: console/handlers/misc.cpp:177
+msgid "Provides"
+msgstr "Poskytuje"
+
+#: console/handlers/misc.cpp:179
+msgid "Provided by"
+msgstr "Poskytované balíkom"
+
+#: console/handlers/misc.cpp:205
+msgid "Description"
+msgstr "Popis"
+
+#: console/handlers/misc.cpp:211
+msgid "Tags"
+msgstr "Značky"
+
+#: console/handlers/misc.cpp:270
+msgid "Binary"
+msgstr "Binárny"
+
+#: console/handlers/misc.cpp:277
+msgid "Uploaders"
+msgstr "Nahrávajú"
+
+#: console/handlers/misc.cpp:279
+msgid "Architectures"
+msgstr "Architektúry"
+
+#: console/handlers/misc.cpp:489
+msgid "Reverse-"
+msgstr "Spätne-"
+
+#: console/handlers/misc.cpp:577
+msgid "the option '--show-dates' can be used only with no package names supplied"
+msgstr "voľbu „--show-dates“ možno použiť iba ak nie sú zadané žiadne názvy balíkov"
+
+#: console/handlers/misc.cpp:596
+#: console/selectors.cpp:174
+#, c-format
+msgid "no versions available for the package '%s'"
+msgstr "nie sú dostupné žiadne verzie balíka „%s“"
+
+#: console/handlers/misc.cpp:615
+msgid "Installed"
+msgstr "Nainštalovaný"
+
+#: console/handlers/misc.cpp:616
+msgid "<none>"
+msgstr "<žiadne>"
+
+#: console/handlers/misc.cpp:620
+msgid "Preferred"
+msgstr "Preferovaná"
+
+#: console/handlers/misc.cpp:621
+msgid "Version table"
+msgstr "Tabuľka verzií"
+
+#: console/handlers/misc.cpp:652
+msgid "signed"
+msgstr "podpísaný"
+
+#: console/handlers/misc.cpp:652
+msgid "unsigned"
+msgstr "nepodpísaný"
+
+#: console/handlers/misc.cpp:678
+msgid "published"
+msgstr "zverejnený"
+
+#: console/handlers/misc.cpp:681
+msgid "does not expire"
+msgstr "nevyprší"
+
+#: console/handlers/misc.cpp:685
+msgid "expires"
+msgstr "vyprší"
+
+#: console/handlers/misc.cpp:900
+msgid "no binary package names specified"
+msgstr "neboli zadané názvy binárnych balíkov"
+
+#: console/handlers/search.cpp:60
+msgid "no search patterns specified"
+msgstr "neboli zadané vyhľadávacie vzory"
+
+#: console/handlers/search.cpp:80
+#: lib/src/internal/regex.cpp:55
+#: lib/src/internal/nativeresolver/autoremovalpossibility.cpp:47
+#, c-format
+msgid "invalid regular expression '%s'"
+msgstr "neplatný regulárny výraz „%s“"
+
+#: console/handlers/shell.cpp:98
+#, c-format
+msgid "unable to dynamically find libreadline.so.6: dlopen: %s"
+msgstr "nie je možné dynamicky nájsť libreadline.so.6: dlopen: %s"
+
+#: console/handlers/shell.cpp:105
+#: console/handlers/shell.cpp:111
+#, c-format
+msgid "unable to dynamically bind the symbol '%s': %s"
+msgstr "nie je možné dynamicky pripojiť symbol „%s“: %s"
+
+#: console/handlers/shell.cpp:131
+#, c-format
+msgid "unable to open an internal shell pipe: %s"
+msgstr "nie je možné otvoriť internú rúru shellu: %s"
+
+#: console/handlers/shell.cpp:170
+msgid "This is an interactive shell of the cupt package manager.\n"
+msgstr "Toto je interaktívny shell správcu balíkov cupt.\n"
+
+#: console/selectors.cpp:43
+#, c-format
+msgid "unable to find the binary package '%s'"
+msgstr "nie je možné nájsť binárny balík „%s“"
+
+#: console/selectors.cpp:53
+#, c-format
+msgid "unable to find the source package '%s'"
+msgstr "nie je možné nájsť zdrojový balík „%s“"
+
+#: console/selectors.cpp:86
+#, c-format
+msgid "unable to find the version '%s' for the package '%s'"
+msgstr "nie je možné nájsť verziu „%s“ balíka „%s“"
+
+#: console/selectors.cpp:103
+#: console/selectors.cpp:107
+#, c-format
+msgid "bad distribution '%s' requested, use archive or codename"
+msgstr "vyžiadaná chybná distribúcia „%s“, použite archív alebo kódové označenie"
+
+#: console/selectors.cpp:139
+#, c-format
+msgid "cannot find the distribution '%s' for the package '%s'"
+msgstr "nie je možné nájsť distribúciu „%s“ balíka „%s“"
+
+#: console/selectors.cpp:155
+#, c-format
+msgid "several versions found for the package '%s' and the distribution '%s': %s;  you should explicitly select by version"
+msgstr "bolo nájdených niekoľko verzií balíka „%s“ a distribúcie „%s“: %s;  mali by ste vybrať explicitne podľa verzie"
+
+#: console/selectors.cpp:207
+#, c-format
+msgid "unable to find an appropriate source or binary version for '%s'"
+msgstr "nie je možné nájsť príslušnú zdrojovú alebo binárnu verziu „%s“"
+
+#: console/selectors.cpp:236
+#, c-format
+msgid "bad package name in the package expression '%s'"
+msgstr "chybný názov balíka vo výraze balíka „%s“"
+
+#: console/selectors.cpp:270
+#, c-format
+msgid "no appropriate versions available for the wildcarded version expression '%s'"
+msgstr "nie sú dostupné žiadne vhodné verzie zodpovedajúce výrazu verzie so zástupnými znakmi „%s“"
+
+#: console/selectors.cpp:311
+#, c-format
+msgid "no packages available for the wildcarded expression '%s'"
+msgstr "nie sú dostupné žiadne balíky zodpovedajúce výrazu so zástupnými znakmi „%s“"
+
+#: downloadmethods/debdelta.cpp:49
+#, c-format
+msgid "delta download failed: %s"
+msgstr "stiahnutie rozdielového súboru zlyhalo: „%s“"
+
+#: downloadmethods/debdelta.cpp:65
+#, c-format
+msgid "debpatch returned error code %d"
+msgstr "debpatch vrátil kód chyby %d"
+
+#: downloadmethods/curl.cpp:43
+msgid "unable to create a Curl handle"
+msgstr "nepodarilo sa vytvoriť handle Curl"
+
+#: downloadmethods/curl.cpp:52
+#: downloadmethods/curl.cpp:61
+#: downloadmethods/curl.cpp:70
+#: downloadmethods/curl.cpp:79
+#, c-format
+msgid "unable to set the Curl option '%s': curl_easy_setopt failed: %s"
+msgstr "nepodarilo sa nastaviť voľbu Curl „%s“: curl_easy_setopt zlyhalo: %s"
+
+#: downloadmethods/curl.cpp:261
+msgid "unable to remove target file for re-downloading"
+msgstr "nebolo možné odstrániť cieľový súbor na opätovné stiahnutie"
+
+#: downloadmethods/curl.cpp:271
+#, c-format
+msgid "download method error: %s"
+msgstr "chyba metódy sťahovania: %s"
+
+#: downloadmethods/wget.cpp:137
+#, c-format
+msgid "unable to launch a wget process: %s"
+msgstr "nebolo možné spustiť proces wget: %s"
+
+#: lib/src/file.cpp:64
+msgid "pipe specification mode should be exactly 2 characters"
+msgstr "režim špecifikácie rúry by mal mať presne 2 znaky"
+
+#: lib/src/file.cpp:108
+#, c-format
+msgid "unable to close the pipe '%s'"
+msgstr "nepodarilo sa zatvoriť rúru „%s“"
+
+#: lib/src/file.cpp:112
+#, c-format
+msgid "execution of the pipe '%s' failed: %s"
+msgstr "vykonanie rúry „%s“ zlyhalo: %s"
+
+#: lib/src/file.cpp:119
+#, c-format
+msgid "unable to close the file '%s'"
+msgstr "nepodarilo sa zatvoriť súbor „%s“"
+
+#: lib/src/file.cpp:148
+#: lib/src/file.cpp:197
+#, c-format
+msgid "unable to read from the file '%s'"
+msgstr "nepodarilo sa čítať zo súboru „%s“"
+
+#: lib/src/file.cpp:247
+#, c-format
+msgid "an attempt to seek on the pipe '%s'"
+msgstr "nepodarilo sa zmeniť pozíciu (seek) v rúre „%s“"
+
+#: lib/src/file.cpp:253
+#, c-format
+msgid "unable to seek on the file '%s'"
+msgstr "nepodarilo sa zmeniť pozíciu (seek) v súbore „%s“"
+
+#: lib/src/file.cpp:262
+#, c-format
+msgid "an attempt to tell a position on the pipe '%s'"
+msgstr "nepodarilo sa určiť pozíciu (seek) v rúre „%s“"
+
+#: lib/src/file.cpp:269
+#, c-format
+msgid "unable to tell a position on the file '%s'"
+msgstr "nepodarilo sa určiť pozíciu (seek) v súbore „%s“"
+
+#: lib/src/file.cpp:286
+msgid "release"
+msgstr "uvoľniť"
+
+#: lib/src/file.cpp:286
+msgid "obtain"
+msgstr "získať"
+
+#: lib/src/file.cpp:287
+#, c-format
+msgid "unable to %s a lock on the file '%s'"
+msgstr "nepodarilo sa %s zámok na súbore „%s“"
+
+#: lib/src/file.cpp:296
+#: lib/src/file.cpp:322
+#, c-format
+msgid "unable to write to the file '%s'"
+msgstr "nepodarilo sa zapísať do súboru „%s“"
+
+#: lib/src/hashsums.cpp:42
+#, c-format
+msgid "unable to open a gcrypt hash handle: %s"
+msgstr "nepodarilo sa otvoriť handle hašu gcrypt „%s“"
+
+#: lib/src/hashsums.cpp:92
+#, c-format
+msgid "unsupported hash type '%zu'"
+msgstr "nepodporovaný typ hašu „%zu“"
+
+#: lib/src/hashsums.cpp:128
+#, c-format
+msgid "unable to compute hash sums '%s' on '%s'"
+msgstr "nie je možné vypočítať hašové súčty „%s“ na „%s“"
+
+#: lib/src/hashsums.cpp:138
+#: lib/src/cache/binaryversion.cpp:160
+msgid "no hash sums specified"
+msgstr "nie sú určené žiadne hašové súčty"
+
+#: lib/src/config.cpp:360
+#, c-format
+msgid "skipped the configuration file '%s'"
+msgstr "preskočený konfiguračný súbor „%s“"
+
+#: lib/src/config.cpp:374
+#: lib/src/internal/cachefiles.cpp:452
+#: lib/src/internal/worker/base.cpp:108
+#, c-format
+msgid "unable to open the pipe '%s': %s"
+msgstr "nepodarilo sa otvoriť rúru „%s“: %s"
+
+#: lib/src/config.cpp:451
+#, c-format
+msgid "an attempt to get the invalid scalar option '%s'"
+msgstr "pokus o získanie neplatnej skalárnej voľby „%s“"
+
+#: lib/src/config.cpp:507
+#, c-format
+msgid "unable to convert '%s' to a number"
+msgstr "nepodarilo sa previesť „%s“ na číslo"
+
+#: lib/src/config.cpp:526
+#, c-format
+msgid "an attempt to get the invalid list option '%s'"
+msgstr "pokus zistiť neplatnú voľbu zoznamu „%s“"
+
+#: lib/src/config.cpp:563
+#, c-format
+msgid "an attempt to set the invalid scalar option '%s'"
+msgstr "pokus nastaviť neplatnú skalárnu voľbu „%s“"
+
+#: lib/src/config.cpp:584
+#, c-format
+msgid "an attempt to set the invalid list option '%s'"
+msgstr "pokus nastaviť neplatnú voľbu zoznamu „%s“"
+
+#: lib/src/internal/cachefiles.cpp:165
+#, c-format
+msgid "no hash sum declarations before the line '%s'"
+msgstr "žiadne deklarácie hašového súčtu pred riadkom „%s“"
+
+#: lib/src/internal/cachefiles.cpp:170
+#: lib/src/cache/sourceversion.cpp:69
+#, c-format
+msgid "malformed line '%s'"
+msgstr "chybný formát riadka „%s“"
+
+#: lib/src/internal/cachefiles.cpp:206
+#, c-format
+msgid "no hash sums defined for the index URI '%s'"
+msgstr "žiadne hašové súčty definované pre URI indexu „%s“"
+
+#: lib/src/internal/cachefiles.cpp:487
+#, c-format
+msgid "gpg: '%s': no information"
+msgstr "gpg: „%s“: žiadne informácie"
+
+#: lib/src/internal/cachefiles.cpp:494
+#, c-format
+msgid "gpg: '%s': invalid status string '%s'"
+msgstr "gpg: „%s“: neplatný stavový reťazec „%s“"
+
+#: lib/src/internal/cachefiles.cpp:505
+#: lib/src/internal/cachefiles.cpp:547
+#, c-format
+msgid "gpg: '%s': invalid detailed information string '%s'"
+msgstr "gpg: „%s“: neplatný podrobný informačný reťazec „%s“"
+
+#: lib/src/internal/cachefiles.cpp:517
+#, c-format
+msgid "gpg: '%s': expired signature: %s"
+msgstr "gpg: „%s“: vypršaný podpis: %s"
+
+#: lib/src/internal/cachefiles.cpp:521
+#: lib/src/internal/cachefiles.cpp:575
+#, c-format
+msgid "gpg: '%s': expired key: %s"
+msgstr "gpg: „%s“: vypršaný kľúč: %s"
+
+#: lib/src/internal/cachefiles.cpp:525
+#, c-format
+msgid "gpg: '%s': revoked key: %s"
+msgstr "gpg: „%s“: odvolaný kľúč: %s"
+
+#: lib/src/internal/cachefiles.cpp:529
+#, c-format
+msgid "gpg: '%s': unknown error: %s %s"
+msgstr "gpg: „%s“: neznáma chyba: %s %s"
+
+#: lib/src/internal/cachefiles.cpp:534
+#, c-format
+msgid "gpg: '%s': bad signature: %s"
+msgstr "gpg: „%s“: chybný podpis: %s"
+
+#: lib/src/internal/cachefiles.cpp:559
+#, c-format
+msgid "gpg: '%s': public key '%s' is not found"
+msgstr "gpg: „%s“: verejný kľúč „%s“ nenájdený"
+
+#: lib/src/internal/cachefiles.cpp:565
+#, c-format
+msgid "gpg: '%s': could not verify a signature: %s"
+msgstr "gpg: „%s“: nie je možné overiť podpis: %s"
+
+#: lib/src/internal/cachefiles.cpp:571
+#, c-format
+msgid "gpg: '%s': empty signature"
+msgstr "gpg: „%s“: prázdny podpis"
+
+#: lib/src/internal/cachefiles.cpp:579
+#, c-format
+msgid "gpg: '%s': unknown message: %s %s"
+msgstr "gpg: „%s“: neznáma správa: %s %s"
+
+#: lib/src/internal/cachefiles.cpp:584
+#, c-format
+msgid "unable to verify a signature for the '%s'"
+msgstr "nie je možné overiť podpis „%s“"
+
+#: lib/src/internal/cachefiles.cpp:678
+#, c-format
+msgid "unable to parse the release '%s'"
+msgstr "nie je možné zistiť vydanie „%s“"
+
+#: lib/src/internal/cachefiles.cpp:701
+#, c-format
+msgid "the release '%s' has expired (expiry time '%s')"
+msgstr "vydanie „%s“ vypršalo (čas vypršania „%s“)"
+
+#: lib/src/internal/cachefiles.cpp:706
+#, c-format
+msgid "unable to parse the expiry time '%s' in the release '%s'"
+msgstr "nie je možné spracovať čas vypršania „%s“ vo vydaní „%s“"
+
+#: lib/src/internal/filesystem.cpp:84
+#, c-format
+msgid "unable to open the directory '%s'"
+msgstr "nie je možné otvoriť adresár „%s“"
+
+#: lib/src/internal/filesystem.cpp:98
+#, c-format
+msgid "unable to close the directory '%s'"
+msgstr "nie je možné zatvoriť adresár „%s“"
+
+#: lib/src/internal/filesystem.cpp:164
+#, c-format
+msgid "the file '%s' does not exist"
+msgstr "súbor „%s“ neexistuje"
+
+#: lib/src/internal/filesystem.cpp:168
+#, c-format
+msgid "the file '%s' is not a regular file"
+msgstr "súbor „%s“ nie je bežný súbor"
+
+#: lib/src/internal/filesystem.cpp:181
+#: lib/src/internal/worker/metadata.cpp:1034
+#, c-format
+msgid "unable to create the directory '%s'"
+msgstr "nie je možné vytvoriť adresár „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:234
+msgid "unable to parse the sources list"
+msgstr "nebolo možné spracovať zoznam zdrojov softvéru"
+
+#: lib/src/internal/cacheimpl.cpp:270
+msgid "undefined source type"
+msgstr "nedefinovaný typ zdroja"
+
+#: lib/src/internal/cacheimpl.cpp:284
+msgid "incorrect source type"
+msgstr "nesprávny typ zdroja"
+
+#: lib/src/internal/cacheimpl.cpp:291
+msgid "undefined source uri"
+msgstr "nesprávny URI zdroja"
+
+#: lib/src/internal/cacheimpl.cpp:300
+msgid "undefined source distribution"
+msgstr "nedefinovaná distribúcia zdroja"
+
+#: lib/src/internal/cacheimpl.cpp:333
+msgid "distribution doesn't end with a slash"
+msgstr "distribúcia nekončí lomkou"
+
+#: lib/src/internal/cacheimpl.cpp:340
+#: lib/src/internal/pininfo.cpp:320
+#, c-format
+msgid "(at the file '%s', line %u)"
+msgstr "(v súbore „%s“, riadok %u)"
+
+#: lib/src/internal/cacheimpl.cpp:384
+#, c-format
+msgid "the option '%s' can have only values 'none', 'include' or 'exclude'"
+msgstr "voľba „%s“ môže nadobúdať iba hodnoty „none“, „include“ alebo „exclude“"
+
+#: lib/src/internal/cacheimpl.cpp:486
+#: lib/src/internal/cacheimpl.cpp:509
+#, c-format
+msgid "skipped the index '%s'"
+msgstr "preskočený index „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:516
+#: lib/src/internal/worker/metadata.cpp:867
+#, c-format
+msgid "'%s' descriptions localization"
+msgstr "„%s“ popisuje lokalizáciu"
+
+#: lib/src/internal/cacheimpl.cpp:517
+#, c-format
+msgid "%s for '%s'"
+msgstr "%s pre „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:569
+msgid "unable to find a Package line"
+msgstr "nepodarilo sa nájsť riadok Package"
+
+#: lib/src/internal/cacheimpl.cpp:578
+#, c-format
+msgid "discarding this package version from the index '%s'"
+msgstr "zahadzuje sa táto verzia balíka z indexu „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:598
+#: lib/src/internal/cacheimpl.cpp:665
+#, c-format
+msgid "unable to parse the index '%s'"
+msgstr "nepodarilo sa spracovať index „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:653
+#, c-format
+msgid "unable to find the md5 hash in the record starting at byte '%u'"
+msgstr "nepodarilo sa nájsť md5 haš v zázname začínajúcom na bajte „%u“"
+
+#: lib/src/internal/cacheimpl.cpp:657
+#, c-format
+msgid "unable to find the translation in the record starting at byte '%u'"
+msgstr "nepodarilo sa nájsť preklad v zázname začínajúcom na bajte „%u“"
+
+#: lib/src/internal/cacheimpl.cpp:735
+#, c-format
+msgid "unable to open the extended states file '%s': %s"
+msgstr "nepodarilo sa otvoriť rozšírené stavy súboru „%s“: %s"
+
+#: lib/src/internal/cacheimpl.cpp:746
+#, c-format
+msgid "wrong tag: expected 'Package', got '%s'"
+msgstr "chybná značka: očakával sa „Package“, dostali sme „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:764
+#, c-format
+msgid "bad value '%s' (should be 0 or 1) for the package '%s'"
+msgstr "chybná hodnota „%s“ (mala byť 0 alebo 1) balíka „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:772
+#, c-format
+msgid "didn't found the 'Auto-Installed' tag for the package '%s'"
+msgstr "nenájdená značka „Auto-Installed“ balíka „%s“"
+
+#: lib/src/internal/cacheimpl.cpp:778
+msgid "unable to parse extended states"
+msgstr "nepodarilo sa prečítať rozšírené stavy"
+
+#: lib/src/internal/tagparser.cpp:59
+#, c-format
+msgid "didn't find a colon in the line '%s'"
+msgstr "nebola nájdená dvojbodka na riadku „%s“"
+
+#: lib/src/internal/debdeltahelper.cpp:46
+#, c-format
+msgid "failed to parse the debdelta configuration file '%s'"
+msgstr "nepodarilo sa prečítať konfiguračný súbor debdelta „%s“"
+
+#: lib/src/internal/debdeltahelper.cpp:62
+#, c-format
+msgid "debdeltahelper: received a version without a corresponding binary package in the cache: package '%s', version '%s'"
+msgstr "debdeltahelper: obdržaná verzia bez príslušného binárneho balíka vo vyrovnávacej pamäti: balík „%s“, verzia „%s“"
+
+#: lib/src/internal/debdeltahelper.cpp:213
+#, c-format
+msgid "unable to parse the key-value pair '%s' in the file '%s'"
+msgstr "nepodarilo sa spracovať dvojicu kľúč-hodnota „%s“ v súbore „%s“"
+
+#: lib/src/internal/pininfo.cpp:205
+msgid "invalid package/source line"
+msgstr "neplatný riadok package/source"
+
+#: lib/src/internal/pininfo.cpp:224
+msgid "no pin line"
+msgstr "chýba riadok pin"
+
+#: lib/src/internal/pininfo.cpp:230
+msgid "invalid pin line"
+msgstr "neplatný riadok pin"
+
+#: lib/src/internal/pininfo.cpp:247
+#, c-format
+msgid "invalid condition '%s'"
+msgstr "neplatná podmienka „%s“"
+
+#: lib/src/internal/pininfo.cpp:260
+#, c-format
+msgid "invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"
+msgstr "neplatný typ podmienky „%c“ (mal by byť jeden z „a“, „v“, „c“, „n“, „o“, „l“)"
+
+#: lib/src/internal/pininfo.cpp:287
+#, c-format
+msgid "invalid pin type '%s' (should be one of 'release', 'version', 'origin')"
+msgstr "neplatný typ pripevnenia „%s“ (mal by byť jeden z „release“ - vydanie, „version“ - verzia, „origin“ - pôvod)"
+
+#: lib/src/internal/pininfo.cpp:295
+msgid "no priority line"
+msgstr "chýba riadok priorita"
+
+#: lib/src/internal/pininfo.cpp:301
+msgid "invalid priority line"
+msgstr "neplatný riadok priority"
+
+#: lib/src/internal/pininfo.cpp:310
+#, c-format
+msgid "invalid integer '%s'"
+msgstr "neplatné celé číslo „%s“"
+
+#: lib/src/internal/pininfo.cpp:464
+msgid "unable to parse preferences"
+msgstr "nebolo možné spracovať predvoľby"
+
+#: lib/src/internal/nativeresolver/impl.cpp:123
+#: lib/src/internal/nativeresolver/impl.cpp:153
+#, c-format
+msgid "unable to re-schedule the package '%s'"
+msgstr "nebolo možné zmeniť naplánovanie balíka „%s“"
+
+#: lib/src/internal/nativeresolver/impl.cpp:385
+#, c-format
+msgid "wrong resolver type '%s'"
+msgstr "chybný typ riešiteľa „%s“"
+
+#: lib/src/internal/nativeresolver/impl.cpp:522
+#, c-format
+msgid "some solutions were dropped, you may want to increase the value of the '%s' option"
+msgstr "niektoré riešenia boli zahodené, možno budete chcieť zvýšiť hodnotu voľby „%s“"
+
+#: lib/src/internal/nativeresolver/impl.cpp:1073
+#, c-format
+msgid ""
+"unable to resolve dependencies, because of:\n"
+"\n"
+"%s"
+msgstr ""
+"nemožno vyriešiť závislosti kvôli:\n"
+"\n"
+"%s"
+
+#: lib/src/internal/nativeresolver/decisionfailtree.cpp:32
+msgid "no solutions"
+msgstr "žiadne riešenia"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:106
+#: lib/src/system/state.cpp:317
+msgid "installed"
+msgstr "nainštalované"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:110
+msgid "removed"
+msgstr "odstránené"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:375
+#, c-format
+msgid "a positive value of the option '%s' has no effect without a positive value of the option '%s'"
+msgstr "kladná hodnota voľby „%s“ nemá žiaden účinok bez kladnej hodnoty voľby „%s“"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:477
+#, c-format
+msgid "the option '%s' can have only values 'none', 'soft' or 'hard'"
+msgstr "voľba „%s“ môže mať iba hodnoty „none“, „soft“ alebo „hard“"
+
+#: lib/src/internal/common.cpp:108
+msgid "too long number string"
+msgstr "príliš dlhý reťazec čísla"
+
+#: lib/src/internal/common.cpp:115
+#, c-format
+msgid "invalid number '%s'"
+msgstr "neplatné číslo „%s“"
+
+#: lib/src/internal/common.cpp:119
+#, c-format
+msgid "negative number '%s'"
+msgstr "záporné číslo „%s“"
+
+#: lib/src/internal/common.cpp:123
+#, c-format
+msgid "too big number '%s'"
+msgstr "príliš veľké číslo „%s“"
+
+#: lib/src/internal/configparser.cpp:57
+#, c-format
+msgid "unable to parse the config file '%s'"
+msgstr "nebolo možné spracovať konfiguračný súbor „%s“"
+
+#: lib/src/internal/configparser.cpp:265
+msgid "clear directive ('#clear')"
+msgstr "direktíva clear („#clear“)"
+
+#: lib/src/internal/configparser.cpp:266
+msgid "closing curly bracket ('}')"
+msgstr "pravá zložená zátvorka („}“)"
+
+#: lib/src/internal/configparser.cpp:267
+msgid "opening curly bracket ('{')"
+msgstr "ľavá zložená zátvorka („{“)"
+
+#: lib/src/internal/configparser.cpp:268
+msgid "semicolon (';')"
+msgstr "bodkočiarka („;“)"
+
+#: lib/src/internal/configparser.cpp:269
+msgid "option value (quoted string)"
+msgstr "hodnota voľby (reťazec v úvodzovkách)"
+
+#: lib/src/internal/configparser.cpp:270
+msgid "option name (letters, numbers, slashes, points, dashes, double colons allowed)"
+msgstr "názov voľby (písmená, číslice, lomky, bodky, pomlčky, dvojité dvojbodky sú prípustné)"
+
+#: lib/src/internal/configparser.cpp:292
+#, c-format
+msgid "syntax error: line %u, character %u: expected: %s"
+msgstr "syntaktická chyba: riadok %u, znak %u: očakávalo sa: %s"
+
+#: lib/src/internal/worker/snapshots.cpp:52
+#: lib/src/internal/worker/snapshots.cpp:57
+#, c-format
+msgid "unable to remove the partial snapshot directory '%s'"
+msgstr "nebolo možné odstrániť adresár čiastočných snímok „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:105
+#, c-format
+msgid "internal error: no binary package '%s'"
+msgstr "vnútorná chyba: binárny balík „%s“ neexistuje"
+
+#: lib/src/internal/worker/snapshots.cpp:111
+#, c-format
+msgid "internal error: no installed version for the installed package '%s'"
+msgstr "vnútorná chyba: žiadna nainštalovaná verzia nainštalovaného balíka „%s“ neexistuje"
+
+#: lib/src/internal/worker/snapshots.cpp:132
+#, c-format
+msgid "dpkg-repack produced either no or more than one Debian archive for the package '%s'"
+msgstr "dpkg-repack nevytvoril buď žiaden alebo vytvoril viac ako jeden archív Debianu pre balík „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:142
+#: lib/src/internal/worker/snapshots.cpp:346
+#: lib/src/internal/worker/metadata.cpp:102
+#: lib/src/internal/worker/metadata.cpp:550
+#: lib/src/internal/worker/packages.cpp:1419
+#, c-format
+msgid "unable to rename '%s' to '%s'"
+msgstr "nemožno premenovať „%s“ na „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:149
+#, c-format
+msgid "failed to repack the package '%s'"
+msgstr "nepodarilo sa prebaliť balík „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:219
+msgid "the system snapshot name cannot be empty"
+msgstr "názov snímky systému nemôže byť prázdny"
+
+#: lib/src/internal/worker/snapshots.cpp:223
+#, c-format
+msgid "the system snapshot name '%s' cannot start with a '.'"
+msgstr "názov snímky systému „%s“ nemôže začínať „.“"
+
+#: lib/src/internal/worker/snapshots.cpp:230
+#, c-format
+msgid "the system snapshot named '%s' already exists"
+msgstr "názov snímky systému „%s“ už existuje"
+
+#: lib/src/internal/worker/snapshots.cpp:240
+msgid "the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'"
+msgstr "spustiteľný súbor „dpkg-repack“ nie je dostupný, nainštalujte balík „dpkg-repack“"
+
+#: lib/src/internal/worker/snapshots.cpp:244
+msgid "the 'dpkg-scanpackages' binary is not available, install the package 'dpkg-dev'"
+msgstr "spustiteľný súbor „dpkg-scanpackages“ nie je dostupný, nainštalujte balík „dpkg-dev“"
+
+#: lib/src/internal/worker/snapshots.cpp:271
+#, c-format
+msgid "unable to create the snapshots directory '%s'"
+msgstr "nebolo možné vytvoriť adresár snímok „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:282
+#, c-format
+msgid "unable to create a temporary snapshot directory '%s'"
+msgstr "nebolo možné vytvoriť dočasný adresár snímok „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:311
+msgid "unable to open the current directory"
+msgstr "nebolo možné otvoriť aktuálny adresár"
+
+#: lib/src/internal/worker/snapshots.cpp:319
+#: lib/src/internal/worker/snapshots.cpp:356
+#, c-format
+msgid "unable to set the current directory to '%s'"
+msgstr "nebolo možné nastaviť aktuálny adresár na „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:339
+msgid "unable to return to a previous working directory"
+msgstr "nebolo možné vrátiť sa do predošlého aktuálneho adresára"
+
+#: lib/src/internal/worker/snapshots.cpp:362
+#, c-format
+msgid "unable to construct the system snapshot '%s'"
+msgstr "nebolo možné zostaviť snímku systému „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:373
+#: lib/src/internal/worker/snapshots.cpp:404
+#: lib/src/system/snapshots.cpp:95
+#, c-format
+msgid "unable to find a snapshot named '%s'"
+msgstr "nebolo možné nájsť snímku s názvom „%s“"
+
+#: lib/src/internal/worker/snapshots.cpp:378
+#, c-format
+msgid "the snapshot '%s' already exists"
+msgstr "snímka „%s“ už existuje"
+
+#: lib/src/internal/worker/snapshots.cpp:394
+#, c-format
+msgid "'%s' is not a valid snapshot"
+msgstr "„%s“ nie je platná snímka"
+
+#: lib/src/internal/worker/metadata.cpp:139
+#, c-format
+msgid "the '%s' uncompressor is not available, not downloading '%s'"
+msgstr "rozbaľovač „%s“ nie je dostupný, „%s“ sa nebude sťahovať"
+
+#: lib/src/internal/worker/metadata.cpp:152
+#, c-format
+msgid "failed to uncompress '%s', '%s' returned the error %d"
+msgstr "nepodarolo sa rozbaliť „%s“, „%s“ vrátil chybu %d"
+
+#: lib/src/internal/worker/metadata.cpp:167
+#, c-format
+msgid "unknown file extension '%s', not downloading '%s'"
+msgstr "neznáma prípona súboru „%s“, „%s“ sa nebude sťahovať"
+
+#: lib/src/internal/worker/metadata.cpp:377
+#, c-format
+msgid "%s: failed to proceed"
+msgstr "%s: nepodarilo sa pokračovať"
+
+#: lib/src/internal/worker/metadata.cpp:410
+#: lib/src/internal/worker/metadata.cpp:809
+#, c-format
+msgid "malformed 'hash-size-name' line '%s'"
+msgstr "chybný formát „hash-size-name“ riadka „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:429
+#, c-format
+msgid "malformed 'hash-size' line '%s'"
+msgstr "chybný formát „hash-size“ riadka „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:437
+msgid "failed to find the target hash sum"
+msgstr "nepodarilo sa nájsť kontrolný súčet cieľa"
+
+#: lib/src/internal/worker/metadata.cpp:454
+#, c-format
+msgid "unable to copy '%s' to '%s'"
+msgstr "nebolo možné skopírovať „%s“ do „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:472
+#, c-format
+msgid "unable to find a patch for the sha1 sum '%s'"
+msgstr "nebolo možné nájsť záplatu súčtu sha1 „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:481
+#, c-format
+msgid "unable to find a patch entry for the patch '%s'"
+msgstr "nebolo možné nájsť záznam záplaty „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:527
+msgid "applying ed script failed"
+msgstr "aplikácia skriptu ed zlyhala"
+
+#: lib/src/internal/worker/metadata.cpp:605
+#, c-format
+msgid "unable to remove an outdated partial file '%s'"
+msgstr "nebolo možné odstrániť zastaraný čiastočný súbor „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:670
+msgid "index"
+msgstr "index"
+
+#: lib/src/internal/worker/metadata.cpp:758
+#, c-format
+msgid "failed to download %s for '%s/%s'"
+msgstr "nepodarilo sa stiahnuť %s pre „%s/%s“"
+
+#: lib/src/internal/worker/metadata.cpp:780
+#, c-format
+msgid "failed to parse localization data from '%s'"
+msgstr "nepodarilo sa spracovať lokalizačné dáta z „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:1001
+#, c-format
+msgid "unable to create the lists directory '%s'"
+msgstr "nebolo možné vytvoriť adresár zoznamov „%s“"
+
+#: lib/src/internal/worker/metadata.cpp:1041
+msgid "aborted downloading release and index data"
+msgstr "zrušené sťahovanie dát vydania a indexu"
+
+#: lib/src/internal/worker/metadata.cpp:1128
+msgid "there were errors while downloading release and index data"
+msgstr "vyskytli sa chyby pri sťahovaní dát vydania a indexu"
+
+#: lib/src/internal/worker/packages.cpp:996
+#: lib/src/internal/worker/setupandpreview.cpp:165
+msgid "worker: the desired state is not given"
+msgstr "worker: nebol zadaný požadovaný stav"
+
+#: lib/src/internal/worker/packages.cpp:1212
+#, c-format
+msgid "internal error: unable to schedule circular actions '%s'"
+msgstr "vnútorná chyba: nebolo možné naplánovať cyklické operácie „%s“"
+
+#: lib/src/internal/worker/packages.cpp:1247
+#, c-format
+msgid "internal error: worker: a relation '%s' cannot be soft"
+msgstr "vnútorná chyba: worker: vzťah „%s“ nemôže byť „soft“"
+
+#: lib/src/internal/worker/packages.cpp:1339
+msgid "unable to create the archive downloads directory"
+msgstr "nebolo možné vytvoriť adresár na stiahnuté archívy"
+
+#: lib/src/internal/worker/packages.cpp:1363
+#, c-format
+msgid "no available download URIs for %s %s"
+msgstr "žiadne dostupné URI na stiahnutie %s %s"
+
+#: lib/src/internal/worker/packages.cpp:1410
+msgid "unable to find the downloaded file"
+msgstr "nebolo možné nájsť stiahnutý súbor"
+
+#: lib/src/internal/worker/packages.cpp:1431
+msgid "failed to prepare downloads"
+msgstr "nepodarilo sa pripraviť sťahovania"
+
+#: lib/src/internal/worker/packages.cpp:1486
+#, c-format
+msgid "internal error: packages have been left unconfigured: '%s'"
+msgstr "vnútorná chyba: balíky boli ponechané nenakonfigurované „%s“"
+
+#: lib/src/internal/worker/packages.cpp:1561
+#, c-format
+msgid "internal error: worker: __set_force_options_for_removals_if_needed: there is no installed record for the package '%s' which is to be removed"
+msgstr "vnútorná chyba: worker: __set_force_options_for_removals_if_needed: nie je žiaden nainštalovaný záznam balíka „%s“, ktorý sa má odstrániť"
+
+#: lib/src/internal/worker/packages.cpp:1628
+#, c-format
+msgid "unable to fit in the archives space limit '%zu', best try is '%zu'"
+msgstr "nebolo možné zmestiť sa do limitu priestoru archívov „%zu“, najlepší pokus je „%zu“"
+
+#: lib/src/internal/worker/packages.cpp:1668
+#, c-format
+msgid "dpkg '%s' action '%s'"
+msgstr "dpkg „%s“ operácia „%s“"
+
+#: lib/src/internal/worker/packages.cpp:1699
+msgid "failed to clean downloaded archives"
+msgstr "nepodarilo sa vyčistiť stiahnuté archívy"
+
+#: lib/src/internal/worker/packages.cpp:1923
+msgid "marking as automatically installed"
+msgstr "označený ako automaticky nainštalovaný"
+
+#: lib/src/internal/worker/packages.cpp:1923
+msgid "marking as manually installed"
+msgstr "označený ako ručne nainštalovaný"
+
+#: lib/src/internal/worker/packages.cpp:1961
+#, c-format
+msgid "unable to renew extended states file: unable to rename '%s' to '%s'"
+msgstr "nepodarilo sa obnoviť súbor rozšírených stavov: nepodarilo sa premenovať „%s“ na „%s“"
+
+#: lib/src/internal/worker/packages.cpp:1968
+msgid "failed to change the 'automatically installed' flag"
+msgstr "nepodarilo sa zmeniť príznak „automaticky nainštalovaný“"
+
+#: lib/src/internal/worker/archives.cpp:51
+#, c-format
+msgid "unable to remove the dangling APT compatibility symbolic link '%s'"
+msgstr "nepodarilo sa označiť visiaci symbolický odkaz „%s“ kompatibility APT"
+
+#: lib/src/internal/worker/archives.cpp:70
+#, c-format
+msgid "unable to create the APT compatibility symbolic link '%s' -> '%s'"
+msgstr "nepodarilo sa vytvoriť symbolický odkaz „%s“ -> „%s“ kompatibility APT"
+
+#: lib/src/internal/worker/archives.cpp:153
+#, c-format
+msgid "the path '%s' lies outside the archives directory '%s'"
+msgstr "cesta „%s“ leží mimo adresára archívov „%s“"
+
+#: lib/src/internal/worker/archives.cpp:157
+#, c-format
+msgid "the path '%s' contains at least one '/../' substring"
+msgstr "cesta „%s“ obsahuje aspoň jeden podreťazec „/../“"
+
+#: lib/src/internal/worker/archives.cpp:204
+msgid "unable to remove partial archives"
+msgstr "nepodarilo sa odstrániť čiastočné archívy"
+
+#: lib/src/internal/worker/base.cpp:92
+#, c-format
+msgid "unable to launch the command '%s'"
+msgstr "nepodailo sa spustiť príkaz „%s“"
+
+#: lib/src/internal/worker/base.cpp:97
+#, c-format
+msgid "the command '%s' failed: %s"
+msgstr "príkaz „%s“ zlyhal: %s"
+
+#: lib/src/internal/worker/base.cpp:115
+#, c-format
+msgid "%s failed"
+msgstr "%s zlyhal"
+
+#: lib/src/internal/worker/setupandpreview.cpp:190
+#, c-format
+msgid "there is no package '%s' in the desired state"
+msgstr "neexistuje žiaden balík „%s“ v požadovanom stave"
+
+#: lib/src/common/consumers.cpp:45
+#, c-format
+msgid "invalid package name '%s'"
+msgstr "neplatný názov balíka „%s“"
+
+#: lib/src/common/consumers.cpp:137
+#, c-format
+msgid "invalid version string '%s'"
+msgstr "neplatný reťazec verzie „%s“"
+
+#: lib/src/common/consumers.cpp:143
+#, c-format
+msgid "version string '%s': should not contain underscores"
+msgstr "reťazec verzie „%s“: nemal by obsahovať podčiarkovníky"
+
+#: lib/src/common/consumers.cpp:147
+#, c-format
+msgid "version string '%s': first upstream character '%c' is not a digit"
+msgstr "reťazec verzie „%s“: prvý upstream znak „%c“ nie je číslica"
+
+#: lib/src/download/progresses/console.cpp:139
+msgid "Get"
+msgstr "Získané"
+
+#: lib/src/download/progresses/console.cpp:150
+msgid "Fail"
+msgstr "Zlyhalo"
+
+#: lib/src/download/progresses/console.cpp:234
+#, c-format
+msgid "Fetched %s in %s.\n"
+msgstr "Stiahnuté %s za %s.\n"
+
+#: lib/src/download/methodfactory.cpp:62
+#: lib/src/download/methodfactory.cpp:118
+#, c-format
+msgid "unable to unload the dynamic library handle '%p': %s"
+msgstr "nepodarilo sa odobrať z pamäte handle dynamickej knižnice „%p“: %s"
+
+#: lib/src/download/methodfactory.cpp:83
+msgid "no download methods found"
+msgstr "neboli nájdené žiadne metódy sťahovania"
+
+#: lib/src/download/methodfactory.cpp:102
+#, c-format
+msgid "not loading another copy of the download method '%s'"
+msgstr "nenačítava sa ďalšia kópia metódy sťahovania „%s“"
+
+#: lib/src/download/methodfactory.cpp:109
+#: lib/src/download/methodfactory.cpp:115
+#, c-format
+msgid "unable to load the download method '%s': %s: %s"
+msgstr "nepodarilo sa načítať metódu sťahovania „%s“: %s: %s"
+
+#: lib/src/download/methodfactory.cpp:139
+#, c-format
+msgid "no download handlers defined for the protocol '%s'"
+msgstr "žiadne obsluhy sťahovania nie sú definované pre protokol „%s“"
+
+#: lib/src/download/methodfactory.cpp:173
+msgid "no download handlers available"
+msgstr "žiadne obsluhy sťahovania nie sú dostupné"
+
+#: lib/src/download/method.cpp:61
+#, c-format
+msgid "the value '%s' of the suboption '%s' is not numeric"
+msgstr "hodnota „%s“ podvoľby „%s“ nie je číselná"
+
+#: lib/src/download/manager.cpp:79
+msgid "unable to send a socket message"
+msgstr "nepodarilo sa poslať správu socketu"
+
+#: lib/src/download/manager.cpp:96
+msgid "unable to receive a socket message length"
+msgstr "nepodarilo sa prijať dĺžku správy socketu"
+
+#: lib/src/download/manager.cpp:101
+#, c-format
+msgid "unable to receive a socket message length: %s"
+msgstr "nepodarilo sa prijať dĺžku správy socketu: %s"
+
+#: lib/src/download/manager.cpp:101
+#: lib/src/download/manager.cpp:122
+msgid "partial message arrived"
+msgstr "prišla čiastočná správa"
+
+#: lib/src/download/manager.cpp:114
+msgid "unable to receive a socket message"
+msgstr "nepodarilo sa prijať správu socketu"
+
+#: lib/src/download/manager.cpp:118
+#: lib/src/download/manager.cpp:122
+#, c-format
+msgid "unable to receive a socket message: %s"
+msgstr "nepodarilo sa prijať správu socketu: %s"
+
+#: lib/src/download/manager.cpp:118
+msgid "unexpected end of stream"
+msgstr "neočakávaný koniec streamu"
+
+#: lib/src/download/manager.cpp:217
+msgid "unable to open the server socket"
+msgstr "nepodarilo sa otvoriť socket servera"
+
+#: lib/src/download/manager.cpp:223
+#, c-format
+msgid "unable to bind the server socket to the file '%s'"
+msgstr "nepodarilo sa otvoriť socket servera k súboru „%s“"
+
+#: lib/src/download/manager.cpp:227
+#, c-format
+msgid "unable to make the server socket on the file '%s' listen for connections"
+msgstr "nepodarilo sa začať počúvanie spojení na sockete servera k súboru „%s“"
+
+#: lib/src/download/manager.cpp:235
+msgid "unable to create the download worker process: fork() failed"
+msgstr "nepodarilo sa vytvoriť pomocný proces sťahovania: fork() zlyhal"
+
+#: lib/src/download/manager.cpp:281
+msgid "unable to shutdown the download worker process: waitpid() failed"
+msgstr "nepodarilo sa vytvoriť pomocný proces sťahovania: waitpid() zlyhal"
+
+#: lib/src/download/manager.cpp:285
+#, c-format
+msgid "the download worker process exited abnormally: %s"
+msgstr "pomocný proces sťahovania bol neštandardne ukončený: %s"
+
+#: lib/src/download/manager.cpp:291
+msgid "the download worker process aborted unexpectedly"
+msgstr "pomocný proces sťahovania sa neštandardne prerušil"
+
+#: lib/src/download/manager.cpp:297
+msgid "unable to close the download server socket"
+msgstr "nepodarilo sa zatvoriť sťahovací socket servera"
+
+#: lib/src/download/manager.cpp:302
+#, c-format
+msgid "unable to remove the download server socket file '%s'"
+msgstr "nepodarilo sa zatvoriť sťahovací socket servera k súboru „%s“"
+
+#: lib/src/download/manager.cpp:316
+#, c-format
+msgid "download manager: unable to terminate a performer process (pid '%d')"
+msgstr "správca sťahovania: nepodarilo sa ukončiť pomocný proces (pid „%d“)"
+
+#: lib/src/download/manager.cpp:413
+msgid "waitpid on the performer process failed"
+msgstr "waitpid na pomocný procese zlyhal"
+
+#: lib/src/download/manager.cpp:503
+#, c-format
+msgid "unable to kill the process %u"
+msgstr "nepodarilo sa ukončiť proces %u"
+
+#: lib/src/download/manager.cpp:538
+#, c-format
+msgid "invalid expected size: expected '%zu', got '%zu'"
+msgstr "neplatná očakávaná veľkosť: očakávané „%zu“, prijaté „%zu“"
+
+#: lib/src/download/manager.cpp:555
+#, c-format
+msgid "downloaded more than expected: expected '%zu', downloaded '%zu'"
+msgstr "stiahnuté viac ako sme očakávali: očakávané „%zu“, stiahnuté „%zu“"
+
+#: lib/src/download/manager.cpp:639
+msgid "unable to create a performer process: fork() failed"
+msgstr "nepodarilo sa vytvoriť pomocný proces sťahovania: fork() zlyhal"
+
+#: lib/src/download/manager.cpp:720
+msgid "unable to poll worker loop sockets"
+msgstr "nepodarilo sa zistiť sockety pomocnej slučky"
+
+#: lib/src/download/manager.cpp:738
+msgid "unable to accept new socket connection"
+msgstr "nepodarilo sa prijať nové pripojenie k socketu"
+
+#: lib/src/download/manager.cpp:848
+#: lib/src/download/manager.cpp:1183
+msgid "unable to close the client socket"
+msgstr "nepodarilo sa zatvoriť klientský socket"
+
+#: lib/src/download/manager.cpp:912
+msgid "download worker: polling the waiter socket failed"
+msgstr "pomocný program sťahovania: poll() čakacieho socketu zlyhal"
+
+#: lib/src/download/manager.cpp:991
+msgid "passed a download entity with an empty target path"
+msgstr "odovzdaná sťahovacia entita s prázdnou cestou k cieľu"
+
+#: lib/src/download/manager.cpp:995
+#, c-format
+msgid "passed distinct download entities with the same target path '%s'"
+msgstr "odovzdané samostatné sťahovacie entity s rovnakou cestou k cieľu „%s“"
+
+#: lib/src/download/manager.cpp:1037
+msgid "download client: polling the client socket failed"
+msgstr "pomocný program sťahovania: poll() klientského socketu zlyhal"
+
+#: lib/src/download/manager.cpp:1042
+msgid "download client: the download server socket timed out"
+msgstr "pomocný program sťahovania: platnosť socketu sťahovacieho servera vypršala"
+
+#: lib/src/download/manager.cpp:1070
+msgid "unable to open a client socket"
+msgstr "nepodarilo sa otvoriť klientský socket"
+
+#: lib/src/download/manager.cpp:1074
+msgid "unable to connect to the server socket"
+msgstr "nepodarilo sa pripojiť k serverovému socketu"
+
+#: lib/src/download/manager.cpp:1150
+#, c-format
+msgid "the postprocessing action raised an exception '%s'"
+msgstr "operácia spracovania vyvolala výnimku „%s“"
+
+#: lib/src/download/manager.cpp:1154
+msgid "the postprocessing action raised an exception"
+msgstr "operácia spracovania vyvolala výnimku"
+
+#: lib/src/download/uri.cpp:42
+#, c-format
+msgid "unable to find a scheme (protocol) in the URI '%s'"
+msgstr "nepodarilo sa nájsť schému (protokol) v URI „%s“"
+
+#: lib/src/download/uri.cpp:53
+#, c-format
+msgid "there should be no or two slashes after a colon in the URI '%s'"
+msgstr "v URI „%s“ by nemali byť viac ako dve lomky po dvojbodke"
+
+#: lib/src/download/progress.cpp:195
+msgid "download progress: received a progress message with less than 2 total parameters"
+msgstr "priebeh sťahovania: prijali sme správu o priebehu s menej ako 2 parametrami celkom"
+
+#: lib/src/download/progress.cpp:208
+#: lib/src/download/progress.cpp:240
+#: lib/src/download/progress.cpp:252
+#: lib/src/download/progress.cpp:261
+#: lib/src/download/progress.cpp:270
+#, c-format
+msgid "download progress: received a submessage '%s' with more than %u parameters"
+msgstr "priebeh sťahovania: prijali sme podsprávu „%s“ s viac ako %u parametrami"
+
+#: lib/src/download/progress.cpp:233
+#, c-format
+msgid "download progress: received an info for a not started download, URI '%s'"
+msgstr "priebeh sťahovania: prijaté info o zatiaľ nezačatom sťahovaní, URI „%s“"
+
+#: lib/src/download/progress.cpp:284
+#, c-format
+msgid "download progress: received the invalid action '%s'"
+msgstr "priebeh sťahovania: prijatá neplatná operácia „%s“"
+
+#: lib/src/cache/sourceversion.cpp:60
+#, c-format
+msgid "unexpected non-empty tag value '%s'"
+msgstr "neočakávaná neprázdna hodnota „%s“"
+
+#: lib/src/cache/sourceversion.cpp:160
+#: lib/src/cache/binaryversion.cpp:149
+msgid "version string isn't defined"
+msgstr "reťazec verzie nie je definovaný"
+
+#: lib/src/cache/sourceversion.cpp:164
+#, c-format
+msgid "source package %s, version %s: architectures aren't defined, setting them to 'all'"
+msgstr "zdrojový balík %s, verzia %s: architektúra nie sú definované, Prebieha nastavenie všetkých - „all“."
+
+#: lib/src/cache/sourceversion.cpp:201
+msgid "Tarball"
+msgstr "Tarball"
+
+#: lib/src/cache/sourceversion.cpp:201
+msgid "Diff"
+msgstr "Diff"
+
+#: lib/src/cache/sourceversion.cpp:201
+msgid "Dsc"
+msgstr "Dsc"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Depends"
+msgstr "Zostav-závisí"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Depends-Indep"
+msgstr "Zostav-závisí-nezáv"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Conflicts"
+msgstr "Konflikt-zostavenia"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Conflicts-Indep"
+msgstr "Konflikt-zostavenia-nezáv"
+
+#: lib/src/cache/binaryversion.cpp:153
+#, c-format
+msgid "binary package %s, version %s: architecture isn't defined, setting it to 'all'"
+msgstr "binárny balík %s, verzia %s: architektúra nie sú definované, Prebieha nastavenie všetkých - „all“."
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Pre-Depends"
+msgstr "Pred-závisí"
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Depends"
+msgstr "Závisí"
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Recommends"
+msgstr "Odporúča"
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Suggests"
+msgstr "Navrhuje"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Enhances"
+msgstr "Rozširuje"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Conflicts"
+msgstr "Je v konflikte s"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Breaks"
+msgstr "Kazí"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Replaces"
+msgstr "Nahrádza"
+
+#: lib/src/cache/relation.cpp:130
+#, c-format
+msgid "failed to parse a package name in the relation '%s'"
+msgstr "nepodarilo sa spracovať názov balíka vo vzťahu k„%s“"
+
+#: lib/src/cache/relation.cpp:144
+#, c-format
+msgid "failed to parse a version part in the relation '%s'"
+msgstr "nepodarilo sa spracovať časť s verziou vo vzťahu k „%s“"
+
+#: lib/src/cache/relation.cpp:223
+#, c-format
+msgid "unable to parse architecture filters '%s'"
+msgstr "nepodarilo sa spracovať filtre architektúry „%s“"
+
+#: lib/src/cache/relation.cpp:275
+#, c-format
+msgid "non-negative architecture filter '%s'"
+msgstr "nezáporný filter architektúry „%s“"
+
+#: lib/src/cache/version.cpp:98
+msgid "required"
+msgstr "povinný"
+
+#: lib/src/cache/version.cpp:98
+msgid "important"
+msgstr "dôležitý"
+
+#: lib/src/cache/version.cpp:98
+msgid "standard"
+msgstr "štandardný"
+
+#: lib/src/cache/version.cpp:98
+msgid "optional"
+msgstr "voliteľný"
+
+#: lib/src/cache/version.cpp:98
+msgid "extra"
+msgstr "extra"
+
+#: lib/src/cache/package.cpp:61
+#, c-format
+msgid "error while parsing a version for the package '%s'"
+msgstr "chyba počas spracovania verzie balíka „%s“"
+
+#: lib/src/cache/package.cpp:66
+msgid "no valid versions available, discarding the package"
+msgstr "nie sú dostupné žiadne platné verzie, zahadzuje sa balík"
+
+#: lib/src/cache/package.cpp:151
+#, c-format
+msgid "discarding a duplicate version with different hash sums: package: '%s', version: '%s', origin of discarded version: '%s', origins left: '%s'"
+msgstr "zahadzuje sa duplicitná verzia s rozdielnym kontrolným súčtom: balík „%s“, verzia: „%s“, pôvod zahodenej verzie: „%s“, zostáva pôvodov: „%s“"
+
+#: lib/src/cache/package.cpp:160
+#, c-format
+msgid "error while merging the version '%s' for the package '%s'"
+msgstr "chyba počas zlučovania verzie „%s“ balíka „%s“"
+
+#: lib/src/pipe.cpp:41
+#, c-format
+msgid "unable to close a part of the '%s' pipe"
+msgstr "nepodarilo sa zatvoriť časť rúry „%s“"
+
+#: lib/src/pipe.cpp:55
+#, c-format
+msgid "unable to create the '%s' pipe"
+msgstr "nepodarilo sa vyvoriť rúru „%s“"
+
+#: lib/src/pipe.cpp:65
+#, c-format
+msgid "unable to create the '%s' pipe: unable to get file descriptor flags"
+msgstr "nepodarilo sa vyvoriť rúru „%s“: nepodarilo sa získať príznaky popisovača súboru"
+
+#: lib/src/pipe.cpp:69
+#, c-format
+msgid "unable to create the '%s' pipe: unable to set the close-on-exec flag"
+msgstr "nepodarilo sa vyvoriť rúru „%s“: nepodarilo sa nastaviť príznak close-on-exec (zatvoriť pri spustení)"
+
+#: lib/src/system/state.cpp:70
+#: lib/src/system/state.cpp:91
+#: lib/src/system/state.cpp:115
+#, c-format
+msgid "malformed '%s' status indicator (for the package '%s')"
+msgstr "neplatný tvar indikátora stavu „%s“ (balíka „%s“)"
+
+#: lib/src/system/state.cpp:77
+#: lib/src/system/state.cpp:98
+#, c-format
+msgid "no '%s' status indicator (for the package '%s')"
+msgstr "chýba indikátor stavu „%s“ (balíka „%s“)"
+
+#: lib/src/system/state.cpp:152
+#, c-format
+msgid "unable to open the dpkg status file '%s': %s"
+msgstr "nepodarilo sa otvoriť súbor stavu dpkg „%s“: %s"
+
+#: lib/src/system/state.cpp:209
+msgid "no package name in the record"
+msgstr "žiaden názov balíka v zázname"
+
+#: lib/src/system/state.cpp:239
+#, c-format
+msgid "error parsing the dpkg status file '%s'"
+msgstr "chyba pročas spracovania súboru stavu dpkg „%s“"
+
+#: lib/src/system/state.cpp:316
+msgid "unpacked"
+msgstr "rozbalený"
+
+#: lib/src/system/state.cpp:316
+msgid "half-configured"
+msgstr "spola-nakonfigurovaný"
+
+#: lib/src/system/state.cpp:316
+msgid "half-installed"
+msgstr "spola-nainštalovaný"
+
+#: lib/src/system/state.cpp:317
+msgid "config files"
+msgstr "konfiguračné súbory"
+
+#: lib/src/system/state.cpp:317
+msgid "postinst failed"
+msgstr "zlyhal postinst"
+
+#: lib/src/system/state.cpp:317
+msgid "removal failed"
+msgstr "zlyhalo odstránenie"
+
+#: lib/src/system/resolver.cpp:25
+msgid "user request"
+msgstr "požiadavka používateľa"
+
+#: lib/src/system/resolver.cpp:30
+msgid "auto-removal"
+msgstr "auto-odstránenie"
+
+#: lib/src/system/resolver.cpp:44
+msgid "pre-depends on"
+msgstr "pred-závisí na"
+
+#: lib/src/system/resolver.cpp:45
+msgid "depends on"
+msgstr "závisí na"
+
+#: lib/src/system/resolver.cpp:46
+msgid "recommends"
+msgstr "odporúča"
+
+#: lib/src/system/resolver.cpp:47
+msgid "suggests"
+msgstr "navrhuje"
+
+#: lib/src/system/resolver.cpp:48
+msgid "conflicts with"
+msgstr "je v konflikte s"
+
+#: lib/src/system/resolver.cpp:49
+msgid "breaks"
+msgstr "kazí"
+
+#: lib/src/system/resolver.cpp:55
+#, c-format
+msgid "unsupported reason dependency type '%s'"
+msgstr "nepodporovaný dôvod typu závislosti „%s“"
+
+#: lib/src/system/resolver.cpp:74
+#, c-format
+msgid "%s: synchronization with %s %s"
+msgstr "„%s“: synchronizácia s %s %s"
+
+#: lib/src/system/snapshots.cpp:109
+#, c-format
+msgid "unable to open the format file '%s': %s"
+msgstr "nepodarilo sa otvoriť súbor formátu „%s“: %s"
+
+#: lib/src/system/snapshots.cpp:116
+#, c-format
+msgid "unsupported snapshot format '%s'"
+msgstr "nepodporovaný formát snímky „%s“"
+

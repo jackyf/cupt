@@ -352,28 +352,28 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		// there is no modifiable element in this solution
 		solution.__added_entries->insert(it,
 				make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
-
-		if (conflictingElementPtr)
-		{
-			auto forRemovalIt = solution.__added_entries->lower_bound(conflictingElementPtr);
-			if (forRemovalIt != solution.__added_entries->end() && forRemovalIt->first == conflictingElementPtr)
-			{
-				forRemovalIt->second.reset();
-			}
-			else
-			{
-				solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
-			}
-		}
 	}
 	else
 	{
-		if (conflictingElementPtr)
+		if (conflictingElementPtr && it->second)
 		{
 			fatal2i("conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
 					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
 		it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
+	}
+
+	if (conflictingElementPtr)
+	{
+		auto forRemovalIt = solution.__added_entries->lower_bound(conflictingElementPtr);
+		if (forRemovalIt != solution.__added_entries->end() && forRemovalIt->first == conflictingElementPtr)
+		{
+			forRemovalIt->second.reset();
+		}
+		else
+		{
+			solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
+		}
 	}
 
 	__update_broken_successors(solution, conflictingElementPtr, elementPtr, priority);

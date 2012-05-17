@@ -170,7 +170,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 		return (methodBuilderIt->second)();
 	}
 
-	fatal2(__("no download handlers available"));
+	fatal2(__("no download handlers available for the protocol '%s'"), protocol);
 	return NULL; // unreachable
 }
 

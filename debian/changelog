@@ -18,6 +18,27 @@ cupt (2.6.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 
+cupt (2.5.4) unstable; urgency=low
+
+  * lib:
+    - system/resolvers/native:
+      - Fixed an internal error when a not installed package was considered
+        but then autoremoved (under certain conditions). This regression was
+        introduced in 2.5.0. Thanks to Karol Kozłowski for the report.
+        (Closes: #672693)
+    - download/methodfactory:
+      - [Jonathan Nieder] 'getDownloadMethodForUri': include the protocol to
+        the 'no download handlers' error message.
+  * po:
+    - Added Slovak translation by Ivan Masár. (Closes: #671793)
+  * debian:
+    - control:
+      - [Jonathan Nieder] Suggest installing a download method in the 'cupt'
+        package description. Thanks to Manuel A. Fernandez Montecelo for the
+        report. (Closes: #672804)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 15 May 2012 20:32:36 +0300
+
 cupt (2.5.3) unstable; urgency=low
 
   * console:
