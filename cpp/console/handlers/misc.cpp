@@ -833,7 +833,7 @@ int findDependencyChain(Context& context)
 		auto version = versions.front();
 		versions.pop();
 
-		if (*version == *leafVersion)
+		if (version == leafVersion)
 		{
 			// we found a path, re-walk it
 			stack< PathEntry > path;
