@@ -482,7 +482,7 @@ int showRelations(Context& context, bool reverse)
 								auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
 								for (const auto& satisfyingVersion: satisfyingVersions)
 								{
-									if (*satisfyingVersion == *version)
+									if (satisfyingVersion == version)
 									{
 										// positive result
 										cout << "  " << __("Reverse-") << caption << ": "
