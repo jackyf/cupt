@@ -707,7 +707,7 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 		if (suggestedVersion)
 		{
 			auto policyVersion = cache->getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
-			if (!(*policyVersion == *suggestedVersion))
+			if (!(policyVersion == suggestedVersion))
 			{
 				result.insert(*suggestedPackageIt);
 			}
