@@ -93,6 +93,7 @@ void MethodFactoryImpl::__load_methods()
 			if (methodName.size() < 4 || methodName.compare(0, 3, "lib"))
 			{
 				debug2("the method filename '%s' does not start with 'lib', discarding it", methodName);
+				continue;
 			}
 			methodName = methodName.substr(3);
 		}
