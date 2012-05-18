@@ -3,7 +3,9 @@ cupt (2.5.5~) UNRELEASED; urgency=low
   * lib:
     - download/methodfactory:
       - Loading download methods: fixed a crash when a download method library
-        filename without extension contains less than 3 characters.
+        filename without extension contains less than 3 characters. Also,
+        don't output a debug messages in this case when the debugging is not
+        turned on.
   * debian:
     - control:
       - Long description: made more specific about 'option name checker'.
