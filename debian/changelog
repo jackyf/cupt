@@ -1,6 +1,12 @@
 cupt (2.5.5~) UNRELEASED; urgency=low
 
-  * 
+  * debian:
+    - control:
+      - Long description: made more specific about 'option name checker'.
+  * doc:
+    - tutorial:
+      - 'Advantages': said more specificly that 'option name checker' is for
+        the 'cupt::' option family.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 18 May 2012 21:23:43 +0300
 

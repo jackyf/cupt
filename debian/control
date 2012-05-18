@@ -72,7 +72,7 @@ Description: alternative front-end for dpkg -- console interface
  Some features:
   - strict full-case resolver;
   - resolver reasons tracking;
-  - command-line and APT-like option name checker;
+  - command-line and 'cupt::*' option name checker;
   - case-sensitive search;
   - pinning by source package name;
   - pinning by package groups using shell-like patterns;
