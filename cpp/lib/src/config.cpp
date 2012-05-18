@@ -504,7 +504,7 @@ vector< string > Config::getList(const string& optionName) const
 
 bool __is_cupt_option(const string& optionName)
 {
-	return optionName.size() >= 6 && optionName.compare(0, 6, "cupt::") == 0;
+	return optionName.compare(0, 6, "cupt::") == 0;
 }
 
 void Config::setScalar(const string& optionName, const string& value)
