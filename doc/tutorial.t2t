@@ -42,8 +42,9 @@ However, you are invited to test it and increase the number of users.
 
 - Some features which are present in other high-level package managers are missing.
 
-Among them: GUI and TUI interfaces, cdrom:// URI download method, integration
-with //cron(8)//. And there are probably many more.
+Among them: GUI and TUI interfaces, cdrom:// URI download method, repositories
+without a Release file, integration with //cron(8)//. And there are probably
+many more.
 
 
 You might want to use Cupt to have these, to my best knowledge, unique features:
