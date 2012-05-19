@@ -992,7 +992,8 @@ See L<cupt.conf(5)>.
 
 Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
 
-The discussion channel about Cupt is irc://irc.debian.org#cupt.
+The user support mailing list is cupt-user@lists.alioth.debian.org. The
+discussion channel about Cupt is irc://irc.debian.org#cupt.
 
 =head1 SEE ALSO
 

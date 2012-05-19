@@ -18,6 +18,8 @@ cupt (2.5.5~) UNRELEASED; urgency=low
         the 'cupt::' option family.
       - 'Disadvantages': explicitly said that Cupt does not currently support
         repositories without a Release file.
+    - man/cupt.1:
+      - Added the user support mailing list.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 18 May 2012 21:23:43 +0300
 
