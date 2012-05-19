@@ -158,12 +158,12 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 			{
 				currentHashSumType = HashSums::SHA256;
 			}
-			else if (line.find(suffix) != string::npos)
+			else if (line.empty() || !isspace(line[0])) // end of hash sum block
 			{
-				if (currentHashSumType == HashSums::Count)
-				{
-					fatal2(__("no hash sum declarations before the line '%s'"), line);
-				}
+				currentHashSumType = HashSums::Count;
+			}
+			else if (currentHashSumType != HashSums::Count && line.find(suffix) != string::npos)
+			{
 				static sregex hashSumsLineRegex = sregex::compile("\\s([[:xdigit:]]+)\\s+(\\d+)\\s+(.*)");
 				if (!regex_match(line, m, hashSumsLineRegex))
 				{
