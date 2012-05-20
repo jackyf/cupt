@@ -726,6 +726,10 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 			{
 				continue;
 			}
+			if (!vertex->version && !__initial_packages.count(packageName))
+			{
+				continue;
+			}
 
 			Resolver::SuggestedPackage& suggestedPackage = suggestedPackages[packageName];
 			suggestedPackage.version = vertex->version;
