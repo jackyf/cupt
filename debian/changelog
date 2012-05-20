@@ -6,6 +6,9 @@ cupt (2.5.5~) UNRELEASED; urgency=low
         filename without extension contains less than 3 characters. Also,
         don't output a debug messages in this case when the debugging is not
         turned on.
+    - cache/sourceversion:
+      - 'parseFromFile': accept the value 'source' as if it was 'extra' for
+        'Priority' field (a workaround for #626394).
     - Parsing Release files: fixed mixing unknown hash sum types and known
       hash sum values which leads to a wrong 'hash sums mismatch' error.
       Thanks to Karol Kozłowski for the report.
