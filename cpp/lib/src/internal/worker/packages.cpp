@@ -2044,6 +2044,30 @@ bool __defer_triggers(const Config& config, const Cache& cache)
 	}
 }
 
+void PackagesWorker::__do_independent_auto_status_changes()
+{
+	auto wasDoneAlready = [this](const string& packageName)
+	{
+		for (const auto& actionGroup: __actions_preview->groups)
+		{
+			if (actionGroup.count(packageName))
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for (const auto& autoFlagChange: __actions_preview->autoFlagChanges)
+	{
+		const auto& packageName = autoFlagChange.first;
+		if (!wasDoneAlready(packageName))
+		{
+			markAsAutomaticallyInstalled(packageName, autoFlagChange.second);
+		}
+	}
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2068,7 +2092,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	vector< Changeset > changesets;
 	{
 		GraphAndAttributes gaa;
-		if (!__build_actions_graph(gaa))
+		if (!__build_actions_graph(gaa) && __actions_preview->autoFlagChanges.empty())
 		{
 			_logger->log(Logger::Subsystem::Packages, 1, "nothing to do");
 			return;
@@ -2243,6 +2267,8 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			debug2("finished changeset");
 		}
 	}
+
+	__do_independent_auto_status_changes();
 
 	__do_dpkg_post_actions();
 }

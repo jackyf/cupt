@@ -105,6 +105,7 @@ class PackagesWorker: public virtual WorkerBase
 			const shared_ptr< download::Progress >&);
 	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
 	void __change_auto_status(const InnerActionGroup&);
+	void __do_independent_auto_status_changes();
  public:
 	PackagesWorker();
 
