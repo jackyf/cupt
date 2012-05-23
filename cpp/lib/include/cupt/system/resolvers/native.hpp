@@ -47,6 +47,7 @@ class CUPT_API NativeResolver: public Resolver
 	void unsatisfyRelationExpression(const RelationExpression&);
 	void removePackage(const string& packageName);
 	void upgrade();
+	void setAutomaticallyInstalledFlag(const string&, bool);
 
 	bool resolve(Resolver::CallbackType);
 

@@ -109,6 +109,11 @@ bool NativeResolverImpl::__prepare_version_no_stick(
 	return true;
 }
 
+void NativeResolverImpl::setAutomaticallyInstalledFlag(const string& packageName, bool flagValue)
+{
+	__auto_status_overrides[packageName] = flagValue;
+}
+
 void NativeResolverImpl::installVersion(const BinaryVersion* version)
 {
 	const string& packageName = version->packageName;
