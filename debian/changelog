@@ -4,6 +4,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - Managing packages:
       - The option 'cupt::resolver::track-reasons' does not correspond to the
         console '--show-reasons' option anymore.
+      - New positional action override options '--markauto', '--unmarkauto'.
   * lib:
     - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
     - [API break] '__': now returns 'const char*' instead of 'string'.

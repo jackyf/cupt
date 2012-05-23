@@ -44,7 +44,8 @@ typedef Worker::Action WA;
 const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
 const WA::Type fakeAutoRemove = WA::Type(1000);
 const WA::Type fakeAutoPurge = WA::Type(1001);
-
+const WA::Type fakeBecomeAutomaticallyInstalled = WA::Type(1002);
+const WA::Type fakeBecomeManuallyInstalled = WA::Type(1003);
 
 static void preProcessMode(ManagePackages::Mode& mode, Config& config, Resolver& resolver)
 {
@@ -240,6 +241,15 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 	}
 }
 
+static void processAutoFlagChangeExpression(const shared_ptr< const Cache >& cache,
+		Resolver& resolver, ManagePackages::Mode mode, const string& packageExpression)
+{
+	getBinaryPackage(cache, packageExpression); // will throw if package name is wrong
+
+	resolver.setAutomaticallyInstalledFlag(packageExpression,
+			(mode == ManagePackages::Markauto));
+}
+
 static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 		Resolver& resolver, const string& packageExpression)
 {
@@ -299,6 +309,14 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		{
 			mode = ManagePackages::Unsatisfy;
 		}
+		else if (*packageExpressionIt == "--markauto")
+		{
+			mode = ManagePackages::Markauto;
+		}
+		else if (*packageExpressionIt == "--unmarkauto")
+		{
+			mode = ManagePackages::Unmarkauto;
+		}
 		else if (*packageExpressionIt == "--iii")
 		{
 			mode = ManagePackages::InstallIfInstalled;
@@ -310,6 +328,10 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		else if (mode == ManagePackages::BuildDepends)
 		{
 			processBuildDependsExpression(config, cache, resolver, *packageExpressionIt);
+		}
+		else if (mode == ManagePackages::Markauto || mode == ManagePackages::Unmarkauto)
+		{
+			processAutoFlagChangeExpression(cache, resolver, mode, *packageExpressionIt);
 		}
 		else if (mode == ManagePackages::Reinstall)
 		{
@@ -736,30 +758,15 @@ static string colorizeByActionType(const Colorizer& colorizer,
 	return colorizer.colorize(input, color, !isAutoInstalled /* bold */);
 }
 
-bool wasOrWillBePackageAutoInstalled(const Cache& cache, const string& packageName,
-		const map< string, bool >& autoFlagChanges)
+bool wasOrWillBePackageAutoInstalled(const Resolver::SuggestedPackage& suggestedPackage)
 {
-	if (cache.isAutomaticallyInstalled(packageName))
-	{
-		return true;
-	}
-
-	auto autoFlagChangeIt = autoFlagChanges.find(packageName);
-	if (autoFlagChangeIt != autoFlagChanges.end())
-	{
-		if (autoFlagChangeIt->second) // "set as autoinstalled"
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return suggestedPackage.automaticallyInstalledFlag;
 }
 
-static void printPackageName(const Cache& cache, const Colorizer& colorizer,
-		const string& packageName, WA::Type actionType, const map< string, bool >& autoFlagChanges)
+static void printPackageName(const Colorizer& colorizer, const string& packageName,
+		WA::Type actionType, const Resolver::SuggestedPackage& suggestedPackage)
 {
-	bool isAutoInstalled = wasOrWillBePackageAutoInstalled(cache, packageName, autoFlagChanges);
+	bool isAutoInstalled = wasOrWillBePackageAutoInstalled(suggestedPackage);
 
 	cout << colorizeByActionType(colorizer, packageName, actionType, isAutoInstalled);
 	if (actionType == WA::Remove || actionType == WA::Purge)
@@ -775,7 +782,9 @@ static string colorizeActionName(const Colorizer& colorizer, const string& actio
 {
 	if (actionType != WA::Install && actionType != WA::Upgrade &&
 			actionType != WA::Configure && actionType != WA::ProcessTriggers &&
-			actionType != fakeAutoRemove && actionType != fakeAutoPurge)
+			actionType != fakeAutoRemove && actionType != fakeAutoPurge &&
+			actionType != fakeBecomeAutomaticallyInstalled &&
+			actionType != fakeBecomeManuallyInstalled)
 	{
 		return colorizer.makeBold(actionName);
 	}
@@ -785,14 +794,14 @@ static string colorizeActionName(const Colorizer& colorizer, const string& actio
 	}
 }
 
-void addActionToSummary(const Cache& cache, WA::Type actionType, const string& actionName,
-		const Resolver::SuggestedPackages& suggestedPackages, const map< string, bool >& autoFlagChanges,
+void addActionToSummary(WA::Type actionType, const string& actionName,
+		const Resolver::SuggestedPackages& suggestedPackages,
 		Colorizer& colorizer, std::stringstream* summaryStreamPtr)
 {
 	size_t manuallyInstalledCount = std::count_if(suggestedPackages.begin(), suggestedPackages.end(),
-			[&cache, &autoFlagChanges](const pair< string, Resolver::SuggestedPackage >& arg)
+			[](const pair< string, Resolver::SuggestedPackage >& arg)
 			{
-				return !wasOrWillBePackageAutoInstalled(cache, arg.first, autoFlagChanges);
+				return !wasOrWillBePackageAutoInstalled(arg.second);
 			});
 	size_t autoInstalledCount = suggestedPackages.size() - manuallyInstalledCount;
 
@@ -848,14 +857,14 @@ struct PackageChangeInfoFlags
 
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
-		const map< string, bool >& autoFlagChanges, const map< string, ssize_t >& unpackedSizesPreview)
+		const map< string, ssize_t >& unpackedSizesPreview)
 {
 	PackageChangeInfoFlags showFlags(config, actionType);
 
 	for (const auto& it: actionSuggestedPackages)
 	{
 		const string& packageName = it.first;
-		printPackageName(cache, colorizer, packageName, actionType, autoFlagChanges);
+		printPackageName(colorizer, packageName, actionType, it.second);
 
 		showVersionInfoIfNeeded(cache, packageName, it.second, actionType, showFlags.versionFlags);
 
@@ -907,6 +916,42 @@ Resolver::SuggestedPackages filterNoLongerNeeded(const Resolver::SuggestedPackag
 	return result;
 }
 
+Resolver::SuggestedPackages filterPureAutoStatusChanges(const Cache& cache,
+		const Worker::ActionsPreview& actionsPreview, bool targetAutoStatus)
+{
+	static const shared_ptr< Resolver::UserReason > userReason;
+	Resolver::SuggestedPackages result;
+
+	for (const auto& autoStatusChange: actionsPreview.autoFlagChanges)
+	{
+		if (autoStatusChange.second == targetAutoStatus)
+		{
+			const string& packageName = autoStatusChange.first;
+			for (size_t ai = 0; ai < WA::Count; ++ai)
+			{
+				if (targetAutoStatus && ai != WA::Install) continue;
+				if (!targetAutoStatus && (ai != WA::Remove && ai != WA::Purge)) continue;
+
+				if (actionsPreview.groups[ai].count(packageName))
+				{
+					goto next_package; // natural, non-pure change
+				}
+			}
+
+			{
+				Resolver::SuggestedPackage& entry = result[packageName];
+				entry.version = cache.getBinaryPackage(packageName)->getInstalledVersion();
+				entry.automaticallyInstalledFlag = !targetAutoStatus;
+				entry.reasons.push_back(userReason);
+			}
+
+			next_package: ;
+		}
+	}
+
+	return result;
+}
+
 Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const Cache >& cache,
 		const Resolver::Offer& offer,
 		const shared_ptr< const Worker::ActionsPreview >& actionsPreview, WA::Type actionType)
@@ -920,6 +965,10 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const
 			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], false);
 		case fakeAutoPurge:
 			return filterNoLongerNeeded(actionsPreview->groups[WA::Purge], false);
+		case fakeBecomeAutomaticallyInstalled:
+			return filterPureAutoStatusChanges(*cache, *actionsPreview, true);
+		case fakeBecomeManuallyInstalled:
+			return filterPureAutoStatusChanges(*cache, *actionsPreview, false);
 		#pragma GCC diagnostic pop
 		case WA::Remove:
 			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], true);
@@ -972,10 +1021,14 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
 				{ fakeAutoRemove, __("are no longer needed and thus will be auto-removed") },
 				{ fakeAutoPurge, __("are no longer needed and thus will be auto-purged") },
+				{ fakeBecomeAutomaticallyInstalled, __("will be marked as automatically installed") },
+				{ fakeBecomeManuallyInstalled, __("will be marked as manually installed") },
 			};
 			cout << endl;
 
-			vector< WA::Type > actionTypesInOrder = { WA::Install, WA::Upgrade, WA::Remove,
+			vector< WA::Type > actionTypesInOrder = {
+					fakeBecomeAutomaticallyInstalled, fakeBecomeManuallyInstalled,
+					WA::Install, WA::Upgrade, WA::Remove,
 					WA::Purge, WA::Downgrade, WA::Configure, WA::ProcessTriggers, WA::Deconfigure };
 			if (showNotPreferred)
 			{
@@ -1002,8 +1055,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 
 				if (showSummary)
 				{
-					addActionToSummary(*cache, actionType, actionName, actionSuggestedPackages,
-							actionsPreview->autoFlagChanges, colorizer, &summaryStream);
+					addActionToSummary(actionType, actionName, actionSuggestedPackages,
+							colorizer, &summaryStream);
 				}
 				if (!showDetails)
 				{
@@ -1014,7 +1067,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
 				showPackageChanges(*config, *cache, colorizer, actionType, actionSuggestedPackages,
-						actionsPreview->autoFlagChanges, unpackedSizesPreview);
+						unpackedSizesPreview);
 			}
 
 			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
@@ -1086,7 +1139,8 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	auto extraParser = [](const string& input) -> pair< string, string >
 	{
 		const set< string > actionModifierOptionNames = {
-			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii"
+			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii",
+			"--markauto", "--unmarkauto"
 		};
 		if (actionModifierOptionNames.count(input))
 		{

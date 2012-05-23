@@ -818,6 +818,28 @@ C<cupt install libv4l-0 cupt --iii libreadline6 vlc*> - install packages
 installed already, install the preferred versions of packages which names start
 with 'vlc' and which are installed already 
 
+=item --markauto
+
+mark as automatically installed (see L</markauto> subcommand) the rest of packages
+
+Example:
+
+C<cupt install vlc --markauto vlc> - install the package 'vlc' but mark it
+automatically installed. That means on the next run 'vlc' will be proposed for
+autoremoval (unless you switched autoremoval off or something in the system has
+a valuable soft dependency on the 'vlc' package).
+
+=item --unmarkauto
+
+mark as manually installed (see L</unmarkauto>) subcommand the rest of packages
+
+Example:
+
+You have a package 'bindfs' installed and now don't need it anymore. C<cupt
+remove bindfs> shows that the package 'fuse' will be removed as it was a
+dependency of 'bindfs'; you however decide you want to keep it in the system.
+Then you run C<cupt remove bindfs --unmarkauto fuse>.
+
 =back
 
 =head3 management modifiers: package name suffixes
