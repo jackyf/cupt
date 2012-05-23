@@ -23,6 +23,8 @@
 namespace cupt {
 namespace internal {
 
+using cupt::cache::BinaryVersion;
+
 class AutoRemovalPossibilityImpl;
 
 class AutoRemovalPossibility
@@ -33,7 +35,7 @@ class AutoRemovalPossibility
 	~AutoRemovalPossibility();
 
 	enum class Allow { Yes, No, YesIfNoRDepends };
-	Allow isAllowed(const Cache&, const BinaryVersion*, bool) const;
+	Allow isAllowed(const BinaryVersion*, bool, bool) const;
 };
 
 }

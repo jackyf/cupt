@@ -48,7 +48,7 @@ class NativeResolverImpl
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
-	set< string > __manually_modified_package_names;
+	map< string, bool > __auto_status_overrides;
 	unique_ptr< SolutionStorage > __solution_storage;
 	ScoreManager __score_manager;
 	AutoRemovalPossibility __auto_removal_possibility;
@@ -68,8 +68,11 @@ class NativeResolverImpl
 			dg::InitialPackageEntry&);
 	float __get_version_weight(const BinaryVersion*) const;
 	float __get_action_profit(const BinaryVersion*, const BinaryVersion*) const;
+
+	bool __compute_target_auto_status(const string&) const;
 	AutoRemovalPossibility::Allow __is_candidate_for_auto_removal(const dg::Element*);
 	bool __clean_automatically_installed(Solution&);
+
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&, size_t);
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;

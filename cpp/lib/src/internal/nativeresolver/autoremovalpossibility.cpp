@@ -18,8 +18,6 @@
 #include <common/regex.hpp>
 
 #include <cupt/config.hpp>
-#include <cupt/cache.hpp>
-#include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/binaryversion.hpp>
 
 #include <internal/nativeresolver/autoremovalpossibility.hpp>
@@ -69,8 +67,8 @@ class AutoRemovalPossibilityImpl
 	}
 
 	typedef AutoRemovalPossibility::Allow Allow;
-	Allow isAllowed(const Cache& cache, const BinaryVersion* version,
-			bool wasInstalledBefore) const
+	Allow isAllowed(const BinaryVersion* version,
+			bool wasInstalledBefore, bool targetAutoStatus) const
 	{
 		const string& packageName = version->packageName;
 
@@ -78,7 +76,7 @@ class AutoRemovalPossibilityImpl
 		{
 			return Allow::No;
 		}
-		auto canAutoremoveThisPackage = __can_autoremove && cache.isAutomaticallyInstalled(packageName);
+		auto canAutoremoveThisPackage = __can_autoremove && targetAutoStatus;
 		if (wasInstalledBefore && !canAutoremoveThisPackage)
 		{
 			return Allow::No;
@@ -106,10 +104,10 @@ AutoRemovalPossibility::~AutoRemovalPossibility()
 	delete __impl;
 }
 
-AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const Cache& cache, const BinaryVersion* version,
-		bool wasInstalledBefore) const
+AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const BinaryVersion* version,
+		bool wasInstalledBefore, bool targetAutoStatus) const
 {
-	return __impl->isAllowed(cache, version, wasInstalledBefore);
+	return __impl->isAllowed(version, wasInstalledBefore, targetAutoStatus);
 }
 
 }

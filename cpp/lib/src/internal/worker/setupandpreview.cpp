@@ -138,20 +138,29 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 	if (action != Action::Count)
 	{
 		__actions_preview->groups[action][packageName] = suggestedPackage;
+	}
 
+	{ // does auto status need changing?
+		bool targetAutoStatus;
 		if (action == Action::Remove ||
 			(action == Action::Purge && installedInfo &&
 			installedInfo->status == State::InstalledRecord::Status::Installed))
 		{
-			/* in case of removing a package we delete the 'automatically
-			   installed' info regardless was this flag set or not so next
-			   time when this package is installed it has 'clean' info */
-			__actions_preview->autoFlagChanges[packageName] = false;
+			/* in case of removing a package we always delete the
+			   'automatically installed' info so next time when this package is
+			   installed it has 'clean' info */
+			targetAutoStatus = false;
 		}
-		else if (action == Action::Install && !suggestedPackage.manuallySelected)
+		// TODO: worker: support auto status changes for non-changed packages
+		else
 		{
-			// set 'automatically installed' for new non-manually selected packages
-			__actions_preview->autoFlagChanges[packageName] = true;
+			targetAutoStatus = suggestedPackage.automaticallyInstalledFlag;
+		}
+
+		bool currentAutoStatus = _cache->isAutomaticallyInstalled(packageName);
+		if (targetAutoStatus != currentAutoStatus)
+		{
+			__actions_preview->autoFlagChanges[packageName] = targetAutoStatus;
 		}
 	}
 }

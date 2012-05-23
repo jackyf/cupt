@@ -22,6 +22,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.
+    - system/resolver:
+      - [API break] SuggestedPackage: new field 'automaticallyInstalledFlag',
+        removed old field 'manuallySelected'.
   * debian:
     - control:
       - Bumped the library API version.

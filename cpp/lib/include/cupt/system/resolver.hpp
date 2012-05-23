@@ -112,8 +112,7 @@ class CUPT_API Resolver
 	struct SuggestedPackage
 	{
 		const BinaryVersion* version; ///< package version
-		// TODO/API break/: change the field to 'automaticallyInstalledFlag'
-		bool manuallySelected; ///< was this package version selected by user, not resolver?
+		bool automaticallyInstalledFlag;
 		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
 	};
 	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
