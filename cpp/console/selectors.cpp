@@ -31,8 +31,6 @@
 #include "common.hpp"
 #include "selectors.hpp"
 
-typedef shared_ptr< const Version > (*__version_selector)(const Cache&,
-		const string& packageName, bool throwOnError);
 typedef std::function< vector< string > (const Cache&) > __package_names_fetcher;
 
 const BinaryPackage* getBinaryPackage(const Cache& cache, const string& packageName, bool throwOnError)
