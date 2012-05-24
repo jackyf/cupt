@@ -511,7 +511,7 @@ void printPackageNamesByLine(const vector< string >& packageNames)
 	cout << endl;
 }
 
-void checkForUntrustedPackages(const shared_ptr< const Worker::ActionsPreview >& actionsPreview,
+void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 		bool& isDangerous)
 {
 	vector< string > untrustedPackageNames;
@@ -521,7 +521,7 @@ void checkForUntrustedPackages(const shared_ptr< const Worker::ActionsPreview >&
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview->groups[actionType];
+		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview.groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
@@ -541,8 +541,7 @@ void checkForUntrustedPackages(const shared_ptr< const Worker::ActionsPreview >&
 }
 
 void checkForRemovalOfEssentialPackages(const Cache& cache,
-		const shared_ptr< const Worker::ActionsPreview >& actionsPreview,
-		bool& isDangerous)
+		const Worker::ActionsPreview& actionsPreview, bool& isDangerous)
 {
 	vector< string > essentialPackageNames;
 	// generate loud warning for unsigned versions
@@ -551,7 +550,7 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview->groups[actionType];
+		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview.groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
@@ -580,8 +579,7 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 }
 
 void checkForIgnoredHolds(const Cache& cache,
-		const shared_ptr< const Worker::ActionsPreview >& actionsPreview,
-		bool& isDangerous)
+		const Worker::ActionsPreview& actionsPreview, bool& isDangerous)
 {
 	vector< string > ignoredHoldsPackageNames;
 
@@ -590,7 +588,7 @@ void checkForIgnoredHolds(const Cache& cache,
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
 		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview->groups[actionType];
+		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview.groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
@@ -953,7 +951,7 @@ Resolver::SuggestedPackages filterPureAutoStatusChanges(const Cache& cache,
 
 Resolver::SuggestedPackages getSuggestedPackagesByAction(const Cache& cache,
 		const Resolver::Offer& offer,
-		const shared_ptr< const Worker::ActionsPreview >& actionsPreview, WA::Type actionType)
+		const Worker::ActionsPreview& actionsPreview, WA::Type actionType)
 {
 	switch (actionType)
 	{
@@ -961,20 +959,20 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const Cache& cache,
 		case fakeNotPolicyVersionAction:
 			return generateNotPolicyVersionList(cache, offer.suggestedPackages);
 		case fakeAutoRemove:
-			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], false);
+			return filterNoLongerNeeded(actionsPreview.groups[WA::Remove], false);
 		case fakeAutoPurge:
-			return filterNoLongerNeeded(actionsPreview->groups[WA::Purge], false);
+			return filterNoLongerNeeded(actionsPreview.groups[WA::Purge], false);
 		case fakeBecomeAutomaticallyInstalled:
-			return filterPureAutoStatusChanges(cache, *actionsPreview, true);
+			return filterPureAutoStatusChanges(cache, actionsPreview, true);
 		case fakeBecomeManuallyInstalled:
-			return filterPureAutoStatusChanges(cache, *actionsPreview, false);
+			return filterPureAutoStatusChanges(cache, actionsPreview, false);
 		#pragma GCC diagnostic pop
 		case WA::Remove:
-			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], true);
+			return filterNoLongerNeeded(actionsPreview.groups[WA::Remove], true);
 		case WA::Purge:
-			return filterNoLongerNeeded(actionsPreview->groups[WA::Purge], true);
+			return filterNoLongerNeeded(actionsPreview.groups[WA::Purge], true);
 		default:
-			return actionsPreview->groups[actionType];
+			return actionsPreview.groups[actionType];
 	}
 }
 
@@ -1039,7 +1037,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 			for (const WA::Type& actionType: actionTypesInOrder)
 			{
 				auto actionSuggestedPackages = getSuggestedPackagesByAction(cache,
-						offer, actionsPreview, actionType);
+						offer, *actionsPreview, actionType);
 				if (actionSuggestedPackages.empty())
 				{
 					continue;
@@ -1088,10 +1086,10 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 		bool isDangerousAction = false;
 		if (!config.getBool("cupt::console::allow-untrusted"))
 		{
-			checkForUntrustedPackages(actionsPreview, isDangerousAction);
+			checkForUntrustedPackages(*actionsPreview, isDangerousAction);
 		}
-		checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
-		checkForIgnoredHolds(cache, actionsPreview, isDangerousAction);
+		checkForRemovalOfEssentialPackages(cache, *actionsPreview, isDangerousAction);
+		checkForIgnoredHolds(cache, *actionsPreview, isDangerousAction);
 
 		{ // print size estimations
 			auto downloadSizesPreview = worker->getDownloadSizesPreview();
