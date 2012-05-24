@@ -132,13 +132,12 @@ static void processSatisfyExpression(const Config& config,
 	__satisfy_or_unsatisfy(resolver, relationLine, mode);
 }
 
-static void processBuildDependsExpression(const shared_ptr< Config >& config,
-		const shared_ptr< const Cache >& cache,
+static void processBuildDependsExpression(const Config& config, const Cache& cache,
 		Resolver& resolver, const string& packageExpression)
 {
-	auto architecture = config->getString("apt::architecture");
+	auto architecture = config.getString("apt::architecture");
 
-	auto versions = selectSourceVersionsWildcarded(*cache, packageExpression);
+	auto versions = selectSourceVersionsWildcarded(cache, packageExpression);
 
 	for (const auto& version: versions)
 	{
@@ -153,11 +152,11 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 	}
 }
 
-static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& cache,
+static void processInstallOrRemoveExpression(const Cache& cache,
 		Resolver& resolver, ManagePackages::Mode mode, string packageExpression,
 		set< string >& purgedPackageNames)
 {
-	auto versions = selectBinaryVersionsWildcarded(*cache, packageExpression, false);
+	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
 	if (versions.empty())
 	{
 		/* we have a funny situation with package names like 'g++',
@@ -186,13 +185,13 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 	{
 		if (versions.empty())
 		{
-			versions = selectBinaryVersionsWildcarded(*cache, packageExpression);
+			versions = selectBinaryVersionsWildcarded(cache, packageExpression);
 		}
 		for (const auto& version: versions)
 		{
 			if (mode == ManagePackages::InstallIfInstalled)
 			{
-				auto&& installedInfo = cache->getSystemState()->getInstalledInfo(version->packageName);
+				auto&& installedInfo = cache.getSystemState()->getInstalledInfo(version->packageName);
 				if (!installedInfo || installedInfo->status == system::State::InstalledRecord::Status::ConfigFiles)
 				{
 					continue;
@@ -208,7 +207,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
 			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
 					packageExpression.find('*') != string::npos;
-			versions = selectBinaryVersionsWildcarded(*cache, packageExpression, wildcardsPresent);
+			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
 		}
 
 		auto scheduleRemoval = [&resolver, &purgedPackageNames, mode](const string& packageName)
@@ -230,8 +229,8 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 		else
 		{
 			checkPackageName(packageExpression);
-			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
-				!getBinaryPackage(*cache, packageExpression, false))
+			if (!cache.getSystemState()->getInstalledInfo(packageExpression) &&
+				!getBinaryPackage(cache, packageExpression, false))
 			{
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
@@ -241,19 +240,19 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 	}
 }
 
-static void processAutoFlagChangeExpression(const shared_ptr< const Cache >& cache,
+static void processAutoFlagChangeExpression(const Cache& cache,
 		Resolver& resolver, ManagePackages::Mode mode, const string& packageExpression)
 {
-	getBinaryPackage(*cache, packageExpression); // will throw if package name is wrong
+	getBinaryPackage(cache, packageExpression); // will throw if package name is wrong
 
 	resolver.setAutomaticallyInstalledFlag(packageExpression,
 			(mode == ManagePackages::Markauto));
 }
 
-static void processReinstallExpression(const shared_ptr< const Cache >& cache,
+static void processReinstallExpression(const Cache& cache,
 		Resolver& resolver, const string& packageExpression)
 {
-	auto package = getBinaryPackage(*cache, packageExpression);
+	auto package = getBinaryPackage(cache, packageExpression);
 	auto installedVersion = package->getInstalledVersion();
 	if (!installedVersion)
 	{
@@ -282,8 +281,8 @@ static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 	}
 }
 
-static void processPackageExpressions(const shared_ptr< Config >& config,
-		const shared_ptr< const Cache >& cache, ManagePackages::Mode& mode,
+static void processPackageExpressions(const Config& config,
+		const Cache& cache, ManagePackages::Mode& mode,
 		Resolver& resolver, const vector< string >& packageExpressions,
 		set< string >& purgedPackageNames)
 {
@@ -323,7 +322,7 @@ static void processPackageExpressions(const shared_ptr< Config >& config,
 		}
 		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
 		{
-			processSatisfyExpression(*config, resolver, *packageExpressionIt, mode);
+			processSatisfyExpression(config, resolver, *packageExpressionIt, mode);
 		}
 		else if (mode == ManagePackages::BuildDepends)
 		{
@@ -541,7 +540,7 @@ void checkForUntrustedPackages(const shared_ptr< const Worker::ActionsPreview >&
 	}
 }
 
-void checkForRemovalOfEssentialPackages(const shared_ptr< const Cache >& cache,
+void checkForRemovalOfEssentialPackages(const Cache& cache,
 		const shared_ptr< const Worker::ActionsPreview >& actionsPreview,
 		bool& isDangerous)
 {
@@ -557,7 +556,7 @@ void checkForRemovalOfEssentialPackages(const shared_ptr< const Cache >& cache,
 		FORIT(it, suggestedPackages)
 		{
 			const string& packageName = it->first;
-			auto package = cache->getBinaryPackage(packageName);
+			auto package = cache.getBinaryPackage(packageName);
 			if (package)
 			{
 				auto version = package->getInstalledVersion();
@@ -580,7 +579,7 @@ void checkForRemovalOfEssentialPackages(const shared_ptr< const Cache >& cache,
 	}
 }
 
-void checkForIgnoredHolds(const shared_ptr< const Cache >& cache,
+void checkForIgnoredHolds(const Cache& cache,
 		const shared_ptr< const Worker::ActionsPreview >& actionsPreview,
 		bool& isDangerous)
 {
@@ -596,7 +595,7 @@ void checkForIgnoredHolds(const shared_ptr< const Cache >& cache,
 		FORIT(it, suggestedPackages)
 		{
 			const string& packageName = it->first;
-			auto installedInfo = cache->getSystemState()->getInstalledInfo(packageName);
+			auto installedInfo = cache.getSystemState()->getInstalledInfo(packageName);
 			if (installedInfo &&
 				installedInfo->want == system::State::InstalledRecord::Want::Hold &&
 				installedInfo->status != system::State::InstalledRecord::Status::ConfigFiles)
@@ -719,7 +718,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	}
 }
 
-Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const Cache >& cache,
+Resolver::SuggestedPackages generateNotPolicyVersionList(const Cache& cache,
 		const Resolver::SuggestedPackages& packages)
 {
 	Resolver::SuggestedPackages result;
@@ -728,7 +727,7 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 		const auto& suggestedVersion = suggestedPackageIt->second.version;
 		if (suggestedVersion)
 		{
-			auto policyVersion = cache->getPolicyVersion(getBinaryPackage(*cache, suggestedVersion->packageName));
+			auto policyVersion = cache.getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
 			if (!(policyVersion == suggestedVersion))
 			{
 				result.insert(*suggestedPackageIt);
@@ -952,7 +951,7 @@ Resolver::SuggestedPackages filterPureAutoStatusChanges(const Cache& cache,
 	return result;
 }
 
-Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const Cache >& cache,
+Resolver::SuggestedPackages getSuggestedPackagesByAction(const Cache& cache,
 		const Resolver::Offer& offer,
 		const shared_ptr< const Worker::ActionsPreview >& actionsPreview, WA::Type actionType)
 {
@@ -966,9 +965,9 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const
 		case fakeAutoPurge:
 			return filterNoLongerNeeded(actionsPreview->groups[WA::Purge], false);
 		case fakeBecomeAutomaticallyInstalled:
-			return filterPureAutoStatusChanges(*cache, *actionsPreview, true);
+			return filterPureAutoStatusChanges(cache, *actionsPreview, true);
 		case fakeBecomeManuallyInstalled:
-			return filterPureAutoStatusChanges(*cache, *actionsPreview, false);
+			return filterPureAutoStatusChanges(cache, *actionsPreview, false);
 		#pragma GCC diagnostic pop
 		case WA::Remove:
 			return filterNoLongerNeeded(actionsPreview->groups[WA::Remove], true);
@@ -979,8 +978,8 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const shared_ptr< const
 	}
 }
 
-Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >& config,
-		const shared_ptr< const Cache >& cache, const shared_ptr< Worker >& worker,
+Resolver::CallbackType generateManagementPrompt(const Config& config,
+		const Cache& cache, const shared_ptr< Worker >& worker,
 		bool showNotPreferred,
 		const set< string >& purgedPackageNames, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
@@ -991,8 +990,8 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		addArgumentsFlag = false;
 		thereIsNothingToDo = false;
 
-		auto showSummary = config->getBool("cupt::console::actions-preview::show-summary");
-		auto showDetails = config->getBool("cupt::console::actions-preview::show-details");
+		auto showSummary = config.getBool("cupt::console::actions-preview::show-summary");
+		auto showDetails = config.getBool("cupt::console::actions-preview::show-details");
 
 		worker->setDesiredState(offer);
 		FORIT(packageNameIt, purgedPackageNames)
@@ -1003,7 +1002,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
 
-		Colorizer colorizer(*config);
+		Colorizer colorizer(config);
 
 		std::stringstream summaryStream;
 
@@ -1066,7 +1065,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 				cout << format2(__("The following packages %s:"),
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
-				showPackageChanges(*config, *cache, colorizer, actionType, actionSuggestedPackages,
+				showPackageChanges(config, cache, colorizer, actionType, actionSuggestedPackages,
 						unpackedSizesPreview);
 			}
 
@@ -1087,7 +1086,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 		}
 
 		bool isDangerousAction = false;
-		if (!config->getBool("cupt::console::allow-untrusted"))
+		if (!config.getBool("cupt::console::allow-untrusted"))
 		{
 			checkForUntrustedPackages(actionsPreview, isDangerousAction);
 		}
@@ -1104,7 +1103,7 @@ Resolver::CallbackType generateManagementPrompt(const shared_ptr< const Config >
 			isDangerousAction = true;
 		}
 
-		return askUserAboutSolution(*config, isDangerousAction, addArgumentsFlag);
+		return askUserAboutSolution(config, isDangerousAction, addArgumentsFlag);
 	};
 
 	return result;
@@ -1315,12 +1314,12 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	preProcessMode(mode, *config, *resolver);
 
 	set< string > purgedPackageNames;
-	processPackageExpressions(config, cache, mode, *resolver, packageExpressions, purgedPackageNames);
+	processPackageExpressions(*config, *cache, mode, *resolver, packageExpressions, purgedPackageNames);
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
 	bool addArgumentsFlag, thereIsNothingToDo;
-	auto callback = generateManagementPrompt(config, cache, worker,
+	auto callback = generateManagementPrompt(*config, *cache, worker,
 			showNotPreferred, purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
@@ -1336,7 +1335,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 			std::getline(std::cin, answer);
 			if (!answer.empty())
 			{
-				processPackageExpressions(config, cache, mode, *resolver,
+				processPackageExpressions(*config, *cache, mode, *resolver,
 						vector< string > { answer }, purgedPackageNames);
 			}
 			else
