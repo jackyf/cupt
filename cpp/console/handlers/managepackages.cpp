@@ -138,7 +138,7 @@ static void processBuildDependsExpression(const shared_ptr< Config >& config,
 {
 	auto architecture = config->getString("apt::architecture");
 
-	auto versions = selectSourceVersionsWildcarded(cache, packageExpression);
+	auto versions = selectSourceVersionsWildcarded(*cache, packageExpression);
 
 	for (const auto& version: versions)
 	{
@@ -157,7 +157,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 		Resolver& resolver, ManagePackages::Mode mode, string packageExpression,
 		set< string >& purgedPackageNames)
 {
-	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
+	auto versions = selectBinaryVersionsWildcarded(*cache, packageExpression, false);
 	if (versions.empty())
 	{
 		/* we have a funny situation with package names like 'g++',
@@ -186,7 +186,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 	{
 		if (versions.empty())
 		{
-			versions = selectBinaryVersionsWildcarded(cache, packageExpression);
+			versions = selectBinaryVersionsWildcarded(*cache, packageExpression);
 		}
 		for (const auto& version: versions)
 		{
@@ -208,7 +208,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
 			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
 					packageExpression.find('*') != string::npos;
-			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
+			versions = selectBinaryVersionsWildcarded(*cache, packageExpression, wildcardsPresent);
 		}
 
 		auto scheduleRemoval = [&resolver, &purgedPackageNames, mode](const string& packageName)
@@ -231,7 +231,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 		{
 			checkPackageName(packageExpression);
 			if (!cache->getSystemState()->getInstalledInfo(packageExpression) &&
-				!getBinaryPackage(cache, packageExpression, false))
+				!getBinaryPackage(*cache, packageExpression, false))
 			{
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
@@ -244,7 +244,7 @@ static void processInstallOrRemoveExpression(const shared_ptr< const Cache >& ca
 static void processAutoFlagChangeExpression(const shared_ptr< const Cache >& cache,
 		Resolver& resolver, ManagePackages::Mode mode, const string& packageExpression)
 {
-	getBinaryPackage(cache, packageExpression); // will throw if package name is wrong
+	getBinaryPackage(*cache, packageExpression); // will throw if package name is wrong
 
 	resolver.setAutomaticallyInstalledFlag(packageExpression,
 			(mode == ManagePackages::Markauto));
@@ -253,7 +253,7 @@ static void processAutoFlagChangeExpression(const shared_ptr< const Cache >& cac
 static void processReinstallExpression(const shared_ptr< const Cache >& cache,
 		Resolver& resolver, const string& packageExpression)
 {
-	auto package = getBinaryPackage(cache, packageExpression);
+	auto package = getBinaryPackage(*cache, packageExpression);
 	auto installedVersion = package->getInstalledVersion();
 	if (!installedVersion)
 	{
@@ -728,7 +728,7 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const shared_ptr< const
 		const auto& suggestedVersion = suggestedPackageIt->second.version;
 		if (suggestedVersion)
 		{
-			auto policyVersion = cache->getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
+			auto policyVersion = cache->getPolicyVersion(getBinaryPackage(*cache, suggestedVersion->packageName));
 			if (!(policyVersion == suggestedVersion))
 			{
 				result.insert(*suggestedPackageIt);
@@ -1448,7 +1448,7 @@ int changeAutoInstalledState(Context& context, bool value)
 
 	FORIT(packageNameIt, arguments)
 	{
-		getBinaryPackage(cache, *packageNameIt); // check that it exists
+		getBinaryPackage(*cache, *packageNameIt); // check that it exists
 		worker.setAutomaticallyInstalledFlag(*packageNameIt, value);
 	}
 

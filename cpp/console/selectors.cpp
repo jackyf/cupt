@@ -31,13 +31,13 @@
 #include "common.hpp"
 #include "selectors.hpp"
 
-typedef shared_ptr< const Version > (*__version_selector)(shared_ptr< const Cache >,
+typedef shared_ptr< const Version > (*__version_selector)(const Cache&,
 		const string& packageName, bool throwOnError);
-typedef std::function< vector< string > (shared_ptr< const Cache >) > __package_names_fetcher;
+typedef std::function< vector< string > (const Cache&) > __package_names_fetcher;
 
-const BinaryPackage* getBinaryPackage(shared_ptr< const Cache > cache, const string& packageName, bool throwOnError)
+const BinaryPackage* getBinaryPackage(const Cache& cache, const string& packageName, bool throwOnError)
 {
-	auto result = cache->getBinaryPackage(packageName);
+	auto result = cache.getBinaryPackage(packageName);
 	if (!result && throwOnError)
 	{
 		fatal2(__("unable to find the binary package '%s'"), packageName);
@@ -45,9 +45,9 @@ const BinaryPackage* getBinaryPackage(shared_ptr< const Cache > cache, const str
 	return result;
 }
 
-const SourcePackage* getSourcePackage(shared_ptr< const Cache > cache, const string& packageName, bool throwOnError)
+const SourcePackage* getSourcePackage(const Cache& cache, const string& packageName, bool throwOnError)
 {
-	auto result = cache->getSourcePackage(packageName);
+	auto result = cache.getSourcePackage(packageName);
 	if (!result && throwOnError)
 	{
 		fatal2(__("unable to find the source package '%s'"), packageName);
@@ -56,7 +56,7 @@ const SourcePackage* getSourcePackage(shared_ptr< const Cache > cache, const str
 }
 
 template < typename PackageSelector >
-const Version* __select_version(shared_ptr< const Cache > cache,
+const Version* __select_version(const Cache& cache,
 		const string& packageExpression, PackageSelector packageSelector, bool throwOnError)
 {
 	typedef const Version* ReturnType;
@@ -168,7 +168,7 @@ const Version* __select_version(shared_ptr< const Cache > cache,
 		{
 			return ReturnType();
 		}
-		auto version = cache->getPolicyVersion(package);
+		auto version = cache.getPolicyVersion(package);
 		if (!version && throwOnError)
 		{
 			fatal2(__("no versions available for the package '%s'"), packageName);
@@ -177,14 +177,14 @@ const Version* __select_version(shared_ptr< const Cache > cache,
 	}
 }
 
-const BinaryVersion* selectBinaryVersion(shared_ptr< const Cache > cache,
+const BinaryVersion* selectBinaryVersion(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
 	return static_cast< const BinaryVersion* >(__select_version< decltype(getBinaryPackage) >
 			(cache, packageExpression, getBinaryPackage, throwOnError));
 }
 
-const SourceVersion* selectSourceVersion(shared_ptr< const Cache > cache,
+const SourceVersion* selectSourceVersion(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
 	auto sourceVersion = static_cast< const SourceVersion* >(__select_version< decltype(getSourcePackage) >
@@ -209,7 +209,7 @@ const SourceVersion* selectSourceVersion(shared_ptr< const Cache > cache,
 	return sourceVersion;
 }
 
-static vector< string > __select_package_names_wildcarded(shared_ptr< const Cache > cache,
+static vector< string > __select_package_names_wildcarded(const Cache& cache,
 		const string& packageNameExpression, __package_names_fetcher packageNamesFetcher)
 {
 	vector< string > result = packageNamesFetcher(cache);
@@ -224,7 +224,7 @@ static vector< string > __select_package_names_wildcarded(shared_ptr< const Cach
 }
 
 template < typename VersionType, typename VersionSelector >
-vector< const VersionType* > __select_versions_wildcarded(shared_ptr< const Cache > cache,
+vector< const VersionType* > __select_versions_wildcarded(const Cache& cache,
 		const string& packageExpression, VersionSelector versionSelector,
 		__package_names_fetcher packageNamesFetcher, bool throwOnError)
 {
@@ -274,24 +274,24 @@ vector< const VersionType* > __select_versions_wildcarded(shared_ptr< const Cach
 	return result;
 }
 
-static vector< string > getBinaryPackageNames(shared_ptr< const Cache > cache)
+static vector< string > getBinaryPackageNames(const Cache& cache)
 {
-	return cache->getBinaryPackageNames();
+	return cache.getBinaryPackageNames();
 }
 
-vector< const BinaryVersion* > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
 	return __select_versions_wildcarded< BinaryVersion >(cache, packageExpression,
 			selectBinaryVersion, getBinaryPackageNames, throwOnError);
 }
 
-static vector< string > getSourcePackageNames(shared_ptr< const Cache > cache)
+static vector< string > getSourcePackageNames(const Cache& cache)
 {
-	return cache->getSourcePackageNames();
+	return cache.getSourcePackageNames();
 }
 
-vector< const SourceVersion* > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
 	return __select_versions_wildcarded< SourceVersion >(cache, packageExpression,
@@ -300,7 +300,7 @@ vector< const SourceVersion* > selectSourceVersionsWildcarded(shared_ptr< const 
 
 template < typename VersionType, typename PackageSelector >
 static vector< const VersionType* > __select_all_versions_wildcarded(
-		shared_ptr< const Cache > cache, const string& packageExpression,
+		const Cache& cache, const string& packageExpression,
 		__package_names_fetcher packageNamesFetcher, PackageSelector packageSelector)
 {
 	vector< const VersionType* > result;
@@ -320,14 +320,14 @@ static vector< const VersionType* > __select_all_versions_wildcarded(
 	return result;
 }
 
-vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression)
 {
 	return __select_all_versions_wildcarded< BinaryVersion >(cache, packageExpression,
 			getBinaryPackageNames, getBinaryPackage);
 }
 
-vector< const SourceVersion* > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression)
 {
 	return __select_all_versions_wildcarded< SourceVersion >(cache, packageExpression,

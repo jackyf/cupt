@@ -24,19 +24,19 @@
 
 #include "common.hpp"
 
-const BinaryPackage* getBinaryPackage(shared_ptr< const Cache > cache,
+const BinaryPackage* getBinaryPackage(const Cache& cache,
 		const string& packageName, bool throwOnError = true);
-const SourcePackage* getSourcePackage(shared_ptr< const Cache > cache,
+const SourcePackage* getSourcePackage(const Cache& cache,
 		const string& packageName, bool throwOnError = true);
-const BinaryVersion* selectBinaryVersion(shared_ptr< const Cache > cache,
+const BinaryVersion* selectBinaryVersion(const Cache& cache,
 		const string& packageExpression, bool throwOnError);
-vector< const BinaryVersion* > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError = true);
-vector< const SourceVersion* > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError = true);
-vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression);
-vector< const SourceVersion* > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression);
 
 #endif

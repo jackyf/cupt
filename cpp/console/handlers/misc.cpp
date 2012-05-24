@@ -102,7 +102,7 @@ int showBinaryVersions(Context& context)
 		vector< const BinaryVersion* > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
-			versions = selectAllBinaryVersionsWildcarded(cache, packageExpression);
+			versions = selectAllBinaryVersionsWildcarded(*cache, packageExpression);
 		}
 		else
 		{
@@ -119,7 +119,7 @@ int showBinaryVersions(Context& context)
 			}
 			if (!foundVirtual)
 			{
-				versions = selectBinaryVersionsWildcarded(cache, packageExpression);
+				versions = selectBinaryVersionsWildcarded(*cache, packageExpression);
 			}
 		}
 
@@ -256,11 +256,11 @@ int showSourceVersions(Context& context)
 		vector< const SourceVersion* > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
-			versions = selectAllSourceVersionsWildcarded(cache, packageExpression);
+			versions = selectAllSourceVersionsWildcarded(*cache, packageExpression);
 		}
 		else
 		{
-			versions = selectSourceVersionsWildcarded(cache, packageExpression);
+			versions = selectSourceVersionsWildcarded(*cache, packageExpression);
 		}
 
 		for (const auto& version: versions)
@@ -355,7 +355,7 @@ int showRelations(Context& context, bool reverse)
 	queue< const BinaryVersion* > versions;
 	FORIT(it, arguments)
 	{
-		auto selectedVersions = selectBinaryVersionsWildcarded(cache, *it);
+		auto selectedVersions = selectBinaryVersionsWildcarded(*cache, *it);
 		FORIT(selectedVersionIt, selectedVersions)
 		{
 			versions.push(*selectedVersionIt);
@@ -587,8 +587,8 @@ int policy(Context& context, bool source)
 		{
 			const string& packageName = *packageNameIt;
 			const Package* package = (!source ?
-					(const Package*)getBinaryPackage(cache, packageName) :
-					(const Package*)getSourcePackage(cache, packageName));
+					(const Package*)getBinaryPackage(*cache, packageName) :
+					(const Package*)getSourcePackage(*cache, packageName));
 			auto policyVersion = cache->getPolicyVersion(package);
 			if (!policyVersion)
 			{
@@ -772,7 +772,7 @@ int findDependencyChain(Context& context)
 
 	auto leafPackageExpression = *(arguments.rbegin());
 	arguments.erase(arguments.end() - 1);
-	auto leafVersion = selectBinaryVersion(cache, leafPackageExpression, true);
+	auto leafVersion = selectBinaryVersion(*cache, leafPackageExpression, true);
 
 	queue< const BinaryVersion* > versions;
 	struct PathEntry
@@ -794,7 +794,7 @@ int findDependencyChain(Context& context)
 		// selected packages
 		FORIT(argumentIt, arguments)
 		{
-			auto selectedVersions = selectBinaryVersionsWildcarded(cache, *argumentIt);
+			auto selectedVersions = selectBinaryVersionsWildcarded(*cache, *argumentIt);
 			FORIT(it, selectedVersions)
 			{
 				addStartingVersion(*it);
@@ -905,7 +905,7 @@ int showScreenshotUris(Context& context)
 	{
 		const string& packageName = *argumentIt;
 		// check for existence
-		getBinaryPackage(cache, packageName);
+		getBinaryPackage(*cache, packageName);
 
 		cout << "http://screenshots.debian.net/package/" << packageName << endl;
 	}

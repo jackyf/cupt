@@ -100,7 +100,7 @@ int downloadSourcePackage(Context& context)
 
 	FORIT(argumentIt, arguments)
 	{
-		auto versions = selectSourceVersionsWildcarded(cache, *argumentIt);
+		auto versions = selectSourceVersionsWildcarded(*cache, *argumentIt);
 
 		for (const auto& version: versions)
 		{
@@ -255,7 +255,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 
 	FORIT(argumentIt, arguments)
 	{
-		auto versions = selectBinaryVersionsWildcarded(cache, *argumentIt);
+		auto versions = selectBinaryVersionsWildcarded(*cache, *argumentIt);
 
 		for (const auto& version: versions)
 		{
