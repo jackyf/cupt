@@ -512,7 +512,7 @@ void printPackageNamesByLine(const vector< string >& packageNames)
 }
 
 void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
-		bool& isDangerous)
+		bool* isDangerous)
 {
 	vector< string > untrustedPackageNames;
 	// generate loud warning for unsigned versions
@@ -534,14 +534,14 @@ void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 
 	if (!untrustedPackageNames.empty())
 	{
-		isDangerous = true;
+		*isDangerous = true;
 		cout << __("WARNING! The untrusted versions of the following packages will be used:") << endl;
 		printPackageNamesByLine(untrustedPackageNames);
 	}
 }
 
 void checkForRemovalOfEssentialPackages(const Cache& cache,
-		const Worker::ActionsPreview& actionsPreview, bool& isDangerous)
+		const Worker::ActionsPreview& actionsPreview, bool* isDangerous)
 {
 	vector< string > essentialPackageNames;
 	// generate loud warning for unsigned versions
@@ -572,14 +572,14 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 
 	if (!essentialPackageNames.empty())
 	{
-		isDangerous = true;
+		*isDangerous = true;
 		cout << __("WARNING! The following essential packages will be removed:") << endl;
 		printPackageNamesByLine(essentialPackageNames);
 	}
 }
 
 void checkForIgnoredHolds(const Cache& cache,
-		const Worker::ActionsPreview& actionsPreview, bool& isDangerous)
+		const Worker::ActionsPreview& actionsPreview, bool* isDangerous)
 {
 	vector< string > ignoredHoldsPackageNames;
 
@@ -604,9 +604,25 @@ void checkForIgnoredHolds(const Cache& cache,
 	}
 	if (!ignoredHoldsPackageNames.empty())
 	{
-		isDangerous = true;
+		*isDangerous = true;
 		cout << __("WARNING! The following packages on hold will change their state:") << endl;
 		printPackageNamesByLine(ignoredHoldsPackageNames);
+	}
+}
+
+void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
+		const Worker::ActionsPreview& actionsPreview, bool* isDangerousAction)
+{
+	if (!config.getBool("cupt::console::allow-untrusted"))
+	{
+		checkForUntrustedPackages(actionsPreview, isDangerousAction);
+	}
+	checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
+	checkForIgnoredHolds(cache, actionsPreview, isDangerousAction);
+
+	if (!actionsPreview.groups[WA::Downgrade].empty())
+	{
+		*isDangerousAction = true;
 	}
 }
 
@@ -1084,21 +1100,12 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 		}
 
 		bool isDangerousAction = false;
-		if (!config.getBool("cupt::console::allow-untrusted"))
-		{
-			checkForUntrustedPackages(*actionsPreview, isDangerousAction);
-		}
-		checkForRemovalOfEssentialPackages(cache, *actionsPreview, isDangerousAction);
-		checkForIgnoredHolds(cache, *actionsPreview, isDangerousAction);
+		checkAndPrintDangerousActions(config, cache, *actionsPreview, &isDangerousAction);
 
 		{ // print size estimations
 			auto downloadSizesPreview = worker->getDownloadSizesPreview();
 			printDownloadSizes(downloadSizesPreview);
 			printUnpackedSizeChanges(unpackedSizesPreview);
-		}
-		if (!actionsPreview->groups[WA::Downgrade].empty())
-		{
-			isDangerousAction = true;
 		}
 
 		return askUserAboutSolution(config, isDangerousAction, addArgumentsFlag);
