@@ -1008,6 +1008,23 @@ map< WA::Type, string > getActionDescriptionMap()
 	};
 }
 
+vector< WA::Type > getActionTypesInPrintOrder(bool showNotPreferred)
+{
+	vector< WA::Type > result = {
+		fakeBecomeAutomaticallyInstalled, fakeBecomeManuallyInstalled,
+		WA::Install, WA::Upgrade, WA::Remove,
+		WA::Purge, WA::Downgrade, WA::Configure, WA::ProcessTriggers, WA::Deconfigure
+	};
+	if (showNotPreferred)
+	{
+		result.push_back(fakeNotPolicyVersionAction);
+	}
+	result.push_back(fakeAutoRemove);
+	result.push_back(fakeAutoPurge);
+
+	return result;
+}
+
 Resolver::CallbackType generateManagementPrompt(const Config& config,
 		const Cache& cache, const shared_ptr< Worker >& worker,
 		bool showNotPreferred,
@@ -1041,18 +1058,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 			const auto actionDescriptions = getActionDescriptionMap();
 			cout << endl;
 
-			vector< WA::Type > actionTypesInOrder = {
-					fakeBecomeAutomaticallyInstalled, fakeBecomeManuallyInstalled,
-					WA::Install, WA::Upgrade, WA::Remove,
-					WA::Purge, WA::Downgrade, WA::Configure, WA::ProcessTriggers, WA::Deconfigure };
-			if (showNotPreferred)
-			{
-				actionTypesInOrder.push_back(fakeNotPolicyVersionAction);
-			}
-			actionTypesInOrder.push_back(fakeAutoRemove);
-			actionTypesInOrder.push_back(fakeAutoPurge);
-
-			for (const WA::Type& actionType: actionTypesInOrder)
+			for (const WA::Type& actionType: getActionTypesInPrintOrder(showNotPreferred))
 			{
 				auto actionSuggestedPackages = getSuggestedPackagesByAction(cache,
 						offer, *actionsPreview, actionType);
