@@ -989,6 +989,25 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const Cache& cache,
 	}
 }
 
+map< WA::Type, string > getActionDescriptionMap()
+{
+	return map< WA::Type, string > {
+		{ WA::Install, __("will be installed") },
+		{ WA::Remove, __("will be removed") },
+		{ WA::Upgrade, __("will be upgraded") },
+		{ WA::Purge, __("will be purged") },
+		{ WA::Downgrade, __("will be downgraded") },
+		{ WA::Configure, __("will be configured") },
+		{ WA::Deconfigure, __("will be deconfigured") },
+		{ WA::ProcessTriggers, __("will have triggers processed") },
+		{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
+		{ fakeAutoRemove, __("are no longer needed and thus will be auto-removed") },
+		{ fakeAutoPurge, __("are no longer needed and thus will be auto-purged") },
+		{ fakeBecomeAutomaticallyInstalled, __("will be marked as automatically installed") },
+		{ fakeBecomeManuallyInstalled, __("will be marked as manually installed") },
+	};
+}
+
 Resolver::CallbackType generateManagementPrompt(const Config& config,
 		const Cache& cache, const shared_ptr< Worker >& worker,
 		bool showNotPreferred,
@@ -1019,21 +1038,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 
 		size_t actionCount = 0;
 		{ // print planned actions
-			const map< WA::Type, string > actionNames = {
-				{ WA::Install, __("will be installed") },
-				{ WA::Remove, __("will be removed") },
-				{ WA::Upgrade, __("will be upgraded") },
-				{ WA::Purge, __("will be purged") },
-				{ WA::Downgrade, __("will be downgraded") },
-				{ WA::Configure, __("will be configured") },
-				{ WA::Deconfigure, __("will be deconfigured") },
-				{ WA::ProcessTriggers, __("will have triggers processed") },
-				{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
-				{ fakeAutoRemove, __("are no longer needed and thus will be auto-removed") },
-				{ fakeAutoPurge, __("are no longer needed and thus will be auto-purged") },
-				{ fakeBecomeAutomaticallyInstalled, __("will be marked as automatically installed") },
-				{ fakeBecomeManuallyInstalled, __("will be marked as manually installed") },
-			};
+			const auto actionDescriptions = getActionDescriptionMap();
 			cout << endl;
 
 			vector< WA::Type > actionTypesInOrder = {
@@ -1061,7 +1066,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 					actionCount += actionSuggestedPackages.size();
 				}
 
-				const string& actionName = actionNames.find(actionType)->second;
+				const string& actionName = actionDescriptions.find(actionType)->second;
 
 				if (showSummary)
 				{
