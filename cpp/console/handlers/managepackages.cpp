@@ -1062,10 +1062,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 			{
 				auto actionSuggestedPackages = getSuggestedPackagesByAction(cache,
 						offer, *actionsPreview, actionType);
-				if (actionSuggestedPackages.empty())
-				{
-					continue;
-				}
+				if (actionSuggestedPackages.empty()) continue;
 
 				if (actionType != fakeNotPolicyVersionAction)
 				{
@@ -1079,10 +1076,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 					addActionToSummary(actionType, actionName, actionSuggestedPackages,
 							colorizer, &summaryStream);
 				}
-				if (!showDetails)
-				{
-					continue;
-				}
+				if (!showDetails) continue;
 
 				cout << format2(__("The following packages %s:"),
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
