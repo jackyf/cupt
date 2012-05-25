@@ -1244,6 +1244,17 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 					showNotPreferredConfigValue == "for-upgrades");
 }
 
+Resolver* getResolver(const shared_ptr< const Config >& config,
+		const shared_ptr< const Cache >& cache)
+{
+	if (!config->getString("cupt::resolver::external-command").empty())
+	{
+		fatal2(__("using an external resolver is not supported now"));
+	}
+
+	return new NativeResolver(config, cache);
+}
+
 int managePackages(Context& context, ManagePackages::Mode mode)
 {
 	auto config = context.getConfig();
@@ -1296,17 +1307,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	}
 
 	cout << __("Initializing package resolver and worker... ") << endl;
-	std::unique_ptr< Resolver > resolver;
-	{
-		if (!config->getString("cupt::resolver::external-command").empty())
-		{
-			fatal2(__("using an external resolver is not supported now"));
-		}
-		else
-		{
-			resolver.reset(new NativeResolver(config, cache));
-		}
-	}
+	std::unique_ptr< Resolver > resolver(getResolver(config, cache));
 
 	if (!snapshotName.empty())
 	{
