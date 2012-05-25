@@ -684,10 +684,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 		{
 			return Resolver::UserAnswer::Abandon;
 		}
-		FORIT(it, answer)
-		{
-			*it = std::tolower(*it); // lowercasing
-		}
+		for (char& c: answer) { c = std::tolower(c); } // lowercasing
 	}
 
 	// deciding
