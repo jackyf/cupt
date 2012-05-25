@@ -1255,6 +1255,26 @@ Resolver* getResolver(const shared_ptr< const Config >& config,
 	return new NativeResolver(config, cache);
 }
 
+void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cache& cache,
+		ManagePackages::Mode mode, Resolver& resolver, set< string >& purgedPackageNames)
+{
+	string answer;
+	do
+	{
+		cout << __("Enter a package expression (empty to finish): ");
+		std::getline(std::cin, answer);
+		if (!answer.empty())
+		{
+			processPackageExpressions(config, cache, mode, resolver,
+					vector< string > { answer }, purgedPackageNames);
+		}
+		else
+		{
+			break;
+		}
+	} while (true);
+}
+
 int managePackages(Context& context, ManagePackages::Mode mode)
 {
 	auto config = context.getConfig();
@@ -1336,21 +1356,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	bool resolved = resolver->resolve(callback);
 	if (addArgumentsFlag && std::cin)
 	{
-		string answer;
-		do
-		{
-			cout << __("Enter a package expression (empty to finish): ");
-			std::getline(std::cin, answer);
-			if (!answer.empty())
-			{
-				processPackageExpressions(*config, *cache, mode, *resolver,
-						vector< string > { answer }, purgedPackageNames);
-			}
-			else
-			{
-				break;
-			}
-		} while (true);
+		queryAndProcessAdditionalPackageExpressions(*config, *cache,
+				mode, *resolver, purgedPackageNames);
 		goto resolve;
 	}
 
