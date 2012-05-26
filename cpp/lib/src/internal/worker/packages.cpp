@@ -2081,6 +2081,18 @@ static string __get_full_dpkg_binary_command(const Config& config)
 	return dpkgBinary;
 }
 
+static InnerAction::Type __get_action_type(const InnerActionGroup& actionGroup)
+{
+	/* all actions within one group have, by algorithm,
+	   a) the same action name (so far, configures only)
+	   b) the same package name (linked actions)
+
+	   in both cases, we can choose the action type of the last action
+	   in the subgroup as effective
+	*/
+	return actionGroup.rbegin()->type;
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2149,14 +2161,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 		FORIT(actionGroupIt, changeset.actionGroups)
 		{
-			/* all actions within one group have, by algorithm,
-			   a) the same action name (so far, configures only)
-			   b) the same package name (linked actions)
-
-			   in both cases, we can choose the action type of the last action
-			   in the subgroup as effective
-			*/
-			InnerAction::Type actionType = actionGroupIt->rbegin()->type;
+			auto actionType = __get_action_type(*actionGroupIt);
 
 			string actionName;
 			switch (actionType)
