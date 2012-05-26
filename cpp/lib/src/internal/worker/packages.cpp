@@ -2183,10 +2183,6 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		{
 			debug2("started changeset");
 		}
-		/* usually, all downloads are done before any install actions (first
-		   and only changeset) however, if 'cupt::worker::archives-space-limit'
-		   is turned on this is no longer the case, and we will do downloads/installs
-		   by portions ("changesets") */
 		__do_downloads(changeset.downloads, downloadProgress);
 
 		__do_dpkg_pre_packages_actions(changeset.actionGroups);
