@@ -738,8 +738,7 @@ Corresponding configuration option: L<cupt::console::actions-preview::show-not-p
 
 =item --download-only,-d
 
-stop after download stage, don't modify the system; not applicable for
-L</markauto> and L</unmarkauto> actions
+stop after download stage, don't modify the system
 
 Corresponding configuration option: L<cupt::worker::download-only>
 

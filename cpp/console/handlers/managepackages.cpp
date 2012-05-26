@@ -1449,26 +1449,6 @@ int updateReleaseAndIndexData(Context& context)
 	return 0;
 }
 
-int changeAutoInstalledState(Context& context, bool value)
-{
-	bpo::options_description noOptions;
-	vector< string > arguments;
-	auto variables = parseOptions(context, noOptions, arguments);
-
-	auto config = context.getConfig();
-	auto cache = context.getCache(false, false, true);
-
-	Worker worker(config, cache);
-
-	FORIT(packageNameIt, arguments)
-	{
-		getBinaryPackage(*cache, *packageNameIt); // check that it exists
-		worker.setAutomaticallyInstalledFlag(*packageNameIt, value);
-	}
-
-	return 0;
-}
-
 int cleanArchives(Context& context, bool leaveAvailable)
 {
 	if (!shellMode)

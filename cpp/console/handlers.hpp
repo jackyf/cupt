@@ -33,7 +33,6 @@ int showPackageNames(Context&);
 int findDependencyChain(Context&);
 int updateReleaseAndIndexData(Context&);
 int downloadSourcePackage(Context&);
-int changeAutoInstalledState(Context&, bool);
 int cleanArchives(Context&, bool);
 int showScreenshotUris(Context&);
 int snapshot(Context&);
