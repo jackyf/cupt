@@ -2125,6 +2125,54 @@ static string __get_action_name(InnerAction::Type actionType,
 	return result;
 }
 
+string PackagesWorker::__get_dpkg_action_command(const string& dpkgBinary,
+		const string& requestedDpkgOptions, const string& archivesDirectory,
+		InnerAction::Type actionType, const string& actionName,
+		const InnerActionGroup& actionGroup, bool deferTriggers)
+{
+	auto dpkgCommand = dpkgBinary + " --" + actionName;
+	if (deferTriggers)
+	{
+		dpkgCommand += " --no-triggers";
+	}
+	dpkgCommand += requestedDpkgOptions;
+
+	/* the workaround for a dpkg bug #558151
+
+	   dpkg performs some IMHO useless checks for programs in PATH
+	   which breaks some upgrades of packages that contains important programs
+
+	   It is possible that this hack is not needed anymore with
+	   better scheduling heuristics of 2.x but we cannot
+	   re-evaluate it with lenny->squeeze (e)glibc upgrade since
+	   new Cupt requires new libgcc which in turn requires new
+	   glibc.
+	*/
+	dpkgCommand += " --force-bad-path";
+
+	for (const auto& action: actionGroup)
+	{
+		if (action.type != actionType)
+		{
+			continue; // will be true for non-last linked actions
+		}
+		string actionExpression;
+		if (actionName == "unpack" || actionName == "install")
+		{
+			const auto& version = action.version;
+			actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
+		}
+		else
+		{
+			actionExpression = action.version->packageName;
+		}
+		dpkgCommand += " ";
+		dpkgCommand += actionExpression;
+	}
+
+	return dpkgCommand;
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2193,51 +2241,14 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			__change_auto_status(*actionGroupIt);
 
 			{ // dpkg actions
-				auto dpkgCommand = dpkgBinary + " --" + actionName;
-				if (deferTriggers)
-				{
-					dpkgCommand += " --no-triggers";
-				}
-				// add necessary options if requested
 				string requestedDpkgOptions;
-				FORIT(dpkgFlagIt, actionGroupIt->dpkgFlags)
+				for (const auto& dpkgFlag: actionGroupIt->dpkgFlags)
 				{
-					requestedDpkgOptions += string(" ") + *dpkgFlagIt;
+					requestedDpkgOptions += string(" ") + dpkgFlag;
 				}
-				dpkgCommand += requestedDpkgOptions;
 
-				/* the workaround for a dpkg bug #558151
-
-				   dpkg performs some IMHO useless checks for programs in PATH
-				   which breaks some upgrades of packages that contains important programs
-
-				   It is possible that this hack is not needed anymore with
-				   better scheduling heuristics of 2.x but we cannot
-				   re-evaluate it with lenny->squeeze (e)glibc upgrade since
-				   new Cupt requires new libgcc which in turn requires new
-				   glibc.
-				*/
-				dpkgCommand += " --force-bad-path";
-
-				FORIT(actionIt, *actionGroupIt)
-				{
-					if (actionIt->type != actionType)
-					{
-						continue; // will be true for non-last linked actions
-					}
-					string actionExpression;
-					if (actionName == "unpack" || actionName == "install")
-					{
-						const auto& version = actionIt->version;
-						actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
-					}
-					else
-					{
-						actionExpression = actionIt->version->packageName;
-					}
-					dpkgCommand += " ";
-					dpkgCommand += actionExpression;
-				}
+				auto dpkgCommand = __get_dpkg_action_command(dpkgBinary, requestedDpkgOptions,
+						archivesDirectory, actionType, actionName, *actionGroupIt, deferTriggers);
 				{ // debug & logs
 					if (debugging)
 					{

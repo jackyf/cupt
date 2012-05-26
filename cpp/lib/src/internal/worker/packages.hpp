@@ -106,6 +106,8 @@ class PackagesWorker: public virtual WorkerBase
 	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
 	void __change_auto_status(const InnerActionGroup&);
 	void __do_independent_auto_status_changes();
+	string __get_dpkg_action_command(const string&, const string&, const string&,
+			InnerAction::Type, const string&, const InnerActionGroup&, bool);
  public:
 	PackagesWorker();
 
