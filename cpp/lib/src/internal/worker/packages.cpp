@@ -2249,21 +2249,19 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 				auto dpkgCommand = __get_dpkg_action_command(dpkgBinary, requestedDpkgOptions,
 						archivesDirectory, actionType, actionName, *actionGroupIt, deferTriggers);
-				{ // debug & logs
-					if (debugging)
+				if (debugging)
+				{
+					vector< string > stringifiedActions;
+					FORIT(actionIt, *actionGroupIt)
 					{
-						vector< string > stringifiedActions;
-						FORIT(actionIt, *actionGroupIt)
-						{
-							stringifiedActions.push_back(actionIt->toString());
-						}
-						auto actionsString = join(" & ", stringifiedActions);
-						debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
-								actionGroupIt->continued ? " (continued)" : "");
+						stringifiedActions.push_back(actionIt->toString());
 					}
-					_logger->log(Logger::Subsystem::Packages, 2,
-							__get_dpkg_action_log(*actionGroupIt, actionType, actionName));
+					auto actionsString = join(" & ", stringifiedActions);
+					debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
+							actionGroupIt->continued ? " (continued)" : "");
 				}
+				_logger->log(Logger::Subsystem::Packages, 2,
+						__get_dpkg_action_log(*actionGroupIt, actionType, actionName));
 				_run_external_command(Logger::Subsystem::Packages, dpkgCommand);
 			};
 		}
