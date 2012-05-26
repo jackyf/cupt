@@ -2173,6 +2173,18 @@ string PackagesWorker::__get_dpkg_action_command(const string& dpkgBinary,
 	return dpkgCommand;
 }
 
+void __debug_dpkg_action_command(const InnerActionGroup& actionGroup, const string& requestedDpkgOptions)
+{
+	vector< string > stringifiedActions;
+	for (const auto& action: actionGroup)
+	{
+		stringifiedActions.push_back(action.toString());
+	}
+	auto actionsString = join(" & ", stringifiedActions);
+	debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
+			actionGroup.continued ? " (continued)" : "");
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2249,17 +2261,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 				auto dpkgCommand = __get_dpkg_action_command(dpkgBinary, requestedDpkgOptions,
 						archivesDirectory, actionType, actionName, *actionGroupIt, deferTriggers);
-				if (debugging)
-				{
-					vector< string > stringifiedActions;
-					FORIT(actionIt, *actionGroupIt)
-					{
-						stringifiedActions.push_back(actionIt->toString());
-					}
-					auto actionsString = join(" & ", stringifiedActions);
-					debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
-							actionGroupIt->continued ? " (continued)" : "");
-				}
+				if (debugging) __debug_dpkg_action_command(*actionGroupIt, requestedDpkgOptions);
 				_logger->log(Logger::Subsystem::Packages, 2,
 						__get_dpkg_action_log(*actionGroupIt, actionType, actionName));
 				_run_external_command(Logger::Subsystem::Packages, dpkgCommand);
