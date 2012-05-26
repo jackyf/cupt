@@ -2175,10 +2175,8 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	}
 
 	auto archivesDirectory = _get_archives_directory();
-	FORIT(changesetIt, changesets)
+	for (const Changeset& changeset: changesets)
 	{
-		const Changeset& changeset = *changesetIt;
-
 		if (debugging)
 		{
 			debug2("started changeset");
