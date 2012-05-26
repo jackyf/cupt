@@ -2068,6 +2068,19 @@ void PackagesWorker::__do_independent_auto_status_changes()
 	}
 }
 
+static string __get_full_dpkg_binary_command(const Config& config)
+{
+	string dpkgBinary = config.getPath("dir::bin::dpkg");
+
+	for (const string& option: config.getList("dpkg::options"))
+	{
+		dpkgBinary += " ";
+		dpkgBinary += option;
+	}
+
+	return dpkgBinary;
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2105,16 +2118,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	_logger->log(Logger::Subsystem::Packages, 1, "changing the system");
 
 	// doing or simulating the actions
-	auto dpkgBinary = _config->getPath("dir::bin::dpkg");
-	{
-		auto dpkgOptions = _config->getList("dpkg::options");
-		FORIT(optionIt, dpkgOptions)
-		{
-			dpkgBinary += " ";
-			dpkgBinary += *optionIt;
-		}
-	}
-
+	auto dpkgBinary = __get_full_dpkg_binary_command(*_config);
 	bool deferTriggers = __defer_triggers(*_config, *_cache);
 
 	__do_dpkg_pre_actions();
