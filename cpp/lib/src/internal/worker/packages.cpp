@@ -2237,10 +2237,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	auto archivesDirectory = _get_archives_directory();
 	for (const Changeset& changeset: changesets)
 	{
-		if (debugging)
-		{
-			debug2("started changeset");
-		}
+		if (debugging) debug2("started changeset");
 		__do_downloads(changeset.downloads, downloadProgress);
 
 		__do_dpkg_pre_packages_actions(changeset.actionGroups);
@@ -2273,10 +2270,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			_logger->log(Logger::Subsystem::Packages, 2, "running pending triggers");
 
 			string command = dpkgBinary + " --triggers-only --pending";
-			if (debugging)
-			{
-				debug2("running triggers");
-			}
+			if (debugging) debug2("running triggers");
 			__run_dpkg_command("triggers", command, "");
 		}
 
@@ -2284,10 +2278,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		{
 			__clean_downloads(changeset);
 		}
-		if (debugging)
-		{
-			debug2("finished changeset");
-		}
+		if (debugging) debug2("finished changeset");
 	}
 
 	__do_independent_auto_status_changes();
