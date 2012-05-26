@@ -2093,6 +2093,38 @@ static InnerAction::Type __get_action_type(const InnerActionGroup& actionGroup)
 	return actionGroup.rbegin()->type;
 }
 
+static string __get_action_name(InnerAction::Type actionType,
+		const Worker::ActionsPreview& actionsPreview, const InnerActionGroup& actionGroup)
+{
+	string result;
+
+	switch (actionType)
+	{
+		case InnerAction::Remove:
+		{
+			const string& packageName = actionGroup.rbegin()->version->packageName;
+			result = actionsPreview.groups[Worker::Action::Purge].count(packageName) ?
+					"purge" : "remove";
+		}
+			break;
+		case InnerAction::Unpack:
+			result = "unpack";
+			break;
+		case InnerAction::Configure:
+			if (actionGroup.size() >= 2 && (actionGroup.rbegin() + 1)->type == InnerAction::Unpack)
+			{
+				result = "install"; // [remove+]unpack+configure
+			}
+			else
+			{
+				result = "configure";
+			}
+			break;
+	}
+
+	return result;
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2162,31 +2194,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 		FORIT(actionGroupIt, changeset.actionGroups)
 		{
 			auto actionType = __get_action_type(*actionGroupIt);
-
-			string actionName;
-			switch (actionType)
-			{
-				case InnerAction::Remove:
-				{
-					const string& packageName = actionGroupIt->rbegin()->version->packageName;
-					actionName = __actions_preview->groups[Action::Purge].count(packageName) ?
-							"purge" : "remove";
-				}
-					break;
-				case InnerAction::Unpack:
-					actionName = "unpack";
-					break;
-				case InnerAction::Configure:
-					if (actionGroupIt->size() >= 2 && (actionGroupIt->rbegin() + 1)->type == InnerAction::Unpack)
-					{
-						actionName = "install"; // [remove+]unpack+configure
-					}
-					else
-					{
-						actionName = "configure";
-					}
-					break;
-			}
+			string actionName = __get_action_name(actionType, *__actions_preview, *actionGroupIt);
 
 			__change_auto_status(*actionGroupIt);
 
