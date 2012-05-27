@@ -28,8 +28,22 @@
 namespace cupt {
 namespace internal {
 
+bool __get_flag_value(bool defaultValue, const string& packageName,
+		const map< string, bool >& overrides)
+{
+	bool result = defaultValue;
+
+	auto it = overrides.find(packageName);
+	if (it != overrides.end())
+	{
+		result = it->second;
+	}
+
+	return result;
+}
+
 void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
-		const Resolver::SuggestedPackage& suggestedPackage, bool purgeFlag)
+		const Resolver::SuggestedPackage& suggestedPackage, bool globalPurgeFlag)
 {
 	Action::Type action = Action::Count; // invalid
 
@@ -111,6 +125,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 		// package is to be removed
 		if (installedInfo)
 		{
+			bool purgeFlag = __get_flag_value(globalPurgeFlag, packageName, __purge_overrides);
 			switch (installedInfo->status)
 			{
 				case State::InstalledRecord::Status::Installed:
@@ -174,14 +189,14 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 		fatal2(__("worker: the desired state is not given"));
 	}
 
-	const bool purge = _config->getBool("cupt::worker::purge");
+	const bool globalPurge = _config->getBool("cupt::worker::purge");
 
 	FORIT(desiredIt, *__desired_state)
 	{
 		const string& packageName = desiredIt->first;
 		const Resolver::SuggestedPackage& suggestedPackage = desiredIt->second;
 
-		__generate_action_preview(packageName, suggestedPackage, purge);
+		__generate_action_preview(packageName, suggestedPackage, globalPurge);
 	}
 }
 
@@ -193,16 +208,7 @@ void SetupAndPreviewWorker::setDesiredState(const Resolver::Offer& offer)
 
 void SetupAndPreviewWorker::setPackagePurgeFlag(const string& packageName, bool value)
 {
-	auto desiredIt = __desired_state->find(packageName);
-	if (desiredIt == __desired_state->end())
-	{
-		fatal2(__("there is no package '%s' in the desired state"), packageName);
-	}
-	auto sourceActionType = value ? Action::Remove : Action::Purge;
-	__actions_preview->groups[sourceActionType].erase(packageName);
-
-	// and regenerate
-	__generate_action_preview(packageName, desiredIt->second, value);
+	__purge_overrides[packageName] = value;
 }
 
 shared_ptr< const Worker::ActionsPreview > SetupAndPreviewWorker::getActionsPreview() const

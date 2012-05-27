@@ -153,8 +153,8 @@ static void processBuildDependsExpression(const Config& config, const Cache& cac
 }
 
 static void processInstallOrRemoveExpression(const Cache& cache,
-		Resolver& resolver, ManagePackages::Mode mode, string packageExpression,
-		set< string >& purgedPackageNames)
+		Resolver& resolver, Worker& worker,
+		ManagePackages::Mode mode, string packageExpression)
 {
 	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
 	if (versions.empty())
@@ -210,12 +210,12 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
 		}
 
-		auto scheduleRemoval = [&resolver, &purgedPackageNames, mode](const string& packageName)
+		auto scheduleRemoval = [&resolver, &worker, mode](const string& packageName)
 		{
 			resolver.removePackage(packageName);
 			if (mode == ManagePackages::Purge)
 			{
-				purgedPackageNames.insert(packageName);
+				worker.setPackagePurgeFlag(packageName, true);
 			}
 		};
 
@@ -283,8 +283,7 @@ static void processReinstallExpression(const Cache& cache,
 
 static void processPackageExpressions(const Config& config,
 		const Cache& cache, ManagePackages::Mode& mode,
-		Resolver& resolver, const vector< string >& packageExpressions,
-		set< string >& purgedPackageNames)
+		Resolver& resolver, Worker& worker, const vector< string >& packageExpressions)
 {
 	FORIT(packageExpressionIt, packageExpressions)
 	{
@@ -338,8 +337,7 @@ static void processPackageExpressions(const Config& config,
 		}
 		else
 		{
-			processInstallOrRemoveExpression(cache, resolver, mode,
-					*packageExpressionIt, purgedPackageNames);
+			processInstallOrRemoveExpression(cache, resolver, worker, mode, *packageExpressionIt);
 		}
 	}
 }
@@ -1027,11 +1025,10 @@ vector< WA::Type > getActionTypesInPrintOrder(bool showNotPreferred)
 
 Resolver::CallbackType generateManagementPrompt(const Config& config,
 		const Cache& cache, const shared_ptr< Worker >& worker,
-		bool showNotPreferred,
-		const set< string >& purgedPackageNames, bool& addArgumentsFlag, bool& thereIsNothingToDo)
+		bool showNotPreferred, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
 	auto result = [&config, &cache, &worker, showNotPreferred,
-			&purgedPackageNames, &addArgumentsFlag, &thereIsNothingToDo]
+			&addArgumentsFlag, &thereIsNothingToDo]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
@@ -1041,11 +1038,6 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 		auto showDetails = config.getBool("cupt::console::actions-preview::show-details");
 
 		worker->setDesiredState(offer);
-		FORIT(packageNameIt, purgedPackageNames)
-		{
-			worker->setPackagePurgeFlag(*packageNameIt, true);
-		}
-
 		auto actionsPreview = worker->getActionsPreview();
 		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
 
@@ -1256,7 +1248,7 @@ Resolver* getResolver(const shared_ptr< const Config >& config,
 }
 
 void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cache& cache,
-		ManagePackages::Mode mode, Resolver& resolver, set< string >& purgedPackageNames)
+		ManagePackages::Mode mode, Resolver& resolver, Worker& worker)
 {
 	string answer;
 	do
@@ -1265,8 +1257,8 @@ void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cac
 		std::getline(std::cin, answer);
 		if (!answer.empty())
 		{
-			processPackageExpressions(config, cache, mode, resolver,
-					vector< string > { answer }, purgedPackageNames);
+			processPackageExpressions(config, cache, mode, resolver, worker,
+					vector< string > { answer });
 		}
 		else
 		{
@@ -1340,15 +1332,13 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	cout << __("Scheduling requested actions... ") << endl;
 
 	preProcessMode(mode, *config, *resolver);
-
-	set< string > purgedPackageNames;
-	processPackageExpressions(*config, *cache, mode, *resolver, packageExpressions, purgedPackageNames);
+	processPackageExpressions(*config, *cache, mode, *resolver, *worker, packageExpressions);
 
 	cout << __("Resolving possible unmet dependencies... ") << endl;
 
 	bool addArgumentsFlag, thereIsNothingToDo;
 	auto callback = generateManagementPrompt(*config, *cache, worker,
-			showNotPreferred, purgedPackageNames, addArgumentsFlag, thereIsNothingToDo);
+			showNotPreferred, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
 	addArgumentsFlag = false;
@@ -1356,8 +1346,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	bool resolved = resolver->resolve(callback);
 	if (addArgumentsFlag && std::cin)
 	{
-		queryAndProcessAdditionalPackageExpressions(*config, *cache,
-				mode, *resolver, purgedPackageNames);
+		queryAndProcessAdditionalPackageExpressions(*config, *cache, mode, *resolver, *worker);
 		goto resolve;
 	}
 
