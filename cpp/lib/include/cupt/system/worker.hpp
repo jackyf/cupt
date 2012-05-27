@@ -56,6 +56,7 @@ class CUPT_API Worker
 			Configure, ///< the existing package in intermediate state is configured (properly installed)
 			Deconfigure, ///< the existing package in intermediate state is removed
 			ProcessTriggers, ///< triggers are processed for the existing package
+			Reinstall, ///< remove and install the installed version
 			Count ///< element count
 		};
 		static const char* rawStrings[Count]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings

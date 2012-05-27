@@ -998,6 +998,7 @@ map< WA::Type, string > getActionDescriptionMap()
 		{ WA::Configure, __("will be configured") },
 		{ WA::Deconfigure, __("will be deconfigured") },
 		{ WA::ProcessTriggers, __("will have triggers processed") },
+		{ WA::Reinstall, __("will be reinstalled") },
 		{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
 		{ fakeAutoRemove, __("are no longer needed and thus will be auto-removed") },
 		{ fakeAutoPurge, __("are no longer needed and thus will be auto-purged") },
@@ -1010,7 +1011,7 @@ vector< WA::Type > getActionTypesInPrintOrder(bool showNotPreferred)
 {
 	vector< WA::Type > result = {
 		fakeBecomeAutomaticallyInstalled, fakeBecomeManuallyInstalled,
-		WA::Install, WA::Upgrade, WA::Remove,
+		WA::Reinstall, WA::Install, WA::Upgrade, WA::Remove,
 		WA::Purge, WA::Downgrade, WA::Configure, WA::ProcessTriggers, WA::Deconfigure
 	};
 	if (showNotPreferred)

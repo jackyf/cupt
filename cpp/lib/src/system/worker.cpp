@@ -41,7 +41,7 @@ namespace system {
 
 const char* Worker::Action::rawStrings[] = {
 	"install", "remove", "purge", "upgrade", "downgrade",
-	"configure", "deconfigure", "process triggers"
+	"configure", "deconfigure", "process triggers", "reinstall",
 };
 
 

@@ -6,6 +6,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         console '--show-reasons' option anymore.
       - New positional action override options '--markauto', '--unmarkauto'.
       - 'markauto', 'unmarkauto': are now first-class management commands.
+      - Action preview prompt: now properly show reinstalled packages as
+        reinstalled, not as upgraded.
   * lib:
     - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
     - [API break] '__': now returns 'const char*' instead of 'string'.
@@ -31,6 +33,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - system/worker:
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.
+      - [ABI break] 'Action::Type' new enum value 'Reinstall'.
   * debian:
     - control:
       - Bumped the library API version.

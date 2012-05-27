@@ -86,7 +86,14 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 
 					if (versionComparisonResult > 0)
 					{
-						action = Action::Upgrade;
+						if (supposedVersion->versionString + "~installed" == installedVersion->versionString)
+						{
+							action = Action::Reinstall;
+						}
+						else
+						{
+							action = Action::Upgrade;
+						}
 					}
 					else if (versionComparisonResult < 0)
 					{
@@ -268,7 +275,8 @@ pair< size_t, size_t > SetupAndPreviewWorker::getDownloadSizesPreview() const
 	size_t needBytes = 0;
 
 	static const Action::Type affectedActionTypes[] = {
-			Action::Install, Action::Upgrade, Action::Downgrade };
+		Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
+	};
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(Action::Type); ++i)
 	{
 		const Resolver::SuggestedPackages& suggestedPackages =

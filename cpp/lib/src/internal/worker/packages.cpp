@@ -238,6 +238,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 		{ Action::Install, vector< IA::Type >{ IA::Unpack, IA::Configure } },
 		{ Action::Upgrade, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
 		{ Action::Downgrade, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
+		{ Action::Reinstall, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
 		{ Action::Configure, vector< IA::Type >{ IA::Configure } },
 		{ Action::Deconfigure, vector< IA::Type >{ IA::Remove } },
 		{ Action::Remove, vector< IA::Type >{ IA::Remove } },
@@ -1340,7 +1341,9 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 		DebdeltaHelper debdeltaHelper;
 
-		static const vector< Action::Type > actions = { Action::Install, Action::Upgrade, Action::Downgrade };
+		static const vector< Action::Type > actions = {
+			Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
+		};
 		FORIT(actionIt, actions)
 		{
 			const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
