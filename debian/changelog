@@ -34,6 +34,34 @@ cupt (2.6.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 
+cupt (2.5.5) unstable; urgency=low
+
+  * lib:
+    - download/methodfactory:
+      - Loading download methods: fixed a crash when a download method library
+        filename without extension contains less than 3 characters. Also,
+        don't output a debug messages in this case when the debugging is not
+        turned on.
+    - cache/sourceversion:
+      - 'parseFromFile': accept the value 'source' as if it was 'extra' for
+        'Priority' field (a workaround for #626394).
+    - Parsing Release files: fixed mixing unknown hash sum types and known
+      hash sum values which leads to a wrong 'hash sums mismatch' error.
+      Thanks to Karol Kozłowski for the report.
+  * debian:
+    - control:
+      - Long description: made more specific about 'option name checker'.
+  * doc:
+    - tutorial:
+      - 'Advantages': said more specificly that 'option name checker' is for
+        the 'cupt::' option family.
+      - 'Disadvantages': explicitly said that Cupt does not currently support
+        repositories without a Release file.
+    - man/cupt.1:
+      - Added the user support mailing list.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 27 May 2012 12:24:20 +0300
+
 cupt (2.5.4) unstable; urgency=low
 
   * lib:

@@ -131,6 +131,10 @@ SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParamet
 			})
 			TAG(Directory, source.directory = tagValue;)
 			TAG(Version, v->versionString = tagValue;)
+			if (tagName.equal(BUFFER_AND_SIZE("Priority")) && tagValue.equal(BUFFER_AND_SIZE("source")))
+			{
+				continue; // a workaround for the unannounced value 'source' (Debian BTS #626394)
+			}
 			PARSE_PRIORITY
 			TAG(Architecture, v->architectures = internal::split(' ', tagValue);)
 
