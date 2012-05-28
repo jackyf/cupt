@@ -26,6 +26,10 @@
 namespace cupt {
 namespace internal {
 
+Worker::Action::Type WorkerBase::_download_dependent_action_types[] = {
+		Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
+};
+
 WorkerBase::WorkerBase()
 {
 	fatal2i("WorkerBase::WorkerBase shouldn't be ever called");

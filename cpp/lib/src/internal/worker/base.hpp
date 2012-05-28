@@ -55,6 +55,8 @@ class WorkerBase
 	static string _get_archive_basename(const BinaryVersion*);
 	void _run_external_command(Logger::Subsystem, const string&,
 			const string& = "", const string& = "");
+
+	static Action::Type _download_dependent_action_types[4];
  public:
 	static const string partialDirectorySuffix;
 

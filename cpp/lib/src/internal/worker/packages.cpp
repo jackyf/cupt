@@ -1341,12 +1341,9 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 		DebdeltaHelper debdeltaHelper;
 
-		static const vector< Action::Type > actions = {
-			Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
-		};
-		FORIT(actionIt, actions)
+		for (auto actionType: _download_dependent_action_types)
 		{
-			const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
+			const auto& suggestedPackages = __actions_preview->groups[actionType];
 			FORIT(it, suggestedPackages)
 			{
 				const auto& version = it->second.version;

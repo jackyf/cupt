@@ -274,13 +274,9 @@ pair< size_t, size_t > SetupAndPreviewWorker::getDownloadSizesPreview() const
 	size_t totalBytes = 0;
 	size_t needBytes = 0;
 
-	static const Action::Type affectedActionTypes[] = {
-		Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
-	};
-	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(Action::Type); ++i)
+	for (auto actionType: _download_dependent_action_types)
 	{
-		const Resolver::SuggestedPackages& suggestedPackages =
-			__actions_preview->groups[affectedActionTypes[i]];
+		const auto& suggestedPackages = __actions_preview->groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
