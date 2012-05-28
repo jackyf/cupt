@@ -142,8 +142,8 @@ void showHelp(const char* argv0)
 	cout << format2(__("Usage: %s <action> [<parameters>]"), argv0) << endl;
 	cout << endl;
 	cout << __("Actions:") << endl;
-	FORIT(it, actionDescriptions)
+	for (const auto& pair: actionDescriptions)
 	{
-		cout << "  " << it->first << ": " << it->second << endl;
+		cout << "  " << pair.first << ": " << pair.second << endl;
 	}
 }
