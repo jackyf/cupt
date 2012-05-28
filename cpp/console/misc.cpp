@@ -116,13 +116,11 @@ string parseCommonOptions(int argc, char** argv, Config& config, vector< string 
 		bpo::notify(variablesMap);
 
 		{ // do not pass 'command' further
-			FORIT(optionIt, parsed.options)
+			auto commandOptionIt = std::find_if(parsed.options.begin(), parsed.options.end(),
+					[](const bpo::option& o) { return o.string_key == "command"; });
+			if (commandOptionIt != parsed.options.end())
 			{
-				if (optionIt->string_key == "command")
-				{
-					parsed.options.erase(optionIt);
-					break;
-				}
+				parsed.options.erase(commandOptionIt);
 			}
 		}
 		unparsed = bpo::collect_unrecognized(parsed.options, bpo::include_positional);
