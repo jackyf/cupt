@@ -132,11 +132,11 @@ void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 const Version* Package::getSpecificVersion(const string& versionString) const
 {
 	const auto& source = _get_versions();
-	FORIT(versionIt, source)
+	for (const auto& version: source)
 	{
-		if ((*versionIt)->versionString == versionString)
+		if (version->versionString == versionString)
 		{
-			return versionIt->get();
+			return version.get();
 		}
 	}
 	return nullptr;
