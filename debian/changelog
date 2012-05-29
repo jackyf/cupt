@@ -1,3 +1,9 @@
+cupt (2.5.6~) UNRELEASED; urgency=low
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 29 May 2012 22:45:17 +0300
+
 cupt (2.5.5) unstable; urgency=low
 
   * lib:
