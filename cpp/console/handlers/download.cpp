@@ -233,9 +233,9 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 		}
 	}
 
-	FORIT(argumentIt, arguments)
+	for (const auto& argument: arguments)
 	{
-		auto versions = selectBinaryVersionsWildcarded(*cache, *argumentIt);
+		auto versions = selectBinaryVersionsWildcarded(*cache, argument);
 
 		for (const auto& version: versions)
 		{
@@ -264,9 +264,9 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 			else
 			{
 				Manager::DownloadEntity downloadEntity;
-				FORIT(it, version->sources)
+				for (const auto& source: version->sources)
 				{
-					if (it->release->vendor != "Debian" && it->release->vendor != "Ubuntu")
+					if (source.release->vendor != "Debian" && source.release->vendor != "Ubuntu")
 					{
 						// this is probably not a package from Debian or Ubuntu archive
 						continue;
@@ -286,8 +286,8 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 							sourcePackageName.substr(0, 1) : sourcePackageName.substr(0, 4);
 
 
-					string uri = baseUrisByVendor.find(it->release->vendor)->second + '/' +
-							it->release->component + '/' + shortPrefix + '/' +
+					string uri = baseUrisByVendor.find(source.release->vendor)->second + '/' +
+							source.release->component + '/' + shortPrefix + '/' +
 							sourcePackageName + '/' + sourcePackageName + '_' +
 							sourceVersionString + '/' + typeString;
 
