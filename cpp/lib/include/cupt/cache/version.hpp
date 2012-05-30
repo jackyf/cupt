@@ -110,6 +110,10 @@ struct CUPT_API Version
 	static bool parseInfoOnly;
 	/// enables parsing unknown fields in versions, @c false by default
 	static bool parseOthers;
+
+	/// @cond
+	string getCodenameAndComponentString(const string&) const;
+	/// @endcond
 };
 
 } // namespace

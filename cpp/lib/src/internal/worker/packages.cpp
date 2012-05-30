@@ -1293,24 +1293,9 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 	newActionGroups.swap(actionGroups);
 }
 
-static string __get_codename_and_component_string(const Version& version, const string& baseUri)
-{
-	vector< string > parts;
-	FORIT(sourceIt, version.sources)
-	{
-		auto releaseInfo = sourceIt->release;
-		if (releaseInfo->baseUri != baseUri)
-		{
-			continue;
-		}
-		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
-	}
-	return join(",", parts);
-}
-
 static string __get_long_alias_tail(const Version& version, const string& baseUri)
 {
-	return format2("%s %s %s", __get_codename_and_component_string(version, baseUri),
+	return format2("%s %s %s", version.getCodenameAndComponentString(baseUri),
 			version.packageName, version.versionString);
 }
 
