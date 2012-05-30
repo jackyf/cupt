@@ -83,26 +83,21 @@ int downloadSourcePackage(Context& context)
 	vector< Manager::DownloadEntity > downloadEntities;
 	vector< string > dscFilenames;
 
-	FORIT(argumentIt, arguments)
+	for (const auto& argument: arguments)
 	{
-		auto versions = selectSourceVersionsWildcarded(*cache, *argumentIt);
-
-		for (const auto& version: versions)
+		for (const auto& version: selectSourceVersionsWildcarded(*cache, argument))
 		{
 			const string& packageName = version->packageName;
 			const string& versionString = version->versionString;
 
 			auto downloadInfo = version->getDownloadInfo();
 
-			FORIT(partIt, partsToDownload)
+			for (auto part: partsToDownload)
 			{
-				const vector< Version::FileRecord >& fileRecords = version->files[*partIt];
-				FORIT(fileRecordIt, fileRecords)
+				for (const Version::FileRecord& record: version->files[part])
 				{
-					const Version::FileRecord& record = *fileRecordIt;
-
 					const string& filename = record.name;
-					if (*partIt == SourceVersion::FileParts::Dsc)
+					if (part == SourceVersion::FileParts::Dsc)
 					{
 						dscFilenames.push_back(filename); // for unpacking after
 					}
@@ -122,14 +117,14 @@ int downloadSourcePackage(Context& context)
 					}
 
 					Manager::DownloadEntity downloadEntity;
-					FORIT(downloadInfoIt, downloadInfo)
+					for (const auto& downloadRecord: downloadInfo)
 					{
-						string shortAlias = packageName + ' ' + SourceVersion::FileParts::strings[*partIt];
-						string longAlias = format2("%s %s %s %s %s", downloadInfoIt->baseUri,
-								version->getCodenameAndComponentString(downloadInfoIt->baseUri),
-								packageName, versionString, SourceVersion::FileParts::strings[*partIt]);
-						string uri = downloadInfoIt->baseUri + '/' +
-								downloadInfoIt->directory + '/' + filename;
+						string shortAlias = packageName + ' ' + SourceVersion::FileParts::strings[part];
+						string longAlias = format2("%s %s %s %s %s", downloadRecord.baseUri,
+								version->getCodenameAndComponentString(downloadRecord.baseUri),
+								packageName, versionString, SourceVersion::FileParts::strings[part]);
+						string uri = downloadRecord.baseUri + '/' +
+								downloadRecord.directory + '/' + filename;
 
 						downloadEntity.extendedUris.push_back(
 								Manager::ExtendedUri(uri, shortAlias, longAlias));
@@ -169,12 +164,12 @@ int downloadSourcePackage(Context& context)
 	if (!downloadOnly)
 	{
 		// unpack downloaded sources
-		FORIT(filenameIt, dscFilenames)
+		for (const auto& filename: dscFilenames)
 		{
-			string command = "dpkg-source -x " + *filenameIt;
+			string command = "dpkg-source -x " + filename;
 			if (::system(command.c_str()))
 			{
-				warn2(__("dpkg-source on the file '%s' failed"), *filenameIt);
+				warn2(__("dpkg-source on the file '%s' failed"), filename);
 			}
 		}
 	}
