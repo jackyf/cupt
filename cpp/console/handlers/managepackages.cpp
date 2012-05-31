@@ -221,9 +221,9 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 
 		if (!versions.empty())
 		{
-			FORIT(versionIt, versions)
+			for (const auto& version: versions)
 			{
-				scheduleRemoval((*versionIt)->packageName);
+				scheduleRemoval(version->packageName);
 			}
 		}
 		else
