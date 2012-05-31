@@ -1437,14 +1437,14 @@ int cleanArchives(Context& context, bool leaveAvailable)
 	uint64_t totalDeletedBytes = 0;
 
 	auto info = worker.getArchivesInfo();
-	FORIT(infoIt, info)
+	for (const auto& infoRecord: info)
 	{
-		if (leaveAvailable && infoIt->second /* version is not empty */)
+		if (leaveAvailable && infoRecord.second /* version is not empty */)
 		{
 			continue; // skip this one
 		}
 
-		const string& path = infoIt->first;
+		const string& path = infoRecord.first;
 
 		struct stat stat_structure;
 		if (lstat(path.c_str(), &stat_structure))
