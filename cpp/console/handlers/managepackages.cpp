@@ -323,9 +323,9 @@ static void processPackageExpressions(const Config& config,
 void printUnpackedSizeChanges(const map< string, ssize_t >& unpackedSizesPreview)
 {
 	ssize_t totalUnpackedSizeChange = 0;
-	FORIT(it, unpackedSizesPreview)
+	for (const auto& previewRecord: unpackedSizesPreview)
 	{
-		totalUnpackedSizeChange += it->second;
+		totalUnpackedSizeChange += previewRecord.second;
 	}
 
 	string message;
