@@ -104,15 +104,15 @@ static void unrollFileArguments(vector< string >& arguments)
 void __satisfy_or_unsatisfy(Resolver& resolver,
 		const RelationLine& relationLine, ManagePackages::Mode mode)
 {
-	FORIT(relationExpressionIt, relationLine)
+	for (const auto& relationExpression: relationLine)
 	{
 		if (mode == ManagePackages::Unsatisfy)
 		{
-			resolver.unsatisfyRelationExpression(*relationExpressionIt);
+			resolver.unsatisfyRelationExpression(relationExpression);
 		}
 		else
 		{
-			resolver.satisfyRelationExpression(*relationExpressionIt);
+			resolver.satisfyRelationExpression(relationExpression);
 		}
 	}
 }
