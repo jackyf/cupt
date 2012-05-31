@@ -285,59 +285,37 @@ static void processPackageExpressions(const Config& config,
 		const Cache& cache, ManagePackages::Mode& mode,
 		Resolver& resolver, Worker& worker, const vector< string >& packageExpressions)
 {
-	FORIT(packageExpressionIt, packageExpressions)
+	for (const auto& packageExpression: packageExpressions)
 	{
-		if (*packageExpressionIt == "--remove")
-		{
-			mode = ManagePackages::Remove;
-		}
-		else if (*packageExpressionIt == "--purge")
-		{
-			mode = ManagePackages::Purge;
-		}
-		else if (*packageExpressionIt == "--install")
-		{
-			mode = ManagePackages::Install;
-		}
-		else if (*packageExpressionIt == "--satisfy")
-		{
-			mode = ManagePackages::Satisfy;
-		}
-		else if (*packageExpressionIt == "--unsatisfy")
-		{
-			mode = ManagePackages::Unsatisfy;
-		}
-		else if (*packageExpressionIt == "--markauto")
-		{
-			mode = ManagePackages::Markauto;
-		}
-		else if (*packageExpressionIt == "--unmarkauto")
-		{
-			mode = ManagePackages::Unmarkauto;
-		}
-		else if (*packageExpressionIt == "--iii")
-		{
-			mode = ManagePackages::InstallIfInstalled;
-		}
+		// positional options: changing mode
+		if (packageExpression == "--remove") mode = ManagePackages::Remove;
+		else if (packageExpression == "--purge") mode = ManagePackages::Purge;
+		else if (packageExpression == "--install") mode = ManagePackages::Install;
+		else if (packageExpression == "--satisfy") mode = ManagePackages::Satisfy;
+		else if (packageExpression == "--unsatisfy") mode = ManagePackages::Unsatisfy;
+		else if (packageExpression == "--markauto") mode = ManagePackages::Markauto;
+		else if (packageExpression == "--unmarkauto") mode = ManagePackages::Unmarkauto;
+		else if (packageExpression == "--iii") mode = ManagePackages::InstallIfInstalled;
+		// package expressions: processing them
 		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
 		{
-			processSatisfyExpression(config, resolver, *packageExpressionIt, mode);
+			processSatisfyExpression(config, resolver, packageExpression, mode);
 		}
 		else if (mode == ManagePackages::BuildDepends)
 		{
-			processBuildDependsExpression(config, cache, resolver, *packageExpressionIt);
+			processBuildDependsExpression(config, cache, resolver, packageExpression);
 		}
 		else if (mode == ManagePackages::Markauto || mode == ManagePackages::Unmarkauto)
 		{
-			processAutoFlagChangeExpression(cache, resolver, mode, *packageExpressionIt);
+			processAutoFlagChangeExpression(cache, resolver, mode, packageExpression);
 		}
 		else if (mode == ManagePackages::Reinstall)
 		{
-			processReinstallExpression(cache, resolver, *packageExpressionIt);
+			processReinstallExpression(cache, resolver, packageExpression);
 		}
 		else
 		{
-			processInstallOrRemoveExpression(cache, resolver, worker, mode, *packageExpressionIt);
+			processInstallOrRemoveExpression(cache, resolver, worker, mode, packageExpression);
 		}
 	}
 }
