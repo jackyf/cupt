@@ -492,20 +492,17 @@ void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 {
 	vector< string > untrustedPackageNames;
 	// generate loud warning for unsigned versions
-	static const WA::Type affectedActionTypes[] = {
+	const WA::Type affectedActionTypes[] = {
 		WA::Reinstall, WA::Install, WA::Upgrade, WA::Downgrade
 	};
 
-	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
+	for (auto actionType: affectedActionTypes)
 	{
-		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview.groups[actionType];
-
-		FORIT(it, suggestedPackages)
+		for (const auto& suggestedRecord: actionsPreview.groups[actionType])
 		{
-			if (!(it->second.version->isVerified()))
+			if (!(suggestedRecord.second.version->isVerified()))
 			{
-				untrustedPackageNames.push_back(it->first);
+				untrustedPackageNames.push_back(suggestedRecord.first);
 			}
 		}
 	}
