@@ -492,7 +492,9 @@ void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 {
 	vector< string > untrustedPackageNames;
 	// generate loud warning for unsigned versions
-	static const WA::Type affectedActionTypes[] = { WA::Install, WA::Upgrade, WA::Downgrade };
+	static const WA::Type affectedActionTypes[] = {
+		WA::Reinstall, WA::Install, WA::Upgrade, WA::Downgrade
+	};
 
 	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
 	{
