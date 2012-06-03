@@ -3,6 +3,8 @@ cupt (2.5.6~) UNRELEASED; urgency=low
   * lib:
     - system/worker:
       - Fatal errors should be logged regardless of the logging level.
+      - Work around FreeBSD kernels on which mkdir(2) sometimes return EISDIR.
+        Thanks to goneri@rulezlan.org for the report. (Closes: #675760)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 29 May 2012 22:45:17 +0300
 

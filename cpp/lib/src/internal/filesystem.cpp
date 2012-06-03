@@ -176,7 +176,8 @@ void mkpath(const string& path)
 	{
 		if (mkdir(pathPart.c_str(), 0755) == -1)
 		{
-			if (errno != EEXIST)
+			if (errno != EEXIST &&
+					errno != EISDIR /* http://www.freebsd.org/cgi/query-pr.cgi?pr=59739 */)
 			{
 				fatal2e(__("unable to create the directory '%s'"), pathPart);
 			}
