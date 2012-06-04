@@ -554,16 +554,13 @@ void checkForIgnoredHolds(const Cache& cache,
 {
 	vector< string > ignoredHoldsPackageNames;
 
-	static const WA::Type affectedActionTypes[] = { WA::Install, WA::Upgrade,
+	const WA::Type affectedActionTypes[] = { WA::Install, WA::Upgrade,
 			WA::Downgrade, WA::Remove, WA::Purge };
-	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(WA::Type); ++i)
+	for (auto actionType: affectedActionTypes)
 	{
-		const WA::Type& actionType = affectedActionTypes[i];
-		const Resolver::SuggestedPackages& suggestedPackages = actionsPreview.groups[actionType];
-
-		FORIT(it, suggestedPackages)
+		for (const auto& suggestedRecord: actionsPreview.groups[actionType])
 		{
-			const string& packageName = it->first;
+			const string& packageName = suggestedRecord.first;
 			auto installedInfo = cache.getSystemState()->getInstalledInfo(packageName);
 			if (installedInfo &&
 				installedInfo->want == system::State::InstalledRecord::Want::Hold &&
