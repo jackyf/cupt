@@ -480,9 +480,9 @@ void showSizeChange(ssize_t bytes)
 void printPackageNamesByLine(const vector< string >& packageNames)
 {
 	cout << endl;
-	FORIT(it, packageNames)
+	for (const auto& packageName: packageNames)
 	{
-		cout << *it << endl;
+		cout << packageName << endl;
 	}
 	cout << endl;
 }
