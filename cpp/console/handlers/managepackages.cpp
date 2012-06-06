@@ -596,9 +596,9 @@ void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 
 void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 {
-	FORIT(reasonIt, suggestedPackage.reasons)
+	for (const auto& reason: suggestedPackage.reasons)
 	{
-		cout << "  " << __("reason: ") << (*reasonIt)->toString() << endl;
+		cout << "  " << __("reason: ") << reason->toString() << endl;
 	}
 	cout << endl;
 }
