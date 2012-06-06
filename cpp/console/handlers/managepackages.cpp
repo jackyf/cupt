@@ -696,15 +696,15 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const Cache& cache,
 		const Resolver::SuggestedPackages& packages)
 {
 	Resolver::SuggestedPackages result;
-	FORIT(suggestedPackageIt, packages)
+	for (const auto& suggestedPackage: packages)
 	{
-		const auto& suggestedVersion = suggestedPackageIt->second.version;
+		const auto& suggestedVersion = suggestedPackage.second.version;
 		if (suggestedVersion)
 		{
 			auto policyVersion = cache.getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
 			if (!(policyVersion == suggestedVersion))
 			{
-				result.insert(*suggestedPackageIt);
+				result.insert(suggestedPackage);
 			}
 		}
 	}
