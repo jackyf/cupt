@@ -477,12 +477,12 @@ void showSizeChange(ssize_t bytes)
 	}
 }
 
-void printPackageNamesByLine(const vector< string >& packageNames)
+void printByLine(const vector< string >& strings)
 {
 	cout << endl;
-	for (const auto& packageName: packageNames)
+	for (const auto& s: strings)
 	{
-		cout << packageName << endl;
+		cout << s << endl;
 	}
 	cout << endl;
 }
@@ -511,7 +511,7 @@ void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 	{
 		*isDangerous = true;
 		cout << __("WARNING! The untrusted versions of the following packages will be used:") << endl;
-		printPackageNamesByLine(untrustedPackageNames);
+		printByLine(untrustedPackageNames);
 	}
 }
 
@@ -545,7 +545,7 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 	{
 		*isDangerous = true;
 		cout << __("WARNING! The following essential packages will be removed:") << endl;
-		printPackageNamesByLine(essentialPackageNames);
+		printByLine(essentialPackageNames);
 	}
 }
 
@@ -574,7 +574,7 @@ void checkForIgnoredHolds(const Cache& cache,
 	{
 		*isDangerous = true;
 		cout << __("WARNING! The following packages on hold will change their state:") << endl;
-		printPackageNamesByLine(ignoredHoldsPackageNames);
+		printByLine(ignoredHoldsPackageNames);
 	}
 }
 
@@ -617,12 +617,7 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
 		if (showDetails)
 		{
 			cout << __("Leave the following dependencies unresolved:") << endl;
-			cout << endl;
-			FORIT(messageIt, messages)
-			{
-				cout << *messageIt << endl;
-			}
-			cout << endl;
+			printByLine(messages);
 		}
 
 		*summaryStreamPtr << format2(__("  %u dependency problems will stay unresolved"),
