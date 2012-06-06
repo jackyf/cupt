@@ -607,9 +607,9 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
 		bool showDetails, std::stringstream* summaryStreamPtr)
 {
 	vector< string > messages;
-	FORIT(unresolvedProblemIt, offer.unresolvedProblems)
+	for (const auto& unresolvedProblem: offer.unresolvedProblems)
 	{
-		messages.push_back((*unresolvedProblemIt)->toString());
+		messages.push_back(unresolvedProblem->toString());
 	}
 
 	if (!messages.empty())
