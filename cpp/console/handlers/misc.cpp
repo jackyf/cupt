@@ -81,15 +81,10 @@ int showBinaryVersions(Context& context)
 		for (const auto& version: cache->getSatisfyingVersions(virtualRelationExpression))
 		{
 			// we don't need versions of the same package
-			auto newPackageName = version->packageName;
-			if (newPackageName == packageName)
-			{
-				continue;
-			}
+			const auto& newPackageName = version->packageName;
+			if (newPackageName == packageName) continue;
 
-			auto newRelationVersionString = version->versionString;
-			RelationExpression newRelationExpression(newPackageName + " (= " + newRelationVersionString + ")");
-			result.push_back(newRelationExpression);
+			result.push_back(RelationExpression{ newPackageName + " (= " + version->versionString + ")" });
 		}
 		return result;
 	};
