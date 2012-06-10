@@ -78,17 +78,16 @@ int showBinaryVersions(Context& context)
 			return result;
 		}
 		RelationExpression virtualRelationExpression(packageName);
-		auto versions = cache->getSatisfyingVersions(virtualRelationExpression);
-		FORIT(it, versions)
+		for (const auto& version: cache->getSatisfyingVersions(virtualRelationExpression))
 		{
 			// we don't need versions of the same package
-			auto newPackageName = (*it)->packageName;
+			auto newPackageName = version->packageName;
 			if (newPackageName == packageName)
 			{
 				continue;
 			}
 
-			auto newRelationVersionString = (*it)->versionString;
+			auto newRelationVersionString = version->versionString;
 			RelationExpression newRelationExpression(newPackageName + " (= " + newRelationVersionString + ")");
 			result.push_back(newRelationExpression);
 		}
