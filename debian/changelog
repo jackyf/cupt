@@ -40,6 +40,18 @@ cupt (2.6.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 
+cupt (2.5.6) unstable; urgency=low
+
+  * lib:
+    - system/worker:
+      - Fatal errors should be logged regardless of the logging level.
+      - Work around FreeBSD kernels on which mkdir(2) sometimes return EISDIR.
+        Thanks to goneri@rulezlan.org for the report. (Closes: #675760)
+  * po:
+    - Added French translation by Julien Patriarca. (Closes: #675689)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 08 Jun 2012 13:01:55 +0300
+
 cupt (2.5.5) unstable; urgency=low
 
   * lib:

@@ -83,7 +83,7 @@ string Logger::__get_log_string(Subsystem subsystem, Level level, const string& 
 			": " + indent + message;
 }
 
-void Logger::log(Subsystem subsystem, Level level, const string& message)
+void Logger::log(Subsystem subsystem, Level level, const string& message, bool force)
 {
 	if (level == 0)
 	{
@@ -102,7 +102,7 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 
 	if (!__simulating)
 	{
-		if (level <= __levels[(int)subsystem])
+		if (force || (level <= __levels[(int)subsystem]))
 		{
 			auto logData = __get_log_string(subsystem, level, message) + "\n";
 			// stdio-buffered fails when there are several writing processes
