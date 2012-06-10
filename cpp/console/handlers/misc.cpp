@@ -172,10 +172,9 @@ int showBinaryVersions(Context& context)
 			auto reverseProvides = getReverseProvides(packageName);
 			p(__("Provided by"), reverseProvides.toString());
 			{
-				auto downloadInfo = version->getDownloadInfo();
-				FORIT(downloadRecordIt, downloadInfo)
+				for (const auto& downloadRecord: version->getDownloadInfo())
 				{
-					p("URI", downloadRecordIt->baseUri + '/' + downloadRecordIt->directory
+					p("URI", downloadRecord.baseUri + '/' + downloadRecord.directory
 							+ '/' + version->file.name);
 				}
 			}
@@ -205,13 +204,13 @@ int showBinaryVersions(Context& context)
 			p(__("Tags"), version->tags);
 			if (version->others)
 			{
-				FORIT(it, (*(version->others)))
+				for (const auto& field: *(version->others))
 				{
-					if (it->first == "Description-md5")
+					if (field.first == "Description-md5")
 					{
 						continue;
 					}
-					p(it->first, it->second);
+					p(field.first, field.second);
 				}
 			}
 			cout << endl;
