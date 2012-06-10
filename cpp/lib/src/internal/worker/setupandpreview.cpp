@@ -101,7 +101,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 					}
 					else if (isImproperlyInstalled)
 					{
-						action = Action::Upgrade; // TODO/ABI Break/: Action::Reinstall
+						action = Action::Reinstall;
 					}
 				}
 				else
