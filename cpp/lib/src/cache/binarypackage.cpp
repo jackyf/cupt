@@ -60,16 +60,18 @@ vector< const BinaryVersion* > BinaryPackage::getVersions() const
 
 const BinaryVersion* BinaryPackage::getInstalledVersion() const
 {
-	auto source = getVersions();
-	if (!source.empty() && source[0]->isInstalled())
+	const auto& source = _get_versions();
+	if (!source.empty())
 	{
 		// here we rely on the fact that installed version (if exists) adds first to the cache/package
-		return source[0];
+		auto binaryVersion = static_cast< const BinaryVersion* >(source[0].get());
+		if (binaryVersion->isInstalled())
+		{
+			return binaryVersion;
+		}
 	}
-	else
-	{
-		return nullptr;
-	}
+
+	return nullptr;
 }
 
 }

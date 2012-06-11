@@ -34,6 +34,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.
       - [ABI break] 'Action::Type' new enum value 'Reinstall'.
+    - cache/binarypackage:
+      - 'getInstalledVersion': significant speed-up.
   * debian:
     - control:
       - Bumped the library API version.
