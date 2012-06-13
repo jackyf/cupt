@@ -275,7 +275,7 @@ bool __is_version_array_intersects_with_packages(
 			continue;
 		}
 
-		if (version->versionString == oldPackageIt->second->versionString)
+		if (version == oldPackageIt->second)
 		{
 			return true;
 		}
