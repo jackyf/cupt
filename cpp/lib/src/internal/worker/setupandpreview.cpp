@@ -106,7 +106,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 				}
 				else
 				{
-					if (installedVersion->versionString == supposedVersion->versionString)
+					if (installedVersion == supposedVersion)
 					{
 						// the same version, but the package was in some interim state
 						if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
