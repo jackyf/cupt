@@ -61,6 +61,7 @@ class VectorBasedMap
 		}
 	};
  public:
+	void init(container_t&& container) { __container.swap(container); }
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
 	const_iterator_t begin() const { return &*__container.begin(); }
@@ -396,11 +397,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
-	initialSolution.__added_entries->reserve(source.size());
-	FORIT(it, source)
-	{
-		initialSolution.__added_entries->push_back(*it);
-	}
+	initialSolution.__added_entries->init(std::move(source));
 	for (const auto& entry: *initialSolution.__added_entries)
 	{
 		__update_broken_successors(initialSolution, NULL, entry.first, 0);
