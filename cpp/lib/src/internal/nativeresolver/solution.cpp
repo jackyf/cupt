@@ -384,6 +384,10 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 			const map< string, dg::InitialPackageEntry >& initialPackages)
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
+	for (const auto& record: source)
+	{
+		__dependency_graph.unfoldElement(record.first);
+	}
 
 	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
 			const pair< const dg::Element*, SPPE >& right)
@@ -395,7 +399,6 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	initialSolution.__added_entries->reserve(source.size());
 	FORIT(it, source)
 	{
-		__dependency_graph.unfoldElement(it->first);
 		initialSolution.__added_entries->push_back(*it);
 	}
 	for (const auto& entry: *initialSolution.__added_entries)
