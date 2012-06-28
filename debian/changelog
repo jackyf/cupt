@@ -4,6 +4,9 @@ cupt (2.5.7~) UNRELEASED; urgency=low
     - cache:
       - Parsing sources list: parse afterline comments properly. Thanks to
         Alexey Ivanov for the report. (Closes: #678345)
+  * doc:
+    - tutorial:
+      - 'Disadvantages': said specificly that multiarch is not supported.
   * Added German translation by Chris Leick. (Closes: #677758)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 17 Jun 2012 15:59:48 +0300
