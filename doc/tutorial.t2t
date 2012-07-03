@@ -1074,6 +1074,9 @@ The effect above is the same as if you specified
 
 in the command line from the start.
 
+
+Starting from Cupt 2.6 you can specify multiple expressions on the same line.
+
 === colors ===
 
 Some parts of the actions preview will be colored if you enable colors by

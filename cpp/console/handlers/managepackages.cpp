@@ -1219,12 +1219,11 @@ void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cac
 	string answer;
 	do
 	{
-		cout << __("Enter a package expression (empty to finish): ");
+		cout << __("Enter package expression(s) (empty to finish): ");
 		std::getline(std::cin, answer);
 		if (!answer.empty())
 		{
-			processPackageExpressions(config, cache, mode, resolver, worker,
-					vector< string > { answer });
+			processPackageExpressions(config, cache, mode, resolver, worker, convertLineToShellArguments(answer));
 		}
 		else
 		{
