@@ -235,6 +235,15 @@ void CacheImpl::parseSourcesLists()
 	}
 }
 
+void stripComment(string& s)
+{
+	auto commentPosition = s.find('#');
+	if (commentPosition != string::npos)
+	{
+		s.erase(commentPosition);
+	}
+}
+
 void CacheImpl::parseSourceList(const string& path)
 {
 	string openError;
@@ -259,6 +268,8 @@ void CacheImpl::parseSourceList(const string& path)
 			{
 				continue;
 			}
+			stripComment(line);
+
 			vector< string > tokens;
 			tokens = internal::split(sregex::compile("[\\t ]+"), line);
 
