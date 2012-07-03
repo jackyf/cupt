@@ -23,6 +23,7 @@ using std::map;
 
 #include <common/regex.hpp>
 
+#include <cupt/file.hpp>
 #include <cupt/download/progresses/console.hpp>
 
 #include "common.hpp"
@@ -285,6 +286,30 @@ void checkNoExtraArguments(const vector< string >& arguments)
 		auto argumentsString = join(" ", arguments);
 		warn2(__("extra arguments '%s' are not processed"), argumentsString);
 	}
+}
+
+vector< string > convertLineToShellArguments(const string& line)
+{
+	vector< string > arguments;
+
+	// kind of hack to get arguments as it was real shell
+	// if you know easier way, let me know :)
+	string errorString;
+	// 'A' - to not let echo interpret $word as an option
+	string shellCommand = format2("(for word in %s; do echo A$word; done)", line);
+	File pipe(shellCommand, "pr", errorString);
+	if (!errorString.empty())
+	{
+		fatal2(__("unable to open an internal shell pipe: %s"), errorString);
+	}
+
+	string argument;
+	while (!pipe.getLine(argument).eof())
+	{
+		arguments.push_back(argument.substr(1));
+	}
+
+	return arguments;
 }
 
 void handleQuietOption(const Config& config)

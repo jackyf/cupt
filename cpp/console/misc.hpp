@@ -54,6 +54,7 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 		[](const string&) -> pair< string, string > { return make_pair(string(), string()); } );
 
 void checkNoExtraArguments(const vector< string >& arguments);
+vector< string > convertLineToShellArguments(const string& line);
 
 shared_ptr< Progress > getDownloadProgress(const Config&);
 
