@@ -166,14 +166,6 @@ int shell(Context& context)
 			mainEx(argc, argv, context, command);
 		};
 
-		static const vector< string > safeCommands = { "config-dump", "show", "showsrc",
-				"search", "depends", "rdepends", "policy", "policysrc", "pkgnames", "changelog",
-				"copyright", "screenshots", "source", "clean", "autoclean" };
-		if (std::find(safeCommands.begin(), safeCommands.end(), command) == safeCommands.end())
-		{
-			// the system could be modified, need to rebuild all
-			context.clearCache();
-		}
 		*(context.getConfig()) = *oldConfig;
 		freeArgcArgv(argc, argv);
 	}

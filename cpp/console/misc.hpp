@@ -32,6 +32,7 @@ class Context
 	bool __used_source;
 	bool __used_binary;
 	bool __used_installed;
+	bool __valid;
  public:
 	Context();
 
@@ -40,6 +41,7 @@ class Context
 			bool useSource, bool useBinary, bool useInstalled,
 			const vector< string >& packageNameGlobsToReinstall = vector< string >());
 	void clearCache();
+	void invalidate();
 
 	vector< string > unparsed;
 	int argc; // argc, argv - for exec() in distUpgrade()

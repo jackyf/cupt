@@ -1329,6 +1329,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 		auto downloadProgress = getDownloadProgress(*config);
 		cout << __("Performing requested actions:") << endl;
+		context.invalidate();
 		try
 		{
 			worker->changeSystem(downloadProgress);
@@ -1397,6 +1398,7 @@ int updateReleaseAndIndexData(Context& context)
 	auto downloadProgress = getDownloadProgress(*config);
 	Worker worker(config, cache);
 
+	context.invalidate();
 	// may throw exception
 	worker.updateReleaseAndIndexData(downloadProgress);
 

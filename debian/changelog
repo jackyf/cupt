@@ -10,6 +10,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         reinstalled, not as upgraded.
       - Action preview prompt: removed the 'one expression per line'
         limitation while processing 'a' choice.
+    - 'shell':
+      - Don't rebuild the cache uselessly when a package management action
+        was suggested but not confirmed by user.
   * lib:
     - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
     - [API break] '__': now returns 'const char*' instead of 'string'.

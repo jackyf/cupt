@@ -345,7 +345,8 @@ shared_ptr< Config > Context::getConfig()
 }
 
 Context::Context()
-	: __used_source(false), __used_binary(false), __used_installed(false)
+	: __used_source(false), __used_binary(false), __used_installed(false),
+	__valid(true)
 {}
 
 shared_ptr< const Cache > Context::getCache(
@@ -354,6 +355,7 @@ shared_ptr< const Cache > Context::getCache(
 {
 	bool needsRebuild =
 			!__cache ||
+			!__valid ||
 			!packageNameGlobsToReinstall.empty() ||
 			(useSource && !__used_source) ||
 			((useBinary != __used_binary || useInstalled != __used_installed) && (useBinary || useInstalled));
@@ -373,6 +375,7 @@ shared_ptr< const Cache > Context::getCache(
 	__used_source = useSource;
 	__used_binary = useBinary;
 	__used_installed = useInstalled;
+	__valid = true;
 
 	return __cache;
 }
@@ -381,4 +384,10 @@ void Context::clearCache()
 {
 	__cache.reset();
 }
+
+void Context::invalidate()
+{
+	__valid = false;
+}
+
 
