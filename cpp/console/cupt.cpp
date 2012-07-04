@@ -59,16 +59,15 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	string command;
 	Context context;
-	return mainEx(argc, argv, context, command);
+	return mainEx(argc, argv, context);
 }
 
-int mainEx(int argc, char* argv[], Context& context, string& command)
+int mainEx(int argc, char* argv[], Context& context)
 {
 	try
 	{
-		command = parseCommonOptions(argc, argv, /* in */ *context.getConfig(),
+		auto command = parseCommonOptions(argc, argv, /* in */ *context.getConfig(),
 				/* out */ context.unparsed);
 		context.argc = argc;
 		context.argv = argv;

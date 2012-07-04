@@ -161,10 +161,7 @@ int shell(Context& context)
 
 		convertLineToArgcArgv(line, argc, argv);
 
-		string command;
-		{
-			mainEx(argc, argv, context, command);
-		};
+		mainEx(argc, argv, context);
 
 		*(context.getConfig()) = *oldConfig;
 		freeArgcArgv(argc, argv);
