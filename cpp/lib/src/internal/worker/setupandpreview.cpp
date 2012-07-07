@@ -170,7 +170,6 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			   installed it has 'clean' info */
 			targetAutoStatus = false;
 		}
-		// TODO: worker: support auto status changes for non-changed packages
 		else
 		{
 			targetAutoStatus = suggestedPackage.automaticallyInstalledFlag;
