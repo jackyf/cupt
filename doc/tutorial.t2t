@@ -124,7 +124,8 @@ some dependency. Packages which are not automatically installed are
 **manually installed**.
 
 Available versions (including installed one) of the binary package have unique
-version strings.
+version strings. Since Cupt 2.6, Cupt-specific version string suffixes (for example,
+``^installed`` or ``^dhs0``) may be applied. More details on this [here #id_suffixes].
 
 == Errors and warnings ==[errors_and_warnings]
 
@@ -568,6 +569,21 @@ Each repository line is:
 
 The repository marked as **signed** if it has a valid and
 verified cryptographic signature, and **unsigned** otherwise.
+
+=== version string id suffixes ===[id_suffixes]
+
+Starting with version 2.6, Cupt's behavior regarding merging versions having
+the same version string changed.
+
+Firstly, Cupt now never merges installed versions with versions from
+repositories, since dpkg provides no way to know if the installed version is
+the same as the version from repository. All version strings of installed
+versions now have ``^installed`` suffix, for example ``1.2.4^installed``.
+
+Secondly, if same versions from different repositories have different hash
+sums, instead of discarding everything but first version Cupt now append
+suffixes like ``^dhs0`` or ``^dhs315`` to version strings of non-first
+versions, for example ``1.2.4^dhs0``.
 
 === selecting binary package versions ===[selecting_binary_package_versions]
 

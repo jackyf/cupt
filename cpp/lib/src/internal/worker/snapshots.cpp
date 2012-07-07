@@ -28,6 +28,7 @@
 #include <cupt/system/snapshots.hpp>
 #include <cupt/system/state.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/filesystem.hpp>
 #include <internal/cachefiles.hpp>
@@ -135,7 +136,7 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				}
 				const string& badFilename = files[0];
 				auto goodFilename = format2("%s_%s_%s.deb", packageName,
-						version->versionString, architecture);
+						versionstring::getOriginal(version->versionString), architecture);
 
 				if (!fs::move(badFilename, goodFilename))
 				{

@@ -19,6 +19,7 @@
 #include <cstring>
 
 #include <cupt/common.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/common.hpp>
 
@@ -30,9 +31,18 @@ void __divide_versions_parts(const string& versionString, StringAnchorPair& epoc
 		StringAnchorPair& upstream, StringAnchorPair& revision)
 {
 	epoch.first = versionString.begin();
-	revision.second = versionString.end();
 
-	size_t position = versionString.find(':');
+	auto position = versionString.rfind(versionstring::idSuffixDelimiter);
+	if (position != string::npos)
+	{
+		revision.second = versionString.begin() + position;
+	}
+	else
+	{
+		revision.second = versionString.end();
+	}
+
+	position = versionString.find(':');
 	if (position != string::npos)
 	{
 		// we found an epoch
@@ -56,7 +66,7 @@ void __divide_versions_parts(const string& versionString, StringAnchorPair& epoc
 	}
 	else
 	{
-		upstream.second = versionString.end();
+		upstream.second = revision.second;
 		revision.first = revision.second;
 	}
 }

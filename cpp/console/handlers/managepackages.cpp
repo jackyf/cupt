@@ -39,6 +39,7 @@ using std::endl;
 #include <cupt/system/worker.hpp>
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
+#include <cupt/versionstring.hpp>
 
 typedef Worker::Action WA;
 const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
@@ -258,27 +259,14 @@ static void processReinstallExpression(const Cache& cache,
 	{
 		fatal2(__("the package '%s' is not installed"), packageExpression);
 	}
-	const string& installedVersionString = installedVersion->versionString;
-
-	static const string reinstallVersionSuffix = "~installed";
-	auto reinstallVersionSuffixPosition = installedVersionString.size() - reinstallVersionSuffix.size();
-	if (installedVersionString.size() > reinstallVersionSuffix.size() &&
-			installedVersionString.compare(reinstallVersionSuffixPosition, reinstallVersionSuffix.size(), reinstallVersionSuffix) == 0)
+	const string& targetVersionString = versionstring::getOriginal(installedVersion->versionString);
+	auto targetVersion = package->getSpecificVersion(targetVersionString);
+	if (!targetVersion)
 	{
-		auto targetVersionString = installedVersionString.substr(0, reinstallVersionSuffixPosition);
-		auto targetVersion = package->getSpecificVersion(targetVersionString);
-		if (!targetVersion)
-		{
-			fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
-					packageExpression, targetVersionString);
-		}
-		resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
+		fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
+				packageExpression, targetVersionString);
 	}
-	else
-	{
-		fatal2i("the installed version '%s' of the package '%s' has not a reinstall version suffix '%s'",
-				installedVersionString, packageExpression, reinstallVersionSuffix);
-	}
+	resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
 }
 
 static void processPackageExpressions(const Config& config,

@@ -17,6 +17,7 @@
 **************************************************************************/
 #include <cupt/config.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/lock.hpp>
 #include <internal/common.hpp>
@@ -60,8 +61,8 @@ string WorkerBase::_get_archives_directory() const
 
 string WorkerBase::_get_archive_basename(const BinaryVersion* version)
 {
-	return version->packageName + '_' + version->versionString + '_' +
-			version->architecture + ".deb";
+	return version->packageName + '_' + versionstring::getOriginal(version->versionString)
+			+ '_' + version->architecture + ".deb";
 }
 
 void WorkerBase::_run_external_command(Logger::Subsystem subsystem,

@@ -124,24 +124,19 @@ const SourcePackage* Cache::getSourcePackage(const string& packageName) const
 
 ssize_t Cache::getPin(const Version* version) const
 {
-	auto getInstalledVersionString = [this, &version]()
+	auto getBinaryPackageFromVersion = [this, &version]() -> const BinaryPackage*
 	{
 		if (dynamic_cast< const BinaryVersion* >(version))
 		{
-			auto package = getBinaryPackage(version->packageName);
-			if (package)
-			{
-				auto installedVersion = package->getInstalledVersion();
-				if (installedVersion)
-				{
-					return installedVersion->versionString;
-				}
-			}
+			return getBinaryPackage(version->packageName);
 		}
-		return string();
+		else
+		{
+			return nullptr;
+		}
 	};
 
-	return __impl->getPin(version, getInstalledVersionString);
+	return __impl->getPin(version, getBinaryPackageFromVersion);
 }
 
 vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* package) const
@@ -150,28 +145,13 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* pac
 
 	auto versions = package->getVersions();
 
-	string installedVersionString;
-	bool ivsIsSet = false;
-	auto getInstalledVersionString = [&installedVersionString, &ivsIsSet, &package]()
+	auto getBinaryPackage = [&package]()
 	{
-		if (!ivsIsSet)
-		{
-			if (auto binaryPackage = dynamic_cast< const BinaryPackage* >(package))
-			{
-				auto installedVersion = binaryPackage->getInstalledVersion();
-				if (installedVersion)
-				{
-					installedVersionString = installedVersion->versionString;
-				}
-			}
-			ivsIsSet = true;
-		}
-		return installedVersionString;
+		return dynamic_cast< const BinaryPackage* >(package);
 	};
-
 	for (const auto& version: versions)
 	{
-		result.push_back(PinnedVersion { version, __impl->getPin(version, getInstalledVersionString) });
+		result.push_back(PinnedVersion { version, __impl->getPin(version, getBinaryPackage) });
 	}
 
 	auto sorter = [](const PinnedVersion& left, const PinnedVersion& right) -> bool

@@ -86,20 +86,17 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 
 					if (versionComparisonResult > 0)
 					{
-						if (supposedVersion->versionString + "~installed" == installedVersion->versionString)
-						{
-							action = Action::Reinstall;
-						}
-						else
-						{
-							action = Action::Upgrade;
-						}
+						action = Action::Upgrade;
 					}
 					else if (versionComparisonResult < 0)
 					{
 						action = Action::Downgrade;
 					}
 					else if (isImproperlyInstalled)
+					{
+						action = Action::Reinstall;
+					}
+					else if (supposedVersion->versionString != installedVersion->versionString)
 					{
 						action = Action::Reinstall;
 					}

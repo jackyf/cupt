@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2010-2012 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -22,6 +22,7 @@
 #include <cupt/cache/package.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binaryversion.hpp>
+#include <cupt/versionstring.hpp>
 
 namespace cupt {
 namespace cache {
@@ -58,6 +59,12 @@ vector< const Version* > Package::getVersions() const
 	return result;
 }
 
+static inline bool __is_installed(const Version* version)
+{
+	auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
+	return (binaryVersion && binaryVersion->isInstalled());
+}
+
 void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 {
 	if (!_is_architecture_appropriate(parsedVersion.get()))
@@ -68,57 +75,53 @@ void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 	// merging
 	try
 	{
-		const auto& parsedVersionString = parsedVersion->versionString;
-		auto foundItem = std::find_if(__parsed_versions.begin(), __parsed_versions.end(),
-				[&parsedVersionString](const unique_ptr< Version >& elem) -> bool
-				{
-					return (elem->versionString == parsedVersionString);
-				});
-
-		if (foundItem == __parsed_versions.end())
+		if (__is_installed(parsedVersion.get()))
 		{
-			// no such version before, just add it
+			// no way to know is this version the same as in repositories,
+			// until for example #667665 is implemented
+			parsedVersion->versionString += versionstring::idSuffixDelimiter;
+			parsedVersion->versionString += "installed";
 			__parsed_versions.push_back(std::move(parsedVersion));
 		}
 		else
 		{
-			// there is such version string
-			const auto& foundVersion = *foundItem;
+			const auto& parsedVersionString = parsedVersion->versionString;
 
-			auto binaryVersion = dynamic_cast< BinaryVersion* >(foundVersion.get());
-			if ((binaryVersion && binaryVersion->isInstalled()) || foundVersion->areHashesEqual(parsedVersion.get()))
+			bool clashed = false;
+			bool merged = false;
+			for (const auto& presentVersion: __parsed_versions)
 			{
-				/*
-				1)
-				this is installed version
-				as dpkg now doesn't provide hash sums, let's assume that
-				local version is the same that available from archive
-				2)
-				ok, this is the same version
-				*/
-
-				// so, adding new Version::Source info
-				foundVersion->sources.push_back(parsedVersion->sources[0]);
-
-				if (binaryVersion && binaryVersion->isInstalled())
+				if (!versionstring::sameOriginal(presentVersion->versionString, parsedVersionString))
 				{
-					BinaryVersion* binaryParsedVersion =
-							dynamic_cast< BinaryVersion* >(parsedVersion.get());
-					binaryVersion->file.hashSums = binaryParsedVersion->file.hashSums;
+					continue;
+				}
+				if (__is_installed(presentVersion.get()))
+				{
+					continue;
+				}
+
+				if (presentVersion->areHashesEqual(parsedVersion.get()))
+				{
+					// ok, this is the same version, so adding new Version::Source info
+					presentVersion->sources.push_back(parsedVersion->sources[0]);
+					merged = true;
+					break;
+				}
+				else
+				{
+					clashed = true; // err, no, this is different version :(
 				}
 			}
-			else
+
+			if (!merged)
 			{
-				// err, no, this is different version :(
-				vector< string > foundOrigins;
-				for (const auto& foundSource: foundVersion->sources)
+				if (clashed)
 				{
-					foundOrigins.emplace_back(foundSource.release->baseUri);
+					static size_t idCounter = 0;
+					parsedVersion->versionString += versionstring::idSuffixDelimiter;
+					parsedVersion->versionString += format2("dhs%zu", idCounter++);
 				}
-				warn2(__("discarding a duplicate version with different hash sums: package: '%s', "
-						"version: '%s', origin of discarded version: '%s', origins left: '%s'"),
-						parsedVersion->packageName, parsedVersion->versionString,
-						parsedVersion->sources[0].release->baseUri, join(", ", foundOrigins));
+				__parsed_versions.push_back(std::move(parsedVersion));
 			}
 		}
 	}

@@ -22,18 +22,13 @@
 namespace cupt {
 namespace cache {
 
-BinaryPackage::BinaryPackage(const string* binaryArchitecture, bool allowReinstall)
-	: Package(binaryArchitecture), __allow_reinstall(allowReinstall)
+BinaryPackage::BinaryPackage(const string* binaryArchitecture)
+	: Package(binaryArchitecture)
 {}
 
 unique_ptr< Version > BinaryPackage::_parse_version(const Version::InitializationParameters& initParams) const
 {
-	auto version = BinaryVersion::parseFromFile(initParams);
-	if (__allow_reinstall && version->isInstalled())
-	{
-		version->versionString += "~installed";
-	}
-	return unique_ptr< Version >(version);
+	return unique_ptr< Version >(BinaryVersion::parseFromFile(initParams));
 }
 
 bool BinaryPackage::_is_architecture_appropriate(const Version* version) const

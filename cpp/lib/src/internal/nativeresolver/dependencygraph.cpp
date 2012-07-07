@@ -25,6 +25,7 @@ using std::list;
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/sourcepackage.hpp>
 #include <cupt/cache/sourceversion.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
@@ -517,6 +518,24 @@ class DependencyGraph::FillHelper
 			if (!version && !__can_package_be_removed(packageName))
 			{
 				return false;
+			}
+
+			if (version)
+			{
+				for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName])
+				{
+					auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
+					if (!existingVersion) continue;
+					if (versionstring::sameOriginal(version->versionString, existingVersion->versionString))
+					{
+						if (std::equal(version->relations,
+									version->relations + BinaryVersion::RelationTypes::Count,
+									existingVersion->relations))
+						{
+							return false; // no reasons to allow this version dependency-wise
+						}
+					}
+				}
 			}
 
 			return true;

@@ -82,6 +82,7 @@ class CacheImpl
 	void processTranslationFiles(const IndexEntry&, const string&);
 	void processTranslationFile(const string& path, const string&);
 	vector< const BinaryVersion* > getSatisfyingVersions(const Relation&) const;
+	ssize_t computePin(const Version*, const BinaryPackage*) const;
  public:
 	shared_ptr< const Config > config;
 	unique_ptr< const string > binaryArchitecture;
@@ -104,7 +105,7 @@ class CacheImpl
 	void parseExtendedStates();
 	const BinaryPackage* getBinaryPackage(const string& packageName) const;
 	const SourcePackage* getSourcePackage(const string& packageName) const;
-	ssize_t getPin(const Version*, const std::function< string () >&) const;
+	ssize_t getPin(const Version*, const std::function< const BinaryPackage* () >&) const;
 	pair< string, string > getLocalizedDescriptions(const BinaryVersion*) const;
 	void processProvides(const string*, const char*, const char*);
 	vector< const BinaryVersion* > getSatisfyingVersions(const RelationExpression&) const;
