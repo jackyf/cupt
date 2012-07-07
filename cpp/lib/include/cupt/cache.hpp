@@ -76,10 +76,8 @@ class CUPT_API Cache
 	 * @param useSource whether to read source package metadata
 	 * @param useBinary whether to read binary package metadata
 	 * @param useInstalled whether to read dpkg metadata (installed binary packages)
-	 * @param packageNameGlobsToReinstall array of glob expressions, allow these packages to be re-installed
 	 */
-	Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled,
-			const vector< string >& packageNameGlobsToReinstall = vector< string >());
+	Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled);
 	/// destructor
 	virtual ~Cache();
 

@@ -25,7 +25,6 @@
 #include <cupt/system/state.hpp>
 
 #include <internal/cacheimpl.hpp>
-#include <internal/regex.hpp>
 #include <internal/cachefiles.hpp>
 #include <internal/filesystem.hpp>
 
@@ -33,17 +32,11 @@ namespace cupt {
 
 typedef internal::CacheImpl::PrePackageRecord PrePackageRecord;
 
-Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled,
-		const vector< string >& packageNameGlobsToReinstall)
+Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled)
 {
 	__impl = new internal::CacheImpl;
 	__impl->config = config;
 	__impl->binaryArchitecture.reset(new string(config->getString("apt::architecture")));
-
-	FORIT(it, packageNameGlobsToReinstall)
-	{
-		__impl->packageNameRegexesToReinstall.push_back(internal::globToRegex(*it));
-	}
 
 	{ // ugly hack to copy trusted keyring from APT whenever possible, see #647001
 		auto cuptKeyringPath = config->getString("gpgv::trustedkeyring");

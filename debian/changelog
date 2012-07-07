@@ -22,6 +22,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         public interfaces.
       - [API break] PinnedVersion: removed explicit constructor.
       - [API break] Removed deprecated methods and structures.
+      - [API break] Constructor: removed the argument
+        'packageNameGlobsToReinstall' as not needed anymore.
     - cache/package:
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash

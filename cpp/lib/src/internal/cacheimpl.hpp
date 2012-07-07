@@ -86,7 +86,6 @@ class CacheImpl
  public:
 	shared_ptr< const Config > config;
 	unique_ptr< const string > binaryArchitecture;
-	vector< shared_ptr< sregex > > packageNameRegexesToReinstall;
 	shared_ptr< const system::State > systemState;
 	vector< IndexEntry > indexEntries;
 	vector< shared_ptr< const ReleaseInfo > > sourceReleaseData;

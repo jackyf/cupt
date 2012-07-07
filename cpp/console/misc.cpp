@@ -364,7 +364,7 @@ shared_ptr< const Cache > Context::getCache(
 	{
 		try
 		{
-			__cache.reset(new Cache(__config, useSource, useBinary, useInstalled, packageNameGlobsToReinstall));
+			__cache.reset(new Cache(__config, useSource, useBinary, useInstalled));
 		}
 		catch (Exception&)
 		{

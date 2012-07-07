@@ -61,7 +61,6 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 
 Package* CacheImpl::newBinaryPackage() const
 {
-	// TODO: remove packageNameRegexesToReinstall
 	return new BinaryPackage(binaryArchitecture.get());
 }
 
