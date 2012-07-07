@@ -113,7 +113,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			bool found = false;
 			FORIT(sourceIt, version->sources)
 			{
-				const shared_ptr< const ReleaseInfo >& releaseInfo = sourceIt->release;
+				const ReleaseInfo* releaseInfo = sourceIt->release;
 				string releaseValue;
 				if (key == "Origin")
 				{

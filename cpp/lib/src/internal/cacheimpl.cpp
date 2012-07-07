@@ -87,8 +87,8 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 		FORIT(preRecordIt, preRecord)
 		{
 			Version::InitializationParameters versionInitParams;
-			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first;
-			versionInitParams.file = preRecordIt->releaseInfoAndFile->second;
+			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
+			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;
 			versionInitParams.packageName = packageName;
 			package->addEntry(versionInitParams);

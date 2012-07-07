@@ -632,7 +632,7 @@ int policy(Context& context, bool source)
 
 				FORIT(sourceIt, version->sources)
 				{
-					const shared_ptr< const ReleaseInfo > release = sourceIt->release;
+					const ReleaseInfo* release = sourceIt->release;
 					static const string spaces(8, ' ');
 					cout << spaces;
 					auto origin = release->baseUri;

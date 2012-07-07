@@ -377,7 +377,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 					matched = false; \
 					FORIT(sourceIt, version->sources) \
 					{ \
-						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
+						const ReleaseInfo* release = sourceIt->release; \
 						if (regex_search(expression, m, *regex)) \
 						{ \
 							matched = true; \

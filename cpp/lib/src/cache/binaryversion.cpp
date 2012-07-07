@@ -44,7 +44,7 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 		// go to starting byte of the entry
 		initParams.file->seek(initParams.offset);
 
-		internal::TagParser parser(initParams.file.get());
+		internal::TagParser parser(initParams.file);
 		internal::TagParser::StringRange tagName, tagValue;
 
 		while (parser.parseNextLine(tagName, tagValue))

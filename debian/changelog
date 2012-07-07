@@ -37,6 +37,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.
+      - [API break] Source, InitializationParameters: replaced shared_ptr's
+        with pointers.
     - system/resolver:
       - [API break] SuggestedPackage: new field 'automaticallyInstalledFlag',
         removed old field 'manuallySelected'.
