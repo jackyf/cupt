@@ -47,7 +47,7 @@ struct CUPT_API Version
 	/// standard initialization parameters
 	struct InitializationParameters
 	{
-		string packageName; ///< package name
+		const string* packageNamePtr;
 		File* file; ///< file to read from
 		uint32_t offset; ///< version record offset in @ref file
 		const ReleaseInfo* releaseInfo; ///< release info

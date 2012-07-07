@@ -90,7 +90,7 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
 			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;
-			versionInitParams.packageName = packageName;
+			versionInitParams.packageNamePtr = &packageName;
 			package->addEntry(versionInitParams);
 		}
 		preRecord.clear();

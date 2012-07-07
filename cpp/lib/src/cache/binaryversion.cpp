@@ -33,7 +33,7 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 	Source source;
 
 	v->essential = false;
-	v->packageName = initParams.packageName;
+	v->packageName = *initParams.packageNamePtr;
 	source.release = initParams.releaseInfo;
 
 	v->installedSize = 0;

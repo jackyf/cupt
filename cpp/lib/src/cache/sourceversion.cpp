@@ -35,7 +35,7 @@ SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParamet
 
 	Source source;
 
-	v->packageName = initParams.packageName;
+	v->packageName = *initParams.packageNamePtr;
 	source.release = initParams.releaseInfo;
 
 	v->priority = Version::Priorities::Extra; // default value if not specified

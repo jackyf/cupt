@@ -39,7 +39,7 @@ void Package::addEntry(const Version::InitializationParameters& initParams)
 	}
 	catch (Exception& e)
 	{
-		warn2(__("error while parsing a version for the package '%s'"), initParams.packageName);
+		warn2(__("error while parsing a version for the package '%s'"), *initParams.packageNamePtr);
 	}
 }
 
