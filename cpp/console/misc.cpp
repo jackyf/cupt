@@ -350,13 +350,11 @@ Context::Context()
 {}
 
 shared_ptr< const Cache > Context::getCache(
-		bool useSource, bool useBinary, bool useInstalled,
-		const vector< string >& packageNameGlobsToReinstall)
+		bool useSource, bool useBinary, bool useInstalled)
 {
 	bool needsRebuild =
 			!__cache ||
 			!__valid ||
-			!packageNameGlobsToReinstall.empty() ||
 			(useSource && !__used_source) ||
 			((useBinary != __used_binary || useInstalled != __used_installed) && (useBinary || useInstalled));
 

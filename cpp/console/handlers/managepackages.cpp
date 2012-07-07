@@ -1257,18 +1257,12 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	shared_ptr< const Cache > cache;
 	{
-		vector< string > packageNameGlobsToReinstall;
-		if (mode == ManagePackages::Reinstall)
-		{
-			packageNameGlobsToReinstall = packageExpressions;
-		}
-
 		// source packages are needed for for synchronizing source versions
 		bool buildSource = (mode == ManagePackages::BuildDepends ||
 				config->getString("cupt::resolver::synchronize-by-source-versions") != "none");
 
 		cout << __("Building the package cache... ") << endl;
-		cache = context.getCache(buildSource, true, true, packageNameGlobsToReinstall);
+		cache = context.getCache(buildSource, true, true);
 	}
 
 	cout << __("Initializing package resolver and worker... ") << endl;
