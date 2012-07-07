@@ -59,13 +59,13 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 			providesStringStart, providesStringEnd, callback);
 }
 
-Package* CacheImpl::newBinaryPackage(const string& /* packageName */) const
+Package* CacheImpl::newBinaryPackage() const
 {
 	// TODO: remove packageNameRegexesToReinstall
 	return new BinaryPackage(binaryArchitecture.get());
 }
 
-Package* CacheImpl::newSourcePackage(const string& /* packageName */) const
+Package* CacheImpl::newSourcePackage() const
 {
 	return new SourcePackage(binaryArchitecture.get());
 }
@@ -82,7 +82,7 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 		{
 			// there was no such package before, and an insertion occured
 			// so, we need to create the package
-			package.reset( (this->*packageBuilderMethod)(packageName) );
+			package.reset( (this->*packageBuilderMethod)() );
 		}
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)

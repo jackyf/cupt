@@ -69,8 +69,8 @@ class CacheImpl
 	list< File > translationFileStorage;
 	smatch* __smatch_ptr;
 
-	Package* newSourcePackage(const string&) const;
-	Package* newBinaryPackage(const string&) const;
+	Package* newSourcePackage() const;
+	Package* newBinaryPackage() const;
 	Package* preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
 			unordered_map< string, unique_ptr< Package > >&, const string&,
 			decltype(&CacheImpl::newBinaryPackage)) const;
