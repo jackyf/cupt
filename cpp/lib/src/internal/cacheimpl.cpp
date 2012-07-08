@@ -581,7 +581,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				continue;
 			}
 
-			auto& prePackageRecords = prePackagesStorage[packageName];
+			auto& prePackageRecords = prePackagesStorage[std::move(packageName)];
 			prePackageRecords.push_back(prePackageRecord);
 
 			auto persistentPackageNamePtr = (const string*)
