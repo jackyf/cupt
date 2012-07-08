@@ -52,6 +52,7 @@ class CacheImpl
  private:
 	typedef Cache::IndexEntry IndexEntry;
 	typedef Cache::ExtendedInfo ExtendedInfo;
+	typedef unordered_map< string, vector< PrePackageRecord > > PrePackageMap;
 	struct TranslationPosition
 	{
 		File* file;
@@ -90,8 +91,8 @@ class CacheImpl
 	vector< IndexEntry > indexEntries;
 	vector< shared_ptr< const ReleaseInfo > > sourceReleaseData;
 	vector< shared_ptr< const ReleaseInfo > > binaryReleaseData;
-	mutable unordered_map< string, vector< PrePackageRecord > > preSourcePackages;
-	mutable unordered_map< string, vector< PrePackageRecord > > preBinaryPackages;
+	mutable PrePackageMap preSourcePackages;
+	mutable PrePackageMap preBinaryPackages;
 	list< pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > > >
 			releaseInfoAndFileStorage;
 	ExtendedInfo extendedInfo;

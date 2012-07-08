@@ -525,8 +525,8 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		shared_ptr< const ReleaseInfo > releaseInfo, const string& alias)
 {
 	using std::make_pair;
-	auto prePackagesStorage = (category == IndexEntry::Binary ?
-			&preBinaryPackages : &preSourcePackages);
+	auto& prePackagesStorage = (category == IndexEntry::Binary ?
+			preBinaryPackages : preSourcePackages);
 
 	string openError;
 	shared_ptr< File > file(new File(path, "r", openError));
@@ -542,8 +542,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	try
 	{
-		pair< const string, vector< PrePackageRecord > > pairForInsertion;
-		string& packageName = const_cast< string& > (pairForInsertion.first);
+		string packageName;
 
 		while (true)
 		{
@@ -582,15 +581,17 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				continue;
 			}
 
-			auto it = prePackagesStorage->insert(pairForInsertion).first;
-			it->second.push_back(prePackageRecord);
+			auto& prePackageRecords = prePackagesStorage[packageName];
+			prePackageRecords.push_back(prePackageRecord);
 
+			auto persistentPackageNamePtr = (const string*)
+					((const char*)(&prePackageRecords) - offsetof(PrePackageMap::value_type, second));
 			while (getNextLine(), size > 1)
 			{
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
 				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
 				{
-					processProvides(&it->first, buf + providesAnchorLength, buf + size - 1);
+					processProvides(persistentPackageNamePtr, buf + providesAnchorLength, buf + size - 1);
 				}
 			}
 		}
