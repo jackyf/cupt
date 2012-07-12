@@ -75,7 +75,6 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 void TagParser::parseAdditionalLines(string& lines)
 {
 	// now let's see if there are any additional lines for the tag
-	lines.clear();
 	while (__input->rawGetLine(__buffer, __buffer_size), (__buffer_size > 1 && isblank(__buffer[0])))
 	{
 		lines.append(__buffer, __buffer_size);
