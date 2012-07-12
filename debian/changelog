@@ -1,6 +1,10 @@
 cupt (2.5.8~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - cache/binaryversion:
+      - 'parseFromFile': the field 'Description-md5' should be parsed together
+        with info-only fields even if Version::parseOthers is off.
+        (Closes: #681340)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 12 Jul 2012 15:14:02 +0300
 
