@@ -1,4 +1,4 @@
-cupt (2.5.8~) UNRELEASED; urgency=low
+cupt (2.5.8) unstable; urgency=low
 
   * lib:
     - cache/binaryversion:
@@ -6,7 +6,7 @@ cupt (2.5.8~) UNRELEASED; urgency=low
         with info-only fields even if Version::parseOthers is off.
         (Closes: #681340)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 12 Jul 2012 15:14:02 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 14 Jul 2012 13:55:39 +0300
 
 cupt (2.5.7) unstable; urgency=low
 
