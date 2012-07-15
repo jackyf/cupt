@@ -106,7 +106,7 @@ class CacheImpl
 	const BinaryPackage* getBinaryPackage(const string& packageName) const;
 	const SourcePackage* getSourcePackage(const string& packageName) const;
 	ssize_t getPin(const Version*, const std::function< const BinaryPackage* () >&) const;
-	pair< string, string > getLocalizedDescriptions(const BinaryVersion*) const;
+	string getLocalizedDescription(const BinaryVersion*) const;
 	void processProvides(const string*, const char*, const char*);
 	vector< const BinaryVersion* > getSatisfyingVersions(const RelationExpression&) const;
 };

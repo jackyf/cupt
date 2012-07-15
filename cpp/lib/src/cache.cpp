@@ -228,9 +228,9 @@ const Cache::ExtendedInfo& Cache::getExtendedInfo() const
 	return __impl->extendedInfo;
 }
 
-pair< string, string > Cache::getLocalizedDescriptions(const BinaryVersion* version) const
+string Cache::getLocalizedDescription(const BinaryVersion* version) const
 {
-	return __impl->getLocalizedDescriptions(version);
+	return __impl->getLocalizedDescription(version);
 }
 
 // static

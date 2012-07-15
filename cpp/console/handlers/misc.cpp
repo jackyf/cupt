@@ -181,26 +181,7 @@ int showBinaryVersions(Context& context)
 			p("MD5", version->file.hashSums[HashSums::MD5]);
 			p("SHA1", version->file.hashSums[HashSums::SHA1]);
 			p("SHA256", version->file.hashSums[HashSums::SHA256]);
-			{ // descriptions
-				string shortDescription;
-				string longDescription;
-				auto localizedDescriptionPair = cache->getLocalizedDescriptions(version);
-				if (!localizedDescriptionPair.first.empty())
-				{
-					shortDescription = localizedDescriptionPair.first;
-					longDescription = localizedDescriptionPair.second;
-				}
-				else
-				{
-					shortDescription = version->shortDescription;
-					longDescription = version->longDescription;
-				}
-				p(__("Description"), shortDescription);
-				if (!shortDescription.empty())
-				{
-					cout << longDescription;
-				}
-			}
+			p(__("Description"), cache->getLocalizedDescription(version));
 			p(__("Tags"), version->tags);
 			if (version->others)
 			{

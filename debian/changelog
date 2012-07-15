@@ -24,6 +24,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] Removed deprecated methods and structures.
       - [API break] Constructor: removed the argument
         'packageNameGlobsToReinstall' as not needed anymore.
+      - [API break] 'getLocalizedDescriptions' is replaced with
+        'getLocalizedDescription'.
     - cache/package:
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash
@@ -50,6 +52,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [ABI break] 'Action::Type' new enum value 'Reinstall'.
     - cache/binarypackage:
       - 'getInstalledVersion': significant speed-up.
+    - cache/binaryversion:
+      - [API break] Fields 'shortDescription' and 'longDescription' are
+        replaced with a new field 'description'.
   * debian:
     - control:
       - Bumped the library API version.

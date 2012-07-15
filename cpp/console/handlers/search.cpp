@@ -120,9 +120,7 @@ int search(Context& context)
 			{
 				bool matched = true;
 
-				auto descriptions = cache->getLocalizedDescriptions(v);
-				const string& shortDescription = descriptions.first.empty() ? v->shortDescription : descriptions.first;
-				const string& longDescription = descriptions.second.empty() ? v->longDescription : descriptions.second;
+				auto description = cache->getLocalizedDescription(v);
 
 				FORIT(regexIt, regexes)
 				{
@@ -131,20 +129,21 @@ int search(Context& context)
 					{
 						continue;
 					}
-					else
+					if (regex_search(description, m, regex))
 					{
-						if (regex_search(shortDescription, m, regex) || regex_search(longDescription, m, regex))
-						{
-							continue;
-						}
+						continue;
 					}
 					matched = false;
 					break;
 				}
 
-				if (matched && printedShortDescriptions.insert(shortDescription).second)
+				if (matched)
 				{
-					cout << packageName << " - " << shortDescription << endl;
+					auto shortDescription = description.substr(0, description.find('\n'));
+					if (printedShortDescriptions.insert(shortDescription).second)
+					{
+						cout << packageName << " - " << shortDescription << endl;
+					}
 				}
 			}
 		}

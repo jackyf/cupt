@@ -139,12 +139,11 @@ class CUPT_API Cache
 	/// gets extended info
 	const ExtendedInfo& getExtendedInfo() const;
 
-	/// gets localized short and long descriptions for the binary version
+	/// gets localized description for the binary version
 	/**
-	 * @return first pair element - short description, long pair element - long description;
-	 * if localized descriptions are not available, short description will be empty
+	 * @return localized description if available, version description otherwise
 	 */
-	pair< string, string > getLocalizedDescriptions(const BinaryVersion*) const;
+	string getLocalizedDescription(const BinaryVersion*) const;
 
 	/// @copydoc getPathOfReleaseList
 	static bool verifySignature(const shared_ptr< const Config >&, const string& path);

@@ -729,28 +729,26 @@ ssize_t CacheImpl::getPin(const Version* version,
 	return result;
 }
 
-pair< string, string > CacheImpl::getLocalizedDescriptions(const BinaryVersion* version) const
+string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 {
 	static const string descriptionHashFieldName = "Description-md5";
 
 	const string& sourceHash = (version->others && version->others->count(descriptionHashFieldName)) ?
 			version->others->find(descriptionHashFieldName)->second :
-			HashSums::getHashOfString(HashSums::MD5, version->shortDescription + "\n" + version->longDescription);
+			HashSums::getHashOfString(HashSums::MD5, version->description);
 
 	auto it = translations.find(sourceHash);
 	if (it != translations.end())
 	{
+		string localizedDescription;
+
 		const TranslationPosition& position = it->second;
-		string combinedDescription;
 		position.file->seek(position.offset);
-		position.file->getRecord(combinedDescription);
+		position.file->getRecord(localizedDescription);
 
-		auto firstNewLinePosition = combinedDescription.find('\n');
-
-		return make_pair(combinedDescription.substr(0, firstNewLinePosition),
-				combinedDescription.substr(firstNewLinePosition+1));
+		return localizedDescription;
 	}
-	return pair< string, string >();
+	return version->description;
 }
 
 void CacheImpl::parseExtendedStates()

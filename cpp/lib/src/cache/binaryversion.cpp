@@ -125,8 +125,9 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 				TAG(Maintainer, v->maintainer = tagValue;)
 				TAG(Description,
 				{
-					v->shortDescription = tagValue;
-					parser.parseAdditionalLines(v->longDescription);
+					v->description = tagValue;
+					v->description.append("\n");
+					parser.parseAdditionalLines(v->description);
 				};)
 				TAG(Tag, v->tags = tagValue;)
 				PARSE_OTHERS

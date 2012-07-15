@@ -45,8 +45,7 @@ struct CUPT_API BinaryVersion: public Version
 	bool essential; ///< has version 'essential' flag?
 	RelationLine relations[RelationTypes::Count]; ///< relations with other binary versions
 	vector< string > provides; ///< array of virtual package names
-	string shortDescription; ///< short description
-	string longDescription; ///< long description
+	string description;
 	string tags; ///< tags
 	FileRecord file; ///< Version::FileRecord
 
