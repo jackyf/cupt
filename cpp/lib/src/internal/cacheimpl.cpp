@@ -733,8 +733,13 @@ string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 {
 	static const string descriptionHashFieldName = "Description-md5";
 
-	const string& sourceHash = (version->others && version->others->count(descriptionHashFieldName)) ?
-			version->others->find(descriptionHashFieldName)->second :
+	map< string, string >::const_iterator descriptionHashIt;
+	if (version->others)
+	{
+		descriptionHashIt = version->others->find(descriptionHashFieldName);
+	}
+	const string& sourceHash = (version->others && descriptionHashIt != version->others->end()) ?
+			descriptionHashIt->second :
 			HashSums::getHashOfString(HashSums::MD5, version->description);
 
 	auto it = translations.find(sourceHash);
