@@ -56,6 +56,16 @@ cupt (2.6.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 
+cupt (2.5.8) unstable; urgency=low
+
+  * lib:
+    - cache/binaryversion:
+      - 'parseFromFile': the field 'Description-md5' should be parsed together
+        with info-only fields even if Version::parseOthers is off.
+        (Closes: #681340)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 14 Jul 2012 13:55:39 +0300
+
 cupt (2.5.7) unstable; urgency=low
 
   * lib:

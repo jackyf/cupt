@@ -58,7 +58,7 @@
 		})
 
 #define PARSE_OTHERS \
-			if (Version::parseOthers) \
+			if (Version::parseOthers || (Version::parseInfoOnly && tagName.equal(BUFFER_AND_SIZE("Description-md5")))) \
 			{ \
 				if (!tagName.equal(BUFFER_AND_SIZE("Package")) && !tagName.equal(BUFFER_AND_SIZE("Status"))) \
 				{ \
