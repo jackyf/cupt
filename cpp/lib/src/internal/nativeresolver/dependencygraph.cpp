@@ -827,6 +827,13 @@ class DependencyGraph::FillHelper
 	}
 };
 
+const shared_ptr< const PackageEntry >& getSharedPackageEntry(bool sticked)
+{
+	static const auto stickedOne = std::make_shared< const PackageEntry >(true);
+	static const auto notStickedOne = std::make_shared< const PackageEntry >(false);
+	return sticked ? stickedOne : notStickedOne;
+}
+
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
 		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
@@ -864,9 +871,7 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 		FORIT(it, initialPackages)
 		{
 			auto elementPtr = __fill_helper->getVertexPtr(it->first, it->second.version);
-			auto packageEntry = std::make_shared< PackageEntry >();
-			packageEntry->sticked = it->second.sticked;
-			result.push_back({ elementPtr, std::move(packageEntry) });
+			result.push_back({ elementPtr, getSharedPackageEntry(it->second.sticked) });
 		}
 	}
 	return result;

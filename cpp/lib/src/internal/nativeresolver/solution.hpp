@@ -65,7 +65,7 @@ struct PackageEntry
 	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
 
-	PackageEntry();
+	PackageEntry(bool sticked_ = false);
 	PackageEntry(PackageEntry&&) = default;
 	PackageEntry(const PackageEntry&) = default;
 

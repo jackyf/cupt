@@ -27,8 +27,8 @@ namespace internal {
 
 using std::make_pair;
 
-PackageEntry::PackageEntry()
-	: sticked(false), autoremoved(false)
+PackageEntry::PackageEntry(bool sticked_)
+	: sticked(sticked_), autoremoved(false)
 {}
 
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
