@@ -62,6 +62,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - Specify OUTPUT_NAME property for targets. As a side effect this
       obsoletes the custom cupt.bin install statement which prevented 'make
       install' from working for out-of-tree builds. (Closes: #683872)
+    - doc:
+      - Fixed 'make install' for out-of-tree builds.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 
