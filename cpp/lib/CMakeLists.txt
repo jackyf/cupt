@@ -2,7 +2,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOVERSION=${CUPT_SOVERSION} -fvisibili
 
 include_directories(include)
 include_directories(src)
-add_library(cupt3 SHARED
+add_library(libcupt3 SHARED
 	./src/internal/common.cpp
 	./src/internal/configparser.cpp
 	./src/internal/nativeresolver/impl.cpp
@@ -54,8 +54,8 @@ add_library(cupt3 SHARED
 	./src/hashsums.cpp
 	./src/versionstring.cpp
 )
-set_target_properties(cupt3 PROPERTIES VERSION 3 SOVERSION ${CUPT_SOVERSION})
-target_link_libraries(cupt3 dl rt gcrypt)
+set_target_properties(libcupt3 PROPERTIES VERSION 3 SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME libcupt3.so)
+target_link_libraries(libcupt3 dl rt gcrypt)
 
-install(TARGETS cupt3 DESTINATION lib)
+install(TARGETS libcupt3 DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
