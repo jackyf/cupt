@@ -5,6 +5,11 @@ cupt (2.5.9~) UNRELEASED; urgency=low
       - Constructor: accept single- or triple-slashes after the ':' character,
         which is the usual situation for 'file' or 'copy' schemes.
         Thanks to Alexey Ivanov for the report. (Closes: #683873)
+    - system/nativeresolver:
+      - Fixed 'internal error: conflicting elements' in the corner case when
+        one version of package A depends on a certain version which in turn
+        depends on a different version of package A, plus additional
+        circumstances apply.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 06 Aug 2012 20:03:23 +0300
 
