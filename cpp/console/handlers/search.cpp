@@ -28,6 +28,35 @@ using std::endl;
 #include "../misc.hpp"
 #include "../handlers.hpp"
 
+namespace {
+
+vector< sregex > generateSearchRegexes(const vector< string >& patterns, bool caseSensitive)
+{
+	int regexFlags = regex_constants::ECMAScript | regex_constants::optimize;
+	if (!caseSensitive)
+	{
+		regexFlags |= regex_constants::icase;
+	}
+
+	vector< sregex > result;
+
+	for (const string& pattern: patterns)
+	{
+		try
+		{
+			result.push_back(sregex::compile(pattern.c_str(), regex_constants::syntax_option_type(regexFlags)));
+		}
+		catch (regex_error&)
+		{
+			fatal2(__("invalid regular expression '%s'"), pattern);
+		}
+	};
+
+	return result;
+}
+
+}
+
 int search(Context& context)
 {
 	auto config = context.getConfig();
@@ -63,24 +92,7 @@ int search(Context& context)
 	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
 			/* installed */ true);
 
-	int regexFlags = regex_constants::ECMAScript | regex_constants::optimize;
-	if (variables.count("case-sensitive") == 0)
-	{
-		regexFlags |= regex_constants::icase;
-	}
-	vector< sregex > regexes;
-	std::for_each(patterns.begin(), patterns.end(), [&regexes, &regexFlags](const string& pattern)
-	{
-		try
-		{
-			regexes.push_back(sregex::compile(pattern.c_str(), regex_constants::syntax_option_type(regexFlags)));
-		}
-		catch (regex_error&)
-		{
-			fatal2(__("invalid regular expression '%s'"), pattern);
-		}
-	});
-
+	auto regexes = generateSearchRegexes(patterns, variables.count("case-sensitive"));
 	smatch m;
 
 	vector< string > packageNames = cache->getBinaryPackageNames();
