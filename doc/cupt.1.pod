@@ -109,6 +109,12 @@ search only in package names
 
 Corresponding configuration variable: L<apt::cache::namesonly>
 
+=item --fse,-f
+
+Turns on functional selector expression mode. In that mode, instead of
+specifying one or more regular expressions, exactly one FSE (see
+L<cupt_functionalselectors(7)>) should be specified.
+
 =back
 
 Examples:
@@ -120,6 +126,8 @@ C<cupt search --case-sensitive Vim>
 C<cupt search -n vim>
 
 C<cupt search "package manager">
+
+C<cupt search --fse 'Zbd(Pn(cupt))'>
 
 =item showauto
 

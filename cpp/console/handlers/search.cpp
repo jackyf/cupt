@@ -27,6 +27,7 @@ using std::endl;
 #include "../common.hpp"
 #include "../misc.hpp"
 #include "../handlers.hpp"
+#include "../functionselectors.hpp"
 
 namespace {
 
@@ -76,6 +77,11 @@ void searchInPackageNames(const vector< string >& packageNames,
 	}
 }
 
+inline string getShortDescription(const string& description)
+{
+	return description.substr(0, description.find('\n'));
+}
+
 void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< string >& packageNames,
 		const vector< sregex >& regexes, smatch& m)
 {
@@ -107,13 +113,30 @@ void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< strin
 
 			if (matched)
 			{
-				auto shortDescription = description.substr(0, description.find('\n'));
+				auto shortDescription = getShortDescription(description);
 				if (printedShortDescriptions.insert(shortDescription).second)
 				{
 					cout << packageName << " - " << shortDescription << endl;
 				}
 			}
 		}
+	}
+}
+
+void searchByFSE(const Cache& cache, vector< string >& patterns)
+{
+	string fse = patterns[0];
+
+	patterns.erase(patterns.begin());
+	checkNoExtraArguments(patterns);
+
+	auto&& foundVersions = selectBestVersions(cache, *parseFunctionQuery(fse, true));
+	for (const auto& version: foundVersions)
+	{
+		auto binaryVersion = static_cast< const BinaryVersion* >(version);
+		cout << format2("%s - %s\n",
+				binaryVersion->packageName,
+				getShortDescription(binaryVersion->description));
 	}
 }
 
@@ -124,15 +147,11 @@ int search(Context& context)
 	auto config = context.getConfig();
 	vector< string > patterns;
 
-	if (!shellMode)
-	{
-		BinaryVersion::parseRelations = false;
-	}
-
 	bpo::options_description options;
 	options.add_options()
 		("names-only,n", "")
 		("case-sensitive", "")
+		("fse,f", "")
 		("installed-only", "");
 
 	auto variables = parseOptions(context, options, patterns);
@@ -151,21 +170,34 @@ int search(Context& context)
 		fatal2(__("no search patterns specified"));
 	}
 
-	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
-			/* installed */ true);
-
-	auto regexes = generateSearchRegexes(patterns, variables.count("case-sensitive"));
-	smatch m;
-
-	vector< string > packageNames = cache->getBinaryPackageNames();
-	std::sort(packageNames.begin(), packageNames.end());
-	if (config->getBool("apt::cache::namesonly"))
+	if (variables.count("fse"))
 	{
-		searchInPackageNames(packageNames, regexes, m);
+		auto cache = context.getCache(true, true, true);
+		searchByFSE(*cache, patterns);
 	}
 	else
 	{
-		searchInPackageNamesAndDescriptions(*cache, packageNames, regexes, m);
+		if (!shellMode)
+		{
+			BinaryVersion::parseRelations = false;
+		}
+		auto cache = context.getCache(/* source */ false,
+				/* binary */ variables.count("installed-only") == 0,
+				/* installed */ true);
+
+		auto regexes = generateSearchRegexes(patterns, variables.count("case-sensitive"));
+		smatch m;
+
+		vector< string > packageNames = cache->getBinaryPackageNames();
+		std::sort(packageNames.begin(), packageNames.end());
+		if (config->getBool("apt::cache::namesonly"))
+		{
+			searchInPackageNames(packageNames, regexes, m);
+		}
+		else
+		{
+			searchInPackageNamesAndDescriptions(*cache, packageNames, regexes, m);
+		}
 	}
 
 	return 0;
