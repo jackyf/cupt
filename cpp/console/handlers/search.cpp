@@ -55,6 +55,27 @@ vector< sregex > generateSearchRegexes(const vector< string >& patterns, bool ca
 	return result;
 }
 
+void searchInPackageNames(const vector< string >& packageNames,
+		const vector< sregex >& regexes, smatch& m)
+{
+	for (const auto& packageName: packageNames)
+	{
+		bool matched = true;
+		for (const auto& regex: regexes)
+		{
+			if (!regex_search(packageName, m, regex))
+			{
+				matched = false;
+				break;
+			}
+		}
+		if (matched)
+		{
+			cout << packageName << endl;
+		}
+	}
+}
+
 }
 
 int search(Context& context)
@@ -99,24 +120,7 @@ int search(Context& context)
 	std::sort(packageNames.begin(), packageNames.end());
 	if (config->getBool("apt::cache::namesonly"))
 	{
-		// search only in package names
-		FORIT(packageNameIt, packageNames)
-		{
-			const string& packageName = *packageNameIt;
-			bool matched = true;
-			FORIT(regexIt, regexes)
-			{
-				if (!regex_search(packageName, m, *regexIt))
-				{
-					matched = false;
-					break;
-				}
-			}
-			if (matched)
-			{
-				cout << packageName << endl;
-			}
-		}
+		searchInPackageNames(packageNames, regexes, m);
 	}
 	else
 	{
