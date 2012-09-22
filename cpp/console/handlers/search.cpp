@@ -76,6 +76,47 @@ void searchInPackageNames(const vector< string >& packageNames,
 	}
 }
 
+void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< string >& packageNames,
+		const vector< sregex >& regexes, smatch& m)
+{
+	for (const string& packageName: packageNames)
+	{
+		auto package = cache.getBinaryPackage(packageName);
+		auto versions = package->getVersions();
+
+		set< string > printedShortDescriptions;
+		for (const auto& v: versions)
+		{
+			bool matched = true;
+
+			auto description = cache.getLocalizedDescription(v);
+
+			for (const sregex& regex: regexes)
+			{
+				if (regex_search(packageName, m, regex))
+				{
+					continue;
+				}
+				if (regex_search(description, m, regex))
+				{
+					continue;
+				}
+				matched = false;
+				break;
+			}
+
+			if (matched)
+			{
+				auto shortDescription = description.substr(0, description.find('\n'));
+				if (printedShortDescriptions.insert(shortDescription).second)
+				{
+					cout << packageName << " - " << shortDescription << endl;
+				}
+			}
+		}
+	}
+}
+
 }
 
 int search(Context& context)
@@ -124,45 +165,7 @@ int search(Context& context)
 	}
 	else
 	{
-		FORIT(packageNameIt, packageNames)
-		{
-			const string& packageName = *packageNameIt;
-
-			auto package = cache->getBinaryPackage(packageName);
-			auto versions = package->getVersions();
-
-			set< string > printedShortDescriptions;
-			for (const auto& v: versions)
-			{
-				bool matched = true;
-
-				auto description = cache->getLocalizedDescription(v);
-
-				FORIT(regexIt, regexes)
-				{
-					const sregex& regex = *regexIt;
-					if (regex_search(packageName, m, regex))
-					{
-						continue;
-					}
-					if (regex_search(description, m, regex))
-					{
-						continue;
-					}
-					matched = false;
-					break;
-				}
-
-				if (matched)
-				{
-					auto shortDescription = description.substr(0, description.find('\n'));
-					if (printedShortDescriptions.insert(shortDescription).second)
-					{
-						cout << packageName << " - " << shortDescription << endl;
-					}
-				}
-			}
-		}
+		searchInPackageNamesAndDescriptions(*cache, packageNames, regexes, m);
 	}
 
 	return 0;
