@@ -303,6 +303,7 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 	for (auto predecessorElementPtr: predecessorsOfOld)
 	{
 		if (isPresent(predecessorsOfNew, predecessorElementPtr)) continue;
+		if (isPresent(successorsOfNew, predecessorElementPtr)) continue;
 
 		if (reverseDependencyExists(predecessorElementPtr))
 		{

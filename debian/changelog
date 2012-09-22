@@ -67,6 +67,21 @@ cupt (2.6.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
 
+cupt (2.5.9) unstable; urgency=low
+
+  * lib:
+    - download/uri:
+      - Constructor: accept single- or triple-slashes after the ':' character,
+        which is the usual situation for 'file' or 'copy' schemes.
+        Thanks to Alexey Ivanov for the report. (Closes: #683873)
+    - system/nativeresolver:
+      - Fixed 'internal error: conflicting elements' in the corner case when
+        one version of package A depends on a certain version which in turn
+        depends on a different version of package A, plus additional
+        circumstances apply.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 15 Aug 2012 19:45:35 +0300
+
 cupt (2.5.8) unstable; urgency=low
 
   * lib:
