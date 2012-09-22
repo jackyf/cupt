@@ -929,6 +929,12 @@ Also, you can specify L</Binary package version expression> as
 L</Source package version expression>, then binary-to-source mapping
 will be performed.
 
+=head2 Functional selectors
+
+You can also use functional selectors (L<cupt_functionalselectors(7)>)
+whereever L</Binary package version expression> or L</Source package version
+expression> is expected.
+
 =head1 COMMON OPTIONS
 
 =over
@@ -1018,7 +1024,7 @@ discussion channel about Cupt is irc://irc.debian.org#cupt.
 
 =head1 SEE ALSO
 
-L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>, L<cupt.conf(5)>
+L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>, L<cupt.conf(5)>, L<cupt_functionalselectors(7)>
 
 =head1 AUTHOR
 

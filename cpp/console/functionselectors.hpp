@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,32 +15,29 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#ifndef CUPT_CONSOLE_FUNCTION_SELECTORS_SEEN
+#define CUPT_CONSOLE_FUNCTION_SELECTORS_SEEN
 
-#ifndef COMMON_SEEN
-#define COMMON_SEEN
+#include <memory>
+#include <list>
 
-#include <unordered_map>
-using std::unordered_map;
+#include "common.hpp"
 
-#include <cupt/common.hpp>
-#include <cupt/config.hpp>
-#include <cupt/cache.hpp>
-#include <cupt/cache/binaryversion.hpp>
+using std::unique_ptr;
+using std::list;
 
-using namespace cupt;
-using namespace cupt::cache;
-using namespace cupt::system;
-using namespace cupt::download;
+class FunctionSelector
+{
+ protected:
+	FunctionSelector();
+ public:
+	virtual ~FunctionSelector();
+};
 
-typedef unordered_map< string, set< string > > ReverseDependsIndexType;
+unique_ptr< FunctionSelector > parseFunctionQuery(const string&, bool);
 
-bool isPackageInstalled(const Cache&, const string& packageName);
-
-ReverseDependsIndexType computeReverseDependsIndex(
-		const Cache&, const vector< BinaryVersion::RelationTypes::Type >& relationTypes);
-void foreachReverseDependency(const Cache&, const ReverseDependsIndexType&,
-		const BinaryVersion* version, BinaryVersion::RelationTypes::Type relationType,
-		const std::function< void (const BinaryVersion*, const RelationExpression&) > callback);
+list< const Version* > selectAllVersions(const Cache&, const FunctionSelector&);
+list< const Version* > selectBestVersions(const Cache&, const FunctionSelector&);
 
 #endif
 

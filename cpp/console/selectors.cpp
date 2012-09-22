@@ -30,6 +30,7 @@
 
 #include "common.hpp"
 #include "selectors.hpp"
+#include "functionselectors.hpp"
 
 typedef std::function< vector< string > (const Cache&) > __package_names_fetcher;
 
@@ -277,11 +278,54 @@ static vector< string > getBinaryPackageNames(const Cache& cache)
 	return cache.getBinaryPackageNames();
 }
 
+bool isFunctionExpression(const string& expression)
+{
+	return (expression.find_first_of("()") != string::npos);
+}
+
+template < typename VersionType >
+static vector< const VersionType* > __convert_version_type(list< const Version* >&& source)
+{
+	vector< const VersionType* > result;
+	for (const auto& oldVersion: source)
+	{
+		auto version = dynamic_cast< const VersionType* >(oldVersion);
+		if (!version)
+		{
+			fatal2i("version has a wrong type");
+		}
+		result.push_back(version);
+	}
+
+	return result;
+}
+
+template < typename VersionType, typename QueryProcessor >
+vector< const VersionType* > __select_using_function(const Cache& cache,
+		const string& expression, QueryProcessor queryProcessor, bool binary, bool throwOnError)
+{
+	auto result = __convert_version_type< VersionType >(
+				queryProcessor(cache, *parseFunctionQuery(expression, binary)));
+	if (throwOnError && result.empty())
+	{
+		fatal2(__("the function expression '%s' selected nothing"), expression);
+	}
+	return std::move(result);
+}
+
 vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
-	return __select_versions_wildcarded< BinaryVersion >(cache, packageExpression,
-			selectBinaryVersion, getBinaryPackageNames, throwOnError);
+	if (isFunctionExpression(packageExpression))
+	{
+		return __select_using_function< BinaryVersion >(cache, packageExpression,
+				selectBestVersions, true, throwOnError);
+	}
+	else
+	{
+		return __select_versions_wildcarded< BinaryVersion >(cache, packageExpression,
+				selectBinaryVersion, getBinaryPackageNames, throwOnError);
+	}
 }
 
 static vector< string > getSourcePackageNames(const Cache& cache)
@@ -292,8 +336,16 @@ static vector< string > getSourcePackageNames(const Cache& cache)
 vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
-	return __select_versions_wildcarded< SourceVersion >(cache, packageExpression,
-			selectSourceVersion, getSourcePackageNames, throwOnError);
+	if (isFunctionExpression(packageExpression))
+	{
+		return __select_using_function< SourceVersion >(cache, packageExpression,
+				selectBestVersions, false, throwOnError);
+	}
+	else
+	{
+		return __select_versions_wildcarded< SourceVersion >(cache, packageExpression,
+				selectSourceVersion, getSourcePackageNames, throwOnError);
+	}
 }
 
 template < typename VersionType, typename PackageSelector >
@@ -321,14 +373,30 @@ static vector< const VersionType* > __select_all_versions_wildcarded(
 vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression)
 {
-	return __select_all_versions_wildcarded< BinaryVersion >(cache, packageExpression,
-			getBinaryPackageNames, getBinaryPackage);
+	if (isFunctionExpression(packageExpression))
+	{
+		return __select_using_function< BinaryVersion >(cache, packageExpression,
+				selectAllVersions, true, false);
+	}
+	else
+	{
+		return __select_all_versions_wildcarded< BinaryVersion >(cache, packageExpression,
+				getBinaryPackageNames, getBinaryPackage);
+	}
 }
 
 vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression)
 {
-	return __select_all_versions_wildcarded< SourceVersion >(cache, packageExpression,
-			getSourcePackageNames, getSourcePackage);
+	if (isFunctionExpression(packageExpression))
+	{
+		return __select_using_function< SourceVersion >(cache, packageExpression,
+				selectAllVersions, false, false);
+	}
+	else
+	{
+		return __select_all_versions_wildcarded< SourceVersion >(cache, packageExpression,
+				getSourcePackageNames, getSourcePackage);
+	}
 }
 

@@ -38,6 +38,7 @@ vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& ca
 		const string& packageExpression);
 vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression);
+bool isFunctionExpression(const string& expression);
 
 #endif
 

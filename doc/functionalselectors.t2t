@@ -1,0 +1,210 @@
+Functional selectors in Cupt
+Eugene V. Lyubimkin
+%%date
+
+%!preproc(man): '%man% ' ''
+%!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
+%!postproc(man): ' \(#\w+\)' ''
+%!options(html): --toc
+%!postproc(html): <HEAD> '<HEAD>\n<STYLE>body{margin:2em;}</STYLE>'
+%!postproc: '^the_end_of_the_config_area' ''
+%!preproc: '%regex_syntax\((.*?)\)%' "``\1(``//regex//``)``"
+
+the_end_of_the_config_area
+
+%man% = NAME =
+%man%
+%man% cupt_functionselectors - syntax of functional selectors in cupt package manager
+%man%
+
+= AIM =
+
+Functional selectors are used for fine-grained selection of versions. While
+standard mechanisms provide a way to select versions by package name, version
+string and/or distribution, functional selectors embed a microlanguage to
+select versions by their various properties.
+
+= SYNTAX =
+
+Functional selector expression (FSE) consists of **function name** and **list of arguments**:
+
+'//function_name//``(``//argument1//, //argument2//, ... //argumentN//``)``'
+
+Every argument can be a FSE itself or a string. Arguments are separated by the
+comma (``,``).  Additional space characters are allowed (and ignored by parser)
+anywhere except between the function name and the opening bracket.
+
+If the argument is a string and contains commas or round brackets, the argument
+should be quoted by placing the ``/`` character around it
+('``/``//argument//``/``').
+
+If the function receives no arguments, arguments bracked may be omitted:
+'//function_name//' is an equivalent to '//function_name//``()``'.
+
+The expression '//argument1// ``&`` //argument2// ``&`` ... ``&``
+//argumentN//' is a special short form for '``and(``//argument1//,
+//argument2//, ...
+//argumentN//``)``'. Similarly, the expression '//argument1// ``|``
+//argument2// ``|`` ... ``|`` //argumentN//'
+is a special short form for '``or(``//argument1//, //argument2//, ...
+//argumentN//``)``'
+
+= FUNCTION REFERENCE =
+
+== Logic functions ==
+
+Receive FSEs as arguments.
+
+|| Function name and arguments | Argument count | Returns versions which... |
+| ``and(``//fse1//, //fse2//, ... //fseN//``)`` | ≥ 1 | satisfy all of the //fse1//..//fseN// |
+| ``or(``//fse1//, //fse2//, ... //fseN//``)`` | ≥ 1 | satisfy any of the //fse1//..//fseN// |
+| ``not(``//fse//``)`` | 1 | don't satisfy //fse// |
+| ``xor(``//fse1//, //fse2//``)`` | 2 | satisfy either //fse1// or //fse2// but not both |
+
+== Package property functions ==
+
+|| Function name and arguments | Short alias | Returns versions which... | Notes |
+| ``package:name(``//regex//``)`` | ``Pn`` | package name matches //regex// |
+| ``package:installed()`` | ``Pi`` | belong to to installed packages | applies only to binary versions |
+| ``package:automatically-installed()`` | ``Pai`` | belong to automatically installed packages | applies only to binary versions |
+
+== Common version property functions ==
+
+Apply to source and binary versions.
+
+|| Function name and arguments | Short alias | Returns versions which... |
+| %regex_syntax(version)% | ``v`` | version string matches //regex// |
+| %regex_syntax(maintainer)% | ``m`` | maintainer matches //regex// |
+| %regex_syntax(priority)% | ``p`` | priority matches //regex// |
+| %regex_syntax(section)% | ``s`` | section matches //regex// |
+| ``trusted()`` | ``t`` | come from at least one release with a valid cryptographic signature |
+| ``field(``//field_name//, //regex//``)`` | ``f`` | value¹ of the non-standard (not recognized by Cupt) field //field_name// matches //regex// | 
+
+¹If the version does not contain a field //field_name//, its value is assumed being empty string; and it can still match if regular expression matches empty string.
+
+=== release-related functions ===
+
+Functions from this family receive one string argument (//regex//) and return
+versions which come from at least one release where //property// (see the
+following table) matches the regular expression //regex//.
+
+|| Function name | Short alias | //Property// |
+| ``release:archive`` | ``Ra`` | archive |
+| ``release:codename`` | ``Rn`` | codename |
+| ``release:component`` | ``Rc`` | component |
+| ``release:version`` | ``Rv`` | version |
+| ``release:vendor`` | ``Ro`` | vendor |
+| ``release:origin`` | ``Ru`` | origin (base URI) |
+
+== Binary version property functions ==
+
+Apply only to binary versions.
+
+|| Function name and arguments | Short alias | Returns versions which... |
+| %regex_syntax(source-package)% | ``sp`` | source package matches //regex// |
+| %regex_syntax(source-version)% | ``sv`` | source version string matches //regex// |
+| ``essential()`` | ``e`` | have 'Essential' flag set |
+| ``installed()`` | ``i`` | are installed in the system |
+| %regex_syntax(description)% | ``d`` | description matches //regex// |
+| %regex_syntax(provides)% | ``o`` | provides at least one virtual package which matches //regex// |
+
+== Source version property functions ==
+
+Apply only to source versions.
+
+|| Function name and arguments | Short alias | Returns versions which... |
+| %regex_syntax(uploaders)% | ``u`` | have at least one uploader which matches //regex// |
+
+== Binary relation functions ==
+
+Apply only to binary versions.
+
+=== forward dependencies ===
+
+Functions from this family receive one FSE-argument (//fse//) and return all versions
+which satisfy the dependency of type //relation type// for //fse// (see the following table).
+
+|| Function name | Short alias | //Relation type// |
+| ``pre-depends`` | ``Ypd`` | Pre-Depends |
+| ``depends`` | ``Yd`` | Depends |
+| ``recommends`` | ``Yr`` | Recommends |
+| ``suggests`` | ``Ys`` | Suggests |
+| ``enhances`` | ``Ye`` | Enhances |
+| ``conflicts`` | ``Yc`` | Conflicts |
+| ``breaks`` | ``Yb`` | Breaks |
+| ``replaces`` | ``Yrp`` | Replaces |
+
+=== reverse dependencies ===
+
+Functions from this family receive one FSE-argument (//fse//) and return all
+versions for which at least one version from //fse// satisfies the dependency
+of type //relation type// (see the following table).
+
+|| Function name | Short alias | //Relation type// |
+| ``reverse-pre-depends`` | ``YRpd`` | Pre-Depends |
+| ``reverse-depends`` | ``YRd`` | Depends |
+| ``reverse-recommends`` | ``YRr`` | Recommends |
+| ``reverse-suggests`` | ``YRs`` | Suggests |
+| ``reverse-enhances`` | ``YRe`` | Enhances |
+| ``reverse-conflicts`` | ``YRc`` | Conflicts |
+| ``reverse-breaks`` | ``YRb`` | Breaks |
+| ``reverse-replaces`` | ``YRrp`` | Replaces |
+
+== Source relation functions ==
+
+Apply only to source versions and return binary versions.
+
+Functions from this family receive one FSE-argument (//fse//) and return all
+versions which satisfy the build-time dependency of type //relation type// for
+//fse// (see the following table).
+
+|| Function name | Short alias | //Relation type// |
+| ``build-depends`` | ``Zbd`` | Build-Depends |
+| ``build-depends-indep`` | ``Zbdi`` | Build-Depends-Indep |
+| ``build-conflicts`` | ``Zbc`` | Build-Conflicts |
+| ``build-conflicts-indep`` | ``Zbci`` | Build-Conflicts-Indep |
+
+== Metafunctions ==
+
+=== defining functions ===
+
+The function **``with``** defines a user function with no parameters
+which can be used as FSE-argument in the subexpression.
+
+Syntax:
+
+``with(``//function_name//, //function_expression//, //subexpression//``)``
+
+|| Argument | Meaning |
+| //function_name// | user-defined function name, must start with an underscore (``_``) |
+| //function_expression// | FSE, function value |
+| //subexpression// | FSE which the defined function can be used in |
+
+This function returns the value of //subexpression//.
+
+=== recursing ===
+
+The function **``recursive``** defines a recursive transformation FSE.
+
+Syntax:
+
+``recursive(``//subresult_function_name//, //initial_subresult//, //iterating_expression//``)``
+
+|| Argument | Meaning |
+| //subresult_function_name// | user-defined function name, must start with an underscore (``_``) |
+| //initial_subresult// | FSE, initial value of //subresult_function_name// |
+| //subexpression// | FSE to compute on each recurse iteration, which //subresult_function_name// to be used in |
+
+The function works as follows:
+
++ //subresult_function_name// defined as //initial_subresult//
++ the value of //iterating_expression// is computed
++ if this value is equal to //subresult_function_name()// its returned as function result 
++ //subresult_function_name// redefined as ``or(``//subresult_function_name//, //iterating_expression//``)``
++ go to step 2
+
+
+== Miscellaneous ==
+
+|| Function name and arguments | Value |
+| ``best(``//fse//``)`` | filters out those versions from //fse// for which there are another version of the same package and higher pin |

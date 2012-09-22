@@ -20,16 +20,23 @@ add_custom_command(
 	VERBATIM
 )
 
-set(TUTORIAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/tutorial.t2t")
-add_custom_command(
-	MAIN_DEPENDENCY ${TUTORIAL_SOURCE}
-	OUTPUT tutorial-stamp
+MACRO(CUPT_PROCESS_T2T)
+	FOREACH(_name ${ARGN})
+		set(T2T_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/${_name}.t2t")
+		add_custom_command(
+			MAIN_DEPENDENCY ${T2T_SOURCE}
+			OUTPUT ${_name}-stamp
 
-	COMMAND txt2tags ARGS -t html -o tutorial.html ${TUTORIAL_SOURCE}
-	COMMAND txt2tags ARGS -t man -o cupt_tutorial.7 ${TUTORIAL_SOURCE}
-	COMMAND touch tutorial-stamp
-)
-add_custom_target(doc ALL DEPENDS doxygen-stamp tutorial-stamp)
+			COMMAND txt2tags ARGS -t html -o ${_name}.html ${T2T_SOURCE}
+			COMMAND txt2tags ARGS -t man -o cupt_${_name}.7 ${T2T_SOURCE}
+			COMMAND touch ${_name}-stamp
+		)
+	ENDFOREACH(_name)
+ENDMACRO(CUPT_PROCESS_T2T)
+
+CUPT_PROCESS_T2T(tutorial functionalselectors)
+
+add_custom_target(doc ALL DEPENDS doxygen-stamp tutorial-stamp functionalselectors-stamp)
 
 install(DIRECTORY examples DESTINATION share/doc/lib)
 install(DIRECTORY ${ODIR}/reference/html DESTINATION share/doc/lib)
