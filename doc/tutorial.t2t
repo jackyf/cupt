@@ -1453,7 +1453,7 @@ So, the process of building binary packages out of source one may be, taking
 The last line will remove all unneeded anymore packages (given auto-removal is
 turned on), including those installed by ``build-dep``.
 
-=== selecting source package versions ===
+=== selecting source package versions ===[selecting_source_package_versions]
 
 You can select source package versions in two ways:
 
@@ -1711,6 +1711,146 @@ Finally, if you want to disable the logging entirely, set the option
 ``cupt::worker::log`` to ``no``.
 
 = ADVANCED USAGE =
+
+== Functional selectors ==
+
+**Functional selectors** is a extended syntax for selecting binary or source
+versions by their properties or relations. It's available starting with Cupt 2.6.
+
+It can be used whereever
+[binary package version expression #selecting_binary_package_versions] and
+[source package version expression #selecting_source_package_versions] can be
+used. It addition, it can be used as a parameter to ``search --fse``.
+
+The full syntax and function reference can be found in
+//cupt_functionalselectors(7)//.
+
+Examples of functional selector expressions (FSE):
+
+- ``essential()``
+
+All essential versions (those which have ``Essential: yes``).
+
+In the command line it will be
+
+``cupt show 'essential()'``
+
+or
+
+``cupt search --fse 'essential()'``
+
+- ``e()``
+
+The same. ``e`` is a shortcut for ``essential``.
+
+- ``package:name(.*req.*)``
+
+All versions which package name contains the substring ``req``.
+
+- ``Pn(.*req.*)``
+
+Same. ``Pn`` is a shortcut for ``package:name``.
+
+- ``and(Pn(b.*), e())``
+
+All versions which are essential and which package name starts with a letter
+``b``.
+
+- ``and(Pn(b.*), e)``
+
+Same. In subexpressions ``()`` can be omitted for functions with no parameters.
+
+- ``Pn(b.*) & e()``
+
+Same. ``x & y & z`` is a special shortcut syntax for ``and(x, y, z)``.
+
+- ``or(e, provides(vim))``
+
+Versions which are essential or provide ``vim`` virtual package.
+
+- ``e() | provides(vim)``
+
+Same. ``x | y | z`` is a special shortcut syntax for ``or(x, y, z)``.
+
+- ``xor(Pn(vim.*), provides(vim))``
+
+Versions, which either have a package name which starts with ``vim`` or provide
+``vim`` virtual package, but not both.
+
+- ``not(Pn(vim-nox)) & provides(vim)``
+
+Versions which provide ``vim`` virtual package, excluding the package
+``vim-nox``.
+
+- ``installed() & priority(extra)``
+
+Installed versions of priority ``extra``.
+
+- ``maintainer(.*lists.alioth.debian.org.*) & priority(required)``
+
+Versions of priority ``required`` and which maintainer email address is a
+mailing list hosted on the Alioth service.
+
+- ``field(Python-Version, .*2\.3.*)``
+
+Versions which have a non-standard field ``Python-Version`` with a substring
+``2.3`` somewhere in the value.
+
+- ``Pn(.*python.*) & section(utils)``
+
+Versions from ``utils`` section having ``python`` somewhere in the package
+name.
+
+- ``package:installed() & release:component(non-free)``
+
+All versions of installed packages which come from ``non-free`` release
+component.
+
+- ``uploaders(.*gmail\.com>)``
+
+All source versions where at least one uploader has a Gmail mail address.
+
+- ``recommends(installed() & e)``
+
+All packages which are recommended by installed essential packages.
+
+- ``and( Ys(Pn(xfce4.*))|Ye(Pn(xfce4.*)), not(Pn(xfce4.*)) )``
+
+All packages which are Suggests (``Ys``) or Enhances (``Ye``) of any package
+which name starts with ``xfce4``, excluding ``xfce4...`` packages themselves.
+
+- ``with(_x, Pn(xfce4.*), and( Ys(_x)|Ye(_x), not(_x)) )``
+
+Same.
+
+- ``with(_x, Pn(grep), reverse-depends(_x) | reverse-recommends(_x))``
+
+All versions which depend on or recommend ``grep``.
+
+- ``build-depends(Pn(grep))``
+
+Build-dependencies of the all available versions of the source package ``grep``.
+
+- ``recursive(_r, Pn(cupt)&i, and( Yd(_r)|Yr(_r), not(Pn(.*downloadmethod.*))) )``
+
+All direct and indirect depended on and recommended packages (excluding those
+which have ``downloadmethod`` in the package name from the recursive chain) of
+the installed version of ``cupt`` package.
+
+For complex FSEs like this it, the multiline no-shortcut equivalent might be preferred:
+
+```
+#!/bin/sh
+cupt search --fse '
+	recursive(_r, 
+		package:name(cupt) & installed(), 
+		and(
+			depends(_r) | recommends(_r), 
+			not( package:name(.*downloadmethod.*) ) 
+		)
+	)'
+```
+
 
 == System snapshots ==[system_snapshots]
 
