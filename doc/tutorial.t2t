@@ -3,6 +3,8 @@ Eugene V. Lyubimkin
 %%date
 
 %!preproc(man): '%man% ' ''
+%!preproc(man): '(``.*?``)' '**\1**'
+%!preproc(man): '^``` (.*)$' '**``\1``**'
 %!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
 %!postproc(man): ' \(#\w+\)' ''
 %!options(html): --toc
