@@ -79,7 +79,7 @@ Out of existing APT infrastructure, Cupt uses (and shares):
 
 - remote repositories and //sources.list(5)//
 
-- .deb archives' cache
+- ".deb" archives' cache
 
 - configuration (//apt.conf(5)//)
 
