@@ -31,8 +31,9 @@ Functional selector expression (FSE) consists of **function name** and **list of
 '//function_name//``(``//argument1//, //argument2//, ... //argumentN//``)``'
 
 Every argument can be a FSE itself or a string. Arguments are separated by the
-comma (``,``).  Additional space characters are allowed (and ignored by parser)
-anywhere except between the function name and the opening bracket.
+comma (``,``).  Additional whitespace characters (space, tab, newline) are
+allowed (and ignored by parser) anywhere except between the function name and
+the opening bracket.
 
 If the argument is a string and contains commas or round brackets, the argument
 should be quoted by placing the ``/`` character around it

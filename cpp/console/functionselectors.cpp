@@ -925,7 +925,7 @@ vector< string > split(const string& input, const char delimiter = ',')
 
 void trim(string& s)
 {
-	const char* trimmedCharacters = " \n";
+	const char* trimmedCharacters = " \t\n";
 	if (s.size() > 0)
 	{
 		auto firstValuablePosition = s.find_first_not_of(trimmedCharacters);
