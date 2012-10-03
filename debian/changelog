@@ -61,6 +61,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.
+    - man/cupt.1:
+      - Fixed the typo: suffix -> prefix in the 'pkgnames' command.
+        (Closes: #689518)
   * debian:
     - control:
       - Bumped the library API version.

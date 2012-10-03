@@ -260,9 +260,9 @@ C<cupt policysrc libpqxx libpqxx3>
 
 =item pkgnames
 
-prints package names that start with a supplied suffix
+prints package names that start with a supplied prefix
 
-If no suffix is given, prints all package names
+If no prefix is given, prints all package names
 
 Examples:
 
