@@ -54,7 +54,7 @@ add_library(libcupt3 SHARED
 	./src/hashsums.cpp
 	./src/versionstring.cpp
 )
-set_target_properties(libcupt3 PROPERTIES VERSION 3 SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME libcupt3.so)
+set_target_properties(libcupt3 PROPERTIES VERSION 3 SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
 target_link_libraries(libcupt3 dl rt gcrypt)
 
 install(TARGETS libcupt3 DESTINATION lib)
