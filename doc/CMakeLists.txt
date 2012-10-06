@@ -10,6 +10,7 @@ set(ODIR "${CMAKE_CURRENT_BINARY_DIR}")
 set(DOXYGEN_OUTPUT_DIRECTORY "${ODIR}/reference")
 add_custom_command(
 	OUTPUT doxygen-stamp
+	MAIN_DEPENDENCY "reference/Doxyfile"
 	DEPENDS libcupt3
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/reference"
 
