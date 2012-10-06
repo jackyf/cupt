@@ -25,7 +25,6 @@
 #include <cupt/system/state.hpp>
 
 #include <internal/cacheimpl.hpp>
-#include <internal/cachefiles.hpp>
 #include <internal/filesystem.hpp>
 
 namespace cupt {
@@ -231,12 +230,6 @@ const Cache::ExtendedInfo& Cache::getExtendedInfo() const
 string Cache::getLocalizedDescription(const BinaryVersion* version) const
 {
 	return __impl->getLocalizedDescription(version);
-}
-
-// static
-bool Cache::verifySignature(const shared_ptr< const Config >& config, const string& path)
-{
-	return internal::cachefiles::verifySignature(*config, path, path);
 }
 
 string Cache::getPathOfCopyright(const BinaryVersion* version)

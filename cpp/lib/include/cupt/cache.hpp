@@ -145,8 +145,6 @@ class CUPT_API Cache
 	 */
 	string getLocalizedDescription(const BinaryVersion*) const;
 
-	/// @copydoc getPathOfReleaseList
-	static bool verifySignature(const shared_ptr< const Config >&, const string& path);
 	/// gets a supposed system path of package copyright file for certain binary version
 	/**
 	 * You must not assume that the file actually exists even if installed
