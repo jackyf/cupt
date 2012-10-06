@@ -38,8 +38,6 @@ class CUPT_API BinaryPackage: public Package
 	/// constructor
 	/**
 	 * @param binaryArchitecture system binary architecture
-	 * @param allowReinstall allow reinstalling installed version of this package,
-	 * i.e. mangle the version string of installed version
 	 */
 	BinaryPackage(const string* binaryArchitecture);
 	/// gets list of versions
