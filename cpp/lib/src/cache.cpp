@@ -135,13 +135,11 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* pac
 {
 	vector< Cache::PinnedVersion > result;
 
-	auto versions = package->getVersions();
-
 	auto getBinaryPackage = [&package]()
 	{
 		return dynamic_cast< const BinaryPackage* >(package);
 	};
-	for (const auto& version: versions)
+	for (const auto& version: *package)
 	{
 		result.push_back(PinnedVersion { version, __impl->getPin(version, getBinaryPackage) });
 	}
