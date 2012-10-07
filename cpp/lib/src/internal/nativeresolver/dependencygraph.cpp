@@ -432,12 +432,11 @@ vector< const BinaryVersion* > __get_versions_by_source_version_string(const Cac
 	vector< const BinaryVersion* > result;
 	if (auto package = cache.getBinaryPackage(packageName))
 	{
-		auto versions = package->getVersions();
-		FORIT(versionIt, versions)
+		for (auto version: *package)
 		{
-			if ((*versionIt)->sourceVersionString == sourceVersionString)
+			if (version->sourceVersionString == sourceVersionString)
 			{
-				result.push_back(*versionIt);
+				result.push_back(version);
 			}
 		}
 	}
