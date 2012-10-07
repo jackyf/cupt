@@ -88,10 +88,9 @@ void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< strin
 	for (const string& packageName: packageNames)
 	{
 		auto package = cache.getBinaryPackage(packageName);
-		auto versions = package->getVersions();
 
 		set< string > printedShortDescriptions;
-		for (const auto& v: versions)
+		for (const auto& v: *package)
 		{
 			bool matched = true;
 
