@@ -103,7 +103,7 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 }
 
 vector< const BinaryVersion* >
-CacheImpl::getSatisfyingVersions(const Relation& relation) const
+CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 {
 	vector< const BinaryVersion* > result;
 
@@ -819,21 +819,9 @@ void CacheImpl::parseExtendedStates()
 }
 
 vector< const BinaryVersion* >
-CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) const
+CacheImpl::getSatisfyingVersionsNonCached(const RelationExpression& relationExpression) const
 {
-	string memoizeKey;
-	if (Cache::memoize)
-	{
-		// caching results
-		memoizeKey = relationExpression.getHashString();
-		auto it = getSatisfyingVersionsCache.find(memoizeKey);
-		if (it != getSatisfyingVersionsCache.end())
-		{
-			return it->second;
-		}
-	}
-
-	auto result = getSatisfyingVersions(relationExpression[0]);
+	auto result = getSatisfyingVersionsNonCached(relationExpression[0]);
 
 	// now, if alternatives (OR groups) are present, we should add them too,
 	// without duplicates, but without sorting to not change the order, specified
@@ -841,7 +829,7 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 	for (auto relationIt = relationExpression.begin() + 1;
 		relationIt != relationExpression.end(); ++relationIt)
 	{
-		auto source = getSatisfyingVersions(*relationIt);
+		auto source = getSatisfyingVersionsNonCached(*relationIt);
 		for (const auto& version: source)
 		{
 			if (std::find(result.begin(), result.end(), version) == result.end())
@@ -851,13 +839,32 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 		}
 	}
 
+	return result;
+}
+
+vector< const BinaryVersion* >
+CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) const
+{
 	if (Cache::memoize)
 	{
-		getSatisfyingVersionsCache.insert(
-				pair< const string, decltype(result) >(std::move(memoizeKey), result));
+		// caching results
+		auto key = relationExpression.getHashString();
+		auto it = getSatisfyingVersionsCache.find(key);
+		if (it != getSatisfyingVersionsCache.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			auto& result = getSatisfyingVersionsCache[std::move(key)];
+			result = getSatisfyingVersionsNonCached(relationExpression);
+			return result;
+		}
 	}
-
-	return result;
+	else
+	{
+		return getSatisfyingVersionsNonCached(relationExpression);
+	}
 }
 
 }

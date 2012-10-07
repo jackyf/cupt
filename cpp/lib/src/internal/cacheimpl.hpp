@@ -82,7 +82,8 @@ class CacheImpl
 			shared_ptr< const ReleaseInfo >, const string&);
 	void processTranslationFiles(const IndexEntry&, const string&);
 	void processTranslationFile(const string& path, const string&);
-	vector< const BinaryVersion* > getSatisfyingVersions(const Relation&) const;
+	vector< const BinaryVersion* > getSatisfyingVersionsNonCached(const Relation&) const;
+	vector< const BinaryVersion* > getSatisfyingVersionsNonCached(const RelationExpression&) const;
 	ssize_t computePin(const Version*, const BinaryPackage*) const;
  public:
 	shared_ptr< const Config > config;
