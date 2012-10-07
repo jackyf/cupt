@@ -26,7 +26,7 @@ namespace cupt {
 namespace internal {
 
 template< typename VersionType >
-class BasePackageIterator: public std::iterator< std::bidirectional_iterator_tag, const VersionType* >
+class CUPT_API BasePackageIterator: public std::iterator< std::bidirectional_iterator_tag, const VersionType* >
 {
 	friend class cache::Package;
 	friend class cache::BinaryPackage;
