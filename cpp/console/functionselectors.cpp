@@ -727,7 +727,7 @@ class DependencyFS: public TransformFS
 class ReverseDependencyFS: public TransformFS
 {
 	BRT::Type __relation_type;
-	mutable unordered_map< string, set< string > > __reverse_index;
+	mutable ReverseDependsIndexType __reverse_index;
  public:
 	ReverseDependencyFS(BRT::Type relationType, const Arguments& arguments)
 		: TransformFS(true, arguments), __relation_type(relationType)

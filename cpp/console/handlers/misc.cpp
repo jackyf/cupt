@@ -353,7 +353,7 @@ int showRelations(Context& context, bool reverse)
 	set< const BinaryVersion* > processedVersions;
 
 	// used only by rdepends
-	unordered_map< string, set< string > > reverseDependsIndex;
+	ReverseDependsIndexType reverseDependsIndex;
 	if (reverse)
 	{
 		reverseDependsIndex = computeReverseDependsIndex(*cache, relationGroups);
