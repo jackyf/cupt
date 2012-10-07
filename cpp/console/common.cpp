@@ -50,7 +50,7 @@ ReverseDependsIndexType computeReverseDependsIndex(const Cache& cache,
 						const string& satisfyingPackageName = satisfyingVersion->packageName;
 						if (usedKeys.insert(satisfyingPackageName).second)
 						{
-							reverseDependsIndex[satisfyingPackageName].push_back(packageName);
+							reverseDependsIndex[satisfyingPackageName].push_back(package);
 						}
 					}
 				}
@@ -64,13 +64,12 @@ void foreachReverseDependency(const Cache& cache, const ReverseDependsIndexType&
 		const BinaryVersion* version, BRT::Type relationType,
 		const std::function< void (const BinaryVersion*, const RelationExpression&) > callback)
 {
-	auto packageCandidateNamesIt = index.find(version->packageName);
-	if (packageCandidateNamesIt != index.end())
+	auto packageCandidatesIt = index.find(version->packageName);
+	if (packageCandidatesIt != index.end())
 	{
-		const auto& packageCandidateNames = packageCandidateNamesIt->second;
-		for (const string& packageCandidateName: packageCandidateNames)
+		const auto& packageCandidates = packageCandidatesIt->second;
+		for (auto packageCandidate: packageCandidates)
 		{
-			auto packageCandidate = cache.getBinaryPackage(packageCandidateName);
 			auto candidateVersions = packageCandidate->getVersions();
 
 			for (const auto& candidateVersion: candidateVersions)

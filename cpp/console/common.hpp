@@ -34,7 +34,7 @@ using namespace cupt::cache;
 using namespace cupt::system;
 using namespace cupt::download;
 
-typedef unordered_map< string, list< string > > ReverseDependsIndexType;
+typedef unordered_map< string, list< const BinaryPackage* > > ReverseDependsIndexType;
 
 bool isPackageInstalled(const Cache&, const string& packageName);
 
