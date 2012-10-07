@@ -852,10 +852,9 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 				{
 					const string& packageName = it->first;
 					auto package = __cache.getBinaryPackage(packageName);
-					auto versions = package->getVersions();
-					FORIT(versionIt, versions)
+					for (auto version: *package)
 					{
-						__fill_helper->getVertexPtr(*versionIt);
+						__fill_helper->getVertexPtr(version);
 					}
 
 					__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
