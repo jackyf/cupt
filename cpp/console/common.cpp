@@ -36,8 +36,7 @@ ReverseDependsIndexType computeReverseDependsIndex(const Cache& cache,
 	for (const string& packageName: cache.getBinaryPackageNames())
 	{
 		auto package = cache.getBinaryPackage(packageName);
-		auto versions = package->getVersions();
-		for (const auto& version: versions)
+		for (const auto& version: *package)
 		{
 			for (auto relationGroup: relationTypes)
 			{
