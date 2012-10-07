@@ -145,6 +145,16 @@ const Version* Package::getSpecificVersion(const string& versionString) const
 	return nullptr;
 }
 
+auto Package::begin() const -> iterator
+{
+	return iterator(_get_versions().begin());
+}
+
+auto Package::end() const -> iterator
+{
+	return iterator(_get_versions().end());
+}
+
 Package::~Package()
 {}
 

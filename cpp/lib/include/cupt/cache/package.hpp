@@ -23,6 +23,29 @@
 #include <cupt/cache/version.hpp>
 
 namespace cupt {
+namespace internal {
+
+template< typename VersionType >
+class BasePackageIterator: public std::iterator< std::bidirectional_iterator_tag, const VersionType* >
+{
+	friend class cache::Package;
+
+	typedef vector< unique_ptr< cache::Version > >::const_iterator UnderlyingIterator;
+
+	UnderlyingIterator __ui;
+
+	BasePackageIterator(UnderlyingIterator);
+ public:
+	typedef BasePackageIterator Self;
+
+	Self& operator++();
+	const VersionType* operator*() const;
+	bool operator==(const Self&) const;
+	bool operator!=(const Self&) const;
+};
+
+}
+
 namespace cache {
 
 /// a container for all versions of the same package name
@@ -60,6 +83,10 @@ class CUPT_API Package
 	 * @param versionString version string
 	 */
 	const Version* getSpecificVersion(const string& versionString) const;
+
+	typedef internal::BasePackageIterator< Version > iterator;
+	iterator begin() const;
+	iterator end() const;
 };
 
 }

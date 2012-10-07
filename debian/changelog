@@ -33,6 +33,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash
         sums.
+      - New methods begin() and end().
     - cache/relation:
       - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
         constructor from string subrange is now explicit.

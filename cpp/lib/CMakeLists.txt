@@ -27,6 +27,7 @@ add_library(libcupt3 SHARED
 	./src/internal/cachefiles.cpp
 	./src/internal/logger.cpp
 	./src/internal/pipe.cpp
+	./src/internal/basepackageiterator.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
