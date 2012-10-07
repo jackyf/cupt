@@ -15,7 +15,6 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-
 #include "common.hpp"
 
 #include <cupt/system/state.hpp>
@@ -35,6 +34,8 @@ ReverseDependsIndexType computeReverseDependsIndex(const Cache& cache,
 	ReverseDependsIndexType reverseDependsIndex;
 	for (const string& packageName: cache.getBinaryPackageNames())
 	{
+		set< string > usedKeys;
+
 		auto package = cache.getBinaryPackage(packageName);
 		for (const auto& version: *package)
 		{
@@ -47,7 +48,10 @@ ReverseDependsIndexType computeReverseDependsIndex(const Cache& cache,
 					for (const auto& satisfyingVersion: satisfyingVersions)
 					{
 						const string& satisfyingPackageName = satisfyingVersion->packageName;
-						reverseDependsIndex[satisfyingPackageName].insert(packageName);
+						if (usedKeys.insert(satisfyingPackageName).second)
+						{
+							reverseDependsIndex[satisfyingPackageName].push_back(packageName);
+						}
 					}
 				}
 			}

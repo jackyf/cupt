@@ -21,6 +21,8 @@
 
 #include <unordered_map>
 using std::unordered_map;
+#include <list>
+using std::list;
 
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
@@ -32,7 +34,7 @@ using namespace cupt::cache;
 using namespace cupt::system;
 using namespace cupt::download;
 
-typedef unordered_map< string, set< string > > ReverseDependsIndexType;
+typedef unordered_map< string, list< string > > ReverseDependsIndexType;
 
 bool isPackageInstalled(const Cache&, const string& packageName);
 

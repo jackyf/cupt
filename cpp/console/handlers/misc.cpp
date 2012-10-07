@@ -420,19 +420,36 @@ int showRelations(Context& context, bool reverse)
 			}
 			else
 			{
+				struct ReverseRecord
+				{
+					const BinaryVersion* version;
+					const RelationExpression* relationExpressionPtr;
+
+					bool operator<(const ReverseRecord& other) const
+					{
+						return (*this->version < *other.version);
+					}
+				};
+				vector< ReverseRecord > reverseRecords;
+
 				foreachReverseDependency(*cache, reverseDependsIndex, version, *relationGroupIt,
-						[&versions, &caption, &recurse](const BinaryVersion* reverseVersion,
-								const RelationExpression& relationExpression)
+						[&reverseRecords](const BinaryVersion* reverseVersion, const RelationExpression& relationExpression)
 						{
-							cout << "  " << __("Reverse-") << caption << ": "
-									<< reverseVersion->packageName << ' '
-									<< reverseVersion->versionString << ": "
-									<< relationExpression.toString() << endl;
-							if (recurse)
-							{
-								versions.push(reverseVersion);
-							}
+							reverseRecords.push_back({ reverseVersion, &relationExpression });
 						});
+				std::sort(reverseRecords.begin(), reverseRecords.end());
+
+				for (const auto& record: reverseRecords)
+				{
+					cout << "  " << __("Reverse-") << caption << ": "
+							<< record.version->packageName << ' '
+							<< record.version->versionString << ": "
+							<< record.relationExpressionPtr->toString() << endl;
+					if (recurse)
+					{
+						versions.push(record.version);
+					}
+				}
 			}
 		}
 	}
