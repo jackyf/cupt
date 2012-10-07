@@ -637,14 +637,13 @@ class DependencyGraph::FillHelper
 				{
 					fatal2i("the binary package '%s' doesn't exist", packageName);
 				}
-				auto packageVersions = package->getVersions();
 				const list< const BinaryVersion* >& subSatisfiedVersions = groupIt->second;
-				FORIT(packageVersionIt, packageVersions)
+				for (auto packageVersion: *package)
 				{
 					if (std::find(subSatisfiedVersions.begin(), subSatisfiedVersions.end(),
-								*packageVersionIt) == subSatisfiedVersions.end())
+								packageVersion) == subSatisfiedVersions.end())
 					{
-						if (auto queuedVersionPtr = getVertexPtr(*packageVersionIt))
+						if (auto queuedVersionPtr = getVertexPtr(packageVersion))
 						{
 							addEdgeCustom(subVertexPtr, queuedVersionPtr);
 						}
