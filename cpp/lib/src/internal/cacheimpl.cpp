@@ -114,17 +114,16 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 	if (package)
 	{
 		// if such binary package exists
-		auto versions = package->getVersions();
-		FORIT(it, versions)
+		for (auto version: *package)
 		{
-			if (relation.isSatisfiedBy((*it)->versionString))
+			if (relation.isSatisfiedBy(version->versionString))
 			{
-				if ((*it)->isInstalled() &&
-						systemState->getInstalledInfo((*it)->packageName)->isBroken())
+				if (version->isInstalled() &&
+						systemState->getInstalledInfo(version->packageName)->isBroken())
 				{
 					continue;
 				}
-				result.push_back(*it);
+				result.push_back(version);
 			}
 		}
 	}
@@ -144,21 +143,20 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 				{
 					continue;
 				}
-				auto versions = reverseProvidePackage->getVersions();
-				FORIT(versionIt, versions)
+				for (auto version: *reverseProvidePackage)
 				{
-					if ((*versionIt)->isInstalled() &&
-							systemState->getInstalledInfo((*versionIt)->packageName)->isBroken())
+					if (version->isInstalled() &&
+							systemState->getInstalledInfo(version->packageName)->isBroken())
 					{
 						continue;
 					}
-					const vector< string >& realProvides = (*versionIt)->provides;
+					const vector< string >& realProvides = version->provides;
 					FORIT(realProvidesIt, realProvides)
 					{
 						if (*realProvidesIt == packageName)
 						{
 							// ok, this particular version does provide this virtual package
-							result.push_back(*versionIt);
+							result.push_back(version);
 							break;
 						}
 					}
