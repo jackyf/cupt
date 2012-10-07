@@ -47,6 +47,10 @@ class CUPT_API BinaryPackage: public Package
 	 * @return installed version if exists, empty pointer if not
 	 */
 	const BinaryVersion* getInstalledVersion() const;
+
+	typedef internal::BasePackageIterator< BinaryVersion > iterator;
+	iterator begin() const;
+	iterator end() const;
 };
 
 }

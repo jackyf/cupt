@@ -69,6 +69,16 @@ const BinaryVersion* BinaryPackage::getInstalledVersion() const
 	return nullptr;
 }
 
+auto BinaryPackage::begin() const -> iterator
+{
+	return iterator(_get_versions().begin());
+}
+
+auto BinaryPackage::end() const -> iterator
+{
+	return iterator(_get_versions().end());
+}
+
 }
 }
 

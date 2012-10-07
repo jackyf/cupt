@@ -56,6 +56,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [ABI break] 'Action::Type' new enum value 'Reinstall'.
     - cache/binarypackage:
       - 'getInstalledVersion': significant speed-up.
+      - New methods begin() and end().
     - cache/binaryversion:
       - [API break] Fields 'shortDescription' and 'longDescription' are
         replaced with a new field 'description'.

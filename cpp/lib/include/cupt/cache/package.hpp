@@ -29,6 +29,8 @@ template< typename VersionType >
 class BasePackageIterator: public std::iterator< std::bidirectional_iterator_tag, const VersionType* >
 {
 	friend class cache::Package;
+	friend class cache::BinaryPackage;
+	friend class cache::SourcePackage;
 
 	typedef vector< unique_ptr< cache::Version > >::const_iterator UnderlyingIterator;
 
