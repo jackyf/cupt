@@ -34,15 +34,25 @@ using namespace cupt::cache;
 using namespace cupt::system;
 using namespace cupt::download;
 
-typedef unordered_map< string, list< const BinaryPackage* > > ReverseDependsIndexType;
+class ReverseDependsIndex
+{
+	typedef unordered_map< string, list< const BinaryPackage* > > PerRelationType;
+
+	const Cache& __cache;
+	map< BinaryVersion::RelationTypes::Type, PerRelationType > __data;
+
+	void __add(BinaryVersion::RelationTypes::Type relationType, PerRelationType*);
+ public:
+	ReverseDependsIndex(const Cache& cache);
+	void add(BinaryVersion::RelationTypes::Type relationType);
+
+	void foreachReverseDependency(
+			const BinaryVersion* version, BinaryVersion::RelationTypes::Type relationType,
+			const std::function< void (const BinaryVersion*, const RelationExpression&) > callback);
+};
 
 bool isPackageInstalled(const Cache&, const string& packageName);
 
-ReverseDependsIndexType computeReverseDependsIndex(
-		const Cache&, const vector< BinaryVersion::RelationTypes::Type >& relationTypes);
-void foreachReverseDependency(const Cache&, const ReverseDependsIndexType&,
-		const BinaryVersion* version, BinaryVersion::RelationTypes::Type relationType,
-		const std::function< void (const BinaryVersion*, const RelationExpression&) > callback);
 
 #endif
 

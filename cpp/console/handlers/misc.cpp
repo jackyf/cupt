@@ -353,10 +353,13 @@ int showRelations(Context& context, bool reverse)
 	set< const BinaryVersion* > processedVersions;
 
 	// used only by rdepends
-	ReverseDependsIndexType reverseDependsIndex;
+	ReverseDependsIndex reverseDependsIndex(*cache);
 	if (reverse)
 	{
-		reverseDependsIndex = computeReverseDependsIndex(*cache, relationGroups);
+		for (auto relationType: relationGroups)
+		{
+			reverseDependsIndex.add(relationType);
+		}
 	}
 
 	bool recurse = config->getBool("apt::cache::recursedepends");
@@ -432,7 +435,7 @@ int showRelations(Context& context, bool reverse)
 				};
 				vector< ReverseRecord > reverseRecords;
 
-				foreachReverseDependency(*cache, reverseDependsIndex, version, *relationGroupIt,
+				reverseDependsIndex.foreachReverseDependency(version, *relationGroupIt,
 						[&reverseRecords](const BinaryVersion* reverseVersion, const RelationExpression& relationExpression)
 						{
 							reverseRecords.push_back({ reverseVersion, &relationExpression });

@@ -240,7 +240,11 @@ class VersionSet
 struct Context
 {
 	const Cache& cache;
+	ReverseDependsIndex reverseIndex;
 
+	Context(const Cache& cache_)
+		: cache(cache_), reverseIndex(cache)
+	{}
 	SpcvGreater getSorter() const
 	{
 		return SpcvGreater(cache);
@@ -735,7 +739,6 @@ class DependencyFS: public TransformFS
 class ReverseDependencyFS: public TransformFS
 {
 	BRT::Type __relation_type;
-	mutable ReverseDependsIndexType __reverse_index;
  public:
 	ReverseDependencyFS(BRT::Type relationType, const Arguments& arguments)
 		: TransformFS(true, arguments), __relation_type(relationType)
@@ -743,15 +746,12 @@ class ReverseDependencyFS: public TransformFS
  protected:
 	FSResult _transform(Context& context, const SPCV& version) const
 	{
-		if (__reverse_index.empty())
-		{
-			__reverse_index = computeReverseDependsIndex(context.cache, { __relation_type });
-		}
+		context.reverseIndex.add(__relation_type);
 
 		FSResult result;
 
 		auto binaryVersion = static_cast< const BinaryVersion* >(version);
-		foreachReverseDependency(context.cache, __reverse_index, binaryVersion, __relation_type,
+		context.reverseIndex.foreachReverseDependency(binaryVersion, __relation_type,
 				[&context, &result](const BinaryVersion* reverseVersion, const RelationExpression&)
 				{
 					context.mergeFsResults(&result, { reverseVersion });
@@ -1109,7 +1109,7 @@ struct FunctionalSelector::Data
 	VersionSetGetter sourceGetter;
 
 	Data(const Cache& cache_)
-		: context { cache_ }, binaryGetter(cache_, true), sourceGetter(cache_, false)
+		: context(cache_), binaryGetter(cache_, true), sourceGetter(cache_, false)
 	{}
 };
 FunctionalSelector::FunctionalSelector(const Cache& cache)

@@ -28,44 +28,55 @@ bool isPackageInstalled(const Cache& cache, const string& packageName)
 
 typedef BinaryVersion::RelationTypes BRT;
 
-ReverseDependsIndexType computeReverseDependsIndex(const Cache& cache,
-		const vector< BRT::Type >& relationTypes)
+ReverseDependsIndex::ReverseDependsIndex(const Cache& cache)
+	: __cache(cache)
+{}
+
+void ReverseDependsIndex::add(BRT::Type relationType)
 {
-	ReverseDependsIndexType reverseDependsIndex;
-	for (const string& packageName: cache.getBinaryPackageNames())
+	auto insertResult = __data.insert({ relationType, {} });
+	if (insertResult.second)
+	{
+		__add(relationType, &insertResult.first->second);
+	}
+}
+
+void ReverseDependsIndex::__add(BRT::Type relationType, PerRelationType* storage)
+{
+	for (const string& packageName: __cache.getBinaryPackageNames())
 	{
 		set< string > usedKeys;
 
-		auto package = cache.getBinaryPackage(packageName);
+		auto package = __cache.getBinaryPackage(packageName);
 		for (const auto& version: *package)
 		{
-			for (auto relationGroup: relationTypes)
+			const RelationLine& relationLine = version->relations[relationType];
+			for (const auto& relationExpression: relationLine)
 			{
-				const RelationLine& relationLine = version->relations[relationGroup];
-				for (const auto& relationExpression: relationLine)
+				auto satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
+				for (const auto& satisfyingVersion: satisfyingVersions)
 				{
-					auto satisfyingVersions = cache.getSatisfyingVersions(relationExpression);
-					for (const auto& satisfyingVersion: satisfyingVersions)
+					const string& satisfyingPackageName = satisfyingVersion->packageName;
+					if (usedKeys.insert(satisfyingPackageName).second)
 					{
-						const string& satisfyingPackageName = satisfyingVersion->packageName;
-						if (usedKeys.insert(satisfyingPackageName).second)
-						{
-							reverseDependsIndex[satisfyingPackageName].push_back(package);
-						}
+						(*storage)[satisfyingPackageName].push_back(package);
 					}
 				}
 			}
 		}
 	}
-	return reverseDependsIndex;
 }
 
-void foreachReverseDependency(const Cache& cache, const ReverseDependsIndexType& index,
+void ReverseDependsIndex::foreachReverseDependency(
 		const BinaryVersion* version, BRT::Type relationType,
 		const std::function< void (const BinaryVersion*, const RelationExpression&) > callback)
 {
-	auto packageCandidatesIt = index.find(version->packageName);
-	if (packageCandidatesIt != index.end())
+	auto storageIt = __data.find(relationType);
+	if (storageIt == __data.end()) return;
+	const auto& storage = storageIt->second;
+
+	auto packageCandidatesIt = storage.find(version->packageName);
+	if (packageCandidatesIt != storage.end())
 	{
 		const auto& packageCandidates = packageCandidatesIt->second;
 		for (auto packageCandidate: packageCandidates)
@@ -74,7 +85,7 @@ void foreachReverseDependency(const Cache& cache, const ReverseDependsIndexType&
 			{
 				for (const auto& relationExpression: candidateVersion->relations[relationType])
 				{
-					auto satisfyingVersions = cache.getSatisfyingVersions(relationExpression);
+					auto satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
 					for (const auto& satisfyingVersion: satisfyingVersions)
 					{
 						if (satisfyingVersion == version)
