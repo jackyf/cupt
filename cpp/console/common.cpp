@@ -70,9 +70,7 @@ void foreachReverseDependency(const Cache& cache, const ReverseDependsIndexType&
 		const auto& packageCandidates = packageCandidatesIt->second;
 		for (auto packageCandidate: packageCandidates)
 		{
-			auto candidateVersions = packageCandidate->getVersions();
-
-			for (const auto& candidateVersion: candidateVersions)
+			for (const auto& candidateVersion: *packageCandidate)
 			{
 				for (const auto& relationExpression: candidateVersion->relations[relationType])
 				{
