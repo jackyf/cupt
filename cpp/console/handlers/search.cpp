@@ -129,7 +129,8 @@ void searchByFSE(const Cache& cache, vector< string >& patterns)
 	patterns.erase(patterns.begin());
 	checkNoExtraArguments(patterns);
 
-	auto&& foundVersions = selectBestVersions(cache, *parseFunctionQuery(fse, true));
+	auto functionalQuery = FunctionalSelector::parseQuery(fse, true);
+	auto&& foundVersions = FunctionalSelector(cache).selectBestVersions(*functionalQuery);
 	for (const auto& version: foundVersions)
 	{
 		auto binaryVersion = static_cast< const BinaryVersion* >(version);

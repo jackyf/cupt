@@ -304,8 +304,10 @@ template < typename VersionType, typename QueryProcessor >
 vector< const VersionType* > __select_using_function(const Cache& cache,
 		const string& expression, QueryProcessor queryProcessor, bool binary, bool throwOnError)
 {
-	auto result = __convert_version_type< VersionType >(
-				queryProcessor(cache, *parseFunctionQuery(expression, binary)));
+	FunctionalSelector selector(cache);
+	auto query = selector.parseQuery(expression, binary);
+
+	auto result = __convert_version_type< VersionType >((selector.*queryProcessor)(*query));
 	if (throwOnError && result.empty())
 	{
 		fatal2(__("the function expression '%s' selected nothing"), expression);
@@ -319,7 +321,7 @@ vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache
 	if (isFunctionExpression(packageExpression))
 	{
 		return __select_using_function< BinaryVersion >(cache, packageExpression,
-				selectBestVersions, true, throwOnError);
+				&FunctionalSelector::selectBestVersions, true, throwOnError);
 	}
 	else
 	{
@@ -339,7 +341,7 @@ vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache
 	if (isFunctionExpression(packageExpression))
 	{
 		return __select_using_function< SourceVersion >(cache, packageExpression,
-				selectBestVersions, false, throwOnError);
+				&FunctionalSelector::selectBestVersions, false, throwOnError);
 	}
 	else
 	{
@@ -376,7 +378,7 @@ vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& ca
 	if (isFunctionExpression(packageExpression))
 	{
 		return __select_using_function< BinaryVersion >(cache, packageExpression,
-				selectAllVersions, true, false);
+				&FunctionalSelector::selectAllVersions, true, false);
 	}
 	else
 	{
@@ -391,7 +393,7 @@ vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& ca
 	if (isFunctionExpression(packageExpression))
 	{
 		return __select_using_function< SourceVersion >(cache, packageExpression,
-				selectAllVersions, false, false);
+				&FunctionalSelector::selectAllVersions, false, false);
 	}
 	else
 	{

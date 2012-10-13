@@ -26,15 +26,15 @@
 
 #include "functionselectors.hpp"
 
-FunctionSelector::FunctionSelector()
+FunctionalSelector::Query::Query()
 {}
 
-FunctionSelector::~FunctionSelector()
+FunctionalSelector::Query::~Query()
 {}
 
 namespace {
 
-typedef FunctionSelector FS;
+typedef FunctionalSelector::Query FS; // rename to FSQ
 typedef const Version* SPCV; // former shared_ptr< const Version >
 typedef list< SPCV > FSResult;
 typedef BinaryVersion::RelationTypes BRT;
@@ -237,11 +237,42 @@ class VersionSet
 	}
 };
 
+struct Context
+{
+	const Cache& cache;
+
+	SpcvGreater getSorter() const
+	{
+		return SpcvGreater(cache);
+	}
+	void mergeFsResults(FSResult* main, FSResult&& other)
+	{
+		main->merge(std::move(other), getSorter());
+		main->unique();
+	}
+	FSResult filterThrough(const FSResult& versions, const VersionSet& allowedSet)
+	{
+		if (allowedSet.isFiltered())
+		{
+			const auto& allowedVersions = allowedSet.get();
+			FSResult result;
+			std::set_intersection(allowedVersions.begin(), allowedVersions.end(),
+					versions.begin(), versions.end(),
+					std::back_inserter(result), getSorter());
+			return result;
+		}
+		else
+		{
+			return versions;
+		}
+	}
+};
+
 class CommonFS: public FS
 {
  public:
 	typedef vector< string > Arguments;
-	virtual FSResult select(const Cache&, const VersionSet& from) const = 0;
+	virtual FSResult select(Context&, const VersionSet& from) const = 0;
 };
 
 unique_ptr< CommonFS > internalParseFunctionQuery(const string& query, bool binary);
@@ -254,29 +285,6 @@ void __require_n_arguments(const CommonFS::Arguments& arguments, size_t n)
 	}
 }
 
-FSResult __filter_through(const Cache& cache, const FSResult& versions, const VersionSet& allowedSet)
-{
-	if (allowedSet.isFiltered())
-	{
-		const auto& allowedVersions = allowedSet.get();
-		FSResult result;
-		std::set_intersection(allowedVersions.begin(), allowedVersions.end(),
-				versions.begin(), versions.end(),
-				std::back_inserter(result), SpcvGreater(cache));
-		return result;
-	}
-	else
-	{
-		return versions;
-	}
-}
-
-void __merge_fsresults(const Cache& cache, FSResult& main, FSResult&& other)
-{
-	main.merge(std::move(other), SpcvGreater(cache));
-	main.unique();
-}
-
 class BestFS: public CommonFS
 {
 	unique_ptr< CommonFS > __leaf_fs;
@@ -286,9 +294,9 @@ class BestFS: public CommonFS
 		__require_n_arguments(arguments, 1);
 		__leaf_fs = internalParseFunctionQuery(arguments[0], binary);
 	}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
-		auto result = __leaf_fs->select(cache, from);
+		auto result = __leaf_fs->select(context, from);
 		result.unique([](const SPCV& left, const SPCV& right) { return left->packageName == right->packageName; });
 		return result;
 	}
@@ -307,12 +315,12 @@ class DefineVariableFS: public CommonFS
 		__value_fs = internalParseFunctionQuery(arguments[1], binary);
 		__leaf_fs = internalParseFunctionQuery(arguments[2], binary);
 	}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
 		VersionSet modifiedFrom(from);
 		modifiedFrom.setVariable(__name,
-				__value_fs->select(cache, from.getUnfiltered()));
-		return __leaf_fs->select(cache, modifiedFrom);
+				__value_fs->select(context, from.getUnfiltered()));
+		return __leaf_fs->select(context, modifiedFrom);
 	}
 };
 
@@ -325,9 +333,9 @@ class ExtractVariableFS: public CommonFS
 	{
 		__require_n_arguments(arguments, 0);
 	}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
-		return __filter_through(cache, from.getFromVariable(__name), from);
+		return context.filterThrough(from.getFromVariable(__name), from);
 	}
 };
 
@@ -356,12 +364,12 @@ class AndFS: public AlgeFS
 	AndFS(bool binary, const Arguments& arguments)
 		: AlgeFS(binary, arguments)
 	{}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
-		auto result = _leaves.front()->select(cache, from);
+		auto result = _leaves.front()->select(context, from);
 		for (auto it = ++_leaves.begin(); it != _leaves.end(); ++it)
 		{
-			result = (*it)->select(cache, from.generate(std::move(result)));
+			result = (*it)->select(context, from.generate(std::move(result)));
 		}
 		return result;
 	}
@@ -378,14 +386,14 @@ class NotFS: public AlgeFS
 	NotFS(bool binary, const Arguments& arguments)
 		: AlgeFS(binary, __check_and_return_arguments(arguments))
 	{}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
 		const auto& fromVersions = from.get();
-		auto notVersions = _leaves.front()->select(cache, from);
+		auto notVersions = _leaves.front()->select(context, from);
 		FSResult result;
 		std::set_difference(fromVersions.begin(), fromVersions.end(),
 				notVersions.begin(), notVersions.end(),
-				std::back_inserter(result), SpcvGreater(cache));
+				std::back_inserter(result), context.getSorter());
 		return result;
 	}
 };
@@ -401,14 +409,14 @@ class XorFS: public AlgeFS
 	XorFS(bool binary, const Arguments& arguments)
 		: AlgeFS(binary, __check_and_return_arguments(arguments))
 	{}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
-		auto leftVersions = _leaves.front()->select(cache, from);
-		auto rightVersions = _leaves.back()->select(cache, from);
+		auto leftVersions = _leaves.front()->select(context, from);
+		auto rightVersions = _leaves.back()->select(context, from);
 		FSResult result;
 		std::set_symmetric_difference(leftVersions.begin(), leftVersions.end(),
 				rightVersions.begin(), rightVersions.end(),
-				std::back_inserter(result), SpcvGreater(cache));
+				std::back_inserter(result), context.getSorter());
 		return result;
 	}
 };
@@ -421,9 +429,9 @@ class BinaryTagDummyFS: public CommonFS
 	BinaryTagDummyFS(unique_ptr< CommonFS >&& realFS)
 		: __real_fs(std::move(realFS))
 	{}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
-		return __real_fs->select(cache, from);
+		return __real_fs->select(context, from);
 	}
 };
 
@@ -433,13 +441,13 @@ class OrFS: public AlgeFS
 	OrFS(bool binary, const Arguments& arguments)
 		: AlgeFS(binary, arguments)
 	{}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
-		auto result = _leaves.front()->select(cache, from);
+		auto result = _leaves.front()->select(context, from);
 		for (auto it = ++_leaves.begin(); it != _leaves.end(); ++it)
 		{
-			auto part = (*it)->select(cache, from);
-			__merge_fsresults(cache, result, std::move(part));
+			auto part = (*it)->select(context, from);
+			context.mergeFsResults(&result, std::move(part));
 		}
 		return result;
 	}
@@ -450,10 +458,10 @@ class PredicateFS: public CommonFS
  protected:
 	virtual bool _match(const Cache&, const SPCV&) const = 0;
  public:
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
 		FSResult result = from.get();
-		result.remove_if([this, &cache](const SPCV& version) { return !this->_match(cache, version); });
+		result.remove_if([this, &context](const SPCV& version) { return !this->_match(context.cache, version); });
 		return result;
 	}
 };
@@ -499,7 +507,7 @@ class PackageNameFS: public CommonFS
 	PackageNameFS(const Arguments& arguments)
 		: __regex(__get_regex_from_arguments(arguments))
 	{}
-	FSResult select(const Cache&, const VersionSet& from) const
+	FSResult select(Context&, const VersionSet& from) const
 	{
 		return from.get(__regex);
 	}
@@ -639,7 +647,7 @@ class TransformFS: public CommonFS
 	unique_ptr< CommonFS > __leaf;
 	bool __binary;
  protected:
-	virtual FSResult _transform(const Cache& cache, const SPCV& version) const = 0;
+	virtual FSResult _transform(Context&, const SPCV& version) const = 0;
  public:
 	TransformFS(bool binary, const Arguments& arguments)
 		: __binary(binary)
@@ -647,17 +655,17 @@ class TransformFS: public CommonFS
 		__require_n_arguments(arguments, 1);
 		__leaf = internalParseFunctionQuery(arguments[0], binary);
 	}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
 		FSResult allTransformed;
 		auto newVersionSet = from.getUnfiltered();
 		newVersionSet.selectGetterType(__binary);
-		for (const auto& version: __leaf->select(cache, newVersionSet))
+		for (const auto& version: __leaf->select(context, newVersionSet))
 		{
-			auto transformedList = _transform(cache, version);
-			__merge_fsresults(cache, allTransformed, std::move(transformedList));
+			auto transformedList = _transform(context, version);
+			context.mergeFsResults(&allTransformed, std::move(transformedList));
 		}
-		return __filter_through(cache, allTransformed, from);
+		return context.filterThrough(allTransformed, from);
 	}
 };
 
@@ -675,11 +683,11 @@ class RecursiveFS: public CommonFS
 		__initial_variable_value_fs = internalParseFunctionQuery(arguments[1], binary);
 		__iterating_fs = internalParseFunctionQuery(arguments[2], binary);
 	}
-	FSResult select(const Cache& cache, const VersionSet& from) const
+	FSResult select(Context& context, const VersionSet& from) const
 	{
 		FSResult result;
 
-		FSResult variableValue = __initial_variable_value_fs->select(cache, from.getUnfiltered());
+		FSResult variableValue = __initial_variable_value_fs->select(context, from.getUnfiltered());
 		size_t previousResultSize;
 		do
 		{
@@ -687,13 +695,13 @@ class RecursiveFS: public CommonFS
 
 			VersionSet iterationSet = from.getUnfiltered();
 			iterationSet.setVariable(__variable_name, std::move(variableValue));
-			__merge_fsresults(cache, result, __iterating_fs->select(cache, iterationSet));
+			context.mergeFsResults(&result, __iterating_fs->select(context, iterationSet));
 
 			variableValue = result;
 		}
 		while (result.size() != previousResultSize);
 
-		return __filter_through(cache, result, from);
+		return context.filterThrough(result, from);
 	}
 };
 
@@ -706,19 +714,19 @@ class DependencyFS: public TransformFS
 		: TransformFS(IsBinary<RelationType>::value, arguments), __relation_type(relationType)
 	{}
  protected:
-	FSResult _transform(const Cache& cache, const SPCV& version) const
+	FSResult _transform(Context& context, const SPCV& version) const
 	{
-		SpcvGreater spcvGreater(cache);
+		auto sorter = context.getSorter();
 		FSResult result;
 
 		for (const auto& relationExpression: getRelationLine(version, __relation_type))
 		{
-			auto satisfyingVersions = cache.getSatisfyingVersions(relationExpression);
-			std::sort(satisfyingVersions.begin(), satisfyingVersions.end(), spcvGreater);
+			auto satisfyingVersions = context.cache.getSatisfyingVersions(relationExpression);
+			std::sort(satisfyingVersions.begin(), satisfyingVersions.end(), sorter);
 			list< SPCV > sortedList;
 			std::move(satisfyingVersions.begin(), satisfyingVersions.end(),
 					std::back_inserter(sortedList));
-			__merge_fsresults(cache, result, std::move(sortedList));
+			context.mergeFsResults(&result, std::move(sortedList));
 		}
 		return result;
 	}
@@ -733,20 +741,20 @@ class ReverseDependencyFS: public TransformFS
 		: TransformFS(true, arguments), __relation_type(relationType)
 	{}
  protected:
-	FSResult _transform(const Cache& cache, const SPCV& version) const
+	FSResult _transform(Context& context, const SPCV& version) const
 	{
 		if (__reverse_index.empty())
 		{
-			__reverse_index = computeReverseDependsIndex(cache, { __relation_type });
+			__reverse_index = computeReverseDependsIndex(context.cache, { __relation_type });
 		}
 
 		FSResult result;
 
 		auto binaryVersion = static_cast< const BinaryVersion* >(version);
-		foreachReverseDependency(cache, __reverse_index, binaryVersion, __relation_type,
-				[&cache, &result](const BinaryVersion* reverseVersion, const RelationExpression&)
+		foreachReverseDependency(context.cache, __reverse_index, binaryVersion, __relation_type,
+				[&context, &result](const BinaryVersion* reverseVersion, const RelationExpression&)
 				{
-					__merge_fsresults(cache, result, { reverseVersion });
+					context.mergeFsResults(&result, { reverseVersion });
 				});
 
 		return result;
@@ -1094,7 +1102,26 @@ unique_ptr< CommonFS > internalParseFunctionQuery(const string& query, bool bina
 
 }
 
-unique_ptr< FS > parseFunctionQuery(const string& query, bool binary)
+struct FunctionalSelector::Data
+{
+	Context context;
+	VersionSetGetter binaryGetter;
+	VersionSetGetter sourceGetter;
+
+	Data(const Cache& cache_)
+		: context { cache_ }, binaryGetter(cache_, true), sourceGetter(cache_, false)
+	{}
+};
+FunctionalSelector::FunctionalSelector(const Cache& cache)
+{
+	__data = new Data(cache);
+}
+FunctionalSelector::~FunctionalSelector()
+{
+	delete __data;
+}
+
+unique_ptr< FS > FunctionalSelector::parseQuery(const string& query, bool binary)
 {
 	Cache::memoize = true;
 
@@ -1110,7 +1137,7 @@ unique_ptr< FS > parseFunctionQuery(const string& query, bool binary)
 	return std::move(result);
 }
 
-list< SPCV > selectAllVersions(const Cache& cache, const FS& functionSelector)
+list< SPCV > FunctionalSelector::selectAllVersions(const FS& functionSelector)
 {
 	const CommonFS* commonFS = dynamic_cast< const CommonFS* >(&functionSelector);
 	if (!commonFS)
@@ -1118,16 +1145,14 @@ list< SPCV > selectAllVersions(const Cache& cache, const FS& functionSelector)
 		fatal2i("selectVersion: functionSelector is not an ancestor of CommonFS");
 	}
 	bool binary = (dynamic_cast< const BinaryTagDummyFS* >(commonFS));
-	VersionSetGetter binaryGetter(cache, true);
-	VersionSetGetter sourceGetter(cache, false);
-	VersionSet versionSet(&binaryGetter, &sourceGetter);
+	VersionSet versionSet(&__data->binaryGetter, &__data->sourceGetter);
 	versionSet.selectGetterType(binary);
-	return commonFS->select(cache, versionSet);
+	return commonFS->select(__data->context, versionSet);
 }
 
-list< SPCV > selectBestVersions(const Cache& cache, const FS& functionSelector)
+list< SPCV > FunctionalSelector::selectBestVersions(const FS& functionSelector)
 {
-	auto result = selectAllVersions(cache, functionSelector);
+	auto result = selectAllVersions(functionSelector);
 	result.unique([](const SPCV& left, const SPCV& right) { return left->packageName == right->packageName; });
 	return result;
 }

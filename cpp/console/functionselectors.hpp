@@ -26,18 +26,27 @@
 using std::unique_ptr;
 using std::list;
 
-class FunctionSelector
+class FunctionalSelector
 {
- protected:
-	FunctionSelector();
+	struct Data;
+	Data* __data;
  public:
-	virtual ~FunctionSelector();
+	class Query
+	{
+	 protected:
+		Query();
+	 public:
+		virtual ~Query();
+	};
+
+	FunctionalSelector(const Cache&);
+	~FunctionalSelector();
+
+	static unique_ptr< Query > parseQuery(const string&, bool);
+
+	list< const Version* > selectAllVersions(const Query&);
+	list< const Version* > selectBestVersions(const Query&);
 };
-
-unique_ptr< FunctionSelector > parseFunctionQuery(const string&, bool);
-
-list< const Version* > selectAllVersions(const Cache&, const FunctionSelector&);
-list< const Version* > selectBestVersions(const Cache&, const FunctionSelector&);
 
 #endif
 
