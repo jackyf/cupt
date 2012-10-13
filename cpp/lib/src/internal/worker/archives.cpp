@@ -94,8 +94,7 @@ vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo()
 			continue;
 		}
 
-		auto versions = package->getVersions();
-		FORIT(versionIt, versions)
+		FORIT(versionIt, *package)
 		{
 			auto path = archivesDirectory + '/' + _get_archive_basename(*versionIt);
 			if (fs::fileExists(path))
