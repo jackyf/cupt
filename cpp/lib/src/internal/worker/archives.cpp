@@ -94,12 +94,12 @@ vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo()
 			continue;
 		}
 
-		FORIT(versionIt, *package)
+		for (auto version: *package)
 		{
-			auto path = archivesDirectory + '/' + _get_archive_basename(*versionIt);
+			auto path = archivesDirectory + '/' + _get_archive_basename(version);
 			if (fs::fileExists(path))
 			{
-				knownArchives[path] = *versionIt;
+				knownArchives[path] = version;
 
 				// checking for symlinks
 				auto readlinkResult = readlink(path.c_str(), &pathBuffer[0], pathMaxLength);
@@ -118,7 +118,7 @@ vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo()
 					string targetPath(archivesDirectory + '/' + relativePath);
 					if (fs::fileExists(targetPath))
 					{
-						knownArchives[targetPath] = *versionIt;
+						knownArchives[targetPath] = version;
 					}
 				}
 			}
