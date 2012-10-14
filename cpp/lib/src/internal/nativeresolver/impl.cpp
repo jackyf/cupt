@@ -181,7 +181,7 @@ void NativeResolverImpl::upgrade()
 
 		// if there is original version, then at least one policy version should exist
 		auto supposedVersion = static_cast< const BinaryVersion* >
-				(__cache->getPolicyVersion(package));
+				(__cache->getPreferredVersion(package));
 		if (!supposedVersion)
 		{
 			fatal2i("supposed version doesn't exist");

@@ -449,7 +449,7 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 
 	if (actionType == fakeNotPolicyVersionAction)
 	{
-		cout << ", " << __("preferred") << ": " << getVersionString(cache.getPolicyVersion(package));
+		cout << ", " << __("preferred") << ": " << getVersionString(cache.getPreferredVersion(package));
 	}
 }
 
@@ -688,7 +688,7 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const Cache& cache,
 		const auto& suggestedVersion = suggestedPackage.second.version;
 		if (suggestedVersion)
 		{
-			auto policyVersion = cache.getPolicyVersion(getBinaryPackage(cache, suggestedVersion->packageName));
+			auto policyVersion = cache.getPreferredVersion(getBinaryPackage(cache, suggestedVersion->packageName));
 			if (!(policyVersion == suggestedVersion))
 			{
 				result.insert(suggestedPackage);

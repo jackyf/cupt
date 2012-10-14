@@ -29,6 +29,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         'packageNameGlobsToReinstall' as not needed anymore.
       - [API break] 'getLocalizedDescriptions' is replaced with
         'getLocalizedDescription'.
+      - [API break] 'getPolicyVersion' is renamed to 'getPreferredVersion'.
     - cache/package:
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash

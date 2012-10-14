@@ -167,7 +167,7 @@ const Version* __select_version(const Cache& cache,
 		{
 			return ReturnType();
 		}
-		auto version = cache.getPolicyVersion(package);
+		auto version = cache.getPreferredVersion(package);
 		if (!version && throwOnError)
 		{
 			fatal2(__("no versions available for the package '%s'"), packageName);

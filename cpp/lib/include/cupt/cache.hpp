@@ -131,7 +131,7 @@ class CUPT_API Cache
 	/// gets list of versions with pins of certain package
 	vector< PinnedVersion > getSortedPinnedVersions(const Package*) const;
 	/// gets version of highest pin from the package
-	const Version* getPolicyVersion(const Package*) const;
+	const Version* getPreferredVersion(const Package*) const;
 
 	/// gets list of binary versions which satisfy given relation expression
 	vector< const BinaryVersion* > getSatisfyingVersions(const RelationExpression&) const;

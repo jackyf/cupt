@@ -164,7 +164,7 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* pac
 	return result;
 }
 
-const Version* Cache::getPolicyVersion(const Package* package) const
+const Version* Cache::getPreferredVersion(const Package* package) const
 {
 	auto sortedPinnedVersions = getSortedPinnedVersions(package);
 	// not assuming the package have at least valid version...

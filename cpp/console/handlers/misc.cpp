@@ -539,7 +539,7 @@ int policy(Context& context, bool source)
 			const Package* package = (!source ?
 					(const Package*)getBinaryPackage(*cache, packageName) :
 					(const Package*)getSourcePackage(*cache, packageName));
-			auto policyVersion = cache->getPolicyVersion(package);
+			auto policyVersion = cache->getPreferredVersion(package);
 			if (!policyVersion)
 			{
 				fatal2(__("no versions available for the package '%s'"), packageName);
