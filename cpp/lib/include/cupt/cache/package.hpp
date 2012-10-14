@@ -72,7 +72,7 @@ class CUPT_API Package
 	/**
 	 * @param binaryArchitecture binary architecture of the system
 	 */
-	Package(const string*);
+	Package(const string* binaryArchitecture);
 	/// destructor
 	virtual ~Package();
 	/// adds new element (version initialization parameters) to the container
