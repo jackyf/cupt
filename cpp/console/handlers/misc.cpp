@@ -885,6 +885,7 @@ int tarMetadata(Context& context)
 		config->getPath("dir::state::extendedstates"),
 		config->getPath("dir::state::status"),
 		listsDirectory + "/*Release",
+		listsDirectory + "/*Release.gpg",
 		listsDirectory + "/*Packages",
 		listsDirectory + "/*Sources",
 	};
