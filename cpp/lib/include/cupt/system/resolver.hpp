@@ -158,7 +158,7 @@ class CUPT_API Resolver
 	 */
 	virtual void removePackage(const string& packageName) = 0;
 	/**
-	 * Requests an upgrade of all installed packages (to their policy version).
+	 * Requests an upgrade of all installed packages (to their preferred version).
 	 */
 	virtual void upgrade() = 0;
 	/**
