@@ -59,7 +59,7 @@ class CUPT_API Worker
 			Reinstall, ///< remove and install the installed version
 			Count ///< element count
 		};
-		static const char* rawStrings[Count]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings
+		static const char* rawStrings[Count]; ///< @copydoc cache::BinaryVersion::RelationTypes::rawStrings
 	};
 	struct ActionsPreview
 	{
