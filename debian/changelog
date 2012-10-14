@@ -60,6 +60,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/binaryversion:
       - [API break] Fields 'shortDescription' and 'longDescription' are
         replaced with a new field 'description'.
+    - cache/sourcepackage:
+      - New methods begin() and end().
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.

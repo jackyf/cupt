@@ -41,6 +41,10 @@ class CUPT_API SourcePackage: public Package
 	 */
 	SourcePackage(const string* binaryArchitecture);
 	vector< const SourceVersion* > getVersions() const;
+
+	typedef internal::BasePackageIterator< SourceVersion > iterator;
+	iterator begin() const;
+	iterator end() const;
 };
 
 }

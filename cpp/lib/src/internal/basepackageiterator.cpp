@@ -19,6 +19,7 @@
 #include <cupt/cache/package.hpp>
 #include <cupt/cache/version.hpp>
 #include <cupt/cache/binaryversion.hpp>
+#include <cupt/cache/sourceversion.hpp>
 
 namespace cupt {
 namespace internal {
@@ -55,6 +56,7 @@ auto BasePackageIterator< VersionType >::operator!=(const Self& other) const -> 
 
 template class BasePackageIterator< cache::Version >;
 template class BasePackageIterator< cache::BinaryVersion >;
+template class BasePackageIterator< cache::SourceVersion >;
 
 }
 }

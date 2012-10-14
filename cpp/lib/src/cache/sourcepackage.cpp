@@ -57,6 +57,16 @@ vector< const SourceVersion* > SourcePackage::getVersions() const
 	return result;
 }
 
+auto SourcePackage::begin() const -> iterator
+{
+	return iterator(_get_versions().begin());
+}
+
+auto SourcePackage::end() const -> iterator
+{
+	return iterator(_get_versions().end());
+}
+
 }
 }
 
