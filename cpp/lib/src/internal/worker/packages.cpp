@@ -58,7 +58,7 @@ string InnerAction::toString() const
 {
 	const static string typeStrings[] = { "remove", "unpack", "configure", };
 	string prefix = fake ? "(fake)" : "";
-	string result = prefix + typeStrings[type] + " " + version->packageName +
+	string result = prefix + typeStrings[type] + " " + version->packageId.name() +
 			" " + version->versionString;
 
 	return result;
@@ -121,9 +121,9 @@ PackagesWorker::PackagesWorker()
 	__auto_installed_package_names = _cache->getExtendedInfo().automaticallyInstalled;
 }
 
-set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debugging)
+set< PackageId > __get_pseudo_essential_package_ids(const Cache& cache, bool debugging)
 {
-	set< string > result;
+	set< PackageId > result;
 	queue< const BinaryVersion* > toProcess;
 
 	auto processRelationExpression = [&cache, &result, &toProcess, &debugging](const RelationExpression& relationExpression)
@@ -133,11 +133,11 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 		{
 			if ((*satisfyingVersionIt)->isInstalled())
 			{
-				if (result.insert((*satisfyingVersionIt)->packageName).second)
+				if (result.insert((*satisfyingVersionIt)->packageId).second)
 				{
 					if (debugging)
 					{
-						debug2("detected pseudo-essential package '%s'", (*satisfyingVersionIt)->packageName);
+						debug2("detected pseudo-essential package '%s'", (*satisfyingVersionIt)->packageId.name());
 					}
 					toProcess.push(*satisfyingVersionIt);
 				}
@@ -180,13 +180,13 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 	return result;
 }
 
-const BinaryVersion* PackagesWorker::__get_fake_version_for_purge(const string& packageName)
+const BinaryVersion* PackagesWorker::__get_fake_version_for_purge(PackageId packageId)
 {
-	auto& versionPtr = __fake_versions_for_purge[packageName];
+	auto& versionPtr = __fake_versions_for_purge[packageId];
 	if (!versionPtr)
 	{
 		versionPtr.reset(new BinaryVersion);
-		versionPtr->packageName = packageName;
+		versionPtr->packageId = packageId;
 		versionPtr->versionString = "<dummy>";
 		versionPtr->essential = false;
 	}
@@ -245,7 +245,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 		{ Action::Purge, vector< IA::Type >{ IA::Remove } },
 	};
 
-	auto pseudoEssentialPackageNames = __get_pseudo_essential_package_names(
+	auto pseudoEssentialPackageIds = __get_pseudo_essential_package_ids(
 			*_cache, _config->getBool("debug::worker"));
 
 	auto addBasicEdge = [&gaa](const InnerAction* fromPtr, const InnerAction* toPtr)
@@ -264,11 +264,11 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 
 		FORIT(suggestedPackageIt, __actions_preview->groups[userAction])
 		{
-			const string& packageName = suggestedPackageIt->first;
+			auto packageId = suggestedPackageIt->first;
 
 			const InnerAction* previousInnerActionPtr = NULL;
 
-			string logMessage = userActionString + ' ' + packageName + " [";
+			string logMessage = userActionString + ' ' + packageId.name() + " [";
 
 			FORIT(innerActionTypeIt, innerActionTypes)
 			{
@@ -277,7 +277,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 				const BinaryVersion* version;
 				if (innerActionType == IA::Remove)
 				{
-					auto package = _cache->getBinaryPackage(packageName);
+					auto package = _cache->getBinaryPackage(packageId);
 					if (package)
 					{
 						version = package->getInstalledVersion(); // may be undef too in purge-only case
@@ -289,7 +289,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 				}
 				if (!version)
 				{
-					version = __get_fake_version_for_purge(packageName);
+					version = __get_fake_version_for_purge(packageId);
 				}
 
 				if (innerActionType != IA::Unpack)
@@ -314,13 +314,13 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 					using std::make_pair;
 					addBasicEdge(previousInnerActionPtr, newVertexPtr);
 					if (previousInnerActionPtr->type == IA::Remove &&
-							(newVertexPtr->version->essential || pseudoEssentialPackageNames.count(packageName)))
+							(newVertexPtr->version->essential || pseudoEssentialPackageIds.count(packageId)))
 					{
 						// merging remove/unpack
 						addBasicEdge(newVertexPtr, previousInnerActionPtr);
 					}
 					if (previousInnerActionPtr->type == IA::Unpack &&
-							pseudoEssentialPackageNames.count(packageName))
+							pseudoEssentialPackageIds.count(packageId))
 					{
 						// merging unpack/configure
 						addBasicEdge(newVertexPtr, previousInnerActionPtr);
@@ -539,18 +539,17 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	*/
 	vector< pair< InnerAction, InnerAction > > virtualEdges;
 
-	set< string > blacklistedPackageNames;
+	set< PackageId > blacklistedPackageIds;
 	// building the black list
 	FORIT(vertexIt, gaa.graph.getVertices())
 	{
-		blacklistedPackageNames.insert(vertexIt->version->packageName);
+		blacklistedPackageIds.insert(vertexIt->version->packageId);
 	}
 
 	auto installedVersions = cache->getInstalledVersions();
 	for (const auto& installedVersion: installedVersions)
 	{
-		const string& packageName = installedVersion->packageName;
-		if (blacklistedPackageNames.count(packageName))
+		if (blacklistedPackageIds.count(installedVersion->packageId))
 		{
 			continue;
 		}
@@ -585,7 +584,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 	{
 		if (innerActionIt->type == InnerAction::Unpack)
 		{
-			const string& packageName = innerActionIt->version->packageName;
+			auto packageId = innerActionIt->version->packageId;
 
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
@@ -594,7 +593,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
-					(*actionPtrIt)->version->packageName == packageName)
+					(*actionPtrIt)->version->packageId == packageId)
 				{
 					fromPtr = *actionPtrIt;
 					break;
@@ -605,7 +604,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
-					(*actionPtrIt)->version->packageName == packageName)
+					(*actionPtrIt)->version->packageId == packageId)
 				{
 					toPtr = *actionPtrIt;
 					break;
@@ -677,7 +676,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 				__move_edge(gaa, toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
 				if (debugging)
 				{
-					const string& mediatorPackageName = fromPtr->version->packageName;
+					const string& mediatorPackageName = fromPtr->version->packageId.name();
 					debug2("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
 							(*predecessorVertexPtrIt)->toString(), (*successorVertexPtrIt)->toString(), mediatorPackageName);
 				}
@@ -791,14 +790,14 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 
 ssize_t __get_action_group_priority(const vector< InnerAction >& preActionGroup)
 {
-	set< string > packageNames;
+	set< PackageId > packageIds;
 	ssize_t sum = 0;
 	FORIT(actionIt, preActionGroup)
 	{
 		sum += actionIt->priority;
-		packageNames.insert(actionIt->version->packageName);
+		packageIds.insert(actionIt->version->packageId);
 	}
-	return sum / (ssize_t)packageNames.size();
+	return sum / (ssize_t)packageIds.size();
 }
 struct __action_group_pointer_priority_less
 {
@@ -865,10 +864,10 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 
 bool __is_single_package_group(const vector< InnerAction >& actionGroup)
 {
-	const string& firstPackageName = actionGroup[0].version->packageName;
+	auto firstPackageId = actionGroup[0].version->packageId;
 	FORIT(actionIt, actionGroup)
 	{
-		if (actionIt->version->packageName != firstPackageName)
+		if (actionIt->version->packageId != firstPackageId)
 		{
 			return false;
 		}
@@ -908,7 +907,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 		{
 			return; // was linked already
 		}
-		if (from.version->packageName == to.version->packageName)
+		if (from.version->packageId == to.version->packageId)
 		{
 			if ((from.type == InnerAction::Remove && to.type == InnerAction::Unpack)
 					|| (from.type == InnerAction::Unpack && to.type == InnerAction::Configure))
@@ -1296,7 +1295,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 static string __get_long_alias_tail(const Version& version, const string& baseUri)
 {
 	return format2("%s %s %s", version.getCodenameAndComponentString(baseUri),
-			version.packageName, version.versionString);
+			version.packageId.name(), version.versionString);
 }
 
 map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker::__prepare_downloads()
@@ -1333,7 +1332,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 			{
 				const auto& version = it->second.version;
 
-				const string& packageName = version->packageName;
+				const string& packageName = version->packageId.name();
 				const string& versionString = version->versionString;
 
 				auto downloadInfo = version->getDownloadInfo();
@@ -1429,7 +1428,7 @@ vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		FORIT(actionIt, *actionGroupIt)
 		{
 			auto actionType = actionIt->type;
-			const string& packageName = actionIt->version->packageName;
+			const string& packageName = actionIt->version->packageId.name();
 			if (actionType == InnerAction::Unpack)
 			{
 				unpackedPackageNames.insert(packageName);
@@ -1523,12 +1522,12 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 		{
 			if (actionIt->type == InnerAction::Remove)
 			{
-				const string& packageName = actionIt->version->packageName;
+				auto packageId = actionIt->version->packageId;
 				auto nextActionIt = actionIt+1;
 				if (nextActionIt != actionGroupIt->end())
 				{
 					if (nextActionIt->type == InnerAction::Unpack &&
-							nextActionIt->version->packageName == packageName)
+							nextActionIt->version->packageId == packageId)
 					{
 						continue; // okay, this is not really a removal, we can ignore it
 					}
@@ -1536,13 +1535,13 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 
 				if (!removeReinstreqFlagIsSet)
 				{
-					auto installedRecord = systemState->getInstalledInfo(packageName);
+					auto installedRecord = systemState->getInstalledInfo(packageId);
 					if (!installedRecord)
 					{
 						logger.loggedFatal2(Logger::Subsystem::Packages, 2,
 								format2, "internal error: worker: __set_force_options_for_removals_if_needed: "
 								"there is no installed record for the package '%s' which is to be removed",
-								packageName);
+								packageId.name());
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
@@ -1755,10 +1754,10 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 					path = archivesDirectory + "/" + _get_archive_basename(version);
 				}
 			}
-			const string& packageName = version->packageName;
+			auto packageId = version->packageId;
 
 			string oldVersionString = "-";
-			auto oldPackage = _cache->getBinaryPackage(packageName);
+			auto oldPackage = _cache->getBinaryPackage(packageId);
 			if (oldPackage)
 			{
 				auto installedVersion = oldPackage->getInstalledVersion();
@@ -1795,7 +1794,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 				}
 			}
 
-			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
+			result += format2("%s %s %s %s %s\n", packageId.name(), oldVersionString,
 					compareVersionStringsSign, newVersionString, path);
 		}
 	}
@@ -1878,24 +1877,24 @@ void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 
 		bool targetStatus = (actionType == InnerAction::Unpack); // will be false for removals
 
-		const map< string, bool >& autoFlagChanges = __actions_preview->autoFlagChanges;
+		const auto& autoFlagChanges = __actions_preview->autoFlagChanges;
 
-		const string& packageName = actionIt->version->packageName;
-		auto it = autoFlagChanges.find(packageName);
+		auto packageId = actionIt->version->packageId;
+		auto it = autoFlagChanges.find(packageId);
 		if (it != autoFlagChanges.end() && it->second == targetStatus)
 		{
-			markAsAutomaticallyInstalled(packageName, targetStatus);
+			markAsAutomaticallyInstalled(packageId, targetStatus);
 		}
 	}
 }
 
-void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, bool targetStatus)
+void PackagesWorker::markAsAutomaticallyInstalled(PackageId packageId, bool targetStatus)
 {
 	auto simulating = _config->getBool("cupt::worker::simulate");
 
 	{ // logging
 		auto message = format2("marking '%s' as %s installed",
-				packageName, targetStatus ? "automatically" : "manually");
+				packageId.name(), targetStatus ? "automatically" : "manually");
 		_logger->log(Logger::Subsystem::Packages, 2, message);
 	}
 
@@ -1903,7 +1902,7 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 	{
 		string prefix = targetStatus ?
 					__("marking as automatically installed") : __("marking as manually installed");
-		simulate2("%s: %s", prefix, packageName);
+		simulate2("%s: %s", prefix, packageId.name());
 	}
 	else
 	{
@@ -1911,11 +1910,11 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 		{
 			if (targetStatus)
 			{
-				__auto_installed_package_names.insert(packageName);
+				__auto_installed_package_ids.insert(packageId);
 			}
 			else
 			{
-				__auto_installed_package_names.erase(packageName);
+				__auto_installed_package_ids.erase(packageId);
 			}
 			auto extendedInfoPath = cachefiles::getPathOfExtendedStates(*_config);
 			fs::mkpath(fs::dirname(extendedInfoPath));
@@ -1931,9 +1930,9 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				}
 
 				// filling new info
-				FORIT(packageNameIt, __auto_installed_package_names)
+				for (auto packageId: __auto_installed_package_ids)
 				{
-					tempFile.put(format2("Package: %s\nAuto-Installed: 1\n\n", *packageNameIt));
+					tempFile.put(format2("Package: %s\nAuto-Installed: 1\n\n", packageId.name()));
 				}
 			}
 

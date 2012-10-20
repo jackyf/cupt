@@ -28,12 +28,12 @@
 namespace cupt {
 namespace internal {
 
-bool __get_flag_value(bool defaultValue, const string& packageName,
-		const map< string, bool >& overrides)
+bool __get_flag_value(bool defaultValue, PackageId packageId,
+		const map< PackageId, bool >& overrides)
 {
 	bool result = defaultValue;
 
-	auto it = overrides.find(packageName);
+	auto it = overrides.find(packageId);
 	if (it != overrides.end())
 	{
 		result = it->second;
@@ -42,13 +42,13 @@ bool __get_flag_value(bool defaultValue, const string& packageName,
 	return result;
 }
 
-void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
+void SetupAndPreviewWorker::__generate_action_preview(PackageId packageId,
 		const Resolver::SuggestedPackage& suggestedPackage, bool globalPurgeFlag)
 {
 	Action::Type action = Action::Count; // invalid
 
 	const auto& supposedVersion = suggestedPackage.version;
-	auto installedInfo = _cache->getSystemState()->getInstalledInfo(packageName);
+	auto installedInfo = _cache->getSystemState()->getInstalledInfo(packageId);
 
 	if (supposedVersion)
 	{
@@ -63,10 +63,10 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			// there is some installed info about package
 
 			// determine installed version
-			auto package = _cache->getBinaryPackage(packageName);
+			auto package = _cache->getBinaryPackage(packageId);
 			if (!package)
 			{
-				fatal2i("the binary package '%s' does not exist", packageName);
+				fatal2i("the binary package '%s' does not exist", packageId.name());
 			}
 			auto installedVersion = package->getInstalledVersion();
 
@@ -129,7 +129,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 		// package is to be removed
 		if (installedInfo)
 		{
-			bool purgeFlag = __get_flag_value(globalPurgeFlag, packageName, __purge_overrides);
+			bool purgeFlag = __get_flag_value(globalPurgeFlag, packageId, __purge_overrides);
 			switch (installedInfo->status)
 			{
 				case State::InstalledRecord::Status::Installed:
@@ -156,7 +156,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 
 	if (action != Action::Count)
 	{
-		__actions_preview->groups[action][packageName] = suggestedPackage;
+		__actions_preview->groups[action][packageId] = suggestedPackage;
 	}
 
 	{ // does auto status need changing?
@@ -175,10 +175,10 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			targetAutoStatus = suggestedPackage.automaticallyInstalledFlag;
 		}
 
-		bool currentAutoStatus = _cache->isAutomaticallyInstalled(packageName);
+		bool currentAutoStatus = _cache->isAutomaticallyInstalled(packageId);
 		if (targetAutoStatus != currentAutoStatus)
 		{
-			__actions_preview->autoFlagChanges[packageName] = targetAutoStatus;
+			__actions_preview->autoFlagChanges[packageId] = targetAutoStatus;
 		}
 	}
 }
@@ -196,10 +196,10 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 
 	FORIT(desiredIt, *__desired_state)
 	{
-		const string& packageName = desiredIt->first;
+		auto packageId = desiredIt->first;
 		const Resolver::SuggestedPackage& suggestedPackage = desiredIt->second;
 
-		__generate_action_preview(packageName, suggestedPackage, globalPurge);
+		__generate_action_preview(packageId, suggestedPackage, globalPurge);
 	}
 }
 
@@ -209,9 +209,9 @@ void SetupAndPreviewWorker::setDesiredState(const Resolver::Offer& offer)
 	__generate_actions_preview();
 }
 
-void SetupAndPreviewWorker::setPackagePurgeFlag(const string& packageName, bool value)
+void SetupAndPreviewWorker::setPackagePurgeFlag(PackageId packageId, bool value)
 {
-	__purge_overrides[packageName] = value;
+	__purge_overrides[packageId] = value;
 }
 
 shared_ptr< const Worker::ActionsPreview > SetupAndPreviewWorker::getActionsPreview() const
@@ -219,27 +219,25 @@ shared_ptr< const Worker::ActionsPreview > SetupAndPreviewWorker::getActionsPrev
 	return __actions_preview;
 }
 
-map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
+map< PackageId, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 {
-	map< string, ssize_t > result;
+	map< PackageId, ssize_t > result;
 
-	set< string > changedPackageNames;
+	set< PackageId > changedPackageIds;
 	for (size_t i = 0; i < Action::Count; ++i)
 	{
 		const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[i];
 		FORIT(it, suggestedPackages)
 		{
-			changedPackageNames.insert(it->first);
+			changedPackageIds.insert(it->first);
 		}
 	}
 
-	FORIT(packageNameIt, changedPackageNames)
+	for (auto packageId: changedPackageIds)
 	{
-		const string& packageName = *packageNameIt;
-
 		// old part
 		ssize_t oldInstalledSize = 0;
-		auto oldPackage = _cache->getBinaryPackage(packageName);
+		auto oldPackage = _cache->getBinaryPackage(packageId);
 		if (oldPackage)
 		{
 			const auto& oldVersion = oldPackage->getInstalledVersion();
@@ -251,13 +249,13 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 
 		// new part
 		ssize_t newInstalledSize = 0;
-		const auto& newVersion = __desired_state->find(packageName)->second.version;
+		const auto& newVersion = __desired_state->find(packageId)->second.version;
 		if (newVersion)
 		{
 			newInstalledSize = newVersion->installedSize;
 		}
 
-		result[packageName] = newInstalledSize - oldInstalledSize;
+		result[packageId] = newInstalledSize - oldInstalledSize;
 	}
 
 

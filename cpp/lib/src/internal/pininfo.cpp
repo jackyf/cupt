@@ -102,10 +102,10 @@ ssize_t PinInfo::getPin(const Version* version, const string& installedVersionSt
 	// adjust for downgrades and holds
 	if (!installedVersionString.empty())
 	{
-		auto installedInfo = systemState->getInstalledInfo(version->packageName);
+		auto installedInfo = systemState->getInstalledInfo(version->packageId);
 		if (!installedInfo)
 		{
-			fatal2i("missing installed info for package '%s'", version->packageName);
+			fatal2i("missing installed info for package '%s'", version->packageId.name());
 		}
 
 		if (compareVersionStrings(installedVersionString, version->versionString) > 0)
@@ -356,7 +356,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
-					matched = regex_search(version->packageName, m, *regex);
+					matched = regex_search(version->packageId.name(), m, *regex);
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
@@ -366,7 +366,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 							matched = false;
 							break;
 						}
-						matched = regex_search(binaryVersion->sourcePackageName, m, *regex);
+						matched = regex_search(binaryVersion->sourcePackageId.name(), m, *regex);
 					}
 					break;
 				case PinEntry::Condition::Version:

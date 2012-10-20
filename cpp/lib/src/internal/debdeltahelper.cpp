@@ -55,12 +55,12 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 {
 	vector< DownloadRecord > result;
 
-	const string& packageName = version->packageName;
-	auto package = cache->getBinaryPackage(packageName);
+	auto packageId = version->packageId;
+	auto package = cache->getBinaryPackage(packageId);
 	if (!package)
 	{
 		warn2(__("debdeltahelper: received a version without a corresponding binary package in the cache: "
-				"package '%s', version '%s'"), packageName, version->versionString);
+				"package '%s', version '%s'"), packageId.name(), version->versionString);
 		return result;
 	}
 	auto installedVersion = package->getInstalledVersion();
@@ -151,7 +151,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 			// not very reliable :(
 			string appendage = version->sources[0].directory + '/';
-			appendage += join("_", vector< string >{ packageName,
+			appendage += join("_", vector< string >{ packageId.name(),
 					mangleVersionString(installedVersion->versionString),
 					mangleVersionString(version->versionString),
 					version->architecture });

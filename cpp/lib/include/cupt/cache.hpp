@@ -60,7 +60,7 @@ class CUPT_API Cache
 	/// extended package information
 	struct ExtendedInfo
 	{
-		set< string > automaticallyInstalled; ///< names of automatically installed packages
+		set< PackageId > automaticallyInstalled; ///< ids of automatically installed packages
 	};
 
  private:

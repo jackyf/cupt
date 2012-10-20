@@ -119,7 +119,7 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 			if (relation.isSatisfiedBy(version->versionString))
 			{
 				if (version->isInstalled() &&
-						systemState->getInstalledInfo(version->packageName)->isBroken())
+						systemState->getInstalledInfo(version->packageId)->isBroken())
 				{
 					continue;
 				}
@@ -146,7 +146,7 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 				for (auto version: *reverseProvidePackage)
 				{
 					if (version->isInstalled() &&
-							systemState->getInstalledInfo(version->packageName)->isBroken())
+							systemState->getInstalledInfo(version->packageId)->isBroken())
 					{
 						continue;
 					}
@@ -796,7 +796,7 @@ void CacheImpl::parseExtendedStates()
 					if (tagValue.equal(BUFFER_AND_SIZE("1")))
 					{
 						// adding to storage
-						extendedInfo.automaticallyInstalled.insert(packageName);
+						extendedInfo.automaticallyInstalled.insert(PackageId(packageName));
 					}
 					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{

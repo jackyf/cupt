@@ -79,10 +79,10 @@ class CUPT_API State
 
 	/// gets installed record for a package
 	/**
-	 * @param packageName
+	 * @param packageId
 	 * @return pointer to InstalledRecord if found, empty pointer if not
 	 */
-	shared_ptr< const InstalledRecord > getInstalledInfo(const string& packageName) const;
+	shared_ptr< const InstalledRecord > getInstalledInfo(PackageId packageId) const;
 	/// gets installed package names
 	/**
 	 * @return array of package names

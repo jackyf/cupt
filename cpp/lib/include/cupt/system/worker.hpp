@@ -64,15 +64,15 @@ class CUPT_API Worker
 	struct ActionsPreview
 	{
 		Resolver::SuggestedPackages groups[Action::Count]; ///< system changes divided by type
-		/// maps package name to target 'automatically installed' flag value
+		/// maps package id to target 'automatically installed' flag value
 		/**
-		 * If a package name is not present in the map, the flag remains unchanged.
+		 * If a package is not present in the map, the flag remains unchanged.
 		 *
-		 * If a package name is mapped to @c true, package will be marked as automatically installed.
+		 * If a package is mapped to @c true, package will be marked as automatically installed.
 		 *
-		 * If a package name is mapped to @c false, package will be marked as manually installed.
+		 * If a package is mapped to @c false, package will be marked as manually installed.
 		 */
-		std::map< string, bool > autoFlagChanges;
+		std::map< PackageId, bool > autoFlagChanges;
 	};
 
 	/// constructor

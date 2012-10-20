@@ -28,17 +28,17 @@ namespace internal {
 
 class SetupAndPreviewWorker: public virtual WorkerBase
 {
-	map< string, bool > __purge_overrides;
+	map< PackageId, bool > __purge_overrides;
 
-	void __generate_action_preview(const string&,
+	void __generate_action_preview(PackageId,
 			const Resolver::SuggestedPackage&, bool);
 	void __generate_actions_preview();
  public:
 	void setDesiredState(const Resolver::Offer& offer);
-	void setPackagePurgeFlag(const string&, bool);
+	void setPackagePurgeFlag(PackageId, bool);
 
 	shared_ptr< const ActionsPreview > getActionsPreview() const;
-	map< string, ssize_t > getUnpackedSizesPreview() const;
+	map< PackageId, ssize_t > getUnpackedSizesPreview() const;
 	pair< size_t, size_t > getDownloadSizesPreview() const;
 };
 

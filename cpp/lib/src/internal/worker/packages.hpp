@@ -86,10 +86,10 @@ struct Changeset
 
 class PackagesWorker: public virtual WorkerBase
 {
-	std::set< string > __auto_installed_package_names;
-	map< string, unique_ptr< BinaryVersion > > __fake_versions_for_purge;
+	std::set< PackageId > __auto_installed_package_names;
+	map< PackageId, unique_ptr< BinaryVersion > > __fake_versions_for_purge;
 
-	const BinaryVersion* __get_fake_version_for_purge(const string&);
+	const BinaryVersion* __get_fake_version_for_purge(PackageId);
 	void __fill_actions(GraphAndAttributes&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
@@ -111,7 +111,7 @@ class PackagesWorker: public virtual WorkerBase
  public:
 	PackagesWorker();
 
-	void markAsAutomaticallyInstalled(const string& packageName, bool targetStatus);
+	void markAsAutomaticallyInstalled(PackageId, bool targetStatus);
 	void changeSystem(const shared_ptr< download::Progress >&);
 };
 
