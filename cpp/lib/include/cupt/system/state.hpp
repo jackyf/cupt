@@ -89,7 +89,7 @@ class CUPT_API State
 	 */
 	vector< string > getInstalledPackageNames() const;
 	/// @cond
-	CUPT_LOCAL vector< string > getReinstallRequiredPackageNames() const;
+	CUPT_LOCAL vector< PackageId > getReinstallRequiredPackageIds() const;
 	/// @endcond
 };
 

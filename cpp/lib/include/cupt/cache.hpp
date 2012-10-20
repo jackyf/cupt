@@ -108,10 +108,10 @@ class CUPT_API Cache
 
 	/// is binary package automatically installed?
 	/**
-	 * @param packageName name of the binary package
+	 * @param packageId
 	 * @return @c true if yes, @c false if no
 	 */
-	bool isAutomaticallyInstalled(const string& packageName) const;
+	bool isAutomaticallyInstalled(PackageId) const;
 
 	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;

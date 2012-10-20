@@ -72,14 +72,14 @@ struct BasicVertex
 struct VersionVertex: public BasicVertex
 {
  private:
-	const map< string, forward_list< const Element* > >::iterator __related_element_ptrs_it;
+	const map< PackageId, forward_list< const Element* > >::iterator __related_element_ptrs_it;
  public:
 	const BinaryVersion* version;
 
-	VersionVertex(const map< string, forward_list< const Element* > >::iterator&);
+	VersionVertex(const decltype(__related_element_ptrs_it)&);
 	string toString() const;
 	const forward_list< const Element* >* getRelatedElements() const;
-	const string& getPackageName() const;
+	PackageId getPackageId() const;
 	string toLocalizedString() const;
 };
 typedef VersionVertex VersionElement;
@@ -113,8 +113,8 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
-			const map< string, const BinaryVersion* >&,
-			const map< string, InitialPackageEntry >&);
+			const map< PackageId, const BinaryVersion* >&,
+			const map< PackageId, InitialPackageEntry >&);
 
 	const Element* getCorrespondingEmptyElement(const Element*);
 	void unfoldElement(const Element*);

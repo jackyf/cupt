@@ -74,7 +74,7 @@ struct CUPT_API Version
 		HashSums hashSums; ///< hash sums
 	};
 	vector< Source > sources; ///< list of sources
-	string packageName; ///< package name
+	PackageId packageId;
 	Priorities::Type priority; ///< priority
 	string section; ///< section
 	string maintainer; ///< maintainer (usually name and mail address)

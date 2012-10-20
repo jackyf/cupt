@@ -40,7 +40,7 @@ struct CUPT_API BinaryVersion: public Version
 	};
 	string architecture; ///< binary architecture
 	uint32_t installedSize; ///< approximate size of unpacked file content in bytes
-	string sourcePackageName; ///< source package name
+	PackageId sourcePackageId;
 	string sourceVersionString; ///< source version string
 	bool essential; ///< has version 'essential' flag?
 	RelationLine relations[RelationTypes::Count]; ///< relations with other binary versions

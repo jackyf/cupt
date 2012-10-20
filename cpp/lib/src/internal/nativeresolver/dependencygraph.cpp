@@ -79,13 +79,13 @@ Unsatisfied::Type BasicVertex::getUnsatisfiedType() const
 	return Unsatisfied::None;
 }
 
-VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >::iterator& it)
+VersionVertex::VersionVertex(decltype(__related_element_ptrs_it)& it)
 	: __related_element_ptrs_it(it)
 {}
 
 string VersionVertex::toString() const
 {
-	return getPackageName() + ' ' +
+	return getPackageId().name() + ' ' +
 			(version ? version->versionString : "<not installed>");
 }
 
@@ -94,14 +94,14 @@ const forward_list< const Element* >* VersionVertex::getRelatedElements() const
 	return &__related_element_ptrs_it->second;
 }
 
-const string& VersionVertex::getPackageName() const
+PackageId VersionVertex::getPackageId() const
 {
 	return __related_element_ptrs_it->first;
 }
 
 string VersionVertex::toLocalizedString() const
 {
-	const string& packageName = getPackageName();
+	const string& packageName = getPackageId().name();
 	if (version)
 	{
 		return __("installed") + ' ' + packageName + ' ' + version->versionString;
@@ -266,11 +266,11 @@ Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
 
 bool __is_version_array_intersects_with_packages(
 		const vector< const BinaryVersion* >& versions,
-		const map< string, const BinaryVersion* >& oldPackages)
+		const map< PackageId, const BinaryVersion* >& oldPackages)
 {
 	for (const auto& version: versions)
 	{
-		auto oldPackageIt = oldPackages.find(version->packageName);
+		auto oldPackageIt = oldPackages.find(version->packageId);
 		if (oldPackageIt == oldPackages.end())
 		{
 			continue;

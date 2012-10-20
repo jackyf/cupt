@@ -115,7 +115,7 @@ class CUPT_API Resolver
 		bool automaticallyInstalledFlag;
 		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
 	};
-	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
+	typedef map< PackageId, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
 	/// the result of resolver's work
 	struct Offer
 	{

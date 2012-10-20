@@ -48,13 +48,13 @@ class NativeResolverImpl
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
-	map< string, bool > __auto_status_overrides;
+	map< PackageId, bool > __auto_status_overrides;
 	unique_ptr< SolutionStorage > __solution_storage;
 	ScoreManager __score_manager;
 	AutoRemovalPossibility __auto_removal_possibility;
 
-	map< string, const BinaryVersion* > __old_packages;
-	map< string, dg::InitialPackageEntry > __initial_packages;
+	map< PackageId, const BinaryVersion* > __old_packages;
+	map< PackageId, dg::InitialPackageEntry > __initial_packages;
 	RelationLine __satisfy_relation_expressions;
 	RelationLine __unsatisfy_relation_expressions;
 	BinaryVersion __custom_relations_version;
@@ -69,7 +69,7 @@ class NativeResolverImpl
 	float __get_version_weight(const BinaryVersion*) const;
 	float __get_action_profit(const BinaryVersion*, const BinaryVersion*) const;
 
-	bool __compute_target_auto_status(const string&) const;
+	bool __compute_target_auto_status(PackageId) const;
 	AutoRemovalPossibility::Allow __is_candidate_for_auto_removal(const dg::Element*);
 	bool __clean_automatically_installed(Solution&);
 
@@ -97,7 +97,7 @@ class NativeResolverImpl
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&,
 			const dg::Element*, const dg::Element*, bool);
 
-	static const string __dummy_package_name;
+	static const PackageId __dummy_package_id;
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 

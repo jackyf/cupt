@@ -93,13 +93,13 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 	{
 		scoreType = ScoreChange::SubScore::Removal;
 
-		auto binaryPackage = __cache->getBinaryPackage(originalVersion->packageName);
+		auto binaryPackage = __cache->getBinaryPackage(originalVersion->packageId);
 		auto installedVersion = binaryPackage->getInstalledVersion();
 		if (installedVersion && installedVersion->essential)
 		{
 			scoreChange.__subscores[ScoreChange::SubScore::RemovalOfEssential] = 1;
 		}
-		if (__cache->isAutomaticallyInstalled(originalVersion->packageName))
+		if (__cache->isAutomaticallyInstalled(originalVersion->packageId))
 		{
 			scoreChange.__subscores[ScoreChange::SubScore::RemovalOfAuto] = 1;
 		}
