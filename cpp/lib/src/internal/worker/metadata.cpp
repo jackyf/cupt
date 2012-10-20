@@ -143,8 +143,9 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 		sub = [uncompressorName, downloadPath, targetPath]() -> string
 		{
+			auto uncompressedPath = downloadPath + ".uncompressed";
 			auto uncompressingResult = ::system(format2("%s %s -c > %s",
-					uncompressorName, downloadPath, targetPath).c_str());
+					uncompressorName, downloadPath, uncompressedPath).c_str());
 			// anyway, remove the compressed file, ignoring errors if any
 			unlink(downloadPath.c_str());
 			if (uncompressingResult)
@@ -152,7 +153,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 				return format2(__("failed to uncompress '%s', '%s' returned the error %d"),
 						downloadPath, uncompressorName, uncompressingResult);
 			}
-			return string(); // success
+			return generateMovingSub(uncompressedPath, targetPath)();
 		};
 		return true;
 	}
