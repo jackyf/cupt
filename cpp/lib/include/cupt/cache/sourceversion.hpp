@@ -51,7 +51,7 @@ struct CUPT_API SourceVersion: public Version
 	ArchitecturedRelationLine relations[RelationTypes::Count]; ///< relations
 	vector< FileRecord > files[FileParts::Count]; ///< Version::FileRecord s
 	vector< string > uploaders; ///< array of uploaders
-	vector< string > binaryPackageNames; ///< array of binary package names, which are built out of
+	vector< PackageId > binaryPackageIds; ///< array of binary package ids, which are built out of
 	vector< string > architectures; ///< array of binary architectures on which this source version may be built
 
 	virtual bool areHashesEqual(const Version* other) const;

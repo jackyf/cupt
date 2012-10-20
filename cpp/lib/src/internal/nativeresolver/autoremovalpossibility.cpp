@@ -70,7 +70,7 @@ class AutoRemovalPossibilityImpl
 	Allow isAllowed(const BinaryVersion* version,
 			bool wasInstalledBefore, bool targetAutoStatus) const
 	{
-		const string& packageName = version->packageName;
+		const string& packageName = version->packageId.name();
 
 		if (version->essential)
 		{

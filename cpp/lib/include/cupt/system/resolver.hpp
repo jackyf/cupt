@@ -98,10 +98,10 @@ class CUPT_API Resolver
 	struct SynchronizationReason: public Reason
 	{
 		const BinaryVersion* version; ///< version that caused the change
-		string relatedPackageName; ///< name of related binary package
+		PackageId relatedPackageId; ///< related binary package
 
 		/// trivial constructor
-		SynchronizationReason(const BinaryVersion*, const string&);
+		SynchronizationReason(const BinaryVersion*, PackageId);
 		virtual string toString() const;
 	};
 
