@@ -104,9 +104,9 @@ class NativeResolverImpl
 	void installVersion(const BinaryVersion*);
 	void satisfyRelationExpression(const RelationExpression&);
 	void unsatisfyRelationExpression(const RelationExpression&);
-	void removePackage(const string& packageName);
+	void removePackage(PackageId);
 	void upgrade();
-	void setAutomaticallyInstalledFlag(const string& packageName, bool flagValue);
+	void setAutomaticallyInstalledFlag(PackageId, bool flagValue);
 
 	bool resolve(Resolver::CallbackType);
 };

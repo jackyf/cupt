@@ -48,12 +48,12 @@ CacheImpl::~CacheImpl()
 	delete __smatch_ptr;
 }
 
-void CacheImpl::processProvides(const string* packageNamePtr,
+void CacheImpl::processProvides(PackageId packageId,
 		const char* providesStringStart, const char* providesStringEnd)
 {
-	auto callback = [this, &packageNamePtr](const char* tokenBeginIt, const char* tokenEndIt)
+	auto callback = [this, &packageId](const char* tokenBeginIt, const char* tokenEndIt)
 	{
-		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(packageNamePtr);
+		this->canProvide[PackageId(string(tokenBeginIt, tokenEndIt))].insert(packageId);
 	};
 	processSpaceCommaSpaceDelimitedStrings(
 			providesStringStart, providesStringEnd, callback);
@@ -69,14 +69,14 @@ Package* CacheImpl::newSourcePackage() const
 	return new SourcePackage(binaryArchitecture.get());
 }
 
-Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageRecord > >& pre,
-		unordered_map< string, unique_ptr< Package > >& target, const string& packageName,
+Package* CacheImpl::preparePackage(unordered_map< PackageId, vector< PrePackageRecord > >& pre,
+		unordered_map< PackageId, unique_ptr< Package > >& target, PackageId packageId,
 		decltype(&CacheImpl::newBinaryPackage) packageBuilderMethod) const
 {
-	auto preIt = pre.find(packageName);
+	auto preIt = pre.find(packageId);
 	if (preIt != pre.end())
 	{
-		auto& package = target[packageName];
+		auto& package = target[packageId];
 		if (!package)
 		{
 			// there was no such package before, and an insertion occured
@@ -90,7 +90,7 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
 			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;
-			versionInitParams.packageNamePtr = &packageName;
+			versionInitParams.packageId = packageId;
 			package->addEntry(versionInitParams);
 		}
 		preRecord.clear();
@@ -107,9 +107,9 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 {
 	vector< const BinaryVersion* > result;
 
-	const string& packageName = relation.packageName;
+	auto packageId = relation.packageId;
 
-	auto package = getBinaryPackage(packageName);
+	auto package = getBinaryPackage(packageId);
 
 	if (package)
 	{
@@ -132,13 +132,13 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 	if (relation.relationType == Relation::Types::None)
 	{
 		// looking for reverse-provides
-		auto reverseProvidesIt = canProvide.find(packageName);
+		auto reverseProvidesIt = canProvide.find(packageId);
 		if (reverseProvidesIt != canProvide.end())
 		{
-			const set< const string* >& reverseProvides = reverseProvidesIt->second;
+			const set< PackageId >& reverseProvides = reverseProvidesIt->second;
 			FORIT(it, reverseProvides)
 			{
-				auto reverseProvidePackage = getBinaryPackage(**it);
+				auto reverseProvidePackage = getBinaryPackage(*it);
 				if (!reverseProvidePackage)
 				{
 					continue;
@@ -150,10 +150,10 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 					{
 						continue;
 					}
-					const vector< string >& realProvides = version->provides;
+					const auto& realProvides = version->provides;
 					FORIT(realProvidesIt, realProvides)
 					{
-						if (*realProvidesIt == packageName)
+						if (*realProvidesIt == packageId)
 						{
 							// ok, this particular version does provide this virtual package
 							result.push_back(version);
@@ -168,13 +168,13 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 	return result;
 }
 
-const BinaryPackage* CacheImpl::getBinaryPackage(const string& packageName) const
+const BinaryPackage* CacheImpl::getBinaryPackage(PackageId packageId) const
 {
-	auto it = binaryPackages.find(packageName);
+	auto it = binaryPackages.find(packageId);
 	if (it == binaryPackages.end())
 	{
 		auto prepareResult = preparePackage(preBinaryPackages,
-				binaryPackages, packageName, &CacheImpl::newBinaryPackage);
+				binaryPackages, packageId, &CacheImpl::newBinaryPackage);
 		// can be empty/NULL also
 		return static_cast< const BinaryPackage* >(prepareResult);
 	}
@@ -184,13 +184,13 @@ const BinaryPackage* CacheImpl::getBinaryPackage(const string& packageName) cons
 	}
 }
 
-const SourcePackage* CacheImpl::getSourcePackage(const string& packageName) const
+const SourcePackage* CacheImpl::getSourcePackage(PackageId packageId) const
 {
-	auto it = sourcePackages.find(packageName);
+	auto it = sourcePackages.find(packageId);
 	if (it == sourcePackages.end())
 	{
 		auto prepareResult = preparePackage(preSourcePackages,
-				sourcePackages, packageName, &CacheImpl::newSourcePackage);
+				sourcePackages, packageId, &CacheImpl::newSourcePackage);
 		// can be empty/NULL also
 		return static_cast< const SourcePackage* >(prepareResult);
 	}
@@ -579,17 +579,17 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				continue;
 			}
 
-			auto& prePackageRecords = prePackagesStorage[std::move(packageName)];
+			PackageId packageId(packageName);
+
+			auto& prePackageRecords = prePackagesStorage[packageId];
 			prePackageRecords.push_back(prePackageRecord);
 
-			auto persistentPackageNamePtr = (const string*)
-					((const char*)(&prePackageRecords) - offsetof(PrePackageMap::value_type, second));
 			while (getNextLine(), size > 1)
 			{
 				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
 				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
 				{
-					processProvides(persistentPackageNamePtr, buf + providesAnchorLength, buf + size - 1);
+					processProvides(packageId, buf + providesAnchorLength, buf + size - 1);
 				}
 			}
 		}

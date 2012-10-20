@@ -52,16 +52,16 @@ class CacheImpl
  private:
 	typedef Cache::IndexEntry IndexEntry;
 	typedef Cache::ExtendedInfo ExtendedInfo;
-	typedef unordered_map< string, vector< PrePackageRecord > > PrePackageMap;
+	typedef unordered_map< PackageId, vector< PrePackageRecord > > PrePackageMap;
 	struct TranslationPosition
 	{
 		File* file;
 		size_t offset;
 	};
 
-	map< string, set< const string* > > canProvide;
-	mutable unordered_map< string, unique_ptr< Package > > binaryPackages;
-	mutable unordered_map< string, unique_ptr< Package > > sourcePackages;
+	map< PackageId, set< PackageId > > canProvide;
+	mutable unordered_map< PackageId, unique_ptr< Package > > binaryPackages;
+	mutable unordered_map< PackageId, unique_ptr< Package > > sourcePackages;
 	map< string, TranslationPosition > translations;
 	mutable unordered_map< string, vector< const BinaryVersion* > > getSatisfyingVersionsCache;
 	shared_ptr< PinInfo > pinInfo;
@@ -72,8 +72,8 @@ class CacheImpl
 
 	Package* newSourcePackage() const;
 	Package* newBinaryPackage() const;
-	Package* preparePackage(unordered_map< string, vector< PrePackageRecord > >&,
-			unordered_map< string, unique_ptr< Package > >&, const string&,
+	Package* preparePackage(unordered_map< PackageId, vector< PrePackageRecord > >&,
+			unordered_map< PackageId, unique_ptr< Package > >&, PackageId,
 			decltype(&CacheImpl::newBinaryPackage)) const;
 	shared_ptr< ReleaseInfo > getReleaseInfo(const Config&, const IndexEntry&);
 	void parseSourceList(const string& path);
@@ -104,11 +104,11 @@ class CacheImpl
 	void processIndexEntries(bool, bool);
 	void parsePreferences();
 	void parseExtendedStates();
-	const BinaryPackage* getBinaryPackage(const string& packageName) const;
-	const SourcePackage* getSourcePackage(const string& packageName) const;
+	const BinaryPackage* getBinaryPackage(PackageId) const;
+	const SourcePackage* getSourcePackage(PackageId) const;
 	ssize_t getPin(const Version*, const std::function< const BinaryPackage* () >&) const;
 	string getLocalizedDescription(const BinaryVersion*) const;
-	void processProvides(const string*, const char*, const char*);
+	void processProvides(PackageId, const char*, const char*);
 	vector< const BinaryVersion* > getSatisfyingVersions(const RelationExpression&) const;
 };
 

@@ -86,22 +86,22 @@ class CUPT_API Cache
 	/// gets release data list of indexed metadata for source packages
 	vector< shared_ptr< const ReleaseInfo > > getSourceReleaseData() const;
 
-	/// gets the list of names of available binary packages
-	vector< string > getBinaryPackageNames() const;
-	/// gets BinaryPackage by name
+	/// gets the list of available binary packages
+	vector< PackageId > getBinaryPackageNames() const;
+	/// gets BinaryPackage by id
 	/**
-	 * @param packageName name of the binary package
+	 * @param packageId
 	 * @return pointer to binary package if found, empty pointer if not
 	 */
-	const BinaryPackage* getBinaryPackage(const string& packageName) const;
-	/// gets the list of names of available source packages
-	vector< string > getSourcePackageNames() const;
+	const BinaryPackage* getBinaryPackage(PackageId packageId) const;
+	/// gets the list of available source packages
+	vector< PackageId > getSourcePackageNames() const;
 	/// gets SourcePackage by name
 	/**
-	 * @param packageName name of the source package
+	 * @param packageId
 	 * @return pointer to source package if found, empty pointer if not
 	 */
-	const SourcePackage* getSourcePackage(const string& packageName) const;
+	const SourcePackage* getSourcePackage(PackageId packageId) const;
 
 	/// gets all installed versions
 	vector< const BinaryVersion* > getInstalledVersions() const;

@@ -139,6 +139,7 @@ int CUPT_API compareVersionStrings(const string& left, const string& right);
 } // namespace
 
 #include <cupt/format2.hpp>
+#include <cupt/packageid.hpp>
 
 #endif
 

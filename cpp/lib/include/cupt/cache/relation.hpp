@@ -40,7 +40,7 @@ struct CUPT_API Relation
 		/// string values of corresponding types
 		static const string strings[];
 	};
-	string packageName; ///< package name
+	PackageId packageId;
 	Types::Type relationType; ///< relation type
 	string versionString; ///< version string
 
