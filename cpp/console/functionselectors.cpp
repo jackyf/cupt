@@ -66,11 +66,11 @@ struct IsBinary< SRT::Type >
 
 bool __spcv_less(const Cache& cache, const SPCV& left, const SPCV& right)
 {
-	if (left->packageName > right->packageName)
+	if (left->packageId > right->packageId)
 	{
 		return true;
 	}
-	if (left->packageName < right->packageName)
+	if (left->packageId < right->packageId)
 	{
 		return false;
 	}
@@ -104,21 +104,21 @@ class VersionSetGetter
 	const Cache& __cache;
 	mutable FSResult* __cached_all_versions;
 
-	vector< string > __get_package_names() const
+	vector< PackageId > __get_package_ids() const
 	{
-		auto result = __binary ? __cache.getBinaryPackageNames() : __cache.getSourcePackageNames();
+		auto result = __binary ? __cache.getBinaryPackageIds() : __cache.getSourcePackageIds();
 		std::sort(result.begin(), result.end());
 		return result;
 	}
-	const Package* __get_package(const string& packageName) const
+	const Package* __get_package(PackageId packageId) const
 	{
-		return __binary ? (const Package*)__cache.getBinaryPackage(packageName)
-				: (const Package*)__cache.getSourcePackage(packageName);
+		return __binary ? (const Package*)__cache.getBinaryPackage(packageId)
+				: (const Package*)__cache.getSourcePackage(packageId);
 	}
-	void __add_package_to_result(const string& packageName, FSResult* result) const
+	void __add_package_to_result(PackageId packageId, FSResult* result) const
 	{
 		// we call getSortedPinnedVersions() to place versions of the same package in the preference order
-		for (auto&& pinnedVersion: __cache.getSortedPinnedVersions(__get_package(packageName)))
+		for (auto&& pinnedVersion: __cache.getSortedPinnedVersions(__get_package(packageId)))
 		{
 			result->emplace_back(std::move(pinnedVersion.version));
 		}
@@ -132,9 +132,9 @@ class VersionSetGetter
 		if (!__cached_all_versions)
 		{
 			__cached_all_versions = new FSResult;
-			for (const string& packageName: __get_package_names())
+			for (auto packageId: __get_package_ids())
 			{
-				__add_package_to_result(packageName, __cached_all_versions);
+				__add_package_to_result(packageId, __cached_all_versions);
 			}
 		}
 		return *__cached_all_versions;
@@ -143,13 +143,13 @@ class VersionSetGetter
 	{
 		smatch m;
 		FSResult result;
-		for (const string& packageName: __get_package_names())
+		for (auto packageId: __get_package_ids())
 		{
-			if (!regex_match(packageName, m, regex))
+			if (!regex_match(packageId.name(), m, regex))
 			{
 				continue;
 			}
-			__add_package_to_result(packageName, &result);
+			__add_package_to_result(packageId, &result);
 		}
 		return result;
 	}
@@ -202,7 +202,7 @@ class VersionSet
 			FSResult result(__versions);
 			result.remove_if([&regex, &m](const SPCV& version)
 			{
-				return !regex_match(version->packageName, m, regex);
+				return !regex_match(version->packageId.name(), m, regex);
 			});
 			return result;
 		}
@@ -301,7 +301,7 @@ class BestFS: public CommonFS
 	FSResult select(Context& context, const VersionSet& from) const
 	{
 		auto result = __leaf_fs->select(context, from);
-		result.unique([](const SPCV& left, const SPCV& right) { return left->packageName == right->packageName; });
+		result.unique([](const SPCV& left, const SPCV& right) { return left->packageId == right->packageId; });
 		return result;
 	}
 };
@@ -572,9 +572,9 @@ class ProvidesFS: public RegexMatchBaseFS
 	bool _match(const Cache&, const SPCV& v) const
 	{
 		auto version = static_cast< const BinaryVersion* >(v);
-		for (const string& virtualPackageName: version->provides)
+		for (auto virtualPackageId: version->provides)
 		{
-			if (_matcher.match(virtualPackageName))
+			if (_matcher.match(virtualPackageId.name()))
 			{
 				return true;
 			}
@@ -766,7 +766,7 @@ class PackageIsInstalledFS: public PredicateFS
  protected:
 	bool _match(const Cache& cache, const SPCV& version) const
 	{
-		return isPackageInstalled(cache, version->packageName);
+		return isPackageInstalled(cache, version->packageId);
 	}
  public:
 	PackageIsInstalledFS(const Arguments& arguments)
@@ -780,7 +780,7 @@ class PackageIsAutoInstalledFS: public PredicateFS
  protected:
 	bool _match(const Cache& cache, const SPCV& version) const
 	{
-		return cache.isAutomaticallyInstalled(version->packageName);
+		return cache.isAutomaticallyInstalled(version->packageId);
 	}
  public:
 	PackageIsAutoInstalledFS(const Arguments& arguments)
@@ -839,7 +839,7 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 	CONSTRUCT_RELEASE_MEMBER_FS("release:origin", baseUri)
 	if (binary)
 	{
-		CONSTRUCT_FS("source-package", RegexMatchFS(BINARY_VERSION_MEMBER(sourcePackageName), arguments))
+		CONSTRUCT_FS("source-package", RegexMatchFS(BINARY_VERSION_MEMBER(sourcePackageId.name()), arguments))
 		CONSTRUCT_FS("source-version", RegexMatchFS(BINARY_VERSION_MEMBER(sourceVersionString), arguments))
 		CONSTRUCT_FS("essential", BoolMatchFS(BINARY_VERSION_MEMBER(essential), arguments))
 		CONSTRUCT_FS("installed", BoolMatchFS(BINARY_VERSION_MEMBER(isInstalled()), arguments))
@@ -1153,6 +1153,6 @@ list< SPCV > FunctionalSelector::selectAllVersions(const FS& functionSelector)
 list< SPCV > FunctionalSelector::selectBestVersions(const FS& functionSelector)
 {
 	auto result = selectAllVersions(functionSelector);
-	result.unique([](const SPCV& left, const SPCV& right) { return left->packageName == right->packageName; });
+	result.unique([](const SPCV& left, const SPCV& right) { return left->packageId == right->packageId; });
 	return result;
 }

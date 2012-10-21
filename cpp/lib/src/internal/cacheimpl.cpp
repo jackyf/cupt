@@ -579,7 +579,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				continue;
 			}
 
-			PackageId packageId(packageName);
+			PackageId packageId(std::move(packageName));
 
 			auto& prePackageRecords = prePackagesStorage[packageId];
 			prePackageRecords.push_back(prePackageRecord);
@@ -796,7 +796,7 @@ void CacheImpl::parseExtendedStates()
 					if (tagValue.equal(BUFFER_AND_SIZE("1")))
 					{
 						// adding to storage
-						extendedInfo.automaticallyInstalled.insert(PackageId(packageName));
+						extendedInfo.automaticallyInstalled.insert(PackageId(std::move(packageName)));
 					}
 					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{

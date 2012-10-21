@@ -87,7 +87,7 @@ int downloadSourcePackage(Context& context)
 	{
 		for (const auto& version: selectSourceVersionsWildcarded(*cache, argument))
 		{
-			const string& packageName = version->packageName;
+			const string& packageName = version->packageId.name();
 			const string& versionString = version->versionString;
 
 			auto downloadInfo = version->getDownloadInfo();
@@ -214,14 +214,14 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 		auto systemState = cache->getSystemState();
 		auto installedStatus = State::InstalledRecord::Status::Installed;
 
-		auto sensibleUtilsInstalledInfo = systemState->getInstalledInfo("sensible-utils");
+		auto sensibleUtilsInstalledInfo = systemState->getInstalledInfo(PackageId("sensible-utils"));
 		if (sensibleUtilsInstalledInfo && sensibleUtilsInstalledInfo->status == installedStatus)
 		{
 			pagerProgram = "sensible-pager";
 		}
 		else
 		{
-			auto lessInstalledInfo = systemState->getInstalledInfo("less");
+			auto lessInstalledInfo = systemState->getInstalledInfo(PackageId("less"));
 			if (lessInstalledInfo && lessInstalledInfo->status == installedStatus)
 			{
 				pagerProgram = "less";
@@ -281,7 +281,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 							sourceVersionString = sourceVersionString.substr(position+1);
 						}
 					}
-					const string& sourcePackageName = version->sourcePackageName;
+					const string& sourcePackageName = version->sourcePackageId.name();
 					string shortPrefix = sourcePackageName.compare(0, 3, "lib") ?
 							sourcePackageName.substr(0, 1) : sourcePackageName.substr(0, 4);
 
@@ -291,8 +291,8 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 							sourcePackageName + '/' + sourcePackageName + '_' +
 							sourceVersionString + '/' + typeString;
 
-					const string& shortAlias = version->packageName;
-					string longAlias = version->packageName + ' ' + version->versionString + ' ' + typeString;
+					const string& shortAlias = version->packageId.name();
+					string longAlias = shortAlias + ' ' + version->versionString + ' ' + typeString;
 					downloadEntity.extendedUris.push_back(Manager::ExtendedUri(
 							uri, shortAlias, longAlias));
 				}
@@ -351,7 +351,7 @@ int downloadChangelogOrCopyright(Context& context, ChangelogOrCopyright::Type ty
 				else
 				{
 					fatal2(__("no info where to acquire %s for version '%s' of package '%s'"),
-							typeString, version->versionString, version->packageName);
+							typeString, version->versionString, version->packageId.name());
 				}
 			}
 		}

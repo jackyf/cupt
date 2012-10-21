@@ -32,11 +32,11 @@
 #include "selectors.hpp"
 #include "functionselectors.hpp"
 
-typedef std::function< vector< string > (const Cache&) > __package_names_fetcher;
+typedef std::function< vector< PackageId > (const Cache&) > __package_names_fetcher;
 
 const BinaryPackage* getBinaryPackage(const Cache& cache, const string& packageName, bool throwOnError)
 {
-	auto result = cache.getBinaryPackage(packageName);
+	auto result = cache.getBinaryPackage(PackageId(packageName));
 	if (!result && throwOnError)
 	{
 		fatal2(__("unable to find the binary package '%s'"), packageName);
@@ -46,7 +46,7 @@ const BinaryPackage* getBinaryPackage(const Cache& cache, const string& packageN
 
 const SourcePackage* getSourcePackage(const Cache& cache, const string& packageName, bool throwOnError)
 {
-	auto result = cache.getSourcePackage(packageName);
+	auto result = cache.getSourcePackage(PackageId(packageName));
 	if (!result && throwOnError)
 	{
 		fatal2(__("unable to find the source package '%s'"), packageName);
@@ -196,7 +196,7 @@ const SourceVersion* selectSourceVersion(const Cache& cache,
 	auto binaryVersion = selectBinaryVersion(cache, packageExpression, false);
 	if (binaryVersion)
 	{
-		auto newPackageExpression = binaryVersion->sourcePackageName +
+		auto newPackageExpression = binaryVersion->sourcePackageId.name() +
 				'=' + binaryVersion->sourceVersionString;
 		return static_cast< const SourceVersion* >(__select_version< decltype(getSourcePackage) >
 				(cache, newPackageExpression, getSourcePackage, throwOnError));
@@ -208,14 +208,14 @@ const SourceVersion* selectSourceVersion(const Cache& cache,
 	return sourceVersion;
 }
 
-static vector< string > __select_package_names_wildcarded(const Cache& cache,
+static vector< PackageId > __select_package_names_wildcarded(const Cache& cache,
 		const string& packageNameExpression, __package_names_fetcher packageNamesFetcher)
 {
-	vector< string > result = packageNamesFetcher(cache);
+	auto result = packageNamesFetcher(cache);
 
-	auto notMatch = [&packageNameExpression, &cache](const string& packageName)
+	auto notMatch = [&packageNameExpression, &cache](PackageId packageId)
 	{
-		return fnmatch(packageNameExpression.c_str(), packageName.c_str(), 0);
+		return fnmatch(packageNameExpression.c_str(), packageId.name().c_str(), 0);
 	};
 	result.erase(std::remove_if(result.begin(), result.end(), notMatch), result.end());
 
@@ -254,10 +254,10 @@ vector< const VersionType* > __select_versions_wildcarded(const Cache& cache,
 	else
 	{
 		// handling wildcards
-		auto packageNames = __select_package_names_wildcarded(cache, packageNameExpression, packageNamesFetcher);
-		FORIT(packageNameIt, packageNames)
+		auto packageIds = __select_package_names_wildcarded(cache, packageNameExpression, packageNamesFetcher);
+		for (auto packageId: packageIds)
 		{
-			auto version = versionSelector(cache, *packageNameIt + remainder, false);
+			auto version = versionSelector(cache, packageId.name() + remainder, false);
 			if (version)
 			{
 				result.push_back(version);
@@ -273,9 +273,9 @@ vector< const VersionType* > __select_versions_wildcarded(const Cache& cache,
 	return result;
 }
 
-static vector< string > getBinaryPackageNames(const Cache& cache)
+static vector< PackageId > getBinaryPackageIds(const Cache& cache)
 {
-	return cache.getBinaryPackageNames();
+	return cache.getBinaryPackageIds();
 }
 
 bool isFunctionExpression(const string& expression)
@@ -326,13 +326,13 @@ vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache
 	else
 	{
 		return __select_versions_wildcarded< BinaryVersion >(cache, packageExpression,
-				selectBinaryVersion, getBinaryPackageNames, throwOnError);
+				selectBinaryVersion, getBinaryPackageIds, throwOnError);
 	}
 }
 
-static vector< string > getSourcePackageNames(const Cache& cache)
+static vector< PackageId > getSourcePackageIds(const Cache& cache)
 {
-	return cache.getSourcePackageNames();
+	return cache.getSourcePackageIds();
 }
 
 vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
@@ -346,7 +346,7 @@ vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache
 	else
 	{
 		return __select_versions_wildcarded< SourceVersion >(cache, packageExpression,
-				selectSourceVersion, getSourcePackageNames, throwOnError);
+				selectSourceVersion, getSourcePackageIds, throwOnError);
 	}
 }
 
@@ -357,14 +357,14 @@ static vector< const VersionType* > __select_all_versions_wildcarded(
 {
 	vector< const VersionType* > result;
 
-	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, packageNamesFetcher);
-	if (packageNames.empty())
+	auto packageIds = __select_package_names_wildcarded(cache, packageExpression, packageNamesFetcher);
+	if (packageIds.empty())
 	{
 		fatal2(__("no packages available for the wildcarded expression '%s'"), packageExpression);
 	}
-	FORIT(packageNameIt, packageNames)
+	for (auto packageId: packageIds)
 	{
-		auto package = packageSelector(cache, *packageNameIt, false);
+		auto package = packageSelector(cache, packageId.name(), false);
 		auto versions = package->getVersions();
 		std::move(versions.begin(), versions.end(), std::back_inserter(result));
 	}
@@ -383,7 +383,7 @@ vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& ca
 	else
 	{
 		return __select_all_versions_wildcarded< BinaryVersion >(cache, packageExpression,
-				getBinaryPackageNames, getBinaryPackage);
+				getBinaryPackageIds, getBinaryPackage);
 	}
 }
 
@@ -398,7 +398,7 @@ vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& ca
 	else
 	{
 		return __select_all_versions_wildcarded< SourceVersion >(cache, packageExpression,
-				getSourcePackageNames, getSourcePackage);
+				getSourcePackageIds, getSourcePackage);
 	}
 }
 

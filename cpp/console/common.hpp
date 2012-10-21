@@ -51,7 +51,7 @@ class ReverseDependsIndex
 			const std::function< void (const BinaryVersion*, const RelationExpression&) > callback);
 };
 
-bool isPackageInstalled(const Cache&, const string& packageName);
+bool isPackageInstalled(const Cache&, PackageId);
 
 
 #endif

@@ -192,7 +192,7 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 		{
 			if (mode == ManagePackages::InstallIfInstalled)
 			{
-				if (!isPackageInstalled(cache, version->packageName))
+				if (!isPackageInstalled(cache, version->packageId))
 				{
 					continue;
 				}
@@ -210,12 +210,12 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
 		}
 
-		auto scheduleRemoval = [&resolver, &worker, mode](const string& packageName)
+		auto scheduleRemoval = [&resolver, &worker, mode](PackageId packageId)
 		{
-			resolver.removePackage(packageName);
+			resolver.removePackage(packageId);
 			if (mode == ManagePackages::Purge)
 			{
-				worker.setPackagePurgeFlag(packageName, true);
+				worker.setPackagePurgeFlag(packageId, true);
 			}
 		};
 
@@ -223,19 +223,20 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 		{
 			for (const auto& version: versions)
 			{
-				scheduleRemoval(version->packageName);
+				scheduleRemoval(version->packageId);
 			}
 		}
 		else
 		{
 			checkPackageName(packageExpression);
-			if (!cache.getSystemState()->getInstalledInfo(packageExpression) &&
+			PackageId packageId(packageExpression);
+			if (!cache.getSystemState()->getInstalledInfo(packageId) &&
 				!getBinaryPackage(cache, packageExpression, false))
 			{
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
 
-			scheduleRemoval(packageExpression);
+			scheduleRemoval(packageId);
 		}
 	}
 }
@@ -245,7 +246,7 @@ static void processAutoFlagChangeExpression(const Cache& cache,
 {
 	getBinaryPackage(cache, packageExpression); // will throw if package name is wrong
 
-	resolver.setAutomaticallyInstalledFlag(packageExpression,
+	resolver.setAutomaticallyInstalledFlag(PackageId(packageExpression),
 			(mode == ManagePackages::Markauto));
 }
 
@@ -307,7 +308,7 @@ static void processPackageExpressions(const Config& config,
 	}
 }
 
-void printUnpackedSizeChanges(const map< string, ssize_t >& unpackedSizesPreview)
+void printUnpackedSizeChanges(const map< PackageId, ssize_t >& unpackedSizesPreview)
 {
 	ssize_t totalUnpackedSizeChange = 0;
 	for (const auto& previewRecord: unpackedSizesPreview)
@@ -367,7 +368,7 @@ struct VersionInfoFlags
 		return !versionString && distributionType == DistributionType::None && !component && !vendor;
 	}
 };
-void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
+void showVersionInfoIfNeeded(const Cache& cache, PackageId packageId,
 		const Resolver::SuggestedPackage& suggestedPackage, WA::Type actionType,
 		VersionInfoFlags flags)
 {
@@ -424,10 +425,10 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 		return result;
 	};
 
-	auto package = cache.getBinaryPackage(packageName);
+	auto package = cache.getBinaryPackage(packageId);
 	if (!package)
 	{
-		fatal2i("no binary package '%s' available", packageName);
+		fatal2i("no binary package '%s' available", packageId.name());
 	}
 
 	string oldVersionString = getVersionString(package->getInstalledVersion());
@@ -489,7 +490,7 @@ void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 		{
 			if (!(suggestedRecord.second.version->isVerified()))
 			{
-				untrustedPackageNames.push_back(suggestedRecord.first);
+				untrustedPackageNames.push_back(suggestedRecord.first.name());
 			}
 		}
 	}
@@ -512,8 +513,8 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 	{
 		for (const auto& suggestedRecord: actionsPreview.groups[actionType])
 		{
-			const string& packageName = suggestedRecord.first;
-			auto package = cache.getBinaryPackage(packageName);
+			auto packageId = suggestedRecord.first;
+			auto package = cache.getBinaryPackage(packageId);
 			if (package)
 			{
 				auto version = package->getInstalledVersion();
@@ -521,7 +522,7 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 				{
 					if (version->essential)
 					{
-						essentialPackageNames.push_back(packageName);
+						essentialPackageNames.push_back(packageId.name());
 					}
 				}
 			}
@@ -547,13 +548,13 @@ void checkForIgnoredHolds(const Cache& cache,
 	{
 		for (const auto& suggestedRecord: actionsPreview.groups[actionType])
 		{
-			const string& packageName = suggestedRecord.first;
-			auto installedInfo = cache.getSystemState()->getInstalledInfo(packageName);
+			auto packageId = suggestedRecord.first;
+			auto installedInfo = cache.getSystemState()->getInstalledInfo(packageId);
 			if (installedInfo &&
 				installedInfo->want == system::State::InstalledRecord::Want::Hold &&
 				installedInfo->status != system::State::InstalledRecord::Status::ConfigFiles)
 			{
-				ignoredHoldsPackageNames.push_back(packageName);
+				ignoredHoldsPackageNames.push_back(packageId.name());
 			}
 		}
 	}
@@ -688,7 +689,7 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const Cache& cache,
 		const auto& suggestedVersion = suggestedPackage.second.version;
 		if (suggestedVersion)
 		{
-			auto policyVersion = cache.getPreferredVersion(getBinaryPackage(cache, suggestedVersion->packageName));
+			auto policyVersion = cache.getPreferredVersion(cache.getBinaryPackage(suggestedVersion->packageId));
 			if (!(policyVersion == suggestedVersion))
 			{
 				result.insert(suggestedPackage);
@@ -759,7 +760,7 @@ void addActionToSummary(WA::Type actionType, const string& actionName,
 		Colorizer& colorizer, std::stringstream* summaryStreamPtr)
 {
 	size_t manuallyInstalledCount = std::count_if(suggestedPackages.begin(), suggestedPackages.end(),
-			[](const pair< string, Resolver::SuggestedPackage >& arg)
+			[](const pair< PackageId, Resolver::SuggestedPackage >& arg)
 			{
 				return !wasOrWillBePackageAutoInstalled(arg.second);
 			});
@@ -817,20 +818,20 @@ struct PackageChangeInfoFlags
 
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
-		const map< string, ssize_t >& unpackedSizesPreview)
+		const map< PackageId, ssize_t >& unpackedSizesPreview)
 {
 	PackageChangeInfoFlags showFlags(config, actionType);
 
 	for (const auto& it: actionSuggestedPackages)
 	{
-		const string& packageName = it.first;
-		printPackageName(colorizer, packageName, actionType, it.second);
+		auto packageId = it.first;
+		printPackageName(colorizer, packageId.name(), actionType, it.second);
 
-		showVersionInfoIfNeeded(cache, packageName, it.second, actionType, showFlags.versionFlags);
+		showVersionInfoIfNeeded(cache, packageId, it.second, actionType, showFlags.versionFlags);
 
 		if (showFlags.sizeChange)
 		{
-			showSizeChange(unpackedSizesPreview.find(packageName)->second);
+			showSizeChange(unpackedSizesPreview.find(packageId)->second);
 		}
 
 		if (!showFlags.empty())
@@ -886,21 +887,21 @@ Resolver::SuggestedPackages filterPureAutoStatusChanges(const Cache& cache,
 	{
 		if (autoStatusChange.second == targetAutoStatus)
 		{
-			const string& packageName = autoStatusChange.first;
+			auto packageId = autoStatusChange.first;
 			for (size_t ai = 0; ai < WA::Count; ++ai)
 			{
 				if (targetAutoStatus && ai != WA::Install) continue;
 				if (!targetAutoStatus && (ai != WA::Remove && ai != WA::Purge)) continue;
 
-				if (actionsPreview.groups[ai].count(packageName))
+				if (actionsPreview.groups[ai].count(packageId))
 				{
 					goto next_package; // natural, non-pure change
 				}
 			}
 
 			{
-				Resolver::SuggestedPackage& entry = result[packageName];
-				entry.version = cache.getBinaryPackage(packageName)->getInstalledVersion();
+				Resolver::SuggestedPackage& entry = result[packageId];
+				entry.version = cache.getBinaryPackage(packageId)->getInstalledVersion();
 				entry.automaticallyInstalledFlag = !targetAutoStatus;
 				entry.reasons.push_back(userReason);
 			}
