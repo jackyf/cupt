@@ -100,7 +100,7 @@ struct CUPT_API Version
 
 	/// less-than operator
 	/**
-	 * Uses pair @ref packageName, @ref versionString for comparison
+	 * Uses pair @ref packageId, @ref versionString for comparison
 	 */
 	bool operator<(const Version&) const;
 

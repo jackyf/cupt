@@ -111,7 +111,7 @@ class CUPT_API Cache
 	 * @param packageId
 	 * @return @c true if yes, @c false if no
 	 */
-	bool isAutomaticallyInstalled(PackageId) const;
+	bool isAutomaticallyInstalled(PackageId packageId) const;
 
 	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;
