@@ -35,7 +35,7 @@ SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParamet
 
 	Source source;
 
-	v->packageName = *initParams.packageNamePtr;
+	v->packageId = initParams.packageId;
 	source.release = initParams.releaseInfo;
 
 	v->priority = Version::Priorities::Extra; // default value if not specified
@@ -126,7 +126,7 @@ SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParamet
 				internal::processSpaceCommaSpaceDelimitedStrings(block.begin(), block.end(),
 						[&v](string::const_iterator a, string::const_iterator b)
 						{
-							v->binaryPackageNames.push_back(string(a, b));
+							v->binaryPackageIds.push_back(PackageId(string(a, b)));
 						});
 			})
 			TAG(Directory, source.directory = tagValue;)
@@ -166,7 +166,7 @@ SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParamet
 	if (v->architectures.empty())
 	{
 		warn2(__("source package %s, version %s: architectures aren't defined, setting them to 'all'"),
-				v->packageName, v->versionString);
+				v->packageId.name(), v->versionString);
 		v->architectures.push_back("all");
 	}
 	// no need to verify hash sums for emptyness, it's guarantted by parsing algorithm above

@@ -88,19 +88,18 @@ void createTextFile(const string& path, const vector< string >& lines,
 	}
 };
 
-void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames,
+void SnapshotsWorker::__do_repacks(const vector< PackageId >& installedPackageIds,
 		bool simulating)
 {
-	FORIT(packageNameIt, installedPackageNames)
+	for (auto packageId: installedPackageIds)
 	{
-		const string& packageName = *packageNameIt;
-
+		const string& packageName = packageId.name();
 		_logger->log(Logger::Subsystem::Snapshots, 2,
 				format2("repacking the installed package '%s'", packageName));
 
 		try
 		{
-			auto package = _cache->getBinaryPackage(packageName);
+			auto package = _cache->getBinaryPackage(packageId);
 			if (!package)
 			{
 				_logger->loggedFatal2(Logger::Subsystem::Snapshots, 2,
@@ -248,6 +247,16 @@ void checkSnapshotSavingTools()
 
 }
 
+vector< string > convertToNames(const vector< PackageId >& input)
+{
+	vector< string > result;
+	for (auto packageId: input)
+	{
+		result.push_back(packageId.name());
+	}
+	return result;
+}
+
 void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& name)
 {
 	checkSnapshotName(snapshots, name);
@@ -285,7 +294,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 		}
 	}
 
-	auto installedPackageNames = _cache->getSystemState()->getInstalledPackageNames();
+	auto installedPackageIds = _cache->getSystemState()->getInstalledPackageIds();
 	try
 	{
 		{
@@ -297,7 +306,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 
 			// saving list of package names
 			createTextFile(temporarySnapshotDirectory + "/" + Snapshots::installedPackageNamesFilename,
-					installedPackageNames, _logger, simulating);
+					convertToNames(installedPackageIds), _logger, simulating);
 
 			{ // building source line
 				auto sourceLine = format2("deb file://%s %s/", snapshotsDirectory, name);
@@ -322,7 +331,7 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 			}
 		}
 
-		__do_repacks(installedPackageNames, simulating);
+		__do_repacks(installedPackageIds, simulating);
 
 		Cache::IndexEntry indexEntry; // component remains empty, "easy" source type
 		indexEntry.category = Cache::IndexEntry::Binary;

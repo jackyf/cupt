@@ -30,7 +30,7 @@ using system::Snapshots;
 class SnapshotsWorker: public virtual WorkerBase
 {
 	void __delete_temporary(const string&, bool);
-	void __do_repacks(const vector< string >&, bool);
+	void __do_repacks(const vector< PackageId >&, bool);
 	string __create_index_file(const Cache::IndexEntry&);
 	void __create_release_file(const string&, const string&,
 			const string&, const Cache::IndexEntry&, bool);

@@ -121,7 +121,7 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 	if (current != start)
 	{
 		// package name is here
-		packageName.assign(start, current);
+		packageId = PackageId(string(start, current));
 	}
 	else
 	{
@@ -165,7 +165,7 @@ Relation::~Relation()
 
 string Relation::toString() const
 {
-	string result = packageName;
+	string result = packageId.name();
 	if (relationType != Types::None)
 	{
 		// there is versioned info
@@ -205,7 +205,7 @@ bool Relation::isSatisfiedBy(const string& otherVersionString) const
 
 bool Relation::operator==(const Relation& other) const
 {
-	return (packageName == other.packageName &&
+	return (packageId == other.packageId &&
 			relationType == other.relationType &&
 			versionString == other.versionString);
 }
@@ -328,7 +328,7 @@ string RelationExpression::getHashString() const
 	size_t targetLength = 0;
 	for (const Relation& relation: *this)
 	{
-		targetLength += 1 + relation.packageName.size();
+		targetLength += 1 + sizeof(relation.packageId);
 		if (relation.relationType != Relation::Types::None)
 		{
 			targetLength += relation.versionString.size() + 1;
@@ -350,7 +350,8 @@ string RelationExpression::getHashString() const
 			*(p++) = '|';
 		}
 
-		p = std::copy(relation.packageName.begin(), relation.packageName.end(), p);
+		p = std::copy((const char*)&relation.packageId,
+				(const char*)&relation.packageId + sizeof(PackageId), p);
 
 		if (relation.relationType != Relation::Types::None)
 		{

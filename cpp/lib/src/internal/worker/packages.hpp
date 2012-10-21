@@ -86,7 +86,7 @@ struct Changeset
 
 class PackagesWorker: public virtual WorkerBase
 {
-	std::set< PackageId > __auto_installed_package_names;
+	std::set< PackageId > __auto_installed_package_ids;
 	map< PackageId, unique_ptr< BinaryVersion > > __fake_versions_for_purge;
 
 	const BinaryVersion* __get_fake_version_for_purge(PackageId);

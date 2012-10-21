@@ -33,7 +33,7 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 	Source source;
 
 	v->essential = false;
-	v->packageName = *initParams.packageNamePtr;
+	v->packageId = initParams.packageId;
 	source.release = initParams.releaseInfo;
 
 	v->installedSize = 0;
@@ -75,8 +75,7 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 			TAG(SHA256, v->file.hashSums[HashSums::SHA256] = tagValue;)
 			TAG(Source,
 			{
-				v->sourcePackageName = tagValue;
-				string& value = v->sourcePackageName;
+				string value = tagValue;
 				// determing do we have source version appended or not?
 				// example: "abcd (1.2-5)"
 				auto size = value.size();
@@ -94,9 +93,10 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 						{
 							--delimiterPosition;
 						}
-						v->sourcePackageName.erase(delimiterPosition);
+						value.erase(delimiterPosition);
 					}
 				}
+				v->sourcePackageId = PackageId(value);
 			};)
 
 			if (Version::parseRelations)
@@ -113,7 +113,7 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 				{
 					auto callback = [&v](string::const_iterator begin, string::const_iterator end)
 					{
-						v->provides.push_back(string(begin, end));
+						v->provides.push_back(PackageId(string(begin, end)));
 					};
 					internal::processSpaceCommaSpaceDelimitedStrings(tagValue.first, tagValue.second, callback);
 				})
@@ -139,9 +139,9 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 		{
 			v->sourceVersionString = v->versionString;
 		}
-		if (v->sourcePackageName.empty())
+		if (!v->sourcePackageId)
 		{
-			v->sourcePackageName = v->packageName;
+			v->sourcePackageId = v->packageId;
 		}
 	};
 
@@ -152,7 +152,7 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 	if (v->architecture.empty())
 	{
 		warn2(__("binary package %s, version %s: architecture isn't defined, setting it to 'all'"),
-				v->packageName, v->versionString);
+				v->packageId.name(), v->versionString);
 		v->architecture = "all";
 	}
 	v->sources.push_back(source);

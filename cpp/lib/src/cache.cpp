@@ -94,9 +94,9 @@ vector< PackageId > Cache::getBinaryPackageNames() const
 	return result;
 }
 
-vector< string > Cache::getSourcePackageNames() const
+vector< PackageId > Cache::getSourcePackageNames() const
 {
-	vector< string > result;
+	vector< PackageId > result;
 	FORIT(it, __impl->preSourcePackages)
 	{
 		result.push_back(it->first);
@@ -104,14 +104,14 @@ vector< string > Cache::getSourcePackageNames() const
 	return result;
 }
 
-const BinaryPackage* Cache::getBinaryPackage(const string& packageName) const
+const BinaryPackage* Cache::getBinaryPackage(PackageId packageId) const
 {
-	return __impl->getBinaryPackage(packageName);
+	return __impl->getBinaryPackage(packageId);
 }
 
-const SourcePackage* Cache::getSourcePackage(const string& packageName) const
+const SourcePackage* Cache::getSourcePackage(PackageId packageId) const
 {
-	return __impl->getSourcePackage(packageName);
+	return __impl->getSourcePackage(packageId);
 }
 
 ssize_t Cache::getPin(const Version* version) const
@@ -120,7 +120,7 @@ ssize_t Cache::getPin(const Version* version) const
 	{
 		if (dynamic_cast< const BinaryVersion* >(version))
 		{
-			return getBinaryPackage(version->packageName);
+			return getBinaryPackage(version->packageId);
 		}
 		else
 		{
@@ -184,9 +184,9 @@ shared_ptr< const system::State > Cache::getSystemState() const
 	return __impl->systemState;
 }
 
-bool Cache::isAutomaticallyInstalled(const string& packageName) const
+bool Cache::isAutomaticallyInstalled(PackageId packageId) const
 {
-	return __impl->extendedInfo.automaticallyInstalled.count(packageName);
+	return __impl->extendedInfo.automaticallyInstalled.count(packageId);
 }
 
 vector< const BinaryVersion* >
@@ -199,19 +199,19 @@ vector< const BinaryVersion* > Cache::getInstalledVersions() const
 {
 	vector< const BinaryVersion* > result;
 
-	auto packageNames = __impl->systemState->getInstalledPackageNames();
-	result.reserve(packageNames.size());
-	for (const string& packageName: packageNames)
+	auto packageIds = __impl->systemState->getInstalledPackageIds();
+	result.reserve(packageIds.size());
+	for (auto packageId: packageIds)
 	{
-		auto package = getBinaryPackage(packageName);
+		auto package = getBinaryPackage(packageId);
 		if (!package)
 		{
-			fatal2i("unable to find the package '%s'", packageName);
+			fatal2i("unable to find the package '%s'", packageId.name());
 		}
 		auto version = package->getInstalledVersion();
 		if (!version)
 		{
-			fatal2i("the package '%s' does not have installed version", packageName);
+			fatal2i("the package '%s' does not have installed version", packageId.name());
 		}
 
 		result.push_back(std::move(version));
@@ -237,7 +237,7 @@ string Cache::getPathOfCopyright(const BinaryVersion* version)
 		return string();
 	}
 
-	return string("/usr/share/doc/") + version->packageName + "/copyright";
+	return string("/usr/share/doc/") + version->packageId.name() + "/copyright";
 }
 
 string Cache::getPathOfChangelog(const BinaryVersion* version)
@@ -247,7 +247,7 @@ string Cache::getPathOfChangelog(const BinaryVersion* version)
 		return string();
 	}
 
-	const string& packageName = version->packageName;
+	const string& packageName = version->packageId.name();
 	const string commonPart = string("/usr/share/doc/") + packageName + "/";
 	if (version->versionString.find('-') == string::npos)
 	{

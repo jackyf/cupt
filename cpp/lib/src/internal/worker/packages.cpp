@@ -118,7 +118,7 @@ typedef Graph< InnerAction >::CessorListType GraphCessorListType;
 
 PackagesWorker::PackagesWorker()
 {
-	__auto_installed_package_names = _cache->getExtendedInfo().automaticallyInstalled;
+	__auto_installed_package_ids = _cache->getExtendedInfo().automaticallyInstalled;
 }
 
 set< PackageId > __get_pseudo_essential_package_ids(const Cache& cache, bool debugging)
@@ -1998,7 +1998,7 @@ string __get_dpkg_action_log(const InnerActionGroup& actionGroup,
 	{
 		if (actionIt->type == actionType)
 		{
-			subResults.push_back(actionName + ' ' + actionIt->version->packageName
+			subResults.push_back(actionName + ' ' + actionIt->version->packageId.name()
 					+ ' ' + actionIt->version->versionString);
 		}
 	}
@@ -2010,7 +2010,7 @@ bool __defer_triggers(const Config& config, const Cache& cache)
 	const string& optionName = "cupt::worker::defer-triggers";
 	if (config.getString(optionName) == "auto")
 	{
-		auto dpkgPackage = cache.getBinaryPackage("dpkg");
+		auto dpkgPackage = cache.getBinaryPackage(PackageId("dpkg"));
 		if (!dpkgPackage)
 		{
 			fatal2i("no 'dpkg' binary package available");
@@ -2030,11 +2030,11 @@ bool __defer_triggers(const Config& config, const Cache& cache)
 
 void PackagesWorker::__do_independent_auto_status_changes()
 {
-	auto wasDoneAlready = [this](const string& packageName)
+	auto wasDoneAlready = [this](PackageId packageId)
 	{
 		for (const auto& actionGroup: __actions_preview->groups)
 		{
-			if (actionGroup.count(packageName))
+			if (actionGroup.count(packageId))
 			{
 				return true;
 			}
@@ -2044,10 +2044,10 @@ void PackagesWorker::__do_independent_auto_status_changes()
 
 	for (const auto& autoFlagChange: __actions_preview->autoFlagChanges)
 	{
-		const auto& packageName = autoFlagChange.first;
-		if (!wasDoneAlready(packageName))
+		auto packageId = autoFlagChange.first;
+		if (!wasDoneAlready(packageId))
 		{
-			markAsAutomaticallyInstalled(packageName, autoFlagChange.second);
+			markAsAutomaticallyInstalled(packageId, autoFlagChange.second);
 		}
 	}
 }
@@ -2086,8 +2086,8 @@ static string __get_action_name(InnerAction::Type actionType,
 	{
 		case InnerAction::Remove:
 		{
-			const string& packageName = actionGroup.rbegin()->version->packageName;
-			result = actionsPreview.groups[Worker::Action::Purge].count(packageName) ?
+			auto packageId = actionGroup.rbegin()->version->packageId;
+			result = actionsPreview.groups[Worker::Action::Purge].count(packageId) ?
 					"purge" : "remove";
 		}
 			break;
@@ -2148,7 +2148,7 @@ string PackagesWorker::__get_dpkg_action_command(const string& dpkgBinary,
 		}
 		else
 		{
-			actionExpression = action.version->packageName;
+			actionExpression = action.version->packageId.name();
 		}
 		dpkgCommand += " ";
 		dpkgCommand += actionExpression;

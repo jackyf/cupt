@@ -53,7 +53,7 @@
 			else \
 			{ \
 				warn2("package %s, version %s: unrecognized priority value '%s', using 'extra' instead", \
-						v->packageName, v->versionString, string(tagValue)); \
+						v->packageId.name(), v->versionString, string(tagValue)); \
 			} \
 		})
 
