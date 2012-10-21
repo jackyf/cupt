@@ -84,7 +84,7 @@ vector< Cache::IndexEntry > Cache::getIndexEntries() const
 	return __impl->indexEntries;
 }
 
-vector< PackageId > Cache::getBinaryPackageNames() const
+vector< PackageId > Cache::getBinaryPackageIds() const
 {
 	vector< PackageId > result;
 	FORIT(it, __impl->preBinaryPackages)
@@ -94,7 +94,7 @@ vector< PackageId > Cache::getBinaryPackageNames() const
 	return result;
 }
 
-vector< PackageId > Cache::getSourcePackageNames() const
+vector< PackageId > Cache::getSourcePackageIds() const
 {
 	vector< PackageId > result;
 	FORIT(it, __impl->preSourcePackages)

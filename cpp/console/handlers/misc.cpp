@@ -45,6 +45,16 @@ auto printTag = [&cout](const string& first, const string& second)
 	}
 };
 
+vector< string > convertToNames(const vector< PackageId >& input)
+{
+	vector< string > result;
+	for (auto packageId: input)
+	{
+		result.push_back(packageId.name());
+	}
+	return result;
+}
+
 int showBinaryVersions(Context& context)
 {
 	auto config = context.getConfig();
@@ -71,21 +81,21 @@ int showBinaryVersions(Context& context)
 			/* binary */ variables.count("installed-only") == 0,
 			/* installed */ true);
 
-	auto getReverseProvides = [&cache](const string& packageName) -> RelationLine
+	auto getReverseProvides = [&cache](PackageId packageId) -> RelationLine
 	{
 		RelationLine result;
-		if (!checkPackageName(packageName, false))
+		if (!checkPackageName(packageId.name(), false))
 		{
 			return result;
 		}
-		RelationExpression virtualRelationExpression(packageName);
+		RelationExpression virtualRelationExpression(packageId.name());
 		for (const auto& version: cache->getSatisfyingVersions(virtualRelationExpression))
 		{
 			// we don't need versions of the same package
-			const auto& newPackageName = version->packageName;
-			if (newPackageName == packageName) continue;
+			auto newPackageId = version->packageId;
+			if (newPackageId == packageId) continue;
 
-			result.push_back(RelationExpression{ newPackageName + " (= " + version->versionString + ")" });
+			result.push_back(RelationExpression{ newPackageId.name() + " (= " + version->versionString + ")" });
 		}
 		return result;
 	};
@@ -102,10 +112,11 @@ int showBinaryVersions(Context& context)
 		else
 		{
 			bool foundVirtual = false;
-			if (!cache->getBinaryPackage(packageExpression))
+			PackageId packageId(packageExpression);
+			if (!cache->getBinaryPackage(packageId))
 			{
 				// there is no such binary package, maybe it's virtual?
-				auto reverseProvides = getReverseProvides(packageExpression);
+				auto reverseProvides = getReverseProvides(packageId);
 				if (!reverseProvides.empty())
 				{
 					p(__("Pure virtual package, provided by"), reverseProvides.toString());
@@ -120,26 +131,26 @@ int showBinaryVersions(Context& context)
 
 		for (const auto& version: versions)
 		{
-			auto packageName = version->packageName;
-			p(__("Package"), packageName);
+			auto packageId = version->packageId;
+			p(__("Package"), packageId.name());
 			p(__("Version"), version->versionString);
 			if (version->isInstalled())
 			{
-				auto installedInfo = cache->getSystemState()->getInstalledInfo(packageName);
+				auto installedInfo = cache->getSystemState()->getInstalledInfo(packageId);
 				string status = __(system::State::InstalledRecord::Status::strings[installedInfo->status].c_str());
 				if (installedInfo->want == system::State::InstalledRecord::Want::Hold)
 				{
 					status += string(" (") + __("on hold") + ")";
 				}
 				p(__("Status"), status);
-				bool isAutoInstalled = cache->isAutomaticallyInstalled(packageName);
+				bool isAutoInstalled = cache->isAutomaticallyInstalled(packageId);
 				p(__("Automatically installed"), isAutoInstalled ? __("yes") : __("no"));
 			}
 			else
 			{
 				p(__("Status"), __("not installed"));
 			}
-			p(__("Source"), version->sourcePackageName);
+			p(__("Source"), version->sourcePackageId.name());
 			if (version->sourceVersionString != version->versionString)
 			{
 				p(__("Source version"), version->sourceVersionString);
@@ -169,8 +180,8 @@ int showBinaryVersions(Context& context)
 			{
 				p(__(BinaryVersion::RelationTypes::strings[i].c_str()), version->relations[i].toString());
 			}
-			p(__("Provides"), join(", ", version->provides));
-			auto reverseProvides = getReverseProvides(packageName);
+			p(__("Provides"), join(", ", convertToNames(version->provides)));
+			auto reverseProvides = getReverseProvides(packageId);
 			p(__("Provided by"), reverseProvides.toString());
 			{
 				for (const auto& downloadRecord: version->getDownloadInfo())
@@ -240,9 +251,8 @@ int showSourceVersions(Context& context)
 
 		for (const auto& version: versions)
 		{
-			auto packageName = version->packageName;
-			p(__("Package"), packageName);
-			p(__("Binary"), join(", ", version->binaryPackageNames));
+			p(__("Package"), version->packageId.name());
+			p(__("Binary"), join(", ", convertToNames(version->binaryPackageIds)));
 			p(__("Version"), version->versionString);
 			p(__("Priority"), __(Version::Priorities::strings[version->priority].c_str()));
 			p(__("Section"), version->section);
@@ -370,7 +380,7 @@ int showRelations(Context& context, bool reverse)
 		auto version = versions.front();
 		versions.pop();
 
-		const string& packageName = version->packageName;
+		const string& packageName = version->packageId.name();
 		const string& versionString = version->versionString;
 
 		if (!processedVersions.insert(version).second)
@@ -445,7 +455,7 @@ int showRelations(Context& context, bool reverse)
 				for (const auto& record: reverseRecords)
 				{
 					cout << "  " << __("Reverse-") << caption << ": "
-							<< record.version->packageName << ' '
+							<< record.version->packageId.name() << ' '
 							<< record.version->versionString << ": "
 							<< record.relationExpressionPtr->toString() << endl;
 					if (recurse)
@@ -682,13 +692,13 @@ int showPackageNames(Context& context)
 
 	checkNoExtraArguments(arguments);
 
-	auto binaryPackageNames = cache->getBinaryPackageNames();
-	FORIT(packageNameIt, binaryPackageNames)
+	for (auto packageId: cache->getBinaryPackageIds())
 	{
+		const string& packageName = packageId.name();
 		// check package name for pattern and output it
-		if (!packageNameIt->compare(0, prefixSize, prefix))
+		if (!packageName.compare(0, prefixSize, prefix))
 		{
-			cout << *packageNameIt << endl;
+			cout << packageName << endl;
 		}
 	}
 
@@ -757,7 +767,7 @@ int findDependencyChain(Context& context)
 		auto installedVersions = cache->getInstalledVersions();
 		for (const auto& installedVersion: installedVersions)
 		{
-			if (!cache->isAutomaticallyInstalled(installedVersion->packageName))
+			if (!cache->isAutomaticallyInstalled(installedVersion->packageId))
 			{
 				addStartingVersion(installedVersion);
 			}
@@ -801,7 +811,7 @@ int findDependencyChain(Context& context)
 				PathEntry pathEntry = path.top();
 				path.pop();
 				cout << format2("%s %s: %s: %s",
-						pathEntry.version->packageName, pathEntry.version->versionString,
+						pathEntry.version->packageId.name(), pathEntry.version->versionString,
 						__(BinaryVersion::RelationTypes::strings[pathEntry.dependencyType].c_str()),
 						pathEntry.relationExpressionPtr->toString()) << endl;
 			}
@@ -912,15 +922,12 @@ int showAutoInstalled(Context& context)
 
 	auto cache = context.getCache(false, false, true); // installed only
 
-	auto installedPackageNames = cache->getBinaryPackageNames();
-	FORIT(packageNameIt, installedPackageNames)
+	for (auto packageId: cache->getBinaryPackageIds())
 	{
-		const string& packageName = *packageNameIt;
-
-		bool isAutoInstalled = cache->isAutomaticallyInstalled(packageName);
+		bool isAutoInstalled = cache->isAutomaticallyInstalled(packageId);
 		if (isAutoInstalled == !showManual)
 		{
-			cout << packageName << endl;
+			cout << packageId.name() << endl;
 		}
 	}
 	return 0;

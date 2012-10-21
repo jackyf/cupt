@@ -39,7 +39,8 @@ void Package::addEntry(const Version::InitializationParameters& initParams)
 	}
 	catch (Exception& e)
 	{
-		warn2(__("error while parsing a version for the package '%s'"), *initParams.packageNamePtr);
+		warn2(__("error while parsing a version for the package '%s'"),
+				initParams.packageId.name());
 	}
 }
 
@@ -128,7 +129,7 @@ void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 	catch (Exception&)
 	{
 		fatal2(__("error while merging the version '%s' for the package '%s'"),
-				parsedVersion->versionString, parsedVersion->packageName);
+				parsedVersion->versionString, parsedVersion->packageId.name());
 	};
 }
 

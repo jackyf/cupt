@@ -118,7 +118,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		}
 	}
 
-	std::set< string > toBeInstalledPackageNames;
+	std::set< PackageId > toBeInstalledPackageIds;
 
 	{
 		auto snapshotPackagesPath = snapshotDirectory + '/' + system::Snapshots::installedPackageNamesFilename;
@@ -132,13 +132,14 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		string packageName;
 		while (!file.getLine(packageName).eof())
 		{
-			auto package = cache.getBinaryPackage(packageName);
+			PackageId packageId(packageName);
+			auto package = cache.getBinaryPackage(packageId);
 			if (!package)
 			{
 				fatal2i("the package '%s' doesn't exist", packageName);
 			}
 
-			toBeInstalledPackageNames.insert(packageName);
+			toBeInstalledPackageIds.insert(packageId);
 
 			auto versions = package->getVersions();
 			FORIT(versionIt, versions)
@@ -161,12 +162,11 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		}
 	}
 
-	auto allPackageNames = cache.getBinaryPackageNames();
-	FORIT(packageNameIt, allPackageNames)
+	for (auto packageId: cache.getBinaryPackageIds())
 	{
-		if (!toBeInstalledPackageNames.count(*packageNameIt))
+		if (!toBeInstalledPackageIds.count(packageId))
 		{
-			resolver.removePackage(*packageNameIt);
+			resolver.removePackage(packageId);
 		}
 	}
 }

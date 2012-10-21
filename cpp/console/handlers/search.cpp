@@ -56,11 +56,13 @@ vector< sregex > generateSearchRegexes(const vector< string >& patterns, bool ca
 	return result;
 }
 
-void searchInPackageNames(const vector< string >& packageNames,
+void searchInPackageNames(const vector< PackageId >& packageIds,
 		const vector< sregex >& regexes, smatch& m)
 {
-	for (const auto& packageName: packageNames)
+	for (auto packageId: packageIds)
 	{
+		const string& packageName = packageId.name();
+
 		bool matched = true;
 		for (const auto& regex: regexes)
 		{
@@ -82,12 +84,13 @@ inline string getShortDescription(const string& description)
 	return description.substr(0, description.find('\n'));
 }
 
-void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< string >& packageNames,
+void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< PackageId >& packageIds,
 		const vector< sregex >& regexes, smatch& m)
 {
-	for (const string& packageName: packageNames)
+	for (auto packageId: packageIds)
 	{
-		auto package = cache.getBinaryPackage(packageName);
+		const string& packageName = packageId.name();
+		auto package = cache.getBinaryPackage(packageId);
 
 		set< string > printedShortDescriptions;
 		for (const auto& v: *package)
@@ -135,7 +138,7 @@ void searchByFSE(const Cache& cache, vector< string >& patterns)
 	{
 		auto binaryVersion = static_cast< const BinaryVersion* >(version);
 		cout << format2("%s - %s\n",
-				binaryVersion->packageName,
+				binaryVersion->packageId.name(),
 				getShortDescription(binaryVersion->description));
 	}
 }
@@ -188,15 +191,15 @@ int search(Context& context)
 		auto regexes = generateSearchRegexes(patterns, variables.count("case-sensitive"));
 		smatch m;
 
-		vector< string > packageNames = cache->getBinaryPackageNames();
-		std::sort(packageNames.begin(), packageNames.end());
+		auto packageIds = cache->getBinaryPackageIds();
+		std::sort(packageIds.begin(), packageIds.end(), PackageId::compareByName);
 		if (config->getBool("apt::cache::namesonly"))
 		{
-			searchInPackageNames(packageNames, regexes, m);
+			searchInPackageNames(packageIds, regexes, m);
 		}
 		else
 		{
-			searchInPackageNamesAndDescriptions(*cache, packageNames, regexes, m);
+			searchInPackageNamesAndDescriptions(*cache, packageIds, regexes, m);
 		}
 	}
 

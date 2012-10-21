@@ -45,9 +45,9 @@ class CUPT_API NativeResolver: public Resolver
 	void installVersion(const BinaryVersion*);
 	void satisfyRelationExpression(const RelationExpression&);
 	void unsatisfyRelationExpression(const RelationExpression&);
-	void removePackage(const string& packageName);
+	void removePackage(PackageId);
 	void upgrade();
-	void setAutomaticallyInstalledFlag(const string&, bool);
+	void setAutomaticallyInstalledFlag(PackageId, bool);
 
 	bool resolve(Resolver::CallbackType);
 

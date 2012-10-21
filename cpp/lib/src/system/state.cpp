@@ -41,14 +41,16 @@ struct StateData
 {
 	shared_ptr< const Config > config;
 	internal::CacheImpl* cacheImpl;
-	map< string, shared_ptr< const InstalledRecord > > installedInfo;
+	map< PackageId, shared_ptr< const InstalledRecord > > installedInfo;
 
 	void parseDpkgStatus();
 };
 
-void parseStatusSubstrings(const string& packageName, const string& input,
+void parseStatusSubstrings(PackageId packageId, const string& input,
 		const shared_ptr< InstalledRecord >& installedRecord)
 {
+	const string& packageName = packageId.name();
+
 	// status should be a triplet delimited by spaces (i.e. 2 ones)
 	internal::TagParser::StringRange current;
 
@@ -171,8 +173,7 @@ void StateData::parseDpkgStatus()
 		internal::TagParser parser(file.get());
 		internal::TagParser::StringRange tagName, tagValue;
 
-		pair< const string, vector< internal::CacheImpl::PrePackageRecord > > pairForInsertion;
-		string& packageName = const_cast< string& >(pairForInsertion.first);
+		PackageId packageId;
 
 		while ((prePackageRecord.offset = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
 		{
@@ -191,7 +192,7 @@ void StateData::parseDpkgStatus()
 					continue; \
 				} \
 
-				TAG("Package", 0, packageName = tagValue)
+				TAG("Package", 0, packageId = PackageId(string(tagValue)))
 				TAG("Status", 1, status = tagValue)
 				TAG("Version", 2, ;)
 				TAG("Provides", 3, provides = tagValue)
@@ -209,7 +210,7 @@ void StateData::parseDpkgStatus()
 				fatal2(__("no package name in the record"));
 			}
 			auto installedRecord = std::make_shared< InstalledRecord >();
-			parseStatusSubstrings(packageName, status, installedRecord);
+			parseStatusSubstrings(packageId, status, installedRecord);
 
 			if (packageHasFullEntryInfo(*installedRecord))
 			{
@@ -219,19 +220,18 @@ void StateData::parseDpkgStatus()
 				prePackageRecord.releaseInfoAndFile = installedRecord->isBroken() ?
 						improperlyInstalledSource : installedSource;
 
-				auto it = preBinaryPackages->insert(pairForInsertion).first;
-				it->second.push_back(prePackageRecord);
+				(*preBinaryPackages)[packageId].push_back(prePackageRecord);
 
 				if (!provides.empty())
 				{
-					cacheImpl->processProvides(&it->first,
+					cacheImpl->processProvides(packageId,
 							&*(provides.begin()), &*(provides.end()));
 				}
 			}
 
 			// add parsed info to installed_info
-			installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
-					std::move(packageName), std::move(installedRecord)));
+			installedInfo.insert(pair< PackageId, shared_ptr< const InstalledRecord > >(
+					packageId, std::move(installedRecord)));
 		}
 	}
 	catch (Exception&)
@@ -263,9 +263,9 @@ State::~State()
 	delete __data;
 }
 
-shared_ptr< const State::InstalledRecord > State::getInstalledInfo(const string& packageName) const
+shared_ptr< const State::InstalledRecord > State::getInstalledInfo(PackageId packageId) const
 {
-	auto it = __data->installedInfo.find(packageName);
+	auto it = __data->installedInfo.find(packageId);
 	if (it == __data->installedInfo.end())
 	{
 		return shared_ptr< const InstalledRecord >();
@@ -276,9 +276,9 @@ shared_ptr< const State::InstalledRecord > State::getInstalledInfo(const string&
 	}
 }
 
-vector< string > State::getInstalledPackageNames() const
+vector< PackageId > State::getInstalledPackageIds() const
 {
-	vector< string > result;
+	vector< PackageId > result;
 
 	FORIT(it, __data->installedInfo)
 	{
@@ -293,9 +293,9 @@ vector< string > State::getInstalledPackageNames() const
 	return result;
 }
 
-vector< string > State::getReinstallRequiredPackageNames() const
+vector< PackageId > State::getReinstallRequiredPackageIds() const
 {
-	vector< string > result;
+	vector< PackageId > result;
 
 	FORIT(it, __data->installedInfo)
 	{

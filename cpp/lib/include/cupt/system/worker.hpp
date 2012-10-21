@@ -101,10 +101,10 @@ class CUPT_API Worker
 	 * last call to @ref setDesiredState, you must call @ref setDesiredState
 	 * again.
 	 *
-	 * @param packageName binary package name to modify a flag value for
+	 * @param packageId binary package id to modify a flag value for
 	 * @param value the target state of the flag
 	 */
-	void setPackagePurgeFlag(const string& packageName, bool value);
+	void setPackagePurgeFlag(PackageId packageId, bool value);
 
 	/**
 	 * Shouldn't be called before @ref setDesiredState.
@@ -115,9 +115,9 @@ class CUPT_API Worker
 	/**
 	 * Shouldn't be called before @ref setDesiredState.
 	 *
-	 * @return map: package name -> unpacked size change (in bytes)
+	 * @return map: package id -> unpacked size change (in bytes)
 	 */
-	map< string, ssize_t > getUnpackedSizesPreview() const;
+	map< PackageId, ssize_t > getUnpackedSizesPreview() const;
 	/**
 	 * Shouldn't be called before @ref setDesiredState.
 	 *
@@ -128,10 +128,10 @@ class CUPT_API Worker
 	/**
 	 * Marks a package as automatically or manually installed.
 	 *
-	 * @param packageName
+	 * @param packageId
 	 * @param value if @c true, marks as automatically installed, if @c false, marks as manually installed
 	 */
-	void setAutomaticallyInstalledFlag(const string& packageName, bool value);
+	void setAutomaticallyInstalledFlag(PackageId packageId, bool value);
 	/**
 	 * Modifies the system to achieve the desired state set by
 	 * @ref setDesiredState.

@@ -59,9 +59,9 @@ void Worker::setDesiredState(const Resolver::Offer& offer)
 	__impl->setDesiredState(offer);
 }
 
-void Worker::setPackagePurgeFlag(const string& packageName, bool value)
+void Worker::setPackagePurgeFlag(PackageId packageId, bool value)
 {
-	__impl->setPackagePurgeFlag(packageName, value);
+	__impl->setPackagePurgeFlag(packageId, value);
 }
 
 shared_ptr< const Worker::ActionsPreview > Worker::getActionsPreview() const
@@ -69,7 +69,7 @@ shared_ptr< const Worker::ActionsPreview > Worker::getActionsPreview() const
 	return __impl->getActionsPreview();
 }
 
-map< string, ssize_t > Worker::getUnpackedSizesPreview() const
+map< PackageId, ssize_t > Worker::getUnpackedSizesPreview() const
 {
 	return __impl->getUnpackedSizesPreview();
 }
@@ -79,9 +79,9 @@ pair< size_t, size_t > Worker::getDownloadSizesPreview() const
 	return __impl->getDownloadSizesPreview();
 }
 
-void Worker::setAutomaticallyInstalledFlag(const string& packageName, bool value)
+void Worker::setAutomaticallyInstalledFlag(PackageId packageId, bool value)
 {
-	__impl->markAsAutomaticallyInstalled(packageName, value);
+	__impl->markAsAutomaticallyInstalled(packageId, value);
 }
 
 void Worker::changeSystem(const shared_ptr< download::Progress >& progress)

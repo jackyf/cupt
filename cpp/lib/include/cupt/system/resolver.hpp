@@ -154,19 +154,19 @@ class CUPT_API Resolver
 	/**
 	 * Requests that specified package is removed.
 	 *
-	 * @param packageName
+	 * @param packageId
 	 */
-	virtual void removePackage(const string& packageName) = 0;
+	virtual void removePackage(PackageId packageId) = 0;
 	/**
 	 * Requests an upgrade of all installed packages (to their preferred version).
 	 */
 	virtual void upgrade() = 0;
 	/**
-	 * Requests that if a solution will have the package @a packageName,
+	 * Requests that if a solution will have the package @a packageId,
 	 * its corresponding Offer::SuggestedPackage::automaticallyInstalledFlag
 	 * will have the value of @a flagValue.
 	 */
-	virtual void setAutomaticallyInstalledFlag(const string& packageName, bool flagValue) = 0;
+	virtual void setAutomaticallyInstalledFlag(PackageId packageId, bool flagValue) = 0;
 
 	/// perform a resolve computations
 	/**

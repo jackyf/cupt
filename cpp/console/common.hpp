@@ -36,7 +36,7 @@ using namespace cupt::download;
 
 class ReverseDependsIndex
 {
-	typedef unordered_map< string, list< const BinaryPackage* > > PerRelationType;
+	typedef unordered_map< PackageId, list< const BinaryPackage* > > PerRelationType;
 
 	const Cache& __cache;
 	map< BinaryVersion::RelationTypes::Type, PerRelationType > __data;

@@ -87,7 +87,7 @@ class CUPT_API Cache
 	vector< shared_ptr< const ReleaseInfo > > getSourceReleaseData() const;
 
 	/// gets the list of available binary packages
-	vector< PackageId > getBinaryPackageNames() const;
+	vector< PackageId > getBinaryPackageIds() const;
 	/// gets BinaryPackage by id
 	/**
 	 * @param packageId
@@ -95,7 +95,7 @@ class CUPT_API Cache
 	 */
 	const BinaryPackage* getBinaryPackage(PackageId packageId) const;
 	/// gets the list of available source packages
-	vector< PackageId > getSourcePackageNames() const;
+	vector< PackageId > getSourcePackageIds() const;
 	/// gets SourcePackage by name
 	/**
 	 * @param packageId

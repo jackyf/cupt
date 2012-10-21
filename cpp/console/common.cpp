@@ -20,9 +20,9 @@
 #include <cupt/system/state.hpp>
 #include <cupt/cache/binarypackage.hpp>
 
-bool isPackageInstalled(const Cache& cache, const string& packageName)
+bool isPackageInstalled(const Cache& cache, PackageId packageId)
 {
-	auto&& installedInfo = cache.getSystemState()->getInstalledInfo(packageName);
+	auto&& installedInfo = cache.getSystemState()->getInstalledInfo(packageId);
 	return (installedInfo && installedInfo->status != system::State::InstalledRecord::Status::ConfigFiles);
 }
 
@@ -43,11 +43,11 @@ void ReverseDependsIndex::add(BRT::Type relationType)
 
 void ReverseDependsIndex::__add(BRT::Type relationType, PerRelationType* storage)
 {
-	for (const string& packageName: __cache.getBinaryPackageNames())
+	for (auto packageId: __cache.getBinaryPackageIds())
 	{
-		set< string > usedKeys;
+		set< PackageId > usedKeys;
 
-		auto package = __cache.getBinaryPackage(packageName);
+		auto package = __cache.getBinaryPackage(packageId);
 		for (const auto& version: *package)
 		{
 			const RelationLine& relationLine = version->relations[relationType];
@@ -56,10 +56,10 @@ void ReverseDependsIndex::__add(BRT::Type relationType, PerRelationType* storage
 				auto satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
 				for (const auto& satisfyingVersion: satisfyingVersions)
 				{
-					const string& satisfyingPackageName = satisfyingVersion->packageName;
-					if (usedKeys.insert(satisfyingPackageName).second)
+					auto satisfyingPackageId = satisfyingVersion->packageId;
+					if (usedKeys.insert(satisfyingPackageId).second)
 					{
-						(*storage)[satisfyingPackageName].push_back(package);
+						(*storage)[satisfyingPackageId].push_back(package);
 					}
 				}
 			}
@@ -75,7 +75,7 @@ void ReverseDependsIndex::foreachReverseDependency(
 	if (storageIt == __data.end()) return;
 	const auto& storage = storageIt->second;
 
-	auto packageCandidatesIt = storage.find(version->packageName);
+	auto packageCandidatesIt = storage.find(version->packageId);
 	if (packageCandidatesIt != storage.end())
 	{
 		const auto& packageCandidates = packageCandidatesIt->second;

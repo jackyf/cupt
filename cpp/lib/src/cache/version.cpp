@@ -52,12 +52,11 @@ bool Version::isVerified() const
 
 bool Version::operator<(const Version& other) const
 {
-	auto comparePackageNamesResult = packageName.compare(other.packageName);
-	if (comparePackageNamesResult < 0)
+	if (packageId < other.packageId)
 	{
 		return true;
 	}
-	else if (comparePackageNamesResult > 0)
+	else if (packageId > other.packageId)
 	{
 		return false;
 	}

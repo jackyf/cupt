@@ -47,9 +47,9 @@ void NativeResolver::unsatisfyRelationExpression(const RelationExpression& relat
 	__impl->unsatisfyRelationExpression(relationExpression);
 }
 
-void NativeResolver::removePackage(const string& packageName)
+void NativeResolver::removePackage(PackageId packageId)
 {
-	__impl->removePackage(packageName);
+	__impl->removePackage(packageId);
 }
 
 void NativeResolver::upgrade()
@@ -57,9 +57,9 @@ void NativeResolver::upgrade()
 	__impl->upgrade();
 }
 
-void NativeResolver::setAutomaticallyInstalledFlag(const string& packageName, bool flagValue)
+void NativeResolver::setAutomaticallyInstalledFlag(PackageId packageId, bool flagValue)
 {
-	__impl->setAutomaticallyInstalledFlag(packageName, flagValue);
+	__impl->setAutomaticallyInstalledFlag(packageId, flagValue);
 }
 
 bool NativeResolver::resolve(Resolver::CallbackType callback)

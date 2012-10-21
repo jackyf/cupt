@@ -58,21 +58,21 @@ string Resolver::RelationExpressionReason::toString() const
 	}
 	else
 	{
-		return format2("%s %s %s '%s'", version->packageName, version->versionString,
+		return format2("%s %s %s '%s'", version->packageId.name(), version->versionString,
 				dependencyTypeTranslationIt->second, relationExpression.toString());
 	}
 }
 
 Resolver::SynchronizationReason::SynchronizationReason(
 		const BinaryVersion* version_,
-		const string& packageName_)
-	: version(version_), relatedPackageName(packageName_)
+		PackageId packageId_)
+	: version(version_), relatedPackageId(packageId_)
 {}
 
 string Resolver::SynchronizationReason::toString() const
 {
-	return format2(__("%s: synchronization with %s %s"), relatedPackageName,
-			version->packageName, version->versionString);
+	return format2(__("%s: synchronization with %s %s"), relatedPackageId.name(),
+			version->packageId.name(), version->versionString);
 }
 
 }
