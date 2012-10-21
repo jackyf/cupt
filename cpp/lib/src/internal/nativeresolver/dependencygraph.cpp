@@ -549,7 +549,7 @@ class DependencyGraph::FillHelper
 		};
 
 		auto rawId = packageId.rawId();
-		string versionHashString((const char*)rawId, sizeof(rawId));
+		string versionHashString((const char*)&rawId, sizeof(rawId));
 		versionHashString.append((const char*)&version, sizeof(version));
 
 		auto insertResult = __version_to_vertex_ptr.insert({ std::move(versionHashString), NULL });
