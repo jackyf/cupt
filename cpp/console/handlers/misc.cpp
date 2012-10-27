@@ -37,6 +37,8 @@ using std::stack;
 #include "../misc.hpp"
 #include "../selectors.hpp"
 
+namespace {
+
 auto printTag = [&cout](const string& first, const string& second)
 {
 	if (!second.empty())
@@ -44,6 +46,19 @@ auto printTag = [&cout](const string& first, const string& second)
 		cout << first << ": " << second << endl;
 	}
 };
+
+string getPrintableInstalledStatus(const Cache& cache, const string& packageName)
+{
+	auto installedInfo = cache.getSystemState()->getInstalledInfo(packageName);
+	string status = __(system::State::InstalledRecord::Status::strings[installedInfo->status].c_str());
+	if (installedInfo->want == system::State::InstalledRecord::Want::Hold)
+	{
+		status += string(" (") + __("on hold") + ")";
+	}
+	return status;
+}
+
+}
 
 int showBinaryVersions(Context& context)
 {
@@ -117,13 +132,7 @@ int showBinaryVersions(Context& context)
 			p(__("Version"), version->versionString);
 			if (version->isInstalled())
 			{
-				auto installedInfo = cache->getSystemState()->getInstalledInfo(packageName);
-				string status = __(system::State::InstalledRecord::Status::strings[installedInfo->status].c_str());
-				if (installedInfo->want == system::State::InstalledRecord::Want::Hold)
-				{
-					status += string(" (") + __("on hold") + ")";
-				}
-				p(__("Status"), status);
+				p(__("Status"), getPrintableInstalledStatus(*cache, packageName));
 				bool isAutoInstalled = cache->isAutomaticallyInstalled(packageName);
 				p(__("Automatically installed"), isAutoInstalled ? __("yes") : __("no"));
 			}
