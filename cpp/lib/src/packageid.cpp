@@ -33,7 +33,7 @@ class StringBuffer
 	};
 	size_t __bufferLength;
 
-	bool __containsString() const { return __bufferLength; }
+	bool __containsString() const { return !__bufferLength; }
 
  public:
 	StringBuffer(const char* start, size_t len)
@@ -100,13 +100,13 @@ uint32_t getPackageNameId(StringBuffer&& packageName)
 	static S2NType s2n;
 	static uint32_t nextId = 1;
 
-	auto& id = s2n[std::move(packageName)];
+	S2NType::value_type insertPair { std::move(packageName), 0 };
+	auto& insertedPair = *s2n.insert(insertPair).first;
+	auto& id = insertedPair.second;
 	if (!id)
 	{
 		id = nextId++;
-		auto persistentStringBuffer = (const StringBuffer*)
-				((const char*)(&id) - offsetof(S2NType::value_type, second));
-		getN2S().push_back(persistentStringBuffer->getStringPtr());
+		getN2S().push_back(insertedPair.first.getStringPtr());
 	}
 
 	return id;
