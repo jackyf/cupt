@@ -98,7 +98,6 @@ int showBinaryVersions(Context& context)
 		}
 		else
 		{
-			bool foundVirtual = false;
 			if (!cache->getBinaryPackage(packageExpression))
 			{
 				// there is no such binary package, maybe it's virtual?
@@ -106,13 +105,10 @@ int showBinaryVersions(Context& context)
 				if (!reverseProvides.empty())
 				{
 					p(__("Pure virtual package, provided by"), reverseProvides.toString());
-					foundVirtual = true;
+					continue;
 				}
 			}
-			if (!foundVirtual)
-			{
-				versions = selectBinaryVersionsWildcarded(*cache, packageExpression);
-			}
+			versions = selectBinaryVersionsWildcarded(*cache, packageExpression);
 		}
 
 		for (const auto& version: versions)
