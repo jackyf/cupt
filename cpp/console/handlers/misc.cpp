@@ -101,16 +101,8 @@ int showBinaryVersions(Context& context)
 	auto getReverseProvides = [&cache](PackageId packageId) -> RelationLine
 	{
 		RelationLine result;
-<<<<<<< HEAD
-		if (!checkPackageName(packageId.name(), false))
-		{
-			return result;
-		}
-		RelationExpression virtualRelationExpression(packageId.name());
-=======
 
-		RelationExpression virtualRelationExpression(packageName);
->>>>>>> next
+		RelationExpression virtualRelationExpression(packageId.name());
 		for (const auto& version: cache->getSatisfyingVersions(virtualRelationExpression))
 		{
 			// we don't need versions of the same package
@@ -131,13 +123,8 @@ int showBinaryVersions(Context& context)
 		}
 		else
 		{
-<<<<<<< HEAD
-			bool foundVirtual = false;
 			PackageId packageId(packageExpression);
 			if (!cache->getBinaryPackage(packageId))
-=======
-			if (!cache->getBinaryPackage(packageExpression))
->>>>>>> next
 			{
 				// there is no such binary package, maybe it's virtual?
 				auto reverseProvides = getReverseProvides(packageId);
@@ -555,13 +542,12 @@ int policy(Context& context, bool source)
 	if (!arguments.empty())
 	{
 		// print release info for supplied package names
-
-		FORIT(packageNameIt, arguments)
+		for (const string& packageName: arguments)
 		{
-			const string& packageName = *packageNameIt;
+			PackageId packageId(packageName);
 			const Package* package = (!source ?
-					(const Package*)getBinaryPackage(*cache, packageName) :
-					(const Package*)getSourcePackage(*cache, packageName));
+					(const Package*)getBinaryPackage(*cache, packageId) :
+					(const Package*)getSourcePackage(*cache, packageId));
 			auto policyVersion = cache->getPreferredVersion(package);
 			if (!policyVersion)
 			{
@@ -874,11 +860,10 @@ int showScreenshotUris(Context& context)
 
 	auto cache = context.getCache(false, true, true); // binary and installed
 
-	FORIT(argumentIt, arguments)
+	for (const string& packageName: arguments)
 	{
-		const string& packageName = *argumentIt;
-		// check for existence
-		getBinaryPackage(*cache, packageName);
+		// check for validity and existence
+		getBinaryPackage(*cache, PackageId(packageName));
 
 		cout << "http://screenshots.debian.net/package/" << packageName << endl;
 	}

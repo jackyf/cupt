@@ -93,6 +93,18 @@ vector< const string* >& getN2S()
 	return n2s;
 }
 
+void checkPackageName(const StringBuffer& packageName)
+{
+	const char* const inputStart = packageName.getBufferStart();
+	auto inputEnd = inputStart + packageName.getBufferLength();
+	const char* resultEnd;
+	consumePackageName(inputStart, inputEnd, resultEnd);
+	if (resultEnd != inputEnd)
+	{
+		fatal2(__("invalid package name '%s'"), *StringBuffer(packageName).getStringPtr());
+	}
+}
+
 uint32_t getPackageNameId(StringBuffer&& packageName)
 {
 	checkPackageName(packageName);
@@ -120,8 +132,8 @@ PackageId::PackageId()
 	: __id(0)
 {}
 
-PackageId::PackageId(const char* start, const char* end)
-	: __id(getPackageNameId(StringBuffer(start, end-start)))
+PackageId::PackageId(const char* start, size_t len)
+	: __id(getPackageNameId(StringBuffer(start, len)))
 {}
 
 PackageId::PackageId(const string& packageName)

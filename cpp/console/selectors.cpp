@@ -34,22 +34,22 @@
 
 typedef std::function< vector< PackageId > (const Cache&) > __package_names_fetcher;
 
-const BinaryPackage* getBinaryPackage(const Cache& cache, const string& packageName, bool throwOnError)
+const BinaryPackage* getBinaryPackage(const Cache& cache, PackageId packageId, bool throwOnError)
 {
-	auto result = cache.getBinaryPackage(PackageId(packageName));
+	auto result = cache.getBinaryPackage(packageId);
 	if (!result && throwOnError)
 	{
-		fatal2(__("unable to find the binary package '%s'"), packageName);
+		fatal2(__("unable to find the binary package '%s'"), packageId.name());
 	}
 	return result;
 }
 
-const SourcePackage* getSourcePackage(const Cache& cache, const string& packageName, bool throwOnError)
+const SourcePackage* getSourcePackage(const Cache& cache, PackageId packageId, bool throwOnError)
 {
-	auto result = cache.getSourcePackage(PackageId(packageName));
+	auto result = cache.getSourcePackage(packageId);
 	if (!result && throwOnError)
 	{
-		fatal2(__("unable to find the source package '%s'"), packageName);
+		fatal2(__("unable to find the source package '%s'"), packageId.name());
 	}
 	return result;
 }
@@ -68,11 +68,11 @@ const Version* __select_version(const Cache& cache,
 		// selecting by strict version string
 		// example: "nlkt=0.3.2.1-1"
 		string packageName = m[1];
-		checkPackageName(packageName);
+		PackageId packageId(packageName);
 		string versionString = m[2];
 		checkVersionString(versionString);
 
-		auto package = packageSelector(cache, packageName, throwOnError);
+		auto package = packageSelector(cache, packageId, throwOnError);
 		if (!package)
 		{
 			return ReturnType();
@@ -90,7 +90,7 @@ const Version* __select_version(const Cache& cache,
 	{
 		// selecting by release distibution
 		string packageName = m[1];
-		checkPackageName(packageName);
+		PackageId packageId(packageName);
 
 		string distributionExpression = m[2];
 
@@ -108,7 +108,7 @@ const Version* __select_version(const Cache& cache,
 			}
 		}
 
-		auto package = packageSelector(cache, packageName, throwOnError);
+		auto package = packageSelector(cache, packageId, throwOnError);
 		if (!package)
 		{
 			return ReturnType();
@@ -160,9 +160,9 @@ const Version* __select_version(const Cache& cache,
 	else
 	{
 		const string& packageName = packageExpression;
-		checkPackageName(packageName);
+		PackageId packageId(packageName);
 
-		auto package = packageSelector(cache, packageName, throwOnError);
+		auto package = packageSelector(cache, packageId, throwOnError);
 		if (!package)
 		{
 			return ReturnType();
@@ -170,7 +170,7 @@ const Version* __select_version(const Cache& cache,
 		auto version = cache.getPreferredVersion(package);
 		if (!version && throwOnError)
 		{
-			fatal2(__("no versions available for the package '%s'"), packageName);
+			fatal2(__("no versions available for the package '%s'"), packageId.name());
 		}
 		return version;
 	}
@@ -364,7 +364,7 @@ static vector< const VersionType* > __select_all_versions_wildcarded(
 	}
 	for (auto packageId: packageIds)
 	{
-		auto package = packageSelector(cache, packageId.name(), false);
+		auto package = packageSelector(cache, packageId, false);
 		auto versions = package->getVersions();
 		std::move(versions.begin(), versions.end(), std::back_inserter(result));
 	}

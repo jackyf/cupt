@@ -25,9 +25,9 @@
 #include "common.hpp"
 
 const BinaryPackage* getBinaryPackage(const Cache& cache,
-		const string& packageName, bool throwOnError = true);
+		PackageId packageId, bool throwOnError = true);
 const SourcePackage* getSourcePackage(const Cache& cache,
-		const string& packageName, bool throwOnError = true);
+		PackageId packageId, bool throwOnError = true);
 const BinaryVersion* selectBinaryVersion(const Cache& cache,
 		const string& packageExpression, bool throwOnError);
 vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache,

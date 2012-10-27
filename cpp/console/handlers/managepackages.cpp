@@ -230,7 +230,7 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 		{
 			PackageId packageId(packageExpression);
 			if (!cache.getSystemState()->getInstalledInfo(packageId) &&
-				!getBinaryPackage(cache, packageExpression, false))
+				!getBinaryPackage(cache, packageId, false))
 			{
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
@@ -243,7 +243,7 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 static void processAutoFlagChangeExpression(const Cache& cache,
 		Resolver& resolver, ManagePackages::Mode mode, const string& packageExpression)
 {
-	getBinaryPackage(cache, packageExpression); // will throw if package name is wrong
+	getBinaryPackage(cache, PackageId(packageExpression)); // will throw if package name is wrong
 
 	resolver.setAutomaticallyInstalledFlag(PackageId(packageExpression),
 			(mode == ManagePackages::Markauto));
@@ -252,7 +252,7 @@ static void processAutoFlagChangeExpression(const Cache& cache,
 static void processReinstallExpression(const Cache& cache,
 		Resolver& resolver, const string& packageExpression)
 {
-	auto package = getBinaryPackage(cache, packageExpression);
+	auto package = getBinaryPackage(cache, PackageId(packageExpression));
 	auto installedVersion = package->getInstalledVersion();
 	if (!installedVersion)
 	{

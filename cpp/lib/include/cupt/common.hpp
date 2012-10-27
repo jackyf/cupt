@@ -98,6 +98,8 @@ CUPT_API const char* __(const char* message);
  * @param end range end iterator
  * @param [in,out] resultEnd consumed range end iterator
  *
+ * Support string::const_iterator and const char* as iterator types.
+ *
  * @par Example:
  * @code
  * string input = "zzuf (>= 1.2)";
@@ -107,16 +109,9 @@ CUPT_API const char* __(const char* message);
  * @endcode
  * @c "zzuf" will be printed
  */
-void CUPT_API consumePackageName(string::const_iterator begin, string::const_iterator end,
-		string::const_iterator& resultEnd);
-
-/// checks package name for correctness
-/**
- * @param packageName package name
- * @param throwOnError if set to @c true, function will throw exception if @a packageName is not correct
- * @return @c true if the @a packageName is correct, @c false if @a packageName is not correct and @a throwOnError is @c false
- */
-bool CUPT_API checkPackageName(const string& packageName, bool throwOnError = true);
+template < typename IteratorType >
+void CUPT_API consumePackageName(IteratorType begin, IteratorType end,
+		IteratorType& resultEnd);
 
 /// checks version string for correctness
 /**

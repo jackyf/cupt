@@ -25,7 +25,7 @@ class CUPT_API PackageId
 	uint32_t __id;
  public:
 	PackageId();
-	explicit PackageId(const char* start, const char* end);
+	explicit PackageId(const char* start, size_t len);
 	explicit PackageId(const string&);
 	const string& name() const;
 	uint32_t rawId() const;

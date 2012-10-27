@@ -35,20 +35,10 @@ void consumePackageName(IteratorType begin, IteratorType end,
 		++resultEnd;
 	}
 }
-template void consumePackageName(string::const_iterator, string::const_iterator, string::const_iterator&);
-template void consumePackageName(const char*, const char*, const char*&);
-
-bool checkPackageName(const string& input, bool throwOnError)
-{
-	string::const_iterator resultEnd;
-	consumePackageName(input.begin(), input.end(), resultEnd);
-	bool result = (resultEnd == input.end());
-	if (!result && throwOnError)
-	{
-		fatal2(__("invalid package name '%s'"), input);
-	}
-	return result;
-}
+template void consumePackageName<>
+		(string::const_iterator, string::const_iterator, string::const_iterator&);
+template void consumePackageName<>
+		(const char*, const char*, const char*&);
 
 // kind of HACK: I want to use this function, but don't want to create a header for it
 typedef pair< string::const_iterator, string::const_iterator > StringAnchorPair;

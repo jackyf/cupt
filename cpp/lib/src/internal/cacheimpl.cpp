@@ -53,7 +53,7 @@ void CacheImpl::processProvides(PackageId packageId,
 {
 	auto callback = [this, &packageId](const char* tokenBeginIt, const char* tokenEndIt)
 	{
-		this->canProvide[PackageId(string(tokenBeginIt, tokenEndIt))].insert(packageId);
+		this->canProvide[PackageId(tokenBeginIt, tokenEndIt-tokenBeginIt)].insert(packageId);
 	};
 	processSpaceCommaSpaceDelimitedStrings(
 			providesStringStart, providesStringEnd, callback);
