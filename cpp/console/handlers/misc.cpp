@@ -88,9 +88,8 @@ int showBinaryVersions(Context& context)
 	};
 
 	auto p = printTag;
-	for (size_t i = 0; i < arguments.size(); ++i)
+	for (const string& packageExpression: arguments)
 	{
-		const string& packageExpression = arguments[i];
 		vector< const BinaryVersion* > versions;
 		if (config->getBool("apt::cache::allversions"))
 		{
