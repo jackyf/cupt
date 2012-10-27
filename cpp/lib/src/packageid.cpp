@@ -33,19 +33,19 @@ class StringBuffer
 	};
 	size_t __bufferLength;
 
-	bool __containsString() const { return !__bufferLength; }
+	bool __containsString() const { return __bufferLength == size_t(-1); }
 
  public:
 	StringBuffer(const char* start, size_t len)
 		: __bufferStart(start), __bufferLength(len)
 	{}
 	StringBuffer(const StringBuffer& other)
-		: __string(new string(other.__bufferStart, other.__bufferLength)), __bufferLength(0)
+		: __string(new string(other.__bufferStart, other.__bufferLength)), __bufferLength(size_t(-1))
 	{}
 	StringBuffer(StringBuffer&& other)
 		: __bufferStart(other.__bufferStart), __bufferLength(other.__bufferLength)
 	{
-		other.__bufferLength = -1; // any non-zero value
+		other.__bufferLength = 0; // any non-(-1)
 	}
 	~StringBuffer()
 	{

@@ -540,7 +540,8 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	try
 	{
-		string packageName;
+		char* packageNameBuf;
+		size_t packageNameLength;
 
 		while (true)
 		{
@@ -561,7 +562,8 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 			static const size_t packageAnchorLength = sizeof("Package: ") - 1;
 			if (size > packageAnchorLength && !memcmp("Package: ", buf, packageAnchorLength))
 			{
-				packageName.assign(buf + packageAnchorLength, size - packageAnchorLength - 1);
+				packageNameBuf = buf + packageAnchorLength;
+				packageNameLength = size - packageAnchorLength - 1;
 			}
 			else
 			{

@@ -19,8 +19,9 @@
 
 namespace cupt {
 
-void consumePackageName(string::const_iterator begin, string::const_iterator end,
-		string::const_iterator& resultEnd)
+template < typename IteratorType >
+void consumePackageName(IteratorType begin, IteratorType end,
+		IteratorType& resultEnd)
 {
 	// "[a-z_0-9.+-]+"
 	resultEnd = begin; // start position, meaning no package name found
@@ -34,6 +35,8 @@ void consumePackageName(string::const_iterator begin, string::const_iterator end
 		++resultEnd;
 	}
 }
+template void consumePackageName(string::const_iterator, string::const_iterator, string::const_iterator&);
+template void consumePackageName(const char*, const char*, const char*&);
 
 bool checkPackageName(const string& input, bool throwOnError)
 {
