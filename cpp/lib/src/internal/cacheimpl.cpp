@@ -540,7 +540,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	try
 	{
-		char* packageNameBuf;
+		const char* packageNameBuf;
 		size_t packageNameLength;
 
 		while (true)
@@ -570,9 +570,10 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				fatal2(__("unable to find a Package line"));
 			}
 
+			PackageId packageId;
 			try
 			{
-				checkPackageName(packageName);
+				packageId = PackageId(packageNameBuf, packageNameLength);
 			}
 			catch (Exception&)
 			{
@@ -581,7 +582,6 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 				continue;
 			}
 
-			PackageId packageId(std::move(packageName));
 
 			auto& prePackageRecords = prePackagesStorage[packageId];
 			prePackageRecords.push_back(prePackageRecord);
