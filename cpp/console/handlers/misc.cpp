@@ -39,13 +39,13 @@ using std::stack;
 
 namespace {
 
-auto printTag = [&cout](const string& first, const string& second)
+void printTag(const string& first, const string& second)
 {
 	if (!second.empty())
 	{
 		cout << first << ": " << second << endl;
 	}
-};
+}
 
 string getPrintableInstalledStatus(const Cache& cache, const string& packageName)
 {
