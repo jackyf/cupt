@@ -39,11 +39,13 @@ using std::stack;
 
 namespace {
 
-void printTag(const string& first, const string& second)
+// "print tag"
+void p(const string& first, const string& second, bool withNewLine = true)
 {
 	if (!second.empty())
 	{
-		cout << first << ": " << second << endl;
+		cout << first << ": " << second;
+		if (withNewLine) cout << endl;
 	}
 }
 
@@ -102,7 +104,6 @@ int showBinaryVersions(Context& context)
 		return result;
 	};
 
-	auto p = printTag;
 	for (const string& packageExpression: arguments)
 	{
 		vector< const BinaryVersion* > versions;
@@ -183,7 +184,7 @@ int showBinaryVersions(Context& context)
 			p("MD5", version->file.hashSums[HashSums::MD5]);
 			p("SHA1", version->file.hashSums[HashSums::SHA1]);
 			p("SHA256", version->file.hashSums[HashSums::SHA256]);
-			p(__("Description"), cache->getLocalizedDescription(version));
+			p(__("Description"), cache->getLocalizedDescription(version), false);
 			p(__("Tags"), version->tags);
 			if (version->others)
 			{
@@ -223,8 +224,6 @@ int showSourceVersions(Context& context)
 		Version::parseOthers = true;
 	}
 	auto cache = context.getCache(/* source */ true, /* binary */ true, /* installed */ true);
-
-	auto p = printTag;
 
 	for (size_t i = 0; i < arguments.size(); ++i)
 	{
