@@ -95,6 +95,8 @@ vector< const string* >& getN2S()
 
 uint32_t getPackageNameId(StringBuffer&& packageName)
 {
+	checkPackageName(packageName);
+
 	typedef std::unordered_map< StringBuffer, uint32_t, StringBufferHasher > S2NType;
 
 	static S2NType s2n;

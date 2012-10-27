@@ -228,7 +228,6 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 		}
 		else
 		{
-			checkPackageName(packageExpression);
 			PackageId packageId(packageExpression);
 			if (!cache.getSystemState()->getInstalledInfo(packageId) &&
 				!getBinaryPackage(cache, packageExpression, false))
