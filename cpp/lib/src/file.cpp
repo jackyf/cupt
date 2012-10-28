@@ -159,6 +159,12 @@ File::File(const string& path, const char* mode, string& openError)
 	: __impl(new internal::FileImpl(path, mode, openError))
 {}
 
+File::File(File&& other)
+	: __impl(other.__impl)
+{
+	other.__impl = nullptr;
+}
+
 File::~File()
 {
 	delete __impl;
