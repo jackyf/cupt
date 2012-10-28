@@ -65,6 +65,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         replaced with a new field 'description'.
     - cache/sourcepackage:
       - New methods begin() and end().
+    - file:
+      - New class 'RequiredFile'.
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.

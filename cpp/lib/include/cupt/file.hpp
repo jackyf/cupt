@@ -152,6 +152,17 @@ class CUPT_API File
 	void lock(int flags);
 };
 
+// File wrapper which throws on open errors
+class CUPT_API RequiredFile: public File
+{
+ public:
+	/*
+	 * Passes @a path and @a mode to File::File(). If file failed to open (i.e.
+	 * !openError.empty()), throws the exception.
+	 */
+	RequiredFile(const string& path, const char* mode);
+};
+
 } // namespace
 
 #endif
