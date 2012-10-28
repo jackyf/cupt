@@ -172,13 +172,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 void DebdeltaHelper::__parse_sources(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
-
+	RequiredFile file(path, "r");
 
 	/* we are parsing entries like that:
 	 [main debian sources]

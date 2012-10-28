@@ -235,12 +235,7 @@ void stripComment(string& s)
 
 void CacheImpl::parseSourceList(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	RequiredFile file(path, "r");
 
 	string line;
 	static sregex toSkip = sregex::compile("^\\s*(?:#.*)?$");
@@ -526,12 +521,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	auto& prePackagesStorage = (category == IndexEntry::Binary ?
 			preBinaryPackages : preSourcePackages);
 
-	string openError;
-	shared_ptr< File > file(new File(path, "r", openError));
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	shared_ptr< File > file(new RequiredFile(path, "r"));
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
 	PrePackageRecord prePackageRecord;

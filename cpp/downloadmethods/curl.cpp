@@ -197,12 +197,7 @@ class CurlMethod: public cupt::download::Method
 				curl.setOption(CURLOPT_WRITEFUNCTION, (void*)&curlWriteFunction, "write function");
 			}
 
-			string openError;
-			File file(targetPath, "a", openError);
-			if (!openError.empty())
-			{
-				fatal2(__("unable to open the file '%s': %s"), targetPath, openError);
-			}
+			RequiredFile file(targetPath, "a");
 
 			start:
 			ssize_t totalBytes = file.tell();

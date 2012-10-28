@@ -82,12 +82,7 @@ static void unrollFileArguments(vector< string >& arguments)
 		{
 			const string path = argument.substr(1);
 			// reading package expressions from file
-			string openError;
-			File file(path, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2(__("unable to open the file '%s': %s"), path, openError);
-			}
+			RequiredFile file(path, "r");
 			string line;
 			while (!file.getLine(line).eof())
 			{
