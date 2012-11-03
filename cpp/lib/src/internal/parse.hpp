@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,31 +15,22 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_COMMON_SEEN
-#define CUPT_INTERNAL_COMMON_SEEN
-
-#include <sys/wait.h>
-
-#include <cupt/common.hpp>
+#ifndef CUPT_INTERNAL_PARSE_SEEN
+#define CUPT_INTERNAL_PARSE_SEEN
 
 namespace cupt {
 namespace internal {
+namespace parse {
 
-void chomp(string& str);
+template < typename IterT, typename CallbackT >
+void processSpaceCharSpaceDelimitedStrings(IterT begin, IterT end,
+		char delimiter, const CallbackT&);
 
-vector< string > split(char, const string&, bool allowEmpty = false);
+}
+}
+}
 
-string getWaitStatusDescription(int status);
-
-// we may use following instead of boost::lexical_cast<> because of speed
-uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input);
-
-bool architectureMatch(const string& architecture, const string& pattern);
-
-} // namespace
-} // namespace
-
-#define N__(arg) arg
+#include <internal/parse.tpp>
 
 #endif
 

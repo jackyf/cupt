@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,31 +15,56 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_COMMON_SEEN
-#define CUPT_INTERNAL_COMMON_SEEN
-
-#include <sys/wait.h>
-
-#include <cupt/common.hpp>
 
 namespace cupt {
 namespace internal {
+namespace parse {
 
-void chomp(string& str);
+namespace {
 
-vector< string > split(char, const string&, bool allowEmpty = false);
+template < class IterT >
+bool findSpaceSymbolSpace(const IterT& begin, const IterT& end,
+		char symbol, IterT& resultBegin, IterT& resultEnd)
+{
+	for (auto current = begin; current != end; ++current)
+	{
+		if (*current == symbol)
+		{
+			// found!
+			resultBegin = current;
+			while (resultBegin != begin && *(resultBegin-1) == ' ')
+			{
+				--resultBegin;
+			}
+			resultEnd = current+1;
+			while (resultEnd != end && *resultEnd == ' ')
+			{
+				++resultEnd;
+			}
+			return true;
+		}
+	}
+	return false;
+}
 
-string getWaitStatusDescription(int status);
+}
 
-// we may use following instead of boost::lexical_cast<> because of speed
-uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input);
+template< typename IterT, typename CallbackT >
+void processSpaceCharSpaceDelimitedStrings(IterT begin, IterT end,
+		char delimiter, const CallbackT& callback)
+{
+	IterT current = begin;
+	IterT delimiterBegin;
+	IterT delimiterEnd;
+	while (findSpaceSymbolSpace(current, end, delimiter, delimiterBegin, delimiterEnd))
+	{
+		callback(current, delimiterBegin);
+		current = delimiterEnd;
+	}
+	callback(current, end);
+}
 
-bool architectureMatch(const string& architecture, const string& pattern);
-
-} // namespace
-} // namespace
-
-#define N__(arg) arg
-
-#endif
+}
+}
+}
 

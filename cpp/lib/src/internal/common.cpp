@@ -125,64 +125,6 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 	return uint32_t(number);
 }
 
-template < class IterType, char symbol >
-inline bool __find_space_symbol_space(const IterType& begin, const IterType& end,
-		IterType& resultBegin, IterType& resultEnd)
-{
-	for (auto current = begin; current != end; ++current)
-	{
-		if (*current == symbol)
-		{
-			// found!
-			resultBegin = current;
-			while (resultBegin != begin && *(resultBegin-1) == ' ')
-			{
-				--resultBegin;
-			}
-			resultEnd = current+1;
-			while (resultEnd != end && *resultEnd == ' ')
-			{
-				++resultEnd;
-			}
-			return true;
-		}
-	}
-	return false;
-}
-
-template< class IterType, char symbol >
-inline void __process_space_symbol_space_delimited_strings(IterType begin, IterType end,
-		const std::function< void (IterType, IterType) >& callback)
-{
-	IterType current = begin;
-	IterType delimiterBegin;
-	IterType delimiterEnd;
-	while (__find_space_symbol_space< IterType, symbol >(current, end, delimiterBegin, delimiterEnd))
-	{
-		callback(current, delimiterBegin);
-		current = delimiterEnd;
-	}
-	callback(current, end);
-}
-
-void processSpaceCommaSpaceDelimitedStrings(const char* begin, const char* end,
-		const std::function< void (const char*, const char*) >& callback)
-{
-	__process_space_symbol_space_delimited_strings<const char*, ','>(begin, end, callback);
-}
-
-void processSpaceCommaSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback)
-{
-	__process_space_symbol_space_delimited_strings<string::const_iterator, ','>(begin, end, callback);
-}
-
-void processSpacePipeSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback)
-{
-	__process_space_symbol_space_delimited_strings<string::const_iterator, '|'>(begin, end, callback);
-}
-
 } // namespace
 } // namespace
 

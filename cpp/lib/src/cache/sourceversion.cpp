@@ -24,6 +24,7 @@
 #include <internal/tagparser.hpp>
 #include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
+#include <internal/parse.hpp>
 #include <internal/regex.hpp>
 
 namespace cupt {
@@ -123,7 +124,8 @@ SourceVersion* SourceVersion::parseFromFile(const Version::InitializationParamet
 					block.append(additionalLines);
 				}
 
-				internal::processSpaceCommaSpaceDelimitedStrings(block.begin(), block.end(),
+				internal::parse::processSpaceCharSpaceDelimitedStrings(
+						block.begin(), block.end(), ',',
 						[&v](string::const_iterator a, string::const_iterator b)
 						{
 							v->binaryPackageNames.push_back(string(a, b));

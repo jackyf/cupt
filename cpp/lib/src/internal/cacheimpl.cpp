@@ -33,7 +33,7 @@
 #include <internal/pininfo.hpp>
 #include <internal/tagparser.hpp>
 #include <internal/regex.hpp>
-#include <internal/common.hpp>
+#include <internal/parse.hpp>
 #include <internal/cachefiles.hpp>
 #include <internal/indexofindex.hpp>
 
@@ -56,8 +56,8 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 	{
 		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(packageNamePtr);
 	};
-	processSpaceCommaSpaceDelimitedStrings(
-			providesStringStart, providesStringEnd, std::cref(callback));
+	parse::processSpaceCharSpaceDelimitedStrings(
+			providesStringStart, providesStringEnd, ',', callback);
 }
 
 Package* CacheImpl::newBinaryPackage() const

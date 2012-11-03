@@ -22,6 +22,7 @@
 #include <internal/tagparser.hpp>
 #include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
+#include <internal/parse.hpp>
 
 namespace cupt {
 namespace cache {
@@ -115,7 +116,8 @@ BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParamet
 					{
 						v->provides.push_back(string(begin, end));
 					};
-					internal::processSpaceCommaSpaceDelimitedStrings(tagValue.first, tagValue.second, callback);
+					internal::parse::processSpaceCharSpaceDelimitedStrings(
+							tagValue.first, tagValue.second, ',', callback);
 				})
 			}
 

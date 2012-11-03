@@ -21,6 +21,7 @@
 #include <cupt/cache/relation.hpp>
 
 #include <internal/common.hpp>
+#include <internal/parse.hpp>
 
 namespace cupt {
 namespace cache {
@@ -379,7 +380,8 @@ void RelationExpressionType::__init(string::const_iterator begin, string::const_
 			{ \
 				this->emplace_back(make_pair(begin, end)); \
 			}; \
-			internal::processSpacePipeSpaceDelimitedStrings(begin, end, std::cref(callback)); \
+			internal::parse::processSpaceCharSpaceDelimitedStrings( \
+					begin, end, '|', callback); \
 			return; \
 		} \
 	} \
@@ -429,7 +431,7 @@ void RelationLineType::__init(string::const_iterator begin, string::const_iterat
 		this->emplace_back(make_pair(begin, end)); \
 	}; \
  \
-	internal::processSpaceCommaSpaceDelimitedStrings(begin, end, std::cref(callback)); \
+	internal::parse::processSpaceCharSpaceDelimitedStrings(begin, end, ',', callback); \
 } \
  \
 RelationLineType::RelationLineType(pair< string::const_iterator, string::const_iterator > input) \
