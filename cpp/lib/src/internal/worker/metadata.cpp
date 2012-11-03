@@ -31,6 +31,7 @@
 #include <internal/lock.hpp>
 #include <internal/tagparser.hpp>
 #include <internal/common.hpp>
+#include <internal/indexofindex.hpp>
 
 #include <internal/worker/metadata.hpp>
 
@@ -93,6 +94,7 @@ std::function< string () > generateMovingSub(const string& downloadPath, const s
 {
 	return [downloadPath, targetPath]() -> string
 	{
+		ioi::removeIndexOfIndex(targetPath);
 		if (fs::move(downloadPath, targetPath))
 		{
 			return "";
@@ -660,6 +662,15 @@ struct MetadataWorker::IndexUpdateInfo
 	string label;
 };
 
+void MetadataWorker::__generate_index_of_index(const string& sourcePath)
+{
+	if (!_config->getBool("cupt::worker::simulate"))
+	{
+		auto temporaryPath = getDownloadPath(sourcePath) + ".ioi";
+		ioi::generate(sourcePath, temporaryPath);
+	}
+}
+
 bool MetadataWorker::__update_main_index(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool releaseFileChanged, bool& mainIndexFileChanged)
 {
@@ -669,8 +680,13 @@ bool MetadataWorker::__update_main_index(download::Manager& downloadManager,
 	info.targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
 	info.downloadInfo = cachefiles::getDownloadInfoOfIndexList(*_config, indexEntry);
 	info.label = __("index");
-	return __update_index(downloadManager, indexEntry,
+	auto result = __update_index(downloadManager, indexEntry,
 			std::move(info), releaseFileChanged, mainIndexFileChanged);
+	if (result && _config->getBool("cupt::update::generate-index-of-index"))
+	{
+		__generate_index_of_index(info.targetPath);
+	}
+	return result;
 }
 
 bool MetadataWorker::__update_index(download::Manager& downloadManager, const cachefiles::IndexEntry& indexEntry,
@@ -934,29 +950,35 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 	_logger->log(Logger::Subsystem::Metadata, 2, "cleaning up old index lists");
 
 	set< string > usedPaths;
-	auto addUsedPrefix = [&usedPaths](const string& prefix)
+	auto addUsedPattern = [&usedPaths](const string& pattern)
 	{
-		auto existingFiles = fs::glob(prefix + '*');
-		FORIT(existingFileIt, existingFiles)
+		for (const string& existingFile: fs::glob(pattern))
 		{
-			usedPaths.insert(*existingFileIt);
+			usedPaths.insert(existingFile);
 		}
 	};
 
+	auto includeIoi = _config->getBool("cupt::update::generate-index-of-index");
 	auto indexEntries = _cache->getIndexEntries();
 	FORIT(indexEntryIt, indexEntries)
 	{
-		addUsedPrefix(cachefiles::getPathOfReleaseList(*_config, *indexEntryIt));
-		addUsedPrefix(cachefiles::getPathOfIndexList(*_config, *indexEntryIt));
+		auto pathOfIndexList = cachefiles::getPathOfIndexList(*_config, *indexEntryIt);
+
+		addUsedPattern(cachefiles::getPathOfReleaseList(*_config, *indexEntryIt) + '*');
+		addUsedPattern(pathOfIndexList);
+		if (includeIoi)
+		{
+			addUsedPattern(ioi::getIndexOfIndexPath(pathOfIndexList));
+		}
 
 		auto translationsPossiblePaths =
 				cachefiles::getPathsOfLocalizedDescriptions(*_config, *indexEntryIt);
 		FORIT(pathIt, translationsPossiblePaths)
 		{
-			addUsedPrefix(pathIt->second);
+			addUsedPattern(pathIt->second);
 		}
 	}
-	addUsedPrefix(lockPath);
+	addUsedPattern(lockPath);
 
 	bool simulating = _config->getBool("cupt::worker::simulate");
 

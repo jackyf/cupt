@@ -32,6 +32,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'getLocalizedDescriptions' is replaced with
         'getLocalizedDescription'.
       - [API break] 'getPolicyVersion' is renamed to 'getPreferredVersion'.
+      - New possibility to use index-of-index files to speed up building
+        the package cache.
     - cache/package:
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash
@@ -43,6 +45,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - config:
       - Don't store unused APT variables anymore.
       - New option 'cupt::console::actions-preview::show-reasons'.
+      - New option 'cupt::update::generate-index-of-index'.
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.

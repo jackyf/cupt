@@ -393,6 +393,13 @@ boolean, specifies whether to keep signature files that failed GPG check
 when doing update. True by default. Setting this option to false will not have
 an effect if the option L<cupt::update::check-release-files> is set to false.
 
+=item cupt::update::generate-index-of-index
+
+boolean, specifies whether to build "index-of-index" for every Packages and
+Sources. If set to true, slightly increases the time of postprocessing after
+downloading new metadata files but speedes up significantly the initialization
+time for every invocation. True by default.
+
 =item cupt::update::use-index-diffs
 
 boolean, specifies whether to try downloading repository index deltas and apply
