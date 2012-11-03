@@ -379,7 +379,7 @@ void RelationExpressionType::__init(string::const_iterator begin, string::const_
 			{ \
 				this->emplace_back(make_pair(begin, end)); \
 			}; \
-			internal::processSpacePipeSpaceDelimitedStrings(begin, end, callback); \
+			internal::processSpacePipeSpaceDelimitedStrings(begin, end, std::cref(callback)); \
 			return; \
 		} \
 	} \
