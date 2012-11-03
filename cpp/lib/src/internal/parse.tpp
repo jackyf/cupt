@@ -23,7 +23,7 @@ namespace parse {
 namespace {
 
 template < class IterT >
-bool findSpaceSymbolSpace(const IterT& begin, const IterT& end,
+inline bool findSpaceSymbolSpace(const IterT& begin, const IterT& end,
 		char symbol, IterT& resultBegin, IterT& resultEnd)
 {
 	for (auto current = begin; current != end; ++current)
