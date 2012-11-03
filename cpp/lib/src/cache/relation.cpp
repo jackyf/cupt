@@ -429,7 +429,7 @@ void RelationLineType::__init(string::const_iterator begin, string::const_iterat
 		this->emplace_back(make_pair(begin, end)); \
 	}; \
  \
-	internal::processSpaceCommaSpaceDelimitedStrings(begin, end, callback); \
+	internal::processSpaceCommaSpaceDelimitedStrings(begin, end, std::cref(callback)); \
 } \
  \
 RelationLineType::RelationLineType(pair< string::const_iterator, string::const_iterator > input) \
