@@ -56,7 +56,7 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(packageNamePtr);
 	};
 	processSpaceCommaSpaceDelimitedStrings(
-			providesStringStart, providesStringEnd, callback);
+			providesStringStart, providesStringEnd, std::cref(callback));
 }
 
 Package* CacheImpl::newBinaryPackage() const
