@@ -371,23 +371,13 @@ string RelationExpression::getHashString() const
 #define DEFINE_RELATION_EXPRESSION_CLASS(RelationExpressionType, UnderlyingElement) \
 void RelationExpressionType::__init(string::const_iterator begin, string::const_iterator end) \
 { \
-	for (auto it = begin; it != end; ++it) \
+	/* split OR groups */ \
+	auto callback = [this](string::const_iterator begin, string::const_iterator end) \
 	{ \
-		if (*it == '|') \
-		{ \
-			/* split OR groups */ \
-			auto callback = [this](string::const_iterator begin, string::const_iterator end) \
-			{ \
-				this->emplace_back(make_pair(begin, end)); \
-			}; \
-			internal::parse::processSpaceCharSpaceDelimitedStrings( \
-					begin, end, '|', callback); \
-			return; \
-		} \
-	} \
- \
-	/* if we reached here, we didn't find OR groups */ \
-	emplace_back(make_pair(begin, end)); \
+		this->emplace_back(make_pair(begin, end)); \
+	}; \
+	internal::parse::processSpaceCharSpaceDelimitedStrings( \
+			begin, end, '|', callback); \
 } \
  \
 RelationExpressionType::RelationExpressionType() \
