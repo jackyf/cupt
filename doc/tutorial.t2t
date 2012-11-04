@@ -1829,6 +1829,10 @@ Same.
 
 All versions which depend on or recommend ``grep``.
 
+- ``fmap(Pn(grep), reverse-depends,reverse-recommends)``
+
+Same.
+
 - ``build-depends(Pn(grep))``
 
 Build-dependencies of the all available versions of the source package ``grep``.
