@@ -221,6 +221,18 @@ The function works as follows:
 + go to step 2
 
 
+=== mapping ===
+
+The function **``fmap``** applies many functions to the same expression and combines their results.
+
+The expression
+
+``fmap(``//fse//, //function_name_1//, ..., //function_name_N//``)``
+
+is equivalent to
+
+``or(``//function_name_1//``(``//fse//``)``, ..., //function_name_N//``(``//fse//``))``
+
 == Miscellaneous ==
 
 || Function name and arguments | Value |

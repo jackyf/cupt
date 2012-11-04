@@ -984,17 +984,39 @@ void stripArgumentQuotes(string& argument)
 
 void processNonTrivialAliases(string* functionNamePtr, vector< string >* argumentsPtr)
 {
-	static size_t anonymousVariableId = 0;
+	auto getUniqueVariableName = []()
+	{
+		static size_t anonymousVariableId = 0;
+		return format2("__anon%zu", anonymousVariableId++);
+	};
 
 	if (*functionNamePtr == "package-with-installed-dependencies")
 	{
 		__require_n_arguments(*argumentsPtr, 1);
 		*functionNamePtr = "recursive";
-		auto variableName = format2("__anon%zu", anonymousVariableId++);
+		auto variableName = getUniqueVariableName();
 		auto recursiveExpression = format2(
-				"best( or(Ypd(%s),Yd(%s),Yr(%s)) & Pi )",
-				variableName, variableName, variableName);
+				"best( fmap(%s, Ypd,Yd,Yr) & Pi )", variableName);
 		*argumentsPtr = { variableName, argumentsPtr->front(), recursiveExpression };
+	}
+	else if (*functionNamePtr == "fmap")
+	{
+		if (argumentsPtr->size() < 2)
+		{
+			fatal2("the function '%s' requires at least %zu arguments", "fmap", 2);
+		}
+		auto argument = argumentsPtr->front();
+		argumentsPtr->erase(argumentsPtr->begin());
+
+		auto variableName = getUniqueVariableName();
+		auto bracedVariableName = format2("(%s)", variableName);
+
+		vector< string > mappedCalls;
+		for (const auto& e: *argumentsPtr) { mappedCalls.push_back(e + bracedVariableName); }
+		string expression = format2("or(%s)", join(",", mappedCalls));
+
+		*functionNamePtr = "with";
+		*argumentsPtr = { variableName, argument, expression };
 	}
 }
 
