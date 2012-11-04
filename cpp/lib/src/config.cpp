@@ -38,17 +38,49 @@ namespace cupt {
 
 namespace internal {
 
-struct ConfigImpl
+class ConfigImpl
 {
+	vector< sregex > __optionalPatterns;
+	void __initOptionalPatterns();
+ public:
 	map< string, string > regularVars;
 	map< string, string > regularCompatibilityVars;
 	map< string, vector< string > > listVars;
-	vector< string > optionalPatterns;
 
 	void initializeVariables();
 	void readConfigs(Config*);
 	bool isOptionalOption(const string& optionName) const;
 };
+
+void ConfigImpl::__initOptionalPatterns()
+{
+	const char* optionalPatterns[] = {
+		// used APT vars
+		"acquire::*::*::proxy",
+		"acquire::*::proxy::*",
+		"acquire::*::proxy",
+		"acquire::*::*::dl-limit",
+		"acquire::*::dl-limit::*",
+		"acquire::*::dl-limit",
+		"acquire::*::*::timeout",
+		"acquire::*::timeout::*",
+		"acquire::*::timeout",
+		"dpkg::tools::options::*",
+		"dpkg::tools::options::*::*",
+
+		// used Cupt vars
+		"cupt::downloader::protocols::*::priority",
+		"cupt::downloader::protocols::*::methods",
+		"cupt::downloader::protocols::*::methods::*::priority",
+	};
+
+	const sregex convertRegex = sregex::compile("\\*");
+	for (const auto& pattern: optionalPatterns)
+	{
+		auto currentRegexString = regex_replace(string(pattern), convertRegex, "[^:]*?");
+		__optionalPatterns.emplace_back(sregex::compile(currentRegexString));
+	}
+}
 
 void ConfigImpl::initializeVariables()
 {
@@ -192,27 +224,6 @@ void ConfigImpl::initializeVariables()
 		{ "apt::get::purge", "cupt::worker::purge" },
 	};
 
-	optionalPatterns =
-	{
-		// used APT vars
-		"acquire::*::*::proxy",
-		"acquire::*::proxy::*",
-		"acquire::*::proxy",
-		"acquire::*::*::dl-limit",
-		"acquire::*::dl-limit::*",
-		"acquire::*::dl-limit",
-		"acquire::*::*::timeout",
-		"acquire::*::timeout::*",
-		"acquire::*::timeout",
-		"dpkg::tools::options::*",
-		"dpkg::tools::options::*::*",
-
-		// used Cupt vars
-		"cupt::downloader::protocols::*::priority",
-		"cupt::downloader::protocols::*::methods",
-		"cupt::downloader::protocols::*::methods::*::priority",
-	};
-
 	listVars =
 	{
 		// used APT vars
@@ -236,23 +247,18 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::ftp::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::resolver::no-autoremove-if-rdepends-exist", {} },
 	};
+
+	__initOptionalPatterns();
 }
 
 bool ConfigImpl::isOptionalOption(const string& optionName) const
 {
-	static const sregex convertRegex = sregex::compile("\\*");
 	smatch m;
-	FORIT(patternIt, optionalPatterns)
-	{
-		auto currentRegexString = *patternIt;
-		currentRegexString = regex_replace(currentRegexString, convertRegex, "[^:]*?");
-		sregex currentRegex = sregex::compile(currentRegexString);
-		if (regex_match(optionName, m, currentRegex))
-		{
-			return true;
-		}
-	}
-	return false;
+	return std::any_of(__optionalPatterns.begin(), __optionalPatterns.end(),
+			[&m, &optionName](const sregex& pattern)
+			{
+				return regex_match(optionName, m, pattern);
+			});
 }
 
 void ConfigImpl::readConfigs(Config* config)
