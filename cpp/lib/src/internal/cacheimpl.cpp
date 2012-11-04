@@ -256,7 +256,8 @@ void CacheImpl::parseSourceList(const string& path)
 			stripComment(line);
 
 			vector< string > tokens;
-			tokens = internal::split(sregex::compile("[\\t ]+"), line);
+			static const sregex tokenRegex = sregex::compile("[\\t ]+");
+			tokens = internal::split(tokenRegex, line);
 
 			IndexEntry entry;
 
