@@ -28,27 +28,48 @@ using std::list;
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binaryversion.hpp>
+#include <cupt/cache/sourceversion.hpp>
 
 using namespace cupt;
 using namespace cupt::cache;
 using namespace cupt::system;
 using namespace cupt::download;
 
+template < typename T > struct VersionTraits;
+template<> struct VersionTraits< BinaryVersion >
+{
+	typedef BinaryPackage PackageT;
+	typedef BinaryVersion::RelationTypes::Type RelationTypeT;
+};
+template<> struct VersionTraits< SourceVersion >
+{
+	typedef SourcePackage PackageT;
+	typedef SourceVersion::RelationTypes::Type RelationTypeT;
+};
+
+template < typename VersionT >
 class ReverseDependsIndex
 {
-	typedef unordered_map< string, list< const BinaryPackage* > > PerRelationType;
+	typedef VersionTraits< VersionT > VT;
+	typedef typename VT::PackageT PackageT;
+	typedef typename VT::RelationTypeT RelationTypeT;
+
+	typedef unordered_map< string, list< const PackageT* > > PerRelationType;
 
 	const Cache& __cache;
-	map< BinaryVersion::RelationTypes::Type, PerRelationType > __data;
+	map< RelationTypeT, PerRelationType > __data;
+	const string __architecture;
 
-	void __add(BinaryVersion::RelationTypes::Type relationType, PerRelationType*);
+	void __add(RelationTypeT relationType, PerRelationType*);
+	const RelationLine& __getRelationLine(const RelationLine&) const;
+	RelationLine __getRelationLine(const ArchitecturedRelationLine&) const;
  public:
-	ReverseDependsIndex(const Cache& cache);
-	void add(BinaryVersion::RelationTypes::Type relationType);
+	ReverseDependsIndex(const Cache&);
+	void add(RelationTypeT relationType);
 
 	void foreachReverseDependency(
-			const BinaryVersion* version, BinaryVersion::RelationTypes::Type relationType,
-			const std::function< void (const BinaryVersion*, const RelationExpression&) > callback);
+			const BinaryVersion* version, RelationTypeT relationType,
+			const std::function< void (const VersionT*, const RelationExpression&) > callback);
 };
 
 bool isPackageInstalled(const Cache&, const string& packageName);

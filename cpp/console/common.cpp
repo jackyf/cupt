@@ -19,6 +19,7 @@
 
 #include <cupt/system/state.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/cache/sourcepackage.hpp>
 
 bool isPackageInstalled(const Cache& cache, const string& packageName)
 {
@@ -26,13 +27,13 @@ bool isPackageInstalled(const Cache& cache, const string& packageName)
 	return (installedInfo && installedInfo->status != system::State::InstalledRecord::Status::ConfigFiles);
 }
 
-typedef BinaryVersion::RelationTypes BRT;
-
-ReverseDependsIndex::ReverseDependsIndex(const Cache& cache)
-	: __cache(cache)
+template < typename VersionT >
+ReverseDependsIndex< VersionT >::ReverseDependsIndex(const Cache& cache)
+	: __cache(cache), __architecture(cache.getSystemState()->getArchitecture())
 {}
 
-void ReverseDependsIndex::add(BRT::Type relationType)
+template < typename VersionT >
+void ReverseDependsIndex< VersionT >::add(RelationTypeT relationType)
 {
 	auto insertResult = __data.insert({ relationType, {} });
 	if (insertResult.second)
@@ -41,16 +42,49 @@ void ReverseDependsIndex::add(BRT::Type relationType)
 	}
 }
 
-void ReverseDependsIndex::__add(BRT::Type relationType, PerRelationType* storage)
+namespace {
+
+template < typename T > struct TraitsPlus;
+template<> struct TraitsPlus< BinaryVersion >
 {
-	for (const string& packageName: __cache.getBinaryPackageNames())
+	static vector< string > getPackageNames(const Cache& cache) { return cache.getBinaryPackageNames(); };
+	static const BinaryPackage* getPackage(const Cache& cache, const string& packageName)
+	{ return cache.getBinaryPackage(packageName); }
+};
+template<> struct TraitsPlus< SourceVersion >
+{
+	static vector< string > getPackageNames(const Cache& cache) { return cache.getSourcePackageNames(); };
+	static const SourcePackage* getPackage(const Cache& cache, const string& packageName)
+	{ return cache.getSourcePackage(packageName); };
+};
+
+}
+
+template < typename VersionT >
+const RelationLine& ReverseDependsIndex< VersionT >::__getRelationLine(const RelationLine& rl) const
+{
+	return rl;
+}
+
+template < typename VersionT >
+RelationLine ReverseDependsIndex< VersionT >::__getRelationLine(const ArchitecturedRelationLine& arl) const
+{
+	return arl.toRelationLine(__architecture);
+}
+
+template < typename VersionT >
+void ReverseDependsIndex< VersionT >::__add(RelationTypeT relationType, PerRelationType* storage)
+{
+	typedef TraitsPlus< VersionT > TP;
+
+	for (const string& packageName: TP::getPackageNames(__cache))
 	{
 		set< string > usedKeys;
 
-		auto package = __cache.getBinaryPackage(packageName);
+		auto package = TP::getPackage(__cache, packageName);
 		for (const auto& version: *package)
 		{
-			const RelationLine& relationLine = version->relations[relationType];
+			auto&& relationLine = __getRelationLine(version->relations[relationType]);
 			for (const auto& relationExpression: relationLine)
 			{
 				auto satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
@@ -67,9 +101,10 @@ void ReverseDependsIndex::__add(BRT::Type relationType, PerRelationType* storage
 	}
 }
 
-void ReverseDependsIndex::foreachReverseDependency(
-		const BinaryVersion* version, BRT::Type relationType,
-		const std::function< void (const BinaryVersion*, const RelationExpression&) > callback)
+template < typename VersionT >
+void ReverseDependsIndex< VersionT >::foreachReverseDependency(
+		const BinaryVersion* version, RelationTypeT relationType,
+		const std::function< void (const VersionT*, const RelationExpression&) > callback)
 {
 	auto storageIt = __data.find(relationType);
 	if (storageIt == __data.end()) return;
@@ -83,7 +118,8 @@ void ReverseDependsIndex::foreachReverseDependency(
 		{
 			for (const auto& candidateVersion: *packageCandidate)
 			{
-				for (const auto& relationExpression: candidateVersion->relations[relationType])
+				auto&& relationLine = __getRelationLine(candidateVersion->relations[relationType]);
+				for (const auto& relationExpression: relationLine)
 				{
 					auto satisfyingVersions = __cache.getSatisfyingVersions(relationExpression);
 					for (const auto& satisfyingVersion: satisfyingVersions)
@@ -101,4 +137,7 @@ void ReverseDependsIndex::foreachReverseDependency(
 		}
 	}
 }
+
+template class ReverseDependsIndex< BinaryVersion >;
+template class ReverseDependsIndex< SourceVersion >;
 

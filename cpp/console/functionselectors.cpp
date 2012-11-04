@@ -240,10 +240,11 @@ class VersionSet
 struct Context
 {
 	const Cache& cache;
-	ReverseDependsIndex reverseIndex;
+	ReverseDependsIndex< BinaryVersion > reverseIndex;
+	ReverseDependsIndex< SourceVersion > reverseBuildIndex;
 
 	Context(const Cache& cache_)
-		: cache(cache_), reverseIndex(cache)
+		: cache(cache_), reverseIndex(cache), reverseBuildIndex(cache)
 	{}
 	SpcvGreater getSorter() const
 	{
@@ -761,6 +762,30 @@ class ReverseDependencyFS: public TransformFS
 	}
 };
 
+class ReverseBuildDependencyFS: public TransformFS
+{
+	SRT::Type __relationType;
+ public:
+	ReverseBuildDependencyFS(SRT::Type relationType, const Arguments& arguments)
+		: TransformFS(true, arguments), __relationType(relationType)
+	{}
+ protected:
+	FSResult _transform(Context& context, const SPCV& version) const
+	{
+		context.reverseBuildIndex.add(__relationType);
+
+		FSResult result;
+
+		auto binaryVersion = static_cast< const BinaryVersion* >(version);
+		context.reverseBuildIndex.foreachReverseDependency(binaryVersion, __relationType,
+				[&context, &result](const SourceVersion* reverseVersion, const RelationExpression&)
+				{
+					context.mergeFsResults(&result, { reverseVersion });
+				});
+		return result;
+	}
+};
+
 class PackageIsInstalledFS: public PredicateFS
 {
  protected:
@@ -874,7 +899,11 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 	else
 	{
 		CONSTRUCT_FS("uploaders", UploadersFS(arguments))
-		// relations // TODO
+
+		CONSTRUCT_FS("reverse-build-depends", ReverseBuildDependencyFS(SRT::BuildDepends, arguments))
+		CONSTRUCT_FS("reverse-build-depends-indep", ReverseBuildDependencyFS(SRT::BuildDependsIndep, arguments))
+		CONSTRUCT_FS("reverse-build-conflicts", ReverseBuildDependencyFS(SRT::BuildConflicts, arguments))
+		CONSTRUCT_FS("reverse-build-conflicts-indep", ReverseBuildDependencyFS(SRT::BuildConflictsIndep, arguments))
 	}
 
 	fatal2(__("unknown %s selector function '%s'"), binary ? __("binary") : __("source"), functionName);
@@ -1013,6 +1042,11 @@ void processAliases(string* functionNamePtr, vector< string >* argumentsPtr)
 			{ "Zbdi", "build-depends-indep" },
 			{ "Zbc", "build-conflicts" },
 			{ "Zbci", "build-conflicts-indep" },
+
+			{ "ZRbd", "reverse-build-depends" },
+			{ "ZRbdi", "reverse-build-depends-indep" },
+			{ "ZRbc", "reverse-build-conflicts" },
+			{ "ZRbci", "reverse-build-conflicts-indep" },
 
 			{ "Ra", "release:archive" },
 			{ "Rn", "release:codename" },

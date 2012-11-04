@@ -353,7 +353,7 @@ int showRelations(Context& context, bool reverse)
 	set< const BinaryVersion* > processedVersions;
 
 	// used only by rdepends
-	ReverseDependsIndex reverseDependsIndex(*cache);
+	ReverseDependsIndex< BinaryVersion > reverseDependsIndex(*cache);
 	if (reverse)
 	{
 		for (auto relationType: relationGroups)
