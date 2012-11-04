@@ -312,6 +312,11 @@ vector< string > State::getReinstallRequiredPackageNames() const
 	return result;
 }
 
+string State::getArchitecture() const
+{
+	return __data->config->getString("apt::architecture");
+}
+
 const string State::InstalledRecord::Status::strings[] = {
 	N__("not installed"), N__("unpacked"), N__("half-configured"), N__("half-installed"),
 	N__("config files"), N__("postinst failed"), N__("removal failed"), N__("installed")
