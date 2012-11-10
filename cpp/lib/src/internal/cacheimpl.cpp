@@ -84,12 +84,8 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 	if (preIt != pre.end())
 	{
 		auto& package = target[packageName];
-		if (!package)
-		{
-			// there was no such package before, and an insertion occured
-			// so, we need to create the package
-			package.reset( (this->*packageBuilderMethod)() );
-		}
+		package.reset( (this->*packageBuilderMethod)() );
+
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)
 		{
