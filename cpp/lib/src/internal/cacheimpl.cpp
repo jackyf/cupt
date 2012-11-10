@@ -74,6 +74,12 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 		unordered_map< string, unique_ptr< Package > >& target, const string& packageName,
 		decltype(&CacheImpl::newBinaryPackage) packageBuilderMethod) const
 {
+	auto targetIt = target.find(packageName);
+	if (targetIt != target.end())
+	{
+		return targetIt->second.get();
+	}
+
 	auto preIt = pre.find(packageName);
 	if (preIt != pre.end())
 	{
@@ -171,34 +177,14 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 
 const BinaryPackage* CacheImpl::getBinaryPackage(const string& packageName) const
 {
-	auto it = binaryPackages.find(packageName);
-	if (it == binaryPackages.end())
-	{
-		auto prepareResult = preparePackage(preBinaryPackages,
-				binaryPackages, packageName, &CacheImpl::newBinaryPackage);
-		// can be empty/NULL also
-		return static_cast< const BinaryPackage* >(prepareResult);
-	}
-	else
-	{
-		return static_cast< const BinaryPackage* >(it->second.get());
-	}
+	return static_cast< const BinaryPackage* >(preparePackage(
+			preBinaryPackages, binaryPackages, packageName, &CacheImpl::newBinaryPackage));
 }
 
 const SourcePackage* CacheImpl::getSourcePackage(const string& packageName) const
 {
-	auto it = sourcePackages.find(packageName);
-	if (it == sourcePackages.end())
-	{
-		auto prepareResult = preparePackage(preSourcePackages,
-				sourcePackages, packageName, &CacheImpl::newSourcePackage);
-		// can be empty/NULL also
-		return static_cast< const SourcePackage* >(prepareResult);
-	}
-	else
-	{
-		return static_cast< const SourcePackage* >(it->second.get());
-	}
+	return static_cast< const SourcePackage* >(preparePackage(
+			preSourcePackages, sourcePackages, packageName, &CacheImpl::newSourcePackage));
 }
 
 void CacheImpl::parseSourcesLists()
