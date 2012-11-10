@@ -29,6 +29,9 @@
 namespace cupt {
 namespace internal {
 
+using std::min;
+using std::max;
+
 namespace {
 
 int __guarded_fileno(FILE* handle, const string& path)
@@ -43,9 +46,10 @@ int __guarded_fileno(FILE* handle, const string& path)
 
 class StorageBuffer
 {
+	static const size_t p_initialSize = 512;
  public:
-	StorageBuffer(int fd, const string& path, size_t initialSize)
-		: p_fd(fd), p_path(path), p_size(initialSize)
+	StorageBuffer(int fd, const string& path)
+		: p_fd(fd), p_path(path), p_size(p_initialSize), p_readChunkSize(p_initialSize)
 	{
 		p_storage = new char[p_size];
 		p_dataBegin = p_dataEnd = p_storage;
@@ -57,11 +61,12 @@ class StorageBuffer
 	bool readMore()
 	{
 		if (p_dataEnd == p_storage + p_size) grow();
+		adjustChunkSize();
 
-		auto freeSpaceLength = p_storage + p_size - p_dataEnd;
+		size_t freeSpaceLength = p_storage + p_size - p_dataEnd;
 
 		reading:
-		auto readResult = read(p_fd, p_dataEnd, freeSpaceLength);
+		auto readResult = read(p_fd, p_dataEnd, min(freeSpaceLength, p_readChunkSize));
 		if (readResult == -1)
 		{
 			if (errno != EINTR)
@@ -74,19 +79,28 @@ class StorageBuffer
 
 		return readResult;
 	}
+	void clear()
+	{
+		adjustChunkSize();
+		p_dataBegin = p_dataEnd = p_storage;
+	}
 	void consumeUpTo(char* ptr) { p_dataBegin = ptr; }
 	char* getDataBegin() const { return p_dataBegin; }
 	char* getDataEnd() const { return p_dataEnd; }
 	size_t getDataLength() const { return p_dataEnd - p_dataBegin; }
-	void clear() { p_dataBegin = p_dataEnd = p_storage; }
  private:
 	int p_fd;
 	const string& p_path;
 	size_t p_size;
+	size_t p_readChunkSize;
 	char* p_storage;
 	char* p_dataBegin;
 	char* p_dataEnd;
 
+	void adjustChunkSize()
+	{
+		p_readChunkSize = max(p_initialSize, (getDataLength()<<2));
+	}
 	void grow()
 	{
 		auto dataLength = getDataLength();
@@ -168,7 +182,7 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 			}
 		}
 
-		readBuffer.reset(new StorageBuffer(fd, path, 512));
+		readBuffer.reset(new StorageBuffer(fd, path));
 	}
 }
 
