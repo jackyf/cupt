@@ -44,12 +44,13 @@ int __guarded_fileno(FILE* handle, const string& path)
 	return fd;
 }
 
+static const size_t initialStorageSize = 512;
+
 class StorageBuffer
 {
-	static const size_t p_initialSize = 512;
  public:
 	StorageBuffer(int fd, const string& path)
-		: p_fd(fd), p_path(path), p_size(p_initialSize), p_readChunkSize(p_initialSize)
+		: p_fd(fd), p_path(path), p_size(initialStorageSize), p_readChunkSize(initialStorageSize)
 	{
 		p_storage = new char[p_size];
 		p_dataBegin = p_dataEnd = p_storage;
@@ -99,7 +100,7 @@ class StorageBuffer
 
 	void adjustChunkSize()
 	{
-		p_readChunkSize = max(p_initialSize, (getDataLength()<<2));
+		p_readChunkSize = max(initialStorageSize, (getDataLength()<<2));
 	}
 	void grow()
 	{
