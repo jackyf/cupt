@@ -85,7 +85,7 @@ class StorageBuffer
 		p_dataBegin = p_dataEnd = p_storage;
 		readMore();
 	}
-	void consumeUpTo(char* ptr) { p_dataBegin = ptr; }
+	void consume(size_t diff) { p_dataBegin += diff; }
 	char* getDataBegin() const { return p_dataBegin; }
 	char* getDataEnd() const { return p_dataEnd; }
 	size_t getDataLength() const { return p_dataEnd - p_dataBegin; }
@@ -141,6 +141,7 @@ struct FileImpl
 	size_t unbufferedReadUntil(char, const char**);
 	inline size_t getLineImpl(const char**);
 	inline void assertFileOpened() const;
+	inline void seek(size_t);
 };
 
 FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
@@ -235,8 +236,8 @@ size_t FileImpl::unbufferedReadUntil(char delimiter, const char** bufferPtr)
 		{
 			++delimiterPtr;
 			*bufferPtr = buffer.getDataBegin();
-			buffer.consumeUpTo(delimiterPtr);
 			auto readCount = delimiterPtr - *bufferPtr;
+			buffer.consume(readCount);
 			offset += readCount;
 			return readCount;
 		}
@@ -251,12 +252,33 @@ size_t FileImpl::unbufferedReadUntil(char delimiter, const char** bufferPtr)
 			{
 				auto readCount = buffer.getDataLength();
 				eof = (readCount == 0);
-				buffer.consumeUpTo(buffer.getDataEnd());
+				buffer.consume(readCount);
 				*bufferPtr = buffer.getDataBegin();
 				return readCount;
 			}
 		}
 	}
+}
+
+void FileImpl::seek(size_t newOffset)
+{
+	if (newOffset > size_t(offset)) // possibly seekable ahead
+	{
+		size_t diff = newOffset - size_t(offset);
+		if (diff <= readBuffer->getDataLength())
+		{
+			readBuffer->consume(diff);
+			offset = newOffset;
+			return;
+		}
+	}
+
+	offset = newOffset;
+	if (lseek(fd, offset, SEEK_SET) == -1)
+	{
+		fatal2e(__("unable to seek on the file '%s'"), path);
+	}
+	readBuffer->clear();
 }
 
 size_t FileImpl::getLineImpl(const char** bufferPtr)
@@ -365,12 +387,7 @@ void File::seek(size_t newPosition)
 	}
 	else
 	{
-		__impl->offset = newPosition;
-		if (lseek(__impl->fd, __impl->offset, SEEK_SET) == -1)
-		{
-			fatal2e(__("unable to seek on the file '%s'"), __impl->path);
-		}
-		__impl->readBuffer->clear();
+		__impl->seek(newPosition);
 	}
 }
 
