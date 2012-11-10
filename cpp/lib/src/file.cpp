@@ -81,8 +81,8 @@ class StorageBuffer
 	}
 	void clear()
 	{
-		adjustChunkSize();
 		p_dataBegin = p_dataEnd = p_storage;
+		readMore();
 	}
 	void consumeUpTo(char* ptr) { p_dataBegin = ptr; }
 	char* getDataBegin() const { return p_dataBegin; }
