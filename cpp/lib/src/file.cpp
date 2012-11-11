@@ -138,8 +138,10 @@ struct FileImpl
 
 	FileImpl(const string& path_, const char* mode, string& openError);
 	~FileImpl();
-	size_t unbufferedReadUntil(char, const char**);
+	template < typename ChunkSeekerT >
+	size_t unbufferedReadUntil(const ChunkSeekerT&, const char**);
 	inline size_t getLineImpl(const char**);
+	inline size_t getBlockImpl(const char** bufferPtr, size_t size);
 	inline void assertFileOpened() const;
 	inline void seek(size_t);
 };
@@ -223,7 +225,8 @@ void FileImpl::assertFileOpened() const
 	}
 }
 
-size_t FileImpl::unbufferedReadUntil(char delimiter, const char** bufferPtr)
+template < typename ChunkSeekerT >
+size_t FileImpl::unbufferedReadUntil(const ChunkSeekerT& seeker, const char** bufferPtr)
 {
 	auto& buffer = *readBuffer;
 
@@ -231,7 +234,7 @@ size_t FileImpl::unbufferedReadUntil(char delimiter, const char** bufferPtr)
 	while (true)
 	{
 		auto unscannedLength = buffer.getDataEnd() - unscannedBegin;
-		auto delimiterPtr = static_cast< char* >(memchr(unscannedBegin, delimiter, unscannedLength));
+		auto delimiterPtr = seeker(unscannedBegin, unscannedLength);
 		if (delimiterPtr)
 		{
 			++delimiterPtr;
@@ -283,7 +286,28 @@ void FileImpl::seek(size_t newOffset)
 
 size_t FileImpl::getLineImpl(const char** bufferPtr)
 {
-	return unbufferedReadUntil('\n', bufferPtr);
+	auto chunkSeeker = [](const char* chunkBegin, size_t chunkSize)
+	{
+		return static_cast< const char* >(memchr(chunkBegin, '\n', chunkSize));
+	};
+	return unbufferedReadUntil(chunkSeeker, bufferPtr);
+}
+
+size_t FileImpl::getBlockImpl(const char** bufferPtr, size_t size)
+{
+	auto chunkSeeker = [&size](const char* chunkBegin, size_t chunkSize) -> const char*
+	{
+		if (chunkSize < size)
+		{
+			size -= chunkSize;
+			return nullptr;
+		}
+		else
+		{
+			return chunkBegin + size - 1;
+		}
+	};
+	return unbufferedReadUntil(chunkSeeker, bufferPtr);
 }
 
 }
@@ -324,18 +348,9 @@ File& File::rawGetLine(const char*& buffer, size_t& size)
 
 File& File::getBlock(char* buffer, size_t& size)
 {
-	__impl->assertFileOpened();
-
-	size = ::fread(buffer, 1, size, __impl->handle);
-	if (!size)
-	{
-		// an error occured
-		if (!feof(__impl->handle))
-		{
-			// real error
-			fatal2e(__("unable to read from the file '%s'"), __impl->path);
-		}
-	}
+	const char* internalBuffer;
+	size = __impl->getBlockImpl(&internalBuffer, size);
+	memcpy(buffer, internalBuffer, size);
 	return *this;
 }
 
