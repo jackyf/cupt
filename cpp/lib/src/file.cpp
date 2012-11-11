@@ -252,8 +252,8 @@ size_t FileImpl::unbufferedReadUntil(char delimiter, const char** bufferPtr)
 			{
 				auto readCount = buffer.getDataLength();
 				eof = (readCount == 0);
-				buffer.consume(readCount);
 				*bufferPtr = buffer.getDataBegin();
+				buffer.consume(readCount);
 				return readCount;
 			}
 		}
