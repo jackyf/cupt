@@ -69,7 +69,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/sourcepackage:
       - New methods begin() and end().
     - file:
-      - New class 'RequiredFile'.
+      - [API break] Not a public API anymore.
     - system/state:
       - New method 'getArchitecture'.
   * doc:
