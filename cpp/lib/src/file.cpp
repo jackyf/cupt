@@ -61,8 +61,8 @@ class StorageBuffer
 	}
 	bool readMore()
 	{
+		p_readChunkSize = max(p_readChunkSize, (getDataLength()<<3));
 		if (p_dataEnd == p_storage + p_size) grow();
-		adjustChunkSize();
 
 		size_t freeSpaceLength = p_storage + p_size - p_dataEnd;
 
@@ -83,9 +83,11 @@ class StorageBuffer
 	void clear()
 	{
 		p_dataBegin = p_dataEnd = p_storage;
+		p_readChunkSize = max(initialStorageSize, p_readChunkSize>>1);
 		readMore();
 	}
-	void consume(size_t diff) { p_dataBegin += diff; }
+	void consume(size_t diff) { move(diff); }
+	void move(size_t diff) { p_dataBegin += diff; }
 	char* getDataBegin() const { return p_dataBegin; }
 	char* getDataEnd() const { return p_dataEnd; }
 	size_t getDataLength() const { return p_dataEnd - p_dataBegin; }
@@ -98,15 +100,11 @@ class StorageBuffer
 	char* p_dataBegin;
 	char* p_dataEnd;
 
-	void adjustChunkSize()
-	{
-		p_readChunkSize = max(initialStorageSize, (getDataLength()<<2));
-	}
 	void grow()
 	{
 		auto dataLength = getDataLength();
-		auto proposedLength = dataLength << 4;
 
+		auto proposedLength = p_readChunkSize<<1;
 		if (proposedLength > (p_size<<1))
 		{
 			auto oldStorage = p_storage;
@@ -270,7 +268,7 @@ void FileImpl::seek(size_t newOffset)
 		size_t diff = newOffset - size_t(offset);
 		if (diff <= readBuffer->getDataLength())
 		{
-			readBuffer->consume(diff);
+			readBuffer->move(diff);
 			offset = newOffset;
 			return;
 		}
