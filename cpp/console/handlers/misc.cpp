@@ -464,43 +464,33 @@ int dumpConfig(Context& context)
 	auto config = context.getConfig();
 
 	vector< string > arguments;
-	bpo::options_description noOptions("");
-
-	parseOptions(context, noOptions, arguments);
+	parseOptions(context, {""}, arguments);
+	checkNoExtraArguments(arguments);
 
 	auto outputScalar = [&](const string& name)
 	{
 		auto value = config->getString(name);
-		if (value.empty())
-		{
-			return;
-		}
-		cout << name << " \"" << value << "\";" << endl;
+		if (value.empty()) return;
+		cout << format2("%s \"%s\";\n", name, value);
 	};
-
 	auto outputList = [&](const string& name)
 	{
-		cout << name << " {};" << endl;
-		auto values = config->getList(name);
-		FORIT(valueIt, values)
+		cout << format2("%s {};\n", name);
+		for (const auto& value: config->getList(name))
 		{
-			cout << name << " { \"" << *valueIt << "\"; };" << endl;
+			cout << format2("%s { \"%s\"; };\n", name, value);
 		}
 	};
 
-	checkNoExtraArguments(arguments);
-
-	auto scalarNames = config->getScalarOptionNames();
-	FORIT(nameIt, scalarNames)
+	for (const auto& name: config->getScalarOptionNames())
 	{
-		outputScalar(*nameIt);
+		outputScalar(name);
+	}
+	for (const auto& name: config->getListOptionNames())
+	{
+		outputList(name);
 	}
 
-	auto listNames = config->getListOptionNames();
-	FORIT(nameIt, listNames)
-	{
-		outputList(*nameIt);
-	}
 	return 0;
 }
 
