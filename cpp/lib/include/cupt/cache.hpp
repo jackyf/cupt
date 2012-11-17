@@ -26,7 +26,6 @@
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
-#include <cupt/hashsums.hpp>
 
 namespace cupt {
 
