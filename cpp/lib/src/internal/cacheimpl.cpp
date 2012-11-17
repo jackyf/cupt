@@ -624,7 +624,7 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 
 void CacheImpl::parsePreferences()
 {
-	pinInfo.reset(new PinInfo(config, systemState));
+	pinInfo.reset(new PinInfo(config, systemState.get()));
 }
 
 ssize_t CacheImpl::computePin(const Version* version, const BinaryPackage* binaryPackage) const

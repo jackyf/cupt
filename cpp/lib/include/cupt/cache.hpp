@@ -114,7 +114,7 @@ class CUPT_API Cache
 	vector< IndexEntry > getIndexEntries() const;
 
 	/// gets system state
-	shared_ptr< const system::State > getSystemState() const;
+	const system::State* getSystemState() const;
 
 	/// gets pin value for a version
 	ssize_t getPin(const Version*) const;

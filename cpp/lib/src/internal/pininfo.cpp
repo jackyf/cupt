@@ -39,8 +39,7 @@ using cache::Version;
 using cache::BinaryVersion;
 using cache::ReleaseInfo;
 
-PinInfo::PinInfo(const shared_ptr< const Config >& config,
-		const shared_ptr< const system::State >& systemState)
+PinInfo::PinInfo(const shared_ptr< const Config >& config, const system::State* systemState)
 	: config(config), systemState(systemState)
 {
 	init();

@@ -48,7 +48,7 @@ class PinInfo
 	};
 
 	shared_ptr< const Config > config;
-	shared_ptr< const system::State > systemState;
+	const system::State* systemState;
 	vector< PinEntry > settings;
 
 	void init();
@@ -56,7 +56,7 @@ class PinInfo
 	ssize_t getOriginalAptPin(const Version*) const;
 	void adjustUsingPinSettings(const Version*, ssize_t& priority) const;
  public:
-	PinInfo(const shared_ptr< const Config >&, const shared_ptr< const system::State >&);
+	PinInfo(const shared_ptr< const Config >&, const system::State*);
 
 	ssize_t getPin(const Version*, const string& installedVersionString) const;
 };

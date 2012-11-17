@@ -179,9 +179,9 @@ const Version* Cache::getPreferredVersion(const Package* package) const
 	}
 }
 
-shared_ptr< const system::State > Cache::getSystemState() const
+const system::State* Cache::getSystemState() const
 {
-	return __impl->systemState;
+	return __impl->systemState.get();
 }
 
 bool Cache::isAutomaticallyInstalled(const string& packageName) const
