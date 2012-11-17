@@ -20,8 +20,6 @@
 
 /// @file
 
-#include <boost/xpressive/xpressive_fwd.hpp>
-
 #include <set>
 
 #include <cupt/common.hpp>
