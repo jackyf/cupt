@@ -56,14 +56,12 @@ class FileMethod: public download::Method
 		}
 
 		{ // writing
-			char buffer[4096];
-			size_t size = sizeof(buffer);
-			while (sourceFile.getBlock(buffer, size), size)
+			while (auto rawBuffer = sourceFile.getBlock(4096))
 			{
-				targetFile.put(buffer, size);
-				totalBytes += size;
+				targetFile.put(rawBuffer.data, rawBuffer.size);
+				totalBytes += rawBuffer.size;
 				callback(vector< string > { "downloading",
-						lexical_cast< string >(totalBytes), lexical_cast< string >(size)});
+						lexical_cast< string >(totalBytes), lexical_cast< string >(rawBuffer.size)});
 			}
 		}
 

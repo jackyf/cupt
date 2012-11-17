@@ -38,6 +38,13 @@ class CUPT_API File
 	internal::FileImpl* __impl;
 	File(const File&) = delete;
  public:
+	struct RawBuffer
+	{
+		const char* data;
+		size_t size;
+
+		operator bool() const { return size; }
+	};
 	/// constructor
 	/**
 	 * Constructs new object for a regular file or reading shell pipe.
@@ -103,14 +110,7 @@ class CUPT_API File
 	 * @return reference to self.
 	 */
 	File& getRecord(string& record);
-	/// reads new block
-	/**
-	 * Reads up to @a size characters from current position to @a buffer.
-	 * @param buffer buffer to read in
-	 * @param [in,out] size before: up limit on character count, after: number of bytes read
-	 * @return reference to self
-	 */
-	File& getBlock(char* buffer, size_t& size);
+	RawBuffer getBlock(size_t size);
 	/// reads all available data from current position
 	/**
 	 * It's usually used just after opening the file and for small files.

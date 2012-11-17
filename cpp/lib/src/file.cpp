@@ -344,12 +344,11 @@ File& File::rawGetLine(const char*& buffer, size_t& size)
 	return *this;
 }
 
-File& File::getBlock(char* buffer, size_t& size)
+File::RawBuffer File::getBlock(size_t size)
 {
-	const char* internalBuffer;
-	size = __impl->getBlockImpl(&internalBuffer, size);
-	memcpy(buffer, internalBuffer, size);
-	return *this;
+	RawBuffer result;
+	result.size = __impl->getBlockImpl(&result.data, size);
+	return result;
 }
 
 File& File::getRecord(string& record)
