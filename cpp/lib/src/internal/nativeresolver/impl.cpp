@@ -179,7 +179,7 @@ void NativeResolverImpl::upgrade()
 		const string& packageName = it->first;
 		auto package = __cache->getBinaryPackage(packageName);
 
-		// if there is original version, then at least one policy version should exist
+		// if there is original version, then the preferred version should exist
 		auto supposedVersion = static_cast< const BinaryVersion* >
 				(__cache->getPreferredVersion(package));
 		if (!supposedVersion)
