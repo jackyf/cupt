@@ -545,22 +545,16 @@ int policy(Context& context, bool source)
 
 			cout << packageName << ':' << endl;
 
-			string installedVersionString;
+			const Version* installedVersion = nullptr;
 			if (!source)
 			{
 				auto binaryPackage = dynamic_cast< const BinaryPackage* >(package);
-				if (!binaryPackage)
-				{
-					fatal2i("binary package expected");
-				}
-				auto installedVersion = binaryPackage->getInstalledVersion();
-				if (installedVersion)
-				{
-					installedVersionString = installedVersion->versionString;
-				}
+				if (!binaryPackage) fatal2i("binary package expected");
+
+				installedVersion = binaryPackage->getInstalledVersion();
 
 				cout << "  " << __("Installed") << ": "
-						<< (installedVersionString.empty() ? __("<none>") : installedVersionString)
+						<< (installedVersion ? installedVersion->versionString : __("<none>"))
 						<< endl;
 			}
 
@@ -574,7 +568,7 @@ int policy(Context& context, bool source)
 				const auto& version = pinnedVersion.version;
 				auto pin = pinnedVersion.pin;
 
-				if (version->versionString == installedVersionString)
+				if (version == installedVersion)
 				{
 					cout << " *** ";
 				}
