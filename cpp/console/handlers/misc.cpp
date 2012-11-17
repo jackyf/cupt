@@ -532,10 +532,8 @@ int policy(Context& context, bool source)
 	if (!arguments.empty())
 	{
 		// print release info for supplied package names
-
-		FORIT(packageNameIt, arguments)
+		for (const string& packageName: arguments)
 		{
-			const string& packageName = *packageNameIt;
 			const Package* package = (!source ?
 					(const Package*)getBinaryPackage(*cache, packageName) :
 					(const Package*)getSourcePackage(*cache, packageName));
@@ -571,10 +569,10 @@ int policy(Context& context, bool source)
 
 			auto pinnedVersions = cache->getSortedPinnedVersions(package);
 
-			FORIT(pinnedVersionIt, pinnedVersions)
+			for (const auto& pinnedVersion: pinnedVersions)
 			{
-				const auto& version = pinnedVersionIt->version;
-				auto pin = pinnedVersionIt->pin;
+				const auto& version = pinnedVersion.version;
+				auto pin = pinnedVersion.pin;
 
 				if (version->versionString == installedVersionString)
 				{
@@ -587,9 +585,9 @@ int policy(Context& context, bool source)
 
 				cout << version->versionString << ' ' << pin << endl;
 
-				FORIT(sourceIt, version->sources)
+				for (const auto& source: version->sources)
 				{
-					const ReleaseInfo* release = sourceIt->release;
+					const ReleaseInfo* release = source.release;
 					static const string spaces(8, ' ');
 					cout << spaces;
 					auto origin = release->baseUri;
