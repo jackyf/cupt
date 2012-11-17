@@ -683,8 +683,9 @@ Resolver::SuggestedPackages generateNotPreferredVersionList(const Cache& cache,
 		const auto& suggestedVersion = suggestedPackage.second.version;
 		if (suggestedVersion)
 		{
-			auto policyVersion = cache.getPreferredVersion(getBinaryPackage(cache, suggestedVersion->packageName));
-			if (!(policyVersion == suggestedVersion))
+			auto preferredVersion = cache.getPreferredVersion(
+					getBinaryPackage(cache, suggestedVersion->packageName));
+			if (!(preferredVersion == suggestedVersion))
 			{
 				result.insert(suggestedPackage);
 			}
