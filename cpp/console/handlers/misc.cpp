@@ -553,13 +553,13 @@ int policy(Context& context, bool source)
 
 				installedVersion = binaryPackage->getInstalledVersion();
 
-				cout << "  " << __("Installed") << ": "
-						<< (installedVersion ? installedVersion->versionString : __("<none>"))
-						<< endl;
+				const auto& installedVersionString =
+						(installedVersion ? installedVersion->versionString : __("<none>"));
+				cout << format2("  %s: %s\n", __("Installed"), installedVersionString);
 			}
 
-			cout << "  " << __("Preferred") << ": " << preferredVersion->versionString << endl;
-			cout << "  " << __("Version table") << ':' << endl;
+			cout << format2("  %s: %s\n", __("Preferred"), preferredVersion->versionString);
+			cout << format2("  %s:\n",  __("Version table"));
 
 			auto pinnedVersions = cache->getSortedPinnedVersions(package);
 
@@ -568,16 +568,8 @@ int policy(Context& context, bool source)
 				const auto& version = pinnedVersion.version;
 				auto pin = pinnedVersion.pin;
 
-				if (version == installedVersion)
-				{
-					cout << " *** ";
-				}
-				else
-				{
-					cout << "     ";
-				}
-
-				cout << version->versionString << ' ' << pin << endl;
+				cout << format2(" %s %s %zd\n",
+						(version == installedVersion ? "***" : "   "), version->versionString, pin);
 
 				for (const auto& source: version->sources)
 				{
@@ -589,8 +581,9 @@ int policy(Context& context, bool source)
 					{
 						origin = config->getPath("dir::state::status");
 					}
-					cout << origin << ' ' << release->archive << '/' << release->component << ' '
-							<< '(' << (release->verified ? __("signed") : __("unsigned")) << ')' << endl;
+					cout << format2("%s %s/%s (%s)\n",
+							origin, release->archive, release->component,
+							(release->verified ? __("signed") : __("unsigned")));
 				}
 			}
 		}
