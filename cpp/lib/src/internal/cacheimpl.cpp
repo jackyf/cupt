@@ -697,13 +697,9 @@ string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 	auto it = translations.find(sourceHash);
 	if (it != translations.end())
 	{
-		string localizedDescription;
-
 		const TranslationPosition& position = it->second;
 		position.file->seek(position.offset);
-		position.file->getRecord(localizedDescription);
-
-		return localizedDescription;
+		return position.file->getRecord().chompAsRecord();
 	}
 	return version->description;
 }

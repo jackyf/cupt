@@ -140,6 +140,7 @@ struct FileImpl
 	size_t unbufferedReadUntil(const ChunkSeekerT&, const char**);
 	inline size_t getLineImpl(const char**);
 	inline size_t getBlockImpl(const char** bufferPtr, size_t size);
+	inline size_t getRecordImpl(const char**);
 	inline void assertFileOpened() const;
 	inline void seek(size_t);
 };
@@ -308,6 +309,42 @@ size_t FileImpl::getBlockImpl(const char** bufferPtr, size_t size)
 	return unbufferedReadUntil(chunkSeeker, bufferPtr);
 }
 
+size_t FileImpl::getRecordImpl(const char** bufferPtr)
+{
+	const char* lastFoundNewline = nullptr;
+	auto chunkSeeker = [&lastFoundNewline](const char* chunkBegin, size_t chunkSize) -> const char*
+	{
+		while (true)
+		{
+			auto newFoundNewline = static_cast< const char* >(memchr(chunkBegin, '\n', chunkSize));
+			if (!newFoundNewline)
+			{
+				return nullptr;
+			}
+			else if (newFoundNewline == lastFoundNewline + 1)
+			{
+				return newFoundNewline; // double-newline, just what we are looking for
+			}
+			chunkSize -= newFoundNewline - chunkBegin + 1;
+			chunkBegin = newFoundNewline + 1;
+			lastFoundNewline = newFoundNewline;
+		}
+	};
+	return unbufferedReadUntil(chunkSeeker, bufferPtr);
+}
+
+}
+
+File::RawBuffer File::RawBuffer::chompAsRecord() const
+{
+	RawBuffer result = *this;
+	if (result.size > 2
+			&& result.data[result.size-1] == '\n'
+			&& result.data[result.size-2] == '\n')
+	{
+		--result.size;
+	}
+	return result;
 }
 
 File::File(const string& path, const char* mode, string& openError)
@@ -351,24 +388,11 @@ File::RawBuffer File::getBlock(size_t size)
 	return result;
 }
 
-File& File::getRecord(string& record)
+File::RawBuffer File::getRecord()
 {
-	__impl->assertFileOpened();
-
-	record.clear();
-
-	int readLength;
-	// readLength of 0 means end of file, of 1 - end of record
-	const char* buf;
-	while (readLength = __impl->getLineImpl(&buf), readLength > 1)
-	{
-		record.append(buf, readLength);
-	}
-	if (!record.empty())
-	{
-		__impl->eof = false; // last but valid record
-	}
-	return *this;
+	RawBuffer result;
+	result.size = __impl->getRecordImpl(&result.data);
+	return result;
 }
 
 void File::getFile(string& block)

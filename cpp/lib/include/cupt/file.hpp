@@ -44,6 +44,9 @@ class CUPT_API File
 		size_t size;
 
 		operator bool() const { return size; }
+		operator string() const { return string(data, size); }
+
+		RawBuffer chompAsRecord() const;
 	};
 	/// constructor
 	/**
@@ -95,21 +98,7 @@ class CUPT_API File
 	 * @endcode
 	 */
 	File& getLine(string& line);
-	/// reads new record
-	/**
-	 * Reads new record, that is, a sequence of characters which ends with
-	 * double newline character (@c "\n\n").
-	 *
-	 * If the end of file was encountered when reading, newline character(s)
-	 * will be not added.
-	 *
-	 * End of file must be checked by querying @ref eof right after @ref getRecord. You can use
-	 * @a record only if @ref eof returned false.
-	 *
-	 * @param [out] record container for read data
-	 * @return reference to self.
-	 */
-	File& getRecord(string& record);
+	RawBuffer getRecord();
 	RawBuffer getBlock(size_t size);
 	/// reads all available data from current position
 	/**
