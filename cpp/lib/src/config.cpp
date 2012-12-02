@@ -355,11 +355,7 @@ static string qx(const string& shellCommand)
 		fatal2(__("unable to open the pipe '%s': %s"), shellCommand, openError);
 	}
 	string result;
-	string block;
-	while (! file.getRecord(block).eof())
-	{
-		result += block;
-	}
+	file.getFile(result);
 	return result;
 }
 
