@@ -726,10 +726,8 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
-	static const shared_ptr< system::Resolver::UserReason >
-			userReason(new system::Resolver::UserReason);
+	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
-
 
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
