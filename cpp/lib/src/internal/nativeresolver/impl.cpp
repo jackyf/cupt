@@ -723,12 +723,35 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 	}
 }
 
-Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
-		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
+void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
+		const string& packageName, Resolver::SuggestedPackage& suggestedPackage,
+		const dg::Element* elementPtr) const
 {
 	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
 
+	auto packageEntryPtr = solution.getPackageEntry(elementPtr);
+	if (packageEntryPtr->autoremoved)
+	{
+		suggestedPackage.reasons.push_back(autoRemovalReason);
+	}
+	else
+	{
+		if (!packageEntryPtr->introducedBy.empty())
+		{
+			suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
+		}
+		auto initialPackageIt = __initial_packages.find(packageName);
+		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
+		{
+			suggestedPackage.reasons.push_back(userReason);
+		}
+	}
+}
+
+Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
+		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
+{
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
 	Resolver::SuggestedPackages& suggestedPackages = offer.suggestedPackages;
@@ -754,23 +777,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 			if (trackReasons)
 			{
-				auto packageEntryPtr = solution.getPackageEntry(*elementPtrIt);
-				if (packageEntryPtr->autoremoved)
-				{
-					suggestedPackage.reasons.push_back(autoRemovalReason);
-				}
-				else
-				{
-					if (!packageEntryPtr->introducedBy.empty())
-					{
-						suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
-					}
-					auto initialPackageIt = __initial_packages.find(packageName);
-					if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
-					{
-						suggestedPackage.reasons.push_back(userReason);
-					}
-				}
+				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage, *elementPtrIt);
 			}
 			suggestedPackage.automaticallyInstalledFlag = __compute_target_auto_status(packageName);
 		}
