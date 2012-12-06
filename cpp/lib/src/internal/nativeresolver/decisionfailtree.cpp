@@ -44,9 +44,7 @@ string DecisionFailTree::__decisions_to_string(
 	FORIT(it, decisions)
 	{
 		result.append(it->level * 2, ' ');
-		auto mainPart = it->introducedBy.brokenElementPtr->
-				getReason(*it->introducedBy.versionElementPtr)->toString();
-		result.append(std::move(mainPart));
+		result.append(it->introducedBy.getReason()->toString());
 		result.append(" -> ");
 		result.append(insertedElementPtrToString(it->insertedElementPtr));
 		result.append("\n");
