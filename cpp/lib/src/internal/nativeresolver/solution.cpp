@@ -484,12 +484,10 @@ void SolutionStorage::processReasonElements(
 	}
 	// dependants
 	set< const dg::Element* > alreadyProcessedConflictors;
-	const GraphCessorListType& successors =
-			getSuccessorElements(introducedBy.brokenElementPtr);
-	FORIT(successorIt, successors)
+	for (const auto& successor: getSuccessorElements(introducedBy.brokenElementPtr))
 	{
 		const dg::Element* conflictingElementPtr;
-		if (!simulateSetPackageEntry(solution, *successorIt, &conflictingElementPtr))
+		if (!simulateSetPackageEntry(solution, successor, &conflictingElementPtr))
 		{
 			// conflicting element is surely exists here
 			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
