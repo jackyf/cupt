@@ -464,6 +464,27 @@ vector< const dg::Element* > SolutionStorage::getInsertedElements(const Solution
 	return result;
 }
 
+pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedElements(
+		size_t leftSolutionId, size_t rightSolutionId) const
+{
+	const auto* leftChangePtr = &__change_index[leftSolutionId];
+	const auto* rightChangePtr = &__change_index[rightSolutionId];
+
+	while (leftChangePtr->parentSolutionId != rightChangePtr->parentSolutionId)
+	{
+		if (leftChangePtr->parentSolutionId < rightChangePtr->parentSolutionId)
+		{
+			rightChangePtr = &__change_index[rightChangePtr->parentSolutionId];
+		}
+		else
+		{
+			leftChangePtr = &__change_index[leftChangePtr->parentSolutionId];
+		}
+	}
+
+	return { leftChangePtr->insertedElementPtr, rightChangePtr->insertedElementPtr };
+}
+
 Solution::Solution()
 	: id(0), level(0), finished(false), score(0)
 {

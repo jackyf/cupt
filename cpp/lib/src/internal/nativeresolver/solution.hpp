@@ -167,6 +167,8 @@ class SolutionStorage
 	void unfoldElement(const dg::Element*);
 
 	vector< const dg::Element* > getInsertedElements(const Solution& solution) const;
+	pair< const dg::Element*, const dg::Element* > getDiversedElements(
+			size_t leftSolutionId, size_t rightSolutionId) const;
 };
 
 }

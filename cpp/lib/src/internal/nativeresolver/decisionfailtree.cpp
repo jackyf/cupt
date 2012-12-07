@@ -157,9 +157,8 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 }
 
 // fail item is dominant if a diversed element didn't cause final breakage
-bool DecisionFailTree::__is_dominant(const FailItem& failItem, size_t offset)
+bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element* diversedElementPtr)
 {
-	auto diversedElementPtr = failItem.insertedElementPtrs[offset];
 	FORIT(it, failItem.decisions)
 	{
 		if (it->insertedElementPtr == diversedElementPtr)
@@ -173,29 +172,17 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, size_t offset)
 void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		const Solution& solution, const PackageEntry::IntroducedBy& lastIntroducedBy)
 {
-	// first, find the diverse point
-	auto getDiverseOffset = [](const vector< const dg::Element* >& left,
-			const vector< const dg::Element* >& right) -> size_t
-	{
-		size_t offset = 0;
-		while (left[offset] == right[offset])
-		{
-			++offset;
-		}
-		return offset;
-	};
-
 	FailItem failItem;
-	failItem.insertedElementPtrs = solutionStorage.getInsertedElements(solution);
+	failItem.solutionId = solution.id;
 	failItem.decisions = __get_decisions(solutionStorage, solution,
-			lastIntroducedBy, failItem.insertedElementPtrs);
+			lastIntroducedBy, solutionStorage.getInsertedElements(solution));
 	bool willBeAdded = true;
 
 	auto it = __fail_items.begin();
 	while (it != __fail_items.end())
 	{
-		auto diverseOffset = getDiverseOffset(it->insertedElementPtrs, failItem.insertedElementPtrs);
-		auto existingIsDominant = __is_dominant(*it, diverseOffset);
+		auto diversedElements = solutionStorage.getDiversedElements(it->solutionId, failItem.solutionId);
+		auto existingIsDominant = __is_dominant(*it, diversedElements.first);
 		if (existingIsDominant)
 		{
 			willBeAdded = false;
@@ -203,7 +190,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		}
 		else
 		{
-			if (__is_dominant(failItem, diverseOffset))
+			if (__is_dominant(failItem, diversedElements.second))
 			{
 				it = __fail_items.erase(it);
 			}
