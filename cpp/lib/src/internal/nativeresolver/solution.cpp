@@ -449,7 +449,7 @@ void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 	__dependency_graph.unfoldElement(elementPtr);
 }
 
-size_t SolutionStorage::getInsertPosition(size_t solutionId, const dg::Element* elementPtr) const
+size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element* elementPtr) const
 {
 	while (solutionId != 0)
 	{
@@ -459,6 +459,66 @@ size_t SolutionStorage::getInsertPosition(size_t solutionId, const dg::Element* 
 	}
 
 	return -1;
+}
+
+void SolutionStorage::processReasonElements(
+		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
+		const PackageEntry::IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
+		const std::function< void (const PackageEntry::IntroducedBy&, const dg::Element*) >& callback) const
+{
+	auto getElementPosition = [this, &solution, &elementPositionCache](const dg::Element* elementPtr)
+	{
+		auto& value = elementPositionCache[elementPtr];
+		if (!value)
+		{
+			value = __getInsertPosition(solution.id, elementPtr);
+		}
+		return value;
+	};
+
+	{ // version
+		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
+		{
+			callback(packageEntryPtr->introducedBy, introducedBy.versionElementPtr);
+		}
+	}
+	// dependants
+	set< const dg::Element* > alreadyProcessedConflictors;
+	const GraphCessorListType& successors =
+			getSuccessorElements(introducedBy.brokenElementPtr);
+	FORIT(successorIt, successors)
+	{
+		const dg::Element* conflictingElementPtr;
+		if (!simulateSetPackageEntry(solution, *successorIt, &conflictingElementPtr))
+		{
+			// conflicting element is surely exists here
+			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
+			{
+				// not yet processed
+
+				// verifying that conflicting element was added to a
+				// solution earlier than currently processed item
+				auto conflictingElementInsertedPosition = getElementPosition(conflictingElementPtr);
+				if (conflictingElementInsertedPosition == size_t(-1))
+				{
+					// conflicting element was not a resolver decision, so it can't
+					// have valid 'introducedBy' anyway
+					continue;
+				}
+				if (getElementPosition(insertedElementPtr) <= conflictingElementInsertedPosition)
+				{
+					// it means conflicting element was inserted to a solution _after_
+					// the current element, so it can't be a reason for it
+					continue;
+				}
+
+				// verified, queueing now
+				const PackageEntry::IntroducedBy& candidateIntroducedBy =
+						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
+				callback(candidateIntroducedBy, conflictingElementPtr);
+			}
+		}
+	}
 }
 
 pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedElements(

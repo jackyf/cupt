@@ -142,6 +142,7 @@ class SolutionStorage
 	};
 	vector< Change > __change_index;
 	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
+	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
 	SolutionStorage(const Config&, const Cache& cache);
 
@@ -166,7 +167,9 @@ class SolutionStorage
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 
-	size_t getInsertPosition(size_t solutionId, const dg::Element*) const;
+	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
+			const PackageEntry::IntroducedBy&, const dg::Element*,
+			const std::function< void (const PackageEntry::IntroducedBy&, const dg::Element*) >&) const;
 	pair< const dg::Element*, const dg::Element* > getDiversedElements(
 			size_t leftSolutionId, size_t rightSolutionId) const;
 };

@@ -63,72 +63,6 @@ string DecisionFailTree::toString() const
 	return result;
 }
 
-namespace {
-
-void processReasonElements(const SolutionStorage& solutionStorage,
-		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
-		const PackageEntry::IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
-		const std::function< void (const PackageEntry::IntroducedBy&, const dg::Element*) >& callback)
-{
-	auto getElementPosition = [&solutionStorage, &solution, &elementPositionCache]
-			(const dg::Element* elementPtr)
-	{
-		auto& value = elementPositionCache[elementPtr];
-		if (!value)
-		{
-			value = solutionStorage.getInsertPosition(solution.id, elementPtr);
-		}
-		return value;
-	};
-
-	{ // version
-		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
-		{
-			callback(packageEntryPtr->introducedBy, introducedBy.versionElementPtr);
-		}
-	}
-	// dependants
-	set< const dg::Element* > alreadyProcessedConflictors;
-	const GraphCessorListType& successors =
-			solutionStorage.getSuccessorElements(introducedBy.brokenElementPtr);
-	FORIT(successorIt, successors)
-	{
-		const dg::Element* conflictingElementPtr;
-		if (!solutionStorage.simulateSetPackageEntry(
-				solution, *successorIt, &conflictingElementPtr))
-		{
-			// conflicting element is surely exists here
-			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
-			{
-				// not yet processed
-
-				// verifying that conflicting element was added to a
-				// solution earlier than currently processed item
-				auto conflictingElementInsertedPosition = getElementPosition(conflictingElementPtr);
-				if (conflictingElementInsertedPosition == size_t(-1))
-				{
-					// conflicting element was not a resolver decision, so it can't
-					// have valid 'introducedBy' anyway
-					continue;
-				}
-				if (getElementPosition(insertedElementPtr) <= conflictingElementInsertedPosition)
-				{
-					// it means conflicting element was inserted to a solution _after_
-					// the current element, so it can't be a reason for it
-					continue;
-				}
-
-				// verified, queueing now
-				const PackageEntry::IntroducedBy& candidateIntroducedBy =
-						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
-				callback(candidateIntroducedBy, conflictingElementPtr);
-			}
-		}
-	}
-}
-
-}
-
 vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		const SolutionStorage& solutionStorage, const Solution& solution,
 		const PackageEntry::IntroducedBy& lastIntroducedBy)
@@ -156,7 +90,7 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 			}
 		};
 
-		processReasonElements(solutionStorage, solution, elementPositionCache,
+		solutionStorage.processReasonElements(solution, elementPositionCache,
 				item.introducedBy, item.insertedElementPtr, std::cref(queueItem));
 	}
 
