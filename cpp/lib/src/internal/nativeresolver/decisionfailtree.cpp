@@ -66,10 +66,21 @@ string DecisionFailTree::toString() const
 namespace {
 
 void processReasonElements(const SolutionStorage& solutionStorage,
-		const Solution& solution, const vector< const dg::Element* >& insertedElementPtrs,
+		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
 		const PackageEntry::IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
 		const std::function< void (const PackageEntry::IntroducedBy&, const dg::Element*) >& callback)
 {
+	auto getElementPosition = [&solutionStorage, &solution, &elementPositionCache]
+			(const dg::Element* elementPtr)
+	{
+		auto& value = elementPositionCache[elementPtr];
+		if (!value)
+		{
+			value = solutionStorage.getInsertPosition(solution.id, elementPtr);
+		}
+		return value;
+	};
+
 	{ // version
 		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
 		{
@@ -93,18 +104,14 @@ void processReasonElements(const SolutionStorage& solutionStorage,
 
 				// verifying that conflicting element was added to a
 				// solution earlier than currently processed item
-				auto conflictingElementInsertedPosition =
-						std::find(insertedElementPtrs.begin(), insertedElementPtrs.end(), conflictingElementPtr);
-				if (conflictingElementInsertedPosition == insertedElementPtrs.end())
+				auto conflictingElementInsertedPosition = getElementPosition(conflictingElementPtr);
+				if (conflictingElementInsertedPosition == size_t(-1))
 				{
 					// conflicting element was not a resolver decision, so it can't
 					// have valid 'introducedBy' anyway
 					continue;
 				}
-				auto currentElementInsertedPosition =
-						std::find(insertedElementPtrs.begin(), conflictingElementInsertedPosition + 1,
-						insertedElementPtr);
-				if (currentElementInsertedPosition <= conflictingElementInsertedPosition)
+				if (getElementPosition(insertedElementPtr) <= conflictingElementInsertedPosition)
 				{
 					// it means conflicting element was inserted to a solution _after_
 					// the current element, so it can't be a reason for it
@@ -124,11 +131,11 @@ void processReasonElements(const SolutionStorage& solutionStorage,
 
 vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		const SolutionStorage& solutionStorage, const Solution& solution,
-		const PackageEntry::IntroducedBy& lastIntroducedBy,
-		const vector< const dg::Element* >& insertedElementPtrs)
+		const PackageEntry::IntroducedBy& lastIntroducedBy)
 {
 	vector< Decision > result;
 
+	map< const dg::Element*, size_t > elementPositionCache;
 	std::stack< Decision > chainStack;
 
 	chainStack.push(Decision { lastIntroducedBy, 0, NULL });
@@ -149,7 +156,7 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 			}
 		};
 
-		processReasonElements(solutionStorage, solution, insertedElementPtrs,
+		processReasonElements(solutionStorage, solution, elementPositionCache,
 				item.introducedBy, item.insertedElementPtr, std::cref(queueItem));
 	}
 
@@ -174,8 +181,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 {
 	FailItem failItem;
 	failItem.solutionId = solution.id;
-	failItem.decisions = __get_decisions(solutionStorage, solution,
-			lastIntroducedBy, solutionStorage.getInsertedElements(solution));
+	failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
 	bool willBeAdded = true;
 
 	auto it = __fail_items.begin();
