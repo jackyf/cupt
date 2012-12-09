@@ -8,7 +8,7 @@ _cupt()
 			depends rdepends why policy policysrc \
 			pkgnames changelog copyright screenshots \
 			snapshot update \
-			install remove full-upgrade safe-upgrade dist-upgrade reinstall \
+			install remove full-upgrade safe-upgrade dist-upgrade reinstall iii \
 			build-dep satisfy source \
 			clean autoclean shell \
 			markauto unmarkauto showauto'
@@ -43,7 +43,7 @@ _cupt()
 		# found subcommand, go case by case then
 		local subcommand_type
 		case "${subcommand}" in
-			install|remove|full-upgrade|safe-upgrade|dist-upgrade|reinstall|build-dep)
+			install|remove|full-upgrade|safe-upgrade|dist-upgrade|reinstall|build-dep|iii)
 				subcommand_type='manage'
 				;;
 			source)
@@ -54,7 +54,11 @@ _cupt()
 				subcommand_type='query'
 				arguments='--all-versions -a --no-all-versions --with-release-info'
 				;;
-			why|policy|policysrc|pkgnames|changelog|copyright|screenshots)
+			policy|policysrc)
+				subcommand_type='query'
+				arguments='--show-dates'
+				;;
+			why|pkgnames|changelog|copyright|screenshots)
 				subcommand_type='query'
 				;;
 			search)
@@ -88,9 +92,10 @@ _cupt()
 			# manage-specific options
 			arguments="${arguments} --no-remove --no-auto-remove --simulate -s \
 					--resolver=fair --resolver=full --max-solution-count= \
-					--no-install-recommends -R --show-versions -V
+					--no-install-recommends -R --show-archives -A --show-versions -V
 					--show-size-changes -Z --show-reasons --show-deps -D \
-					--no-install-unpacked --download-only -d \
+					--show-vendors -O --show-codenames -N --show-components -C \
+					--download-only -d \
 					--summary-only --no-summary \
 					--assume-yes --yes -y"
 		fi

@@ -7,6 +7,21 @@ Files: *
 Copyright: 2008-2011, Eugene V. Lyubimkin <jackyf@debian.org>
 License: GPL-3+
 
+Files: po/pl.po
+Copyright: 2012, Karol Kozłowski <karoldom@myopera.com>
+
+Files: po/da.po
+Copyright: 2012, Joe Hansen <joedalton2@yahoo.dk>
+
+Files: po/sk.po
+Copyright: 2012, Ivan Masár <helix84@centrum.sk>
+
+Files: po/fr.po
+Copyright: 2012, Julien Patriarca <patriarcaj@gmail.com>
+
+Files: po/de.po
+Copyright: 2012, Chris Leick <c.leick@vollbio.de>
+
 License: GPL-3+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

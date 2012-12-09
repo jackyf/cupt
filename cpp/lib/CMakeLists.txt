@@ -2,7 +2,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOVERSION=${CUPT_SOVERSION} -fvisibili
 
 include_directories(include)
 include_directories(src)
-add_library(cupt2 SHARED
+add_library(libcupt3 SHARED
 	./src/internal/common.cpp
 	./src/internal/configparser.cpp
 	./src/internal/nativeresolver/impl.cpp
@@ -10,7 +10,7 @@ add_library(cupt2 SHARED
 	./src/internal/nativeresolver/score.cpp
 	./src/internal/nativeresolver/dependencygraph.cpp
 	./src/internal/nativeresolver/decisionfailtree.cpp
-	./src/internal/nativeresolver/autoremoval.cpp
+	./src/internal/nativeresolver/autoremovalpossibility.cpp
 	./src/internal/lock.cpp
 	./src/internal/cacheimpl.cpp
 	./src/internal/pininfo.cpp
@@ -26,6 +26,9 @@ add_library(cupt2 SHARED
 	./src/internal/regex.cpp
 	./src/internal/cachefiles.cpp
 	./src/internal/logger.cpp
+	./src/internal/pipe.cpp
+	./src/internal/basepackageiterator.cpp
+	./src/internal/indexofindex.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
@@ -51,10 +54,10 @@ add_library(cupt2 SHARED
 	./src/common/consumers.cpp
 	./src/file.cpp
 	./src/hashsums.cpp
-	./src/pipe.cpp
+	./src/versionstring.cpp
 )
-set_target_properties(cupt2 PROPERTIES VERSION 2.0.0 SOVERSION ${CUPT_SOVERSION})
-target_link_libraries(cupt2 dl rt gcrypt)
+set_target_properties(libcupt3 PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
+target_link_libraries(libcupt3 dl rt gcrypt)
 
-install(TARGETS cupt2 DESTINATION lib)
+install(TARGETS libcupt3 DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)

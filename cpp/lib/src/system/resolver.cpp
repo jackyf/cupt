@@ -31,7 +31,7 @@ string Resolver::AutoRemovalReason::toString() const
 }
 
 Resolver::RelationExpressionReason::RelationExpressionReason(
-		const shared_ptr< const BinaryVersion >& version_,
+		const BinaryVersion* version_,
 		BinaryVersion::RelationTypes::Type dependencyType_,
 		const cache::RelationExpression& relationExpression_)
 	: version(version_), dependencyType(dependencyType_),
@@ -52,7 +52,7 @@ string Resolver::RelationExpressionReason::toString() const
 	auto dependencyTypeTranslationIt = dependencyTypeTranslations.find(dependencyType);
 	if (dependencyTypeTranslationIt == dependencyTypeTranslations.end())
 	{
-		warn2("unsupported reason dependency type '%s'",
+		warn2(__("unsupported reason dependency type '%s'"),
 				BinaryVersion::RelationTypes::strings[dependencyType]);
 		return string();
 	}
@@ -64,7 +64,7 @@ string Resolver::RelationExpressionReason::toString() const
 }
 
 Resolver::SynchronizationReason::SynchronizationReason(
-		const shared_ptr< const BinaryVersion >& version_,
+		const BinaryVersion* version_,
 		const string& packageName_)
 	: version(version_), relatedPackageName(packageName_)
 {}

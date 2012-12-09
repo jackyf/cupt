@@ -3,6 +3,8 @@ Eugene V. Lyubimkin
 %%date
 
 %!preproc(man): '%man% ' ''
+%!preproc(man): '(``.*?``)' '**\1**'
+%!preproc(man): '^``` (.*)$' '**``\1``**'
 %!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
 %!postproc(man): ' \(#\w+\)' ''
 %!options(html): --toc
@@ -27,8 +29,7 @@ The aim of this manual is to describe the all features Cupt package manager has
 to manage the system, from the most basics to very advanced tuning. Please
 submit your proposals/patches when you see some use case is not covered.
 
-This manual was written for the second major version of Cupt (2.x branch). Most
-of it is however applicable to first major version (1.x branch) too.
+This manual was written for the second major version of Cupt (2.x branch).
 
 == Disadvantages and advantages ==
 
@@ -43,8 +44,9 @@ However, you are invited to test it and increase the number of users.
 
 - Some features which are present in other high-level package managers are missing.
 
-Among them: GUI and TUI interfaces, cdrom:// URI download method, integration
-with //cron(8)//. And there are probably many more.
+Among them: multiarch, GUI and TUI interfaces, cdrom:// URI download method, repositories
+without a Release file, integration with //cron(8)//. And there are probably
+many more.
 
 
 You might want to use Cupt to have these, to my best knowledge, unique features:
@@ -63,7 +65,7 @@ You might want to use Cupt to have these, to my best knowledge, unique features:
 
 - changeset-based system modifications for systems with low free disk space
 
-- APT-like option name checker
+- option name checker (for the 'cupt::*' option family)
 
 - dpkg action sequences with heuristics to make an average number of packages in interim states low
 
@@ -71,18 +73,37 @@ You might want to use Cupt to have these, to my best knowledge, unique features:
 Also, one of Cupt's targets is to have zero non-wishlist bugs. You might want
 to try it if you encountered a bug in other package manager(s).
 
+== Infrastructure ==
+
+Out of existing APT infrastructure, Cupt uses (and shares):
+
+- remote repositories and //sources.list(5)//
+
+- ".deb" archives' cache
+
+- configuration (//apt.conf(5)//)
+
+- preferences (//apt_preferences(5)//)
+
+- database of automatically installed packages
+
+
+The following infrastructure items are Cupt-specific:
+
+- local cache of repository metadata (since version 2.1.0)
+
+- Cupt-specific configuration (//cupt.conf(5)//)
+
+- system snapshots
+
+
 == Getting started ==
 
 To start working with Cupt just install it using any present package manager
 (for example, ``apt-get install cupt`` or ``aptitude install cupt``) and run
 ``cupt update`` afterwards.
 
-Cupt uses existing APT infrastructure for the work. It should be safe to co-use
-Cupt and any APT-based package managers.
-
-Note: since version 2.1.0, Cupt uses its own directory for repository index
-lists, so ``apt-get update``, ``aptitude update`` etc. do not change Cupt index
-data anymore.
+It should be safe to co-use Cupt and any APT-based package managers.
 
 When using commands that modify a system, you have to either execute ``cupt`` with
 root privileges or supply ``--simulate`` (or ``-s``) option.
@@ -105,7 +126,8 @@ some dependency. Packages which are not automatically installed are
 **manually installed**.
 
 Available versions (including installed one) of the binary package have unique
-version strings.
+version strings. Since Cupt 2.6, Cupt-specific version string suffixes (for example,
+``^installed`` or ``^dhs0``) may be applied. More details on this [here #id_suffixes].
 
 == Errors and warnings ==[errors_and_warnings]
 
@@ -550,6 +572,21 @@ Each repository line is:
 The repository marked as **signed** if it has a valid and
 verified cryptographic signature, and **unsigned** otherwise.
 
+=== version string id suffixes ===[id_suffixes]
+
+Starting with version 2.6, Cupt's behavior regarding merging versions having
+the same version string changed.
+
+Firstly, Cupt now never merges installed versions with versions from
+repositories, since dpkg provides no way to know if the installed version is
+the same as the version from repository. All version strings of installed
+versions now have ``^installed`` suffix, for example ``1.2.4^installed``.
+
+Secondly, if same versions from different repositories have different hash
+sums, instead of discarding everything but first version Cupt now append
+suffixes like ``^dhs0`` or ``^dhs315`` to version strings of non-first
+versions, for example ``1.2.4^dhs0``.
+
 === selecting binary package versions ===[selecting_binary_package_versions]
 
 When there are more than one version for a package, Cupt provides following ways to
@@ -628,12 +665,39 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
+== Conditional installation ==
+
+Starting with Cupt 2.4, there is a special subcommand ``iii`` ("install if
+installed") for installing new versions of already installed packages while not
+touching uninstalled packages. It behaves like ``install``, but ignores
+arguments corresponding to not installed packages.
+
+Examples:
+
++ You want to upgrade a certain package (say, ``git``) on multiple
+machines, where some of these machines have that package installed and some
+not. If you have a mechanism to send one command to all machines (say, ssh
+multiplexer), you can send the command
+
+``` cupt update && cupt iii git
+
+The second part of the command will do nothing on the machines where ``git`` is
+not installed and will install the preferred version of the package ``git``
+where this package was installed.
+
++ You have an X server and some X video drivers installed, and you want to
+upgrade all installed drivers. For that you can do
+
+``` cupt iii xserver-xorg-video*
+
+
+
 == Overriding package management actions ==
 
 === Action override options ===
 
 You can use special positional options ``--install``, ``--remove``, ``--purge``,
-``--satisfy`` and ``--unsatisfy`` to override the specified action until the
+``--iii``, ``--satisfy`` and ``--unsatisfy`` to override the specified action until the
 end of the arguments or the next action override option.
 
 Example:
@@ -784,6 +848,84 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
  libcloog-ppl0
  libgcc1 <+8192B>
  libgomp1 <+16.0KiB>
+```
+
+- release archives
+
+Use ``--show-archives`` (``-A``) option. Example:
+
+```
+ $ cupt install gcc-4.7 -A
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be installed:
+ 
+ cpp-4.7 [(experimental)]
+ gcc-4.7 [(experimental)]
+ gcc-4.7-base [(experimental)]
+ libitm1 [(experimental)]
+ 
+ The following packages will be upgraded:
+ 
+ libgcc1 [(installed,testing) -> (experimental)]
+ libgomp1 [(installed,testing) -> (experimental)]
+ libquadmath0 [(installed,testing) -> (experimental)]
+```
+
+- release codenames
+
+Use ``--show-codenames`` (``-N``) option. Example:
+
+```
+ $ cupt install libstreams0 -N
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [(now,squeeze) -> (wheezy,sid)]
+ libstreams0 [(now,squeeze) -> (wheezy,sid)]
+```
+
+- release components
+
+Use ``--show-components`` (``-C``) option. It's mostly useful in conjunction
+with ``--show-codenames`` or ``--show-archives``. Example:
+
+```
+ $ cupt install libstreams0 -CN
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
+ libstreams0 [(now,squeeze/main) -> (wheezy/main,sid/main)]
+```
+
+- release vendors
+
+Use ``--show-vendors`` (``-O``) option. Useful if you have repositories of more
+than one vendor and usually in conjunction with ``-V``, ``-A`` or ``-N``. Example:
+
+```
+ $ cupt install libstreams0 -VNO
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be upgraded:
+ 
+ libstreamanalyzer0 [0.7.2-1+b1(dpkg:now,Debian:squeeze) -> 0.7.7-1(Debian:wheezy,Debian:sid)]
+ libstreams0 [0.7.2-1+b1(dpkg:now,Debian:squeeze) -> 0.7.7-1(Debian:wheezy,Debian:sid)]
 ```
 
 - change reasons
@@ -949,6 +1091,9 @@ The effect above is the same as if you specified
 ``` cupt install gnash libgnome-keyring0-
 
 in the command line from the start.
+
+
+Starting from Cupt 2.6 you can specify multiple expressions on the same line.
 
 === colors ===
 
@@ -1310,7 +1455,7 @@ So, the process of building binary packages out of source one may be, taking
 The last line will remove all unneeded anymore packages (given auto-removal is
 turned on), including those installed by ``build-dep``.
 
-=== selecting source package versions ===
+=== selecting source package versions ===[selecting_source_package_versions]
 
 You can select source package versions in two ways:
 
@@ -1568,6 +1713,150 @@ Finally, if you want to disable the logging entirely, set the option
 ``cupt::worker::log`` to ``no``.
 
 = ADVANCED USAGE =
+
+== Functional selectors ==
+
+**Functional selectors** is a extended syntax for selecting binary or source
+versions by their properties or relations. It's available starting with Cupt 2.6.
+
+It can be used whereever
+[binary package version expression #selecting_binary_package_versions] and
+[source package version expression #selecting_source_package_versions] can be
+used. It addition, it can be used as a parameter to ``search --fse``.
+
+The full syntax and function reference can be found in
+//cupt_functionalselectors(7)//.
+
+Examples of functional selector expressions (FSE):
+
+- ``essential()``
+
+All essential versions (those which have ``Essential: yes``).
+
+In the command line it will be
+
+``cupt show 'essential()'``
+
+or
+
+``cupt search --fse 'essential()'``
+
+- ``e()``
+
+The same. ``e`` is a shortcut for ``essential``.
+
+- ``package:name(.*req.*)``
+
+All versions which package name contains the substring ``req``.
+
+- ``Pn(.*req.*)``
+
+Same. ``Pn`` is a shortcut for ``package:name``.
+
+- ``and(Pn(b.*), e())``
+
+All versions which are essential and which package name starts with a letter
+``b``.
+
+- ``and(Pn(b.*), e)``
+
+Same. In subexpressions ``()`` can be omitted for functions with no parameters.
+
+- ``Pn(b.*) & e()``
+
+Same. ``x & y & z`` is a special shortcut syntax for ``and(x, y, z)``.
+
+- ``or(e, provides(vim))``
+
+Versions which are essential or provide ``vim`` virtual package.
+
+- ``e() | provides(vim)``
+
+Same. ``x | y | z`` is a special shortcut syntax for ``or(x, y, z)``.
+
+- ``xor(Pn(vim.*), provides(vim))``
+
+Versions, which either have a package name which starts with ``vim`` or provide
+``vim`` virtual package, but not both.
+
+- ``not(Pn(vim-nox)) & provides(vim)``
+
+Versions which provide ``vim`` virtual package, excluding the package
+``vim-nox``.
+
+- ``installed() & priority(extra)``
+
+Installed versions of priority ``extra``.
+
+- ``maintainer(.*lists.alioth.debian.org.*) & priority(required)``
+
+Versions of priority ``required`` and which maintainer email address is a
+mailing list hosted on the Alioth service.
+
+- ``field(Python-Version, .*2\.3.*)``
+
+Versions which have a non-standard field ``Python-Version`` with a substring
+``2.3`` somewhere in the value.
+
+- ``Pn(.*python.*) & section(utils)``
+
+Versions from ``utils`` section having ``python`` somewhere in the package
+name.
+
+- ``package:installed() & release:component(non-free)``
+
+All versions of installed packages which come from ``non-free`` release
+component.
+
+- ``uploaders(.*gmail\.com>)``
+
+All source versions where at least one uploader has a Gmail mail address.
+
+- ``recommends(installed() & e)``
+
+All packages which are recommended by installed essential packages.
+
+- ``and( Ys(Pn(xfce4.*))|Ye(Pn(xfce4.*)), not(Pn(xfce4.*)) )``
+
+All packages which are Suggests (``Ys``) or Enhances (``Ye``) of any package
+which name starts with ``xfce4``, excluding ``xfce4...`` packages themselves.
+
+- ``with(_x, Pn(xfce4.*), and( Ys(_x)|Ye(_x), not(_x)) )``
+
+Same.
+
+- ``with(_x, Pn(grep), reverse-depends(_x) | reverse-recommends(_x))``
+
+All versions which depend on or recommend ``grep``.
+
+- ``fmap(Pn(grep), reverse-depends,reverse-recommends)``
+
+Same.
+
+- ``build-depends(Pn(grep))``
+
+Build-dependencies of the all available versions of the source package ``grep``.
+
+- ``recursive(_r, Pn(cupt)&i, and( Yd(_r)|Yr(_r), not(Pn(.*downloadmethod.*))) )``
+
+All direct and indirect depended on and recommended packages (excluding those
+which have ``downloadmethod`` in the package name from the recursive chain) of
+the installed version of ``cupt`` package.
+
+For complex FSEs like this it, the multiline no-shortcut equivalent might be preferred:
+
+```
+#!/bin/sh
+cupt search --fse '
+	recursive(_r, 
+		package:name(cupt) & installed(), 
+		and(
+			depends(_r) | recommends(_r), 
+			not( package:name(.*downloadmethod.*) ) 
+		)
+	)'
+```
+
 
 == System snapshots ==[system_snapshots]
 

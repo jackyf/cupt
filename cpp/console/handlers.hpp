@@ -33,7 +33,6 @@ int showPackageNames(Context&);
 int findDependencyChain(Context&);
 int updateReleaseAndIndexData(Context&);
 int downloadSourcePackage(Context&);
-int changeAutoInstalledState(Context&, bool);
 int cleanArchives(Context&, bool);
 int showScreenshotUris(Context&);
 int snapshot(Context&);
@@ -43,7 +42,8 @@ int showAutoInstalled(Context&);
 struct ManagePackages
 {
 	enum Mode { FullUpgrade, SafeUpgrade, Install, Reinstall, Purge, Remove,
-			Satisfy, Unsatisfy, BuildDepends, LoadSnapshot };
+			Satisfy, Unsatisfy, Markauto, Unmarkauto, BuildDepends, LoadSnapshot,
+			InstallIfInstalled };
 };
 int managePackages(Context&, ManagePackages::Mode);
 int distUpgrade(Context&);

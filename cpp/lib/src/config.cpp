@@ -38,17 +38,49 @@ namespace cupt {
 
 namespace internal {
 
-struct ConfigImpl
+class ConfigImpl
 {
+	vector< sregex > __optionalPatterns;
+	void __initOptionalPatterns();
+ public:
 	map< string, string > regularVars;
 	map< string, string > regularCompatibilityVars;
 	map< string, vector< string > > listVars;
-	vector< string > optionalPatterns;
 
 	void initializeVariables();
 	void readConfigs(Config*);
 	bool isOptionalOption(const string& optionName) const;
 };
+
+void ConfigImpl::__initOptionalPatterns()
+{
+	const char* optionalPatterns[] = {
+		// used APT vars
+		"acquire::*::*::proxy",
+		"acquire::*::proxy::*",
+		"acquire::*::proxy",
+		"acquire::*::*::dl-limit",
+		"acquire::*::dl-limit::*",
+		"acquire::*::dl-limit",
+		"acquire::*::*::timeout",
+		"acquire::*::timeout::*",
+		"acquire::*::timeout",
+		"dpkg::tools::options::*",
+		"dpkg::tools::options::*::*",
+
+		// used Cupt vars
+		"cupt::downloader::protocols::*::priority",
+		"cupt::downloader::protocols::*::methods",
+		"cupt::downloader::protocols::*::methods::*::priority",
+	};
+
+	const sregex convertRegex = sregex::compile("\\*");
+	for (const auto& pattern: optionalPatterns)
+	{
+		auto currentRegexString = regex_replace(string(pattern), convertRegex, "[^:]*?");
+		__optionalPatterns.emplace_back(sregex::compile(currentRegexString));
+	}
+}
 
 void ConfigImpl::initializeVariables()
 {
@@ -92,15 +124,6 @@ void ConfigImpl::initializeVariables()
 		{ "gpgv::trustedkeyring", "/var/lib/cupt/trusted.gpg" },
 		{ "quiet", "0" }, // bool, '0' instead of 'no' for apt-listchanges (#604130)
 
-		// unused APT vars
-		{ "apt::cache-limit", "0" },
-		{ "apt::get::show-upgraded", "no" },
-		{ "apt::get::build-dep-automatic", "yes" },
-		{ "acquire::pdiffs", "yes" },
-		{ "dir::log", "var/log/apt" },
-		{ "dir::log::history", "history.log" },
-		{ "dir::log::terminal", "term.log" },
-
 		// Cupt vars
 		{ "cupt::cache::limit-releases::by-archive::type", "none" },
 		{ "cupt::cache::limit-releases::by-codename::type", "none" },
@@ -111,9 +134,16 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
+		{ "cupt::console::actions-preview::show-archives", "no" },
+		{ "cupt::console::actions-preview::show-codenames", "no" },
+		{ "cupt::console::actions-preview::show-components", "no" },
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
+		{ "cupt::console::actions-preview::show-reasons", "no" },
+		{ "cupt::console::actions-preview::show-size-changes", "no" },
 		{ "cupt::console::actions-preview::show-summary", "yes" },
+		{ "cupt::console::actions-preview::show-vendors", "no" },
+		{ "cupt::console::actions-preview::show-versions", "no" },
 		{ "cupt::console::use-colors", "no" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },
@@ -147,6 +177,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::update::compression-types::xz::priority", "100" },
 		{ "cupt::update::compression-types::uncompressed::priority", "100" },
 		{ "cupt::update::keep-bad-signatures", "yes" },
+		{ "cupt::update::generate-index-of-index", "yes" },
 		{ "cupt::update::use-index-diffs", "yes" },
 		{ "cupt::resolver::auto-remove", "yes" },
 		{ "cupt::resolver::external-command", "" },
@@ -158,7 +189,8 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::track-reasons", "no" },
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "-5" },
-		{ "cupt::resolver::score::removal", "-1500" },
+		{ "cupt::resolver::score::removal", "-1800" },
+		{ "cupt::resolver::score::removal-of-autoinstalled", "1200" },
 		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
@@ -169,7 +201,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::failed-synchronization", "-80" },
 		{ "cupt::resolver::score::auto-removal", "10" },
 		{ "cupt::worker::archives-space-limit", "0" },
-		{ "cupt::worker::defer-triggers", "no" },
+		{ "cupt::worker::defer-triggers", "auto" },
 		{ "cupt::worker::download-only", "no" },
 		{ "cupt::worker::log", "yes" },
 		{ "cupt::worker::log::levels::metadata", "1" },
@@ -193,37 +225,6 @@ void ConfigImpl::initializeVariables()
 		{ "apt::get::purge", "cupt::worker::purge" },
 	};
 
-	optionalPatterns =
-	{
-		// used APT vars
-		"acquire::*::*::proxy",
-		"acquire::*::proxy::*",
-		"acquire::*::proxy",
-		"acquire::*::*::dl-limit",
-		"acquire::*::dl-limit::*",
-		"acquire::*::dl-limit",
-		"acquire::*::*::timeout",
-		"acquire::*::timeout::*",
-		"acquire::*::timeout",
-		"dpkg::tools::options::*",
-		"dpkg::tools::options::*::*",
-
-		// unused APT vars
-		"acquire::cdrom::*",
-		"acquire::compressiontypes::*",
-		"apt::archives::*",
-		"apt::periodic::*",
-		"aptlistbugs::*",
-		"unattended-upgrade::*",
-		"aptitude::*",
-		"dselect::*",
-
-		// used Cupt vars
-		"cupt::downloader::protocols::*::priority",
-		"cupt::downloader::protocols::*::methods",
-		"cupt::downloader::protocols::*::methods::*::priority",
-	};
-
 	listVars =
 	{
 		// used APT vars
@@ -236,12 +237,6 @@ void ConfigImpl::initializeVariables()
 		{ "dpkg::pre-invoke", vector< string > {} },
 		{ "dpkg::post-invoke", vector< string > {} },
 
-		// unused APT vars
-		{ "rpm::pre-invoke", vector< string > {} },
-		{ "rpm::post-invoke", vector< string > {} },
-		{ "acquire::languages", vector< string > {} },
-		{ "apt::never-markauto-sections", vector< string > {} },
-
 		// Cupt vars
 		{ "cupt::cache::limit-releases::by-archive", vector< string > {} },
 		{ "cupt::cache::limit-releases::by-codename", vector< string > {} },
@@ -251,24 +246,20 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::http::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::ftp::methods", vector< string > { "curl", "wget" } },
+		{ "cupt::resolver::no-autoremove-if-rdepends-exist", {} },
 	};
+
+	__initOptionalPatterns();
 }
 
 bool ConfigImpl::isOptionalOption(const string& optionName) const
 {
-	static const sregex convertRegex = sregex::compile("\\*");
 	smatch m;
-	FORIT(patternIt, optionalPatterns)
-	{
-		auto currentRegexString = *patternIt;
-		currentRegexString = regex_replace(currentRegexString, convertRegex, "[^:]*?");
-		sregex currentRegex = sregex::compile(currentRegexString);
-		if (regex_match(optionName, m, currentRegex))
-		{
-			return true;
-		}
-	}
-	return false;
+	return std::any_of(__optionalPatterns.begin(), __optionalPatterns.end(),
+			[&m, &optionName](const sregex& pattern)
+			{
+				return regex_match(optionName, m, pattern);
+			});
 }
 
 void ConfigImpl::readConfigs(Config* config)
@@ -277,7 +268,7 @@ void ConfigImpl::readConfigs(Config* config)
 	{
 		if (value.size() < 2)
 		{
-			fatal2("internal error: unquoted simple value '%s'", value);
+			fatal2i("unquoted simple value '%s'", value);
 		}
 		return string(value.begin() + 1, value.end() - 1);
 	};
@@ -348,7 +339,7 @@ void ConfigImpl::readConfigs(Config* config)
 			}
 			catch (Exception&)
 			{
-				warn2("skipped configuration file '%s'", *configFileIt);
+				warn2(__("skipped the configuration file '%s'"), *configFileIt);
 			}
 		}
 	}
@@ -362,14 +353,10 @@ static string qx(const string& shellCommand)
 	File file(shellCommand, "pr", openError); // reading from pipe
 	if (!openError.empty())
 	{
-		fatal2("unable to open pipe '%s': %s", shellCommand, openError);
+		fatal2(__("unable to open the pipe '%s': %s"), shellCommand, openError);
 	}
 	string result;
-	string block;
-	while (! file.getRecord(block).eof())
-	{
-		result += block;
-	}
+	file.getFile(result);
 	return result;
 }
 
@@ -439,7 +426,7 @@ string Config::getString(const string& optionName) const
 	}
 	else
 	{
-		fatal2("an attempt to get wrong scalar option '%s'", optionName);
+		fatal2(__("an attempt to get the invalid scalar option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -495,7 +482,7 @@ ssize_t Config::getInteger(const string& optionName) const
 		}
 		catch (boost::bad_lexical_cast&)
 		{
-			fatal2("unable to convert '%s' to number", source);
+			fatal2(__("unable to convert '%s' to a number"), source);
 		}
 		return result; // we'll never return default value here
 	}
@@ -514,9 +501,14 @@ vector< string > Config::getList(const string& optionName) const
 	}
 	else
 	{
-		fatal2("an attempt to get wrong list option '%s'", optionName);
+		fatal2(__("an attempt to get the invalid list option '%s'"), optionName);
 	}
 	__builtin_unreachable();
+}
+
+bool __is_cupt_option(const string& optionName)
+{
+	return optionName.compare(0, 6, "cupt::") == 0;
 }
 
 void Config::setScalar(const string& optionName, const string& value)
@@ -544,7 +536,10 @@ void Config::setScalar(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2("an attempt to set wrong scalar option '%s'", optionName);
+		if (__is_cupt_option(optionName))
+		{
+			warn2(__("an attempt to set the invalid scalar option '%s'"), optionName);
+		}
 	}
 }
 
@@ -562,7 +557,10 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2("an attempt to set wrong list option '%s'", optionName);
+		if (__is_cupt_option(optionName))
+		{
+			warn2(__("an attempt to set the invalid list option '%s'"), optionName);
+		}
 	}
 }
 

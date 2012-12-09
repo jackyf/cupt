@@ -30,36 +30,35 @@
 
 #include "common.hpp"
 #include "selectors.hpp"
+#include "functionselectors.hpp"
 
-typedef shared_ptr< const Version > (*__version_selector)(shared_ptr< const Cache >,
-		const string& packageName, bool throwOnError);
-typedef std::function< vector< string > (shared_ptr< const Cache >) > __package_names_fetcher;
+typedef std::function< vector< string > (const Cache&) > __package_names_fetcher;
 
-shared_ptr< const BinaryPackage > getBinaryPackage(shared_ptr< const Cache > cache, const string& packageName, bool throwOnError)
+const BinaryPackage* getBinaryPackage(const Cache& cache, const string& packageName, bool throwOnError)
 {
-	shared_ptr< const BinaryPackage > result = cache->getBinaryPackage(packageName);
+	auto result = cache.getBinaryPackage(packageName);
 	if (!result && throwOnError)
 	{
-		fatal2("unable to find the binary package '%s'", packageName);
+		fatal2(__("unable to find the binary package '%s'"), packageName);
 	}
 	return result;
 }
 
-shared_ptr< const SourcePackage > getSourcePackage(shared_ptr< const Cache > cache, const string& packageName, bool throwOnError)
+const SourcePackage* getSourcePackage(const Cache& cache, const string& packageName, bool throwOnError)
 {
-	shared_ptr< const SourcePackage > result = cache->getSourcePackage(packageName);
+	auto result = cache.getSourcePackage(packageName);
 	if (!result && throwOnError)
 	{
-		fatal2("unable to find the source package '%s'", packageName);
+		fatal2(__("unable to find the source package '%s'"), packageName);
 	}
 	return result;
 }
 
 template < typename PackageSelector >
-shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
+const Version* __select_version(const Cache& cache,
 		const string& packageExpression, PackageSelector packageSelector, bool throwOnError)
 {
-	typedef shared_ptr< const Version > ReturnType;
+	typedef const Version* ReturnType;
 
 	static const sregex exactVersionRegex = sregex::compile("(.*?)=(.*)");
 	static const sregex exactDistributionRegex = sregex::compile("(.*?)/(.*)");
@@ -83,7 +82,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 
 		if (!version && throwOnError)
 		{
-			fatal2("unable to find version '%s' for package '%s'", versionString, packageName);
+			fatal2(__("unable to find the version '%s' for the package '%s'"), versionString, packageName);
 		}
 		return version;
 	}
@@ -100,11 +99,11 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		{
 			if (throwOnError)
 			{
-				fatal2("bad distribution '%s' requested, use archive or codename", distributionExpression);
+				fatal2(__("bad distribution '%s' requested, use archive or codename"), distributionExpression);
 			}
 			else
 			{
-				warn2("bad distribution '%s' requested, use archive or codename", distributionExpression);
+				warn2(__("bad distribution '%s' requested, use archive or codename"), distributionExpression);
 				return ReturnType();
 			}
 		}
@@ -136,7 +135,7 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			// not found
 			if (throwOnError)
 			{
-				fatal2("cannot find distribution '%s' for package '%s'",
+				fatal2(__("cannot find the distribution '%s' for the package '%s'"),
 						distributionExpression, packageName);
 			}
 			return ReturnType();
@@ -152,8 +151,8 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 			{
 				versionStrings.push_back((*it)->versionString);
 			}
-			fatal2("for the package '%s' and the distribution '%s' several versions found: %s;"
-					" you should explicitly select by version", packageName,
+			fatal2(__("several versions found for the package '%s' and the distribution '%s': %s; "
+					" you should explicitly select by version"), packageName,
 					distributionExpression, join(", ", versionStrings));
 			return ReturnType(); // unreachable
 		}
@@ -168,26 +167,26 @@ shared_ptr< const Version > __select_version(shared_ptr< const Cache > cache,
 		{
 			return ReturnType();
 		}
-		auto version = cache->getPolicyVersion(package);
+		auto version = cache.getPreferredVersion(package);
 		if (!version && throwOnError)
 		{
-			fatal2("no versions available for package '%s'", packageName);
+			fatal2(__("no versions available for the package '%s'"), packageName);
 		}
 		return version;
 	}
 }
 
-shared_ptr< const BinaryVersion > selectBinaryVersion(shared_ptr< const Cache > cache,
+const BinaryVersion* selectBinaryVersion(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
-	return static_pointer_cast< const BinaryVersion >(__select_version< decltype(getBinaryPackage) >
+	return static_cast< const BinaryVersion* >(__select_version< decltype(getBinaryPackage) >
 			(cache, packageExpression, getBinaryPackage, throwOnError));
 }
 
-shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > cache,
+const SourceVersion* selectSourceVersion(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
-	auto sourceVersion = static_pointer_cast< const SourceVersion >(__select_version< decltype(getSourcePackage) >
+	auto sourceVersion = static_cast< const SourceVersion* >(__select_version< decltype(getSourcePackage) >
 			(cache, packageExpression, getSourcePackage, false));
 	if (sourceVersion)
 	{
@@ -199,17 +198,17 @@ shared_ptr< const SourceVersion > selectSourceVersion(shared_ptr< const Cache > 
 	{
 		auto newPackageExpression = binaryVersion->sourcePackageName +
 				'=' + binaryVersion->sourceVersionString;
-		return static_pointer_cast< const SourceVersion >(__select_version< decltype(getSourcePackage) >
+		return static_cast< const SourceVersion* >(__select_version< decltype(getSourcePackage) >
 				(cache, newPackageExpression, getSourcePackage, throwOnError));
 	}
 	else if (throwOnError)
 	{
-		fatal2("unable to find appropriate source or binary version for '%s'", packageExpression);
+		fatal2(__("unable to find an appropriate source or binary version for '%s'"), packageExpression);
 	}
 	return sourceVersion;
 }
 
-static vector< string > __select_package_names_wildcarded(shared_ptr< const Cache > cache,
+static vector< string > __select_package_names_wildcarded(const Cache& cache,
 		const string& packageNameExpression, __package_names_fetcher packageNamesFetcher)
 {
 	vector< string > result = packageNamesFetcher(cache);
@@ -223,8 +222,9 @@ static vector< string > __select_package_names_wildcarded(shared_ptr< const Cach
 	return result;
 }
 
-vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< const Cache > cache,
-		const string& packageExpression, __version_selector versionSelector,
+template < typename VersionType, typename VersionSelector >
+vector< const VersionType* > __select_versions_wildcarded(const Cache& cache,
+		const string& packageExpression, VersionSelector versionSelector,
 		__package_names_fetcher packageNamesFetcher, bool throwOnError)
 {
 	static sregex packageAndRemainderRegex = sregex::compile("([^=/]+)((?:=|/).*)?");
@@ -232,7 +232,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 	smatch m;
 	if (!regex_match(packageExpression, m, packageAndRemainderRegex))
 	{
-		fatal2("bad package name in package expression '%s'", packageExpression);
+		fatal2(__("bad package name in the package expression '%s'"), packageExpression);
 	}
 	string packageNameExpression = m[1];
 	string remainder;
@@ -241,7 +241,7 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 		remainder = m[2];
 	}
 
-	vector< shared_ptr< const Version > > result;
+	vector< const VersionType* > result;
 	if (packageNameExpression.find('?') == string::npos && packageNameExpression.find('*') == string::npos)
 	{
 		// there are no wildcards
@@ -266,37 +266,33 @@ vector< shared_ptr< const Version > > __select_versions_wildcarded(shared_ptr< c
 
 		if (result.empty() && throwOnError)
 		{
-			fatal2("no appropriate versions available for wildcarded version expression '%s'", packageExpression);
+			fatal2(__("no appropriate versions available for the wildcarded version expression '%s'"), packageExpression);
 		}
 	}
 
 	return result;
 }
 
-static vector< string > getBinaryPackageNames(shared_ptr< const Cache > cache)
+static vector< string > getBinaryPackageNames(const Cache& cache)
 {
-	return cache->getBinaryPackageNames();
+	return cache.getBinaryPackageNames();
 }
 
-vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
-		const string& packageExpression, bool throwOnError)
+bool isFunctionExpression(const string& expression)
 {
-	auto versionSelector =
-			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
-			{
-				return static_pointer_cast< const Version >(selectBinaryVersion(cache, packageName, throwOnError));
-			};
+	return (expression.find_first_of("()") != string::npos);
+}
 
-	auto source = __select_versions_wildcarded(cache, packageExpression, versionSelector,
-			getBinaryPackageNames, throwOnError);
-
-	vector< shared_ptr< const BinaryVersion > > result;
-	for (size_t i = 0; i < source.size(); ++i)
+template < typename VersionType >
+static vector< const VersionType* > __convert_version_type(list< const Version* >&& source)
+{
+	vector< const VersionType* > result;
+	for (const auto& oldVersion: source)
 	{
-		auto version = dynamic_pointer_cast< const BinaryVersion >(source[i]);
+		auto version = dynamic_cast< const VersionType* >(oldVersion);
 		if (!version)
 		{
-			fatal2("internal error: version is not binary");
+			fatal2i("version has a wrong type");
 		}
 		result.push_back(version);
 	}
@@ -304,50 +300,71 @@ vector< shared_ptr< const BinaryVersion > > selectBinaryVersionsWildcarded(share
 	return result;
 }
 
-static vector< string > getSourcePackageNames(shared_ptr< const Cache > cache)
+template < typename VersionType, typename QueryProcessor >
+vector< const VersionType* > __select_using_function(const Cache& cache,
+		const string& expression, QueryProcessor queryProcessor, bool binary, bool throwOnError)
 {
-	return cache->getSourcePackageNames();
+	FunctionalSelector selector(cache);
+	auto query = selector.parseQuery(expression, binary);
+
+	auto result = __convert_version_type< VersionType >((selector.*queryProcessor)(*query));
+	if (throwOnError && result.empty())
+	{
+		fatal2(__("the function expression '%s' selected nothing"), expression);
+	}
+	return std::move(result);
 }
 
-vector< shared_ptr< const SourceVersion > > selectSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError)
 {
-	auto versionSelector =
-			[](shared_ptr< const Cache > cache, const string& packageName, bool throwOnError) -> shared_ptr< const Version >
-			{
-				return static_pointer_cast< const Version >(selectSourceVersion(cache, packageName, throwOnError));
-			};
-
-	auto source = __select_versions_wildcarded(cache, packageExpression, versionSelector,
-			getSourcePackageNames, throwOnError);
-
-	vector< shared_ptr< const SourceVersion > > result;
-	for (size_t i = 0; i < source.size(); ++i)
+	if (isFunctionExpression(packageExpression))
 	{
-		auto version = dynamic_pointer_cast< const SourceVersion >(source[i]);
-		if (!version)
-		{
-			fatal2("internal error: version is not source");
-		}
-		result.push_back(version);
+		return __select_using_function< BinaryVersion >(cache, packageExpression,
+				&FunctionalSelector::selectBestVersions, true, throwOnError);
 	}
-
-	return result;
+	else
+	{
+		return __select_versions_wildcarded< BinaryVersion >(cache, packageExpression,
+				selectBinaryVersion, getBinaryPackageNames, throwOnError);
+	}
 }
 
-vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(shared_ptr< const Cache > cache,
-		const string& packageExpression)
+static vector< string > getSourcePackageNames(const Cache& cache)
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	return cache.getSourcePackageNames();
+}
 
-	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, getBinaryPackageNames);
+vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
+		const string& packageExpression, bool throwOnError)
+{
+	if (isFunctionExpression(packageExpression))
+	{
+		return __select_using_function< SourceVersion >(cache, packageExpression,
+				&FunctionalSelector::selectBestVersions, false, throwOnError);
+	}
+	else
+	{
+		return __select_versions_wildcarded< SourceVersion >(cache, packageExpression,
+				selectSourceVersion, getSourcePackageNames, throwOnError);
+	}
+}
+
+template < typename VersionType, typename PackageSelector >
+static vector< const VersionType* > __select_all_versions_wildcarded(
+		const Cache& cache, const string& packageExpression,
+		__package_names_fetcher packageNamesFetcher, PackageSelector packageSelector)
+{
+	vector< const VersionType* > result;
+
+	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, packageNamesFetcher);
 	if (packageNames.empty())
 	{
-		fatal2("no binary packages available for the wildcarded expression '%s'", packageExpression);
+		fatal2(__("no packages available for the wildcarded expression '%s'"), packageExpression);
 	}
 	FORIT(packageNameIt, packageNames)
 	{
-		auto package = getBinaryPackage(cache, *packageNameIt);
+		auto package = packageSelector(cache, *packageNameIt, false);
 		auto versions = package->getVersions();
 		std::move(versions.begin(), versions.end(), std::back_inserter(result));
 	}
@@ -355,23 +372,33 @@ vector< shared_ptr< const BinaryVersion > > selectAllBinaryVersionsWildcarded(sh
 	return result;
 }
 
-vector< shared_ptr< const SourceVersion > > selectAllSourceVersionsWildcarded(shared_ptr< const Cache > cache,
+vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression)
 {
-	vector< shared_ptr< const SourceVersion > > result;
-
-	auto packageNames = __select_package_names_wildcarded(cache, packageExpression, getSourcePackageNames);
-	if (packageNames.empty())
+	if (isFunctionExpression(packageExpression))
 	{
-		fatal2("no source packages available for the wildcarded expression '%s'", packageExpression);
+		return __select_using_function< BinaryVersion >(cache, packageExpression,
+				&FunctionalSelector::selectAllVersions, true, false);
 	}
-	FORIT(packageNameIt, packageNames)
+	else
 	{
-		auto package = getSourcePackage(cache, *packageNameIt);
-		auto versions = package->getVersions();
-		std::move(versions.begin(), versions.end(), std::back_inserter(result));
+		return __select_all_versions_wildcarded< BinaryVersion >(cache, packageExpression,
+				getBinaryPackageNames, getBinaryPackage);
 	}
+}
 
-	return result;
+vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
+		const string& packageExpression)
+{
+	if (isFunctionExpression(packageExpression))
+	{
+		return __select_using_function< SourceVersion >(cache, packageExpression,
+				&FunctionalSelector::selectAllVersions, false, false);
+	}
+	else
+	{
+		return __select_all_versions_wildcarded< SourceVersion >(cache, packageExpression,
+				getSourcePackageNames, getSourcePackage);
+	}
 }
 

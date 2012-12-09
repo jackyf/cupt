@@ -21,6 +21,8 @@
 #include <cupt/cache/version.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 
+#include <internal/common.hpp>
+
 namespace cupt {
 namespace cache {
 
@@ -62,11 +64,6 @@ bool Version::operator<(const Version& other) const
 	return (versionString < other.versionString);
 }
 
-bool Version::operator==(const Version& other) const
-{
-	return packageName == other.packageName && versionString == other.versionString;
-}
-
 vector< Version::DownloadRecord > Version::getDownloadInfo() const
 {
 	set< string > seenFullDirs;
@@ -95,12 +92,27 @@ vector< Version::DownloadRecord > Version::getDownloadInfo() const
 }
 
 const string Version::Priorities::strings[] = {
-	__("required"), __("important"), __("standard"), __("optional"), __("extra")
+	N__("required"), N__("important"), N__("standard"), N__("optional"), N__("extra")
 };
 
 Version::~Version()
 {
 	delete others;
+}
+
+string Version::getCodenameAndComponentString(const string& baseUri) const
+{
+	vector< string > parts;
+	for (const auto& source: sources)
+	{
+		auto releaseInfo = source.release;
+		if (releaseInfo->baseUri != baseUri)
+		{
+			continue;
+		}
+		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
+	}
+	return join(",", parts);
 }
 
 }

@@ -109,6 +109,12 @@ search only in package names
 
 Corresponding configuration variable: L<apt::cache::namesonly>
 
+=item --fse,-f
+
+Turns on functional selector expression mode. In that mode, instead of
+specifying one or more regular expressions, exactly one FSE (see
+L<cupt_functionalselectors(7)>) should be specified.
+
 =back
 
 Examples:
@@ -120,6 +126,8 @@ C<cupt search --case-sensitive Vim>
 C<cupt search -n vim>
 
 C<cupt search "package manager">
+
+C<cupt search --fse 'Zbd(Pn(cupt))'>
 
 =item showauto
 
@@ -209,9 +217,22 @@ Arguments: list of binary package names.
 
 Given no arguments, prints available Release info for binary packages.
 
+Specific options:
+
+=over
+
+=item --show-dates
+
+Show also publish and expiration dates for each record. Works only for a second
+form (i.e. no arguments).
+
+=back
+
 Examples:
 
 C<cupt policy>
+
+C<cupt policy --show-dates>
 
 C<cupt policy dpkg>
 
@@ -225,9 +246,13 @@ Arguments: list of source package names.
 
 Given no arguments, prints available Release info for source packages.
 
+Same specific options as for L</policy> subcommand.
+
 Examples:
 
 C<cupt policysrc>
+
+C<cupt policysrc --show-dates>
 
 C<cupt policysrc dpkg>
 
@@ -235,9 +260,9 @@ C<cupt policysrc libpqxx libpqxx3>
 
 =item pkgnames
 
-prints package names that start with a supplied suffix
+prints package names that start with a supplied prefix
 
-If no suffix is given, prints all package names
+If no prefix is given, prints all package names
 
 Examples:
 
@@ -419,6 +444,18 @@ This subcommand receives list of binary package names.
 Examples:
 
 C<cupt reinstall libc6>
+
+=item iii
+
+"L</install> if installed"
+
+Same as L</install>, but silently ignores packages which are not installed.
+
+Examples:
+
+C<cupt iii gnash>
+
+C<cupt iii xserver* *cupt*>
 
 =item markauto
 
@@ -654,21 +691,51 @@ cupt installs recommended packages by default, this option cancels described beh
 
 Corresponding configuration option: L<apt::install-recommends>
 
+=item --show-archives,-A
+
+when displaying actions preview prompt, display also release archives for each package
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-archives>
+
+=item --show-codenames,-N
+
+when displaying actions preview prompt, display also release codenames for each package
+
+This option cannot be used together with --show-archives.
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-codenames>
+
+=item --show-components,-C
+
+when displaying actions preview prompt, display also release components for each package
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-components>
+
 =item --show-versions,-V
 
 when displaying actions preview prompt, display also versions of packages
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-versions>
+
+=item --show-vendors,-O
+
+when displaying actions preview prompt, display also vendors of packages
+
+Corresponding configuration option: L<cupt::console::actions-preview::show-vendors>
 
 =item --show-size-changes,-Z
 
 when displaying actions preview prompt, display also changes in disk space
 usage for each package
 
+Corresponding configuration option: L<cupt::console::actions-preview::show-size-changes>
+
 =item --show-reasons,--show-deps,-D
 
 when displaying actions preview prompt, display also reasons why this action was
 considered to perform
 
-Corresponding configuration option: L<cupt::resolver::track-reasons>
+Corresponding configuration option: L<cupt::console::actions-preview::show-reasons>
 
 =item --show-not-preferred
 
@@ -679,8 +746,7 @@ Corresponding configuration option: L<cupt::console::actions-preview::show-not-p
 
 =item --download-only,-d
 
-stop after download stage, don't modify the system; not applicable for
-L</markauto> and L</unmarkauto> actions
+stop after download stage, don't modify the system
 
 Corresponding configuration option: L<cupt::worker::download-only>
 
@@ -747,6 +813,39 @@ Example:
 C<< cupt install sieve-connect --unsatisfy "iceweasel (<< 3.5.20)" >> - install
 the package 'sieve-connect', upgrade or remove the package 'iceweasel' if it is installed
 and has the version lower than '3.5.20'
+
+=item --iii
+
+"install if installed" (see L</iii> subcommand) the rest of packages
+
+Example:
+
+C<cupt install libv4l-0 cupt --iii libreadline6 vlc*> - install packages
+'libv4l-0' and 'cupt', install the preferred version of 'libreadline6' if it's
+installed already, install the preferred versions of packages which names start
+with 'vlc' and which are installed already 
+
+=item --markauto
+
+mark as automatically installed (see L</markauto> subcommand) the rest of packages
+
+Example:
+
+C<cupt install vlc --markauto vlc> - install the package 'vlc' but mark it
+automatically installed. That means on the next run 'vlc' will be proposed for
+autoremoval (unless you switched autoremoval off or something in the system has
+a valuable soft dependency on the 'vlc' package).
+
+=item --unmarkauto
+
+mark as manually installed (see L</unmarkauto>) subcommand the rest of packages
+
+Example:
+
+You have a package 'bindfs' installed and now don't need it anymore. C<cupt
+remove bindfs> shows that the package 'fuse' will be removed as it was a
+dependency of 'bindfs'; you however decide you want to keep it in the system.
+Then you run C<cupt remove bindfs --unmarkauto fuse>.
 
 =back
 
@@ -838,6 +937,12 @@ Also, you can specify L</Binary package version expression> as
 L</Source package version expression>, then binary-to-source mapping
 will be performed.
 
+=head2 Functional selectors
+
+You can also use functional selectors (L<cupt_functionalselectors(7)>)
+whereever L</Binary package version expression> or L</Source package version
+expression> is expected.
+
 =head1 COMMON OPTIONS
 
 =over
@@ -922,11 +1027,12 @@ See L<cupt.conf(5)>.
 
 Please report all bugs in Cupt to Debian BTS using L<reportbug(1)>.
 
-The discussion channel about Cupt is irc://irc.debian.org#cupt.
+The user support mailing list is cupt-user@lists.alioth.debian.org. The
+discussion channel about Cupt is irc://irc.debian.org#cupt.
 
 =head1 SEE ALSO
 
-L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>, L<cupt.conf(5)>
+L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>, L<cupt.conf(5)>, L<cupt_functionalselectors(7)>
 
 =head1 AUTHOR
 

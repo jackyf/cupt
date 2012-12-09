@@ -42,11 +42,12 @@ class CUPT_API NativeResolver: public Resolver
 	/// constructor
 	NativeResolver(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
-	void installVersion(const shared_ptr< const BinaryVersion >&);
+	void installVersion(const BinaryVersion*);
 	void satisfyRelationExpression(const RelationExpression&);
 	void unsatisfyRelationExpression(const RelationExpression&);
 	void removePackage(const string& packageName);
 	void upgrade();
+	void setAutomaticallyInstalledFlag(const string&, bool);
 
 	bool resolve(Resolver::CallbackType);
 

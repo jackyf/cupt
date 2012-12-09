@@ -195,9 +195,9 @@ string humanReadableSizeString(uint64_t bytes)
 	return string(buf);
 }
 
-string __(const char* buf)
+const char* __(const char* buf)
 {
-	return string(dgettext("cupt", buf));
+	return dgettext("cupt", buf);
 }
 
 } // namespace

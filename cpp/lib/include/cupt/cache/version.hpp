@@ -41,16 +41,16 @@ struct CUPT_API Version
 	/// where version comes from
 	struct Source
 	{
-		shared_ptr< const ReleaseInfo > release; ///< release info
+		const ReleaseInfo* release; ///< release info
 		string directory; ///< remote directory containing files
 	};
 	/// standard initialization parameters
 	struct InitializationParameters
 	{
-		string packageName; ///< package name
-		shared_ptr< File > file; ///< file to read from
+		const string* packageNamePtr;
+		File* file; ///< file to read from
 		uint32_t offset; ///< version record offset in @ref file
-		shared_ptr< const ReleaseInfo > releaseInfo; ///< release info
+		const ReleaseInfo* releaseInfo; ///< release info
 	};
 	/// download place record
 	struct DownloadRecord
@@ -91,7 +91,7 @@ struct CUPT_API Version
 	 * @return @c true if hash sums of all files in the version match hash sums
 	 * of all files in the @a other version, @c false otherwise
 	 */
-	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const = 0;
+	virtual bool areHashesEqual(const Version* other) const = 0;
 
 	/// does version have at least one verified Source?
 	bool isVerified() const;
@@ -103,11 +103,6 @@ struct CUPT_API Version
 	 * Uses pair @ref packageName, @ref versionString for comparison
 	 */
 	bool operator<(const Version&) const;
-	/// equality operator
-	/**
-	 * Uses pair @ref packageName, @ref versionString for comparison
-	 */
-	bool operator==(const Version&) const;
 
 	/// enables parsing relation fields in versions, @c true by default
 	static bool parseRelations;
@@ -115,6 +110,10 @@ struct CUPT_API Version
 	static bool parseInfoOnly;
 	/// enables parsing unknown fields in versions, @c false by default
 	static bool parseOthers;
+
+	/// @cond
+	string getCodenameAndComponentString(const string&) const;
+	/// @endcond
 };
 
 } // namespace

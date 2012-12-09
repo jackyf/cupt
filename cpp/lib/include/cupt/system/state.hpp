@@ -88,6 +88,8 @@ class CUPT_API State
 	 * @return array of package names
 	 */
 	vector< string > getInstalledPackageNames() const;
+	/// gets system binary architecture
+	string getArchitecture() const;
 	/// @cond
 	CUPT_LOCAL vector< string > getReinstallRequiredPackageNames() const;
 	/// @endcond

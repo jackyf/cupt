@@ -35,15 +35,7 @@ gpgv::trustedkeyring, quiet
 
 See L<apt.conf(5)> for their meanings.
 
-Secondly, Cupt recognizes (but doesn't use) following configuration variables:
-
-apt::acquire::translation, apt::archives::*, acquire::pdiffs,
-acquire::languages, apt::cache-limit, apt::periodic::*, dir::log*,
-dir::state::lists, unattended-upgrade::*, acquire::compressiontypes,
-apt::get::show-upgraded, apt::get::build-dep-automatic, rpm::pre-invoke,
-rpm::post-invoke
-
-Thirdly, Cupt introduces cupt-specific configuration variables.
+Secondly, Cupt introduces cupt-specific configuration variables.
 
 =head2 variable types
 
@@ -186,20 +178,54 @@ Show always.
 
 =back
 
+=item cupt::console::actions-preview::show-archives
+
+boolean, if true, release archive(s) will be shown for each package in the
+actions preview. False by default.
+
+=item cupt::console::actions-preview::show-codenames
+
+boolean, if true, release codename(s) will be shown for each package in the
+actions preview. False by default.
+
+=item cupt::console::actions-preview::show-components
+
+boolean, if true, release component(s) will be shown for each package in the
+actions preview. False by default.
+
 =item cupt::console::actions-preview::show-details
 
 boolean, if true, details of planned actions will be shown in the
 actions preview. True by default.
+
+=item cupt::console::actions-preview::show-size-changes
+
+boolean, if true, a change in the disk space usage will be shown for each
+package in the actions preview. False by default.
+
+=item cupt::console::actions-preview::show-reasons
+
+boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 =item cupt::console::actions-preview::show-summary
 
 boolean, if true, a summary of planned actions will be shown in the
 actions preview. True by default.
 
+=item cupt::console::actions-preview::show-versions
+
+boolean, if true, a version will be shown for each package in the
+actions preview. False by default.
+
+=item cupt::console::actions-preview::show-vendors
+
+boolean, if true, a version will be shown for each package in the actions
+preview. False by default.
+
 =item cupt::console::use-colors
 
 string, specifies whether to use colors in the console interface. Defaults to
-"auto".
+"no".
 
 For now concerns only the action preview.
 
@@ -367,6 +393,13 @@ boolean, specifies whether to keep signature files that failed GPG check
 when doing update. True by default. Setting this option to false will not have
 an effect if the option L<cupt::update::check-release-files> is set to false.
 
+=item cupt::update::generate-index-of-index
+
+boolean, specifies whether to build "index-of-index" for every Packages and
+Sources. If set to true, slightly increases the time of postprocessing after
+downloading new metadata files but speedes up significantly the initialization
+time for every invocation. True by default.
+
 =item cupt::update::use-index-diffs
 
 boolean, specifies whether to try downloading repository index deltas and apply
@@ -394,6 +427,36 @@ boolean, see L<cupt(1)> L<--no-auto-remove/|--no-auto-remove>
 =item cupt::resolver::max-solution-count
 
 integer, positive, see L<cupt(1)> L<--max-solution-count|/--max-solution-count>
+
+=item cupt::resolver::no-autoremove-if-rdepends-exist
+
+list of regular expressions; if the package name matches to any of those
+regular expressions it will be not considered for auto-removal if there are any
+reverse dependencies installed. Empty by default.
+
+Example (simplified real situation):
+
+ Package: xserver-xorg
+ Depends: xserver-xorg-video-all | xorg-driver-video
+ 
+ Package: xserver-xorg-video-nv
+ Provides: xorg-driver-video
+ 
+ Package: xserver-xorg-video-radeon
+ Provides: xorg-driver-video
+ 
+ You have:
+ xserver-xorg: manually installed
+ xserver-xorg-video-all: not installed
+ xserver-xorg-video-nv: automatically installed
+ xserver-xorg-video-radeon: automatically installed
+
+Both xserver-xorg-video-nv and xserver-xorg-video-radeon satisfy the dependency
+of xserver-xorg, so only one of them is needed in the system. Therefore, by
+default one of these two will be considered for auto-removal. If you add a
+regular expression 'xserver-xorg-video.*' to the value of this option, none of
+packages providing xorg-driver-video will be considered for auto-removal as
+long as xserver-xorg is installed.
 
 =item cupt::resolver::no-remove
 
@@ -431,7 +494,7 @@ package cannot be synchronized with the modified one.
 
 =item cupt::resolver::track-reasons
 
-boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
+boolean, specifies whether 'suggestedPackages::reasons' is filled in the Resolver::Offer. False by default.
 
 =item cupt::resolver::type
 
@@ -457,6 +520,10 @@ removal of an existing package
 =item removal-of-essential
 
 removal of an existing essential package (a general B<removal> option is applied as well)
+
+=item removal-of-autoinstalled
+
+removal of an automatically installed package (a general B<removal> option is applied as well)
 
 =item upgrade
 
@@ -502,12 +569,30 @@ are generated successfully.
 
 =item cupt::worker::defer-triggers
 
-boolean, specifies whether should worker defer dpkg trigger processing to
-the end of the whole operation or not. Being set to true, speeds up
+string, specifies whether should worker defer dpkg trigger processing to
+the end of the whole operation or not. When enabled, speeds up
 large-amount actions, but if the operation will somewhy be interrupted, leaves
 system in the interim trigger state, which can be fixed by manual run of 'dpkg
---triggers-only --pending' command. False by default due to tiresome dpkg bug
-(Debian BTS #526774).
+--triggers-only --pending' command. Defaults to "auto".
+
+Available values:
+
+=over
+
+=item no
+
+Disable deferring triggers.
+
+=item yes
+
+Enable deferring triggers.
+
+=item auto
+
+Enable deferring triggers if enough recent version of dpkg (1.16.1, where
+tiresome trigger-related bug (Debian BTS #526774) is fixed) is installed.
+
+=back
 
 =item cupt::worker::download-only
 

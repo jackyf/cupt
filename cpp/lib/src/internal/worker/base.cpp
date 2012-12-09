@@ -17,6 +17,7 @@
 **************************************************************************/
 #include <cupt/config.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/lock.hpp>
 #include <internal/common.hpp>
@@ -26,9 +27,13 @@
 namespace cupt {
 namespace internal {
 
+Worker::Action::Type WorkerBase::_download_dependent_action_types[] = {
+		Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
+};
+
 WorkerBase::WorkerBase()
 {
-	fatal2("internal error: WorkerBase::WorkerBase shouldn't be ever called");
+	fatal2i("WorkerBase::WorkerBase shouldn't be ever called");
 }
 
 WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
@@ -39,7 +44,7 @@ WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_pt
 	__umask = umask(0022);
 
 	string lockPath = _config->getPath("cupt::directory::state") + "/lock";
-	__lock = new Lock(_config, lockPath);
+	__lock = new Lock(*_config, lockPath);
 }
 
 WorkerBase::~WorkerBase()
@@ -54,10 +59,10 @@ string WorkerBase::_get_archives_directory() const
 	return _config->getPath("dir::cache::archives");
 }
 
-string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >& version)
+string WorkerBase::_get_archive_basename(const BinaryVersion* version)
 {
-	return version->packageName + '_' + version->versionString + '_' +
-			version->architecture + ".deb";
+	return version->packageName + '_' + versionstring::getOriginal(version->versionString)
+			+ '_' + version->architecture + ".deb";
 }
 
 void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
@@ -88,13 +93,13 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			auto result = ::system(command.c_str());
 			if (result == -1)
 			{
-				_logger->loggedFatal(subsystem, level,
-						format2e("unable to launch command '%s'", command));
+				_logger->loggedFatal2(subsystem, level,
+						format2e, "unable to launch the command '%s'", command);
 			}
 			else if (result)
 			{
-				_logger->loggedFatal(subsystem, level,
-						format2("command '%s' execution failed: %s", command, getWaitStatusDescription(result)));
+				_logger->loggedFatal2(subsystem, level,
+						format2, "the command '%s' failed: %s", command, getWaitStatusDescription(result));
 			}
 		}
 		else try
@@ -104,15 +109,15 @@ void WorkerBase::_run_external_command(Logger::Subsystem subsystem,
 			File pipeFile(command, "pw", errorString);
 			if (!errorString.empty())
 			{
-				_logger->loggedFatal(subsystem, level,
-						format2("unable to launch a pipe to the command '%s': %s", command, errorString));
+				_logger->loggedFatal2(subsystem, level,
+						format2, "unable to open the pipe '%s': %s", command, errorString);
 			}
 
 			pipeFile.put(commandInput);
 		}
 		catch (...)
 		{
-			_logger->loggedFatal(subsystem, level, id + " failed");
+			_logger->loggedFatal2(subsystem, level, format2, "%s failed", id);
 		}
 	}
 }

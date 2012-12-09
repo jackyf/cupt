@@ -32,14 +32,15 @@ class Context
 	bool __used_source;
 	bool __used_binary;
 	bool __used_installed;
+	bool __valid;
  public:
 	Context();
 
 	shared_ptr< Config > getConfig();
 	shared_ptr< const Cache > getCache(
-			bool useSource, bool useBinary, bool useInstalled,
-			const vector< string >& packageNameGlobsToReinstall = vector< string >());
+			bool useSource, bool useBinary, bool useInstalled);
 	void clearCache();
+	void invalidate();
 
 	vector< string > unparsed;
 	int argc; // argc, argv - for exec() in distUpgrade()
@@ -47,17 +48,16 @@ class Context
 };
 std::function< int (Context&) > getHandler(const string&);
 
-string parseCommonOptions(int argc, char** argv, shared_ptr< Config >, vector< string >& unparsed);
+string parseCommonOptions(int argc, char** argv, Config&, vector< string >& unparsed);
 bpo::variables_map parseOptions(const Context& context, bpo::options_description options,
 		vector< string >& arguments,
 		std::function< pair< string, string > (const string&) > extraParser =
 		[](const string&) -> pair< string, string > { return make_pair(string(), string()); } );
 
 void checkNoExtraArguments(const vector< string >& arguments);
+vector< string > convertLineToShellArguments(const string& line);
 
-void handleQuietOption(const shared_ptr< Config >& config);
-
-shared_ptr< Progress > getDownloadProgress(const shared_ptr< const Config >&);
+shared_ptr< Progress > getDownloadProgress(const Config&);
 
 #endif
 

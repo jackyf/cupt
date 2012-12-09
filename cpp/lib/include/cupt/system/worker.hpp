@@ -56,9 +56,10 @@ class CUPT_API Worker
 			Configure, ///< the existing package in intermediate state is configured (properly installed)
 			Deconfigure, ///< the existing package in intermediate state is removed
 			ProcessTriggers, ///< triggers are processed for the existing package
+			Reinstall, ///< remove and install the installed version
 			Count ///< element count
 		};
-		static const char* rawStrings[Count]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings
+		static const char* rawStrings[Count]; ///< @copydoc cache::BinaryVersion::RelationTypes::rawStrings
 	};
 	struct ActionsPreview
 	{
@@ -95,12 +96,10 @@ class CUPT_API Worker
 	 * Removed packages can be either simply removed or removed along with
 	 * their configuration files (purged).
 	 *
-	 * This method should be called only after @ref setDesiredState. If the new call
-	 * to @ref setDesiredState has been made, all the changes made previously
-	 * by calling this method are reset and should be repeated if needed.
-	 *
-	 * This method must not be called for packages which are not marked for
-	 * removal or purge.
+	 * Changes which are made by this method are not visible until you call
+	 * @ref setDesiredState. If some calls of this method were made after a
+	 * last call to @ref setDesiredState, you must call @ref setDesiredState
+	 * again.
 	 *
 	 * @param packageName binary package name to modify a flag value for
 	 * @param value the target state of the flag
@@ -157,7 +156,7 @@ class CUPT_API Worker
 	 *
 	 * @return array of pairs < package name, pointer to binary version >
 	 */
-	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
+	vector< pair< string, const BinaryVersion* > > getArchivesInfo() const;
 	/**
 	 * Deletes an archive file (it may be a symlink). Verifies that deleted file is
 	 * located under archives path directory.

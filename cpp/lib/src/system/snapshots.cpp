@@ -92,7 +92,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		if (std::find(snapshotNames.begin(), snapshotNames.end(), snapshotName)
 				== snapshotNames.end())
 		{
-			fatal2("unable to find snapshot named '%s'", snapshotName);
+			fatal2(__("unable to find a snapshot named '%s'"), snapshotName);
 		}
 	}
 
@@ -102,18 +102,13 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		auto formatPath = snapshotDirectory + "/format";
 		if (fs::fileExists(formatPath))
 		{
-			string openError;
-			File file(formatPath, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2("unable to open the format file '%s': %s", formatPath, openError);
-			}
+			RequiredFile file(formatPath, "r");
 			string content;
 			file.getFile(content);
 			chomp(content);
 			if (content != "1")
 			{
-				fatal2("unsupported snapshot format '%s'", content);
+				fatal2(__("unsupported snapshot format '%s'"), content);
 			}
 		}
 	}
@@ -122,12 +117,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 
 	{
 		auto snapshotPackagesPath = snapshotDirectory + '/' + system::Snapshots::installedPackageNamesFilename;
-		string openError;
-		File file(snapshotPackagesPath, "r", openError);
-		if (!openError.empty())
-		{
-			fatal2("unable to open the file '%s': %s", snapshotPackagesPath, openError);
-		}
+		RequiredFile file(snapshotPackagesPath, "r");
 
 		string packageName;
 		while (!file.getLine(packageName).eof())
@@ -135,7 +125,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			auto package = cache.getBinaryPackage(packageName);
 			if (!package)
 			{
-				fatal2("internal error: the package '%s' doesn't exist", packageName);
+				fatal2i("the package '%s' doesn't exist", packageName);
 			}
 
 			toBeInstalledPackageNames.insert(packageName);
@@ -154,7 +144,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 			}
 
 			// not found
-			fatal2("internal error: unable to find snapshot version for the package '%s'", packageName);
+			fatal2i("unable to find snapshot version for the package '%s'", packageName);
 
 			next_file_line:
 			;

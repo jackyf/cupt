@@ -52,9 +52,11 @@ class WorkerBase
 	shared_ptr< ActionsPreview > __actions_preview;
 
 	string _get_archives_directory() const;
-	static string _get_archive_basename(const shared_ptr< const BinaryVersion >&);
+	static string _get_archive_basename(const BinaryVersion*);
 	void _run_external_command(Logger::Subsystem, const string&,
 			const string& = "", const string& = "");
+
+	static Action::Type _download_dependent_action_types[4];
  public:
 	static const string partialDirectorySuffix;
 

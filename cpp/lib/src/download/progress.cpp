@@ -72,7 +72,7 @@ struct timespec getCurrentTimeSpec()
 	struct timespec currentTimeSpec;
 	if (clock_gettime(CLOCK_REALTIME, &currentTimeSpec) == -1)
 	{
-		warn2e("unable to get system clock time: clock_gettime failed");
+		warn2e(__("%s() failed"), "clock_gettime");
 		currentTimeSpec.tv_sec = time(NULL);
 		currentTimeSpec.tv_nsec = 0;
 	}
@@ -192,7 +192,7 @@ void Progress::progress(const vector< string >& params)
 	}
 	if (params.size() < 2)
 	{
-		fatal2("download progress: received progress message with less than 2 parameters");
+		fatal2(__("download progress: received a progress message with less than 2 total parameters"));
 	}
 	const string& uri = params[0];
 	const string& action = params[1];
@@ -205,7 +205,7 @@ void Progress::progress(const vector< string >& params)
 	{
 		if (params.size() > 3)
 		{
-			fatal2("download progress: received progress submessage 'start' with more than 1 parameters");
+			fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "start", 1);
 		}
 		// new download
 		DownloadRecord& record = __impl->nowDownloading[uri];
@@ -230,14 +230,14 @@ void Progress::progress(const vector< string >& params)
 		auto recordIt = __impl->nowDownloading.find(uri);
 		if (recordIt == __impl->nowDownloading.end())
 		{
-			fatal2("download progress: received info for not started download, uri '%s'", uri);
+			fatal2(__("download progress: received an info for a not started download, URI '%s'"), uri);
 		}
 		DownloadRecord& record = recordIt->second;
 		if (action == "downloading")
 		{
 			if (params.size() != 4)
 			{
-				fatal2("download progress: received submessage 'downloading' with more than 2 parameters");
+				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "downloading", 2);
 			}
 			record.downloadedSize = lexical_cast< size_t >(params[2]);
 			auto bytesInFetchedPiece = lexical_cast< size_t >(params[3]);
@@ -249,7 +249,7 @@ void Progress::progress(const vector< string >& params)
 		{
 			if (params.size() != 3)
 			{
-				fatal2("download progress: received submessage 'expected-size' with more than 1 parameter");
+				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "expected-size", 1);
 			}
 			record.size = lexical_cast< size_t >(params[2]);
 			updateHook(true);
@@ -258,7 +258,7 @@ void Progress::progress(const vector< string >& params)
 		{
 			if (params.size() != 2)
 			{
-				fatal2("download progress: received submessage 'pre-done' with more than 0 parameters");
+				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "pre-done", 0);
 			}
 			record.beingPostprocessed = true;
 			updateHook(true);
@@ -267,7 +267,7 @@ void Progress::progress(const vector< string >& params)
 		{
 			if (params.size() != 3)
 			{
-				fatal2("download progress: received submessage 'done' with more than 1 parameter");
+				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "done", 1);
 			}
 			const string& result = params[2];
 			if (result.empty()) // only if download succeeded
@@ -281,7 +281,7 @@ void Progress::progress(const vector< string >& params)
 		}
 		else
 		{
-			fatal2("download progress: wrong action '%s' received", action);
+			fatal2(__("download progress: received the invalid action '%s'"), action);
 		}
 	}
 }

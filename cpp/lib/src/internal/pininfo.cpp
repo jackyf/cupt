@@ -39,14 +39,13 @@ using cache::Version;
 using cache::BinaryVersion;
 using cache::ReleaseInfo;
 
-PinInfo::PinInfo(const shared_ptr< const Config >& config,
-		const shared_ptr< const system::State >& systemState)
+PinInfo::PinInfo(const shared_ptr< const Config >& config, const system::State* systemState)
 	: config(config), systemState(systemState)
 {
 	init();
 }
 
-ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) const
+ssize_t PinInfo::getOriginalAptPin(const Version* version) const
 {
 	static const ssize_t defaultReleasePriority = 990;
 	static const ssize_t notAutomaticReleasePriority = 1;
@@ -95,8 +94,7 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 	return result;
 }
 
-ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
-		const string& installedVersionString) const
+ssize_t PinInfo::getPin(const Version* version, const string& installedVersionString) const
 {
 	auto result = getOriginalAptPin(version);
 
@@ -106,7 +104,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 		auto installedInfo = systemState->getInstalledInfo(version->packageName);
 		if (!installedInfo)
 		{
-			fatal2("internal error: missing installed info for package '%s'", version->packageName);
+			fatal2i("missing installed info for package '%s'", version->packageName);
 		}
 
 		if (compareVersionStrings(installedVersionString, version->versionString) > 0)
@@ -114,10 +112,10 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 			result += config->getInteger("cupt::cache::pin::addendums::downgrade");
 		}
 
-		auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
+		auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 		if (!binaryVersion)
 		{
-			fatal2("internal error: version is not binary");
+			fatal2i("version is not binary");
 		}
 		if (installedInfo->want == system::State::InstalledRecord::Want::Hold && binaryVersion->isInstalled())
 		{
@@ -159,156 +157,160 @@ void PinInfo::loadData(const string& path)
 	// Pin: a=experimental
 	// Pin-Priority: 1100
 
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2("unable to open file '%s': %s", path, openError);
-	}
+	RequiredFile file(path, "r");
+
+	smatch m;
 
 	string line;
-	smatch m;
 	size_t lineNumber = 0;
-	while (!file.getLine(line).eof())
+	auto getNextLine = [&file, &line, &lineNumber]() -> File&
 	{
+		file.getLine(line);
 		++lineNumber;
-
-		// skip all empty lines and lines with comments
-		static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
-		if (regex_match(line, m, commentRegex))
+		return file;
+	};
+	try
+	{
+		while (!getNextLine().eof())
 		{
-			continue;
-		}
-
-		// skip special explanation lines, they are just comments
-		static const sregex explanationRegex = sregex::compile("Explanation:");
-		if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
-		{
-			continue;
-		}
-
-		// ok, real triad should be here
-		PinEntry pinEntry;
-
-		{ // processing first line
-			PinEntry::Condition condition;
-			static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
-			if (!regex_match(line, m, packageOrSourceRegex))
+			// skip all empty lines and lines with comments
+			static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
+			if (regex_match(line, m, commentRegex))
 			{
-				fatal2("invalid package/source line at file '%s', line %u", path, lineNumber);
+				continue;
 			}
 
-			condition.type = (string(m[1]) == "Package" ?
-					PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
-
-			vector< string > parts = split(' ', m[2]);
-			FORIT(it, parts)
+			// skip special explanation lines, they are just comments
+			static const sregex explanationRegex = sregex::compile("Explanation:");
+			if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
 			{
-				*it = pinStringToRegexString(*it);
-			}
-			condition.value = stringToRegex(join("|", parts));
-			pinEntry.conditions.push_back(std::move(condition));
-		}
-
-		{ // processing second line
-			file.getLine(line);
-			if (file.eof())
-			{
-				fatal2("no pin line at file '%s' line %u", path, lineNumber);
+				continue;
 			}
 
-			static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
-			if (!regex_match(line, m, pinRegex))
-			{
-				fatal2("invalid pin line at file '%s' line %u", path, lineNumber);
+			// ok, real triad should be here
+			PinEntry pinEntry;
+
+			{ // processing first line
+				PinEntry::Condition condition;
+				static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
+				if (!regex_match(line, m, packageOrSourceRegex))
+				{
+					fatal2(__("invalid package/source line"));
+				}
+
+				condition.type = (string(m[1]) == "Package" ?
+						PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
+
+				vector< string > parts = split(' ', m[2]);
+				FORIT(it, parts)
+				{
+					*it = pinStringToRegexString(*it);
+				}
+				condition.value = stringToRegex(join("|", parts));
+				pinEntry.conditions.push_back(std::move(condition));
 			}
 
-			string pinType = m[1];
-			string pinExpression = m[2];
-			if (pinType == "release")
-			{
-				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
-				auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
+			{ // processing second line
+				getNextLine();
+				if (file.eof())
+				{
+					fatal2(__("no pin line"));
+				}
 
-				FORIT(subExpressionIt, subExpressions)
+				static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
+				if (!regex_match(line, m, pinRegex))
+				{
+					fatal2(__("invalid pin line"));
+				}
+
+				string pinType = m[1];
+				string pinExpression = m[2];
+				if (pinType == "release")
+				{
+					static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
+					auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
+
+					FORIT(subExpressionIt, subExpressions)
+					{
+						PinEntry::Condition condition;
+
+						static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
+						if (!regex_match(*subExpressionIt, m, subExpressionRegex))
+						{
+							fatal2(__("invalid condition '%s'"), *subExpressionIt);
+						}
+
+						char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
+						switch (subExpressionType)
+						{
+							case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
+							case 'v': condition.type = PinEntry::Condition::ReleaseVersion; break;
+							case 'c': condition.type = PinEntry::Condition::ReleaseComponent; break;
+							case 'n': condition.type = PinEntry::Condition::ReleaseCodename; break;
+							case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
+							case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
+							default:
+								fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"),
+										subExpressionType);
+						}
+						condition.value = stringToRegex(pinStringToRegexString(m[2]));
+						pinEntry.conditions.push_back(std::move(condition));
+					}
+				}
+				else if (pinType == "version")
 				{
 					PinEntry::Condition condition;
-
-					static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
-					if (!regex_match(*subExpressionIt, m, subExpressionRegex))
-					{
-						fatal2("invalid condition '%s' in release expression at file '%s' line %u",
-								(*subExpressionIt), path, lineNumber);
-					}
-
-					char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
-					switch (subExpressionType)
-					{
-						case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
-						case 'v': condition.type = PinEntry::Condition::ReleaseVersion; break;
-						case 'c': condition.type = PinEntry::Condition::ReleaseComponent; break;
-						case 'n': condition.type = PinEntry::Condition::ReleaseCodename; break;
-						case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
-						case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
-						default:
-							fatal2("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l') "
-									"in release expression at file '%s' line %u",
-									subExpressionType, path, lineNumber);
-					}
-					condition.value = stringToRegex(pinStringToRegexString(m[2]));
-					pinEntry.conditions.push_back(std::move(condition));
+					condition.type = PinEntry::Condition::Version;
+					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+					pinEntry.conditions.push_back(condition);
 				}
-			}
-			else if (pinType == "version")
-			{
-				PinEntry::Condition condition;
-				condition.type = PinEntry::Condition::Version;
-				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-				pinEntry.conditions.push_back(condition);
-			}
-			else if (pinType == "origin")
-			{
-				PinEntry::Condition condition;
-				condition.type = PinEntry::Condition::HostName;
-				if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+				else if (pinType == "origin")
 				{
-					pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+					PinEntry::Condition condition;
+					condition.type = PinEntry::Condition::HostName;
+					if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+					{
+						pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+					}
+					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+					pinEntry.conditions.push_back(condition);
 				}
-				condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-				pinEntry.conditions.push_back(condition);
+				else
+				{
+					fatal2(__("invalid pin type '%s' (should be one of 'release', 'version', 'origin')"), pinType);
+				}
 			}
-			else
-			{
-				fatal2("invalid pin type '%s' (should be one of 'release', 'version', 'origin') "
-						"at file '%s' line %u", pinType, path, lineNumber);
+
+			{ // processing third line
+				getNextLine();
+				if (file.eof())
+				{
+					fatal2(__("no priority line"));
+				}
+
+				static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
+				if (!regex_match(line, m, priorityRegex))
+				{
+					fatal2(__("invalid priority line"));
+				}
+
+				try
+				{
+					pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
+				}
+				catch (boost::bad_lexical_cast&)
+				{
+					fatal2(__("invalid integer '%s'"), string(m[1]));
+				}
 			}
+
+			// adding to storage
+			settings.push_back(std::move(pinEntry));
 		}
-
-		{ // processing third line
-			file.getLine(line);
-			if (file.eof())
-			{
-				fatal2("no priority line at file '%s' line %u", path, lineNumber);
-			}
-
-			static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
-			if (!regex_match(line, m, priorityRegex))
-			{
-				fatal2("invalid priority line at file '%s' line %u", path, lineNumber);
-			}
-
-			try
-			{
-				pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
-			}
-			catch (boost::bad_lexical_cast&)
-			{
-				fatal2("invalid integer '%s'", string(m[1]));
-			}
-		}
-
-		// adding to storage
-		settings.push_back(std::move(pinEntry));
+	}
+	catch (Exception&)
+	{
+		fatal2(__("(at the file '%s', line %u)"), path, lineNumber);
 	}
 }
 
@@ -332,7 +334,7 @@ string getHostNameInAptPreferencesStyle(const string& baseUri)
 	}
 }
 
-void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version, ssize_t& priority) const
+void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) const
 {
 	smatch m;
 
@@ -352,7 +354,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
-						auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
+						auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 						if (!binaryVersion)
 						{
 							matched = false;
@@ -369,7 +371,7 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 					matched = false; \
 					FORIT(sourceIt, version->sources) \
 					{ \
-						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
+						const ReleaseInfo* release = sourceIt->release; \
 						if (regex_search(expression, m, *regex)) \
 						{ \
 							matched = true; \
@@ -452,7 +454,7 @@ void PinInfo::init()
 	}
 	catch (Exception&)
 	{
-		fatal2("error while parsing preferences");
+		fatal2(__("unable to parse preferences"));
 	}
 }
 

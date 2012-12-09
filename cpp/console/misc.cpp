@@ -23,6 +23,7 @@ using std::map;
 
 #include <common/regex.hpp>
 
+#include <cupt/file.hpp>
 #include <cupt/download/progresses/console.hpp>
 
 #include "common.hpp"
@@ -44,7 +45,7 @@ void parseReleaseLimit(Config& config, const string& limitName, const string& in
 	auto limitOptionName = string("cupt::cache::limit-releases::by-") + limitName;
 	if (!included.empty() && !excluded.empty())
 	{
-		fatal2("options '--include-%ss' and '--exclude-%ss' cannot be specified together",
+		fatal2(__("options '--include-%ss' and '--exclude-%ss' cannot be specified together"),
 				limitName, limitName);
 	}
 	else if (!included.empty())
@@ -66,8 +67,9 @@ void parseReleaseLimits(Config& config, const string& includedArchives, const st
 	parseReleaseLimit(config, "codename", includedCodenames, excludedCodenames);
 }
 
+void handleQuietOption(const Config&);
 
-string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, vector< string >& unparsed)
+string parseCommonOptions(int argc, char** argv, Config& config, vector< string >& unparsed)
 {
 	if (argc == 3)
 	{
@@ -115,13 +117,11 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		bpo::notify(variablesMap);
 
 		{ // do not pass 'command' further
-			FORIT(optionIt, parsed.options)
+			auto commandOptionIt = std::find_if(parsed.options.begin(), parsed.options.end(),
+					[](const bpo::option& o) { return o.string_key == "command"; });
+			if (commandOptionIt != parsed.options.end())
 			{
-				if (optionIt->string_key == "command")
-				{
-					parsed.options.erase(optionIt);
-					break;
-				}
+				parsed.options.erase(commandOptionIt);
 			}
 		}
 		unparsed = bpo::collect_unrecognized(parsed.options, bpo::include_positional);
@@ -129,49 +129,48 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 		{ // processing
 			if (command.empty())
 			{
-				fatal2("no command specified");
+				fatal2(__("no command specified"));
 			}
 			if (variablesMap.count("important"))
 			{
-				config->setScalar("apt::cache::important", "yes");
+				config.setScalar("apt::cache::important", "yes");
 			}
 			if (variablesMap.count("recurse"))
 			{
-				config->setScalar("apt::cache::recursedepends", "yes");
+				config.setScalar("apt::cache::recursedepends", "yes");
 			}
 			if (!targetRelease.empty())
 			{
-				config->setScalar("apt::default-release", targetRelease);
+				config.setScalar("apt::default-release", targetRelease);
 			}
 			if (variablesMap.count("all-versions"))
 			{
-				config->setScalar("apt::cache::allversions", "yes");
+				config.setScalar("apt::cache::allversions", "yes");
 			}
 			if (variablesMap.count("no-all-versions"))
 			{
-				config->setScalar("apt::cache::allversions", "no");
+				config.setScalar("apt::cache::allversions", "no");
 			}
 			if (variablesMap.count("simulate"))
 			{
-				config->setScalar("cupt::worker::simulate", "yes");
+				config.setScalar("cupt::worker::simulate", "yes");
 			}
 			if (variablesMap.count("quiet"))
 			{
-				config->setScalar("quiet", "yes");
+				config.setScalar("quiet", "yes");
 				handleQuietOption(config);
 			}
-			parseReleaseLimits(*config, includedArchives, excludedArchives,
+			parseReleaseLimits(config, includedArchives, excludedArchives,
 					includedCodenames, excludedCodenames);
 		}
 
 		smatch m;
-		FORIT(directOptionIt, directOptions)
+		for (const string& directOption: directOptions)
 		{
 			static const sregex optionRegex = sregex::compile("(.*?)=(.*)");
-			const string& directOption = *directOptionIt;
 			if (!regex_match(directOption, m, optionRegex))
 			{
-				fatal2("invalid option syntax in '%s' (right is '<option>=<value>')", directOption);
+				fatal2(__("invalid option syntax in '%s' (right is '<option>=<value>')"), directOption);
 			}
 			string key = m[1];
 			string value = m[2];
@@ -180,22 +179,22 @@ string parseCommonOptions(int argc, char** argv, shared_ptr< Config > config, ve
 			if (regex_match(key, m, listOptionNameRegex))
 			{
 				// this is list option
-				config->setList(m[1], value);
+				config.setList(m[1], value);
 			}
 			else
 			{
 				// regular option
-				config->setScalar(key, value);
+				config.setScalar(key, value);
 			}
 		}
 	}
 	catch (const bpo::error& e)
 	{
-		fatal2("failed to parse command-line options: %s", e.what());
+		fatal2(__("failed to parse command-line options: %s"), e.what());
 	}
 	catch (Exception&)
 	{
-		fatal2("error while processing command-line options");
+		fatal2(__("error while processing command-line options"));
 	}
 	return command;
 }
@@ -224,11 +223,11 @@ bpo::variables_map parseOptions(const Context& context, bpo::options_description
 	}
 	catch (const bpo::unknown_option& e)
 	{
-		fatal2("unknown option '%s'", e.get_option_name());
+		fatal2(__("unknown option '%s'"), e.get_option_name());
 	}
 	catch (const bpo::error& e)
 	{
-		fatal2("failed to parse options: %s", e.what());
+		fatal2(__("failed to parse command-line options: %s"), e.what());
 	}
 	bpo::notify(variablesMap);
 
@@ -254,14 +253,15 @@ std::function< int (Context&) > getHandler(const string& command)
 		{ "safe-upgrade", [](Context& c) -> int { return managePackages(c, ManagePackages::SafeUpgrade); } },
 		{ "full-upgrade", [](Context& c) -> int { return managePackages(c, ManagePackages::FullUpgrade); } },
 		{ "reinstall", [](Context& c) -> int { return managePackages(c, ManagePackages::Reinstall); } },
+		{ "iii", [](Context& c) -> int { return managePackages(c, ManagePackages::InstallIfInstalled); } },
 		{ "satisfy", [](Context& c) -> int { return managePackages(c, ManagePackages::Satisfy); } },
 		{ "build-dep", [](Context& c) -> int { return managePackages(c, ManagePackages::BuildDepends); } },
 		{ "dist-upgrade", &distUpgrade },
 		{ "update", &updateReleaseAndIndexData },
 		{ "shell", &shell },
 		{ "source", &downloadSourcePackage },
-		{ "markauto", [](Context& c) -> int { return changeAutoInstalledState(c, true); } },
-		{ "unmarkauto", [](Context& c) -> int { return changeAutoInstalledState(c, false); } },
+		{ "markauto", [](Context& c) -> int { return managePackages(c, ManagePackages::Markauto); } },
+		{ "unmarkauto", [](Context& c) -> int { return managePackages(c, ManagePackages::Unmarkauto); } },
 		{ "showauto", &showAutoInstalled },
 		{ "clean", [](Context& c) -> int { return cleanArchives(c, false); } },
 		{ "autoclean", [](Context& c) -> int { return cleanArchives(c, true); } },
@@ -274,7 +274,7 @@ std::function< int (Context&) > getHandler(const string& command)
 	auto it = handlerMap.find(command);
 	if (it == handlerMap.end())
 	{
-		fatal2("unrecognized command '%s'", command);
+		fatal2(__("unrecognized command '%s'"), command);
 	}
 	return it->second;
 }
@@ -284,24 +284,48 @@ void checkNoExtraArguments(const vector< string >& arguments)
 	if (!arguments.empty())
 	{
 		auto argumentsString = join(" ", arguments);
-		warn2("extra arguments '%s' are not processed", argumentsString);
+		warn2(__("extra arguments '%s' are not processed"), argumentsString);
 	}
 }
 
-void handleQuietOption(const shared_ptr< Config >& config)
+vector< string > convertLineToShellArguments(const string& line)
 {
-	if (config->getBool("quiet"))
+	vector< string > arguments;
+
+	// kind of hack to get arguments as it was real shell
+	// if you know easier way, let me know :)
+	string errorString;
+	// 'A' - to not let echo interpret $word as an option
+	string shellCommand = format2("(for word in %s; do echo A$word; done)", line);
+	File pipe(shellCommand, "pr", errorString);
+	if (!errorString.empty())
+	{
+		fatal2(__("unable to open an internal shell pipe: %s"), errorString);
+	}
+
+	string argument;
+	while (!pipe.getLine(argument).eof())
+	{
+		arguments.push_back(argument.substr(1));
+	}
+
+	return arguments;
+}
+
+void handleQuietOption(const Config& config)
+{
+	if (config.getBool("quiet"))
 	{
 		if (!freopen("/dev/null", "w", stdout))
 		{
-			fatal2e("unable to redirect standard output to '/dev/null'");
+			fatal2e(__("unable to redirect standard output to '/dev/null'"));
 		}
 	}
 }
 
-shared_ptr< Progress > getDownloadProgress(const shared_ptr< const Config >& config)
+shared_ptr< Progress > getDownloadProgress(const Config& config)
 {
-	return shared_ptr< Progress >(config->getBool("quiet") ? new Progress : new ConsoleProgress);
+	return shared_ptr< Progress >(config.getBool("quiet") ? new Progress : new ConsoleProgress);
 }
 
 shared_ptr< Config > Context::getConfig()
@@ -314,23 +338,23 @@ shared_ptr< Config > Context::getConfig()
 		}
 		catch (Exception&)
 		{
-			fatal2("error while loading config");
+			fatal2(__("error while loading the configuration"));
 		}
 	}
 	return __config;
 }
 
 Context::Context()
-	: __used_source(false), __used_binary(false), __used_installed(false)
+	: __used_source(false), __used_binary(false), __used_installed(false),
+	__valid(true)
 {}
 
 shared_ptr< const Cache > Context::getCache(
-		bool useSource, bool useBinary, bool useInstalled,
-		const vector< string >& packageNameGlobsToReinstall)
+		bool useSource, bool useBinary, bool useInstalled)
 {
 	bool needsRebuild =
 			!__cache ||
-			!packageNameGlobsToReinstall.empty() ||
+			!__valid ||
 			(useSource && !__used_source) ||
 			((useBinary != __used_binary || useInstalled != __used_installed) && (useBinary || useInstalled));
 
@@ -338,17 +362,18 @@ shared_ptr< const Cache > Context::getCache(
 	{
 		try
 		{
-			__cache.reset(new Cache(__config, useSource, useBinary, useInstalled, packageNameGlobsToReinstall));
+			__cache.reset(new Cache(__config, useSource, useBinary, useInstalled));
 		}
 		catch (Exception&)
 		{
-			fatal2("error while creating package cache");
+			fatal2(__("error while creating the package cache"));
 		}
 	}
 
 	__used_source = useSource;
 	__used_binary = useBinary;
 	__used_installed = useInstalled;
+	__valid = true;
 
 	return __cache;
 }
@@ -357,4 +382,10 @@ void Context::clearCache()
 {
 	__cache.reset();
 }
+
+void Context::invalidate()
+{
+	__valid = false;
+}
+
 

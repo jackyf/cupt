@@ -26,13 +26,14 @@ namespace fs {
 
 string filename(const string& path);
 string dirname(const string& path);
-string move(const string& oldPath, const string& newPath);
+bool move(const string& oldPath, const string& newPath);
 vector< string > glob(const string& param);
 // this version don't follow symbolic links
 vector< string > lglob(const string& directoryPath, const string& shellPattern);
 bool fileExists(const string& path);
 bool dirExists(const string& path);
 size_t fileSize(const string& path);
+void mkpath(const string& path);
 
 }
 }

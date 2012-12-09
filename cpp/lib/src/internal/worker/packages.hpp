@@ -36,7 +36,7 @@ using std::multimap;
 struct InnerAction
 {
 	enum Type { Remove, Unpack, Configure } type;
-	shared_ptr< const BinaryVersion > version;
+	const BinaryVersion* version;
 	bool fake;
 	mutable int16_t priority;
 	mutable const InnerAction* linkedFrom;
@@ -87,7 +87,9 @@ struct Changeset
 class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
+	map< string, unique_ptr< BinaryVersion > > __fake_versions_for_purge;
 
+	const BinaryVersion* __get_fake_version_for_purge(const string&);
 	void __fill_actions(GraphAndAttributes&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
@@ -103,6 +105,9 @@ class PackagesWorker: public virtual WorkerBase
 			const shared_ptr< download::Progress >&);
 	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
 	void __change_auto_status(const InnerActionGroup&);
+	void __do_independent_auto_status_changes();
+	string __get_dpkg_action_command(const string&, const string&, const string&,
+			InnerAction::Type, const string&, const InnerActionGroup&, bool);
  public:
 	PackagesWorker();
 

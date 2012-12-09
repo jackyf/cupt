@@ -22,18 +22,19 @@
 #include <internal/tagparser.hpp>
 #include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
+#include <internal/parse.hpp>
 
 namespace cupt {
 namespace cache {
 
-shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::InitializationParameters& initParams)
+BinaryVersion* BinaryVersion::parseFromFile(const Version::InitializationParameters& initParams)
 {
 	auto v = new BinaryVersion;
 
 	Source source;
 
 	v->essential = false;
-	v->packageName = initParams.packageName;
+	v->packageName = *initParams.packageNamePtr;
 	source.release = initParams.releaseInfo;
 
 	v->installedSize = 0;
@@ -44,7 +45,7 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 		// go to starting byte of the entry
 		initParams.file->seek(initParams.offset);
 
-		internal::TagParser parser(initParams.file.get());
+		internal::TagParser parser(initParams.file);
 		internal::TagParser::StringRange tagName, tagValue;
 
 		while (parser.parseNextLine(tagName, tagValue))
@@ -115,7 +116,8 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 					{
 						v->provides.push_back(string(begin, end));
 					};
-					internal::processSpaceCommaSpaceDelimitedStrings(tagValue.first, tagValue.second, callback);
+					internal::parse::processSpaceCharSpaceDelimitedStrings(
+							tagValue.first, tagValue.second, ',', callback);
 				})
 			}
 
@@ -125,8 +127,9 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 				TAG(Maintainer, v->maintainer = tagValue;)
 				TAG(Description,
 				{
-					v->shortDescription = tagValue;
-					parser.parseAdditionalLines(v->longDescription);
+					v->description = tagValue;
+					v->description.append("\n");
+					parser.parseAdditionalLines(v->description);
 				};)
 				TAG(Tag, v->tags = tagValue;)
 				PARSE_OTHERS
@@ -146,21 +149,21 @@ shared_ptr< BinaryVersion > BinaryVersion::parseFromFile(const Version::Initiali
 
 	if (v->versionString.empty())
 	{
-		fatal2("version string isn't defined");
+		fatal2(__("version string isn't defined"));
 	}
 	if (v->architecture.empty())
 	{
-		warn2("package %s, version %s: architecture isn't defined, setting it to 'all'",
+		warn2(__("binary package %s, version %s: architecture isn't defined, setting it to 'all'"),
 				v->packageName, v->versionString);
 		v->architecture = "all";
 	}
 	v->sources.push_back(source);
 	if (!v->isInstalled() && v->file.hashSums.empty())
 	{
-		fatal2("no hash sums specified");
+		fatal2(__("no hash sums specified"));
 	}
 
-	return shared_ptr< BinaryVersion >(v);
+	return v;
 }
 
 bool BinaryVersion::isInstalled() const
@@ -168,19 +171,19 @@ bool BinaryVersion::isInstalled() const
 	return sources.empty() ? false : sources[0].release->baseUri.empty();
 }
 
-bool BinaryVersion::areHashesEqual(const shared_ptr< const Version >& other) const
+bool BinaryVersion::areHashesEqual(const Version* other) const
 {
-	shared_ptr< const BinaryVersion > o = dynamic_pointer_cast< const BinaryVersion >(other);
+	auto o = dynamic_cast< const BinaryVersion* >(other);
 	if (!o)
 	{
-		fatal2("internal error: areHashesEqual: non-binary version parameter");
+		fatal2i("areHashesEqual: non-binary version parameter");
 	}
 	return file.hashSums.match(o->file.hashSums);
 }
 
 const string BinaryVersion::RelationTypes::strings[] = {
-	__("Pre-Depends"), __("Depends"), __("Recommends"), __("Suggests"),
-	__("Enhances"), __("Conflicts"), __("Breaks"), __("Replaces")
+	N__("Pre-Depends"), N__("Depends"), N__("Recommends"), N__("Suggests"),
+	N__("Enhances"), N__("Conflicts"), N__("Breaks"), N__("Replaces")
 };
 const char* BinaryVersion::RelationTypes::rawStrings[] = {
 	"pre-depends", "depends", "recommends", "suggests",

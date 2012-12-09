@@ -51,13 +51,8 @@ Logger::Logger(const Config& config)
 
 	if (!__simulating)
 	{
-		string openError;
 		auto path = config.getPath("cupt::directory::log");
-		__file = new File(path, "a", openError);
-		if (!openError.empty())
-		{
-			fatal2("unable to open the log file '%s': %s", path, openError);
-		}
+		__file = new RequiredFile(path, "a");
 	}
 
 	log(Subsystem::Session, 1, "started");
@@ -83,11 +78,11 @@ string Logger::__get_log_string(Subsystem subsystem, Level level, const string& 
 			": " + indent + message;
 }
 
-void Logger::log(Subsystem subsystem, Level level, const string& message)
+void Logger::log(Subsystem subsystem, Level level, const string& message, bool force)
 {
 	if (level == 0)
 	{
-		fatal2("internal error: logger: log: level should be >= 1");
+		fatal2i("logger: log: level should be >= 1");
 	}
 
 	if (!__enabled)
@@ -102,7 +97,7 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 
 	if (!__simulating)
 	{
-		if (level <= __levels[(int)subsystem])
+		if (force || (level <= __levels[(int)subsystem]))
 		{
 			auto logData = __get_log_string(subsystem, level, message) + "\n";
 			// stdio-buffered fails when there are several writing processes
@@ -111,11 +106,6 @@ void Logger::log(Subsystem subsystem, Level level, const string& message)
 	}
 }
 
-void Logger::loggedFatal(Subsystem subsystem, Level level, const string& message)
-{
-	this->log(subsystem, level, string("error: ") + message);
-	fatal2("%s", message);
-}
 
 }
 }

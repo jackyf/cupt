@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,27 +15,48 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_NATIVERESOLVER_AUTOREMOVAL
-#define CUPT_INTERNAL_NATIVERESOLVER_AUTOREMOVAL
 
-#include <cupt/fwd.hpp>
+#include <cupt/cache/package.hpp>
+#include <cupt/cache/version.hpp>
+#include <cupt/cache/binaryversion.hpp>
+#include <cupt/cache/sourceversion.hpp>
 
 namespace cupt {
 namespace internal {
 
-class AutoRemovalImpl;
+template< typename VersionType >
+BasePackageIterator< VersionType >::BasePackageIterator(UnderlyingIterator ui)
+	: __ui(ui)
+{}
 
-class AutoRemoval
+template< typename VersionType >
+auto BasePackageIterator< VersionType >::operator++() -> Self&
 {
-	AutoRemovalImpl* __impl;
- public:
-	AutoRemoval(const Config&);
-	~AutoRemoval();
-	bool isAllowed(const Cache&, const string& packageName) const;
-};
+	++__ui;
+	return *this;
+}
+
+template< typename VersionType >
+auto BasePackageIterator< VersionType >::operator*() const -> const VersionType*
+{
+	return static_cast< const VersionType* >(__ui->get());
+}
+
+template< typename VersionType >
+auto BasePackageIterator< VersionType >::operator==(const Self& other) const -> bool
+{
+	return __ui == other.__ui;
+}
+
+template< typename VersionType >
+auto BasePackageIterator< VersionType >::operator!=(const Self& other) const -> bool
+{
+	return !(*this == other);
+}
+
+template class BasePackageIterator< cache::Version >;
+template class BasePackageIterator< cache::BinaryVersion >;
+template class BasePackageIterator< cache::SourceVersion >;
 
 }
 }
-
-#endif
-

@@ -39,7 +39,7 @@ namespace dependencygraph {
 
 struct InitialPackageEntry
 {
-	shared_ptr< const BinaryVersion > version;
+	const BinaryVersion* version;
 	bool sticked;
 	bool modified;
 
@@ -55,19 +55,26 @@ struct BasicVertex;
 typedef BasicVertex Element;
 struct BasicVertex
 {
+ private:
+	static uint32_t __next_id;
+ public:
+	const uint32_t id;
 	virtual string toString() const = 0;
 	virtual size_t getTypePriority() const;
 	virtual shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	virtual bool isAnti() const; // TODO: remove?
 	virtual const forward_list< const Element* >* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
+
+	BasicVertex();
+	virtual ~BasicVertex();
 };
 struct VersionVertex: public BasicVertex
 {
  private:
 	const map< string, forward_list< const Element* > >::iterator __related_element_ptrs_it;
  public:
-	shared_ptr< const BinaryVersion > version;
+	const BinaryVersion* version;
 
 	VersionVertex(const map< string, forward_list< const Element* > >::iterator&);
 	string toString() const;
@@ -105,8 +112,8 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
-	vector< pair< const Element*, PackageEntry > > fill(
-			const map< string, shared_ptr< const BinaryVersion > >&,
+	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
+			const map< string, const BinaryVersion* >&,
 			const map< string, InitialPackageEntry >&);
 
 	const Element* getCorrespondingEmptyElement(const Element*, bool);

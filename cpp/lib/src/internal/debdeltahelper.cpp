@@ -43,14 +43,14 @@ DebdeltaHelper::DebdeltaHelper()
 			}
 			catch (Exception& e)
 			{
-				warn2("failed to parse debdelta configuration file '%s'", sourcesPath);
+				warn2(__("failed to parse the debdelta configuration file '%s'"), sourcesPath);
 			}
 		}
 	}
 }
 
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
-		const shared_ptr< const cache::BinaryVersion > version,
+		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
 {
 	vector< DownloadRecord > result;
@@ -59,8 +59,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 	auto package = cache->getBinaryPackage(packageName);
 	if (!package)
 	{
-		warn2("debdeltahelper: received version without corresponding binary package in the cache: "
-				"package name '%s', version '%s'", packageName, version->versionString);
+		warn2(__("debdeltahelper: received a version without a corresponding binary package in the cache: "
+				"package '%s', version '%s'"), packageName, version->versionString);
 		return result;
 	}
 	auto installedVersion = package->getInstalledVersion();
@@ -113,7 +113,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			bool found = false;
 			FORIT(sourceIt, version->sources)
 			{
-				const shared_ptr< const ReleaseInfo >& releaseInfo = sourceIt->release;
+				const ReleaseInfo* releaseInfo = sourceIt->release;
 				string releaseValue;
 				if (key == "Origin")
 				{
@@ -172,13 +172,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 void DebdeltaHelper::__parse_sources(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2("unable to open file '%s'", path);
-	}
-
+	RequiredFile file(path, "r");
 
 	/* we are parsing entries like that:
 	 [main debian sources]
@@ -210,7 +204,7 @@ void DebdeltaHelper::__parse_sources(const string& path)
 			static const sregex keyValueRegex = sregex::compile("(.*?)=(.*)", regex_constants::optimize);
 			if (!regex_match(line, m, keyValueRegex))
 			{
-				fatal2("unable to parse key-value pair '%s' in file '%s'", line, path);
+				fatal2(__("unable to parse the key-value pair '%s' in the file '%s'"), line, path);
 			}
 			string key = m[1];
 			string value = m[2];

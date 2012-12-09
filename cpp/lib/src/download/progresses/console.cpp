@@ -85,11 +85,11 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	bool statusIsModified = false;
 	if (oldStatus == -1)
 	{
-		warn2e("unable to get standard error stream status flags: fcntl failed");
+		warn2e(__("%s() failed"), "fcntl");
 	}
 	else if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus | O_NONBLOCK) == -1)
 	{
-		warn2e("unable to make standard error stream non-blocking: fcntl failed");
+		warn2e(__("%s() failed"), "fcntl");
 	}
 	else
 	{
@@ -102,14 +102,14 @@ void ConsoleProgressImpl::nonBlockingPrint(const string& s)
 	{
 		if (fcntl(STDERR_FILENO, F_SETFL, (long)oldStatus) == -1)
 		{
-			warn2e("unable to make standard error stream blocking again: fcntl failed");
+			warn2e(__("%s() failed"), "fcntl");
 		}
 	}
 }
 
 void ConsoleProgressImpl::termClean()
 {
-	nonBlockingPrint(string(getTerminalWidth(), ' ') + "\r");
+	nonBlockingPrint(string("\r") + string(getTerminalWidth(), ' ') + "\r");
 }
 
 void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendage)
@@ -125,7 +125,6 @@ void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendag
 		outputString += s + string(allowedWidth - s.size(), ' ');
 	}
 	outputString += rightAppendage;
-	outputString += "\r";
 	nonBlockingPrint(outputString);
 }
 
@@ -137,8 +136,7 @@ void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string
 		sizeSuffix = string(" [") + humanReadableSizeString(record.size) + "]";
 	}
 	termClean();
-	nonBlockingPrint(__("Get") + ":" + lexical_cast< string >(record.number) + " " +
-			longAlias + sizeSuffix + "\n");
+	nonBlockingPrint(format2("Get:%zu %s%s\n", record.number, longAlias, sizeSuffix));
 }
 
 void ConsoleProgressImpl::finishedDownload(const string& uri,
@@ -148,8 +146,7 @@ void ConsoleProgressImpl::finishedDownload(const string& uri,
 	{
 		// some error occured, output it
 		termClean();
-		nonBlockingPrint(__("Fail") + ":" + lexical_cast< string >(number) + " " +
-				result + " (uri '" + uri + "')\n");
+		nonBlockingPrint(format2("Fail:%zu %s (uri '%s')\n", number, result, uri));
 	}
 }
 

@@ -1,5 +1,6 @@
 include_directories(../lib/include)
 add_executable(cupt.bin
+	common.cpp
 	cupt.cpp
 	misc.cpp
 	handlers/search.cpp
@@ -9,7 +10,8 @@ add_executable(cupt.bin
 	handlers/download.cpp
 	handlers/snapshot.cpp
 	colorizer.cpp
+	functionselectors.cpp
 	selectors.cpp)
-target_link_libraries(cupt.bin cupt2 boost_program_options)
+set_property(TARGET cupt.bin PROPERTY OUTPUT_NAME cupt)
+target_link_libraries(cupt.bin libcupt3 boost_program_options)
 
-install(PROGRAMS cupt.bin DESTINATION bin RENAME cupt)
