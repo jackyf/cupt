@@ -249,35 +249,6 @@ bool NativeResolverImpl::__compute_target_auto_status(const string& packageName)
 }
 
 /*
-AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr)
-{
-	typedef AutoRemovalPossibility::Allow Allow;
-
-	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
-	if (!versionVertex)
-	{
-		return Allow::No;
-	}
-
-	const string& packageName = versionVertex->getPackageName();
-	auto& version = versionVertex->version;
-
-	if (packageName == __dummy_package_name)
-	{
-		return Allow::No;
-	}
-	if (!version)
-	{
-		return Allow::No;
-	}
-	{ // checking was the package initially requested
-		auto initialPackageIt = __initial_packages.find(packageName);
-		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.sticked)
-		{
-			return Allow::No;
-		}
-	}
-
 	return __auto_removal_possibility.isAllowed(version, __old_packages.count(packageName),
 			__compute_target_auto_status(packageName));
 }
@@ -285,19 +256,6 @@ AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_remova
 
 /*
 	typedef AutoRemovalPossibility::Allow Allow;
-
-	map< const dg::Element*, Allow > isCandidateForAutoRemovalCache;
-	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache]
-			(const dg::Element* elementPtr) -> Allow
-	{
-		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert( { elementPtr, {}});
-		auto& answer = cacheInsertionResult.first->second;
-		if (cacheInsertionResult.second)
-		{
-			answer = __is_candidate_for_auto_removal(elementPtr);
-		}
-		return answer;
-	};
 
 				bool allRightSidesAreAutomatic = true;
 				const dg::Element* const* candidateElementPtrPtr = NULL;
