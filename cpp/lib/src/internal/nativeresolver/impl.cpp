@@ -725,10 +725,17 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 
 void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 		const string& packageName, Resolver::SuggestedPackage& suggestedPackage,
-		const dg::Element* elementPtr) const
+		const dg::Element* elementPtr, map< const dg::Element*, size_t >& reasonProcessingCache) const
 {
 	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
+
+	auto fillReasonElements = [&suggestedPackage]
+			(const PackageEntry::IntroducedBy&, const dg::Element* elementPtr)
+	{
+		auto versionVertex = static_cast< const dg::VersionVertex* >(elementPtr);
+		suggestedPackage.reasonPackageNames.push_back(versionVertex->getPackageName());
+	};
 
 	auto packageEntryPtr = solution.getPackageEntry(elementPtr);
 	if (packageEntryPtr->autoremoved)
@@ -737,9 +744,12 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 	}
 	else
 	{
-		if (!packageEntryPtr->introducedBy.empty())
+		const auto& introducedBy = packageEntryPtr->introducedBy;
+		if (!introducedBy.empty())
 		{
-			suggestedPackage.reasons.push_back(packageEntryPtr->introducedBy.getReason());
+			suggestedPackage.reasons.push_back(introducedBy.getReason());
+			__solution_storage->processReasonElements(solution, reasonProcessingCache,
+					introducedBy, elementPtr, std::cref(fillReasonElements));
 		}
 		auto initialPackageIt = __initial_packages.find(packageName);
 		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
@@ -755,6 +765,8 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
 	Resolver::SuggestedPackages& suggestedPackages = offer.suggestedPackages;
+
+	map< const dg::Element*, size_t > reasonProcessingCache;
 
 	auto elementPtrs = solution.getElements();
 	FORIT(elementPtrIt, elementPtrs)
@@ -777,7 +789,8 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 			if (trackReasons)
 			{
-				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage, *elementPtrIt);
+				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage,
+						*elementPtrIt, reasonProcessingCache);
 			}
 			suggestedPackage.automaticallyInstalledFlag = __compute_target_auto_status(packageName);
 		}

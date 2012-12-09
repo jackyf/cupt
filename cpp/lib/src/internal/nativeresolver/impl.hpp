@@ -92,7 +92,7 @@ class NativeResolverImpl
 			const dg::Element*);
 	void __prepare_reject_requests(vector< unique_ptr< Action > >& actions) const;
 	void __fillSuggestedPackageReasons(const Solution&, const string&,
-			Resolver::SuggestedPackage&, const dg::Element*) const;
+			Resolver::SuggestedPackage&, const dg::Element*, map< const dg::Element*, size_t >&) const;
 	Resolver::UserAnswer::Type __propose_solution(
 			const Solution&, Resolver::CallbackType, bool);
 
