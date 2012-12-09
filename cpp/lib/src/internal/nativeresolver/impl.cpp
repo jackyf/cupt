@@ -589,7 +589,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 	}
 
 	const forward_list< const dg::Element* >& conflictingElementPtrs =
-			__solution_storage->getConflictingElements(versionElementPtr, solution.isAutoRemovalsStage);
+			__solution_storage->getConflictingElements(versionElementPtr);
 	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
 	{
 		if (*conflictingElementPtrIt == versionElementPtr)
@@ -624,11 +624,6 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 		const dg::Element* conflictingElementPtr;
 		if (__solution_storage->simulateSetPackageEntry(solution, *successorElementPtrIt, &conflictingElementPtr))
 		{
-			if (solution.isAutoRemovalsStage && (*successorElementPtrIt)->getUnsatisfiedType() != dg::Unsatisfied::AutoRemoval)
-			{
-				continue;
-			}
-
 			unique_ptr< Action > action(new Action);
 			action->oldElementPtr = conflictingElementPtr;
 			action->newElementPtr = *successorElementPtrIt;
@@ -954,10 +949,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				brokenSuccessor = brokenPair.second;
 			}
 			checkFailed = true;
-			if (brokenSuccessor.elementPtr->getTypePriority() == 0)
-			{
-				currentSolution->isAutoRemovalsStage = true;
-			}
 
 			if (debugging)
 			{
