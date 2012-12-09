@@ -112,9 +112,14 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
-			const map< string, const BinaryVersion* >&,
-			const map< string, InitialPackageEntry >&);
+
+	struct FillData
+	{
+		const map< string, const BinaryVersion* >& oldPackages;
+		const map< string, InitialPackageEntry >& initialPackages;
+		std::function< bool (const string&) > getTargetAutoStatus;
+	};
+	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(const FillData&);
 
 	const Element* getCorrespondingEmptyElement(const Element*);
 	void unfoldElement(const Element*);

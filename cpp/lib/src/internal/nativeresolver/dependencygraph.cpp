@@ -498,8 +498,7 @@ short __get_synchronize_level(const Config& config)
 class DependencyGraph::FillHelper
 {
 	DependencyGraph& __dependency_graph;
-	const map< string, const BinaryVersion* >& __old_packages;
-	const map< string, InitialPackageEntry >& __initial_packages;
+	FillData __fillData;
 	bool __debugging;
 	AutoRemovalPossibility __arp;
 
@@ -518,16 +517,13 @@ class DependencyGraph::FillHelper
 	bool __can_package_be_removed(const string& packageName) const
 	{
 		return !__dependency_graph.__config.getBool("cupt::resolver::no-remove") ||
-				!__old_packages.count(packageName) ||
+				!__fillData.oldPackages.count(packageName) ||
 				__dependency_graph.__cache.isAutomaticallyInstalled(packageName);
 	}
 
  public:
-	FillHelper(DependencyGraph& dependencyGraph,
-			const map< string, const BinaryVersion* >& oldPackages,
-			const map< string, InitialPackageEntry >& initialPackages)
-		: __dependency_graph(dependencyGraph),
-		__old_packages(oldPackages), __initial_packages(initialPackages),
+	FillHelper(DependencyGraph& dependencyGraph, const FillData& fillData)
+		: __dependency_graph(dependencyGraph), __fillData(fillData),
 		__debugging(__dependency_graph.__config.getBool("debug::resolver")),
 		__arp(__dependency_graph.__config)
 	{
@@ -539,8 +535,8 @@ class DependencyGraph::FillHelper
 	{
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
-			auto initialPackageIt = this->__initial_packages.find(packageName);
-			if (initialPackageIt != this->__initial_packages.end() && initialPackageIt->second.sticked)
+			auto initialPackageIt = __fillData.initialPackages.find(packageName);
+			if (initialPackageIt != __fillData.initialPackages.end() && initialPackageIt->second.sticked)
 			{
 				if (version != initialPackageIt->second.version)
 				{
@@ -713,7 +709,7 @@ class DependencyGraph::FillHelper
 		{
 			satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 			if (__is_soft_dependency_ignored(__dependency_graph.__config, version, dependencyType,
-					relationExpression, satisfyingVersions, __old_packages))
+					relationExpression, satisfyingVersions, __fillData.oldPackages))
 			{
 				if (__debugging)
 				{
@@ -822,14 +818,17 @@ class DependencyGraph::FillHelper
 			// this package name is not processed yet
 
 			{ // checking was the package initially requested
-				auto initialPackageIt = __initial_packages.find(packageName);
-				if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.sticked)
+				auto initialPackageIt = __fillData.initialPackages.find(packageName);
+				if (initialPackageIt != __fillData.initialPackages.end() && initialPackageIt->second.sticked)
 				{
 					return; // no, not allowed
 				}
 			}
 
-			if (__arp.isAllowed(version, ))
+			// FIXME: yes-if-no-rdepends support
+			auto wasInstalled = __fillData.oldPackages.count(packageName);
+			bool targetAutoStatus = __fillData.getTargetAutoStatus(packageName);
+			if (__arp.isAllowed(version, wasInstalled, targetAutoStatus) == AutoRemovalPossibility::Allow::Yes)
 			{
 				removeAutoInstalledVertexPtr = __dependency_graph.addVertex(new RemoveAutoInstalledVertex);
 
@@ -892,7 +891,7 @@ class DependencyGraph::FillHelper
 			processSynchronizations(version, elementPtr);
 		}
 
-		processRemoveAutoInstalled(version->packageName, elementPtr);
+		processRemoveAutoInstalled(version, elementPtr);
 	}
 };
 
@@ -904,15 +903,14 @@ const shared_ptr< const PackageEntry >& getSharedPackageEntry(bool sticked)
 }
 
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
-		const map< string, const BinaryVersion* >& oldPackages,
-		const map< string, InitialPackageEntry >& initialPackages)
+		const FillData& fillData)
 {
-	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages, initialPackages));
+	__fill_helper.reset(new DependencyGraph::FillHelper(*this, fillData));
 
 	{ // getting elements from initial packages
-		FORIT(it, initialPackages)
+		for (const auto& initialPackage: fillData.initialPackages)
 		{
-			const InitialPackageEntry& initialPackageEntry = it->second;
+			const InitialPackageEntry& initialPackageEntry = initialPackage.second;
 			const auto& initialVersion = initialPackageEntry.version;
 
 			if (initialVersion)
@@ -921,7 +919,7 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 
 				if (!initialPackageEntry.sticked)
 				{
-					const string& packageName = it->first;
+					const string& packageName = initialPackage.first;
 					auto package = __cache.getBinaryPackage(packageName);
 					for (auto version: *package)
 					{
@@ -936,10 +934,10 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
 	{ // generating solution elements
-		FORIT(it, initialPackages)
+		for (const auto& it: fillData.initialPackages)
 		{
-			auto elementPtr = __fill_helper->getVertexPtr(it->first, it->second.version);
-			result.push_back({ elementPtr, getSharedPackageEntry(it->second.sticked) });
+			auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
+			result.push_back({ elementPtr, getSharedPackageEntry(it.second.sticked) });
 		}
 	}
 	return result;

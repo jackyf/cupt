@@ -382,10 +382,9 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 }
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
-			const map< string, const BinaryVersion* >& oldPackages,
-			const map< string, dg::InitialPackageEntry >& initialPackages)
+			const dg::DependencyGraph::FillData& fillData)
 {
-	auto source = __dependency_graph.fill(oldPackages, initialPackages);
+	auto source = __dependency_graph.fill(fillData);
 	for (const auto& record: source)
 	{
 		__dependency_graph.unfoldElement(record.first);

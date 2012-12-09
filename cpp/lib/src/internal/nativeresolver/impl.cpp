@@ -249,12 +249,6 @@ bool NativeResolverImpl::__compute_target_auto_status(const string& packageName)
 }
 
 /*
-	return __auto_removal_possibility.isAllowed(version, __old_packages.count(packageName),
-			__compute_target_auto_status(packageName));
-}
-*/
-
-/*
 	typedef AutoRemovalPossibility::Allow Allow;
 
 				bool allRightSidesAreAutomatic = true;
@@ -863,7 +857,10 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution, __old_packages, __initial_packages);
+
+	auto autoStatusRequester = [this](const string& packageName) { return __compute_target_auto_status(packageName); };
+	__solution_storage->prepareForResolving(*initialSolution,
+			{ __old_packages, __initial_packages, autoStatusRequester });
 
 	SolutionContainer solutions = { initialSolution };
 
