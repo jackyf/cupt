@@ -741,6 +741,10 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		const Solution& solution, const dg::Element* versionElementPtr,
 		const dg::Element* brokenElementPtr, bool debugging)
 {
+	if (brokenElementPtr->getUnsatisfiedType() == dg::Unsatisfied::AutoRemoval)
+	{
+		return; // on purpose-made autoremovals are rejected if they cause problems to other packages
+	}
 	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
 	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
 			versionElementPtr, brokenElementPtr, debugging);
