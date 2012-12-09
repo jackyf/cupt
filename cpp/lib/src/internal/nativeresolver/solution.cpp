@@ -439,11 +439,6 @@ bool SolutionStorage::verifyElement(const Solution& solution,
 	return false;
 }
 
-const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
-{
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
-}
-
 void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 {
 	__dependency_graph.unfoldElement(elementPtr);
