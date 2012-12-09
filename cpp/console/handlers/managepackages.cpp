@@ -582,6 +582,10 @@ void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 	{
 		cout << "  " << __("reason: ") << reason->toString() << endl;
 	}
+	if (!suggestedPackage.reasonPackageNames.empty())
+	{
+		cout << "  " << __("caused by changes in: ") << join(", ", suggestedPackage.reasonPackageNames) << endl;
+	}
 	cout << endl;
 }
 
