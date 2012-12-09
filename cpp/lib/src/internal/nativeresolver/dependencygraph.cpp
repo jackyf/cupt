@@ -836,13 +836,6 @@ class DependencyGraph::FillHelper
 	}
 
  public:
-	bool isAutoRemovalAllowed(const string& packageName) const
-	{
-		// this function should not be called for not unfolded package names,
-		// so the entry in the map must exist already
-		return __package_name_to_autoremoval_vertex.find(packageName)->second;
-	}
-
 	void unfoldElement(const Element* elementPtr)
 	{
 		if (!__unfolded_elements.insert(elementPtr).second)
