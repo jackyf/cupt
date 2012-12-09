@@ -156,7 +156,6 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 	cloned->level = source->level;
 	cloned->id = __get_new_solution_id(*source);
 	cloned->finished = false;
-	cloned->isAutoRemovalsStage = source->isAutoRemovalsStage;
 
 	cloned->__parent = source;
 
@@ -176,26 +175,11 @@ const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Ele
 }
 
 const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(
-		const dg::Element* elementPtr, bool onlyAutoRemovals) const
+		const dg::Element* elementPtr)
 {
 	static const forward_list< const dg::Element* > nullList;
-	// it will be modified, so this function is not thread-safe
-	static forward_list< const dg::Element* > autoRemovalList;
-
-	if (onlyAutoRemovals)
-	{
-		autoRemovalList.clear();
-		if (auto emptyElementPtr = __dependency_graph.getCorrespondingEmptyElement(elementPtr, true))
-		{
-			autoRemovalList.push_front(emptyElementPtr);
-		}
-		return autoRemovalList;
-	}
-	else
-	{
-		auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
-		return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
-	}
+	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
+	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }
 
 bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
@@ -225,7 +209,7 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 		if (versionElement->version)
 		{
 			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
-					(__dependency_graph).getCorrespondingEmptyElement(elementPtr, false);
+					(__dependency_graph).getCorrespondingEmptyElement(elementPtr);
 		}
 	}
 	return true;
@@ -457,7 +441,7 @@ bool SolutionStorage::verifyElement(const Solution& solution,
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
 {
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr, false);
+	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
 }
 
 void SolutionStorage::unfoldElement(const dg::Element* elementPtr)

@@ -107,7 +107,6 @@ class Solution
 	size_t id;
 	size_t level;
 	bool finished;
-	bool isAutoRemovalsStage;
 	ssize_t score;
 	std::unique_ptr< const Action > pendingAction;
 
@@ -159,8 +158,8 @@ class SolutionStorage
 	bool verifyElement(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself
-	const forward_list< const dg::Element* >&
-			getConflictingElements(const dg::Element*, bool onlyAutoRemovals = false) const;
+	static const forward_list< const dg::Element* >&
+			getConflictingElements(const dg::Element*);
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
 	void setRejection(Solution&, const dg::Element*, const dg::Element*);
