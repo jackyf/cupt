@@ -60,8 +60,6 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 				leafOption = "unsatisfied-suggests"; break;
 			case ScoreChange::SubScore::FailedSync:
 				leafOption = "failed-synchronization"; break;
-			case ScoreChange::SubScore::AutoRemoval:
-				leafOption = "auto-removal"; break;
 			default:
 				fatal2i("missing score multiplier for the score '%zu'", i);
 		}
@@ -112,15 +110,8 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 				supposedVersion->versionString) < 0 ? ScoreChange::SubScore::Upgrade : ScoreChange::SubScore::Downgrade;
 	}
 
-	if (scoreType == ScoreChange::SubScore::Removal && __cache->isAutomaticallyInstalled(originalVersion->packageName))
-	{
-		scoreChange.__subscores[ScoreChange::SubScore::AutoRemoval] = 1;
-	}
-	else
-	{
-		scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
-		scoreChange.__subscores[scoreType] = 1;
-	}
+	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
+	scoreChange.__subscores[scoreType] = 1;
 
 	return scoreChange;
 }
@@ -219,8 +210,6 @@ string ScoreChange::__to_string() const
 					result << "us"; break;
 				case SubScore::FailedSync:
 					result << "fs"; break;
-				case SubScore::AutoRemoval:
-					result << "ar"; break;
 			}
 		}
 	}
