@@ -248,6 +248,7 @@ bool NativeResolverImpl::__compute_target_auto_status(const string& packageName)
 	return !__initial_packages.count(packageName);
 }
 
+/*
 AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
@@ -280,9 +281,9 @@ AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_remova
 	return __auto_removal_possibility.isAllowed(version, __old_packages.count(packageName),
 			__compute_target_auto_status(packageName));
 }
+*/
 
-bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
-{
+/*
 	typedef AutoRemovalPossibility::Allow Allow;
 
 	map< const dg::Element*, Allow > isCandidateForAutoRemovalCache;
@@ -297,32 +298,6 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 		}
 		return answer;
 	};
-
-	Graph< const dg::Element* > dependencyGraph;
-	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
-	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
-	{ // building dependency graph
-		auto elementPtrs = solution.getElements();
-		FORIT(elementPtrIt, elementPtrs)
-		{
-			dependencyGraph.addVertex(*elementPtrIt);
-		}
-		FORIT(elementPtrIt, vertices)
-		{
-			if (!*elementPtrIt)
-			{
-				continue; // main vertex
-			}
-			const GraphCessorListType& successorElementPtrs =
-					__solution_storage->getSuccessorElements(*elementPtrIt);
-			FORIT(successorElementPtrIt, successorElementPtrs)
-			{
-				if ((*successorElementPtrIt)->isAnti())
-				{
-					continue;
-				}
-				const GraphCessorListType& successorSuccessorElementPtrs =
-						__solution_storage->getSuccessorElements(*successorElementPtrIt);
 
 				bool allRightSidesAreAutomatic = true;
 				const dg::Element* const* candidateElementPtrPtr = NULL;
@@ -347,44 +322,7 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 						}
 					}
 				}
-				if (allRightSidesAreAutomatic && candidateElementPtrPtr)
-				{
-					dependencyGraph.addEdgeFromPointers(&*elementPtrIt, candidateElementPtrPtr);
-				}
-			}
-
-			if (isCandidateForAutoRemoval(*elementPtrIt) == Allow::No)
-			{
-				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
-			}
-		}
-	}
-
-	{ // looping through the candidates
-		bool debugging = __config->getBool("debug::resolver");
-
-		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
-
-		FORIT(elementPtrIt, vertices)
-		{
-			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
-			{
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
-
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-
-				if (debugging)
-				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
-				}
-				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), *elementPtrIt, (size_t)-1);
-			}
-		}
-	}
-	return true;
-}
+*/
 
 SolutionChooser __select_solution_chooser(const Config& config)
 {
