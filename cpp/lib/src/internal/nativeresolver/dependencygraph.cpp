@@ -946,8 +946,7 @@ void DependencyGraph::unfoldElement(const Element* elementPtr)
 	__fill_helper->unfoldElement(elementPtr);
 }
 
-const Element* DependencyGraph::getCorrespondingEmptyElement(
-		const Element* elementPtr, bool onlyAutoRemovals)
+const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
 {
 	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
 	if (!versionVertex)
@@ -955,10 +954,6 @@ const Element* DependencyGraph::getCorrespondingEmptyElement(
 		fatal2i("getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
-	if (onlyAutoRemovals && !__fill_helper->isAutoRemovalAllowed(packageName))
-	{
-		return NULL;
-	}
 	return __fill_helper->getVertexPtrForEmptyPackage(packageName);
 }
 
