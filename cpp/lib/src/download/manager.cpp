@@ -319,69 +319,6 @@ void ManagerImpl::terminateDownloadProcesses()
 	}
 }
 
-// each worker has own process, so own ping pipe too
-Pipe pingPipe("worker's ping");
-volatile sig_atomic_t pingIsProcessed = true;
-
-void sendPingMessage(int)
-{
-	if (pingIsProcessed) // don't send a ping when last is not processed
-	{
-		sendSocketMessage(pingPipe, vector< string >{ "ping" });
-	}
-	pingIsProcessed = false;
-}
-
-void enablePingTimer()
-{
-	struct sigaction newAction;
-	newAction.sa_handler = sendPingMessage;
-	if (sigfillset(&newAction.sa_mask) == -1)
-	{
-		fatal2e(__("%s() failed"), "sigfillset");
-	}
-	newAction.sa_flags = SA_RESTART;
-	if (sigaction(SIGALRM, &newAction, NULL) == -1)
-	{
-		fatal2e(__("%s() failed"), "sigaction");
-	}
-
-	struct itimerval timerStruct;
-	timerStruct.it_interval.tv_sec = 0;
-	timerStruct.it_interval.tv_usec = 250000; // 0.25s
-	timerStruct.it_value.tv_sec = 0;
-	timerStruct.it_value.tv_usec = timerStruct.it_interval.tv_usec;
-	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
-	{
-		fatal2e(__("%s() failed"), "setitimer");
-	}
-}
-
-void disablePingTimer()
-{
-	struct sigaction defaultAction;
-	defaultAction.sa_handler = SIG_DFL;
-	if (sigemptyset(&defaultAction.sa_mask) == -1)
-	{
-		fatal2e(__("%s() failed"), "sigemptyset");
-	}
-	defaultAction.sa_flags = 0;
-	if (sigaction(SIGALRM, &defaultAction, NULL) == -1)
-	{
-		fatal2e(__("%s() failed"), "sigaction");
-	}
-
-	struct itimerval timerStruct;
-	timerStruct.it_interval.tv_sec = 0;
-	timerStruct.it_interval.tv_usec = 0;
-	timerStruct.it_value.tv_sec = 0;
-	timerStruct.it_value.tv_usec = 0;
-	if (setitimer(ITIMER_REAL, &timerStruct, NULL) == -1)
-	{
-		fatal2e(__("%s() failed"), "setitimer");
-	}
-}
-
 void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 		const vector< string >& params, bool debugging)
 {
@@ -782,10 +719,9 @@ void ManagerImpl::worker()
 	bool exitFlag = false;
 
 	makeSyscallsRestartable();
-	enablePingTimer();
 
 	const vector< int > persistentSockets = {
-			pingPipe.getReaderFd(), parentPipe->getReaderFd(), serverSocket
+			parentPipe->getReaderFd(), serverSocket
 	};
 	set< int > clientSockets;
 
@@ -887,37 +823,6 @@ void ManagerImpl::worker()
 		{
 			processProgressMessage(workerQueue, params);
 		}
-		else if (command == "ping")
-		{
-			sendSocketMessage(pingPipe, vector< string >({ "progress", "", "ping" }));
-
-			// ping clients regularly so they can detect if worker process died
-			FORIT(socketIt, clientSockets)
-			{
-				pollfd pollFd;
-				pollFd.fd = *socketIt;
-				pollFd.events = POLLERR;
-
-				// but don't send anything if waiterSocket is already closed by pair
-				// that can easily happen when process send done/done-ack and dies
-				int pollResult;
-				do_poll:
-				pollResult = poll(&pollFd, 1, 0);
-				if (pollResult == -1)
-				{
-					if (errno == EINTR)
-					{
-						goto do_poll;
-					}
-					fatal2e(__("download worker: polling the waiter socket failed"));
-				}
-				if (!pollResult)
-				{
-					sendSocketMessage(*socketIt, vector< string >{ "ping" });
-				}
-			}
-			pingIsProcessed = true;
-		}
 		else if (command == "pop-download")
 		{
 			if (!onHold.empty())
@@ -958,7 +863,6 @@ void ManagerImpl::worker()
 			fatal2i("download manager: invalid worker command '%s'", command);
 		}
 	}
-	disablePingTimer();
 	// finishing progress
 	progress->progress(vector< string >{ "finish" });
 
@@ -1017,30 +921,6 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 	}
 
 	return result;
-}
-
-static void checkSocketForTimeout(int sock)
-{
-	pollfd pollFd;
-	pollFd.fd = sock;
-	pollFd.events = POLLIN;
-	do_poll:
-	auto pollResult = poll(&pollFd, 1, 2000); // 2 seconds
-	if (pollResult == -1)
-	{
-		if (errno == EINTR)
-		{
-			goto do_poll;
-		}
-		else
-		{
-			fatal2e(__("download client: polling the client socket failed"));
-		}
-	}
-	else if (!pollResult)
-	{
-		fatal2(__("download client: the download server socket timed out"));
-	}
 }
 
 string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
@@ -1110,13 +990,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	string result; // no error by default
 	while (!waitedUriToTargetPath.empty())
 	{
-		checkSocketForTimeout(sock);
-
 		auto params = receiveSocketMessage(sock);
-		if (params.size() == 1 && params[0] == "ping")
-		{
-			continue; // it's just ping that worker is alive
-		}
 		if (params.size() != 3)
 		{
 			fatal2i("download client: wrong parameter count for download result message");
