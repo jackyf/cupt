@@ -80,7 +80,6 @@ class Graph
 	void deleteEdgeFromPointers(PtrT fromVertexPtr, PtrT toVertexPtr);
 
 	unordered_set< PtrT > getReachableFrom(const T& from) const;
-	unordered_set< PtrT > getReachableTo(const T& to) const;
 
 	template< class PriorityLess, class OutputIterator >
 	void topologicalSortOfStronglyConnectedComponents(
@@ -430,15 +429,6 @@ auto Graph< T, PtrTraitsT >::getReachableFrom(const T& from) const -> unordered_
 		}
 	}
 
-	return result;
-}
-
-template< class T, template < class X > class PtrTraitsT >
-auto Graph< T, PtrTraitsT >::getReachableTo(const T& to) const -> unordered_set< PtrT >
-{
-	__successors.swap(__predecessors); // transposing the graph temporarily
-	auto result = getReachableFrom(to);
-	__successors.swap(__predecessors); // transposing it to original state
 	return result;
 }
 
