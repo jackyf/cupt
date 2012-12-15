@@ -74,6 +74,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] Not a public API anymore.
     - system/state:
       - New method 'getArchitecture'.
+    - download/manager:
+      - Removed 'alive pings'.
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.
