@@ -737,14 +737,43 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	return userAnswer;
 }
 
+namespace {
+
+bool __is_caused_by_autoremoval(const SolutionStorage& solutionStorage,
+		const Solution& solution, const PackageEntry::IntroducedBy& introducedBy)
+{
+	map< const dg::Element*, size_t > unusedCache;
+
+	bool caused = false;
+	auto callback = [&caused](const PackageEntry::IntroducedBy& ib, const dg::Element*)
+	{
+		if (!ib.brokenElementPtr) return;
+		if (ib.brokenElementPtr->getUnsatisfiedType() == dg::Unsatisfied::AutoRemoval)
+		{
+			caused = true;
+		}
+	};
+	solutionStorage.processReasonElements(solution, unusedCache,
+			introducedBy, NULL, std::cref(callback));
+
+	return caused;
+}
+
+}
+
+// TODO: accept introducedBy
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
 		const Solution& solution, const dg::Element* versionElementPtr,
 		const dg::Element* brokenElementPtr, bool debugging)
 {
-	if (brokenElementPtr->getUnsatisfiedType() == dg::Unsatisfied::AutoRemoval)
+	PackageEntry::IntroducedBy introducedBy;
+	introducedBy.versionElementPtr = versionElementPtr;
+	introducedBy.brokenElementPtr = brokenElementPtr;
+	if (__is_caused_by_autoremoval(*__solution_storage, solution, introducedBy))
 	{
 		return; // on purpose-made autoremovals are rejected if they cause problems to other packages
 	}
+
 	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
 	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
 			versionElementPtr, brokenElementPtr, debugging);
