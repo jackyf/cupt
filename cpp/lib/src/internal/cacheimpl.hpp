@@ -46,7 +46,7 @@ class CacheImpl
  public:
 	struct PrePackageRecord
 	{
-		size_t offset;
+		uint32_t offset;
 		const pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > >* releaseInfoAndFile;
 	};
  private:
