@@ -460,6 +460,11 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	__solution_storage->setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
 
+	if (action.oldElementPtr)
+	{
+		__consider_subsequent_autoremovals(solution, action.oldElementPtr);
+	}
+
 	solution.pendingAction.reset();
 }
 
