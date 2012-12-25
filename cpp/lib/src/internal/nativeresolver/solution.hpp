@@ -102,6 +102,9 @@ class Solution
 		ScoreChange profit;
 		PackageEntry::IntroducedBy introducedBy;
 		size_t brokenElementPriority;
+		bool restoreFromAutoremoval;
+
+		Action() : restoreFromAutoremoval(false) {}
 	};
 
 	size_t id;

@@ -339,8 +339,9 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	if (__config->getBool("debug::resolver"))
 	{
-		__mydebug_wrapper(originalSolution, oldSolutionId, "-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
+		__mydebug_wrapper(originalSolution, oldSolutionId, "-> (%u,Δ:[%s]) trying: %s'%s' -> '%s'",
 				solution.id, __score_manager.getScoreChangeString(profit),
+				actionToApply->restoreFromAutoremoval ? "(restoring from autoremoval) " : "",
 				oldElementPtr ? oldElementPtr->toString() : "", newElementPtr->toString());
 	}
 
@@ -455,7 +456,7 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 	};
 
 	PackageEntry packageEntry;
-	packageEntry.sticked = true;
+	if (!action.restoreFromAutoremoval) packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
 	__solution_storage->setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
@@ -743,6 +744,26 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 		const Solution& solution, const dg::Element* versionElementPtr,
 		const dg::Element* brokenElementPtr, bool debugging)
 {
+	for (auto dependentElementPtr: __solution_storage->getSuccessorElements(brokenElementPtr))
+	{
+		const dg::Element* conflictingElementPtr;
+		if (__solution_storage->simulateSetPackageEntry(solution, dependentElementPtr, &conflictingElementPtr))
+		{
+			if (!conflictingElementPtr) continue;
+			auto packageEntry = solution.getPackageEntry(conflictingElementPtr);
+			if (packageEntry && packageEntry->autoremoved)
+			{
+				// restoring action
+				unique_ptr< Action > action(new Action);
+				action->oldElementPtr = conflictingElementPtr;
+				action->newElementPtr = dependentElementPtr;
+				action->restoreFromAutoremoval = true;
+				possibleActionsPtr->push_back(std::move(action));
+
+				return;
+			}
+		}
+	}
 	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
 	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
 			versionElementPtr, brokenElementPtr, debugging);
@@ -854,23 +875,24 @@ void NativeResolverImpl::__maybe_autoremove(Solution& solution, const dg::Elemen
 		{
 			if (neighborElementPtr == elementPtr) return;
 
-			if (solution.getPackageEntry(neighborElementPtr)) return;
+			if (solution.getPackageEntry(neighborElementPtr)) break;
 
-			{ // yep, now auto-removing
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(elementPtr);
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), elementPtr, 0);
-
-				if (__debugging)
-				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", elementPtr->toString());
-				}
-
-				__consider_subsequent_autoremovals(solution, elementPtr);
-			}
 		}
+	}
+
+	{ // yep, now auto-removing
+		auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(elementPtr);
+		PackageEntry packageEntry;
+		packageEntry.autoremoved = true;
+		__solution_storage->setPackageEntry(solution, emptyElementPtr,
+				std::move(packageEntry), elementPtr, 0);
+
+		if (__debugging)
+		{
+			__mydebug_wrapper(solution, "auto-removed '%s'", elementPtr->toString());
+		}
+
+		__consider_subsequent_autoremovals(solution, elementPtr);
 	}
 }
 
