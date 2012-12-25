@@ -156,6 +156,7 @@ class SolutionStorage
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
 	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
 	bool verifyElement(const Solution&, const dg::Element*) const;
+	bool reverseDependencyExists(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself
 	static const forward_list< const dg::Element* >&

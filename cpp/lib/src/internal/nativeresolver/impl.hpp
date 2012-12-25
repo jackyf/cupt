@@ -52,6 +52,7 @@ class NativeResolverImpl
 	unique_ptr< SolutionStorage > __solution_storage;
 	ScoreManager __score_manager;
 	AutoRemovalPossibility __auto_removal_possibility;
+	bool __debugging;
 
 	map< string, const BinaryVersion* > __old_packages;
 	map< string, dg::InitialPackageEntry > __initial_packages;
@@ -71,7 +72,9 @@ class NativeResolverImpl
 
 	bool __compute_target_auto_status(const string&) const;
 	AutoRemovalPossibility::Allow __is_candidate_for_auto_removal(const dg::Element*);
-	bool __clean_automatically_installed(Solution&);
+	void __initial_autoremoval(Solution&);
+	void __maybe_autoremove(Solution&, const dg::Element*);
+	void __consider_subsequent_autoremovals(Solution&, const dg::Element*);
 
 	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&, size_t);

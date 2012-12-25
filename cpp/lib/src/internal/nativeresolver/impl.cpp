@@ -36,6 +36,7 @@ using std::queue;
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __config(config), __cache(cache), __score_manager(*config, cache), __auto_removal_possibility(*__config)
 {
+	__debugging = __config->getBool("debug::resolver");
 	__import_installed_versions();
 }
 
@@ -279,111 +280,6 @@ AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_remova
 
 	return __auto_removal_possibility.isAllowed(version, __old_packages.count(packageName),
 			__compute_target_auto_status(packageName));
-}
-
-bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
-{
-	typedef AutoRemovalPossibility::Allow Allow;
-
-	map< const dg::Element*, Allow > isCandidateForAutoRemovalCache;
-	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache]
-			(const dg::Element* elementPtr) -> Allow
-	{
-		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert( { elementPtr, {}});
-		auto& answer = cacheInsertionResult.first->second;
-		if (cacheInsertionResult.second)
-		{
-			answer = __is_candidate_for_auto_removal(elementPtr);
-		}
-		return answer;
-	};
-
-	Graph< const dg::Element* > dependencyGraph;
-	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
-	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
-	{ // building dependency graph
-		auto elementPtrs = solution.getElements();
-		FORIT(elementPtrIt, elementPtrs)
-		{
-			dependencyGraph.addVertex(*elementPtrIt);
-		}
-		FORIT(elementPtrIt, vertices)
-		{
-			if (!*elementPtrIt)
-			{
-				continue; // main vertex
-			}
-			const GraphCessorListType& successorElementPtrs =
-					__solution_storage->getSuccessorElements(*elementPtrIt);
-			FORIT(successorElementPtrIt, successorElementPtrs)
-			{
-				if ((*successorElementPtrIt)->isAnti())
-				{
-					continue;
-				}
-				const GraphCessorListType& successorSuccessorElementPtrs =
-						__solution_storage->getSuccessorElements(*successorElementPtrIt);
-
-				bool allRightSidesAreAutomatic = true;
-				const dg::Element* const* candidateElementPtrPtr = NULL;
-				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
-				{
-					auto it = vertices.find(*successorSuccessorElementPtrIt);
-					if (it != vertices.end())
-					{
-						switch (isCandidateForAutoRemoval(*it))
-						{
-							case Allow::No:
-								allRightSidesAreAutomatic = false;
-								break;
-							case Allow::YesIfNoRDepends:
-								dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
-							case Allow::Yes:
-								if (!candidateElementPtrPtr) // not found yet
-								{
-									candidateElementPtrPtr = &*it;
-								}
-								break;
-						}
-					}
-				}
-				if (allRightSidesAreAutomatic && candidateElementPtrPtr)
-				{
-					dependencyGraph.addEdgeFromPointers(&*elementPtrIt, candidateElementPtrPtr);
-				}
-			}
-
-			if (isCandidateForAutoRemoval(*elementPtrIt) == Allow::No)
-			{
-				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
-			}
-		}
-	}
-
-	{ // looping through the candidates
-		bool debugging = __config->getBool("debug::resolver");
-
-		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
-
-		FORIT(elementPtrIt, vertices)
-		{
-			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
-			{
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
-
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-
-				if (debugging)
-				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
-				}
-				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), *elementPtrIt, (size_t)-1);
-			}
-		}
-	}
-	return true;
 }
 
 SolutionChooser __select_solution_chooser(const Config& config)
@@ -938,6 +834,64 @@ BrokenPairType __get_broken_pair(const SolutionStorage& solutionStorage,
 	return result;
 }
 
+void NativeResolverImpl::__maybe_autoremove(Solution& solution, const dg::Element* elementPtr)
+{
+	auto allowed = __is_candidate_for_auto_removal(elementPtr);
+	if (allowed == AutoRemovalPossibility::Allow::No) return;
+
+	for (auto relationElementPtr: __solution_storage->getPredecessorElements(elementPtr))
+	{
+		if (!__solution_storage->reverseDependencyExists(solution, relationElementPtr)) continue;
+
+		if (allowed == AutoRemovalPossibility::Allow::YesIfNoRDepends) return;
+
+		for (auto neighborElementPtr: __solution_storage->getSuccessorElements(relationElementPtr))
+		{
+			if (neighborElementPtr == elementPtr) return;
+
+			if (solution.getPackageEntry(neighborElementPtr)) return;
+
+			{ // yep, now auto-removing
+				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(elementPtr);
+				PackageEntry packageEntry;
+				packageEntry.autoremoved = true;
+				__solution_storage->setPackageEntry(solution, emptyElementPtr,
+						std::move(packageEntry), elementPtr, 0);
+
+				if (__debugging)
+				{
+					__mydebug_wrapper(solution, "auto-removed '%s'", elementPtr->toString());
+				}
+
+				__consider_subsequent_autoremovals(solution, elementPtr);
+			}
+		}
+	}
+}
+
+void NativeResolverImpl::__consider_subsequent_autoremovals(
+		Solution& solution, const dg::Element* elementPtr)
+{
+	for (auto relationElementPtr: __solution_storage->getSuccessorElements(elementPtr))
+	{
+		for (auto dependentElementPtr: __solution_storage->getSuccessorElements(relationElementPtr))
+		{
+			if (solution.getPackageEntry(dependentElementPtr))
+			{
+				__maybe_autoremove(solution, dependentElementPtr);
+			}
+		}
+	}
+}
+
+void NativeResolverImpl::__initial_autoremoval(Solution& solution)
+{
+	for (auto elementPtr: solution.getElements())
+	{
+		__maybe_autoremove(solution, elementPtr);
+	}
+}
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
@@ -959,6 +913,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
 	__solution_storage->prepareForResolving(*initialSolution, __old_packages, __initial_packages);
+	__initial_autoremoval(*initialSolution);
 
 	SolutionContainer solutions = { initialSolution };
 
@@ -1061,16 +1016,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				continue; // ok, process other solution
 			}
 			solutions.erase(newSelectedSolutionIt);
-
-			// clean up automatically installed by resolver and now unneeded packages
-			if (!__clean_automatically_installed(*currentSolution))
-			{
-				if (debugging)
-				{
-					__mydebug_wrapper(*currentSolution, "auto-discarded");
-				}
-				continue;
-			}
 
 			if (!__any_solution_was_found)
 			{

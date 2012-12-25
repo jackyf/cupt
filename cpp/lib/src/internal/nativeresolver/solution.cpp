@@ -234,6 +234,18 @@ void SolutionStorage::setRejection(Solution& solution,
 			std::move(packageEntry), NULL, -1);
 }
 
+bool SolutionStorage::reverseDependencyExists(const Solution& solution, const dg::Element* elementPtr) const
+{
+	for (auto reverseDependencyPtr: getPredecessorElements(elementPtr))
+	{
+		if (solution.getPackageEntry(reverseDependencyPtr))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void SolutionStorage::__update_broken_successors(Solution& solution,
 		const dg::Element* oldElementPtr, const dg::Element* newElementPtr, size_t priority)
 {
@@ -244,17 +256,6 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 
 	auto& bss = *solution.__broken_successors;
 
-	auto reverseDependencyExists = [this, &solution](const dg::Element* elementPtr)
-	{
-		for (auto reverseDependencyPtr: getPredecessorElements(elementPtr))
-		{
-			if (solution.getPackageEntry(reverseDependencyPtr))
-			{
-				return true;
-			}
-		}
-		return false;
-	};
 	auto isPresent = [](const GraphCessorListType& container, const dg::Element* elementPtr)
 	{
 		return std::find(container.begin(), container.end(), elementPtr) != container.end();
@@ -272,7 +273,7 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 		auto it = bss.find(successorPtr);
 		if (it != bss.end())
 		{
-			if (!reverseDependencyExists(successorPtr))
+			if (!reverseDependencyExists(solution, successorPtr))
 			{
 				bss.erase(it);
 			}
@@ -305,7 +306,7 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 		if (isPresent(predecessorsOfNew, predecessorElementPtr)) continue;
 		if (isPresent(successorsOfNew, predecessorElementPtr)) continue;
 
-		if (reverseDependencyExists(predecessorElementPtr))
+		if (reverseDependencyExists(solution, predecessorElementPtr))
 		{
 			if (!verifyElement(solution, predecessorElementPtr))
 			{
