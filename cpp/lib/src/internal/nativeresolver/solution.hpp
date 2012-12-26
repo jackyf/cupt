@@ -46,12 +46,6 @@ struct IntroducedBy
 	const dg::Element* versionElementPtr;
 	const dg::Element* brokenElementPtr;
 
-	IntroducedBy() : versionElementPtr(NULL) {}
-	bool empty() const { return !versionElementPtr; }
-	bool operator<(const IntroducedBy& other) const
-	{
-		return std::memcmp(this, &other, sizeof(*this)) < 0;
-	}
 	shared_ptr< const Resolver::Reason > getReason() const
 	{
 		return brokenElementPtr->getReason(*versionElementPtr);
@@ -62,8 +56,9 @@ struct PackageEntry
 {
 	bool sticked;
 	bool autoremoved;
+	bool changedByResolver;
+	const dg::Element* avoidedBrokenElement;
 	forward_list< const dg::Element* > rejectedConflictors;
-	IntroducedBy introducedBy;
 
 	PackageEntry(bool sticked_ = false);
 	PackageEntry(PackageEntry&&) = default;
@@ -100,8 +95,10 @@ class Solution
 		vector< const dg::Element* > elementsToReject;
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
-		IntroducedBy introducedBy;
+		const dg::Element* avoidedBrokenElement;
 		size_t brokenElementPriority;
+
+		Action() : avoidedBrokenElement(nullptr) {}
 	};
 
 	size_t id;
@@ -112,7 +109,6 @@ class Solution
 
 	Solution();
 	Solution(const Solution&) = delete;
-	Solution& operator=(const Solution&) = delete;
 	~Solution();
 
 	void prepare();
@@ -129,6 +125,7 @@ class SolutionStorage
 	size_t __get_new_solution_id(const Solution& parent);
 
 	dg::DependencyGraph __dependency_graph;
+	shared_ptr< const Solution > __initialSolution;
 
 	void __update_broken_successors(Solution&,
 			const dg::Element*, const dg::Element*, size_t priority);
@@ -149,7 +146,7 @@ class SolutionStorage
 	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
 	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< Solution >&);
 
-	void prepareForResolving(Solution&,
+	void prepareForResolving(const shared_ptr< Solution >&,
 			const map< string, const BinaryVersion* >&,
 			const map< string, dg::InitialPackageEntry >&);
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
@@ -167,9 +164,11 @@ class SolutionStorage
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 
-	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
+	void findIntroducedBy(const Solution&, const dg::Element*, const PackageEntry*,
+			const std::function< void (const IntroducedBy&) >&) const;
+	void findReasonElements(const Solution&, map< const dg::Element*, size_t >&,
 			const IntroducedBy&, const dg::Element*,
-			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
+			const std::function< void (const dg::Element*) >&) const;
 	pair< const dg::Element*, const dg::Element* > getDiversedElements(
 			size_t leftSolutionId, size_t rightSolutionId) const;
 };

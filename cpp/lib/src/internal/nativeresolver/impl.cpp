@@ -513,9 +513,12 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 	auto oldSolutionId = currentSolution->id;
 	FORIT(actionIt, actions)
 	{
-		auto newSolution = onlyOneAction ?
+		// if this is initial solution, always apply "true" clone to leave
+		// initial solution valid as solution storage uses it for reason processing
+		auto newSolution = (onlyOneAction && oldSolutionId > 0) ?
 				__solution_storage->fakeCloneSolution(currentSolution) :
 				__solution_storage->cloneSolution(currentSolution);
+
 		__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt), oldSolutionId);
 		callback(newSolution);
 	}
@@ -560,7 +563,8 @@ void NativeResolverImpl::__post_apply_action(Solution& solution)
 
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
-	packageEntry.introducedBy = action.introducedBy;
+	packageEntry.changedByResolver = true;
+	packageEntry.avoidedBrokenElement = action.avoidedBrokenElement;
 	__solution_storage->setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
 
@@ -666,6 +670,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 			unique_ptr< Action > action(new Action);
 			action->oldElementPtr = versionElementPtr;
 			action->newElementPtr = *conflictingElementPtrIt;
+			action->avoidedBrokenElement = brokenElementPtr;
 
 			actions.push_back(std::move(action));
 		}
@@ -730,11 +735,18 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
 
-	auto fillReasonElements = [&suggestedPackage]
-			(const IntroducedBy&, const dg::Element* elementPtr)
+	auto fillReasonData = [this, &solution, &elementPtr, &suggestedPackage, &reasonProcessingCache]
+			(const IntroducedBy& introducedBy)
 	{
-		auto versionVertex = static_cast< const dg::VersionVertex* >(elementPtr);
-		suggestedPackage.reasonPackageNames.push_back(versionVertex->getPackageName());
+		suggestedPackage.reasons.push_back(introducedBy.getReason());
+
+		auto callback = [&suggestedPackage](const dg::Element* reasonElement)
+		{
+			auto versionVertex = static_cast< const dg::VersionVertex* >(reasonElement);
+			suggestedPackage.reasonPackageNames.push_back(versionVertex->getPackageName());
+		};
+		__solution_storage->findReasonElements(solution, reasonProcessingCache,
+				introducedBy, elementPtr, std::cref(callback));
 	};
 
 	auto packageEntryPtr = solution.getPackageEntry(elementPtr);
@@ -744,13 +756,8 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 	}
 	else
 	{
-		const auto& introducedBy = packageEntryPtr->introducedBy;
-		if (!introducedBy.empty())
-		{
-			suggestedPackage.reasons.push_back(introducedBy.getReason());
-			__solution_storage->processReasonElements(solution, reasonProcessingCache,
-					introducedBy, elementPtr, std::cref(fillReasonElements));
-		}
+		__solution_storage->findIntroducedBy(solution,
+				elementPtr, packageEntryPtr, std::cref(fillReasonData));
 		auto initialPackageIt = __initial_packages.find(packageName);
 		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
 		{
@@ -958,7 +965,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution, __old_packages, __initial_packages);
+	__solution_storage->prepareForResolving(initialSolution, __old_packages, __initial_packages);
 
 	SolutionContainer solutions = { initialSolution };
 
@@ -1021,13 +1028,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				{
 					__decision_fail_tree.addFailedSolution(*__solution_storage,
 							*currentSolution, ourIntroducedBy);
-				}
-				else
-				{
-					FORIT(actionIt, possibleActions)
-					{
-						(*actionIt)->introducedBy = ourIntroducedBy;
-					}
 				}
 			}
 

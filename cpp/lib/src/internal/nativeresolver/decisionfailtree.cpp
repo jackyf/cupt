@@ -80,17 +80,17 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 
 		result.push_back(item);
 
-		auto queueItem = [&chainStack, &item](
-				const IntroducedBy& introducedBy,
-				const dg::Element* insertedElementPtr)
+		auto queueItem = [&chainStack, &item, &solutionStorage, &solution](const dg::Element* element)
 		{
-			if (!introducedBy.empty())
+			auto callback = [&chainStack, &item, &element](const IntroducedBy& introducedBy)
 			{
-				chainStack.push(Decision { introducedBy, item.level + 1, insertedElementPtr });
-			}
+				chainStack.push(Decision { introducedBy, item.level + 1, element });
+			};
+			solutionStorage.findIntroducedBy(solution, element,
+					solution.getPackageEntry(element), std::cref(callback));
 		};
 
-		solutionStorage.processReasonElements(solution, elementPositionCache,
+		solutionStorage.findReasonElements(solution, elementPositionCache,
 				item.introducedBy, item.insertedElementPtr, std::cref(queueItem));
 	}
 
