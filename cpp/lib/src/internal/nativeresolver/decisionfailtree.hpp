@@ -32,7 +32,7 @@ class DecisionFailTree
 {
 	struct Decision
 	{
-		PackageEntry::IntroducedBy introducedBy;
+		IntroducedBy introducedBy;
 		size_t level;
 		const dg::Element* insertedElementPtr;
 	};
@@ -45,13 +45,11 @@ class DecisionFailTree
 
 	static string __decisions_to_string(const vector< Decision >&);
 	static vector< Decision > __get_decisions(
-			const SolutionStorage& solutionStorage, const Solution& solution,
-			const PackageEntry::IntroducedBy&);
+			const SolutionStorage& solutionStorage, const Solution& solution, const IntroducedBy&);
 	static bool __is_dominant(const FailItem&, const dg::Element*);
  public:
 	string toString() const;
-	void addFailedSolution(const SolutionStorage&, const Solution&,
-			const PackageEntry::IntroducedBy&);
+	void addFailedSolution(const SolutionStorage&, const Solution&, const IntroducedBy&);
 	void clear();
 };
 

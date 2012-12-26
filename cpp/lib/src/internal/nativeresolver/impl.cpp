@@ -731,7 +731,7 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
 
 	auto fillReasonElements = [&suggestedPackage]
-			(const PackageEntry::IntroducedBy&, const dg::Element* elementPtr)
+			(const IntroducedBy&, const dg::Element* elementPtr)
 	{
 		auto versionVertex = static_cast< const dg::VersionVertex* >(elementPtr);
 		suggestedPackage.reasonPackageNames.push_back(versionVertex->getPackageName());
@@ -1013,7 +1013,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					versionElementPtr, brokenSuccessor.elementPtr, debugging);
 
 			{
-				PackageEntry::IntroducedBy ourIntroducedBy;
+				IntroducedBy ourIntroducedBy;
 				ourIntroducedBy.versionElementPtr = versionElementPtr;
 				ourIntroducedBy.brokenElementPtr = brokenSuccessor.elementPtr;
 

@@ -463,8 +463,8 @@ size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element
 
 void SolutionStorage::processReasonElements(
 		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
-		const PackageEntry::IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
-		const std::function< void (const PackageEntry::IntroducedBy&, const dg::Element*) >& callback) const
+		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
+		const std::function< void (const IntroducedBy&, const dg::Element*) >& callback) const
 {
 	auto getElementPosition = [this, &solution, &elementPositionCache](const dg::Element* elementPtr)
 	{
@@ -511,7 +511,7 @@ void SolutionStorage::processReasonElements(
 				}
 
 				// verified, queueing now
-				const PackageEntry::IntroducedBy& candidateIntroducedBy =
+				const IntroducedBy& candidateIntroducedBy =
 						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
 				callback(candidateIntroducedBy, conflictingElementPtr);
 			}

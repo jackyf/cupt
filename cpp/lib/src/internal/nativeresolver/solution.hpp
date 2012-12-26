@@ -41,25 +41,25 @@ using namespace system;
 using std::map;
 using std::forward_list;
 
+struct IntroducedBy
+{
+	const dg::Element* versionElementPtr;
+	const dg::Element* brokenElementPtr;
+
+	IntroducedBy() : versionElementPtr(NULL) {}
+	bool empty() const { return !versionElementPtr; }
+	bool operator<(const IntroducedBy& other) const
+	{
+		return std::memcmp(this, &other, sizeof(*this)) < 0;
+	}
+	shared_ptr< const Resolver::Reason > getReason() const
+	{
+		return brokenElementPtr->getReason(*versionElementPtr);
+	}
+};
+
 struct PackageEntry
 {
-	struct IntroducedBy
-	{
-		const dg::Element* versionElementPtr;
-		const dg::Element* brokenElementPtr;
-
-		IntroducedBy() : versionElementPtr(NULL) {}
-		bool empty() const { return !versionElementPtr; }
-		bool operator<(const IntroducedBy& other) const
-		{
-			return std::memcmp(this, &other, sizeof(*this)) < 0;
-		}
-		shared_ptr< const Resolver::Reason > getReason() const
-		{
-			return brokenElementPtr->getReason(*versionElementPtr);
-		}
-	};
-
 	bool sticked;
 	bool autoremoved;
 	forward_list< const dg::Element* > rejectedConflictors;
@@ -100,7 +100,7 @@ class Solution
 		vector< const dg::Element* > elementsToReject;
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
-		PackageEntry::IntroducedBy introducedBy;
+		IntroducedBy introducedBy;
 		size_t brokenElementPriority;
 	};
 
@@ -168,8 +168,8 @@ class SolutionStorage
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
-			const PackageEntry::IntroducedBy&, const dg::Element*,
-			const std::function< void (const PackageEntry::IntroducedBy&, const dg::Element*) >&) const;
+			const IntroducedBy&, const dg::Element*,
+			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
 	pair< const dg::Element*, const dg::Element* > getDiversedElements(
 			size_t leftSolutionId, size_t rightSolutionId) const;
 };
