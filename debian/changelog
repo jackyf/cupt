@@ -10,6 +10,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         reinstalled, not as upgraded.
       - Action preview prompt: removed the 'one expression per line'
         limitation while processing 'a' choice.
+      - Action preview prompt: new choice 'rc' ("show reason chain").
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.

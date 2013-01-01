@@ -18,6 +18,7 @@
 #include <iostream>
 using std::cout;
 using std::endl;
+#include <stack>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -611,8 +612,60 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
 	}
 }
 
-Resolver::UserAnswer::Type askUserAboutSolution(
-		const Config& config, bool isDangerous, bool& addArgumentsFlag)
+void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggestedPackages)
+{
+	cout << __("Enter a binary package name to show reason chain for (empty to cancel): ");
+	string answer;
+	std::getline(std::cin, answer);
+	if (answer.empty()) return;
+
+	const auto& topPackageName = answer;
+	if (!suggestedPackages.count(topPackageName))
+	{
+		cout << format2(__("The package '%s' is not going to change its state."), topPackageName) << endl;
+		return;
+	}
+
+	struct PackageAndLevel
+	{
+		string packageName;
+		size_t level;
+	};
+	std::stack< PackageAndLevel > reasonStack({ PackageAndLevel{ topPackageName, 0 } });
+
+	cout << endl;
+	while (!reasonStack.empty())
+	{
+		const string& packageName = reasonStack.top().packageName;
+
+		auto reasonIt = suggestedPackages.find(packageName);
+		if (reasonIt == suggestedPackages.end())
+		{
+			fatal2i("a reason chain is broken: the package '%s' is not changed", packageName);
+		}
+		const auto& reasons = reasonIt->second.reasons;
+		if (reasons.empty())
+		{
+			fatal2i("no reasons available for the package '%s'", packageName);
+		}
+		const auto& reasonPtr = reasons[0];
+
+		size_t level = reasonStack.top().level;
+		cout << format2("%s%s: %s", string(level*2, ' '), packageName, reasonPtr->toString()) << endl;
+
+		reasonStack.pop();
+
+		for (const string& reasonPackageName: reasonIt->second.reasonPackageNames)
+		{
+			reasonStack.push({ reasonPackageName, level + 1 });
+		}
+	}
+	cout << endl;
+}
+
+Resolver::UserAnswer::Type askUserAboutSolution(const Config& config,
+		const Resolver::SuggestedPackages& suggestedPackages,
+		bool isDangerous, bool& addArgumentsFlag)
 {
 	string answer;
 
@@ -627,7 +680,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	else
 	{
 		ask:
-		cout << __("Do you want to continue? [y/N/q/a/?] ");
+		cout << __("Do you want to continue? [y/N/q/a/rc/?] ");
 		std::getline(std::cin, answer);
 		if (!std::cin)
 		{
@@ -661,12 +714,18 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 		addArgumentsFlag = true;
 		return Resolver::UserAnswer::Abandon;
 	}
+	else if (answer == "rc")
+	{
+		showReasonChainForAskedPackage(suggestedPackages);
+		goto ask;
+	}
 	else if (answer == "?")
 	{
 		cout << __("y: accept the solution") << endl;
 		cout << __("n: reject the solution, try to find other ones") << endl;
 		cout << __("q: reject the solution and exit") << endl;
 		cout << __("a: specify an additional binary package expression") << endl;
+		cout << __("rc: show a reason chain for a package") << endl;
 		cout << __("?: output this help") << endl << endl;
 		goto ask;
 	}
@@ -1055,7 +1114,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 			printUnpackedSizeChanges(unpackedSizesPreview);
 		}
 
-		return askUserAboutSolution(config, isDangerousAction, addArgumentsFlag);
+		return askUserAboutSolution(config, offer.suggestedPackages, isDangerousAction, addArgumentsFlag);
 	};
 
 	return result;
