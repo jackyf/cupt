@@ -1035,6 +1035,13 @@ vector< WA::Type > getActionTypesInPrintOrder(bool showNotPreferred)
 	return result;
 }
 
+bool isSummaryEnabled(const Config& config, size_t actionCount)
+{
+	auto configValue = config.getString("cupt::console::actions-preview::show-summary");
+	return (configValue == "yes") ||
+			(actionCount > 100 && configValue == "auto");
+}
+
 Resolver::CallbackType generateManagementPrompt(const Config& config,
 		const Cache& cache, const shared_ptr< Worker >& worker,
 		bool showNotPreferred, bool& addArgumentsFlag, bool& thereIsNothingToDo)
@@ -1046,7 +1053,6 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 		addArgumentsFlag = false;
 		thereIsNothingToDo = false;
 
-		auto showSummary = config.getBool("cupt::console::actions-preview::show-summary");
 		auto showDetails = config.getBool("cupt::console::actions-preview::show-details");
 
 		worker->setDesiredState(offer);
@@ -1075,11 +1081,8 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 
 				const string& actionName = actionDescriptions.find(actionType)->second;
 
-				if (showSummary)
-				{
-					addActionToSummary(actionType, actionName, actionSuggestedPackages,
-							colorizer, &summaryStream);
-				}
+				addActionToSummary(actionType, actionName, actionSuggestedPackages,
+						colorizer, &summaryStream);
 				if (!showDetails) continue;
 
 				cout << format2(__("The following packages %s:"),
@@ -1099,7 +1102,7 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 			return Resolver::UserAnswer::Abandon;
 		}
 
-		if (showSummary)
+		if (isSummaryEnabled(config, actionCount))
 		{
 			cout << __("Action summary:") << endl << summaryStream.str() << endl;
 			summaryStream.clear();

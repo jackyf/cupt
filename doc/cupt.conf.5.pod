@@ -209,8 +209,11 @@ boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 =item cupt::console::actions-preview::show-summary
 
-boolean, if true, a summary of planned actions will be shown in the
-actions preview. True by default.
+string, tristate ("yes", "no" or "auto"), controls whether summary of planned
+actions will be shown in the actions preview or not. Defaults to "yes".
+
+Currently, "auto" means that summary will be shown when there are >= 100 change
+entries in total.
 
 =item cupt::console::actions-preview::show-versions
 
