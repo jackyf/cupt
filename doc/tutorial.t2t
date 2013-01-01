@@ -1016,6 +1016,52 @@ they can be upgraded):
 
 You can also combine them.
 
+=== reason chain ===
+
+Instead of display the reasons for all changed packages, starting with Cupt 2.6
+you can request the reason chain the specific package. To do this, use the choice **rc**. Example:
+
+```
+ $ cupt -s install exim4-daemon-light
+ Building the package cache... 
+ Initializing package resolver and worker... 
+ Scheduling requested actions... 
+ Resolving possible unmet dependencies... 
+ 
+ The following packages will be installed:
+ 
+ bsd-mailx exim4-base exim4-config exim4-daemon-light liblockfile-bin liblockfile1 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ The following packages are no longer needed and thus will be auto-removed:
+ 
+ libgsasl7 libntlm0 msmtp 
+ 
+ Action summary:
+   1 manually installed and 5 automatically installed packages will be installed
+   1 manually installed packages will be removed
+   3 automatically installed packages are no longer needed and thus will be auto-removed
+ 
+ Need to get 2241KiB/2241KiB of archives. After unpacking 3006KiB will be used.
+ Do you want to continue? [y/N/q/a/rc/?] rc
+ Enter a binary package name to show reason chain for (empty to cancel): bsd-mailx
+ 
+ bsd-mailx: exim4-base 4.80-6 recommends 'mailx'
+   exim4-base: exim4-daemon-light 4.80-6 depends on 'exim4-base (>= 4.80)'
+     exim4-daemon-light: user request
+ 
+ Do you want to continue? [y/N/q/a/rc/?] rc
+ Enter a binary package name to show reason chain for (empty to cancel): msmtp-mta
+ 
+ msmtp-mta: exim4-daemon-light 4.80-6 conflicts with 'mail-transport-agent'
+   exim4-daemon-light: user request
+ 
+ Do you want to continue? [y/N/q/a/rc/?]
+```
+
 === specifying more package expression arguments ===[specifying_more_package_expression_arguments]
 
 In a solution preview (action preview prompt) you have an ability to specify
