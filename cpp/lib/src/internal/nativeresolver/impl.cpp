@@ -849,17 +849,14 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 
 void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 {
-	auto elementPtrs = solution.getElements();
-	FORIT(elementPtrIt, elementPtrs)
+	for (auto element: solution.getElements())
 	{
-		const GraphCessorListType& successorElementPtrs =
-				__solution_storage->getSuccessorElements(*elementPtrIt);
-		FORIT(successorElementPtrIt, successorElementPtrs)
+		for (auto successorElement: __solution_storage->getSuccessorElements(element))
 		{
-			if (!__solution_storage->verifyElement(solution, *successorElementPtrIt))
+			if (!__solution_storage->verifyElement(solution, successorElement))
 			{
 				fatal2i("final solution check failed: solution '%u', version '%s', problem '%s'",
-						solution.id, (*elementPtrIt)->toString(), (*successorElementPtrIt)->toString());
+						solution.id, element->toString(), successorElement->toString());
 			}
 		}
 	}
