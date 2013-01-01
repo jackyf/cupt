@@ -28,7 +28,7 @@ namespace internal {
 using std::make_pair;
 
 PackageEntry::PackageEntry(bool sticked_)
-	: sticked(sticked_), autoremoved(false), avoidedBrokenElement(nullptr)
+	: sticked(sticked_), autoremoved(false)
 {}
 
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
@@ -381,7 +381,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	__update_broken_successors(solution, conflictingElementPtr, elementPtr, priority);
 }
 
-void SolutionStorage::prepareForResolving(const shared_ptr< Solution >& initialSolution,
+void SolutionStorage::prepareForResolving(Solution& initialSolution,
 			const map< string, const BinaryVersion* >& oldPackages,
 			const map< string, dg::InitialPackageEntry >& initialPackages)
 {
@@ -398,12 +398,11 @@ void SolutionStorage::prepareForResolving(const shared_ptr< Solution >& initialS
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
-	initialSolution->__added_entries->init(std::move(source));
-	for (const auto& entry: *(initialSolution->__added_entries))
+	initialSolution.__added_entries->init(std::move(source));
+	for (const auto& entry: *initialSolution.__added_entries)
 	{
-		__update_broken_successors(*initialSolution, NULL, entry.first, 0);
+		__update_broken_successors(initialSolution, NULL, entry.first, 0);
 	}
-	__initialSolution = initialSolution;
 
 	__change_index.emplace_back(0);
 }
@@ -462,10 +461,10 @@ size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element
 	return -1;
 }
 
-void SolutionStorage::findReasonElements(
+void SolutionStorage::processReasonElements(
 		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
 		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
-		const std::function< void (const dg::Element*) >& callback) const
+		const std::function< void (const IntroducedBy&, const dg::Element*) >& callback) const
 {
 	auto getElementPosition = [this, &solution, &elementPositionCache](const dg::Element* elementPtr)
 	{
@@ -477,8 +476,12 @@ void SolutionStorage::findReasonElements(
 		return value;
 	};
 
-	// version
-	callback(introducedBy.versionElementPtr);
+	{ // version
+		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
+		{
+			callback(packageEntryPtr->introducedBy, introducedBy.versionElementPtr);
+		}
+	}
 	// dependants
 	set< const dg::Element* > alreadyProcessedConflictors;
 	for (const auto& successor: getSuccessorElements(introducedBy.brokenElementPtr))
@@ -508,43 +511,11 @@ void SolutionStorage::findReasonElements(
 				}
 
 				// verified, queueing now
-				callback(conflictingElementPtr);
+				const IntroducedBy& candidateIntroducedBy =
+						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
+				callback(candidateIntroducedBy, conflictingElementPtr);
 			}
 		}
-	}
-}
-
-void SolutionStorage::findIntroducedBy(const Solution& solution,
-		const dg::Element* insertedElement, const PackageEntry* packageEntry,
-		const std::function< void (const IntroducedBy&) >& callback) const
-{
-	if (!packageEntry) return; // replaced element
-	if (!packageEntry->changedByResolver) return;
-
-	// version
-	for (auto relationElement: getPredecessorElements(insertedElement))
-	{
-		for (auto dependentElement: getPredecessorElements(relationElement))
-		{
-			if (!solution.getPackageEntry(dependentElement)) continue;
-			callback(IntroducedBy{dependentElement,relationElement});
-		}
-	}
-	// conflictors
-	if (auto brokenElement = packageEntry->avoidedBrokenElement)
-	{
-		const dg::Element* conflictingElement;
-		if (!simulateSetPackageEntry(*__initialSolution, insertedElement, &conflictingElement))
-		{
-			fatal2i("simulateSetPackageEntry() of present element '%s' failed on initial solution",
-					insertedElement->toString());
-		}
-		if (!conflictingElement)
-		{
-			fatal2i("avoided broken element '%s' is present, but no conflicting (to '%s') element in initial solution",
-					brokenElement->toString(), insertedElement->toString());
-		}
-		callback(IntroducedBy{conflictingElement,brokenElement});
 	}
 }
 
