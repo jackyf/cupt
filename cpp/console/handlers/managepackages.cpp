@@ -1281,9 +1281,26 @@ void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cac
 	} while (true);
 }
 
+class ProgressStage
+{
+	bool p_print;
+ public:
+	ProgressStage(const Config& config)
+		: p_print(config.getBool("cupt::console::show-progress-messages"))
+	{}
+	void operator()(const char* message)
+	{
+		if (p_print)
+		{
+			cout << message << endl;
+		}
+	}
+};
+
 int managePackages(Context& context, ManagePackages::Mode mode)
 {
 	auto config = context.getConfig();
+	ProgressStage stage(*config);
 
 	// turn off info parsing, we don't need it
 	if (!shellMode)
@@ -1322,11 +1339,11 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		bool buildSource = (mode == ManagePackages::BuildDepends ||
 				config->getString("cupt::resolver::synchronize-by-source-versions") != "none");
 
-		cout << __("Building the package cache... ") << endl;
+		stage(__("Building the package cache... "));
 		cache = context.getCache(buildSource, true, true);
 	}
 
-	cout << __("Initializing package resolver and worker... ") << endl;
+	stage(__("Initializing package resolver and worker... "));
 	std::unique_ptr< Resolver > resolver(getResolver(config, cache));
 
 	if (!snapshotName.empty())
@@ -1337,12 +1354,11 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	shared_ptr< Worker > worker(new Worker(config, cache));
 
-	cout << __("Scheduling requested actions... ") << endl;
-
+	stage(__("Scheduling requested actions... "));
 	preProcessMode(mode, *config, *resolver);
 	processPackageExpressions(*config, *cache, mode, *resolver, *worker, packageExpressions);
 
-	cout << __("Resolving possible unmet dependencies... ") << endl;
+	stage(__("Resolving possible unmet dependencies... "));
 
 	bool addArgumentsFlag, thereIsNothingToDo;
 	auto callback = generateManagementPrompt(*config, *cache, worker,

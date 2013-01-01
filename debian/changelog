@@ -50,6 +50,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Don't store unused APT variables anymore.
       - New option 'cupt::console::actions-preview::show-reasons'.
       - New option 'cupt::update::generate-index-of-index'.
+      - New option 'cupt::console::show-progress-messages'.
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.

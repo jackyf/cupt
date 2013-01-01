@@ -225,6 +225,11 @@ actions preview. False by default.
 boolean, if true, a version will be shown for each package in the actions
 preview. False by default.
 
+=item cupt::console::show-progress-messages
+
+boolean, if true, package management actions will print stage messages
+("Building a cache", "Resolving possible unmet dependencies" etc.). True by default.
+
 =item cupt::console::use-colors
 
 string, specifies whether to use colors in the console interface. Defaults to
