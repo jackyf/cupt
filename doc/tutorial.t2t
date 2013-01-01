@@ -982,8 +982,8 @@ You can also combine them.
 
 === reason chain ===
 
-Instead of display the reasons for all changed packages, starting with Cupt 2.6
-you can request the reason chain the specific package. To do this, use the choice **rc**. Example:
+Instead of displaying the reasons for all changed packages, starting with Cupt 2.6
+you can request the reason chain for the specific package. To do this, use the choice **rc**. Example:
 
 ```
  $ cupt -s install exim4-daemon-light
