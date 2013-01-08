@@ -309,7 +309,7 @@ list, names of the methods available to download protocol I<protocol>
 =item cupt::languages::indexes
 
 string, specifies localizations of what languages should be used for repository
-indexes. Defaults to "environment".
+indexes. Defaults to "environment,en".
 
 The value is comma-delimited (no spaces allowed) list of localization specificators. Localization specificator is either:
 
