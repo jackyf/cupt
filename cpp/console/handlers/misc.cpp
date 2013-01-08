@@ -91,7 +91,10 @@ int showBinaryVersions(Context& context)
 	auto getReverseProvides = [&cache](const string& packageName) -> RelationLine
 	{
 		RelationLine result;
-
+		if (!checkPackageName(packageName, false))
+		{
+			return result;
+		}
 		RelationExpression virtualRelationExpression(packageName);
 		for (const auto& version: cache->getSatisfyingVersions(virtualRelationExpression))
 		{
