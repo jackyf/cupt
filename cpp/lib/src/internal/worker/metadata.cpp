@@ -901,13 +901,13 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		if (localizationIndexDownloadInfo.empty())
 		{
 			_logger->log(Logger::Subsystem::Metadata, 3,
-					"no localization file index was found in the release, skipping downloading localization files");
+					__get_pidded_string("no localization file index was found in the release, skipping downloading localization files"));
 			return;
 		}
 		if (localizationIndexDownloadInfo.size() > 1)
 		{
 			_logger->log(Logger::Subsystem::Metadata, 3,
-					"more than one localization file index was found in the release, skipping downloading localization files");
+					__get_pidded_string("more than one localization file index was found in the release, skipping downloading localization files"));
 			return;
 		}
 
