@@ -29,7 +29,7 @@ SourcePackage::SourcePackage(const string* binaryArchitecture)
 	: Package(binaryArchitecture)
 {}
 
-unique_ptr< Version > SourcePackage::_parse_version(const Version::InitializationParameters& initParams) const
+unique_ptr< Version > SourcePackage::_parse_version(const internal::VersionParseParameters& initParams) const
 {
 	return internal::parseSourceVersion(initParams);
 }

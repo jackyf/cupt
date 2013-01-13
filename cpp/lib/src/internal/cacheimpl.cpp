@@ -36,6 +36,7 @@
 #include <internal/parse.hpp>
 #include <internal/cachefiles.hpp>
 #include <internal/indexofindex.hpp>
+#include <internal/versionparse.hpp>
 
 namespace cupt {
 namespace internal {
@@ -89,7 +90,7 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)
 		{
-			Version::InitializationParameters versionInitParams;
+			internal::VersionParseParameters versionInitParams;
 			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
 			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;

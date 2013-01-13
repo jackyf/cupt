@@ -44,14 +44,6 @@ struct CUPT_API Version
 		const ReleaseInfo* release; ///< release info
 		string directory; ///< remote directory containing files
 	};
-	/// standard initialization parameters
-	struct InitializationParameters
-	{
-		const string* packageNamePtr;
-		File* file; ///< file to read from
-		uint32_t offset; ///< version record offset in @ref file
-		const ReleaseInfo* releaseInfo; ///< release info
-	};
 	/// download place record
 	struct DownloadRecord
 	{

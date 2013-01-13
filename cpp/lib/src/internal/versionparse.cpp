@@ -24,6 +24,7 @@
 #include <internal/tagparser.hpp>
 #include <internal/parse.hpp>
 #include <internal/regex.hpp>
+#include <internal/versionparse.hpp>
 
 namespace cupt {
 namespace internal {
@@ -83,7 +84,7 @@ using namespace cache;
 				} \
 			}
 
-unique_ptr< BinaryVersion > parseBinaryVersion(const Version::InitializationParameters& initParams)
+unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& initParams)
 {
 	typedef BinaryVersion::RelationTypes RelationTypes;
 
@@ -224,7 +225,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const Version::InitializationPara
 	return v;
 }
 
-unique_ptr< SourceVersion > parseSourceVersion(const Version::InitializationParameters& initParams)
+unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& initParams)
 {
 	typedef SourceVersion::RelationTypes RelationTypes;
 

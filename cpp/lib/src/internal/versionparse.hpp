@@ -24,8 +24,16 @@
 namespace cupt {
 namespace internal {
 
-unique_ptr< cache::SourceVersion > parseSourceVersion(const cache::Version::InitializationParameters&);
-unique_ptr< cache::BinaryVersion > parseBinaryVersion(const cache::Version::InitializationParameters&);
+struct VersionParseParameters
+{
+	const string* packageNamePtr;
+	File* file; ///< file to read from
+	uint32_t offset; ///< version record offset in @ref file
+	const cache::ReleaseInfo* releaseInfo;
+};
+
+unique_ptr< cache::SourceVersion > parseSourceVersion(const VersionParseParameters&);
+unique_ptr< cache::BinaryVersion > parseBinaryVersion(const VersionParseParameters&);
 
 }
 }

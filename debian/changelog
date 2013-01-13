@@ -43,6 +43,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         differentiate versions with same version string but different hash
         sums.
       - New methods begin() and end().
+      - [API break]: 'addEntry': removed.
     - cache/relation:
       - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
         constructor from string subrange is now explicit.
@@ -59,7 +60,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         pointers' values.
       - [API break] Source, InitializationParameters: replaced shared_ptr's
         with pointers.
-      - [API break] InitializationParameters: packageName -> packageNamePtr.
+      - [API break] InitializationParameters: removed.
     - system/resolver:
       - [API break] SuggestedPackage: new field 'automaticallyInstalledFlag',
         removed old field 'manuallySelected'.

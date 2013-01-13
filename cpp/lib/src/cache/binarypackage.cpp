@@ -28,7 +28,7 @@ BinaryPackage::BinaryPackage(const string* binaryArchitecture)
 	: Package(binaryArchitecture)
 {}
 
-unique_ptr< Version > BinaryPackage::_parse_version(const Version::InitializationParameters& initParams) const
+unique_ptr< Version > BinaryPackage::_parse_version(const internal::VersionParseParameters& initParams) const
 {
 	return internal::parseBinaryVersion(initParams);
 }

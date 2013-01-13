@@ -24,6 +24,8 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/versionstring.hpp>
 
+#include <internal/versionparse.hpp>
+
 namespace cupt {
 namespace cache {
 
@@ -31,7 +33,7 @@ Package::Package(const string* binaryArchitecture)
 	: _binary_architecture(binaryArchitecture)
 {}
 
-void Package::addEntry(const Version::InitializationParameters& initParams)
+void Package::addEntry(const internal::VersionParseParameters& initParams)
 {
 	try
 	{
