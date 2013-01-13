@@ -75,6 +75,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/binaryversion:
       - [API break] Fields 'shortDescription' and 'longDescription' are
         replaced with a new field 'description'.
+      - [API break] 'parseFromFile': removed.
+    - cache/sourceversion:
+      - [API break] 'parseFromFile': removed.
     - cache/sourcepackage:
       - New methods begin() and end().
     - file:

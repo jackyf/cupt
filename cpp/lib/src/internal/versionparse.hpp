@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2013 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,38 +15,20 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <cupt/cache/binaryversion.hpp>
-#include <cupt/cache/releaseinfo.hpp>
+#ifndef CUPT_INTERNAL_VERSIONPARSE_SEEN
+#define CUPT_INTERNAL_VERSIONPARSE_SEEN
 
-#include <internal/common.hpp>
+#include <cupt/common.hpp>
+#include <cupt/cache/version.hpp>
 
 namespace cupt {
-namespace cache {
+namespace internal {
 
-bool BinaryVersion::isInstalled() const
-{
-	return sources.empty() ? false : sources[0].release->baseUri.empty();
-}
-
-bool BinaryVersion::areHashesEqual(const Version* other) const
-{
-	auto o = dynamic_cast< const BinaryVersion* >(other);
-	if (!o)
-	{
-		fatal2i("areHashesEqual: non-binary version parameter");
-	}
-	return file.hashSums.match(o->file.hashSums);
-}
-
-const string BinaryVersion::RelationTypes::strings[] = {
-	N__("Pre-Depends"), N__("Depends"), N__("Recommends"), N__("Suggests"),
-	N__("Enhances"), N__("Conflicts"), N__("Breaks"), N__("Replaces")
-};
-const char* BinaryVersion::RelationTypes::rawStrings[] = {
-	"pre-depends", "depends", "recommends", "suggests",
-	"enhances", "conflicts", "breaks", "replaces"
-};
+unique_ptr< cache::SourceVersion > parseSourceVersion(const cache::Version::InitializationParameters&);
+unique_ptr< cache::BinaryVersion > parseBinaryVersion(const cache::Version::InitializationParameters&);
 
 }
 }
+
+#endif
 

@@ -19,6 +19,8 @@
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/binaryversion.hpp>
 
+#include <internal/versionparse.hpp>
+
 namespace cupt {
 namespace cache {
 
@@ -28,7 +30,7 @@ BinaryPackage::BinaryPackage(const string* binaryArchitecture)
 
 unique_ptr< Version > BinaryPackage::_parse_version(const Version::InitializationParameters& initParams) const
 {
-	return unique_ptr< Version >(BinaryVersion::parseFromFile(initParams));
+	return internal::parseBinaryVersion(initParams);
 }
 
 bool BinaryPackage::_is_architecture_appropriate(const Version* version) const

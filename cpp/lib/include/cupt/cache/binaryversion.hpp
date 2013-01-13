@@ -51,9 +51,6 @@ struct CUPT_API BinaryVersion: public Version
 
 	bool isInstalled() const; ///< is version installed?
 	virtual bool areHashesEqual(const Version* other) const;
-
-	/// parse version
-	static BinaryVersion* parseFromFile(const Version::InitializationParameters&);
 };
 
 } // namespace
