@@ -84,20 +84,29 @@ using namespace cache;
 				} \
 			}
 
+namespace {
+
+void fillCommon(Version* v, const VersionParseParameters& initParams)
+{
+	v->packageName = *initParams.packageNamePtr;
+	v->priority = Version::Priorities::Extra; // default value if not specified
+
+	Version::Source source;
+	source.release = initParams.releaseInfo;
+	v->sources.push_back(source);
+}
+
+}
+
 unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& initParams)
 {
 	typedef BinaryVersion::RelationTypes RelationTypes;
 
 	unique_ptr< BinaryVersion > v(new BinaryVersion);
-
-	Version::Source source;
+	fillCommon(v.get(), initParams);
 
 	v->essential = false;
-	v->packageName = *initParams.packageNamePtr;
-	source.release = initParams.releaseInfo;
-
 	v->installedSize = 0;
-	v->priority = Version::Priorities::Extra; // default value if not specified
 	v->file.size = 0;
 
 	{ // actual parsing
@@ -126,7 +135,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 				}
 				else
 				{
-					source.directory = filename.substr(0, lastSlashPosition);
+					v->sources[0].directory = filename.substr(0, lastSlashPosition);
 					v->file.name = filename.substr(lastSlashPosition + 1);
 				}
 			})
@@ -216,7 +225,6 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 				v->packageName, v->versionString);
 		v->architecture = "all";
 	}
-	v->sources.push_back(source);
 	if (!v->isInstalled() && v->file.hashSums.empty())
 	{
 		fatal2(__("no hash sums specified"));
@@ -230,13 +238,7 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 	typedef SourceVersion::RelationTypes RelationTypes;
 
 	unique_ptr< SourceVersion > v(new SourceVersion);
-
-	Version::Source source;
-
-	v->packageName = *initParams.packageNamePtr;
-	source.release = initParams.releaseInfo;
-
-	v->priority = Version::Priorities::Extra; // default value if not specified
+	fillCommon(v.get(), initParams);
 
 	{ // actual parsing
 		// go to starting byte of the entry
@@ -328,7 +330,7 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 							v->binaryPackageNames.push_back(string(a, b));
 						});
 			})
-			TAG(Directory, source.directory = tagValue;)
+			TAG(Directory, v->sources[0].directory = tagValue;)
 			TAG(Version, v->versionString = tagValue;)
 			if (tagName.equal(BUFFER_AND_SIZE("Priority")) && tagValue.equal(BUFFER_AND_SIZE("source")))
 			{
@@ -356,7 +358,6 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 		}
 	}
 	checkVersionString(v->versionString);
-	v->sources.push_back(source);
 
 	if (v->versionString.empty())
 	{
