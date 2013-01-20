@@ -51,7 +51,10 @@ const WA::Type fakeBecomeManuallyInstalled = WA::Type(1003);
 
 struct ManagePackagesContext
 {
+	enum class AutoInstall { Yes, No, Nop };
+
 	ManagePackages::Mode mode;
+	AutoInstall autoinstall;
 	Config& config;
 	const Cache& cache;
 	Resolver& resolver;
@@ -203,6 +206,15 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 				}
 			}
 			mpc.resolver.installVersion(version);
+
+			if (mpc.autoinstall == ManagePackagesContext::AutoInstall::Yes)
+			{
+				mpc.resolver.setAutomaticallyInstalledFlag(version->packageName, true);
+			}
+			else if (mpc.autoinstall == ManagePackagesContext::AutoInstall::No)
+			{
+				mpc.resolver.setAutomaticallyInstalledFlag(version->packageName, false);
+			}
 		}
 	}
 	else // ManagePackages::Remove or ManagePackages::Purge
@@ -285,6 +297,9 @@ static void processPackageExpressions(ManagePackagesContext& mpc, const vector< 
 		else if (packageExpression == "--markauto") mpc.mode = ManagePackages::Markauto;
 		else if (packageExpression == "--unmarkauto") mpc.mode = ManagePackages::Unmarkauto;
 		else if (packageExpression == "--iii") mpc.mode = ManagePackages::InstallIfInstalled;
+		else if (packageExpression == "--asauto=yes") mpc.autoinstall = ManagePackagesContext::AutoInstall::Yes;
+		else if (packageExpression == "--asauto=no") mpc.autoinstall = ManagePackagesContext::AutoInstall::No;
+		else if (packageExpression == "--asauto=default") mpc.autoinstall = ManagePackagesContext::AutoInstall::Nop;
 		// package expressions: processing them
 		else if (mpc.mode == ManagePackages::Satisfy || mpc.mode == ManagePackages::Unsatisfy)
 		{
@@ -1157,7 +1172,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	{
 		const set< string > actionModifierOptionNames = {
 			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii",
-			"--markauto", "--unmarkauto"
+			"--markauto", "--unmarkauto", "--asauto=yes", "--asauto=no", "--asauto=default"
 		};
 		if (actionModifierOptionNames.count(input))
 		{
@@ -1357,7 +1372,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	shared_ptr< Worker > worker(new Worker(config, cache));
 
-	ManagePackagesContext mpc = { mode, *config, *cache, *resolver, *worker };
+	ManagePackagesContext mpc = { mode, ManagePackagesContext::AutoInstall::Nop,
+			*config, *cache, *resolver, *worker };
 
 	stage(__("Scheduling requested actions... "));
 	preProcessMode(mpc);

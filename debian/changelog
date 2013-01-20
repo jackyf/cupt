@@ -4,7 +4,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - Managing packages:
       - The option 'cupt::resolver::track-reasons' does not correspond to the
         console '--show-reasons' option anymore.
-      - New positional action override options '--markauto', '--unmarkauto'.
+      - New positional action override options '--markauto', '--unmarkauto',
+        '--asauto=yes', '--asauto=no', '--asauto=default'.
       - 'markauto', 'unmarkauto': are now first-class management commands.
       - Action preview prompt: now properly show reinstalled packages as
         reinstalled, not as upgraded.

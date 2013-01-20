@@ -847,6 +847,19 @@ remove bindfs> shows that the package 'fuse' will be removed as it was a
 dependency of 'bindfs'; you however decide you want to keep it in the system.
 Then you run C<cupt remove bindfs --unmarkauto fuse>.
 
+=item --asauto=yes
+
+in addition to following actions, also mark packages as automatically installed
+
+=item --asauto=no
+
+in addition to following actions, also mark packages as manually installed
+
+=item --asauto=default
+
+reset any previous C<--asauto> switches (to default mode, which is: mark newly
+installed packages as manually installed and preserve auto-status otherwise)
+
 =back
 
 =head3 management modifiers: package name suffixes
