@@ -693,9 +693,10 @@ upgrade all installed drivers. For that you can do
 === Action override options ===
 
 You can use special positional options ``--install``, ``--remove``,
-``--purge``, ``--iii``, ``--satisfy``, ``--unsatisfy``, ``--asauto=yes``,
-``--asauto=no``, ``--asauto=default`` to override the specified action until
-the end of the arguments or the next action override option.
+``--purge``, ``--iii``, ``--satisfy``, ``--unsatisfy``, ``--markauto``,
+``--unmarkauto``, ``--asauto=yes``, ``--asauto=no``, ``--asauto=default`` to
+override the specified action until the end of the arguments or the next action
+override option.
 
 Examples:
 
@@ -705,6 +706,17 @@ Install packages ``clive`` and ``git``, remove the package
 ``youtube-dl``, purge packages ``cvs`` and ``subversion``, make sure that the package
 ``iceweasel`` of version 4 or higher is installed, make sure that the package
 ``xinput`` either is not installed or has the version ``1.5`` or higher.
+
+- ``cupt install vlc --markauto xine``
+
+Install the package ``vlc`` and mark the package ``xine`` automatically installed.
+
+- ``cupt remove bindfs --unmarkauto fuse``
+
+You have a package 'bindfs' installed and now don't need it anymore.
+``cupt remove bindfs`` shows that the package ``fuse`` will be removed as it was a
+dependency of ``bindfs``; you however decide you want to keep it in the system
+and run the command above.
 
 - ``cupt install mumble libgeoip1 geoip-dbg``
 
