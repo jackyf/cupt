@@ -49,17 +49,17 @@ int main()
 			auto package = cache.getBinaryPackage(packageName);
 			if (!package)
 			{
-				cupt::fatal("no binary package '%s'", packageName.c_str());
+				cupt::fatal2("no binary package '%s'", packageName.c_str());
 			}
 			auto installedVersion = package->getInstalledVersion();
 			if (!installedVersion)
 			{
-				cupt::fatal("no installed version in package '%s'", packageName.c_str());
+				cupt::fatal2("no installed version in package '%s'", packageName.c_str());
 			}
-			auto policyVersion = cache.getPolicyVersion(package);
+			auto policyVersion = cache.getPreferredVersion(package);
 			if (!policyVersion)
 			{
-				cupt::fatal("unable to get policy version for package '%s'", packageName.c_str());
+				cupt::fatal2("unable to get policy version for package '%s'", packageName.c_str());
 			}
 
 			if (installedVersion->versionString != policyVersion->versionString)
