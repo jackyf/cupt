@@ -43,20 +43,18 @@ string globToRegexString(const string& input)
 	return string("^") + output + "$";
 }
 
-unique_ptr< sregex > stringToRegex(const string& input)
+sregex stringToRegex(const string& input)
 {
-	unique_ptr< sregex > result;
 	try
 	{
-		result = unique_ptr< sregex >(new sregex(sregex::compile(input)));
+		return sregex::compile(input);
 	}
 	catch (regex_error& e)
 	{
 		fatal2(__("invalid regular expression '%s'"), input);
 	}
-	return result;
 }
-unique_ptr< sregex > globToRegex(const string& glob)
+sregex globToRegex(const string& glob)
 {
 	return stringToRegex(globToRegexString(glob));
 }

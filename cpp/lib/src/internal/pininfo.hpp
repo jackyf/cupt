@@ -40,7 +40,7 @@ class PinInfo
 					ReleaseVendor, ReleaseVersion, ReleaseComponent, ReleaseLabel, HostName };
 
 			Type type;
-			unique_ptr< sregex > value;
+			sregex value;
 		};
 
 		vector< Condition > conditions;
