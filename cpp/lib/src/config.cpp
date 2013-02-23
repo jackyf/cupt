@@ -24,8 +24,6 @@ using std::map;
 
 #include <boost/lexical_cast.hpp>
 
-#include <common/regex.hpp>
-
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
 #include <cupt/file.hpp>
@@ -33,6 +31,7 @@ using std::map;
 #include <internal/common.hpp>
 #include <internal/configparser.hpp>
 #include <internal/filesystem.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 
@@ -48,6 +47,7 @@ class ConfigImpl
 	map< string, vector< string > > listVars;
 
 	void initializeVariables();
+	vector< string > getConfigurationFilePaths(Config*) const;
 	void readConfigs(Config*);
 	bool isOptionalOption(const string& optionName) const;
 };
@@ -232,6 +232,7 @@ void ConfigImpl::initializeVariables()
 		{ "apt::update::pre-invoke", vector< string > {} },
 		{ "apt::update::post-invoke", vector< string > {} },
 		{ "apt::update::post-invoke-success", vector< string > {} },
+		{ "dir::ignore-files-silently", { "~$", "\\.disabled$", "\\.bak$", "\\.dpkg-[a-z]+$" } },
 		{ "dpkg::options", vector< string > {} },
 		{ "dpkg::pre-install-pkgs", vector< string > {} },
 		{ "dpkg::pre-invoke", vector< string > {} },
@@ -252,14 +253,71 @@ void ConfigImpl::initializeVariables()
 	__initOptionalPatterns();
 }
 
-bool ConfigImpl::isOptionalOption(const string& optionName) const
+namespace {
+
+bool matchesAnyOfRegexes(const string& s, const vector< sregex >& regexes)
 {
 	smatch m;
-	return std::any_of(__optionalPatterns.begin(), __optionalPatterns.end(),
-			[&m, &optionName](const sregex& pattern)
+	return std::any_of(regexes.begin(), regexes.end(),
+			[&m, &s](const sregex& regex)
 			{
-				return regex_match(optionName, m, pattern);
+				return regex_match(s, m, regex);
 			});
+}
+
+vector< string > getConfigurationPartsFilePaths(
+		const string& partsDirectoryPath, const vector< sregex >& ignorePathRegexes)
+{
+	using namespace std::placeholders;
+
+	vector< string > result = internal::fs::glob(partsDirectoryPath + "/*");
+	result.erase(std::remove_if(result.begin(), result.end(),
+			std::bind(matchesAnyOfRegexes, _1, ignorePathRegexes)), result.end());
+	return result;
+}
+
+}
+
+bool ConfigImpl::isOptionalOption(const string& optionName) const
+{
+	return matchesAnyOfRegexes(optionName, __optionalPatterns);
+}
+
+vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
+{
+	vector< sregex > ignorePathRegexes;
+	for (const auto& ignorePathRegexString: config->getList("dir::ignore-files-silently"))
+	{
+		auto fullString = "^.*" + ignorePathRegexString + ".*$";
+		ignorePathRegexes.emplace_back(stringToRegex(fullString));
+	}
+
+	vector< string > result;
+	{ // APT files
+		result = getConfigurationPartsFilePaths(config->getPath("dir::etc::parts"), ignorePathRegexes);
+
+		string mainFilePath = config->getPath("dir::etc::main");
+		const char* envAptConfig = getenv("APT_CONFIG");
+		if (envAptConfig)
+		{
+			mainFilePath = envAptConfig;
+		}
+		if (internal::fs::fileExists(mainFilePath))
+		{
+			result.push_back(mainFilePath);
+		}
+	}
+	{ // Cupt files
+		auto cuptParts = getConfigurationPartsFilePaths(
+				config->getPath("cupt::directory::configuration::main-parts"), ignorePathRegexes);
+		result.insert(result.end(), cuptParts.begin(), cuptParts.end());
+		auto mainFilePath = config->getPath("cupt::directory::configuration::main");
+		if (internal::fs::fileExists(mainFilePath))
+		{
+			result.push_back(mainFilePath);
+		}
+	}
+	return result;
 }
 
 void ConfigImpl::readConfigs(Config* config)
@@ -303,43 +361,15 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		vector< string > configFiles;
-
-		{ // APT files
-			string partsDir = config->getPath("dir::etc::parts");
-			configFiles = internal::fs::glob(partsDir + "/*");
-
-			string mainFilePath = config->getPath("dir::etc::main");
-			const char* envAptConfig = getenv("APT_CONFIG");
-			if (envAptConfig)
-			{
-				mainFilePath = envAptConfig;
-			}
-			if (internal::fs::fileExists(mainFilePath))
-			{
-				configFiles.push_back(mainFilePath);
-			}
-		}
-		{ // Cupt files
-			auto cuptParts = internal::fs::glob(config->getPath(
-					"cupt::directory::configuration::main-parts") + "/*");
-			configFiles.insert(configFiles.end(), cuptParts.begin(), cuptParts.end());
-			auto mainFilePath = config->getPath("cupt::directory::configuration::main");
-			if (internal::fs::fileExists(mainFilePath))
-			{
-				configFiles.push_back(mainFilePath);
-			}
-		}
-
-		FORIT(configFileIt, configFiles)
+		for (const auto& configFile: getConfigurationFilePaths(config))
 		{
 			try
 			{
-				parser.parse(*configFileIt);
+				parser.parse(configFile);
 			}
 			catch (Exception&)
 			{
-				warn2(__("skipped the configuration file '%s'"), *configFileIt);
+				warn2(__("skipped the configuration file '%s'"), configFile);
 			}
 		}
 	}

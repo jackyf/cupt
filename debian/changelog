@@ -58,6 +58,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - The option 'cupt::languages::indexes' has now default value
         'environment,en' to always download English translations regardless of
         the current locale.
+      - Recognize and use the option 'dir::ignore-files-silently'.
+        (Closes: #697248)
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.

@@ -28,10 +28,10 @@ apt::get::automaticremove, apt::get::list-cleanup, apt::get::purge,
 apt::update::pre-invoke, apt::update::post-invoke,
 apt::update::post-invoke-success, dir, dir::bin::dpkg, dir::cache,
 dir::cache::archives, dir::etc, dir::etc::sourcelist, dir::etc::sourceparts,
-dir::etc::parts, dir::etc::main, dir::etc::preferences, dir::state,
-dir::state::extendedstates, dir::state::status, dpkg::options,
-dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
-gpgv::trustedkeyring, quiet
+dir::etc::parts, dir::etc::main, dir::etc::preferences,
+dir::ignore-files-silently, dir::state, dir::state::extendedstates,
+dir::state::status, dpkg::options, dpkg::pre-invoke, dpkg::post-invoke,
+dpkg::pre-install-pkgs, gpgv::trustedkeyring, quiet
 
 See L<apt.conf(5)> for their meanings.
 
