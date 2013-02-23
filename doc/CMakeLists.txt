@@ -44,3 +44,4 @@ install(DIRECTORY ${ODIR}/reference/html DESTINATION share/doc/lib)
 install(DIRECTORY ${ODIR}/reference/man DESTINATION share FILES_MATCHING PATTERN cupt*)
 install(FILES ${ODIR}/tutorial.html ${ODIR}/cupt_tutorial.7 DESTINATION share/doc)
 
+add_subdirectory(examples/show-upgradeable)
