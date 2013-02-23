@@ -43,12 +43,12 @@ string globToRegexString(const string& input)
 	return string("^") + output + "$";
 }
 
-shared_ptr< sregex > stringToRegex(const string& input)
+unique_ptr< sregex > stringToRegex(const string& input)
 {
-	shared_ptr< sregex > result;
+	unique_ptr< sregex > result;
 	try
 	{
-		result = shared_ptr< sregex >(new sregex(sregex::compile(input)));
+		result = unique_ptr< sregex >(new sregex(sregex::compile(input)));
 	}
 	catch (regex_error& e)
 	{
@@ -56,7 +56,7 @@ shared_ptr< sregex > stringToRegex(const string& input)
 	}
 	return result;
 }
-shared_ptr< sregex > globToRegex(const string& glob)
+unique_ptr< sregex > globToRegex(const string& glob)
 {
 	return stringToRegex(globToRegexString(glob));
 }

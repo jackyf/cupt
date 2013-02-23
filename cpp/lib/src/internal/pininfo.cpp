@@ -262,7 +262,7 @@ void PinInfo::loadData(const string& path)
 					PinEntry::Condition condition;
 					condition.type = PinEntry::Condition::Version;
 					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(condition);
+					pinEntry.conditions.push_back(std::move(condition));
 				}
 				else if (pinType == "origin")
 				{
@@ -273,7 +273,7 @@ void PinInfo::loadData(const string& path)
 						pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
 					}
 					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(condition);
+					pinEntry.conditions.push_back(std::move(condition));
 				}
 				else
 				{
@@ -345,7 +345,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 		FORIT(conditionIt, conditions)
 		{
 			const PinEntry::Condition& condition = *conditionIt;
-			const shared_ptr< sregex >& regex = condition.value;
+			const auto& regex = condition.value;
 
 			switch (condition.type)
 			{
