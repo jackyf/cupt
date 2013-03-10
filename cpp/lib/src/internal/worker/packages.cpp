@@ -29,6 +29,7 @@
 #include <internal/cachefiles.hpp>
 
 #include <internal/worker/packages.hpp>
+#include <internal/worker/dpkg.hpp>
 
 namespace cupt {
 namespace internal {
@@ -62,6 +63,18 @@ string InnerAction::toString() const
 			" " + version->versionString;
 
 	return result;
+}
+
+InnerAction::Type InnerActionGroup::getCompoundActionType() const
+{
+	/* all actions within one group have, by algorithm,
+	   a) the same action name (so far, configures only)
+	   b) the same package name (linked actions)
+
+	   in both cases, we can choose the action type of the last action
+	   in the subgroup as effective
+	*/
+	return this->rbegin()->type;
 }
 
 
@@ -1991,44 +2004,6 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 	}
 }
 
-string __get_dpkg_action_log(const InnerActionGroup& actionGroup,
-		InnerAction::Type actionType, const string& actionName)
-{
-	vector< string > subResults;
-	FORIT(actionIt, actionGroup)
-	{
-		if (actionIt->type == actionType)
-		{
-			subResults.push_back(actionName + ' ' + actionIt->version->packageName
-					+ ' ' + actionIt->version->versionString);
-		}
-	}
-	return join(" & ", subResults);
-}
-
-bool __defer_triggers(const Config& config, const Cache& cache)
-{
-	const string& optionName = "cupt::worker::defer-triggers";
-	if (config.getString(optionName) == "auto")
-	{
-		auto dpkgPackage = cache.getBinaryPackage("dpkg");
-		if (!dpkgPackage)
-		{
-			fatal2i("no 'dpkg' binary package available");
-		}
-		auto dpkgInstalledVersion = dpkgPackage->getInstalledVersion();
-		if (!dpkgInstalledVersion)
-		{
-			fatal2i("no installed version for 'dpkg' binary package");
-		}
-		return (compareVersionStrings(dpkgInstalledVersion->versionString, "1.16.1") != -1); // >=
-	}
-	else
-	{
-		return config.getBool(optionName);
-	}
-}
-
 void PackagesWorker::__do_independent_auto_status_changes()
 {
 	auto wasDoneAlready = [this](const string& packageName)
@@ -2051,123 +2026,6 @@ void PackagesWorker::__do_independent_auto_status_changes()
 			markAsAutomaticallyInstalled(packageName, autoFlagChange.second);
 		}
 	}
-}
-
-static string __get_full_dpkg_binary_command(const Config& config)
-{
-	string dpkgBinary = config.getPath("dir::bin::dpkg");
-
-	for (const string& option: config.getList("dpkg::options"))
-	{
-		dpkgBinary += " ";
-		dpkgBinary += option;
-	}
-
-	return dpkgBinary;
-}
-
-static InnerAction::Type __get_action_type(const InnerActionGroup& actionGroup)
-{
-	/* all actions within one group have, by algorithm,
-	   a) the same action name (so far, configures only)
-	   b) the same package name (linked actions)
-
-	   in both cases, we can choose the action type of the last action
-	   in the subgroup as effective
-	*/
-	return actionGroup.rbegin()->type;
-}
-
-static string __get_action_name(InnerAction::Type actionType,
-		const Worker::ActionsPreview& actionsPreview, const InnerActionGroup& actionGroup)
-{
-	string result;
-
-	switch (actionType)
-	{
-		case InnerAction::Remove:
-		{
-			const string& packageName = actionGroup.rbegin()->version->packageName;
-			result = actionsPreview.groups[Worker::Action::Purge].count(packageName) ?
-					"purge" : "remove";
-		}
-			break;
-		case InnerAction::Unpack:
-			result = "unpack";
-			break;
-		case InnerAction::Configure:
-			if (actionGroup.size() >= 2 && (actionGroup.rbegin() + 1)->type == InnerAction::Unpack)
-			{
-				result = "install"; // [remove+]unpack+configure
-			}
-			else
-			{
-				result = "configure";
-			}
-			break;
-	}
-
-	return result;
-}
-
-string PackagesWorker::__get_dpkg_action_command(const string& dpkgBinary,
-		const string& requestedDpkgOptions, const string& archivesDirectory,
-		InnerAction::Type actionType, const string& actionName,
-		const InnerActionGroup& actionGroup, bool deferTriggers)
-{
-	auto dpkgCommand = dpkgBinary + " --" + actionName;
-	if (deferTriggers)
-	{
-		dpkgCommand += " --no-triggers";
-	}
-	dpkgCommand += requestedDpkgOptions;
-
-	/* the workaround for a dpkg bug #558151
-
-	   dpkg performs some IMHO useless checks for programs in PATH
-	   which breaks some upgrades of packages that contains important programs
-
-	   It is possible that this hack is not needed anymore with
-	   better scheduling heuristics of 2.x but we cannot
-	   re-evaluate it with lenny->squeeze (e)glibc upgrade since
-	   new Cupt requires new libgcc which in turn requires new
-	   glibc.
-	*/
-	dpkgCommand += " --force-bad-path";
-
-	for (const auto& action: actionGroup)
-	{
-		if (action.type != actionType)
-		{
-			continue; // will be true for non-last linked actions
-		}
-		string actionExpression;
-		if (actionName == "unpack" || actionName == "install")
-		{
-			const auto& version = action.version;
-			actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
-		}
-		else
-		{
-			actionExpression = action.version->packageName;
-		}
-		dpkgCommand += " ";
-		dpkgCommand += actionExpression;
-	}
-
-	return dpkgCommand;
-}
-
-void __debug_dpkg_action_command(const InnerActionGroup& actionGroup, const string& requestedDpkgOptions)
-{
-	vector< string > stringifiedActions;
-	for (const auto& action: actionGroup)
-	{
-		stringifiedActions.push_back(action.toString());
-	}
-	auto actionsString = join(" & ", stringifiedActions);
-	debug2("do: (%s) %s%s", actionsString, requestedDpkgOptions,
-			actionGroup.continued ? " (continued)" : "");
 }
 
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
@@ -2206,68 +2064,25 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 	_logger->log(Logger::Subsystem::Packages, 1, "changing the system");
 
-	// doing or simulating the actions
-	auto dpkgBinary = __get_full_dpkg_binary_command(*_config);
-	bool deferTriggers = __defer_triggers(*_config, *_cache);
-
 	__do_dpkg_pre_actions();
-
-	{ // make sure system is trigger-clean
-		_logger->log(Logger::Subsystem::Packages, 2, "running all package triggers");
-
-		auto command = dpkgBinary + " --triggers-only -a";
-		__run_dpkg_command("triggers-only", command, "");
-	}
-
-	auto archivesDirectory = _get_archives_directory();
-	for (const Changeset& changeset: changesets)
 	{
-		if (debugging) debug2("started changeset");
-		__do_downloads(changeset.downloads, downloadProgress);
-
-		__do_dpkg_pre_packages_actions(changeset.actionGroups);
-
-		FORIT(actionGroupIt, changeset.actionGroups)
+		for (const Changeset& changeset: changesets)
 		{
-			auto actionType = __get_action_type(*actionGroupIt);
-			string actionName = __get_action_name(actionType, *__actions_preview, *actionGroupIt);
+			Dpkg dpkg(this);
 
-			__change_auto_status(*actionGroupIt);
-
-			{ // dpkg actions
-				string requestedDpkgOptions;
-				for (const auto& dpkgFlag: actionGroupIt->dpkgFlags)
-				{
-					requestedDpkgOptions += string(" ") + dpkgFlag;
-				}
-
-				auto dpkgCommand = __get_dpkg_action_command(dpkgBinary, requestedDpkgOptions,
-						archivesDirectory, actionType, actionName, *actionGroupIt, deferTriggers);
-				if (debugging) __debug_dpkg_action_command(*actionGroupIt, requestedDpkgOptions);
-				_logger->log(Logger::Subsystem::Packages, 2,
-						__get_dpkg_action_log(*actionGroupIt, actionType, actionName));
-				_run_external_command(Logger::Subsystem::Packages, dpkgCommand);
-			};
+			if (debugging) debug2("started changeset");
+			__do_downloads(changeset.downloads, downloadProgress);
+			__do_dpkg_pre_packages_actions(changeset.actionGroups);
+			for (const auto& actionGroup: changeset.actionGroups)
+			{
+				__change_auto_status(actionGroup);
+				dpkg.doActionGroup(actionGroup, *__actions_preview);
+			}
+			if (archivesSpaceLimit) __clean_downloads(changeset);
+			if (debugging) debug2("finished changeset");
 		}
-		if (deferTriggers)
-		{
-			// triggers were not processed during actions perfomed before, do it now at once
-			_logger->log(Logger::Subsystem::Packages, 2, "running pending triggers");
-
-			string command = dpkgBinary + " --triggers-only --pending";
-			if (debugging) debug2("running triggers");
-			__run_dpkg_command("triggers", command, "");
-		}
-
-		if (archivesSpaceLimit)
-		{
-			__clean_downloads(changeset);
-		}
-		if (debugging) debug2("finished changeset");
+		__do_independent_auto_status_changes();
 	}
-
-	__do_independent_auto_status_changes();
-
 	__do_dpkg_post_actions();
 }
 

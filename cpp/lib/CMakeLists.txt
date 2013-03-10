@@ -19,6 +19,7 @@ add_library(libcupt3 SHARED
 	./src/internal/tagparser.cpp
 	./src/internal/worker/base.cpp
 	./src/internal/worker/archives.cpp
+	./src/internal/worker/dpkg.cpp
 	./src/internal/worker/metadata.cpp
 	./src/internal/worker/setupandpreview.cpp
 	./src/internal/worker/packages.cpp

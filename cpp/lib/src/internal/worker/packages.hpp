@@ -52,6 +52,7 @@ struct InnerActionGroup: public vector< InnerAction >
 	bool continued;
 
 	InnerActionGroup() : continued(false) {}
+	InnerAction::Type getCompoundActionType() const;
 };
 typedef pair< const InnerAction*, const InnerAction* > InnerActionPtrPair;
 struct GraphAndAttributes

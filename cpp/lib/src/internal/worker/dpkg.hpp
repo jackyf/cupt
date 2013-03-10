@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2013 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,56 +15,32 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_WORKER_BASE_SEEN
-#define CUPT_INTERNAL_WORKER_BASE_SEEN
+#ifndef CUPT_INTERNAL_WORKER_DPKG_SEEN
+#define CUPT_INTERNAL_WORKER_DPKG_SEEN
 
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include <cupt/fwd.hpp>
-#include <cupt/system/worker.hpp>
-
-#include <internal/logger.hpp>
+#include <internal/worker/packages.hpp>
 
 namespace cupt {
 namespace internal {
 
-using system::Worker;
-using system::Resolver;
-using system::State;
-
-using namespace cache;
-
-class Lock;
-
-class WorkerBase
+class Dpkg
 {
-	friend class Dpkg;
-	mode_t __umask;
-	Lock* __lock;
- protected:
-	shared_ptr< const Config > _config;
-	shared_ptr< const Cache > _cache;
-	Logger* _logger;
-
-	typedef Worker::ActionsPreview ActionsPreview;
-	typedef Worker::Action Action;
-	shared_ptr< const Resolver::SuggestedPackages > __desired_state;
-	shared_ptr< ActionsPreview > __actions_preview;
-
-	string _get_archives_directory() const;
-	static string _get_archive_basename(const BinaryVersion*);
-	void _run_external_command(Logger::Subsystem, const string&,
-			const string& = "", const string& = "");
-
-	static Action::Type _download_dependent_action_types[4];
  public:
-	static const string partialDirectorySuffix;
+	Dpkg(WorkerBase*);
+	~Dpkg();
+	void doActionGroup(const InnerActionGroup&, const Worker::ActionsPreview&);
+ private:
+	void p_makeSureThatSystemIsTriggerClean();
+	void p_runPendingTriggers();
+	string p_getActionCommand(const string&, InnerAction::Type, const string&, const InnerActionGroup&);
 
-	WorkerBase();
-	WorkerBase(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
-	virtual ~WorkerBase();
+	WorkerBase* p_base;
+	string p_fullCommand;
+	bool p_shouldDeferTriggers;
+	string p_archivesDirectoryPath;
+	bool p_debugging;
 };
+
 
 }
 }
