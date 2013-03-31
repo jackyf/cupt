@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,38 +15,29 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <cupt/cache/binaryversion.hpp>
-#include <cupt/cache/releaseinfo.hpp>
-
-#include <internal/common.hpp>
 
 namespace cupt {
-namespace cache {
+namespace internal {
+namespace ioi {
 
-bool BinaryVersion::isInstalled() const
+struct Record
 {
-	return sources.empty() ? false : sources[0].release->baseUri.empty();
-}
-
-bool BinaryVersion::areHashesEqual(const Version* other) const
-{
-	auto o = dynamic_cast< const BinaryVersion* >(other);
-	if (!o)
-	{
-		fatal2i("areHashesEqual: non-binary version parameter");
-	}
-	return file.hashSums.match(o->file.hashSums);
-}
-
-const string BinaryVersion::RelationTypes::strings[] = {
-	N__("Pre-Depends"), N__("Depends"), N__("Recommends"), N__("Suggests"),
-	N__("Enhances"), N__("Conflicts"), N__("Breaks"), N__("Replaces")
+	uint32_t* offsetPtr;
 };
-const char* BinaryVersion::RelationTypes::rawStrings[] = {
-	"pre-depends", "depends", "recommends", "suggests",
-	"enhances", "conflicts", "breaks", "replaces"
+// index suffix number must be incremented every time Record changes
+
+struct Callbacks
+{
+	std::function< void (const char*, size_t) > main;
+	std::function< void (const char*, const char*) > provides;
 };
 
+void processIndex(const string& path, const Callbacks&, const Record&);
+string getIndexOfIndexPath(const string& path);
+void removeIndexOfIndex(const string& path);
+void generate(const string& indexPath, const string& temporaryPath);
+
+}
 }
 }
 

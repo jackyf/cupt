@@ -41,25 +41,25 @@ using namespace system;
 using std::map;
 using std::forward_list;
 
+struct IntroducedBy
+{
+	const dg::Element* versionElementPtr;
+	const dg::Element* brokenElementPtr;
+
+	IntroducedBy() : versionElementPtr(NULL) {}
+	bool empty() const { return !versionElementPtr; }
+	bool operator<(const IntroducedBy& other) const
+	{
+		return std::memcmp(this, &other, sizeof(*this)) < 0;
+	}
+	shared_ptr< const Resolver::Reason > getReason() const
+	{
+		return brokenElementPtr->getReason(*versionElementPtr);
+	}
+};
+
 struct PackageEntry
 {
-	struct IntroducedBy
-	{
-		const dg::Element* versionElementPtr;
-		const dg::Element* brokenElementPtr;
-
-		IntroducedBy() : versionElementPtr(NULL) {}
-		bool empty() const { return !versionElementPtr; }
-		bool operator<(const IntroducedBy& other) const
-		{
-			return std::memcmp(this, &other, sizeof(*this)) < 0;
-		}
-		shared_ptr< const Resolver::Reason > getReason() const
-		{
-			return brokenElementPtr->getReason(*versionElementPtr);
-		}
-	};
-
 	bool sticked;
 	bool autoremoved;
 	forward_list< const dg::Element* > rejectedConflictors;
@@ -100,7 +100,7 @@ class Solution
 		vector< const dg::Element* > elementsToReject;
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
-		PackageEntry::IntroducedBy introducedBy;
+		IntroducedBy introducedBy;
 		size_t brokenElementPriority;
 	};
 
@@ -142,6 +142,7 @@ class SolutionStorage
 	};
 	vector< Change > __change_index;
 	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
+	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
 	SolutionStorage(const Config&, const Cache& cache);
 
@@ -166,7 +167,11 @@ class SolutionStorage
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 
-	vector< const dg::Element* > getInsertedElements(const Solution& solution) const;
+	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
+			const IntroducedBy&, const dg::Element*,
+			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
+	pair< const dg::Element*, const dg::Element* > getDiversedElements(
+			size_t leftSolutionId, size_t rightSolutionId) const;
 };
 
 }

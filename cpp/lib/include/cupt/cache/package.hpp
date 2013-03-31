@@ -25,6 +25,8 @@
 namespace cupt {
 namespace internal {
 
+struct VersionParseParameters;
+
 template< typename VersionType >
 class CUPT_API BasePackageIterator: public std::iterator< std::bidirectional_iterator_tag, const VersionType* >
 {
@@ -64,7 +66,7 @@ class CUPT_API Package
 	const string* _binary_architecture;
 
 	CUPT_LOCAL const vector< unique_ptr< Version > >& _get_versions() const;
-	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const Version::InitializationParameters&) const = 0;
+	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const internal::VersionParseParameters&) const = 0;
 	CUPT_LOCAL virtual bool _is_architecture_appropriate(const Version*) const = 0;
 	/// @endcond
  public:
@@ -75,8 +77,10 @@ class CUPT_API Package
 	Package(const string* binaryArchitecture);
 	/// destructor
 	virtual ~Package();
-	/// adds new element (version initialization parameters) to the container
-	void addEntry(const Version::InitializationParameters&);
+	/// @cond
+	CUPT_LOCAL void addEntry(const internal::VersionParseParameters&);
+	/// @endcond
+
 	/// gets list of versions
 	vector< const Version* > getVersions() const;
 	/// gets version with a certain Version::versionString

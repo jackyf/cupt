@@ -121,7 +121,7 @@ string format2e(const string& format, const Args&... args)
 CUPT_API void __mwrite_line(const char*, const string&);
 
 template < typename... Args >
-void fatal2(const string& format, const Args&... args)
+__attribute ((noreturn)) void fatal2(const string& format, const Args&... args)
 {
 	auto errorString = format2(format, args...);
 	__mwrite_line("E: ", errorString);

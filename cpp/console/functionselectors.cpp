@@ -240,10 +240,11 @@ class VersionSet
 struct Context
 {
 	const Cache& cache;
-	ReverseDependsIndex reverseIndex;
+	ReverseDependsIndex< BinaryVersion > reverseIndex;
+	ReverseDependsIndex< SourceVersion > reverseBuildIndex;
 
 	Context(const Cache& cache_)
-		: cache(cache_), reverseIndex(cache)
+		: cache(cache_), reverseIndex(cache), reverseBuildIndex(cache)
 	{}
 	SpcvGreater getSorter() const
 	{
@@ -761,6 +762,30 @@ class ReverseDependencyFS: public TransformFS
 	}
 };
 
+class ReverseBuildDependencyFS: public TransformFS
+{
+	SRT::Type __relationType;
+ public:
+	ReverseBuildDependencyFS(SRT::Type relationType, const Arguments& arguments)
+		: TransformFS(true, arguments), __relationType(relationType)
+	{}
+ protected:
+	FSResult _transform(Context& context, const SPCV& version) const
+	{
+		context.reverseBuildIndex.add(__relationType);
+
+		FSResult result;
+
+		auto binaryVersion = static_cast< const BinaryVersion* >(version);
+		context.reverseBuildIndex.foreachReverseDependency(binaryVersion, __relationType,
+				[&context, &result](const SourceVersion* reverseVersion, const RelationExpression&)
+				{
+					context.mergeFsResults(&result, { reverseVersion });
+				});
+		return result;
+	}
+};
+
 class PackageIsInstalledFS: public PredicateFS
 {
  protected:
@@ -874,7 +899,11 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 	else
 	{
 		CONSTRUCT_FS("uploaders", UploadersFS(arguments))
-		// relations // TODO
+
+		CONSTRUCT_FS("reverse-build-depends", ReverseBuildDependencyFS(SRT::BuildDepends, arguments))
+		CONSTRUCT_FS("reverse-build-depends-indep", ReverseBuildDependencyFS(SRT::BuildDependsIndep, arguments))
+		CONSTRUCT_FS("reverse-build-conflicts", ReverseBuildDependencyFS(SRT::BuildConflicts, arguments))
+		CONSTRUCT_FS("reverse-build-conflicts-indep", ReverseBuildDependencyFS(SRT::BuildConflictsIndep, arguments))
 	}
 
 	fatal2(__("unknown %s selector function '%s'"), binary ? __("binary") : __("source"), functionName);
@@ -955,17 +984,39 @@ void stripArgumentQuotes(string& argument)
 
 void processNonTrivialAliases(string* functionNamePtr, vector< string >* argumentsPtr)
 {
-	static size_t anonymousVariableId = 0;
+	auto getUniqueVariableName = []()
+	{
+		static size_t anonymousVariableId = 0;
+		return format2("__anon%zu", anonymousVariableId++);
+	};
 
 	if (*functionNamePtr == "package-with-installed-dependencies")
 	{
 		__require_n_arguments(*argumentsPtr, 1);
 		*functionNamePtr = "recursive";
-		auto variableName = format2("__anon%zu", anonymousVariableId++);
+		auto variableName = getUniqueVariableName();
 		auto recursiveExpression = format2(
-				"best( or(Ypd(%s),Yd(%s),Yr(%s)) & Pi )",
-				variableName, variableName, variableName);
+				"best( fmap(%s, Ypd,Yd,Yr) & Pi )", variableName);
 		*argumentsPtr = { variableName, argumentsPtr->front(), recursiveExpression };
+	}
+	else if (*functionNamePtr == "fmap")
+	{
+		if (argumentsPtr->size() < 2)
+		{
+			fatal2("the function '%s' requires at least %zu arguments", "fmap", 2);
+		}
+		auto argument = argumentsPtr->front();
+		argumentsPtr->erase(argumentsPtr->begin());
+
+		auto variableName = getUniqueVariableName();
+		auto bracedVariableName = format2("(%s)", variableName);
+
+		vector< string > mappedCalls;
+		for (const auto& e: *argumentsPtr) { mappedCalls.push_back(e + bracedVariableName); }
+		string expression = format2("or(%s)", join(",", mappedCalls));
+
+		*functionNamePtr = "with";
+		*argumentsPtr = { variableName, argument, expression };
 	}
 }
 
@@ -1013,6 +1064,11 @@ void processAliases(string* functionNamePtr, vector< string >* argumentsPtr)
 			{ "Zbdi", "build-depends-indep" },
 			{ "Zbc", "build-conflicts" },
 			{ "Zbci", "build-conflicts-indep" },
+
+			{ "ZRbd", "reverse-build-depends" },
+			{ "ZRbdi", "reverse-build-depends-indep" },
+			{ "ZRbc", "reverse-build-conflicts" },
+			{ "ZRbci", "reverse-build-conflicts-indep" },
 
 			{ "Ra", "release:archive" },
 			{ "Rn", "release:codename" },

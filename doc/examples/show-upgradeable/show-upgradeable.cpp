@@ -21,7 +21,6 @@
 #include <iostream>
 using std::cout;
 using std::endl;
-using std::cerr;
 
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
@@ -36,36 +35,34 @@ int main()
 	{
 		cupt::shared_ptr< cupt::Config > config(new cupt::Config());
 		cupt::Cache cache(config, false, true, true); // include binary installed packages
-		auto systemState = cache.getSystemState();
-		auto packageNames = systemState->getInstalledPackageNames();
 
-		for (size_t i = 0; i < packageNames.size(); ++i)
+		for (const auto& packageId: cache.getSystemState()->getInstalledPackageIds())
 		{
-			const cupt::string& packageName = packageNames[i];
-			if (cache.isAutomaticallyInstalled(packageName))
+			const std::string& packageName = packageId.name();
+			if (cache.isAutomaticallyInstalled(packageId))
 			{
 				continue;
 			}
-			auto package = cache.getBinaryPackage(packageName);
+			auto package = cache.getBinaryPackage(packageId);
 			if (!package)
 			{
-				cupt::fatal("no binary package '%s'", packageName.c_str());
+				cupt::fatal2("no binary package '%s'", packageName);
 			}
 			auto installedVersion = package->getInstalledVersion();
 			if (!installedVersion)
 			{
-				cupt::fatal("no installed version in package '%s'", packageName.c_str());
+				cupt::fatal2("no installed version in package '%s'", packageName);
 			}
-			auto policyVersion = cache.getPolicyVersion(package);
-			if (!policyVersion)
+			auto preferredVersion = cache.getPreferredVersion(package);
+			if (!preferredVersion)
 			{
-				cupt::fatal("unable to get policy version for package '%s'", packageName.c_str());
+				cupt::fatal2("unable to get preferred version for package '%s'", packageName);
 			}
 
-			if (installedVersion->versionString != policyVersion->versionString)
+			if (installedVersion != preferredVersion)
 			{
 				cout << packageName << ": " << installedVersion->versionString
-						<< " -> " << policyVersion->versionString << endl;
+						<< " -> " << preferredVersion->versionString << endl;
 			}
 		}
 	}

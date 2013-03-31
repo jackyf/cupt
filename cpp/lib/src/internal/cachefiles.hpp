@@ -20,6 +20,7 @@
 
 #include <cupt/fwd.hpp>
 #include <cupt/cache.hpp>
+#include <cupt/hashsums.hpp>
 
 namespace cupt {
 namespace internal {

@@ -35,6 +35,7 @@ class CUPT_API PackageId
 	operator bool() const { return __id; }
 
 	static bool compareByName(PackageId left, PackageId right) { return left.name() < right.name(); }
+	static bool checkPackageName(const char* start, size_t len);
 };
 
 }

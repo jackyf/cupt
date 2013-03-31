@@ -18,7 +18,7 @@
 #ifndef CUPT_FILE_SEEN
 #define CUPT_FILE_SEEN
 
-/// @file
+/// @cond
 
 #include <functional>
 
@@ -36,7 +36,18 @@ struct FileImpl;
 class CUPT_API File
 {
 	internal::FileImpl* __impl;
+	File(const File&) = delete;
  public:
+	struct RawBuffer
+	{
+		const char* data;
+		size_t size;
+
+		operator bool() const { return size; }
+		operator string() const { return string(data, size); }
+
+		RawBuffer chompAsRecord() const;
+	};
 	/// constructor
 	/**
 	 * Constructs new object for a regular file or reading shell pipe.
@@ -50,6 +61,7 @@ class CUPT_API File
 	 * @param [out] error if open fails, human readable error will be placed here
 	 */
 	File(const string& path, const char* mode, string& error);
+	File(File&&);
 	/// destructor
 	virtual ~File();
 	/// reads new line
@@ -86,29 +98,8 @@ class CUPT_API File
 	 * @endcode
 	 */
 	File& getLine(string& line);
-	/// reads new record
-	/**
-	 * Reads new record, that is, a sequence of characters which ends with
-	 * double newline character (@c "\n\n").
-	 *
-	 * If the end of file was encountered when reading, newline character(s)
-	 * will be not added.
-	 *
-	 * End of file must be checked by querying @ref eof right after @ref getRecord. You can use
-	 * @a record only if @ref eof returned false.
-	 *
-	 * @param [out] record container for read data
-	 * @return reference to self.
-	 */
-	File& getRecord(string& record);
-	/// reads new block
-	/**
-	 * Reads up to @a size characters from current position to @a buffer.
-	 * @param buffer buffer to read in
-	 * @param [in,out] size before: up limit on character count, after: number of bytes read
-	 * @return reference to self
-	 */
-	File& getBlock(char* buffer, size_t& size);
+	RawBuffer getRecord();
+	RawBuffer getBlock(size_t size);
 	/// reads all available data from current position
 	/**
 	 * It's usually used just after opening the file and for small files.
@@ -127,9 +118,7 @@ class CUPT_API File
 	 * @param size size of the buffer
 	 */
 	void put(const char* data, size_t size);
-	/// @cond
 	void unbufferedPut(const char* data, size_t size);
-	/// @endcond
 
 
 	/// checks for the end of file condition
@@ -152,7 +141,20 @@ class CUPT_API File
 	void lock(int flags);
 };
 
+// File wrapper which throws on open errors
+class CUPT_API RequiredFile: public File
+{
+ public:
+	/*
+	 * Passes @a path and @a mode to File::File(). If file failed to open (i.e.
+	 * !openError.empty()), throws the exception.
+	 */
+	RequiredFile(const string& path, const char* mode);
+};
+
 } // namespace
+
+/// @endcond
 
 #endif
 

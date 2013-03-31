@@ -99,18 +99,11 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 
 		if (sourceType == Source::File)
 		{
-			string openError;
-			File file(source, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2(__("unable to open the file '%s': %s"), source, openError);
-			}
+			RequiredFile file(source, "r");
 
-			char buffer[8192];
-			size_t size = sizeof(buffer);
-			while (file.getBlock(buffer, size), size)
+			while (auto rawBuffer = file.getBlock(8192))
 			{
-				gcryptHasher.process(buffer, size);
+				gcryptHasher.process(rawBuffer.data, rawBuffer.size);
 			}
 		}
 		else // string

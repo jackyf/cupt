@@ -4,12 +4,16 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - Managing packages:
       - The option 'cupt::resolver::track-reasons' does not correspond to the
         console '--show-reasons' option anymore.
-      - New positional action override options '--markauto', '--unmarkauto'.
+      - New positional action override options '--markauto', '--unmarkauto',
+        '--asauto=yes', '--asauto=no', '--asauto=default'.
       - 'markauto', 'unmarkauto': are now first-class management commands.
       - Action preview prompt: now properly show reinstalled packages as
         reinstalled, not as upgraded.
       - Action preview prompt: removed the 'one expression per line'
         limitation while processing 'a' choice.
+      - Action preview prompt: new choice 'rc' ("show reason chain").
+      - The option 'cupt::console::actions-preview::show-summary' got a new 
+        value variant "auto".
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
@@ -32,27 +36,41 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'getLocalizedDescriptions' is replaced with
         'getLocalizedDescription'.
       - [API break] 'getPolicyVersion' is renamed to 'getPreferredVersion'.
+      - New possibility to use index-of-index files to speed up building
+        the package cache.
+      - [API break] 'getSystemState': now returns persistent constant pointer.
+      - Don't include unnecessary 'boost/xpressive/xpressive_fwd.hpp'.
+        (Closes: #701207)
     - cache/package:
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash
         sums.
       - New methods begin() and end().
+      - [API break]: 'addEntry': removed.
     - cache/relation:
       - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
         constructor from string subrange is now explicit.
     - config:
       - Don't store unused APT variables anymore.
       - New option 'cupt::console::actions-preview::show-reasons'.
+      - New option 'cupt::update::generate-index-of-index'.
+      - New option 'cupt::console::show-progress-messages'.
+      - The option 'cupt::languages::indexes' has now default value
+        'environment,en' to always download English translations regardless of
+        the current locale.
+      - Recognize and use the option 'dir::ignore-files-silently'.
+        (Closes: #697248)
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.
       - [API break] Source, InitializationParameters: replaced shared_ptr's
         with pointers.
-      - [API break] InitializationParameters: packageName -> packageNamePtr.
+      - [API break] InitializationParameters: removed.
     - system/resolver:
       - [API break] SuggestedPackage: new field 'automaticallyInstalledFlag',
         removed old field 'manuallySelected'.
       - New method 'setAutomaticallyInstalledFlag'.
+      - 'SuggestedPackage': new field 'reasonPackageNames'.
     - system/worker:
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.
@@ -63,8 +81,17 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/binaryversion:
       - [API break] Fields 'shortDescription' and 'longDescription' are
         replaced with a new field 'description'.
+      - [API break] 'parseFromFile': removed.
+    - cache/sourceversion:
+      - [API break] 'parseFromFile': removed.
     - cache/sourcepackage:
       - New methods begin() and end().
+    - file:
+      - [API break] Not a public API anymore.
+    - system/state:
+      - New method 'getArchitecture'.
+    - download/manager:
+      - Removed 'alive pings'.
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.

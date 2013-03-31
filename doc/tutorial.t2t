@@ -257,10 +257,6 @@ An example of action preview prompt:
 
 ```
 $ cupt install kdm akregator exim4
-Building the package cache...
-Initializing package resolver and worker...
-Scheduling requested actions...
-Resolving possible unmet dependencies...
 
 The following packages will be installed:
 
@@ -696,18 +692,81 @@ upgrade all installed drivers. For that you can do
 
 === Action override options ===
 
-You can use special positional options ``--install``, ``--remove``, ``--purge``,
-``--iii``, ``--satisfy`` and ``--unsatisfy`` to override the specified action until the
-end of the arguments or the next action override option.
+You can use special positional options ``--install``, ``--remove``,
+``--purge``, ``--iii``, ``--satisfy``, ``--unsatisfy``, ``--markauto``,
+``--unmarkauto``, ``--asauto=yes``, ``--asauto=no``, ``--asauto=default`` to
+override the specified action until the end of the arguments or the next action
+override option.
 
-Example:
+Examples:
 
-``` cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"
+- ``cupt remove msmtp-mta --install exim4-daemon-light esmtp``
 
-The command above will install packages ``clive`` and ``git``, remove the package
+Install packages ``exim4-daemon-light`` and ``esmtp``, remove the package
+``msmtp-mta``.
+
+- ``cupt install exim4-daemon-light --remove msmtp-mta esmtp``
+
+Install the package ``exim4-daemon-light``, remove packages ``msmtp-mta`` and ``esmtp``.
+
+- ``cupt purge libkate1 --remove libass4 --purge libdirac-decoder0``
+
+Remove the package ``libass4``, purge packages ``libkate1`` and ``libdirac-decoder0``.
+
+- ``cupt install lightspark --remove gnash --satisfy "iceweasel (>= 5)"``
+
+Install the package ``lightspark``, remove the packae ``gnash``, and make sure that
+``iceweasel`` (at least of version ``5``) is installed.
+
+- ``cupt install sieve-connect --unsatisfy "iceweasel (<< 3.5.20)"``
+
+Install the package ``sieve-connect``, upgrade or remove the package ``iceweasel``
+if it is installed and has the version lower than ``3.5.20``.
+
+- ``cupt install libv4l-0 cupt --iii libreadline6 vlc*``
+
+Install packages ``libv4l-0`` and ``cupt``, install the preferred version of
+``libreadline6`` if it's installed already, install the preferred versions of
+packages which names start with ``vlc`` and which are installed already .
+
+- ``cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"``
+
+Install packages ``clive`` and ``git``, remove the package
 ``youtube-dl``, purge packages ``cvs`` and ``subversion``, make sure that the package
 ``iceweasel`` of version 4 or higher is installed, make sure that the package
 ``xinput`` either is not installed or has the version ``1.5`` or higher.
+
+- ``cupt install vlc --markauto xine``
+
+Install the package ``vlc`` and mark the package ``xine`` automatically installed.
+
+- ``cupt remove bindfs --unmarkauto fuse``
+
+You have a package ``bindfs`` installed and now don't need it anymore.
+``cupt remove bindfs`` shows that the package ``fuse`` will be removed as it was a
+dependency of ``bindfs``; you however decide you want to keep it in the system
+and run the command above.
+
+- ``cupt install mumble libgeoip1 geoip-dbg``
+
+(in this and following examples we suppose that currently ``mumble`` is
+manually installed, ``libgeoip1`` is automatically installed, ``geoip-dbg`` is
+not installed)
+
+``geoip-dbg`` will be manually installed.
+
+- ``cupt install --asauto=yes mumble libgeoip1 geoip-dbg``
+
+``mumble`` will be marked as automatically installed, ``geoip-dbg`` will be automatically installed
+
+- ``cupt install --asauto=no mumble libgeoip1 geoip-dbg``
+
+``libgeoip1`` will be marked as manually installed, ``geoip-dbg`` will be manually installed
+
+- ``cupt install --asauto=yes mumble --asauto=default libgeoip1 geoip-dbg``
+
+``mumble`` will be marked as automatically installed, ``geoip-dbg`` will be manually installed
+
 
 === Package name suffixes ===
 
@@ -798,10 +857,6 @@ Use ``--show-versions`` (``-V``) option. Example:
 
 ```
  $ cupt install gcc-4.6 -V
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
  
  The following packages will be installed:
  
@@ -827,10 +882,6 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
 
 ```
  $ cupt install gcc-4.6 -Z
- Building the package cache...                     
- Initializing package resolver and worker...       
- Scheduling requested actions...                   
- Resolving possible unmet dependencies...          
 
  The following packages will be installed:
  
@@ -856,10 +907,6 @@ Use ``--show-archives`` (``-A``) option. Example:
 
 ```
  $ cupt install gcc-4.7 -A
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be installed:
  
@@ -881,10 +928,6 @@ Use ``--show-codenames`` (``-N``) option. Example:
 
 ```
  $ cupt install libstreams0 -N
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be upgraded:
  
@@ -899,10 +942,6 @@ with ``--show-codenames`` or ``--show-archives``. Example:
 
 ```
  $ cupt install libstreams0 -CN
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be upgraded:
  
@@ -917,10 +956,6 @@ than one vendor and usually in conjunction with ``-V``, ``-A`` or ``-N``. Exampl
 
 ```
  $ cupt install libstreams0 -VNO
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be upgraded:
  
@@ -935,10 +970,6 @@ Example:
 
 ```
  $ cupt install gcc-4.6 -D
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
  
  The following packages will be installed:
  
@@ -992,10 +1023,6 @@ they can be upgraded):
 
 ```
  $ cupt install --no-auto-remove --show-not-preferred -V
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will have a not preferred version:
  
@@ -1016,6 +1043,48 @@ they can be upgraded):
 
 You can also combine them.
 
+=== reason chain ===
+
+Instead of displaying the reasons for all changed packages, starting with Cupt 2.6
+you can request the reason chain for the specific package. To do this, use the choice **rc**. Example:
+
+```
+ $ cupt -s install exim4-daemon-light
+ 
+ The following packages will be installed:
+ 
+ bsd-mailx exim4-base exim4-config exim4-daemon-light liblockfile-bin liblockfile1 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ The following packages are no longer needed and thus will be auto-removed:
+ 
+ libgsasl7 libntlm0 msmtp 
+ 
+ Action summary:
+   1 manually installed and 5 automatically installed packages will be installed
+   1 manually installed packages will be removed
+   3 automatically installed packages are no longer needed and thus will be auto-removed
+ 
+ Need to get 2241KiB/2241KiB of archives. After unpacking 3006KiB will be used.
+ Do you want to continue? [y/N/q/a/rc/?] rc
+ Enter a binary package name to show reason chain for (empty to cancel): bsd-mailx
+ 
+ bsd-mailx: exim4-base 4.80-6 recommends 'mailx'
+   exim4-base: exim4-daemon-light 4.80-6 depends on 'exim4-base (>= 4.80)'
+     exim4-daemon-light: user request
+ 
+ Do you want to continue? [y/N/q/a/rc/?] rc
+ Enter a binary package name to show reason chain for (empty to cancel): msmtp-mta
+ 
+ msmtp-mta: exim4-daemon-light 4.80-6 conflicts with 'mail-transport-agent'
+   exim4-daemon-light: user request
+ 
+ Do you want to continue? [y/N/q/a/rc/?]
+```
+
 === specifying more package expression arguments ===[specifying_more_package_expression_arguments]
 
 In a solution preview (action preview prompt) you have an ability to specify
@@ -1024,10 +1093,6 @@ choice **a**. Example:
 
 ```
  $ cupt install gnash
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
  
  The following packages will be installed:
  
@@ -1301,7 +1366,7 @@ This is a command line.
  4: Scheduling requested actions...
  5: Resolving possible unmet dependencies...
 ```
-These are information messages from Cupt.
+These are (optional) information messages from Cupt.
 
 ```
  6:
@@ -1515,7 +1580,6 @@ Example:
 ```
  $ cupt shell
  This is interactive shell of cupt package manager.
- Building the package cache... [done]
  cupt>policy libsoprano4
  libsoprano4:
    Installed: 2.2.2+dfsg.1-1
@@ -1572,10 +1636,7 @@ Example:
  Homepage: http://soprano.sourceforge.net
 
  cupt>--simulate install libsoprano4
- Building the package cache... [done]
- Initializing package resolver and worker... [done]
- Scheduling requested actions... [done]
- Resolving possible unmet dependencies... 
+
  The following 1 packages will be INSTALLED:
 
  soprano-daemon 
@@ -1828,6 +1889,10 @@ Same.
 - ``with(_x, Pn(grep), reverse-depends(_x) | reverse-recommends(_x))``
 
 All versions which depend on or recommend ``grep``.
+
+- ``fmap(Pn(grep), reverse-depends,reverse-recommends)``
+
+Same.
 
 - ``build-depends(Pn(grep))``
 

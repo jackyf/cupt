@@ -36,13 +36,6 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 
 bool architectureMatch(const string& architecture, const string& pattern);
 
-void processSpaceCommaSpaceDelimitedStrings(const char* begin, const char* end,
-		const std::function< void (const char*, const char*) >& callback);
-void processSpaceCommaSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback);
-void processSpacePipeSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback);
-
 } // namespace
 } // namespace
 

@@ -20,6 +20,7 @@
 #include <cupt/cache/sourceversion.hpp>
 
 #include <internal/common.hpp>
+#include <internal/versionparse.hpp>
 
 namespace cupt {
 namespace cache {
@@ -28,9 +29,9 @@ SourcePackage::SourcePackage(const string* binaryArchitecture)
 	: Package(binaryArchitecture)
 {}
 
-unique_ptr< Version > SourcePackage::_parse_version(const Version::InitializationParameters& initParams) const
+unique_ptr< Version > SourcePackage::_parse_version(const internal::VersionParseParameters& initParams) const
 {
-	return unique_ptr< Version >(SourceVersion::parseFromFile(initParams));
+	return internal::parseSourceVersion(initParams);
 }
 
 bool SourcePackage::_is_architecture_appropriate(const Version* version) const

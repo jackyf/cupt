@@ -27,8 +27,14 @@
 #include <internal/common.hpp>
 
 namespace cupt {
+namespace internal {
 
-static int __guarded_fileno(FILE* handle, const string& path)
+using std::min;
+using std::max;
+
+namespace {
+
+int __guarded_fileno(FILE* handle, const string& path)
 {
 	int fd = fileno(handle);
 	if (fd == -1)
@@ -38,24 +44,109 @@ static int __guarded_fileno(FILE* handle, const string& path)
 	return fd;
 }
 
-namespace internal {
+static const size_t initialStorageSize = 512;
+
+class StorageBuffer
+{
+ public:
+	StorageBuffer(int fd, const string& path)
+		: p_fd(fd), p_path(path), p_size(initialStorageSize), p_readChunkSize(initialStorageSize)
+	{
+		p_storage = new char[p_size];
+		p_dataBegin = p_dataEnd = p_storage;
+	}
+	~StorageBuffer()
+	{
+		delete [] p_storage;
+	}
+	bool readMore()
+	{
+		p_readChunkSize = max(p_readChunkSize, (getDataLength()<<3));
+		if (p_dataEnd == p_storage + p_size) grow();
+
+		size_t freeSpaceLength = p_storage + p_size - p_dataEnd;
+
+		reading:
+		auto readResult = read(p_fd, p_dataEnd, min(freeSpaceLength, p_readChunkSize));
+		if (readResult == -1)
+		{
+			if (errno != EINTR)
+			{
+				fatal2e(__("unable to read from the file '%s'"), p_path);
+			}
+			goto reading;
+		}
+		p_dataEnd += readResult;
+
+		return readResult;
+	}
+	void clear()
+	{
+		p_dataBegin = p_dataEnd = p_storage;
+		p_readChunkSize = max(initialStorageSize, p_readChunkSize>>1);
+		readMore();
+	}
+	void consume(size_t diff) { move(diff); }
+	void move(size_t diff) { p_dataBegin += diff; }
+	char* getDataBegin() const { return p_dataBegin; }
+	char* getDataEnd() const { return p_dataEnd; }
+	size_t getDataLength() const { return p_dataEnd - p_dataBegin; }
+ private:
+	int p_fd;
+	const string& p_path;
+	size_t p_size;
+	size_t p_readChunkSize;
+	char* p_storage;
+	char* p_dataBegin;
+	char* p_dataEnd;
+
+	void grow()
+	{
+		auto dataLength = getDataLength();
+
+		auto proposedLength = p_readChunkSize<<1;
+		if (proposedLength > (p_size<<1))
+		{
+			auto oldStorage = p_storage;
+			p_size = proposedLength;
+			p_storage = new char[p_size];
+			memcpy(p_storage, p_dataBegin, dataLength);
+			delete [] oldStorage;
+		}
+		else
+		{
+			memmove(p_storage, p_dataBegin, dataLength);
+		}
+		p_dataBegin = p_storage;
+		p_dataEnd = p_dataBegin + dataLength;
+	}
+};
+
+}
 
 struct FileImpl
 {
 	FILE* handle;
-	char* buf; // for ::getline
-	size_t bufLength; // for ::getline
 	const string path;
 	bool isPipe;
+	bool eof;
+	int fd;
+	off_t offset;
+	unique_ptr< StorageBuffer > readBuffer;
 
 	FileImpl(const string& path_, const char* mode, string& openError);
 	~FileImpl();
-	inline size_t getLineImpl();
+	template < typename ChunkSeekerT >
+	size_t unbufferedReadUntil(const ChunkSeekerT&, const char**);
+	inline size_t getLineImpl(const char**);
+	inline size_t getBlockImpl(const char** bufferPtr, size_t size);
+	inline size_t getRecordImpl(const char**);
 	inline void assertFileOpened() const;
+	inline void seek(size_t);
 };
 
 FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
-	: handle(NULL), buf(NULL), bufLength(0), path(path_), isPipe(false)
+	: handle(NULL), path(path_), isPipe(false), eof(false), offset(0)
 {
 	if (mode[0] == 'p')
 	{
@@ -80,7 +171,7 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	{
 		// setting FD_CLOEXEC flag
 
-		int fd = __guarded_fileno(handle, path);
+		fd = __guarded_fileno(handle, path);
 		int oldFdFlags = fcntl(fd, F_GETFD);
 		if (oldFdFlags < 0)
 		{
@@ -93,6 +184,8 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 				openError = format2e("unable to set the close-on-exec flag");
 			}
 		}
+
+		readBuffer.reset(new StorageBuffer(fd, path));
 	}
 }
 
@@ -120,7 +213,6 @@ FileImpl::~FileImpl()
 			}
 		}
 	}
-	free(buf);
 }
 
 void FileImpl::assertFileOpened() const
@@ -132,32 +224,138 @@ void FileImpl::assertFileOpened() const
 	}
 }
 
-size_t FileImpl::getLineImpl()
+template < typename ChunkSeekerT >
+size_t FileImpl::unbufferedReadUntil(const ChunkSeekerT& seeker, const char** bufferPtr)
 {
-	auto result = ::getline(&buf, &bufLength, handle);
-	if (result >= 0)
-	{
-		return result;
-	}
-	else
-	{
-		// an error occured
-		if (!feof(handle))
-		{
-			// real error
-			fatal2e(__("unable to read from the file '%s'"), path);
-		}
+	auto& buffer = *readBuffer;
 
-		// ok, end of file
-		return 0;
+	auto unscannedBegin = buffer.getDataBegin();
+	while (true)
+	{
+		auto unscannedLength = buffer.getDataEnd() - unscannedBegin;
+		auto delimiterPtr = seeker(unscannedBegin, unscannedLength);
+		if (delimiterPtr)
+		{
+			++delimiterPtr;
+			*bufferPtr = buffer.getDataBegin();
+			auto readCount = delimiterPtr - *bufferPtr;
+			buffer.consume(readCount);
+			offset += readCount;
+			return readCount;
+		}
+		else
+		{
+			auto scannedLength = buffer.getDataLength();
+			if (buffer.readMore())
+			{
+				unscannedBegin = buffer.getDataBegin() + scannedLength;
+			}
+			else
+			{
+				auto readCount = buffer.getDataLength();
+				eof = (readCount == 0);
+				*bufferPtr = buffer.getDataBegin();
+				buffer.consume(readCount);
+				return readCount;
+			}
+		}
 	}
 }
 
+void FileImpl::seek(size_t newOffset)
+{
+	if (newOffset > size_t(offset)) // possibly seekable ahead
+	{
+		size_t diff = newOffset - size_t(offset);
+		if (diff <= readBuffer->getDataLength())
+		{
+			readBuffer->move(diff);
+			offset = newOffset;
+			return;
+		}
+	}
+
+	offset = newOffset;
+	if (lseek(fd, offset, SEEK_SET) == -1)
+	{
+		fatal2e(__("unable to seek on the file '%s'"), path);
+	}
+	readBuffer->clear();
+}
+
+size_t FileImpl::getLineImpl(const char** bufferPtr)
+{
+	auto chunkSeeker = [](const char* chunkBegin, size_t chunkSize)
+	{
+		return static_cast< const char* >(memchr(chunkBegin, '\n', chunkSize));
+	};
+	return unbufferedReadUntil(chunkSeeker, bufferPtr);
+}
+
+size_t FileImpl::getBlockImpl(const char** bufferPtr, size_t size)
+{
+	auto chunkSeeker = [&size](const char* chunkBegin, size_t chunkSize) -> const char*
+	{
+		if (chunkSize < size)
+		{
+			size -= chunkSize;
+			return nullptr;
+		}
+		else
+		{
+			return chunkBegin + size - 1;
+		}
+	};
+	return unbufferedReadUntil(chunkSeeker, bufferPtr);
+}
+
+size_t FileImpl::getRecordImpl(const char** bufferPtr)
+{
+	const char* lastFoundNewline = nullptr;
+	auto chunkSeeker = [&lastFoundNewline](const char* chunkBegin, size_t chunkSize) -> const char*
+	{
+		while (true)
+		{
+			auto newFoundNewline = static_cast< const char* >(memchr(chunkBegin, '\n', chunkSize));
+			if (!newFoundNewline)
+			{
+				return nullptr;
+			}
+			else if (newFoundNewline == lastFoundNewline + 1)
+			{
+				return newFoundNewline; // double-newline, just what we are looking for
+			}
+			chunkSize -= newFoundNewline - chunkBegin + 1;
+			chunkBegin = newFoundNewline + 1;
+			lastFoundNewline = newFoundNewline;
+		}
+	};
+	return unbufferedReadUntil(chunkSeeker, bufferPtr);
+}
+
+}
+
+File::RawBuffer File::RawBuffer::chompAsRecord() const
+{
+	RawBuffer result = *this;
+	if (result.size > 2
+			&& result.data[result.size-1] == '\n'
+			&& result.data[result.size-2] == '\n')
+	{
+		--result.size;
+	}
+	return result;
 }
 
 File::File(const string& path, const char* mode, string& openError)
 	: __impl(new internal::FileImpl(path, mode, openError))
 {}
+
+File::File(File&& other)
+	: __impl(other.__impl)
+{
+	other.__impl = nullptr;
+}
 
 File::~File()
 {
@@ -167,57 +365,34 @@ File::~File()
 File& File::getLine(string& line)
 {
 	__impl->assertFileOpened();
-	auto size = __impl->getLineImpl();
-	if (size > 0 && __impl->buf[size-1] == '\n')
+	const char* buf;
+	auto size = __impl->getLineImpl(&buf);
+	if (size > 0 && buf[size-1] == '\n')
 	{
 		--size;
 	}
-	line.assign(__impl->buf, size);
+	line.assign(buf, size);
 	return *this;
 }
 
 File& File::rawGetLine(const char*& buffer, size_t& size)
 {
-	size = __impl->getLineImpl();
-	buffer = __impl->buf;
+	size = __impl->getLineImpl(&buffer);
 	return *this;
 }
 
-File& File::getBlock(char* buffer, size_t& size)
+File::RawBuffer File::getBlock(size_t size)
 {
-	__impl->assertFileOpened();
-
-	size = ::fread(buffer, 1, size, __impl->handle);
-	if (!size)
-	{
-		// an error occured
-		if (!feof(__impl->handle))
-		{
-			// real error
-			fatal2e(__("unable to read from the file '%s'"), __impl->path);
-		}
-	}
-	return *this;
+	RawBuffer result;
+	result.size = __impl->getBlockImpl(&result.data, size);
+	return result;
 }
 
-File& File::getRecord(string& record)
+File::RawBuffer File::getRecord()
 {
-	__impl->assertFileOpened();
-
-	record.clear();
-
-	int readLength;
-	// readLength of 0 means end of file, of 1 - end of record
-	while (readLength = __impl->getLineImpl(), readLength > 1)
-	{
-		record.append(__impl->buf, readLength);
-	}
-	if (!record.empty())
-	{
-		// there was some info read, clear eof flag before the next getRecord/getLine call
-		clearerr(__impl->handle);
-	}
-	return *this;
+	RawBuffer result;
+	result.size = __impl->getRecordImpl(&result.data);
+	return result;
 }
 
 void File::getFile(string& block)
@@ -226,18 +401,18 @@ void File::getFile(string& block)
 
 	block.clear();
 
+	const char* buf;
 	int readLength;
 	// readLength of 0 means end of file
-	while ((readLength = __impl->getLineImpl()))
+	while ((readLength = __impl->getLineImpl(&buf)))
 	{
-		block.append(__impl->buf, readLength);
+		block.append(buf, readLength);
 	}
 }
 
 bool File::eof() const
 {
-	__impl->assertFileOpened();
-	return feof(__impl->handle);
+	return __impl->eof;
 }
 
 void File::seek(size_t newPosition)
@@ -248,10 +423,7 @@ void File::seek(size_t newPosition)
 	}
 	else
 	{
-		if (fseek(__impl->handle, newPosition, SEEK_SET) == -1)
-		{
-			fatal2e(__("unable to seek on the file '%s'"), __impl->path);
-		}
+		__impl->seek(newPosition);
 	}
 }
 
@@ -261,27 +433,14 @@ size_t File::tell() const
 	{
 		fatal2(__("an attempt to tell a position on the pipe '%s'"), __impl->path);
 	}
-	else
-	{
-		long result = ftell(__impl->handle);
-		if (result == -1)
-		{
-			fatal2e(__("unable to tell a position on the file '%s'"), __impl->path);
-		}
-		else
-		{
-			return result;
-		}
-	}
-	__builtin_unreachable();
+	return __impl->offset;
 }
 
 void File::lock(int flags)
 {
 	__impl->assertFileOpened();
-	int fd = __guarded_fileno(__impl->handle, __impl->path);
 	// TODO/API break/: provide only lock(void) and unlock(void) methods, consider using fcntl
-	if (flock(fd, flags) == -1)
+	if (flock(__impl->fd, flags) == -1)
 	{
 		auto actionName = (flags & LOCK_UN) ? __("release") : __("obtain");
 		fatal2e(__("unable to %s a lock on the file '%s'"), actionName, __impl->path);
@@ -305,12 +464,11 @@ void File::put(const string& bytes)
 void File::unbufferedPut(const char* data, size_t size)
 {
 	fflush(__impl->handle);
-	int fd = __guarded_fileno(__impl->handle, __impl->path);
 
 	size_t currentOffset = 0;
 	while (currentOffset < size)
 	{
-		auto writeResult = write(fd, data + currentOffset, size - currentOffset);
+		auto writeResult = write(__impl->fd, data + currentOffset, size - currentOffset);
 		if (writeResult == -1)
 		{
 			if (errno == EINTR)
@@ -325,6 +483,25 @@ void File::unbufferedPut(const char* data, size_t size)
 		currentOffset += writeResult;
 	}
 }
+
+namespace {
+
+File openRequiredFile(const string& path, const char* mode)
+{
+	string openError;
+	File file(path, mode, openError);
+	if (!openError.empty())
+	{
+		fatal2(__("unable to open the file '%s': %s"), path, openError);
+	}
+	return std::move(file);
+}
+
+}
+
+RequiredFile::RequiredFile(const string& path, const char* mode)
+	: File(openRequiredFile(path, mode))
+{}
 
 } // namespace
 

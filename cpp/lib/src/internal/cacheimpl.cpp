@@ -33,8 +33,10 @@
 #include <internal/pininfo.hpp>
 #include <internal/tagparser.hpp>
 #include <internal/regex.hpp>
-#include <internal/common.hpp>
+#include <internal/parse.hpp>
 #include <internal/cachefiles.hpp>
+#include <internal/indexofindex.hpp>
+#include <internal/versionparse.hpp>
 
 namespace cupt {
 namespace internal {
@@ -55,8 +57,8 @@ void CacheImpl::processProvides(PackageId packageId,
 	{
 		this->canProvide[PackageId(tokenBeginIt, tokenEndIt-tokenBeginIt)].insert(packageId);
 	};
-	processSpaceCommaSpaceDelimitedStrings(
-			providesStringStart, providesStringEnd, callback);
+	parse::processSpaceCharSpaceDelimitedStrings(
+			providesStringStart, providesStringEnd, ',', callback);
 }
 
 Package* CacheImpl::newBinaryPackage() const
@@ -73,20 +75,22 @@ Package* CacheImpl::preparePackage(unordered_map< PackageId, vector< PrePackageR
 		unordered_map< PackageId, unique_ptr< Package > >& target, PackageId packageId,
 		decltype(&CacheImpl::newBinaryPackage) packageBuilderMethod) const
 {
+	auto targetIt = target.find(packageId);
+	if (targetIt != target.end())
+	{
+		return targetIt->second.get();
+	}
+
 	auto preIt = pre.find(packageId);
 	if (preIt != pre.end())
 	{
 		auto& package = target[packageId];
-		if (!package)
-		{
-			// there was no such package before, and an insertion occured
-			// so, we need to create the package
-			package.reset( (this->*packageBuilderMethod)() );
-		}
+		package.reset( (this->*packageBuilderMethod)() );
+
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)
 		{
-			Version::InitializationParameters versionInitParams;
+			internal::VersionParseParameters versionInitParams;
 			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
 			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;
@@ -170,34 +174,14 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 
 const BinaryPackage* CacheImpl::getBinaryPackage(PackageId packageId) const
 {
-	auto it = binaryPackages.find(packageId);
-	if (it == binaryPackages.end())
-	{
-		auto prepareResult = preparePackage(preBinaryPackages,
-				binaryPackages, packageId, &CacheImpl::newBinaryPackage);
-		// can be empty/NULL also
-		return static_cast< const BinaryPackage* >(prepareResult);
-	}
-	else
-	{
-		return static_cast< const BinaryPackage* >(it->second.get());
-	}
+	return static_cast< const BinaryPackage* >(preparePackage(
+			preBinaryPackages, binaryPackages, packageId, &CacheImpl::newBinaryPackage));
 }
 
 const SourcePackage* CacheImpl::getSourcePackage(PackageId packageId) const
 {
-	auto it = sourcePackages.find(packageId);
-	if (it == sourcePackages.end())
-	{
-		auto prepareResult = preparePackage(preSourcePackages,
-				sourcePackages, packageId, &CacheImpl::newSourcePackage);
-		// can be empty/NULL also
-		return static_cast< const SourcePackage* >(prepareResult);
-	}
-	else
-	{
-		return static_cast< const SourcePackage* >(it->second.get());
-	}
+	return static_cast< const SourcePackage* >(preparePackage(
+			preSourcePackages, sourcePackages, packageId, &CacheImpl::newSourcePackage));
 }
 
 void CacheImpl::parseSourcesLists()
@@ -235,12 +219,7 @@ void stripComment(string& s)
 
 void CacheImpl::parseSourceList(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	RequiredFile file(path, "r");
 
 	string line;
 	static sregex toSkip = sregex::compile("^\\s*(?:#.*)?$");
@@ -260,7 +239,8 @@ void CacheImpl::parseSourceList(const string& path)
 			stripComment(line);
 
 			vector< string > tokens;
-			tokens = internal::split(sregex::compile("[\\t ]+"), line);
+			static const sregex tokenRegex = sregex::compile("[\\t ]+");
+			tokens = internal::split(tokenRegex, line);
 
 			IndexEntry entry;
 
@@ -526,75 +506,44 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 	auto& prePackagesStorage = (category == IndexEntry::Binary ?
 			preBinaryPackages : preSourcePackages);
 
-	string openError;
-	shared_ptr< File > file(new File(path, "r", openError));
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	shared_ptr< File > file(new RequiredFile(path, "r"));
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
 	PrePackageRecord prePackageRecord;
-	prePackageRecord.offset = 0;
 	prePackageRecord.releaseInfoAndFile = &*(releaseInfoAndFileStorage.rbegin());
 
 	try
 	{
-		const char* packageNameBuf;
-		size_t packageNameLength;
+		PackageId packageId;
 
-		while (true)
-		{
-			const char* buf;
-			size_t size;
-			auto getNextLine = [&file, &buf, &size, &prePackageRecord]
-			{
-				file->rawGetLine(buf, size);
-				prePackageRecord.offset += size;
-			};
+		ioi::Record ioiRecord;
+		ioiRecord.offsetPtr = &prePackageRecord.offset;
 
-			getNextLine();
-			if (size == 0)
-			{
-				break; // eof
-			}
-
-			static const size_t packageAnchorLength = sizeof("Package: ") - 1;
-			if (size > packageAnchorLength && !memcmp("Package: ", buf, packageAnchorLength))
-			{
-				packageNameBuf = buf + packageAnchorLength;
-				packageNameLength = size - packageAnchorLength - 1;
-			}
-			else
-			{
-				fatal2(__("unable to find a Package line"));
-			}
-
-			PackageId packageId;
-			try
-			{
-				packageId = PackageId(packageNameBuf, packageNameLength);
-			}
-			catch (Exception&)
-			{
-				warn2(__("discarding this package version from the index '%s'"), alias);
-				while (getNextLine(), size > 1) {}
-				continue;
-			}
-
-
-			auto& prePackageRecords = prePackagesStorage[packageId];
-			prePackageRecords.push_back(prePackageRecord);
-
-			while (getNextLine(), size > 1)
-			{
-				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
-				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
+		ioi::Callbacks callbacks;
+		callbacks.main =
+				[this, &packageId, &alias, &prePackagesStorage, &prePackageRecord]
+				(const char* packageNameBuf, size_t packageNameLength)
 				{
-					processProvides(packageId, buf + providesAnchorLength, buf + size - 1);
-				}
-			}
-		}
+					try
+					{
+						packageId = PackageId(packageNameBuf, packageNameLength);
+					}
+					catch (Exception&)
+					{
+						warn2(__("discarding this package version from the index '%s'"), alias);
+						return;
+					}
+
+					auto& prePackageRecords = prePackagesStorage[packageId];
+					prePackageRecords.push_back(prePackageRecord);
+				};
+		callbacks.provides =
+				[this, &packageId](const char* begin, const char* end)
+				{
+					processProvides(packageId, begin, end);
+				};
+
+		ioi::processIndex(path, callbacks, ioiRecord);
 	}
 	catch (Exception&)
 	{
@@ -672,7 +621,7 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 
 void CacheImpl::parsePreferences()
 {
-	pinInfo.reset(new PinInfo(config, systemState));
+	pinInfo.reset(new PinInfo(config, systemState.get()));
 }
 
 ssize_t CacheImpl::computePin(const Version* version, const BinaryPackage* binaryPackage) const
@@ -745,13 +694,9 @@ string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 	auto it = translations.find(sourceHash);
 	if (it != translations.end())
 	{
-		string localizedDescription;
-
 		const TranslationPosition& position = it->second;
 		position.file->seek(position.offset);
-		position.file->getRecord(localizedDescription);
-
-		return localizedDescription;
+		return position.file->getRecord().chompAsRecord();
 	}
 	return version->description;
 }

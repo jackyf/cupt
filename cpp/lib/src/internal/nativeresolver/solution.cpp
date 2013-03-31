@@ -449,19 +449,95 @@ void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 	__dependency_graph.unfoldElement(elementPtr);
 }
 
-vector< const dg::Element* > SolutionStorage::getInsertedElements(const Solution& solution) const
+size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element* elementPtr) const
 {
-	vector< const dg::Element* > result;
-
-	auto solutionId = solution.id;
 	while (solutionId != 0)
 	{
 		const auto& change = __change_index[solutionId];
-		result.push_back(change.insertedElementPtr);
+		if (change.insertedElementPtr == elementPtr) return solutionId;
 		solutionId = change.parentSolutionId;
 	}
-	std::reverse(result.begin(), result.end());
-	return result;
+
+	return -1;
+}
+
+void SolutionStorage::processReasonElements(
+		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
+		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
+		const std::function< void (const IntroducedBy&, const dg::Element*) >& callback) const
+{
+	auto getElementPosition = [this, &solution, &elementPositionCache](const dg::Element* elementPtr)
+	{
+		auto& value = elementPositionCache[elementPtr];
+		if (!value)
+		{
+			value = __getInsertPosition(solution.id, elementPtr);
+		}
+		return value;
+	};
+
+	{ // version
+		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
+		{
+			callback(packageEntryPtr->introducedBy, introducedBy.versionElementPtr);
+		}
+	}
+	// dependants
+	set< const dg::Element* > alreadyProcessedConflictors;
+	for (const auto& successor: getSuccessorElements(introducedBy.brokenElementPtr))
+	{
+		const dg::Element* conflictingElementPtr;
+		if (!simulateSetPackageEntry(solution, successor, &conflictingElementPtr))
+		{
+			// conflicting element is surely exists here
+			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
+			{
+				// not yet processed
+
+				// verifying that conflicting element was added to a
+				// solution earlier than currently processed item
+				auto conflictingElementInsertedPosition = getElementPosition(conflictingElementPtr);
+				if (conflictingElementInsertedPosition == size_t(-1))
+				{
+					// conflicting element was not a resolver decision, so it can't
+					// have valid 'introducedBy' anyway
+					continue;
+				}
+				if (getElementPosition(insertedElementPtr) <= conflictingElementInsertedPosition)
+				{
+					// it means conflicting element was inserted to a solution _after_
+					// the current element, so it can't be a reason for it
+					continue;
+				}
+
+				// verified, queueing now
+				const IntroducedBy& candidateIntroducedBy =
+						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
+				callback(candidateIntroducedBy, conflictingElementPtr);
+			}
+		}
+	}
+}
+
+pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedElements(
+		size_t leftSolutionId, size_t rightSolutionId) const
+{
+	const auto* leftChangePtr = &__change_index[leftSolutionId];
+	const auto* rightChangePtr = &__change_index[rightSolutionId];
+
+	while (leftChangePtr->parentSolutionId != rightChangePtr->parentSolutionId)
+	{
+		if (leftChangePtr->parentSolutionId < rightChangePtr->parentSolutionId)
+		{
+			rightChangePtr = &__change_index[rightChangePtr->parentSolutionId];
+		}
+		else
+		{
+			leftChangePtr = &__change_index[leftChangePtr->parentSolutionId];
+		}
+	}
+
+	return { leftChangePtr->insertedElementPtr, rightChangePtr->insertedElementPtr };
 }
 
 Solution::Solution()

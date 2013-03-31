@@ -39,8 +39,7 @@ using cache::Version;
 using cache::BinaryVersion;
 using cache::ReleaseInfo;
 
-PinInfo::PinInfo(const shared_ptr< const Config >& config,
-		const shared_ptr< const system::State >& systemState)
+PinInfo::PinInfo(const shared_ptr< const Config >& config, const system::State* systemState)
 	: config(config), systemState(systemState)
 {
 	init();
@@ -158,12 +157,7 @@ void PinInfo::loadData(const string& path)
 	// Pin: a=experimental
 	// Pin-Priority: 1100
 
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	RequiredFile file(path, "r");
 
 	smatch m;
 
@@ -268,7 +262,7 @@ void PinInfo::loadData(const string& path)
 					PinEntry::Condition condition;
 					condition.type = PinEntry::Condition::Version;
 					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(condition);
+					pinEntry.conditions.push_back(std::move(condition));
 				}
 				else if (pinType == "origin")
 				{
@@ -279,7 +273,7 @@ void PinInfo::loadData(const string& path)
 						pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
 					}
 					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(condition);
+					pinEntry.conditions.push_back(std::move(condition));
 				}
 				else
 				{
@@ -351,12 +345,12 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 		FORIT(conditionIt, conditions)
 		{
 			const PinEntry::Condition& condition = *conditionIt;
-			const shared_ptr< sregex >& regex = condition.value;
+			const auto& regex = condition.value;
 
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
-					matched = regex_search(version->packageId.name(), m, *regex);
+					matched = regex_search(version->packageId.name(), m, regex);
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
@@ -366,11 +360,11 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 							matched = false;
 							break;
 						}
-						matched = regex_search(binaryVersion->sourcePackageId.name(), m, *regex);
+						matched = regex_search(binaryVersion->sourcePackageId.name(), m, regex);
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_search(version->versionString, m, *regex);
+					matched = regex_search(version->versionString, m, regex);
 					break;
 #define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \
@@ -378,7 +372,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 					FORIT(sourceIt, version->sources) \
 					{ \
 						const ReleaseInfo* release = sourceIt->release; \
-						if (regex_search(expression, m, *regex)) \
+						if (regex_search(expression, m, regex)) \
 						{ \
 							matched = true; \
 							break; \

@@ -93,21 +93,12 @@ vector< const string* >& getN2S()
 	return n2s;
 }
 
-void checkPackageName(const StringBuffer& packageName)
+uint32_t getPackageNameId(StringBuffer&& packageName)
 {
-	const char* const inputStart = packageName.getBufferStart();
-	auto inputEnd = inputStart + packageName.getBufferLength();
-	const char* resultEnd;
-	consumePackageName(inputStart, inputEnd, resultEnd);
-	if (resultEnd != inputEnd)
+	if (!PackageId::checkPackageName(packageName.getBufferStart(), packageName.getBufferLength()))
 	{
 		fatal2(__("invalid package name '%s'"), *StringBuffer(packageName).getStringPtr());
 	}
-}
-
-uint32_t getPackageNameId(StringBuffer&& packageName)
-{
-	checkPackageName(packageName);
 
 	typedef std::unordered_map< StringBuffer, uint32_t, StringBufferHasher > S2NType;
 
@@ -148,6 +139,15 @@ uint32_t PackageId::rawId() const
 const string& PackageId::name() const
 {
 	return *(getN2S()[__id-1]);
+}
+
+bool PackageId::checkPackageName(const char* buffer, size_t length)
+{
+	const char* const inputStart = buffer;
+	const char* const inputEnd = buffer + length;
+	const char* resultEnd;
+	consumePackageName(inputStart, inputEnd, resultEnd);
+	return (resultEnd == inputEnd);
 }
 
 }

@@ -19,6 +19,7 @@ add_library(libcupt3 SHARED
 	./src/internal/tagparser.cpp
 	./src/internal/worker/base.cpp
 	./src/internal/worker/archives.cpp
+	./src/internal/worker/dpkg.cpp
 	./src/internal/worker/metadata.cpp
 	./src/internal/worker/setupandpreview.cpp
 	./src/internal/worker/packages.cpp
@@ -28,6 +29,8 @@ add_library(libcupt3 SHARED
 	./src/internal/logger.cpp
 	./src/internal/pipe.cpp
 	./src/internal/basepackageiterator.cpp
+	./src/internal/indexofindex.cpp
+	./src/internal/versionparse.cpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
@@ -56,7 +59,7 @@ add_library(libcupt3 SHARED
 	./src/versionstring.cpp
 	./src/packageid.cpp
 )
-set_target_properties(libcupt3 PROPERTIES VERSION 3 SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
+set_target_properties(libcupt3 PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
 target_link_libraries(libcupt3 dl rt gcrypt)
 
 install(TARGETS libcupt3 DESTINATION lib)

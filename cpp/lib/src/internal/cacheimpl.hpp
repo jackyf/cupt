@@ -46,7 +46,7 @@ class CacheImpl
  public:
 	struct PrePackageRecord
 	{
-		size_t offset;
+		uint32_t offset;
 		const pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > >* releaseInfoAndFile;
 	};
  private:
@@ -88,7 +88,7 @@ class CacheImpl
  public:
 	shared_ptr< const Config > config;
 	unique_ptr< const string > binaryArchitecture;
-	shared_ptr< const system::State > systemState;
+	unique_ptr< const system::State > systemState;
 	vector< IndexEntry > indexEntries;
 	vector< shared_ptr< const ReleaseInfo > > sourceReleaseData;
 	vector< shared_ptr< const ReleaseInfo > > binaryReleaseData;

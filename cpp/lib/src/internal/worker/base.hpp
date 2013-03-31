@@ -39,6 +39,7 @@ class Lock;
 
 class WorkerBase
 {
+	friend class Dpkg;
 	mode_t __umask;
 	Lock* __lock;
  protected:

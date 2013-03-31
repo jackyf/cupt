@@ -26,8 +26,8 @@ namespace internal {
 vector< string > split(const sregex&, const string&);
 
 string globToRegexString(const string&);
-shared_ptr< sregex > stringToRegex(const string& input);
-shared_ptr< sregex > globToRegex(const string& glob);
+sregex stringToRegex(const string& input);
+sregex globToRegex(const string& glob);
 
 }
 }

@@ -32,26 +32,24 @@ class DecisionFailTree
 {
 	struct Decision
 	{
-		PackageEntry::IntroducedBy introducedBy;
+		IntroducedBy introducedBy;
 		size_t level;
 		const dg::Element* insertedElementPtr;
 	};
 	struct FailItem
 	{
+		size_t solutionId;
 		vector< Decision > decisions;
-		vector< const dg::Element* > insertedElementPtrs;
 	};
 	std::list< FailItem > __fail_items;
 
 	static string __decisions_to_string(const vector< Decision >&);
 	static vector< Decision > __get_decisions(
-			const SolutionStorage& solutionStorage, const Solution& solution,
-			const PackageEntry::IntroducedBy&, const vector< const dg::Element* >&);
-	static bool __is_dominant(const FailItem&, size_t);
+			const SolutionStorage& solutionStorage, const Solution& solution, const IntroducedBy&);
+	static bool __is_dominant(const FailItem&, const dg::Element*);
  public:
 	string toString() const;
-	void addFailedSolution(const SolutionStorage&, const Solution&,
-			const PackageEntry::IntroducedBy&);
+	void addFailedSolution(const SolutionStorage&, const Solution&, const IntroducedBy&);
 	void clear();
 };
 

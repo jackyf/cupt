@@ -114,6 +114,7 @@ class CUPT_API Resolver
 		const BinaryVersion* version; ///< package version
 		bool automaticallyInstalledFlag;
 		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
+		vector< PackageId > reasonPackageIds; ///< changes in these packages caused the change in this package
 	};
 	typedef map< PackageId, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
 	/// the result of resolver's work

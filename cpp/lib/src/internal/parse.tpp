@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,38 +15,56 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <cupt/cache/binaryversion.hpp>
-#include <cupt/cache/releaseinfo.hpp>
-
-#include <internal/common.hpp>
 
 namespace cupt {
-namespace cache {
+namespace internal {
+namespace parse {
 
-bool BinaryVersion::isInstalled() const
-{
-	return sources.empty() ? false : sources[0].release->baseUri.empty();
-}
+namespace {
 
-bool BinaryVersion::areHashesEqual(const Version* other) const
+template < class IterT >
+inline bool findSpaceSymbolSpace(const IterT& begin, const IterT& end,
+		char symbol, IterT& resultBegin, IterT& resultEnd)
 {
-	auto o = dynamic_cast< const BinaryVersion* >(other);
-	if (!o)
+	for (auto current = begin; current != end; ++current)
 	{
-		fatal2i("areHashesEqual: non-binary version parameter");
+		if (*current == symbol)
+		{
+			// found!
+			resultBegin = current;
+			while (resultBegin != begin && *(resultBegin-1) == ' ')
+			{
+				--resultBegin;
+			}
+			resultEnd = current+1;
+			while (resultEnd != end && *resultEnd == ' ')
+			{
+				++resultEnd;
+			}
+			return true;
+		}
 	}
-	return file.hashSums.match(o->file.hashSums);
+	return false;
 }
 
-const string BinaryVersion::RelationTypes::strings[] = {
-	N__("Pre-Depends"), N__("Depends"), N__("Recommends"), N__("Suggests"),
-	N__("Enhances"), N__("Conflicts"), N__("Breaks"), N__("Replaces")
-};
-const char* BinaryVersion::RelationTypes::rawStrings[] = {
-	"pre-depends", "depends", "recommends", "suggests",
-	"enhances", "conflicts", "breaks", "replaces"
-};
+}
 
+template< typename IterT, typename CallbackT >
+void processSpaceCharSpaceDelimitedStrings(IterT begin, IterT end,
+		char delimiter, const CallbackT& callback)
+{
+	IterT current = begin;
+	IterT delimiterBegin;
+	IterT delimiterEnd;
+	while (findSpaceSymbolSpace(current, end, delimiter, delimiterBegin, delimiterEnd))
+	{
+		callback(current, delimiterBegin);
+		current = delimiterEnd;
+	}
+	callback(current, end);
+}
+
+}
 }
 }
 

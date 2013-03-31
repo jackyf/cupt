@@ -153,6 +153,8 @@ of type //relation type// (see the following table).
 
 == Source relation functions ==
 
+=== forward dependencies ===
+
 Apply only to source versions and return binary versions.
 
 Functions from this family receive one FSE-argument (//fse//) and return all
@@ -164,6 +166,20 @@ versions which satisfy the build-time dependency of type //relation type// for
 | ``build-depends-indep`` | ``Zbdi`` | Build-Depends-Indep |
 | ``build-conflicts`` | ``Zbc`` | Build-Conflicts |
 | ``build-conflicts-indep`` | ``Zbci`` | Build-Conflicts-Indep |
+
+=== reverse dependencies ===
+
+Apply only to binary versions and return source versions.
+
+Functions from this family receive one FSE-argument (//fse//) and return all
+versions for which at least one version from //fse// satisfies the
+build-dependency of type //relation type// (see the following table).
+
+|| Function name | Short alias | //Relation type// |
+| ``reverse-build-depends`` | ``ZRbd`` | Build-Depends |
+| ``reverse-build-depends-indep`` | ``ZRbdi`` | Build-Depends-Indep |
+| ``reverse-build-conflicts`` | ``ZRbc`` | Build-Conflicts |
+| ``reverse-build-conflicts-indep`` | ``ZRbci`` | Build-Conflicts-Indep |
 
 == Metafunctions ==
 
@@ -204,6 +220,18 @@ The function works as follows:
 + //subresult_function_name// redefined as ``or(``//subresult_function_name//, //iterating_expression//``)``
 + go to step 2
 
+
+=== mapping ===
+
+The function **``fmap``** applies many functions to the same expression and combines their results.
+
+The expression
+
+``fmap(``//fse//, //function_name_1//, ..., //function_name_N//``)``
+
+is equivalent to
+
+``or(``//function_name_1//``(``//fse//``)``, ..., //function_name_N//``(``//fse//``))``
 
 == Miscellaneous ==
 

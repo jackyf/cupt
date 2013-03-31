@@ -31,7 +31,7 @@ class CUPT_API SourcePackage: public Package
 {
  protected:
 	/// @cond
-	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
+	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const internal::VersionParseParameters&) const;
 	CUPT_LOCAL virtual bool _is_architecture_appropriate(const Version*) const;
 	/// @endcond
  public:

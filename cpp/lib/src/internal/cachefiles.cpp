@@ -132,13 +132,8 @@ static vector< FileDownloadRecord > getDownloadInfoFromRelease(
 
 	try
 	{
-		string openError;
 		auto releaseFilePath = getPathOfReleaseList(config, indexEntry);
-		File releaseFile(releaseFilePath, "r", openError);
-		if (!openError.empty())
-		{
-			fatal2(__("unable to open the file '%s': %s"), releaseFilePath, openError);
-		}
+		RequiredFile releaseFile(releaseFilePath, "r");
 
 		HashSums::Type currentHashSumType = HashSums::Count;
 		// now we need to find if this variant is present in the release file
@@ -581,12 +576,7 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 	smatch matches;
 	try
 	{
-		string openError;
-		File file(path, "r", openError);
-		if (!openError.empty())
-		{
-			fatal2(__("unable to open the file '%s': %s"), path, openError);
-		}
+		RequiredFile file(path, "r");
 
 		string line;
 		while (! file.getLine(line).eof())

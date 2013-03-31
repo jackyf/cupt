@@ -15,12 +15,11 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <common/regex.hpp>
-
 #include <cupt/config.hpp>
 #include <cupt/cache/binaryversion.hpp>
 
 #include <internal/nativeresolver/autoremovalpossibility.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace internal {
@@ -36,14 +35,7 @@ class AutoRemovalPossibilityImpl
 	{
 		for (const auto& regexString: config.getList(optionName))
 		{
-			try
-			{
-				regexes.push_back(sregex::compile(regexString));
-			}
-			catch (regex_error&)
-			{
-				fatal2(__("invalid regular expression '%s'"), regexString);
-			}
+			regexes.push_back(stringToRegex(regexString));
 		}
 	}
 

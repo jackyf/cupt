@@ -18,6 +18,7 @@
 #include <iostream>
 using std::cout;
 using std::endl;
+#include <stack>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,34 +43,46 @@ using std::endl;
 #include <cupt/versionstring.hpp>
 
 typedef Worker::Action WA;
-const WA::Type fakeNotPolicyVersionAction = WA::Type(999);
+const WA::Type fakeNotPreferredVersionAction = WA::Type(999);
 const WA::Type fakeAutoRemove = WA::Type(1000);
 const WA::Type fakeAutoPurge = WA::Type(1001);
 const WA::Type fakeBecomeAutomaticallyInstalled = WA::Type(1002);
 const WA::Type fakeBecomeManuallyInstalled = WA::Type(1003);
 
-static void preProcessMode(ManagePackages::Mode& mode, Config& config, Resolver& resolver)
+struct ManagePackagesContext
 {
-	if (mode == ManagePackages::FullUpgrade || mode == ManagePackages::SafeUpgrade)
+	enum class AutoInstall { Yes, No, Nop };
+
+	ManagePackages::Mode mode;
+	AutoInstall autoinstall;
+	Config& config;
+	const Cache& cache;
+	Resolver& resolver;
+	Worker& worker;
+};
+
+static void preProcessMode(ManagePackagesContext& mpc)
+{
+	if (mpc.mode == ManagePackages::FullUpgrade || mpc.mode == ManagePackages::SafeUpgrade)
 	{
-		if (mode == ManagePackages::SafeUpgrade)
+		if (mpc.mode == ManagePackages::SafeUpgrade)
 		{
-			config.setScalar("cupt::resolver::no-remove", "yes");
+			mpc.config.setScalar("cupt::resolver::no-remove", "yes");
 		}
-		resolver.upgrade();
+		mpc.resolver.upgrade();
 
 		// despite the main action is {safe,full}-upgrade, allow package
 		// modifiers in the command line just as with the install command
-		mode = ManagePackages::Install;
+		mpc.mode = ManagePackages::Install;
 	}
-	else if (mode == ManagePackages::Satisfy || mode == ManagePackages::BuildDepends)
+	else if (mpc.mode == ManagePackages::Satisfy || mpc.mode == ManagePackages::BuildDepends)
 	{
-		config.setScalar("apt::install-recommends", "no");
-		config.setScalar("apt::install-suggests", "no");
+		mpc.config.setScalar("apt::install-recommends", "no");
+		mpc.config.setScalar("apt::install-suggests", "no");
 	}
-	else if (mode == ManagePackages::BuildDepends)
+	else if (mpc.mode == ManagePackages::BuildDepends)
 	{
-		resolver.satisfyRelationExpression(RelationExpression("build-essential"));
+		mpc.resolver.satisfyRelationExpression(RelationExpression("build-essential"));
 	}
 }
 
@@ -82,12 +95,7 @@ static void unrollFileArguments(vector< string >& arguments)
 		{
 			const string path = argument.substr(1);
 			// reading package expressions from file
-			string openError;
-			File file(path, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2(__("unable to open the file '%s': %s"), path, openError);
-			}
+			RequiredFile file(path, "r");
 			string line;
 			while (!file.getLine(line).eof())
 			{
@@ -118,46 +126,46 @@ void __satisfy_or_unsatisfy(Resolver& resolver,
 	}
 }
 
-static void processSatisfyExpression(const Config& config,
-		Resolver& resolver, string packageExpression, ManagePackages::Mode mode)
+static void processSatisfyExpression(ManagePackagesContext& mpc, string packageExpression)
 {
-	if (mode == ManagePackages::Satisfy && !packageExpression.empty() && *(packageExpression.rbegin()) == '-')
+	auto localMode = mpc.mode;
+
+	if (localMode == ManagePackages::Satisfy && !packageExpression.empty() && *(packageExpression.rbegin()) == '-')
 	{
-		mode = ManagePackages::Unsatisfy;
+		localMode = ManagePackages::Unsatisfy;
 		packageExpression.erase(packageExpression.end() - 1);
 	}
 
 	auto relationLine = ArchitecturedRelationLine(packageExpression)
-			.toRelationLine(config.getString("apt::architecture"));
+			.toRelationLine(mpc.config.getString("apt::architecture"));
 
-	__satisfy_or_unsatisfy(resolver, relationLine, mode);
+	__satisfy_or_unsatisfy(mpc.resolver, relationLine, localMode);
 }
 
-static void processBuildDependsExpression(const Config& config, const Cache& cache,
-		Resolver& resolver, const string& packageExpression)
+static void processBuildDependsExpression(ManagePackagesContext& mpc, const string& packageExpression)
 {
-	auto architecture = config.getString("apt::architecture");
+	auto architecture = mpc.config.getString("apt::architecture");
 
-	auto versions = selectSourceVersionsWildcarded(cache, packageExpression);
+	auto versions = selectSourceVersionsWildcarded(mpc.cache, packageExpression);
 
 	for (const auto& version: versions)
 	{
-		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
+		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
 				.toRelationLine(architecture), ManagePackages::Satisfy);
-		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
+		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
 				.toRelationLine(architecture), ManagePackages::Satisfy);
-		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
+		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
 				.toRelationLine(architecture), ManagePackages::Unsatisfy);
-		__satisfy_or_unsatisfy(resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
+		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
 				.toRelationLine(architecture), ManagePackages::Unsatisfy);
 	}
 }
 
-static void processInstallOrRemoveExpression(const Cache& cache,
-		Resolver& resolver, Worker& worker,
-		ManagePackages::Mode mode, string packageExpression)
+static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string packageExpression)
 {
-	auto versions = selectBinaryVersionsWildcarded(cache, packageExpression, false);
+	auto localMode = mpc.mode;
+
+	auto versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, false);
 	if (versions.empty())
 	{
 		/* we have a funny situation with package names like 'g++',
@@ -171,33 +179,42 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 			const char& lastLetter = *(packageExpression.end() - 1);
 			if (lastLetter == '+')
 			{
-				mode = ManagePackages::Install;
+				localMode = ManagePackages::Install;
 				packageExpression.erase(packageExpression.end() - 1);
 			}
 			else if (lastLetter == '-')
 			{
-				mode = ManagePackages::Remove;
+				localMode = ManagePackages::Remove;
 				packageExpression.erase(packageExpression.end() - 1);
 			}
 		}
 	}
 
-	if (mode == ManagePackages::Install || mode == ManagePackages::InstallIfInstalled)
+	if (localMode == ManagePackages::Install || localMode == ManagePackages::InstallIfInstalled)
 	{
 		if (versions.empty())
 		{
-			versions = selectBinaryVersionsWildcarded(cache, packageExpression);
+			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression);
 		}
 		for (const auto& version: versions)
 		{
-			if (mode == ManagePackages::InstallIfInstalled)
+			if (localMode == ManagePackages::InstallIfInstalled)
 			{
-				if (!isPackageInstalled(cache, version->packageId))
+				if (!isPackageInstalled(mpc.cache, version->packageId))
 				{
 					continue;
 				}
 			}
-			resolver.installVersion(version);
+			mpc.resolver.installVersion(version);
+
+			if (mpc.autoinstall == ManagePackagesContext::AutoInstall::Yes)
+			{
+				mpc.resolver.setAutomaticallyInstalledFlag(version->packageId, true);
+			}
+			else if (mpc.autoinstall == ManagePackagesContext::AutoInstall::No)
+			{
+				mpc.resolver.setAutomaticallyInstalledFlag(version->packageId, false);
+			}
 		}
 	}
 	else // ManagePackages::Remove or ManagePackages::Purge
@@ -207,15 +224,15 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
 			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
 					packageExpression.find('*') != string::npos;
-			versions = selectBinaryVersionsWildcarded(cache, packageExpression, wildcardsPresent);
+			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, wildcardsPresent);
 		}
 
-		auto scheduleRemoval = [&resolver, &worker, mode](PackageId packageId)
+		auto scheduleRemoval = [&mpc, localMode](PackageId packageId)
 		{
-			resolver.removePackage(packageId);
-			if (mode == ManagePackages::Purge)
+			mpc.resolver.removePackage(packageId);
+			if (localMode == ManagePackages::Purge)
 			{
-				worker.setPackagePurgeFlag(packageId, true);
+				mpc.worker.setPackagePurgeFlag(packageId, true);
 			}
 		};
 
@@ -229,8 +246,8 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 		else
 		{
 			PackageId packageId(packageExpression);
-			if (!cache.getSystemState()->getInstalledInfo(packageId) &&
-				!getBinaryPackage(cache, packageId, false))
+			if (!mpc.cache.getSystemState()->getInstalledInfo(packageId) &&
+				!getBinaryPackage(mpc.cache, packageId, false))
 			{
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
@@ -240,19 +257,18 @@ static void processInstallOrRemoveExpression(const Cache& cache,
 	}
 }
 
-static void processAutoFlagChangeExpression(const Cache& cache,
-		Resolver& resolver, ManagePackages::Mode mode, const string& packageExpression)
+static void processAutoFlagChangeExpression(ManagePackagesContext& mpc,
+		const string& packageExpression)
 {
-	getBinaryPackage(cache, PackageId(packageExpression)); // will throw if package name is wrong
+	getBinaryPackage(mpc.cache, PackageId(packageExpression)); // will throw if package name is wrong
 
-	resolver.setAutomaticallyInstalledFlag(PackageId(packageExpression),
-			(mode == ManagePackages::Markauto));
+	mpc.resolver.setAutomaticallyInstalledFlag(PackageId(packageExpression),
+			(mpc.mode == ManagePackages::Markauto));
 }
 
-static void processReinstallExpression(const Cache& cache,
-		Resolver& resolver, const string& packageExpression)
+static void processReinstallExpression(ManagePackagesContext& mpc, const string& packageExpression)
 {
-	auto package = getBinaryPackage(cache, PackageId(packageExpression));
+	auto package = getBinaryPackage(mpc.cache, PackageId(packageExpression));
 	auto installedVersion = package->getInstalledVersion();
 	if (!installedVersion)
 	{
@@ -265,44 +281,45 @@ static void processReinstallExpression(const Cache& cache,
 		fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
 				packageExpression, targetVersionString);
 	}
-	resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
+	mpc.resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
 }
 
-static void processPackageExpressions(const Config& config,
-		const Cache& cache, ManagePackages::Mode& mode,
-		Resolver& resolver, Worker& worker, const vector< string >& packageExpressions)
+static void processPackageExpressions(ManagePackagesContext& mpc, const vector< string >& packageExpressions)
 {
 	for (const auto& packageExpression: packageExpressions)
 	{
 		// positional options: changing mode
-		if (packageExpression == "--remove") mode = ManagePackages::Remove;
-		else if (packageExpression == "--purge") mode = ManagePackages::Purge;
-		else if (packageExpression == "--install") mode = ManagePackages::Install;
-		else if (packageExpression == "--satisfy") mode = ManagePackages::Satisfy;
-		else if (packageExpression == "--unsatisfy") mode = ManagePackages::Unsatisfy;
-		else if (packageExpression == "--markauto") mode = ManagePackages::Markauto;
-		else if (packageExpression == "--unmarkauto") mode = ManagePackages::Unmarkauto;
-		else if (packageExpression == "--iii") mode = ManagePackages::InstallIfInstalled;
+		if (packageExpression == "--remove") mpc.mode = ManagePackages::Remove;
+		else if (packageExpression == "--purge") mpc.mode = ManagePackages::Purge;
+		else if (packageExpression == "--install") mpc.mode = ManagePackages::Install;
+		else if (packageExpression == "--satisfy") mpc.mode = ManagePackages::Satisfy;
+		else if (packageExpression == "--unsatisfy") mpc.mode = ManagePackages::Unsatisfy;
+		else if (packageExpression == "--markauto") mpc.mode = ManagePackages::Markauto;
+		else if (packageExpression == "--unmarkauto") mpc.mode = ManagePackages::Unmarkauto;
+		else if (packageExpression == "--iii") mpc.mode = ManagePackages::InstallIfInstalled;
+		else if (packageExpression == "--asauto=yes") mpc.autoinstall = ManagePackagesContext::AutoInstall::Yes;
+		else if (packageExpression == "--asauto=no") mpc.autoinstall = ManagePackagesContext::AutoInstall::No;
+		else if (packageExpression == "--asauto=default") mpc.autoinstall = ManagePackagesContext::AutoInstall::Nop;
 		// package expressions: processing them
-		else if (mode == ManagePackages::Satisfy || mode == ManagePackages::Unsatisfy)
+		else if (mpc.mode == ManagePackages::Satisfy || mpc.mode == ManagePackages::Unsatisfy)
 		{
-			processSatisfyExpression(config, resolver, packageExpression, mode);
+			processSatisfyExpression(mpc, packageExpression);
 		}
-		else if (mode == ManagePackages::BuildDepends)
+		else if (mpc.mode == ManagePackages::BuildDepends)
 		{
-			processBuildDependsExpression(config, cache, resolver, packageExpression);
+			processBuildDependsExpression(mpc, packageExpression);
 		}
-		else if (mode == ManagePackages::Markauto || mode == ManagePackages::Unmarkauto)
+		else if (mpc.mode == ManagePackages::Markauto || mpc.mode == ManagePackages::Unmarkauto)
 		{
-			processAutoFlagChangeExpression(cache, resolver, mode, packageExpression);
+			processAutoFlagChangeExpression(mpc, packageExpression);
 		}
-		else if (mode == ManagePackages::Reinstall)
+		else if (mpc.mode == ManagePackages::Reinstall)
 		{
-			processReinstallExpression(cache, resolver, packageExpression);
+			processReinstallExpression(mpc, packageExpression);
 		}
 		else
 		{
-			processInstallOrRemoveExpression(cache, resolver, worker, mode, packageExpression);
+			processInstallOrRemoveExpression(mpc, packageExpression);
 		}
 	}
 }
@@ -434,7 +451,7 @@ void showVersionInfoIfNeeded(const Cache& cache, PackageId packageId,
 	string newVersionString = getVersionString(suggestedPackage.version);
 
 	if (!oldVersionString.empty() && !newVersionString.empty() &&
-			(actionType != fakeNotPolicyVersionAction || oldVersionString != newVersionString))
+			(actionType != fakeNotPreferredVersionAction || oldVersionString != newVersionString))
 	{
 		cout << format2(" [%s -> %s]", oldVersionString, newVersionString);
 	}
@@ -447,7 +464,7 @@ void showVersionInfoIfNeeded(const Cache& cache, PackageId packageId,
 		cout << format2(" [%s]", newVersionString);
 	}
 
-	if (actionType == fakeNotPolicyVersionAction)
+	if (actionType == fakeNotPreferredVersionAction)
 	{
 		cout << ", " << __("preferred") << ": " << getVersionString(cache.getPreferredVersion(package));
 	}
@@ -587,6 +604,15 @@ void showReason(const Resolver::SuggestedPackage& suggestedPackage)
 	{
 		cout << "  " << __("reason: ") << reason->toString() << endl;
 	}
+	if (!suggestedPackage.reasonPackageIds.empty())
+	{
+		vector< string > reasonPackageNames;
+		for (auto packageId: suggestedPackage.reasonPackageIds)
+		{
+			reasonPackageNames.push_back(packageId.name());
+		}
+		cout << "  " << __("caused by changes in: ") << join(", ", reasonPackageNames) << endl;
+	}
 	cout << endl;
 }
 
@@ -612,8 +638,60 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
 	}
 }
 
-Resolver::UserAnswer::Type askUserAboutSolution(
-		const Config& config, bool isDangerous, bool& addArgumentsFlag)
+void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggestedPackages)
+{
+	cout << __("Enter a binary package name to show reason chain for (empty to cancel): ");
+	string answer;
+	std::getline(std::cin, answer);
+	if (answer.empty()) return;
+
+	const auto& topPackageId = PackageId(answer);
+	if (!suggestedPackages.count(topPackageId))
+	{
+		cout << format2(__("The package '%s' is not going to change its state."), topPackageId.name()) << endl;
+		return;
+	}
+
+	struct PackageAndLevel
+	{
+		PackageId packageId;
+		size_t level;
+	};
+	std::stack< PackageAndLevel > reasonStack({ PackageAndLevel{ topPackageId, 0 } });
+
+	cout << endl;
+	while (!reasonStack.empty())
+	{
+		auto packageId = reasonStack.top().packageId;
+
+		auto reasonIt = suggestedPackages.find(packageId);
+		if (reasonIt == suggestedPackages.end())
+		{
+			fatal2i("a reason chain is broken: the package '%s' is not changed", packageId.name());
+		}
+		const auto& reasons = reasonIt->second.reasons;
+		if (reasons.empty())
+		{
+			fatal2i("no reasons available for the package '%s'", packageId.name());
+		}
+		const auto& reasonPtr = reasons[0];
+
+		size_t level = reasonStack.top().level;
+		cout << format2("%s%s: %s", string(level*2, ' '), packageId.name(), reasonPtr->toString()) << endl;
+
+		reasonStack.pop();
+
+		for (auto reasonPackageId: reasonIt->second.reasonPackageIds)
+		{
+			reasonStack.push({ reasonPackageId, level + 1 });
+		}
+	}
+	cout << endl;
+}
+
+Resolver::UserAnswer::Type askUserAboutSolution(const Config& config,
+		const Resolver::SuggestedPackages& suggestedPackages,
+		bool isDangerous, bool& addArgumentsFlag)
 {
 	string answer;
 
@@ -628,7 +706,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	else
 	{
 		ask:
-		cout << __("Do you want to continue? [y/N/q/a/?] ");
+		cout << __("Do you want to continue? [y/N/q/a/rc/?] ");
 		std::getline(std::cin, answer);
 		if (!std::cin)
 		{
@@ -662,12 +740,18 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 		addArgumentsFlag = true;
 		return Resolver::UserAnswer::Abandon;
 	}
+	else if (answer == "rc")
+	{
+		showReasonChainForAskedPackage(suggestedPackages);
+		goto ask;
+	}
 	else if (answer == "?")
 	{
 		cout << __("y: accept the solution") << endl;
 		cout << __("n: reject the solution, try to find other ones") << endl;
 		cout << __("q: reject the solution and exit") << endl;
 		cout << __("a: specify an additional binary package expression") << endl;
+		cout << __("rc: show a reason chain for a package") << endl;
 		cout << __("?: output this help") << endl << endl;
 		goto ask;
 	}
@@ -679,7 +763,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(
 	}
 }
 
-Resolver::SuggestedPackages generateNotPolicyVersionList(const Cache& cache,
+Resolver::SuggestedPackages generateNotPreferredVersionList(const Cache& cache,
 		const Resolver::SuggestedPackages& packages)
 {
 	Resolver::SuggestedPackages result;
@@ -688,8 +772,9 @@ Resolver::SuggestedPackages generateNotPolicyVersionList(const Cache& cache,
 		const auto& suggestedVersion = suggestedPackage.second.version;
 		if (suggestedVersion)
 		{
-			auto policyVersion = cache.getPreferredVersion(cache.getBinaryPackage(suggestedVersion->packageId));
-			if (!(policyVersion == suggestedVersion))
+			auto preferredVersion = cache.getPreferredVersion(
+					getBinaryPackage(cache, suggestedVersion->packageId));
+			if (!(preferredVersion == suggestedVersion))
 			{
 				result.insert(suggestedPackage);
 			}
@@ -805,9 +890,9 @@ struct PackageChangeInfoFlags
 		: versionFlags(config)
 	{
 		sizeChange = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
-				actionType != fakeNotPolicyVersionAction);
+				actionType != fakeNotPreferredVersionAction);
 		reasons = (config.getBool("cupt::console::actions-preview::show-reasons") &&
-				actionType != fakeNotPolicyVersionAction);
+				actionType != fakeNotPreferredVersionAction);
 	}
 	bool empty() const
 	{
@@ -919,8 +1004,8 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const Cache& cache,
 	switch (actionType)
 	{
 		#pragma GCC diagnostic ignored "-Wswitch"
-		case fakeNotPolicyVersionAction:
-			return generateNotPolicyVersionList(cache, offer.suggestedPackages);
+		case fakeNotPreferredVersionAction:
+			return generateNotPreferredVersionList(cache, offer.suggestedPackages);
 		case fakeAutoRemove:
 			return filterNoLongerNeeded(actionsPreview.groups[WA::Remove], false);
 		case fakeAutoPurge:
@@ -951,7 +1036,7 @@ map< WA::Type, string > getActionDescriptionMap()
 		{ WA::Deconfigure, __("will be deconfigured") },
 		{ WA::ProcessTriggers, __("will have triggers processed") },
 		{ WA::Reinstall, __("will be reinstalled") },
-		{ fakeNotPolicyVersionAction, __("will have a not preferred version") },
+		{ fakeNotPreferredVersionAction, __("will have a not preferred version") },
 		{ fakeAutoRemove, __("are no longer needed and thus will be auto-removed") },
 		{ fakeAutoPurge, __("are no longer needed and thus will be auto-purged") },
 		{ fakeBecomeAutomaticallyInstalled, __("will be marked as automatically installed") },
@@ -968,7 +1053,7 @@ vector< WA::Type > getActionTypesInPrintOrder(bool showNotPreferred)
 	};
 	if (showNotPreferred)
 	{
-		result.push_back(fakeNotPolicyVersionAction);
+		result.push_back(fakeNotPreferredVersionAction);
 	}
 	result.push_back(fakeAutoRemove);
 	result.push_back(fakeAutoPurge);
@@ -976,25 +1061,29 @@ vector< WA::Type > getActionTypesInPrintOrder(bool showNotPreferred)
 	return result;
 }
 
-Resolver::CallbackType generateManagementPrompt(const Config& config,
-		const Cache& cache, const shared_ptr< Worker >& worker,
+bool isSummaryEnabled(const Config& config, size_t actionCount)
+{
+	auto configValue = config.getString("cupt::console::actions-preview::show-summary");
+	return (configValue == "yes") ||
+			(actionCount > 100 && configValue == "auto");
+}
+
+Resolver::CallbackType generateManagementPrompt(ManagePackagesContext& mpc,
 		bool showNotPreferred, bool& addArgumentsFlag, bool& thereIsNothingToDo)
 {
-	auto result = [&config, &cache, &worker, showNotPreferred,
-			&addArgumentsFlag, &thereIsNothingToDo]
+	auto result = [&mpc, showNotPreferred, &addArgumentsFlag, &thereIsNothingToDo]
 			(const Resolver::Offer& offer) -> Resolver::UserAnswer::Type
 	{
 		addArgumentsFlag = false;
 		thereIsNothingToDo = false;
 
-		auto showSummary = config.getBool("cupt::console::actions-preview::show-summary");
-		auto showDetails = config.getBool("cupt::console::actions-preview::show-details");
+		auto showDetails = mpc.config.getBool("cupt::console::actions-preview::show-details");
 
-		worker->setDesiredState(offer);
-		auto actionsPreview = worker->getActionsPreview();
-		auto unpackedSizesPreview = worker->getUnpackedSizesPreview();
+		mpc.worker.setDesiredState(offer);
+		auto actionsPreview = mpc.worker.getActionsPreview();
+		auto unpackedSizesPreview = mpc.worker.getUnpackedSizesPreview();
 
-		Colorizer colorizer(config);
+		Colorizer colorizer(mpc.config);
 
 		std::stringstream summaryStream;
 
@@ -1005,29 +1094,26 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 
 			for (const WA::Type& actionType: getActionTypesInPrintOrder(showNotPreferred))
 			{
-				auto actionSuggestedPackages = getSuggestedPackagesByAction(cache,
+				auto actionSuggestedPackages = getSuggestedPackagesByAction(mpc.cache,
 						offer, *actionsPreview, actionType);
 				if (actionSuggestedPackages.empty()) continue;
 
-				if (actionType != fakeNotPolicyVersionAction)
+				if (actionType != fakeNotPreferredVersionAction)
 				{
 					actionCount += actionSuggestedPackages.size();
 				}
 
 				const string& actionName = actionDescriptions.find(actionType)->second;
 
-				if (showSummary)
-				{
-					addActionToSummary(actionType, actionName, actionSuggestedPackages,
-							colorizer, &summaryStream);
-				}
+				addActionToSummary(actionType, actionName, actionSuggestedPackages,
+						colorizer, &summaryStream);
 				if (!showDetails) continue;
 
 				cout << format2(__("The following packages %s:"),
 						colorizeActionName(colorizer, actionName, actionType)) << endl << endl;
 
-				showPackageChanges(config, cache, colorizer, actionType, actionSuggestedPackages,
-						unpackedSizesPreview);
+				showPackageChanges(mpc.config, mpc.cache, colorizer, actionType,
+						actionSuggestedPackages, unpackedSizesPreview);
 			}
 
 			showUnsatisfiedSoftDependencies(offer, showDetails, &summaryStream);
@@ -1040,22 +1126,22 @@ Resolver::CallbackType generateManagementPrompt(const Config& config,
 			return Resolver::UserAnswer::Abandon;
 		}
 
-		if (showSummary)
+		if (isSummaryEnabled(mpc.config, actionCount))
 		{
 			cout << __("Action summary:") << endl << summaryStream.str() << endl;
 			summaryStream.clear();
 		}
 
 		bool isDangerousAction = false;
-		checkAndPrintDangerousActions(config, cache, *actionsPreview, &isDangerousAction);
+		checkAndPrintDangerousActions(mpc.config, mpc.cache, *actionsPreview, &isDangerousAction);
 
 		{ // print size estimations
-			auto downloadSizesPreview = worker->getDownloadSizesPreview();
+			auto downloadSizesPreview = mpc.worker.getDownloadSizesPreview();
 			printDownloadSizes(downloadSizesPreview);
 			printUnpackedSizeChanges(unpackedSizesPreview);
 		}
 
-		return askUserAboutSolution(config, isDangerousAction, addArgumentsFlag);
+		return askUserAboutSolution(mpc.config, offer.suggestedPackages, isDangerousAction, addArgumentsFlag);
 	};
 
 	return result;
@@ -1091,7 +1177,7 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	{
 		const set< string > actionModifierOptionNames = {
 			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii",
-			"--markauto", "--unmarkauto"
+			"--markauto", "--unmarkauto", "--asauto=yes", "--asauto=no", "--asauto=default"
 		};
 		if (actionModifierOptionNames.count(input))
 		{
@@ -1200,8 +1286,7 @@ Resolver* getResolver(const shared_ptr< const Config >& config,
 	return new NativeResolver(config, cache);
 }
 
-void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cache& cache,
-		ManagePackages::Mode mode, Resolver& resolver, Worker& worker)
+void queryAndProcessAdditionalPackageExpressions(ManagePackagesContext& mpc)
 {
 	string answer;
 	do
@@ -1210,7 +1295,7 @@ void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cac
 		std::getline(std::cin, answer);
 		if (!answer.empty())
 		{
-			processPackageExpressions(config, cache, mode, resolver, worker, convertLineToShellArguments(answer));
+			processPackageExpressions(mpc, convertLineToShellArguments(answer));
 		}
 		else
 		{
@@ -1219,9 +1304,26 @@ void queryAndProcessAdditionalPackageExpressions(const Config& config, const Cac
 	} while (true);
 }
 
+class ProgressStage
+{
+	bool p_print;
+ public:
+	ProgressStage(const Config& config)
+		: p_print(config.getBool("cupt::console::show-progress-messages"))
+	{}
+	void operator()(const char* message)
+	{
+		if (p_print)
+		{
+			cout << message << endl;
+		}
+	}
+};
+
 int managePackages(Context& context, ManagePackages::Mode mode)
 {
 	auto config = context.getConfig();
+	ProgressStage stage(*config);
 
 	// turn off info parsing, we don't need it
 	if (!shellMode)
@@ -1260,11 +1362,11 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 		bool buildSource = (mode == ManagePackages::BuildDepends ||
 				config->getString("cupt::resolver::synchronize-by-source-versions") != "none");
 
-		cout << __("Building the package cache... ") << endl;
+		stage(__("Building the package cache... "));
 		cache = context.getCache(buildSource, true, true);
 	}
 
-	cout << __("Initializing package resolver and worker... ") << endl;
+	stage(__("Initializing package resolver and worker... "));
 	std::unique_ptr< Resolver > resolver(getResolver(config, cache));
 
 	if (!snapshotName.empty())
@@ -1275,15 +1377,17 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	shared_ptr< Worker > worker(new Worker(config, cache));
 
-	cout << __("Scheduling requested actions... ") << endl;
+	ManagePackagesContext mpc = { mode, ManagePackagesContext::AutoInstall::Nop,
+			*config, *cache, *resolver, *worker };
 
-	preProcessMode(mode, *config, *resolver);
-	processPackageExpressions(*config, *cache, mode, *resolver, *worker, packageExpressions);
+	stage(__("Scheduling requested actions... "));
+	preProcessMode(mpc);
+	processPackageExpressions(mpc, packageExpressions);
 
-	cout << __("Resolving possible unmet dependencies... ") << endl;
+	stage(__("Resolving possible unmet dependencies... "));
 
 	bool addArgumentsFlag, thereIsNothingToDo;
-	auto callback = generateManagementPrompt(*config, *cache, worker,
+	auto callback = generateManagementPrompt(mpc,
 			showNotPreferred, addArgumentsFlag, thereIsNothingToDo);
 
 	resolve:
@@ -1292,7 +1396,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	bool resolved = resolver->resolve(callback);
 	if (addArgumentsFlag && std::cin)
 	{
-		queryAndProcessAdditionalPackageExpressions(*config, *cache, mode, *resolver, *worker);
+		queryAndProcessAdditionalPackageExpressions(mpc);
 		goto resolve;
 	}
 

@@ -28,10 +28,10 @@ apt::get::automaticremove, apt::get::list-cleanup, apt::get::purge,
 apt::update::pre-invoke, apt::update::post-invoke,
 apt::update::post-invoke-success, dir, dir::bin::dpkg, dir::cache,
 dir::cache::archives, dir::etc, dir::etc::sourcelist, dir::etc::sourceparts,
-dir::etc::parts, dir::etc::main, dir::etc::preferences, dir::state,
-dir::state::extendedstates, dir::state::status, dpkg::options,
-dpkg::pre-invoke, dpkg::post-invoke, dpkg::pre-install-pkgs,
-gpgv::trustedkeyring, quiet
+dir::etc::parts, dir::etc::main, dir::etc::preferences,
+dir::ignore-files-silently, dir::state, dir::state::extendedstates,
+dir::state::status, dpkg::options, dpkg::pre-invoke, dpkg::post-invoke,
+dpkg::pre-install-pkgs, gpgv::trustedkeyring, quiet
 
 See L<apt.conf(5)> for their meanings.
 
@@ -209,8 +209,11 @@ boolean, see L<cupt(1)> L<--show-reasons|/--show-reasons,--show-deps,-D>
 
 =item cupt::console::actions-preview::show-summary
 
-boolean, if true, a summary of planned actions will be shown in the
-actions preview. True by default.
+string, tristate ("yes", "no" or "auto"), controls whether summary of planned
+actions will be shown in the actions preview or not. Defaults to "yes".
+
+Currently, "auto" means that summary will be shown when there are >= 100 change
+entries in total.
 
 =item cupt::console::actions-preview::show-versions
 
@@ -221,6 +224,11 @@ actions preview. False by default.
 
 boolean, if true, a version will be shown for each package in the actions
 preview. False by default.
+
+=item cupt::console::show-progress-messages
+
+boolean, if true, package management actions will print stage messages
+("Building a cache", "Resolving possible unmet dependencies" etc.). True by default.
 
 =item cupt::console::use-colors
 
@@ -301,7 +309,7 @@ list, names of the methods available to download protocol I<protocol>
 =item cupt::languages::indexes
 
 string, specifies localizations of what languages should be used for repository
-indexes. Defaults to "environment".
+indexes. Defaults to "environment,en".
 
 The value is comma-delimited (no spaces allowed) list of localization specificators. Localization specificator is either:
 
@@ -392,6 +400,13 @@ cupt::update::compression-types::uncompressed::priority "300";
 boolean, specifies whether to keep signature files that failed GPG check
 when doing update. True by default. Setting this option to false will not have
 an effect if the option L<cupt::update::check-release-files> is set to false.
+
+=item cupt::update::generate-index-of-index
+
+boolean, specifies whether to build "index-of-index" for every Packages and
+Sources. If set to true, slightly increases the time of postprocessing after
+downloading new metadata files but speedes up significantly the initialization
+time for every invocation. True by default.
 
 =item cupt::update::use-index-diffs
 
