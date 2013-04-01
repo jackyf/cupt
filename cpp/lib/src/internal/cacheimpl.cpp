@@ -97,7 +97,7 @@ Package* CacheImpl::preparePackage(unordered_map< PackageId, vector< PrePackageR
 			versionInitParams.packageId = packageId;
 			package->addEntry(versionInitParams);
 		}
-		preRecord.clear();
+		pre.erase(preIt);
 		return package.get();
 	}
 	else
