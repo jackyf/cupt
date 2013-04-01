@@ -122,7 +122,7 @@ void Relation::__init(const char* start, const char* end)
 	if (current != start)
 	{
 		// package name is here
-		packageId = PackageId(string(start, current));
+		packageId = PackageId(start, current-start);
 	}
 	else
 	{
