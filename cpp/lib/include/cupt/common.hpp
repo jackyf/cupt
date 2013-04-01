@@ -109,9 +109,7 @@ CUPT_API const char* __(const char* message);
  * @endcode
  * @c "zzuf" will be printed
  */
-template < typename IteratorType >
-void CUPT_API consumePackageName(IteratorType begin, IteratorType end,
-		IteratorType& resultEnd);
+void CUPT_API consumePackageName(const char* begin, const char* end, const char*& resultEnd);
 
 /// checks version string for correctness
 /**

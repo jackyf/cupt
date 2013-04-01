@@ -19,9 +19,7 @@
 
 namespace cupt {
 
-template < typename IteratorType >
-void consumePackageName(IteratorType begin, IteratorType end,
-		IteratorType& resultEnd)
+void consumePackageName(const char* begin, const char* end, const char*& resultEnd)
 {
 	// "[a-z_0-9.+-]+"
 	resultEnd = begin; // start position, meaning no package name found
@@ -35,10 +33,6 @@ void consumePackageName(IteratorType begin, IteratorType end,
 		++resultEnd;
 	}
 }
-template void consumePackageName<>
-		(string::const_iterator, string::const_iterator, string::const_iterator&);
-template void consumePackageName<>
-		(const char*, const char*, const char*&);
 
 // kind of HACK: I want to use this function, but don't want to create a header for it
 typedef pair< string::const_iterator, string::const_iterator > StringAnchorPair;
