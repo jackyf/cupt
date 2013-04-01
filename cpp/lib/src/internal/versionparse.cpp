@@ -322,10 +322,10 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 				}
 
 				internal::parse::processSpaceCharSpaceDelimitedStrings(
-						block.begin(), block.end(), ',',
-						[&v](string::const_iterator a, string::const_iterator b)
+						block.data(), block.data()+block.size(), ',',
+						[&v](const char* a, const char* b)
 						{
-							v->binaryPackageIds.push_back(PackageId(string(a, b)));
+							v->binaryPackageIds.push_back(PackageId(a, b-a));
 						});
 			})
 			TAG(Directory, v->sources[0].directory = tagValue.toString();)
