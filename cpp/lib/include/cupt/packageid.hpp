@@ -31,8 +31,10 @@ class CUPT_API PackageId
 	uint32_t rawId() const;
 
 	bool operator==(const PackageId& other) const { return __id == other.__id; }
+	bool operator!=(const PackageId& other) const { return !(*this == other); }
 	bool operator<(const PackageId& other) const { return __id < other.__id; }
-	operator bool() const { return __id; }
+	bool operator>(const PackageId& other) const { return other < *this; }
+	explicit operator bool() const { return __id; }
 
 	static bool compareByName(PackageId left, PackageId right) { return left.name() < right.name(); }
 	static bool checkPackageName(const char* start, size_t len);
