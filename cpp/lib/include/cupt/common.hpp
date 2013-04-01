@@ -107,8 +107,7 @@ CUPT_API const char* __(const char* message);
  * @endcode
  * @c "zzuf" will be printed
  */
-void CUPT_API consumePackageName(string::const_iterator begin, string::const_iterator end,
-		string::const_iterator& resultEnd);
+void CUPT_API consumePackageName(const char* begin, const char* end, const char*& resultEnd);
 
 /// checks package name for correctness
 /**

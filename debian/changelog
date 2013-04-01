@@ -52,6 +52,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         constructor from string subrange is now explicit.
       - [API break] Relation, ArchitecturedRelation: removed constructors from
         strings.
+      - [API break] Use 'const char*' instead of 'string::const_iterator' in
+        constructors.
     - config:
       - Don't store unused APT variables anymore.
       - New option 'cupt::console::actions-preview::show-reasons'.

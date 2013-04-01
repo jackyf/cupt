@@ -19,8 +19,7 @@
 
 namespace cupt {
 
-void consumePackageName(string::const_iterator begin, string::const_iterator end,
-		string::const_iterator& resultEnd)
+void consumePackageName(const char* begin, const char* end, const char*& resultEnd)
 {
 	// "[a-z_0-9.+-]+"
 	resultEnd = begin; // start position, meaning no package name found
@@ -37,9 +36,12 @@ void consumePackageName(string::const_iterator begin, string::const_iterator end
 
 bool checkPackageName(const string& input, bool throwOnError)
 {
-	string::const_iterator resultEnd;
-	consumePackageName(input.begin(), input.end(), resultEnd);
-	bool result = (resultEnd == input.end());
+	auto begin = input.data();
+	auto end = begin + input.size();
+
+	const char* resultEnd;
+	consumePackageName(begin, end, resultEnd);
+	bool result = (resultEnd == end);
 	if (!result && throwOnError)
 	{
 		fatal2(__("invalid package name '%s'"), input);
