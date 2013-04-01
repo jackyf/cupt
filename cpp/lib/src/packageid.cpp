@@ -93,8 +93,7 @@ uint32_t getPackageNameId(const StringBuffer& packageName)
 	static S2NType s2n;
 	static uint32_t nextId = 1;
 
-	S2NType::value_type insertPair { std::move(packageName), 0 };
-	auto& insertedPair = *s2n.insert(insertPair).first;
+	auto& insertedPair = *s2n.insert({ packageName, 0 }).first;
 	auto& id = insertedPair.second;
 	if (!id)
 	{
