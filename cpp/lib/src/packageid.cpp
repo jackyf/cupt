@@ -26,38 +26,26 @@ namespace {
 
 class StringBuffer
 {
-	union
-	{
-		const char* __bufferStart;
-		const string* __string;
-	};
+	mutable const char* __bufferStart;
 	size_t __bufferLength;
-
-	bool __containsString() const { return __bufferLength == size_t(-1); }
-
  public:
 	StringBuffer(const char* start, size_t len)
 		: __bufferStart(start), __bufferLength(len)
 	{}
 	StringBuffer(const StringBuffer& other)
-		: __string(new string(other.__bufferStart, other.__bufferLength)), __bufferLength(size_t(-1))
-	{}
-	StringBuffer(StringBuffer&& other)
 		: __bufferStart(other.__bufferStart), __bufferLength(other.__bufferLength)
+	{}
+	void assignStorage(const string& storage) const
 	{
-		other.__bufferLength = 0; // any non-(-1)
-	}
-	~StringBuffer()
-	{
-		if (__containsString()) delete __string;
+		__bufferStart = storage.data();
 	}
 	const char* getBufferStart() const
 	{
-		return __containsString() ? __string->data() : __bufferStart;
+		return __bufferStart;
 	}
 	size_t getBufferLength() const
 	{
-		return __containsString() ? __string->size() : __bufferLength;
+		return __bufferLength;
 	}
 	bool operator==(const StringBuffer& other) const
 	{
@@ -65,9 +53,9 @@ class StringBuffer
 		if (ourLength != other.getBufferLength()) return false;
 		return memcmp(getBufferStart(), other.getBufferStart(), ourLength) == 0;
 	}
-	const string* getStringPtr() const
+	string toString() const
 	{
-		return __string;
+		return string(__bufferStart, __bufferLength);
 	}
 };
 struct StringBufferHasher
@@ -87,17 +75,17 @@ struct StringBufferHasher
 	}
 };
 
-vector< const string* >& getN2S()
+vector< string >& getN2S()
 {
-	static vector< const string* > n2s;
+	static vector< string > n2s;
 	return n2s;
 }
 
-uint32_t getPackageNameId(StringBuffer&& packageName)
+uint32_t getPackageNameId(const StringBuffer& packageName)
 {
 	if (!PackageId::checkPackageName(packageName.getBufferStart(), packageName.getBufferLength()))
 	{
-		fatal2(__("invalid package name '%s'"), *StringBuffer(packageName).getStringPtr());
+		fatal2(__("invalid package name '%s'"), packageName.toString());
 	}
 
 	typedef std::unordered_map< StringBuffer, uint32_t, StringBufferHasher > S2NType;
@@ -111,7 +99,8 @@ uint32_t getPackageNameId(StringBuffer&& packageName)
 	if (!id)
 	{
 		id = nextId++;
-		getN2S().push_back(insertedPair.first.getStringPtr());
+		getN2S().push_back(packageName.toString());
+		insertedPair.first.assignStorage(getN2S().back());
 	}
 
 	return id;
@@ -138,7 +127,7 @@ uint32_t PackageId::rawId() const
 
 const string& PackageId::name() const
 {
-	return *(getN2S()[__id-1]);
+	return getN2S()[__id-1];
 }
 
 bool PackageId::checkPackageName(const char* buffer, size_t length)
