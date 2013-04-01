@@ -156,11 +156,6 @@ Relation::Relation(pair< string::const_iterator, string::const_iterator > input)
 	__init(input.first, input.second);
 }
 
-Relation::Relation(const string& unparsed)
-{
-	__init(unparsed.begin(), unparsed.end());
-}
-
 Relation::~Relation()
 {}
 
@@ -227,12 +222,6 @@ void ArchitecturedRelation::__init(string::const_iterator start, string::const_i
 	--end;
 
 	architectureFilters = internal::split(' ', string(start, end));
-}
-
-ArchitecturedRelation::ArchitecturedRelation(const string& unparsed)
-		: Relation(string(unparsed.begin(), std::find(unparsed.begin(), unparsed.end(), '[')))
-{
-	__init(std::find(unparsed.begin(), unparsed.end(), '['), unparsed.end());
 }
 
 ArchitecturedRelation::ArchitecturedRelation(

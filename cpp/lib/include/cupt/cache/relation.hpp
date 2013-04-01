@@ -47,12 +47,6 @@ struct CUPT_API Relation
 	/// constructor
 	/**
 	 * Parses @a input and constructs Relation from it.
-	 * @param input stringified relation
-	 */
-	explicit Relation(const string& input);
-	/// constructor
-	/**
-	 * Parses @a input and constructs Relation from it.
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
 	explicit Relation(pair< string::const_iterator, string::const_iterator > input);
@@ -90,12 +84,6 @@ struct CUPT_API ArchitecturedRelation: public Relation
 	/// architecture filters
 	vector< string > architectureFilters;
 
-	/// constructor
-	/**
-	 * Parses @a input and constructs ArchitecturedRelation from it.
-	 * @param input stringified architectured relation
-	 */
-	explicit ArchitecturedRelation(const string& input);
 	/// constructor
 	/**
 	 * Parses @a input and constructs ArchitecturedRelation from it.

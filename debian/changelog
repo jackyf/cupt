@@ -50,6 +50,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - cache/relation:
       - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
         constructor from string subrange is now explicit.
+      - [API break] Relation, ArchitecturedRelation: removed constructors from
+        strings.
     - config:
       - Don't store unused APT variables anymore.
       - New option 'cupt::console::actions-preview::show-reasons'.
