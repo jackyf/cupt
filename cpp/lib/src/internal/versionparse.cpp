@@ -66,7 +66,7 @@ using namespace cache;
 			else \
 			{ \
 				warn2("package %s, version %s: unrecognized priority value '%s', using 'extra' instead", \
-						v->packageName, v->versionString, string(tagValue)); \
+						v->packageName, v->versionString, tagValue.toString()); \
 			} \
 		})
 
@@ -79,8 +79,7 @@ using namespace cache;
 					{ \
 						v->others = new map< string, string >; \
 					} \
-					string tagNameString(tagName); \
-					(*(v->others))[tagNameString] = tagValue; \
+					(*(v->others))[tagName.toString()] = tagValue.toString(); \
 				} \
 			}
 
@@ -118,15 +117,15 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 
 		while (parser.parseNextLine(tagName, tagValue))
 		{
-			TAG(Version, v->versionString = tagValue;)
-			TAG(Essential, v->essential = (string(tagValue) == "yes");)
+			TAG(Version, v->versionString = tagValue.toString();)
+			TAG(Essential, v->essential = (tagValue.toString() == "yes");)
 			PARSE_PRIORITY
 			TAG(Size, v->file.size = internal::string2uint32(tagValue);)
 			TAG(Installed-Size, v->installedSize = internal::string2uint32(tagValue) * 1024;)
-			TAG(Architecture, v->architecture = tagValue;)
+			TAG(Architecture, v->architecture = tagValue.toString();)
 			TAG(Filename,
 			{
-				string filename = tagValue;
+				string filename = tagValue.toString();
 				auto lastSlashPosition = filename.find_last_of('/');
 				if (lastSlashPosition == string::npos)
 				{
@@ -139,12 +138,12 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 					v->file.name = filename.substr(lastSlashPosition + 1);
 				}
 			})
-			TAG(MD5sum, v->file.hashSums[HashSums::MD5] = tagValue;)
-			TAG(SHA1, v->file.hashSums[HashSums::SHA1] = tagValue;)
-			TAG(SHA256, v->file.hashSums[HashSums::SHA256] = tagValue;)
+			TAG(MD5sum, v->file.hashSums[HashSums::MD5] = tagValue.toString();)
+			TAG(SHA1, v->file.hashSums[HashSums::SHA1] = tagValue.toString();)
+			TAG(SHA256, v->file.hashSums[HashSums::SHA256] = tagValue.toString();)
 			TAG(Source,
 			{
-				v->sourcePackageName = tagValue;
+				v->sourcePackageName = tagValue.toString();
 				string& value = v->sourcePackageName;
 				// determing do we have source version appended or not?
 				// example: "abcd (1.2-5)"
@@ -180,7 +179,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 				TAG(Enhances, v->relations[RelationTypes::Enhances] = RelationLine(tagValue);)
 				TAG(Provides,
 				{
-					auto callback = [&v](string::const_iterator begin, string::const_iterator end)
+					auto callback = [&v](const char* begin, const char* end)
 					{
 						v->provides.push_back(string(begin, end));
 					};
@@ -191,15 +190,15 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 
 			if (Version::parseInfoOnly)
 			{
-				TAG(Section, v->section = tagValue;)
-				TAG(Maintainer, v->maintainer = tagValue;)
+				TAG(Section, v->section = tagValue.toString();)
+				TAG(Maintainer, v->maintainer = tagValue.toString();)
 				TAG(Description,
 				{
-					v->description = tagValue;
+					v->description = tagValue.toString();
 					v->description.append("\n");
 					parser.parseAdditionalLines(v->description);
 				};)
-				TAG(Tag, v->tags = tagValue;)
+				TAG(Tag, v->tags = tagValue.toString();)
 				PARSE_OTHERS
 			}
 		}
@@ -257,7 +256,7 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 		{
 			if (tagValue.first != tagValue.second)
 			{
-				fatal2(__("unexpected non-empty tag value '%s'"), string(tagValue));
+				fatal2(__("unexpected non-empty tag value '%s'"), tagValue.toString());
 			}
 			string block;
 			parser.parseAdditionalLines(block);
@@ -303,7 +302,7 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 
 			TAG(Binary,
 			{
-				auto block = string(tagValue);
+				auto block = tagValue.toString();
 				string additionalLines;
 				parser.parseAdditionalLines(additionalLines);
 				if (!additionalLines.empty())
@@ -330,14 +329,14 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 							v->binaryPackageNames.push_back(string(a, b));
 						});
 			})
-			TAG(Directory, v->sources[0].directory = tagValue;)
-			TAG(Version, v->versionString = tagValue;)
+			TAG(Directory, v->sources[0].directory = tagValue.toString();)
+			TAG(Version, v->versionString = tagValue.toString();)
 			if (tagName.equal(BUFFER_AND_SIZE("Priority")) && tagValue.equal(BUFFER_AND_SIZE("source")))
 			{
 				continue; // a workaround for the unannounced value 'source' (Debian BTS #626394)
 			}
 			PARSE_PRIORITY
-			TAG(Architecture, v->architectures = internal::split(' ', tagValue);)
+			TAG(Architecture, v->architectures = internal::split(' ', tagValue.toString());)
 
 			if (Version::parseRelations)
 			{
@@ -349,10 +348,10 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 
 			if (Version::parseInfoOnly)
 			{
-				TAG(Section, v->section = tagValue;)
-				TAG(Maintainer, v->maintainer = tagValue;)
+				TAG(Section, v->section = tagValue.toString();)
+				TAG(Maintainer, v->maintainer = tagValue.toString();)
 				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*", regex_constants::optimize);
-				TAG(Uploaders, v->uploaders = split(commaSeparatedRegex, tagValue);)
+				TAG(Uploaders, v->uploaders = split(commaSeparatedRegex, tagValue.toString());)
 				PARSE_OTHERS
 			}
 		}

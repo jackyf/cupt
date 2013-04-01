@@ -425,11 +425,11 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				}
 				else if (fieldName.equal(BUFFER_AND_SIZE("SHA1-Current")))
 				{
-					auto values = internal::split(' ', string(fieldValue));
+					auto values = internal::split(' ', fieldValue.toString());
 					if (values.size() != 2)
 					{
 						logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-								piddedFormat2, "malformed 'hash-size' line '%s'", string(fieldValue));
+								piddedFormat2, "malformed 'hash-size' line '%s'", fieldValue.toString());
 					}
 					wantedHashSum = values[0];
 				}

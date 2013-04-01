@@ -58,10 +58,10 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 		{
 			fatal2(__("didn't find a colon in the line '%s'"), string(__buffer, __buffer_size));
 		}
-		tagName.first = decltype(tagName.first)(__buffer);
-		tagName.second = decltype(tagName.second)((const char*)colonPosition);
+		tagName.first = __buffer;
+		tagName.second = (const char*)colonPosition;
 		// getting tag value on a first line
-		tagValue.first = decltype(tagValue.first)((const char*)colonPosition+1);
+		tagValue.first = (const char*)colonPosition+1;
 		if (isblank(*tagValue.first))
 		{
 			++tagValue.first;

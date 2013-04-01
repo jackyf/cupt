@@ -595,7 +595,7 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 				if (tagName.equal(BUFFER_AND_SIZE("Description-md5")))
 				{
 					hashSumFound = true;
-					md5 = tagValue;
+					md5 = tagValue.toString();
 				}
 				else if ((size_t)(tagName.second - tagName.first) > descriptionSubPatternSize &&
 						!memcmp(&*tagName.first, descriptionSubPattern, descriptionSubPatternSize))
@@ -733,10 +733,10 @@ void CacheImpl::parseExtendedStates()
 		{
 			if (!tagName.equal("Package", 7))
 			{
-				fatal2(__("wrong tag: expected 'Package', got '%s'"), string(tagName));
+				fatal2(__("wrong tag: expected 'Package', got '%s'"), tagName.toString());
 			}
 
-			string packageName = tagValue;
+			string packageName = tagValue.toString();
 
 			bool valueFound = false;
 			while (parser.parseNextLine(tagName, tagValue))
@@ -752,7 +752,7 @@ void CacheImpl::parseExtendedStates()
 					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{
 						fatal2(__("bad value '%s' (should be 0 or 1) for the package '%s'"),
-								string(tagValue), packageName);
+								tagValue.toString(), packageName);
 					}
 				}
 			}
