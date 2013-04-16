@@ -633,15 +633,24 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
 	}
 }
 
-void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggestedPackages)
+void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggestedPackages, const Worker::ActionsPreview& actionsPreview)
 {
+	auto isPackageChangingItsState = [&actionsPreview](const string& packageName)
+	{
+		for (const auto& group: actionsPreview.groups)
+		{
+			if (group.count(packageName)) return true;
+		}
+		return false;
+	};
+
 	cout << __("Enter a binary package name to show reason chain for (empty to cancel): ");
 	string answer;
 	std::getline(std::cin, answer);
 	if (answer.empty()) return;
 
 	const auto& topPackageName = answer;
-	if (!suggestedPackages.count(topPackageName))
+	if (!isPackageChangingItsState(topPackageName))
 	{
 		cout << format2(__("The package '%s' is not going to change its state."), topPackageName) << endl;
 		return;
@@ -658,12 +667,12 @@ void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggested
 	while (!reasonStack.empty())
 	{
 		const string& packageName = reasonStack.top().packageName;
-
-		auto reasonIt = suggestedPackages.find(packageName);
-		if (reasonIt == suggestedPackages.end())
+		if (!isPackageChangingItsState(packageName))
 		{
 			fatal2i("a reason chain is broken: the package '%s' is not changed", packageName);
 		}
+
+		auto reasonIt = suggestedPackages.find(packageName);
 		const auto& reasons = reasonIt->second.reasons;
 		if (reasons.empty())
 		{
@@ -686,6 +695,7 @@ void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggested
 
 Resolver::UserAnswer::Type askUserAboutSolution(const Config& config,
 		const Resolver::SuggestedPackages& suggestedPackages,
+		const Worker::ActionsPreview& actionsPreview,
 		bool isDangerous, bool& addArgumentsFlag)
 {
 	string answer;
@@ -737,7 +747,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(const Config& config,
 	}
 	else if (answer == "rc")
 	{
-		showReasonChainForAskedPackage(suggestedPackages);
+		showReasonChainForAskedPackage(suggestedPackages, actionsPreview);
 		goto ask;
 	}
 	else if (answer == "?")
@@ -1136,7 +1146,7 @@ Resolver::CallbackType generateManagementPrompt(ManagePackagesContext& mpc,
 			printUnpackedSizeChanges(unpackedSizesPreview);
 		}
 
-		return askUserAboutSolution(mpc.config, offer.suggestedPackages, isDangerousAction, addArgumentsFlag);
+		return askUserAboutSolution(mpc.config, offer.suggestedPackages, *actionsPreview, isDangerousAction, addArgumentsFlag);
 	};
 
 	return result;
