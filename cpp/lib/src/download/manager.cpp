@@ -48,6 +48,7 @@ namespace internal {
 using namespace cupt::download;
 
 typedef Manager::ExtendedUri ExtendedUri;
+typedef Manager::DownloadEntity DownloadEntity;
 
 struct InputMessage
 {
@@ -129,9 +130,8 @@ static vector< string > receiveSocketMessage(int socket)
 
 struct InnerDownloadElement
 {
-	queue< ExtendedUri > extendedUris;
-	size_t size;
-	std::function< string () > postAction;
+	queue< ExtendedUri > sortedExtendedUris;
+	const DownloadEntity* data;
 };
 
 class ManagerImpl
@@ -182,10 +182,10 @@ class ManagerImpl
 
 	int getUriPriority(const Uri& uri);
 	map< string, InnerDownloadElement > convertEntitiesToDownloads(
-			const vector< Manager::DownloadEntity >& entities);
+			const vector< DownloadEntity >& entities);
  public:
 	ManagerImpl(const shared_ptr< const Config >& config, const shared_ptr< Progress >& progress);
-	string download(const vector< Manager::DownloadEntity >& entities);
+	string download(const vector< DownloadEntity >& entities);
 	~ManagerImpl();
 };
 
@@ -883,13 +883,13 @@ int ManagerImpl::getUriPriority(const Uri& uri)
 }
 
 map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
-		const vector< Manager::DownloadEntity >& entities)
+		const vector< DownloadEntity >& entities)
 {
 	map< string, InnerDownloadElement > result;
 
-	FORIT(entityIt, entities)
+	for (const auto& entity: entities)
 	{
-		const string& targetPath = entityIt->targetPath;
+		const string& targetPath = entity.targetPath;
 		if (targetPath.empty())
 		{
 			fatal2(__("passed a download entity with an empty target path"));
@@ -902,9 +902,9 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 
 		// sorting uris by protocols' priorities
 		vector< pair< Manager::ExtendedUri, int > > extendedPrioritizedUris;
-		FORIT(extendedUriIt, entityIt->extendedUris)
+		for (const auto& extendedUri: entity.extendedUris)
 		{
-			extendedPrioritizedUris.push_back(make_pair(*extendedUriIt, getUriPriority(extendedUriIt->uri)));
+			extendedPrioritizedUris.push_back({extendedUri, getUriPriority(extendedUri.uri)});
 		}
 		std::sort(extendedPrioritizedUris.begin(), extendedPrioritizedUris.end(), [this]
 				(const pair< Manager::ExtendedUri, int >& left, const pair< Manager::ExtendedUri, int >& right)
@@ -913,17 +913,16 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 				});
 		FORIT(it, extendedPrioritizedUris)
 		{
-			element.extendedUris.push(it->first);
+			element.sortedExtendedUris.push(it->first);
 		}
 
-		element.size = entityIt->size;
-		element.postAction = entityIt->postAction;
+		element.data = &entity;
 	}
 
 	return result;
 }
 
-string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
+string ManagerImpl::download(const vector< DownloadEntity >& entities)
 {
 	if (config->getBool("cupt::worker::simulate"))
 	{
@@ -958,15 +957,15 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	{
 		InnerDownloadElement& downloadElement = downloads[targetPath];
 
-		auto extendedUri = downloadElement.extendedUris.front();
-		downloadElement.extendedUris.pop();
+		auto extendedUri = downloadElement.sortedExtendedUris.front();
+		downloadElement.sortedExtendedUris.pop();
 
 		const string& uri = extendedUri.uri;
 
-		if (downloadElement.size != (size_t)-1)
+		if (downloadElement.data->size != (size_t)-1)
 		{
 			sendSocketMessage(sock,
-					vector< string >{ "set-download-size", uri, lexical_cast< string >(downloadElement.size) });
+					vector< string >{ "set-download-size", uri, lexical_cast< string >(downloadElement.data->size) });
 		}
 		if (!extendedUri.shortAlias.empty())
 		{
@@ -1017,7 +1016,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 			// but do this only if this file wasn't post-processed before
 			try
 			{
-				errorString = element.postAction();
+				errorString = element.data->postAction();
 			}
 			catch (std::exception& e)
 			{
@@ -1039,7 +1038,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 		{
 			// this download hasn't been processed smoothly
 			// check - maybe we have another URI(s) for this file?
-			if (!element.extendedUris.empty())
+			if (!element.sortedExtendedUris.empty())
 			{
 				// yes, so reschedule a download with another URI
 				scheduleDownload(targetPath);
