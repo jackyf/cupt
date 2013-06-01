@@ -24,7 +24,7 @@ namespace cupt {
 
 class DebdeltaMethod: public download::Method
 {
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		auto deltaCallback = [callback](const vector< string >& params)

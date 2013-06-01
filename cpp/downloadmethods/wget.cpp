@@ -52,7 +52,7 @@ static bool __get_file_size(const string& path, ssize_t* result)
 
 class WgetMethod: public cupt::download::Method
 {
-	vector< string > generateWgetParametersVector(const shared_ptr< const Config >& config,
+	vector< string > generateWgetParametersVector(const Config& config,
 			const download::Uri& uri, const string& targetPath)
 	{
 		vector< string > p;
@@ -65,7 +65,7 @@ class WgetMethod: public cupt::download::Method
 		}
 		p.push_back("wget"); // passed as a binary name, not parameter
 		p.push_back("--continue");
-		p.push_back(string("--tries=") + lexical_cast< string >(config->getInteger("acquire::retries")+1));
+		p.push_back(string("--tries=") + lexical_cast< string >(config.getInteger("acquire::retries")+1));
 		auto maxSpeedLimit = getIntegerAcquireSuboptionForUri(config, uri, "dl-limit");
 		if (maxSpeedLimit)
 		{
@@ -75,7 +75,7 @@ class WgetMethod: public cupt::download::Method
 		{
 			p.push_back("--no-proxy");
 		}
-		if (uri.getProtocol() != "http" || !config->getBool("acquire::http::allowredirect"))
+		if (uri.getProtocol() != "http" || !config.getBool("acquire::http::allowredirect"))
 		{
 			p.push_back("--max-redirect=0");
 		}
@@ -92,7 +92,7 @@ class WgetMethod: public cupt::download::Method
 		return p;
 	}
 
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		bool wgetProcessFinished = false;

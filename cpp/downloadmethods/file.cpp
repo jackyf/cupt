@@ -67,7 +67,7 @@ class FileMethod: public download::Method
 
 		return string();
 	}
-	string perform(const shared_ptr< const Config >& /* config */, const download::Uri& uri,
+	string perform(const Config&, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		auto sourcePath = uri.getOpaque();

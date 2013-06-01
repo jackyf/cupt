@@ -190,7 +190,7 @@ class ManagerImpl
 };
 
 ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared_ptr< Progress >& progress_)
-	: config(config_), progress(progress_), methodFactory(config_)
+	: config(config_), progress(progress_), methodFactory(*config_)
 {
 	if (config->getBool("cupt::worker::simulate"))
 	{
@@ -1072,7 +1072,7 @@ string ManagerImpl::perform(const string& uri, const string& targetPath, int soc
 	try
 	{
 		auto downloadMethod = methodFactory.getDownloadMethodForUri(uri);
-		result = downloadMethod->perform(config, uri, targetPath, callback);
+		result = downloadMethod->perform(*config, uri, targetPath, callback);
 		delete downloadMethod;
 	}
 	catch (Exception& e)
