@@ -669,7 +669,8 @@ void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggested
 		const string& packageName = reasonStack.top().packageName;
 		if (!isPackageChangingItsState(packageName))
 		{
-			fatal2i("a reason chain is broken: the package '%s' is not changed", packageName);
+			reasonStack.pop();
+			continue;
 		}
 
 		auto reasonIt = suggestedPackages.find(packageName);
