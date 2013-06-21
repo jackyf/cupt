@@ -240,6 +240,7 @@ void ConfigImpl::initializeVariables()
 		{ "dpkg::post-invoke", vector< string > {} },
 
 		// Cupt vars
+		{ "cupt::cache::foreign-architectures", {} },
 		{ "cupt::cache::limit-releases::by-archive", vector< string > {} },
 		{ "cupt::cache::limit-releases::by-codename", vector< string > {} },
 		{ "cupt::downloader::protocols::file::methods", vector< string > { "file" } },
@@ -391,9 +392,16 @@ static string qx(const string& shellCommand)
 
 void ConfigImpl::setArchitecture(Config* config)
 {
-	string architecture = qx(config->getPath("dir::bin::dpkg") + " --print-architecture");
+	const string dpkgPath = config->getPath("dir::bin::dpkg");
+	string architecture = qx(dpkgPath + " --print-architecture");
 	internal::chomp(architecture);
 	config->setScalar("apt::architecture", architecture);
+
+	string foreignArchitectures = qx(dpkgPath + " --print-foreign-architectures");
+	for (const auto& item: internal::split('\n', foreignArchitectures))
+	{
+		config->setList("cupt::cache::foreign-architectures", item);
+	}
 }
 
 }
