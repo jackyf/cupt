@@ -49,6 +49,7 @@ class ConfigImpl
 	void initializeVariables();
 	vector< string > getConfigurationFilePaths(Config*) const;
 	void readConfigs(Config*);
+	void setArchitecture(Config*);
 	bool isOptionalOption(const string& optionName) const;
 };
 
@@ -375,8 +376,6 @@ void ConfigImpl::readConfigs(Config* config)
 	}
 }
 
-}
-
 static string qx(const string& shellCommand)
 {
 	string openError;
@@ -390,16 +389,21 @@ static string qx(const string& shellCommand)
 	return result;
 }
 
+void ConfigImpl::setArchitecture(Config* config)
+{
+	string architecture = qx(config->getPath("dir::bin::dpkg") + " --print-architecture");
+	internal::chomp(architecture);
+	config->setScalar("apt::architecture", architecture);
+}
+
+}
+
 Config::Config()
 {
 	__impl = new internal::ConfigImpl;
 	__impl->initializeVariables();
 	__impl->readConfigs(this);
-
-	// setting architecture
-	string architecture = qx(getPath("dir::bin::dpkg") + " --print-architecture");
-	internal::chomp(architecture);
-	setScalar("apt::architecture", architecture);
+	__impl->setArchitecture(this);
 }
 
 Config::~Config()
