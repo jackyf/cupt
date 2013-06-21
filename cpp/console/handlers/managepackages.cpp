@@ -582,6 +582,19 @@ void checkForIgnoredHolds(const Cache& cache,
 	}
 }
 
+void checkForMultiArchSystem(const Config& config, bool* isDangerousAction)
+{
+	auto foreignArchitectures = config.getList("cupt::cache::foreign-architectures");
+	if (!foreignArchitectures.empty())
+	{
+		*isDangerousAction = true;
+		cout << __("WARNING! You are running cupt on MultiArch-enabled system. This setup is not supported at the moment.") << endl;
+		cout << __("Any actions may break your system.") << endl;
+		cout << format2(__("Detected foreign architectures: %s"), join(", ", foreignArchitectures)) << endl;
+		cout << endl;
+	}
+}
+
 void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 		const Worker::ActionsPreview& actionsPreview, bool* isDangerousAction)
 {
@@ -591,6 +604,7 @@ void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 	}
 	checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
 	checkForIgnoredHolds(cache, actionsPreview, isDangerousAction);
+	checkForMultiArchSystem(config, isDangerousAction);
 
 	if (!actionsPreview.groups[WA::Downgrade].empty())
 	{

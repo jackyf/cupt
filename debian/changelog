@@ -14,6 +14,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Action preview prompt: new choice 'rc' ("show reason chain").
       - The option 'cupt::console::actions-preview::show-summary' got a new 
         value variant "auto".
+      - Warn and require extra confirmation for actions on MultiArch-enabled
+        systems. (Closes: #710052)
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
