@@ -587,10 +587,7 @@ void __foreach_solution_element(const PackageEntryMap& masterEntries, const Pack
 
 void Solution::prepare()
 {
-	if (!__parent)
-	{
-		return; // prepared already
-	}
+	if (!__parent) return; // prepared already
 
 	if (!__parent->__master_entries)
 	{
