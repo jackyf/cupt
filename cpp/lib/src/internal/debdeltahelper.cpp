@@ -76,9 +76,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 		string result;
 		// replacing
-		FORIT(charIt, input)
+		for (const char c: input)
 		{
-			char c = *charIt;
 			if (c != ':')
 			{
 				result += c;
