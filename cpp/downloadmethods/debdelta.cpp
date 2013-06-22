@@ -31,9 +31,14 @@ class DebdeltaMethod: public download::Method
 		{
 			if (!params.empty() && params[0] == "expected-size")
 			{
-				return; // ignore it
+				auto uiSizeParams = params;
+				uiSizeParams[0] = "ui-size";
+				callback(uiSizeParams);
 			}
-			callback(params);
+			else
+			{
+				callback(params);
+			}
 		};
 
 		// download delta file

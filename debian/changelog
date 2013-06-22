@@ -103,6 +103,10 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break]: don't require shared_ptr< Config > anymore.
     - download/progress:
       - Added support for the dynamic changes of expected download sizes.
+  * downloadmethods:
+    - debdelta:
+      - Pass delta size (when/if known) to download progress.
+        (Closes: #690914)
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.
