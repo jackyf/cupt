@@ -183,8 +183,43 @@ void Progress::setTotalEstimatedSize(uint64_t size)
 	__impl->totalEstimatedSize = size;
 }
 
-void Progress::progress(const vector< string >& params)
+namespace {
+
+template < typename T >
+class VectorSuffix
 {
+ public:
+	VectorSuffix(const vector< T >& source)
+		: p_source(source)
+		, p_position(0)
+	{}
+
+	void slide(size_t count)
+	{
+		p_position += count;
+	}
+
+	const T& operator[](size_t offset) const
+	{
+		return p_source[p_position + offset];
+	}
+
+	size_t size() const
+	{
+		return p_source.size() - p_position;
+	}
+
+ private:
+	const vector< T >& p_source;
+	size_t p_position;
+};
+
+}
+
+void Progress::progress(const vector< string >& allParams)
+{
+	VectorSuffix<string> params(allParams);
+
 	if (params.size() == 1 && params[0] == "finish")
 	{
 		finishHook();
@@ -196,6 +231,22 @@ void Progress::progress(const vector< string >& params)
 	}
 	const string& uri = params[0];
 	const string& action = params[1];
+	params.slide(2);
+
+	auto assertMaxParamCount = [&params, &action](size_t maxCount)
+	{
+		if (params.size() > maxCount)
+		{
+			fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), action, maxCount);
+		}
+	};
+	auto assertParamCount = [&params, &action](size_t count)
+	{
+		if (params.size() != count)
+		{
+			fatal2(__("download progress: received a submessage '%s' with not %u parameters"), action, count);
+		}
+	};
 
 	if (action == "ping")
 	{
@@ -203,16 +254,14 @@ void Progress::progress(const vector< string >& params)
 	}
 	else if (action == "start")
 	{
-		if (params.size() > 3)
-		{
-			fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "start", 1);
-		}
+		assertMaxParamCount(1);
+
 		// new download
 		DownloadRecord& record = __impl->nowDownloading[uri];
 		record.number = __impl->nextDownloadNumber++;
-		if (params.size() == 3)
+		if (params.size() > 0)
 		{
-			record.size = lexical_cast< size_t >(params[2]);
+			record.size = lexical_cast< size_t >(params[0]);
 		}
 		else
 		{
@@ -235,41 +284,29 @@ void Progress::progress(const vector< string >& params)
 		DownloadRecord& record = recordIt->second;
 		if (action == "downloading")
 		{
-			if (params.size() != 4)
-			{
-				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "downloading", 2);
-			}
-			record.downloadedSize = lexical_cast< size_t >(params[2]);
-			auto bytesInFetchedPiece = lexical_cast< size_t >(params[3]);
+			assertParamCount(2);
+			record.downloadedSize = lexical_cast< size_t >(params[0]);
+			auto bytesInFetchedPiece = lexical_cast< size_t >(params[1]);
 			__impl->fetchedSize += bytesInFetchedPiece;
 			__impl->addChunk(bytesInFetchedPiece);
 			updateHook(false);
 		}
 		else if (action == "expected-size")
 		{
-			if (params.size() != 3)
-			{
-				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "expected-size", 1);
-			}
-			record.size = lexical_cast< size_t >(params[2]);
+			assertParamCount(1);
+			record.size = lexical_cast< size_t >(params[0]);
 			updateHook(true);
 		}
 		else if (action == "pre-done")
 		{
-			if (params.size() != 2)
-			{
-				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "pre-done", 0);
-			}
+			assertParamCount(0);
 			record.beingPostprocessed = true;
 			updateHook(true);
 		}
 		else if (action == "done")
 		{
-			if (params.size() != 3)
-			{
-				fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), "done", 1);
-			}
-			const string& result = params[2];
+			assertParamCount(1);
+			const string& result = params[0];
 			if (result.empty()) // only if download succeeded
 			{
 				auto value = (record.size != (size_t)-1 ? record.size : record.downloadedSize);
