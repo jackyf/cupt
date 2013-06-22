@@ -260,11 +260,13 @@ void ConsoleProgress::updateHook(bool immediate)
 
 	vector< DownloadRecordForPrint > printRecords;
 	const std::map< string, DownloadRecord >& records = this->getDownloadRecords();
-	FORIT(recordIt, records)
+	for (const auto& item: records)
 	{
+		if (item.second.phase < DownloadRecord::Phase::Started) continue;
+
 		DownloadRecordForPrint recordForPrint;
-		recordForPrint.record = recordIt->second;
-		recordForPrint.uri = recordIt->first;
+		recordForPrint.record = item.second;
+		recordForPrint.uri = item.first;
 		recordForPrint.shortAlias = this->getShortAliasForUri(recordForPrint.uri);
 		printRecords.push_back(std::move(recordForPrint));
 	}
