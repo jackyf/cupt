@@ -269,6 +269,7 @@ void Progress::progress(const vector< string >& allParams)
 		}
 		record.downloadedSize = 0;
 		record.beingPostprocessed = false;
+		record.sizeScaleFactor = 1.f;
 
 		newDownloadHook(uri, record);
 		updateHook(true);
@@ -296,6 +297,16 @@ void Progress::progress(const vector< string >& allParams)
 			assertParamCount(1);
 			record.size = lexical_cast< size_t >(params[0]);
 			updateHook(true);
+		}
+		else if (action == "ui-size")
+		{
+			assertParamCount(1);
+			size_t uiSize = lexical_cast< size_t >(params[0]);
+			if (record.size != -1u)
+			{
+				record.sizeScaleFactor = (float)record.size / uiSize;
+			}
+			record.size = uiSize;
 		}
 		else if (action == "pre-done")
 		{
@@ -333,9 +344,9 @@ uint64_t Progress::getOverallDownloadedSize() const
 	// firstly, start up with filling size of already downloaded things
 	uint64_t result = __impl->doneDownloadsSize;
 	// count each amount bytes download for all active entries
-	FORIT(it, __impl->nowDownloading)
+	for (const auto& item: __impl->nowDownloading)
 	{
-		result += it->second.downloadedSize;
+		result += (item.second.downloadedSize * item.second.sizeScaleFactor);
 	}
 
 	return result;
@@ -352,16 +363,16 @@ uint64_t Progress::getOverallEstimatedSize() const
 	{
 		// otherwise compute it based on data we have
 		auto result = __impl->doneDownloadsSize;
-		FORIT(it, __impl->nowDownloading)
+		for (const auto& item: __impl->nowDownloading)
 		{
 			// add or real estimated size, or downloaded size (for entries
 			// where download size hasn't been determined yet)
-			auto size = it->second.size;
+			auto size = item.second.size;
 			if (size == (size_t)-1)
 			{
-				size = it->second.downloadedSize;
+				size = item.second.downloadedSize;
 			}
-			result += size;
+			result += (size * item.second.sizeScaleFactor);
 		}
 		return result;
 	}

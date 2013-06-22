@@ -101,6 +101,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Removed 'alive pings'.
     - download/method{,factory}:
       - [API break]: don't require shared_ptr< Config > anymore.
+    - download/progress:
+      - Added support for the dynamic changes of expected download sizes.
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.
