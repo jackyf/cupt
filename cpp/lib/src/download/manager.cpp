@@ -588,15 +588,14 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 		// background downloader process
 		performerPipe->useAsWriter();
 
-		// start progress
-		vector< string > progressMessage = { "progress", uri, "start" };
+		// notify progress(es)
 		auto sizeIt = sizes.find(uri);
 		if (sizeIt != sizes.end())
 		{
-			progressMessage.push_back(lexical_cast< string >(sizeIt->second));
+			sendSocketMessage(*performerPipe,
+					{ "progress", uri, "expected-size", lexical_cast< string >(sizeIt->second) });
 		}
-
-		sendSocketMessage(*performerPipe, progressMessage);
+		sendSocketMessage(*performerPipe, { "progress", uri, "start" });
 
 		auto errorMessage = perform(uri, targetPath, performerPipe->getWriterFd());
 		sendSocketMessage(*performerPipe, vector< string >{ "done", uri, errorMessage });

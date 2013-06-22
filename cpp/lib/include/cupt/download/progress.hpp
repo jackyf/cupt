@@ -45,8 +45,15 @@ class CUPT_API Progress
 		size_t number; ///< unique number
 		size_t downloadedSize; ///< already downloaded amount of bytes
 		size_t size; ///< expected file size, @c -1 if unknown
-		bool beingPostprocessed; ///< is download being postprocessed
+		enum class Phase
+		{
+			Planned, ///< not started yet, @a number is not initialized
+			Started, ///< started, @a number is now holding a valid value
+			Postprocessed ///< network actions finished, result is being postprocessed
+		} phase;
 		float sizeScaleFactor;
+
+		DownloadRecord();
 	};
  protected:
 	/**

@@ -131,6 +131,13 @@ size_t ProgressImpl::getDownloadSpeed() const
 
 namespace download {
 
+Progress::DownloadRecord::DownloadRecord()
+	: downloadedSize(0)
+	, size(-1)
+	, phase(Phase::Planned)
+	, sizeScaleFactor(1.f)
+{}
+
 float Progress::speedCalculatingAccuracy = 16;
 
 Progress::Progress()
@@ -233,13 +240,6 @@ void Progress::progress(const vector< string >& allParams)
 	const string& action = params[1];
 	params.slide(2);
 
-	auto assertMaxParamCount = [&params, &action](size_t maxCount)
-	{
-		if (params.size() > maxCount)
-		{
-			fatal2(__("download progress: received a submessage '%s' with more than %u parameters"), action, maxCount);
-		}
-	};
 	auto assertParamCount = [&params, &action](size_t count)
 	{
 		if (params.size() != count)
@@ -254,31 +254,29 @@ void Progress::progress(const vector< string >& allParams)
 	}
 	else if (action == "start")
 	{
-		assertMaxParamCount(1);
+		assertParamCount(0);
 
-		// new download
+		// new/started download
 		DownloadRecord& record = __impl->nowDownloading[uri];
+		record.phase = DownloadRecord::Phase::Started;
 		record.number = __impl->nextDownloadNumber++;
-		if (params.size() > 0)
-		{
-			record.size = lexical_cast< size_t >(params[0]);
-		}
-		else
-		{
-			record.size = -1;
-		}
-		record.downloadedSize = 0;
-		record.beingPostprocessed = false;
-		record.sizeScaleFactor = 1.f;
 
 		newDownloadHook(uri, record);
+		updateHook(true);
+	}
+	else if (action == "expected-size")
+	{
+		assertParamCount(1);
+
+		DownloadRecord& record = __impl->nowDownloading[uri];
+		record.size = lexical_cast< size_t >(params[0]);
 		updateHook(true);
 	}
 	else
 	{
 		// this is info about something that currently downloading
 		auto recordIt = __impl->nowDownloading.find(uri);
-		if (recordIt == __impl->nowDownloading.end())
+		if (recordIt == __impl->nowDownloading.end() || recordIt->second.phase < DownloadRecord::Phase::Started)
 		{
 			fatal2(__("download progress: received an info for a not started download, URI '%s'"), uri);
 		}
@@ -291,12 +289,6 @@ void Progress::progress(const vector< string >& allParams)
 			__impl->fetchedSize += bytesInFetchedPiece;
 			__impl->addChunk(bytesInFetchedPiece);
 			updateHook(false);
-		}
-		else if (action == "expected-size")
-		{
-			assertParamCount(1);
-			record.size = lexical_cast< size_t >(params[0]);
-			updateHook(true);
 		}
 		else if (action == "ui-size")
 		{
@@ -311,7 +303,7 @@ void Progress::progress(const vector< string >& allParams)
 		else if (action == "pre-done")
 		{
 			assertParamCount(0);
-			record.beingPostprocessed = true;
+			record.phase = DownloadRecord::Phase::Postprocessed;
 			updateHook(true);
 		}
 		else if (action == "done")

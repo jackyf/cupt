@@ -209,7 +209,7 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 	FORIT(it, records)
 	{
 		string suffix;
-		if (it->record.beingPostprocessed)
+		if (it->record.phase == DownloadRecord::Phase::Postprocessed)
 		{
 			suffix = " | postprocessing";
 		}
