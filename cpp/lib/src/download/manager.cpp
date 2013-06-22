@@ -174,6 +174,7 @@ class ManagerImpl
 			const string& actionName, const string& errorString);
 	void terminateDownloadProcesses();
 	void startNewDownload(const string& uri, const string& targetPath, int waiterSocket, bool debugging);
+	void setDownloadSize(const string& uri, size_t size);
 	InputMessage pollAllInput(MessageQueue& workerQueue,
 			const vector< int >& persistentSockets, set< int >& clientSockets,
 			bool exitFlag, bool debugging);
@@ -589,12 +590,6 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 		performerPipe->useAsWriter();
 
 		// notify progress(es)
-		auto sizeIt = sizes.find(uri);
-		if (sizeIt != sizes.end())
-		{
-			sendSocketMessage(*performerPipe,
-					{ "progress", uri, "expected-size", lexical_cast< string >(sizeIt->second) });
-		}
 		sendSocketMessage(*performerPipe, { "progress", uri, "start" });
 
 		auto errorMessage = perform(uri, targetPath, performerPipe->getWriterFd());
@@ -604,6 +599,12 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 
 		_exit(0);
 	}
+}
+
+void ManagerImpl::setDownloadSize(const string& uri, size_t size)
+{
+	sizes[uri] = size;
+	progress->progress({ uri, "expected-size", lexical_cast< string >(size) });
 }
 
 InputMessage ManagerImpl::pollAllInput(MessageQueue& workerQueue,
@@ -806,7 +807,7 @@ void ManagerImpl::worker()
 			}
 			const string& uri = params[0];
 			const size_t size = lexical_cast< size_t >(params[1]);
-			sizes[uri] = size;
+			setDownloadSize(uri, size);
 		}
 		else if (command == "done")
 		{
