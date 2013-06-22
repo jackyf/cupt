@@ -57,14 +57,13 @@ class ProgressImpl
 	uint64_t fetchedSize;
 	map< string, AliasPair > aliases;
 	size_t nextDownloadNumber;
-	uint64_t totalEstimatedSize;
 	time_t startTimestamp;
 	map< string, DownloadRecord > nowDownloading;
 };
 
 ProgressImpl::ProgressImpl()
 	: doneDownloadsSize(0), fetchedSize(0), nextDownloadNumber(1),
-	totalEstimatedSize(-1), startTimestamp(time(NULL))
+	startTimestamp(time(NULL))
 {}
 
 struct timespec getCurrentTimeSpec()
@@ -183,11 +182,6 @@ string Progress::getShortAliasForUri(const string& uri) const
 	{
 		return uri;
 	}
-}
-
-void Progress::setTotalEstimatedSize(uint64_t size)
-{
-	__impl->totalEstimatedSize = size;
 }
 
 namespace {
@@ -346,28 +340,19 @@ uint64_t Progress::getOverallDownloadedSize() const
 
 uint64_t Progress::getOverallEstimatedSize() const
 {
-	if (__impl->totalEstimatedSize != (uint64_t)-1)
+	auto result = __impl->doneDownloadsSize;
+	for (const auto& item: __impl->nowDownloading)
 	{
-		// caller has specified the estimated size, just use it
-		return __impl->totalEstimatedSize;
-	}
-	else
-	{
-		// otherwise compute it based on data we have
-		auto result = __impl->doneDownloadsSize;
-		for (const auto& item: __impl->nowDownloading)
+		// add or real estimated size, or downloaded size (for entries
+		// where download size hasn't been determined yet)
+		auto size = item.second.size;
+		if (size == (size_t)-1)
 		{
-			// add or real estimated size, or downloaded size (for entries
-			// where download size hasn't been determined yet)
-			auto size = item.second.size;
-			if (size == (size_t)-1)
-			{
-				size = item.second.downloadedSize;
-			}
-			result += (size * item.second.sizeScaleFactor);
+			size = item.second.downloadedSize;
 		}
-		return result;
+		result += (size * item.second.sizeScaleFactor);
 	}
+	return result;
 }
 
 uint64_t Progress::getOverallFetchedSize() const

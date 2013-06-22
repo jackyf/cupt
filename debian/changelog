@@ -108,6 +108,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Added support for the dynamic changes of expected download sizes.
       - [API break]' 'DownloadRecord': the field 'beingPostprocessed' is
         replaced with a new field 'phase'.
+      - [API break] 'setTotalEstimatedSize': removed as superseded by early
+        notificiations by download manager.
   * downloadmethods:
     - debdelta:
       - Pass delta size (when/if known) to download progress.
