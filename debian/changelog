@@ -1,4 +1,4 @@
-cupt (2.5.10~) UNRELEASED; urgency=low
+cupt (2.5.10) unstable; urgency=low
 
   * lib:
     - download/manager:
@@ -6,7 +6,7 @@ cupt (2.5.10~) UNRELEASED; urgency=low
         pings. This could hang the download manager. Many thanks to
         James McCoy for the final analysis. (Closes: #710239)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 25 Jun 2013 20:00:45 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 25 Jun 2013 20:57:51 +0300
 
 cupt (2.5.9) unstable; urgency=low
 
