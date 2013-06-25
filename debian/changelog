@@ -1,6 +1,10 @@
 cupt (2.5.10~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - download/manager:
+      - Avoid memory allocations in a signal handler when sending internal
+        pings. This could hang the download manager. Many thanks to
+        James McCoy for the final analysis. (Closes: #710239)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 25 Jun 2013 20:00:45 +0300
 
