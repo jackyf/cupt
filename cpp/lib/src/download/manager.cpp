@@ -150,6 +150,7 @@ class ManagerImpl
 	struct ActiveDownloadInfo
 	{
 		int waiterSocket;
+		vector< int > secondaryWaiterSockets;
 		pid_t performerPid;
 		shared_ptr< Pipe > performerPipe;
 		string targetPath;
@@ -162,10 +163,10 @@ class ManagerImpl
 		int waiterSocket;
 	};
 	queue< OnHoldRecord > onHold;
-	multimap< string, int > pendingDuplicates; // uri -> waiterSocket
 	map< string, size_t > sizes;
 
-	void finishPendingDownload(multimap< string, int >::iterator, const string&, bool);
+	void finishDuplicatedDownload(int, const string&, const string&);
+	void finishPendingDownloads(const string&, const ActiveDownloadInfo&, const string&, bool);
 	void processFinalResult(MessageQueue&, const vector< string >& params, bool debugging);
 	void processPreliminaryResult(MessageQueue&, const vector< string >& params, bool debugging);
 	void processProgressMessage(MessageQueue&, const vector< string >& params);
@@ -356,22 +357,32 @@ void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 	workerQueue.push({ "progress", uri, "pre-done" });
 }
 
-void ManagerImpl::finishPendingDownload(multimap< string, int >::iterator pendingDownloadIt,
-		const string& result, bool debugging)
+void ManagerImpl::finishDuplicatedDownload(int waiterSocket, const string& uri, const string& result)
 {
 	const bool isDuplicatedDownload = true;
+	sendSocketMessage(waiterSocket,
+			{ uri, result, lexical_cast< string >(isDuplicatedDownload) });
+}
 
-	const string& uri = pendingDownloadIt->first;
-
+void ManagerImpl::finishPendingDownloads(const string& uri, const ActiveDownloadInfo& downloadInfo,
+		const string& result, bool debugging)
+{
 	if (debugging)
 	{
-		debug2("final download result for a duplicated request: '%s': %s", uri, result);
+		debug2("started checking pending queue");
 	}
-	auto waiterSocket = pendingDownloadIt->second;
-	sendSocketMessage(waiterSocket,
-			vector< string > { uri, result, lexical_cast< string >(isDuplicatedDownload) });
-
-	pendingDuplicates.erase(pendingDownloadIt);
+	for (auto waiterSocket: downloadInfo.secondaryWaiterSockets)
+	{
+		if (debugging)
+		{
+			debug2("final download result for a duplicated request: '%s': %s", uri, result);
+		}
+		finishDuplicatedDownload(waiterSocket, uri, result);
+	}
+	if (debugging)
+	{
+		debug2("finished checking pending queue");
+	}
 }
 
 void ManagerImpl::processFinalResult(MessageQueue& workerQueue,
@@ -392,29 +403,12 @@ void ManagerImpl::processFinalResult(MessageQueue& workerQueue,
 	// put the query to the list of finished ones
 	done[uri] = result;
 
-	if (debugging)
-	{
-		debug2("started checking pending queue");
-	}
-	{ // answering on duplicated requests if any
-
-		auto matchedPendingDownloads = pendingDuplicates.equal_range(uri);
-		for (auto pendingDownloadIt = matchedPendingDownloads.first;
-				pendingDownloadIt != matchedPendingDownloads.second;)
-		{
-			finishPendingDownload(pendingDownloadIt++, result, debugging);
-		}
-	}
-	if (debugging)
-	{
-		debug2("finished checking pending queue");
-	}
-
 	auto downloadInfoIt = activeDownloads.find(uri);
 	if (downloadInfoIt == activeDownloads.end())
 	{
 		fatal2i("download manager: received final result for unexistent download, uri '%s'", uri);
 	}
+	finishPendingDownloads(uri, downloadInfoIt->second, result, debugging);
 	activeDownloads.erase(downloadInfoIt);
 
 	// update progress
@@ -521,10 +515,7 @@ void ManagerImpl::proceedDownload(MessageQueue& workerQueue, const vector< strin
 		if (doneIt != done.end())
 		{
 			const string& result = doneIt->second;
-			auto insertIt = pendingDuplicates.insert(make_pair(uri, waiterSocket));
-			// and immediately process it
-			finishPendingDownload(insertIt, result, debugging);
-
+			finishDuplicatedDownload(waiterSocket, uri, result);
 			workerQueue.push({ "pop-download" });
 			return;
 		}
@@ -532,9 +523,9 @@ void ManagerImpl::proceedDownload(MessageQueue& workerQueue, const vector< strin
 		{
 			if (debugging)
 			{
-				debug2("pushed '%s' to pending queue", uri);
+				debug2("adding secondary waiting socket for '%s'", uri);
 			}
-			pendingDuplicates.insert(make_pair(uri, waiterSocket));
+			activeDownloads[uri].secondaryWaiterSockets.push_back(waiterSocket);
 			workerQueue.push({ "pop-download" });
 			return;
 		}
