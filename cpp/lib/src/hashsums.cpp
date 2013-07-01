@@ -17,6 +17,8 @@
 **************************************************************************/
 #include <gcrypt.h>
 
+#include <mutex>
+
 #include <cupt/hashsums.hpp>
 #include <cupt/file.hpp>
 
@@ -70,16 +72,23 @@ class GcryptHasher
 	}
 };
 
+namespace {
+
+bool initGcrypt()
+{
+	gcry_check_version(NULL);
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+	return true;
+}
+
+std::once_flag gcryptInitFlag;
+
+}
+
 string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string& source)
 {
-	static bool initialized = false;
-	if (!initialized)
-	{
-		gcry_check_version(NULL);
-		gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
-		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-		initialized = true;
-	}
+	std::call_once(gcryptInitFlag, initGcrypt);
 
 	int gcryptAlgorithm;
 	switch (hashType)
