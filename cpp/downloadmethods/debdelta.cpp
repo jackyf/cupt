@@ -24,16 +24,21 @@ namespace cupt {
 
 class DebdeltaMethod: public download::Method
 {
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		auto deltaCallback = [callback](const vector< string >& params)
 		{
 			if (!params.empty() && params[0] == "expected-size")
 			{
-				return; // ignore it
+				auto uiSizeParams = params;
+				uiSizeParams[0] = "ui-size";
+				callback(uiSizeParams);
 			}
-			callback(params);
+			else
+			{
+				callback(params);
+			}
 		};
 
 		// download delta file

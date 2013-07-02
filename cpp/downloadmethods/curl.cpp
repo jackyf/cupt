@@ -157,7 +157,7 @@ extern "C"
 
 class CurlMethod: public cupt::download::Method
 {
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		try
@@ -165,7 +165,7 @@ class CurlMethod: public cupt::download::Method
 			CurlWrapper curl;
 			// bad connections can return 'receive failure' transient error
 			// occasionally, give them several tries to finish the download
-			auto transientErrorsLeft = config->getInteger("acquire::retries");
+			auto transientErrorsLeft = config.getInteger("acquire::retries");
 
 			{ // setting options
 				curl.setOption(CURLOPT_URL, string(uri), "uri");
@@ -183,7 +183,7 @@ class CurlMethod: public cupt::download::Method
 				{
 					curl.setOption(CURLOPT_PROXY, proxy, "proxy");
 				}
-				if (uri.getProtocol() == "http" && config->getBool("acquire::http::allowredirect"))
+				if (uri.getProtocol() == "http" && config.getBool("acquire::http::allowredirect"))
 				{
 					curl.setOption(CURLOPT_FOLLOWLOCATION, 1, "follow-location");
 				}
@@ -237,7 +237,7 @@ class CurlMethod: public cupt::download::Method
 				// transient errors handling
 				if (performResult == CURLE_RECV_ERROR && transientErrorsLeft)
 				{
-					if (config->getBool("debug::downloader"))
+					if (config.getBool("debug::downloader"))
 					{
 						debug2("transient error while downloading '%s'", string(uri));
 					}
@@ -247,7 +247,7 @@ class CurlMethod: public cupt::download::Method
 
 				if (performResult == CURLE_RANGE_ERROR)
 				{
-					if (config->getBool("debug::downloader"))
+					if (config.getBool("debug::downloader"))
 					{
 						debug2("range command failed, need to restart from beginning while downloading '%s'", string(uri));
 					}

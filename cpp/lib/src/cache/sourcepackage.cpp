@@ -34,17 +34,9 @@ unique_ptr< Version > SourcePackage::_parse_version(const internal::VersionParse
 	return internal::parseSourceVersion(initParams);
 }
 
-bool SourcePackage::_is_architecture_appropriate(const Version* version) const
+bool SourcePackage::_is_architecture_appropriate(const Version*) const
 {
-	const vector< string >& architectures = static_cast< const SourceVersion* >(version)->architectures;
-	FORIT(architectureIt, architectures)
-	{
-		if(*architectureIt == "all" || internal::architectureMatch(*_binary_architecture, *architectureIt))
-		{
-			return true;
-		}
-	}
-	return false;
+	return true;
 }
 
 vector< const SourceVersion* > SourcePackage::getVersions() const

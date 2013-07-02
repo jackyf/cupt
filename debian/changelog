@@ -14,6 +14,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Action preview prompt: new choice 'rc' ("show reason chain").
       - The option 'cupt::console::actions-preview::show-summary' got a new 
         value variant "auto".
+      - Warn and require extra confirmation for actions on MultiArch-enabled
+        systems. (Closes: #710052)
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
@@ -79,6 +81,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.
       - [ABI break] 'Action::Type' new enum value 'Reinstall'.
+      - 'updateReleaseAndIndexData': use threads instead of forking.
     - cache/binarypackage:
       - 'getInstalledVersion': significant speed-up.
       - New methods begin() and end().
@@ -90,12 +93,30 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'parseFromFile': removed.
     - cache/sourcepackage:
       - New methods begin() and end().
+      - Stopped filtering out packages with unapplicable binary architectures.
     - file:
       - [API break] Not a public API anymore.
     - system/state:
       - New method 'getArchitecture'.
     - download/manager:
       - Removed 'alive pings'.
+      - Notify the download progress of download sizes earlier. This improves
+        the total percent accuracy where a grand total size is not known
+        beforehand (for example, metadata updates).
+    - download/method{,factory}:
+      - [API break]: don't require shared_ptr< Config > anymore.
+    - download/progress:
+      - Added support for the dynamic changes of expected download sizes.
+      - [API break]' 'DownloadRecord': the field 'beingPostprocessed' is
+        replaced with a new field 'phase'.
+      - [API break] 'setTotalEstimatedSize': removed as superseded by early
+        notificiations by download manager.
+    - hashsums:
+      - Fixed non-thread-safe initialization of libgcrypt.
+  * downloadmethods:
+    - debdelta:
+      - Pass delta size (when/if known) to download progress.
+        (Closes: #690914)
   * doc:
     - tutorial:
       - In the man page version, all command examples are now marked bold.

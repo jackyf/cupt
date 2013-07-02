@@ -49,6 +49,7 @@ class ConfigImpl
 	void initializeVariables();
 	vector< string > getConfigurationFilePaths(Config*) const;
 	void readConfigs(Config*);
+	void setArchitecture(Config*);
 	bool isOptionalOption(const string& optionName) const;
 };
 
@@ -239,6 +240,7 @@ void ConfigImpl::initializeVariables()
 		{ "dpkg::post-invoke", vector< string > {} },
 
 		// Cupt vars
+		{ "cupt::cache::foreign-architectures", {} },
 		{ "cupt::cache::limit-releases::by-archive", vector< string > {} },
 		{ "cupt::cache::limit-releases::by-codename", vector< string > {} },
 		{ "cupt::downloader::protocols::file::methods", vector< string > { "file" } },
@@ -375,8 +377,6 @@ void ConfigImpl::readConfigs(Config* config)
 	}
 }
 
-}
-
 static string qx(const string& shellCommand)
 {
 	string openError;
@@ -390,16 +390,28 @@ static string qx(const string& shellCommand)
 	return result;
 }
 
+void ConfigImpl::setArchitecture(Config* config)
+{
+	const string dpkgPath = config->getPath("dir::bin::dpkg");
+	string architecture = qx(dpkgPath + " --print-architecture");
+	internal::chomp(architecture);
+	config->setScalar("apt::architecture", architecture);
+
+	string foreignArchitectures = qx(dpkgPath + " --print-foreign-architectures");
+	for (const auto& item: internal::split('\n', foreignArchitectures))
+	{
+		config->setList("cupt::cache::foreign-architectures", item);
+	}
+}
+
+}
+
 Config::Config()
 {
 	__impl = new internal::ConfigImpl;
 	__impl->initializeVariables();
 	__impl->readConfigs(this);
-
-	// setting architecture
-	string architecture = qx(getPath("dir::bin::dpkg") + " --print-architecture");
-	internal::chomp(architecture);
-	setScalar("apt::architecture", architecture);
+	__impl->setArchitecture(this);
 }
 
 Config::~Config()

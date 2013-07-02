@@ -15,10 +15,10 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <future>
 
 #include <algorithm>
+#include <queue>
 
 #include <common/regex.hpp>
 
@@ -1068,53 +1068,31 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 	{ // download manager involved part
 		download::Manager downloadManager(_config, downloadProgress);
 
-		set< int > pids;
+		std::queue< std::future<bool> > threadReturnValues;
 
-		auto indexEntries = _cache->getIndexEntries();
-		FORIT(indexEntryIt, indexEntries)
+		for (const auto& indexEntry: _cache->getIndexEntries())
 		{
-			auto pid = fork();
-			if (pid == -1)
-			{
-				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "%s() failed", "fork");
-			}
-
-			if (pid)
-			{
-				// master process
-				pids.insert(pid);
-			}
-			else
-			{
-				// child process
-				bool success; // bad by default
-
-				// wrapping all errors here
-				try
-				{
-					success = __update_release_and_index_data(downloadManager, *indexEntryIt);
-				}
-				catch (...)
-				{
-					success = false;
-				}
-				_exit(success ? 0 : EXIT_FAILURE);
-			}
+			threadReturnValues.emplace(std::async(std::launch::async,
+					[this, &downloadManager, indexEntry]()
+					{
+						// wrapping all errors here
+						try
+						{
+							return __update_release_and_index_data(downloadManager, indexEntry);
+						}
+						catch (...)
+						{
+							return false;
+						}
+					}));
 		}
-		while (!pids.empty())
+		while (!threadReturnValues.empty())
 		{
-			int status;
-			pid_t pid = wait(&status);
-			if (pid == -1)
-			{
-				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "%s() failed", "wait");
-			}
-			pids.erase(pid);
-			// if something went bad in child, the parent won't return non-zero code too
-			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+			if (!threadReturnValues.front().get())
 			{
 				masterExitCode = false;
 			}
+			threadReturnValues.pop();
 		}
 	};
 

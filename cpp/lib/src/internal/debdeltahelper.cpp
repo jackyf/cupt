@@ -22,6 +22,7 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/debdeltahelper.hpp>
 #include <internal/filesystem.hpp>
@@ -76,9 +77,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 		string result;
 		// replacing
-		FORIT(charIt, input)
+		for (const char c: input)
 		{
-			char c = *charIt;
 			if (c != ':')
 			{
 				result += c;
@@ -152,7 +152,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			// not very reliable :(
 			string appendage = version->sources[0].directory + '/';
 			appendage += join("_", vector< string >{ packageId.name(),
-					mangleVersionString(installedVersion->versionString),
+					mangleVersionString(versionstring::getOriginal(installedVersion->versionString)),
 					mangleVersionString(version->versionString),
 					version->architecture });
 			appendage += ".debdelta";

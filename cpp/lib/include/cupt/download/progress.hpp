@@ -45,7 +45,15 @@ class CUPT_API Progress
 		size_t number; ///< unique number
 		size_t downloadedSize; ///< already downloaded amount of bytes
 		size_t size; ///< expected file size, @c -1 if unknown
-		bool beingPostprocessed; ///< is download being postprocessed
+		enum class Phase
+		{
+			Planned, ///< not started yet, @a number is not initialized
+			Started, ///< started, @a number is now holding a valid value
+			Postprocessed ///< network actions finished, result is being postprocessed
+		} phase;
+		float sizeScaleFactor;
+
+		DownloadRecord();
 	};
  protected:
 	/**
@@ -149,14 +157,6 @@ class CUPT_API Progress
 	 * @param alias long alias
 	 */
 	void setLongAliasForUri(const string& uri, const string& alias);
-	/// sets total download size for the all download progress lifetime
-	/**
-	 * This method should be called if this amount is known beforehand to get
-	 * better overall progress indication.
-	 *
-	 * @param size number of bytes
-	 */
-	void setTotalEstimatedSize(uint64_t size);
 
 	/// @cond
 	CUPT_LOCAL void progress(const vector< string >& params);

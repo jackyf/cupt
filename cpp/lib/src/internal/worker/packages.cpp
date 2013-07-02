@@ -1977,13 +1977,6 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 		{
 			Lock lock(*_config, archivesDirectory + "/lock");
 
-			uint64_t totalDownloadSize = 0;
-			FORIT(it, downloads)
-			{
-				totalDownloadSize += it->first.size;
-			}
-			downloadProgress->setTotalEstimatedSize(totalDownloadSize);
-
 			vector< download::Manager::DownloadEntity > params;
 			FORIT(it, downloads)
 			{

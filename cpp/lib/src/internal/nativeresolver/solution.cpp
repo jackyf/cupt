@@ -566,10 +566,7 @@ void __foreach_solution_element(const PackageEntryMap& masterEntries, const Pack
 		RepackInsertIterator& operator*() { return *this; }
 		void operator=(const PackageEntryMap::value_type& data)
 		{
-			if (data.second)
-			{
-				__callback(data);
-			}
+			__callback(data);
 		}
 	};
 	struct Comparator
@@ -587,37 +584,44 @@ void __foreach_solution_element(const PackageEntryMap& masterEntries, const Pack
 
 void Solution::prepare()
 {
-	if (!__parent)
-	{
-		return; // prepared already
-	}
+	if (!__parent) return; // prepared already
 
-	if (!__parent->__master_entries)
+	if (!__parent->__initial_entries)
 	{
-		// parent solution is a master solution, build a slave on top of it
-		__master_entries = __parent->__added_entries;
+		// parent is initial (top-level) solution
+		__initial_entries = __parent->__added_entries;
 	}
 	else
 	{
-		// this a slave solution
-		size_t& forkedCount = __parent->__master_entries->forkedCount;
-		forkedCount += __parent->__added_entries->size();
-		if (forkedCount > __parent->__master_entries->size())
+		__initial_entries = __parent->__initial_entries;
+
+		if (!__parent->__master_entries)
 		{
-			forkedCount = 0;
-
-			// master solution is overdiverted, build new master one
-			__added_entries->reserve(__parent->__added_entries->size() +
-					__parent->__master_entries->size());
-
-			__foreach_solution_element(*__parent->__master_entries, *__parent->__added_entries,
-					[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
+			// parent solution is a master solution, build a slave on top of it
+			__master_entries = __parent->__added_entries;
 		}
 		else
 		{
-			// build new slave solution from current
-			__master_entries = __parent->__master_entries;
-			*__added_entries = *(__parent->__added_entries);
+			// this a slave solution
+			size_t& forkedCount = __parent->__master_entries->forkedCount;
+			forkedCount += __parent->__added_entries->size();
+			if (forkedCount > __parent->__master_entries->size())
+			{
+				forkedCount = 0;
+
+				// master solution is overdiverted, build new master one
+				__added_entries->reserve(__parent->__added_entries->size() +
+						__parent->__master_entries->size());
+
+				__foreach_solution_element(*__parent->__master_entries, *__parent->__added_entries,
+						[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
+			}
+			else
+			{
+				// build new slave solution from current
+				__master_entries = __parent->__master_entries;
+				*__added_entries = *(__parent->__added_entries);
+			}
 		}
 	}
 
@@ -630,10 +634,15 @@ vector< const dg::Element* > Solution::getElements() const
 	vector< const dg::Element* > result;
 
 	static const PackageEntryMap nullPackageEntryMap;
+	const auto& initialEntries = __initial_entries ? *__initial_entries : nullPackageEntryMap;
 	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
 
-	__foreach_solution_element(masterEntries, *__added_entries,
-			[&result](const PackageEntryMap::value_type& data) { result.push_back(data.first); });
+	PackageEntryMap intermediateMap;
+	__foreach_solution_element(initialEntries, masterEntries,
+			[&intermediateMap](const PackageEntryMap::value_type& data) { intermediateMap.push_back(data); });
+
+	__foreach_solution_element(intermediateMap, *__added_entries,
+			[&result](const PackageEntryMap::value_type& data) { if (data.second) result.push_back(data.first); });
 
 	return result;
 }
@@ -658,8 +667,16 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 			return it->second.get();
 		}
 	}
+	if (__initial_entries)
+	{
+		it = __initial_entries->find(elementPtr);
+		if (it != __initial_entries->end())
+		{
+			return it->second.get();
+		}
+	}
 
-	return NULL; // not found
+	return nullptr; // not found
 }
 
 }

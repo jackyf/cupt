@@ -582,6 +582,19 @@ void checkForIgnoredHolds(const Cache& cache,
 	}
 }
 
+void checkForMultiArchSystem(const Config& config, bool* isDangerousAction)
+{
+	auto foreignArchitectures = config.getList("cupt::cache::foreign-architectures");
+	if (!foreignArchitectures.empty())
+	{
+		*isDangerousAction = true;
+		cout << __("WARNING! You are running cupt on MultiArch-enabled system. This setup is not supported at the moment.") << endl;
+		cout << __("Any actions may break your system.") << endl;
+		cout << format2(__("Detected foreign architectures: %s"), join(", ", foreignArchitectures)) << endl;
+		cout << endl;
+	}
+}
+
 void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 		const Worker::ActionsPreview& actionsPreview, bool* isDangerousAction)
 {
@@ -591,6 +604,7 @@ void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 	}
 	checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
 	checkForIgnoredHolds(cache, actionsPreview, isDangerousAction);
+	checkForMultiArchSystem(config, isDangerousAction);
 
 	if (!actionsPreview.groups[WA::Downgrade].empty())
 	{
@@ -638,15 +652,24 @@ void showUnsatisfiedSoftDependencies(const Resolver::Offer& offer,
 	}
 }
 
-void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggestedPackages)
+void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggestedPackages, const Worker::ActionsPreview& actionsPreview)
 {
+	auto isPackageChangingItsState = [&actionsPreview](PackageId packageId)
+	{
+		for (const auto& group: actionsPreview.groups)
+		{
+			if (group.count(packageId)) return true;
+		}
+		return false;
+	};
+
 	cout << __("Enter a binary package name to show reason chain for (empty to cancel): ");
 	string answer;
 	std::getline(std::cin, answer);
 	if (answer.empty()) return;
 
 	const auto& topPackageId = PackageId(answer);
-	if (!suggestedPackages.count(topPackageId))
+	if (!isPackageChangingItsState(topPackageId))
 	{
 		cout << format2(__("The package '%s' is not going to change its state."), topPackageId.name()) << endl;
 		return;
@@ -663,12 +686,13 @@ void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggested
 	while (!reasonStack.empty())
 	{
 		auto packageId = reasonStack.top().packageId;
+		if (!isPackageChangingItsState(packageId))
+		{
+			reasonStack.pop();
+			continue;
+		}
 
 		auto reasonIt = suggestedPackages.find(packageId);
-		if (reasonIt == suggestedPackages.end())
-		{
-			fatal2i("a reason chain is broken: the package '%s' is not changed", packageId.name());
-		}
 		const auto& reasons = reasonIt->second.reasons;
 		if (reasons.empty())
 		{
@@ -691,6 +715,7 @@ void showReasonChainForAskedPackage(const Resolver::SuggestedPackages& suggested
 
 Resolver::UserAnswer::Type askUserAboutSolution(const Config& config,
 		const Resolver::SuggestedPackages& suggestedPackages,
+		const Worker::ActionsPreview& actionsPreview,
 		bool isDangerous, bool& addArgumentsFlag)
 {
 	string answer;
@@ -742,7 +767,7 @@ Resolver::UserAnswer::Type askUserAboutSolution(const Config& config,
 	}
 	else if (answer == "rc")
 	{
-		showReasonChainForAskedPackage(suggestedPackages);
+		showReasonChainForAskedPackage(suggestedPackages, actionsPreview);
 		goto ask;
 	}
 	else if (answer == "?")
@@ -1141,7 +1166,7 @@ Resolver::CallbackType generateManagementPrompt(ManagePackagesContext& mpc,
 			printUnpackedSizeChanges(unpackedSizesPreview);
 		}
 
-		return askUserAboutSolution(mpc.config, offer.suggestedPackages, isDangerousAction, addArgumentsFlag);
+		return askUserAboutSolution(mpc.config, offer.suggestedPackages, *actionsPreview, isDangerousAction, addArgumentsFlag);
 	};
 
 	return result;

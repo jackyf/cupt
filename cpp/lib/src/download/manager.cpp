@@ -48,6 +48,7 @@ namespace internal {
 using namespace cupt::download;
 
 typedef Manager::ExtendedUri ExtendedUri;
+typedef Manager::DownloadEntity DownloadEntity;
 
 struct InputMessage
 {
@@ -129,9 +130,8 @@ static vector< string > receiveSocketMessage(int socket)
 
 struct InnerDownloadElement
 {
-	queue< ExtendedUri > extendedUris;
-	size_t size;
-	std::function< string () > postAction;
+	queue< ExtendedUri > sortedExtendedUris;
+	const DownloadEntity* data;
 };
 
 class ManagerImpl
@@ -150,6 +150,7 @@ class ManagerImpl
 	struct ActiveDownloadInfo
 	{
 		int waiterSocket;
+		vector< int > secondaryWaiterSockets;
 		pid_t performerPid;
 		shared_ptr< Pipe > performerPipe;
 		string targetPath;
@@ -162,10 +163,10 @@ class ManagerImpl
 		int waiterSocket;
 	};
 	queue< OnHoldRecord > onHold;
-	multimap< string, int > pendingDuplicates; // uri -> waiterSocket
 	map< string, size_t > sizes;
 
-	void finishPendingDownload(multimap< string, int >::iterator, const string&, bool);
+	void finishDuplicatedDownload(int, const string&, const string&);
+	void finishPendingDownloads(const string&, const ActiveDownloadInfo&, const string&, bool);
 	void processFinalResult(MessageQueue&, const vector< string >& params, bool debugging);
 	void processPreliminaryResult(MessageQueue&, const vector< string >& params, bool debugging);
 	void processProgressMessage(MessageQueue&, const vector< string >& params);
@@ -174,6 +175,7 @@ class ManagerImpl
 			const string& actionName, const string& errorString);
 	void terminateDownloadProcesses();
 	void startNewDownload(const string& uri, const string& targetPath, int waiterSocket, bool debugging);
+	void setDownloadSize(const string& uri, size_t size);
 	InputMessage pollAllInput(MessageQueue& workerQueue,
 			const vector< int >& persistentSockets, set< int >& clientSockets,
 			bool exitFlag, bool debugging);
@@ -182,15 +184,15 @@ class ManagerImpl
 
 	int getUriPriority(const Uri& uri);
 	map< string, InnerDownloadElement > convertEntitiesToDownloads(
-			const vector< Manager::DownloadEntity >& entities);
+			const vector< DownloadEntity >& entities);
  public:
 	ManagerImpl(const shared_ptr< const Config >& config, const shared_ptr< Progress >& progress);
-	string download(const vector< Manager::DownloadEntity >& entities);
+	string download(const vector< DownloadEntity >& entities);
 	~ManagerImpl();
 };
 
 ManagerImpl::ManagerImpl(const shared_ptr< const Config >& config_, const shared_ptr< Progress >& progress_)
-	: config(config_), progress(progress_), methodFactory(config_)
+	: config(config_), progress(progress_), methodFactory(*config_)
 {
 	if (config->getBool("cupt::worker::simulate"))
 	{
@@ -355,22 +357,32 @@ void ManagerImpl::processPreliminaryResult(MessageQueue& workerQueue,
 	workerQueue.push({ "progress", uri, "pre-done" });
 }
 
-void ManagerImpl::finishPendingDownload(multimap< string, int >::iterator pendingDownloadIt,
-		const string& result, bool debugging)
+void ManagerImpl::finishDuplicatedDownload(int waiterSocket, const string& uri, const string& result)
 {
 	const bool isDuplicatedDownload = true;
+	sendSocketMessage(waiterSocket,
+			{ uri, result, lexical_cast< string >(isDuplicatedDownload) });
+}
 
-	const string& uri = pendingDownloadIt->first;
-
+void ManagerImpl::finishPendingDownloads(const string& uri, const ActiveDownloadInfo& downloadInfo,
+		const string& result, bool debugging)
+{
 	if (debugging)
 	{
-		debug2("final download result for a duplicated request: '%s': %s", uri, result);
+		debug2("started checking pending queue");
 	}
-	auto waiterSocket = pendingDownloadIt->second;
-	sendSocketMessage(waiterSocket,
-			vector< string > { uri, result, lexical_cast< string >(isDuplicatedDownload) });
-
-	pendingDuplicates.erase(pendingDownloadIt);
+	for (auto waiterSocket: downloadInfo.secondaryWaiterSockets)
+	{
+		if (debugging)
+		{
+			debug2("final download result for a duplicated request: '%s': %s", uri, result);
+		}
+		finishDuplicatedDownload(waiterSocket, uri, result);
+	}
+	if (debugging)
+	{
+		debug2("finished checking pending queue");
+	}
 }
 
 void ManagerImpl::processFinalResult(MessageQueue& workerQueue,
@@ -391,29 +403,12 @@ void ManagerImpl::processFinalResult(MessageQueue& workerQueue,
 	// put the query to the list of finished ones
 	done[uri] = result;
 
-	if (debugging)
-	{
-		debug2("started checking pending queue");
-	}
-	{ // answering on duplicated requests if any
-
-		auto matchedPendingDownloads = pendingDuplicates.equal_range(uri);
-		for (auto pendingDownloadIt = matchedPendingDownloads.first;
-				pendingDownloadIt != matchedPendingDownloads.second;)
-		{
-			finishPendingDownload(pendingDownloadIt++, result, debugging);
-		}
-	}
-	if (debugging)
-	{
-		debug2("finished checking pending queue");
-	}
-
 	auto downloadInfoIt = activeDownloads.find(uri);
 	if (downloadInfoIt == activeDownloads.end())
 	{
 		fatal2i("download manager: received final result for unexistent download, uri '%s'", uri);
 	}
+	finishPendingDownloads(uri, downloadInfoIt->second, result, debugging);
 	activeDownloads.erase(downloadInfoIt);
 
 	// update progress
@@ -520,10 +515,7 @@ void ManagerImpl::proceedDownload(MessageQueue& workerQueue, const vector< strin
 		if (doneIt != done.end())
 		{
 			const string& result = doneIt->second;
-			auto insertIt = pendingDuplicates.insert(make_pair(uri, waiterSocket));
-			// and immediately process it
-			finishPendingDownload(insertIt, result, debugging);
-
+			finishDuplicatedDownload(waiterSocket, uri, result);
 			workerQueue.push({ "pop-download" });
 			return;
 		}
@@ -531,9 +523,9 @@ void ManagerImpl::proceedDownload(MessageQueue& workerQueue, const vector< strin
 		{
 			if (debugging)
 			{
-				debug2("pushed '%s' to pending queue", uri);
+				debug2("adding secondary waiting socket for '%s'", uri);
 			}
-			pendingDuplicates.insert(make_pair(uri, waiterSocket));
+			activeDownloads[uri].secondaryWaiterSockets.push_back(waiterSocket);
 			workerQueue.push({ "pop-download" });
 			return;
 		}
@@ -588,15 +580,8 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 		// background downloader process
 		performerPipe->useAsWriter();
 
-		// start progress
-		vector< string > progressMessage = { "progress", uri, "start" };
-		auto sizeIt = sizes.find(uri);
-		if (sizeIt != sizes.end())
-		{
-			progressMessage.push_back(lexical_cast< string >(sizeIt->second));
-		}
-
-		sendSocketMessage(*performerPipe, progressMessage);
+		// notify progress(es)
+		sendSocketMessage(*performerPipe, { "progress", uri, "start" });
 
 		auto errorMessage = perform(uri, targetPath, performerPipe->getWriterFd());
 		sendSocketMessage(*performerPipe, vector< string >{ "done", uri, errorMessage });
@@ -605,6 +590,12 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 
 		_exit(0);
 	}
+}
+
+void ManagerImpl::setDownloadSize(const string& uri, size_t size)
+{
+	sizes[uri] = size;
+	progress->progress({ uri, "expected-size", lexical_cast< string >(size) });
 }
 
 InputMessage ManagerImpl::pollAllInput(MessageQueue& workerQueue,
@@ -807,7 +798,7 @@ void ManagerImpl::worker()
 			}
 			const string& uri = params[0];
 			const size_t size = lexical_cast< size_t >(params[1]);
-			sizes[uri] = size;
+			setDownloadSize(uri, size);
 		}
 		else if (command == "done")
 		{
@@ -883,13 +874,13 @@ int ManagerImpl::getUriPriority(const Uri& uri)
 }
 
 map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
-		const vector< Manager::DownloadEntity >& entities)
+		const vector< DownloadEntity >& entities)
 {
 	map< string, InnerDownloadElement > result;
 
-	FORIT(entityIt, entities)
+	for (const auto& entity: entities)
 	{
-		const string& targetPath = entityIt->targetPath;
+		const string& targetPath = entity.targetPath;
 		if (targetPath.empty())
 		{
 			fatal2(__("passed a download entity with an empty target path"));
@@ -902,9 +893,9 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 
 		// sorting uris by protocols' priorities
 		vector< pair< Manager::ExtendedUri, int > > extendedPrioritizedUris;
-		FORIT(extendedUriIt, entityIt->extendedUris)
+		for (const auto& extendedUri: entity.extendedUris)
 		{
-			extendedPrioritizedUris.push_back(make_pair(*extendedUriIt, getUriPriority(extendedUriIt->uri)));
+			extendedPrioritizedUris.push_back({extendedUri, getUriPriority(extendedUri.uri)});
 		}
 		std::sort(extendedPrioritizedUris.begin(), extendedPrioritizedUris.end(), [this]
 				(const pair< Manager::ExtendedUri, int >& left, const pair< Manager::ExtendedUri, int >& right)
@@ -913,17 +904,16 @@ map< string, InnerDownloadElement > ManagerImpl::convertEntitiesToDownloads(
 				});
 		FORIT(it, extendedPrioritizedUris)
 		{
-			element.extendedUris.push(it->first);
+			element.sortedExtendedUris.push(it->first);
 		}
 
-		element.size = entityIt->size;
-		element.postAction = entityIt->postAction;
+		element.data = &entity;
 	}
 
 	return result;
 }
 
-string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
+string ManagerImpl::download(const vector< DownloadEntity >& entities)
 {
 	if (config->getBool("cupt::worker::simulate"))
 	{
@@ -958,15 +948,15 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 	{
 		InnerDownloadElement& downloadElement = downloads[targetPath];
 
-		auto extendedUri = downloadElement.extendedUris.front();
-		downloadElement.extendedUris.pop();
+		auto extendedUri = downloadElement.sortedExtendedUris.front();
+		downloadElement.sortedExtendedUris.pop();
 
 		const string& uri = extendedUri.uri;
 
-		if (downloadElement.size != (size_t)-1)
+		if (downloadElement.data->size != (size_t)-1)
 		{
 			sendSocketMessage(sock,
-					vector< string >{ "set-download-size", uri, lexical_cast< string >(downloadElement.size) });
+					vector< string >{ "set-download-size", uri, lexical_cast< string >(downloadElement.data->size) });
 		}
 		if (!extendedUri.shortAlias.empty())
 		{
@@ -1017,7 +1007,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 			// but do this only if this file wasn't post-processed before
 			try
 			{
-				errorString = element.postAction();
+				errorString = element.data->postAction();
 			}
 			catch (std::exception& e)
 			{
@@ -1039,7 +1029,7 @@ string ManagerImpl::download(const vector< Manager::DownloadEntity >& entities)
 		{
 			// this download hasn't been processed smoothly
 			// check - maybe we have another URI(s) for this file?
-			if (!element.extendedUris.empty())
+			if (!element.sortedExtendedUris.empty())
 			{
 				// yes, so reschedule a download with another URI
 				scheduleDownload(targetPath);
@@ -1072,7 +1062,7 @@ string ManagerImpl::perform(const string& uri, const string& targetPath, int soc
 	try
 	{
 		auto downloadMethod = methodFactory.getDownloadMethodForUri(uri);
-		result = downloadMethod->perform(config, uri, targetPath, callback);
+		result = downloadMethod->perform(*config, uri, targetPath, callback);
 		delete downloadMethod;
 	}
 	catch (Exception& e)

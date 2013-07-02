@@ -52,7 +52,47 @@ static bool __get_file_size(const string& path, ssize_t* result)
 
 class WgetMethod: public cupt::download::Method
 {
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	vector< string > generateWgetParametersVector(const Config& config,
+			const download::Uri& uri, const string& targetPath)
+	{
+		vector< string > p;
+
+		p.push_back("env");
+		auto proxy = getAcquireSuboptionForUri(config, uri, "proxy");
+		if (!proxy.empty() && proxy != "DIRECT")
+		{
+			p.push_back(uri.getProtocol() + "_proxy=" + proxy);
+		}
+		p.push_back("wget"); // passed as a binary name, not parameter
+		p.push_back("--continue");
+		p.push_back(string("--tries=") + lexical_cast< string >(config.getInteger("acquire::retries")+1));
+		auto maxSpeedLimit = getIntegerAcquireSuboptionForUri(config, uri, "dl-limit");
+		if (maxSpeedLimit)
+		{
+			p.push_back(string("--limit-rate=") + lexical_cast< string >(maxSpeedLimit) + "k");
+		}
+		if (proxy == "DIRECT")
+		{
+			p.push_back("--no-proxy");
+		}
+		if (uri.getProtocol() != "http" || !config.getBool("acquire::http::allowredirect"))
+		{
+			p.push_back("--max-redirect=0");
+		}
+		auto timeout = getIntegerAcquireSuboptionForUri(config, uri, "timeout");
+		if (timeout)
+		{
+			p.push_back(string("--timeout=") + lexical_cast< string >(timeout));
+		}
+		p.push_back(string(uri));
+		p.push_back(string("--output-document=") + targetPath);
+		p.push_back(format2("--user-agent=\"Wget (libcupt/%s)\"", cupt::libraryVersion));
+		p.push_back("2>&1");
+
+		return p;
+	}
+
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		bool wgetProcessFinished = false;
@@ -69,41 +109,6 @@ class WgetMethod: public cupt::download::Method
 			}
 
 			// wget executor
-			vector< string > p; // array to put parameters
-			{
-				p.push_back("env");
-				auto proxy = getAcquireSuboptionForUri(config, uri, "proxy");
-				if (!proxy.empty() && proxy != "DIRECT")
-				{
-					p.push_back(uri.getProtocol() + "_proxy=" + proxy);
-				}
-				p.push_back("wget"); // passed as a binary name, not parameter
-				p.push_back("--continue");
-				p.push_back(string("--tries=") + lexical_cast< string >(config->getInteger("acquire::retries")+1));
-				auto maxSpeedLimit = getIntegerAcquireSuboptionForUri(config, uri, "dl-limit");
-				if (maxSpeedLimit)
-				{
-					p.push_back(string("--limit-rate=") + lexical_cast< string >(maxSpeedLimit) + "k");
-				}
-				if (proxy == "DIRECT")
-				{
-					p.push_back("--no-proxy");
-				}
-				if (uri.getProtocol() != "http" || !config->getBool("acquire::http::allowredirect"))
-				{
-					p.push_back("--max-redirect=0");
-				}
-				auto timeout = getIntegerAcquireSuboptionForUri(config, uri, "timeout");
-				if (timeout)
-				{
-					p.push_back(string("--timeout=") + lexical_cast< string >(timeout));
-				}
-				p.push_back(string(uri));
-				p.push_back(string("--output-document=") + targetPath);
-				p.push_back(format2("--user-agent=\"Wget (libcupt/%s)\"", cupt::libraryVersion));
-				p.push_back("2>&1");
-			}
-
 			std::thread downloadingStatsThread([&targetPath, &totalBytes, &callback,
 					&wgetProcessFinishedMutex, &wgetProcessFinishedCV, &wgetProcessFinished]()
 			{
@@ -130,8 +135,10 @@ class WgetMethod: public cupt::download::Method
 			cupt::messageFd = -1;
 			try
 			{
+				auto wgetParameters = generateWgetParametersVector(config, uri, targetPath);
+
 				string openError;
-				File wgetOutputFile(join(" ", p), "pr", openError);
+				File wgetOutputFile(join(" ", wgetParameters), "pr", openError);
 				if (!openError.empty())
 				{
 					fatal2(__("unable to launch a wget process: %s"), openError);

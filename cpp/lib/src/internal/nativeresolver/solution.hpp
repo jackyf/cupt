@@ -89,6 +89,7 @@ class Solution
 	friend class SolutionStorage;
 
 	shared_ptr< const Solution > __parent;
+	shared_ptr< const PackageEntryMap > __initial_entries;
 	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
 	BrokenSuccessorMap*  __broken_successors;
