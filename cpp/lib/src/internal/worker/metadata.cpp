@@ -175,7 +175,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 string __get_pidded_string(const string& input)
 {
-	return format2("(%d): %s", getpid(), input);
+	return format2("(%x): %s", (unsigned)pthread_self(), input);
 }
 template < typename... Args >
 string piddedFormat2(const string& format, const Args&... args)
