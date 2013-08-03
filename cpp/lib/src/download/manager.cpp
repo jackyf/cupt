@@ -176,6 +176,7 @@ class ManagerImpl
 	void terminateDownloadProcesses();
 	void startNewDownload(const string& uri, const string& targetPath, int waiterSocket, bool debugging);
 	void setDownloadSize(const string& uri, size_t size);
+	void forwardToProgress(const string&, const string&, const string&);
 	InputMessage pollAllInput(MessageQueue& workerQueue,
 			const vector< int >& persistentSockets, set< int >& clientSockets,
 			bool exitFlag, bool debugging);
@@ -592,6 +593,22 @@ void ManagerImpl::startNewDownload(const string& uri, const string& targetPath,
 	}
 }
 
+void ManagerImpl::forwardToProgress(const string& subcommand, const string& uri, const string& value)
+{
+	if (subcommand == "set-long-alias")
+	{
+		progress->setLongAliasForUri(uri, value);
+	}
+	else if (subcommand == "set-short-alias")
+	{
+		progress->setShortAliasForUri(uri, value);
+	}
+	else
+	{
+		fatal2i("download manager: forward-to-progress: wrong subcommand");
+	}
+}
+
 void ManagerImpl::setDownloadSize(const string& uri, size_t size)
 {
 	sizes[uri] = size;
@@ -829,21 +846,13 @@ void ManagerImpl::worker()
 						next.uri, next.targetPath, lexical_cast< string >(next.waiterSocket) });
 			}
 		}
-		else if (command == "set-long-alias")
+		else if (command == "forward-to-progress")
 		{
-			if (params.size() != 2)
+			if (params.size() != 3)
 			{
-				fatal2i("download manager: wrong parameter count for 'set-long-alias' message");
+				fatal2i("download manager: wrong parameter count for 'forward-to-progress' message");
 			}
-			progress->setLongAliasForUri(params[0], params[1]);
-		}
-		else if (command == "set-short-alias")
-		{
-			if (params.size() != 2)
-			{
-				fatal2i("download manager: wrong parameter count for 'set-short-alias' message");
-			}
-			progress->setShortAliasForUri(params[0], params[1]);
+			forwardToProgress(params[0], params[1], params[2]);
 		}
 		else if (command == "proceed-download")
 		{
@@ -960,11 +969,11 @@ string ManagerImpl::download(const vector< DownloadEntity >& entities)
 		}
 		if (!extendedUri.shortAlias.empty())
 		{
-			sendSocketMessage(sock, vector< string >{ "set-short-alias", uri, extendedUri.shortAlias });
+			sendSocketMessage(sock, vector< string >{ "forward-to-progress", "set-short-alias", uri, extendedUri.shortAlias });
 		}
 		if (!extendedUri.longAlias.empty())
 		{
-			sendSocketMessage(sock, vector< string >{ "set-long-alias", uri, extendedUri.longAlias });
+			sendSocketMessage(sock, vector< string >{ "forward-to-progress", "set-long-alias", uri, extendedUri.longAlias });
 		}
 		sendSocketMessage(sock, vector< string >{ "download", uri, targetPath });
 
