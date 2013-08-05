@@ -111,6 +111,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         replaced with a new field 'phase'.
       - [API break] 'setTotalEstimatedSize': removed as superseded by early
         notificiations by download manager.
+      - New methods 'markAsOptional' and 'isOptional'.
     - hashsums:
       - Fixed non-thread-safe initialization of libgcrypt.
   * downloadmethods:
