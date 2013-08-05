@@ -239,10 +239,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	{
 		download::Manager::DownloadEntity downloadEntity;
 
-		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, longAlias);
-
-		downloadEntity.extendedUris.push_back(std::move(extendedUri));
+		downloadEntity.extendedUris.emplace_back(download::Uri(uri), alias, longAlias);
 		downloadEntity.targetPath = downloadPath;
 		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
 		downloadEntity.size = (size_t)-1;
@@ -301,10 +298,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	{
 		download::Manager::DownloadEntity downloadEntity;
 
-		download::Manager::ExtendedUri extendedUri(download::Uri(signatureUri),
-				signatureAlias, signatureLongAlias);
-
-		downloadEntity.extendedUris.push_back(std::move(extendedUri));
+		downloadEntity.extendedUris.emplace_back(download::Uri(signatureUri), signatureAlias, signatureLongAlias);
 		downloadEntity.targetPath = signatureDownloadPath;
 		downloadEntity.postAction = signaturePostAction;
 		downloadEntity.size = (size_t)-1;
