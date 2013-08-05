@@ -53,7 +53,7 @@ class ConsoleProgressImpl
  public:
 	ConsoleProgressImpl();
 	void newDownload(const DownloadRecord& record, const string& longAlias);
-	void finishedDownload(const string& uri, const string& result, size_t number);
+	void finishedDownload(const string& uri, const string& result, size_t number, bool);
 	void finish(uint64_t size, size_t time);
 
 	bool isUpdateNeeded(bool immediate);
@@ -140,13 +140,20 @@ void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string
 }
 
 void ConsoleProgressImpl::finishedDownload(const string& uri,
-		const string& result, size_t number)
+		const string& result, size_t number, bool isOptional)
 {
 	if (!result.empty())
 	{
 		// some error occured, output it
 		termClean();
-		nonBlockingPrint(format2("Fail:%zu %s (uri '%s')\n", number, result, uri));
+		if (isOptional)
+		{
+			nonBlockingPrint(format2("NotAvailable:%zu\n", number));
+		}
+		else
+		{
+			nonBlockingPrint(format2("Fail:%zu %s (uri '%s')\n", number, result, uri));
+		}
 	}
 }
 
@@ -289,7 +296,7 @@ void ConsoleProgress::finishedDownloadHook(const string& uri, const string& resu
 	{
 		warn2("internal error: console download progress: no existing download record for the uri '%s'", uri);
 	}
-	__impl->finishedDownload(uri, result, recordNumber);
+	__impl->finishedDownload(uri, result, recordNumber, isOptional(uri));
 }
 
 void ConsoleProgress::finishHook()
