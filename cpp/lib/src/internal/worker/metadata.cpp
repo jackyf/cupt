@@ -193,6 +193,21 @@ string __get_download_log_message(const string& longAlias)
 	return __get_pidded_string(string("downloading: ") + longAlias);
 }
 
+std::function< string() > combineDownloadPostActions(
+		const std::function< string () >& left,
+		const std::function< string () >& right)
+{
+	return [left, right]()
+	{
+		auto value = left();
+		if (value.empty())
+		{
+			value = right();
+		}
+		return value;
+	};
+}
+
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
@@ -234,26 +249,20 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 		if (!simulating && runChecks)
 		{
-			auto oldPostAction = downloadEntity.postAction;
-			auto extendedPostAction = [oldPostAction, _config, targetPath]() -> string
-			{
-				auto moveError = oldPostAction();
-				if (!moveError.empty())
-				{
-					return moveError;
-				}
-
-				try
-				{
-					cachefiles::getReleaseInfo(*_config, targetPath, targetPath);
-				}
-				catch (Exception& e)
-				{
-					return e.what();
-				}
-				return string(); // success
-			};
-			downloadEntity.postAction = extendedPostAction;
+			downloadEntity.postAction = combineDownloadPostActions(downloadEntity.postAction,
+					[_config, targetPath]() -> string
+					{
+						try
+						{
+							cachefiles::getReleaseInfo(*_config, targetPath, targetPath);
+						}
+						catch (Exception& e)
+						{
+							return e.what();
+						}
+						return string(); // success
+					}
+					);
 		}
 
 		auto downloadResult = downloadManager.download(
@@ -280,28 +289,23 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 	if (!simulating and runChecks)
 	{
-		auto oldSignaturePostAction = signaturePostAction;
-		signaturePostAction = [oldSignaturePostAction, longAlias, targetPath, signatureTargetPath, &_config]() -> string
-		{
-			auto moveError = oldSignaturePostAction();
-			if (!moveError.empty())
-			{
-				return moveError;
-			}
-
-			if (!cachefiles::verifySignature(*_config, targetPath, longAlias))
-			{
-				if (!_config->getBool("cupt::update::keep-bad-signatures"))
+		signaturePostAction = combineDownloadPostActions(signaturePostAction,
+				[longAlias, targetPath, signatureTargetPath, &_config]() -> string
 				{
-					// for compatibility with APT tools delete the downloaded file
-					if (unlink(signatureTargetPath.c_str()) == -1)
+					if (!cachefiles::verifySignature(*_config, targetPath, longAlias))
 					{
-						warn2e(__("unable to remove the file '%s'"), signatureTargetPath);
+						if (!_config->getBool("cupt::update::keep-bad-signatures"))
+						{
+							// for compatibility with APT tools delete the downloaded file
+							if (unlink(signatureTargetPath.c_str()) == -1)
+							{
+								warn2e(__("unable to remove the file '%s'"), signatureTargetPath);
+							}
+						}
 					}
+					return string();
 				}
-			}
-			return string();
-		};
+				);
 	}
 
 	{
