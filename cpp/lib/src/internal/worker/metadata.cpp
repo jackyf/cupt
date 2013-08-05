@@ -292,17 +292,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		signaturePostAction = combineDownloadPostActions(signaturePostAction,
 				[longAlias, targetPath, signatureTargetPath, &_config]() -> string
 				{
-					if (!cachefiles::verifySignature(*_config, targetPath, longAlias))
-					{
-						if (!_config->getBool("cupt::update::keep-bad-signatures"))
-						{
-							// for compatibility with APT tools delete the downloaded file
-							if (unlink(signatureTargetPath.c_str()) == -1)
-							{
-								warn2e(__("unable to remove the file '%s'"), signatureTargetPath);
-							}
-						}
-					}
+					cachefiles::verifySignature(*_config, targetPath, longAlias);
 					return string();
 				}
 				);

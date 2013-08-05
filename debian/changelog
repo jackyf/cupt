@@ -66,6 +66,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         the current locale.
       - Recognize and use the option 'dir::ignore-files-silently'.
         (Closes: #697248)
+      - Removed the option 'cupt::update::keep-bad-signatures', signatures are
+        always kept.
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.
