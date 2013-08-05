@@ -603,6 +603,10 @@ void ManagerImpl::forwardToProgress(const string& subcommand, const string& uri,
 	{
 		progress->setShortAliasForUri(uri, value);
 	}
+	else if (subcommand == "mark-as-optional")
+	{
+		progress->markAsOptional(uri);
+	}
 	else
 	{
 		fatal2i("download manager: forward-to-progress: wrong subcommand");
@@ -975,6 +979,10 @@ string ManagerImpl::download(const vector< DownloadEntity >& entities)
 		{
 			sendSocketMessage(sock, vector< string >{ "forward-to-progress", "set-long-alias", uri, extendedUri.longAlias });
 		}
+		if (downloadElement.data->optional)
+		{
+			sendSocketMessage(sock, { "forward-to-progress", "mark-as-optional", uri, "" });
+		}
 		sendSocketMessage(sock, vector< string >{ "download", uri, targetPath });
 
 		waitedUriToTargetPath[uri] = targetPath;
@@ -1084,6 +1092,10 @@ string ManagerImpl::perform(const string& uri, const string& targetPath, int soc
 }
 
 namespace download {
+
+Manager::DownloadEntity::DownloadEntity()
+	: optional(false)
+{}
 
 Manager::Manager(const shared_ptr< const Config >& config, const shared_ptr< Progress >& progress)
 	: __impl(new internal::ManagerImpl(config, progress))

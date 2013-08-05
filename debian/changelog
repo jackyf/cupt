@@ -103,6 +103,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Notify the download progress of download sizes earlier. This improves
         the total percent accuracy where a grand total size is not known
         beforehand (for example, metadata updates).
+      - [ABI break] 'DownloadEntity': new member 'optional'.
     - download/method{,factory}:
       - [API break]: don't require shared_ptr< Config > anymore.
     - download/progress:
