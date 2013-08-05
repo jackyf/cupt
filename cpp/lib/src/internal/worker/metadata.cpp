@@ -262,9 +262,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 					);
 		}
 
-		auto downloadResult = downloadManager.download(
-				vector< download::Manager::DownloadEntity >{ downloadEntity });
-		if (!downloadResult.empty())
+		if (!downloadManager.download({ downloadEntity }).empty())
 		{
 			return false;
 		}
@@ -303,8 +301,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		downloadEntity.postAction = signaturePostAction;
 		downloadEntity.size = (size_t)-1;
 
-		downloadManager.download(
-				vector< download::Manager::DownloadEntity >{ downloadEntity });
+		downloadManager.download({ downloadEntity });
 	}
 
 	return true;
