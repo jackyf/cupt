@@ -208,6 +208,33 @@ std::function< string() > combineDownloadPostActions(
 	};
 }
 
+std::function< string() > getReleaseCheckPostAction(
+		const Config& config, const string& path)
+{
+	return [&config, path]() -> string
+	{
+		try
+		{
+			cachefiles::getReleaseInfo(config, path, path);
+		}
+		catch (Exception& e)
+		{
+			return e.what();
+		}
+		return string(); // success
+	};
+}
+
+std::function< string() > getReleaseSignatureCheckPostAction(
+		const Config& config, const string& signedFilePath, const string& signedFileAlias)
+{
+	return [&config, signedFilePath, signedFileAlias]() -> string
+	{
+		cachefiles::verifySignature(config, signedFilePath, signedFileAlias);
+		return string();
+	};
+}
+
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
@@ -246,19 +273,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		if (runChecks)
 		{
 			downloadEntity.postAction = combineDownloadPostActions(downloadEntity.postAction,
-					[_config, targetPath]() -> string
-					{
-						try
-						{
-							cachefiles::getReleaseInfo(*_config, targetPath, targetPath);
-						}
-						catch (Exception& e)
-						{
-							return e.what();
-						}
-						return string(); // success
-					}
-					);
+					getReleaseCheckPostAction(*_config, targetPath));
 		}
 
 		if (!downloadManager.download({ downloadEntity }).empty())
@@ -284,12 +299,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	if (runChecks)
 	{
 		signaturePostAction = combineDownloadPostActions(signaturePostAction,
-				[longAlias, targetPath, signatureTargetPath, &_config]() -> string
-				{
-					cachefiles::verifySignature(*_config, targetPath, longAlias);
-					return string();
-				}
-				);
+				getReleaseSignatureCheckPostAction(*_config, targetPath, longAlias));
 	}
 
 	{
