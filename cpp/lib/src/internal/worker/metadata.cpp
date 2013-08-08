@@ -275,6 +275,18 @@ bool MetadataWorker::__downloadReleaseLikeFile(download::Manager& downloadManage
 	}
 }
 
+HashSums fillHashSumsIfPresent(const string& path)
+{
+	HashSums hashSums; // empty now
+	hashSums[HashSums::MD5] = "0"; // won't match for sure
+	if (fs::fileExists(path))
+	{
+		// the Release file already present
+		hashSums.fill(path);
+	}
+	return hashSums;
+}
+
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
@@ -285,14 +297,8 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 	// we'll check hash sums of local file before and after to
 	// determine do we need to clean partial indexes
-	//
-	HashSums hashSums; // empty now
-	hashSums[HashSums::MD5] = "0"; // won't match for sure
-	if (fs::fileExists(targetPath))
-	{
-		// the Release file already present
-		hashSums.fill(targetPath);
-	}
+	auto hashSums = fillHashSumsIfPresent(targetPath);
+
 	releaseFileChanged = false; // until proved otherwise later
 
 	if (!__downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry, "Release",
