@@ -33,6 +33,12 @@ class MetadataWorker: public virtual WorkerBase
 
 	static bool __is_diff_type(const IndexType&);
 	string __get_indexes_directory() const;
+
+	typedef std::function< string () > (*SecondPostActionGeneratorForReleaseLike)(const Config&, const string&, const string&);
+	bool __downloadReleaseLikeFile(download::Manager&,
+			const string&, const string&,
+			const cachefiles::IndexEntry&, const string&,
+			bool runChecks, SecondPostActionGeneratorForReleaseLike);
 	bool __update_release_and_index_data(download::Manager&, const cachefiles::IndexEntry&);
 	bool __update_release(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
 	ssize_t __get_uri_priority(const string& uri);

@@ -209,7 +209,7 @@ std::function< string() > combineDownloadPostActions(
 }
 
 std::function< string() > getReleaseCheckPostAction(
-		const Config& config, const string& path)
+		const Config& config, const string& path, const string&)
 {
 	return [&config, path]() -> string
 	{
@@ -225,14 +225,54 @@ std::function< string() > getReleaseCheckPostAction(
 	};
 }
 
-std::function< string() > getReleaseSignatureCheckPostAction(
-		const Config& config, const string& signedFilePath, const string& signedFileAlias)
+string deDotGpg(const string& input)
 {
-	return [&config, signedFilePath, signedFileAlias]() -> string
+	if (getFilenameExtension(input) == ".gpg")
 	{
-		cachefiles::verifySignature(config, signedFilePath, signedFileAlias);
+		return input.substr(0, input.size() - 4);
+	}
+	else
+	{
+		return input;
+	}
+}
+
+std::function< string() > getReleaseSignatureCheckPostAction(
+		const Config& config, const string& path, const string& alias)
+{
+	return [&config, path, alias]() -> string
+	{
+		cachefiles::verifySignature(config, deDotGpg(path), deDotGpg(alias));
 		return string();
 	};
+}
+
+bool MetadataWorker::__downloadReleaseLikeFile(download::Manager& downloadManager,
+		const string& uri, const string& targetPath,
+		const cachefiles::IndexEntry& indexEntry, const string& name,
+		bool runChecks, SecondPostActionGeneratorForReleaseLike secondPostActionGenerator)
+{
+	auto alias = indexEntry.distribution + ' ' + name;
+	auto longAlias = indexEntry.uri + ' ' + alias;
+	auto downloadPath = getDownloadPath(targetPath);
+
+	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
+	{
+		download::Manager::DownloadEntity downloadEntity;
+
+		downloadEntity.extendedUris.emplace_back(download::Uri(uri), alias, longAlias);
+		downloadEntity.targetPath = downloadPath;
+		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
+		downloadEntity.size = (size_t)-1;
+
+		if (runChecks)
+		{
+			downloadEntity.postAction = combineDownloadPostActions(downloadEntity.postAction,
+					secondPostActionGenerator(*_config, targetPath, longAlias));
+		}
+
+		return downloadManager.download({ downloadEntity }).empty();
+	}
 }
 
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
@@ -240,6 +280,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 {
 	bool runChecks = _config->getBool("cupt::update::check-release-files");
 
+	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
 	// we'll check hash sums of local file before and after to
@@ -254,64 +295,16 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	}
 	releaseFileChanged = false; // until proved otherwise later
 
-	// downloading Release file
-	auto alias = indexEntry.distribution + ' ' + "Release";
-	auto longAlias = indexEntry.uri + ' ' + alias;
-	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
-
-	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
-	auto downloadPath = getDownloadPath(targetPath);
-
+	if (!__downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry, "Release",
+			runChecks, getReleaseCheckPostAction))
 	{
-		download::Manager::DownloadEntity downloadEntity;
-
-		downloadEntity.extendedUris.emplace_back(download::Uri(uri), alias, longAlias);
-		downloadEntity.targetPath = downloadPath;
-		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
-		downloadEntity.size = (size_t)-1;
-
-		if (runChecks)
-		{
-			downloadEntity.postAction = combineDownloadPostActions(downloadEntity.postAction,
-					getReleaseCheckPostAction(*_config, targetPath));
-		}
-
-		if (!downloadManager.download({ downloadEntity }).empty())
-		{
-			return false;
-		}
+		return false;
 	}
 
 	releaseFileChanged = !hashSums.verify(targetPath);
 
-	// downloading signature for Release file
-	auto signatureUri = uri + ".gpg";
-	auto signatureTargetPath = targetPath + ".gpg";
-	auto signatureDownloadPath = downloadPath + ".gpg";
-
-	auto signatureAlias = alias + ".gpg";
-	auto signatureLongAlias = indexEntry.uri + ' ' + signatureAlias;
-	_logger->log(Logger::Subsystem::Metadata, 3,
-			__get_download_log_message(signatureLongAlias));
-
-	auto signaturePostAction = generateMovingSub(signatureDownloadPath, signatureTargetPath);
-
-	if (runChecks)
-	{
-		signaturePostAction = combineDownloadPostActions(signaturePostAction,
-				getReleaseSignatureCheckPostAction(*_config, targetPath, longAlias));
-	}
-
-	{
-		download::Manager::DownloadEntity downloadEntity;
-
-		downloadEntity.extendedUris.emplace_back(download::Uri(signatureUri), signatureAlias, signatureLongAlias);
-		downloadEntity.targetPath = signatureDownloadPath;
-		downloadEntity.postAction = signaturePostAction;
-		downloadEntity.size = (size_t)-1;
-
-		downloadManager.download({ downloadEntity });
-	}
+	__downloadReleaseLikeFile(downloadManager, uri+".gpg", targetPath+".gpg", indexEntry, "Release.gpg",
+			runChecks, getReleaseSignatureCheckPostAction);
 
 	return true;
 }
