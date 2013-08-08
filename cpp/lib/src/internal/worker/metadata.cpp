@@ -211,7 +211,6 @@ std::function< string() > combineDownloadPostActions(
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
-	bool simulating = _config->getBool("cupt::worker::simulate");
 	bool runChecks = _config->getBool("cupt::update::check-release-files");
 
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
@@ -244,7 +243,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
 		downloadEntity.size = (size_t)-1;
 
-		if (!simulating && runChecks)
+		if (runChecks)
 		{
 			downloadEntity.postAction = combineDownloadPostActions(downloadEntity.postAction,
 					[_config, targetPath]() -> string
@@ -282,7 +281,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 
 	auto signaturePostAction = generateMovingSub(signatureDownloadPath, signatureTargetPath);
 
-	if (!simulating and runChecks)
+	if (runChecks)
 	{
 		signaturePostAction = combineDownloadPostActions(signaturePostAction,
 				[longAlias, targetPath, signatureTargetPath, &_config]() -> string
