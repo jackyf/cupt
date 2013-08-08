@@ -250,8 +250,10 @@ std::function< string() > getReleaseSignatureCheckPostAction(
 bool MetadataWorker::__downloadReleaseLikeFile(download::Manager& downloadManager,
 		const string& uri, const string& targetPath,
 		const cachefiles::IndexEntry& indexEntry, const string& name,
-		bool runChecks, SecondPostActionGeneratorForReleaseLike secondPostActionGenerator)
+		SecondPostActionGeneratorForReleaseLike secondPostActionGenerator)
 {
+	bool runChecks = _config->getBool("cupt::update::check-release-files");
+
 	auto alias = indexEntry.distribution + ' ' + name;
 	auto longAlias = indexEntry.uri + ' ' + alias;
 	auto downloadPath = getDownloadPath(targetPath);
@@ -290,27 +292,21 @@ HashSums fillHashSumsIfPresent(const string& path)
 bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
-	bool runChecks = _config->getBool("cupt::update::check-release-files");
-
 	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
-	// we'll check hash sums of local file before and after to
-	// determine do we need to clean partial indexes
 	auto hashSums = fillHashSumsIfPresent(targetPath);
 
 	releaseFileChanged = false; // until proved otherwise later
 
-	if (!__downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry, "Release",
-			runChecks, getReleaseCheckPostAction))
+	if (!__downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry, "Release", getReleaseCheckPostAction))
 	{
 		return false;
 	}
 
 	releaseFileChanged = !hashSums.verify(targetPath);
 
-	__downloadReleaseLikeFile(downloadManager, uri+".gpg", targetPath+".gpg", indexEntry, "Release.gpg",
-			runChecks, getReleaseSignatureCheckPostAction);
+	__downloadReleaseLikeFile(downloadManager, uri+".gpg", targetPath+".gpg", indexEntry, "Release.gpg", getReleaseSignatureCheckPostAction);
 
 	return true;
 }
