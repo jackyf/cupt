@@ -128,6 +128,15 @@ void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendag
 	nonBlockingPrint(outputString);
 }
 
+namespace {
+
+string getNumberPrefix(size_t number)
+{
+	return format2("#%zu: ", number);
+}
+
+}
+
 void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string& longAlias)
 {
 	string sizeSuffix;
@@ -136,7 +145,7 @@ void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string
 		sizeSuffix = string(" [") + humanReadableSizeString(record.size) + "]";
 	}
 	termClean();
-	nonBlockingPrint(format2("Get:%zu %s%s\n", record.number, longAlias, sizeSuffix));
+	nonBlockingPrint(getNumberPrefix(record.number) + format2("starting %s%s\n", longAlias, sizeSuffix));
 }
 
 void ConsoleProgressImpl::finishedDownload(const string& uri,
@@ -145,15 +154,10 @@ void ConsoleProgressImpl::finishedDownload(const string& uri,
 	if (!result.empty())
 	{
 		// some error occured, output it
+		string toPrint = getNumberPrefix(number);
+		toPrint += isOptional ? "not available\n" : format2("failed: %s (uri '%s')\n", result, uri);
 		termClean();
-		if (isOptional)
-		{
-			nonBlockingPrint(format2("NotAvailable:%zu\n", number));
-		}
-		else
-		{
-			nonBlockingPrint(format2("Fail:%zu %s (uri '%s')\n", number, result, uri));
-		}
+		nonBlockingPrint(toPrint);
 	}
 }
 
@@ -225,7 +229,7 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 			suffix = format2("/%s %.0f%%", humanReadableSizeString(it->record.size),
 					(float)it->record.downloadedSize / it->record.size * 100);
 		}
-		viewString += format2("[%u %s %s%s]", it->record.number, it->shortAlias,
+		viewString += format2("[#%zu %s %s%s]", it->record.number, it->shortAlias,
 				humanReadableSizeString(it->record.downloadedSize), suffix);
 	}
 	auto speedAndTimeAppendage = string("| ") + humanReadableSpeedString(speed) +

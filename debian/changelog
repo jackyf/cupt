@@ -117,6 +117,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'setTotalEstimatedSize': removed as superseded by early
         notificiations by download manager.
       - New methods 'markAsOptional' and 'isOptional'.
+    - download/progresses/console:
+      - Changed the format of outputting download number prefixes.
     - hashsums:
       - Fixed non-thread-safe initialization of libgcrypt.
   * downloadmethods:
