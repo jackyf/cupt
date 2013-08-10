@@ -296,8 +296,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
 	auto hashSums = fillHashSumsIfPresent(targetPath);
-
-	releaseFileChanged = false; // until proved otherwise later
+	releaseFileChanged = false;
 
 	if (!__downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry, "Release", getReleaseCheckPostAction))
 	{
@@ -309,6 +308,23 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	__downloadReleaseLikeFile(downloadManager, uri+".gpg", targetPath+".gpg", indexEntry, "Release.gpg", getReleaseSignatureCheckPostAction);
 
 	return true;
+}
+
+// InRelease == inside signed Release
+bool MetadataWorker::__update_inrelease(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
+{
+	auto uri = cachefiles::getDownloadUriOfInReleaseList(indexEntry);
+	auto targetPath = cachefiles::getPathOfInReleaseList(*_config, indexEntry);
+
+	auto hashSums = fillHashSumsIfPresent(targetPath);
+	releaseFileChanged = false;
+
+	bool downloadResult = __downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry,
+			"InRelease", getReleaseSignatureCheckPostAction);
+	releaseFileChanged = downloadResult && !hashSums.verify(targetPath);
+
+	return downloadResult;
 }
 
 ssize_t MetadataWorker::__get_uri_priority(const string& uri)
@@ -918,7 +934,8 @@ bool MetadataWorker::__update_release_and_index_data(download::Manager& download
 
 	// phase 1
 	bool releaseFileChanged;
-	if (!__update_release(downloadManager, indexEntry, releaseFileChanged))
+	if (!__update_inrelease(downloadManager, indexEntry, releaseFileChanged) &&
+			!__update_release(downloadManager, indexEntry, releaseFileChanged))
 	{
 		return false;
 	}
@@ -948,12 +965,12 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 	};
 
 	auto includeIoi = _config->getBool("cupt::update::generate-index-of-index");
-	auto indexEntries = _cache->getIndexEntries();
-	FORIT(indexEntryIt, indexEntries)
+	for (const auto& indexEntry: _cache->getIndexEntries())
 	{
-		auto pathOfIndexList = cachefiles::getPathOfIndexList(*_config, *indexEntryIt);
+		auto pathOfIndexList = cachefiles::getPathOfIndexList(*_config, indexEntry);
 
-		addUsedPattern(cachefiles::getPathOfReleaseList(*_config, *indexEntryIt) + '*');
+		addUsedPattern(cachefiles::getPathOfReleaseList(*_config, indexEntry) + '*');
+		addUsedPattern(cachefiles::getPathOfInReleaseList(*_config, indexEntry));
 		addUsedPattern(pathOfIndexList);
 		if (includeIoi)
 		{
@@ -961,7 +978,7 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 		}
 
 		auto translationsPossiblePaths =
-				cachefiles::getPathsOfLocalizedDescriptions(*_config, *indexEntryIt);
+				cachefiles::getPathsOfLocalizedDescriptions(*_config, indexEntry);
 		FORIT(pathIt, translationsPossiblePaths)
 		{
 			addUsedPattern(pathIt->second);

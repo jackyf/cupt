@@ -84,9 +84,19 @@ string getPathOfReleaseList(const Config& config, const IndexEntry& entry)
 	return getPathOfIndexEntry(config, entry) + "_Release";
 }
 
+string getPathOfInReleaseList(const Config& config, const IndexEntry& entry)
+{
+	return getPathOfIndexEntry(config, entry) + "_InRelease";
+}
+
 string getDownloadUriOfReleaseList(const IndexEntry& entry)
 {
 	return getUriOfIndexEntry(entry) + "/Release";
+}
+
+string getDownloadUriOfInReleaseList(const IndexEntry& entry)
+{
+	return getUriOfIndexEntry(entry) + "/InRelease";
 }
 
 static string getIndexListSuffix(const Config& config, const IndexEntry& entry, char delimiter)

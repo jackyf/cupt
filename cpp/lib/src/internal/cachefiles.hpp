@@ -36,9 +36,11 @@ struct FileDownloadRecord
 
 string getPathOfIndexList(const Config&, const IndexEntry&);
 string getPathOfReleaseList(const Config&, const IndexEntry&);
+string getPathOfInReleaseList(const Config&, const IndexEntry&);
 string getPathOfExtendedStates(const Config&);
 
 string getDownloadUriOfReleaseList(const IndexEntry&);
+string getDownloadUriOfInReleaseList(const IndexEntry&);
 vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 		const Config&, const IndexEntry&);
 

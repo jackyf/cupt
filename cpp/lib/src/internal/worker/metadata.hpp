@@ -41,6 +41,7 @@ class MetadataWorker: public virtual WorkerBase
 			SecondPostActionGeneratorForReleaseLike);
 	bool __update_release_and_index_data(download::Manager&, const cachefiles::IndexEntry&);
 	bool __update_release(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
+	bool __update_inrelease(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
 	ssize_t __get_uri_priority(const string& uri);
 	bool __download_index(download::Manager&, const cachefiles::FileDownloadRecord&, IndexType,
 			const cachefiles::IndexEntry&, const string&, const string&, bool);
