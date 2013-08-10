@@ -84,9 +84,38 @@ string getPathOfReleaseList(const Config& config, const IndexEntry& entry)
 	return getPathOfIndexEntry(config, entry) + "_Release";
 }
 
+string getPathOfInReleaseList(const Config& config, const IndexEntry& entry)
+{
+	return getPathOfIndexEntry(config, entry) + "_InRelease";
+}
+
+namespace {
+
+string selectNewerFile(const string& leftPath, const string& rightPath)
+{
+	if (!fs::fileExists(rightPath)) return leftPath;
+	if (!fs::fileExists(leftPath)) return rightPath;
+	return fs::fileModificationTime(leftPath) >= fs::fileModificationTime(rightPath) ?
+			leftPath : rightPath;
+}
+
+}
+
+string getPathOfMasterReleaseLikeList(const Config& config, const IndexEntry& entry)
+{
+	return selectNewerFile(
+			getPathOfInReleaseList(config, entry),
+			getPathOfReleaseList(config, entry));
+}
+
 string getDownloadUriOfReleaseList(const IndexEntry& entry)
 {
 	return getUriOfIndexEntry(entry) + "/Release";
+}
+
+string getDownloadUriOfInReleaseList(const IndexEntry& entry)
+{
+	return getUriOfIndexEntry(entry) + "/InRelease";
 }
 
 static string getIndexListSuffix(const Config& config, const IndexEntry& entry, char delimiter)
@@ -132,7 +161,7 @@ static vector< FileDownloadRecord > getDownloadInfoFromRelease(
 
 	try
 	{
-		auto releaseFilePath = getPathOfReleaseList(config, indexEntry);
+		auto releaseFilePath = getPathOfMasterReleaseLikeList(config, indexEntry);
 		RequiredFile releaseFile(releaseFilePath, "r");
 
 		HashSums::Type currentHashSumType = HashSums::Count;
@@ -359,6 +388,25 @@ string getPathOfExtendedStates(const Config& config)
 	return config.getPath("dir::state::extendedstates");
 }
 
+namespace {
+
+bool openingForReadingSucceeds(const string& path, const string& fileType, bool debugging)
+{
+	string openError;
+	File file(path, "r", openError);
+	if (!openError.empty())
+	{
+		if (debugging)
+		{
+			debug2("unable to read %s file '%s': %s", fileType, path, openError);
+		}
+		return false;
+	}
+	return true;
+}
+
+}
+
 bool verifySignature(const Config& config, const string& path, const string& alias)
 {
 	auto debugging = config.getBool("debug::gpgv");
@@ -368,10 +416,8 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 	}
 
 	auto keyringPath = config.getString("gpgv::trustedkeyring");
-	if (debugging)
-	{
-		debug2("keyring file is '%s'", keyringPath);
-	}
+	if (debugging) debug2("keyring file is '%s'", keyringPath);
+	if (!openingForReadingSucceeds(keyringPath, "keyring", debugging)) return false;
 
 	auto signaturePath = path + ".gpg";
 	if (debugging)
@@ -381,38 +427,14 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 
 	if (!fs::fileExists(signaturePath))
 	{
-		if (debugging)
-		{
-			debug2("signature file '%s' doesn't exist", signaturePath);
-		}
-		return 0;
+		if (debugging) debug2("signature file '%s' doesn't exist, omitting it and assuming self-signed file", signaturePath);
+		signaturePath.clear();
+	}
+	else
+	{
+		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return false;
 	}
 
-	// file checks
-	{
-		string openError;
-		File file(signaturePath, "r", openError);
-		if (!openError.empty())
-		{
-			if (debugging)
-			{
-				debug2("unable to read signature file '%s': %s", signaturePath, openError);
-			}
-			return false;
-		}
-	}
-	{
-		string openError;
-		File file(keyringPath, "r", openError);
-		if (!openError.empty())
-		{
-			if (debugging)
-			{
-				debug2("unable to read keyring file '%s': %s", keyringPath, openError);
-			}
-			return false;
-		}
-	}
 
 	bool verifyResult = false;
 	try
@@ -581,10 +603,10 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 		string line;
 		while (! file.getLine(line).eof())
 		{
-			if (!regex_match(line, matches, fieldRegex))
-			{
-				break;
-			}
+			if (line.empty()) continue;
+			if (line[0] == '-') continue; // "----- BEGIN PGP SIGNED MESSAGE-----"
+			if (!regex_match(line, matches, fieldRegex)) break;
+
 			string fieldName = matches[1];
 			string fieldValue = matches[2];
 

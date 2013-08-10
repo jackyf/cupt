@@ -17,6 +17,7 @@
 **************************************************************************/
 #include <map>
 #include <list>
+#include <set>
 
 #include <boost/lexical_cast.hpp>
 
@@ -32,6 +33,7 @@ typedef download::Progress::DownloadRecord DownloadRecord;
 
 using std::map;
 using std::list;
+using std::set;
 
 struct AliasPair
 {
@@ -59,6 +61,7 @@ class ProgressImpl
 	size_t nextDownloadNumber;
 	time_t startTimestamp;
 	map< string, DownloadRecord > nowDownloading;
+	set< string > optionalUris;
 };
 
 ProgressImpl::ProgressImpl()
@@ -153,6 +156,11 @@ void Progress::setLongAliasForUri(const string& uri, const string& alias)
 	__impl->aliases[uri].longAlias = alias;
 }
 
+void Progress::markAsOptional(const string& uri)
+{
+	__impl->optionalUris.insert(uri);
+}
+
 Progress::~Progress()
 {
 	delete __impl;
@@ -182,6 +190,11 @@ string Progress::getShortAliasForUri(const string& uri) const
 	{
 		return uri;
 	}
+}
+
+bool Progress::isOptional(const string& uri) const
+{
+	return __impl->optionalUris.count(uri);
 }
 
 namespace {

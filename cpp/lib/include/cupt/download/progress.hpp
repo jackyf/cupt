@@ -67,6 +67,10 @@ class CUPT_API Progress
 	 */
 	string getShortAliasForUri(const string& uri) const;
 	/**
+	 * @see markAsOptional
+	 */
+	bool isOptional(const string& uri) const;
+	/**
 	 * Gets current downloads.
 	 *
 	 * @return map of uris to download records.
@@ -157,6 +161,11 @@ class CUPT_API Progress
 	 * @param alias long alias
 	 */
 	void setLongAliasForUri(const string& uri, const string& alias);
+	/**
+	 * Notify that a failure to download @a uri is not an error.
+	 * @param uri
+	 */
+	void markAsOptional(const string& uri);
 
 	/// @cond
 	CUPT_LOCAL void progress(const vector< string >& params);

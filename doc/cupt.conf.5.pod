@@ -395,12 +395,6 @@ Also, if you have a local mirror, which may store uncompressed indexes too
 
 cupt::update::compression-types::uncompressed::priority "300";
 
-=item cupt::update::keep-bad-signatures
-
-boolean, specifies whether to keep signature files that failed GPG check
-when doing update. True by default. Setting this option to false will not have
-an effect if the option L<cupt::update::check-release-files> is set to false.
-
 =item cupt::update::generate-index-of-index
 
 boolean, specifies whether to build "index-of-index" for every Packages and

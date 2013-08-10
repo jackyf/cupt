@@ -66,6 +66,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         the current locale.
       - Recognize and use the option 'dir::ignore-files-silently'.
         (Closes: #697248)
+      - Removed the option 'cupt::update::keep-bad-signatures', signatures are
+        always kept.
     - cache/version:
       - [API break] 'operator==': removed, versions can be now compared by
         pointers' values.
@@ -82,6 +84,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         called before 'setDesiredState'.
       - [ABI break] 'Action::Type' new enum value 'Reinstall'.
       - 'updateReleaseAndIndexData': use threads instead of forking.
+      - 'updateReleaseAndIndexData': initial support for InRelease files.
+        (Closes: #623113)
     - cache/binarypackage:
       - 'getInstalledVersion': significant speed-up.
       - New methods begin() and end().
@@ -103,6 +107,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Notify the download progress of download sizes earlier. This improves
         the total percent accuracy where a grand total size is not known
         beforehand (for example, metadata updates).
+      - [ABI break] 'DownloadEntity': new member 'optional'.
     - download/method{,factory}:
       - [API break]: don't require shared_ptr< Config > anymore.
     - download/progress:
@@ -111,6 +116,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         replaced with a new field 'phase'.
       - [API break] 'setTotalEstimatedSize': removed as superseded by early
         notificiations by download manager.
+      - New methods 'markAsOptional' and 'isOptional'.
     - hashsums:
       - Fixed non-thread-safe initialization of libgcrypt.
   * downloadmethods:
