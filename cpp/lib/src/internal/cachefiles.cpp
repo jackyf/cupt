@@ -397,10 +397,8 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 	}
 
 	auto keyringPath = config.getString("gpgv::trustedkeyring");
-	if (debugging)
-	{
-		debug2("keyring file is '%s'", keyringPath);
-	}
+	if (debugging) debug2("keyring file is '%s'", keyringPath);
+	if (!openingForReadingSucceeds(keyringPath, "keyring", debugging)) return false;
 
 	auto signaturePath = path + ".gpg";
 	if (debugging)
@@ -410,16 +408,14 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 
 	if (!fs::fileExists(signaturePath))
 	{
-		if (debugging)
-		{
-			debug2("signature file '%s' doesn't exist", signaturePath);
-		}
-		return 0;
+		if (debugging) debug2("signature file '%s' doesn't exist, omitting it and assuming self-signed file", signaturePath);
+		signaturePath.clear();
+	}
+	else
+	{
+		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return false;
 	}
 
-	// file checks
-	if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return false;
-	if (!openingForReadingSucceeds(keyringPath, "keyring", debugging)) return false;
 
 	bool verifyResult = false;
 	try
