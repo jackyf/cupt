@@ -293,6 +293,8 @@ HashSums fillHashSumsIfPresent(const string& path)
 bool MetadataWorker::__downloadRelease(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
+	const auto simulating = _config->getBool("cupt::worker::simulate");
+
 	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
 	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
 
@@ -304,7 +306,7 @@ bool MetadataWorker::__downloadRelease(download::Manager& downloadManager,
 		return false;
 	}
 
-	releaseFileChanged = !hashSums.verify(targetPath);
+	releaseFileChanged = simulating || !hashSums.verify(targetPath);
 
 	__downloadReleaseLikeFile(downloadManager, uri+".gpg", targetPath+".gpg", indexEntry, "Release.gpg", getReleaseSignatureCheckPostAction);
 
@@ -315,6 +317,8 @@ bool MetadataWorker::__downloadRelease(download::Manager& downloadManager,
 bool MetadataWorker::__downloadInRelease(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
+	const auto simulating = _config->getBool("cupt::worker::simulate");
+
 	auto uri = cachefiles::getDownloadUriOfInReleaseList(indexEntry);
 	auto targetPath = cachefiles::getPathOfInReleaseList(*_config, indexEntry);
 
@@ -323,7 +327,7 @@ bool MetadataWorker::__downloadInRelease(download::Manager& downloadManager,
 
 	bool downloadResult = __downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry,
 			"InRelease", getReleaseSignatureCheckPostAction);
-	releaseFileChanged = downloadResult && !hashSums.verify(targetPath);
+	releaseFileChanged = downloadResult && (simulating || !hashSums.verify(targetPath));
 
 	return downloadResult;
 }
