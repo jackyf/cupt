@@ -584,10 +584,10 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 		string line;
 		while (! file.getLine(line).eof())
 		{
-			if (!regex_match(line, matches, fieldRegex))
-			{
-				break;
-			}
+			if (line.empty()) continue;
+			if (line[0] == '-') continue; // "----- BEGIN PGP SIGNED MESSAGE-----"
+			if (!regex_match(line, matches, fieldRegex)) break;
+
 			string fieldName = matches[1];
 			string fieldValue = matches[2];
 
