@@ -394,10 +394,8 @@ class ReleaseLimits
 void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 {
 	ReleaseLimits releaseLimits(*config);
-	FORIT(indexEntryIt, indexEntries)
+	for (const auto& entry: indexEntries)
 	{
-		const IndexEntry& entry = *indexEntryIt;
-
 		if (entry.category == IndexEntry::Binary && !useBinary)
 		{
 			continue;
