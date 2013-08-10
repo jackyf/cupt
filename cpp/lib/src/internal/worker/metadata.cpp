@@ -289,7 +289,7 @@ HashSums fillHashSumsIfPresent(const string& path)
 	return hashSums;
 }
 
-bool MetadataWorker::__update_release(download::Manager& downloadManager,
+bool MetadataWorker::__downloadRelease(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
 	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
@@ -311,7 +311,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 }
 
 // InRelease == inside signed Release
-bool MetadataWorker::__update_inrelease(download::Manager& downloadManager,
+bool MetadataWorker::__downloadInRelease(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
 {
 	auto uri = cachefiles::getDownloadUriOfInReleaseList(indexEntry);
@@ -325,6 +325,18 @@ bool MetadataWorker::__update_inrelease(download::Manager& downloadManager,
 	releaseFileChanged = downloadResult && !hashSums.verify(targetPath);
 
 	return downloadResult;
+}
+
+bool MetadataWorker::__update_release(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
+{
+	bool result = __downloadInRelease(downloadManager, indexEntry, releaseFileChanged) ||
+			__downloadRelease(downloadManager, indexEntry, releaseFileChanged);
+	if (!result)
+	{
+		warn2(__("failed to download %s for '%s %s/%s'"), "(In)Release", indexEntry.uri, indexEntry.distribution, "");
+	}
+	return result;
 }
 
 ssize_t MetadataWorker::__get_uri_priority(const string& uri)
@@ -923,6 +935,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 	}
 }
 
+
 bool MetadataWorker::__update_release_and_index_data(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry)
 {
@@ -934,8 +947,7 @@ bool MetadataWorker::__update_release_and_index_data(download::Manager& download
 
 	// phase 1
 	bool releaseFileChanged;
-	if (!__update_inrelease(downloadManager, indexEntry, releaseFileChanged) &&
-			!__update_release(downloadManager, indexEntry, releaseFileChanged))
+	if (!__update_release(downloadManager, indexEntry, releaseFileChanged))
 	{
 		return false;
 	}
