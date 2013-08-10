@@ -266,6 +266,7 @@ bool MetadataWorker::__downloadReleaseLikeFile(download::Manager& downloadManage
 		downloadEntity.targetPath = downloadPath;
 		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
 		downloadEntity.size = (size_t)-1;
+		downloadEntity.optional = true;
 
 		if (runChecks)
 		{
