@@ -369,6 +369,25 @@ string getPathOfExtendedStates(const Config& config)
 	return config.getPath("dir::state::extendedstates");
 }
 
+namespace {
+
+bool openingForReadingSucceeds(const string& path, const string& fileType, bool debugging)
+{
+	string openError;
+	File file(path, "r", openError);
+	if (!openError.empty())
+	{
+		if (debugging)
+		{
+			debug2("unable to read %s file '%s': %s", fileType, path, openError);
+		}
+		return false;
+	}
+	return true;
+}
+
+}
+
 bool verifySignature(const Config& config, const string& path, const string& alias)
 {
 	auto debugging = config.getBool("debug::gpgv");
@@ -399,30 +418,8 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 	}
 
 	// file checks
-	{
-		string openError;
-		File file(signaturePath, "r", openError);
-		if (!openError.empty())
-		{
-			if (debugging)
-			{
-				debug2("unable to read signature file '%s': %s", signaturePath, openError);
-			}
-			return false;
-		}
-	}
-	{
-		string openError;
-		File file(keyringPath, "r", openError);
-		if (!openError.empty())
-		{
-			if (debugging)
-			{
-				debug2("unable to read keyring file '%s': %s", keyringPath, openError);
-			}
-			return false;
-		}
-	}
+	if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return false;
+	if (!openingForReadingSucceeds(keyringPath, "keyring", debugging)) return false;
 
 	bool verifyResult = false;
 	try
