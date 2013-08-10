@@ -411,23 +411,9 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 	}
 }
 
-namespace {
-
-string selectNewerFile(const string& leftPath, const string& rightPath)
-{
-	if (!fs::fileExists(rightPath)) return leftPath;
-	if (!fs::fileExists(leftPath)) return rightPath;
-	return fs::fileModificationTime(leftPath) >= fs::fileModificationTime(rightPath) ?
-			leftPath : rightPath;
-}
-
-}
-
 shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
 {
-	auto path = selectNewerFile(
-			cachefiles::getPathOfInReleaseList(config, indexEntry),
-			cachefiles::getPathOfReleaseList(config, indexEntry));
+	auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
 	auto insertResult = releaseInfoCache.insert({ path, {} });
 	auto& cachedValue = insertResult.first->second;
 	if (insertResult.second)

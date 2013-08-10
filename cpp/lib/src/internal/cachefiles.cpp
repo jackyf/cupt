@@ -89,6 +89,25 @@ string getPathOfInReleaseList(const Config& config, const IndexEntry& entry)
 	return getPathOfIndexEntry(config, entry) + "_InRelease";
 }
 
+namespace {
+
+string selectNewerFile(const string& leftPath, const string& rightPath)
+{
+	if (!fs::fileExists(rightPath)) return leftPath;
+	if (!fs::fileExists(leftPath)) return rightPath;
+	return fs::fileModificationTime(leftPath) >= fs::fileModificationTime(rightPath) ?
+			leftPath : rightPath;
+}
+
+}
+
+string getPathOfMasterReleaseLikeList(const Config& config, const IndexEntry& entry)
+{
+	return selectNewerFile(
+			getPathOfInReleaseList(config, entry),
+			getPathOfReleaseList(config, entry));
+}
+
 string getDownloadUriOfReleaseList(const IndexEntry& entry)
 {
 	return getUriOfIndexEntry(entry) + "/Release";
@@ -142,7 +161,7 @@ static vector< FileDownloadRecord > getDownloadInfoFromRelease(
 
 	try
 	{
-		auto releaseFilePath = getPathOfReleaseList(config, indexEntry);
+		auto releaseFilePath = getPathOfMasterReleaseLikeList(config, indexEntry);
 		RequiredFile releaseFile(releaseFilePath, "r");
 
 		HashSums::Type currentHashSumType = HashSums::Count;

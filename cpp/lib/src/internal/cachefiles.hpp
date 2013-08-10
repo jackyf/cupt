@@ -37,6 +37,7 @@ struct FileDownloadRecord
 string getPathOfIndexList(const Config&, const IndexEntry&);
 string getPathOfReleaseList(const Config&, const IndexEntry&);
 string getPathOfInReleaseList(const Config&, const IndexEntry&);
+string getPathOfMasterReleaseLikeList(const Config&, const IndexEntry&);
 string getPathOfExtendedStates(const Config&);
 
 string getDownloadUriOfReleaseList(const IndexEntry&);
