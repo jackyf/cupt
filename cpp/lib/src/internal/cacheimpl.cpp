@@ -157,10 +157,9 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 					{
 						continue;
 					}
-					const vector< string >& realProvides = version->provides;
-					FORIT(realProvidesIt, realProvides)
+					for (const auto& realProvidesPackageName: version->provides)
 					{
-						if (*realProvidesIt == packageName)
+						if (realProvidesPackageName == packageName)
 						{
 							// ok, this particular version does provide this virtual package
 							result.push_back(version);
