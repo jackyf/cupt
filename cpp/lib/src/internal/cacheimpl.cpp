@@ -500,7 +500,6 @@ void CacheImpl::processTranslationFiles(const IndexEntry& indexEntry,
 void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		shared_ptr< const ReleaseInfo > releaseInfo, const string& alias)
 {
-	using std::make_pair;
 	auto& prePackagesStorage = (category == IndexEntry::Binary ?
 			preBinaryPackages : preSourcePackages);
 
