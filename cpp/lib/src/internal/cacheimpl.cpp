@@ -55,7 +55,11 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 {
 	auto callback = [this, &packageNamePtr](const char* tokenBeginIt, const char* tokenEndIt)
 	{
-		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(packageNamePtr);
+		auto& sublist = this->canProvide[string(tokenBeginIt, tokenEndIt)];
+		if (std::find(sublist.begin(), sublist.end(), packageNamePtr) == sublist.end())
+		{
+			sublist.push_back(packageNamePtr);
+		}
 	};
 	parse::processSpaceCharSpaceDelimitedStrings(
 			providesStringStart, providesStringEnd, ',', callback);
@@ -139,10 +143,9 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 		auto reverseProvidesIt = canProvide.find(packageName);
 		if (reverseProvidesIt != canProvide.end())
 		{
-			const set< const string* >& reverseProvides = reverseProvidesIt->second;
-			FORIT(it, reverseProvides)
+			for (const auto& it: reverseProvidesIt->second)
 			{
-				auto reverseProvidePackage = getBinaryPackage(**it);
+				auto reverseProvidePackage = getBinaryPackage(*it);
 				if (!reverseProvidePackage)
 				{
 					continue;

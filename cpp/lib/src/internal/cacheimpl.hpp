@@ -59,7 +59,7 @@ class CacheImpl
 		size_t offset;
 	};
 
-	map< string, set< const string* > > canProvide;
+	map< string, vector< const string* > > canProvide;
 	mutable unordered_map< string, unique_ptr< Package > > binaryPackages;
 	mutable unordered_map< string, unique_ptr< Package > > sourcePackages;
 	map< string, TranslationPosition > translations;
