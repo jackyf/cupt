@@ -37,6 +37,8 @@ using std::list;
 using std::unique_ptr;
 using std::set;
 
+struct BrokenPair;
+
 class NativeResolverImpl
 {
 	typedef Resolver::Reason Reason;
@@ -95,8 +97,7 @@ class NativeResolverImpl
 	Resolver::UserAnswer::Type __propose_solution(
 			const Solution&, Resolver::CallbackType, bool);
 
-	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&,
-			const dg::Element*, const dg::Element*, bool);
+	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&, const BrokenPair&, bool);
 
 	static const string __dummy_package_name;
  public:

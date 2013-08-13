@@ -838,13 +838,25 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	return userAnswer;
 }
 
-void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
-		const Solution& solution, const dg::Element* versionElementPtr,
-		const dg::Element* brokenElementPtr, bool debugging)
+struct BrokenPair
 {
+	const dg::Element* versionElementPtr;
+	BrokenSuccessor brokenSuccessor;
+};
+
+void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
+		const Solution& solution, const BrokenPair& bp, bool debugging)
+{
+	auto brokenElementPtr = bp.brokenSuccessor.elementPtr;
+
 	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
 	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
-			versionElementPtr, brokenElementPtr, debugging);
+			bp.versionElementPtr, brokenElementPtr, debugging);
+
+	for (auto& action: *possibleActionsPtr)
+	{
+		action->brokenElementPriority = bp.brokenSuccessor.priority;
+	}
 }
 
 void NativeResolverImpl::__final_verify_solution(const Solution& solution)
@@ -861,12 +873,6 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 		}
 	}
 }
-
-struct BrokenPair
-{
-	const dg::Element* versionElementPtr;
-	BrokenSuccessor brokenSuccessor;
-};
 
 BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
@@ -1007,8 +1013,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
 						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
 			}
-			__generate_possible_actions(&possibleActions, *currentSolution,
-					bp.versionElementPtr, bp.brokenSuccessor.elementPtr, debugging);
+			__generate_possible_actions(&possibleActions, *currentSolution, bp, debugging);
 
 			{
 				IntroducedBy ourIntroducedBy;
@@ -1027,11 +1032,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						(*actionIt)->introducedBy = ourIntroducedBy;
 					}
 				}
-			}
-
-			FORIT(actionIt, possibleActions)
-			{
-				(*actionIt)->brokenElementPriority = bp.brokenSuccessor.priority;
 			}
 
 			// mark package as failed one more time
