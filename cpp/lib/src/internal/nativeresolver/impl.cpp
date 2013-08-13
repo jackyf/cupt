@@ -1009,22 +1009,16 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	// during processing these packages
 	map< const dg::Element*, size_t > failCounts;
 
-	bool checkFailed;
-
 	while (!solutions.empty())
 	{
 		vector< unique_ptr< Action > > possibleActions;
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
 
-		do
+		auto problemFound = [this, &failCounts, &possibleActions, &currentSolution, debugging]
 		{
-			checkFailed = false;
-
 			auto bp = __get_broken_pair(*__solution_storage, *currentSolution, failCounts);
-			if (!bp.versionElementPtr) break;
-
-			checkFailed = true;
+			if (!bp.versionElementPtr) return false;
 
 			if (debugging)
 			{
@@ -1037,10 +1031,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 			// mark package as failed one more time
 			failCounts[bp.brokenSuccessor.elementPtr] += 1;
-		}
-		while (false);
 
-		if (!checkFailed)
+			return true;
+		};
+
+		if (!problemFound())
 		{
 			// if the solution was only just finished
 			if (!currentSolution->finished)
