@@ -543,25 +543,25 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 	}
 }
 
-void NativeResolverImpl::__post_apply_action(Solution& solution)
+void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
 {
 	if (!solution.pendingAction)
 	{
 		fatal2i("__post_apply_action: no action to apply");
 	}
-	const Action& action = *solution.pendingAction;
+	const auto& action = *solution.pendingAction;
 
 	{ // process elements to reject
 		FORIT(elementPtrIt, action.elementsToReject)
 		{
-			__solution_storage->setRejection(solution, *elementPtrIt, action.newElementPtr);
+			solutionStorage.setRejection(solution, *elementPtrIt, action.newElementPtr);
 		}
 	};
 
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
-	__solution_storage->setPackageEntry(solution, action.newElementPtr,
+	solutionStorage.setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
 
 	solution.pendingAction.reset();
@@ -939,6 +939,21 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 	return result;
 }
 
+shared_ptr< Solution > __get_next_current_solution(
+		SolutionContainer& solutions, SolutionStorage& solutionStorage, const SolutionChooser& chooser)
+{
+	auto currentSolutionIt = chooser(solutions);
+	shared_ptr< Solution > currentSolution = *currentSolutionIt;
+	solutions.erase(currentSolutionIt);
+
+	if (currentSolution->pendingAction)
+	{
+		currentSolution->prepare();
+		__post_apply_action(solutionStorage, *currentSolution);
+	}
+
+	return currentSolution;
+}
 
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
@@ -975,19 +990,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	{
 		vector< unique_ptr< Action > > possibleActions;
 
-		// choosing the solution to process
-		shared_ptr< Solution > currentSolution;
-		{
-			auto currentSolutionIt = solutionChooser(solutions);
-			currentSolution = *currentSolutionIt;
-			solutions.erase(currentSolutionIt);
-		}
-
-		if (currentSolution->pendingAction)
-		{
-			currentSolution->prepare();
-			__post_apply_action(*currentSolution);
-		}
+		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
 
 		do
 		{

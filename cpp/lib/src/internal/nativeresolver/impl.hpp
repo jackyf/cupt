@@ -80,7 +80,6 @@ class NativeResolverImpl
 			std::function< void (const shared_ptr< Solution >&) > callback,
 			const shared_ptr< Solution >&, vector< unique_ptr< Action > >&);
 
-	void __post_apply_action(Solution&);
 	void __final_verify_solution(const Solution&);
 
 	bool __makes_sense_to_modify_package(const Solution&, const dg::Element*,
