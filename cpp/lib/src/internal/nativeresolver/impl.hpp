@@ -47,6 +47,7 @@ class NativeResolverImpl
 	typedef Resolver::SynchronizationReason SynchronizationReason;
 	typedef Resolver::RelationExpressionReason RelationExpressionReason;
 	typedef Solution::Action Action;
+	typedef vector< unique_ptr< Action > > ActionContainer;
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
@@ -97,6 +98,7 @@ class NativeResolverImpl
 	Resolver::UserAnswer::Type __propose_solution(
 			const Solution&, Resolver::CallbackType, bool);
 
+	void __fill_and_process_introduced_by(const Solution&, const BrokenPair&, ActionContainer* actionsPtr);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&, const BrokenPair&, bool);
 
 	static const string __dummy_package_name;

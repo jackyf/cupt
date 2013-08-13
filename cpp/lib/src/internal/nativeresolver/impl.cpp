@@ -961,6 +961,25 @@ shared_ptr< Solution > __get_next_current_solution(
 	return currentSolution;
 }
 
+void NativeResolverImpl::__fill_and_process_introduced_by(
+		const Solution& solution, const BrokenPair& bp, ActionContainer* actionsPtr)
+{
+	IntroducedBy ourIntroducedBy;
+	ourIntroducedBy.versionElementPtr = bp.versionElementPtr;
+	ourIntroducedBy.brokenElementPtr = bp.brokenSuccessor.elementPtr;
+
+	if (actionsPtr->empty() && !__any_solution_was_found)
+	{
+		__decision_fail_tree.addFailedSolution(*__solution_storage, solution, ourIntroducedBy);
+	}
+	else
+	{
+		for (const auto& actionPtr: *actionsPtr)
+		{
+			actionPtr->introducedBy = ourIntroducedBy;
+		}
+	}
+}
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
@@ -1014,25 +1033,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
 			}
 			__generate_possible_actions(&possibleActions, *currentSolution, bp, debugging);
-
-			{
-				IntroducedBy ourIntroducedBy;
-				ourIntroducedBy.versionElementPtr = bp.versionElementPtr;
-				ourIntroducedBy.brokenElementPtr = bp.brokenSuccessor.elementPtr;
-
-				if (possibleActions.empty() && !__any_solution_was_found)
-				{
-					__decision_fail_tree.addFailedSolution(*__solution_storage,
-							*currentSolution, ourIntroducedBy);
-				}
-				else
-				{
-					FORIT(actionIt, possibleActions)
-					{
-						(*actionIt)->introducedBy = ourIntroducedBy;
-					}
-				}
-			}
+			__fill_and_process_introduced_by(*currentSolution, bp, &possibleActions);
 
 			// mark package as failed one more time
 			failCounts[bp.brokenSuccessor.elementPtr] += 1;
