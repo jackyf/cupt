@@ -862,9 +862,13 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 	}
 }
 
-typedef pair< const dg::Element*, BrokenSuccessor > BrokenPairType;
+struct BrokenPair
+{
+	const dg::Element* versionElementPtr;
+	BrokenSuccessor brokenSuccessor;
+};
 
-BrokenPairType __get_broken_pair(const SolutionStorage& solutionStorage,
+BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
 {
 	auto failValue = [&failCounts](const dg::Element* e) -> size_t
@@ -913,20 +917,20 @@ BrokenPairType __get_broken_pair(const SolutionStorage& solutionStorage,
 			brokenSuccessors.begin(), brokenSuccessors.end(), compareBrokenSuccessors);
 	if (bestBrokenSuccessorIt == brokenSuccessors.end())
 	{
-		return BrokenPairType{ NULL, { NULL, 0 } };
+		return BrokenPair{ nullptr, { nullptr, 0 } };
 	}
-	BrokenPairType result(NULL, *bestBrokenSuccessorIt);
+	BrokenPair result = { nullptr, *bestBrokenSuccessorIt };
 	for (auto reverseDependencyPtr: solutionStorage.getPredecessorElements(bestBrokenSuccessorIt->elementPtr))
 	{
 		if (solution.getPackageEntry(reverseDependencyPtr))
 		{
-			if (!result.first || (result.first->id < reverseDependencyPtr->id))
+			if (!result.versionElementPtr || (result.versionElementPtr->id < reverseDependencyPtr->id))
 			{
-				result.first = reverseDependencyPtr;
+				result.versionElementPtr = reverseDependencyPtr;
 			}
 		}
 	}
-	if (!result.first)
+	if (!result.versionElementPtr)
 	{
 		fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s'",
 				bestBrokenSuccessorIt->elementPtr->toString());
@@ -934,6 +938,8 @@ BrokenPairType __get_broken_pair(const SolutionStorage& solutionStorage,
 
 	return result;
 }
+
+
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
@@ -987,32 +993,24 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		{
 			checkFailed = false;
 
-			const dg::Element* versionElementPtr;
-			BrokenSuccessor brokenSuccessor;
-			{
-				auto brokenPair = __get_broken_pair(*__solution_storage, *currentSolution, failCounts);
-				versionElementPtr = brokenPair.first;
-				if (!versionElementPtr)
-				{
-					break;
-				}
-				brokenSuccessor = brokenPair.second;
-			}
+			auto bp = __get_broken_pair(*__solution_storage, *currentSolution, failCounts);
+			if (!bp.versionElementPtr) break;
+
 			checkFailed = true;
 
 			if (debugging)
 			{
 				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
-						brokenSuccessor.elementPtr->getTypePriority(), brokenSuccessor.priority,
-						versionElementPtr->toString(), brokenSuccessor.elementPtr->toString());
+						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
+						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
 			}
 			__generate_possible_actions(&possibleActions, *currentSolution,
-					versionElementPtr, brokenSuccessor.elementPtr, debugging);
+					bp.versionElementPtr, bp.brokenSuccessor.elementPtr, debugging);
 
 			{
 				IntroducedBy ourIntroducedBy;
-				ourIntroducedBy.versionElementPtr = versionElementPtr;
-				ourIntroducedBy.brokenElementPtr = brokenSuccessor.elementPtr;
+				ourIntroducedBy.versionElementPtr = bp.versionElementPtr;
+				ourIntroducedBy.brokenElementPtr = bp.brokenSuccessor.elementPtr;
 
 				if (possibleActions.empty() && !__any_solution_was_found)
 				{
@@ -1030,11 +1028,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 			FORIT(actionIt, possibleActions)
 			{
-				(*actionIt)->brokenElementPriority = brokenSuccessor.priority;
+				(*actionIt)->brokenElementPriority = bp.brokenSuccessor.priority;
 			}
 
 			// mark package as failed one more time
-			failCounts[brokenSuccessor.elementPtr] += 1;
+			failCounts[bp.brokenSuccessor.elementPtr] += 1;
 		}
 		while (false);
 
