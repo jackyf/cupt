@@ -261,10 +261,6 @@ AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_remova
 	const string& packageName = versionVertex->getPackageName();
 	auto& version = versionVertex->version;
 
-	if (packageName == __dummy_package_name)
-	{
-		return Allow::No;
-	}
 	if (!version)
 	{
 		return Allow::No;
