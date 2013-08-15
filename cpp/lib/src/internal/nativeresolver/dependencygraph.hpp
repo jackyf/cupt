@@ -107,6 +107,9 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	friend class FillHelper;
 
 	std::unique_ptr< FillHelper > __fill_helper;
+
+	vector< pair< const Element*, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
+			const map< string, InitialPackageEntry >&);
  public:
 	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
 

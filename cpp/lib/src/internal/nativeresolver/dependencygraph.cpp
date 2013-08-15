@@ -860,13 +860,17 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 		}
 	}
 
+	return p_generateSolutionElements(initialPackages);
+}
+
+vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
+		const map< string, InitialPackageEntry >& initialPackages)
+{
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
-	{ // generating solution elements
-		FORIT(it, initialPackages)
-		{
-			auto elementPtr = __fill_helper->getVertexPtr(it->first, it->second.version);
-			result.push_back({ elementPtr, getSharedPackageEntry(it->second.sticked) });
-		}
+	for (const auto& it: initialPackages)
+	{
+		auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
+		result.push_back({ elementPtr, getSharedPackageEntry(it.second.sticked) });
 	}
 	return result;
 }
