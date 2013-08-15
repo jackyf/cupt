@@ -797,16 +797,13 @@ class DependencyGraph::FillHelper
 			return;
 		}
 
-		FORIT(dependencyGroupIt, __dependency_groups)
+		for (const auto& dependencyGroup: __dependency_groups)
 		{
-			auto dependencyType = dependencyGroupIt->type;
-			auto isDependencyAnti = dependencyGroupIt->isAnti;
+			auto dependencyType = dependencyGroup.type;
+			auto isDependencyAnti = dependencyGroup.isAnti;
 
-			const RelationLine& relationLine = version->relations[dependencyType];
-			FORIT(relationExpressionIt, relationLine)
+			for (const auto& relationExpression: version->relations[dependencyType])
 			{
-				const RelationExpression& relationExpression = *relationExpressionIt;
-
 				if (isDependencyAnti)
 				{
 					processAntiRelation(version->packageName, elementPtr, relationExpression, dependencyType);
