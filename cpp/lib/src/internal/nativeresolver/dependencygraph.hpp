@@ -118,6 +118,7 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
 			const map< string, const BinaryVersion* >&,
 			const map< string, InitialPackageEntry >&);
+	void addUserRelationExpression(const cache::RelationExpression&, bool);
 
 	const Element* getCorrespondingEmptyElement(const Element*);
 	void unfoldElement(const Element*);

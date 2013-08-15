@@ -479,6 +479,7 @@ class DependencyGraph::FillHelper
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
+	const Element* p_dummyElementPtr;
 
 	set< const Element* > __unfolded_elements;
 
@@ -499,6 +500,7 @@ class DependencyGraph::FillHelper
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
+		p_dummyElementPtr = getVertexPtrForEmptyPackage("dummypackagename");
 	}
 
 	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version)
@@ -820,6 +822,24 @@ class DependencyGraph::FillHelper
 			processSynchronizations(version, elementPtr);
 		}
 	}
+
+	const Element* getDummyElementPtr() const
+	{
+		return p_dummyElementPtr;
+	}
+
+	void addUserRelationExpression(const RelationExpression& relationExpression, bool isForward)
+	{
+		typedef BinaryVersion::RelationTypes BRT;
+		if (isForward)
+		{
+			processForwardRelation(NULL, p_dummyElementPtr, relationExpression, BRT::Depends);
+		}
+		else
+		{
+			processAntiRelation("", p_dummyElementPtr, relationExpression, BRT::Breaks);
+		}
+	}
 };
 
 const shared_ptr< const PackageEntry >& getSharedPackageEntry(bool sticked)
@@ -872,7 +892,13 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 		auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
 		result.push_back({ elementPtr, getSharedPackageEntry(it.second.sticked) });
 	}
+	result.emplace_back(__fill_helper->getDummyElementPtr(), getSharedPackageEntry(true));
 	return result;
+}
+
+void DependencyGraph::addUserRelationExpression(const RelationExpression& re, bool isForward)
+{
+	__fill_helper->addUserRelationExpression(re, isForward);
 }
 
 void DependencyGraph::unfoldElement(const Element* elementPtr)

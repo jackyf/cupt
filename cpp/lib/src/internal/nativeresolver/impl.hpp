@@ -60,7 +60,6 @@ class NativeResolverImpl
 	map< string, dg::InitialPackageEntry > __initial_packages;
 	RelationLine __satisfy_relation_expressions;
 	RelationLine __unsatisfy_relation_expressions;
-	BinaryVersion __custom_relations_version;
 
 	DecisionFailTree __decision_fail_tree;
 	bool __any_solution_was_found;
@@ -76,7 +75,6 @@ class NativeResolverImpl
 	AutoRemovalPossibility::Allow __is_candidate_for_auto_removal(const dg::Element*);
 	bool __clean_automatically_installed(Solution&);
 
-	void __require_strict_relation_expressions();
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&, size_t);
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;
 	void __pre_apply_actions_to_solution_tree(
@@ -100,8 +98,6 @@ class NativeResolverImpl
 
 	void __fill_and_process_introduced_by(const Solution&, const BrokenPair&, ActionContainer* actionsPtr);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const Solution&, const BrokenPair&, bool);
-
-	static const string __dummy_package_name;
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
