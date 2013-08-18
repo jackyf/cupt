@@ -614,47 +614,39 @@ class DependencyGraph::FillHelper
 
 		if (isNewRelationExpressionVertex)
 		{
+			map< string, const Element* > packageNameToSubElements;
 			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
-			// filling sub elements
-			map< string, list< const BinaryVersion* > > groupedSatisfiedVersions;
-			FORIT(satisfyingVersionIt, satisfyingVersions)
+			for (auto satisfyingVersion: satisfyingVersions)
 			{
-				groupedSatisfiedVersions[(*satisfyingVersionIt)->packageName].push_back(
-						*satisfyingVersionIt);
-			}
-
-			FORIT(groupIt, groupedSatisfiedVersions)
-			{
-				const string& packageName = groupIt->first;
+				const string& packageName = satisfyingVersion->packageName;
+				auto& subElement = packageNameToSubElements[packageName];
+				if (subElement) continue;
 
 				auto subVertex(new RelationExpressionVertex);
 				subVertex->dependencyType = dependencyType;
 				subVertex->relationExpressionPtr = &relationExpression;
 				subVertex->specificPackageName = packageName;
-				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
-				subElementPtrs.push_back(make_pair(packageName, subVertexPtr));
+				subElement = __dependency_graph.addVertex(subVertex);
+				subElementPtrs.push_back(make_pair(packageName, subElement));
 
 				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
-				if (!package)
-				{
-					fatal2i("the binary package '%s' doesn't exist", packageName);
-				}
-				const list< const BinaryVersion* >& subSatisfiedVersions = groupIt->second;
+				if (!package) fatal2i("the binary package '%s' doesn't exist", packageName);
+
 				for (auto packageVersion: *package)
 				{
-					if (std::find(subSatisfiedVersions.begin(), subSatisfiedVersions.end(),
-								packageVersion) == subSatisfiedVersions.end())
+					if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
+								packageVersion) == satisfyingVersions.end())
 					{
 						if (auto queuedVersionPtr = getVertexPtr(packageVersion))
 						{
-							addEdgeCustom(subVertexPtr, queuedVersionPtr);
+							addEdgeCustom(subElement, queuedVersionPtr);
 						}
 					}
 				}
 
 				if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName))
 				{
-					addEdgeCustom(subVertexPtr, emptyPackageElementPtr);
+					addEdgeCustom(subElement, emptyPackageElementPtr);
 				}
 			}
 		}
