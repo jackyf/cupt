@@ -148,8 +148,11 @@ class CUPT_API Resolver
 	 * Requests that specified relation expression is satisfied.
 	 *
 	 * @param invert if set to @c true, unsatisfies the expression rather than satisfy it
+	 * @param annotation user-friendly description of request; if empty,
+	 * standard one will be generated
 	 */
-	virtual void satisfyRelationExpression(const RelationExpression&, bool invert = false) = 0;
+	virtual void satisfyRelationExpression(const RelationExpression&,
+			bool invert = false, const string& annotation = string()) = 0;
 	/**
 	 * Requests that specified package is removed.
 	 *

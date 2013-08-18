@@ -83,6 +83,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - 'SuggestedPackage': new field 'reasonPackageNames'.
       - [API break] 'unsatisfyRelationExpression': removed, merged into
         'satisfyRelationExpression' with new boolean parameter.
+      - [ABI break] 'satisfyRelationExpression': added new parameters 'invert'
+        and 'annotation'.
     - system/worker:
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.
