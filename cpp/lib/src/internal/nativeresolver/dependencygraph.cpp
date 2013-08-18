@@ -477,7 +477,7 @@ class DependencyGraph::FillHelper
 	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
-	unordered_map< string, list< pair< string, const Element* > > > __meta_anti_relation_expression_vertices;
+	unordered_map< string, map< string, const Element* > > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
 	const Element* p_dummyElementPtr;
 
@@ -606,15 +606,14 @@ class DependencyGraph::FillHelper
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
-		static const list< pair< string, const Element* > > emptyList;
+		static const map< string, const Element* > emptyMap;
 		auto insertResult = __meta_anti_relation_expression_vertices.insert(
-				make_pair(std::move(hashKey), emptyList));
+				make_pair(std::move(hashKey), emptyMap));
 		bool isNewRelationExpressionVertex = insertResult.second;
-		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
+		auto& packageNameToSubElements = insertResult.first->second;
 
 		if (isNewRelationExpressionVertex)
 		{
-			map< string, const Element* > packageNameToSubElements;
 			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 			for (auto satisfyingVersion: satisfyingVersions)
 			{
@@ -627,7 +626,6 @@ class DependencyGraph::FillHelper
 				subVertex->relationExpressionPtr = &relationExpression;
 				subVertex->specificPackageName = packageName;
 				subElement = __dependency_graph.addVertex(subVertex);
-				subElementPtrs.push_back(make_pair(packageName, subElement));
 
 				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
 				if (!package) fatal2i("the binary package '%s' doesn't exist", packageName);
@@ -650,13 +648,13 @@ class DependencyGraph::FillHelper
 				}
 			}
 		}
-		FORIT(subElementPtrIt, subElementPtrs)
+		for (const auto& it: packageNameToSubElements)
 		{
-			if (subElementPtrIt->first == packageName)
+			if (it.first == packageName)
 			{
 				continue; // doesn't conflict with itself
 			}
-			addEdgeCustom(vertexPtr, subElementPtrIt->second);
+			addEdgeCustom(vertexPtr, it.second);
 		}
 	}
 
