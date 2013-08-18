@@ -102,8 +102,7 @@ class NativeResolverImpl
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
 	void installVersion(const BinaryVersion*);
-	void satisfyRelationExpression(const RelationExpression&);
-	void unsatisfyRelationExpression(const RelationExpression&);
+	void satisfyRelationExpression(const RelationExpression&, bool);
 	void removePackage(const string& packageName);
 	void upgrade();
 	void setAutomaticallyInstalledFlag(const string& packageName, bool flagValue);

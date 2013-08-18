@@ -281,9 +281,9 @@ struct UserRelationExpressionVertex: public BasicVertex
 	bool invert;
 	string annotation;
 
-	UserRelationExpressionVertex(bool invert_, const string& annotation_)
-		: invert(invert_)
-		, annotation(annotation_)
+	UserRelationExpressionVertex(const UserRelationExpression& ure)
+		: invert(ure.invert)
+		, annotation(ure.annotation)
 	{}
 	size_t getTypePriority() const
 	{
@@ -870,14 +870,9 @@ class DependencyGraph::FillHelper
 
 	void addUserRelationExpression(const UserRelationExpression& ure)
 	{
-		auto getAnnotation = [&]
-		{
-			string prefix = !ure.invert ? __("satisfy") : __("unsatisfy");
-			return format2("%s '%s'", prefix, ure.expression.toString());
-		};
 		auto createVertex = [&](const string&) -> const Element*
 		{
-			auto vertex = new UserRelationExpressionVertex(ure.invert, getAnnotation());
+			auto vertex = new UserRelationExpressionVertex(ure);
 			__dependency_graph.addVertex(vertex);
 			addEdgeCustom(p_dummyElementPtr, vertex);
 			return vertex;

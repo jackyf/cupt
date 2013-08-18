@@ -127,21 +127,22 @@ void NativeResolverImpl::installVersion(const BinaryVersion* version)
 	initialPackageEntry.sticked = true;
 }
 
-void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& relationExpression)
+namespace {
+
+string getAnnotation(const RelationExpression& re, bool invert)
 {
-	p_userRelationExpressions.push_back({ relationExpression, false });
-	if (__config->getBool("debug::resolver"))
-	{
-		debug2("strictly satisfying relation '%s'", relationExpression.toString());
-	}
+	string prefix = !invert ? __("satisfy") : __("unsatisfy");
+	return format2("%s '%s'", prefix, re.toString());
+};
+
 }
 
-void NativeResolverImpl::unsatisfyRelationExpression(const RelationExpression& relationExpression)
+void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re, bool invert)
 {
-	p_userRelationExpressions.push_back({ relationExpression, true });
+	p_userRelationExpressions.push_back({ re, invert, getAnnotation(re, invert) });
 	if (__config->getBool("debug::resolver"))
 	{
-		debug2("strictly unsatisfying relation '%s'", relationExpression.toString());
+		debug2("strictly %ssatisfying relation '%s'", (invert? "un" : ""), re.toString());
 	}
 }
 

@@ -50,6 +50,7 @@ struct UserRelationExpression
 {
 	RelationExpression expression;
 	bool invert;
+	string annotation;
 };
 
 struct Unsatisfied

@@ -39,12 +39,12 @@ void NativeResolver::installVersion(const BinaryVersion* version)
 
 void NativeResolver::satisfyRelationExpression(const RelationExpression& relationExpression)
 {
-	__impl->satisfyRelationExpression(relationExpression);
+	__impl->satisfyRelationExpression(relationExpression, false);
 }
 
 void NativeResolver::unsatisfyRelationExpression(const RelationExpression& relationExpression)
 {
-	__impl->unsatisfyRelationExpression(relationExpression);
+	__impl->satisfyRelationExpression(relationExpression, true);
 }
 
 void NativeResolver::removePackage(const string& packageName)
