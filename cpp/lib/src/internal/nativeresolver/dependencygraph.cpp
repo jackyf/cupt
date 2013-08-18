@@ -278,11 +278,11 @@ class AnnotatedUserReason: public system::Resolver::UserReason
 
 struct UserRelationExpressionVertex: public BasicVertex
 {
-	bool isForward;
+	bool invert;
 	string annotation;
 
-	UserRelationExpressionVertex(bool isForward_, const string& annotation_)
-		: isForward(isForward_)
+	UserRelationExpressionVertex(bool invert_, const string& annotation_)
+		: invert(invert_)
 		, annotation(annotation_)
 	{}
 	size_t getTypePriority() const
@@ -291,7 +291,7 @@ struct UserRelationExpressionVertex: public BasicVertex
 	}
 	bool isAnti() const
 	{
-		return !isForward;
+		return invert;
 	}
 	shared_ptr< const Reason > getReason(const BasicVertex&) const
 	{
@@ -868,16 +868,16 @@ class DependencyGraph::FillHelper
 		return p_dummyElementPtr;
 	}
 
-	void addUserRelationExpression(const RelationExpression& relationExpression, bool isForward)
+	void addUserRelationExpression(const UserRelationExpression& ure)
 	{
 		auto getAnnotation = [&]
 		{
-			string prefix = isForward ? __("satisfy") : __("unsatisfy");
-			return format2("%s '%s'", prefix, relationExpression.toString());
+			string prefix = !ure.invert ? __("satisfy") : __("unsatisfy");
+			return format2("%s '%s'", prefix, ure.expression.toString());
 		};
 		auto createVertex = [&](const string&) -> const Element*
 		{
-			auto vertex = new UserRelationExpressionVertex(isForward, getAnnotation());
+			auto vertex = new UserRelationExpressionVertex(ure.invert, getAnnotation());
 			__dependency_graph.addVertex(vertex);
 			addEdgeCustom(p_dummyElementPtr, vertex);
 			return vertex;
@@ -887,8 +887,8 @@ class DependencyGraph::FillHelper
 			if (to) addEdgeCustom(from, to);
 		};
 
-		auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
-		if (isForward)
+		auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(ure.expression);
+		if (!ure.invert)
 		{
 			static string dummy;
 			auto vertex = createVertex(dummy);
@@ -959,9 +959,9 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 	return result;
 }
 
-void DependencyGraph::addUserRelationExpression(const RelationExpression& re, bool isForward)
+void DependencyGraph::addUserRelationExpression(const UserRelationExpression& ure)
 {
-	__fill_helper->addUserRelationExpression(re, isForward);
+	__fill_helper->addUserRelationExpression(ure);
 }
 
 void DependencyGraph::unfoldElement(const Element* elementPtr)

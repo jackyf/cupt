@@ -58,8 +58,8 @@ class NativeResolverImpl
 
 	map< string, const BinaryVersion* > __old_packages;
 	map< string, dg::InitialPackageEntry > __initial_packages;
-	RelationLine __satisfy_relation_expressions;
-	RelationLine __unsatisfy_relation_expressions;
+
+	vector< dg::UserRelationExpression > p_userRelationExpressions;
 
 	DecisionFailTree __decision_fail_tree;
 	bool __any_solution_was_found;

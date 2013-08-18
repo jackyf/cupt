@@ -384,8 +384,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
 			const map< string, const BinaryVersion* >& oldPackages,
 			const map< string, dg::InitialPackageEntry >& initialPackages,
-			const RelationLine& satisfyRelationLine,
-			const RelationLine& unsatisfyRelationLine)
+			const vector< dg::UserRelationExpression >& userRelationExpressions)
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
 	for (const auto& record: source)
@@ -393,13 +392,9 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 		__dependency_graph.unfoldElement(record.first);
 	}
 
-	for (const auto& relationExpression: satisfyRelationLine)
+	for (const auto& userRelationExpression: userRelationExpressions)
 	{
-		__dependency_graph.addUserRelationExpression(relationExpression, true);
-	}
-	for (const auto& relationExpression: unsatisfyRelationLine)
-	{
-		__dependency_graph.addUserRelationExpression(relationExpression, false);
+		__dependency_graph.addUserRelationExpression(userRelationExpression);
 	}
 
 	auto comparator = [](const pair< const dg::Element*, SPPE >& left,

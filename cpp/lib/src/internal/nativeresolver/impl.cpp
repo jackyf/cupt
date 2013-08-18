@@ -129,7 +129,7 @@ void NativeResolverImpl::installVersion(const BinaryVersion* version)
 
 void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& relationExpression)
 {
-	__satisfy_relation_expressions.push_back(relationExpression);
+	p_userRelationExpressions.push_back({ relationExpression, false });
 	if (__config->getBool("debug::resolver"))
 	{
 		debug2("strictly satisfying relation '%s'", relationExpression.toString());
@@ -138,7 +138,7 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& rel
 
 void NativeResolverImpl::unsatisfyRelationExpression(const RelationExpression& relationExpression)
 {
-	__unsatisfy_relation_expressions.push_back(relationExpression);
+	p_userRelationExpressions.push_back({ relationExpression, true });
 	if (__config->getBool("debug::resolver"))
 	{
 		debug2("strictly unsatisfying relation '%s'", relationExpression.toString());
@@ -973,8 +973,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
 	__solution_storage->prepareForResolving(*initialSolution,
-			__old_packages, __initial_packages,
-			__satisfy_relation_expressions, __unsatisfy_relation_expressions);
+			__old_packages, __initial_packages, p_userRelationExpressions);
 
 	SolutionContainer solutions = { initialSolution };
 
