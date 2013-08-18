@@ -81,6 +81,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         removed old field 'manuallySelected'.
       - New method 'setAutomaticallyInstalledFlag'.
       - 'SuggestedPackage': new field 'reasonPackageNames'.
+      - [API break] 'unsatisfyRelationExpression': removed, merged into
+        'satisfyRelationExpression' with new boolean parameter.
     - system/worker:
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.

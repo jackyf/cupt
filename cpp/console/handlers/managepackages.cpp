@@ -115,14 +115,7 @@ void __satisfy_or_unsatisfy(Resolver& resolver,
 {
 	for (const auto& relationExpression: relationLine)
 	{
-		if (mode == ManagePackages::Unsatisfy)
-		{
-			resolver.unsatisfyRelationExpression(relationExpression);
-		}
-		else
-		{
-			resolver.satisfyRelationExpression(relationExpression);
-		}
+		resolver.satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy));
 	}
 }
 

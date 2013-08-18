@@ -146,12 +146,10 @@ class CUPT_API Resolver
 	virtual void installVersion(const BinaryVersion*) = 0;
 	/**
 	 * Requests that specified relation expression is satisfied.
+	 *
+	 * @param invert if set to @c true, unsatisfies the expression rather than satisfy it
 	 */
-	virtual void satisfyRelationExpression(const RelationExpression&) = 0;
-	/**
-	 * Requests that specified relation expression is not satisfied.
-	 */
-	virtual void unsatisfyRelationExpression(const RelationExpression&) = 0;
+	virtual void satisfyRelationExpression(const RelationExpression&, bool invert = false) = 0;
 	/**
 	 * Requests that specified package is removed.
 	 *
