@@ -332,11 +332,11 @@ void ConfigImpl::readConfigs(Config* config)
 		return string(value.begin() + 1, value.end() - 1);
 	};
 
-	static auto regularHandler = [&config, unquoteValue](const string& name, const string& value)
+	static auto regularHandler = [&config](const string& name, const string& value)
 	{
 		config->setScalar(name, unquoteValue(value));
 	};
-	static auto listHandler = [&config, unquoteValue](const string& name, const string& value)
+	static auto listHandler = [&config](const string& name, const string& value)
 	{
 		config->setList(name, unquoteValue(value));
 	};
