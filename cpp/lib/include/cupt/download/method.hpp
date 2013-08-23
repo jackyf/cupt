@@ -74,6 +74,7 @@ class CUPT_API Method
 	 */
 	virtual string perform(const Config& config, const Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback) = 0;
+	virtual ~Method() {}
 };
 
 }
