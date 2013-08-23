@@ -80,6 +80,7 @@ CUPT_API extern int messageFd;
 /// @cond
 CUPT_API string join(const string& joiner, const vector< string >& parts);
 CUPT_API string humanReadableSizeString(uint64_t bytes);
+CUPT_API string globToRegexString(const string&);
 /// @endcond
 
 /// localizes message
