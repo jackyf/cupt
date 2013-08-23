@@ -232,7 +232,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 		if (!simulating && runChecks)
 		{
 			auto oldPostAction = downloadEntity.postAction;
-			auto extendedPostAction = [oldPostAction, _config, targetPath]() -> string
+			auto extendedPostAction = [oldPostAction, this, targetPath]() -> string
 			{
 				auto moveError = oldPostAction();
 				if (!moveError.empty())
@@ -278,7 +278,7 @@ bool MetadataWorker::__update_release(download::Manager& downloadManager,
 	if (!simulating and runChecks)
 	{
 		auto oldSignaturePostAction = signaturePostAction;
-		signaturePostAction = [oldSignaturePostAction, longAlias, targetPath, signatureTargetPath, &_config]() -> string
+		signaturePostAction = [oldSignaturePostAction, longAlias, targetPath, signatureTargetPath, this]() -> string
 		{
 			auto moveError = oldSignaturePostAction();
 			if (!moveError.empty())
