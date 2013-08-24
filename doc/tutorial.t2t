@@ -1568,7 +1568,7 @@ package versions, examples:
 
 ``` cupt build-dep clive/unstable
 
-``` cupt source man-db=2.5.9-4>
+``` cupt source man-db=2.5.9-4
 
 == Package manager shell ==
 
