@@ -700,7 +700,7 @@ int findDependencyChain(Context& context)
 
 	auto leafPackageExpression = *(arguments.rbegin());
 	arguments.erase(arguments.end() - 1);
-	auto leafVersion = selectBinaryVersion(*cache, leafPackageExpression, true);
+	auto leafVersion = selectBinaryVersionsWildcarded(*cache, leafPackageExpression, true)[0];
 
 	queue< const BinaryVersion* > versions;
 	struct PathEntry

@@ -24,6 +24,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - New option '--fse'.
     - 'tar-metadata':
       - Include also signatures of Release files.
+    - 'show', 'showsrc': syntaxes '.../<distribution>' and '...=<version>' now
+      work also with '-a' option.
   * lib:
     - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
     - [API break] '__': now returns 'const char*' instead of 'string'.

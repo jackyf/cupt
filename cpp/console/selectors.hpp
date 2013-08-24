@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2013 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -28,8 +28,6 @@ const BinaryPackage* getBinaryPackage(const Cache& cache,
 		const string& packageName, bool throwOnError = true);
 const SourcePackage* getSourcePackage(const Cache& cache,
 		const string& packageName, bool throwOnError = true);
-const BinaryVersion* selectBinaryVersion(const Cache& cache,
-		const string& packageExpression, bool throwOnError);
 vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError = true);
 vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
