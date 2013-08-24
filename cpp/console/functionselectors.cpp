@@ -786,6 +786,30 @@ class ReverseBuildDependencyFS: public TransformFS
 	}
 };
 
+class BinaryToSourceFS: public TransformFS
+{
+ public:
+	BinaryToSourceFS(const Arguments& arguments)
+		: TransformFS(true, arguments)
+	{}
+ protected:
+	FSResult _transform(Context& context, const SPCV& version) const
+	{
+		auto binaryVersion = static_cast< const BinaryVersion* >(version);
+		if (auto sourcePackage = context.cache.getSourcePackage(binaryVersion->sourcePackageName))
+		{
+			for (auto sourceVersion: *sourcePackage)
+			{
+				if (sourceVersion->versionString == binaryVersion->sourceVersionString)
+				{
+					return { sourceVersion };
+				}
+			}
+		}
+		return {};
+	}
+};
+
 class PackageIsInstalledFS: public PredicateFS
 {
  protected:
@@ -904,6 +928,8 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 		CONSTRUCT_FS("reverse-build-depends-indep", ReverseBuildDependencyFS(SRT::BuildDependsIndep, arguments))
 		CONSTRUCT_FS("reverse-build-conflicts", ReverseBuildDependencyFS(SRT::BuildConflicts, arguments))
 		CONSTRUCT_FS("reverse-build-conflicts-indep", ReverseBuildDependencyFS(SRT::BuildConflictsIndep, arguments))
+
+		CONSTRUCT_FS("binary-to-source", BinaryToSourceFS(arguments))
 	}
 
 	fatal2(__("unknown %s selector function '%s'"), binary ? __("binary") : __("source"), functionName);

@@ -237,3 +237,4 @@ is equivalent to
 
 || Function name and arguments | Value |
 | ``best(``//fse//``)`` | filters out those versions from //fse// for which there are another version of the same package and higher pin |
+| ``binary-to-source(``//binary_fse//``)`` | converts binary versions, selected by //binary_fse//, to their corresponding source versions |

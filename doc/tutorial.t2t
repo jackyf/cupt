@@ -1873,6 +1873,10 @@ component.
 
 All source versions where at least one uploader has a Gmail mail address.
 
+- ``binary-to-source(provides(vim))``
+
+All corresponding source versions of those binary versions which provide ``vim``.
+
 - ``recommends(installed() & e)``
 
 All packages which are recommended by installed essential packages.
