@@ -49,6 +49,12 @@ const WA::Type fakeAutoPurge = WA::Type(1001);
 const WA::Type fakeBecomeAutomaticallyInstalled = WA::Type(1002);
 const WA::Type fakeBecomeManuallyInstalled = WA::Type(1003);
 
+struct VersionChoices
+{
+	string packageName;
+	vector< const BinaryVersion* > versions;
+};
+
 struct ManagePackagesContext
 {
 	enum class AutoInstall { Yes, No, Nop };
@@ -59,6 +65,37 @@ struct ManagePackagesContext
 	const Cache& cache;
 	Resolver& resolver;
 	Worker& worker;
+
+	typedef vector< VersionChoices > SelectedVersions;
+
+	SelectedVersions selectVersions(const string& expression, bool throwOnError = true)
+	{
+		SelectedVersions result;
+		// grouping by package
+		for (auto version: selectBinaryVersionsWildcarded(cache, expression, throwOnError))
+		{
+			if (result.empty() || result.back().packageName != version->packageName)
+			{
+				result.push_back(VersionChoices{version->packageName, {}});
+			}
+			result.back().versions.push_back(version);
+		}
+		return result;
+	}
+	void install(const VersionChoices& versionChoices, const string& annotation)
+	{
+		resolver.installVersion(versionChoices.versions, annotation);
+	}
+	void remove(const VersionChoices& versionChoices, const string& annotation)
+	{
+		// so far, acting strictly and removing all the package regardless of
+		// what versions of packages were chosen
+		if (!versionChoices.versions.empty())
+		{
+			const string& packageName = versionChoices.packageName;
+			resolver.removeVersions(cache.getBinaryPackage(packageName)->getVersions(), annotation);
+		}
+	}
 };
 
 static const char* modeToString(ManagePackages::Mode mode)
@@ -178,7 +215,7 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 {
 	auto localMode = mpc.mode;
 
-	auto versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, false);
+	auto versions = mpc.selectVersions(packageExpression, false);
 	if (versions.empty())
 	{
 		/* we have a funny situation with package names like 'g++',
@@ -207,26 +244,28 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 	{
 		if (versions.empty())
 		{
-			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression);
+			versions = mpc.selectVersions(packageExpression);
 		}
-		for (const auto& version: versions)
+		for (const auto& versionChoices: versions)
 		{
+			const auto& packageName = versionChoices.packageName;
+
 			if (localMode == ManagePackages::InstallIfInstalled)
 			{
-				if (!isPackageInstalled(mpc.cache, version->packageName))
+				if (!isPackageInstalled(mpc.cache, packageName))
 				{
 					continue;
 				}
 			}
-			mpc.resolver.installVersion({ version }, getRequestAnnotation(localMode, packageExpression));
+			mpc.install(versionChoices, getRequestAnnotation(localMode, packageExpression));
 
 			if (mpc.autoinstall == ManagePackagesContext::AutoInstall::Yes)
 			{
-				mpc.resolver.setAutomaticallyInstalledFlag(version->packageName, true);
+				mpc.resolver.setAutomaticallyInstalledFlag(packageName, true);
 			}
 			else if (mpc.autoinstall == ManagePackagesContext::AutoInstall::No)
 			{
-				mpc.resolver.setAutomaticallyInstalledFlag(version->packageName, false);
+				mpc.resolver.setAutomaticallyInstalledFlag(packageName, false);
 			}
 		}
 	}
@@ -234,27 +273,24 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 	{
 		if (versions.empty())
 		{
-			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
-			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
-					packageExpression.find('*') != string::npos;
-			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, wildcardsPresent);
+			// retry, still non-fatal to deal with packages in 'config-files' state
+			versions = mpc.selectVersions(packageExpression, false);
 		}
 
-		auto scheduleRemoval = [&mpc, localMode, &packageExpression](const string& packageName)
+		auto scheduleRemoval = [&mpc, localMode, &packageExpression](const VersionChoices& versionChoices)
 		{
-			mpc.resolver.removeVersions(mpc.cache.getBinaryPackage(packageName)->getVersions(),
-					getRequestAnnotation(localMode, packageExpression));
+			mpc.remove(versionChoices, getRequestAnnotation(localMode, packageExpression));
 			if (localMode == ManagePackages::Purge)
 			{
-				mpc.worker.setPackagePurgeFlag(packageName, true);
+				mpc.worker.setPackagePurgeFlag(versionChoices.packageName, true);
 			}
 		};
 
 		if (!versions.empty())
 		{
-			for (const auto& version: versions)
+			for (const auto& versionChoices: versions)
 			{
-				scheduleRemoval(version->packageName);
+				scheduleRemoval(versionChoices);
 			}
 		}
 		else
@@ -266,7 +302,7 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
 
-			scheduleRemoval(packageExpression);
+			scheduleRemoval(VersionChoices{packageExpression, {}});
 		}
 	}
 }
