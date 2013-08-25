@@ -114,19 +114,6 @@ void NativeResolverImpl::setAutomaticallyInstalledFlag(const string& packageName
 	__auto_status_overrides[packageName] = flagValue;
 }
 
-void NativeResolverImpl::installVersion(const BinaryVersion* version)
-{
-	const string& packageName = version->packageName;
-
-	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
-	if (!__prepare_version_no_stick(version, initialPackageEntry))
-	{
-		fatal2(__("unable to re-schedule the package '%s'"), packageName);
-	}
-
-	initialPackageEntry.sticked = true;
-}
-
 namespace {
 
 string getAnnotation(const RelationExpression& re, bool invert)
@@ -144,24 +131,7 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 	p_userRelationExpressions.push_back({ re, invert, annotation });
 	if (__config->getBool("debug::resolver"))
 	{
-		debug2("strictly %ssatisfying relation '%s'", (invert? "un" : ""), re.toString());
-	}
-}
-
-void NativeResolverImpl::removePackage(const string& packageName)
-{
-	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
-	if (initialPackageEntry.version && initialPackageEntry.sticked)
-	{
-		fatal2(__("unable to re-schedule the package '%s'"), packageName);
-	}
-	initialPackageEntry.sticked = true;
-	initialPackageEntry.modified = true;
-	initialPackageEntry.version = nullptr;
-
-	if (__config->getBool("debug::resolver"))
-	{
-		debug2("removing package '%s'", packageName);
+		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
 	}
 }
 

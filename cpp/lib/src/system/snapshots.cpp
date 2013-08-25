@@ -130,14 +130,13 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 
 			toBeInstalledPackageNames.insert(packageName);
 
-			auto versions = package->getVersions();
-			FORIT(versionIt, versions)
+			for (auto version: *package)
 			{
-				FORIT(sourceIt, (*versionIt)->sources)
+				for (const auto& source: version->sources)
 				{
-					if (sourceIt->release->archive == "snapshot")
+					if (source.release->archive == "snapshot")
 					{
-						resolver.installVersion(*versionIt);
+						resolver.installVersion({ version });
 						goto next_file_line;
 					}
 				}
@@ -151,12 +150,11 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		}
 	}
 
-	auto allPackageNames = cache.getBinaryPackageNames();
-	FORIT(packageNameIt, allPackageNames)
+	for (const auto& packageName: cache.getBinaryPackageNames())
 	{
-		if (!toBeInstalledPackageNames.count(*packageNameIt))
+		if (!toBeInstalledPackageNames.count(packageName))
 		{
-			resolver.removePackage(*packageNameIt);
+			resolver.removeVersions(cache.getBinaryPackage(packageName)->getVersions());
 		}
 	}
 }

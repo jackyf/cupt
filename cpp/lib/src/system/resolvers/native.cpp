@@ -32,20 +32,10 @@ NativeResolver::~NativeResolver()
 	delete __impl;
 }
 
-void NativeResolver::installVersion(const BinaryVersion* version)
-{
-	__impl->installVersion(version);
-}
-
 void NativeResolver::satisfyRelationExpression(const RelationExpression& relationExpression,
 		bool invert, const string& annotation)
 {
 	__impl->satisfyRelationExpression(relationExpression, invert, annotation);
-}
-
-void NativeResolver::removePackage(const string& packageName)
-{
-	__impl->removePackage(packageName);
 }
 
 void NativeResolver::upgrade()

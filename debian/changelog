@@ -85,6 +85,10 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         'satisfyRelationExpression' with new boolean parameter.
       - [ABI break] 'satisfyRelationExpression': added new parameters 'invert'
         and 'annotation'.
+      - [API break] 'installVersion': now set of possible versions can be
+        passed.
+      - [API break] 'removePackage': removed, replaced by new, more flexible
+        method 'removeVersions'.
     - system/worker:
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.

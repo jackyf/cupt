@@ -61,6 +61,25 @@ struct ManagePackagesContext
 	Worker& worker;
 };
 
+static const char* modeToString(ManagePackages::Mode mode)
+{
+	switch (mode)
+	{
+		case ManagePackages::Install: return "install";
+		case ManagePackages::InstallIfInstalled: return "iii";
+		case ManagePackages::Remove: return "remove";
+		case ManagePackages::Purge: return "purge";
+		case ManagePackages::BuildDepends: return "build-dependencies of";
+		case ManagePackages::Reinstall: return "reinstall";
+		default: return "";
+	}
+}
+
+static string getRequestAnnotation(ManagePackages::Mode mode, const string& expression)
+{
+	return format2("%s %s", modeToString(mode), expression);
+}
+
 static void preProcessMode(ManagePackagesContext& mpc)
 {
 	if (mpc.mode == ManagePackages::FullUpgrade || mpc.mode == ManagePackages::SafeUpgrade)
@@ -111,11 +130,11 @@ static void unrollFileArguments(vector< string >& arguments)
 }
 
 void __satisfy_or_unsatisfy(Resolver& resolver,
-		const RelationLine& relationLine, ManagePackages::Mode mode)
+		const RelationLine& relationLine, ManagePackages::Mode mode, const string& annotation = string())
 {
 	for (const auto& relationExpression: relationLine)
 	{
-		resolver.satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy));
+		resolver.satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy), annotation);
 	}
 }
 
@@ -140,17 +159,18 @@ static void processBuildDependsExpression(ManagePackagesContext& mpc, const stri
 	auto architecture = mpc.config.getString("apt::architecture");
 
 	auto versions = selectSourceVersionsWildcarded(mpc.cache, packageExpression);
+	auto annotation = getRequestAnnotation(mpc.mode, packageExpression);
 
 	for (const auto& version: versions)
 	{
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
-				.toRelationLine(architecture), ManagePackages::Satisfy);
+				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
-				.toRelationLine(architecture), ManagePackages::Satisfy);
+				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
-				.toRelationLine(architecture), ManagePackages::Unsatisfy);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
-				.toRelationLine(architecture), ManagePackages::Unsatisfy);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 	}
 }
 
@@ -198,7 +218,7 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 					continue;
 				}
 			}
-			mpc.resolver.installVersion(version);
+			mpc.resolver.installVersion({ version }, getRequestAnnotation(localMode, packageExpression));
 
 			if (mpc.autoinstall == ManagePackagesContext::AutoInstall::Yes)
 			{
@@ -220,9 +240,10 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, wildcardsPresent);
 		}
 
-		auto scheduleRemoval = [&mpc, localMode](const string& packageName)
+		auto scheduleRemoval = [&mpc, localMode, &packageExpression](const string& packageName)
 		{
-			mpc.resolver.removePackage(packageName);
+			mpc.resolver.removeVersions(mpc.cache.getBinaryPackage(packageName)->getVersions(),
+					getRequestAnnotation(localMode, packageExpression));
 			if (localMode == ManagePackages::Purge)
 			{
 				mpc.worker.setPackagePurgeFlag(packageName, true);
@@ -274,7 +295,8 @@ static void processReinstallExpression(ManagePackagesContext& mpc, const string&
 		fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
 				packageExpression, targetVersionString);
 	}
-	mpc.resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
+	mpc.resolver.installVersion({ static_cast< const BinaryVersion* >(targetVersion) },
+			getRequestAnnotation(mpc.mode, packageExpression));
 }
 
 static void processPackageExpressions(ManagePackagesContext& mpc, const vector< string >& packageExpressions)

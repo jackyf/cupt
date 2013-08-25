@@ -141,9 +141,19 @@ class CUPT_API Resolver
 	Resolver() {};
 
 	/**
-	 * Requests installation of the specific version.
+	 * Requests installation of one of the specific version(s).  If more than
+	 * one version is supplied, installing any of them will be enough to
+	 * satisfy this request.
+	 *
+	 * @param annotation passed to @ref satisfyRelationExpression
 	 */
-	virtual void installVersion(const BinaryVersion*) = 0;
+	void installVersion(const vector< const BinaryVersion* >&, const string& annotation = string());
+	/**
+	 * Requests removal of all supplied versions.
+	 *
+	 * @param annotation passed to @ref satisfyRelationExpression
+	 */
+	void removeVersions(const vector< const BinaryVersion* >&, const string& annotation = string());
 	/**
 	 * Requests that specified relation expression is satisfied.
 	 *
@@ -153,12 +163,6 @@ class CUPT_API Resolver
 	 */
 	virtual void satisfyRelationExpression(const RelationExpression&,
 			bool invert = false, const string& annotation = string()) = 0;
-	/**
-	 * Requests that specified package is removed.
-	 *
-	 * @param packageName
-	 */
-	virtual void removePackage(const string& packageName) = 0;
 	/**
 	 * Requests an upgrade of all installed packages (to their preferred version).
 	 */

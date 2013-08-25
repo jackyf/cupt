@@ -75,5 +75,30 @@ string Resolver::SynchronizationReason::toString() const
 			version->packageName, version->versionString);
 }
 
+namespace {
+
+RelationExpression versionChoicesToRelationExpression(const vector< const BinaryVersion* >& versions)
+{
+	RelationExpression result;
+	for (auto version: versions)
+	{
+		auto relationString = format2("%s (= %s)", version->packageName, version->versionString);
+		result.emplace_back(RelationExpression(relationString)[0]);
+	}
+	return result;
+}
+
+}
+
+void Resolver::installVersion(const vector< const BinaryVersion* >& versions, const string& annotation)
+{
+	satisfyRelationExpression(versionChoicesToRelationExpression(versions), false, annotation);
+}
+
+void Resolver::removeVersions(const vector< const BinaryVersion* >& versions, const string& annotation)
+{
+	satisfyRelationExpression(versionChoicesToRelationExpression(versions), true, annotation);
+}
+
 }
 }
