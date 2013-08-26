@@ -202,7 +202,7 @@ struct CUPT_API RelationLine: public vector< RelationExpression >
 	explicit RelationLine(pair< string::const_iterator, string::const_iterator > input);
 	RelationLine(RelationLine&&) = default;
 	RelationLine(const RelationLine&) = default;
-	RelationLine& operator=(RelationLine&&) = default;
+	RelationLine& operator=(RelationLine&&);
 	RelationLine& operator=(const RelationLine&) = default;
 	/// destructor
 	virtual ~RelationLine();
@@ -234,7 +234,7 @@ struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationE
 	explicit ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
 	ArchitecturedRelationLine(ArchitecturedRelationLine&&) = default;
 	ArchitecturedRelationLine(const ArchitecturedRelationLine&) = default;
-	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&) = default;
+	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&);
 	ArchitecturedRelationLine& operator=(const ArchitecturedRelationLine&) = default;
 	/// converts to RelationLine given system architecture
 	/**

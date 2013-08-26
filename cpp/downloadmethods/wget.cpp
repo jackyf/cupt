@@ -20,6 +20,8 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 #include <boost/lexical_cast.hpp>
 using boost::lexical_cast;

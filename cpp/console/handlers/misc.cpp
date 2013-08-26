@@ -39,7 +39,7 @@ using std::stack;
 #include "../misc.hpp"
 #include "../selectors.hpp"
 
-auto printTag = [&cout](const string& first, const string& second)
+auto printTag = [](const string& first, const string& second)
 {
 	if (!second.empty())
 	{
