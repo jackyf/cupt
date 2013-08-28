@@ -287,7 +287,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 			{
 				const IA::Type& innerActionType = *innerActionTypeIt;
 
-				const BinaryVersion* version;
+				const BinaryVersion* version = nullptr;
 				if (innerActionType == IA::Remove)
 				{
 					auto package = _cache->getBinaryPackage(packageName);
