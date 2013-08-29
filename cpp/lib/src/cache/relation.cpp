@@ -176,6 +176,10 @@ bool Relation::isSatisfiedBy(const string& otherVersionString) const
 	{
 		return true;
 	}
+	else if (relationType == Types::LiteralyEqual)
+	{
+		return versionString == otherVersionString;
+	}
 	else
 	{
 		// relation is defined, checking
@@ -192,7 +196,7 @@ bool Relation::isSatisfiedBy(const string& otherVersionString) const
 				return (comparisonResult == 0);
 			case Types::More:
 				return (comparisonResult > 0);
-			case Types::None:
+			default:
 				__builtin_unreachable();
 		}
 	}
@@ -206,7 +210,7 @@ bool Relation::operator==(const Relation& other) const
 			versionString == other.versionString);
 }
 
-const string Relation::Types::strings[] = { "<<", "=", ">>", "<=", ">=" };
+const string Relation::Types::strings[] = { "<<", "=", ">>", "<=", ">=", "===" };
 
 void ArchitecturedRelation::__init(const char* start, const char* end)
 {
