@@ -83,7 +83,9 @@ RelationExpression versionChoicesToRelationExpression(const vector< const Binary
 	for (auto version: versions)
 	{
 		auto relationString = format2("%s (= %s)", version->packageName, version->versionString);
-		result.emplace_back(RelationExpression(relationString)[0]);
+		auto relation = RelationExpression(relationString)[0];
+		relation.relationType = Relation::Types::LiteralyEqual;
+		result.push_back(relation);
 	}
 	return result;
 }
