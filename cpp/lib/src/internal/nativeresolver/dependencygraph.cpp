@@ -542,7 +542,7 @@ class DependencyGraph::FillHelper
 		p_dummyElementPtr = getVertexPtrForEmptyPackage("dummypackagename");
 	}
 
-	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version)
+	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version, bool overrideChecks = false)
 	{
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
@@ -593,11 +593,11 @@ class DependencyGraph::FillHelper
 
 		string versionHashString = packageName;
 		versionHashString.append((const char*)&version, sizeof(version));
-		auto insertResult = __version_to_vertex_ptr.insert({ std::move(versionHashString), NULL });
+		auto insertResult = __version_to_vertex_ptr.insert({ std::move(versionHashString), nullptr });
 		bool isNew = insertResult.second;
 		const VersionVertex** elementPtrPtr = &insertResult.first->second;
 
-		if (isNew && isVertexAllowed())
+		if ((isNew && isVertexAllowed()) || (overrideChecks && !*elementPtrPtr))
 		{
 			// needs new vertex
 			*elementPtrPtr = makeVertex();
@@ -605,9 +605,9 @@ class DependencyGraph::FillHelper
 		return *elementPtrPtr;
 	}
 
-	const VersionElement* getVertexPtr(const BinaryVersion* version)
+	const VersionElement* getVertexPtr(const BinaryVersion* version, bool overrideChecks = false)
 	{
-		return getVertexPtr(version->packageName, version);
+		return getVertexPtr(version->packageName, version, overrideChecks);
 	}
 
  private:
@@ -877,10 +877,6 @@ class DependencyGraph::FillHelper
 			addEdgeCustom(p_dummyElementPtr, vertex);
 			return vertex;
 		};
-		auto addEdgeCustomIfValid = [this](const Element* from, const Element* to)
-		{
-			if (to) addEdgeCustom(from, to);
-		};
 
 		auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(ure.expression);
 		if (!ure.invert)
@@ -889,7 +885,7 @@ class DependencyGraph::FillHelper
 			auto vertex = createVertex(dummy);
 			for (auto version: satisfyingVersions)
 			{
-				addEdgeCustomIfValid(vertex, getVertexPtr(version));
+				addEdgeCustom(vertex, getVertexPtr(version, true));
 			}
 		}
 		else

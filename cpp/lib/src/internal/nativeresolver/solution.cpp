@@ -387,14 +387,15 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 			const vector< dg::UserRelationExpression >& userRelationExpressions)
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
-	for (const auto& record: source)
-	{
-		__dependency_graph.unfoldElement(record.first);
-	}
-
+	/* User relation expressions must be processed before any unfoldElement() calls
+	   to early override version checks (if needed) for all explicitly required versions. */
 	for (const auto& userRelationExpression: userRelationExpressions)
 	{
 		__dependency_graph.addUserRelationExpression(userRelationExpression);
+	}
+	for (const auto& record: source)
+	{
+		__dependency_graph.unfoldElement(record.first);
 	}
 
 	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
