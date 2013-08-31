@@ -56,7 +56,7 @@ class CUPT_API Resolver
 	/// reason: asked by user
 	/**
 	 * This reason means that change was asked by "user" by calling @ref
-	 * installVersion, @ref removePackage etc. methods.
+	 * installVersion, @ref removeVersions etc. methods.
 	 */
 	struct UserReason: public Reason
 	{

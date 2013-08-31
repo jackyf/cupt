@@ -85,8 +85,7 @@ class CUPT_API Progress
 	 * Overall estimated size is guaranteed to be not less than @ref
 	 * getOverallDownloadedSize.
 	 *
-	 * @return total estimated size counting both done and running downloads,
-	 * and predefined size if it was set by @ref setTotalEstimatedSize before
+	 * @return total estimated size counting both done and running downloads
 	 */
 	uint64_t getOverallEstimatedSize() const;
 	/**
