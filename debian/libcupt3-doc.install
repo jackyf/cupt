@@ -1,2 +1,2 @@
-usr/share/doc/lib/* usr/share/doc/libcupt2-doc
+usr/share/doc/lib/* usr/share/doc/libcupt3-doc
 # usr/share | do not install man pages (at least for now)

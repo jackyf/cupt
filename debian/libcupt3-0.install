@@ -1,0 +1,5 @@
+usr/lib/libcupt3.so.3.*
+usr/lib/libcupt3.so.0
+usr/lib/cupt3-0/downloadmethods/libdebdelta*
+usr/lib/cupt3-0/downloadmethods/libfile*
+usr/share/locale/
