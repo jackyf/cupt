@@ -16,6 +16,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         value variant "auto".
       - Warn and require extra confirmation for actions on MultiArch-enabled
         systems. (Closes: #710052)
+      - New positional request type options '--select=traditional',
+        '--select=flexible'.
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
