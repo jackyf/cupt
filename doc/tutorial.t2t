@@ -661,7 +661,7 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
-== Conditional installation ==
+== Conditional installation ==[iii]
 
 Starting with Cupt 2.4, there is a special subcommand ``iii`` ("install if
 installed") for installing new versions of already installed packages while not
@@ -1991,6 +1991,36 @@ Be careful:
 ``cupt satisfy vim emacs-``: install vim or anything which provides it, remove emacs and anything which provides it
 
 ``cupt satisfy "vim, emacs-"``: remove emacs, vim and anything which provides them
+
+== Request type options ==
+
+By default, when you type ``cupt install abcde``, the preferred version of
+``abcde`` package will be installed. By default, on ``cupt install abcde/unstable``
+the best of ``abcde`` versions found in ``unstable`` distribution will be
+installed. Also, by default, ``cupt remove wget/installed`` or
+``cupt remove wget/wheezy`` will remove all versions of ``wget`` package (so none of them may
+be installed). This is **traditional** selection behavior.
+
+Starting with Cupt 2.6, it's possible to choose (per request) new **flexible**
+selection behavior, though traditional selection behavior is still the default.
+Flexible behavior is enabled using ``--select=flexible`` (or, shorter,
+``--sf``) command line option. Traditional behavior can be (re)enabled using
+``--select=traditional`` (or, shorter, ``--st``) command line option.
+
+Flexible selection behavior is often more intuitive.
+``cupt --sf install abcde`` will install any version of ``abcde`` package
+(with, as usual, resolver choosing versions with higher [pins #pinning] first).
+``cupt --sf install abcde/unstable`` will install any version of ``abcde``
+found in ``unstable`` distribution. ``cupt --sf remove wget`` will still remove
+the package unconditionally just like traditional behavior, but, say,
+``cupt --sf remove wget/installed wget/wheezy`` may either remove ``wget``
+package or install some its version not from ``wheezy`` distribution.
+
+The command line options above are positional and can be mixed.
+``cupt --select=flexible iii jhc ncdu/experimental --select=traditional --remove automake*/installed``
+will [install (if were installed) #iii] any version of ``jhc`` and any version
+of ``ncdu`` found in ``experimental`` distribution, but unconditionally remove
+installed packages which names start with ``automake``.
 
 == Changes in systems with a low disk space ==
 

@@ -49,17 +49,85 @@ const WA::Type fakeAutoPurge = WA::Type(1001);
 const WA::Type fakeBecomeAutomaticallyInstalled = WA::Type(1002);
 const WA::Type fakeBecomeManuallyInstalled = WA::Type(1003);
 
+struct VersionChoices
+{
+	string packageName;
+	vector< const BinaryVersion* > versions;
+};
+
 struct ManagePackagesContext
 {
 	enum class AutoInstall { Yes, No, Nop };
+	enum class SelectType { Traditional, Flexible };
 
 	ManagePackages::Mode mode;
 	AutoInstall autoinstall;
+	SelectType selectType;
 	Config& config;
 	const Cache& cache;
 	Resolver& resolver;
 	Worker& worker;
+
+	typedef vector< VersionChoices > SelectedVersions;
+
+	SelectedVersions selectVersions(const string& expression, bool throwOnError = true)
+	{
+		auto selector = (selectType == SelectType::Traditional ?
+				selectBinaryVersionsWildcarded : selectAllBinaryVersionsWildcarded);
+
+		SelectedVersions result;
+		// grouping by package
+		for (auto version: selector(cache, expression, throwOnError))
+		{
+			if (result.empty() || result.back().packageName != version->packageName)
+			{
+				result.push_back(VersionChoices{version->packageName, {}});
+			}
+			result.back().versions.push_back(version);
+		}
+		return result;
+	}
+	void install(const VersionChoices& versionChoices, const string& annotation)
+	{
+		resolver.installVersion(versionChoices.versions, annotation);
+	}
+	void remove(const VersionChoices& versionChoices, const string& annotation)
+	{
+		if (selectType == SelectType::Traditional)
+		{
+			// removing all the package regardless of what versions of packages
+			// were chosen
+			if (!versionChoices.versions.empty())
+			{
+				const string& packageName = versionChoices.packageName;
+				resolver.removeVersions(cache.getBinaryPackage(packageName)->getVersions(), annotation);
+			}
+		}
+		else
+		{
+			resolver.removeVersions(versionChoices.versions, annotation);
+		}
+	}
 };
+
+static const char* modeToString(ManagePackages::Mode mode)
+{
+	switch (mode)
+	{
+		case ManagePackages::Install: return "install";
+		case ManagePackages::InstallIfInstalled: return "iii";
+		case ManagePackages::Remove: return "remove";
+		case ManagePackages::Purge: return "purge";
+		case ManagePackages::BuildDepends: return "build-dependencies of";
+		case ManagePackages::Reinstall: return "reinstall";
+		default: return "";
+	}
+}
+
+static string getRequestAnnotation(ManagePackages::Mode mode, const string& expression)
+{
+	return format2("%s %s", modeToString(mode), expression);
+}
 
 static void preProcessMode(ManagePackagesContext& mpc)
 {
@@ -111,18 +179,11 @@ static void unrollFileArguments(vector< string >& arguments)
 }
 
 void __satisfy_or_unsatisfy(Resolver& resolver,
-		const RelationLine& relationLine, ManagePackages::Mode mode)
+		const RelationLine& relationLine, ManagePackages::Mode mode, const string& annotation = string())
 {
 	for (const auto& relationExpression: relationLine)
 	{
-		if (mode == ManagePackages::Unsatisfy)
-		{
-			resolver.unsatisfyRelationExpression(relationExpression);
-		}
-		else
-		{
-			resolver.satisfyRelationExpression(relationExpression);
-		}
+		resolver.satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy), annotation);
 	}
 }
 
@@ -147,17 +208,18 @@ static void processBuildDependsExpression(ManagePackagesContext& mpc, const stri
 	auto architecture = mpc.config.getString("apt::architecture");
 
 	auto versions = selectSourceVersionsWildcarded(mpc.cache, packageExpression);
+	auto annotation = getRequestAnnotation(mpc.mode, packageExpression);
 
 	for (const auto& version: versions)
 	{
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
-				.toRelationLine(architecture), ManagePackages::Satisfy);
+				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
-				.toRelationLine(architecture), ManagePackages::Satisfy);
+				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
-				.toRelationLine(architecture), ManagePackages::Unsatisfy);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
-				.toRelationLine(architecture), ManagePackages::Unsatisfy);
+				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 	}
 }
 
@@ -165,7 +227,7 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 {
 	auto localMode = mpc.mode;
 
-	auto versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, false);
+	auto versions = mpc.selectVersions(packageExpression, false);
 	if (versions.empty())
 	{
 		/* we have a funny situation with package names like 'g++',
@@ -194,26 +256,28 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 	{
 		if (versions.empty())
 		{
-			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression);
+			versions = mpc.selectVersions(packageExpression);
 		}
-		for (const auto& version: versions)
+		for (const auto& versionChoices: versions)
 		{
+			const auto& packageName = versionChoices.packageName;
+
 			if (localMode == ManagePackages::InstallIfInstalled)
 			{
-				if (!isPackageInstalled(mpc.cache, version->packageName))
+				if (!isPackageInstalled(mpc.cache, packageName))
 				{
 					continue;
 				}
 			}
-			mpc.resolver.installVersion(version);
+			mpc.install(versionChoices, getRequestAnnotation(localMode, packageExpression));
 
 			if (mpc.autoinstall == ManagePackagesContext::AutoInstall::Yes)
 			{
-				mpc.resolver.setAutomaticallyInstalledFlag(version->packageName, true);
+				mpc.resolver.setAutomaticallyInstalledFlag(packageName, true);
 			}
 			else if (mpc.autoinstall == ManagePackagesContext::AutoInstall::No)
 			{
-				mpc.resolver.setAutomaticallyInstalledFlag(version->packageName, false);
+				mpc.resolver.setAutomaticallyInstalledFlag(packageName, false);
 			}
 		}
 	}
@@ -221,26 +285,24 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 	{
 		if (versions.empty())
 		{
-			// retry, still non-fatal in non-wildcard mode, to deal with packages in 'config-files' state
-			bool wildcardsPresent = packageExpression.find('?') != string::npos ||
-					packageExpression.find('*') != string::npos;
-			versions = selectBinaryVersionsWildcarded(mpc.cache, packageExpression, wildcardsPresent);
+			// retry, still non-fatal to deal with packages in 'config-files' state
+			versions = mpc.selectVersions(packageExpression, false);
 		}
 
-		auto scheduleRemoval = [&mpc, localMode](const string& packageName)
+		auto scheduleRemoval = [&mpc, localMode, &packageExpression](const VersionChoices& versionChoices)
 		{
-			mpc.resolver.removePackage(packageName);
+			mpc.remove(versionChoices, getRequestAnnotation(localMode, packageExpression));
 			if (localMode == ManagePackages::Purge)
 			{
-				mpc.worker.setPackagePurgeFlag(packageName, true);
+				mpc.worker.setPackagePurgeFlag(versionChoices.packageName, true);
 			}
 		};
 
 		if (!versions.empty())
 		{
-			for (const auto& version: versions)
+			for (const auto& versionChoices: versions)
 			{
-				scheduleRemoval(version->packageName);
+				scheduleRemoval(versionChoices);
 			}
 		}
 		else
@@ -252,7 +314,7 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 				fatal2(__("unable to find binary package/expression '%s'"), packageExpression);
 			}
 
-			scheduleRemoval(packageExpression);
+			scheduleRemoval(VersionChoices{packageExpression, {}});
 		}
 	}
 }
@@ -281,27 +343,40 @@ static void processReinstallExpression(ManagePackagesContext& mpc, const string&
 		fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
 				packageExpression, targetVersionString);
 	}
-	mpc.resolver.installVersion(static_cast< const BinaryVersion* >(targetVersion));
+	mpc.resolver.installVersion({ static_cast< const BinaryVersion* >(targetVersion) },
+			getRequestAnnotation(mpc.mode, packageExpression));
+}
+
+static bool processPositionalOption(ManagePackagesContext& mpc, const string& arg)
+{
+	if (arg == "--remove") mpc.mode = ManagePackages::Remove;
+	else if (arg == "--purge") mpc.mode = ManagePackages::Purge;
+	else if (arg == "--install") mpc.mode = ManagePackages::Install;
+	else if (arg == "--satisfy") mpc.mode = ManagePackages::Satisfy;
+	else if (arg == "--unsatisfy") mpc.mode = ManagePackages::Unsatisfy;
+	else if (arg == "--markauto") mpc.mode = ManagePackages::Markauto;
+	else if (arg == "--unmarkauto") mpc.mode = ManagePackages::Unmarkauto;
+	else if (arg == "--iii") mpc.mode = ManagePackages::InstallIfInstalled;
+	else if (arg == "--asauto=yes") mpc.autoinstall = ManagePackagesContext::AutoInstall::Yes;
+	else if (arg == "--asauto=no") mpc.autoinstall = ManagePackagesContext::AutoInstall::No;
+	else if (arg == "--asauto=default") mpc.autoinstall = ManagePackagesContext::AutoInstall::Nop;
+	else if (arg == "--select=traditional" || arg == "--st")
+		mpc.selectType = ManagePackagesContext::SelectType::Traditional;
+	else if (arg == "--select=flexible" || arg == "--sf")
+		mpc.selectType = ManagePackagesContext::SelectType::Flexible;
+	else
+		return false;
+
+	return true; // if some option was processed
 }
 
 static void processPackageExpressions(ManagePackagesContext& mpc, const vector< string >& packageExpressions)
 {
 	for (const auto& packageExpression: packageExpressions)
 	{
-		// positional options: changing mode
-		if (packageExpression == "--remove") mpc.mode = ManagePackages::Remove;
-		else if (packageExpression == "--purge") mpc.mode = ManagePackages::Purge;
-		else if (packageExpression == "--install") mpc.mode = ManagePackages::Install;
-		else if (packageExpression == "--satisfy") mpc.mode = ManagePackages::Satisfy;
-		else if (packageExpression == "--unsatisfy") mpc.mode = ManagePackages::Unsatisfy;
-		else if (packageExpression == "--markauto") mpc.mode = ManagePackages::Markauto;
-		else if (packageExpression == "--unmarkauto") mpc.mode = ManagePackages::Unmarkauto;
-		else if (packageExpression == "--iii") mpc.mode = ManagePackages::InstallIfInstalled;
-		else if (packageExpression == "--asauto=yes") mpc.autoinstall = ManagePackagesContext::AutoInstall::Yes;
-		else if (packageExpression == "--asauto=no") mpc.autoinstall = ManagePackagesContext::AutoInstall::No;
-		else if (packageExpression == "--asauto=default") mpc.autoinstall = ManagePackagesContext::AutoInstall::Nop;
-		// package expressions: processing them
-		else if (mpc.mode == ManagePackages::Satisfy || mpc.mode == ManagePackages::Unsatisfy)
+		if (processPositionalOption(mpc, packageExpression)) continue;
+
+		if (mpc.mode == ManagePackages::Satisfy || mpc.mode == ManagePackages::Unsatisfy)
 		{
 			processSatisfyExpression(mpc, packageExpression);
 		}
@@ -1197,7 +1272,8 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	{
 		const set< string > actionModifierOptionNames = {
 			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii",
-			"--markauto", "--unmarkauto", "--asauto=yes", "--asauto=no", "--asauto=default"
+			"--markauto", "--unmarkauto", "--asauto=yes", "--asauto=no", "--asauto=default",
+			"--select=traditional", "--st", "--select=flexible", "--sf"
 		};
 		if (actionModifierOptionNames.count(input))
 		{
@@ -1397,7 +1473,8 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 
 	shared_ptr< Worker > worker(new Worker(config, cache));
 
-	ManagePackagesContext mpc = { mode, ManagePackagesContext::AutoInstall::Nop,
+	ManagePackagesContext mpc = { mode,
+			ManagePackagesContext::AutoInstall::Nop, ManagePackagesContext::SelectType::Traditional,
 			*config, *cache, *resolver, *worker };
 
 	stage(__("Scheduling requested actions... "));

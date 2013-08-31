@@ -814,6 +814,20 @@ installed packages as manually installed and preserve auto-status otherwise)
 
 =back
 
+=head3 management modifiers: request type options
+
+=item --select=traditional,--st
+
+for install-type actions, request installing the best of chosen versions for
+each package; for remove-type actions, request removing the whole package. This
+is the default.
+
+=item --select=flexible,--sf
+
+for install-type actions, request installing any of chosen versions for each
+package; for remove-type actions, request removing only chosen versions for
+each package.
+
 =head3 management modifiers: package name suffixes
 
 =over

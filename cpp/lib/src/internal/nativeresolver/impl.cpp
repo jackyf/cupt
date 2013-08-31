@@ -114,51 +114,24 @@ void NativeResolverImpl::setAutomaticallyInstalledFlag(const string& packageName
 	__auto_status_overrides[packageName] = flagValue;
 }
 
-void NativeResolverImpl::installVersion(const BinaryVersion* version)
+namespace {
+
+string getAnnotation(const RelationExpression& re, bool invert)
 {
-	const string& packageName = version->packageName;
+	string prefix = !invert ? __("satisfy") : __("unsatisfy");
+	return format2("%s '%s'", prefix, re.toString());
+};
 
-	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
-	if (!__prepare_version_no_stick(version, initialPackageEntry))
-	{
-		fatal2(__("unable to re-schedule the package '%s'"), packageName);
-	}
-
-	initialPackageEntry.sticked = true;
 }
 
-void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& relationExpression)
+void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
+		bool invert, const string& proposedAnnotation)
 {
-	__satisfy_relation_expressions.push_back(relationExpression);
+	const string& annotation = !proposedAnnotation.empty() ? proposedAnnotation : getAnnotation(re, invert);
+	p_userRelationExpressions.push_back({ re, invert, annotation });
 	if (__config->getBool("debug::resolver"))
 	{
-		debug2("strictly satisfying relation '%s'", relationExpression.toString());
-	}
-}
-
-void NativeResolverImpl::unsatisfyRelationExpression(const RelationExpression& relationExpression)
-{
-	__unsatisfy_relation_expressions.push_back(relationExpression);
-	if (__config->getBool("debug::resolver"))
-	{
-		debug2("strictly unsatisfying relation '%s'", relationExpression.toString());
-	}
-}
-
-void NativeResolverImpl::removePackage(const string& packageName)
-{
-	dg::InitialPackageEntry& initialPackageEntry = __initial_packages[packageName];
-	if (initialPackageEntry.version && initialPackageEntry.sticked)
-	{
-		fatal2(__("unable to re-schedule the package '%s'"), packageName);
-	}
-	initialPackageEntry.sticked = true;
-	initialPackageEntry.modified = true;
-	initialPackageEntry.version = nullptr;
-
-	if (__config->getBool("debug::resolver"))
-	{
-		debug2("removing package '%s'", packageName);
+		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
 	}
 }
 
@@ -401,23 +374,6 @@ SolutionChooser __select_solution_chooser(const Config& config)
 	}
 
 	return result;
-}
-
-void NativeResolverImpl::__require_strict_relation_expressions()
-{
-	// "installing" virtual package, which will be used for strict '(un)satisfy' requests
-	auto version = &__custom_relations_version;
-
-	version->packageName = __dummy_package_name;
-	version->sourcePackageName = __dummy_package_name;
-	version->versionString = "";
-	version->relations[BinaryVersion::RelationTypes::Depends] = __satisfy_relation_expressions;
-	version->relations[BinaryVersion::RelationTypes::Breaks] = __unsatisfy_relation_expressions;
-
-	dg::InitialPackageEntry initialPackageEntry;
-	initialPackageEntry.version = version;
-	initialPackageEntry.sticked = true;
-	__initial_packages[__dummy_package_name] = initialPackageEntry;
 }
 
 /* __pre_apply_action only prints debug info and changes level/score of the
@@ -771,10 +727,6 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		if (vertex)
 		{
 			const string& packageName = vertex->getPackageName();
-			if (packageName == __dummy_package_name)
-			{
-				continue;
-			}
 			if (!vertex->version && !__initial_packages.count(packageName))
 			{
 				continue;
@@ -986,18 +938,15 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
 	bool thereWereSolutionsDropped = false;
 
-	if (debugging)
-	{
-		debug2("started resolving");
-	}
-	__require_strict_relation_expressions();
+	if (debugging) debug2("started resolving");
 
 	__any_solution_was_found = false;
 	__decision_fail_tree.clear();
 
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution, __old_packages, __initial_packages);
+	__solution_storage->prepareForResolving(*initialSolution,
+			__old_packages, __initial_packages, p_userRelationExpressions);
 
 	SolutionContainer solutions = { initialSolution };
 
@@ -1116,8 +1065,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	}
 	return false;
 }
-
-const string NativeResolverImpl::__dummy_package_name = "dummy_package_name";
 
 }
 }

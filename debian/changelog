@@ -16,6 +16,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         value variant "auto".
       - Warn and require extra confirmation for actions on MultiArch-enabled
         systems. (Closes: #710052)
+      - New positional request type options '--select=traditional',
+        '--select=flexible'.
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
@@ -81,6 +83,14 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         removed old field 'manuallySelected'.
       - New method 'setAutomaticallyInstalledFlag'.
       - 'SuggestedPackage': new field 'reasonPackageNames'.
+      - [API break] 'unsatisfyRelationExpression': removed, merged into
+        'satisfyRelationExpression' with new boolean parameter.
+      - [ABI break] 'satisfyRelationExpression': added new parameters 'invert'
+        and 'annotation'.
+      - [API break] 'installVersion': now set of possible versions can be
+        passed.
+      - [API break] 'removePackage': removed, replaced by new, more flexible
+        method 'removeVersions'.
     - system/worker:
       - [API break] 'setPackagePurgeFlag': now is persistent, and should be
         called before 'setDesiredState'.

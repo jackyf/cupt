@@ -383,9 +383,16 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
 			const map< string, const BinaryVersion* >& oldPackages,
-			const map< string, dg::InitialPackageEntry >& initialPackages)
+			const map< string, dg::InitialPackageEntry >& initialPackages,
+			const vector< dg::UserRelationExpression >& userRelationExpressions)
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
+	/* User relation expressions must be processed before any unfoldElement() calls
+	   to early override version checks (if needed) for all explicitly required versions. */
+	for (const auto& userRelationExpression: userRelationExpressions)
+	{
+		__dependency_graph.addUserRelationExpression(userRelationExpression);
+	}
 	for (const auto& record: source)
 	{
 		__dependency_graph.unfoldElement(record.first);

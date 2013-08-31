@@ -194,12 +194,24 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 
 	const bool globalPurge = _config->getBool("cupt::worker::purge");
 
-	FORIT(desiredIt, *__desired_state)
+	set< string > processedPackageNames;
+	for (const auto& desired: *__desired_state)
 	{
-		const string& packageName = desiredIt->first;
-		const Resolver::SuggestedPackage& suggestedPackage = desiredIt->second;
+		const string& packageName = desired.first;
+		const Resolver::SuggestedPackage& suggestedPackage = desired.second;
 
 		__generate_action_preview(packageName, suggestedPackage, globalPurge);
+		processedPackageNames.insert(packageName);
+	}
+	for (const auto& item: __purge_overrides)
+	{
+		const string& packageName = item.first;
+		if (processedPackageNames.count(packageName)) continue;
+
+		static const Resolver::SuggestedPackage suggestedPackageForPurge = {
+			nullptr, false, { std::make_shared< Resolver::UserReason >() }, {}
+		};
+		__generate_action_preview(packageName, suggestedPackageForPurge, globalPurge);
 	}
 }
 
@@ -251,10 +263,14 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 
 		// new part
 		ssize_t newInstalledSize = 0;
-		const auto& newVersion = __desired_state->find(packageName)->second.version;
-		if (newVersion)
+		auto desiredPackageIt = __desired_state->find(packageName);
+		if (desiredPackageIt != __desired_state->end())
 		{
-			newInstalledSize = newVersion->installedSize;
+			const auto& newVersion = __desired_state->find(packageName)->second.version;
+			if (newVersion)
+			{
+				newInstalledSize = newVersion->installedSize;
+			}
 		}
 
 		result[packageName] = newInstalledSize - oldInstalledSize;

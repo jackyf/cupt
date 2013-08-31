@@ -27,6 +27,7 @@ using std::forward_list;
 #include <cupt/system/resolver.hpp>
 typedef cupt::system::Resolver::Reason Reason;
 using cupt::cache::BinaryVersion;
+using cupt::cache::RelationExpression;
 
 #include <internal/graph.hpp>
 
@@ -44,6 +45,12 @@ struct InitialPackageEntry
 	bool modified;
 
 	InitialPackageEntry();
+};
+struct UserRelationExpression
+{
+	RelationExpression expression;
+	bool invert;
+	string annotation;
 };
 
 struct Unsatisfied
@@ -118,6 +125,7 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
 			const map< string, const BinaryVersion* >&,
 			const map< string, InitialPackageEntry >&);
+	void addUserRelationExpression(const UserRelationExpression&);
 
 	const Element* getCorrespondingEmptyElement(const Element*);
 	void unfoldElement(const Element*);

@@ -36,7 +36,7 @@ struct CUPT_API Relation
 	struct Types
 	{
 		/// type
-		enum Type { Less, Equal, More, LessOrEqual, MoreOrEqual, None };
+		enum Type { Less, Equal, More, LessOrEqual, MoreOrEqual, LiteralyEqual, None };
 		/// string values of corresponding types
 		static const string strings[];
 	};
