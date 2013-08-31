@@ -816,6 +816,8 @@ installed packages as manually installed and preserve auto-status otherwise)
 
 =head3 management modifiers: request type options
 
+=over
+
 =item --select=traditional,--st
 
 for install-type actions, request installing the best of chosen versions for
@@ -827,6 +829,8 @@ is the default.
 for install-type actions, request installing any of chosen versions for each
 package; for remove-type actions, request removing only chosen versions for
 each package.
+
+=back
 
 =head3 management modifiers: package name suffixes
 
