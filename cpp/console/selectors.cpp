@@ -160,16 +160,16 @@ vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache
 }
 
 vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& cache,
-		const string& packageExpression)
+		const string& packageExpression, bool throwOnError)
 {
 	return __select_using_function< BinaryVersion >(cache, getFse(packageExpression),
-			&FunctionalSelector::selectAllVersions, true, false);
+			&FunctionalSelector::selectAllVersions, true, throwOnError);
 }
 
 vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
-		const string& packageExpression)
+		const string& packageExpression, bool throwOnError)
 {
 	return selectBySourceFse(cache, getFse(packageExpression),
-			&FunctionalSelector::selectAllVersions, false);
+			&FunctionalSelector::selectAllVersions, throwOnError);
 }
 

@@ -33,9 +33,9 @@ vector< const BinaryVersion* > selectBinaryVersionsWildcarded(const Cache& cache
 vector< const SourceVersion* > selectSourceVersionsWildcarded(const Cache& cache,
 		const string& packageExpression, bool throwOnError = true);
 vector< const BinaryVersion* > selectAllBinaryVersionsWildcarded(const Cache& cache,
-		const string& packageExpression);
+		const string& packageExpression, bool throwOnError = true);
 vector< const SourceVersion* > selectAllSourceVersionsWildcarded(const Cache& cache,
-		const string& packageExpression);
+		const string& packageExpression, bool throwOnError = true);
 bool isFunctionExpression(const string& expression);
 
 #endif
