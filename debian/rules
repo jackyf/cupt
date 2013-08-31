@@ -18,7 +18,7 @@ override_dh_auto_install:
 	# produce additional man pages for cupt
 	$(PERL) debian/install_pods
 	install -m644 scripts/bash_completion $(CURDIR)/debian/cupt/etc/bash_completion.d/cupt
-	install -m644 scripts/logrotate $(CURDIR)/debian/libcupt2-0/etc/logrotate.d/cupt
+	install -m644 scripts/logrotate $(CURDIR)/debian/libcupt3-0/etc/logrotate.d/cupt
 
 override_dh_strip:
 	dh_strip --dbg-package=cupt-dbg
