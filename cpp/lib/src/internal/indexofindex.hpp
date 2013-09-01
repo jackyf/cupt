@@ -27,6 +27,11 @@ struct Record
 };
 // index suffix number must be incremented every time Record changes
 
+string getIndexOfIndexPath(const string& path);
+void removeIndexOfIndex(const string& path);
+
+namespace ps { // Packages/Sources
+
 struct Callbacks
 {
 	std::function< void () > main;
@@ -34,9 +39,9 @@ struct Callbacks
 };
 
 void processIndex(const string& path, const Callbacks&, const Record&);
-string getIndexOfIndexPath(const string& path);
-void removeIndexOfIndex(const string& path);
 void generate(const string& indexPath, const string& temporaryPath);
+
+}
 
 }
 }

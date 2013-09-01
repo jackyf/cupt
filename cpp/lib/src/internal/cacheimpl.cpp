@@ -520,7 +520,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 		ioiRecord.offsetPtr = &prePackageRecord.offset;
 		ioiRecord.packageNamePtr = &packageName;
 
-		ioi::Callbacks callbacks;
+		ioi::ps::Callbacks callbacks;
 		callbacks.main =
 				[this, &packageName, &alias, &prePackagesStorage, &prePackageRecord, &persistentPackageNamePtr]()
 				{
@@ -546,7 +546,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 					processProvides(persistentPackageNamePtr, begin, end);
 				};
 
-		ioi::processIndex(path, callbacks, ioiRecord);
+		ioi::ps::processIndex(path, callbacks, ioiRecord);
 	}
 	catch (Exception&)
 	{

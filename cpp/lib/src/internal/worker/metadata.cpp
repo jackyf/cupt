@@ -689,7 +689,7 @@ void MetadataWorker::__generate_index_of_index(const string& sourcePath)
 	if (!_config->getBool("cupt::worker::simulate"))
 	{
 		auto temporaryPath = getDownloadPath(sourcePath) + ".ioi";
-		ioi::generate(sourcePath, temporaryPath);
+		ioi::ps::generate(sourcePath, temporaryPath);
 	}
 }
 

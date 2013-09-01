@@ -40,7 +40,7 @@ time_t getModifyTime(const string& path)
 	return st.st_mtime;
 }
 
-void parseFullIndex(const string& path, const Callbacks& callbacks, const Record& record)
+void parsePackagesSourcesFullIndex(const string& path, const ps::Callbacks& callbacks, const Record& record)
 {
 	RequiredFile file(path, "r");
 
@@ -116,7 +116,7 @@ uint32_t ourHex2Uint(const char* s)
 	return result;
 }
 
-void parseIndexOfIndex(const string& path, const Callbacks& callbacks, const Record& record)
+void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& callbacks, const Record& record)
 {
 	RequiredFile file(path, "r");
 
@@ -174,19 +174,6 @@ string getIndexOfIndexPath(const string& path)
 	return path + indexPathSuffix;
 }
 
-void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
-{
-	auto ioiPath = getIndexOfIndexPath(path);
-	if (fs::fileExists(ioiPath) && (getModifyTime(ioiPath) >= getModifyTime(path)))
-	{
-		parseIndexOfIndex(ioiPath, callbacks, record);
-	}
-	else
-	{
-		parseFullIndex(path, callbacks, record);
-	}
-}
-
 void removeIndexOfIndex(const string& path)
 {
 	auto ioiPath = getIndexOfIndexPath(path);
@@ -196,6 +183,21 @@ void removeIndexOfIndex(const string& path)
 		{
 			fatal2e("unable to remove the file '%s'", ioiPath);
 		}
+	}
+}
+
+namespace ps {
+
+void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
+{
+	auto ioiPath = getIndexOfIndexPath(path);
+	if (fs::fileExists(ioiPath) && (getModifyTime(ioiPath) >= getModifyTime(path)))
+	{
+		parsePackagesSourcesIndexOfIndex(ioiPath, callbacks, record);
+	}
+	else
+	{
+		parsePackagesSourcesFullIndex(path, callbacks, record);
 	}
 }
 
@@ -231,9 +233,11 @@ void generate(const string& indexPath, const string& temporaryPath)
 				file.put("\n");
 			};
 
-	parseFullIndex(indexPath, callbacks, { &offset, &packageName });
+	parsePackagesSourcesFullIndex(indexPath, callbacks, { &offset, &packageName });
 
 	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
+}
+
 }
 
 }
