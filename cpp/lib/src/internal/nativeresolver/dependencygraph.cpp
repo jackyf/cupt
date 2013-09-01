@@ -118,7 +118,6 @@ struct RelationExpressionVertex: public BasicVertex
 {
 	RelationType dependencyType;
 	const RelationExpression* relationExpressionPtr;
-	string specificPackageName;
 
 	string toString() const;
 	size_t getTypePriority() const;
@@ -129,21 +128,14 @@ struct RelationExpressionVertex: public BasicVertex
 
 string RelationExpressionVertex::toString() const
 {
-	auto result = format2("%s '%s'", BinaryVersion::RelationTypes::rawStrings[dependencyType],
+	return format2("%s '%s'", BinaryVersion::RelationTypes::rawStrings[dependencyType],
 			relationExpressionPtr->toString());
-	if (!specificPackageName.empty())
-	{
-		result += string(" [") + specificPackageName + ']';
-	}
-	return result;
 }
 
 size_t RelationExpressionVertex::getTypePriority() const
 {
 	switch (dependencyType)
 	{
-		case BinaryVersion::RelationTypes::Conflicts:
-		case BinaryVersion::RelationTypes::Breaks:
 		case BinaryVersion::RelationTypes::PreDepends:
 		case BinaryVersion::RelationTypes::Depends:
 			return 3;
@@ -159,8 +151,7 @@ size_t RelationExpressionVertex::getTypePriority() const
 
 bool RelationExpressionVertex::isAnti() const
 {
-	return dependencyType == BinaryVersion::RelationTypes::Conflicts ||
-			dependencyType == BinaryVersion::RelationTypes::Breaks;
+	return false;
 }
 
 shared_ptr< const Reason > RelationExpressionVertex::getReason(const BasicVertex& parent) const
@@ -189,6 +180,28 @@ Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
 			return Unsatisfied::None;
 	}
 }
+
+struct AntiRelationExpressionVertex: public RelationExpressionVertex
+{
+	string specificPackageName;
+
+	string toString() const
+	{
+		return RelationExpressionVertex::toString() + " [" + specificPackageName + ']';
+	}
+	size_t getTypePriority() const
+	{
+		return 3;
+	}
+	bool isAnti() const
+	{
+		return true;
+	}
+	Unsatisfied::Type getUnsatisfiedType() const
+	{
+		return Unsatisfied::None;
+	}
+};
 
 struct SynchronizeVertex: public BasicVertex
 {
@@ -689,7 +702,7 @@ class DependencyGraph::FillHelper
 		{
 			auto createVertex = [&](const string& packageName)
 			{
-				auto subVertex(new RelationExpressionVertex);
+				auto subVertex(new AntiRelationExpressionVertex);
 				subVertex->dependencyType = dependencyType;
 				subVertex->relationExpressionPtr = &relationExpression;
 				subVertex->specificPackageName = packageName;
