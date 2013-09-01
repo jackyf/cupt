@@ -67,7 +67,7 @@ class CacheImpl
 	shared_ptr< PinInfo > pinInfo;
 	mutable map< const Version*, ssize_t > pinCache;
 	map< string, shared_ptr< ReleaseInfo > > releaseInfoCache;
-	list< File > translationFileStorage;
+	list< RequiredFile > translationFileStorage;
 	smatch* __smatch_ptr;
 
 	Package* newSourcePackage() const;

@@ -556,12 +556,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 void CacheImpl::processTranslationFile(const string& path, const string& alias)
 {
-	string errorString;
-	translationFileStorage.emplace_back(path, "r", errorString);
-	if (!errorString.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, errorString);
-	}
+	translationFileStorage.emplace_back(path, "r");
 
 	File* file = &translationFileStorage.back();
 	try
