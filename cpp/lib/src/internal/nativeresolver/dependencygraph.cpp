@@ -539,7 +539,7 @@ class DependencyGraph::FillHelper
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
-		p_dummyElementPtr = getVertexPtrForEmptyPackage("dummypackagename");
+		p_dummyElementPtr = getVertexPtrForEmptyPackage("<user requests>");
 	}
 
 	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version, bool overrideChecks = false)
