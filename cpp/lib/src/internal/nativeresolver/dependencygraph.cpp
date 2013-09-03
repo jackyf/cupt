@@ -300,7 +300,7 @@ struct UserRelationExpressionVertex: public BasicVertex
 	{}
 	size_t getTypePriority() const
 	{
-		return 3;
+		return 4;
 	}
 	bool isAnti() const
 	{
