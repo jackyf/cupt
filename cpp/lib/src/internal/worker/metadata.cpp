@@ -1026,6 +1026,44 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 	}
 }
 
+bool MetadataWorker::p_metadataUpdateThread(download::Manager& downloadManager, const cachefiles::IndexEntry& indexEntry)
+{
+	// wrapping all errors here
+	try
+	{
+		return __update_release_and_index_data(downloadManager, indexEntry);
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+bool MetadataWorker::p_runMetadataUpdateThreads(const shared_ptr< download::Progress >& downloadProgress)
+{
+	bool result = true;
+	{ // download manager involved part
+		download::Manager downloadManager(_config, downloadProgress);
+
+		std::queue< std::future<bool> > threadReturnValues;
+
+		for (const auto& indexEntry: _cache->getIndexEntries())
+		{
+			threadReturnValues.emplace(std::async(std::launch::async,
+					std::bind(&MetadataWorker::p_metadataUpdateThread, this, std::ref(downloadManager), indexEntry)));
+		}
+		while (!threadReturnValues.empty())
+		{
+			if (!threadReturnValues.front().get())
+			{
+				result = false;
+			}
+			threadReturnValues.pop();
+		}
+	}
+	return result;
+}
+
 void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progress >& downloadProgress)
 {
 	_logger->log(Logger::Subsystem::Metadata, 1, "updating package metadata");
@@ -1087,37 +1125,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		_logger->loggedFatal2(Logger::Subsystem::Metadata, 1, format2, "aborted downloading release and index data");
 	}
 
-	int masterExitCode = true;
-	{ // download manager involved part
-		download::Manager downloadManager(_config, downloadProgress);
-
-		std::queue< std::future<bool> > threadReturnValues;
-
-		for (const auto& indexEntry: _cache->getIndexEntries())
-		{
-			threadReturnValues.emplace(std::async(std::launch::async,
-					[this, &downloadManager, indexEntry]()
-					{
-						// wrapping all errors here
-						try
-						{
-							return __update_release_and_index_data(downloadManager, indexEntry);
-						}
-						catch (...)
-						{
-							return false;
-						}
-					}));
-		}
-		while (!threadReturnValues.empty())
-		{
-			if (!threadReturnValues.front().get())
-			{
-				masterExitCode = false;
-			}
-			threadReturnValues.pop();
-		}
-	};
+	auto masterExitCode = p_runMetadataUpdateThreads(downloadProgress);
 
 	if (_config->getBool("apt::get::list-cleanup"))
 	{
