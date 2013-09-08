@@ -246,6 +246,22 @@ struct MainCallback
 	}
 };
 
+template < typename CallbacksPreFiller, typename FullIndexParser >
+void templatedGenerate(const string& indexPath, const string& temporaryPath,
+		const CallbacksPreFiller& callbacksPreFiller, FullIndexParser fullIndexParser)
+{
+	RequiredFile file(temporaryPath, "w");
+
+	auto callbacks = callbacksPreFiller(file);
+	MainCallback mainCallback;
+	callbacks.main = std::bind(&MainCallback::perform, std::ref(mainCallback), std::ref(file));
+
+	fullIndexParser(indexPath, callbacks,
+			{ &mainCallback.offset, &mainCallback.indexString });
+
+	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
+}
+
 }
 
 string getIndexOfIndexPath(const string& path)
@@ -282,24 +298,19 @@ void processIndex(const string& path, const Callbacks& callbacks, const Record& 
 
 void generate(const string& indexPath, const string& temporaryPath)
 {
-	RequiredFile file(temporaryPath, "w");
-
-	MainCallback mainCallback;
-
-	Callbacks callbacks;
-	callbacks.main = std::bind(&MainCallback::perform, std::ref(mainCallback), std::ref(file));
-	callbacks.provides =
-			[&file](const char* begin, const char* end)
-			{
-				file.put(&field::provides, 1);
-				file.put(begin, end - begin);
-				file.put("\n");
-			};
-
-	parsePackagesSourcesFullIndex(indexPath, callbacks,
-			{ &mainCallback.offset, &mainCallback.indexString });
-
-	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
+	auto callbacksPreFiller = [](File& file)
+	{
+		Callbacks callbacks;
+		callbacks.provides =
+				[&file](const char* begin, const char* end)
+				{
+					file.put(&field::provides, 1);
+					file.put(begin, end - begin);
+					file.put("\n");
+				};
+		return callbacks;
+	};
+	templatedGenerate(indexPath, temporaryPath, callbacksPreFiller, parsePackagesSourcesFullIndex);
 }
 
 }
@@ -309,6 +320,12 @@ namespace tr {
 void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
 {
 	parseTranslationFullIndex(path, callbacks, record);
+}
+
+void generate(const string& indexPath, const string& temporaryPath)
+{
+	auto callbacksPreFiller = [](File&) { return Callbacks(); };
+	templatedGenerate(indexPath, temporaryPath, callbacksPreFiller, parseTranslationFullIndex);
 }
 
 }
