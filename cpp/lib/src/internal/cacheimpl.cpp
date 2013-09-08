@@ -518,7 +518,7 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 		ioi::Record ioiRecord;
 		ioiRecord.offsetPtr = &prePackageRecord.offset;
-		ioiRecord.packageNamePtr = &packageName;
+		ioiRecord.indexStringPtr = &packageName;
 
 		ioi::ps::Callbacks callbacks;
 		callbacks.main =
@@ -561,55 +561,20 @@ void CacheImpl::processTranslationFile(const string& path, const string& alias)
 	File* file = &translationFileStorage.back();
 	try
 	{
-		TagParser parser(file);
-		TagParser::StringRange tagName, tagValue;
-
-		static const char descriptionSubPattern[] = "Description-";
-		static const size_t descriptionSubPatternSize = sizeof(descriptionSubPattern) - 1;
-
-		size_t recordPosition;
-
 		string md5;
 		TranslationPosition translationPosition;
 		translationPosition.file = file;
 
-		while (true)
-		{
-			recordPosition = file->tell();
-			if (!parser.parseNextLine(tagName, tagValue))
-			{
-				if (file->eof()) break; else continue;
-			}
+		ioi::Record ioiRecord = { &translationPosition.offset, &md5 };
 
-			bool hashSumFound = false;
-			bool translationFound = false;
-
-			do
-			{
-				if (tagName.equal(BUFFER_AND_SIZE("Description-md5")))
+		ioi::tr::Callbacks callbacks;
+		callbacks.main =
+				[this, &md5, &translationPosition]()
 				{
-					hashSumFound = true;
-					md5 = tagValue.toString();
-				}
-				else if ((size_t)(tagName.second - tagName.first) > descriptionSubPatternSize &&
-						!memcmp(&*tagName.first, descriptionSubPattern, descriptionSubPatternSize))
-				{
-					translationFound = true;
-					translationPosition.offset = file->tell() - (tagValue.second - tagValue.first) - 1; // -1 for '\n'
-				}
-			} while (parser.parseNextLine(tagName, tagValue));
+					translations.insert({ std::move(md5), translationPosition });
+				};
 
-			if (!hashSumFound)
-			{
-				fatal2(__("unable to find the md5 hash in the record starting at byte '%u'"), recordPosition);
-			}
-			if (!translationFound)
-			{
-				fatal2(__("unable to find the translation in the record starting at byte '%u'"), recordPosition);
-			}
-
-			translations.insert({ std::move(md5), translationPosition });
-		}
+		ioi::tr::processIndex(path, callbacks, ioiRecord);
 	}
 	catch(Exception&)
 	{

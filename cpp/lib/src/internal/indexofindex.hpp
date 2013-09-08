@@ -23,7 +23,7 @@ namespace ioi {
 struct Record
 {
 	uint32_t* offsetPtr;
-	string* packageNamePtr;
+	string* indexStringPtr;
 };
 // index suffix number must be incremented every time Record changes
 
@@ -40,6 +40,17 @@ struct Callbacks
 
 void processIndex(const string& path, const Callbacks&, const Record&);
 void generate(const string& indexPath, const string& temporaryPath);
+
+}
+
+namespace tr { // Translation-xy(z)
+
+struct Callbacks
+{
+	std::function< void() > main;
+};
+
+void processIndex(const string& path, const Callbacks&, const Record&);
 
 }
 

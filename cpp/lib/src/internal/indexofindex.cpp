@@ -23,6 +23,7 @@
 #include <cupt/file.hpp>
 
 #include <internal/filesystem.hpp>
+#include <internal/tagparser.hpp>
 
 #include <internal/indexofindex.hpp>
 
@@ -66,7 +67,7 @@ void parsePackagesSourcesFullIndex(const string& path, const ps::Callbacks& call
 		static const size_t packageAnchorLength = sizeof("Package: ") - 1;
 		if (size > packageAnchorLength && !memcmp("Package: ", buf, packageAnchorLength))
 		{
-			record.packageNamePtr->assign(buf + packageAnchorLength, size - packageAnchorLength - 1);
+			record.indexStringPtr->assign(buf + packageAnchorLength, size - packageAnchorLength - 1);
 		}
 		else
 		{
@@ -82,6 +83,57 @@ void parsePackagesSourcesFullIndex(const string& path, const ps::Callbacks& call
 				callbacks.provides(buf + providesAnchorLength, buf + size - 1);
 			}
 		}
+	}
+}
+
+void parseTranslationFullIndex(const string& path, const tr::Callbacks& callbacks, const Record& record)
+{
+	RequiredFile file(path, "r");
+
+	TagParser parser(&file);
+	TagParser::StringRange tagName, tagValue;
+
+	static const char descriptionSubPattern[] = "Description-";
+	static const size_t descriptionSubPatternSize = sizeof(descriptionSubPattern) - 1;
+
+	size_t recordPosition;
+
+	while (true)
+	{
+		recordPosition = file.tell();
+		if (!parser.parseNextLine(tagName, tagValue))
+		{
+			if (file.eof()) break; else continue;
+		}
+
+		bool hashSumFound = false;
+		bool translationFound = false;
+
+		do
+		{
+			if (tagName.equal(BUFFER_AND_SIZE("Description-md5")))
+			{
+				hashSumFound = true;
+				*record.indexStringPtr = tagValue.toString();
+			}
+			else if ((size_t)(tagName.second - tagName.first) > descriptionSubPatternSize &&
+					!memcmp(&*tagName.first, descriptionSubPattern, descriptionSubPatternSize))
+			{
+				translationFound = true;
+				*record.offsetPtr = file.tell() - (tagValue.second - tagValue.first) - 1; // -1 for '\n'
+			}
+		} while (parser.parseNextLine(tagName, tagValue));
+
+		if (!hashSumFound)
+		{
+			fatal2(__("unable to find the md5 hash in the record starting at byte '%u'"), recordPosition);
+		}
+		if (!translationFound)
+		{
+			fatal2(__("unable to find the translation in the record starting at byte '%u'"), recordPosition);
+		}
+
+		callbacks.main();
 	}
 }
 
@@ -140,7 +192,7 @@ void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& c
 
 			absoluteOffset += ourHex2Uint(buf);
 			(*record.offsetPtr) = absoluteOffset;
-			record.packageNamePtr->assign((const char*)delimiterPosition+1, buf+bufSize-1);
+			record.indexStringPtr->assign((const char*)delimiterPosition+1, buf+bufSize-1);
 			callbacks.main();
 		}
 		while (file.rawGetLine(buf, bufSize), bufSize > 1)
@@ -236,6 +288,15 @@ void generate(const string& indexPath, const string& temporaryPath)
 	parsePackagesSourcesFullIndex(indexPath, callbacks, { &offset, &packageName });
 
 	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
+}
+
+}
+
+namespace tr {
+
+void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
+{
+	parseTranslationFullIndex(path, callbacks, record);
 }
 
 }
