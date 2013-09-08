@@ -219,6 +219,33 @@ void putUint2Hex(File& file, uint32_t value)
 	file.put(buf, sprintf(buf, "%x", value));
 }
 
+struct MainCallback
+{
+	string indexString;
+	uint32_t previousOffset;
+	uint32_t offset;
+	bool isFirstRecord;
+
+	MainCallback()
+		: previousOffset(0)
+		, isFirstRecord(true)
+	{}
+
+	void perform(File& file)
+	{
+		if (!isFirstRecord) file.put("\n");
+		isFirstRecord = false;
+
+		auto relativeOffset = offset - previousOffset;
+		putUint2Hex(file, relativeOffset);
+		file.put("\0", 1);
+		file.put(indexString);
+		file.put("\n");
+
+		previousOffset = offset;
+	}
+};
+
 }
 
 string getIndexOfIndexPath(const string& path)
@@ -257,26 +284,10 @@ void generate(const string& indexPath, const string& temporaryPath)
 {
 	RequiredFile file(temporaryPath, "w");
 
-	string packageName;
-	uint32_t previousOffset = 0;
-	uint32_t offset;
-	bool isFirstRecord = true;
+	MainCallback mainCallback;
 
 	Callbacks callbacks;
-	callbacks.main =
-			[&file, &isFirstRecord, &offset, &previousOffset, &packageName]()
-			{
-				if (!isFirstRecord) file.put("\n");
-				isFirstRecord = false;
-
-				auto relativeOffset = offset - previousOffset;
-				putUint2Hex(file, relativeOffset);
-				file.put("\0", 1);
-				file.put(packageName);
-				file.put("\n");
-
-				previousOffset = offset;
-			};
+	callbacks.main = std::bind(&MainCallback::perform, std::ref(mainCallback), std::ref(file));
 	callbacks.provides =
 			[&file](const char* begin, const char* end)
 			{
@@ -285,7 +296,8 @@ void generate(const string& indexPath, const string& temporaryPath)
 				file.put("\n");
 			};
 
-	parsePackagesSourcesFullIndex(indexPath, callbacks, { &offset, &packageName });
+	parsePackagesSourcesFullIndex(indexPath, callbacks,
+			{ &mainCallback.offset, &mainCallback.indexString });
 
 	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
 }
