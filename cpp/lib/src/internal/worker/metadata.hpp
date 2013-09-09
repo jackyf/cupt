@@ -48,7 +48,7 @@ class MetadataWorker: public virtual WorkerBase
 			const cachefiles::IndexEntry&, const string&, const string&, bool);
 	bool __update_index(download::Manager&, const cachefiles::IndexEntry&,
 			IndexUpdateInfo&&, bool, bool&);
-	void __generate_index_of_index(const string&);
+	void p_generateIndexesOfIndexes(const cachefiles::IndexEntry&);
 	bool __update_main_index(download::Manager&, const cachefiles::IndexEntry&,
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,

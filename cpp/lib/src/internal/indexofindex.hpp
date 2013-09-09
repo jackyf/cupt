@@ -51,6 +51,7 @@ struct Callbacks
 };
 
 void processIndex(const string& path, const Callbacks&, const Record&);
+void generate(const string& indexPath, const string& temporaryPath);
 
 }
 
