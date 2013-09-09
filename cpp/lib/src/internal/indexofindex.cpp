@@ -168,7 +168,9 @@ uint32_t ourHex2Uint(const char* s)
 	return result;
 }
 
-void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& callbacks, const Record& record)
+template< typename Callbacks, typename AdditionalLinesParser >
+void templatedParseIndexOfIndex(const string& path, const Callbacks& callbacks, const Record& record,
+		const AdditionalLinesParser& additionalLinesParser)
 {
 	RequiredFile file(path, "r");
 
@@ -181,13 +183,13 @@ void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& c
 		{ // offset and package name:
 			if (bufSize-1 < 3)
 			{
-				fatal2i("ioi: offset and package name: too small line");
+				fatal2i("ioi: offset and index string: too small line");
 			}
 			// finding delimiter (format: "<hex>\0<packagename>\n)
 			auto delimiterPosition = memchr(buf+1, '\0', bufSize-3);
 			if (!delimiterPosition)
 			{
-				fatal2i("ioi: offset and package name: no delimiter found");
+				fatal2i("ioi: offset and index string: no delimiter found");
 			}
 
 			absoluteOffset += ourHex2Uint(buf);
@@ -198,16 +200,34 @@ void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& c
 		while (file.rawGetLine(buf, bufSize), bufSize > 1)
 		{
 			auto fieldType = buf[0];
-			switch (fieldType)
-			{
-				case field::provides:
-					callbacks.provides(buf+1, buf+bufSize-1);
-					break;
-				default:
-					fatal2i("ioi: invalid field type %zu", size_t(fieldType));
-			}
+			additionalLinesParser(fieldType, buf+1, buf+bufSize-1);
 		}
 	}
+}
+
+void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& callbacks, const Record& record)
+{
+	auto additionalLinesParser = [&callbacks](char fieldType, const char* bufferStart, const char* bufferEnd)
+	{
+		switch (fieldType)
+		{
+			case field::provides:
+				callbacks.provides(bufferStart, bufferEnd);
+				break;
+			default:
+				fatal2i("ioi: invalid field type %zu", size_t(fieldType));
+		}
+	};
+	templatedParseIndexOfIndex(path, callbacks, record, additionalLinesParser);
+}
+
+void parseTranslationIndexOfIndex(const string& path, const tr::Callbacks& callbacks, const Record& record)
+{
+	auto additionalLinesParser = [](char fieldType, const char*, const char*)
+	{
+		fatal2i("ioi: unexpected additional field type %zu", size_t(fieldType));
+	};
+	templatedParseIndexOfIndex(path, callbacks, record, additionalLinesParser);
 }
 
 static const string indexPathSuffix = ".index" "0";
@@ -262,6 +282,21 @@ void templatedGenerate(const string& indexPath, const string& temporaryPath,
 	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
 }
 
+template< typename Callbacks, typename Parser >
+void templatedProcessIndex(const string& path, const Callbacks& callbacks, const Record& record,
+		Parser fullParser, Parser ioiParser)
+{
+	auto ioiPath = getIndexOfIndexPath(path);
+	if (fs::fileExists(ioiPath) && (getModifyTime(ioiPath) >= getModifyTime(path)))
+	{
+		ioiParser(ioiPath, callbacks, record);
+	}
+	else
+	{
+		fullParser(path, callbacks, record);
+	}
+}
+
 }
 
 string getIndexOfIndexPath(const string& path)
@@ -285,15 +320,8 @@ namespace ps {
 
 void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
 {
-	auto ioiPath = getIndexOfIndexPath(path);
-	if (fs::fileExists(ioiPath) && (getModifyTime(ioiPath) >= getModifyTime(path)))
-	{
-		parsePackagesSourcesIndexOfIndex(ioiPath, callbacks, record);
-	}
-	else
-	{
-		parsePackagesSourcesFullIndex(path, callbacks, record);
-	}
+	templatedProcessIndex(path, callbacks, record,
+			parsePackagesSourcesFullIndex, parsePackagesSourcesIndexOfIndex);
 }
 
 void generate(const string& indexPath, const string& temporaryPath)
@@ -319,7 +347,8 @@ namespace tr {
 
 void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
 {
-	parseTranslationFullIndex(path, callbacks, record);
+	templatedProcessIndex(path, callbacks, record,
+			parseTranslationFullIndex, parseTranslationIndexOfIndex);
 }
 
 void generate(const string& indexPath, const string& temporaryPath)
