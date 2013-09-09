@@ -133,6 +133,10 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - Changed the format of outputting download number prefixes.
     - hashsums:
       - Fixed non-thread-safe initialization of libgcrypt.
+    - system/resolvers/native:
+      - Adjusted version normalized score calculation that a version from
+        non-default release has a positive score, and thus removing it gets,
+        by default, a penalty, not a bonus.
   * downloadmethods:
     - debdelta:
       - Pass delta size (when/if known) to download progress.
