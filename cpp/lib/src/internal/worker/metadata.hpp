@@ -48,7 +48,7 @@ class MetadataWorker: public virtual WorkerBase
 			const cachefiles::IndexEntry&, const string&, const string&, bool);
 	bool __update_index(download::Manager&, const cachefiles::IndexEntry&,
 			IndexUpdateInfo&&, bool, bool&);
-	void __generate_index_of_index(const string&);
+	void p_generateIndexesOfIndexes(const cachefiles::IndexEntry&);
 	bool __update_main_index(download::Manager&, const cachefiles::IndexEntry&,
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,
@@ -56,6 +56,8 @@ class MetadataWorker: public virtual WorkerBase
 	bool __download_translations(download::Manager&, const cachefiles::IndexEntry& indexEntry,
 			const string&, const string&, const string&, bool, Logger* logger);
 	void __list_cleanup(const string&);
+	bool p_runMetadataUpdateThreads(const shared_ptr< download::Progress >&);
+	bool p_metadataUpdateThread(download::Manager&, const cachefiles::IndexEntry&);
  public:
 	void updateReleaseAndIndexData(const shared_ptr< download::Progress >&);
 };

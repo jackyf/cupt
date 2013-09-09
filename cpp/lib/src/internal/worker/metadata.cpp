@@ -684,15 +684,6 @@ struct MetadataWorker::IndexUpdateInfo
 	string label;
 };
 
-void MetadataWorker::__generate_index_of_index(const string& sourcePath)
-{
-	if (!_config->getBool("cupt::worker::simulate"))
-	{
-		auto temporaryPath = getDownloadPath(sourcePath) + ".ioi";
-		ioi::generate(sourcePath, temporaryPath);
-	}
-}
-
 bool MetadataWorker::__update_main_index(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool releaseFileChanged, bool& mainIndexFileChanged)
 {
@@ -702,13 +693,8 @@ bool MetadataWorker::__update_main_index(download::Manager& downloadManager,
 	info.targetPath = cachefiles::getPathOfIndexList(*_config, indexEntry);
 	info.downloadInfo = cachefiles::getDownloadInfoOfIndexList(*_config, indexEntry);
 	info.label = __("index");
-	auto result = __update_index(downloadManager, indexEntry,
+	return __update_index(downloadManager, indexEntry,
 			std::move(info), releaseFileChanged, mainIndexFileChanged);
-	if (result && _config->getBool("cupt::update::generate-index-of-index"))
-	{
-		__generate_index_of_index(info.targetPath);
-	}
-	return result;
 }
 
 bool MetadataWorker::__update_index(download::Manager& downloadManager, const cachefiles::IndexEntry& indexEntry,
@@ -999,6 +985,10 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 		FORIT(pathIt, translationsPossiblePaths)
 		{
 			addUsedPattern(pathIt->second);
+			if (includeIoi)
+			{
+				addUsedPattern(ioi::getIndexOfIndexPath(pathIt->second));
+			}
 		}
 	}
 	addUsedPattern(lockPath);
@@ -1024,6 +1014,71 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 			}
 		}
 	}
+}
+
+void MetadataWorker::p_generateIndexesOfIndexes(const cachefiles::IndexEntry& indexEntry)
+{
+	if (_config->getBool("cupt::worker::simulate")) return;
+
+	auto getIoiTemporaryPath = [](const string& path)
+	{
+		return getDownloadPath(path) + ".ioi";
+	};
+	auto generateForPath = [&getIoiTemporaryPath](const string& path, bool isMainIndex /* or translation one */)
+	{
+		if (!fs::fileExists(path)) return;
+		auto generator = (isMainIndex ? ioi::ps::generate : ioi::tr::generate);
+		generator(path, getIoiTemporaryPath(path));
+	};
+
+	generateForPath(cachefiles::getPathOfIndexList(*_config, indexEntry), true);
+	for (const auto& item: cachefiles::getPathsOfLocalizedDescriptions(*_config, indexEntry))
+	{
+		generateForPath(item.second, false);
+	}
+}
+
+bool MetadataWorker::p_metadataUpdateThread(download::Manager& downloadManager, const cachefiles::IndexEntry& indexEntry)
+{
+	// wrapping all errors here
+	try
+	{
+		bool result = __update_release_and_index_data(downloadManager, indexEntry);
+		if (_config->getBool("cupt::update::generate-index-of-index"))
+		{
+			p_generateIndexesOfIndexes(indexEntry);
+		}
+		return result;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+bool MetadataWorker::p_runMetadataUpdateThreads(const shared_ptr< download::Progress >& downloadProgress)
+{
+	bool result = true;
+	{ // download manager involved part
+		download::Manager downloadManager(_config, downloadProgress);
+
+		std::queue< std::future<bool> > threadReturnValues;
+
+		for (const auto& indexEntry: _cache->getIndexEntries())
+		{
+			threadReturnValues.emplace(std::async(std::launch::async,
+					std::bind(&MetadataWorker::p_metadataUpdateThread, this, std::ref(downloadManager), indexEntry)));
+		}
+		while (!threadReturnValues.empty())
+		{
+			if (!threadReturnValues.front().get())
+			{
+				result = false;
+			}
+			threadReturnValues.pop();
+		}
+	}
+	return result;
 }
 
 void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progress >& downloadProgress)
@@ -1087,37 +1142,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		_logger->loggedFatal2(Logger::Subsystem::Metadata, 1, format2, "aborted downloading release and index data");
 	}
 
-	int masterExitCode = true;
-	{ // download manager involved part
-		download::Manager downloadManager(_config, downloadProgress);
-
-		std::queue< std::future<bool> > threadReturnValues;
-
-		for (const auto& indexEntry: _cache->getIndexEntries())
-		{
-			threadReturnValues.emplace(std::async(std::launch::async,
-					[this, &downloadManager, indexEntry]()
-					{
-						// wrapping all errors here
-						try
-						{
-							return __update_release_and_index_data(downloadManager, indexEntry);
-						}
-						catch (...)
-						{
-							return false;
-						}
-					}));
-		}
-		while (!threadReturnValues.empty())
-		{
-			if (!threadReturnValues.front().get())
-			{
-				masterExitCode = false;
-			}
-			threadReturnValues.pop();
-		}
-	};
+	auto masterExitCode = p_runMetadataUpdateThreads(downloadProgress);
 
 	if (_config->getBool("apt::get::list-cleanup"))
 	{

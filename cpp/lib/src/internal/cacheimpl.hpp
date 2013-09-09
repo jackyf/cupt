@@ -56,7 +56,7 @@ class CacheImpl
 	struct TranslationPosition
 	{
 		File* file;
-		size_t offset;
+		uint32_t offset;
 	};
 
 	unordered_map< string, vector< const string* > > canProvide;

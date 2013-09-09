@@ -23,6 +23,7 @@
 #include <cupt/file.hpp>
 
 #include <internal/filesystem.hpp>
+#include <internal/tagparser.hpp>
 
 #include <internal/indexofindex.hpp>
 
@@ -40,7 +41,7 @@ time_t getModifyTime(const string& path)
 	return st.st_mtime;
 }
 
-void parseFullIndex(const string& path, const Callbacks& callbacks, const Record& record)
+void parsePackagesSourcesFullIndex(const string& path, const ps::Callbacks& callbacks, const Record& record)
 {
 	RequiredFile file(path, "r");
 
@@ -66,7 +67,7 @@ void parseFullIndex(const string& path, const Callbacks& callbacks, const Record
 		static const size_t packageAnchorLength = sizeof("Package: ") - 1;
 		if (size > packageAnchorLength && !memcmp("Package: ", buf, packageAnchorLength))
 		{
-			record.packageNamePtr->assign(buf + packageAnchorLength, size - packageAnchorLength - 1);
+			record.indexStringPtr->assign(buf + packageAnchorLength, size - packageAnchorLength - 1);
 		}
 		else
 		{
@@ -82,6 +83,57 @@ void parseFullIndex(const string& path, const Callbacks& callbacks, const Record
 				callbacks.provides(buf + providesAnchorLength, buf + size - 1);
 			}
 		}
+	}
+}
+
+void parseTranslationFullIndex(const string& path, const tr::Callbacks& callbacks, const Record& record)
+{
+	RequiredFile file(path, "r");
+
+	TagParser parser(&file);
+	TagParser::StringRange tagName, tagValue;
+
+	static const char descriptionSubPattern[] = "Description-";
+	static const size_t descriptionSubPatternSize = sizeof(descriptionSubPattern) - 1;
+
+	size_t recordPosition;
+
+	while (true)
+	{
+		recordPosition = file.tell();
+		if (!parser.parseNextLine(tagName, tagValue))
+		{
+			if (file.eof()) break; else continue;
+		}
+
+		bool hashSumFound = false;
+		bool translationFound = false;
+
+		do
+		{
+			if (tagName.equal(BUFFER_AND_SIZE("Description-md5")))
+			{
+				hashSumFound = true;
+				*record.indexStringPtr = tagValue.toString();
+			}
+			else if ((size_t)(tagName.second - tagName.first) > descriptionSubPatternSize &&
+					!memcmp(&*tagName.first, descriptionSubPattern, descriptionSubPatternSize))
+			{
+				translationFound = true;
+				*record.offsetPtr = file.tell() - (tagValue.second - tagValue.first) - 1; // -1 for '\n'
+			}
+		} while (parser.parseNextLine(tagName, tagValue));
+
+		if (!hashSumFound)
+		{
+			fatal2(__("unable to find the md5 hash in the record starting at byte '%u'"), recordPosition);
+		}
+		if (!translationFound)
+		{
+			fatal2(__("unable to find the translation in the record starting at byte '%u'"), recordPosition);
+		}
+
+		callbacks.main();
 	}
 }
 
@@ -116,7 +168,9 @@ uint32_t ourHex2Uint(const char* s)
 	return result;
 }
 
-void parseIndexOfIndex(const string& path, const Callbacks& callbacks, const Record& record)
+template< typename Callbacks, typename AdditionalLinesParser >
+void templatedParseIndexOfIndex(const string& path, const Callbacks& callbacks, const Record& record,
+		const AdditionalLinesParser& additionalLinesParser)
 {
 	RequiredFile file(path, "r");
 
@@ -129,33 +183,51 @@ void parseIndexOfIndex(const string& path, const Callbacks& callbacks, const Rec
 		{ // offset and package name:
 			if (bufSize-1 < 3)
 			{
-				fatal2i("ioi: offset and package name: too small line");
+				fatal2i("ioi: offset and index string: too small line");
 			}
 			// finding delimiter (format: "<hex>\0<packagename>\n)
 			auto delimiterPosition = memchr(buf+1, '\0', bufSize-3);
 			if (!delimiterPosition)
 			{
-				fatal2i("ioi: offset and package name: no delimiter found");
+				fatal2i("ioi: offset and index string: no delimiter found");
 			}
 
 			absoluteOffset += ourHex2Uint(buf);
 			(*record.offsetPtr) = absoluteOffset;
-			record.packageNamePtr->assign((const char*)delimiterPosition+1, buf+bufSize-1);
+			record.indexStringPtr->assign((const char*)delimiterPosition+1, buf+bufSize-1);
 			callbacks.main();
 		}
 		while (file.rawGetLine(buf, bufSize), bufSize > 1)
 		{
 			auto fieldType = buf[0];
-			switch (fieldType)
-			{
-				case field::provides:
-					callbacks.provides(buf+1, buf+bufSize-1);
-					break;
-				default:
-					fatal2i("ioi: invalid field type %zu", size_t(fieldType));
-			}
+			additionalLinesParser(fieldType, buf+1, buf+bufSize-1);
 		}
 	}
+}
+
+void parsePackagesSourcesIndexOfIndex(const string& path, const ps::Callbacks& callbacks, const Record& record)
+{
+	auto additionalLinesParser = [&callbacks](char fieldType, const char* bufferStart, const char* bufferEnd)
+	{
+		switch (fieldType)
+		{
+			case field::provides:
+				callbacks.provides(bufferStart, bufferEnd);
+				break;
+			default:
+				fatal2i("ioi: invalid field type %zu", size_t(fieldType));
+		}
+	};
+	templatedParseIndexOfIndex(path, callbacks, record, additionalLinesParser);
+}
+
+void parseTranslationIndexOfIndex(const string& path, const tr::Callbacks& callbacks, const Record& record)
+{
+	auto additionalLinesParser = [](char fieldType, const char*, const char*)
+	{
+		fatal2i("ioi: unexpected additional field type %zu", size_t(fieldType));
+	};
+	templatedParseIndexOfIndex(path, callbacks, record, additionalLinesParser);
 }
 
 static const string indexPathSuffix = ".index" "0";
@@ -167,24 +239,69 @@ void putUint2Hex(File& file, uint32_t value)
 	file.put(buf, sprintf(buf, "%x", value));
 }
 
+struct MainCallback
+{
+	string indexString;
+	uint32_t previousOffset;
+	uint32_t offset;
+	bool isFirstRecord;
+
+	MainCallback()
+		: previousOffset(0)
+		, isFirstRecord(true)
+	{}
+
+	void perform(File& file)
+	{
+		if (!isFirstRecord) file.put("\n");
+		isFirstRecord = false;
+
+		auto relativeOffset = offset - previousOffset;
+		putUint2Hex(file, relativeOffset);
+		file.put("\0", 1);
+		file.put(indexString);
+		file.put("\n");
+
+		previousOffset = offset;
+	}
+};
+
+template < typename CallbacksPreFiller, typename FullIndexParser >
+void templatedGenerate(const string& indexPath, const string& temporaryPath,
+		const CallbacksPreFiller& callbacksPreFiller, FullIndexParser fullIndexParser)
+{
+	RequiredFile file(temporaryPath, "w");
+
+	auto callbacks = callbacksPreFiller(file);
+	MainCallback mainCallback;
+	callbacks.main = std::bind(&MainCallback::perform, std::ref(mainCallback), std::ref(file));
+
+	fullIndexParser(indexPath, callbacks,
+			{ &mainCallback.offset, &mainCallback.indexString });
+
+	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
+}
+
+template< typename Callbacks, typename Parser >
+void templatedProcessIndex(const string& path, const Callbacks& callbacks, const Record& record,
+		Parser fullParser, Parser ioiParser)
+{
+	auto ioiPath = getIndexOfIndexPath(path);
+	if (fs::fileExists(ioiPath) && (getModifyTime(ioiPath) >= getModifyTime(path)))
+	{
+		ioiParser(ioiPath, callbacks, record);
+	}
+	else
+	{
+		fullParser(path, callbacks, record);
+	}
+}
+
 }
 
 string getIndexOfIndexPath(const string& path)
 {
 	return path + indexPathSuffix;
-}
-
-void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
-{
-	auto ioiPath = getIndexOfIndexPath(path);
-	if (fs::fileExists(ioiPath) && (getModifyTime(ioiPath) >= getModifyTime(path)))
-	{
-		parseIndexOfIndex(ioiPath, callbacks, record);
-	}
-	else
-	{
-		parseFullIndex(path, callbacks, record);
-	}
 }
 
 void removeIndexOfIndex(const string& path)
@@ -199,41 +316,47 @@ void removeIndexOfIndex(const string& path)
 	}
 }
 
+namespace ps {
+
+void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
+{
+	templatedProcessIndex(path, callbacks, record,
+			parsePackagesSourcesFullIndex, parsePackagesSourcesIndexOfIndex);
+}
+
 void generate(const string& indexPath, const string& temporaryPath)
 {
-	RequiredFile file(temporaryPath, "w");
+	auto callbacksPreFiller = [](File& file)
+	{
+		Callbacks callbacks;
+		callbacks.provides =
+				[&file](const char* begin, const char* end)
+				{
+					file.put(&field::provides, 1);
+					file.put(begin, end - begin);
+					file.put("\n");
+				};
+		return callbacks;
+	};
+	templatedGenerate(indexPath, temporaryPath, callbacksPreFiller, parsePackagesSourcesFullIndex);
+}
 
-	string packageName;
-	uint32_t previousOffset = 0;
-	uint32_t offset;
-	bool isFirstRecord = true;
+}
 
-	Callbacks callbacks;
-	callbacks.main =
-			[&file, &isFirstRecord, &offset, &previousOffset, &packageName]()
-			{
-				if (!isFirstRecord) file.put("\n");
-				isFirstRecord = false;
+namespace tr {
 
-				auto relativeOffset = offset - previousOffset;
-				putUint2Hex(file, relativeOffset);
-				file.put("\0", 1);
-				file.put(packageName);
-				file.put("\n");
+void processIndex(const string& path, const Callbacks& callbacks, const Record& record)
+{
+	templatedProcessIndex(path, callbacks, record,
+			parseTranslationFullIndex, parseTranslationIndexOfIndex);
+}
 
-				previousOffset = offset;
-			};
-	callbacks.provides =
-			[&file](const char* begin, const char* end)
-			{
-				file.put(&field::provides, 1);
-				file.put(begin, end - begin);
-				file.put("\n");
-			};
+void generate(const string& indexPath, const string& temporaryPath)
+{
+	auto callbacksPreFiller = [](File&) { return Callbacks(); };
+	templatedGenerate(indexPath, temporaryPath, callbacksPreFiller, parseTranslationFullIndex);
+}
 
-	parseFullIndex(indexPath, callbacks, { &offset, &packageName });
-
-	fs::move(temporaryPath, getIndexOfIndexPath(indexPath));
 }
 
 }
