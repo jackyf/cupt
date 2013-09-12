@@ -42,7 +42,7 @@ class CUPT_API NativeResolver: public Resolver
 	/// constructor
 	NativeResolver(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
-	void satisfyRelationExpression(const RelationExpression&, bool, const string&);
+	void satisfyRelationExpression(const RelationExpression&, bool, const string&, RequestImportance);
 	void upgrade();
 	void setAutomaticallyInstalledFlag(const string&, bool);
 

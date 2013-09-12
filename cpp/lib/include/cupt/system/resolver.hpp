@@ -138,6 +138,25 @@ class CUPT_API Resolver
 	/// callback function type
 	typedef std::function< UserAnswer::Type (const Offer&) > CallbackType;
 
+	struct RequestImportance
+	{
+		typedef uint32_t Value;
+
+		static const Value Must;
+		static const Value Try;
+		static const Value Wish;
+
+		RequestImportance(Value value)
+			: p_value(value)
+		{}
+		operator Value() const
+		{
+			return p_value;
+		}
+     private:
+		Value p_value;
+	};
+
 	Resolver() {};
 
 	/**
@@ -146,23 +165,32 @@ class CUPT_API Resolver
 	 * satisfy this request.
 	 *
 	 * @param annotation passed to @ref satisfyRelationExpression
+	 * @param importance passed to @ref satisfyRelationExpression
 	 */
-	void installVersion(const vector< const BinaryVersion* >&, const string& annotation = string());
+	void installVersion(const vector< const BinaryVersion* >&,
+			const string& annotation = string(), RequestImportance importance = RequestImportance::Must);
 	/**
 	 * Requests removal of all supplied versions.
 	 *
 	 * @param annotation passed to @ref satisfyRelationExpression
+	 * @param importance passed to @ref satisfyRelationExpression
 	 */
-	void removeVersions(const vector< const BinaryVersion* >&, const string& annotation = string());
+	void removeVersions(const vector< const BinaryVersion* >&,
+			const string& annotation = string(), RequestImportance importance = RequestImportance::Must);
 	/**
 	 * Requests that specified relation expression is satisfied.
 	 *
 	 * @param invert if set to @c true, unsatisfies the expression rather than satisfy it
 	 * @param annotation user-friendly description of request; if empty,
 	 * standard one will be generated
+	 * @param importance specifies is the request mandatory, and if not, what is the penalty:
+	 * - Must: request is mandatory;
+	 * - Try: request is optional, penalty is the value of 'cupt::resolver::score::unsatisfied-try' option;
+	 * - Wish: request is optiona, penalty is the value of 'cupt::resolver::score::unsatisfied-wish' option;
+	 * - any other value: request is optional, penalty is the value itself.
 	 */
 	virtual void satisfyRelationExpression(const RelationExpression&,
-			bool invert = false, const string& annotation = string()) = 0;
+			bool invert = false, const string& annotation = string(), RequestImportance importance = RequestImportance::Must) = 0;
 	/**
 	 * Requests an upgrade of all installed packages (to their preferred version).
 	 */

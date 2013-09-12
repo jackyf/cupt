@@ -26,6 +26,7 @@ using std::forward_list;
 #include <cupt/fwd.hpp>
 #include <cupt/system/resolver.hpp>
 typedef cupt::system::Resolver::Reason Reason;
+typedef cupt::system::Resolver::RequestImportance RequestImportance;
 using cupt::cache::BinaryVersion;
 using cupt::cache::RelationExpression;
 
@@ -51,11 +52,12 @@ struct UserRelationExpression
 	RelationExpression expression;
 	bool invert;
 	string annotation;
+	RequestImportance importance;
 };
 
 struct Unsatisfied
 {
-	enum Type { None, Recommends, Suggests, Sync };
+	enum Type { None, Recommends, Suggests, Sync, Custom };
 };
 
 struct BasicVertex;
@@ -72,6 +74,7 @@ struct BasicVertex
 	virtual bool isAnti() const;
 	virtual const forward_list< const Element* >* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
+	virtual const RequestImportance& getUnsatisfiedImportance() const;
 
 	BasicVertex();
 	virtual ~BasicVertex();

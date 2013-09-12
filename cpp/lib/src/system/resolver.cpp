@@ -75,6 +75,10 @@ string Resolver::SynchronizationReason::toString() const
 			version->packageName, version->versionString);
 }
 
+const Resolver::RequestImportance::Value Resolver::RequestImportance::Wish = -1;
+const Resolver::RequestImportance::Value Resolver::RequestImportance::Try = -2;
+const Resolver::RequestImportance::Value Resolver::RequestImportance::Must = -3;
+
 namespace {
 
 RelationExpression versionChoicesToRelationExpression(const vector< const BinaryVersion* >& versions)
@@ -92,14 +96,16 @@ RelationExpression versionChoicesToRelationExpression(const vector< const Binary
 
 }
 
-void Resolver::installVersion(const vector< const BinaryVersion* >& versions, const string& annotation)
+void Resolver::installVersion(const vector< const BinaryVersion* >& versions,
+		const string& annotation, RequestImportance importance)
 {
-	satisfyRelationExpression(versionChoicesToRelationExpression(versions), false, annotation);
+	satisfyRelationExpression(versionChoicesToRelationExpression(versions), false, annotation, importance);
 }
 
-void Resolver::removeVersions(const vector< const BinaryVersion* >& versions, const string& annotation)
+void Resolver::removeVersions(const vector< const BinaryVersion* >& versions,
+		const string& annotation, RequestImportance importance)
 {
-	satisfyRelationExpression(versionChoicesToRelationExpression(versions), true, annotation);
+	satisfyRelationExpression(versionChoicesToRelationExpression(versions), true, annotation, importance);
 }
 
 }

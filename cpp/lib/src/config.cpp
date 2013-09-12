@@ -199,6 +199,8 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::quality-adjustment", "40" },
 		{ "cupt::resolver::score::unsatisfied-recommends", "-240" },
 		{ "cupt::resolver::score::unsatisfied-suggests", "-60" },
+		{ "cupt::resolver::score::unsatisfied-try", "-10000" },
+		{ "cupt::resolver::score::unsatisfied-wish", "-500" },
 		{ "cupt::resolver::score::failed-synchronization", "-80" },
 		{ "cupt::worker::archives-space-limit", "0" },
 		{ "cupt::worker::defer-triggers", "auto" },

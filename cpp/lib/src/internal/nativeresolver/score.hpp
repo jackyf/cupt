@@ -25,6 +25,7 @@ namespace cupt {
 namespace internal {
 
 using cache::BinaryVersion;
+using system::Resolver;
 
 class ScoreChange
 {
@@ -33,7 +34,9 @@ class ScoreChange
 	struct SubScore
 	{
 		enum Type { Version, New, Removal, RemovalOfEssential, RemovalOfAuto, Upgrade, Downgrade,
-				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
+				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync,
+				UnsatisfiedTry, UnsatisfiedWish, UnsatisfiedCustomRequest,
+				PositionPenalty, Count };
 	};
 
 	ssize_t __subscores[SubScore::Count];
@@ -60,6 +63,7 @@ class ScoreManager
 	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
 	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
+	ScoreChange getCustomUnsatisfiedScoreChange(Resolver::RequestImportance) const;
 	string getScoreChangeString(const ScoreChange&) const;
 };
 
