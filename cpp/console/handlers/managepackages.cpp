@@ -1270,12 +1270,8 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	// use action modifiers as arguments, not options
 	auto extraParser = [](const string& input) -> pair< string, string >
 	{
-		const set< string > actionModifierOptionNames = {
-			"--install", "--remove", "--purge", "--satisfy", "--unsatisfy", "--iii",
-			"--markauto", "--unmarkauto", "--asauto=yes", "--asauto=no", "--asauto=default",
-			"--select=traditional", "--st", "--select=flexible", "--sf"
-		};
-		if (actionModifierOptionNames.count(input))
+		ManagePackagesContext dummyMpc;
+		if (processPositionalOption(dummyMpc, input))
 		{
 			return make_pair("arguments", input);
 		}
