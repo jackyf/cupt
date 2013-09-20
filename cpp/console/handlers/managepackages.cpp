@@ -53,6 +53,11 @@ struct VersionChoices
 {
 	string packageName;
 	vector< const BinaryVersion* > versions;
+
+	string getFullAnnotation(const string& requestAnnotation) const
+	{
+		return requestAnnotation + format2(" | for package '%s'", packageName);
+	}
 };
 
 struct ManagePackagesContext
@@ -88,12 +93,15 @@ struct ManagePackagesContext
 		}
 		return result;
 	}
-	void install(const VersionChoices& versionChoices, const string& annotation)
+	void install(const VersionChoices& versionChoices, const string& requestAnnotation)
 	{
-		resolver->installVersion(versionChoices.versions, annotation, importance);
+		resolver->installVersion(versionChoices.versions,
+				versionChoices.getFullAnnotation(requestAnnotation), importance);
 	}
-	void remove(const VersionChoices& versionChoices, const string& annotation)
+	void remove(const VersionChoices& versionChoices, const string& requestAnnotation)
 	{
+		const auto& fullAnnotation = versionChoices.getFullAnnotation(requestAnnotation);
+
 		if (selectType == SelectType::Traditional)
 		{
 			// removing all the package regardless of what versions of packages
@@ -101,12 +109,12 @@ struct ManagePackagesContext
 			if (!versionChoices.versions.empty())
 			{
 				const string& packageName = versionChoices.packageName;
-				resolver->removeVersions(cache->getBinaryPackage(packageName)->getVersions(), annotation, importance);
+				resolver->removeVersions(cache->getBinaryPackage(packageName)->getVersions(), fullAnnotation, importance);
 			}
 		}
 		else
 		{
-			resolver->removeVersions(versionChoices.versions, annotation, importance);
+			resolver->removeVersions(versionChoices.versions, fullAnnotation, importance);
 		}
 	}
 };
