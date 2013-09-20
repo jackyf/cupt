@@ -62,7 +62,7 @@ class CacheImpl
 	unordered_map< string, vector< const string* > > canProvide;
 	mutable unordered_map< string, unique_ptr< Package > > binaryPackages;
 	mutable unordered_map< string, unique_ptr< Package > > sourcePackages;
-	map< string, TranslationPosition > translations;
+	unordered_map< string, TranslationPosition > translations;
 	mutable unordered_map< string, vector< const BinaryVersion* > > getSatisfyingVersionsCache;
 	shared_ptr< PinInfo > pinInfo;
 	mutable map< const Version*, ssize_t > pinCache;
