@@ -125,10 +125,10 @@ string getAnnotation(const RelationExpression& re, bool invert)
 }
 
 void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
-		bool invert, const string& proposedAnnotation)
+		bool invert, const string& proposedAnnotation, RequestImportance importance)
 {
 	const string& annotation = !proposedAnnotation.empty() ? proposedAnnotation : getAnnotation(re, invert);
-	p_userRelationExpressions.push_back({ re, invert, annotation });
+	p_userRelationExpressions.push_back({ re, invert, annotation, importance});
 	if (__config->getBool("debug::resolver"))
 	{
 		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
@@ -441,6 +441,9 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 				break;
 			case dg::Unsatisfied::Sync:
 				action.profit = __score_manager.getUnsatisfiedSynchronizationScoreChange();
+				break;
+			case dg::Unsatisfied::Custom:
+				action.profit = __score_manager.getCustomUnsatisfiedScoreChange(action.newElementPtr->getUnsatisfiedImportance());
 				break;
 		}
 		action.profit.setPosition(position);

@@ -18,6 +18,8 @@ cupt (2.6.0~) UNRELEASED; urgency=low
         systems. (Closes: #710052)
       - New positional request type options '--select=traditional',
         '--select=flexible'.
+      - New positional request importance options '--importance=must',
+        '--importance=try', '--importance=wish', '--importance=<value>'.
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
@@ -86,7 +88,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'unsatisfyRelationExpression': removed, merged into
         'satisfyRelationExpression' with new boolean parameter.
       - [ABI break] 'satisfyRelationExpression': added new parameters 'invert'
-        and 'annotation'.
+        'annotation' and 'importance'.
       - [API break] 'installVersion': now set of possible versions can be
         passed.
       - [API break] 'removePackage': removed, replaced by new, more flexible

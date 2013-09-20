@@ -21,6 +21,7 @@
 #include <cupt/cache.hpp>
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/system/resolver.hpp>
 
 #include <internal/nativeresolver/score.hpp>
 
@@ -33,12 +34,20 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 	__quality_adjustment = config.getInteger("cupt::resolver::score::quality-adjustment");
 	__preferred_version_default_pin = config.getString("apt::default-release").empty() ?
 			500 : 990;
-	__subscore_multipliers[ScoreChange::SubScore::Version] = 1u;
-	// from 1, skipping SubScore::Version
-	for (size_t i = 1; i < ScoreChange::SubScore::Count; ++i)
+
+	for (size_t i = 0; i < ScoreChange::SubScore::Count; ++i)
 	{
+		const auto type = ScoreChange::SubScore::Type(i);
+		auto& multiplier = __subscore_multipliers[i];
+
+		if (type == ScoreChange::SubScore::Version || type == ScoreChange::SubScore::UnsatisfiedCustomRequest)
+		{
+			multiplier = 1u;
+			continue;
+		}
+
 		const char* leafOption;
-		switch (ScoreChange::SubScore::Type(i))
+		switch (type)
 		{
 			case ScoreChange::SubScore::New:
 				leafOption = "new"; break;
@@ -60,11 +69,15 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 				leafOption = "unsatisfied-suggests"; break;
 			case ScoreChange::SubScore::FailedSync:
 				leafOption = "failed-synchronization"; break;
+			case ScoreChange::SubScore::UnsatisfiedTry:
+				leafOption = "unsatisfied-try"; break;
+			case ScoreChange::SubScore::UnsatisfiedWish:
+				leafOption = "unsatisfied-wish"; break;
 			default:
 				fatal2i("missing score multiplier for the score '%zu'", i);
 		}
 
-		__subscore_multipliers[i] = config.getInteger(
+		multiplier = config.getInteger(
 				string("cupt::resolver::score::") + leafOption);
 	}
 }
@@ -137,6 +150,24 @@ ScoreChange ScoreManager::getUnsatisfiedSynchronizationScoreChange() const
 	return result;
 }
 
+ScoreChange ScoreManager::getCustomUnsatisfiedScoreChange(Resolver::RequestImportance importance) const
+{
+	ScoreChange result;
+	if (importance == Resolver::RequestImportance::Try)
+	{
+		result.__subscores[ScoreChange::SubScore::UnsatisfiedTry] = 1;
+	}
+	else if (importance == Resolver::RequestImportance::Wish)
+	{
+		result.__subscores[ScoreChange::SubScore::UnsatisfiedWish] = 1;
+	}
+	else
+	{
+		result.__subscores[ScoreChange::SubScore::UnsatisfiedCustomRequest] = -(ssize_t)importance;
+	}
+	return result;
+}
+
 ssize_t ScoreManager::getScoreChangeValue(const ScoreChange& scoreChange) const
 {
 	// quality correction makes backtracking more/less possible
@@ -202,6 +233,12 @@ string ScoreChange::__to_string() const
 					result << "ur"; break;
 				case SubScore::UnsatisfiedSuggests:
 					result << "us"; break;
+				case SubScore::UnsatisfiedTry:
+					result << "ut"; break;
+				case SubScore::UnsatisfiedWish:
+					result << "uw"; break;
+				case SubScore::UnsatisfiedCustomRequest:
+					result << "uc"; break;
 				case SubScore::FailedSync:
 					result << "fs"; break;
 			}

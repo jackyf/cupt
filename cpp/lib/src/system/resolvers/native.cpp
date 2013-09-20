@@ -33,9 +33,9 @@ NativeResolver::~NativeResolver()
 }
 
 void NativeResolver::satisfyRelationExpression(const RelationExpression& relationExpression,
-		bool invert, const string& annotation)
+		bool invert, const string& annotation, RequestImportance importance)
 {
-	__impl->satisfyRelationExpression(relationExpression, invert, annotation);
+	__impl->satisfyRelationExpression(relationExpression, invert, annotation, importance);
 }
 
 void NativeResolver::upgrade()

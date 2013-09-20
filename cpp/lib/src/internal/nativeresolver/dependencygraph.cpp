@@ -79,6 +79,12 @@ Unsatisfied::Type BasicVertex::getUnsatisfiedType() const
 	return Unsatisfied::None;
 }
 
+const RequestImportance& BasicVertex::getUnsatisfiedImportance() const
+{
+	fatal2i("getting unsatisfied importance of '%s'", toString());
+	return *(const RequestImportance*)nullptr; // unreachable
+}
+
 VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >::iterator& it)
 	: __related_element_ptrs_it(it)
 {}
@@ -275,6 +281,23 @@ Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
 {
 	return parent->getUnsatisfiedType();
 }
+
+class CustomUnsatisfiedVertex: public UnsatisfiedVertex
+{
+	RequestImportance importance;
+ public:
+	CustomUnsatisfiedVertex(const RequestImportance& importance_)
+		: importance(importance_)
+	{}
+	Unsatisfied::Type getUnsatisfiedType() const
+	{
+		return Unsatisfied::Custom;
+	}
+	const RequestImportance& getUnsatisfiedImportance() const
+	{
+		return importance;
+	}
+};
 
 class AnnotatedUserReason: public system::Resolver::UserReason
 {
@@ -832,6 +855,13 @@ class DependencyGraph::FillHelper
 		}
 	}
 
+	const Element* createCustomUnsatisfiedElement(const Element* parent, const RequestImportance& importance)
+	{
+		auto vertex = new CustomUnsatisfiedVertex(importance);
+		vertex->parent = parent;
+		return __dependency_graph.addVertex(vertex);
+	}
+
  public:
 	void unfoldElement(const Element* elementPtr)
 	{
@@ -883,11 +913,18 @@ class DependencyGraph::FillHelper
 
 	void addUserRelationExpression(const UserRelationExpression& ure)
 	{
+		const Element* unsatisfiedElement = nullptr;
+
 		auto createVertex = [&](const string&) -> const Element*
 		{
 			auto vertex = new UserRelationExpressionVertex(ure);
 			__dependency_graph.addVertex(vertex);
 			addEdgeCustom(p_dummyElementPtr, vertex);
+			if (ure.importance != RequestImportance::Must)
+			{
+				if (!unsatisfiedElement) unsatisfiedElement = createCustomUnsatisfiedElement(vertex, ure.importance);
+				addEdgeCustom(vertex, unsatisfiedElement);
+			}
 			return vertex;
 		};
 

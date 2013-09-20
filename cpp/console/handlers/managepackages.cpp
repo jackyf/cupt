@@ -53,6 +53,11 @@ struct VersionChoices
 {
 	string packageName;
 	vector< const BinaryVersion* > versions;
+
+	string getFullAnnotation(const string& requestAnnotation) const
+	{
+		return requestAnnotation + format2(" | for package '%s'", packageName);
+	}
 };
 
 struct ManagePackagesContext
@@ -63,6 +68,7 @@ struct ManagePackagesContext
 	ManagePackages::Mode mode;
 	AutoInstall autoinstall;
 	SelectType selectType;
+	Resolver::RequestImportance importance;
 	Config* config;
 	const Cache* cache;
 	Resolver* resolver;
@@ -87,12 +93,15 @@ struct ManagePackagesContext
 		}
 		return result;
 	}
-	void install(const VersionChoices& versionChoices, const string& annotation)
+	void install(const VersionChoices& versionChoices, const string& requestAnnotation)
 	{
-		resolver->installVersion(versionChoices.versions, annotation);
+		resolver->installVersion(versionChoices.versions,
+				versionChoices.getFullAnnotation(requestAnnotation), importance);
 	}
-	void remove(const VersionChoices& versionChoices, const string& annotation)
+	void remove(const VersionChoices& versionChoices, const string& requestAnnotation)
 	{
+		const auto& fullAnnotation = versionChoices.getFullAnnotation(requestAnnotation);
+
 		if (selectType == SelectType::Traditional)
 		{
 			// removing all the package regardless of what versions of packages
@@ -100,12 +109,12 @@ struct ManagePackagesContext
 			if (!versionChoices.versions.empty())
 			{
 				const string& packageName = versionChoices.packageName;
-				resolver->removeVersions(cache->getBinaryPackage(packageName)->getVersions(), annotation);
+				resolver->removeVersions(cache->getBinaryPackage(packageName)->getVersions(), fullAnnotation, importance);
 			}
 		}
 		else
 		{
-			resolver->removeVersions(versionChoices.versions, annotation);
+			resolver->removeVersions(versionChoices.versions, fullAnnotation, importance);
 		}
 	}
 };
@@ -150,7 +159,7 @@ static void preProcessMode(ManagePackagesContext& mpc)
 	}
 	else if (mpc.mode == ManagePackages::BuildDepends)
 	{
-		mpc.resolver->satisfyRelationExpression(RelationExpression("build-essential"));
+		mpc.resolver->satisfyRelationExpression(RelationExpression("build-essential"), false, string(), mpc.importance);
 	}
 }
 
@@ -178,12 +187,13 @@ static void unrollFileArguments(vector< string >& arguments)
 	arguments.swap(newArguments);
 }
 
-void __satisfy_or_unsatisfy(Resolver* resolver,
+void __satisfy_or_unsatisfy(ManagePackagesContext& mpc,
 		const RelationLine& relationLine, ManagePackages::Mode mode, const string& annotation = string())
 {
 	for (const auto& relationExpression: relationLine)
 	{
-		resolver->satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy), annotation);
+		mpc.resolver->satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy),
+				annotation, mpc.importance);
 	}
 }
 
@@ -200,7 +210,7 @@ static void processSatisfyExpression(ManagePackagesContext& mpc, string packageE
 	auto relationLine = ArchitecturedRelationLine(packageExpression)
 			.toRelationLine(mpc.config->getString("apt::architecture"));
 
-	__satisfy_or_unsatisfy(mpc.resolver, relationLine, localMode);
+	__satisfy_or_unsatisfy(mpc, relationLine, localMode);
 }
 
 static void processBuildDependsExpression(ManagePackagesContext& mpc, const string& packageExpression)
@@ -212,13 +222,13 @@ static void processBuildDependsExpression(ManagePackagesContext& mpc, const stri
 
 	for (const auto& version: versions)
 	{
-		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDepends]
+		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildDepends]
 				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
-		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
+		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
 				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
-		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflicts]
+		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildConflicts]
 				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
-		__satisfy_or_unsatisfy(mpc.resolver, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
+		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
 				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 	}
 }
@@ -344,7 +354,29 @@ static void processReinstallExpression(ManagePackagesContext& mpc, const string&
 				packageExpression, targetVersionString);
 	}
 	mpc.resolver->installVersion({ static_cast< const BinaryVersion* >(targetVersion) },
-			getRequestAnnotation(mpc.mode, packageExpression));
+			getRequestAnnotation(mpc.mode, packageExpression), mpc.importance);
+}
+
+static bool processNumericImportanceOption(ManagePackagesContext& mpc, const string& arg)
+{
+	const char field[] = "--importance=";
+	const size_t fieldLength = sizeof(field)-1;
+	if (arg.compare(0, fieldLength, field) == 0)
+	{
+		try
+		{
+			mpc.importance = boost::lexical_cast< Resolver::RequestImportance::Value >(arg.substr(fieldLength));
+		}
+		catch (boost::bad_lexical_cast&)
+		{
+			fatal2("option '--importance' requires non-negative numeric value");
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 static bool processPositionalOption(ManagePackagesContext& mpc, const string& arg)
@@ -364,6 +396,10 @@ static bool processPositionalOption(ManagePackagesContext& mpc, const string& ar
 		mpc.selectType = ManagePackagesContext::SelectType::Traditional;
 	else if (arg == "--select=flexible" || arg == "--sf")
 		mpc.selectType = ManagePackagesContext::SelectType::Flexible;
+	else if (arg == "--importance=wish" || arg == "--wish") mpc.importance = Resolver::RequestImportance::Wish;
+	else if (arg == "--importance=try" || arg == "--try") mpc.importance = Resolver::RequestImportance::Try;
+	else if (arg == "--importance=must" || arg == "--must") mpc.importance = Resolver::RequestImportance::Must;
+	else if (processNumericImportanceOption(mpc, arg)) ;
 	else
 		return false;
 
@@ -1270,7 +1306,12 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 	// use action modifiers as arguments, not options
 	auto extraParser = [](const string& input) -> pair< string, string >
 	{
-		ManagePackagesContext dummyMpc;
+		ManagePackagesContext dummyMpc = {
+			ManagePackages::Mode::Install,
+			ManagePackagesContext::AutoInstall::Nop,
+			ManagePackagesContext::SelectType::Traditional,
+			0, nullptr, nullptr, nullptr, nullptr
+		};
 		if (processPositionalOption(dummyMpc, input))
 		{
 			return make_pair("arguments", input);
@@ -1470,7 +1511,7 @@ int managePackages(Context& context, ManagePackages::Mode mode)
 	shared_ptr< Worker > worker(new Worker(config, cache));
 
 	ManagePackagesContext mpc = { mode,
-			ManagePackagesContext::AutoInstall::Nop, ManagePackagesContext::SelectType::Traditional,
+			ManagePackagesContext::AutoInstall::Nop, ManagePackagesContext::SelectType::Traditional, Resolver::RequestImportance::Must,
 			config.get(), cache.get(), resolver.get(), worker.get() };
 
 	stage(__("Scheduling requested actions... "));
