@@ -832,6 +832,34 @@ each package.
 
 =back
 
+=head3 management modifiers: request importance options
+
+=over
+
+=item --importance=must,--must
+
+the following actions must be unconditionally performed, in other words,
+mandatory. This is the default.
+
+=item --importance=try,--try
+
+the following actions are optional, but relatively big
+(L<cupt::resolver::score::unsatisfied-try>) penalty will be applied for each
+non-satisfied request
+
+=item --importance=wish,--wish
+
+the following actions are optional, but relatively small
+(L<cupt::resolver::score::unsatisfied-wish>) penalty will be applied for each
+non-satisfied request
+
+=item --importance=<value>
+
+(where <value> is a positive integer) the following actions are optional, but
+exact penalty of <value> will be applied for each non-satisfied request
+
+=back
+
 =head3 management modifiers: package name suffixes
 
 =over
