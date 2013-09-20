@@ -620,7 +620,7 @@ The syntax described above is known as **binary package version expression**.
 In the //cupt(1)// manual page all subcommands which accept this syntax are clearly
 marked as such.
 
-== Combining multiple version arguments ==
+== Combining multiple version arguments ==[multiple_versions_arguments_and_wildcars]
 
 Many subcommands accept several arguments of the same meaning. Examples:
 
@@ -1775,7 +1775,7 @@ Finally, if you want to disable the logging entirely, set the option
 
 = ADVANCED USAGE =
 
-== Functional selectors ==
+== Functional selectors ==[fse]
 
 **Functional selectors** is a extended syntax for selecting binary or source
 versions by their properties or relations. It's available starting with Cupt 2.6.
@@ -2021,6 +2021,112 @@ The command line options above are positional and can be mixed.
 will [install (if were installed) #iii] any version of ``jhc`` and any version
 of ``ncdu`` found in ``experimental`` distribution, but unconditionally remove
 installed packages which names start with ``automake``.
+
+== Request importance options ==
+
+By default, when you ask Cupt to perform some package management actions, they
+will be performed unconditionally. As in, the command will fail if any of
+requested actions cannot be performed. Sometimes more flexibility might be
+wanted, especially with [wildcards #multiple_versions_arguments_and_wildcars]
+and [FSE #fse].
+
+Starting with Cupt 2.6, it's possibly to specify also non-mandatory, or
+optional, requests. For optional requests you also specify their importance,
+choosing from a three predefined profiles or supplying precise integer value.
+The request importance is controlled by ``--importance=`` command line option.
+
+To specify actions which should be tried hard but you accept that some of them
+could not be satisfied at reasonable price (e.g. some of them conflicts with
+each other or require extremely "bad" changes to the system), use
+``--importance=try`` (or its shortcut ``--try``). For example:
+
+```
+ $ cupt -s install --try 'provides(vim)' --no-summary
+ 
+ The following packages will be installed:
+ 
+ [...] vim-athena vim-nox 
+ 
+ The following packages will be upgraded:
+ 
+ [...] vim vim-common vim-gtk vim-gui-common vim-runtime 
+ 
+ [...]
+ 
+ Leave the following dependencies unresolved:
+ 
+ user request: install provides(vim) | for package 'vim-gnome'
+```
+
+To specify actions with low importance (as in: "do some of them if possible"),
+use ``--importance=wish`` (or its shortcut ``--wish``). For example:
+
+```
+ $ cupt -s --wish remove *gnome*
+
+ [...]
+ 
+ The following packages will be removed:
+ 
+ gnome-keyring gstreamer0.10-plugins-good libpam-gnome-keyring
+ libsoup-gnome2.4-1 
+ 
+ The following packages are no longer needed and thus will be auto-removed:
+ 
+ gcr gstreamer0.10-gconf gstreamer0.10-x iptables libcap-ng0 libcap2-bin
+ libdrm-nouveau1a libdv4 libgck-1-0 libgcr-3-1 libgcr-3-common libiec61883-0
+ libnfnetlink0 libpam-cap libxtables10 
+ 
+ Leave the following dependencies unresolved:
+ 
+ gksu 2.0.2-6^installed recommends 'gnome-keyring'
+ user request: remove *gnome* | for package 'libgnome-keyring-common'
+ user request: remove *gnome* | for package 'libgnome-keyring0'
+ libwebkitgtk-3.0-0 2.0.4-5 recommends 'gstreamer1.0-plugins-good'
+ libwebkitgtk-1.0-0 2.0.4-5 recommends 'gstreamer1.0-plugins-good'
+```
+
+To specify precise numeric importance(s), use ``--importance=``//number//. For example:
+
+```
+ $ cupt -s install --importance=10000 xmail --importance=15000 nullmailer --no-auto-remove
+ 
+ The following packages will be installed:
+ 
+ nullmailer 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ Leave the following dependencies unresolved:
+ 
+ user request: install xmail | for package 'xmail'
+```
+```
+ $ cupt -s install --importance=20000 xmail --importance=15000 nullmailer --no-auto-remove
+ 
+ The following packages will be installed:
+ 
+ xmail 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ Leave the following dependencies unresolved:
+ 
+ user request: install nullmailer | for package 'nullmailer'
+```
+
+You can also, as usually, mix those options and use ``--importance=must`` (or
+its shortcut ``--must``) to restore default behavior, for example:
+
+``` cupt install --try pinentry-* --wish *debootstrap --must --select=flexible icedove *xulrunner*
+
+The penalty values of ``--importance=try`` and ``--importance=wish`` are
+controlled by configuration options ``cupt::resolver::score::unsatisfied-try``
+and ``cupt::resolver::score::unsatisfied-wish``, respectively.
 
 == Changes in systems with a low disk space ==
 
