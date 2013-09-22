@@ -747,18 +747,14 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		else
 		{
 			// non-version vertex - unsatisfied one
-			const GraphCessorListType& predecessors =
-					__solution_storage->getPredecessorElements(elementPtr);
-			FORIT(predecessorIt, predecessors)
+			for (auto predecessor: __solution_storage->getPredecessorElements(elementPtr))
 			{
-				const GraphCessorListType& affectedVersionElements =
-						__solution_storage->getPredecessorElements(*predecessorIt);
-				FORIT(affectedVersionElementIt, affectedVersionElements)
+				for (auto affectedVersionElementPtr: __solution_storage->getPredecessorElements(predecessor))
 				{
-					if (solution.getPackageEntry(*affectedVersionElementIt))
+					if (solution.getPackageEntry(affectedVersionElementPtr))
 					{
 						offer.unresolvedProblems.push_back(
-								(*predecessorIt)->getReason(**affectedVersionElementIt));
+								predecessor->getReason(*affectedVersionElementPtr));
 					}
 				}
 			}
