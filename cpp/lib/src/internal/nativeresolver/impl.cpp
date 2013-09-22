@@ -723,10 +723,9 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 	map< const dg::Element*, size_t > reasonProcessingCache;
 
-	auto elementPtrs = solution.getElements();
-	FORIT(elementPtrIt, elementPtrs)
+	for (auto elementPtr: solution.getElements())
 	{
-		auto vertex = dynamic_cast< const dg::VersionVertex* >(*elementPtrIt);
+		auto vertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 		if (vertex)
 		{
 			const string& packageName = vertex->getPackageName();
@@ -741,7 +740,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 			if (trackReasons)
 			{
 				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage,
-						*elementPtrIt, reasonProcessingCache);
+						elementPtr, reasonProcessingCache);
 			}
 			suggestedPackage.automaticallyInstalledFlag = __compute_target_auto_status(packageName);
 		}
@@ -749,7 +748,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		{
 			// non-version vertex - unsatisfied one
 			const GraphCessorListType& predecessors =
-					__solution_storage->getPredecessorElements(*elementPtrIt);
+					__solution_storage->getPredecessorElements(elementPtr);
 			FORIT(predecessorIt, predecessors)
 			{
 				const GraphCessorListType& affectedVersionElements =
