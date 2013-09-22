@@ -71,8 +71,8 @@ class NativeResolverImpl
 	float __get_version_weight(const BinaryVersion*) const;
 	float __get_action_profit(const BinaryVersion*, const BinaryVersion*) const;
 
-	bool __compute_target_auto_status(const string&) const;
-	AutoRemovalPossibility::Allow __is_candidate_for_auto_removal(const dg::Element*);
+	bool p_computeTargetAutoStatus(const string&, const Solution&, const dg::Element*) const;
+	AutoRemovalPossibility::Allow p_isCandidateForAutoRemoval(const Solution&, const dg::Element*);
 	bool __clean_automatically_installed(Solution&);
 
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&, size_t);

@@ -205,7 +205,8 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 	return __fair_chooser(solutions);
 }
 
-bool NativeResolverImpl::__compute_target_auto_status(const string& packageName) const
+bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
+		const Solution& solution, const dg::Element* elementPtr) const
 {
 	auto overrideIt = __auto_status_overrides.find(packageName);
 	if (overrideIt != __auto_status_overrides.end())
@@ -218,10 +219,22 @@ bool NativeResolverImpl::__compute_target_auto_status(const string& packageName)
 		return __cache->isAutomaticallyInstalled(packageName);
 	}
 
-	return !__initial_packages.count(packageName);
+	auto packageEntryPtr = solution.getPackageEntry(elementPtr);
+	if (!packageEntryPtr)
+	{
+		fatal2i("native resolver: new package does not have a package entry");
+	}
+	if (packageEntryPtr->introducedBy.empty())
+	{
+		fatal2i("native resolver: new package does not have 'introducedBy'");
+	}
+
+	bool requestedByUser = dynamic_cast<const Resolver::UserReason*>(packageEntryPtr->introducedBy.getReason().get());
+	return !requestedByUser;
 }
 
-AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_removal(const dg::Element* elementPtr)
+AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
+		const Solution& solution, const dg::Element* elementPtr)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
@@ -238,16 +251,9 @@ AutoRemovalPossibility::Allow NativeResolverImpl::__is_candidate_for_auto_remova
 	{
 		return Allow::No;
 	}
-	{ // checking was the package initially requested
-		auto initialPackageIt = __initial_packages.find(packageName);
-		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.sticked)
-		{
-			return Allow::No;
-		}
-	}
 
 	return __auto_removal_possibility.isAllowed(version, __old_packages.count(packageName),
-			__compute_target_auto_status(packageName));
+			p_computeTargetAutoStatus(packageName, solution, elementPtr));
 }
 
 bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
@@ -255,14 +261,14 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 	typedef AutoRemovalPossibility::Allow Allow;
 
 	map< const dg::Element*, Allow > isCandidateForAutoRemovalCache;
-	auto isCandidateForAutoRemoval = [this, &isCandidateForAutoRemovalCache]
+	auto isCandidateForAutoRemoval = [this, &solution, &isCandidateForAutoRemovalCache]
 			(const dg::Element* elementPtr) -> Allow
 	{
 		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert( { elementPtr, {}});
 		auto& answer = cacheInsertionResult.first->second;
 		if (cacheInsertionResult.second)
 		{
-			answer = __is_candidate_for_auto_removal(elementPtr);
+			answer = p_isCandidateForAutoRemoval(solution, elementPtr);
 		}
 		return answer;
 	};
@@ -742,7 +748,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage,
 						elementPtr, reasonProcessingCache);
 			}
-			suggestedPackage.automaticallyInstalledFlag = __compute_target_auto_status(packageName);
+			suggestedPackage.automaticallyInstalledFlag = p_computeTargetAutoStatus(packageName, solution, elementPtr);
 		}
 		else
 		{
