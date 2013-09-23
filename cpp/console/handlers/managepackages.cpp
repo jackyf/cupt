@@ -119,7 +119,7 @@ struct ManagePackagesContext
 	}
 	void satisfy(const RelationExpression& relationExpression, bool inverted, const string& requestAnnotation)
 	{
-		resolver->satisfyRelationExpression(relationExpression, inverted, requestAnnotation, importance);
+		resolver->satisfyRelationExpression(relationExpression, inverted, requestAnnotation, importance, true);
 	}
 };
 
