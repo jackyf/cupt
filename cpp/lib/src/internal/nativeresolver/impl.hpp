@@ -101,7 +101,7 @@ class NativeResolverImpl
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
-	void satisfyRelationExpression(const RelationExpression&, bool, const string&, RequestImportance);
+	void satisfyRelationExpression(const RelationExpression&, bool, const string&, RequestImportance, bool);
 	void upgrade();
 	void setAutomaticallyInstalledFlag(const string& packageName, bool flagValue);
 

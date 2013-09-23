@@ -188,9 +188,13 @@ class CUPT_API Resolver
 	 * - Try: request is optional, penalty is the value of 'cupt::resolver::score::unsatisfied-try' option;
 	 * - Wish: request is optiona, penalty is the value of 'cupt::resolver::score::unsatisfied-wish' option;
 	 * - any other value: request is optional, penalty is the value itself.
+	 * @param asAutomatic if new packages are to be installed as a result of
+	 * perfoming this request, their 'automaticallyInstalledFlag' will have the
+	 * value of this parameter.
 	 */
 	virtual void satisfyRelationExpression(const RelationExpression&,
-			bool invert = false, const string& annotation = string(), RequestImportance importance = RequestImportance::Must) = 0;
+			bool invert = false, const string& annotation = string(), RequestImportance importance = RequestImportance::Must,
+			bool asAutomatic = false) = 0;
 	/**
 	 * Requests an upgrade of all installed packages (to their preferred version).
 	 */

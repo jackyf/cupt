@@ -88,7 +88,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'unsatisfyRelationExpression': removed, merged into
         'satisfyRelationExpression' with new boolean parameter.
       - [ABI break] 'satisfyRelationExpression': added new parameters 'invert'
-        'annotation' and 'importance'.
+        'annotation', 'importance', 'asAutomatic'.
       - [API break] 'installVersion': now set of possible versions can be
         passed.
       - [API break] 'removePackage': removed, replaced by new, more flexible

@@ -120,10 +120,10 @@ string getAnnotation(const RelationExpression& re, bool invert)
 }
 
 void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
-		bool invert, const string& proposedAnnotation, RequestImportance importance)
+		bool invert, const string& proposedAnnotation, RequestImportance importance, bool asAutomatic)
 {
 	const string& annotation = !proposedAnnotation.empty() ? proposedAnnotation : getAnnotation(re, invert);
-	p_userRelationExpressions.push_back({ re, invert, annotation, importance, false });
+	p_userRelationExpressions.push_back({ re, invert, annotation, importance, asAutomatic });
 	if (__config->getBool("debug::resolver"))
 	{
 		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
