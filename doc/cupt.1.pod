@@ -810,7 +810,8 @@ in addition to following actions, also mark packages as manually installed
 =item --asauto=default
 
 reset any previous C<--asauto> switches (to default mode, which is: mark newly
-installed packages as manually installed and preserve auto-status otherwise)
+installed packages (except for satisfy-type actions) as manually installed and
+preserve auto-status otherwise)
 
 =back
 

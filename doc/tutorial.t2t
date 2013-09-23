@@ -767,6 +767,13 @@ not installed)
 
 ``mumble`` will be marked as automatically installed, ``geoip-dbg`` will be manually installed
 
+- ``cupt satisfy --asauto=no "iptables (>= 1.4)"``
+
+(assuming ``iptables`` package not installed) if possible, install enough
+recent (``1.4`` or later) version of ``iptables``; ``iptables`` itself will be
+marked as manually installed, its possible dependencies as automatically
+installed
+
 
 === Package name suffixes ===
 

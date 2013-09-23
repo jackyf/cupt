@@ -119,7 +119,8 @@ struct ManagePackagesContext
 	}
 	void satisfy(const RelationExpression& relationExpression, bool inverted, const string& requestAnnotation)
 	{
-		resolver->satisfyRelationExpression(relationExpression, inverted, requestAnnotation, importance, true);
+		resolver->satisfyRelationExpression(relationExpression,
+				inverted, requestAnnotation, importance, autoinstall != AutoInstall::No);
 	}
 };
 
