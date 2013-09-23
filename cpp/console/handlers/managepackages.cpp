@@ -117,6 +117,10 @@ struct ManagePackagesContext
 			resolver->removeVersions(versionChoices.versions, fullAnnotation, importance);
 		}
 	}
+	void satisfy(const RelationExpression& relationExpression, bool inverted, const string& requestAnnotation)
+	{
+		resolver->satisfyRelationExpression(relationExpression, inverted, requestAnnotation, importance);
+	}
 };
 
 static const char* modeToString(ManagePackages::Mode mode)
@@ -159,7 +163,7 @@ static void preProcessMode(ManagePackagesContext& mpc)
 	}
 	else if (mpc.mode == ManagePackages::BuildDepends)
 	{
-		mpc.resolver->satisfyRelationExpression(RelationExpression("build-essential"), false, string(), mpc.importance);
+		mpc.satisfy(RelationExpression("build-essential"), false, string());
 	}
 }
 
@@ -192,8 +196,7 @@ void __satisfy_or_unsatisfy(ManagePackagesContext& mpc,
 {
 	for (const auto& relationExpression: relationLine)
 	{
-		mpc.resolver->satisfyRelationExpression(relationExpression, (mode == ManagePackages::Unsatisfy),
-				annotation, mpc.importance);
+		mpc.satisfy(relationExpression, (mode == ManagePackages::Unsatisfy), annotation);
 	}
 }
 
