@@ -543,7 +543,6 @@ class DependencyGraph::FillHelper
 {
 	DependencyGraph& __dependency_graph;
 	const map< string, const BinaryVersion* >& __old_packages;
-	const map< string, InitialPackageEntry >& __initial_packages;
 	bool __debugging;
 
 	int __synchronize_level;
@@ -567,11 +566,10 @@ class DependencyGraph::FillHelper
 
  public:
 	FillHelper(DependencyGraph& dependencyGraph,
-			const map< string, const BinaryVersion* >& oldPackages,
-			const map< string, InitialPackageEntry >& initialPackages)
-		: __dependency_graph(dependencyGraph),
-		__old_packages(oldPackages), __initial_packages(initialPackages),
-		__debugging(__dependency_graph.__config.getBool("debug::resolver"))
+			const map< string, const BinaryVersion* >& oldPackages)
+		: __dependency_graph(dependencyGraph)
+		, __old_packages(oldPackages)
+		, __debugging(__dependency_graph.__config.getBool("debug::resolver"))
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
@@ -948,7 +946,7 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
 {
-	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages, initialPackages));
+	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages));
 
 	{ // getting elements from initial packages
 		FORIT(it, initialPackages)
