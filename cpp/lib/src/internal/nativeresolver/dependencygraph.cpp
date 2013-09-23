@@ -38,7 +38,7 @@ using cache::RelationExpression;
 using std::make_pair;
 
 InitialPackageEntry::InitialPackageEntry()
-	: version(NULL), sticked(false), modified(false)
+	: version(NULL), modified(false)
 {}
 
 BasicVertex::~BasicVertex()
@@ -582,15 +582,6 @@ class DependencyGraph::FillHelper
 	{
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
-			auto initialPackageIt = this->__initial_packages.find(packageName);
-			if (initialPackageIt != this->__initial_packages.end() && initialPackageIt->second.sticked)
-			{
-				if (version != initialPackageIt->second.version)
-				{
-					return false;
-				}
-			}
-
 			if (!version && !__can_package_be_removed(packageName))
 			{
 				return false;
@@ -969,17 +960,14 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 			{
 				__fill_helper->getVertexPtr(initialVersion);
 
-				if (!initialPackageEntry.sticked)
+				const string& packageName = it->first;
+				auto package = __cache.getBinaryPackage(packageName);
+				for (auto version: *package)
 				{
-					const string& packageName = it->first;
-					auto package = __cache.getBinaryPackage(packageName);
-					for (auto version: *package)
-					{
-						__fill_helper->getVertexPtr(version);
-					}
-
-					__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
+					__fill_helper->getVertexPtr(version);
 				}
+
+				__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
 			}
 		}
 	}
@@ -994,7 +982,7 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 	for (const auto& it: initialPackages)
 	{
 		auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
-		result.push_back({ elementPtr, getSharedPackageEntry(it.second.sticked) });
+		result.push_back({ elementPtr, getSharedPackageEntry(false) });
 	}
 	result.emplace_back(__fill_helper->getDummyElementPtr(), getSharedPackageEntry(true));
 	return result;

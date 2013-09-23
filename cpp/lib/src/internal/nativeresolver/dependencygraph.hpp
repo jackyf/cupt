@@ -42,7 +42,6 @@ namespace dependencygraph {
 struct InitialPackageEntry
 {
 	const BinaryVersion* version;
-	bool sticked;
 	bool modified;
 
 	InitialPackageEntry();

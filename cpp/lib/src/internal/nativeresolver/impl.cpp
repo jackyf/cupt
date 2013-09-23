@@ -94,11 +94,6 @@ bool NativeResolverImpl::__prepare_version_no_stick(
 		return true; // there is such version installed already
 	}
 
-	if (initialPackageEntry.sticked)
-	{
-		return false; // package is restricted to be updated
-	}
-
 	if (__config->getBool("debug::resolver"))
 	{
 		debug2("install package '%s', version '%s'", packageName, version->versionString);
@@ -141,10 +136,6 @@ void NativeResolverImpl::upgrade()
 	{
 		dg::InitialPackageEntry& initialPackageEntry = it->second;
 		if (!initialPackageEntry.version)
-		{
-			continue;
-		}
-		if (initialPackageEntry.sticked)
 		{
 			continue;
 		}
