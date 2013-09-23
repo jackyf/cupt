@@ -52,6 +52,7 @@ struct UserRelationExpression
 	bool invert;
 	string annotation;
 	RequestImportance importance;
+	bool asAuto;
 };
 
 struct Unsatisfied
@@ -74,6 +75,7 @@ struct BasicVertex
 	virtual const forward_list< const Element* >* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
 	virtual const RequestImportance& getUnsatisfiedImportance() const;
+	virtual bool asAuto() const;
 
 	BasicVertex();
 	virtual ~BasicVertex();

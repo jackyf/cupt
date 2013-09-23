@@ -123,7 +123,7 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 		bool invert, const string& proposedAnnotation, RequestImportance importance)
 {
 	const string& annotation = !proposedAnnotation.empty() ? proposedAnnotation : getAnnotation(re, invert);
-	p_userRelationExpressions.push_back({ re, invert, annotation, importance});
+	p_userRelationExpressions.push_back({ re, invert, annotation, importance, false });
 	if (__config->getBool("debug::resolver"))
 	{
 		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
@@ -219,9 +219,7 @@ bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
 	{
 		fatal2i("native resolver: new package does not have 'introducedBy'");
 	}
-
-	bool requestedByUser = dynamic_cast<const Resolver::UserReason*>(packageEntryPtr->introducedBy.getReason().get());
-	return !requestedByUser;
+	return packageEntryPtr->introducedBy.brokenElementPtr->asAuto();
 }
 
 AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(

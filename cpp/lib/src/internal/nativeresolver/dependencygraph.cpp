@@ -85,6 +85,12 @@ const RequestImportance& BasicVertex::getUnsatisfiedImportance() const
 	return *(const RequestImportance*)nullptr; // unreachable
 }
 
+bool BasicVertex::asAuto() const
+{
+	fatal2i("getting asAuto of '%s'", toString());
+	return true; // unreacahble
+}
+
 VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >::iterator& it)
 	: __related_element_ptrs_it(it)
 {}
@@ -130,6 +136,10 @@ struct RelationExpressionVertex: public BasicVertex
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	bool isAnti() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
+	bool asAuto() const
+	{
+		return true;
+	}
 };
 
 string RelationExpressionVertex::toString() const
@@ -315,10 +325,12 @@ class AnnotatedUserReason: public system::Resolver::UserReason
 struct UserRelationExpressionVertex: public BasicVertex
 {
 	bool invert;
+	bool asAutoFlag;
 	string annotation;
 
 	UserRelationExpressionVertex(const UserRelationExpression& ure)
 		: invert(ure.invert)
+		, asAutoFlag(ure.asAuto)
 		, annotation(ure.annotation)
 	{}
 	size_t getTypePriority() const
@@ -328,6 +340,10 @@ struct UserRelationExpressionVertex: public BasicVertex
 	bool isAnti() const
 	{
 		return invert;
+	}
+	bool asAuto() const
+	{
+		return asAutoFlag;
 	}
 	shared_ptr< const Reason > getReason(const BasicVertex&) const
 	{
