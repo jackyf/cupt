@@ -219,6 +219,87 @@ void stripComment(string& s)
 	}
 }
 
+static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
+{
+	typedef Cache::IndexEntry IndexEntry;
+
+	vector< string > tokens;
+	static const sregex tokenRegex = sregex::compile("[\\t ]+");
+	tokens = internal::split(tokenRegex, line);
+
+	IndexEntry entry;
+
+	// type
+	if (tokens.empty())
+	{
+		fatal2(__("undefined source type"));
+	}
+	else
+	{
+		if (tokens[0] == "deb")
+		{
+			entry.category = IndexEntry::Binary;
+		}
+		else if (tokens[0] == "deb-src")
+		{
+			entry.category = IndexEntry::Source;
+		}
+		else
+		{
+			fatal2(__("incorrect source type"));
+		}
+	}
+
+	// uri
+	if (tokens.size() < 2)
+	{
+		fatal2(__("undefined source uri"));
+	}
+	else
+	{
+		entry.uri = tokens[1];
+	}
+
+	if (tokens.size() < 3)
+	{
+		fatal2(__("undefined source distribution"));
+	}
+	else
+	{
+		entry.distribution = tokens[2];
+	}
+
+	if (*entry.uri.rbegin() == '/')
+	{
+		entry.uri.erase(entry.uri.end() - 1); // strip last '/' if present
+	}
+
+	if (tokens.size() > 3)
+	{
+		// there are components (sections) specified, it's a normal entry
+		for_each(tokens.begin() + 3, tokens.end(), [&indexEntries, &entry](const string& component)
+		{
+			entry.component = component;
+			indexEntries->push_back(entry);
+		});
+	}
+	else
+	{
+		// this a candidate for easy entry
+		// distribution must end with a slash
+		if (*entry.distribution.rbegin() == '/')
+		{
+			entry.distribution.erase(entry.distribution.end() - 1); // strip last '/' if present
+			entry.component = "";
+			indexEntries->push_back(entry);
+		}
+		else
+		{
+			fatal2(__("distribution doesn't end with a slash"));
+		}
+	}
+}
+
 void CacheImpl::parseSourceList(const string& path)
 {
 	RequiredFile file(path, "r");
@@ -240,81 +321,7 @@ void CacheImpl::parseSourceList(const string& path)
 			}
 			stripComment(line);
 
-			vector< string > tokens;
-			static const sregex tokenRegex = sregex::compile("[\\t ]+");
-			tokens = internal::split(tokenRegex, line);
-
-			IndexEntry entry;
-
-			// type
-			if (tokens.empty())
-			{
-				fatal2(__("undefined source type"));
-			}
-			else
-			{
-				if (tokens[0] == "deb")
-				{
-					entry.category = IndexEntry::Binary;
-				}
-				else if (tokens[0] == "deb-src")
-				{
-					entry.category = IndexEntry::Source;
-				}
-				else
-				{
-					fatal2(__("incorrect source type"));
-				}
-			}
-
-			// uri
-			if (tokens.size() < 2)
-			{
-				fatal2(__("undefined source uri"));
-			}
-			else
-			{
-				entry.uri = tokens[1];
-			}
-
-			if (tokens.size() < 3)
-			{
-				fatal2(__("undefined source distribution"));
-			}
-			else
-			{
-				entry.distribution = tokens[2];
-			}
-
-			if (*entry.uri.rbegin() == '/')
-			{
-				entry.uri.erase(entry.uri.end() - 1); // strip last '/' if present
-			}
-
-			if (tokens.size() > 3)
-			{
-				// there are components (sections) specified, it's a normal entry
-				for_each(tokens.begin() + 3, tokens.end(), [this, &entry](const string& component)
-				{
-					entry.component = component;
-					indexEntries.push_back(entry);
-				});
-			}
-			else
-			{
-				// this a candidate for easy entry
-				// distribution must end with a slash
-				if (*entry.distribution.rbegin() == '/')
-				{
-					entry.distribution.erase(entry.distribution.end() - 1); // strip last '/' if present
-					entry.component = "";
-					indexEntries.push_back(entry);
-				}
-				else
-				{
-					fatal2(__("distribution doesn't end with a slash"));
-				}
-			}
+			parseSourceListLine(line, &indexEntries);
 		}
 	}
 	catch (Exception&)
