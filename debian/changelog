@@ -49,6 +49,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] 'getSystemState': now returns persistent constant pointer.
       - Don't include unnecessary 'boost/xpressive/xpressive_fwd.hpp'.
         (Closes: #701207)
+      - [ABI break] IndexEntry: new member 'options'.
     - cache/package:
       - Apply id version suffixes (^<suffix>) to version strings to
         differentiate versions with same version string but different hash

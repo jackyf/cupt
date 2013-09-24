@@ -21,6 +21,7 @@
 /// @file
 
 #include <set>
+#include <map>
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
@@ -34,6 +35,7 @@ struct CacheImpl;
 }
 
 using std::set;
+using std::map;
 
 using namespace cache;
 
@@ -53,6 +55,7 @@ class CUPT_API Cache
 		string uri; ///< base index URI, as specified in source list
 		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
 		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
+		map< string, string > options; ///< key-value options;
 	};
 	/// extended package information
 	struct ExtendedInfo
