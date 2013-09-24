@@ -219,6 +219,32 @@ void stripComment(string& s)
 	}
 }
 
+static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry* entry)
+{
+	if (tokens.size() < 2) return;
+	auto openingBracketTokenIt = tokens.begin() + 1;
+	if (*openingBracketTokenIt != "[") return;
+
+	auto closingBracketTokenIt = std::find(openingBracketTokenIt+1, tokens.end(), "]");
+	if (closingBracketTokenIt == tokens.end())
+	{
+		fatal2(__("no closing token (']') for options"));
+	}
+
+	for (auto it = openingBracketTokenIt+1; it != closingBracketTokenIt; ++it)
+	{
+		const string& token = *it;
+		auto keyValueDelimiterPosition = token.find('=');
+		if (keyValueDelimiterPosition == string::npos)
+		{
+			fatal2(__("no key-value separator ('=') in the option token '%s'"), token);
+		}
+		entry->options[token.substr(0, keyValueDelimiterPosition)] = token.substr(keyValueDelimiterPosition+1);
+	}
+
+	tokens.erase(openingBracketTokenIt, closingBracketTokenIt+1);
+}
+
 static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
 {
 	typedef Cache::IndexEntry IndexEntry;
@@ -249,6 +275,8 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 			fatal2(__("incorrect source type"));
 		}
 	}
+
+	parseOutKeyValueOptions(tokens, &entry);
 
 	// uri
 	if (tokens.size() < 2)
