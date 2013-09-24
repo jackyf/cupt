@@ -446,6 +446,37 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 	}
 }
 
+static string getIndexEntryOptionValue(const Cache::IndexEntry& entry, const string& key)
+{
+	auto it = entry.options.find(key);
+	if (it == entry.options.end())
+	{
+		return string();
+	}
+	else
+	{
+		return it->second;
+	}
+}
+
+static bool getVerifiedBitForIndexEntry(const Cache::IndexEntry& entry,
+		const Config& config, const string& path, const string& alias)
+{
+	auto trustedOptionValue = getIndexEntryOptionValue(entry, "trusted");
+	if (trustedOptionValue == "yes")
+	{
+		return true;
+	}
+	else if (trustedOptionValue == "no")
+	{
+		return false;
+	}
+	else
+	{
+		return cachefiles::verifySignature(config, path, alias);
+	}
+}
+
 shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
 {
 	auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
@@ -455,7 +486,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const 
 	{
 		auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
 		cachedValue = cachefiles::getReleaseInfo(config, path, alias);
-		cachedValue->verified = cachefiles::verifySignature(config, path, alias);
+		cachedValue->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
 	}
 	if (!cachedValue)
 	{
