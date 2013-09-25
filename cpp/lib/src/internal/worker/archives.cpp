@@ -85,10 +85,9 @@ vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo()
 	auto pathMaxLength = pathconf("/", _PC_PATH_MAX);
 	vector< char > pathBuffer(pathMaxLength + 1, '\0');
 
-	auto packageNames = _cache->getBinaryPackageNames();
-	FORIT(packageNameIt, packageNames)
+	for (const auto& packageName: _cache->getBinaryPackageNames())
 	{
-		auto package = _cache->getBinaryPackage(*packageNameIt);
+		auto package = _cache->getBinaryPackage(packageName);
 		if (!package)
 		{
 			continue;

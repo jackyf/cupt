@@ -660,13 +660,12 @@ int showPackageNames(Context& context)
 
 	checkNoExtraArguments(arguments);
 
-	auto binaryPackageNames = cache->getBinaryPackageNames();
-	FORIT(packageNameIt, binaryPackageNames)
+	for (const string& packageName: cache->getBinaryPackageNames())
 	{
 		// check package name for pattern and output it
-		if (!packageNameIt->compare(0, prefixSize, prefix))
+		if (!packageName.compare(0, prefixSize, prefix))
 		{
-			cout << *packageNameIt << endl;
+			cout << packageName << endl;
 		}
 	}
 

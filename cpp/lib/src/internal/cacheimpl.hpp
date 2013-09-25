@@ -49,10 +49,10 @@ class CacheImpl
 		uint32_t offset;
 		const pair< shared_ptr< const ReleaseInfo >, shared_ptr< File > >* releaseInfoAndFile;
 	};
+	typedef unordered_map< string, vector< PrePackageRecord > > PrePackageMap;
  private:
 	typedef Cache::IndexEntry IndexEntry;
 	typedef Cache::ExtendedInfo ExtendedInfo;
-	typedef unordered_map< string, vector< PrePackageRecord > > PrePackageMap;
 	struct TranslationPosition
 	{
 		File* file;

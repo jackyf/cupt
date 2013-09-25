@@ -106,7 +106,8 @@ class VersionSetGetter
 
 	vector< string > __get_package_names() const
 	{
-		auto result = __binary ? __cache.getBinaryPackageNames() : __cache.getSourcePackageNames();
+		auto range = __binary ? __cache.getBinaryPackageNames() : __cache.getSourcePackageNames();
+		auto result = range.asVector();
 		std::sort(result.begin(), result.end());
 		return result;
 	}

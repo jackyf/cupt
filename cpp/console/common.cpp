@@ -47,13 +47,13 @@ namespace {
 template < typename T > struct TraitsPlus;
 template<> struct TraitsPlus< BinaryVersion >
 {
-	static vector< string > getPackageNames(const Cache& cache) { return cache.getBinaryPackageNames(); };
+	static Range< Cache::PackageNameIterator > getPackageNames(const Cache& cache) { return cache.getBinaryPackageNames(); };
 	static const BinaryPackage* getPackage(const Cache& cache, const string& packageName)
 	{ return cache.getBinaryPackage(packageName); }
 };
 template<> struct TraitsPlus< SourceVersion >
 {
-	static vector< string > getPackageNames(const Cache& cache) { return cache.getSourcePackageNames(); };
+	static Range< Cache::PackageNameIterator > getPackageNames(const Cache& cache) { return cache.getSourcePackageNames(); };
 	static const SourcePackage* getPackage(const Cache& cache, const string& packageName)
 	{ return cache.getSourcePackage(packageName); };
 };

@@ -188,7 +188,7 @@ int search(Context& context)
 		auto regexes = generateSearchRegexes(patterns, variables.count("case-sensitive"));
 		smatch m;
 
-		vector< string > packageNames = cache->getBinaryPackageNames();
+		vector< string > packageNames = cache->getBinaryPackageNames().asVector();
 		std::sort(packageNames.begin(), packageNames.end());
 		if (config->getBool("apt::cache::namesonly"))
 		{

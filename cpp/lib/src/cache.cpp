@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2013 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -29,7 +29,59 @@
 
 namespace cupt {
 
+typedef internal::CacheImpl::PrePackageMap PrePackageMap;
 typedef internal::CacheImpl::PrePackageRecord PrePackageRecord;
+
+struct Cache::PackageNameIterator::Impl: public PrePackageMap::const_iterator
+{
+	Impl(PrePackageMap::const_iterator it)
+		: PrePackageMap::const_iterator(it)
+	{}
+};
+
+Cache::PackageNameIterator& Cache::PackageNameIterator::operator++()
+{
+	++*p_impl;
+	return *this;
+}
+
+Cache::PackageNameIterator::value_type& Cache::PackageNameIterator::operator*() const
+{
+	return (*p_impl)->first;
+}
+
+bool Cache::PackageNameIterator::operator==(const PackageNameIterator& other) const
+{
+	return *p_impl == *(other.p_impl);
+}
+
+bool Cache::PackageNameIterator::operator!=(const PackageNameIterator& other) const
+{
+	return !(*this == other);
+}
+
+Cache::PackageNameIterator::PackageNameIterator(Impl* impl)
+	: p_impl(impl)
+{}
+
+Cache::PackageNameIterator::PackageNameIterator(const PackageNameIterator& other)
+	: p_impl(new Impl(*other.p_impl))
+{}
+
+Cache::PackageNameIterator& Cache::PackageNameIterator::operator=(const PackageNameIterator& other)
+{
+	if (this != &other)
+	{
+		delete p_impl;
+		p_impl = new Impl(*other.p_impl);
+	}
+	return *this;
+}
+
+Cache::PackageNameIterator::~PackageNameIterator()
+{
+	delete p_impl;
+}
 
 Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled)
 {
@@ -84,24 +136,20 @@ vector< Cache::IndexEntry > Cache::getIndexEntries() const
 	return __impl->indexEntries;
 }
 
-vector< string > Cache::getBinaryPackageNames() const
+static Range< Cache::PackageNameIterator > getPrePackagesRange(const PrePackageMap& ppm)
 {
-	vector< string > result;
-	FORIT(it, __impl->preBinaryPackages)
-	{
-		result.push_back(it->first);
-	}
-	return result;
+	typedef Cache::PackageNameIterator PNI;
+	return { PNI(new PNI::Impl(ppm.cbegin())), PNI(new PNI::Impl(ppm.cend())) };
 }
 
-vector< string > Cache::getSourcePackageNames() const
+Range< Cache::PackageNameIterator > Cache::getBinaryPackageNames() const
 {
-	vector< string > result;
-	FORIT(it, __impl->preSourcePackages)
-	{
-		result.push_back(it->first);
-	}
-	return result;
+	return getPrePackagesRange(__impl->preBinaryPackages);
+}
+
+Range< Cache::PackageNameIterator > Cache::getSourcePackageNames() const
+{
+	return getPrePackagesRange(__impl->preSourcePackages);
 }
 
 const BinaryPackage* Cache::getBinaryPackage(const string& packageName) const

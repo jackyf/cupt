@@ -25,6 +25,7 @@
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
+#include <cupt/range.hpp>
 
 namespace cupt {
 
@@ -63,6 +64,28 @@ class CUPT_API Cache
 		set< string > automaticallyInstalled; ///< names of automatically installed packages
 	};
 
+	class PackageNameIterator
+	{
+	 public:
+		typedef const string value_type;
+
+		class Impl;
+		PackageNameIterator(Impl* impl);
+		~PackageNameIterator();
+		PackageNameIterator(const PackageNameIterator&);
+		PackageNameIterator& operator=(const PackageNameIterator&);
+		PackageNameIterator(PackageNameIterator&&) = default;
+
+		bool operator==(const PackageNameIterator&) const;
+		bool operator!=(const PackageNameIterator&) const;
+
+		value_type& operator*() const;
+		PackageNameIterator& operator++();
+
+	 private:
+		Impl* p_impl;
+	};
+
  private:
 	internal::CacheImpl* __impl;
 	Cache(const Cache&);
@@ -87,7 +110,7 @@ class CUPT_API Cache
 	vector< shared_ptr< const ReleaseInfo > > getSourceReleaseData() const;
 
 	/// gets the list of names of available binary packages
-	vector< string > getBinaryPackageNames() const;
+	Range< PackageNameIterator > getBinaryPackageNames() const;
 	/// gets BinaryPackage by name
 	/**
 	 * @param packageName name of the binary package
@@ -95,7 +118,7 @@ class CUPT_API Cache
 	 */
 	const BinaryPackage* getBinaryPackage(const string& packageName) const;
 	/// gets the list of names of available source packages
-	vector< string > getSourcePackageNames() const;
+	Range< PackageNameIterator > getSourcePackageNames() const;
 	/// gets SourcePackage by name
 	/**
 	 * @param packageName name of the source package
