@@ -104,12 +104,14 @@ class VersionSetGetter
 	const Cache& __cache;
 	mutable FSResult* __cached_all_versions;
 
-	vector< string > __get_package_names() const
+	static vector< string > __sort(vector< string >&& input)
 	{
-		auto range = __binary ? __cache.getBinaryPackageNames() : __cache.getSourcePackageNames();
-		auto result = range.asVector();
-		std::sort(result.begin(), result.end());
-		return result;
+		std::sort(input.begin(), input.end());
+		return input;
+	}
+	Range< Cache::PackageNameIterator > __get_package_names() const
+	{
+		return __binary ? __cache.getBinaryPackageNames() : __cache.getSourcePackageNames();
 	}
 	const Package* __get_package(const string& packageName) const
 	{
@@ -133,7 +135,7 @@ class VersionSetGetter
 		if (!__cached_all_versions)
 		{
 			__cached_all_versions = new FSResult;
-			for (const string& packageName: __get_package_names())
+			for (const string& packageName: __sort(__get_package_names().asVector()))
 			{
 				__add_package_to_result(packageName, __cached_all_versions);
 			}
@@ -142,16 +144,22 @@ class VersionSetGetter
 	}
 	FSResult get(const sregex& regex) const
 	{
-		smatch m;
 		FSResult result;
+
+		smatch m;
+		vector< string > matchedPackageNames;
 		for (const string& packageName: __get_package_names())
 		{
-			if (!regex_match(packageName, m, regex))
+			if (regex_match(packageName, m, regex))
 			{
-				continue;
+				matchedPackageNames.push_back(packageName);
 			}
+		}
+		for (const string& packageName: __sort(std::move(matchedPackageNames)))
+		{
 			__add_package_to_result(packageName, &result);
 		}
+
 		return result;
 	}
 	~VersionSetGetter()
