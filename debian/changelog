@@ -1,6 +1,9 @@
 cupt (2.5.11~) UNRELEASED; urgency=low
 
-  * 
+  * doc:
+    - man/cupt.conf.5:
+      - Fixed '--no-auto-remove' reference syntax. Fixes building with recent
+        pod2man. (Closes: #724133)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 27 Sep 2013 17:48:42 +0300
 

@@ -419,7 +419,7 @@ suggested packages or not. False by default.
 
 =item cupt::resolver::auto-remove
 
-boolean, see L<cupt(1)> L<--no-auto-remove/|--no-auto-remove>
+boolean, see L<cupt(1)> L<--no-auto-remove|/--no-auto-remove>
 
 =item cupt::resolver::max-solution-count
 
