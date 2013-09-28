@@ -71,7 +71,7 @@ using namespace cache;
 		})
 
 #define PARSE_OTHERS \
-			if (Version::parseOthers || (Version::parseInfoOnly && tagName.equal(BUFFER_AND_SIZE("Description-md5")))) \
+			if (Version::parseOthers) \
 			{ \
 				if (!tagName.equal(BUFFER_AND_SIZE("Package")) && !tagName.equal(BUFFER_AND_SIZE("Status"))) \
 				{ \
@@ -198,6 +198,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 					v->description.append("\n");
 					parser.parseAdditionalLines(v->description);
 				};)
+				TAG(Description-md5, v->descriptionHash = tagValue.toString();)
 				TAG(Tag, v->tags = tagValue.toString();)
 				PARSE_OTHERS
 			}

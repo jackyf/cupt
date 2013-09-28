@@ -193,10 +193,6 @@ int showBinaryVersions(Context& context)
 			{
 				for (const auto& field: *(version->others))
 				{
-					if (field.first == "Description-md5")
-					{
-						continue;
-					}
 					p(field.first, field.second);
 				}
 			}

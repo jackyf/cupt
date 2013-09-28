@@ -111,6 +111,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
       - [API break] Fields 'shortDescription' and 'longDescription' are
         replaced with a new field 'description'.
       - [API break] 'parseFromFile': removed.
+      - [ABI break] New field 'descriptionHash'.
     - cache/sourceversion:
       - [API break] 'parseFromFile': removed.
     - cache/sourcepackage:
