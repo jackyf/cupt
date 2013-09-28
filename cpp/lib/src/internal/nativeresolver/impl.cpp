@@ -395,7 +395,6 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 				oldElementPtr ? oldElementPtr->toString() : "", newElementPtr->toString());
 	}
 
-	solution.level += 1;
 	solution.score += __score_manager.getScoreChangeValue(profit);
 
 	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);

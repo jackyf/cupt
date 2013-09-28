@@ -153,7 +153,7 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 {
 	auto cloned = std::make_shared< Solution >();
 	cloned->score = source->score;
-	cloned->level = source->level;
+	cloned->level = source->level + 1;
 	cloned->id = __get_new_solution_id(*source);
 	cloned->finished = false;
 
