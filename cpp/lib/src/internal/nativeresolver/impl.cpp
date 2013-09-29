@@ -57,16 +57,20 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 	bool debugging = __config->getBool("debug::resolver");
 
 	auto reinstallRequiredPackageNames = __cache->getSystemState()->getReinstallRequiredPackageNames();
-	FORIT(packageNameIt, reinstallRequiredPackageNames)
+	for (const auto& packageName: reinstallRequiredPackageNames)
 	{
 		if (debugging)
 		{
-			debug2("the package '%s' needs a reinstall", *packageNameIt);
+			debug2("the package '%s' needs a reinstall", packageName);
 		}
 
-		// this also involves creating new entry in __initial_packages
-		auto& targetVersion = __initial_packages[*packageNameIt].version;
-		targetVersion = nullptr; // removed by default
+		const string annotation = "reinstall " + packageName;
+
+		auto installedVersion = __cache->getBinaryPackage(packageName)->getInstalledVersion();
+		RelationExpression installedExpression(format2("%s (= %s", packageName, installedVersion->versionString));
+		installedExpression[0].relationType = Relation::Types::LiteralyEqual;
+
+		satisfyRelationExpression(installedExpression, true, annotation, RequestImportance::Try, true);
 	}
 }
 
