@@ -93,8 +93,11 @@ namespace {
 
 string selectNewerFile(const string& leftPath, const string& rightPath)
 {
-	if (!fs::fileExists(rightPath)) return leftPath;
-	if (!fs::fileExists(leftPath)) return rightPath;
+	bool leftExists = fs::fileExists(leftPath);
+	bool rightExists = fs::fileExists(rightPath);
+	if (!leftExists && !rightExists) return string();
+	if (!rightExists) return leftPath;
+	if (!leftExists) return rightPath;
 	return fs::fileModificationTime(leftPath) >= fs::fileModificationTime(rightPath) ?
 			leftPath : rightPath;
 }
