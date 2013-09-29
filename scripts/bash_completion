@@ -96,6 +96,7 @@ _cupt()
 					--show-size-changes -Z --show-reasons --show-deps -D \
 					--show-vendors -O --show-codenames -N --show-components -C \
 					--install --remove --satisfy --unsatisfy --markauto --unmarkauto --asauto=yes --asauto=no --asauto=default
+					--importance=must --importance=try --importance=wish --importance= --must --try --wish
 					--download-only -d \
 					--summary-only --no-summary \
 					--assume-yes --yes -y"
