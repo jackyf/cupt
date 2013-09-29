@@ -156,6 +156,9 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - man/cupt.1:
       - Fixed the typo: suffix -> prefix in the 'pkgnames' command.
         (Closes: #689518)
+  * scripts:
+    - bash_completion:
+      - Suppress standard error messages in invocations of 'cupt'.
   * debian:
     - control:
       - Bumped the library API version.
