@@ -15,14 +15,11 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <common/regex.hpp>
-
 #include <cupt/config.hpp>
-#include <cupt/cache.hpp>
-#include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/binaryversion.hpp>
 
 #include <internal/nativeresolver/autoremovalpossibility.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 namespace internal {
@@ -38,14 +35,7 @@ class AutoRemovalPossibilityImpl
 	{
 		for (const auto& regexString: config.getList(optionName))
 		{
-			try
-			{
-				regexes.push_back(sregex::compile(regexString));
-			}
-			catch (regex_error&)
-			{
-				fatal2(__("invalid regular expression '%s'"), regexString);
-			}
+			regexes.push_back(stringToRegex(regexString));
 		}
 	}
 
@@ -69,8 +59,8 @@ class AutoRemovalPossibilityImpl
 	}
 
 	typedef AutoRemovalPossibility::Allow Allow;
-	Allow isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
-			bool wasInstalledBefore) const
+	Allow isAllowed(const BinaryVersion* version,
+			bool wasInstalledBefore, bool targetAutoStatus) const
 	{
 		const string& packageName = version->packageName;
 
@@ -78,7 +68,7 @@ class AutoRemovalPossibilityImpl
 		{
 			return Allow::No;
 		}
-		auto canAutoremoveThisPackage = __can_autoremove && cache.isAutomaticallyInstalled(packageName);
+		auto canAutoremoveThisPackage = __can_autoremove && targetAutoStatus;
 		if (wasInstalledBefore && !canAutoremoveThisPackage)
 		{
 			return Allow::No;
@@ -106,10 +96,10 @@ AutoRemovalPossibility::~AutoRemovalPossibility()
 	delete __impl;
 }
 
-AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const Cache& cache, const shared_ptr< const BinaryVersion >& version,
-		bool wasInstalledBefore) const
+AutoRemovalPossibility::Allow AutoRemovalPossibility::isAllowed(const BinaryVersion* version,
+		bool wasInstalledBefore, bool targetAutoStatus) const
 {
-	return __impl->isAllowed(cache, version, wasInstalledBefore);
+	return __impl->isAllowed(version, wasInstalledBefore, targetAutoStatus);
 }
 
 }

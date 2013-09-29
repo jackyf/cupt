@@ -17,6 +17,7 @@
 **************************************************************************/
 #include <cupt/config.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/lock.hpp>
 #include <internal/common.hpp>
@@ -25,6 +26,10 @@
 
 namespace cupt {
 namespace internal {
+
+Worker::Action::Type WorkerBase::_download_dependent_action_types[] = {
+		Action::Reinstall, Action::Install, Action::Upgrade, Action::Downgrade
+};
 
 WorkerBase::WorkerBase()
 {
@@ -54,10 +59,10 @@ string WorkerBase::_get_archives_directory() const
 	return _config->getPath("dir::cache::archives");
 }
 
-string WorkerBase::_get_archive_basename(const shared_ptr< const BinaryVersion >& version)
+string WorkerBase::_get_archive_basename(const BinaryVersion* version)
 {
-	return version->packageName + '_' + version->versionString + '_' +
-			version->architecture + ".deb";
+	return version->packageName + '_' + versionstring::getOriginal(version->versionString)
+			+ '_' + version->architecture + ".deb";
 }
 
 void WorkerBase::_run_external_command(Logger::Subsystem subsystem,

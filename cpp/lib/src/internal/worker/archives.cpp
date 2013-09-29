@@ -76,31 +76,29 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 	}
 }
 
-vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getArchivesInfo() const
+vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo() const
 {
-	map< string, shared_ptr< const BinaryVersion > > knownArchives;
+	map< string, const BinaryVersion* > knownArchives;
 
 	auto archivesDirectory = _get_archives_directory();
 
 	auto pathMaxLength = pathconf("/", _PC_PATH_MAX);
 	vector< char > pathBuffer(pathMaxLength + 1, '\0');
 
-	auto packageNames = _cache->getBinaryPackageNames();
-	FORIT(packageNameIt, packageNames)
+	for (const auto& packageName: _cache->getBinaryPackageNames())
 	{
-		auto package = _cache->getBinaryPackage(*packageNameIt);
+		auto package = _cache->getBinaryPackage(packageName);
 		if (!package)
 		{
 			continue;
 		}
 
-		auto versions = package->getVersions();
-		FORIT(versionIt, versions)
+		for (auto version: *package)
 		{
-			auto path = archivesDirectory + '/' + _get_archive_basename(*versionIt);
+			auto path = archivesDirectory + '/' + _get_archive_basename(version);
 			if (fs::fileExists(path))
 			{
-				knownArchives[path] = *versionIt;
+				knownArchives[path] = version;
 
 				// checking for symlinks
 				auto readlinkResult = readlink(path.c_str(), &pathBuffer[0], pathMaxLength);
@@ -119,7 +117,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 					string targetPath(archivesDirectory + '/' + relativePath);
 					if (fs::fileExists(targetPath))
 					{
-						knownArchives[targetPath] = *versionIt;
+						knownArchives[targetPath] = version;
 					}
 				}
 			}
@@ -128,11 +126,11 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 
 	auto paths = fs::lglob(archivesDirectory, "*.deb");
 
-	vector< pair< string, shared_ptr< const BinaryVersion > > > result;
+	vector< pair< string, const BinaryVersion* > > result;
 
 	FORIT(pathIt, paths)
 	{
-		shared_ptr< const BinaryVersion > version; // empty by default
+		const BinaryVersion* version = nullptr;
 		auto knownPathIt = knownArchives.find(*pathIt);
 		if (knownPathIt != knownArchives.end())
 		{

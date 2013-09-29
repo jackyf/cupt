@@ -53,7 +53,7 @@ class ConsoleProgressImpl
  public:
 	ConsoleProgressImpl();
 	void newDownload(const DownloadRecord& record, const string& longAlias);
-	void finishedDownload(const string& uri, const string& result, size_t number);
+	void finishedDownload(const string& uri, const string& result, size_t number, bool);
 	void finish(uint64_t size, size_t time);
 
 	bool isUpdateNeeded(bool immediate);
@@ -128,6 +128,15 @@ void ConsoleProgressImpl::termPrint(const string& s, const string& rightAppendag
 	nonBlockingPrint(outputString);
 }
 
+namespace {
+
+string getNumberPrefix(size_t number)
+{
+	return format2("#%zu: ", number);
+}
+
+}
+
 void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string& longAlias)
 {
 	string sizeSuffix;
@@ -136,19 +145,19 @@ void ConsoleProgressImpl::newDownload(const DownloadRecord& record, const string
 		sizeSuffix = string(" [") + humanReadableSizeString(record.size) + "]";
 	}
 	termClean();
-	nonBlockingPrint(__("Get") + ":" + lexical_cast< string >(record.number) + " " +
-			longAlias + sizeSuffix + "\n");
+	nonBlockingPrint(getNumberPrefix(record.number) + format2("starting %s%s\n", longAlias, sizeSuffix));
 }
 
 void ConsoleProgressImpl::finishedDownload(const string& uri,
-		const string& result, size_t number)
+		const string& result, size_t number, bool isOptional)
 {
 	if (!result.empty())
 	{
 		// some error occured, output it
+		string toPrint = getNumberPrefix(number);
+		toPrint += isOptional ? "not available\n" : format2("failed: %s (uri '%s')\n", result, uri);
 		termClean();
-		nonBlockingPrint(__("Fail") + ":" + lexical_cast< string >(number) + " " +
-				result + " (uri '" + uri + "')\n");
+		nonBlockingPrint(toPrint);
 	}
 }
 
@@ -211,7 +220,7 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 	FORIT(it, records)
 	{
 		string suffix;
-		if (it->record.beingPostprocessed)
+		if (it->record.phase == DownloadRecord::Phase::Postprocessed)
 		{
 			suffix = " | postprocessing";
 		}
@@ -220,7 +229,7 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 			suffix = format2("/%s %.0f%%", humanReadableSizeString(it->record.size),
 					(float)it->record.downloadedSize / it->record.size * 100);
 		}
-		viewString += format2("[%u %s %s%s]", it->record.number, it->shortAlias,
+		viewString += format2("[#%zu %s %s%s]", it->record.number, it->shortAlias,
 				humanReadableSizeString(it->record.downloadedSize), suffix);
 	}
 	auto speedAndTimeAppendage = string("| ") + humanReadableSpeedString(speed) +
@@ -262,11 +271,13 @@ void ConsoleProgress::updateHook(bool immediate)
 
 	vector< DownloadRecordForPrint > printRecords;
 	const std::map< string, DownloadRecord >& records = this->getDownloadRecords();
-	FORIT(recordIt, records)
+	for (const auto& item: records)
 	{
+		if (item.second.phase < DownloadRecord::Phase::Started) continue;
+
 		DownloadRecordForPrint recordForPrint;
-		recordForPrint.record = recordIt->second;
-		recordForPrint.uri = recordIt->first;
+		recordForPrint.record = item.second;
+		recordForPrint.uri = item.first;
 		recordForPrint.shortAlias = this->getShortAliasForUri(recordForPrint.uri);
 		printRecords.push_back(std::move(recordForPrint));
 	}
@@ -289,7 +300,7 @@ void ConsoleProgress::finishedDownloadHook(const string& uri, const string& resu
 	{
 		warn2("internal error: console download progress: no existing download record for the uri '%s'", uri);
 	}
-	__impl->finishedDownload(uri, result, recordNumber);
+	__impl->finishedDownload(uri, result, recordNumber, isOptional(uri));
 }
 
 void ConsoleProgress::finishHook()

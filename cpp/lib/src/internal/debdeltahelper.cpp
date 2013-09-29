@@ -22,6 +22,7 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/debdeltahelper.hpp>
 #include <internal/filesystem.hpp>
@@ -50,7 +51,7 @@ DebdeltaHelper::DebdeltaHelper()
 }
 
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
-		const shared_ptr< const cache::BinaryVersion > version,
+		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
 {
 	vector< DownloadRecord > result;
@@ -76,9 +77,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 		string result;
 		// replacing
-		FORIT(charIt, input)
+		for (const char c: input)
 		{
-			char c = *charIt;
 			if (c != ':')
 			{
 				result += c;
@@ -113,7 +113,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			bool found = false;
 			FORIT(sourceIt, version->sources)
 			{
-				const shared_ptr< const ReleaseInfo >& releaseInfo = sourceIt->release;
+				const ReleaseInfo* releaseInfo = sourceIt->release;
 				string releaseValue;
 				if (key == "Origin")
 				{
@@ -152,7 +152,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			// not very reliable :(
 			string appendage = version->sources[0].directory + '/';
 			appendage += join("_", vector< string >{ packageName,
-					mangleVersionString(installedVersion->versionString),
+					mangleVersionString(versionstring::getOriginal(installedVersion->versionString)),
 					mangleVersionString(version->versionString),
 					version->architecture });
 			appendage += ".debdelta";
@@ -172,13 +172,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 
 void DebdeltaHelper::__parse_sources(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
-
+	RequiredFile file(path, "r");
 
 	/* we are parsing entries like that:
 	 [main debian sources]

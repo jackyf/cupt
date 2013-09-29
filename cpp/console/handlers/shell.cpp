@@ -24,7 +24,6 @@ using std::cin;
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <cupt/file.hpp>
 #include <cupt/cache/package.hpp>
 
 #include "../common.hpp"
@@ -118,24 +117,7 @@ void (*Readline::__dl_add_history)(const char*) = NULL;
 
 void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
 {
-	vector< string > arguments;
-
-	// kind of hack to get arguments as it was real shell
-	// if you know easier way, let me know :)
-	string errorString;
-	// 'A' - to not let echo interpret $word as an option
-	string shellCommand = format2("(for word in %s; do echo A$word; done)", line);
-	File pipe(shellCommand, "pr", errorString);
-	if (!errorString.empty())
-	{
-		fatal2(__("unable to open an internal shell pipe: %s"), errorString);
-	}
-
-	string argument;
-	while (!pipe.getLine(argument).eof())
-	{
-		arguments.push_back(argument.substr(1));
-	}
+	auto arguments = convertLineToShellArguments(line);
 
 	argc = arguments.size() + 1;
 	argv = new char*[argc];
@@ -158,7 +140,6 @@ void freeArgcArgv(int argc, char** argv)
 int shell(Context& context)
 {
 	shellMode = true;
-	Package::memoize = true;
 
 	vector< string > arguments;
 	bpo::options_description noOptions;
@@ -180,19 +161,8 @@ int shell(Context& context)
 
 		convertLineToArgcArgv(line, argc, argv);
 
-		string command;
-		{
-			mainEx(argc, argv, context, command);
-		};
+		mainEx(argc, argv, context);
 
-		static const vector< string > safeCommands = { "config-dump", "show", "showsrc",
-				"search", "depends", "rdepends", "policy", "policysrc", "pkgnames", "changelog",
-				"copyright", "screenshots", "source", "clean", "autoclean" };
-		if (std::find(safeCommands.begin(), safeCommands.end(), command) == safeCommands.end())
-		{
-			// the system could be modified, need to rebuild all
-			context.clearCache();
-		}
 		*(context.getConfig()) = *oldConfig;
 		freeArgcArgv(argc, argv);
 	}

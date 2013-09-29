@@ -45,16 +45,13 @@ struct CUPT_API BinaryVersion: public Version
 	bool essential; ///< has version 'essential' flag?
 	RelationLine relations[RelationTypes::Count]; ///< relations with other binary versions
 	vector< string > provides; ///< array of virtual package names
-	string shortDescription; ///< short description
-	string longDescription; ///< long description
+	string description;
+	string descriptionHash; ///< MD5 hash sum value of the full description
 	string tags; ///< tags
 	FileRecord file; ///< Version::FileRecord
 
 	bool isInstalled() const; ///< is version installed?
-	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
-
-	/// parse version
-	static shared_ptr< BinaryVersion > parseFromFile(const Version::InitializationParameters&);
+	virtual bool areHashesEqual(const Version* other) const;
 };
 
 } // namespace

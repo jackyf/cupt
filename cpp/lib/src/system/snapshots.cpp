@@ -102,12 +102,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		auto formatPath = snapshotDirectory + "/format";
 		if (fs::fileExists(formatPath))
 		{
-			string openError;
-			File file(formatPath, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2(__("unable to open the format file '%s': %s"), formatPath, openError);
-			}
+			RequiredFile file(formatPath, "r");
 			string content;
 			file.getFile(content);
 			chomp(content);
@@ -122,12 +117,7 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 
 	{
 		auto snapshotPackagesPath = snapshotDirectory + '/' + system::Snapshots::installedPackageNamesFilename;
-		string openError;
-		File file(snapshotPackagesPath, "r", openError);
-		if (!openError.empty())
-		{
-			fatal2(__("unable to open the file '%s': %s"), snapshotPackagesPath, openError);
-		}
+		RequiredFile file(snapshotPackagesPath, "r");
 
 		string packageName;
 		while (!file.getLine(packageName).eof())
@@ -140,14 +130,13 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 
 			toBeInstalledPackageNames.insert(packageName);
 
-			auto versions = package->getVersions();
-			FORIT(versionIt, versions)
+			for (auto version: *package)
 			{
-				FORIT(sourceIt, (*versionIt)->sources)
+				for (const auto& source: version->sources)
 				{
-					if (sourceIt->release->archive == "snapshot")
+					if (source.release->archive == "snapshot")
 					{
-						resolver.installVersion(*versionIt);
+						resolver.installVersion({ version });
 						goto next_file_line;
 					}
 				}
@@ -161,12 +150,11 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		}
 	}
 
-	auto allPackageNames = cache.getBinaryPackageNames();
-	FORIT(packageNameIt, allPackageNames)
+	for (const auto& packageName: cache.getBinaryPackageNames())
 	{
-		if (!toBeInstalledPackageNames.count(*packageNameIt))
+		if (!toBeInstalledPackageNames.count(packageName))
 		{
-			resolver.removePackage(*packageNameIt);
+			resolver.removeVersions(cache.getBinaryPackage(packageName)->getVersions());
 		}
 	}
 }

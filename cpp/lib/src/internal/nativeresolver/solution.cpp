@@ -27,8 +27,8 @@ namespace internal {
 
 using std::make_pair;
 
-PackageEntry::PackageEntry()
-	: sticked(false), autoremoved(false)
+PackageEntry::PackageEntry(bool sticked_)
+	: sticked(sticked_), autoremoved(false)
 {}
 
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
@@ -61,6 +61,7 @@ class VectorBasedMap
 		}
 	};
  public:
+	void init(container_t&& container) { __container.swap(container); }
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
 	const_iterator_t begin() const { return &*__container.begin(); }
@@ -152,7 +153,7 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 {
 	auto cloned = std::make_shared< Solution >();
 	cloned->score = source->score;
-	cloned->level = source->level;
+	cloned->level = source->level + 1;
 	cloned->id = __get_new_solution_id(*source);
 	cloned->finished = false;
 
@@ -381,10 +382,21 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 }
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
-			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
-			const map< string, dg::InitialPackageEntry >& initialPackages)
+			const map< string, const BinaryVersion* >& oldPackages,
+			const map< string, dg::InitialPackageEntry >& initialPackages,
+			const vector< dg::UserRelationExpression >& userRelationExpressions)
 {
 	auto source = __dependency_graph.fill(oldPackages, initialPackages);
+	/* User relation expressions must be processed before any unfoldElement() calls
+	   to early override version checks (if needed) for all explicitly required versions. */
+	for (const auto& userRelationExpression: userRelationExpressions)
+	{
+		__dependency_graph.addUserRelationExpression(userRelationExpression);
+	}
+	for (const auto& record: source)
+	{
+		__dependency_graph.unfoldElement(record.first);
+	}
 
 	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
 			const pair< const dg::Element*, SPPE >& right)
@@ -393,12 +405,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
-	initialSolution.__added_entries->reserve(source.size());
-	FORIT(it, source)
-	{
-		__dependency_graph.unfoldElement(it->first);
-		initialSolution.__added_entries->push_back(*it);
-	}
+	initialSolution.__added_entries->init(std::move(source));
 	for (const auto& entry: *initialSolution.__added_entries)
 	{
 		__update_broken_successors(initialSolution, NULL, entry.first, 0);
@@ -449,19 +456,95 @@ void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 	__dependency_graph.unfoldElement(elementPtr);
 }
 
-vector< const dg::Element* > SolutionStorage::getInsertedElements(const Solution& solution) const
+size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element* elementPtr) const
 {
-	vector< const dg::Element* > result;
-
-	auto solutionId = solution.id;
 	while (solutionId != 0)
 	{
 		const auto& change = __change_index[solutionId];
-		result.push_back(change.insertedElementPtr);
+		if (change.insertedElementPtr == elementPtr) return solutionId;
 		solutionId = change.parentSolutionId;
 	}
-	std::reverse(result.begin(), result.end());
-	return result;
+
+	return -1;
+}
+
+void SolutionStorage::processReasonElements(
+		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
+		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
+		const std::function< void (const IntroducedBy&, const dg::Element*) >& callback) const
+{
+	auto getElementPosition = [this, &solution, &elementPositionCache](const dg::Element* elementPtr)
+	{
+		auto& value = elementPositionCache[elementPtr];
+		if (!value)
+		{
+			value = __getInsertPosition(solution.id, elementPtr);
+		}
+		return value;
+	};
+
+	{ // version
+		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
+		{
+			callback(packageEntryPtr->introducedBy, introducedBy.versionElementPtr);
+		}
+	}
+	// dependants
+	set< const dg::Element* > alreadyProcessedConflictors;
+	for (const auto& successor: getSuccessorElements(introducedBy.brokenElementPtr))
+	{
+		const dg::Element* conflictingElementPtr;
+		if (!simulateSetPackageEntry(solution, successor, &conflictingElementPtr))
+		{
+			// conflicting element is surely exists here
+			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
+			{
+				// not yet processed
+
+				// verifying that conflicting element was added to a
+				// solution earlier than currently processed item
+				auto conflictingElementInsertedPosition = getElementPosition(conflictingElementPtr);
+				if (conflictingElementInsertedPosition == size_t(-1))
+				{
+					// conflicting element was not a resolver decision, so it can't
+					// have valid 'introducedBy' anyway
+					continue;
+				}
+				if (getElementPosition(insertedElementPtr) <= conflictingElementInsertedPosition)
+				{
+					// it means conflicting element was inserted to a solution _after_
+					// the current element, so it can't be a reason for it
+					continue;
+				}
+
+				// verified, queueing now
+				const IntroducedBy& candidateIntroducedBy =
+						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
+				callback(candidateIntroducedBy, conflictingElementPtr);
+			}
+		}
+	}
+}
+
+pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedElements(
+		size_t leftSolutionId, size_t rightSolutionId) const
+{
+	const auto* leftChangePtr = &__change_index[leftSolutionId];
+	const auto* rightChangePtr = &__change_index[rightSolutionId];
+
+	while (leftChangePtr->parentSolutionId != rightChangePtr->parentSolutionId)
+	{
+		if (leftChangePtr->parentSolutionId < rightChangePtr->parentSolutionId)
+		{
+			rightChangePtr = &__change_index[rightChangePtr->parentSolutionId];
+		}
+		else
+		{
+			leftChangePtr = &__change_index[leftChangePtr->parentSolutionId];
+		}
+	}
+
+	return { leftChangePtr->insertedElementPtr, rightChangePtr->insertedElementPtr };
 }
 
 Solution::Solution()
@@ -490,10 +573,7 @@ void __foreach_solution_element(const PackageEntryMap& masterEntries, const Pack
 		RepackInsertIterator& operator*() { return *this; }
 		void operator=(const PackageEntryMap::value_type& data)
 		{
-			if (data.second)
-			{
-				__callback(data);
-			}
+			__callback(data);
 		}
 	};
 	struct Comparator
@@ -511,37 +591,44 @@ void __foreach_solution_element(const PackageEntryMap& masterEntries, const Pack
 
 void Solution::prepare()
 {
-	if (!__parent)
-	{
-		return; // prepared already
-	}
+	if (!__parent) return; // prepared already
 
-	if (!__parent->__master_entries)
+	if (!__parent->__initial_entries)
 	{
-		// parent solution is a master solution, build a slave on top of it
-		__master_entries = __parent->__added_entries;
+		// parent is initial (top-level) solution
+		__initial_entries = __parent->__added_entries;
 	}
 	else
 	{
-		// this a slave solution
-		size_t& forkedCount = __parent->__master_entries->forkedCount;
-		forkedCount += __parent->__added_entries->size();
-		if (forkedCount > __parent->__master_entries->size())
+		__initial_entries = __parent->__initial_entries;
+
+		if (!__parent->__master_entries)
 		{
-			forkedCount = 0;
-
-			// master solution is overdiverted, build new master one
-			__added_entries->reserve(__parent->__added_entries->size() +
-					__parent->__master_entries->size());
-
-			__foreach_solution_element(*__parent->__master_entries, *__parent->__added_entries,
-					[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
+			// parent solution is a master solution, build a slave on top of it
+			__master_entries = __parent->__added_entries;
 		}
 		else
 		{
-			// build new slave solution from current
-			__master_entries = __parent->__master_entries;
-			*__added_entries = *(__parent->__added_entries);
+			// this a slave solution
+			size_t& forkedCount = __parent->__master_entries->forkedCount;
+			forkedCount += __parent->__added_entries->size();
+			if (forkedCount > __parent->__master_entries->size())
+			{
+				forkedCount = 0;
+
+				// master solution is overdiverted, build new master one
+				__added_entries->reserve(__parent->__added_entries->size() +
+						__parent->__master_entries->size());
+
+				__foreach_solution_element(*__parent->__master_entries, *__parent->__added_entries,
+						[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
+			}
+			else
+			{
+				// build new slave solution from current
+				__master_entries = __parent->__master_entries;
+				*__added_entries = *(__parent->__added_entries);
+			}
 		}
 	}
 
@@ -554,10 +641,15 @@ vector< const dg::Element* > Solution::getElements() const
 	vector< const dg::Element* > result;
 
 	static const PackageEntryMap nullPackageEntryMap;
+	const auto& initialEntries = __initial_entries ? *__initial_entries : nullPackageEntryMap;
 	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
 
-	__foreach_solution_element(masterEntries, *__added_entries,
-			[&result](const PackageEntryMap::value_type& data) { result.push_back(data.first); });
+	PackageEntryMap intermediateMap;
+	__foreach_solution_element(initialEntries, masterEntries,
+			[&intermediateMap](const PackageEntryMap::value_type& data) { intermediateMap.push_back(data); });
+
+	__foreach_solution_element(intermediateMap, *__added_entries,
+			[&result](const PackageEntryMap::value_type& data) { if (data.second) result.push_back(data.first); });
 
 	return result;
 }
@@ -582,8 +674,16 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 			return it->second.get();
 		}
 	}
+	if (__initial_entries)
+	{
+		it = __initial_entries->find(elementPtr);
+		if (it != __initial_entries->end())
+		{
+			return it->second.get();
+		}
+	}
 
-	return NULL; // not found
+	return nullptr; // not found
 }
 
 }

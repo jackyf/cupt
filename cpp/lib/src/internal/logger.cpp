@@ -51,13 +51,8 @@ Logger::Logger(const Config& config)
 
 	if (!__simulating)
 	{
-		string openError;
 		auto path = config.getPath("cupt::directory::log");
-		__file = new File(path, "a", openError);
-		if (!openError.empty())
-		{
-			fatal2(__("unable to open the file '%s': %s"), path, openError);
-		}
+		__file = new RequiredFile(path, "a");
 	}
 
 	log(Subsystem::Session, 1, "started");

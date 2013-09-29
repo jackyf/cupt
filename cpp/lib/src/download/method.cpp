@@ -27,25 +27,25 @@ namespace download {
 Method::Method()
 {}
 
-string Method::getAcquireSuboptionForUri(const shared_ptr< const Config >& config,
+string Method::getAcquireSuboptionForUri(const Config& config,
 		const Uri& uri, const string& suboptionName)
 {
 	auto host = uri.getHost();
 	// this "zoo" of per-host variants is given by APT...
 	string optionNamePrefix = string("acquire::") + uri.getProtocol();
-	auto result = config->getString(optionNamePrefix + "::" + suboptionName + "::" + host);
+	auto result = config.getString(optionNamePrefix + "::" + suboptionName + "::" + host);
 	if (result.empty())
 	{
-		result = config->getString(optionNamePrefix + "::" + host + "::" + suboptionName);
+		result = config.getString(optionNamePrefix + "::" + host + "::" + suboptionName);
 	}
 	if (result.empty())
 	{
-		result = config->getString(optionNamePrefix + "::" + suboptionName);
+		result = config.getString(optionNamePrefix + "::" + suboptionName);
 	}
 	return result;
 }
 
-ssize_t Method::getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >& config,
+ssize_t Method::getIntegerAcquireSuboptionForUri(const Config& config,
 		const Uri& uri, const string& suboptionName)
 {
 	auto result = getAcquireSuboptionForUri(config, uri, suboptionName);

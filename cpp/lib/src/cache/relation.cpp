@@ -21,11 +21,12 @@
 #include <cupt/cache/relation.hpp>
 
 #include <internal/common.hpp>
+#include <internal/parse.hpp>
 
 namespace cupt {
 namespace cache {
 
-bool Relation::__parse_versioned_info(string::const_iterator current, string::const_iterator end)
+bool Relation::__parse_versioned_info(const char* current, const char* end)
 {
 	// parse relation
 	if (current == end || current+1 == end /* version should at least have one character */)
@@ -85,7 +86,7 @@ bool Relation::__parse_versioned_info(string::const_iterator current, string::co
 	{
 		++current;
 	}
-	string::const_iterator versionStringEnd = current+1;
+	const char* versionStringEnd = current+1;
 	while (versionStringEnd != end && *versionStringEnd != ')' && *versionStringEnd != ' ')
 	{
 		++versionStringEnd;
@@ -114,9 +115,9 @@ bool Relation::__parse_versioned_info(string::const_iterator current, string::co
 	return (current == end);
 }
 
-void Relation::__init(string::const_iterator start, string::const_iterator end)
+void Relation::__init(const char* start, const char* end)
 {
-	string::const_iterator current;
+	const char* current;
 	consumePackageName(start, end, current);
 	if (current != start)
 	{
@@ -150,14 +151,9 @@ void Relation::__init(string::const_iterator start, string::const_iterator end)
 	}
 }
 
-Relation::Relation(pair< string::const_iterator, string::const_iterator > input)
+Relation::Relation(pair< const char*, const char* > input)
 {
 	__init(input.first, input.second);
-}
-
-Relation::Relation(const string& unparsed)
-{
-	__init(unparsed.begin(), unparsed.end());
 }
 
 Relation::~Relation()
@@ -180,6 +176,10 @@ bool Relation::isSatisfiedBy(const string& otherVersionString) const
 	{
 		return true;
 	}
+	else if (relationType == Types::LiteralyEqual)
+	{
+		return versionString == otherVersionString;
+	}
 	else
 	{
 		// relation is defined, checking
@@ -196,7 +196,7 @@ bool Relation::isSatisfiedBy(const string& otherVersionString) const
 				return (comparisonResult == 0);
 			case Types::More:
 				return (comparisonResult > 0);
-			case Types::None:
+			default:
 				__builtin_unreachable();
 		}
 	}
@@ -210,9 +210,9 @@ bool Relation::operator==(const Relation& other) const
 			versionString == other.versionString);
 }
 
-const string Relation::Types::strings[] = { "<<", "=", ">>", "<=", ">=" };
+const string Relation::Types::strings[] = { "<<", "=", ">>", "<=", ">=", "===" };
 
-void ArchitecturedRelation::__init(string::const_iterator start, string::const_iterator end)
+void ArchitecturedRelation::__init(const char* start, const char* end)
 {
 	if (start == end)
 	{
@@ -228,16 +228,9 @@ void ArchitecturedRelation::__init(string::const_iterator start, string::const_i
 	architectureFilters = internal::split(' ', string(start, end));
 }
 
-ArchitecturedRelation::ArchitecturedRelation(const string& unparsed)
-		: Relation(string(unparsed.begin(), std::find(unparsed.begin(), unparsed.end(), '[')))
-{
-	__init(std::find(unparsed.begin(), unparsed.end(), '['), unparsed.end());
-}
-
-// TODO/API break/: make this constructor explicit too
 ArchitecturedRelation::ArchitecturedRelation(
-		pair< string::const_iterator, string::const_iterator > input)
-	: Relation(make_pair(input.first, std::find(input.first, input.second, '[')))
+		pair< const char*, const char* > input)
+	: Relation(std::make_pair(input.first, std::find(input.first, input.second, '[')))
 {
 	__init(std::find(input.first, input.second, '['), input.second);
 }
@@ -369,37 +362,28 @@ string RelationExpression::getHashString() const
 
 // yes, I know about templates, but here they cause just too much trouble
 #define DEFINE_RELATION_EXPRESSION_CLASS(RelationExpressionType, UnderlyingElement) \
-void RelationExpressionType::__init(string::const_iterator begin, string::const_iterator end) \
+void RelationExpressionType::__init(const char* begin, const char* end) \
 { \
-	for (auto it = begin; it != end; ++it) \
+	/* split OR groups */ \
+	auto callback = [this](const char* begin, const char* end) \
 	{ \
-		if (*it == '|') \
-		{ \
-			/* split OR groups */ \
-			auto callback = [this](string::const_iterator begin, string::const_iterator end) \
-			{ \
-				this->emplace_back(make_pair(begin, end)); \
-			}; \
-			internal::processSpacePipeSpaceDelimitedStrings(begin, end, callback); \
-			return; \
-		} \
-	} \
- \
-	/* if we reached here, we didn't find OR groups */ \
-	emplace_back(make_pair(begin, end)); \
+		this->emplace_back(std::make_pair(begin, end)); \
+	}; \
+	internal::parse::processSpaceCharSpaceDelimitedStrings( \
+			begin, end, '|', callback); \
 } \
  \
 RelationExpressionType::RelationExpressionType() \
 {} \
  \
-RelationExpressionType::RelationExpressionType(pair< string::const_iterator, string::const_iterator > input) \
+RelationExpressionType::RelationExpressionType(pair< const char*, const char* > input) \
 { \
 	__init(input.first, input.second); \
 } \
  \
 RelationExpressionType::RelationExpressionType(const string& expression) \
 { \
-	__init(expression.begin(), expression.end()); \
+	__init(expression.data(), expression.data()+expression.size()); \
 } \
 \
 RelationExpressionType::~RelationExpressionType() \
@@ -423,24 +407,24 @@ DEFINE_RELATION_EXPRESSION_CLASS(ArchitecturedRelationExpression, ArchitecturedR
 RelationLineType::RelationLineType() \
 {} \
  \
-void RelationLineType::__init(string::const_iterator begin, string::const_iterator end) \
+void RelationLineType::__init(const char* begin, const char* end) \
 { \
-	auto callback = [this](string::const_iterator begin, string::const_iterator end) \
+	auto callback = [this](const char* begin, const char* end) \
 	{ \
-		this->emplace_back(make_pair(begin, end)); \
+		this->emplace_back(std::make_pair(begin, end)); \
 	}; \
  \
-	internal::processSpaceCommaSpaceDelimitedStrings(begin, end, callback); \
+	internal::parse::processSpaceCharSpaceDelimitedStrings(begin, end, ',', callback); \
 } \
  \
-RelationLineType::RelationLineType(pair< string::const_iterator, string::const_iterator > input) \
+RelationLineType::RelationLineType(pair< const char*, const char* > input) \
 { \
 	__init(input.first, input.second); \
 } \
  \
 RelationLineType::RelationLineType(const string& line) \
 { \
-	__init(line.begin(), line.end()); \
+	__init(line.data(), line.data()+line.size()); \
 } \
  \
 RelationLineType& RelationLineType::operator=(RelationLineType&& other) \

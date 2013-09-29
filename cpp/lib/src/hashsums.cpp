@@ -17,6 +17,8 @@
 **************************************************************************/
 #include <gcrypt.h>
 
+#include <mutex>
+
 #include <cupt/hashsums.hpp>
 #include <cupt/file.hpp>
 
@@ -70,16 +72,26 @@ class GcryptHasher
 	}
 };
 
+namespace {
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+bool initGcrypt()
+{
+	gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+	gcry_check_version(NULL);
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+	return true;
+}
+
+std::once_flag gcryptInitFlag;
+
+}
+
 string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string& source)
 {
-	static bool initialized = false;
-	if (!initialized)
-	{
-		gcry_check_version(NULL);
-		gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
-		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-		initialized = true;
-	}
+	std::call_once(gcryptInitFlag, initGcrypt);
 
 	int gcryptAlgorithm;
 	switch (hashType)
@@ -99,18 +111,11 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 
 		if (sourceType == Source::File)
 		{
-			string openError;
-			File file(source, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2(__("unable to open the file '%s': %s"), source, openError);
-			}
+			RequiredFile file(source, "r");
 
-			char buffer[8192];
-			size_t size = sizeof(buffer);
-			while (file.getBlock(buffer, size), size)
+			while (auto rawBuffer = file.getBlock(8192))
 			{
-				gcryptHasher.process(buffer, size);
+				gcryptHasher.process(rawBuffer.data, rawBuffer.size);
 			}
 		}
 		else // string

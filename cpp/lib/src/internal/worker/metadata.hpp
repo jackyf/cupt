@@ -33,13 +33,22 @@ class MetadataWorker: public virtual WorkerBase
 
 	static bool __is_diff_type(const IndexType&);
 	string __get_indexes_directory() const;
+
+	typedef std::function< string () > (*SecondPostActionGeneratorForReleaseLike)(const Config&, const string&, const string&);
+	bool __downloadReleaseLikeFile(download::Manager&,
+			const string&, const string&,
+			const cachefiles::IndexEntry&, const string&,
+			SecondPostActionGeneratorForReleaseLike);
 	bool __update_release_and_index_data(download::Manager&, const cachefiles::IndexEntry&);
 	bool __update_release(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
+	bool __downloadRelease(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
+	bool __downloadInRelease(download::Manager&, const cachefiles::IndexEntry&, bool& releaseFileChanged);
 	ssize_t __get_uri_priority(const string& uri);
 	bool __download_index(download::Manager&, const cachefiles::FileDownloadRecord&, IndexType,
 			const cachefiles::IndexEntry&, const string&, const string&, bool);
 	bool __update_index(download::Manager&, const cachefiles::IndexEntry&,
 			IndexUpdateInfo&&, bool, bool&);
+	void p_generateIndexesOfIndexes(const cachefiles::IndexEntry&);
 	bool __update_main_index(download::Manager&, const cachefiles::IndexEntry&,
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,
@@ -47,6 +56,8 @@ class MetadataWorker: public virtual WorkerBase
 	bool __download_translations(download::Manager&, const cachefiles::IndexEntry& indexEntry,
 			const string&, const string&, const string&, bool, Logger* logger);
 	void __list_cleanup(const string&);
+	bool p_runMetadataUpdateThreads(const shared_ptr< download::Progress >&);
+	bool p_metadataUpdateThread(download::Manager&, const cachefiles::IndexEntry&);
  public:
 	void updateReleaseAndIndexData(const shared_ptr< download::Progress >&);
 };

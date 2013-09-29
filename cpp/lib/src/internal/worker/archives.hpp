@@ -29,7 +29,7 @@ class ArchivesWorker: public virtual WorkerBase
  public:
 	ArchivesWorker();
 
-	vector< pair< string, shared_ptr< const BinaryVersion > > > getArchivesInfo() const;
+	vector< pair< string, const BinaryVersion* > > getArchivesInfo() const;
 	void deleteArchive(const string& path);
 	void deletePartialArchives();
 };

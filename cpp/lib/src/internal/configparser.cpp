@@ -29,12 +29,7 @@ ConfigParser::ConfigParser(Handler regularHandler, Handler listHandler, Handler 
 
 void ConfigParser::parse(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	RequiredFile file(path, "r");
 
 	string block;
 	file.getFile(block);

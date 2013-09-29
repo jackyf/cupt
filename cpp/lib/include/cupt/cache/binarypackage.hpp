@@ -29,27 +29,28 @@ namespace cache {
 /// Package for binary versions
 class CUPT_API BinaryPackage: public Package
 {
-	const bool __allow_reinstall;
  protected:
 	/// @cond
-	CUPT_LOCAL virtual shared_ptr< Version > _parse_version(const Version::InitializationParameters& initParams) const;
-	CUPT_LOCAL virtual bool _is_architecture_appropriate(const shared_ptr< const Version >&) const;
+	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const internal::VersionParseParameters&) const;
+	CUPT_LOCAL virtual bool _is_architecture_appropriate(const Version*) const;
 	/// @endcond
  public:
 	/// constructor
 	/**
 	 * @param binaryArchitecture system binary architecture
-	 * @param allowReinstall allow reinstalling installed version of this package,
-	 * i.e. mangle the version string of installed version
 	 */
-	BinaryPackage(const shared_ptr< const string >& binaryArchitecture, bool allowReinstall);
+	BinaryPackage(const string* binaryArchitecture);
 	/// gets list of versions
-	vector< shared_ptr< const BinaryVersion > > getVersions() const;
+	vector< const BinaryVersion* > getVersions() const;
 	/// gets installed version
 	/**
 	 * @return installed version if exists, empty pointer if not
 	 */
-	shared_ptr< const BinaryVersion > getInstalledVersion() const;
+	const BinaryVersion* getInstalledVersion() const;
+
+	typedef internal::BasePackageIterator< BinaryVersion > iterator;
+	iterator begin() const;
+	iterator end() const;
 };
 
 }

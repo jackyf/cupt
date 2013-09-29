@@ -170,6 +170,14 @@ size_t fileSize(const string& path)
 	return s.st_size;
 }
 
+time_t fileModificationTime(const string& path)
+{
+	struct stat s;
+	if (!__lstat(path, &s)) fatal2(__("the file '%s' does not exist"), path);
+
+	return s.st_mtime;
+}
+
 void mkpath(const string& path)
 {
 	auto ensureDirectoryExist = [](const string& pathPart)

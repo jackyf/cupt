@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2010-2012 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -22,79 +22,54 @@
 #include <cupt/cache/package.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binaryversion.hpp>
+#include <cupt/versionstring.hpp>
+
+#include <internal/versionparse.hpp>
 
 namespace cupt {
 namespace cache {
 
-bool Package::memoize = false;
-
-Package::Package(const shared_ptr< const string >& binaryArchitecture)
-	: __parsed_versions(NULL), _binary_architecture(binaryArchitecture)
+Package::Package(const string* binaryArchitecture)
+	: _binary_architecture(binaryArchitecture)
 {}
 
-void Package::addEntry(const Version::InitializationParameters& initParams)
+void Package::addEntry(const internal::VersionParseParameters& initParams)
 {
-	__unparsed_versions.push_back(initParams);
-}
-
-vector< shared_ptr< Version > > Package::_get_versions() const
-{
-	if (! __parsed_versions)
+	try
 	{
-		// versions were either not parsed or parsed, but not saved
-		vector< shared_ptr< Version > > result;
-
-		vector< Version::InitializationParameters > newUnparsedVersions;
-		FORIT(unparsedVersionIt, __unparsed_versions)
-		{
-			Version::InitializationParameters& initParams = *unparsedVersionIt;
-			try
-			{
-				__merge_version(_parse_version(initParams), result);
-				if (!memoize)
-				{
-					newUnparsedVersions.push_back(initParams);
-				}
-			}
-			catch (Exception& e)
-			{
-				warn2(__("error while parsing a version for the package '%s'"), initParams.packageName);
-			}
-		}
-		if (result.empty())
-		{
-			warn2(__("no valid versions available, discarding the package"));
-		}
-		__unparsed_versions.swap(newUnparsedVersions);
-
-		if (memoize)
-		{
-			__parsed_versions = new vector< shared_ptr< Version > >();
-			__parsed_versions->swap(result);
-			return *__parsed_versions;
-		}
-		else
-		{
-			return result;
-		}
+		__merge_version(_parse_version(initParams));
 	}
-	else
+	catch (Exception& e)
 	{
-		return *__parsed_versions;
+		warn2(__("error while parsing a version for the package '%s'"), *initParams.packageNamePtr);
 	}
 }
 
-vector< shared_ptr< const Version > > Package::getVersions() const
+const vector< unique_ptr< Version > >& Package::_get_versions() const
 {
-	auto source = _get_versions();
-	vector< shared_ptr< const Version > > result;
-	std::copy(source.begin(), source.end(), std::back_inserter(result));
+	return __parsed_versions;
+}
+
+vector< const Version* > Package::getVersions() const
+{
+	const auto& source = _get_versions();
+	vector< const Version* > result;
+	for (const auto& version: source)
+	{
+		result.push_back(version.get());
+	}
 	return result;
 }
 
-void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< shared_ptr< Version > >& result) const
+static inline bool __is_installed(const Version* version)
 {
-	if (!_is_architecture_appropriate(parsedVersion))
+	auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
+	return (binaryVersion && binaryVersion->isInstalled());
+}
+
+void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
+{
+	if (!_is_architecture_appropriate(parsedVersion.get()))
 	{
 		return; // skip this version
 	}
@@ -102,56 +77,53 @@ void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< sha
 	// merging
 	try
 	{
-		const auto& parsedVersionString = parsedVersion->versionString;
-		auto foundItem = std::find_if(result.begin(), result.end(), [&parsedVersionString](shared_ptr< const Version > elem) -> bool
+		if (__is_installed(parsedVersion.get()))
 		{
-			return (elem->versionString == parsedVersionString);
-		});
-
-		if (foundItem == result.end())
-		{
-			// no such version before, just add it
-			result.push_back(std::move(parsedVersion));
+			// no way to know is this version the same as in repositories,
+			// until for example #667665 is implemented
+			parsedVersion->versionString += versionstring::idSuffixDelimiter;
+			parsedVersion->versionString += "installed";
+			__parsed_versions.push_back(std::move(parsedVersion));
 		}
 		else
 		{
-			// there is such version string
-			const auto& foundVersion = *foundItem;
+			const auto& parsedVersionString = parsedVersion->versionString;
 
-			auto binaryVersion = dynamic_pointer_cast< BinaryVersion >(foundVersion);
-			if ((binaryVersion && binaryVersion->isInstalled()) || foundVersion->areHashesEqual(parsedVersion))
+			bool clashed = false;
+			bool merged = false;
+			for (const auto& presentVersion: __parsed_versions)
 			{
-				/*
-				1)
-				this is installed version
-				as dpkg now doesn't provide hash sums, let's assume that
-				local version is the same that available from archive
-				2)
-				ok, this is the same version
-				*/
-
-				// so, adding new Version::Source info
-				foundVersion->sources.push_back(parsedVersion->sources[0]);
-
-				if (binaryVersion && binaryVersion->isInstalled())
+				if (!versionstring::sameOriginal(presentVersion->versionString, parsedVersionString))
 				{
-					shared_ptr< BinaryVersion > binaryParsedVersion =
-							dynamic_pointer_cast< BinaryVersion >(parsedVersion);
-					binaryVersion->file.hashSums = binaryParsedVersion->file.hashSums;
+					continue;
+				}
+				if (__is_installed(presentVersion.get()))
+				{
+					continue;
+				}
+
+				if (presentVersion->areHashesEqual(parsedVersion.get()))
+				{
+					// ok, this is the same version, so adding new Version::Source info
+					presentVersion->sources.push_back(parsedVersion->sources[0]);
+					merged = true;
+					break;
+				}
+				else
+				{
+					clashed = true; // err, no, this is different version :(
 				}
 			}
-			else
+
+			if (!merged)
 			{
-				// err, no, this is different version :(
-				vector< string > foundOrigins;
-				for (const auto& foundSource: foundVersion->sources)
+				if (clashed)
 				{
-					foundOrigins.emplace_back(foundSource.release->baseUri);
+					static size_t idCounter = 0;
+					parsedVersion->versionString += versionstring::idSuffixDelimiter;
+					parsedVersion->versionString += format2("dhs%zu", idCounter++);
 				}
-				warn2(__("discarding a duplicate version with different hash sums: package: '%s', "
-						"version: '%s', origin of discarded version: '%s', origins left: '%s'"),
-						parsedVersion->packageName, parsedVersion->versionString,
-						parsedVersion->sources[0].release->baseUri, join(", ", foundOrigins));
+				__parsed_versions.push_back(std::move(parsedVersion));
 			}
 		}
 	}
@@ -162,23 +134,31 @@ void Package::__merge_version(shared_ptr< Version >&& parsedVersion, vector< sha
 	};
 }
 
-shared_ptr< const Version > Package::getSpecificVersion(const string& versionString) const
+const Version* Package::getSpecificVersion(const string& versionString) const
 {
-	auto source = _get_versions();
-	FORIT(versionIt, source)
+	const auto& source = _get_versions();
+	for (const auto& version: source)
 	{
-		if ((*versionIt)->versionString == versionString)
+		if (version->versionString == versionString)
 		{
-			return *versionIt;
+			return version.get();
 		}
 	}
-	return shared_ptr< const Version >();
+	return nullptr;
+}
+
+auto Package::begin() const -> iterator
+{
+	return iterator(_get_versions().begin());
+}
+
+auto Package::end() const -> iterator
+{
+	return iterator(_get_versions().end());
 }
 
 Package::~Package()
-{
-	delete __parsed_versions;
-}
+{}
 
 }
 }

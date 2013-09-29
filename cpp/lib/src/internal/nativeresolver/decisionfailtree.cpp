@@ -25,7 +25,7 @@ namespace internal {
 string DecisionFailTree::__decisions_to_string(
 		const vector< Decision >& decisions)
 {
-	auto insertedElementPtrToString = [](const dg::Element* elementPtr)
+	auto insertedElementPtrToString = [](const dg::Element* elementPtr) -> string
 	{
 		if (!elementPtr)
 		{
@@ -44,9 +44,7 @@ string DecisionFailTree::__decisions_to_string(
 	FORIT(it, decisions)
 	{
 		result.append(it->level * 2, ' ');
-		auto mainPart = it->introducedBy.brokenElementPtr->
-				getReason(*it->introducedBy.versionElementPtr)->toString();
-		result.append(std::move(mainPart));
+		result.append(it->introducedBy.getReason()->toString());
 		result.append(" -> ");
 		result.append(insertedElementPtrToString(it->insertedElementPtr));
 		result.append("\n");
@@ -67,23 +65,14 @@ string DecisionFailTree::toString() const
 
 vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 		const SolutionStorage& solutionStorage, const Solution& solution,
-		const PackageEntry::IntroducedBy& lastIntroducedBy,
-		const vector< const dg::Element* >& insertedElementPtrs)
+		const IntroducedBy& lastIntroducedBy)
 {
 	vector< Decision > result;
 
+	map< const dg::Element*, size_t > elementPositionCache;
 	std::stack< Decision > chainStack;
-	auto queueItem = [&chainStack](
-			const PackageEntry::IntroducedBy& introducedBy, size_t level,
-			const dg::Element* insertedElementPtr)
-	{
-		if (!introducedBy.empty())
-		{
-			chainStack.push(Decision { introducedBy, level, insertedElementPtr });
-		}
-	};
 
-	queueItem(lastIntroducedBy, 0, NULL);
+	chainStack.push(Decision { lastIntroducedBy, 0, NULL });
 	while (!chainStack.empty())
 	{
 		auto item = chainStack.top();
@@ -91,67 +80,26 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 
 		result.push_back(item);
 
-		const PackageEntry::IntroducedBy& introducedBy = item.introducedBy;
-
-		// processing subchains
-		{ // version
-			if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
-			{
-				queueItem(packageEntryPtr->introducedBy,
-						item.level + 1, introducedBy.versionElementPtr);
-			}
-		}
-		// dependants
-		set< const dg::Element* > alreadyProcessedConflictors;
-		const GraphCessorListType& successors =
-				solutionStorage.getSuccessorElements(introducedBy.brokenElementPtr);
-		FORIT(successorIt, successors)
+		auto queueItem = [&chainStack, &item](
+				const IntroducedBy& introducedBy,
+				const dg::Element* insertedElementPtr)
 		{
-			const dg::Element* conflictingElementPtr;
-			if (!solutionStorage.simulateSetPackageEntry(
-					solution, *successorIt, &conflictingElementPtr))
+			if (!introducedBy.empty())
 			{
-				// conflicting element is surely exists here
-				if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
-				{
-					// not yet processed
-
-					// verifying that conflicting element was added to a
-					// solution earlier than currently processed item
-					auto conflictingElementInsertedPosition =
-							std::find(insertedElementPtrs.begin(), insertedElementPtrs.end(), conflictingElementPtr);
-					if (conflictingElementInsertedPosition == insertedElementPtrs.end())
-					{
-						// conflicting element was not a resolver decision, so it can't
-						// have valid 'introducedBy' anyway
-						continue;
-					}
-					auto currentElementInsertedPosition =
-							std::find(insertedElementPtrs.begin(), conflictingElementInsertedPosition + 1,
-							item.insertedElementPtr);
-					if (currentElementInsertedPosition <= conflictingElementInsertedPosition)
-					{
-						// it means conflicting element was inserted to a solution _after_
-						// the current element, so it can't be a reason for it
-						continue;
-					}
-
-					// verified, queueing now
-					const PackageEntry::IntroducedBy& candidateIntroducedBy =
-							solution.getPackageEntry(conflictingElementPtr)->introducedBy;
-					queueItem(candidateIntroducedBy, item.level + 1, conflictingElementPtr);
-				}
+				chainStack.push(Decision { introducedBy, item.level + 1, insertedElementPtr });
 			}
-		}
+		};
+
+		solutionStorage.processReasonElements(solution, elementPositionCache,
+				item.introducedBy, item.insertedElementPtr, std::cref(queueItem));
 	}
 
 	return std::move(result);
 }
 
 // fail item is dominant if a diversed element didn't cause final breakage
-bool DecisionFailTree::__is_dominant(const FailItem& failItem, size_t offset)
+bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element* diversedElementPtr)
 {
-	auto diversedElementPtr = failItem.insertedElementPtrs[offset];
 	FORIT(it, failItem.decisions)
 	{
 		if (it->insertedElementPtr == diversedElementPtr)
@@ -163,31 +111,18 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, size_t offset)
 }
 
 void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
-		const Solution& solution, const PackageEntry::IntroducedBy& lastIntroducedBy)
+		const Solution& solution, const IntroducedBy& lastIntroducedBy)
 {
-	// first, find the diverse point
-	auto getDiverseOffset = [](const vector< const dg::Element* >& left,
-			const vector< const dg::Element* >& right) -> size_t
-	{
-		size_t offset = 0;
-		while (left[offset] == right[offset])
-		{
-			++offset;
-		}
-		return offset;
-	};
-
 	FailItem failItem;
-	failItem.insertedElementPtrs = solutionStorage.getInsertedElements(solution);
-	failItem.decisions = __get_decisions(solutionStorage, solution,
-			lastIntroducedBy, failItem.insertedElementPtrs);
+	failItem.solutionId = solution.id;
+	failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
 	bool willBeAdded = true;
 
 	auto it = __fail_items.begin();
 	while (it != __fail_items.end())
 	{
-		auto diverseOffset = getDiverseOffset(it->insertedElementPtrs, failItem.insertedElementPtrs);
-		auto existingIsDominant = __is_dominant(*it, diverseOffset);
+		auto diversedElements = solutionStorage.getDiversedElements(it->solutionId, failItem.solutionId);
+		auto existingIsDominant = __is_dominant(*it, diversedElements.first);
 		if (existingIsDominant)
 		{
 			willBeAdded = false;
@@ -195,7 +130,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		}
 		else
 		{
-			if (__is_dominant(failItem, diverseOffset))
+			if (__is_dominant(failItem, diversedElements.second))
 			{
 				it = __fail_items.erase(it);
 			}

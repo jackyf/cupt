@@ -15,10 +15,10 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <future>
 
 #include <algorithm>
+#include <queue>
 
 #include <common/regex.hpp>
 
@@ -31,6 +31,7 @@
 #include <internal/lock.hpp>
 #include <internal/tagparser.hpp>
 #include <internal/common.hpp>
+#include <internal/indexofindex.hpp>
 
 #include <internal/worker/metadata.hpp>
 
@@ -93,6 +94,7 @@ std::function< string () > generateMovingSub(const string& downloadPath, const s
 {
 	return [downloadPath, targetPath]() -> string
 	{
+		ioi::removeIndexOfIndex(targetPath);
 		if (fs::move(downloadPath, targetPath))
 		{
 			return "";
@@ -143,8 +145,9 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 		sub = [uncompressorName, downloadPath, targetPath]() -> string
 		{
+			auto uncompressedPath = downloadPath + ".uncompressed";
 			auto uncompressingResult = ::system(format2("%s %s -c > %s",
-					uncompressorName, downloadPath, targetPath).c_str());
+					uncompressorName, downloadPath, uncompressedPath).c_str());
 			// anyway, remove the compressed file, ignoring errors if any
 			unlink(downloadPath.c_str());
 			if (uncompressingResult)
@@ -152,7 +155,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 				return format2(__("failed to uncompress '%s', '%s' returned the error %d"),
 						downloadPath, uncompressorName, uncompressingResult);
 			}
-			return string(); // success
+			return generateMovingSub(uncompressedPath, targetPath)();
 		};
 		return true;
 	}
@@ -172,7 +175,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 string __get_pidded_string(const string& input)
 {
-	return format2("(%d): %s", getpid(), input);
+	return format2("(%x): %s", (unsigned)pthread_self(), input);
 }
 template < typename... Args >
 string piddedFormat2(const string& format, const Args&... args)
@@ -190,133 +193,155 @@ string __get_download_log_message(const string& longAlias)
 	return __get_pidded_string(string("downloading: ") + longAlias);
 }
 
-bool MetadataWorker::__update_release(download::Manager& downloadManager,
-		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
+std::function< string() > combineDownloadPostActions(
+		const std::function< string () >& left,
+		const std::function< string () >& right)
 {
-	bool simulating = _config->getBool("cupt::worker::simulate");
+	return [left, right]()
+	{
+		auto value = left();
+		if (value.empty())
+		{
+			value = right();
+		}
+		return value;
+	};
+}
+
+std::function< string() > getReleaseCheckPostAction(
+		const Config& config, const string& path, const string&)
+{
+	return [&config, path]() -> string
+	{
+		try
+		{
+			cachefiles::getReleaseInfo(config, path, path);
+		}
+		catch (Exception& e)
+		{
+			return e.what();
+		}
+		return string(); // success
+	};
+}
+
+string deDotGpg(const string& input)
+{
+	if (getFilenameExtension(input) == ".gpg")
+	{
+		return input.substr(0, input.size() - 4);
+	}
+	else
+	{
+		return input;
+	}
+}
+
+std::function< string() > getReleaseSignatureCheckPostAction(
+		const Config& config, const string& path, const string& alias)
+{
+	return [&config, path, alias]() -> string
+	{
+		cachefiles::verifySignature(config, deDotGpg(path), deDotGpg(alias));
+		return string();
+	};
+}
+
+bool MetadataWorker::__downloadReleaseLikeFile(download::Manager& downloadManager,
+		const string& uri, const string& targetPath,
+		const cachefiles::IndexEntry& indexEntry, const string& name,
+		SecondPostActionGeneratorForReleaseLike secondPostActionGenerator)
+{
 	bool runChecks = _config->getBool("cupt::update::check-release-files");
 
-	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
-
-	// we'll check hash sums of local file before and after to
-	// determine do we need to clean partial indexes
-	//
-	HashSums hashSums; // empty now
-	hashSums[HashSums::MD5] = "0"; // won't match for sure
-	if (fs::fileExists(targetPath))
-	{
-		// the Release file already present
-		hashSums.fill(targetPath);
-	}
-	releaseFileChanged = false; // until proved otherwise later
-
-	// downloading Release file
-	auto alias = indexEntry.distribution + ' ' + "Release";
+	auto alias = indexEntry.distribution + ' ' + name;
 	auto longAlias = indexEntry.uri + ' ' + alias;
-	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
-
-	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
 	auto downloadPath = getDownloadPath(targetPath);
 
+	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 	{
 		download::Manager::DownloadEntity downloadEntity;
 
-		download::Manager::ExtendedUri extendedUri(download::Uri(uri),
-				alias, longAlias);
-
-		downloadEntity.extendedUris.push_back(std::move(extendedUri));
+		downloadEntity.extendedUris.emplace_back(download::Uri(uri), alias, longAlias);
 		downloadEntity.targetPath = downloadPath;
 		downloadEntity.postAction = generateMovingSub(downloadPath, targetPath);
 		downloadEntity.size = (size_t)-1;
+		downloadEntity.optional = true;
 
-		if (!simulating && runChecks)
+		if (runChecks)
 		{
-			auto oldPostAction = downloadEntity.postAction;
-			auto extendedPostAction = [oldPostAction, _config, targetPath]() -> string
-			{
-				auto moveError = oldPostAction();
-				if (!moveError.empty())
-				{
-					return moveError;
-				}
-
-				try
-				{
-					cachefiles::getReleaseInfo(*_config, targetPath, targetPath);
-				}
-				catch (Exception& e)
-				{
-					return e.what();
-				}
-				return string(); // success
-			};
-			downloadEntity.postAction = extendedPostAction;
+			downloadEntity.postAction = combineDownloadPostActions(downloadEntity.postAction,
+					secondPostActionGenerator(*_config, targetPath, longAlias));
 		}
 
-		auto downloadResult = downloadManager.download(
-				vector< download::Manager::DownloadEntity >{ downloadEntity });
-		if (!downloadResult.empty())
-		{
-			return false;
-		}
+		return downloadManager.download({ downloadEntity }).empty();
 	}
+}
 
-	releaseFileChanged = !hashSums.verify(targetPath);
-
-	// downloading signature for Release file
-	auto signatureUri = uri + ".gpg";
-	auto signatureTargetPath = targetPath + ".gpg";
-	auto signatureDownloadPath = downloadPath + ".gpg";
-
-	auto signatureAlias = alias + ".gpg";
-	auto signatureLongAlias = indexEntry.uri + ' ' + signatureAlias;
-	_logger->log(Logger::Subsystem::Metadata, 3,
-			__get_download_log_message(signatureLongAlias));
-
-	auto signaturePostAction = generateMovingSub(signatureDownloadPath, signatureTargetPath);
-
-	if (!simulating and runChecks)
+HashSums fillHashSumsIfPresent(const string& path)
+{
+	HashSums hashSums; // empty now
+	hashSums[HashSums::MD5] = "0"; // won't match for sure
+	if (fs::fileExists(path))
 	{
-		auto oldSignaturePostAction = signaturePostAction;
-		signaturePostAction = [oldSignaturePostAction, longAlias, targetPath, signatureTargetPath, &_config]() -> string
-		{
-			auto moveError = oldSignaturePostAction();
-			if (!moveError.empty())
-			{
-				return moveError;
-			}
-
-			if (!cachefiles::verifySignature(*_config, targetPath, longAlias))
-			{
-				if (!_config->getBool("cupt::update::keep-bad-signatures"))
-				{
-					// for compatibility with APT tools delete the downloaded file
-					if (unlink(signatureTargetPath.c_str()) == -1)
-					{
-						warn2e(__("unable to remove the file '%s'"), signatureTargetPath);
-					}
-				}
-			}
-			return string();
-		};
+		// the Release file already present
+		hashSums.fill(path);
 	}
+	return hashSums;
+}
 
+bool MetadataWorker::__downloadRelease(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
+{
+	const auto simulating = _config->getBool("cupt::worker::simulate");
+
+	auto uri = cachefiles::getDownloadUriOfReleaseList(indexEntry);
+	auto targetPath = cachefiles::getPathOfReleaseList(*_config, indexEntry);
+
+	auto hashSums = fillHashSumsIfPresent(targetPath);
+	releaseFileChanged = false;
+
+	if (!__downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry, "Release", getReleaseCheckPostAction))
 	{
-		download::Manager::DownloadEntity downloadEntity;
-
-		download::Manager::ExtendedUri extendedUri(download::Uri(signatureUri),
-				signatureAlias, signatureLongAlias);
-
-		downloadEntity.extendedUris.push_back(std::move(extendedUri));
-		downloadEntity.targetPath = signatureDownloadPath;
-		downloadEntity.postAction = signaturePostAction;
-		downloadEntity.size = (size_t)-1;
-
-		downloadManager.download(
-				vector< download::Manager::DownloadEntity >{ downloadEntity });
+		return false;
 	}
+
+	releaseFileChanged = simulating || !hashSums.verify(targetPath);
+
+	__downloadReleaseLikeFile(downloadManager, uri+".gpg", targetPath+".gpg", indexEntry, "Release.gpg", getReleaseSignatureCheckPostAction);
 
 	return true;
+}
+
+// InRelease == inside signed Release
+bool MetadataWorker::__downloadInRelease(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
+{
+	const auto simulating = _config->getBool("cupt::worker::simulate");
+
+	auto uri = cachefiles::getDownloadUriOfInReleaseList(indexEntry);
+	auto targetPath = cachefiles::getPathOfInReleaseList(*_config, indexEntry);
+
+	auto hashSums = fillHashSumsIfPresent(targetPath);
+	releaseFileChanged = false;
+
+	bool downloadResult = __downloadReleaseLikeFile(downloadManager, uri, targetPath, indexEntry,
+			"InRelease", getReleaseSignatureCheckPostAction);
+	releaseFileChanged = downloadResult && (simulating || !hashSums.verify(targetPath));
+
+	return downloadResult;
+}
+
+bool MetadataWorker::__update_release(download::Manager& downloadManager,
+		const cachefiles::IndexEntry& indexEntry, bool& releaseFileChanged)
+{
+	bool result = __downloadInRelease(downloadManager, indexEntry, releaseFileChanged) ||
+			__downloadRelease(downloadManager, indexEntry, releaseFileChanged);
+	if (!result)
+	{
+		warn2(__("failed to download %s for '%s %s/%s'"), "(In)Release", indexEntry.uri, indexEntry.distribution, "");
+	}
+	return result;
 }
 
 ssize_t MetadataWorker::__get_uri_priority(const string& uri)
@@ -422,11 +447,11 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				}
 				else if (fieldName.equal(BUFFER_AND_SIZE("SHA1-Current")))
 				{
-					auto values = internal::split(' ', string(fieldValue));
+					auto values = internal::split(' ', fieldValue.toString());
 					if (values.size() != 2)
 					{
 						logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-								piddedFormat2, "malformed 'hash-size' line '%s'", string(fieldValue));
+								piddedFormat2, "malformed 'hash-size' line '%s'", fieldValue.toString());
 					}
 					wantedHashSum = values[0];
 				}
@@ -884,13 +909,13 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		if (localizationIndexDownloadInfo.empty())
 		{
 			_logger->log(Logger::Subsystem::Metadata, 3,
-					"no localization file index was found in the release, skipping downloading localization files");
+					__get_pidded_string("no localization file index was found in the release, skipping downloading localization files"));
 			return;
 		}
 		if (localizationIndexDownloadInfo.size() > 1)
 		{
 			_logger->log(Logger::Subsystem::Metadata, 3,
-					"more than one localization file index was found in the release, skipping downloading localization files");
+					__get_pidded_string("more than one localization file index was found in the release, skipping downloading localization files"));
 			return;
 		}
 
@@ -900,6 +925,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 				indexEntry, baseDownloadPath, "" /* unused */, indexFileChanged);
 	}
 }
+
 
 bool MetadataWorker::__update_release_and_index_data(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry)
@@ -933,29 +959,39 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 	_logger->log(Logger::Subsystem::Metadata, 2, "cleaning up old index lists");
 
 	set< string > usedPaths;
-	auto addUsedPrefix = [&usedPaths](const string& prefix)
+	auto addUsedPattern = [&usedPaths](const string& pattern)
 	{
-		auto existingFiles = fs::glob(prefix + '*');
-		FORIT(existingFileIt, existingFiles)
+		for (const string& existingFile: fs::glob(pattern))
 		{
-			usedPaths.insert(*existingFileIt);
+			usedPaths.insert(existingFile);
 		}
 	};
 
-	auto indexEntries = _cache->getIndexEntries();
-	FORIT(indexEntryIt, indexEntries)
+	auto includeIoi = _config->getBool("cupt::update::generate-index-of-index");
+	for (const auto& indexEntry: _cache->getIndexEntries())
 	{
-		addUsedPrefix(cachefiles::getPathOfReleaseList(*_config, *indexEntryIt));
-		addUsedPrefix(cachefiles::getPathOfIndexList(*_config, *indexEntryIt));
+		auto pathOfIndexList = cachefiles::getPathOfIndexList(*_config, indexEntry);
+
+		addUsedPattern(cachefiles::getPathOfReleaseList(*_config, indexEntry) + '*');
+		addUsedPattern(cachefiles::getPathOfInReleaseList(*_config, indexEntry));
+		addUsedPattern(pathOfIndexList);
+		if (includeIoi)
+		{
+			addUsedPattern(ioi::getIndexOfIndexPath(pathOfIndexList));
+		}
 
 		auto translationsPossiblePaths =
-				cachefiles::getPathsOfLocalizedDescriptions(*_config, *indexEntryIt);
+				cachefiles::getPathsOfLocalizedDescriptions(*_config, indexEntry);
 		FORIT(pathIt, translationsPossiblePaths)
 		{
-			addUsedPrefix(pathIt->second);
+			addUsedPattern(pathIt->second);
+			if (includeIoi)
+			{
+				addUsedPattern(ioi::getIndexOfIndexPath(pathIt->second));
+			}
 		}
 	}
-	addUsedPrefix(lockPath);
+	addUsedPattern(lockPath);
 
 	bool simulating = _config->getBool("cupt::worker::simulate");
 
@@ -978,6 +1014,71 @@ void MetadataWorker::__list_cleanup(const string& lockPath)
 			}
 		}
 	}
+}
+
+void MetadataWorker::p_generateIndexesOfIndexes(const cachefiles::IndexEntry& indexEntry)
+{
+	if (_config->getBool("cupt::worker::simulate")) return;
+
+	auto getIoiTemporaryPath = [](const string& path)
+	{
+		return getDownloadPath(path) + ".ioi";
+	};
+	auto generateForPath = [&getIoiTemporaryPath](const string& path, bool isMainIndex /* or translation one */)
+	{
+		if (!fs::fileExists(path)) return;
+		auto generator = (isMainIndex ? ioi::ps::generate : ioi::tr::generate);
+		generator(path, getIoiTemporaryPath(path));
+	};
+
+	generateForPath(cachefiles::getPathOfIndexList(*_config, indexEntry), true);
+	for (const auto& item: cachefiles::getPathsOfLocalizedDescriptions(*_config, indexEntry))
+	{
+		generateForPath(item.second, false);
+	}
+}
+
+bool MetadataWorker::p_metadataUpdateThread(download::Manager& downloadManager, const cachefiles::IndexEntry& indexEntry)
+{
+	// wrapping all errors here
+	try
+	{
+		bool result = __update_release_and_index_data(downloadManager, indexEntry);
+		if (_config->getBool("cupt::update::generate-index-of-index"))
+		{
+			p_generateIndexesOfIndexes(indexEntry);
+		}
+		return result;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+bool MetadataWorker::p_runMetadataUpdateThreads(const shared_ptr< download::Progress >& downloadProgress)
+{
+	bool result = true;
+	{ // download manager involved part
+		download::Manager downloadManager(_config, downloadProgress);
+
+		std::queue< std::future<bool> > threadReturnValues;
+
+		for (const auto& indexEntry: _cache->getIndexEntries())
+		{
+			threadReturnValues.emplace(std::async(std::launch::async,
+					std::bind(&MetadataWorker::p_metadataUpdateThread, this, std::ref(downloadManager), indexEntry)));
+		}
+		while (!threadReturnValues.empty())
+		{
+			if (!threadReturnValues.front().get())
+			{
+				result = false;
+			}
+			threadReturnValues.pop();
+		}
+	}
+	return result;
 }
 
 void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progress >& downloadProgress)
@@ -1041,59 +1142,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		_logger->loggedFatal2(Logger::Subsystem::Metadata, 1, format2, "aborted downloading release and index data");
 	}
 
-	int masterExitCode = true;
-	{ // download manager involved part
-		download::Manager downloadManager(_config, downloadProgress);
-
-		set< int > pids;
-
-		auto indexEntries = _cache->getIndexEntries();
-		FORIT(indexEntryIt, indexEntries)
-		{
-			auto pid = fork();
-			if (pid == -1)
-			{
-				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "%s() failed", "fork");
-			}
-
-			if (pid)
-			{
-				// master process
-				pids.insert(pid);
-			}
-			else
-			{
-				// child process
-				bool success; // bad by default
-
-				// wrapping all errors here
-				try
-				{
-					success = __update_release_and_index_data(downloadManager, *indexEntryIt);
-				}
-				catch (...)
-				{
-					success = false;
-				}
-				_exit(success ? 0 : EXIT_FAILURE);
-			}
-		}
-		while (!pids.empty())
-		{
-			int status;
-			pid_t pid = wait(&status);
-			if (pid == -1)
-			{
-				_logger->loggedFatal2(Logger::Subsystem::Metadata, 2, format2e, "%s() failed", "wait");
-			}
-			pids.erase(pid);
-			// if something went bad in child, the parent won't return non-zero code too
-			if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-			{
-				masterExitCode = false;
-			}
-		}
-	};
+	auto masterExitCode = p_runMetadataUpdateThreads(downloadProgress);
 
 	if (_config->getBool("apt::get::list-cleanup"))
 	{

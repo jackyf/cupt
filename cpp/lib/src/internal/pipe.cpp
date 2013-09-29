@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2012 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -18,10 +18,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <cupt/pipe.hpp>
+#include <internal/pipe.hpp>
 
 namespace cupt {
-
 namespace internal {
 
 struct PipeData
@@ -40,8 +39,6 @@ void PipeData::close(int fd)
 	{
 		warn2e(__("unable to close a part of the '%s' pipe"), name);
 	}
-}
-
 }
 
 Pipe::Pipe(const string& name_)
@@ -112,5 +109,6 @@ Pipe::~Pipe()
 	delete __data;
 }
 
+}
 }
 

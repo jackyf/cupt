@@ -52,8 +52,8 @@ void parseStatusSubstrings(const string& packageName, const string& input,
 	// status should be a triplet delimited by spaces (i.e. 2 ones)
 	internal::TagParser::StringRange current;
 
-	current.first = current.second = input.begin();
-	auto end = input.end();
+	current.first = current.second = input.data();
+	auto end = input.data() + input.size();
 
 	while (current.second != end && *current.second != ' ')
 	{
@@ -191,10 +191,10 @@ void StateData::parseDpkgStatus()
 					continue; \
 				} \
 
-				TAG("Package", 0, packageName = tagValue)
-				TAG("Status", 1, status = tagValue)
+				TAG("Package", 0, packageName = tagValue.toString())
+				TAG("Status", 1, status = tagValue.toString())
 				TAG("Version", 2, ;)
-				TAG("Provides", 3, provides = tagValue)
+				TAG("Provides", 3, provides = tagValue.toString())
 #undef TAG
 			} while (parser.parseNextLine(tagName, tagValue));
 
@@ -310,6 +310,11 @@ vector< string > State::getReinstallRequiredPackageNames() const
 	}
 
 	return result;
+}
+
+string State::getArchitecture() const
+{
+	return __data->config->getString("apt::architecture");
 }
 
 const string State::InstalledRecord::Status::strings[] = {

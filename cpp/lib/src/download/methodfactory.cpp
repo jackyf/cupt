@@ -34,20 +34,20 @@ using std::multimap;
 class MethodFactoryImpl
 {
 	typedef download::Method* (*MethodBuilder)();
-	shared_ptr< const Config > __config;
+	const Config& __config;
 	map< string, MethodBuilder > __method_builders;
 	vector< void* > __dl_handles;
 
 	void __load_methods();
 	int __get_method_priority(const string& protocol, const string& methodName) const;
  public:
-	MethodFactoryImpl(const shared_ptr< const Config >&);
+	MethodFactoryImpl(const Config&);
 	~MethodFactoryImpl();
 	download::Method* getDownloadMethodForUri(const download::Uri& uri) const;
 };
 
 
-MethodFactoryImpl::MethodFactoryImpl(const shared_ptr< const Config >& config)
+MethodFactoryImpl::MethodFactoryImpl(const Config& config)
 	: __config(config)
 {
 	__load_methods();
@@ -69,14 +69,14 @@ MethodFactoryImpl::~MethodFactoryImpl()
 #else
 	#define QUOTED(x) QUOTED_(x)
 	#define QUOTED_(x) # x
-	const string downloadMethodPath = "/usr/lib/cupt2-" QUOTED(SOVERSION) "/downloadmethods/";
+	const string downloadMethodPath = "/usr/lib/cupt3-" QUOTED(SOVERSION) "/downloadmethods/";
 	#undef QUOTED
 	#undef QUOTED_
 #endif
 
 void MethodFactoryImpl::__load_methods()
 {
-	auto debugging = __config->getBool("debug::downloader");
+	auto debugging = __config.getBool("debug::downloader");
 	auto paths = fs::glob(downloadMethodPath + "*.so");
 	if (paths.empty())
 	{
@@ -137,7 +137,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 	auto protocol = uri.getProtocol();
 
 	auto optionName = string("cupt::downloader::protocols::") + protocol + "::methods";
-	auto availableHandlerNames = __config->getList(optionName);
+	auto availableHandlerNames = __config.getList(optionName);
 	if (availableHandlerNames.empty())
 	{
 		fatal2(__("no download handlers defined for the protocol '%s'"), protocol);
@@ -151,7 +151,7 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 				make_pair(__get_method_priority(protocol, handlerName), handlerName));
 	}
 
-	bool debugging = __config->getBool("debug::downloader");
+	bool debugging = __config.getBool("debug::downloader");
 	FORIT(handlerIt, prioritizedHandlerNames)
 	{
 		const string& handlerName = handlerIt->second;
@@ -182,7 +182,7 @@ int MethodFactoryImpl::__get_method_priority(const string& protocol, const strin
 {
 	string optionName = string("cupt::downloader::protocols::") + protocol +
 			"::methods::" + methodName + "::priority";
-	auto result = __config->getInteger(optionName);
+	auto result = __config.getInteger(optionName);
 	return result ? result : 100;
 }
 
@@ -190,7 +190,7 @@ int MethodFactoryImpl::__get_method_priority(const string& protocol, const strin
 
 namespace download {
 
-MethodFactory::MethodFactory(const shared_ptr< const Config >& config)
+MethodFactory::MethodFactory(const Config& config)
 {
 	__impl = new internal::MethodFactoryImpl(config);
 }

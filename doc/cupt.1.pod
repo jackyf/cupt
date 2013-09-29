@@ -109,6 +109,12 @@ search only in package names
 
 Corresponding configuration variable: L<apt::cache::namesonly>
 
+=item --fse,-f
+
+Turns on functional selector expression mode. In that mode, instead of
+specifying one or more regular expressions, exactly one FSE (see
+L<cupt_functionalselectors(7)>) should be specified.
+
 =back
 
 Examples:
@@ -120,6 +126,8 @@ C<cupt search --case-sensitive Vim>
 C<cupt search -n vim>
 
 C<cupt search "package manager">
+
+C<cupt search --fse 'Zbd(Pn(cupt))'>
 
 =item showauto
 
@@ -252,9 +260,9 @@ C<cupt policysrc libpqxx libpqxx3>
 
 =item pkgnames
 
-prints package names that start with a supplied suffix
+prints package names that start with a supplied prefix
 
-If no suffix is given, prints all package names
+If no prefix is given, prints all package names
 
 Examples:
 
@@ -727,7 +735,7 @@ Corresponding configuration option: L<cupt::console::actions-preview::show-size-
 when displaying actions preview prompt, display also reasons why this action was
 considered to perform
 
-Corresponding configuration option: L<cupt::resolver::track-reasons>
+Corresponding configuration option: L<cupt::console::actions-preview::show-reasons>
 
 =item --show-not-preferred
 
@@ -738,8 +746,7 @@ Corresponding configuration option: L<cupt::console::actions-preview::show-not-p
 
 =item --download-only,-d
 
-stop after download stage, don't modify the system; not applicable for
-L</markauto> and L</unmarkauto> actions
+stop after download stage, don't modify the system
 
 Corresponding configuration option: L<cupt::worker::download-only>
 
@@ -764,59 +771,93 @@ specify as many action override options as needed.
 
 install the rest of packages
 
-Example:
-
-C<cupt remove msmtp-mta --install exim4-daemon-light esmtp> - install the packages
-'exim4-daemon-light' and 'esmtp', remove the package 'msmtp-mta'
-
 =item --remove
 
 remove rest of packages
-
-Example:
-
-C<cupt install exim4-daemon-light --remove msmtp-mta esmtp> - install the package
-'exim4-daemon-light', remove the packages 'msmtp-mta' and 'esmtp'
 
 =item --purge
 
 purge the rest of packages
 
-Example:
-
-C<cupt purge libkate1 --remove libass4 --purge libdirac-decoder0> - remove the
-package 'libass4', purge packages 'libkate1' and 'libdirac-decoder0'
-
 =item --satisfy
 
 satisfy the rest of relation expressions
-
-Example:
-
-C<< cupt install lightspark --remove gnash --satisfy "iceweasel (>= 5)" >> -
-install the package 'lightspark', remove the packae 'gnash', and make sure that
-iceweasel (at least of version 5) is installed
 
 =item --unsatisfy
 
 unsatisfy the rest of relation expressions
 
-Example:
-
-C<< cupt install sieve-connect --unsatisfy "iceweasel (<< 3.5.20)" >> - install
-the package 'sieve-connect', upgrade or remove the package 'iceweasel' if it is installed
-and has the version lower than '3.5.20'
-
 =item --iii
 
 "install if installed" (see L</iii> subcommand) the rest of packages
 
-Example:
+=item --markauto
 
-C<cupt install libv4l-0 cupt --iii libreadline6 vlc*> - install packages
-'libv4l-0' and 'cupt', install the preferred version of 'libreadline6' if it's
-installed already, install the preferred versions of packages which names start
-with 'vlc' and which are installed already 
+mark as automatically installed (see L</markauto> subcommand) the rest of packages
+
+=item --unmarkauto
+
+mark as manually installed (see L</unmarkauto>) subcommand the rest of packages
+
+=item --asauto=yes
+
+in addition to following actions, also mark packages as automatically installed
+
+=item --asauto=no
+
+in addition to following actions, also mark packages as manually installed
+
+=item --asauto=default
+
+reset any previous C<--asauto> switches (to default mode, which is: mark newly
+installed packages (except for satisfy-type actions) as manually installed and
+preserve auto-status otherwise)
+
+=back
+
+=head3 management modifiers: request type options
+
+=over
+
+=item --select=traditional,--st
+
+for install-type actions, request installing the best of chosen versions for
+each package; for remove-type actions, request removing the whole package. This
+is the default.
+
+=item --select=flexible,--sf
+
+for install-type actions, request installing any of chosen versions for each
+package; for remove-type actions, request removing only chosen versions for
+each package.
+
+=back
+
+=head3 management modifiers: request importance options
+
+=over
+
+=item --importance=must,--must
+
+the following actions must be unconditionally performed, in other words,
+mandatory. This is the default.
+
+=item --importance=try,--try
+
+the following actions are optional, but relatively big
+(L<cupt::resolver::score::unsatisfied-try>) penalty will be applied for each
+non-satisfied request
+
+=item --importance=wish,--wish
+
+the following actions are optional, but relatively small
+(L<cupt::resolver::score::unsatisfied-wish>) penalty will be applied for each
+non-satisfied request
+
+=item --importance=<value>
+
+(where <value> is a positive integer) the following actions are optional, but
+exact penalty of <value> will be applied for each non-satisfied request
 
 =back
 
@@ -908,6 +949,12 @@ Also, you can specify L</Binary package version expression> as
 L</Source package version expression>, then binary-to-source mapping
 will be performed.
 
+=head2 Functional selectors
+
+You can also use functional selectors (L<cupt_functionalselectors(7)>)
+whereever L</Binary package version expression> or L</Source package version
+expression> is expected.
+
 =head1 COMMON OPTIONS
 
 =over
@@ -997,7 +1044,7 @@ discussion channel about Cupt is irc://irc.debian.org#cupt.
 
 =head1 SEE ALSO
 
-L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>, L<cupt.conf(5)>
+L<cupt_vs_apt(5)>, L<cupt_tutorial(7)>, L<cupt.conf(5)>, L<cupt_functionalselectors(7)>
 
 =head1 AUTHOR
 

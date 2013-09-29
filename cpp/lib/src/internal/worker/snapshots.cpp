@@ -28,8 +28,10 @@
 #include <cupt/system/snapshots.hpp>
 #include <cupt/system/state.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/filesystem.hpp>
+#include <internal/cachefiles.hpp>
 
 #include <internal/worker/snapshots.hpp>
 
@@ -134,7 +136,7 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				}
 				const string& badFilename = files[0];
 				auto goodFilename = format2("%s_%s_%s.deb", packageName,
-						version->versionString, architecture);
+						versionstring::getOriginal(version->versionString), architecture);
 
 				if (!fs::move(badFilename, goodFilename))
 				{
@@ -153,7 +155,7 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 
 string SnapshotsWorker::__create_index_file(const Cache::IndexEntry& indexEntry)
 {
-	auto filename = fs::filename(_cache->getPathOfIndexList(indexEntry));
+	auto filename = fs::filename(cachefiles::getPathOfIndexList(*_config, indexEntry));
 
 	_logger->log(Logger::Subsystem::Snapshots, 2, "building an index file");
 	_run_external_command(Logger::Subsystem::Snapshots, string("dpkg-scanpackages . > ") + filename);
@@ -208,7 +210,7 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 #undef LL
 
 	auto path = temporarySnapshotDirectory + '/' +
-			fs::filename(_cache->getPathOfReleaseList(indexEntry));
+			fs::filename(cachefiles::getPathOfReleaseList(*_config, indexEntry));
 	createTextFile(path, lines, _logger, simulating);
 }
 

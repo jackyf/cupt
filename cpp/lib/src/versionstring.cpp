@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,40 +15,24 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_PIPE_SEEN
-#define CUPT_PIPE_SEEN
-
-/// @cond
-
-#include <unistd.h>
-
-#include <cupt/common.hpp>
+#include <cupt/versionstring.hpp>
 
 namespace cupt {
+namespace versionstring {
 
-namespace internal {
+char idSuffixDelimiter = '^';
 
-struct PipeData;
-
-}
-
-// TODO/API break/: not used externally anymore, make it internal
-class CUPT_API Pipe
+//TODO: VersionString class?
+string getOriginal(const string& s)
 {
-	internal::PipeData* __data;
-	Pipe(const Pipe&);
- public:
-	Pipe(const string& name);
-	virtual ~Pipe();
-	void useAsReader();
-	void useAsWriter();
-	int getReaderFd();
-	int getWriterFd();
-};
-
+	return s.substr(0, s.rfind(idSuffixDelimiter));
 }
 
-/// @endcond
+bool sameOriginal(const string& left, const string& right)
+{
+	return left.compare(0, left.rfind(idSuffixDelimiter),
+			right, 0, right.rfind(idSuffixDelimiter)) == 0;
+}
 
-#endif
-
+}
+}

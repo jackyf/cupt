@@ -39,14 +39,13 @@ using cache::Version;
 using cache::BinaryVersion;
 using cache::ReleaseInfo;
 
-PinInfo::PinInfo(const shared_ptr< const Config >& config,
-		const shared_ptr< const system::State >& systemState)
+PinInfo::PinInfo(const shared_ptr< const Config >& config, const system::State* systemState)
 	: config(config), systemState(systemState)
 {
 	init();
 }
 
-ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) const
+ssize_t PinInfo::getOriginalAptPin(const Version* version) const
 {
 	static const ssize_t defaultReleasePriority = 990;
 	static const ssize_t notAutomaticReleasePriority = 1;
@@ -95,8 +94,7 @@ ssize_t PinInfo::getOriginalAptPin(const shared_ptr< const Version >& version) c
 	return result;
 }
 
-ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
-		const string& installedVersionString) const
+ssize_t PinInfo::getPin(const Version* version, const string& installedVersionString) const
 {
 	auto result = getOriginalAptPin(version);
 
@@ -114,7 +112,7 @@ ssize_t PinInfo::getPin(const shared_ptr< const Version >& version,
 			result += config->getInteger("cupt::cache::pin::addendums::downgrade");
 		}
 
-		auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
+		auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 		if (!binaryVersion)
 		{
 			fatal2i("version is not binary");
@@ -159,12 +157,7 @@ void PinInfo::loadData(const string& path)
 	// Pin: a=experimental
 	// Pin-Priority: 1100
 
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2(__("unable to open the file '%s': %s"), path, openError);
-	}
+	RequiredFile file(path, "r");
 
 	smatch m;
 
@@ -269,7 +262,7 @@ void PinInfo::loadData(const string& path)
 					PinEntry::Condition condition;
 					condition.type = PinEntry::Condition::Version;
 					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(condition);
+					pinEntry.conditions.push_back(std::move(condition));
 				}
 				else if (pinType == "origin")
 				{
@@ -280,7 +273,7 @@ void PinInfo::loadData(const string& path)
 						pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
 					}
 					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(condition);
+					pinEntry.conditions.push_back(std::move(condition));
 				}
 				else
 				{
@@ -341,7 +334,7 @@ string getHostNameInAptPreferencesStyle(const string& baseUri)
 	}
 }
 
-void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version, ssize_t& priority) const
+void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) const
 {
 	smatch m;
 
@@ -352,34 +345,34 @@ void PinInfo::adjustUsingPinSettings(const shared_ptr< const Version >& version,
 		FORIT(conditionIt, conditions)
 		{
 			const PinEntry::Condition& condition = *conditionIt;
-			const shared_ptr< sregex >& regex = condition.value;
+			const auto& regex = condition.value;
 
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
-					matched = regex_search(version->packageName, m, *regex);
+					matched = regex_search(version->packageName, m, regex);
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
-						auto binaryVersion = dynamic_pointer_cast< const BinaryVersion >(version);
+						auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 						if (!binaryVersion)
 						{
 							matched = false;
 							break;
 						}
-						matched = regex_search(binaryVersion->sourcePackageName, m, *regex);
+						matched = regex_search(binaryVersion->sourcePackageName, m, regex);
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_search(version->versionString, m, *regex);
+					matched = regex_search(version->versionString, m, regex);
 					break;
 #define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \
 					matched = false; \
 					FORIT(sourceIt, version->sources) \
 					{ \
-						const shared_ptr< const ReleaseInfo >& release = sourceIt->release; \
-						if (regex_search(expression, m, *regex)) \
+						const ReleaseInfo* release = sourceIt->release; \
+						if (regex_search(expression, m, regex)) \
 						{ \
 							matched = true; \
 							break; \

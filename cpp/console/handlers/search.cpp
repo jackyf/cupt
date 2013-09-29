@@ -27,21 +27,131 @@ using std::endl;
 #include "../common.hpp"
 #include "../misc.hpp"
 #include "../handlers.hpp"
+#include "../functionselectors.hpp"
+
+namespace {
+
+vector< sregex > generateSearchRegexes(const vector< string >& patterns, bool caseSensitive)
+{
+	int regexFlags = regex_constants::ECMAScript | regex_constants::optimize;
+	if (!caseSensitive)
+	{
+		regexFlags |= regex_constants::icase;
+	}
+
+	vector< sregex > result;
+
+	for (const string& pattern: patterns)
+	{
+		try
+		{
+			result.push_back(sregex::compile(pattern.c_str(), regex_constants::syntax_option_type(regexFlags)));
+		}
+		catch (regex_error&)
+		{
+			fatal2(__("invalid regular expression '%s'"), pattern);
+		}
+	};
+
+	return result;
+}
+
+void searchInPackageNames(const vector< string >& packageNames,
+		const vector< sregex >& regexes, smatch& m)
+{
+	for (const auto& packageName: packageNames)
+	{
+		bool matched = true;
+		for (const auto& regex: regexes)
+		{
+			if (!regex_search(packageName, m, regex))
+			{
+				matched = false;
+				break;
+			}
+		}
+		if (matched)
+		{
+			cout << packageName << endl;
+		}
+	}
+}
+
+inline string getShortDescription(const string& description)
+{
+	return description.substr(0, description.find('\n'));
+}
+
+void searchInPackageNamesAndDescriptions(const Cache& cache, const vector< string >& packageNames,
+		const vector< sregex >& regexes, smatch& m)
+{
+	for (const string& packageName: packageNames)
+	{
+		auto package = cache.getBinaryPackage(packageName);
+
+		set< string > printedShortDescriptions;
+		for (const auto& v: *package)
+		{
+			bool matched = true;
+
+			auto description = cache.getLocalizedDescription(v);
+
+			for (const sregex& regex: regexes)
+			{
+				if (regex_search(packageName, m, regex))
+				{
+					continue;
+				}
+				if (regex_search(description, m, regex))
+				{
+					continue;
+				}
+				matched = false;
+				break;
+			}
+
+			if (matched)
+			{
+				auto shortDescription = getShortDescription(description);
+				if (printedShortDescriptions.insert(shortDescription).second)
+				{
+					cout << packageName << " - " << shortDescription << endl;
+				}
+			}
+		}
+	}
+}
+
+void searchByFSE(const Cache& cache, vector< string >& patterns)
+{
+	string fse = patterns[0];
+
+	patterns.erase(patterns.begin());
+	checkNoExtraArguments(patterns);
+
+	auto functionalQuery = FunctionalSelector::parseQuery(fse, true);
+	auto&& foundVersions = FunctionalSelector(cache).selectBestVersions(*functionalQuery);
+	for (const auto& version: foundVersions)
+	{
+		auto binaryVersion = static_cast< const BinaryVersion* >(version);
+		cout << format2("%s - %s\n",
+				binaryVersion->packageName,
+				getShortDescription(binaryVersion->description));
+	}
+}
+
+}
 
 int search(Context& context)
 {
 	auto config = context.getConfig();
 	vector< string > patterns;
 
-	if (!shellMode)
-	{
-		BinaryVersion::parseRelations = false;
-	}
-
 	bpo::options_description options;
 	options.add_options()
 		("names-only,n", "")
 		("case-sensitive", "")
+		("fse,f", "")
 		("installed-only", "");
 
 	auto variables = parseOptions(context, options, patterns);
@@ -60,93 +170,33 @@ int search(Context& context)
 		fatal2(__("no search patterns specified"));
 	}
 
-	auto cache = context.getCache(/* source */ false, /* binary */ variables.count("installed-only") == 0,
-			/* installed */ true);
-
-	int regexFlags = regex_constants::ECMAScript | regex_constants::optimize;
-	if (variables.count("case-sensitive") == 0)
+	if (variables.count("fse"))
 	{
-		regexFlags |= regex_constants::icase;
-	}
-	vector< sregex > regexes;
-	std::for_each(patterns.begin(), patterns.end(), [&regexes, &regexFlags](const string& pattern)
-	{
-		try
-		{
-			regexes.push_back(sregex::compile(pattern.c_str(), regex_constants::syntax_option_type(regexFlags)));
-		}
-		catch (regex_error&)
-		{
-			fatal2(__("invalid regular expression '%s'"), pattern);
-		}
-	});
-
-	smatch m;
-
-	vector< string > packageNames = cache->getBinaryPackageNames();
-	std::sort(packageNames.begin(), packageNames.end());
-	if (config->getBool("apt::cache::namesonly"))
-	{
-		// search only in package names
-		FORIT(packageNameIt, packageNames)
-		{
-			const string& packageName = *packageNameIt;
-			bool matched = true;
-			FORIT(regexIt, regexes)
-			{
-				if (!regex_search(packageName, m, *regexIt))
-				{
-					matched = false;
-					break;
-				}
-			}
-			if (matched)
-			{
-				cout << packageName << endl;
-			}
-		}
+		auto cache = context.getCache(true, true, true);
+		searchByFSE(*cache, patterns);
 	}
 	else
 	{
-		FORIT(packageNameIt, packageNames)
+		if (!shellMode)
 		{
-			const string& packageName = *packageNameIt;
+			BinaryVersion::parseRelations = false;
+		}
+		auto cache = context.getCache(/* source */ false,
+				/* binary */ variables.count("installed-only") == 0,
+				/* installed */ true);
 
-			auto package = cache->getBinaryPackage(packageName);
-			auto versions = package->getVersions();
+		auto regexes = generateSearchRegexes(patterns, variables.count("case-sensitive"));
+		smatch m;
 
-			set< string > printedShortDescriptions;
-			for (const auto& v: versions)
-			{
-				bool matched = true;
-
-				auto descriptions = cache->getLocalizedDescriptions(v);
-				const string& shortDescription = descriptions.first.empty() ? v->shortDescription : descriptions.first;
-				const string& longDescription = descriptions.second.empty() ? v->longDescription : descriptions.second;
-
-				FORIT(regexIt, regexes)
-				{
-					const sregex& regex = *regexIt;
-					if (regex_search(packageName, m, regex))
-					{
-						continue;
-					}
-					else
-					{
-						if (regex_search(shortDescription, m, regex) || regex_search(longDescription, m, regex))
-						{
-							continue;
-						}
-					}
-					matched = false;
-					break;
-				}
-
-				if (matched && printedShortDescriptions.insert(shortDescription).second)
-				{
-					cout << packageName << " - " << shortDescription << endl;
-				}
-			}
+		vector< string > packageNames = cache->getBinaryPackageNames().asVector();
+		std::sort(packageNames.begin(), packageNames.end());
+		if (config->getBool("apt::cache::namesonly"))
+		{
+			searchInPackageNames(packageNames, regexes, m);
+		}
+		else
+		{
+			searchInPackageNamesAndDescriptions(*cache, packageNames, regexes, m);
 		}
 	}
 

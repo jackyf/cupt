@@ -25,6 +25,7 @@ namespace cupt {
 namespace internal {
 
 using cache::BinaryVersion;
+using system::Resolver;
 
 class ScoreChange
 {
@@ -33,7 +34,9 @@ class ScoreChange
 	struct SubScore
 	{
 		enum Type { Version, New, Removal, RemovalOfEssential, RemovalOfAuto, Upgrade, Downgrade,
-				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync, PositionPenalty, Count };
+				UnsatisfiedRecommends, UnsatisfiedSuggests, FailedSync,
+				UnsatisfiedTry, UnsatisfiedWish, UnsatisfiedCustomRequest,
+				PositionPenalty, Count };
 	};
 
 	ssize_t __subscores[SubScore::Count];
@@ -52,15 +55,15 @@ class ScoreManager
 	ssize_t __quality_adjustment;
 	ssize_t __preferred_version_default_pin;
 
-	ssize_t __get_version_weight(const shared_ptr< const BinaryVersion >& version) const;
+	ssize_t __get_version_weight(const BinaryVersion* version) const;
  public:
 	ScoreManager(const Config&, const shared_ptr< const Cache >&);
 	ssize_t getScoreChangeValue(const ScoreChange&) const;
-	ScoreChange getVersionScoreChange(const shared_ptr< const BinaryVersion >&,
-			const shared_ptr< const BinaryVersion >&) const;
+	ScoreChange getVersionScoreChange(const BinaryVersion*, const BinaryVersion*) const;
 	ScoreChange getUnsatisfiedRecommendsScoreChange() const;
 	ScoreChange getUnsatisfiedSuggestsScoreChange() const;
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
+	ScoreChange getCustomUnsatisfiedScoreChange(Resolver::RequestImportance) const;
 	string getScoreChangeString(const ScoreChange&) const;
 };
 

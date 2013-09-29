@@ -29,14 +29,14 @@ namespace cache {
 struct CUPT_API Relation
 {
  private:
-	CUPT_LOCAL bool __parse_versioned_info(string::const_iterator, string::const_iterator);
-	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL bool __parse_versioned_info(const char*, const char*);
+	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// %relation type
 	struct Types
 	{
 		/// type
-		enum Type { Less, Equal, More, LessOrEqual, MoreOrEqual, None };
+		enum Type { Less, Equal, More, LessOrEqual, MoreOrEqual, LiteralyEqual, None };
 		/// string values of corresponding types
 		static const string strings[];
 	};
@@ -47,15 +47,9 @@ struct CUPT_API Relation
 	/// constructor
 	/**
 	 * Parses @a input and constructs Relation from it.
-	 * @param input stringified relation
-	 */
-	explicit Relation(const string& input);
-	/// constructor
-	/**
-	 * Parses @a input and constructs Relation from it.
 	 * @param input pair of begin iterator and end iterator of stringified relation
 	 */
-	explicit Relation(pair< string::const_iterator, string::const_iterator > input);
+	explicit Relation(pair< const char*, const char* > input);
 	Relation(Relation&&) = default;
 	Relation(const Relation&) = default;
 	Relation& operator=(Relation&&) = default;
@@ -85,7 +79,7 @@ struct CUPT_API Relation
 struct CUPT_API ArchitecturedRelation: public Relation
 {
  private:
-	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// architecture filters
 	vector< string > architectureFilters;
@@ -93,16 +87,10 @@ struct CUPT_API ArchitecturedRelation: public Relation
 	/// constructor
 	/**
 	 * Parses @a input and constructs ArchitecturedRelation from it.
-	 * @param input stringified architectured relation
-	 */
-	explicit ArchitecturedRelation(const string& input);
-	/// constructor
-	/**
-	 * Parses @a input and constructs ArchitecturedRelation from it.
 	 * @param input pair of begin iterator and end iterator of stringified
 	 * architectured relation
 	 */
-	ArchitecturedRelation(pair< string::const_iterator, string::const_iterator > input);
+	explicit ArchitecturedRelation(pair< const char*, const char* > input);
 	ArchitecturedRelation(ArchitecturedRelation&&) = default;
 	ArchitecturedRelation(const ArchitecturedRelation&) = default;
 	ArchitecturedRelation& operator=(ArchitecturedRelation&&) = default;
@@ -114,7 +102,7 @@ struct CUPT_API ArchitecturedRelation: public Relation
 struct CUPT_API RelationExpression: public vector< Relation >
 {
  private:
-	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -135,7 +123,7 @@ struct CUPT_API RelationExpression: public vector< Relation >
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	explicit RelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	explicit RelationExpression(pair< const char*, const char* > input);
 	RelationExpression(RelationExpression&&) = default;
 	RelationExpression(const RelationExpression&) = default;
 	RelationExpression& operator=(RelationExpression&&) = default;
@@ -148,7 +136,7 @@ struct CUPT_API RelationExpression: public vector< Relation >
 struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRelation >
 {
  private:
-	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -167,7 +155,7 @@ struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRel
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	ArchitecturedRelationExpression(pair< string::const_iterator, string::const_iterator > input);
+	explicit ArchitecturedRelationExpression(pair< const char*, const char* > input);
 	ArchitecturedRelationExpression(ArchitecturedRelationExpression&&) = default;
 	ArchitecturedRelationExpression(const ArchitecturedRelationExpression&) = default;
 	ArchitecturedRelationExpression& operator=(ArchitecturedRelationExpression&&) = default;
@@ -180,7 +168,7 @@ struct CUPT_API ArchitecturedRelationExpression: public vector< ArchitecturedRel
 struct CUPT_API RelationLine: public vector< RelationExpression >
 {
  private:
-	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -199,10 +187,10 @@ struct CUPT_API RelationLine: public vector< RelationExpression >
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	explicit RelationLine(pair< string::const_iterator, string::const_iterator > input);
+	explicit RelationLine(pair< const char*, const char* > input);
 	RelationLine(RelationLine&&) = default;
 	RelationLine(const RelationLine&) = default;
-	RelationLine& operator=(RelationLine&&) = default;
+	RelationLine& operator=(RelationLine&&);
 	RelationLine& operator=(const RelationLine&) = default;
 	/// destructor
 	virtual ~RelationLine();
@@ -212,7 +200,7 @@ struct CUPT_API RelationLine: public vector< RelationExpression >
 struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationExpression >
 {
  private:
-	CUPT_LOCAL void __init(string::const_iterator, string::const_iterator);
+	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// gets the string representation
 	string toString() const;
@@ -231,10 +219,10 @@ struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationE
 	 * @param input pair of begin iterator and end iterator of string
 	 * representation
 	 */
-	explicit ArchitecturedRelationLine(pair< string::const_iterator, string::const_iterator > input);
+	explicit ArchitecturedRelationLine(pair< const char*, const char* > input);
 	ArchitecturedRelationLine(ArchitecturedRelationLine&&) = default;
 	ArchitecturedRelationLine(const ArchitecturedRelationLine&) = default;
-	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&) = default;
+	ArchitecturedRelationLine& operator=(ArchitecturedRelationLine&&);
 	ArchitecturedRelationLine& operator=(const ArchitecturedRelationLine&) = default;
 	/// converts to RelationLine given system architecture
 	/**

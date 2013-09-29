@@ -16,6 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <libintl.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cstdarg>
@@ -195,9 +196,31 @@ string humanReadableSizeString(uint64_t bytes)
 	return string(buf);
 }
 
-string __(const char* buf)
+const char* __(const char* buf)
 {
-	return string(dgettext("cupt", buf));
+	return dgettext("cupt", buf);
+}
+
+string globToRegexString(const string& input)
+{
+	string result = "^";
+	for (auto c: input)
+	{
+		switch (c)
+		{
+			case '?':
+				result += '.';
+				break;
+			case '*':
+				result += ".*?";
+				break;
+			default:
+				if (!isalnum(c) && c != '_') result += '\\';
+				result += c;
+		}
+	}
+	result += '$';
+	return result;
 }
 
 } // namespace

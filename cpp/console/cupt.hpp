@@ -19,5 +19,5 @@
 #include "common.hpp"
 #include "misc.hpp"
 
-int mainEx(int argc, char* argv[], Context& context, string& command);
+int mainEx(int argc, char* argv[], Context& context);
 

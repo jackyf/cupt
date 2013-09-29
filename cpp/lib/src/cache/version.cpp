@@ -64,11 +64,6 @@ bool Version::operator<(const Version& other) const
 	return (versionString < other.versionString);
 }
 
-bool Version::operator==(const Version& other) const
-{
-	return packageName == other.packageName && versionString == other.versionString;
-}
-
 vector< Version::DownloadRecord > Version::getDownloadInfo() const
 {
 	set< string > seenFullDirs;
@@ -103,6 +98,21 @@ const string Version::Priorities::strings[] = {
 Version::~Version()
 {
 	delete others;
+}
+
+string Version::getCodenameAndComponentString(const string& baseUri) const
+{
+	vector< string > parts;
+	for (const auto& source: sources)
+	{
+		auto releaseInfo = source.release;
+		if (releaseInfo->baseUri != baseUri)
+		{
+			continue;
+		}
+		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
+	}
+	return join(",", parts);
 }
 
 }

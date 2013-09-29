@@ -26,7 +26,9 @@ using std::forward_list;
 #include <cupt/fwd.hpp>
 #include <cupt/system/resolver.hpp>
 typedef cupt::system::Resolver::Reason Reason;
+typedef cupt::system::Resolver::RequestImportance RequestImportance;
 using cupt::cache::BinaryVersion;
+using cupt::cache::RelationExpression;
 
 #include <internal/graph.hpp>
 
@@ -39,16 +41,23 @@ namespace dependencygraph {
 
 struct InitialPackageEntry
 {
-	shared_ptr< const BinaryVersion > version;
-	bool sticked;
+	const BinaryVersion* version;
 	bool modified;
 
 	InitialPackageEntry();
 };
+struct UserRelationExpression
+{
+	RelationExpression expression;
+	bool invert;
+	string annotation;
+	RequestImportance importance;
+	bool asAuto;
+};
 
 struct Unsatisfied
 {
-	enum Type { None, Recommends, Suggests, Sync };
+	enum Type { None, Recommends, Suggests, Sync, Custom };
 };
 
 struct BasicVertex;
@@ -65,6 +74,8 @@ struct BasicVertex
 	virtual bool isAnti() const;
 	virtual const forward_list< const Element* >* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
+	virtual const RequestImportance& getUnsatisfiedImportance() const;
+	virtual bool asAuto() const;
 
 	BasicVertex();
 	virtual ~BasicVertex();
@@ -74,7 +85,7 @@ struct VersionVertex: public BasicVertex
  private:
 	const map< string, forward_list< const Element* > >::iterator __related_element_ptrs_it;
  public:
-	shared_ptr< const BinaryVersion > version;
+	const BinaryVersion* version;
 
 	VersionVertex(const map< string, forward_list< const Element* > >::iterator&);
 	string toString() const;
@@ -107,14 +118,18 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	friend class FillHelper;
 
 	std::unique_ptr< FillHelper > __fill_helper;
+
+	vector< pair< const Element*, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
+			const map< string, InitialPackageEntry >&);
  public:
 	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
-			const map< string, shared_ptr< const BinaryVersion > >&,
+			const map< string, const BinaryVersion* >&,
 			const map< string, InitialPackageEntry >&);
+	void addUserRelationExpression(const UserRelationExpression&);
 
 	const Element* getCorrespondingEmptyElement(const Element*);
 	void unfoldElement(const Element*);

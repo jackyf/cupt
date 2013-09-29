@@ -1,3 +1,176 @@
+cupt (2.6.0~) UNRELEASED; urgency=low
+
+  * console:
+    - Managing packages:
+      - The option 'cupt::resolver::track-reasons' does not correspond to the
+        console '--show-reasons' option anymore.
+      - New positional action override options '--markauto', '--unmarkauto',
+        '--asauto=yes', '--asauto=no', '--asauto=default'.
+      - 'markauto', 'unmarkauto': are now first-class management commands.
+      - Action preview prompt: now properly show reinstalled packages as
+        reinstalled, not as upgraded.
+      - Action preview prompt: removed the 'one expression per line'
+        limitation while processing 'a' choice.
+      - Action preview prompt: new choice 'rc' ("show reason chain").
+      - The option 'cupt::console::actions-preview::show-summary' got a new 
+        value variant "auto".
+      - Warn and require extra confirmation for actions on MultiArch-enabled
+        systems. (Closes: #710052)
+      - New positional request type options '--select=traditional',
+        '--select=flexible'.
+      - New positional request importance options '--importance=must',
+        '--importance=try', '--importance=wish', '--importance=<value>'.
+    - 'shell':
+      - Don't rebuild the cache uselessly when a package management action
+        was suggested but not confirmed by user.
+    - New 'functional selectors' syntax for advanced version selection. 
+    - 'search':
+      - New option '--fse'.
+    - 'tar-metadata':
+      - Include also signatures of Release files.
+    - 'show', 'showsrc': syntaxes '.../<distribution>' and '...=<version>' now
+      work also with '-a' option.
+  * lib:
+    - Removed deprecated functions 'fatal', 'warn', 'debug', 'simulate'.
+    - [API break] '__': now returns 'const char*' instead of 'string'.
+    - cache:
+      - [API break] Pointers to Package and Version objects are now persistent
+        and unique. Thus shared pointers to those objects are no more used in
+        public interfaces.
+      - [API break] PinnedVersion: removed explicit constructor.
+      - [API break] Removed deprecated methods and structures.
+      - [API break] Constructor: removed the argument
+        'packageNameGlobsToReinstall' as not needed anymore.
+      - [API break] 'getLocalizedDescriptions' is replaced with
+        'getLocalizedDescription'.
+      - [API break] 'getPolicyVersion' is renamed to 'getPreferredVersion'.
+      - New possibility to use index-of-index files to speed up building
+        the package cache.
+      - [API break] 'getSystemState': now returns persistent constant pointer.
+      - Don't include unnecessary 'boost/xpressive/xpressive_fwd.hpp'.
+        (Closes: #701207)
+      - [ABI break] IndexEntry: new member 'options'.
+      - Support for 'trusted=yes' and 'trusted=no' options in sources.list.
+      - [API break] 'getBinaryPackageNames', 'getSourcePackageNames': return
+        type is now 'Range<PackageNameIterator>'.
+    - cache/package:
+      - Apply id version suffixes (^<suffix>) to version strings to
+        differentiate versions with same version string but different hash
+        sums.
+      - New methods begin() and end().
+      - [API break]: 'addEntry': removed.
+    - cache/relation:
+      - [API break] ArchitecturedRelation, ArchitecturedRelationExpression:
+        constructor from string subrange is now explicit.
+      - [API break] Relation, ArchitecturedRelation: removed constructors from
+        strings.
+      - [API break] Use 'const char*' instead of 'string::const_iterator' in
+        constructors.
+    - config:
+      - Don't store unused APT variables anymore.
+      - New option 'cupt::console::actions-preview::show-reasons'.
+      - New option 'cupt::update::generate-index-of-index'.
+      - New option 'cupt::console::show-progress-messages'.
+      - The option 'cupt::languages::indexes' has now default value
+        'environment,en' to always download English translations regardless of
+        the current locale.
+      - Recognize and use the option 'dir::ignore-files-silently'.
+        (Closes: #697248)
+      - Removed the option 'cupt::update::keep-bad-signatures', signatures are
+        always kept.
+    - cache/version:
+      - [API break] 'operator==': removed, versions can be now compared by
+        pointers' values.
+      - [API break] Source, InitializationParameters: replaced shared_ptr's
+        with pointers.
+      - [API break] InitializationParameters: removed.
+    - system/resolver:
+      - [API break] SuggestedPackage: new field 'automaticallyInstalledFlag',
+        removed old field 'manuallySelected'.
+      - New method 'setAutomaticallyInstalledFlag'.
+      - 'SuggestedPackage': new field 'reasonPackageNames'.
+      - [API break] 'unsatisfyRelationExpression': removed, merged into
+        'satisfyRelationExpression' with new boolean parameter.
+      - [ABI break] 'satisfyRelationExpression': added new parameters 'invert'
+        'annotation', 'importance', 'asAutomatic'.
+      - [API break] 'installVersion': now set of possible versions can be
+        passed.
+      - [API break] 'removePackage': removed, replaced by new, more flexible
+        method 'removeVersions'.
+    - system/worker:
+      - [API break] 'setPackagePurgeFlag': now is persistent, and should be
+        called before 'setDesiredState'.
+      - [ABI break] 'Action::Type' new enum value 'Reinstall'.
+      - 'updateReleaseAndIndexData': use threads instead of forking.
+      - 'updateReleaseAndIndexData': initial support for InRelease files.
+        (Closes: #623113)
+    - cache/binarypackage:
+      - 'getInstalledVersion': significant speed-up.
+      - New methods begin() and end().
+    - cache/binaryversion:
+      - [API break] Fields 'shortDescription' and 'longDescription' are
+        replaced with a new field 'description'.
+      - [API break] 'parseFromFile': removed.
+      - [ABI break] New field 'descriptionHash'.
+    - cache/sourceversion:
+      - [API break] 'parseFromFile': removed.
+    - cache/sourcepackage:
+      - New methods begin() and end().
+      - Stopped filtering out packages with unapplicable binary architectures.
+    - file:
+      - [API break] Not a public API anymore.
+    - system/state:
+      - New method 'getArchitecture'.
+    - download/manager:
+      - Removed 'alive pings'.
+      - Notify the download progress of download sizes earlier. This improves
+        the total percent accuracy where a grand total size is not known
+        beforehand (for example, metadata updates).
+      - [ABI break] 'DownloadEntity': new member 'optional'.
+    - download/method{,factory}:
+      - [API break]: don't require shared_ptr< Config > anymore.
+    - download/progress:
+      - Added support for the dynamic changes of expected download sizes.
+      - [API break]' 'DownloadRecord': the field 'beingPostprocessed' is
+        replaced with a new field 'phase'.
+      - [API break] 'setTotalEstimatedSize': removed as superseded by early
+        notificiations by download manager.
+      - New methods 'markAsOptional' and 'isOptional'.
+    - download/progresses/console:
+      - Changed the format of outputting download number prefixes.
+    - hashsums:
+      - Fixed non-thread-safe initialization of libgcrypt.
+    - system/resolvers/native:
+      - Adjusted version normalized score calculation that a version from
+        non-default release has a positive score, and thus removing it gets,
+        by default, a penalty, not a bonus.
+    - range:
+      - New module.
+  * downloadmethods:
+    - debdelta:
+      - Pass delta size (when/if known) to download progress.
+        (Closes: #690914)
+  * doc:
+    - tutorial:
+      - In the man page version, all command examples are now marked bold.
+    - man/cupt.1:
+      - Fixed the typo: suffix -> prefix in the 'pkgnames' command.
+        (Closes: #689518)
+  * scripts:
+    - bash_completion:
+      - Suppress standard error messages in invocations of 'cupt'.
+  * debian:
+    - control:
+      - Bumped the library API version.
+  * build system:
+    - Specify OUTPUT_NAME property for targets. As a side effect this
+      obsoletes the custom cupt.bin install statement which prevented 'make
+      install' from working for out-of-tree builds. (Closes: #683872)
+    - doc:
+      - Fixed 'make install' for out-of-tree builds.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
+
 cupt (2.5.11) unstable; urgency=low
 
   * doc:

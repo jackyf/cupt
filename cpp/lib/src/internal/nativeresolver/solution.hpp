@@ -41,31 +41,31 @@ using namespace system;
 using std::map;
 using std::forward_list;
 
+struct IntroducedBy
+{
+	const dg::Element* versionElementPtr;
+	const dg::Element* brokenElementPtr;
+
+	IntroducedBy() : versionElementPtr(NULL) {}
+	bool empty() const { return !versionElementPtr; }
+	bool operator<(const IntroducedBy& other) const
+	{
+		return std::memcmp(this, &other, sizeof(*this)) < 0;
+	}
+	shared_ptr< const Resolver::Reason > getReason() const
+	{
+		return brokenElementPtr->getReason(*versionElementPtr);
+	}
+};
+
 struct PackageEntry
 {
-	struct IntroducedBy
-	{
-		const dg::Element* versionElementPtr;
-		const dg::Element* brokenElementPtr;
-
-		IntroducedBy() : versionElementPtr(NULL) {}
-		bool empty() const { return !versionElementPtr; }
-		bool operator<(const IntroducedBy& other) const
-		{
-			return std::memcmp(this, &other, sizeof(*this)) < 0;
-		}
-		shared_ptr< const Resolver::Reason > getReason() const
-		{
-			return brokenElementPtr->getReason(*versionElementPtr);
-		}
-	};
-
 	bool sticked;
 	bool autoremoved;
 	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
 
-	PackageEntry();
+	PackageEntry(bool sticked_ = false);
 	PackageEntry(PackageEntry&&) = default;
 	PackageEntry(const PackageEntry&) = default;
 
@@ -89,6 +89,7 @@ class Solution
 	friend class SolutionStorage;
 
 	shared_ptr< const Solution > __parent;
+	shared_ptr< const PackageEntryMap > __initial_entries;
 	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
 	BrokenSuccessorMap*  __broken_successors;
@@ -100,7 +101,7 @@ class Solution
 		vector< const dg::Element* > elementsToReject;
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
-		PackageEntry::IntroducedBy introducedBy;
+		IntroducedBy introducedBy;
 		size_t brokenElementPriority;
 	};
 
@@ -142,6 +143,7 @@ class SolutionStorage
 	};
 	vector< Change > __change_index;
 	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
+	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
 	SolutionStorage(const Config&, const Cache& cache);
 
@@ -149,8 +151,9 @@ class SolutionStorage
 	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< Solution >&);
 
 	void prepareForResolving(Solution&,
-			const map< string, shared_ptr< const BinaryVersion > >&,
-			const map< string, dg::InitialPackageEntry >&);
+			const map< string, const BinaryVersion* >&,
+			const map< string, dg::InitialPackageEntry >&,
+			const vector< dg::UserRelationExpression >&);
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
 	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
@@ -166,7 +169,11 @@ class SolutionStorage
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 
-	vector< const dg::Element* > getInsertedElements(const Solution& solution) const;
+	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
+			const IntroducedBy&, const dg::Element*,
+			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
+	pair< const dg::Element*, const dg::Element* > getDiversedElements(
+			size_t leftSolutionId, size_t rightSolutionId) const;
 };
 
 }

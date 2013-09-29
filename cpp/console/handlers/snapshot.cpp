@@ -50,9 +50,9 @@ int snapshot(Context& context)
 	{
 		checkNoExtraArguments(arguments);
 		auto snapshotNames = snapshots.getSnapshotNames();
-		FORIT(nameIt, snapshotNames)
+		for (const auto& name: snapshotNames)
 		{
-			cout << *nameIt << endl;
+			cout << name << endl;
 		}
 	}
 	else if (action == "save" || action == "remove")

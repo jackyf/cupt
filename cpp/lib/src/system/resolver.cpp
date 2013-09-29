@@ -31,7 +31,7 @@ string Resolver::AutoRemovalReason::toString() const
 }
 
 Resolver::RelationExpressionReason::RelationExpressionReason(
-		const shared_ptr< const BinaryVersion >& version_,
+		const BinaryVersion* version_,
 		BinaryVersion::RelationTypes::Type dependencyType_,
 		const cache::RelationExpression& relationExpression_)
 	: version(version_), dependencyType(dependencyType_),
@@ -64,7 +64,7 @@ string Resolver::RelationExpressionReason::toString() const
 }
 
 Resolver::SynchronizationReason::SynchronizationReason(
-		const shared_ptr< const BinaryVersion >& version_,
+		const BinaryVersion* version_,
 		const string& packageName_)
 	: version(version_), relatedPackageName(packageName_)
 {}
@@ -73,6 +73,39 @@ string Resolver::SynchronizationReason::toString() const
 {
 	return format2(__("%s: synchronization with %s %s"), relatedPackageName,
 			version->packageName, version->versionString);
+}
+
+const Resolver::RequestImportance::Value Resolver::RequestImportance::Wish = -1;
+const Resolver::RequestImportance::Value Resolver::RequestImportance::Try = -2;
+const Resolver::RequestImportance::Value Resolver::RequestImportance::Must = -3;
+
+namespace {
+
+RelationExpression versionChoicesToRelationExpression(const vector< const BinaryVersion* >& versions)
+{
+	RelationExpression result;
+	for (auto version: versions)
+	{
+		auto relationString = format2("%s (= %s)", version->packageName, version->versionString);
+		auto relation = RelationExpression(relationString)[0];
+		relation.relationType = Relation::Types::LiteralyEqual;
+		result.push_back(relation);
+	}
+	return result;
+}
+
+}
+
+void Resolver::installVersion(const vector< const BinaryVersion* >& versions,
+		const string& annotation, RequestImportance importance)
+{
+	satisfyRelationExpression(versionChoicesToRelationExpression(versions), false, annotation, importance);
+}
+
+void Resolver::removeVersions(const vector< const BinaryVersion* >& versions,
+		const string& annotation, RequestImportance importance)
+{
+	satisfyRelationExpression(versionChoicesToRelationExpression(versions), true, annotation, importance);
 }
 
 }

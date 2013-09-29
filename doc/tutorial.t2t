@@ -3,6 +3,8 @@ Eugene V. Lyubimkin
 %%date
 
 %!preproc(man): '%man% ' ''
+%!preproc(man): '(``.*?``)' '**\1**'
+%!preproc(man): '^``` (.*)$' '**``\1``**'
 %!postproc(man): "^(\.TH.*) 1 "  "\1 7 "
 %!postproc(man): ' \(#\w+\)' ''
 %!options(html): --toc
@@ -77,7 +79,7 @@ Out of existing APT infrastructure, Cupt uses (and shares):
 
 - remote repositories and //sources.list(5)//
 
-- .deb archives' cache
+- ".deb" archives' cache
 
 - configuration (//apt.conf(5)//)
 
@@ -124,7 +126,8 @@ some dependency. Packages which are not automatically installed are
 **manually installed**.
 
 Available versions (including installed one) of the binary package have unique
-version strings.
+version strings. Since Cupt 2.6, Cupt-specific version string suffixes (for example,
+``^installed`` or ``^dhs0``) may be applied. More details on this [here #id_suffixes].
 
 == Errors and warnings ==[errors_and_warnings]
 
@@ -254,10 +257,6 @@ An example of action preview prompt:
 
 ```
 $ cupt install kdm akregator exim4
-Building the package cache...
-Initializing package resolver and worker...
-Scheduling requested actions...
-Resolving possible unmet dependencies...
 
 The following packages will be installed:
 
@@ -569,6 +568,21 @@ Each repository line is:
 The repository marked as **signed** if it has a valid and
 verified cryptographic signature, and **unsigned** otherwise.
 
+=== version string id suffixes ===[id_suffixes]
+
+Starting with version 2.6, Cupt's behavior regarding merging versions having
+the same version string changed.
+
+Firstly, Cupt now never merges installed versions with versions from
+repositories, since dpkg provides no way to know if the installed version is
+the same as the version from repository. All version strings of installed
+versions now have ``^installed`` suffix, for example ``1.2.4^installed``.
+
+Secondly, if same versions from different repositories have different hash
+sums, instead of discarding everything but first version Cupt now append
+suffixes like ``^dhs0`` or ``^dhs315`` to version strings of non-first
+versions, for example ``1.2.4^dhs0``.
+
 === selecting binary package versions ===[selecting_binary_package_versions]
 
 When there are more than one version for a package, Cupt provides following ways to
@@ -606,7 +620,7 @@ The syntax described above is known as **binary package version expression**.
 In the //cupt(1)// manual page all subcommands which accept this syntax are clearly
 marked as such.
 
-== Combining multiple version arguments ==
+== Combining multiple version arguments ==[multiple_versions_arguments_and_wildcars]
 
 Many subcommands accept several arguments of the same meaning. Examples:
 
@@ -647,7 +661,7 @@ Show policy versions of packages with names which have 'a', 'f' and 'f' on 2nd,
 3rd and 4th positions (starting with 1st), respectively.
 
 
-== Conditional installation ==
+== Conditional installation ==[iii]
 
 Starting with Cupt 2.4, there is a special subcommand ``iii`` ("install if
 installed") for installing new versions of already installed packages while not
@@ -678,18 +692,88 @@ upgrade all installed drivers. For that you can do
 
 === Action override options ===
 
-You can use special positional options ``--install``, ``--remove``, ``--purge``,
-``--iii``, ``--satisfy`` and ``--unsatisfy`` to override the specified action until the
-end of the arguments or the next action override option.
+You can use special positional options ``--install``, ``--remove``,
+``--purge``, ``--iii``, ``--satisfy``, ``--unsatisfy``, ``--markauto``,
+``--unmarkauto``, ``--asauto=yes``, ``--asauto=no``, ``--asauto=default`` to
+override the specified action until the end of the arguments or the next action
+override option.
 
-Example:
+Examples:
 
-``` cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"
+- ``cupt remove msmtp-mta --install exim4-daemon-light esmtp``
 
-The command above will install packages ``clive`` and ``git``, remove the package
+Install packages ``exim4-daemon-light`` and ``esmtp``, remove the package
+``msmtp-mta``.
+
+- ``cupt install exim4-daemon-light --remove msmtp-mta esmtp``
+
+Install the package ``exim4-daemon-light``, remove packages ``msmtp-mta`` and ``esmtp``.
+
+- ``cupt purge libkate1 --remove libass4 --purge libdirac-decoder0``
+
+Remove the package ``libass4``, purge packages ``libkate1`` and ``libdirac-decoder0``.
+
+- ``cupt install lightspark --remove gnash --satisfy "iceweasel (>= 5)"``
+
+Install the package ``lightspark``, remove the packae ``gnash``, and make sure that
+``iceweasel`` (at least of version ``5``) is installed.
+
+- ``cupt install sieve-connect --unsatisfy "iceweasel (<< 3.5.20)"``
+
+Install the package ``sieve-connect``, upgrade or remove the package ``iceweasel``
+if it is installed and has the version lower than ``3.5.20``.
+
+- ``cupt install libv4l-0 cupt --iii libreadline6 vlc*``
+
+Install packages ``libv4l-0`` and ``cupt``, install the preferred version of
+``libreadline6`` if it's installed already, install the preferred versions of
+packages which names start with ``vlc`` and which are installed already .
+
+- ``cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"``
+
+Install packages ``clive`` and ``git``, remove the package
 ``youtube-dl``, purge packages ``cvs`` and ``subversion``, make sure that the package
 ``iceweasel`` of version 4 or higher is installed, make sure that the package
 ``xinput`` either is not installed or has the version ``1.5`` or higher.
+
+- ``cupt install vlc --markauto xine``
+
+Install the package ``vlc`` and mark the package ``xine`` automatically installed.
+
+- ``cupt remove bindfs --unmarkauto fuse``
+
+You have a package ``bindfs`` installed and now don't need it anymore.
+``cupt remove bindfs`` shows that the package ``fuse`` will be removed as it was a
+dependency of ``bindfs``; you however decide you want to keep it in the system
+and run the command above.
+
+- ``cupt install mumble libgeoip1 geoip-dbg``
+
+(in this and following examples we suppose that currently ``mumble`` is
+manually installed, ``libgeoip1`` is automatically installed, ``geoip-dbg`` is
+not installed)
+
+``geoip-dbg`` will be manually installed.
+
+- ``cupt install --asauto=yes mumble libgeoip1 geoip-dbg``
+
+``mumble`` will be marked as automatically installed, ``geoip-dbg`` will be automatically installed
+
+- ``cupt install --asauto=no mumble libgeoip1 geoip-dbg``
+
+``libgeoip1`` will be marked as manually installed, ``geoip-dbg`` will be manually installed
+
+- ``cupt install --asauto=yes mumble --asauto=default libgeoip1 geoip-dbg``
+
+``mumble`` will be marked as automatically installed, ``geoip-dbg`` will be manually installed
+
+- ``cupt satisfy --asauto=no "iptables (>= 1.4)"``
+
+(assuming ``iptables`` package not installed) if possible, install enough
+recent (``1.4`` or later) version of ``iptables``; ``iptables`` itself will be
+marked as manually installed, its possible dependencies as automatically
+installed
+
 
 === Package name suffixes ===
 
@@ -780,10 +864,6 @@ Use ``--show-versions`` (``-V``) option. Example:
 
 ```
  $ cupt install gcc-4.6 -V
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
  
  The following packages will be installed:
  
@@ -809,10 +889,6 @@ Use ``--show-size-changes`` (``-Z``) option. Example:
 
 ```
  $ cupt install gcc-4.6 -Z
- Building the package cache...                     
- Initializing package resolver and worker...       
- Scheduling requested actions...                   
- Resolving possible unmet dependencies...          
 
  The following packages will be installed:
  
@@ -838,10 +914,6 @@ Use ``--show-archives`` (``-A``) option. Example:
 
 ```
  $ cupt install gcc-4.7 -A
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be installed:
  
@@ -863,10 +935,6 @@ Use ``--show-codenames`` (``-N``) option. Example:
 
 ```
  $ cupt install libstreams0 -N
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be upgraded:
  
@@ -881,10 +949,6 @@ with ``--show-codenames`` or ``--show-archives``. Example:
 
 ```
  $ cupt install libstreams0 -CN
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be upgraded:
  
@@ -899,10 +963,6 @@ than one vendor and usually in conjunction with ``-V``, ``-A`` or ``-N``. Exampl
 
 ```
  $ cupt install libstreams0 -VNO
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will be upgraded:
  
@@ -917,10 +977,6 @@ Example:
 
 ```
  $ cupt install gcc-4.6 -D
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
  
  The following packages will be installed:
  
@@ -974,10 +1030,6 @@ they can be upgraded):
 
 ```
  $ cupt install --no-auto-remove --show-not-preferred -V
- Building the package cache... 
- Initializing package resolver and worker... 
- Scheduling requested actions... 
- Resolving possible unmet dependencies... 
  
  The following packages will have a not preferred version:
  
@@ -998,6 +1050,48 @@ they can be upgraded):
 
 You can also combine them.
 
+=== reason chain ===
+
+Instead of displaying the reasons for all changed packages, starting with Cupt 2.6
+you can request the reason chain for the specific package. To do this, use the choice **rc**. Example:
+
+```
+ $ cupt -s install exim4-daemon-light
+ 
+ The following packages will be installed:
+ 
+ bsd-mailx exim4-base exim4-config exim4-daemon-light liblockfile-bin liblockfile1 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ The following packages are no longer needed and thus will be auto-removed:
+ 
+ libgsasl7 libntlm0 msmtp 
+ 
+ Action summary:
+   1 manually installed and 5 automatically installed packages will be installed
+   1 manually installed packages will be removed
+   3 automatically installed packages are no longer needed and thus will be auto-removed
+ 
+ Need to get 2241KiB/2241KiB of archives. After unpacking 3006KiB will be used.
+ Do you want to continue? [y/N/q/a/rc/?] rc
+ Enter a binary package name to show reason chain for (empty to cancel): bsd-mailx
+ 
+ bsd-mailx: exim4-base 4.80-6 recommends 'mailx'
+   exim4-base: exim4-daemon-light 4.80-6 depends on 'exim4-base (>= 4.80)'
+     exim4-daemon-light: user request
+ 
+ Do you want to continue? [y/N/q/a/rc/?] rc
+ Enter a binary package name to show reason chain for (empty to cancel): msmtp-mta
+ 
+ msmtp-mta: exim4-daemon-light 4.80-6 conflicts with 'mail-transport-agent'
+   exim4-daemon-light: user request
+ 
+ Do you want to continue? [y/N/q/a/rc/?]
+```
+
 === specifying more package expression arguments ===[specifying_more_package_expression_arguments]
 
 In a solution preview (action preview prompt) you have an ability to specify
@@ -1006,10 +1100,6 @@ choice **a**. Example:
 
 ```
  $ cupt install gnash
- Building the package cache...
- Initializing package resolver and worker...
- Scheduling requested actions...
- Resolving possible unmet dependencies...
  
  The following packages will be installed:
  
@@ -1073,6 +1163,9 @@ The effect above is the same as if you specified
 ``` cupt install gnash libgnome-keyring0-
 
 in the command line from the start.
+
+
+Starting from Cupt 2.6 you can specify multiple expressions on the same line.
 
 === colors ===
 
@@ -1280,7 +1373,7 @@ This is a command line.
  4: Scheduling requested actions...
  5: Resolving possible unmet dependencies...
 ```
-These are information messages from Cupt.
+These are (optional) information messages from Cupt.
 
 ```
  6:
@@ -1434,7 +1527,7 @@ So, the process of building binary packages out of source one may be, taking
 The last line will remove all unneeded anymore packages (given auto-removal is
 turned on), including those installed by ``build-dep``.
 
-=== selecting source package versions ===
+=== selecting source package versions ===[selecting_source_package_versions]
 
 You can select source package versions in two ways:
 
@@ -1482,7 +1575,7 @@ package versions, examples:
 
 ``` cupt build-dep clive/unstable
 
-``` cupt source man-db=2.5.9-4>
+``` cupt source man-db=2.5.9-4
 
 == Package manager shell ==
 
@@ -1494,7 +1587,6 @@ Example:
 ```
  $ cupt shell
  This is interactive shell of cupt package manager.
- Building the package cache... [done]
  cupt>policy libsoprano4
  libsoprano4:
    Installed: 2.2.2+dfsg.1-1
@@ -1551,10 +1643,7 @@ Example:
  Homepage: http://soprano.sourceforge.net
 
  cupt>--simulate install libsoprano4
- Building the package cache... [done]
- Initializing package resolver and worker... [done]
- Scheduling requested actions... [done]
- Resolving possible unmet dependencies... 
+
  The following 1 packages will be INSTALLED:
 
  soprano-daemon 
@@ -1693,6 +1782,154 @@ Finally, if you want to disable the logging entirely, set the option
 
 = ADVANCED USAGE =
 
+== Functional selectors ==[fse]
+
+**Functional selectors** is a extended syntax for selecting binary or source
+versions by their properties or relations. It's available starting with Cupt 2.6.
+
+It can be used whereever
+[binary package version expression #selecting_binary_package_versions] and
+[source package version expression #selecting_source_package_versions] can be
+used. It addition, it can be used as a parameter to ``search --fse``.
+
+The full syntax and function reference can be found in
+//cupt_functionalselectors(7)//.
+
+Examples of functional selector expressions (FSE):
+
+- ``essential()``
+
+All essential versions (those which have ``Essential: yes``).
+
+In the command line it will be
+
+``cupt show 'essential()'``
+
+or
+
+``cupt search --fse 'essential()'``
+
+- ``e()``
+
+The same. ``e`` is a shortcut for ``essential``.
+
+- ``package:name(.*req.*)``
+
+All versions which package name contains the substring ``req``.
+
+- ``Pn(.*req.*)``
+
+Same. ``Pn`` is a shortcut for ``package:name``.
+
+- ``and(Pn(b.*), e())``
+
+All versions which are essential and which package name starts with a letter
+``b``.
+
+- ``and(Pn(b.*), e)``
+
+Same. In subexpressions ``()`` can be omitted for functions with no parameters.
+
+- ``Pn(b.*) & e()``
+
+Same. ``x & y & z`` is a special shortcut syntax for ``and(x, y, z)``.
+
+- ``or(e, provides(vim))``
+
+Versions which are essential or provide ``vim`` virtual package.
+
+- ``e() | provides(vim)``
+
+Same. ``x | y | z`` is a special shortcut syntax for ``or(x, y, z)``.
+
+- ``xor(Pn(vim.*), provides(vim))``
+
+Versions, which either have a package name which starts with ``vim`` or provide
+``vim`` virtual package, but not both.
+
+- ``not(Pn(vim-nox)) & provides(vim)``
+
+Versions which provide ``vim`` virtual package, excluding the package
+``vim-nox``.
+
+- ``installed() & priority(extra)``
+
+Installed versions of priority ``extra``.
+
+- ``maintainer(.*lists.alioth.debian.org.*) & priority(required)``
+
+Versions of priority ``required`` and which maintainer email address is a
+mailing list hosted on the Alioth service.
+
+- ``field(Python-Version, .*2\.3.*)``
+
+Versions which have a non-standard field ``Python-Version`` with a substring
+``2.3`` somewhere in the value.
+
+- ``Pn(.*python.*) & section(utils)``
+
+Versions from ``utils`` section having ``python`` somewhere in the package
+name.
+
+- ``package:installed() & release:component(non-free)``
+
+All versions of installed packages which come from ``non-free`` release
+component.
+
+- ``uploaders(.*gmail\.com>)``
+
+All source versions where at least one uploader has a Gmail mail address.
+
+- ``binary-to-source(provides(vim))``
+
+All corresponding source versions of those binary versions which provide ``vim``.
+
+- ``recommends(installed() & e)``
+
+All packages which are recommended by installed essential packages.
+
+- ``and( Ys(Pn(xfce4.*))|Ye(Pn(xfce4.*)), not(Pn(xfce4.*)) )``
+
+All packages which are Suggests (``Ys``) or Enhances (``Ye``) of any package
+which name starts with ``xfce4``, excluding ``xfce4...`` packages themselves.
+
+- ``with(_x, Pn(xfce4.*), and( Ys(_x)|Ye(_x), not(_x)) )``
+
+Same.
+
+- ``with(_x, Pn(grep), reverse-depends(_x) | reverse-recommends(_x))``
+
+All versions which depend on or recommend ``grep``.
+
+- ``fmap(Pn(grep), reverse-depends,reverse-recommends)``
+
+Same.
+
+- ``build-depends(Pn(grep))``
+
+Build-dependencies of the all available versions of the source package ``grep``.
+
+- ``recursive(_r, Pn(cupt)&i, and( Yd(_r)|Yr(_r), not(Pn(.*downloadmethod.*))) )``
+
+All direct and indirect depended on and recommended packages (excluding those
+which have ``downloadmethod`` in the package name from the recursive chain) of
+the installed version of ``cupt`` package.
+
+For complex FSEs like this it, the multiline no-shortcut equivalent might be preferred:
+
+```
+#!/bin/sh
+cupt search --fse '
+	recursive(_r, 
+		package:name(cupt) & installed(), 
+		and(
+			depends(_r) | recommends(_r), 
+			not( package:name(.*downloadmethod.*) ) 
+		)
+	)'
+```
+
+
 == System snapshots ==[system_snapshots]
 
 System snapshots, created by Cupt, consist of binary archives of installed
@@ -1761,6 +1998,142 @@ Be careful:
 ``cupt satisfy vim emacs-``: install vim or anything which provides it, remove emacs and anything which provides it
 
 ``cupt satisfy "vim, emacs-"``: remove emacs, vim and anything which provides them
+
+== Request type options ==
+
+By default, when you type ``cupt install abcde``, the preferred version of
+``abcde`` package will be installed. By default, on ``cupt install abcde/unstable``
+the best of ``abcde`` versions found in ``unstable`` distribution will be
+installed. Also, by default, ``cupt remove wget/installed`` or
+``cupt remove wget/wheezy`` will remove all versions of ``wget`` package (so none of them may
+be installed). This is **traditional** selection behavior.
+
+Starting with Cupt 2.6, it's possible to choose (per request) new **flexible**
+selection behavior, though traditional selection behavior is still the default.
+Flexible behavior is enabled using ``--select=flexible`` (or, shorter,
+``--sf``) command line option. Traditional behavior can be (re)enabled using
+``--select=traditional`` (or, shorter, ``--st``) command line option.
+
+Flexible selection behavior is often more intuitive.
+``cupt --sf install abcde`` will install any version of ``abcde`` package
+(with, as usual, resolver choosing versions with higher [pins #pinning] first).
+``cupt --sf install abcde/unstable`` will install any version of ``abcde``
+found in ``unstable`` distribution. ``cupt --sf remove wget`` will still remove
+the package unconditionally just like traditional behavior, but, say,
+``cupt --sf remove wget/installed wget/wheezy`` may either remove ``wget``
+package or install some its version not from ``wheezy`` distribution.
+
+The command line options above are positional and can be mixed.
+``cupt --select=flexible iii jhc ncdu/experimental --select=traditional --remove automake*/installed``
+will [install (if were installed) #iii] any version of ``jhc`` and any version
+of ``ncdu`` found in ``experimental`` distribution, but unconditionally remove
+installed packages which names start with ``automake``.
+
+== Request importance options ==
+
+By default, when you ask Cupt to perform some package management actions, they
+will be performed unconditionally. As in, the command will fail if any of
+requested actions cannot be performed. Sometimes more flexibility might be
+wanted, especially with [wildcards #multiple_versions_arguments_and_wildcars]
+and [FSE #fse].
+
+Starting with Cupt 2.6, it's possibly to specify also non-mandatory, or
+optional, requests. For optional requests you also specify their importance,
+choosing from a three predefined profiles or supplying precise integer value.
+The request importance is controlled by ``--importance=`` command line option.
+
+To specify actions which should be tried hard but you accept that some of them
+could not be satisfied at reasonable price (e.g. some of them conflicts with
+each other or require extremely "bad" changes to the system), use
+``--importance=try`` (or its shortcut ``--try``). For example:
+
+```
+ $ cupt -s install --try 'provides(vim)' --no-summary
+ 
+ The following packages will be installed:
+ 
+ [...] vim-athena vim-nox 
+ 
+ The following packages will be upgraded:
+ 
+ [...] vim vim-common vim-gtk vim-gui-common vim-runtime 
+ 
+ [...]
+ 
+ Leave the following dependencies unresolved:
+ 
+ user request: install provides(vim) | for package 'vim-gnome'
+```
+
+To specify actions with low importance (as in: "do some of them if possible"),
+use ``--importance=wish`` (or its shortcut ``--wish``). For example:
+
+```
+ $ cupt -s --wish remove *gnome*
+
+ [...]
+ 
+ The following packages will be removed:
+ 
+ gnome-keyring gstreamer0.10-plugins-good libpam-gnome-keyring
+ libsoup-gnome2.4-1 
+ 
+ The following packages are no longer needed and thus will be auto-removed:
+ 
+ gcr gstreamer0.10-gconf gstreamer0.10-x iptables libcap-ng0 libcap2-bin
+ libdrm-nouveau1a libdv4 libgck-1-0 libgcr-3-1 libgcr-3-common libiec61883-0
+ libnfnetlink0 libpam-cap libxtables10 
+ 
+ Leave the following dependencies unresolved:
+ 
+ gksu 2.0.2-6^installed recommends 'gnome-keyring'
+ user request: remove *gnome* | for package 'libgnome-keyring-common'
+ user request: remove *gnome* | for package 'libgnome-keyring0'
+ libwebkitgtk-3.0-0 2.0.4-5 recommends 'gstreamer1.0-plugins-good'
+ libwebkitgtk-1.0-0 2.0.4-5 recommends 'gstreamer1.0-plugins-good'
+```
+
+To specify precise numeric importance(s), use ``--importance=``//number//. For example:
+
+```
+ $ cupt -s install --importance=10000 xmail --importance=15000 nullmailer --no-auto-remove
+ 
+ The following packages will be installed:
+ 
+ nullmailer 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ Leave the following dependencies unresolved:
+ 
+ user request: install xmail | for package 'xmail'
+```
+```
+ $ cupt -s install --importance=20000 xmail --importance=15000 nullmailer --no-auto-remove
+ 
+ The following packages will be installed:
+ 
+ xmail 
+ 
+ The following packages will be removed:
+ 
+ msmtp-mta 
+ 
+ Leave the following dependencies unresolved:
+ 
+ user request: install nullmailer | for package 'nullmailer'
+```
+
+You can also, as usually, mix those options and use ``--importance=must`` (or
+its shortcut ``--must``) to restore default behavior, for example:
+
+``` cupt install --try pinentry-* --wish *debootstrap --must --select=flexible icedove *xulrunner*
+
+The penalty values of ``--importance=try`` and ``--importance=wish`` are
+controlled by configuration options ``cupt::resolver::score::unsatisfied-try``
+and ``cupt::resolver::score::unsatisfied-wish``, respectively.
 
 == Changes in systems with a low disk space ==
 

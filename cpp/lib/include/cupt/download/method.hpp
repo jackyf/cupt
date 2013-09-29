@@ -48,7 +48,7 @@ class CUPT_API Method
 	 * auto proxy = getAcquireSuboptionForUri(config, uri, "proxy");
 	 * @endcode
 	 */
-	static string getAcquireSuboptionForUri(const shared_ptr< const Config >& config,
+	static string getAcquireSuboptionForUri(const Config& config,
 			const Uri& uri, const string& suboptionName);
 	/// gets URI-specific value of some integer @c 'acquire::*' option
 	/**
@@ -58,7 +58,7 @@ class CUPT_API Method
 	 * @param uri
 	 * @param suboptionName
 	 */
-	static ssize_t getIntegerAcquireSuboptionForUri(const shared_ptr< const Config >& config,
+	static ssize_t getIntegerAcquireSuboptionForUri(const Config& config,
 			const Uri& uri, const string& suboptionName);
  public:
 	/// downloads @a uri to @a targetPath
@@ -72,8 +72,9 @@ class CUPT_API Method
 	 * @c downloading @a total_downloaded_bytes @a size_of_last_fetched_piece @n
 	 * @c expected-size @a expected_file_size
 	 */
-	virtual string perform(const shared_ptr< const Config >& config, const Uri& uri,
+	virtual string perform(const Config& config, const Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback) = 0;
+	virtual ~Method() {}
 };
 
 }

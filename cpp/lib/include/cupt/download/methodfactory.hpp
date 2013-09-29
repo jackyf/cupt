@@ -44,7 +44,7 @@ class CUPT_API MethodFactory
 	/**
 	 * @param config
 	 */
-	MethodFactory(const shared_ptr< const Config >& config);
+	MethodFactory(const Config& config);
 	/// destructor
 	~MethodFactory();
 	/// gets download method for @a uri
