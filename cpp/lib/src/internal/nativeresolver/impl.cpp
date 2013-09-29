@@ -83,27 +83,6 @@ void __mydebug_wrapper(const Solution& solution, size_t id, const Args&... args)
 	debug2("%s(%u:%zd) %s", levelString, id, solution.score, format2(args...));
 }
 
-// installs new version, but does not sticks it
-bool NativeResolverImpl::__prepare_version_no_stick(
-		const BinaryVersion* version, dg::InitialPackageEntry& initialPackageEntry)
-{
-	const string& packageName = version->packageName;
-	if (initialPackageEntry.version &&
-			initialPackageEntry.version->versionString == version->versionString)
-	{
-		return true; // there is such version installed already
-	}
-
-	if (__config->getBool("debug::resolver"))
-	{
-		debug2("install package '%s', version '%s'", packageName, version->versionString);
-	}
-	initialPackageEntry.modified = true;
-	initialPackageEntry.version = version;
-
-	return true;
-}
-
 void NativeResolverImpl::setAutomaticallyInstalledFlag(const string& packageName, bool flagValue)
 {
 	__auto_status_overrides[packageName] = flagValue;
@@ -135,23 +114,23 @@ void NativeResolverImpl::upgrade()
 	FORIT(it, __initial_packages)
 	{
 		dg::InitialPackageEntry& initialPackageEntry = it->second;
-		if (!initialPackageEntry.version)
-		{
-			continue;
-		}
+		if (!initialPackageEntry.version) continue;
 
 		const string& packageName = it->first;
 		auto package = __cache->getBinaryPackage(packageName);
 
-		// if there is original version, then the preferred version should exist
-		auto supposedVersion = static_cast< const BinaryVersion* >
-				(__cache->getPreferredVersion(package));
-		if (!supposedVersion)
-		{
-			fatal2i("supposed version doesn't exist");
-		}
+		// if there is original version, then the preferred and installed versions should exist
+		auto preferredVersion = static_cast< const BinaryVersion* >(__cache->getPreferredVersion(package));
+		if (!preferredVersion) fatal2i("nativeresolver: upgrade: preferred version of '%s' doesn't exist", packageName);
+		auto installedVersion = package->getInstalledVersion();
+		if (!installedVersion) fatal2i("nativeresolver: upgrade: installed version of '%s' doesn't exist", packageName);
 
-		__prepare_version_no_stick(supposedVersion, initialPackageEntry);
+		if (preferredVersion == installedVersion) continue; // this package is already in the preferred shape
+
+		RelationExpression upgradeExpression(format2("%s (>> %s)", packageName, initialPackageEntry.version->versionString));
+
+		const string annotation = string("upgrade ") + packageName;
+		satisfyRelationExpression(upgradeExpression, false, annotation, RequestImportance::Wish, true);
 	}
 }
 
