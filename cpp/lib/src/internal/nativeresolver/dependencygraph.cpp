@@ -37,10 +37,6 @@ namespace dependencygraph {
 using cache::RelationExpression;
 using std::make_pair;
 
-InitialPackageEntry::InitialPackageEntry()
-	: version(NULL), modified(false)
-{}
-
 BasicVertex::~BasicVertex()
 {}
 
@@ -959,43 +955,38 @@ const shared_ptr< const PackageEntry >& getSharedPackageEntry(bool sticked)
 }
 
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
-		const map< string, const BinaryVersion* >& oldPackages,
-		const map< string, InitialPackageEntry >& initialPackages)
+		const map< string, const BinaryVersion* >& oldPackages)
 {
 	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages));
 
 	{ // getting elements from initial packages
-		FORIT(it, initialPackages)
+		for (const auto& item: oldPackages)
 		{
-			const InitialPackageEntry& initialPackageEntry = it->second;
-			const auto& initialVersion = initialPackageEntry.version;
+			const auto& oldVersion = item.second;
 
-			if (initialVersion)
+			__fill_helper->getVertexPtr(oldVersion);
+
+			const string& packageName = oldVersion->packageName;
+			auto package = __cache.getBinaryPackage(packageName);
+			for (auto version: *package)
 			{
-				__fill_helper->getVertexPtr(initialVersion);
-
-				const string& packageName = it->first;
-				auto package = __cache.getBinaryPackage(packageName);
-				for (auto version: *package)
-				{
-					__fill_helper->getVertexPtr(version);
-				}
-
-				__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
+				__fill_helper->getVertexPtr(version);
 			}
+
+			__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
 		}
 	}
 
-	return p_generateSolutionElements(initialPackages);
+	return p_generateSolutionElements(oldPackages);
 }
 
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
-		const map< string, InitialPackageEntry >& initialPackages)
+		const map< string, const BinaryVersion* >& oldPackages)
 {
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
-	for (const auto& it: initialPackages)
+	for (const auto& it: oldPackages)
 	{
-		auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
+		auto elementPtr = __fill_helper->getVertexPtr(it.second);
 		result.push_back({ elementPtr, getSharedPackageEntry(false) });
 	}
 	result.emplace_back(__fill_helper->getDummyElementPtr(), getSharedPackageEntry(true));

@@ -46,7 +46,6 @@ void NativeResolverImpl::__import_installed_versions()
 	{
 		// just moving versions, don't try to install or remove some dependencies
 		__old_packages[version->packageName] = version;
-		__initial_packages[version->packageName].version = version;
 	}
 
 	__import_packages_to_reinstall();
@@ -115,23 +114,19 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 
 void NativeResolverImpl::upgrade()
 {
-	FORIT(it, __initial_packages)
+	for (const auto& item: __old_packages)
 	{
-		dg::InitialPackageEntry& initialPackageEntry = it->second;
-		if (!initialPackageEntry.version) continue;
-
-		const string& packageName = it->first;
+		const string& packageName = item.first;
 		auto package = __cache->getBinaryPackage(packageName);
 
-		// if there is original version, then the preferred and installed versions should exist
+		const auto installedVersion = item.second;
+		// if there is original version, then the preferred version should exist
 		auto preferredVersion = static_cast< const BinaryVersion* >(__cache->getPreferredVersion(package));
 		if (!preferredVersion) fatal2i("nativeresolver: upgrade: preferred version of '%s' doesn't exist", packageName);
-		auto installedVersion = package->getInstalledVersion();
-		if (!installedVersion) fatal2i("nativeresolver: upgrade: installed version of '%s' doesn't exist", packageName);
 
 		if (preferredVersion == installedVersion) continue; // this package is already in the preferred shape
 
-		RelationExpression upgradeExpression(format2("%s (>> %s)", packageName, initialPackageEntry.version->versionString));
+		RelationExpression upgradeExpression(format2("%s (>> %s)", packageName, installedVersion->versionString));
 
 		const string annotation = string("upgrade ") + packageName;
 		satisfyRelationExpression(upgradeExpression, false, annotation, RequestImportance::Wish, true);
@@ -656,7 +651,7 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 }
 
 void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
-		const string& packageName, Resolver::SuggestedPackage& suggestedPackage,
+		Resolver::SuggestedPackage& suggestedPackage,
 		const dg::Element* elementPtr, map< const dg::Element*, size_t >& reasonProcessingCache) const
 {
 	static const shared_ptr< const Reason > userReason(new UserReason);
@@ -683,11 +678,6 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 			__solution_storage->processReasonElements(solution, reasonProcessingCache,
 					introducedBy, elementPtr, std::cref(fillReasonElements));
 		}
-		auto initialPackageIt = __initial_packages.find(packageName);
-		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
-		{
-			suggestedPackage.reasons.push_back(userReason);
-		}
 	}
 }
 
@@ -706,7 +696,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		if (vertex)
 		{
 			const string& packageName = vertex->getPackageName();
-			if (!vertex->version && !__initial_packages.count(packageName))
+			if (!vertex->version && !__old_packages.count(packageName))
 			{
 				continue;
 			}
@@ -716,8 +706,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 			if (trackReasons)
 			{
-				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage,
-						elementPtr, reasonProcessingCache);
+				__fillSuggestedPackageReasons(solution, suggestedPackage, elementPtr, reasonProcessingCache);
 			}
 			suggestedPackage.automaticallyInstalledFlag = p_computeTargetAutoStatus(packageName, solution, elementPtr);
 		}
@@ -920,8 +909,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	shared_ptr< Solution > initialSolution(new Solution);
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution,
-			__old_packages, __initial_packages, p_userRelationExpressions);
+	__solution_storage->prepareForResolving(*initialSolution, __old_packages, p_userRelationExpressions);
 
 	SolutionContainer solutions = { initialSolution };
 

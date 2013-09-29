@@ -39,13 +39,6 @@ class PackageEntry;
 
 namespace dependencygraph {
 
-struct InitialPackageEntry
-{
-	const BinaryVersion* version;
-	bool modified;
-
-	InitialPackageEntry();
-};
 struct UserRelationExpression
 {
 	RelationExpression expression;
@@ -120,15 +113,14 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	std::unique_ptr< FillHelper > __fill_helper;
 
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
-			const map< string, InitialPackageEntry >&);
+			const map< string, const BinaryVersion* >&);
  public:
 	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
-			const map< string, const BinaryVersion* >&,
-			const map< string, InitialPackageEntry >&);
+			const map< string, const BinaryVersion* >&);
 	void addUserRelationExpression(const UserRelationExpression&);
 
 	const Element* getCorrespondingEmptyElement(const Element*);

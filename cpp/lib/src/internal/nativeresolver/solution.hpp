@@ -152,7 +152,6 @@ class SolutionStorage
 
 	void prepareForResolving(Solution&,
 			const map< string, const BinaryVersion* >&,
-			const map< string, dg::InitialPackageEntry >&,
 			const vector< dg::UserRelationExpression >&);
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
