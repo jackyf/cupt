@@ -62,7 +62,7 @@ _cupt()
 				subcommand_type='query'
 				;;
 			search)
-				arguments='--case-sensitive --names-only -n'
+				arguments='--case-sensitive --names-only -n --fse'
 				;;
 			depends|rdepends)
 				subcommand_type='query'
