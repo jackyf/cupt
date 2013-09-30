@@ -24,6 +24,7 @@ Package: libcupt3-0
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Conflicts: libcupt2-0
+Replaces: libcupt2-0
 Breaks: debdelta (<< 0.31)
 Recommends: libcupt3-0-downloadmethod-curl | libcupt3-0-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
