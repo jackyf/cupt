@@ -1,4 +1,4 @@
-cupt (2.6.0~) UNRELEASED; urgency=low
+cupt (2.6.0) experimental; urgency=low
 
   * console:
     - Managing packages:
@@ -170,7 +170,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - doc:
       - Fixed 'make install' for out-of-tree builds.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 30 Sep 2013 21:45:27 +0300
 
 cupt (2.5.11) unstable; urgency=low
 
