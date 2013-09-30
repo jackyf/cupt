@@ -22,9 +22,7 @@ Description: alternative front-end for dpkg -- debugging symbols
 
 Package: libcupt3-0
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Conflicts: libcupt2-0
-Replaces: libcupt2-0
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt-common (>= ${source:Version})
 Breaks: debdelta (<< 0.31)
 Recommends: libcupt3-0-downloadmethod-curl | libcupt3-0-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
@@ -43,6 +41,15 @@ Description: alternative front-end for dpkg -- runtime library
   - worker for modifying system state.
  .
  See also description of 'cupt' package for more information.
+
+Package: libcupt-common
+Architecture: all
+Conflicts: libcupt2-0
+Replaces: libcupt2-0
+Description: alternative front-end for dpkg -- runtime library (support files)
+ This package provides architecture-independent support parts for Cupt library.
+ .
+ See also description of libcupt3-0 package.
 
 Package: libcupt3-dev
 Section: libdevel

@@ -162,6 +162,7 @@ cupt (2.6.0~) UNRELEASED; urgency=low
   * debian:
     - control:
       - Bumped the library API version.
+      - New binary package 'libcupt-common'.
   * build system:
     - Specify OUTPUT_NAME property for targets. As a side effect this
       obsoletes the custom cupt.bin install statement which prevented 'make
