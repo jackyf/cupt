@@ -13,6 +13,8 @@ Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
 Package: cupt-dbg
+Section: debug
+Priority: extra
 Architecture: any
 Depends: libcupt3-0 (= ${binary:Version}) | cupt (= ${binary:Version}) |
  libcupt3-0-downloadmethod-curl (= ${binary:Version}) |
