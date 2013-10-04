@@ -1,3 +1,9 @@
+cupt (2.6.1~) UNRELEASED; urgency=low
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 04 Oct 2013 19:25:34 +0300
+
 cupt (2.6.0) experimental; urgency=low
 
   * console:
