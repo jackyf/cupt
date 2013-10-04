@@ -42,7 +42,7 @@ CUPT_PROCESS_T2T(tutorial functionalselectors)
 
 add_custom_target(doc ALL DEPENDS doxygen-stamp tutorial-stamp functionalselectors-stamp)
 
-install(DIRECTORY examples DESTINATION share/doc/lib)
+install(DIRECTORY examples DESTINATION share/doc/lib FILES_MATCHING PATTERN "*.cpp" PATTERN "*CMake*" EXCLUDE)
 install(DIRECTORY ${ODIR}/reference/html DESTINATION share/doc/lib)
 install(DIRECTORY ${ODIR}/reference/man DESTINATION share FILES_MATCHING PATTERN cupt*)
 

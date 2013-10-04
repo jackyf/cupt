@@ -9,6 +9,7 @@ cupt (2.6.1~) UNRELEASED; urgency=low
     - cmakelists:
       - Fixed installing all generated HTML pages to /usr/share, not only
         tutorial one.
+      - Fixed not installing build artefacts of 'show-upgradeable' example.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 04 Oct 2013 19:25:34 +0300
 
