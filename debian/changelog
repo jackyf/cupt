@@ -3,6 +3,8 @@ cupt (2.6.1~) UNRELEASED; urgency=low
   * debian:
     - cupt.manpages:
       - Fixed installing cupt_functionalselectors.7.
+    - cupt.install:
+      - Fixed installing all generated HTML pages.
   * doc:
     - cmakelists:
       - Fixed installing all generated HTML pages to /usr/share, not only
