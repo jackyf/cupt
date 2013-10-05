@@ -5,6 +5,9 @@ cupt (2.6.1~) UNRELEASED; urgency=low
       - Fixed installing cupt_functionalselectors.7.
     - cupt.install:
       - Fixed installing all generated HTML pages.
+    - rules:
+      - Don't attempt to install logrotate script in binary-arch target. Fixes
+        FTBFS for binary-only builds.
   * doc:
     - cmakelists:
       - Fixed installing all generated HTML pages to /usr/share, not only
