@@ -574,17 +574,17 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	return virtualEdges;
 }
 
-bool __share_relation_expression(const GraphAndAttributes::Attribute& left,
-		const GraphAndAttributes::Attribute& right)
+const GraphAndAttributes::RelationInfoRecord* __get_shared_relation_info_record(
+		const GraphAndAttributes::Attribute& left, const GraphAndAttributes::Attribute& right)
 {
-	FORIT(leftRelationRecordIt, left.relationInfo)
+	for (const auto& leftRelationRecord: left.relationInfo)
 	{
-		FORIT(rightRelationRecordIt, right.relationInfo)
+		for (const auto& rightRelationRecord: right.relationInfo)
 		{
-			if (leftRelationRecordIt->dependencyType == rightRelationRecordIt->dependencyType &&
-					leftRelationRecordIt->relationExpression == rightRelationRecordIt->relationExpression)
+			if (leftRelationRecord.dependencyType == rightRelationRecord.dependencyType &&
+					leftRelationRecord.relationExpression == rightRelationRecord.relationExpression)
 			{
-				return true;
+				return &leftRelationRecord;
 			}
 		}
 	}
@@ -669,35 +669,37 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
-		const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
-		FORIT(predecessorVertexPtrIt, predecessors)
+		const auto& predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
+		const auto& successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+		for (auto predecessor: predecessors)
 		{
-			FORIT(successorVertexPtrIt, successors)
+			for (auto successor: successors)
 			{
-				if (*predecessorVertexPtrIt == *successorVertexPtrIt)
-				{
-					continue;
-				}
-				if (!__share_relation_expression(
-							gaa.attributes[make_pair(*predecessorVertexPtrIt, fromPtr)],
-							gaa.attributes[make_pair(toPtr, *successorVertexPtrIt)]))
-				{
-					continue;
-				}
+				if (predecessor == successor) continue;
 
-				__move_edge(gaa, *predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
-				__move_edge(gaa, toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
+				auto sharedRir = __get_shared_relation_info_record(
+						gaa.attributes[make_pair(predecessor, fromPtr)],
+						gaa.attributes[make_pair(toPtr, successor)]);
+				if (!sharedRir) continue;
+
+				gaa.graph.addEdgeFromPointers(predecessor, successor);
+				gaa.attributes[make_pair(predecessor, successor)].relationInfo.push_back(*sharedRir);
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
 					debug2("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
-							(*predecessorVertexPtrIt)->toString(), (*successorVertexPtrIt)->toString(), mediatorPackageName);
+							predecessor->toString(), successor->toString(), mediatorPackageName);
 				}
-
 			}
 		}
-
+		for (auto predecessor: predecessors)
+		{
+			gaa.attributes.erase(make_pair(predecessor, fromPtr));
+		}
+		for (auto successor: successors)
+		{
+			gaa.attributes.erase(make_pair(toPtr, successor));
+		}
 		gaa.graph.deleteVertex(*fromPtr);
 		gaa.graph.deleteVertex(*toPtr);
 	}
