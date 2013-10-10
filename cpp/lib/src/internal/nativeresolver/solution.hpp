@@ -93,6 +93,7 @@ class Solution
 	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
 	BrokenSuccessorMap*  __broken_successors;
+	Graph< const dg::Element* > p_brokenElementSplitGraph;
  public:
 	struct Action
 	{
@@ -108,6 +109,7 @@ class Solution
 	size_t id;
 	size_t level;
 	bool finished;
+	bool splitRun;
 	ssize_t score;
 	std::unique_ptr< const Action > pendingAction;
 

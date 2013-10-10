@@ -930,6 +930,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		vector< unique_ptr< Action > > possibleActions;
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
+		currentSolution->splitRun = true;
 
 		auto problemFound = [this, &possibleActions, &currentSolution, debugging]
 		{

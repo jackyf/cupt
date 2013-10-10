@@ -259,6 +259,21 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 	{
 		return std::find(container.begin(), container.end(), elementPtr) != container.end();
 	};
+	auto newPotentialBrokenSuccessorCallback = [this, &solution, &newElementPtr](const dg::Element* brokenElementPtr)
+	{
+		if (solution.splitRun)
+		{
+			if (solution.p_brokenElementSplitGraph.getVertices().count(brokenElementPtr))
+			{
+				solution.p_brokenElementSplitGraph.addEdgeFromPointers(newElementPtr, brokenElementPtr);
+			}
+			else if (!verifyElement(solution, brokenElementPtr))
+			{
+				solution.p_brokenElementSplitGraph.addVertex(brokenElementPtr);
+				solution.p_brokenElementSplitGraph.addEdgeFromPointers(newElementPtr, brokenElementPtr);
+			}
+		}
+	};
 
 	static const GraphCessorListType nullList;
 
@@ -282,6 +297,8 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 	for (auto successorPtr: successorsOfNew)
 	{
 		if (isPresent(successorsOfOld, successorPtr)) continue;
+
+		newPotentialBrokenSuccessorCallback(successorPtr);
 
 		auto it = bss.lower_bound(successorPtr);
 		if (it == bss.end() || it->elementPtr != successorPtr)
@@ -307,13 +324,15 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 
 		if (reverseDependencyExists(predecessorElementPtr))
 		{
+			newPotentialBrokenSuccessorCallback(predecessorElementPtr);
+
 			if (!verifyElement(solution, predecessorElementPtr))
 			{
 				// here we assume brokenSuccessors didn't
 				// contain predecessorElementPtr, since as old element was
 				// present, predecessorElementPtr was not broken
-				bss.insert(bss.lower_bound(predecessorElementPtr),
-						BrokenSuccessor { predecessorElementPtr, priority });
+				auto it = bss.lower_bound(predecessorElementPtr);
+				bss.insert(it, BrokenSuccessor { predecessorElementPtr, priority });
 			}
 		}
 	}
@@ -348,6 +367,12 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	__dependency_graph.unfoldElement(elementPtr);
 	__update_change_index(solution.id, elementPtr, packageEntry);
 
+	auto reasonBrokenElementPtr = packageEntry.introducedBy.brokenElementPtr;
+	if (solution.splitRun)
+	{
+		conflictingElementPtr = nullptr; // conflicting elements allowed
+	}
+
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
 	{
@@ -376,6 +401,13 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		{
 			solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
 		}
+	}
+
+	if (solution.splitRun && priority != (size_t)-1)
+	{
+		solution.p_brokenElementSplitGraph.addVertex(reasonBrokenElementPtr);
+		solution.p_brokenElementSplitGraph.addVertex(elementPtr);
+		solution.p_brokenElementSplitGraph.addEdgeFromPointers(reasonBrokenElementPtr, elementPtr);
 	}
 
 	__update_broken_successors(solution, conflictingElementPtr, elementPtr, priority);
@@ -548,7 +580,7 @@ pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedEleme
 }
 
 Solution::Solution()
-	: id(0), level(0), finished(false), score(0)
+	: id(0), level(0), finished(false), splitRun(false), score(0)
 {
 	__added_entries.reset(new PackageEntryMap);
 	__broken_successors = new BrokenSuccessorMap;
