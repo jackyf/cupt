@@ -445,28 +445,70 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 	}
 }
 
+void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
+{
+	if (!solution.pendingAction)
+	{
+		fatal2i("__post_apply_action: no action to apply");
+	}
+	const auto& action = *solution.pendingAction;
+
+	if (!solution.splitRun)
+	{ // process elements to reject
+		FORIT(elementPtrIt, action.elementsToReject)
+		{
+			solutionStorage.setRejection(solution, *elementPtrIt, action.newElementPtr);
+		}
+	};
+
+	PackageEntry packageEntry;
+	if (!solution.splitRun)
+	{
+		packageEntry.sticked = true;
+	}
+	packageEntry.introducedBy = action.introducedBy;
+	solutionStorage.setPackageEntry(solution, action.newElementPtr,
+			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
+
+	solution.pendingAction.reset();
+}
+
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
-	// sort them by "rank", from more good to more bad
-	std::stable_sort(actions.begin(), actions.end(),
-			[this](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
-			{
-				return this->__score_manager.getScoreChangeValue(right->profit)
-						< this->__score_manager.getScoreChangeValue(left->profit);
-			});
-
-	// apply all the solutions by one
-	bool onlyOneAction = (actions.size() == 1);
-	auto oldSolutionId = currentSolution->id;
-	FORIT(actionIt, actions)
+	if (currentSolution->splitRun)
 	{
-		auto newSolution = onlyOneAction ?
-				__solution_storage->fakeCloneSolution(currentSolution) :
-				__solution_storage->cloneSolution(currentSolution);
-		__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt), oldSolutionId);
-		callback(newSolution);
+		auto splitSolution = currentSolution;
+		for (auto&& action: actions)
+		{
+			splitSolution = __solution_storage->fakeCloneSolution(splitSolution);
+			__pre_apply_action(*splitSolution, *splitSolution, std::move(action), splitSolution->id);
+			__post_apply_action(*__solution_storage, *splitSolution);
+		}
+		callback(currentSolution);
+	}
+	else
+	{
+		// sort them by "rank", from more good to more bad
+		std::stable_sort(actions.begin(), actions.end(),
+				[this](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
+				{
+					return this->__score_manager.getScoreChangeValue(right->profit)
+							< this->__score_manager.getScoreChangeValue(left->profit);
+				});
+
+		// apply all the solutions by one
+		bool onlyOneAction = (actions.size() == 1);
+		auto oldSolutionId = currentSolution->id;
+		FORIT(actionIt, actions)
+		{
+			auto newSolution = onlyOneAction ?
+					__solution_storage->fakeCloneSolution(currentSolution) :
+					__solution_storage->cloneSolution(currentSolution);
+			__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt), oldSolutionId);
+			callback(newSolution);
+		}
 	}
 }
 
@@ -490,30 +532,6 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 					"cupt::resolver::max-solution-count");
 		}
 	}
-}
-
-void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
-{
-	if (!solution.pendingAction)
-	{
-		fatal2i("__post_apply_action: no action to apply");
-	}
-	const auto& action = *solution.pendingAction;
-
-	{ // process elements to reject
-		FORIT(elementPtrIt, action.elementsToReject)
-		{
-			solutionStorage.setRejection(solution, *elementPtrIt, action.newElementPtr);
-		}
-	};
-
-	PackageEntry packageEntry;
-	packageEntry.sticked = true;
-	packageEntry.introducedBy = action.introducedBy;
-	solutionStorage.setPackageEntry(solution, action.newElementPtr,
-			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
-
-	solution.pendingAction.reset();
 }
 
 bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
