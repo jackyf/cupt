@@ -972,6 +972,10 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			// if the solution was only just finished
 			if (!currentSolution->finished)
 			{
+				if (currentSolution->splitRun)
+				{
+					__solution_storage->debugIslands(*currentSolution);
+				}
 				if (debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "finished");

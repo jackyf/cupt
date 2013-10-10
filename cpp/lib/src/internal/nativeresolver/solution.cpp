@@ -718,6 +718,51 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 	return nullptr; // not found
 }
 
+void SolutionStorage::debugIslands(Solution& solution) const
+{
+	auto& graph = solution.p_brokenElementSplitGraph;
+	for (const auto& elementPtr: graph.getVertices())
+	{
+		if (auto pe = solution.getPackageEntry(elementPtr))
+		{
+			if (!pe->introducedBy.empty()) continue;
+
+			for (auto conflictingElementPtr: SolutionStorage::getConflictingElements(elementPtr))
+			{
+				if (conflictingElementPtr == elementPtr) continue;
+				if (!graph.getVertices().count(conflictingElementPtr)) continue;
+
+				for (auto predecessor: getPredecessorElements(conflictingElementPtr))
+				{
+					graph.addEdgeFromPointers(predecessor, elementPtr);
+				}
+				for (auto successor: getSuccessorElements(conflictingElementPtr))
+				{
+					graph.addEdgeFromPointers(elementPtr, successor);
+				}
+				graph.deleteVertex(conflictingElementPtr);
+			}
+		}
+	}
+	for (const auto& island: graph.getWeaklyConnectedComponents())
+	{
+		if (island.size() > 1)
+		{
+			debug2("island:");
+			for (const auto& elementPtr: island)
+			{
+				if (auto pe = solution.getPackageEntry(elementPtr))
+				{
+					//if (pe->introducedBy.empty())
+					{
+						debug2("  %s", elementPtr->toString());
+					}
+				}
+			}
+		}
+	}
+}
+
 }
 }
 

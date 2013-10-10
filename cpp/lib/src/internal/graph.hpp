@@ -71,6 +71,8 @@ class Graph
 	void topologicalSortOfStronglyConnectedComponents(
 			std::function< void (const vector< T >&, bool) > callback,
 			OutputIterator outputIterator) const;
+
+	vector< vector< PtrT > > getWeaklyConnectedComponents() const;
 };
 
 template< class T >
@@ -428,6 +430,42 @@ auto Graph< T >::getReachableFrom(const T& from) const -> unordered_set< PtrT >
 			{
 				currentVertices.push(successorPtr); // non-seen yet vertex
 			}
+		}
+	}
+
+	return result;
+}
+
+template < class T >
+auto Graph< T >::getWeaklyConnectedComponents() const -> vector< vector< PtrT > >
+{
+	set< PtrT > seen;
+	vector< PtrT > island;
+	std::function< void (PtrT) > visit = [this, &seen, &island, &visit](PtrT vertexPtr)
+	{
+		if (seen.insert(vertexPtr).second)
+		{
+			island.push_back(vertexPtr);
+			for (auto predecessor: this->getPredecessorsFromPointer(vertexPtr))
+			{
+				visit(predecessor);
+			}
+			for (auto successor: this->getSuccessorsFromPointer(vertexPtr))
+			{
+				visit(successor);
+			}
+		}
+	};
+
+	vector< vector< PtrT > > result;
+	for (const auto& vertex: getVertices())
+	{
+		visit(toPointer(vertex));
+
+		if (!island.empty())
+		{
+			result.push_back(std::move(island));
+			island.clear();
 		}
 	}
 

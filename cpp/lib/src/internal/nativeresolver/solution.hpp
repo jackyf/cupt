@@ -176,6 +176,7 @@ class SolutionStorage
 			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
 	pair< const dg::Element*, const dg::Element* > getDiversedElements(
 			size_t leftSolutionId, size_t rightSolutionId) const;
+	void debugIslands(Solution&) const;
 };
 
 }
