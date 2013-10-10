@@ -814,15 +814,9 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 	}
 }
 
-BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
-		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
+BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage, const Solution& solution)
 {
-	auto failValue = [&failCounts](const dg::Element* e) -> size_t
-	{
-		auto it = failCounts.find(e);
-		return it != failCounts.end() ? it->second : 0u;
-	};
-	auto compareBrokenSuccessors = [&failValue](const BrokenSuccessor& left, const BrokenSuccessor& right)
+	auto compareBrokenSuccessors = [](const BrokenSuccessor& left, const BrokenSuccessor& right)
 	{
 		auto leftTypePriority = left.elementPtr->getTypePriority();
 		auto rightTypePriority = right.elementPtr->getTypePriority();
@@ -840,17 +834,6 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 			return true;
 		}
 		if (left.priority > right.priority)
-		{
-			return false;
-		}
-
-		auto leftFailValue = failValue(left.elementPtr);
-		auto rightFailValue = failValue(right.elementPtr);
-		if (leftFailValue < rightFailValue)
-		{
-			return true;
-		}
-		if (leftFailValue > rightFailValue)
 		{
 			return false;
 		}
@@ -942,19 +925,15 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	SolutionContainer solutions = { initialSolution };
 
-	// for each package entry 'count' will contain the number of failures
-	// during processing these packages
-	map< const dg::Element*, size_t > failCounts;
-
 	while (!solutions.empty())
 	{
 		vector< unique_ptr< Action > > possibleActions;
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
 
-		auto problemFound = [this, &failCounts, &possibleActions, &currentSolution, debugging]
+		auto problemFound = [this, &possibleActions, &currentSolution, debugging]
 		{
-			auto bp = __get_broken_pair(*__solution_storage, *currentSolution, failCounts);
+			auto bp = __get_broken_pair(*__solution_storage, *currentSolution);
 			if (!bp.versionElementPtr) return false;
 
 			if (debugging)
@@ -965,9 +944,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			}
 			__generate_possible_actions(&possibleActions, *currentSolution, bp, debugging);
 			__fill_and_process_introduced_by(*currentSolution, bp, &possibleActions);
-
-			// mark package as failed one more time
-			failCounts[bp.brokenSuccessor.elementPtr] += 1;
 
 			return true;
 		};
