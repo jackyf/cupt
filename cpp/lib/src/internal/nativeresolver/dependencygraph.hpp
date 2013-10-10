@@ -95,21 +95,7 @@ struct VersionVertex: public BasicVertex
 };
 typedef VersionVertex VersionElement;
 
-namespace {
-
-template< class T >
-struct PointeredAlreadyTraits
-{
-	typedef T PointerType;
-	static T toPointer(T vertex)
-	{
-		return vertex;
-	}
-};
-
-}
-
-class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
+class DependencyGraph: protected Graph< const Element* >
 {
 	const Config& __config;
 	const Cache& __cache;
@@ -122,7 +108,7 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
 			const map< string, InitialPackageEntry >&);
  public:
-	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
+	typedef Graph< const Element* > BaseT;
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();

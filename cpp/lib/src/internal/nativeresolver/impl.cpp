@@ -289,7 +289,7 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 						__solution_storage->getSuccessorElements(*successorElementPtrIt);
 
 				bool allRightSidesAreAutomatic = true;
-				const dg::Element* const* candidateElementPtrPtr = NULL;
+				const dg::Element*  candidateElementPtr = NULL;
 				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
 				{
 					auto it = vertices.find(*successorSuccessorElementPtrIt);
@@ -301,25 +301,25 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 								allRightSidesAreAutomatic = false;
 								break;
 							case Allow::YesIfNoRDepends:
-								dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
+								dependencyGraph.addEdgeFromPointers(*elementPtrIt, *it);
 							case Allow::Yes:
-								if (!candidateElementPtrPtr) // not found yet
+								if (!candidateElementPtr) // not found yet
 								{
-									candidateElementPtrPtr = &*it;
+									candidateElementPtr = *it;
 								}
 								break;
 						}
 					}
 				}
-				if (allRightSidesAreAutomatic && candidateElementPtrPtr)
+				if (allRightSidesAreAutomatic && candidateElementPtr)
 				{
-					dependencyGraph.addEdgeFromPointers(&*elementPtrIt, candidateElementPtrPtr);
+					dependencyGraph.addEdgeFromPointers(*elementPtrIt, candidateElementPtr);
 				}
 			}
 
 			if (isCandidateForAutoRemoval(*elementPtrIt) == Allow::No)
 			{
-				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
+				dependencyGraph.addEdgeFromPointers(mainVertexPtr, *elementPtrIt);
 			}
 		}
 	}
@@ -327,11 +327,11 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 	{ // looping through the candidates
 		bool debugging = __config->getBool("debug::resolver");
 
-		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
+		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(mainVertexPtr);
 
 		FORIT(elementPtrIt, vertices)
 		{
-			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
+			if (!reachableElementPtrPtrs.count(*elementPtrIt))
 			{
 				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
 
