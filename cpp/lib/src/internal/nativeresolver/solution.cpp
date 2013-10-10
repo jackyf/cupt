@@ -718,30 +718,41 @@ const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) con
 	return nullptr; // not found
 }
 
-void SolutionStorage::debugIslands(Solution& solution) const
+void SolutionStorage::debugIslands(Solution& solution)
 {
 	auto& graph = solution.p_brokenElementSplitGraph;
+
+	auto findPresentElement = [this, &solution, &graph](const dg::Element* elementPtr)
+	{
+		for (auto conflictingElementPtr: getConflictingElements(elementPtr))
+		{
+			if (conflictingElementPtr == elementPtr) continue;
+
+			if (auto pe = solution.getPackageEntry(conflictingElementPtr))
+			{
+				if (pe->introducedBy.empty())
+				{
+					return conflictingElementPtr;
+				}
+			}
+		}
+		return graph.addVertex(getCorrespondingEmptyElement(elementPtr));
+	};
+
 	for (const auto& elementPtr: graph.getVertices())
 	{
-		if (auto pe = solution.getPackageEntry(elementPtr))
+		if (!dynamic_cast< const dg::VersionElement* >(elementPtr)) continue;
+
+		auto presentElementPtr = findPresentElement(elementPtr);
+		debug2("merging %s to %s", elementPtr->toString(), presentElementPtr->toString());
+
+		for (auto predecessor: getPredecessorElements(elementPtr))
 		{
-			if (!pe->introducedBy.empty()) continue;
-
-			for (auto conflictingElementPtr: SolutionStorage::getConflictingElements(elementPtr))
-			{
-				if (conflictingElementPtr == elementPtr) continue;
-				if (!graph.getVertices().count(conflictingElementPtr)) continue;
-
-				for (auto predecessor: getPredecessorElements(conflictingElementPtr))
-				{
-					graph.addEdgeFromPointers(predecessor, elementPtr);
-				}
-				for (auto successor: getSuccessorElements(conflictingElementPtr))
-				{
-					graph.addEdgeFromPointers(elementPtr, successor);
-				}
-				graph.deleteVertex(conflictingElementPtr);
-			}
+			graph.addEdgeFromPointers(predecessor, presentElementPtr);
+		}
+		for (auto successor: getSuccessorElements(elementPtr))
+		{
+			graph.addEdgeFromPointers(presentElementPtr, successor);
 		}
 	}
 	for (const auto& island: graph.getWeaklyConnectedComponents())
@@ -749,14 +760,15 @@ void SolutionStorage::debugIslands(Solution& solution) const
 		if (island.size() > 1)
 		{
 			debug2("island:");
+			set< const dg::Element* > seen;
 			for (const auto& elementPtr: island)
 			{
-				if (auto pe = solution.getPackageEntry(elementPtr))
+				if (!dynamic_cast< const dg::VersionElement* >(elementPtr)) continue;
+
+				auto presentElementPtr = findPresentElement(elementPtr);
+				if (seen.insert(presentElementPtr).second)
 				{
-					//if (pe->introducedBy.empty())
-					{
-						debug2("  %s", elementPtr->toString());
-					}
+					debug2("  %s", presentElementPtr->toString());
 				}
 			}
 		}
