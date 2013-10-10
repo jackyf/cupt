@@ -726,8 +726,6 @@ void SolutionStorage::debugIslands(Solution& solution)
 	{
 		for (auto conflictingElementPtr: getConflictingElements(elementPtr))
 		{
-			if (conflictingElementPtr == elementPtr) continue;
-
 			if (auto pe = solution.getPackageEntry(conflictingElementPtr))
 			{
 				if (pe->introducedBy.empty())
