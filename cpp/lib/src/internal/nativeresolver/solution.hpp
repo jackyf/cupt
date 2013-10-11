@@ -133,6 +133,10 @@ class SolutionStorage
 
 	dg::DependencyGraph __dependency_graph;
 
+	void p_updateBrokenSuccessorsRaw(Solution& solution,
+			const dg::Element*, size_t,
+			const GraphCessorListType&, const GraphCessorListType&,
+			const GraphCessorListType&, const GraphCessorListType&);
 	void __update_broken_successors(Solution&,
 			const dg::Element*, const dg::Element*, size_t priority);
 
