@@ -312,18 +312,15 @@ void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 	// invalidate those which depend on the old element
 	for (auto predecessorElementPtr: predecessorsOfOld)
 	{
-		debug2("io: %s", predecessorElementPtr->toString());
 		if (isPresent(predecessorsOfNew, predecessorElementPtr)) continue;
 		if (isPresent(successorsOfNew, predecessorElementPtr)) continue;
 
 		if (reverseDependencyExists(predecessorElementPtr))
 		{
-			debug2("  callback");
 			if (!newPotentialBrokenSuccessorCallback(predecessorElementPtr)) continue;
 
 			if (solution.splitRun || !verifyElement(solution, predecessorElementPtr))
 			{
-				debug2("  passed");
 				// here we assume brokenSuccessors didn't
 				// contain predecessorElementPtr, since as old element was
 				// present, predecessorElementPtr was not broken
@@ -361,22 +358,14 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 	if (solution.splitRun)
 	{
 		typedef vector< const dg::Element* > ElementVector;
-		auto d = [](const ElementVector& ev)
-		{
-			vector< string > strings;
-			for (auto e: ev) { strings.push_back(e->toString()); }
-			return format2("(%s)", join(", ", strings));
-		};
 		ElementVector group;
-		auto getGroupPredecessors = [this, &group, &d]()
+		auto getGroupPredecessors = [this, &group]()
 		{
 			ElementVector result;
 			for (auto elementPtr: group)
 			{
 				auto subResult = getPredecessorElements(elementPtr);
-				debug2("  subResult: %s", d(subResult));
 				std::sort(subResult.begin(), subResult.end());
-				debug2("  sorted subResult: %s", d(subResult));
 
 				ElementVector newResult;
 				if (elementPtr != group.front())
@@ -389,9 +378,7 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 				{
 					subResult.swap(result);
 				}
-				debug2("  accumulated result: %s", d(result));
 			}
-			debug2("getGroupPredecessors: %s", d(result));
 			return result;
 		};
 
@@ -402,10 +389,8 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 
 			group.push_back(elementPtr);
 		}
-		debug2("groupOld: %s", d(group));
 		auto predecessorsOfOld = getGroupPredecessors();
 		group.push_back(newElementPtr);
-		debug2("groupNew: %s", d(group));
 		auto predecessorsOfNew = getGroupPredecessors();
 
 		p_updateBrokenSuccessorsRaw(solution, newElementPtr, priority, successorsOfOld, successorsOfNew, predecessorsOfOld, predecessorsOfNew);
