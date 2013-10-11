@@ -263,6 +263,7 @@ void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 			if (solution.p_brokenElementSplitGraph.getVertices().count(brokenElementPtr))
 			{
 				solution.p_brokenElementSplitGraph.addEdgeFromPointers(newElementPtr, brokenElementPtr);
+				return false;
 			}
 			else if (!verifyElement(solution, brokenElementPtr))
 			{
@@ -270,6 +271,7 @@ void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 				solution.p_brokenElementSplitGraph.addEdgeFromPointers(newElementPtr, brokenElementPtr);
 			}
 		}
+		return true;
 	};
 
 	// check direct dependencies of the old element
@@ -291,7 +293,7 @@ void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 	{
 		if (isPresent(successorsOfOld, successorPtr)) continue;
 
-		newPotentialBrokenSuccessorCallback(successorPtr);
+		if (!newPotentialBrokenSuccessorCallback(successorPtr)) continue;
 
 		auto it = bss.lower_bound(successorPtr);
 		if (it == bss.end() || it->elementPtr != successorPtr)
@@ -312,18 +314,16 @@ void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 	{
 		debug2("io: %s", predecessorElementPtr->toString());
 		if (isPresent(predecessorsOfNew, predecessorElementPtr)) continue;
-		debug2("  1");
 		if (isPresent(successorsOfNew, predecessorElementPtr)) continue;
-		debug2("  2");
 
 		if (reverseDependencyExists(predecessorElementPtr))
 		{
-			debug2("  3");
-			newPotentialBrokenSuccessorCallback(predecessorElementPtr);
+			debug2("  callback");
+			if (!newPotentialBrokenSuccessorCallback(predecessorElementPtr)) continue;
 
 			if (solution.splitRun || !verifyElement(solution, predecessorElementPtr))
 			{
-				debug2("  4");
+				debug2("  passed");
 				// here we assume brokenSuccessors didn't
 				// contain predecessorElementPtr, since as old element was
 				// present, predecessorElementPtr was not broken
