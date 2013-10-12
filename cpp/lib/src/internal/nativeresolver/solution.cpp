@@ -405,6 +405,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
+	initialSolution.p_initNonSharedStructures();
 	initialSolution.__added_entries->init(std::move(source));
 	for (const auto& entry: *initialSolution.__added_entries)
 	{
@@ -550,13 +551,15 @@ pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedEleme
 Solution::Solution()
 	: id(0), level(0), finished(false), score(0)
 {
-	__added_entries.reset(new PackageEntryMap);
-	__broken_successors = new BrokenSuccessorMap;
 }
 
 Solution::~Solution()
+{}
+
+void Solution::p_initNonSharedStructures()
 {
-	delete __broken_successors;
+	__added_entries.reset(new PackageEntryMap);
+	__broken_successors.reset(new BrokenSuccessorMap);
 }
 
 template < typename CallbackType >
@@ -592,6 +595,8 @@ void __foreach_solution_element(const PackageEntryMap& masterEntries, const Pack
 void Solution::prepare()
 {
 	if (!__parent) return; // prepared already
+
+	p_initNonSharedStructures();
 
 	if (!__parent->__initial_entries)
 	{
