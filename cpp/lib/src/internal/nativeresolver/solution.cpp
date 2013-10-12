@@ -428,18 +428,18 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		conflictingElementPtr = nullptr; // conflicting elements allowed
 	}
 
-	auto it = solution.__added_entries->lower_bound(elementPtr);
-	if (it == solution.__added_entries->end() || it->first != elementPtr)
+	auto it = solution.p_entries->lower_bound(elementPtr);
+	if (it == solution.p_entries->end() || it->first != elementPtr)
 	{
 		// there is no modifiable element in this solution
-		solution.__added_entries->insert(it,
+		solution.p_entries->insert(it,
 				make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
 	}
 	else
 	{
 		if (conflictingElementPtr && it->second)
 		{
-			fatal2i("conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
+			fatal2i("conflicting elements in p_entries: solution '%u', in '%s', out '%s'",
 					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
 		it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
@@ -447,15 +447,13 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 
 	if (conflictingElementPtr)
 	{
-		auto forRemovalIt = solution.__added_entries->lower_bound(conflictingElementPtr);
-		if (forRemovalIt != solution.__added_entries->end() && forRemovalIt->first == conflictingElementPtr)
+		auto forRemovalIt = solution.p_entries->find(conflictingElementPtr);
+		if (forRemovalIt == solution.p_entries->end())
 		{
-			forRemovalIt->second.reset();
+			fatal2i("didn't find a conflicting element in p_entries: solution '%u', out '%s'",
+					solution.id, conflictingElementPtr->toString());
 		}
-		else
-		{
-			solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
-		}
+		solution.p_entries->erase(forRemovalIt);
 	}
 
 	if (solution.splitRun && priority != (size_t)-1)
@@ -500,8 +498,8 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
-	initialSolution.__added_entries->init(std::move(source));
-	for (const auto& entry: *initialSolution.__added_entries)
+	initialSolution.p_entries->init(std::move(source));
+	for (const auto& entry: *initialSolution.p_entries)
 	{
 		__update_broken_successors(initialSolution, NULL, entry.first, 0);
 	}
@@ -645,7 +643,7 @@ pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedEleme
 Solution::Solution()
 	: id(0), level(0), finished(false), splitRun(false), score(0)
 {
-	__added_entries.reset(new PackageEntryMap);
+	p_entries.reset(new PackageEntryMap);
 	__broken_successors = new BrokenSuccessorMap;
 }
 
@@ -688,64 +686,19 @@ void Solution::prepare()
 {
 	if (!__parent) return; // prepared already
 
-	if (!__parent->__initial_entries)
-	{
-		// parent is initial (top-level) solution
-		__initial_entries = __parent->__added_entries;
-	}
-	else
-	{
-		__initial_entries = __parent->__initial_entries;
-
-		if (!__parent->__master_entries)
-		{
-			// parent solution is a master solution, build a slave on top of it
-			__master_entries = __parent->__added_entries;
-		}
-		else
-		{
-			// this a slave solution
-			size_t& forkedCount = __parent->__master_entries->forkedCount;
-			forkedCount += __parent->__added_entries->size();
-			if (forkedCount > __parent->__master_entries->size())
-			{
-				forkedCount = 0;
-
-				// master solution is overdiverted, build new master one
-				__added_entries->reserve(__parent->__added_entries->size() +
-						__parent->__master_entries->size());
-
-				__foreach_solution_element(*__parent->__master_entries, *__parent->__added_entries,
-						[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
-			}
-			else
-			{
-				// build new slave solution from current
-				__master_entries = __parent->__master_entries;
-				*__added_entries = *(__parent->__added_entries);
-			}
-		}
-	}
-
+	*p_entries = *__parent->p_entries;
 	*__broken_successors = *__parent->__broken_successors;
 	__parent.reset();
 }
 
 vector< const dg::Element* > Solution::getElements() const
 {
+	// FIXME: return reference and modify callers accordingly
 	vector< const dg::Element* > result;
-
-	static const PackageEntryMap nullPackageEntryMap;
-	const auto& initialEntries = __initial_entries ? *__initial_entries : nullPackageEntryMap;
-	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
-
-	PackageEntryMap intermediateMap;
-	__foreach_solution_element(initialEntries, masterEntries,
-			[&intermediateMap](const PackageEntryMap::value_type& data) { intermediateMap.push_back(data); });
-
-	__foreach_solution_element(intermediateMap, *__added_entries,
-			[&result](const PackageEntryMap::value_type& data) { if (data.second) result.push_back(data.first); });
-
+	for (const auto& data: *p_entries)
+	{
+		result.push_back(data.first);
+	}
 	return result;
 }
 
@@ -756,28 +709,11 @@ const vector< BrokenSuccessor >& Solution::getBrokenSuccessors() const
 
 const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
 {
-	auto it = __added_entries->find(elementPtr);
-	if (it != __added_entries->end())
+	auto it = p_entries->find(elementPtr);
+	if (it != p_entries->end())
 	{
 		return it->second.get();
 	}
-	if (__master_entries)
-	{
-		it = __master_entries->find(elementPtr);
-		if (it != __master_entries->end())
-		{
-			return it->second.get();
-		}
-	}
-	if (__initial_entries)
-	{
-		it = __initial_entries->find(elementPtr);
-		if (it != __initial_entries->end())
-		{
-			return it->second.get();
-		}
-	}
-
 	return nullptr; // not found
 }
 
