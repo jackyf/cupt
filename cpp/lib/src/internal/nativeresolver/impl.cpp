@@ -512,28 +512,6 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 	}
 }
 
-void __erase_worst_solutions(SolutionContainer& solutions,
-		size_t maxSolutionCount, bool debugging, bool& thereWereDrops)
-{
-	// don't allow solution tree to grow unstoppably
-	while (solutions.size() > maxSolutionCount)
-	{
-		// drop the worst solution
-		auto worstSolutionIt = solutions.begin();
-		if (debugging)
-		{
-			__mydebug_wrapper(**worstSolutionIt, "dropped");
-		}
-		solutions.erase(worstSolutionIt);
-		if (!thereWereDrops)
-		{
-			thereWereDrops = true;
-			warn2(__("some solutions were dropped, you may want to increase the value of the '%s' option"),
-					"cupt::resolver::max-solution-count");
-		}
-	}
-}
-
 bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
 		const dg::Element* candidateElementPtr, const dg::Element* brokenElementPtr,
 		bool debugging)
@@ -928,8 +906,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	const bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
-	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
-	bool thereWereSolutionsDropped = false;
 
 	if (debugging) debug2("started resolving");
 
@@ -1043,8 +1019,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 					solutions.insert(solution);
 				};
 				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
-
-				__erase_worst_solutions(solutions, maxSolutionCount, debugging, thereWereSolutionsDropped);
 			}
 		}
 	}
