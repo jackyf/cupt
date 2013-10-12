@@ -8,6 +8,9 @@ cupt (2.6.2~) UNRELEASED; urgency=low
         was introduced in 2.2.0~rc1.
     - system/resolvers/native:
       - Reduced a memory footprint of unprepared solutions a bit.
+  * debian:
+    - control:
+      - Bumped Standards-Version to 3.9.4, no changes needed.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 05 Oct 2013 20:46:06 +0300
 

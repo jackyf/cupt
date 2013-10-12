@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 7.4.10), g++-4.6,
 Maintainer: Cupt developers <cupt-devel@lists.alioth.debian.org>
 Uploaders: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
