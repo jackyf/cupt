@@ -326,11 +326,6 @@ void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 void SolutionStorage::__update_broken_successors(Solution& solution,
 		const dg::Element* oldElementPtr, const dg::Element* newElementPtr, size_t priority)
 {
-	if (priority == (size_t)-1)
-	{
-		return;
-	}
-
 	static const GraphCessorListType nullList;
 
 	const auto& successorsOfOld = oldElementPtr ? getSuccessorElements(oldElementPtr) : nullList;
@@ -383,6 +378,11 @@ void SolutionStorage::__update_broken_successors(Solution& solution,
 
 		p_updateBrokenSuccessorsRaw(solution, newElementPtr, priority, successorsOfOld, successorsOfNew, predecessorsOfOld, predecessorsOfNew);
 	}
+}
+
+void SolutionStorage::p_addElementToUniverse(Solution& solution, const dg::Element* elementPtr)
+{
+
 }
 
 void SolutionStorage::__update_change_index(size_t solutionId,
@@ -485,7 +485,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	initialSolution.p_entries->init(std::move(source));
 	for (const auto& entry: *initialSolution.p_entries)
 	{
-		__update_broken_successors(initialSolution, NULL, entry.first, 0);
+		p_addElementToUniverse(initialSolution, entry.first, 0);
 	}
 
 	__change_index.emplace_back(0);
@@ -625,7 +625,7 @@ pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedEleme
 }
 
 Solution::Solution()
-	: id(0), level(0), finished(false), splitRun(false), score(0)
+	: id(0), level(0), finished(false), score(0)
 {
 	p_entries.reset(new PackageEntryMap);
 	__broken_successors = new BrokenSuccessorMap;
@@ -636,42 +636,16 @@ Solution::~Solution()
 	delete __broken_successors;
 }
 
-template < typename CallbackType >
-void __foreach_solution_element(const PackageEntryMap& masterEntries, const PackageEntryMap& addedEntries,
-		CallbackType callback)
+vector< const dg::Element* > Solution::giveStickedElements()
 {
-	class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
-	{
-		const CallbackType& __callback;
-	 public:
-		RepackInsertIterator(const CallbackType& callback_)
-			: __callback(callback_) {}
-		RepackInsertIterator& operator++() { return *this; }
-		RepackInsertIterator& operator*() { return *this; }
-		void operator=(const PackageEntryMap::value_type& data)
-		{
-			__callback(data);
-		}
-	};
-	struct Comparator
-	{
-		bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
-		{ return left.first < right.first; }
-	};
-	// it's important that parent's __added_entries come first,
-	// if two elements are present in both (i.e. an element is overriden)
-	// the new version of an element will be considered
-	std::set_union(addedEntries.begin(), addedEntries.end(),
-			masterEntries.begin(), masterEntries.end(),
-			RepackInsertIterator(callback), Comparator());
+	// FIXME: implement
+	return {};
 }
 
 void Solution::prepare()
 {
 	if (!__parent) return; // prepared already
 
-	*p_entries = *__parent->p_entries;
-	*__broken_successors = *__parent->__broken_successors;
 	__parent.reset();
 }
 
@@ -684,11 +658,6 @@ vector< const dg::Element* > Solution::getElements() const
 		result.push_back(data.first);
 	}
 	return result;
-}
-
-const vector< BrokenSuccessor >& Solution::getBrokenSuccessors() const
-{
-	return __broken_successors->getContainer();
 }
 
 const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
