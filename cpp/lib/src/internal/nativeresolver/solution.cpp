@@ -215,25 +215,6 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 	return true;
 }
 
-void SolutionStorage::setRejection(Solution& solution,
-		const dg::Element* elementPtr, const dg::Element* dontChangePtr)
-{
-	const dg::Element* conflictingElementPtr;
-	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
-	if (!conflictingElementPtr || conflictingElementPtr == dontChangePtr)
-	{
-		return;
-	}
-	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
-
-	PackageEntry packageEntry = (conflictorPackageEntryPtr ?
-			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
-
-	packageEntry.rejectedConflictors.push_front(elementPtr);
-	setPackageEntry(solution, conflictingElementPtr,
-			std::move(packageEntry), NULL, -1);
-}
-
 void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
 		const dg::Element* newElementPtr, size_t priority,
 		const GraphCessorListType& successorsOfOld, const GraphCessorListType& successorsOfNew,

@@ -445,34 +445,6 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 	}
 }
 
-void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
-{
-	if (!solution.pendingAction)
-	{
-		fatal2i("__post_apply_action: no action to apply");
-	}
-	const auto& action = *solution.pendingAction;
-
-	if (!solution.splitRun)
-	{ // process elements to reject
-		FORIT(elementPtrIt, action.elementsToReject)
-		{
-			solutionStorage.setRejection(solution, *elementPtrIt, action.newElementPtr);
-		}
-	};
-
-	PackageEntry packageEntry;
-	if (!solution.splitRun)
-	{
-		packageEntry.sticked = true;
-	}
-	packageEntry.introducedBy = action.introducedBy;
-	solutionStorage.setPackageEntry(solution, action.newElementPtr,
-			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
-
-	solution.pendingAction.reset();
-}
-
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
@@ -633,37 +605,6 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 			action->newElementPtr = *successorElementPtrIt;
 
 			actions.push_back(std::move(action));
-		}
-	}
-}
-
-void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > >& actions) const
-{
-	// each next action receives one more additional reject request to not
-	// interfere with all previous solutions
-	vector< const dg::Element* > elementPtrs;
-	FORIT(actionIt, actions)
-	{
-		(*actionIt)->elementsToReject = elementPtrs;
-
-		elementPtrs.push_back((*actionIt)->newElementPtr);
-	}
-	for (auto& actionPtr: actions)
-	{
-		if (actionPtr->newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
-		{
-			actionPtr->elementsToReject = elementPtrs; // all
-		}
-		else
-		{
-			const auto& uselessToRejectElements = SolutionStorage::getConflictingElements(actionPtr->newElementPtr);
-			auto deleteIt = std::remove_if(actionPtr->elementsToReject.begin(), actionPtr->elementsToReject.end(),
-					[&uselessToRejectElements](const dg::Element* elementPtr)
-					{
-						return std::find(uselessToRejectElements.begin(), uselessToRejectElements.end(), elementPtr) !=
-								uselessToRejectElements.end();
-					});
-			actionPtr->elementsToReject.erase(deleteIt, actionPtr->elementsToReject.end());
 		}
 	}
 }
@@ -900,6 +841,13 @@ void NativeResolverImpl::__fill_and_process_introduced_by(
 	}
 }
 
+struct SolutionGraphItem
+{
+	vector< const dg::Element* > stickedElements;
+	Solution solution;
+};
+typedef Graph< SolutionGraphItem > SolutionGraph;
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
@@ -912,9 +860,13 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	__any_solution_was_found = false;
 	__decision_fail_tree.clear();
 
-	shared_ptr< Solution > initialSolution(new Solution);
+	SolutionGraph solutionGraph;
+
+	auto* initialItem = solutionGraph.addVertex({});
+	Solution& initialSolution = initialItem->solution;
+
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution,
+	__solution_storage->prepareForResolving(initialSolution,
 			__old_packages, __initial_packages, p_userRelationExpressions);
 
 	SolutionContainer solutions = { initialSolution };

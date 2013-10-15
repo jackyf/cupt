@@ -60,9 +60,7 @@ struct IntroducedBy
 
 struct PackageEntry
 {
-	bool sticked;
 	bool autoremoved;
-	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
 
 	PackageEntry(bool sticked_ = false);
@@ -71,8 +69,6 @@ struct PackageEntry
 
 	PackageEntry& operator=(PackageEntry&&) = default;
 	PackageEntry& operator=(const PackageEntry&) = default;
-
-	bool isModificationAllowed(const dg::Element*) const;
 };
 
 class PackageEntryMap;
@@ -88,16 +84,12 @@ class Solution
 {
 	friend class SolutionStorage;
 
-	shared_ptr< const Solution > __parent;
-	unique_ptr< PackageEntryMap > p_entries;
-	BrokenSuccessorMap*  __broken_successors;
-	Graph< const dg::Element* > p_brokenElementSplitGraph;
+	Graph< const dg::Element* > p_universe;
  public:
 	struct Action
 	{
 		const dg::Element* oldElementPtr; // may be NULL
 		const dg::Element* newElementPtr; // many not be NULL
-		vector< const dg::Element* > elementsToReject;
 		shared_ptr< const Reason > reason;
 		ScoreChange profit;
 		IntroducedBy introducedBy;
@@ -107,7 +99,6 @@ class Solution
 	size_t id;
 	size_t level;
 	bool finished;
-	bool splitRun;
 	ssize_t score;
 	std::unique_ptr< const Action > pendingAction;
 
@@ -168,7 +159,6 @@ class SolutionStorage
 			getConflictingElements(const dg::Element*);
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
-	void setRejection(Solution&, const dg::Element*, const dg::Element*);
 	void setPackageEntry(Solution&, const dg::Element*,
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
