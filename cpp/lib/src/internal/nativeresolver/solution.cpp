@@ -428,21 +428,24 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		conflictingElementPtr = nullptr; // conflicting elements allowed
 	}
 
-	auto it = solution.p_entries->lower_bound(elementPtr);
-	if (it == solution.p_entries->end() || it->first != elementPtr)
+	if (!solution.splitRun || !solution.getPackageEntry(elementPtr))
 	{
-		// there is no modifiable element in this solution
-		solution.p_entries->insert(it,
-				make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
-	}
-	else
-	{
-		if (conflictingElementPtr && it->second)
+		auto it = solution.p_entries->lower_bound(elementPtr);
+		if (it == solution.p_entries->end() || it->first != elementPtr)
 		{
-			fatal2i("conflicting elements in p_entries: solution '%u', in '%s', out '%s'",
-					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
+			// there is no modifiable element in this solution
+			solution.p_entries->insert(it,
+					make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
 		}
-		it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
+		else
+		{
+			if (conflictingElementPtr && it->second)
+			{
+				fatal2i("conflicting elements in p_entries: solution '%u', in '%s', out '%s'",
+						solution.id, elementPtr->toString(), conflictingElementPtr->toString());
+			}
+			it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
+		}
 	}
 
 	if (conflictingElementPtr)
