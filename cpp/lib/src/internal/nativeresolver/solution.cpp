@@ -741,6 +741,8 @@ void SolutionStorage::debugIslands(Solution& solution)
 		if (!dynamic_cast< const dg::VersionElement* >(elementPtr)) continue;
 
 		auto presentElementPtr = findPresentElement(elementPtr);
+		if (presentElementPtr == elementPtr) continue;
+
 		debug2("merging %s to %s", elementPtr->toString(), presentElementPtr->toString());
 
 		for (auto predecessor: getPredecessorElements(elementPtr))
