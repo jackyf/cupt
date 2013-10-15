@@ -721,24 +721,40 @@ void SolutionStorage::debugIslands(Solution& solution)
 {
 	auto& graph = solution.p_brokenElementSplitGraph;
 
-	auto findPresentElement = [this, &solution, &graph](const dg::Element* elementPtr)
+	auto isInitialElement = [&solution](const dg::Element* elementPtr)
 	{
+		if (auto pe = solution.getPackageEntry(elementPtr))
+		{
+			const auto& ib = pe->introducedBy;
+			debug2("  present, versionElementPtr: %s", ib.empty() ? "<none>" : ib.versionElementPtr->toString());
+			return ib.empty();
+		}
+		debug2("  not present");
+		return false;
+	};
+	auto findPresentElement = [this, &isInitialElement, &graph](const dg::Element* elementPtr)
+	{
+		debug2("findPresentElement of %s:", elementPtr->toString());
 		for (auto conflictingElementPtr: getConflictingElements(elementPtr))
 		{
-			if (auto pe = solution.getPackageEntry(conflictingElementPtr))
+			debug2("  candidate: %s", conflictingElementPtr->toString());
+			if (isInitialElement(conflictingElementPtr))
 			{
-				if (pe->introducedBy.empty())
-				{
-					return conflictingElementPtr;
-				}
+				debug2("  yes, it's initial");
+				return conflictingElementPtr;
 			}
 		}
+		debug2("  returning corresponding empty one");
 		return graph.addVertex(getCorrespondingEmptyElement(elementPtr));
+	};
+	auto isVersionElement = [](const dg::Element* elementPtr) -> bool
+	{
+		return dynamic_cast< const dg::VersionElement* >(elementPtr);
 	};
 
 	for (const auto& elementPtr: graph.getVertices())
 	{
-		if (!dynamic_cast< const dg::VersionElement* >(elementPtr)) continue;
+		if (!isVersionElement(elementPtr)) continue;
 
 		auto presentElementPtr = findPresentElement(elementPtr);
 		if (presentElementPtr == elementPtr) continue;
@@ -762,7 +778,8 @@ void SolutionStorage::debugIslands(Solution& solution)
 			set< const dg::Element* > seen;
 			for (const auto& elementPtr: island)
 			{
-				if (!dynamic_cast< const dg::VersionElement* >(elementPtr)) continue;
+				if (!isVersionElement(elementPtr)) continue;
+				if (!isInitialElement(elementPtr)) continue;
 
 				auto presentElementPtr = findPresentElement(elementPtr);
 				if (seen.insert(presentElementPtr).second)
