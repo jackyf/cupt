@@ -58,28 +58,6 @@ struct IntroducedBy
 	}
 };
 
-struct PackageEntry
-{
-	bool autoremoved;
-	IntroducedBy introducedBy;
-
-	PackageEntry(bool sticked_ = false);
-	PackageEntry(PackageEntry&&) = default;
-	PackageEntry(const PackageEntry&) = default;
-
-	PackageEntry& operator=(PackageEntry&&) = default;
-	PackageEntry& operator=(const PackageEntry&) = default;
-};
-
-class PackageEntryMap;
-class BrokenSuccessorMap;
-
-struct BrokenSuccessor
-{
-	const dg::Element* elementPtr;
-	size_t priority;
-};
-
 class Solution
 {
 	friend class SolutionStorage;
@@ -110,7 +88,6 @@ class Solution
 	void prepare();
 	vector< const dg::Element* > getElements() const;
 
-	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 };
@@ -122,22 +99,15 @@ class SolutionStorage
 
 	dg::DependencyGraph __dependency_graph;
 
-	void p_updateBrokenSuccessorsRaw(Solution& solution,
-			const dg::Element*, size_t,
-			const GraphCessorListType&, const GraphCessorListType&,
-			const GraphCessorListType&, const GraphCessorListType&);
-	void __update_broken_successors(Solution&,
-			const dg::Element*, const dg::Element*, size_t priority);
-
-	struct Change
+	struct Problem
 	{
-		const dg::Element* insertedElementPtr;
-		size_t parentSolutionId;
-
-		explicit Change(size_t);
+		const dg::Element* versionElement;
+		const dg::Element* brokenElement;
 	};
-	vector< Change > __change_index;
-	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
+	void p_detectNewProblems(Solution& solution,
+			const dg::Element*, const GraphCessorListType&, const GraphCessorListType&);
+	void p_postAddElementToUniverse(Solution&, const dg::Element*, const dg::Element*);
+
 	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
 	SolutionStorage(const Config&, const Cache& cache);

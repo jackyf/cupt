@@ -215,247 +215,104 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 	return true;
 }
 
-void SolutionStorage::p_updateBrokenSuccessorsRaw(Solution& solution,
-		const dg::Element* newElementPtr, size_t priority,
-		const GraphCessorListType& successorsOfOld, const GraphCessorListType& successorsOfNew,
-		const GraphCessorListType& predecessorsOfOld, const GraphCessorListType& predecessorsOfNew)
+void SolutionStorage::p_processProblem(Solution& solution, Problem problem)
 {
-	auto& bss = *solution.__broken_successors;
+	// FIXME: implement
+}
 
-	auto reverseDependencyExists = [this, &solution](const dg::Element* elementPtr)
-	{
-		for (auto reverseDependencyPtr: getPredecessorElements(elementPtr))
-		{
-			if (solution.getPackageEntry(reverseDependencyPtr))
-			{
-				return true;
-			}
-		}
-		return false;
-	};
+void SolutionStorage::p_detectNewProblems(Solution& solution,
+		const dg::Element* newElementPtr,
+		const GraphCessorListType& predecessorsDifference,
+		queue<Problem>* problemQueue)
+{
 	auto isPresent = [](const GraphCessorListType& container, const dg::Element* elementPtr)
 	{
 		return std::find(container.begin(), container.end(), elementPtr) != container.end();
 	};
-	auto newPotentialBrokenSuccessorCallback = [this, &solution, &newElementPtr](const dg::Element* brokenElementPtr)
+	auto newProblemCallback = [this, &solution, &newElementPtr](const dg::Element* brokenElementPtr)
 	{
-		if (solution.splitRun)
-		{
-			if (solution.p_brokenElementSplitGraph.getVertices().count(brokenElementPtr))
-			{
-				solution.p_brokenElementSplitGraph.addEdgeFromPointers(newElementPtr, brokenElementPtr);
-				return false;
-			}
-			else if (!verifyElement(solution, brokenElementPtr))
-			{
-				solution.p_brokenElementSplitGraph.addVertex(brokenElementPtr);
-				solution.p_brokenElementSplitGraph.addEdgeFromPointers(newElementPtr, brokenElementPtr);
-			}
-		}
-		return true;
+		solution.p_universe.addVertex(brokenElementPtr);
+		solution.p_universe.addEdgeFromPointers(newElementPtr, brokenElementPtr);
 	};
 
-	// check direct dependencies of the old element
-	for (auto successorPtr: successorsOfOld)
-	{
-		if (isPresent(successorsOfNew, successorPtr)) continue;
-
-		auto it = bss.find(successorPtr);
-		if (it != bss.end())
-		{
-			if (!reverseDependencyExists(successorPtr))
-			{
-				bss.erase(it);
-			}
-		}
-	}
 	// check direct dependencies of the new element
-	for (auto successorPtr: successorsOfNew)
+	for (auto successor: getSuccessorElements(newElementPtr))
 	{
-		if (isPresent(successorsOfOld, successorPtr)) continue;
-
-		if (!newPotentialBrokenSuccessorCallback(successorPtr)) continue;
-
-		auto it = bss.lower_bound(successorPtr);
-		if (it == bss.end() || it->elementPtr != successorPtr)
+		if (!verifyElement(solution, successor))
 		{
-			if (!verifyElement(solution, successorPtr))
-			{
-				bss.insert(it, BrokenSuccessor { successorPtr, priority });
-			}
-		}
-		else
-		{
-			it->priority = std::max(it->priority, priority);
+			problemQueue->push({ newElementPtr, successor });
+			newProblemCallback(successor);
 		}
 	}
 
 	// invalidate those which depend on the old element
-	for (auto predecessorElementPtr: predecessorsOfOld)
+	for (auto predecessor: predecessorsDifference)
 	{
-		if (isPresent(predecessorsOfNew, predecessorElementPtr)) continue;
-		if (isPresent(successorsOfNew, predecessorElementPtr)) continue;
+		if (isPresent(successorsOfNew, predecessor)) continue;
 
-		if (reverseDependencyExists(predecessorElementPtr))
+		for (auto reverseDependencyPtr: getPredecessorElements(predecessor))
 		{
-			if (!newPotentialBrokenSuccessorCallback(predecessorElementPtr)) continue;
-
-			if (solution.splitRun || !verifyElement(solution, predecessorElementPtr))
+			if (solution.getPackageEntry(reverseDependencyPtr))
 			{
-				// here we assume brokenSuccessors didn't
-				// contain predecessorElementPtr, since as old element was
-				// present, predecessorElementPtr was not broken
-				auto it = bss.lower_bound(predecessorElementPtr);
-				bss.insert(it, BrokenSuccessor { predecessorElementPtr, priority });
+				problemQueue->push({ reverseDependencyPtr, brokenElementPtr });
+				newProblemCallback(predecessor);
 			}
 		}
 	}
-	// validate those which depend on the new element
-	for (auto predecessorElementPtr: predecessorsOfNew)
-	{
-		if (isPresent(predecessorsOfOld, predecessorElementPtr)) continue;
-
-		auto it = bss.find(predecessorElementPtr);
-		if (it != bss.end())
-		{
-			bss.erase(it);
-		}
-	}
 }
 
-void SolutionStorage::__update_broken_successors(Solution& solution,
-		const dg::Element* oldElementPtr, const dg::Element* newElementPtr, size_t priority)
+void SolutionStorage::p_postAddElementToUniverse(Solution& solution, const dg::Element* newElementPtr)
 {
-	static const GraphCessorListType nullList;
-
-	const auto& successorsOfOld = oldElementPtr ? getSuccessorElements(oldElementPtr) : nullList;
-	const auto& successorsOfNew = getSuccessorElements(newElementPtr);
-
-	if (solution.splitRun)
+	typedef vector< const dg::Element* > ElementVector;
+	ElementVector group;
+	auto getGroupPredecessors = [this, &group]()
 	{
-		typedef vector< const dg::Element* > ElementVector;
-		ElementVector group;
-		auto getGroupPredecessors = [this, &group]()
+		ElementVector result;
+		for (auto elementPtr: group)
 		{
-			ElementVector result;
-			for (auto elementPtr: group)
+			auto subResult = getPredecessorElements(elementPtr);
+			std::sort(subResult.begin(), subResult.end());
+
+			ElementVector newResult;
+			if (elementPtr != group.front())
 			{
-				auto subResult = getPredecessorElements(elementPtr);
-				std::sort(subResult.begin(), subResult.end());
-
-				ElementVector newResult;
-				if (elementPtr != group.front())
-				{
-					std::set_intersection(result.begin(), result.end(), subResult.begin(), subResult.end(),
-							std::back_inserter(newResult));
-					newResult.swap(result);
-				}
-				else
-				{
-					subResult.swap(result);
-				}
+				std::set_intersection(result.begin(), result.end(), subResult.begin(), subResult.end(),
+						std::back_inserter(newResult));
+				newResult.swap(result);
 			}
-			return result;
-		};
-
-		for (auto elementPtr: getConflictingElements(newElementPtr))
-		{
-			if (elementPtr == newElementPtr) continue;
-			if (!solution.getPackageEntry(elementPtr)) continue;
-
-			group.push_back(elementPtr);
+			else
+			{
+				subResult.swap(result);
+			}
 		}
-		auto predecessorsOfOld = getGroupPredecessors();
-		group.push_back(newElementPtr);
-		auto predecessorsOfNew = getGroupPredecessors();
+		return result;
+	};
 
-		p_updateBrokenSuccessorsRaw(solution, newElementPtr, priority, successorsOfOld, successorsOfNew, predecessorsOfOld, predecessorsOfNew);
-	}
-	else
+	for (auto elementPtr: getConflictingElements(newElementPtr))
 	{
-		const auto& predecessorsOfOld = oldElementPtr ? getPredecessorElements(oldElementPtr) : nullList;
-		const auto& predecessorsOfNew = getPredecessorElements(newElementPtr);
+		if (elementPtr == newElementPtr) continue;
+		if (!solution.getPackageEntry(elementPtr)) continue;
 
-		p_updateBrokenSuccessorsRaw(solution, newElementPtr, priority, successorsOfOld, successorsOfNew, predecessorsOfOld, predecessorsOfNew);
+		group.push_back(elementPtr);
 	}
-}
+	auto predecessorsOfOld = getGroupPredecessors();
+	group.push_back(newElementPtr);
+	auto predecessorsOfNew = getGroupPredecessors();
+	ElementVector predecessorsDifference;
+	std::set_difference(predecessorsOfOld.begin(), predecessorsOfOld.end(), predecessorsOfNew.begin(), predecessorsOfNew.end(),
+			std::back_inserter(predecessorsDifference));
 
-void SolutionStorage::p_addElementToUniverse(Solution& solution, const dg::Element* elementPtr)
-{
-
-}
-
-void SolutionStorage::__update_change_index(size_t solutionId,
-		const dg::Element* newElementPtr, const PackageEntry& packageEntry)
-{
-	if (!packageEntry.sticked)
-	{
-		return; // not a "main" change
-	}
-
-	__change_index[solutionId].insertedElementPtr = newElementPtr;
+	p_detectNewProblems(solution, newElementPtr, predecessorsDifference);
 }
 
 void SolutionStorage::setPackageEntry(Solution& solution,
-		const dg::Element* elementPtr, PackageEntry&& packageEntry,
-		const dg::Element* conflictingElementPtr, size_t priority)
+		const dg::Element* elementPtr, const dg::Element* reasonBrokenElementPtr)
 {
 	__dependency_graph.unfoldElement(elementPtr);
-	__update_change_index(solution.id, elementPtr, packageEntry);
 
-	auto reasonBrokenElementPtr = packageEntry.introducedBy.brokenElementPtr;
-	if (solution.splitRun)
-	{
-		conflictingElementPtr = nullptr; // conflicting elements allowed
-	}
-
-	if (!solution.splitRun || !solution.getPackageEntry(elementPtr))
-	{
-		auto it = solution.p_entries->lower_bound(elementPtr);
-		if (it == solution.p_entries->end() || it->first != elementPtr)
-		{
-			// there is no modifiable element in this solution
-			solution.p_entries->insert(it,
-					make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
-		}
-		else
-		{
-			if (conflictingElementPtr && it->second)
-			{
-				fatal2i("conflicting elements in p_entries: solution '%u', in '%s', out '%s'",
-						solution.id, elementPtr->toString(), conflictingElementPtr->toString());
-			}
-			it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
-		}
-	}
-
-	if (conflictingElementPtr)
-	{
-		auto forRemovalIt = solution.p_entries->find(conflictingElementPtr);
-		if (forRemovalIt == solution.p_entries->end())
-		{
-			fatal2i("didn't find a conflicting element in p_entries: solution '%u', out '%s'",
-					solution.id, conflictingElementPtr->toString());
-		}
-		solution.p_entries->erase(forRemovalIt);
-	}
-
-	if (solution.splitRun && priority != (size_t)-1)
-	{
-		solution.p_brokenElementSplitGraph.addVertex(reasonBrokenElementPtr);
-		solution.p_brokenElementSplitGraph.addVertex(elementPtr);
-		solution.p_brokenElementSplitGraph.addEdgeFromPointers(reasonBrokenElementPtr, elementPtr);
-	}
-
-	__update_broken_successors(solution, conflictingElementPtr, elementPtr, priority);
-	if (solution.splitRun)
-	{
-		auto it = solution.__broken_successors->find(reasonBrokenElementPtr);
-		if (it != solution.__broken_successors->end())
-		{
-			solution.__broken_successors->erase(it);
-		}
-	}
+	solution.p_universe.addVertex(reasonBrokenElementPtr);
+	solution.p_universe.addVertex(elementPtr);
+	solution.p_universe.addEdgeFromPointers(reasonBrokenElementPtr, elementPtr);
 }
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
@@ -482,13 +339,33 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
-	initialSolution.p_entries->init(std::move(source));
-	for (const auto& entry: *initialSolution.p_entries)
+	initialSolution.p_universe->init(std::move(source));
+	p_expandUniverse(initialSolution);
+}
+
+void SolutionStorage::p_expandUniverse(Solution& initialSolution)
+{
+	queue< Problem > problemQueue;
+	set< Problem > processedProblems;
+
+	for (const auto& entry: *initialSolution.p_universe)
 	{
-		p_addElementToUniverse(initialSolution, entry.first, 0);
+		p_postAddElementToUniverse(initialSolution, entry.first, &problemQueue);
 	}
 
-	__change_index.emplace_back(0);
+	while (!problemQueue.empty())
+	{
+		auto problem = problemQueue.top();
+		problemQueue.pop();
+
+		if (processedProblems.insert(problem).second) // not processed yet
+		{
+			for (const auto& action: getPossibleAction(problem))
+			{
+
+			}
+		}
+	}
 }
 
 bool SolutionStorage::verifyElement(const Solution& solution,
