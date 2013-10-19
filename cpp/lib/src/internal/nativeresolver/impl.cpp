@@ -33,6 +33,26 @@ namespace internal {
 
 using std::queue;
 
+struct NativeResolverImpl::ResolvedSolution
+{
+	struct PackageEntry
+	{
+		IntroducedBy introducedBy;
+		bool autoremoved;
+	};
+
+	map< const dg::Element*, PackageEntry > elements;
+	size_t id;
+	size_t level;
+	ssize_t score;
+
+	const PackageEntry* getPackageEntry(const dg::Element* element) const
+	{
+		auto it = elements.find(element);
+		return it != elements.end() ? &it->second : nullptr;
+	}
+};
+
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __config(config), __cache(cache), __score_manager(*config, cache), __auto_removal_possibility(*__config)
 {
@@ -71,13 +91,13 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 }
 
 template < typename... Args >
-void __mydebug_wrapper(const Solution& solution, const Args&... args)
+void __mydebug_wrapper(const NativeResolverImpl::ResolvedSolution& solution, const Args&... args)
 {
 	__mydebug_wrapper(solution, solution.id, args...);
 }
 
 template < typename... Args >
-void __mydebug_wrapper(const Solution& solution, size_t id, const Args&... args)
+void __mydebug_wrapper(const NativeResolverImpl::ResolvedSolution& solution, size_t id, const Args&... args)
 {
 	string levelString(solution.level, ' ');
 	debug2("%s(%u:%zd) %s", levelString, id, solution.score, format2(args...));
@@ -197,7 +217,7 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 }
 
 bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
-		const Solution& solution, const dg::Element* elementPtr) const
+		const ResolvedSolution& solution, const dg::Element* elementPtr) const
 {
 	auto overrideIt = __auto_status_overrides.find(packageName);
 	if (overrideIt != __auto_status_overrides.end())
@@ -223,7 +243,7 @@ bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
 }
 
 AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
-		const Solution& solution, const dg::Element* elementPtr)
+		const ResolvedSolution& solution, const dg::Element* elementPtr)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
@@ -245,7 +265,7 @@ AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
 			p_computeTargetAutoStatus(packageName, solution, elementPtr));
 }
 
-bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
+bool NativeResolverImpl::__clean_automatically_installed(ResolvedSolution& solution)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
@@ -266,10 +286,9 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
 	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
 	{ // building dependency graph
-		auto elementPtrs = solution.getElements();
-		FORIT(elementPtrIt, elementPtrs)
+		for (auto element: solution.elements)
 		{
-			dependencyGraph.addVertex(*elementPtrIt);
+			dependencyGraph.addVertex(element.first);
 		}
 		FORIT(elementPtrIt, vertices)
 		{
@@ -329,21 +348,17 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 
 		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(mainVertexPtr);
 
-		FORIT(elementPtrIt, vertices)
+		for (auto elementToAutoremove: vertices)
 		{
-			if (!reachableElementPtrPtrs.count(*elementPtrIt))
+			if (!reachableElementPtrPtrs.count(elementToAutoremove))
 			{
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
-
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-
 				if (debugging)
 				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
+					debug2("auto-removed '%s'", elementToAutoremove->toString());
 				}
-				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), *elementPtrIt, (size_t)-1);
+				auto emptyElement = __solution_storage->getCorrespondingEmptyElement(elementToAutoremove);
+				solution.elements.erase(elementToAutoremove);
+				solution.elements[emptyElement].autoremoved = true;
 			}
 		}
 	}
@@ -371,11 +386,7 @@ SolutionChooser __select_solution_chooser(const Config& config)
 	return result;
 }
 
-/* __pre_apply_action only prints debug info and changes level/score of the
-   solution, not modifying packages in it, economing RAM and CPU,
-   __post_apply_action will perform actual changes when the solution is picked up
-   by resolver */
-
+/*
 void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 		Solution& solution, unique_ptr< Action >&& actionToApply, size_t oldSolutionId)
 {
@@ -399,7 +410,9 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
 }
+*/
 
+/*
 void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& actions) const
 {
 	auto getVersion = [](const dg::Element* elementPtr) -> const BinaryVersion*
@@ -444,13 +457,13 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 		++position;
 	}
 }
+*/
 
+/*
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
-	if (currentSolution->splitRun)
-	{
 		auto splitSolution = currentSolution;
 		for (auto&& action: actions)
 		{
@@ -459,32 +472,10 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 			__post_apply_action(*__solution_storage, *splitSolution);
 		}
 		callback(currentSolution);
-	}
-	else
-	{
-		// sort them by "rank", from more good to more bad
-		std::stable_sort(actions.begin(), actions.end(),
-				[this](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
-				{
-					return this->__score_manager.getScoreChangeValue(right->profit)
-							< this->__score_manager.getScoreChangeValue(left->profit);
-				});
-
-		// apply all the solutions by one
-		bool onlyOneAction = (actions.size() == 1);
-		auto oldSolutionId = currentSolution->id;
-		FORIT(actionIt, actions)
-		{
-			auto newSolution = onlyOneAction ?
-					__solution_storage->fakeCloneSolution(currentSolution) :
-					__solution_storage->cloneSolution(currentSolution);
-			__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt), oldSolutionId);
-			callback(newSolution);
-		}
-	}
 }
+*/
 
-void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
+void NativeResolverImpl::__fillSuggestedPackageReasons(const ResolvedSolution& solution,
 		const string& packageName, Resolver::SuggestedPackage& suggestedPackage,
 		const dg::Element* elementPtr, map< const dg::Element*, size_t >& reasonProcessingCache) const
 {
@@ -509,8 +500,12 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 		if (!introducedBy.empty())
 		{
 			suggestedPackage.reasons.push_back(introducedBy.getReason());
+			/* FIXME:
 			__solution_storage->processReasonElements(solution, reasonProcessingCache,
 					introducedBy, elementPtr, std::cref(fillReasonElements));
+			*/
+			(void)reasonProcessingCache;
+			(void)fillReasonElements;
 		}
 		auto initialPackageIt = __initial_packages.find(packageName);
 		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
@@ -521,7 +516,7 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 }
 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
-		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
+		const ResolvedSolution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
@@ -529,8 +524,10 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 	map< const dg::Element*, size_t > reasonProcessingCache;
 
-	for (auto elementPtr: solution.getElements())
+	for (const auto& item: solution.elements)
 	{
+		auto elementPtr = item.first;
+
 		auto vertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 		if (vertex)
 		{
@@ -590,16 +587,12 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	return userAnswer;
 }
 
-struct BrokenPair
+/*
+void NativeResolverImpl::__final_verify_solution(const ResolvedSolution& solution)
 {
-	const dg::Element* versionElementPtr;
-	BrokenSuccessor brokenSuccessor;
-};
-
-void NativeResolverImpl::__final_verify_solution(const Solution& solution)
-{
-	for (auto element: solution.getElements())
+	for (const auto& item: solution.elements)
 	{
+		auto element = item.first;
 		for (auto successorElement: __solution_storage->getSuccessorElements(element))
 		{
 			if (!__solution_storage->verifyElement(solution, successorElement))
@@ -610,7 +603,9 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 		}
 	}
 }
+*/
 
+/*
 BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage, const Solution& solution)
 {
 	auto compareBrokenSuccessors = [](const BrokenSuccessor& left, const BrokenSuccessor& right)
@@ -664,6 +659,7 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage, const Solut
 
 	return result;
 }
+*/
 
 shared_ptr< Solution > __get_next_current_solution(
 		SolutionContainer& solutions, SolutionStorage& solutionStorage, const SolutionChooser& chooser)
@@ -679,26 +675,6 @@ shared_ptr< Solution > __get_next_current_solution(
 	}
 
 	return currentSolution;
-}
-
-void NativeResolverImpl::__fill_and_process_introduced_by(
-		const Solution& solution, const BrokenPair& bp, ActionContainer* actionsPtr)
-{
-	IntroducedBy ourIntroducedBy;
-	ourIntroducedBy.versionElementPtr = bp.versionElementPtr;
-	ourIntroducedBy.brokenElementPtr = bp.brokenSuccessor.elementPtr;
-
-	if (actionsPtr->empty() && !__any_solution_was_found)
-	{
-		__decision_fail_tree.addFailedSolution(*__solution_storage, solution, ourIntroducedBy);
-	}
-	else
-	{
-		for (const auto& actionPtr: *actionsPtr)
-		{
-			actionPtr->introducedBy = ourIntroducedBy;
-		}
-	}
 }
 
 struct SolutionGraphItem
@@ -717,9 +693,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	if (debugging) debug2("started resolving");
 
-	__any_solution_was_found = false;
-	__decision_fail_tree.clear();
-
 	SolutionGraph solutionGraph;
 
 	auto* initialItem = solutionGraph.addVertex({});
@@ -733,8 +706,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	while (!solutions.empty())
 	{
-		vector< unique_ptr< Action > > possibleActions;
-
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
 		currentSolution->splitRun = true;
 
@@ -749,8 +720,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
 						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
 			}
-			__generate_possible_actions(&possibleActions, *currentSolution, bp, debugging);
-			__fill_and_process_introduced_by(*currentSolution, bp, &possibleActions);
 
 			return true;
 		};
@@ -760,10 +729,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			// if the solution was only just finished
 			if (!currentSolution->finished)
 			{
-				if (currentSolution->splitRun)
-				{
-					__solution_storage->debugIslands(*currentSolution);
-				}
+				__solution_storage->debugIslands(*currentSolution);
 				if (debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "finished");
@@ -790,13 +756,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				continue;
 			}
 
-			if (!__any_solution_was_found)
-			{
-				__any_solution_was_found = true;
-				__decision_fail_tree.clear(); // no need to store this tree anymore
-			}
-
-			__final_verify_solution(*currentSolution);
+			//__final_verify_solution(*currentSolution);
 
 			auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
 			switch (userAnswer)
@@ -804,17 +764,15 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				case Resolver::UserAnswer::Accept:
 					// yeah, this is end of our tortures
 					return true;
+				case Resolver::UserAnswer::Decline:
+					// now same as abandon, user should specify more precise request instead
 				case Resolver::UserAnswer::Abandon:
 					// user has selected abandoning all further efforts
 					return false;
-				case Resolver::UserAnswer::Decline:
-					; // caller hasn't accepted this solution, well, go next...
 			}
 		}
 		else
 		{
-			__prepare_reject_requests(possibleActions);
-
 			if (possibleActions.empty())
 			{
 				if (debugging)
@@ -826,21 +784,14 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			{
 				__calculate_profits(possibleActions);
 
-				auto callback = [&solutions](const shared_ptr< Solution >& solution)
-				{
-					solutions.insert(solution);
-				};
-				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
+				__pre_apply_actions_to_solution_tree(currentSolution, possibleActions);
 			}
 		}
 	}
-	if (!__any_solution_was_found)
-	{
-		// no solutions pending, we have a great fail
-		fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
-				__decision_fail_tree.toString());
-	}
-	return false;
+	// no more solutions pending, we have a great fail
+	fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
+			__decision_fail_tree.toString());
+	return false; // unreachable
 }
 
 }

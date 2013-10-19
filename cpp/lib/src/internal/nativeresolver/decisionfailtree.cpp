@@ -22,6 +22,7 @@
 namespace cupt {
 namespace internal {
 
+/*
 string DecisionFailTree::__decisions_to_string(
 		const vector< Decision >& decisions)
 {
@@ -151,6 +152,7 @@ void DecisionFailTree::clear()
 {
 	__fail_items.clear();
 }
+*/
 
 }
 }
