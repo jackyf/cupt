@@ -105,14 +105,14 @@ class DependencyGraph: protected Graph< const Element* >
 
 	std::unique_ptr< FillHelper > __fill_helper;
 
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
+	vector< const Element* > p_generateSolutionElements(
 			const map< string, InitialPackageEntry >&);
  public:
 	typedef Graph< const Element* > BaseT;
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
+	vector< const Element* > fill(
 			const map< string, const BinaryVersion* >&,
 			const map< string, InitialPackageEntry >&);
 	void addUserRelationExpression(const UserRelationExpression&);

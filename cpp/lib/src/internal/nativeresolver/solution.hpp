@@ -65,6 +65,7 @@ class Solution
 	Graph< const dg::Element* > p_universe;
 
 	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
+	bool isPresent(const dg::Element*) const;
  public:
 	struct Action
 	{
@@ -91,9 +92,6 @@ class Solution
 	// sorting
 	bool operator<(const Solution&) const;
 
-	// FIXME: remove
-	// result becomes invalid after any setPackageEntry
-	const PackageEntry* getPackageEntry(const dg::Element*) const;
 };
 
 class SolutionStorage
@@ -110,6 +108,7 @@ class SolutionStorage
 	void p_detectNewProblems(Solution& solution,
 			const dg::Element*, const GraphCessorListType&, queue<Problem>*);
 	void p_postAddElementToUniverse(Solution&, const dg::Element*, queue< Problem >*);
+	void p_expandUniverse(Solution&);
 
 	typedef vector< const dg::Element* > PossibleActions;
 	void p_addActionsToFixDependency(PossibleActions*, const dg::Element*) const;

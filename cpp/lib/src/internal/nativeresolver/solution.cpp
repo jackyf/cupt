@@ -300,7 +300,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 	{
 		for (auto reverseDependencyPtr: getPredecessorElements(predecessor))
 		{
-			if (solution.getPackageEntry(reverseDependencyPtr))
+			if (solution.isPresent(reverseDependencyPtr))
 			{
 				problemQueue->push({ reverseDependencyPtr, predecessor });
 				newProblemCallback(predecessor);
@@ -340,7 +340,7 @@ void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
 	for (auto elementPtr: getConflictingElements(newElementPtr))
 	{
 		if (elementPtr == newElementPtr) continue;
-		if (!solution.getPackageEntry(elementPtr)) continue;
+		if (!solution.isPresent(elementPtr)) continue;
 
 		group.push_back(elementPtr);
 	}
@@ -373,19 +373,13 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	{
 		__dependency_graph.addUserRelationExpression(userRelationExpression);
 	}
-	for (const auto& record: source)
+
+	for (const auto& element: source)
 	{
-		__dependency_graph.unfoldElement(record.first);
+		__dependency_graph.unfoldElement(element);
+		initialSolution.p_universe.addVertex(element);
 	}
 
-	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
-			const pair< const dg::Element*, SPPE >& right)
-	{
-		return left.first < right.first;
-	};
-	std::sort(source.begin(), source.end(), comparator);
-
-	initialSolution.p_universe->init(std::move(source));
 	p_expandUniverse(initialSolution);
 }
 
@@ -394,21 +388,21 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 	queue< Problem > problemQueue;
 	set< Problem > processedProblems;
 
-	for (const auto& entry: *initialSolution.p_universe)
+	for (const auto& element: initialSolution.p_universe.getVertices())
 	{
-		p_postAddElementToUniverse(initialSolution, entry.first, &problemQueue);
+		p_postAddElementToUniverse(initialSolution, element, &problemQueue);
 	}
 
 	while (!problemQueue.empty())
 	{
-		auto problem = problemQueue.top();
+		auto problem = problemQueue.front();
 		problemQueue.pop();
 
 		if (processedProblems.insert(problem).second) // not processed yet
 		{
-			for (const auto& actionElement: p_getPossibleActions(problem))
+			for (auto actionElement: p_getPossibleActions(initialSolution, problem))
 			{
-				setPackageEntry(initialSolution, actionElement);
+				setPackageEntry(initialSolution, actionElement, problem.brokenElement);
 				p_postAddElementToUniverse(initialSolution, actionElement, &problemQueue);
 			}
 		}
@@ -423,7 +417,7 @@ bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, co
 
 		for (auto conflictor: getConflictingElements(successor))
 		{
-			if (solution.getPackageEntry(conflictor))
+			if (solution.isPresent(conflictor))
 			{
 				return false;
 			}
@@ -444,16 +438,21 @@ void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 
 size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element* elementPtr) const
 {
+	(void)solutionId;
+	(void)elementPtr;
+	/*
 	while (solutionId != 0)
 	{
 		const auto& change = __change_index[solutionId];
 		if (change.insertedElementPtr == elementPtr) return solutionId;
 		solutionId = change.parentSolutionId;
 	}
+	*/
 
 	return -1;
 }
 
+/*
 void SolutionStorage::processReasonElements(
 		const Solution& solution, map< const dg::Element*, size_t >& elementPositionCache,
 		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
@@ -532,28 +531,18 @@ pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedEleme
 
 	return { leftChangePtr->insertedElementPtr, rightChangePtr->insertedElementPtr };
 }
+*/
 
 Solution::Solution()
-	: id(0), level(0), finished(false), score(0)
-{
-	p_entries.reset(new PackageEntryMap);
-	__broken_successors = new BrokenSuccessorMap;
-}
+	: id(0), finished(false), score(0)
+{}
 
 Solution::~Solution()
-{
-	delete __broken_successors;
-}
+{}
 
 bool Solution::operator<(const Solution& other) const
 {
 	return p_universe.getVertices() < other.p_universe.getVertices();
-}
-
-vector< const dg::Element* > Solution::giveStickedElements()
-{
-	// FIXME: implement
-	return {};
 }
 
 void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg::Element* to)
@@ -563,32 +552,10 @@ void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg:
 	p_universe.addEdgeFromPointers(from, to);
 }
 
-void Solution::prepare()
+bool Solution::isPresent(const dg::Element* elementPtr) const
 {
-	if (!__parent) return; // prepared already
-
-	__parent.reset();
-}
-
-vector< const dg::Element* > Solution::getElements() const
-{
-	// FIXME: return reference and modify callers accordingly
-	vector< const dg::Element* > result;
-	for (const auto& data: *p_entries)
-	{
-		result.push_back(data.first);
-	}
-	return result;
-}
-
-const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
-{
-	auto it = p_entries->find(elementPtr);
-	if (it != p_entries->end())
-	{
-		return it->second.get();
-	}
-	return nullptr; // not found
+	auto it = p_universe.getVertices().find(elementPtr);
+	return it != p_universe.getVertices().end();
 }
 
 void SolutionStorage::debugIslands(Solution& solution)

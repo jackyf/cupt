@@ -951,13 +951,6 @@ class DependencyGraph::FillHelper
 	}
 };
 
-const shared_ptr< const PackageEntry >& getSharedPackageEntry(bool sticked)
-{
-	static const auto stickedOne = std::make_shared< const PackageEntry >(true);
-	static const auto notStickedOne = std::make_shared< const PackageEntry >(false);
-	return sticked ? stickedOne : notStickedOne;
-}
-
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
 		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
@@ -989,16 +982,16 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 	return p_generateSolutionElements(initialPackages);
 }
 
-vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
+vector< const dg::Element* > DependencyGraph::p_generateSolutionElements(
 		const map< string, InitialPackageEntry >& initialPackages)
 {
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
+	vector< const Element* > result;
 	for (const auto& it: initialPackages)
 	{
 		auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
-		result.push_back({ elementPtr, getSharedPackageEntry(false) });
+		result.push_back(elementPtr);
 	}
-	result.emplace_back(__fill_helper->getDummyElementPtr(), getSharedPackageEntry(true));
+	result.emplace_back(__fill_helper->getDummyElementPtr());
 	return result;
 }
 
