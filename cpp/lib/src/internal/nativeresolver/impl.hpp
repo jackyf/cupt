@@ -74,7 +74,7 @@ class NativeResolverImpl
 
 	bool p_computeTargetAutoStatus(const string&, const ResolvedSolution&, const dg::Element*) const;
 	AutoRemovalPossibility::Allow p_isCandidateForAutoRemoval(const ResolvedSolution&, const dg::Element*);
-	bool __clean_automatically_installed(ResolvedSolution&);
+	void __clean_automatically_installed(ResolvedSolution&);
 
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&, size_t);
 	void __calculate_profits(vector< unique_ptr< Action > >& actions) const;

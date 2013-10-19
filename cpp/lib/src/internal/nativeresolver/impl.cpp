@@ -243,7 +243,7 @@ AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
 			p_computeTargetAutoStatus(packageName, solution, elementPtr));
 }
 
-bool NativeResolverImpl::__clean_automatically_installed(ResolvedSolution& solution)
+void NativeResolverImpl::__clean_automatically_installed(ResolvedSolution& solution)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
@@ -340,7 +340,6 @@ bool NativeResolverImpl::__clean_automatically_installed(ResolvedSolution& solut
 			}
 		}
 	}
-	return true;
 }
 
 /*
@@ -726,6 +725,25 @@ void resolveGraphItem(SolutionGraph* graph, SolutionGraphItem* item)
 
 }
 
+/*
+				if (debugging)
+				{
+					__mydebug_wrapper(*currentSolution, "no solutions");
+				}
+*/
+/*
+			if (debugging)
+			{
+				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
+						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
+						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
+			}
+*/
+
+/*
+				__calculate_profits(possibleActions);
+*/
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	const bool debugging = __config->getBool("debug::resolver");
@@ -741,81 +759,40 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			__old_packages, __initial_packages, p_userRelationExpressions);
 
 	auto* initialItem = solutionGraph.addVertex({{}, SolutionGraphItem::Status::SplitPending});
-	p_resolveGraphItem(&solutionGraph, initialItem);
+	resolveGraphItem(&solutionGraph, initialItem);
 
-	while (!solutions.empty())
+	if (initialItem->status == SolutionGraphItem::Status::Success)
 	{
-		auto problemFound = [this, &currentSolution, debugging]
+		ResolvedSolution resolvedSolution;
+		for (auto element: initialItem->stickedElements)
 		{
-			if (debugging)
-			{
-				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
-						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
-						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
-			}
-
-			return true;
-		};
-
-		if (!problemFound())
-		{
-			// if the solution was only just finished
-			if (!currentSolution->finished)
-			{
-				__solution_storage->debugIslands(*currentSolution);
-				if (debugging)
-				{
-					__mydebug_wrapper(*currentSolution, "finished");
-				}
-				currentSolution->finished = 1;
-			}
-
-			// clean up automatically installed by resolver and now unneeded packages
-			if (!__clean_automatically_installed(*currentSolution))
-			{
-				if (debugging)
-				{
-					__mydebug_wrapper(*currentSolution, "auto-discarded");
-				}
-				continue;
-			}
-
-			//__final_verify_solution(*currentSolution);
-
-			auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
-			switch (userAnswer)
-			{
-				case Resolver::UserAnswer::Accept:
-					// yeah, this is end of our tortures
-					return true;
-				case Resolver::UserAnswer::Decline:
-					// now same as abandon, user should specify more precise request instead
-				case Resolver::UserAnswer::Abandon:
-					// user has selected abandoning all further efforts
-					return false;
-			}
+			resolvedSolution[element];
 		}
-		else
-		{
-			if (possibleActions.empty())
-			{
-				if (debugging)
-				{
-					__mydebug_wrapper(*currentSolution, "no solutions");
-				}
-			}
-			else
-			{
-				__calculate_profits(possibleActions);
 
-				__pre_apply_actions_to_solution_tree(currentSolution, possibleActions);
-			}
+		__clean_automatically_installed(*currentSolution);
+
+		//__final_verify_solution(*currentSolution);
+
+		auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
+		switch (userAnswer)
+		{
+			case Resolver::UserAnswer::Accept:
+				// yeah, this is end of our tortures
+				return true;
+			case Resolver::UserAnswer::Decline:
+				// now same as abandon, user should specify more precise request instead
+			case Resolver::UserAnswer::Abandon:
+				// user has selected abandoning all further efforts
+				return false;
 		}
 	}
-	// no more solutions pending, we have a great fail
-	fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
-			__decision_fail_tree.toString());
-	return false; // unreachable
+	else
+	{
+		fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
+				// FIXME: __decision_fail_tree.toString());
+				"<not implemented>");
+		return false; // unreachable
+	}
 }
 
 }
