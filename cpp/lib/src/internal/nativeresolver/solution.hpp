@@ -63,6 +63,8 @@ class Solution
 	friend class SolutionStorage;
 
 	Graph< const dg::Element* > p_universe;
+
+	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
  public:
 	struct Action
 	{

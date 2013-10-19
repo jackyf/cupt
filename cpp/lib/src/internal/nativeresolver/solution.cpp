@@ -310,10 +310,16 @@ auto SolutionStorage::p_getPossibleActions(Solution& solution, Problem problem) 
 {
 	PossibleActions result;
 
-	// FIXME: implement
 	// FIXME: detect real debugging flag
 	p_addActionsToFixDependency(&result, solution, problem.brokenElement);
 	p_addActionsToModifyCausingVersion(&result, solution, problem, true);
+
+	for (auto element: result)
+	{
+		solution.p_addElementsAndEdgeToUniverse(problem.brokenElement, element);
+	}
+
+	return result;
 }
 
 void SolutionStorage::p_detectNewProblems(Solution& solution,
@@ -406,10 +412,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* elementPtr, const dg::Element* reasonBrokenElementPtr)
 {
 	__dependency_graph.unfoldElement(elementPtr);
-
-	solution.p_universe.addVertex(reasonBrokenElementPtr);
-	solution.p_universe.addVertex(elementPtr);
-	solution.p_universe.addEdgeFromPointers(reasonBrokenElementPtr, elementPtr);
+	solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
 }
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
@@ -615,6 +618,13 @@ vector< const dg::Element* > Solution::giveStickedElements()
 {
 	// FIXME: implement
 	return {};
+}
+
+void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg::Element* to)
+{
+	p_universe.addVertex(from);
+	p_universe.addVertex(to);
+	p_universe.addEdgeFromPointers(from, to);
 }
 
 void Solution::prepare()
