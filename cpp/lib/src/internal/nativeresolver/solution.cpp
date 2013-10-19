@@ -215,7 +215,7 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 	return true;
 }
 
-void SolutionStorage::p_processProblem(Solution& solution, Problem problem)
+void SolutionStorage::p_getPossibleActions(Solution& solution, Problem problem)
 {
 	// FIXME: implement
 }
@@ -261,7 +261,8 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 	}
 }
 
-void SolutionStorage::p_postAddElementToUniverse(Solution& solution, const dg::Element* newElementPtr)
+void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
+		const dg::Element* newElementPtr, queue< Problem >* problemQueue)
 {
 	typedef vector< const dg::Element* > ElementVector;
 	ElementVector group;
@@ -302,7 +303,7 @@ void SolutionStorage::p_postAddElementToUniverse(Solution& solution, const dg::E
 	std::set_difference(predecessorsOfOld.begin(), predecessorsOfOld.end(), predecessorsOfNew.begin(), predecessorsOfNew.end(),
 			std::back_inserter(predecessorsDifference));
 
-	p_detectNewProblems(solution, newElementPtr, predecessorsDifference);
+	p_detectNewProblems(solution, newElementPtr, predecessorsDifference, problemQueue);
 }
 
 void SolutionStorage::setPackageEntry(Solution& solution,
@@ -360,9 +361,10 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 
 		if (processedProblems.insert(problem).second) // not processed yet
 		{
-			for (const auto& action: getPossibleAction(problem))
+			for (const auto& actionElement: p_getPossibleActions(problem))
 			{
-
+				setPackageEntry(initialSolution, actionElement);
+				p_postAddElementToUniverse(initialSolution, actionElement, &problemQueue);
 			}
 		}
 	}
