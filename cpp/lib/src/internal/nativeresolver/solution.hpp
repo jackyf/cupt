@@ -77,19 +77,21 @@ class Solution
 	};
 
 	size_t id;
-	size_t level;
 	bool finished;
 	ssize_t score;
-	std::unique_ptr< const Action > pendingAction;
 
 	Solution();
-	Solution(const Solution&) = delete;
+	//Solution(const Solution&) = delete;
 	Solution& operator=(const Solution&) = delete;
 	~Solution();
 
-	void prepare();
-	vector< const dg::Element* > getElements() const;
+	vector< Solution > split() const;
+	vector< Solution > reduce() const;
 
+	// sorting
+	bool operator<(const Solution&) const;
+
+	// FIXME: remove
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 };
@@ -97,7 +99,6 @@ class Solution
 class SolutionStorage
 {
 	size_t __next_free_id;
-	size_t __get_new_solution_id(const Solution& parent);
 
 	dg::DependencyGraph __dependency_graph;
 
@@ -107,11 +108,17 @@ class SolutionStorage
 		const dg::Element* brokenElement;
 	};
 	void p_detectNewProblems(Solution& solution,
-			const dg::Element*, const GraphCessorListType&, const GraphCessorListType&);
-	void p_postAddElementToUniverse(Solution&, const dg::Element*, const dg::Element*);
+			const dg::Element*, const GraphCessorListType&, queue<Problem>*);
+	void p_postAddElementToUniverse(Solution&, const dg::Element*, queue< Problem >*);
 
 	typedef vector< const dg::Element* > PossibleActions;
-	void p_getPossibleActions(Solution&, Problem) const;
+	void p_addActionsToFixDependency(PossibleActions*, const dg::Element*) const;
+	bool p_makesSenseToModifyPackage(const dg::Element*, const dg::Element*, bool debugging);
+	void p_addActionsToModifyCausingVersion(PossibleActions* actions, Problem problem, bool debugging);
+	PossibleActions p_getPossibleActions(Solution&, Problem);
+
+	static const forward_list< const dg::Element* >&
+			getConflictingElements(const dg::Element*);
 
 	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
@@ -127,15 +134,12 @@ class SolutionStorage
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
 	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
-	bool verifyElement(const Solution&, const dg::Element*) const;
+	bool verifyNoConflictingSuccessors(const Solution&, const dg::Element*) const;
 
 	// may include parameter itself
-	static const forward_list< const dg::Element* >&
-			getConflictingElements(const dg::Element*);
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
-	void setPackageEntry(Solution&, const dg::Element*,
-			PackageEntry&&, const dg::Element*, size_t);
+	void setPackageEntry(Solution&, const dg::Element*, const dg::Element*);
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,

@@ -27,17 +27,6 @@ namespace internal {
 
 using std::make_pair;
 
-PackageEntry::PackageEntry(bool sticked_)
-	: sticked(sticked_), autoremoved(false)
-{}
-
-bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
-{
-	auto findResult = std::find(rejectedConflictors.begin(),
-			rejectedConflictors.end(), elementPtr);
-	return (findResult == rejectedConflictors.end());
-}
-
 template < class data_t, class KeyGetter >
 class VectorBasedMap
 {
@@ -122,47 +111,9 @@ class PackageEntryMap: public VectorBasedMap<
 	{}
 };
 
-struct BrokenSuccessorMapKeyGetter
-{
-	const dg::Element* operator()(const BrokenSuccessor& data) { return data.elementPtr; }
-};
-class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor, BrokenSuccessorMapKeyGetter >
-{};
-
-SolutionStorage::Change::Change(size_t parentSolutionId_)
-	: parentSolutionId(parentSolutionId_)
-{}
-
 SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 	: __next_free_id(1), __dependency_graph(config, cache)
 {}
-
-size_t SolutionStorage::__get_new_solution_id(const Solution& parent)
-{
-	__change_index.emplace_back(parent.id);
-	return __next_free_id++;
-}
-
-shared_ptr< Solution > SolutionStorage::fakeCloneSolution(const shared_ptr< Solution >& source)
-{
-	source->id = __get_new_solution_id(*source);
-	return source;
-}
-
-shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution >& source)
-{
-	auto cloned = std::make_shared< Solution >();
-	cloned->score = source->score;
-	cloned->level = source->level + 1;
-	cloned->id = __get_new_solution_id(*source);
-	cloned->finished = false;
-
-	cloned->__parent = source;
-
-	// other part should be done by calling prepare outside
-
-	return cloned;
-}
 
 const GraphCessorListType& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
 {
@@ -182,6 +133,7 @@ const forward_list< const dg::Element* >& SolutionStorage::getConflictingElement
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }
 
+/*
 bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr) const
 {
@@ -214,9 +166,9 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 	}
 	return true;
 }
+*/
 
-void SolutionStorage::p_addActionsToFixDependency(PossibleActions* actions,
-		const Solution& solution, const dg::Element* brokenElement)
+void SolutionStorage::p_addActionsToFixDependency(PossibleActions* actions, const dg::Element* brokenElement) const
 {
 	// one of versions package needs
 	for (auto successorElement: getSuccessorElements(brokenElement))
@@ -225,13 +177,13 @@ void SolutionStorage::p_addActionsToFixDependency(PossibleActions* actions,
 	}
 }
 
-bool SolutionStorage::p_makesSenseToModifyPackage(const Solution& solution,
+bool SolutionStorage::p_makesSenseToModifyPackage(
 		const dg::Element* candidateElement, const dg::Element* brokenElement, bool debugging)
 {
 	unfoldElement(candidateElement);
 
 	const auto& successorElements = getSuccessorElements(candidateElement);
-	for (successorElement: successorElements)
+	for (auto successorElement: successorElements)
 	{
 		if (successorElement == brokenElement)
 		{
@@ -244,9 +196,9 @@ bool SolutionStorage::p_makesSenseToModifyPackage(const Solution& solution,
 	}
 
 	// let's try even harder to find if this candidate is really appropriate for us
-	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
-	const auto& brokenElementSuccessors = getSuccessorElements(brokenElementPtr);
-	for (successorElement: successorElements)
+	auto brokenElementTypePriority = brokenElement->getTypePriority();
+	const auto& brokenElementSuccessors = getSuccessorElements(brokenElement);
+	for (auto successorElement: successorElements)
 	{
 		/* we check only successors with the same or bigger priority than
 		   currently broken one */
@@ -286,20 +238,15 @@ bool SolutionStorage::p_makesSenseToModifyPackage(const Solution& solution,
 	return true;
 }
 
-void NativeResolverImpl::p_addActionsToModifyCausingVersion(
-		PossibleActions* actions, const Solution& solution, Problem problem, bool debugging)
+void SolutionStorage::p_addActionsToModifyCausingVersion(
+		PossibleActions* actions, Problem problem, bool debugging)
 {
 	auto versionElement = problem.versionElement;
-
-	auto versionPackageEntryPtr = solution.getPackageEntry(versionElementPtr);
-
-	for (conflictingElement: getConflictingElements(versionElement))
+	for (auto conflictingElement: getConflictingElements(versionElement))
 	{
-		if (conflictingElement == versionElementPtr)
-		{
-			continue;
-		}
-		if (p_makesSenseToModifyPackage(solution, conflictingElement, problem.brokenElement, debugging))
+		if (conflictingElement == versionElement) continue;
+
+		if (p_makesSenseToModifyPackage(conflictingElement, problem.brokenElement, debugging))
 		{
 			actions->push_back(conflictingElement);
 		}
@@ -310,9 +257,9 @@ auto SolutionStorage::p_getPossibleActions(Solution& solution, Problem problem) 
 {
 	PossibleActions result;
 
+	p_addActionsToFixDependency(&result, problem.brokenElement);
 	// FIXME: detect real debugging flag
-	p_addActionsToFixDependency(&result, solution, problem.brokenElement);
-	p_addActionsToModifyCausingVersion(&result, solution, problem, true);
+	p_addActionsToModifyCausingVersion(&result, problem, true);
 
 	for (auto element: result)
 	{
@@ -327,10 +274,11 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		const GraphCessorListType& predecessorsDifference,
 		queue<Problem>* problemQueue)
 {
+	/*
 	auto isPresent = [](const GraphCessorListType& container, const dg::Element* elementPtr)
 	{
 		return std::find(container.begin(), container.end(), elementPtr) != container.end();
-	};
+	};*/
 	auto newProblemCallback = [this, &solution, &newElementPtr](const dg::Element* brokenElementPtr)
 	{
 		solution.p_universe.addVertex(brokenElementPtr);
@@ -340,7 +288,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 	// check direct dependencies of the new element
 	for (auto successor: getSuccessorElements(newElementPtr))
 	{
-		if (!verifyElement(solution, successor))
+		if (!verifyNoConflictingSuccessors(solution, successor))
 		{
 			problemQueue->push({ newElementPtr, successor });
 			newProblemCallback(successor);
@@ -350,13 +298,11 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 	// invalidate those which depend on the old element
 	for (auto predecessor: predecessorsDifference)
 	{
-		if (isPresent(successorsOfNew, predecessor)) continue;
-
 		for (auto reverseDependencyPtr: getPredecessorElements(predecessor))
 		{
 			if (solution.getPackageEntry(reverseDependencyPtr))
 			{
-				problemQueue->push({ reverseDependencyPtr, brokenElementPtr });
+				problemQueue->push({ reverseDependencyPtr, predecessor });
 				newProblemCallback(predecessor);
 			}
 		}
@@ -469,36 +415,21 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 	}
 }
 
-bool SolutionStorage::verifyElement(const Solution& solution,
-		const dg::Element* elementPtr) const
+bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, const dg::Element* element) const
 {
-	const GraphCessorListType& successorElementPtrs =
-			getSuccessorElements(elementPtr);
-	FORIT(elementPtrIt, successorElementPtrs)
+	for (auto successor: getSuccessorElements(element))
 	{
-		if (solution.getPackageEntry(*elementPtrIt))
-		{
-			return true;
-		}
-	}
+		if (successor == element) continue;
 
-	// second try, check for non-present empty elements as they are virtually present
-	FORIT(elementPtrIt, successorElementPtrs)
-	{
-		if (auto versionElement = dynamic_cast< const dg::VersionElement* >(*elementPtrIt))
+		for (auto conflictor: getConflictingElements(successor))
 		{
-			if (!versionElement->version)
+			if (solution.getPackageEntry(conflictor))
 			{
-				const dg::Element* conflictorPtr;
-				if (simulateSetPackageEntry(solution, versionElement, &conflictorPtr), !conflictorPtr)
-				{
-					return true;
-				}
+				return false;
 			}
 		}
 	}
-
-	return false;
+	return true;
 }
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
@@ -612,6 +543,11 @@ Solution::Solution()
 Solution::~Solution()
 {
 	delete __broken_successors;
+}
+
+bool Solution::operator<(const Solution& other) const
+{
+	return p_universe.getVertices() < other.p_universe.getVertices();
 }
 
 vector< const dg::Element* > Solution::giveStickedElements()

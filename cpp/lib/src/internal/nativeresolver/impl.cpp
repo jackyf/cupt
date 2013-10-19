@@ -626,15 +626,22 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage, const Solut
 
 struct SolutionGraphItem
 {
-	vector< const dg::Element* > stickedElements;
+	enum Status { SplitPending, ReducePending, Opened, Success, Fail };
+
 	Solution solution;
-	enum Status { SplitPending, ReducePending, Opened, Success, Fail } status;
-	ssize_t totalScore;
+	mutable Status status;
+	mutable ssize_t score;
+	mutable vector< const dg::Element* > stickedElements;
 
 	SolutionGraphItem(const Solution& solution_, Status status_)
 		: solution(solution_)
 		, status(status_)
 	{}
+
+	bool operator<(const SolutionGraphItem& other) const
+	{
+		return solution < other.solution;
+	}
 };
 typedef Graph< SolutionGraphItem > SolutionGraph;
 
@@ -642,13 +649,13 @@ namespace {
 
 typedef SolutionGraphItem::Status IS;
 
-void resolveGraphItem(SolutionGraph*, SolutionGraphItem*);
+void resolveGraphItem(SolutionGraph*, const SolutionGraphItem*);
 
-IS computeGraphItemSplitStatus(SolutionGraph* graph, SolutionGraphItem* item)
+IS computeGraphItemSplitStatus(SolutionGraph* graph, const SolutionGraphItem* item)
 {
 	for (const auto& solution: item->solution.split())
 	{
-		auto newSuccessor = graph->addVertex(solution, IS::ReducePending);
+		auto newSuccessor = graph->addVertex({ solution, IS::ReducePending });
 		graph->addEdgeFromPointers(item, newSuccessor);
 		if (newSuccessor->status == IS::Fail)
 		{
@@ -666,21 +673,21 @@ IS computeGraphItemSplitStatus(SolutionGraph* graph, SolutionGraphItem* item)
 	}
 
 	// at this point all children have IS::Success
-	score = 0;
-	for (auto child = graph->getSuccessorsFromPointer(item))
+	item->score = 0;
+	for (auto child: graph->getSuccessorsFromPointer(item))
 	{
-		score += child->score;
-		stickedElements.insert(stickedElements.end(),
-			child->stickedElements.begin(), child->stickedElements->end());
+		item->score += child->score;
+		item->stickedElements.insert(item->stickedElements.end(),
+			child->stickedElements.begin(), child->stickedElements.end());
 	}
 	return IS::Success;
 }
 
-IS computeGraphItemReduceStatus(SolutionGraph* graph, SolutionGraphItem* item)
+IS computeGraphItemReduceStatus(SolutionGraph* graph, const SolutionGraphItem* item)
 {
 	for (const auto& solution: item->solution.reduce())
 	{
-		auto newSuccessor = graph->addVertex(solution, IS::SplitPending);
+		auto newSuccessor = graph->addVertex({ solution, IS::SplitPending });
 		graph->addEdgeFromPointers(item, newSuccessor);
 	}
 
@@ -693,8 +700,8 @@ IS computeGraphItemReduceStatus(SolutionGraph* graph, SolutionGraphItem* item)
 			if (result == IS::Fail || (child->score > item->score))
 			{
 				item->score = child->score;
-				stickedElements = child->stickedElements;
-				result == IS::Success;
+				item->stickedElements = child->stickedElements;
+				result = IS::Success;
 			}
 		}
 	}
@@ -703,19 +710,19 @@ IS computeGraphItemReduceStatus(SolutionGraph* graph, SolutionGraphItem* item)
 }
 
 // postcondition: item->status > IS::Opened
-void resolveGraphItem(SolutionGraph* graph, SolutionGraphItem* item)
+void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 {
 	if (item->status > IS::Opened) return;
 
 	if (item->status == IS::SplitPending)
 	{
 		item->status = IS::Opened;
-		item->status = computeGraphItemSplitStatus(item);
+		item->status = computeGraphItemSplitStatus(graph, item);
 	}
 	else if (item->status == IS::ReducePending)
 	{
 		item->status = IS::Opened;
-		item->status = computeGraphItemReduceStatus(item);
+		item->status = computeGraphItemReduceStatus(graph, item);
 	}
 	else
 	{
@@ -766,14 +773,14 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		ResolvedSolution resolvedSolution;
 		for (auto element: initialItem->stickedElements)
 		{
-			resolvedSolution[element];
+			resolvedSolution.elements[element];
 		}
 
-		__clean_automatically_installed(*currentSolution);
+		__clean_automatically_installed(resolvedSolution);
 
 		//__final_verify_solution(*currentSolution);
 
-		auto userAnswer = __propose_solution(*currentSolution, callback, trackReasons);
+		auto userAnswer = __propose_solution(resolvedSolution, callback, trackReasons);
 		switch (userAnswer)
 		{
 			case Resolver::UserAnswer::Accept:
@@ -791,8 +798,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
 				// FIXME: __decision_fail_tree.toString());
 				"<not implemented>");
-		return false; // unreachable
 	}
+	return false; // unreachable
 }
 
 }
