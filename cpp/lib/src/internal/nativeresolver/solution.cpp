@@ -215,9 +215,105 @@ bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
 	return true;
 }
 
-void SolutionStorage::p_getPossibleActions(Solution& solution, Problem problem)
+void SolutionStorage::p_addActionsToFixDependency(PossibleActions* actions,
+		const Solution& solution, const dg::Element* brokenElement)
 {
+	// one of versions package needs
+	for (auto successorElement: getSuccessorElements(brokenElement))
+	{
+		actions->push_back(successorElement);
+	}
+}
+
+bool SolutionStorage::p_makesSenseToModifyPackage(const Solution& solution,
+		const dg::Element* candidateElement, const dg::Element* brokenElement, bool debugging)
+{
+	unfoldElement(candidateElement);
+
+	const auto& successorElements = getSuccessorElements(candidateElement);
+	for (successorElement: successorElements)
+	{
+		if (successorElement == brokenElement)
+		{
+			if (debugging)
+			{
+				debug2("not considering %s: it has the same problem", candidateElement->toString());
+			}
+			return false;
+		}
+	}
+
+	// let's try even harder to find if this candidate is really appropriate for us
+	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
+	const auto& brokenElementSuccessors = getSuccessorElements(brokenElementPtr);
+	for (successorElement: successorElements)
+	{
+		/* we check only successors with the same or bigger priority than
+		   currently broken one */
+		if (successorElement->getTypePriority() < brokenElementTypePriority)
+		{
+			continue;
+		}
+		/* if any of such successors gives us equal or less "space" in
+		   terms of satisfying elements, the version won't be accepted as a
+		   resolution */
+		bool isMoreWide = false;
+		for (auto element: getSuccessorElements(successorElement))
+		{
+			bool notFound = (std::find(brokenElementSuccessors.begin(),
+					brokenElementSuccessors.end(), element)
+					== brokenElementSuccessors.end());
+
+			if (notFound)
+			{
+				// more wide relation, can't say nothing bad with it at time being
+				isMoreWide = true;
+				break;
+			}
+		}
+
+		if (!isMoreWide)
+		{
+			if (debugging)
+			{
+				debug2("not considering %s: it contains equal or less wide relation expression '%s'",
+						candidateElement->toString(), successorElement->toString());
+			}
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void NativeResolverImpl::p_addActionsToModifyCausingVersion(
+		PossibleActions* actions, const Solution& solution, Problem problem, bool debugging)
+{
+	auto versionElement = problem.versionElement;
+
+	auto versionPackageEntryPtr = solution.getPackageEntry(versionElementPtr);
+
+	for (conflictingElement: getConflictingElements(versionElement))
+	{
+		if (conflictingElement == versionElementPtr)
+		{
+			continue;
+		}
+		if (p_makesSenseToModifyPackage(solution, conflictingElement, problem.brokenElement, debugging))
+		{
+			actions->push_back(conflictingElement);
+		}
+	}
+}
+
+auto SolutionStorage::p_getPossibleActions(Solution& solution, Problem problem) -> PossibleActions
+{
+	PossibleActions result;
+
 	// FIXME: implement
+	// FIXME: detect real debugging flag
+	p_addActionsToFixDependency(&result, solution, problem.brokenElement);
+	p_addActionsToModifyCausingVersion(&result, solution, problem, true);
 }
 
 void SolutionStorage::p_detectNewProblems(Solution& solution,

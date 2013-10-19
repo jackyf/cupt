@@ -108,6 +108,9 @@ class SolutionStorage
 			const dg::Element*, const GraphCessorListType&, const GraphCessorListType&);
 	void p_postAddElementToUniverse(Solution&, const dg::Element*, const dg::Element*);
 
+	typedef vector< const dg::Element* > PossibleActions;
+	void p_getPossibleActions(Solution&, Problem) const;
+
 	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
 	SolutionStorage(const Config&, const Cache& cache);
