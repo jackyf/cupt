@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2010-2013 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -175,6 +175,7 @@ void NativeResolverImpl::upgrade()
 	}
 }
 
+/*
 struct SolutionScoreLess
 {
 	bool operator()(const shared_ptr< Solution >& left,
@@ -191,30 +192,7 @@ struct SolutionScoreLess
 		return left->id > right->id;
 	}
 };
-typedef set< shared_ptr< Solution >, SolutionScoreLess > SolutionContainer;
-typedef std::function< SolutionContainer::iterator (SolutionContainer&) > SolutionChooser;
-
-SolutionContainer::iterator __fair_chooser(SolutionContainer& solutions)
-{
-	// choose the solution with maximum score
-	return --solutions.end();
-}
-
-SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
-{
-	// defer the decision until all solutions are built
-	FORIT(solutionIt, solutions)
-	{
-		if (! (*solutionIt)->finished)
-		{
-			return solutionIt;
-		}
-	}
-
-	// heh, the whole solution tree has been already built?.. ok, let's choose
-	// the best solution
-	return __fair_chooser(solutions);
-}
+*/
 
 bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
 		const ResolvedSolution& solution, const dg::Element* elementPtr) const
@@ -363,27 +341,6 @@ bool NativeResolverImpl::__clean_automatically_installed(ResolvedSolution& solut
 		}
 	}
 	return true;
-}
-
-SolutionChooser __select_solution_chooser(const Config& config)
-{
-	SolutionChooser result;
-
-	auto resolverType = config.getString("cupt::resolver::type");
-	if (resolverType == "fair")
-	{
-		result = __fair_chooser;
-	}
-	else if (resolverType == "full")
-	{
-		result = __full_chooser;
-	}
-	else
-	{
-		fatal2(__("wrong resolver type '%s'"), resolverType);
-	}
-
-	return result;
 }
 
 /*
@@ -661,21 +618,12 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage, const Solut
 }
 */
 
-shared_ptr< Solution > __get_next_current_solution(
-		SolutionContainer& solutions, SolutionStorage& solutionStorage, const SolutionChooser& chooser)
-{
-	auto currentSolutionIt = chooser(solutions);
-	shared_ptr< Solution > currentSolution = *currentSolutionIt;
-	solutions.erase(currentSolutionIt);
-
+/*
 	if (currentSolution->pendingAction)
 	{
 		currentSolution->prepare();
-		__post_apply_action(solutionStorage, *currentSolution);
 	}
-
-	return currentSolution;
-}
+*/
 
 struct SolutionGraphItem
 {
@@ -686,8 +634,6 @@ typedef Graph< SolutionGraphItem > SolutionGraph;
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
-	auto solutionChooser = __select_solution_chooser(*__config);
-
 	const bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 
@@ -706,10 +652,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	while (!solutions.empty())
 	{
-		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
-		currentSolution->splitRun = true;
-
-		auto problemFound = [this, &possibleActions, &currentSolution, debugging]
+		auto problemFound = [this, &currentSolution, debugging]
 		{
 			auto bp = __get_broken_pair(*__solution_storage, *currentSolution);
 			if (!bp.versionElementPtr) return false;
@@ -736,15 +679,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				}
 				currentSolution->finished = 1;
 			}
-
-			// resolver can refuse the solution
-			solutions.insert(currentSolution);
-			auto newSelectedSolutionIt = solutionChooser(solutions);
-			if (*newSelectedSolutionIt != currentSolution)
-			{
-				continue; // ok, process other solution
-			}
-			solutions.erase(newSelectedSolutionIt);
 
 			// clean up automatically installed by resolver and now unneeded packages
 			if (!__clean_automatically_installed(*currentSolution))
