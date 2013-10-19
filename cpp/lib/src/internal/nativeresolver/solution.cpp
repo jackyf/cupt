@@ -359,6 +359,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 {
 	__dependency_graph.unfoldElement(elementPtr);
 	solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
+	solution.p_addElementsAndEdgeToUniverse(elementPtr, getCorrespondingEmptyElement(elementPtr));
 }
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
@@ -558,71 +559,59 @@ bool Solution::isPresent(const dg::Element* elementPtr) const
 	return it != p_universe.getVertices().end();
 }
 
-void SolutionStorage::debugIslands(Solution& solution)
+vector< Solution > Solution::reduce() const
 {
-	auto& graph = solution.p_brokenElementSplitGraph;
+	// choose element family
+	// fork solution: one new per present element in family
+	// mark successors of chosen element as vital (self-edge)
+	// drop non-chosen elements in each forked solution, at first attempt to drop vital vertices, drop the whole solution
+	// return alived forked solutions
+}
 
-	auto isInitialElement = [&solution](const dg::Element* elementPtr)
-	{
-		if (auto pe = solution.getPackageEntry(elementPtr))
-		{
-			const auto& ib = pe->introducedBy;
-			return ib.empty();
-		}
-		return false;
-	};
-	auto findPresentElement = [this, &isInitialElement, &graph](const dg::Element* elementPtr)
-	{
-		for (auto conflictingElementPtr: getConflictingElements(elementPtr))
-		{
-			if (isInitialElement(conflictingElementPtr))
-			{
-				return conflictingElementPtr;
-			}
-		}
-		return graph.addVertex(getCorrespondingEmptyElement(elementPtr));
-	};
+vector< Solution > Solution::split() const
+{
 	auto isVersionElement = [](const dg::Element* elementPtr) -> bool
 	{
 		return dynamic_cast< const dg::VersionElement* >(elementPtr);
 	};
-
-	for (const auto& elementPtr: graph.getVertices())
+	auto copyIsland = [this](Solution* newSolution, const vector< const dg::Element* >& island)
 	{
-		if (!isVersionElement(elementPtr)) continue;
-
-		auto presentElementPtr = findPresentElement(elementPtr);
-		if (presentElementPtr == elementPtr) continue;
-
-		debug2("merging %s to %s", elementPtr->toString(), presentElementPtr->toString());
-
-		for (auto predecessor: getPredecessorElements(elementPtr))
+		for (auto element: island)
 		{
-			graph.addEdgeFromPointers(predecessor, presentElementPtr);
-		}
-		for (auto successor: getSuccessorElements(elementPtr))
-		{
-			graph.addEdgeFromPointers(presentElementPtr, successor);
-		}
-	}
-	for (const auto& island: graph.getWeaklyConnectedComponents())
-	{
-		if (island.size() > 1)
-		{
-			debug2("island:");
-			set< const dg::Element* > seen;
-			for (const auto& elementPtr: island)
+			for (auto successor: p_universe.getSuccessorsFromPointer(element))
 			{
-				if (!isVersionElement(elementPtr)) continue;
-				if (!isInitialElement(elementPtr)) continue;
-
-				auto presentElementPtr = findPresentElement(elementPtr);
-				if (seen.insert(presentElementPtr).second)
-				{
-					debug2("  %s", presentElementPtr->toString());
-				}
+				newSolution->p_addElementsAndEdgeToUniverse(element, successor);
 			}
 		}
+	};
+
+	for (const auto& island: p_universe.getWeaklyConnectedComponents())
+	{
+		debug2("island (%zu):", island.size());
+		for (const auto& element: island)
+		{
+			if (!isVersionElement(element)) continue;
+			debug2("  %s", element->toString());
+		}
+
+		Solution newSolution;
+		copyIsland(&newSolution, island);
+	}
+}
+
+const dg::Element* Solution::getFinishedElement() const
+{
+	if (p_universe.empty())
+	{
+		fatal2i("nativeresolver: solution: getFinishedElement: empty universe");
+	}
+	if (p_universe.size() == 1)
+	{
+		return &*p_universe.getVertices.begin();
+	}
+	else
+	{
+		return nullptr;
 	}
 }
 

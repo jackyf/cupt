@@ -89,9 +89,10 @@ class Solution
 	vector< Solution > split() const;
 	vector< Solution > reduce() const;
 
+	const dg::Element* getFinishedElement() const;
+
 	// sorting
 	bool operator<(const Solution&) const;
-
 };
 
 class SolutionStorage
