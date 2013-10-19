@@ -629,8 +629,102 @@ struct SolutionGraphItem
 {
 	vector< const dg::Element* > stickedElements;
 	Solution solution;
+	enum Status { SplitPending, ReducePending, Opened, Success, Fail } status;
+	ssize_t totalScore;
+
+	SolutionGraphItem(const Solution& solution_, Status status_)
+		: solution(solution_)
+		, status(status_)
+	{}
 };
 typedef Graph< SolutionGraphItem > SolutionGraph;
+
+namespace {
+
+typedef SolutionGraphItem::Status IS;
+
+void resolveGraphItem(SolutionGraph*, SolutionGraphItem*);
+
+IS computeGraphItemSplitStatus(SolutionGraph* graph, SolutionGraphItem* item)
+{
+	for (const auto& solution: item->solution.split())
+	{
+		auto newSuccessor = graph->addVertex(solution, IS::ReducePending);
+		graph->addEdgeFromPointers(item, newSuccessor);
+		if (newSuccessor->status == IS::Fail)
+		{
+			return IS::Fail;
+		}
+	}
+
+	for (auto child: graph->getSuccessorsFromPointer(item))
+	{
+		resolveGraphItem(graph, child);
+		if (child->status == IS::Fail)
+		{
+			return IS::Fail;
+		}
+	}
+
+	// at this point all children have IS::Success
+	score = 0;
+	for (auto child = graph->getSuccessorsFromPointer(item))
+	{
+		score += child->score;
+		stickedElements.insert(stickedElements.end(),
+			child->stickedElements.begin(), child->stickedElements->end());
+	}
+	return IS::Success;
+}
+
+IS computeGraphItemReduceStatus(SolutionGraph* graph, SolutionGraphItem* item)
+{
+	for (const auto& solution: item->solution.reduce())
+	{
+		auto newSuccessor = graph->addVertex(solution, IS::SplitPending);
+		graph->addEdgeFromPointers(item, newSuccessor);
+	}
+
+	IS result = IS::Fail;
+	for (auto child: graph->getSuccessorsFromPointer(item))
+	{
+		resolveGraphItem(graph, child);
+		if (child->status == IS::Success)
+		{
+			if (result == IS::Fail || (child->score > item->score))
+			{
+				item->score = child->score;
+				stickedElements = child->stickedElements;
+				result == IS::Success;
+			}
+		}
+	}
+
+	return result;
+}
+
+// postcondition: item->status > IS::Opened
+void resolveGraphItem(SolutionGraph* graph, SolutionGraphItem* item)
+{
+	if (item->status > IS::Opened) return;
+
+	if (item->status == IS::SplitPending)
+	{
+		item->status = IS::Opened;
+		item->status = computeGraphItemSplitStatus(item);
+	}
+	else if (item->status == IS::ReducePending)
+	{
+		item->status = IS::Opened;
+		item->status = computeGraphItemReduceStatus(item);
+	}
+	else
+	{
+		fatal2i("native resolver: p_resolveGraphItem: trying to resolve WIP-item");
+	}
+}
+
+}
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
@@ -641,22 +735,18 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	SolutionGraph solutionGraph;
 
-	auto* initialItem = solutionGraph.addVertex({});
-	Solution& initialSolution = initialItem->solution;
-
+	Solution initialSolution;
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
 	__solution_storage->prepareForResolving(initialSolution,
 			__old_packages, __initial_packages, p_userRelationExpressions);
 
-	SolutionContainer solutions = { initialSolution };
+	auto* initialItem = solutionGraph.addVertex({{}, SolutionGraphItem::Status::SplitPending});
+	p_resolveGraphItem(&solutionGraph, initialItem);
 
 	while (!solutions.empty())
 	{
 		auto problemFound = [this, &currentSolution, debugging]
 		{
-			auto bp = __get_broken_pair(*__solution_storage, *currentSolution);
-			if (!bp.versionElementPtr) return false;
-
 			if (debugging)
 			{
 				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
