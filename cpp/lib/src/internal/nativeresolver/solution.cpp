@@ -273,6 +273,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 {
 	__dependency_graph.unfoldElement(elementPtr);
 	solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
+	// TODO: save space by adding one back-edges to present vertices
+	for (
 	solution.p_addElementsAndEdgeToUniverse(elementPtr, getCorrespondingEmptyElement(elementPtr));
 }
 
@@ -473,21 +475,35 @@ bool Solution::isPresent(const dg::Element* elementPtr) const
 	return it != p_universe.getVertices().end();
 }
 
+bool isVersionElement(const dg::Element* elementPtr)
+{
+	return dynamic_cast< const dg::VersionElement* >(elementPtr);
+}
+
 vector< Solution > Solution::reduce() const
 {
-	// choose element family
+	const dg::Element* firstVersionElement;
+	for (auto element: p_universe.getVertices())
+	{
+		if (isVersionElement(element))
+		{
+			firstVersionElement = element;
+			break;
+		}
+	}
+
+	for (auto successor: p_universe.getSuccessorsFromPointer(firstVersionElement))
+	{
+		if (!isVersionElement(successor)) continue; // broken element
+	}
 	// fork solution: one new per present element in family
 	// mark successors of chosen element as vital (self-edge)
 	// drop non-chosen elements in each forked solution, at first attempt to drop vital vertices, drop the whole solution
-	// return alived forked solutions
+	// return alive forked solutions
 }
 
 vector< Solution > Solution::split() const
 {
-	auto isVersionElement = [](const dg::Element* elementPtr) -> bool
-	{
-		return dynamic_cast< const dg::VersionElement* >(elementPtr);
-	};
 	auto copyIsland = [this](Solution* newSolution, const vector< const dg::Element* >& island)
 	{
 		for (auto element: island)
