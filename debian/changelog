@@ -1,4 +1,4 @@
-cupt (2.6.3~) UNRELEASED; urgency=low
+cupt (2.6.3) unstable; urgency=low
 
   * lib:
     - Standard-conformance fixes to be buildable by g++-4.8.
@@ -8,7 +8,7 @@ cupt (2.6.3~) UNRELEASED; urgency=low
     - control:
       - Removed 'g++-4.6' from Build-Depends.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Oct 2013 20:13:37 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Oct 2013 23:05:55 +0300
 
 cupt (2.6.2) unstable; urgency=low
 
