@@ -4,6 +4,9 @@ cupt (2.6.3~) UNRELEASED; urgency=low
     - Standard-conformance fixes to be buildable by g++-4.8.
   * build system:
     - Removed the restriction to build only with g++-4.6.
+  * debian:
+    - control:
+      - Removed 'g++-4.6' from Build-Depends.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Oct 2013 20:13:37 +0300
 

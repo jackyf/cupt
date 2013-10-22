@@ -1,7 +1,7 @@
 Source: cupt
 Section: admin
 Priority: optional
-Build-Depends: debhelper (>= 7.4.10), g++-4.6,
+Build-Depends: debhelper (>= 7.4.10),
   libboost-program-options-dev (>= 1.42), libboost-dev (>= 1.42),
   libreadline6-dev, chrpath, libcurl4-gnutls-dev (>= 7.19.4),
   cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags, gettext
