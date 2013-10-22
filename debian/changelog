@@ -1,6 +1,7 @@
 cupt (2.6.3~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - Standard-conformance fixes to be buildable by g++-4.8.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Oct 2013 20:13:37 +0300
 

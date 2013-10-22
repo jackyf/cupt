@@ -31,6 +31,8 @@
 #include <internal/worker/packages.hpp>
 #include <internal/worker/dpkg.hpp>
 
+#include <unistd.h>
+
 namespace cupt {
 namespace internal {
 
@@ -588,7 +590,7 @@ const GraphAndAttributes::RelationInfoRecord* __get_shared_relation_info_record(
 			}
 		}
 	}
-	return false;
+	return nullptr;
 }
 
 void __for_each_package_sequence(const Graph< InnerAction >& graph,
