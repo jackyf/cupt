@@ -722,10 +722,10 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 	else if (item->status == IS::ReducePending)
 	{
 		item->status = IS::Opened;
-		if (auto finishedElement = solution->getFinishedElement())
+		if (auto finishedElement = item->solution.getFinishedElement())
 		{
 			item->stickedElements.push_back(finishedElement);
-			item->score = 7 // FIXME: finishedElement->getScore();
+			item->score = 7; // FIXME: finishedElement->getScore();
 			item->status = IS::Success;
 		}
 		item->status = computeGraphItemReduceStatus(graph, item);

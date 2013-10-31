@@ -15,6 +15,8 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <boost/range/adaptors.hpp>
+#include <boost/range/any_range.hpp>
 
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
@@ -39,12 +41,22 @@ const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Ele
 	return __dependency_graph.getPredecessorsFromPointer(elementPtr);
 }
 
-const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(
+namespace {
+
+const forward_list< const dg::Element* >& getRelatedElements(
 		const dg::Element* elementPtr)
 {
 	static const forward_list< const dg::Element* > nullList;
 	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
+}
+
+typedef boost::any_range< const dg::Element*, boost::forward_traversal_tag, const dg::Element*, std::ptrdiff_t > ElementRange;
+auto getConflictingElements(const dg::Element* input) -> ElementRange
+{
+	return getRelatedElements(input) | boost::adaptors::filtered(std::bind(std::not_equal_to< const dg::Element* >(), input));
+}
+
 }
 
 /*
@@ -155,11 +167,8 @@ bool SolutionStorage::p_makesSenseToModifyPackage(
 void SolutionStorage::p_addActionsToModifyCausingVersion(
 		PossibleActions* actions, Problem problem, bool debugging)
 {
-	auto versionElement = problem.versionElement;
-	for (auto conflictingElement: getConflictingElements(versionElement))
+	for (auto conflictingElement: getConflictingElements(problem.versionElement))
 	{
-		if (conflictingElement == versionElement) continue;
-
 		if (p_makesSenseToModifyPackage(conflictingElement, problem.brokenElement, debugging))
 		{
 			actions->push_back(conflictingElement);
@@ -332,6 +341,7 @@ bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, co
 	{
 		if (successor == element) continue;
 
+		foreachConflictingElement(successor, 
 		for (auto conflictor: getConflictingElements(successor))
 		{
 			if (solution.isPresent(conflictor))

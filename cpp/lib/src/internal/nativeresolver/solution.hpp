@@ -117,9 +117,6 @@ class SolutionStorage
 	void p_addActionsToModifyCausingVersion(PossibleActions* actions, Problem problem, bool debugging);
 	PossibleActions p_getPossibleActions(Solution&, Problem);
 
-	static const forward_list< const dg::Element* >&
-			getConflictingElements(const dg::Element*);
-
 	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
 	SolutionStorage(const Config&, const Cache& cache);
