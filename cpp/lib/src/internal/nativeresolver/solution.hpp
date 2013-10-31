@@ -82,8 +82,6 @@ class Solution
 	ssize_t score;
 
 	Solution();
-	//Solution(const Solution&) = delete;
-	Solution& operator=(const Solution&) = delete;
 	~Solution();
 
 	vector< Solution > split() const;
@@ -105,6 +103,12 @@ class SolutionStorage
 	{
 		const dg::Element* versionElement;
 		const dg::Element* brokenElement;
+
+		bool operator<(const Problem& other) const
+		{
+			return std::make_tuple(versionElement, brokenElement) <
+					std::make_tuple(other.versionElement, other.brokenElement);
+		}
 	};
 	void p_detectNewProblems(Solution& solution,
 			const dg::Element*, const GraphCessorListType&, queue<Problem>*);

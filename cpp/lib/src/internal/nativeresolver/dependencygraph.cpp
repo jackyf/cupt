@@ -951,7 +951,7 @@ class DependencyGraph::FillHelper
 	}
 };
 
-vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
+vector< const dg::Element* > DependencyGraph::fill(
 		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
 {

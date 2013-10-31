@@ -54,7 +54,12 @@ const forward_list< const dg::Element* >& getRelatedElements(
 typedef boost::any_range< const dg::Element*, boost::forward_traversal_tag, const dg::Element*, std::ptrdiff_t > ElementRange;
 auto getConflictingElements(const dg::Element* input) -> ElementRange
 {
-	return getRelatedElements(input) | boost::adaptors::filtered(std::bind(std::not_equal_to< const dg::Element* >(), input));
+	using namespace std::placeholders;
+
+	// the adapter under requires default-constructible function object :(
+	std::function< bool (const dg::Element*) > predicate = [input](const dg::Element* element) { return element != input; };
+
+	return getRelatedElements(input) | boost::adaptors::filtered(predicate);
 }
 
 }
@@ -506,14 +511,22 @@ vector< Solution > Solution::reduce() const
 		}
 	}
 
-	for (auto successor: p_universe.getSuccessorsFromPointer(firstVersionElement))
+	vector< Solution > result;
+	for (auto familyElement: getRelatedElements(firstVersionElement))
 	{
-		if (!isVersionElement(successor)) continue; // broken element
+		Solution forked = *this;
+		// mark successors of chosen element as vital (self-edge)
+		for (auto successor: p_universe.getSuccessorsFromPointer(familyElement))
+		{
+			if (!isVersionElement(successor)) continue; // broken element
+			// ...
+		}
+		// drop non-chosen elements in each forked solution, at first attempt to drop vital vertices, drop the whole solution
+		// else add forked to result
 	}
-	// fork solution: one new per present element in family
-	// mark successors of chosen element as vital (self-edge)
-	// drop non-chosen elements in each forked solution, at first attempt to drop vital vertices, drop the whole solution
+
 	// return alive forked solutions
+	return result;
 }
 
 vector< Solution > Solution::split() const
@@ -529,6 +542,7 @@ vector< Solution > Solution::split() const
 		}
 	};
 
+	vector< Solution > result;
 	for (const auto& island: p_universe.getWeaklyConnectedComponents())
 	{
 		debug2("island (%zu):", island.size());
@@ -540,18 +554,21 @@ vector< Solution > Solution::split() const
 
 		Solution newSolution;
 		copyIsland(&newSolution, island);
+		result.push_back(newSolution);
 	}
+	return result;
 }
 
 const dg::Element* Solution::getFinishedElement() const
 {
-	if (p_universe.empty())
+	const auto& vertices = p_universe.getVertices();
+	if (vertices.empty())
 	{
 		fatal2i("nativeresolver: solution: getFinishedElement: empty universe");
 	}
-	if (p_universe.size() == 1)
+	if (vertices.size() == 1)
 	{
-		return &*p_universe.getVertices.begin();
+		return *vertices.begin();
 	}
 	else
 	{
