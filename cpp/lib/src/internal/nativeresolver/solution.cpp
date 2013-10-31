@@ -262,7 +262,6 @@ void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
 
 	for (auto elementPtr: getConflictingElements(newElementPtr))
 	{
-		if (elementPtr == newElementPtr) continue;
 		if (!solution.isPresent(elementPtr)) continue;
 
 		group.push_back(elementPtr);
@@ -283,8 +282,14 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	__dependency_graph.unfoldElement(elementPtr);
 	solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
 	// TODO: save space by adding one back-edges to present vertices
-	for (
-	solution.p_addElementsAndEdgeToUniverse(elementPtr, getCorrespondingEmptyElement(elementPtr));
+	for (auto conflictor: getConflictingElements(elementPtr))
+	{
+		if (solution.isPresent(conflictor))
+		{
+			solution.p_universe.addEdgeFromPointers(elementPtr, conflictor);
+			solution.p_universe.addEdgeFromPointers(conflictor, elementPtr);
+		}
+	}
 }
 
 void SolutionStorage::prepareForResolving(Solution& initialSolution,
@@ -341,7 +346,6 @@ bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, co
 	{
 		if (successor == element) continue;
 
-		foreachConflictingElement(successor, 
 		for (auto conflictor: getConflictingElements(successor))
 		{
 			if (solution.isPresent(conflictor))
