@@ -284,6 +284,7 @@ void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* elementPtr, const dg::Element* reasonBrokenElementPtr)
 {
+	debug2("adding '%s' to universe becase of '%s'", elementPtr->toString(), reasonBrokenElementPtr->toString());
 	__dependency_graph.unfoldElement(elementPtr);
 	solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
 	// TODO: save space by adding one back-edges to present vertices
