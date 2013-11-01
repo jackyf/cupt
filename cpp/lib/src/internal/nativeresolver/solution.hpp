@@ -65,7 +65,10 @@ class Solution
 	Graph< const dg::Element* > p_universe;
 
 	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
-	bool isPresent(const dg::Element*) const;
+	bool p_isPresent(const dg::Element*) const;
+	void p_markAsSettled(const dg::Element*);
+	bool p_dropElement(const dg::Element*);
+	bool p_dropConflictingElements(const dg::Element*);
  public:
 	struct Action
 	{

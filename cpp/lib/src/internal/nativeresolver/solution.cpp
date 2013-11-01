@@ -228,7 +228,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 	{
 		for (auto reverseDependencyPtr: getPredecessorElements(predecessor))
 		{
-			if (solution.isPresent(reverseDependencyPtr))
+			if (solution.p_isPresent(reverseDependencyPtr))
 			{
 				problemQueue->push({ reverseDependencyPtr, predecessor });
 				newProblemCallback(predecessor);
@@ -267,7 +267,7 @@ void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
 
 	for (auto elementPtr: getConflictingElements(newElementPtr))
 	{
-		if (!solution.isPresent(elementPtr)) continue;
+		if (!solution.p_isPresent(elementPtr)) continue;
 
 		group.push_back(elementPtr);
 	}
@@ -289,7 +289,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	// TODO: save space by adding one back-edges to present vertices
 	for (auto conflictor: getConflictingElements(elementPtr))
 	{
-		if (solution.isPresent(conflictor))
+		if (solution.p_isPresent(conflictor))
 		{
 			solution.p_universe.addEdgeFromPointers(elementPtr, conflictor);
 			solution.p_universe.addEdgeFromPointers(conflictor, elementPtr);
@@ -349,11 +349,10 @@ bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, co
 {
 	for (auto successor: getSuccessorElements(element))
 	{
-		if (successor == element) continue;
-
+		// TODO: at this point there shouldn't be yet vital edges: if (successor == element) continue;
 		for (auto conflictor: getConflictingElements(successor))
 		{
-			if (solution.isPresent(conflictor))
+			if (solution.p_isPresent(conflictor))
 			{
 				return false;
 			}
@@ -488,7 +487,7 @@ void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg:
 	p_universe.addEdgeFromPointers(from, to);
 }
 
-bool Solution::isPresent(const dg::Element* elementPtr) const
+bool Solution::p_isPresent(const dg::Element* elementPtr) const
 {
 	auto it = p_universe.getVertices().find(elementPtr);
 	return it != p_universe.getVertices().end();
@@ -499,29 +498,33 @@ bool isVersionElement(const dg::Element* elementPtr)
 	return dynamic_cast< const dg::VersionElement* >(elementPtr);
 }
 
-void Solution::markAsSettled(const dg::Element* element)
+void Solution::p_markAsSettled(const dg::Element* element)
 {
 	debug2("  settling %s", element->toString());
 	for (auto successor: p_universe.getSuccessorsFromPointer(element))
 	{
+		if (isVersionElement(successor)) continue;
 		// mark as vital by self-edge
 		p_universe.deleteEdgeFromPointers(element, successor);
 		p_universe.addEdgeFromPointers(successor, successor);
 	}
 	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
 	{
+		if (isVersionElement(predecessor)) continue;
 		// mark as satisfied
 		p_universe.deleteVertex(predecessor);
 	}
 }
 
 // returns false if Solution becomes invalid as a result of dropping
-bool Solution::dropElement(const dg::Element* element)
+bool Solution::p_dropElement(const dg::Element* element)
 {
-	queue< const dg::Element* > dropCandidates = { element };
+	queue< const dg::Element* > dropCandidates;
+	dropCandidates.push(element);
+
 	while (!dropCandidates.empty())
 	{
-		auto candidate = dropCandidates.first();
+		auto candidate = dropCandidates.front();
 		dropCandidates.pop();
 
 		if (isVersionElement(candidate))
@@ -570,15 +573,18 @@ bool Solution::dropElement(const dg::Element* element)
 	return true;
 }
 
-void Solution::removeFamilyEdges(const dg::Element* element)
+bool Solution::p_dropConflictingElements(const dg::Element* element)
 {
-	for (auto left: getRelatedElements(element))
+	for (auto elementToDrop: getConflictingElements(element))
 	{
-		for (auto right: getRelatedElements(element))
+		if (!p_isPresent(elementToDrop)) continue;
+
+		if (!p_dropElement(elementToDrop))
 		{
-			p_universe.deleteEdgeFromPointers(left, right);
+			return false;
 		}
 	}
+	return true;
 }
 
 vector< Solution > Solution::reduce() const
@@ -595,24 +601,15 @@ vector< Solution > Solution::reduce() const
 		}
 	}
 
-	removeFamilyEdges(firstVersionElement);
-
 	vector< Solution > result;
 	for (auto familyElement: getRelatedElements(firstVersionElement))
 	{
-		if (!isPresent(familyElement)) continue;
+		if (!p_isPresent(familyElement)) continue;
 
 		Solution forked = *this;
 
-		forked.markAsSettled(familyElement);
-
-		for (auto elementToDrop: getConflictingElements(familyElement))
-		{
-			if (!forked.dropElement(elementToDrop))
-			{
-				continue; // drop the whole solution
-			}
-		}
+		forked.p_markAsSettled(familyElement);
+		if (!forked.p_dropConflictingElements(familyElement)) continue;
 
 		result.push_back(std::move(forked));
 	}
