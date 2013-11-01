@@ -499,8 +499,92 @@ bool isVersionElement(const dg::Element* elementPtr)
 	return dynamic_cast< const dg::VersionElement* >(elementPtr);
 }
 
+void Solution::markAsSettled(const dg::Element* element)
+{
+	debug2("  settling %s", element->toString());
+	for (auto successor: p_universe.getSuccessorsFromPointer(element))
+	{
+		// mark as vital by self-edge
+		p_universe.deleteEdgeFromPointers(element, successor);
+		p_universe.addEdgeFromPointers(successor, successor);
+	}
+	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
+	{
+		// mark as satisfied
+		p_universe.deleteVertex(predecessor);
+	}
+}
+
+// returns false if Solution becomes invalid as a result of dropping
+bool Solution::dropElement(const dg::Element* element)
+{
+	queue< const dg::Element* > dropCandidates = { element };
+	while (!dropCandidates.empty())
+	{
+		auto candidate = dropCandidates.first();
+		dropCandidates.pop();
+
+		if (isVersionElement(candidate))
+		{
+			for (auto predecessor: p_universe.getPredecessorsFromPointer(candidate))
+			{
+				if (!isVersionElement(predecessor))
+				{
+					dropCandidates.push(predecessor);
+				}
+			}
+		}
+		else // relation element
+		{
+			bool isVital = false;
+			bool hasVersionSuccessors = false;
+			for (auto successor: p_universe.getSuccessorsFromPointer(candidate))
+			{
+				if (isVersionElement(successor))
+				{
+					hasVersionSuccessors = true;
+					break;
+				}
+				if (successor == candidate)
+				{
+					isVital = true;
+				}
+			}
+			if (hasVersionSuccessors) continue;
+			// we should drop it as failed
+			if (isVital)
+			{
+				return false; // boom! one less solution to process
+			}
+
+			// dropping
+			for (auto predecessor: p_universe.getPredecessorsFromPointer(candidate))
+			{
+				dropCandidates.push(predecessor);
+			}
+		}
+
+		debug2("  dropping %s", candidate->toString());
+		p_universe.deleteVertex(candidate);
+	}
+	return true;
+}
+
+void Solution::removeFamilyEdges(const dg::Element* element)
+{
+	for (auto left: getRelatedElements(element))
+	{
+		for (auto right: getRelatedElements(element))
+		{
+			p_universe.deleteEdgeFromPointers(left, right);
+		}
+	}
+}
+
 vector< Solution > Solution::reduce() const
 {
+	debug2("reducing:");
+
 	const dg::Element* firstVersionElement;
 	for (auto element: p_universe.getVertices())
 	{
@@ -511,18 +595,26 @@ vector< Solution > Solution::reduce() const
 		}
 	}
 
+	removeFamilyEdges(firstVersionElement);
+
 	vector< Solution > result;
 	for (auto familyElement: getRelatedElements(firstVersionElement))
 	{
+		if (!isPresent(familyElement)) continue;
+
 		Solution forked = *this;
-		// mark successors of chosen element as vital (self-edge)
-		for (auto successor: p_universe.getSuccessorsFromPointer(familyElement))
+
+		forked.markAsSettled(familyElement);
+
+		for (auto elementToDrop: getConflictingElements(familyElement))
 		{
-			if (!isVersionElement(successor)) continue; // broken element
-			// ...
+			if (!forked.dropElement(elementToDrop))
+			{
+				continue; // drop the whole solution
+			}
 		}
-		// drop non-chosen elements in each forked solution, at first attempt to drop vital vertices, drop the whole solution
-		// else add forked to result
+
+		result.push_back(std::move(forked));
 	}
 
 	// return alive forked solutions
