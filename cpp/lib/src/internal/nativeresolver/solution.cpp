@@ -182,18 +182,13 @@ void SolutionStorage::p_addActionsToModifyCausingVersion(
 	}
 }
 
-auto SolutionStorage::p_getPossibleActions(Solution& solution, Problem problem) -> PossibleActions
+auto SolutionStorage::p_getPossibleActions(Problem problem) -> PossibleActions
 {
 	PossibleActions result;
 
 	p_addActionsToFixDependency(&result, problem.brokenElement);
 	// FIXME: detect real debugging flag
 	p_addActionsToModifyCausingVersion(&result, problem, true);
-
-	for (auto element: result)
-	{
-		solution.p_addElementsAndEdgeToUniverse(problem.brokenElement, element);
-	}
 
 	return result;
 }
@@ -281,9 +276,12 @@ void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* elementPtr, const dg::Element* reasonBrokenElementPtr)
 {
-	debug2("adding '%s' to universe becase of '%s'", elementPtr->toString(), reasonBrokenElementPtr->toString());
+	debug2("adding '%s' to universe because of '%s'", elementPtr->toString(), reasonBrokenElementPtr->toString());
 	__dependency_graph.unfoldElement(elementPtr);
-	solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
+	if (contains(getSuccessorElements(reasonBrokenElementPtr), elementPtr)) // valid dependency edge
+	{
+		solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
+	}
 	// TODO: save space by adding one back-edges to present vertices
 	for (auto conflictor: getConflictingElements(elementPtr))
 	{
@@ -343,7 +341,7 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 		if (processedProblems.insert(problem).second) // not processed yet
 		{
 			debug2("processing the problem '%s'", problem.toString());
-			for (auto actionElement: p_getPossibleActions(initialSolution, problem))
+			for (auto actionElement: p_getPossibleActions(problem))
 			{
 				setPackageEntry(initialSolution, actionElement, problem.brokenElement);
 				p_postAddElementToUniverse(initialSolution, actionElement, &problemQueue);
@@ -549,6 +547,7 @@ bool Solution::p_dropElement(const dg::Element* element)
 	while (!dropCandidates.empty())
 	{
 		auto candidate = dropCandidates.front();
+		debug2("    considering dropping %s", candidate->toString());
 		dropCandidates.pop();
 
 		if (isVersionElement(candidate))
@@ -569,6 +568,7 @@ bool Solution::p_dropElement(const dg::Element* element)
 			{
 				if (isVersionElement(successor))
 				{
+					debug2("      has successor '%s'", successor->toString());
 					hasVersionSuccessors = true;
 					break;
 				}
@@ -581,6 +581,7 @@ bool Solution::p_dropElement(const dg::Element* element)
 			// we should drop it as failed
 			if (isVital)
 			{
+				debug2("      it's vital");
 				return false; // boom! one less solution to process
 			}
 
@@ -591,7 +592,7 @@ bool Solution::p_dropElement(const dg::Element* element)
 			}
 		}
 
-		debug2("    dropping %s", candidate->toString());
+		debug2("      yes");
 		p_universe.deleteVertex(candidate);
 	}
 	return true;

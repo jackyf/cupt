@@ -127,7 +127,7 @@ class SolutionStorage
 	void p_addActionsToFixDependency(PossibleActions*, const dg::Element*) const;
 	bool p_makesSenseToModifyPackage(const dg::Element*, const dg::Element*, bool debugging);
 	void p_addActionsToModifyCausingVersion(PossibleActions* actions, Problem problem, bool debugging);
-	PossibleActions p_getPossibleActions(Solution&, Problem);
+	PossibleActions p_getPossibleActions(Problem);
 
 	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
  public:
