@@ -523,6 +523,7 @@ void Solution::p_markAsSettled(const dg::Element* element)
 	}
 }
 
+// FIXME: add dropping down, current version drops only up
 // returns false if Solution becomes invalid as a result of dropping
 bool Solution::p_dropElement(const dg::Element* element)
 {
@@ -598,22 +599,42 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 	return true;
 }
 
+const dg::Element* Solution::p_selectMostUpVersionElement() const
+{
+	typedef vector< const dg::Element* > ElementGroup;
+	const dg::Element* result = nullptr;
+	// TODO: adjust signature of topologicalSortOf to not have two "callbacks"
+	// TODO: implement early cancellation in topologicalSortOf callback
+	auto callback = [&result](const ElementGroup& group, bool)
+	{
+		if (result) return; // found already
+		for (auto element: group)
+		{
+			if (isVersionElement(element))
+			{
+				result = element;
+				break;
+			}
+		}
+	};
+
+	std::vector< ElementGroup > dummyGroups;
+	p_universe.topologicalSortOfStronglyConnectedComponents
+			< std::less<const ElementGroup*> >(callback, std::back_inserter(dummyGroups));
+
+	if (!result)
+	{
+		fatal2i("nativeresolver: solution: p_selectMostUpVersionElement: null result");
+	}
+	return result;
+}
+
 vector< Solution > Solution::reduce() const
 {
 	debug2("reducing:");
 
-	const dg::Element* firstVersionElement;
-	for (auto element: p_universe.getVertices())
-	{
-		if (isVersionElement(element))
-		{
-			firstVersionElement = element;
-			break;
-		}
-	}
-
 	vector< Solution > result;
-	for (auto familyElement: getRelatedElements(firstVersionElement))
+	for (auto familyElement: getRelatedElements(p_selectMostUpVersionElement()))
 	{
 		if (!p_isPresent(familyElement)) continue;
 

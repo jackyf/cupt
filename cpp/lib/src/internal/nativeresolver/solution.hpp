@@ -69,6 +69,7 @@ class Solution
 	void p_markAsSettled(const dg::Element*);
 	bool p_dropElement(const dg::Element*);
 	bool p_dropConflictingElements(const dg::Element*);
+	const dg::Element* p_selectMostUpVersionElement() const;
  public:
 	struct Action
 	{

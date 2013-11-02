@@ -39,8 +39,8 @@ using std::priority_queue;
 template < class T >
 class Graph
 {
-	typedef const typename std::remove_pointer< T >::type* PtrT;
  public:
+	typedef const typename std::remove_pointer< T >::type* PtrT;
 	typedef std::vector< PtrT > CessorListType; // type for {suc,prede}cessor lists
  private:
 	set< T > __vertices;
@@ -112,6 +112,18 @@ const T* toPointer(const T& value)
 
 template< typename T >
 const T* toPointer(const T* value)
+{
+	return value;
+}
+
+template< typename T >
+T fromPointer(const T* value)
+{
+	return *value;
+}
+
+template< typename T >
+T fromPointer(T value)
 {
 	return value;
 }
@@ -219,9 +231,11 @@ const typename Graph< T >::CessorListType& Graph< T >::getSuccessorsFromPointer(
 	return (it != __successors.end() ? it->second : __null_list);
 }
 
+#define GraphPtrT typename Graph<T>::PtrT
+
 template< class T >
-void __dfs_visit(const Graph< T >& graph, const T* vertexPtr,
-		set< const T* >& seen, vector< const T* >& output)
+void __dfs_visit(const Graph< T >& graph, GraphPtrT vertexPtr,
+		set< GraphPtrT >& seen, vector< GraphPtrT >& output)
 {
 	seen.insert(vertexPtr);
 
@@ -238,23 +252,17 @@ void __dfs_visit(const Graph< T >& graph, const T* vertexPtr,
 }
 
 template < class T >
-vector< const T* > __dfs_mode1(const Graph< T >& graph)
+vector< GraphPtrT > __dfs_mode1(const Graph< T >& graph)
 {
-	vector< const T* > vertices;
+	set< GraphPtrT > seen;
+	vector< GraphPtrT > result;
 
-	FORIT(it, graph.getVertices())
+	for (const auto& vertex: graph.getVertices())
 	{
-		vertices.push_back(&*it);
-	}
-
-	set< const T* > seen;
-	vector< const T* > result;
-
-	FORIT(vertexIt, vertices)
-	{
-		if (!seen.count(*vertexIt))
+		auto vertexPtr = toPointer(vertex);
+		if (!seen.count(vertexPtr))
 		{
-			__dfs_visit(graph, *vertexIt, seen, result);
+			__dfs_visit(graph, vertexPtr, seen, result);
 		}
 	}
 
@@ -262,12 +270,12 @@ vector< const T* > __dfs_mode1(const Graph< T >& graph)
 }
 
 template < class T >
-vector< vector< const T* > > __dfs_mode2(const Graph< T >& graph, const vector< const T* >& vertices)
+vector< vector< GraphPtrT > > __dfs_mode2(const Graph< T >& graph, const vector< GraphPtrT >& vertices)
 {
-	set< const T* > seen;
-	vector< const T* > stronglyConnectedComponent;
+	set< GraphPtrT > seen;
+	vector< GraphPtrT > stronglyConnectedComponent;
 
-	vector< vector< const T* > > result; // topologically sorted vertices
+	vector< vector< GraphPtrT > > result; // topologically sorted vertices
 
 	FORIT(vertexIt, vertices)
 	{
@@ -284,21 +292,20 @@ vector< vector< const T* > > __dfs_mode2(const Graph< T >& graph, const vector< 
 
 template < class T >
 Graph< vector< T > > __make_scc_graph(const Graph< T >& graph,
-		const vector< vector< const T* > >& scc)
+		const vector< vector< GraphPtrT > >& scc)
 {
 	Graph< vector< T > > result;
 
 	// indexing original vertices
-	map< const T*, const vector< T >* > vertexToComponent;
-	vector< const vector< T >* > sccVertexPtrs;
+	map< GraphPtrT, const vector< T >* > vertexToComponent;
 	{
 		FORIT(sccIt, scc)
 		{
 			// converting from (const T*) to T
 			vector< T > component;
-			FORIT(it, *sccIt)
+			for (const auto& it: *sccIt)
 			{
-				component.push_back(**it);
+				component.push_back(fromPointer< T >(it));
 			}
 
 			auto componentPtr = result.addVertex(component);
@@ -311,9 +318,9 @@ Graph< vector< T > > __make_scc_graph(const Graph< T >& graph,
 	}
 
 	{ // go check all edges for cross-component ones
-		FORIT(vertexIt, graph.getVertices())
+		for (const auto& vertex: graph.getVertices())
 		{
-			const T* vertexPtr = &*vertexIt;
+			auto vertexPtr = toPointer(vertex);
 			auto fromComponentPtr = vertexToComponent[vertexPtr];
 
 			const typename Graph< T >::CessorListType& successors = graph.getSuccessorsFromPointer(vertexPtr);
