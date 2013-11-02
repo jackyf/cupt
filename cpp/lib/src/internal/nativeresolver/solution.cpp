@@ -316,6 +316,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 
 	debug2("starting expanding the universe");
 	p_expandUniverse(initialSolution);
+	initialSolution.p_markAsSettled(source.back() /* user requests */);
 	debug2("finished expanding the universe");
 }
 
@@ -523,7 +524,7 @@ bool isVersionElement(const dg::Element* elementPtr)
 
 void Solution::p_markAsSettled(const dg::Element* element)
 {
-	debug2("  settling %s", element->toString());
+	debug2("    settling %s", element->toString());
 	for (auto successor: p_universe.getSuccessorsFromPointer(element))
 	{
 		if (isVersionElement(successor)) continue;
@@ -590,7 +591,7 @@ bool Solution::p_dropElement(const dg::Element* element)
 			}
 		}
 
-		debug2("  dropping %s", candidate->toString());
+		debug2("    dropping %s", candidate->toString());
 		p_universe.deleteVertex(candidate);
 	}
 	return true;
@@ -604,6 +605,7 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 
 		if (!p_dropElement(elementToDrop))
 		{
+			debug2("  fail");
 			return false;
 		}
 	}
@@ -629,11 +631,13 @@ vector< Solution > Solution::reduce() const
 	{
 		if (!p_isPresent(familyElement)) continue;
 
+		debug2("  candidate: %s", familyElement->toString());
 		Solution forked = *this;
 
 		forked.p_markAsSettled(familyElement);
 		if (!forked.p_dropConflictingElements(familyElement)) continue;
 
+		debug2("    success");
 		result.push_back(std::move(forked));
 	}
 
@@ -643,10 +647,12 @@ vector< Solution > Solution::reduce() const
 
 vector< Solution > Solution::split() const
 {
+	debug2("splitting:");
 	auto copyIsland = [this](Solution* newSolution, const vector< const dg::Element* >& island)
 	{
 		for (auto element: island)
 		{
+			newSolution->p_universe.addVertex(element);
 			for (auto successor: p_universe.getSuccessorsFromPointer(element))
 			{
 				newSolution->p_addElementsAndEdgeToUniverse(element, successor);
@@ -657,11 +663,11 @@ vector< Solution > Solution::split() const
 	vector< Solution > result;
 	for (const auto& island: p_universe.getWeaklyConnectedComponents())
 	{
-		debug2("island (%zu):", island.size());
+		debug2("  island (%zu):", island.size());
 		for (const auto& element: island)
 		{
 			if (!isVersionElement(element)) continue;
-			debug2("  %s", element->toString());
+			debug2("    %s", element->toString());
 		}
 
 		Solution newSolution;

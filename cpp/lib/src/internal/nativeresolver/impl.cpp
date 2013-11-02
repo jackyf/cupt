@@ -771,7 +771,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	__solution_storage->prepareForResolving(initialSolution,
 			__old_packages, __initial_packages, p_userRelationExpressions);
 
-	auto* initialItem = solutionGraph.addVertex({{}, SolutionGraphItem::Status::SplitPending});
+	auto* initialItem = solutionGraph.addVertex({initialSolution, SolutionGraphItem::Status::SplitPending});
 	resolveGraphItem(&solutionGraph, initialItem);
 
 	if (initialItem->status == SolutionGraphItem::Status::Success)
