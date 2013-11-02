@@ -742,12 +742,6 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 }
 
 /*
-				if (debugging)
-				{
-					__mydebug_wrapper(*currentSolution, "no solutions");
-				}
-*/
-/*
 			if (debugging)
 			{
 				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",

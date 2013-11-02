@@ -195,100 +195,90 @@ auto SolutionStorage::p_getPossibleActions(Problem problem) -> PossibleActions
 
 void SolutionStorage::p_detectNewProblems(Solution& solution,
 		const dg::Element* newElementPtr,
-		const GraphCessorListType& predecessorsDifference,
 		queue<Problem>* problemQueue)
 {
-	auto newProblemCallback = [this, &solution, &newElementPtr](const dg::Element* brokenElementPtr)
+	auto newProblemCallback = [&](Problem problem, bool dependencyEdgeNeeded)
 	{
-		debug2("new broken element '%s'", brokenElementPtr->toString());
-		solution.p_universe.addVertex(brokenElementPtr);
-		solution.p_universe.addEdgeFromPointers(newElementPtr, brokenElementPtr);
+		debug2("    new problem: %s", problem.toString());
+		problemQueue->push(problem);
+
+		if (dependencyEdgeNeeded)
+		{
+			solution.p_universe.addVertex(problem.brokenElement);
+			debug2("    adding dependency edge '%s' -> '%s'",
+					newElementPtr->toString(), problem.brokenElement->toString());
+			solution.p_universe.addEdgeFromPointers(newElementPtr, problem.brokenElement);
+		}
 	};
 
-	// check direct dependencies of the new element
+	debug2("  checking direct dependencies of the new element");
 	for (auto successor: getSuccessorElements(newElementPtr))
 	{
 		if (!verifyNoConflictingSuccessors(solution, successor))
 		{
-			problemQueue->push({ newElementPtr, successor });
-			newProblemCallback(successor);
+			newProblemCallback({ newElementPtr, successor }, true);
 		}
 	}
 
-	// invalidate those which depend on the old element
-	for (auto predecessor: predecessorsDifference)
+	debug2("  invalidating those which depend on the old element(s)");
+	for (auto conflictor: getConflictingElements(newElementPtr))
 	{
-		for (auto reverseDependencyPtr: getPredecessorElements(predecessor))
+		if (!solution.p_isPresent(conflictor)) continue;
+
+		for (auto predecessor: getPredecessorElements(conflictor))
 		{
-			if (solution.p_isPresent(reverseDependencyPtr))
+			if (verifyNoConflictingSuccessors(solution, predecessor)) continue;
+
+			debug2("    unsatisfied predecessor: %s", predecessor->toString());
+			for (auto reverseDependency: getPredecessorElements(predecessor))
 			{
-				problemQueue->push({ reverseDependencyPtr, predecessor });
-				newProblemCallback(predecessor);
+				if (solution.p_isPresent(reverseDependency))
+				{
+					newProblemCallback({ reverseDependency, predecessor }, false);
+				}
 			}
 		}
 	}
 }
 
-void SolutionStorage::p_postAddElementToUniverse(Solution& solution,
-		const dg::Element* newElementPtr, queue< Problem >* problemQueue)
+static bool isVersionElement(const dg::Element* elementPtr)
 {
-	typedef vector< const dg::Element* > ElementVector;
-	ElementVector group;
-	auto getGroupPredecessors = [this, &group]()
-	{
-		ElementVector result;
-		for (auto elementPtr: group)
-		{
-			auto subResult = getPredecessorElements(elementPtr);
-			std::sort(subResult.begin(), subResult.end());
-
-			ElementVector newResult;
-			if (elementPtr != group.front())
-			{
-				std::set_intersection(result.begin(), result.end(), subResult.begin(), subResult.end(),
-						std::back_inserter(newResult));
-				newResult.swap(result);
-			}
-			else
-			{
-				subResult.swap(result);
-			}
-		}
-		return result;
-	};
-
-	for (auto elementPtr: getConflictingElements(newElementPtr))
-	{
-		if (!solution.p_isPresent(elementPtr)) continue;
-
-		group.push_back(elementPtr);
-	}
-	auto predecessorsOfOld = getGroupPredecessors();
-	group.push_back(newElementPtr);
-	auto predecessorsOfNew = getGroupPredecessors();
-	ElementVector predecessorsDifference;
-	std::set_difference(predecessorsOfOld.begin(), predecessorsOfOld.end(), predecessorsOfNew.begin(), predecessorsOfNew.end(),
-			std::back_inserter(predecessorsDifference));
-
-	p_detectNewProblems(solution, newElementPtr, predecessorsDifference, problemQueue);
+	return dynamic_cast< const dg::VersionElement* >(elementPtr);
 }
 
 void SolutionStorage::setPackageEntry(Solution& solution,
-		const dg::Element* elementPtr, const dg::Element* reasonBrokenElementPtr)
+		const dg::Element* element, const dg::Element* reasonElement)
 {
-	debug2("adding '%s' to universe because of '%s'", elementPtr->toString(), reasonBrokenElementPtr->toString());
-	__dependency_graph.unfoldElement(elementPtr);
-	if (contains(getSuccessorElements(reasonBrokenElementPtr), elementPtr)) // valid dependency edge
+	debug2("adding '%s' to universe because of '%s'", element->toString(), reasonElement->toString());
+	__dependency_graph.unfoldElement(element);
+	if (contains(getSuccessorElements(reasonElement), element)) // valid dependency edge
 	{
-		solution.p_addElementsAndEdgeToUniverse(reasonBrokenElementPtr, elementPtr);
+		solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
 	}
 	// TODO: save space by adding one back-edges to present vertices
-	for (auto conflictor: getConflictingElements(elementPtr))
+	bool conflictorsFound = false;
+	for (auto conflictor: getConflictingElements(element))
 	{
 		if (solution.p_isPresent(conflictor))
 		{
-			solution.p_universe.addEdgeFromPointers(elementPtr, conflictor);
-			solution.p_universe.addEdgeFromPointers(conflictor, elementPtr);
+			conflictorsFound = true;
+			solution.p_universe.addEdgeFromPointers(element, conflictor);
+			solution.p_universe.addEdgeFromPointers(conflictor, element);
+		}
+	}
+	if (!conflictorsFound)
+	{
+		// there were zero elements of this family in the solution, so we
+		// should add an empty one (which was virtually present before calling
+		// this setPackageEntry())
+
+		// TODO: check --no-remove still works
+		if (isVersionElement(element))
+		{
+			if (auto emptyVariant = getCorrespondingEmptyElement(element))
+			{
+				setPackageEntry(solution, emptyVariant, element);
+			}
 		}
 	}
 }
@@ -328,7 +318,7 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 		for (auto element: copiedInitialVertices)
 		{
 			debug2("adding initial element '%s'", element->toString());
-			p_postAddElementToUniverse(initialSolution, element, &problemQueue);
+			p_detectNewProblems(initialSolution, element, &problemQueue);
 		}
 	}
 
@@ -344,7 +334,7 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 			for (auto actionElement: p_getPossibleActions(problem))
 			{
 				setPackageEntry(initialSolution, actionElement, problem.brokenElement);
-				p_postAddElementToUniverse(initialSolution, actionElement, &problemQueue);
+				p_detectNewProblems(initialSolution, actionElement, &problemQueue);
 			}
 		}
 	}
@@ -352,7 +342,7 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 
 bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, const dg::Element* element) const
 {
-	debug2("verifying '%s'", element->toString());
+	debug2("    verifying '%s'", element->toString());
 	auto&& successors = getSuccessorElements(element);
 
 	auto isEmptyVersion = [&solution](const dg::Element* element)
@@ -515,19 +505,14 @@ bool Solution::p_isPresent(const dg::Element* elementPtr) const
 	return it != p_universe.getVertices().end();
 }
 
-bool isVersionElement(const dg::Element* elementPtr)
-{
-	return dynamic_cast< const dg::VersionElement* >(elementPtr);
-}
-
 void Solution::p_markAsSettled(const dg::Element* element)
 {
 	debug2("    settling %s", element->toString());
 	for (auto successor: p_universe.getSuccessorsFromPointer(element))
 	{
 		if (isVersionElement(successor)) continue;
-		// mark as vital by self-edge
 		p_universe.deleteEdgeFromPointers(element, successor);
+		debug2("      marking '%s' as vital", successor->toString());
 		p_universe.addEdgeFromPointers(successor, successor);
 	}
 	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))

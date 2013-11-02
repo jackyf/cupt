@@ -118,9 +118,7 @@ class SolutionStorage
 			return brokenElement->getReason(*versionElement)->toString();
 		}
 	};
-	void p_detectNewProblems(Solution& solution,
-			const dg::Element*, const GraphCessorListType&, queue<Problem>*);
-	void p_postAddElementToUniverse(Solution&, const dg::Element*, queue< Problem >*);
+	void p_detectNewProblems(Solution& solution, const dg::Element*, queue<Problem>*);
 	void p_expandUniverse(Solution&);
 
 	typedef vector< const dg::Element* > PossibleActions;
