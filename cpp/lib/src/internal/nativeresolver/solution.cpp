@@ -317,7 +317,9 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 		initialSolution.p_universe.addVertex(element);
 	}
 
+	debug2("starting expanding the universe");
 	p_expandUniverse(initialSolution);
+	debug2("finished expanding the universe");
 }
 
 void SolutionStorage::p_expandUniverse(Solution& initialSolution)
@@ -325,9 +327,13 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 	queue< Problem > problemQueue;
 	set< Problem > processedProblems;
 
-	for (const auto& element: initialSolution.p_universe.getVertices())
 	{
-		p_postAddElementToUniverse(initialSolution, element, &problemQueue);
+		auto copiedInitialVertices = initialSolution.p_universe.getVertices();
+		for (auto element: copiedInitialVertices)
+		{
+			debug2("adding initial element '%s'", element->toString());
+			p_postAddElementToUniverse(initialSolution, element, &problemQueue);
+		}
 	}
 
 	while (!problemQueue.empty())
@@ -337,6 +343,7 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 
 		if (processedProblems.insert(problem).second) // not processed yet
 		{
+			debug2("processing the problem '%s'", problem.toString());
 			for (auto actionElement: p_getPossibleActions(initialSolution, problem))
 			{
 				setPackageEntry(initialSolution, actionElement, problem.brokenElement);

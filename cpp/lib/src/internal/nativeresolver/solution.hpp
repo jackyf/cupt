@@ -112,6 +112,10 @@ class SolutionStorage
 			return std::make_tuple(versionElement, brokenElement) <
 					std::make_tuple(other.versionElement, other.brokenElement);
 		}
+		string toString() const
+		{
+			return brokenElement->getReason(*versionElement)->toString();
+		}
 	};
 	void p_detectNewProblems(Solution& solution,
 			const dg::Element*, const GraphCessorListType&, queue<Problem>*);
