@@ -605,7 +605,7 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 
 		if (!p_dropElement(elementToDrop))
 		{
-			debug2("  fail");
+			debug2("    fail");
 			return false;
 		}
 	}
@@ -614,7 +614,7 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 
 vector< Solution > Solution::reduce() const
 {
-	debug2("reducing:");
+	debug2("reducing (%s):", toString());
 
 	const dg::Element* firstVersionElement;
 	for (auto element: p_universe.getVertices())
@@ -647,7 +647,7 @@ vector< Solution > Solution::reduce() const
 
 vector< Solution > Solution::split() const
 {
-	debug2("splitting:");
+	debug2("splitting (%s):", toString());
 	auto copyIsland = [this](Solution* newSolution, const vector< const dg::Element* >& island)
 	{
 		for (auto element: island)
@@ -692,6 +692,16 @@ const dg::Element* Solution::getFinishedElement() const
 	{
 		return nullptr;
 	}
+}
+
+string Solution::toString() const
+{
+	vector< string > strings;
+	for (auto element: p_universe.getVertices())
+	{
+		strings.push_back(element->toString());
+	}
+	return join(", ", strings);
 }
 
 }
