@@ -415,22 +415,6 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 }
 */
 
-/*
-void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
-		std::function< void (const shared_ptr< Solution >&) > callback,
-		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
-{
-		auto splitSolution = currentSolution;
-		for (auto&& action: actions)
-		{
-			splitSolution = __solution_storage->fakeCloneSolution(splitSolution);
-			__pre_apply_action(*splitSolution, *splitSolution, std::move(action), splitSolution->id);
-			__post_apply_action(*__solution_storage, *splitSolution);
-		}
-		callback(currentSolution);
-}
-*/
-
 void NativeResolverImpl::__fillSuggestedPackageReasons(const ResolvedSolution& solution,
 		const string& packageName, Resolver::SuggestedPackage& suggestedPackage,
 		const dg::Element* elementPtr, map< const dg::Element*, size_t >& reasonProcessingCache) const
@@ -617,13 +601,6 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage, const Solut
 }
 */
 
-/*
-	if (currentSolution->pendingAction)
-	{
-		currentSolution->prepare();
-	}
-*/
-
 struct SolutionGraphItem
 {
 	enum Status { SplitPending, ReducePending, Opened, Success, Fail };
@@ -718,7 +695,7 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 	if (auto finishedElement = item->solution.getFinishedElement())
 	{
 		item->stickedElements.push_back(finishedElement);
-		item->score = 7; // FIXME: finishedElement->getScore();
+		item->score = -7; // FIXME: finishedElement->getScore();
 		item->status = IS::Success;
 	}
 	else if (item->status == IS::SplitPending)
@@ -736,7 +713,7 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 		fatal2i("native resolver: p_resolveGraphItem: trying to resolve WIP-item");
 	}
 	debug2("solved: %s -> %s", item->solution.toString(),
-			(item->status == IS::Success ? format2("success (%zu)", item->score) : "fail"));
+			(item->status == IS::Success ? format2("success (%zd)", item->score) : "fail"));
 }
 
 }
@@ -753,6 +730,16 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 /*
 				__calculate_profits(possibleActions);
 */
+
+NativeResolverImpl::ResolvedSolution getResolvedSolution(const SolutionGraphItem* initialItem)
+{
+	NativeResolverImpl::ResolvedSolution result;
+	for (auto element: initialItem->stickedElements)
+	{
+		result.elements[element];
+	}
+	return result;
+}
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
@@ -773,11 +760,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	if (initialItem->status == SolutionGraphItem::Status::Success)
 	{
-		ResolvedSolution resolvedSolution;
-		for (auto element: initialItem->stickedElements)
-		{
-			resolvedSolution.elements[element];
-		}
+		auto resolvedSolution = getResolvedSolution(initialItem);
 
 		__clean_automatically_installed(resolvedSolution);
 

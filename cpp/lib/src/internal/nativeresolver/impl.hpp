@@ -41,6 +41,10 @@ struct BrokenPair;
 
 class NativeResolverImpl
 {
+ public:
+	struct ResolvedSolution;
+ private:
+
 	typedef Resolver::Reason Reason;
 	typedef Resolver::UserReason UserReason;
 	typedef Resolver::AutoRemovalReason AutoRemovalReason;
@@ -48,8 +52,6 @@ class NativeResolverImpl
 	typedef Resolver::RelationExpressionReason RelationExpressionReason;
 	typedef Solution::Action Action;
 	typedef vector< unique_ptr< Action > > ActionContainer;
-
-	struct ResolvedSolution;
 
 	shared_ptr< const Config > __config;
 	shared_ptr< const Cache > __cache;
