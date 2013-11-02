@@ -108,6 +108,11 @@ void SolutionStorage::p_addActionsToFixDependency(PossibleActions* actions, cons
 	}
 }
 
+bool contains(const GraphCessorListType& elist, const dg::Element* element)
+{
+	return (std::find(elist.begin(), elist.end(), element) != elist.end());
+}
+
 bool SolutionStorage::p_makesSenseToModifyPackage(
 		const dg::Element* candidateElement, const dg::Element* brokenElement, bool debugging)
 {
@@ -143,11 +148,7 @@ bool SolutionStorage::p_makesSenseToModifyPackage(
 		bool isMoreWide = false;
 		for (auto element: getSuccessorElements(successorElement))
 		{
-			bool notFound = (std::find(brokenElementSuccessors.begin(),
-					brokenElementSuccessors.end(), element)
-					== brokenElementSuccessors.end());
-
-			if (notFound)
+			if (!contains(brokenElementSuccessors, element))
 			{
 				// more wide relation, can't say nothing bad with it at time being
 				isMoreWide = true;
@@ -361,18 +362,27 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 
 bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, const dg::Element* element) const
 {
-	for (auto successor: getSuccessorElements(element))
+	auto&& successors = getSuccessorElements(element);
+
+	auto areThereConflictors = [&successors, &solution](const dg::Element* successor)
 	{
-		// TODO: at this point there shouldn't be yet vital edges: if (successor == element) continue;
 		for (auto conflictor: getConflictingElements(successor))
 		{
-			if (solution.p_isPresent(conflictor))
-			{
-				return false;
-			}
+			if (!solution.p_isPresent(conflictor)) continue;
+			if (contains(successors, conflictor)) continue;
+			return true; // really conflicts
+		}
+		return false;
+	};
+	for (auto successor: successors)
+	{
+		// TODO: at this point there shouldn't be yet vital edges: if (successor == element) continue;
+		if (!areThereConflictors(successor))
+		{
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
 const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
