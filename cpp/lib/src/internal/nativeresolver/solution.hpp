@@ -69,7 +69,6 @@ class Solution
 	void p_markAsSettled(const dg::Element*);
 	bool p_dropElement(const dg::Element*);
 	bool p_dropConflictingElements(const dg::Element*);
-	string toString() const;
  public:
 	struct Action
 	{
@@ -88,9 +87,10 @@ class Solution
 	Solution();
 	~Solution();
 
+	string toString() const;
+
 	vector< Solution > split() const;
 	vector< Solution > reduce() const;
-
 	const dg::Element* getFinishedElement() const;
 
 	// sorting

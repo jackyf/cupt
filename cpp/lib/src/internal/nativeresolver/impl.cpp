@@ -712,9 +712,16 @@ IS computeGraphItemReduceStatus(SolutionGraph* graph, const SolutionGraphItem* i
 // postcondition: item->status > IS::Opened
 void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 {
+	debug2("solving: %s", item->solution.toString());
 	if (item->status > IS::Opened) return;
 
-	if (item->status == IS::SplitPending)
+	if (auto finishedElement = item->solution.getFinishedElement())
+	{
+		item->stickedElements.push_back(finishedElement);
+		item->score = 7; // FIXME: finishedElement->getScore();
+		item->status = IS::Success;
+	}
+	else if (item->status == IS::SplitPending)
 	{
 		item->status = IS::Opened;
 		item->status = computeGraphItemSplitStatus(graph, item);
@@ -722,18 +729,14 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 	else if (item->status == IS::ReducePending)
 	{
 		item->status = IS::Opened;
-		if (auto finishedElement = item->solution.getFinishedElement())
-		{
-			item->stickedElements.push_back(finishedElement);
-			item->score = 7; // FIXME: finishedElement->getScore();
-			item->status = IS::Success;
-		}
 		item->status = computeGraphItemReduceStatus(graph, item);
 	}
 	else
 	{
 		fatal2i("native resolver: p_resolveGraphItem: trying to resolve WIP-item");
 	}
+	debug2("solved: %s -> %s", item->solution.toString(),
+			(item->status == IS::Success ? format2("success (%zu)", item->score) : "fail"));
 }
 
 }
