@@ -203,13 +203,9 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		const GraphCessorListType& predecessorsDifference,
 		queue<Problem>* problemQueue)
 {
-	/*
-	auto isPresent = [](const GraphCessorListType& container, const dg::Element* elementPtr)
-	{
-		return std::find(container.begin(), container.end(), elementPtr) != container.end();
-	};*/
 	auto newProblemCallback = [this, &solution, &newElementPtr](const dg::Element* brokenElementPtr)
 	{
+		debug2("new broken element '%s'", brokenElementPtr->toString());
 		solution.p_universe.addVertex(brokenElementPtr);
 		solution.p_universe.addEdgeFromPointers(newElementPtr, brokenElementPtr);
 	};
@@ -337,17 +333,12 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 		}
 	}
 
+	debug2("starting unrolling the problem queue");
 	while (!problemQueue.empty())
 	{
 		auto problem = problemQueue.front();
 		problemQueue.pop();
 
-		debug2("considering the problem '%s'", problem.toString());
-		if (verifyNoConflictingSuccessors(initialSolution, problem.brokenElement))
-		{
-			debug2(  "verified, skipping");
-			continue;
-		}
 		if (processedProblems.insert(problem).second) // not processed yet
 		{
 			debug2("processing the problem '%s'", problem.toString());
@@ -362,8 +353,17 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 
 bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, const dg::Element* element) const
 {
+	debug2("verifying '%s'", element->toString());
 	auto&& successors = getSuccessorElements(element);
 
+	auto isEmptyVersion = [&solution](const dg::Element* element)
+	{
+		if (auto versionSuccessor = dynamic_cast< const dg::VersionElement* >(element))
+		{
+			return !versionSuccessor->version;
+		}
+		return false;
+	};
 	auto areThereConflictors = [&successors, &solution](const dg::Element* successor)
 	{
 		for (auto conflictor: getConflictingElements(successor))
@@ -377,10 +377,9 @@ bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, co
 	for (auto successor: successors)
 	{
 		// TODO: at this point there shouldn't be yet vital edges: if (successor == element) continue;
-		if (!areThereConflictors(successor))
-		{
-			return true;
-		}
+		if (!solution.p_isPresent(successor) && !isEmptyVersion(successor)) continue;
+		if (areThereConflictors(successor)) continue;
+		return true;
 	}
 	return false;
 }
