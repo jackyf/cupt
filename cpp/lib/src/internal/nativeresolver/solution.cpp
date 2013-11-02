@@ -341,6 +341,12 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 		auto problem = problemQueue.front();
 		problemQueue.pop();
 
+		debug2("considering the problem '%s'", problem.toString());
+		if (verifyNoConflictingSuccessors(initialSolution, problem.brokenElement))
+		{
+			debug2(  "verified, skipping");
+			continue;
+		}
 		if (processedProblems.insert(problem).second) // not processed yet
 		{
 			debug2("processing the problem '%s'", problem.toString());
