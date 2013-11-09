@@ -663,6 +663,7 @@ vector< Solution > Solution::reduce() const
 	vector< const dg::Element* > processedActionElements;
 	for (auto actionElement: p_universe.getSuccessorsFromPointer(relationElement))
 	{
+		if (actionElement == relationElement) continue;
 		if (!p_isPresent(actionElement)) continue;
 
 		debug2("  candidate: %s", actionElement->toString());
