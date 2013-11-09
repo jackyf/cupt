@@ -514,12 +514,14 @@ void Solution::p_markAsSettled(const dg::Element* element)
 		p_universe.deleteEdgeFromPointers(element, successor);
 		debug2("      marking '%s' as vital", successor->toString());
 		p_universe.addEdgeFromPointers(successor, successor);
+		reasonEdges.push_back({ element, successor });
 	}
 	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
 	{
 		if (isVersionElement(predecessor)) continue;
 		// mark as satisfied
 		p_universe.deleteVertex(predecessor);
+		reasonEdges.push_back({ predecessor, element });
 	}
 }
 

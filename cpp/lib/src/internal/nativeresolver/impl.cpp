@@ -630,17 +630,19 @@ void resolveGraphItem(SolutionGraph*, const SolutionGraphItem*);
 
 IS computeGraphItemSplitStatus(SolutionGraph* graph, const SolutionGraphItem* item)
 {
+	vector< const SolutionGraphItem* > children;
+
 	for (const auto& solution: item->solution.split())
 	{
 		auto newSuccessor = graph->addVertex({ solution, IS::ReducePending });
-		graph->addEdgeFromPointers(item, newSuccessor);
 		if (newSuccessor->status == IS::Fail)
 		{
 			return IS::Fail;
 		}
+		children.push_back(newSuccessor);
 	}
 
-	for (auto child: graph->getSuccessorsFromPointer(item))
+	for (auto child: children)
 	{
 		resolveGraphItem(graph, child);
 		if (child->status == IS::Fail)
@@ -651,39 +653,42 @@ IS computeGraphItemSplitStatus(SolutionGraph* graph, const SolutionGraphItem* it
 
 	// at this point all children have IS::Success
 	item->score = 0;
-	for (auto child: graph->getSuccessorsFromPointer(item))
+	for (auto child: children)
 	{
 		item->score += child->score;
-		item->stickedElements.insert(item->stickedElements.end(),
-			child->stickedElements.begin(), child->stickedElements.end());
+		graph->addEdgeFromPointers(item, child);
 	}
 	return IS::Success;
 }
 
 IS computeGraphItemReduceStatus(SolutionGraph* graph, const SolutionGraphItem* item)
 {
+	const SolutionGraphItem* bestChild = nullptr;
+
 	for (const auto& solution: item->solution.reduce())
 	{
-		auto newSuccessor = graph->addVertex({ solution, IS::SplitPending });
-		graph->addEdgeFromPointers(item, newSuccessor);
-	}
+		auto child = graph->addVertex({ solution, IS::SplitPending });
 
-	IS result = IS::Fail;
-	for (auto child: graph->getSuccessorsFromPointer(item))
-	{
 		resolveGraphItem(graph, child);
 		if (child->status == IS::Success)
 		{
-			if (result == IS::Fail || (child->score > item->score))
+			if (!bestChild || (child->score > bestChild->score))
 			{
-				item->score = child->score;
-				item->stickedElements = child->stickedElements;
-				result = IS::Success;
+				bestChild = child;
 			}
 		}
 	}
 
-	return result;
+	if (bestChild)
+	{
+		item->score = bestChild->score;
+		graph->addEdgeFromPointers(item, bestChild);
+		return IS::Success;
+	}
+	else
+	{
+		return IS::Fail;
+	}
 }
 
 // postcondition: item->status > IS::Opened
@@ -731,7 +736,8 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 				__calculate_profits(possibleActions);
 */
 
-NativeResolverImpl::ResolvedSolution getResolvedSolution(const SolutionGraphItem* initialItem)
+NativeResolverImpl::ResolvedSolution getResolvedSolution(
+		const SolutionGraph* graph, const SolutionGraphItem* initialItem)
 {
 	NativeResolverImpl::ResolvedSolution result;
 	for (auto element: initialItem->stickedElements)

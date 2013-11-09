@@ -81,9 +81,16 @@ class Solution
 		size_t brokenElementPriority;
 	};
 
+	struct ReasonEdge
+	{
+		const dg::Element* from;
+		const dg::Element* to;
+	};
+
 	size_t id;
 	bool finished;
 	ssize_t score;
+	vector< ReasonEdge > reasonEdges;
 
 	Solution();
 	~Solution();
