@@ -126,7 +126,7 @@ string VersionVertex::toLocalizedString() const
 
 typedef BinaryVersion::RelationTypes::Type RelationType;
 
-struct RelationExpressionVertex: public BasicVertex
+struct RelationExpressionVertex: public RelationVertex
 {
 	RelationType dependencyType;
 	const RelationExpression* relationExpressionPtr;
@@ -219,7 +219,7 @@ struct AntiRelationExpressionVertex: public RelationExpressionVertex
 	}
 };
 
-struct SynchronizeVertex: public BasicVertex
+struct SynchronizeVertex: public RelationVertex
 {
 	string targetPackageName;
 	bool isHard;
@@ -322,7 +322,7 @@ class AnnotatedUserReason: public system::Resolver::UserReason
 	}
 };
 
-struct UserRelationExpressionVertex: public BasicVertex
+struct UserRelationExpressionVertex: public RelationVertex
 {
 	bool invert;
 	bool asAutoFlag;

@@ -94,6 +94,8 @@ struct VersionVertex: public BasicVertex
 	string toLocalizedString() const;
 };
 typedef VersionVertex VersionElement;
+struct RelationVertex: public BasicVertex
+{};
 
 class DependencyGraph: protected Graph< const Element* >
 {

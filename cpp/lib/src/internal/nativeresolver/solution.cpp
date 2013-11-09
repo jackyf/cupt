@@ -246,14 +246,20 @@ static bool isVersionElement(const dg::Element* elementPtr)
 	return dynamic_cast< const dg::VersionElement* >(elementPtr);
 }
 
+static bool isRelationElement(const dg::Element* element)
+{
+	return dynamic_cast< const dg::RelationVertex* >(element);
+}
+
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* element, const dg::Element* reasonElement)
 {
 	debug2("adding '%s' to universe because of '%s'", element->toString(), reasonElement->toString());
 	__dependency_graph.unfoldElement(element);
+	solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
 	if (contains(getSuccessorElements(reasonElement), element)) // valid dependency edge
 	{
-		solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
+		solution.p_realDependencies[{ reasonElement, element }];
 	}
 	// TODO: save space by adding one back-edges to present vertices
 	bool conflictorsFound = false;
@@ -519,9 +525,9 @@ void Solution::p_markAsSettled(const dg::Element* element)
 	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
 	{
 		if (isVersionElement(predecessor)) continue;
+		if (!p_realDependencies.count({ predecessor, element })) continue;
 		// mark as satisfied
 		p_universe.deleteVertex(predecessor);
-		reasonEdges.push_back({ predecessor, element });
 	}
 }
 
@@ -601,7 +607,23 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 	return true;
 }
 
-const dg::Element* Solution::p_selectMostUpVersionElement() const
+bool Solution::p_dropAlreadyProcessedElements(const dg::Element* element,
+		const vector< const dg::Element* > alreadyProcessedElements)
+{
+	for (auto processedActionElement: processedActionElements)
+	{
+		if (processingActionElement == actionElement) continue; // current one, NOP
+
+		if (!p_dropElement(processedActionElement))
+		{
+			debug2("    fail");
+			return false;
+		}
+	}
+	return true;
+}
+
+const dg::Element* Solution::p_selectMostUpRelationElement() const
 {
 	typedef vector< const dg::Element* > ElementGroup;
 	const dg::Element* result = nullptr;
@@ -612,7 +634,7 @@ const dg::Element* Solution::p_selectMostUpVersionElement() const
 		if (result) return; // found already
 		for (auto element: group)
 		{
-			if (isVersionElement(element))
+			if (isRelationElement(element))
 			{
 				result = element;
 				break;
@@ -631,22 +653,31 @@ const dg::Element* Solution::p_selectMostUpVersionElement() const
 	return result;
 }
 
+bool Solution::p_dropAfterSettling(const dg::Element* actionElement
+
 vector< Solution > Solution::reduce() const
 {
 	debug2("reducing:");
 
+	auto relationElement = p_selectMostUpRelationElement();
+	debug2("  relation: %s", relationElement->toString());
 	vector< Solution > result;
-	for (auto familyElement: getRelatedElements(p_selectMostUpVersionElement()))
+	vector< const dg::Element* > processedActionElements;
+	for (auto actionElement: p_universe.getSuccessorsFromPointer(relationElement))
 	{
-		if (!p_isPresent(familyElement)) continue;
+		if (!p_isPresent(actionElement)) continue;
 
-		debug2("  candidate: %s", familyElement->toString());
+		debug2("  candidate: %s", actionElement->toString());
 		Solution forked = *this;
 
-		forked.p_markAsSettled(familyElement);
-		if (!forked.p_dropConflictingElements(familyElement)) continue;
+		processedActionElements.push_back(actionElement);
+
+		forked.p_markAsSettled(actionElement);
+		if (!forked.p_dropConflictingElements(actionElement)) continue;
+		if (!forked.p_dropAlreadyProcessedElements(actionElement, processedActionElements)) continue;
 
 		debug2("    success");
+		forked.reasonEdges.push_back({ relationElement, actionElement });
 		result.push_back(std::move(forked));
 	}
 
@@ -665,6 +696,10 @@ vector< Solution > Solution::split() const
 			for (auto successor: p_universe.getSuccessorsFromPointer(element))
 			{
 				newSolution->p_addElementsAndEdgeToUniverse(element, successor);
+				if (p_realDependencies.count({ element, successor }))
+				{
+					newSolution.p_realDependencies[{ element, successor }];
+				}
 			}
 		}
 	};
