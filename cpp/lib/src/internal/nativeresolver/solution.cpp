@@ -525,9 +525,19 @@ void Solution::p_markAsSettled(const dg::Element* element)
 	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
 	{
 		if (isVersionElement(predecessor)) continue;
-		if (!p_realDependencies.count({ predecessor, element })) continue;
+
 		// mark as satisfied
-		p_universe.deleteVertex(predecessor);
+		if (p_realDependencies.count({ predecessor, element }))
+		{
+			debug2("      deleting predecessor '%s'", predecessor->toString());
+			p_universe.deleteVertex(predecessor);
+		}
+		else
+		{
+			debug2("      deleting virtual edge '%s' -> '%s'",
+					predecessor->toString(), element->toString());
+			p_universe.deleteEdgeFromPointers(predecessor, element);
+		}
 	}
 }
 

@@ -755,9 +755,9 @@ void rawGetResolverSolution(NativeResolverImpl::ResolvedSolution* result,
 	for (auto element: item->stickedElements)
 	{
 		auto& value = result->elements[element];
-		for (auto relationElement: reasonGraph.getSuccessorsFromPointer(element))
+		for (auto relationElement: reasonGraph.getPredecessorsFromPointer(element))
 		{
-			for (auto versionElement: reasonGraph.getSuccessorsFromPointer(relationElement))
+			for (auto versionElement: reasonGraph.getPredecessorsFromPointer(relationElement))
 			{
 				auto& ib = value.introducedBy;
 				if (!ib.empty())
@@ -766,6 +766,7 @@ void rawGetResolverSolution(NativeResolverImpl::ResolvedSolution* result,
 				}
 				ib.versionElementPtr = versionElement;
 				ib.brokenElementPtr = relationElement;
+				debug2("setting the reason '%s' for '%s'", ib.getReason()->toString(), element->toString());
 			}
 		}
 	}
