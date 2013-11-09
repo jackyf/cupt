@@ -70,7 +70,8 @@ class Solution
 	void p_markAsSettled(const dg::Element*);
 	bool p_dropElement(const dg::Element*);
 	bool p_dropConflictingElements(const dg::Element*);
-	const dg::Element* p_selectMostUpVersionElement() const;
+	bool p_dropAlreadyProcessedElements(const dg::Element*, const vector< const dg::Element* >&);
+	const dg::Element* p_selectMostUpRelationElement() const;
  public:
 	struct Action
 	{

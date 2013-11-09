@@ -259,7 +259,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 	solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
 	if (contains(getSuccessorElements(reasonElement), element)) // valid dependency edge
 	{
-		solution.p_realDependencies[{ reasonElement, element }];
+		solution.p_realDependencies.insert({ reasonElement, element });
 	}
 	// TODO: save space by adding one back-edges to present vertices
 	bool conflictorsFound = false;
@@ -607,12 +607,12 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 	return true;
 }
 
-bool Solution::p_dropAlreadyProcessedElements(const dg::Element* element,
-		const vector< const dg::Element* > alreadyProcessedElements)
+bool Solution::p_dropAlreadyProcessedElements(const dg::Element* actionElement,
+		const vector< const dg::Element* >& processedActionElements)
 {
 	for (auto processedActionElement: processedActionElements)
 	{
-		if (processingActionElement == actionElement) continue; // current one, NOP
+		if (processedActionElement == actionElement) continue; // current one, NOP
 
 		if (!p_dropElement(processedActionElement))
 		{
@@ -652,8 +652,6 @@ const dg::Element* Solution::p_selectMostUpRelationElement() const
 	}
 	return result;
 }
-
-bool Solution::p_dropAfterSettling(const dg::Element* actionElement
 
 vector< Solution > Solution::reduce() const
 {
@@ -698,7 +696,7 @@ vector< Solution > Solution::split() const
 				newSolution->p_addElementsAndEdgeToUniverse(element, successor);
 				if (p_realDependencies.count({ element, successor }))
 				{
-					newSolution.p_realDependencies[{ element, successor }];
+					newSolution->p_realDependencies.insert({ element, successor });
 				}
 			}
 		}

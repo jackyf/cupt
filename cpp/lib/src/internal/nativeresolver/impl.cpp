@@ -736,14 +736,46 @@ void resolveGraphItem(SolutionGraph* graph, const SolutionGraphItem* item)
 				__calculate_profits(possibleActions);
 */
 
+void rawGetResolverSolution(NativeResolverImpl::ResolvedSolution* result,
+		const SolutionGraph& graph, const SolutionGraphItem* item,
+		Graph< const dg::Element* > reasonGraph)
+{
+	for (auto reasonEdge: item->solution.reasonEdges)
+	{
+		reasonGraph.addVertex(reasonEdge.from);
+		reasonGraph.addVertex(reasonEdge.to);
+		reasonGraph.addEdgeFromPointers(reasonEdge.from, reasonEdge.to);
+	}
+
+	for (auto child: graph.getSuccessorsFromPointer(item))
+	{
+		rawGetResolverSolution(result, graph, child, reasonGraph);
+	}
+
+	for (auto element: item->stickedElements)
+	{
+		auto& value = result->elements[element];
+		for (auto relationElement: reasonGraph.getSuccessorsFromPointer(element))
+		{
+			for (auto versionElement: reasonGraph.getSuccessorsFromPointer(relationElement))
+			{
+				auto& ib = value.introducedBy;
+				if (!ib.empty())
+				{
+					fatal2i("nativeresolver: impl: rawGetResolverSolution: second introducedBy for '%s'", element->toString());
+				}
+				ib.versionElementPtr = versionElement;
+				ib.brokenElementPtr = relationElement;
+			}
+		}
+	}
+}
+
 NativeResolverImpl::ResolvedSolution getResolvedSolution(
-		const SolutionGraph* graph, const SolutionGraphItem* initialItem)
+		const SolutionGraph& graph, const SolutionGraphItem* initialItem)
 {
 	NativeResolverImpl::ResolvedSolution result;
-	for (auto element: initialItem->stickedElements)
-	{
-		result.elements[element];
-	}
+	rawGetResolverSolution(&result, graph, initialItem, {});
 	return result;
 }
 
@@ -766,7 +798,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	if (initialItem->status == SolutionGraphItem::Status::Success)
 	{
-		auto resolvedSolution = getResolvedSolution(initialItem);
+		auto resolvedSolution = getResolvedSolution(solutionGraph, initialItem);
 
 		__clean_automatically_installed(resolvedSolution);
 
