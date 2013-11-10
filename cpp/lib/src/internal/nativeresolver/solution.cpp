@@ -254,6 +254,8 @@ static bool isRelationElement(const dg::Element* element)
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* element, const dg::Element* reasonElement)
 {
+	if (solution.p_universe.hasEdgeFromPointers(reasonElement, element)) return;
+
 	debug2("adding '%s' to universe because of '%s'", element->toString(), reasonElement->toString());
 	__dependency_graph.unfoldElement(element);
 	solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
@@ -339,8 +341,12 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 			debug2("processing the problem '%s'", problem.toString());
 			for (auto actionElement: p_getPossibleActions(problem))
 			{
+				bool actionElementPresent = initialSolution.p_isPresent(actionElement);
 				setPackageEntry(initialSolution, actionElement, problem.brokenElement);
-				p_detectNewProblems(initialSolution, actionElement, &problemQueue);
+				if (!actionElementPresent)
+				{
+					p_detectNewProblems(initialSolution, actionElement, &problemQueue);
+				}
 			}
 		}
 	}
