@@ -532,9 +532,13 @@ void Solution::p_markAsSettled(const dg::Element* element)
 		if (isVersionElement(successor)) continue;
 		if (!p_realDependencies.count({ element, successor })) continue;
 
-		p_universe.deleteEdgeFromPointers(element, successor);
 		debug2("      marking '%s' as vital", successor->toString());
+		for (auto predecessorOfVital: deepCopy(p_universe.getPredecessorsFromPointer(successor)))
+		{
+			p_universe.deleteEdgeFromPointers(predecessorOfVital, successor);
+		}
 		p_universe.addEdgeFromPointers(successor, successor);
+
 		reasonEdges.push_back({ element, successor });
 	}
 	for (auto predecessor: deepCopy(p_universe.getPredecessorsFromPointer(element)))
@@ -556,9 +560,8 @@ void Solution::p_markAsSettled(const dg::Element* element)
 	}
 }
 
-// FIXME: add dropping down, current version drops only up
 // returns false if Solution becomes invalid as a result of dropping
-bool Solution::p_dropElement(const dg::Element* element)
+bool Solution::p_dropElementUp(const dg::Element* element)
 {
 	queue< const dg::Element* > dropCandidates;
 	dropCandidates.push(element);
@@ -566,7 +569,7 @@ bool Solution::p_dropElement(const dg::Element* element)
 	while (!dropCandidates.empty())
 	{
 		auto candidate = dropCandidates.front();
-		debug2("    considering dropping %s", candidate->toString());
+		debug2("    considering up-dropping %s", candidate->toString());
 		dropCandidates.pop();
 
 		if (isVersionElement(candidate))
@@ -626,6 +629,41 @@ bool Solution::p_dropElement(const dg::Element* element)
 		p_universe.deleteVertex(candidate);
 	}
 	return true;
+}
+
+void Solution::p_dropElementDown(const dg::Element* element)
+{
+	queue< const dg::Element* > elementsToDrop;
+	elementsToDrop.push(element);
+	while (!elementsToDrop.empty())
+	{
+		auto elementToDrop = elementsToDrop.front();
+		elementsToDrop.pop();
+
+		for (auto successor: p_universe.getSuccessorsFromPointer(elementToDrop))
+		{
+			if (isVersionElement(elementToDrop) && isVersionElement(successor)) continue;
+
+			debug2("    considering down-dropping %s", successor->toString());
+			if (p_universe.getPredecessorsFromPointer(successor).size() <= 1)
+			{
+				debug2("      yes");
+				elementsToDrop.push(successor);
+			}
+		}
+
+		if (elementToDrop != element)
+		{
+			p_universe.deleteVertex(elementToDrop);
+		}
+	}
+}
+
+bool Solution::p_dropElement(const dg::Element* element)
+{
+	debug2("    dropping '%s'", element->toString());
+	p_dropElementDown(element);
+	return p_dropElementUp(element);
 }
 
 bool Solution::p_dropConflictingElements(const dg::Element* element)
