@@ -205,13 +205,13 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		if (dependencyEdgeNeeded)
 		{
 			solution.p_universe.addVertex(problem.brokenElement);
-			debug2("    adding dependency edge '%s' -> '%s'",
-					newElementPtr->toString(), problem.brokenElement->toString());
+			/*debug2("    adding dependency edge '%s' -> '%s'",
+					newElementPtr->toString(), problem.brokenElement->toString());*/
 			solution.p_universe.addEdgeFromPointers(newElementPtr, problem.brokenElement);
 		}
 	};
 
-	debug2("  checking direct dependencies of the new element");
+	//debug2("  checking direct dependencies of the new element");
 	for (auto successor: getSuccessorElements(newElementPtr))
 	{
 		if (!verifyNoConflictingSuccessors(solution, successor))
@@ -220,7 +220,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		}
 	}
 
-	debug2("  invalidating those which depend on the old element(s)");
+	//debug2("  invalidating those which depend on the old element(s)");
 	for (auto conflictor: getConflictingElements(newElementPtr))
 	{
 		if (!solution.p_isPresent(conflictor)) continue;
@@ -229,7 +229,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		{
 			if (verifyNoConflictingSuccessors(solution, predecessor)) continue;
 
-			debug2("    unsatisfied predecessor: %s", predecessor->toString());
+			//debug2("    unsatisfied predecessor: %s", predecessor->toString());
 			for (auto reverseDependency: getPredecessorElements(predecessor))
 			{
 				if (solution.p_isPresent(reverseDependency))
@@ -354,7 +354,7 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 
 bool SolutionStorage::verifyNoConflictingSuccessors(const Solution& solution, const dg::Element* element) const
 {
-	debug2("    verifying '%s'", element->toString());
+	//debug2("    verifying '%s'", element->toString());
 	auto&& successors = getSuccessorElements(element);
 
 	auto isEmptyVersion = [&solution](const dg::Element* element)
