@@ -707,8 +707,13 @@ const dg::Element* Solution::p_selectMostUpRelationElement() const
 	const dg::Element* result = nullptr;
 	// TODO: adjust signature of topologicalSortOf to not have two "callbacks"
 	// TODO: implement early cancellation in topologicalSortOf callback
-	auto callback = [&result](const ElementGroup& group, bool)
+	auto callback = [&result](const ElementGroup& group, bool closed)
 	{
+		debug2("p_selectMostUpVersionElement: group");
+		for (auto e: group)
+		{
+			debug2("  (%c) %s", (closed?'c':'o'), e->toString());
+		}
 		if (result) return; // found already
 		for (auto element: group)
 		{
