@@ -592,7 +592,7 @@ bool Solution::p_dropElementChain(const dg::Element* element)
 				{
 					if (p_realDependencies.count({ candidate, successor }))
 					{
-						debug2("      has successor '%s'", successor->toString());
+						debug2("      no, has successor '%s'", successor->toString());
 						hasVersionSuccessors = true;
 						break;
 					}
@@ -633,6 +633,21 @@ bool Solution::p_dropElementChain(const dg::Element* element)
 
 void Solution::p_dropElementChainDown(const dg::Element* element)
 {
+	auto isDownDropAllowed = [this](const dg::Element* element, const dg::Element* excludingElement)
+	{
+		for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
+		{
+			if (predecessor == excludingElement) continue;
+			if (isVersionElement(element) && isVersionElement(predecessor)) continue;
+			if (isRelationElement(element) && !p_realDependencies.count({ predecessor, element })) continue;
+
+			debug2("        no, has other predecessor '%s'", predecessor->toString());
+			return false;
+		}
+		debug2("        yes");
+		return true;
+	};
+
 	queue< const dg::Element* > elementsToDrop;
 	elementsToDrop.push(element);
 	while (!elementsToDrop.empty())
@@ -644,10 +659,9 @@ void Solution::p_dropElementChainDown(const dg::Element* element)
 		{
 			if (isVersionElement(elementToDrop) && isVersionElement(successor)) continue;
 
-			debug2("    considering down-dropping %s", successor->toString());
-			if (p_universe.getPredecessorsFromPointer(successor).size() <= 1)
+			debug2("      considering down-dropping %s", successor->toString());
+			if (isDownDropAllowed(successor, elementToDrop))
 			{
-				debug2("      yes");
 				elementsToDrop.push(successor);
 			}
 		}
