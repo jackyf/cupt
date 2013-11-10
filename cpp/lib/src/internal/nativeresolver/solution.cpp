@@ -197,16 +197,17 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		const dg::Element* newElementPtr,
 		queue<Problem>* problemQueue)
 {
-	auto newProblemCallback = [&](Problem problem, bool dependencyEdgeNeeded)
+	auto newProblemCallback = [&](Problem problem)
 	{
 		debug2("    new problem: %s", problem.toString());
 		problemQueue->push(problem);
 
-		if (dependencyEdgeNeeded)
+		solution.p_universe.addVertex(problem.brokenElement);
+		solution.p_universe.addEdgeFromPointers(problem.versionElement, problem.brokenElement);
+		solution.p_realDependencies.insert({ problem.versionElement, problem.brokenElement });
+
+		if (newElementPtr != problem.versionElement)
 		{
-			solution.p_universe.addVertex(problem.brokenElement);
-			/*debug2("    adding dependency edge '%s' -> '%s'",
-					newElementPtr->toString(), problem.brokenElement->toString());*/
 			solution.p_universe.addEdgeFromPointers(newElementPtr, problem.brokenElement);
 		}
 	};
@@ -216,7 +217,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 	{
 		if (!verifyNoConflictingSuccessors(solution, successor))
 		{
-			newProblemCallback({ newElementPtr, successor }, true);
+			newProblemCallback({ newElementPtr, successor });
 		}
 	}
 
@@ -234,7 +235,7 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 			{
 				if (solution.p_isPresent(reverseDependency))
 				{
-					newProblemCallback({ reverseDependency, predecessor }, false);
+					newProblemCallback({ reverseDependency, predecessor });
 				}
 			}
 		}
@@ -517,18 +518,26 @@ bool Solution::p_isPresent(const dg::Element* elementPtr) const
 	return it != p_universe.getVertices().end();
 }
 
+template< typename T >
+T deepCopy(const T& value)
+{
+	return T(value);
+}
+
 void Solution::p_markAsSettled(const dg::Element* element)
 {
 	debug2("    settling %s", element->toString());
-	for (auto successor: p_universe.getSuccessorsFromPointer(element))
+	for (auto successor: deepCopy(p_universe.getSuccessorsFromPointer(element)))
 	{
 		if (isVersionElement(successor)) continue;
+		if (!p_realDependencies.count({ element, successor })) continue;
+
 		p_universe.deleteEdgeFromPointers(element, successor);
 		debug2("      marking '%s' as vital", successor->toString());
 		p_universe.addEdgeFromPointers(successor, successor);
 		reasonEdges.push_back({ element, successor });
 	}
-	for (auto predecessor: p_universe.getPredecessorsFromPointer(element))
+	for (auto predecessor: deepCopy(p_universe.getPredecessorsFromPointer(element)))
 	{
 		if (isVersionElement(predecessor)) continue;
 
@@ -576,15 +585,23 @@ bool Solution::p_dropElement(const dg::Element* element)
 			bool hasVersionSuccessors = false;
 			for (auto successor: p_universe.getSuccessorsFromPointer(candidate))
 			{
-				if (isVersionElement(successor))
+				if (!isRelationElement(successor))
 				{
-					debug2("      has successor '%s'", successor->toString());
-					hasVersionSuccessors = true;
-					break;
+					if (p_realDependencies.count({ candidate, successor }))
+					{
+						debug2("      has successor '%s'", successor->toString());
+						hasVersionSuccessors = true;
+						break;
+					}
 				}
-				if (successor == candidate)
+				else if (successor == candidate)
 				{
 					isVital = true;
+				}
+				else
+				{
+					fatal2i("nativeresolver: solution: p_dropElement: non-self edge relation edge '%s' -> '%s'",
+							candidate->toString(), successor->toString());
 				}
 			}
 			if (hasVersionSuccessors) continue;
@@ -598,7 +615,10 @@ bool Solution::p_dropElement(const dg::Element* element)
 			// dropping
 			for (auto predecessor: p_universe.getPredecessorsFromPointer(candidate))
 			{
-				dropCandidates.push(predecessor);
+				if (p_realDependencies.count({ predecessor, candidate }))
+				{
+					dropCandidates.push(predecessor);
+				}
 			}
 		}
 
