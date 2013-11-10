@@ -202,14 +202,11 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		debug2("    new problem: %s", problem.toString());
 		problemQueue->push(problem);
 
-		solution.p_universe.addVertex(problem.brokenElement);
-		solution.p_universe.addEdgeFromPointers(problem.versionElement, problem.brokenElement);
-		solution.p_realDependencies.insert({ problem.versionElement, problem.brokenElement });
-
 		if (newElementPtr != problem.versionElement)
 		{
-			solution.p_universe.addEdgeFromPointers(newElementPtr, problem.brokenElement);
+			solution.p_addElementsAndEdgeToUniverse(newElementPtr, problem.versionElement);
 		}
+		solution.p_addElementsAndEdgeToUniverse(problem.versionElement, problem.brokenElement);
 	};
 
 	//debug2("  checking direct dependencies of the new element");
@@ -255,15 +252,12 @@ static bool isRelationElement(const dg::Element* element)
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* element, const dg::Element* reasonElement)
 {
-	if (solution.p_universe.hasEdgeFromPointers(reasonElement, element)) return;
+	if (solution.p_isPresent(element)) return;
 
 	debug2("adding '%s' to universe because of '%s'", element->toString(), reasonElement->toString());
 	__dependency_graph.unfoldElement(element);
 	solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
-	if (contains(getSuccessorElements(reasonElement), element)) // valid dependency edge
-	{
-		solution.p_realDependencies.insert({ reasonElement, element });
-	}
+
 	// TODO: save space by adding one back-edges to present vertices
 	bool conflictorsFound = false;
 	for (auto conflictor: getConflictingElements(element))
@@ -312,6 +306,7 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	}
 
 	debug2("starting expanding the universe");
+	initialSolution.p_dependencyGraph = &__dependency_graph;
 	p_expandUniverse(initialSolution);
 	initialSolution.p_markAsSettled(source.back() /* user requests */);
 	debug2("finished expanding the universe");
@@ -343,9 +338,9 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 			for (auto actionElement: p_getPossibleActions(problem))
 			{
 				bool actionElementPresent = initialSolution.p_isPresent(actionElement);
-				setPackageEntry(initialSolution, actionElement, problem.brokenElement);
 				if (!actionElementPresent)
 				{
+					setPackageEntry(initialSolution, actionElement, problem.brokenElement);
 					p_detectNewProblems(initialSolution, actionElement, &problemQueue);
 				}
 			}
@@ -509,7 +504,10 @@ void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg:
 {
 	p_universe.addVertex(from);
 	p_universe.addVertex(to);
-	p_universe.addEdgeFromPointers(from, to);
+	if (p_universe.getPredecessorsFromPointer(to).empty())
+	{
+		p_universe.addEdgeFromPointers(from, to);
+	}
 }
 
 bool Solution::p_isPresent(const dg::Element* elementPtr) const
@@ -527,10 +525,9 @@ T deepCopy(const T& value)
 void Solution::p_markAsSettled(const dg::Element* element)
 {
 	debug2("    settling %s", element->toString());
-	for (auto successor: deepCopy(p_universe.getSuccessorsFromPointer(element)))
+	for (auto successor: p_dependencyGraph->getSuccessorsFromPointer(element))
 	{
-		if (isVersionElement(successor)) continue;
-		if (!p_realDependencies.count({ element, successor })) continue;
+		if (!p_isPresent(successor)) continue;
 
 		debug2("      marking '%s' as vital", successor->toString());
 		for (auto predecessorOfVital: deepCopy(p_universe.getPredecessorsFromPointer(successor)))
@@ -546,7 +543,7 @@ void Solution::p_markAsSettled(const dg::Element* element)
 		if (isVersionElement(predecessor)) continue;
 
 		// mark as satisfied
-		if (p_realDependencies.count({ predecessor, element }))
+		if (p_dependencyGraph->hasEdgeFromPointers(predecessor, element))
 		{
 			debug2("      deleting predecessor '%s'", predecessor->toString());
 			p_universe.deleteVertex(predecessor);
@@ -590,7 +587,7 @@ bool Solution::p_dropElementChain(const dg::Element* element)
 			{
 				if (!isRelationElement(successor))
 				{
-					if (p_realDependencies.count({ candidate, successor }))
+					if (p_dependencyGraph->hasEdgeFromPointers(candidate, successor))
 					{
 						debug2("      no, has successor '%s'", successor->toString());
 						hasVersionSuccessors = true;
@@ -616,12 +613,11 @@ bool Solution::p_dropElementChain(const dg::Element* element)
 			}
 
 			// dropping
-			for (auto predecessor: p_universe.getPredecessorsFromPointer(candidate))
+			for (auto predecessor: p_dependencyGraph->getPredecessorsFromPointer(candidate))
 			{
-				if (p_realDependencies.count({ predecessor, candidate }))
-				{
-					dropCandidates.push(predecessor);
-				}
+				if (!p_isPresent(predecessor)) continue;
+
+				dropCandidates.push(predecessor);
 			}
 		}
 
@@ -639,7 +635,7 @@ void Solution::p_dropElementChainDown(const dg::Element* element)
 		{
 			if (predecessor == excludingElement) continue;
 			if (isVersionElement(element) && isVersionElement(predecessor)) continue;
-			if (isRelationElement(element) && !p_realDependencies.count({ predecessor, element })) continue;
+			if (isRelationElement(element) && !p_dependencyGraph->hasEdgeFromPointers(predecessor, element)) continue;
 
 			debug2("        no, has other predecessor '%s'", predecessor->toString());
 			return false;
@@ -778,10 +774,6 @@ vector< Solution > Solution::split() const
 			for (auto successor: p_universe.getSuccessorsFromPointer(element))
 			{
 				newSolution->p_addElementsAndEdgeToUniverse(element, successor);
-				if (p_realDependencies.count({ element, successor }))
-				{
-					newSolution->p_realDependencies.insert({ element, successor });
-				}
 			}
 		}
 	};
@@ -797,6 +789,7 @@ vector< Solution > Solution::split() const
 		}
 
 		Solution newSolution;
+		newSolution.p_dependencyGraph = p_dependencyGraph;
 		copyIsland(&newSolution, island);
 		result.push_back(newSolution);
 	}

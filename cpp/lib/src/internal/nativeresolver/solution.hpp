@@ -63,7 +63,7 @@ class Solution
 	friend class SolutionStorage;
 
 	Graph< const dg::Element* > p_universe;
-	set< pair< const dg::Element*, const dg::Element* > > p_realDependencies;
+	dg::DependencyGraph* p_dependencyGraph;
 
 	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
 	bool p_isPresent(const dg::Element*) const;

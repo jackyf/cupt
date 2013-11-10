@@ -124,6 +124,7 @@ class DependencyGraph: protected Graph< const Element* >
 
 	using BaseT::getSuccessorsFromPointer;
 	using BaseT::getPredecessorsFromPointer;
+	using BaseT::hasEdgeFromPointers;
 	using BaseT::CessorListType;
 };
 
