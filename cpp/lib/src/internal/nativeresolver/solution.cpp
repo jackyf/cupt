@@ -525,6 +525,7 @@ T deepCopy(const T& value)
 void Solution::p_markAsSettled(const dg::Element* element)
 {
 	debug2("    settling %s", element->toString());
+
 	for (auto successor: p_dependencyGraph->getSuccessorsFromPointer(element))
 	{
 		if (!p_isPresent(successor)) continue;
@@ -538,6 +539,13 @@ void Solution::p_markAsSettled(const dg::Element* element)
 
 		reasonEdges.push_back({ element, successor });
 	}
+	for (auto successor: deepCopy(p_universe.getSuccessorsFromPointer(element)))
+	{
+		debug2("      deleting virtual edge '%s' -> '%s'",
+				element->toString(), successor->toString());
+		p_universe.deleteEdgeFromPointers(element, successor);
+	}
+
 	for (auto predecessor: deepCopy(p_universe.getPredecessorsFromPointer(element)))
 	{
 		if (isVersionElement(predecessor)) continue;
