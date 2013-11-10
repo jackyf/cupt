@@ -68,9 +68,8 @@ class Solution
 	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
 	bool p_isPresent(const dg::Element*) const;
 	void p_markAsSettled(const dg::Element*);
-	bool p_dropElement(const dg::Element*);
-	void p_dropElementDown(const dg::Element*);
-	bool p_dropElementUp(const dg::Element*);
+	void p_dropElementChainDown(const dg::Element*);
+	bool p_dropElementChain(const dg::Element*);
 	bool p_dropConflictingElements(const dg::Element*);
 	bool p_dropAlreadyProcessedElements(const dg::Element*, const vector< const dg::Element* >&);
 	const dg::Element* p_selectMostUpRelationElement() const;

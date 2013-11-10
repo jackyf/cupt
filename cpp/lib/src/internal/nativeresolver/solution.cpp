@@ -561,7 +561,7 @@ void Solution::p_markAsSettled(const dg::Element* element)
 }
 
 // returns false if Solution becomes invalid as a result of dropping
-bool Solution::p_dropElementUp(const dg::Element* element)
+bool Solution::p_dropElementChain(const dg::Element* element)
 {
 	queue< const dg::Element* > dropCandidates;
 	dropCandidates.push(element);
@@ -626,12 +626,12 @@ bool Solution::p_dropElementUp(const dg::Element* element)
 		}
 
 		debug2("      yes");
-		p_universe.deleteVertex(candidate);
+		p_dropElementChainDown(candidate);
 	}
 	return true;
 }
 
-void Solution::p_dropElementDown(const dg::Element* element)
+void Solution::p_dropElementChainDown(const dg::Element* element)
 {
 	queue< const dg::Element* > elementsToDrop;
 	elementsToDrop.push(element);
@@ -652,18 +652,8 @@ void Solution::p_dropElementDown(const dg::Element* element)
 			}
 		}
 
-		if (elementToDrop != element)
-		{
-			p_universe.deleteVertex(elementToDrop);
-		}
+		p_universe.deleteVertex(elementToDrop);
 	}
-}
-
-bool Solution::p_dropElement(const dg::Element* element)
-{
-	debug2("    dropping '%s'", element->toString());
-	p_dropElementDown(element);
-	return p_dropElementUp(element);
 }
 
 bool Solution::p_dropConflictingElements(const dg::Element* element)
@@ -672,7 +662,7 @@ bool Solution::p_dropConflictingElements(const dg::Element* element)
 	{
 		if (!p_isPresent(elementToDrop)) continue;
 
-		if (!p_dropElement(elementToDrop))
+		if (!p_dropElementChain(elementToDrop))
 		{
 			debug2("    fail");
 			return false;
@@ -688,7 +678,7 @@ bool Solution::p_dropAlreadyProcessedElements(const dg::Element* actionElement,
 	{
 		if (processedActionElement == actionElement) continue; // current one, NOP
 
-		if (!p_dropElement(processedActionElement))
+		if (!p_dropElementChain(processedActionElement))
 		{
 			debug2("    fail");
 			return false;
