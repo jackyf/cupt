@@ -63,6 +63,7 @@ class Solution
 	friend class SolutionStorage;
 
 	Graph< const dg::Element* > p_universe;
+	map< const dg::Element*, set< const dg::Element* > > p_reservedPredecessors;
 	dg::DependencyGraph* p_dependencyGraph;
 
 	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
@@ -129,7 +130,8 @@ class SolutionStorage
 			return brokenElement->getReason(*versionElement)->toString();
 		}
 	};
-	void p_detectNewProblems(Solution& solution, const dg::Element*, queue<Problem>*);
+	template< typename CallbackT >
+	void p_detectNewProblems(Solution& solution, const dg::Element*, const CallbackT&);
 	void p_expandUniverse(Solution&);
 
 	typedef vector< const dg::Element* > PossibleActions;

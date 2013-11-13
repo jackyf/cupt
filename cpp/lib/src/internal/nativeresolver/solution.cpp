@@ -193,14 +193,13 @@ auto SolutionStorage::p_getPossibleActions(Problem problem) -> PossibleActions
 	return result;
 }
 
+template< typename CallbackT >
 void SolutionStorage::p_detectNewProblems(Solution& solution,
-		const dg::Element* newElementPtr,
-		queue<Problem>* problemQueue)
+		const dg::Element* newElementPtr, const CallbackT& queueCallback)
 {
 	auto newProblemCallback = [&](Problem problem)
 	{
-		debug2("    new problem: %s", problem.toString());
-		problemQueue->push(problem);
+		queueCallback(problem);
 
 		if (newElementPtr != problem.versionElement)
 		{
@@ -252,7 +251,7 @@ static bool isRelationElement(const dg::Element* element)
 void SolutionStorage::setPackageEntry(Solution& solution,
 		const dg::Element* element, const dg::Element* reasonElement)
 {
-	if (solution.p_isPresent(element)) return;
+	if (solution.p_universe.hasEdgeFromPointers(reasonElement, element)) return;
 
 	debug2("adding '%s' to universe because of '%s'", element->toString(), reasonElement->toString());
 	__dependency_graph.unfoldElement(element);
@@ -312,18 +311,29 @@ void SolutionStorage::prepareForResolving(Solution& initialSolution,
 	debug2("finished expanding the universe");
 }
 
+template< typename T >
+T deepCopy(const T& value)
+{
+	return T(value);
+}
+
 void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 {
 	queue< Problem > problemQueue;
 	set< Problem > processedProblems;
-
+	auto problemQueueCallback = [&problemQueue, &processedProblems](Problem problem)
 	{
-		auto copiedInitialVertices = initialSolution.p_universe.getVertices();
-		for (auto element: copiedInitialVertices)
+		if (processedProblems.insert(problem).second)
 		{
-			debug2("adding initial element '%s'", element->toString());
-			p_detectNewProblems(initialSolution, element, &problemQueue);
+			debug2("    new problem: %s", problem.toString());
+			problemQueue.push(problem);
 		}
+	};
+
+	for (auto element: deepCopy(initialSolution.p_universe.getVertices()))
+	{
+		debug2("adding initial element '%s'", element->toString());
+		p_detectNewProblems(initialSolution, element, problemQueueCallback);
 	}
 
 	debug2("starting unrolling the problem queue");
@@ -332,17 +342,14 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 		auto problem = problemQueue.front();
 		problemQueue.pop();
 
-		if (processedProblems.insert(problem).second) // not processed yet
+		debug2("processing the problem '%s'", problem.toString());
+		for (auto actionElement: p_getPossibleActions(problem))
 		{
-			debug2("processing the problem '%s'", problem.toString());
-			for (auto actionElement: p_getPossibleActions(problem))
+			bool actionElementPresent = initialSolution.p_isPresent(actionElement);
+			setPackageEntry(initialSolution, actionElement, problem.brokenElement);
+			if (!actionElementPresent)
 			{
-				bool actionElementPresent = initialSolution.p_isPresent(actionElement);
-				if (!actionElementPresent)
-				{
-					setPackageEntry(initialSolution, actionElement, problem.brokenElement);
-					p_detectNewProblems(initialSolution, actionElement, &problemQueue);
-				}
+				p_detectNewProblems(initialSolution, actionElement, problemQueueCallback);
 			}
 		}
 	}
@@ -504,7 +511,12 @@ void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg:
 {
 	p_universe.addVertex(from);
 	p_universe.addVertex(to);
-	if (p_universe.getPredecessorsFromPointer(to).empty())
+	if (p_universe.getReachableFrom(to).count(from))
+	{
+		// avoid loops in the p_universe
+		p_reservedPredecessors[to].insert(from);
+	}
+	else
 	{
 		p_universe.addEdgeFromPointers(from, to);
 	}
@@ -514,12 +526,6 @@ bool Solution::p_isPresent(const dg::Element* elementPtr) const
 {
 	auto it = p_universe.getVertices().find(elementPtr);
 	return it != p_universe.getVertices().end();
-}
-
-template< typename T >
-T deepCopy(const T& value)
-{
-	return T(value);
 }
 
 void Solution::p_markAsSettled(const dg::Element* element)
@@ -648,8 +654,26 @@ void Solution::p_dropElementChainDown(const dg::Element* element)
 			debug2("        no, has other predecessor '%s'", predecessor->toString());
 			return false;
 		}
-		debug2("        yes");
 		return true;
+	};
+
+	auto instantiateReservedPredecessor = [this](const dg::Element* element)
+	{
+		auto it = p_reservedPredecessors.find(element);
+		if (it != p_reservedPredecessors.end())
+		{
+			auto newPredecessorIt = it->second.begin();
+			auto newPredecessor = *newPredecessorIt;
+			debug2("      no, instantiated new predecessor '%s'", newPredecessor->toString());
+			p_universe.addEdgeFromPointers(newPredecessor, element);
+			it->second.erase(newPredecessorIt);
+			if (it->second.empty())
+			{
+				p_reservedPredecessors.erase(it);
+			}
+			return true;
+		}
+		return false;
 	};
 
 	queue< const dg::Element* > elementsToDrop;
@@ -666,7 +690,11 @@ void Solution::p_dropElementChainDown(const dg::Element* element)
 			debug2("      considering down-dropping %s", successor->toString());
 			if (isDownDropAllowed(successor, elementToDrop))
 			{
-				elementsToDrop.push(successor);
+				if (!instantiateReservedPredecessor(successor))
+				{
+					debug2("        yes");
+					elementsToDrop.push(successor);
+				}
 			}
 		}
 
