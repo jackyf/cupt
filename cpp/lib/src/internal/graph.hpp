@@ -236,21 +236,14 @@ void __dfs_visit(const Graph< T >& graph, const T* vertexPtr,
 template < class T >
 vector< const T* > __dfs_mode1(const Graph< T >& graph)
 {
-	vector< const T* > vertices;
-
-	FORIT(it, graph.getVertices())
-	{
-		vertices.push_back(&*it);
-	}
-
 	set< const T* > seen;
 	vector< const T* > result;
 
-	FORIT(vertexIt, vertices)
+	for (const auto& vertex: graph.getVertices())
 	{
-		if (!seen.count(*vertexIt))
+		if (!seen.count(&vertex))
 		{
-			__dfs_visit(graph, *vertexIt, seen, result);
+			__dfs_visit(graph, &vertex, seen, result);
 		}
 	}
 
