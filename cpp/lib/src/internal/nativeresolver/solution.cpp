@@ -205,7 +205,6 @@ void SolutionStorage::p_detectNewProblems(Solution& solution,
 		{
 			solution.p_addElementsAndEdgeToUniverse(newElementPtr, problem.versionElement);
 		}
-		solution.p_addElementsAndEdgeToUniverse(problem.versionElement, problem.brokenElement);
 	};
 
 	//debug2("  checking direct dependencies of the new element");
@@ -248,14 +247,10 @@ static bool isRelationElement(const dg::Element* element)
 	return dynamic_cast< const dg::RelationVertex* >(element);
 }
 
-void SolutionStorage::setPackageEntry(Solution& solution,
-		const dg::Element* element, const dg::Element* reasonElement)
+void SolutionStorage::setPackageEntry(Solution& solution, const dg::Element* element)
 {
-	if (solution.p_universe.hasEdgeFromPointers(reasonElement, element)) return;
-
-	debug2("adding '%s' to universe because of '%s'", element->toString(), reasonElement->toString());
+	debug2("new element '%s'", element->toString());
 	__dependency_graph.unfoldElement(element);
-	solution.p_addElementsAndEdgeToUniverse(reasonElement, element);
 
 	// TODO: save space by adding one back-edges to present vertices
 	bool conflictorsFound = false;
@@ -264,8 +259,8 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		if (solution.p_isPresent(conflictor))
 		{
 			conflictorsFound = true;
-			solution.p_universe.addEdgeFromPointers(element, conflictor);
-			solution.p_universe.addEdgeFromPointers(conflictor, element);
+			solution.p_addElementsAndEdgeToUniverse(element, conflictor);
+			solution.p_addElementsAndEdgeToUniverse(conflictor, element);
 		}
 	}
 	if (!conflictorsFound)
@@ -279,7 +274,7 @@ void SolutionStorage::setPackageEntry(Solution& solution,
 		{
 			if (auto emptyVariant = getCorrespondingEmptyElement(element))
 			{
-				setPackageEntry(solution, emptyVariant, element);
+				setPackageEntry(solution, emptyVariant);
 			}
 		}
 	}
@@ -321,12 +316,13 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 {
 	queue< Problem > problemQueue;
 	set< Problem > processedProblems;
-	auto problemQueueCallback = [&problemQueue, &processedProblems](Problem problem)
+	auto problemQueueCallback = [&](Problem problem)
 	{
 		if (processedProblems.insert(problem).second)
 		{
-			debug2("    new problem: %s", problem.toString());
+			debug2("  new problem: %s", problem.toString());
 			problemQueue.push(problem);
+			initialSolution.p_addElementsAndEdgeToUniverse(problem.versionElement, problem.brokenElement);
 		}
 	};
 
@@ -346,9 +342,10 @@ void SolutionStorage::p_expandUniverse(Solution& initialSolution)
 		for (auto actionElement: p_getPossibleActions(problem))
 		{
 			bool actionElementPresent = initialSolution.p_isPresent(actionElement);
-			setPackageEntry(initialSolution, actionElement, problem.brokenElement);
+			initialSolution.p_addElementsAndEdgeToUniverse(problem.brokenElement, actionElement);
 			if (!actionElementPresent)
 			{
+				setPackageEntry(initialSolution, actionElement);
 				p_detectNewProblems(initialSolution, actionElement, problemQueueCallback);
 			}
 		}
@@ -507,19 +504,31 @@ bool Solution::operator<(const Solution& other) const
 	return p_universe.getVertices() < other.p_universe.getVertices();
 }
 
-void Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg::Element* to)
+bool Solution::p_addElementsAndEdgeToUniverse(const dg::Element* from, const dg::Element* to)
 {
 	p_universe.addVertex(from);
 	p_universe.addVertex(to);
+
+	if (p_universe.hasEdgeFromPointers(from, to)) return false;
+	auto reservedPredecessorsIt = p_reservedPredecessors.find(to);
+	if (reservedPredecessorsIt != p_reservedPredecessors.end())
+	{
+		if (reservedPredecessorsIt->second.count(from)) return false;
+	}
+
 	if (p_universe.getReachableFrom(to).count(from))
 	{
 		// avoid loops in the p_universe
+		debug2("  new reserved edge '%s' -> '%s'", from->toString(), to->toString());
 		p_reservedPredecessors[to].insert(from);
 	}
 	else
 	{
+		debug2("  new actual edge '%s' -> '%s'", from->toString(), to->toString());
 		p_universe.addEdgeFromPointers(from, to);
 	}
+
+	return true;
 }
 
 bool Solution::p_isPresent(const dg::Element* elementPtr) const
@@ -807,9 +816,17 @@ vector< Solution > Solution::split() const
 		for (auto element: island)
 		{
 			newSolution->p_universe.addVertex(element);
+
 			for (auto successor: p_universe.getSuccessorsFromPointer(element))
 			{
-				newSolution->p_addElementsAndEdgeToUniverse(element, successor);
+				newSolution->p_universe.addVertex(successor);
+				newSolution->p_universe.addEdgeFromPointers(element, successor);
+			}
+
+			auto reservedPredecessorsIt = p_reservedPredecessors.find(element);
+			if (reservedPredecessorsIt != p_reservedPredecessors.end())
+			{
+				newSolution->p_reservedPredecessors[element] = std::move(reservedPredecessorsIt->second);
 			}
 		}
 	};

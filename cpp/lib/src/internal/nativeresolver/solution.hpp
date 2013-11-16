@@ -66,7 +66,7 @@ class Solution
 	map< const dg::Element*, set< const dg::Element* > > p_reservedPredecessors;
 	dg::DependencyGraph* p_dependencyGraph;
 
-	void p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
+	bool p_addElementsAndEdgeToUniverse(const dg::Element*, const dg::Element*);
 	bool p_isPresent(const dg::Element*) const;
 	void p_markAsSettled(const dg::Element*);
 	void p_dropElementChainDown(const dg::Element*);
@@ -159,7 +159,7 @@ class SolutionStorage
 	// may include parameter itself
 	bool simulateSetPackageEntry(const Solution& solution,
 			const dg::Element*, const dg::Element**) const;
-	void setPackageEntry(Solution&, const dg::Element*, const dg::Element*);
+	void setPackageEntry(Solution&, const dg::Element*);
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
