@@ -265,7 +265,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 
 	auto addBasicEdge = [&gaa](const InnerAction* fromPtr, const InnerAction* toPtr)
 	{
-		gaa.graph.addEdgeFromPointers(fromPtr, toPtr);
+		gaa.graph.addEdge(fromPtr, toPtr);
 		gaa.attributes[make_pair(fromPtr, toPtr)].isFundamental = true;
 	};
 
@@ -429,7 +429,7 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			}
 			*/
 
-			gi.gaaPtr->graph.addEdgeFromPointers(slaveActionPtr, masterActionPtr);
+			gi.gaaPtr->graph.addEdge(slaveActionPtr, masterActionPtr);
 
 			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
 			// adding relation to attributes
@@ -605,7 +605,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
 
-			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& predecessors = graph.getPredecessors(&*innerActionIt);
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
@@ -616,7 +616,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 				}
 			}
 
-			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& successors = graph.getSuccessors(&*innerActionIt);
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
@@ -658,7 +658,7 @@ void __move_edge(GraphAndAttributes& gaa,
 	// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' should be deleted
 	// manually after the call of this function
 
-	gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
+	gaa.graph.addEdge(toPredecessorPtr, toSuccessorPtr);
 };
 
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
@@ -671,8 +671,8 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const auto& predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
-		const auto& successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+		const auto& predecessors = gaa.graph.getPredecessors(fromPtr);
+		const auto& successors = gaa.graph.getSuccessors(toPtr);
 		for (auto predecessor: predecessors)
 		{
 			for (auto successor: successors)
@@ -684,7 +684,7 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 						gaa.attributes[make_pair(toPtr, successor)]);
 				if (!sharedRir) continue;
 
-				gaa.graph.addEdgeFromPointers(predecessor, successor);
+				gaa.graph.addEdge(predecessor, successor);
 				gaa.attributes[make_pair(predecessor, successor)].relationInfo.push_back(*sharedRir);
 				if (debugging)
 				{
@@ -756,7 +756,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		setVirtual(fromAttribute);
 		__move_edge(gaa, fromPredecessorPtr, fromSuccessorPtr, toPredecessorPtr, toSuccessorPtr, debugging);
 
-		gaa.graph.deleteEdgeFromPointers(fromPredecessorPtr, fromSuccessorPtr);
+		gaa.graph.deleteEdge(fromPredecessorPtr, fromSuccessorPtr);
 		if (debugging)
 		{
 			debug2("deleting the edge '%s' -> '%s'",
@@ -776,7 +776,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					return; // this chain is not fully linked
 				}
 
-				const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr); // copying
+				const GraphCessorListType predecessors = gaa.graph.getPredecessors(fromPtr); // copying
 				FORIT(predecessorPtrIt, predecessors)
 				{
 					if (*predecessorPtrIt == toPtr)
@@ -790,7 +790,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					}
 				}
 
-				const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+				const GraphCessorListType successors = gaa.graph.getSuccessors(toPtr);
 				FORIT(successorPtrIt, successors)
 				{
 					if (*successorPtrIt == fromPtr)
@@ -840,7 +840,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr,
 			const InnerAction* unpackActionPtr)
 	{
-		if (gaa.graph.hasEdgeFromPointers(toPtr, fromPtr))
+		if (gaa.graph.hasEdge(toPtr, fromPtr))
 		{
 			return;
 		}
@@ -858,7 +858,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
 		FORIT(actionPtrIt, notFirstActions)
 		{
-			const GraphCessorListType& predecessors = gaa.graph.getPredecessorsFromPointer(*actionPtrIt);
+			const GraphCessorListType& predecessors = gaa.graph.getPredecessors(*actionPtrIt);
 			FORIT(predecessorIt, predecessors)
 			{
 				if (!reachableFromVertices.count(*predecessorIt))
@@ -866,7 +866,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 					// the fact we reached here means:
 					// 1) predecessorIt does not belong to a chain being adjusted
 					// 2) link 'predecessor' -> 'from' does not create a cycle
-					gaa.graph.addEdgeFromPointers(*predecessorIt, fromPtr);
+					gaa.graph.addEdge(*predecessorIt, fromPtr);
 					if (debugging)
 					{
 						debug2("setting priority link: '%s' -> '%s'",
@@ -941,7 +941,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 				{
 					debug2("new link: '%s' -> '%s'", fromPtr->toString(), toPtr->toString());
 				}
-				gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+				gaa.graph.addEdge(toPtr, fromPtr);
 			}
 		}
 	};
@@ -1031,7 +1031,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 				[&gaa](const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 				{
 					// priority edge for shorting distance between package subactions
-					gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+					gaa.graph.addEdge(toPtr, fromPtr);
 				});
 		__fill_graph_dependencies(_cache, gaa, debugging);
 		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
@@ -1112,7 +1112,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			auto newFromPtr = &*it;
 			auto oldFromPtr = gaa.graph.addVertex(*newFromPtr);
 
-			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
+			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessors(oldFromPtr);
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;
@@ -1136,7 +1136,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 					}
 					else
 					{
-						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+						miniGaa.graph.addEdge(newFromPtr, newToPtr);
 						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
 						if (debugging)
 						{
@@ -1174,7 +1174,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 
 						if (ignoring)
 						{
-							miniGaa.graph.addEdgeFromPointers(newPotentialFromPtr, newPotentialToPtr);
+							miniGaa.graph.addEdge(newPotentialFromPtr, newPotentialToPtr);
 							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] = potentialEdgeAttribute;
 						}
 						else

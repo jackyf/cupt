@@ -166,12 +166,12 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution
 
 const GraphCessorListType& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
 {
-	return __dependency_graph.getSuccessorsFromPointer(elementPtr);
+	return __dependency_graph.getSuccessors(elementPtr);
 }
 
 const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
 {
-	return __dependency_graph.getPredecessorsFromPointer(elementPtr);
+	return __dependency_graph.getPredecessors(elementPtr);
 }
 
 const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(

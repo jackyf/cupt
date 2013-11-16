@@ -301,7 +301,7 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 								allRightSidesAreAutomatic = false;
 								break;
 							case Allow::YesIfNoRDepends:
-								dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
+								dependencyGraph.addEdge(&*elementPtrIt, &*it);
 							case Allow::Yes:
 								if (!candidateElementPtrPtr) // not found yet
 								{
@@ -313,13 +313,13 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 				}
 				if (allRightSidesAreAutomatic && candidateElementPtrPtr)
 				{
-					dependencyGraph.addEdgeFromPointers(&*elementPtrIt, candidateElementPtrPtr);
+					dependencyGraph.addEdge(&*elementPtrIt, candidateElementPtrPtr);
 				}
 			}
 
 			if (isCandidateForAutoRemoval(*elementPtrIt) == Allow::No)
 			{
-				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
+				dependencyGraph.addEdge(mainVertexPtr, &*elementPtrIt);
 			}
 		}
 	}

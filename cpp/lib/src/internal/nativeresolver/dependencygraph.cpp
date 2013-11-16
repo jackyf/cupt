@@ -654,7 +654,7 @@ class DependencyGraph::FillHelper
  private:
 	void addEdgeCustom(const Element* fromVertexPtr, const Element* toVertexPtr)
 	{
-		__dependency_graph.addEdgeFromPointers(fromVertexPtr, toVertexPtr);
+		__dependency_graph.addEdge(fromVertexPtr, toVertexPtr);
 	}
 
 	const Element* getVertexPtrForRelationExpression(const RelationExpression* relationExpressionPtr,

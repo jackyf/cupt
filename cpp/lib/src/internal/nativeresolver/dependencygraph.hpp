@@ -134,8 +134,8 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 	const Element* getCorrespondingEmptyElement(const Element*);
 	void unfoldElement(const Element*);
 
-	using BaseT::getSuccessorsFromPointer;
-	using BaseT::getPredecessorsFromPointer;
+	using BaseT::getSuccessors;
+	using BaseT::getPredecessors;
 	using BaseT::CessorListType;
 };
 
