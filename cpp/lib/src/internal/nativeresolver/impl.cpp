@@ -492,6 +492,42 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 	}
 }
 
+void setRejections(SolutionStorage& solutionStorage, Solution& solution, const Solution::Action& action)
+{
+	auto reject = [&](const dg::Element* element)
+	{
+		solutionStorage.setRejection(solution, element, action.newElementPtr);
+	};
+
+	if (!action.allActionNewElements) return; // nothing to reject
+
+	if (action.newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
+	{
+		// all
+		for (auto element: *action.allActionNewElements)
+		{
+			reject(element);
+		}
+	}
+	else
+	{
+		const auto& uselessToRejectElements = SolutionStorage::getConflictingElements(action.newElementPtr);
+		auto uselessToReject = [&uselessToRejectElements](const dg::Element* element)
+		{
+			return std::find(uselessToRejectElements.begin(), uselessToRejectElements.end(), element) !=
+					uselessToRejectElements.end();
+		};
+
+		for (auto element: *action.allActionNewElements)
+		{
+			if (element == action.newElementPtr) break;
+			if (uselessToReject(element)) continue;
+
+			reject(element);
+		}
+	}
+}
+
 void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
 {
 	if (!solution.pendingAction)
@@ -500,12 +536,7 @@ void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
 	}
 	const auto& action = *solution.pendingAction;
 
-	{ // process elements to reject
-		FORIT(elementPtrIt, action.elementsToReject)
-		{
-			solutionStorage.setRejection(solution, *elementPtrIt, action.newElementPtr);
-		}
-	};
+	setRejections(solutionStorage, solution, action);
 
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
@@ -643,32 +674,15 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 
 void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > >& actions) const
 {
-	// each next action receives one more additional reject request to not
-	// interfere with all previous solutions
-	vector< const dg::Element* > elementPtrs;
-	FORIT(actionIt, actions)
-	{
-		(*actionIt)->elementsToReject = elementPtrs;
+	if (actions.size() <= 1) return;
 
-		elementPtrs.push_back((*actionIt)->newElementPtr);
-	}
-	for (auto& actionPtr: actions)
+	auto allNewElements = std::make_shared< vector< const dg::Element* > >();
+	allNewElements->reserve(actions.size());
+
+	for (const auto& action: actions)
 	{
-		if (actionPtr->newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
-		{
-			actionPtr->elementsToReject = elementPtrs; // all
-		}
-		else
-		{
-			const auto& uselessToRejectElements = SolutionStorage::getConflictingElements(actionPtr->newElementPtr);
-			auto deleteIt = std::remove_if(actionPtr->elementsToReject.begin(), actionPtr->elementsToReject.end(),
-					[&uselessToRejectElements](const dg::Element* elementPtr)
-					{
-						return std::find(uselessToRejectElements.begin(), uselessToRejectElements.end(), elementPtr) !=
-								uselessToRejectElements.end();
-					});
-			actionPtr->elementsToReject.erase(deleteIt, actionPtr->elementsToReject.end());
-		}
+		action->allActionNewElements = allNewElements;
+		allNewElements->push_back(action->newElementPtr);
 	}
 }
 
