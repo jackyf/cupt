@@ -402,33 +402,6 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			auto masterActionPtr = (direction == Direction::After ? currentActionPtr : gi.innerActionPtr);
 			auto slaveActionPtr = (direction == Direction::After ? gi.innerActionPtr : currentActionPtr);
 
-			// commented, because of #582423
-			/* bool replacesFound = false;
-			if (dependencyType == BinaryVersion::RelationTypes::Conflicts)
-			{
-				// this is Conflicts, in the case there are appropriate
-				// Replaces, the 'remove before' action dependency should not be created
-				const RelationLine& replaces = masterAction.version->relations[BinaryVersion::RelationTypes::Replaces];
-				FORIT(replacesRelationExpressionIt, replaces)
-				{
-					auto replacesSatisfyingVersions = cache->getSatisfyingVersions(*replacesRelationExpressionIt);
-
-					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), slaveAction.version);
-					if (std::find_if(replacesSatisfyingVersions.begin(), replacesSatisfyingVersions.end(),
-							predicate) != replacesSatisfyingVersions.end())
-					{
-						// yes, found Replaces, skip this action
-						replacesFound = true;
-						break;
-					}
-				}
-			}
-			if (replacesFound)
-			{
-				continue;
-			}
-			*/
-
 			gi.gaaPtr->graph.addEdge(slaveActionPtr, masterActionPtr);
 
 			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
