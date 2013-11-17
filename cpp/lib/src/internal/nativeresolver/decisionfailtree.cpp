@@ -64,7 +64,7 @@ string DecisionFailTree::toString() const
 }
 
 vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
-		const SolutionStorage& solutionStorage, const Solution& solution,
+		const SolutionStorage& solutionStorage, const PreparedSolution& solution,
 		const IntroducedBy& lastIntroducedBy)
 {
 	vector< Decision > result;
@@ -111,7 +111,7 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element
 }
 
 void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
-		const Solution& solution, const IntroducedBy& lastIntroducedBy)
+		const PreparedSolution& solution, const IntroducedBy& lastIntroducedBy)
 {
 	FailItem failItem;
 	failItem.solutionId = solution.id;

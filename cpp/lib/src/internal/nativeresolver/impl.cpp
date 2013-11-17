@@ -79,8 +79,8 @@ void __mydebug_wrapper(const Solution& solution, const Args&... args)
 template < typename... Args >
 void __mydebug_wrapper(const Solution& solution, size_t id, const Args&... args)
 {
-	string levelString(solution.level, ' ');
-	debug2("%s(%u:%zd) %s", levelString, id, solution.score, format2(args...));
+	string levelString(solution.getLevel(), ' ');
+	debug2("%s(%u:%zd) %s", levelString, id, solution.getScore(), format2(args...));
 }
 
 // installs new version, but does not sticks it
@@ -160,11 +160,11 @@ struct SolutionScoreLess
 	bool operator()(const shared_ptr< Solution >& left,
 			const shared_ptr< Solution >& right) const
 	{
-		if (left->score < right->score)
+		if (left->getScore() < right->getScore())
 		{
 			return true;
 		}
-		if (left->score > right->score)
+		if (left->getScore() > right->getScore())
 		{
 			return false;
 		}
@@ -185,7 +185,7 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 	// defer the decision until all solutions are built
 	FORIT(solutionIt, solutions)
 	{
-		if (! (*solutionIt)->finished)
+		if (! (*solutionIt)->isFinished())
 		{
 			return solutionIt;
 		}
@@ -197,7 +197,7 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 }
 
 bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
-		const Solution& solution, const dg::Element* elementPtr) const
+		const PreparedSolution& solution, const dg::Element* elementPtr) const
 {
 	auto overrideIt = __auto_status_overrides.find(packageName);
 	if (overrideIt != __auto_status_overrides.end())
@@ -223,7 +223,7 @@ bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
 }
 
 AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
-		const Solution& solution, const dg::Element* elementPtr)
+		const PreparedSolution& solution, const dg::Element* elementPtr)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
@@ -245,7 +245,7 @@ AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
 			p_computeTargetAutoStatus(packageName, solution, elementPtr));
 }
 
-bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
+bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solution)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
@@ -372,15 +372,12 @@ SolutionChooser __select_solution_chooser(const Config& config)
 }
 
 /* __pre_apply_action only prints debug info and changes level/score of the
-   solution, not modifying packages in it, economing RAM and CPU,
-   __post_apply_action will perform actual changes when the solution is picked up
-   by resolver */
-
+   solution, not necessarily modifying packages in it, saving RAM and CPU */
 void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 		Solution& solution, unique_ptr< Action >&& actionToApply,
 		size_t actionPosition, size_t oldSolutionId)
 {
-	if (originalSolution.finished)
+	if (originalSolution.isFinished())
 	{
 		fatal2i("an attempt to make changes to already finished solution");
 	}
@@ -398,7 +395,7 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	solution.score += __score_manager.getScoreChangeValue(scoreChange);
 
-	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
+	__solution_storage->assignAction(solution, std::move(actionToApply));
 }
 
 ScoreChange NativeResolverImpl::p_getScoreChange(
@@ -444,7 +441,7 @@ ScoreChange NativeResolverImpl::p_getScoreChange(
 
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
-		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
+		const shared_ptr< PreparedSolution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
 	// apply all the solutions by one
 	bool onlyOneAction = (actions.size() == 1);
@@ -483,62 +480,7 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 	}
 }
 
-void setRejections(SolutionStorage& solutionStorage, Solution& solution, const Solution::Action& action)
-{
-	auto reject = [&](const dg::Element* element)
-	{
-		solutionStorage.setRejection(solution, element, action.newElementPtr);
-	};
-
-	if (!action.allActionNewElements) return; // nothing to reject
-
-	if (action.newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
-	{
-		// all
-		for (auto element: *action.allActionNewElements)
-		{
-			reject(element);
-		}
-	}
-	else
-	{
-		const auto& uselessToRejectElements = SolutionStorage::getConflictingElements(action.newElementPtr);
-		auto uselessToReject = [&uselessToRejectElements](const dg::Element* element)
-		{
-			return std::find(uselessToRejectElements.begin(), uselessToRejectElements.end(), element) !=
-					uselessToRejectElements.end();
-		};
-
-		for (auto element: *action.allActionNewElements)
-		{
-			if (element == action.newElementPtr) break;
-			if (uselessToReject(element)) continue;
-
-			reject(element);
-		}
-	}
-}
-
-void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
-{
-	if (!solution.pendingAction)
-	{
-		fatal2i("__post_apply_action: no action to apply");
-	}
-	const auto& action = *solution.pendingAction;
-
-	setRejections(solutionStorage, solution, action);
-
-	PackageEntry packageEntry;
-	packageEntry.sticked = true;
-	packageEntry.introducedBy = action.introducedBy;
-	solutionStorage.setPackageEntry(solution, action.newElementPtr,
-			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
-
-	solution.pendingAction.reset();
-}
-
-bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
+bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution& solution,
 		const dg::Element* candidateElementPtr, const dg::Element* brokenElementPtr,
 		bool debugging)
 {
@@ -608,7 +550,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 }
 
 void NativeResolverImpl::__add_actions_to_modify_package_entry(
-		vector< unique_ptr< Action > >& actions, const Solution& solution,
+		vector< unique_ptr< Action > >& actions, const PreparedSolution& solution,
 		const dg::Element* versionElementPtr, const dg::Element* brokenElementPtr,
 		bool debugging)
 {
@@ -644,7 +586,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 }
 
 void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Action > >& actions,
-		const Solution& solution, const dg::Element* brokenElementPtr)
+		const PreparedSolution& solution, const dg::Element* brokenElementPtr)
 {
 	const GraphCessorListType& successorElementPtrs =
 			__solution_storage->getSuccessorElements(brokenElementPtr);
@@ -677,7 +619,7 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 	}
 }
 
-void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
+void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& solution,
 		const string& packageName, Resolver::SuggestedPackage& suggestedPackage,
 		const dg::Element* elementPtr, map< const dg::Element*, size_t >& reasonProcessingCache) const
 {
@@ -714,7 +656,7 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 }
 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
-		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
+		const PreparedSolution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
@@ -790,7 +732,7 @@ struct BrokenPair
 };
 
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
-		const Solution& solution, const BrokenPair& bp, bool debugging)
+		const PreparedSolution& solution, const BrokenPair& bp, bool debugging)
 {
 	auto brokenElementPtr = bp.brokenSuccessor.elementPtr;
 
@@ -804,7 +746,7 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 	}
 }
 
-void NativeResolverImpl::__final_verify_solution(const Solution& solution)
+void NativeResolverImpl::__final_verify_solution(const PreparedSolution& solution)
 {
 	for (auto element: solution.getElements())
 	{
@@ -820,7 +762,7 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 }
 
 BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
-		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
+		const PreparedSolution& solution, const map< const dg::Element*, size_t >& failCounts)
 {
 	auto failValue = [&failCounts](const dg::Element* e) -> size_t
 	{
@@ -890,24 +832,18 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 	return result;
 }
 
-shared_ptr< Solution > __get_next_current_solution(
+shared_ptr< PreparedSolution > __get_next_current_solution(
 		SolutionContainer& solutions, SolutionStorage& solutionStorage, const SolutionChooser& chooser)
 {
 	auto currentSolutionIt = chooser(solutions);
 	shared_ptr< Solution > currentSolution = *currentSolutionIt;
 	solutions.erase(currentSolutionIt);
 
-	if (currentSolution->pendingAction)
-	{
-		currentSolution->prepare();
-		__post_apply_action(solutionStorage, *currentSolution);
-	}
-
-	return currentSolution;
+	return solutionStorage.prepareSolution(currentSolution);
 }
 
 void NativeResolverImpl::__fill_and_process_introduced_by(
-		const Solution& solution, const BrokenPair& bp, ActionContainer* actionsPtr)
+		const PreparedSolution& solution, const BrokenPair& bp, ActionContainer* actionsPtr)
 {
 	IntroducedBy ourIntroducedBy;
 	ourIntroducedBy.versionElementPtr = bp.versionElementPtr;
@@ -940,7 +876,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	__any_solution_was_found = false;
 	__decision_fail_tree.clear();
 
-	shared_ptr< Solution > initialSolution(new Solution);
+	auto initialSolution = std::make_shared< PreparedSolution >();
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
 	__solution_storage->prepareForResolving(*initialSolution,
 			__old_packages, __initial_packages, p_userRelationExpressions);

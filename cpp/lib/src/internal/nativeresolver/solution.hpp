@@ -86,15 +86,6 @@ struct BrokenSuccessor
 
 class Solution
 {
-	friend class SolutionStorage;
-
-	shared_ptr< const Solution > __parent;
-	shared_ptr< const PackageEntryMap > __initial_entries;
-	shared_ptr< const PackageEntryMap > __master_entries;
-	shared_ptr< PackageEntryMap > __added_entries;
-	unique_ptr< BrokenSuccessorMap > __broken_successors;
-
-	void p_initNonSharedStructures();
  public:
 	struct Action
 	{
@@ -106,19 +97,41 @@ class Solution
 	};
 
 	size_t id;
-	size_t level;
-	bool finished;
 	ssize_t score;
-	std::unique_ptr< const Action > pendingAction;
 
 	Solution();
 	Solution(const Solution&) = delete;
 	Solution& operator=(const Solution&) = delete;
-	~Solution();
+	virtual ~Solution();
 
-	void prepare();
+	virtual ssize_t getScore() const = 0;
+	virtual bool isFinished() const = 0;
+	virtual size_t getLevel() const = 0;
+};
+
+class PreparedSolution: public Solution
+{
+	friend class SolutionStorage;
+
+	shared_ptr< const PackageEntryMap > __initial_entries;
+	shared_ptr< const PackageEntryMap > __master_entries;
+	shared_ptr< PackageEntryMap > __added_entries;
+	unique_ptr< BrokenSuccessorMap > __broken_successors;
+
+	void p_initNonSharedStructures();
+ public:
+	PreparedSolution();
+	~PreparedSolution();
+	void initEntriesFromParent(const PreparedSolution&);
+
+	size_t level;
+	bool finished;
+
+	ssize_t getScore() const { return score; }
+	bool isFinished() const { return finished; }
+	size_t getLevel() const { return level; }
+
 	vector< const dg::Element* > getElements() const;
-
 	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
@@ -131,7 +144,7 @@ class SolutionStorage
 
 	dg::DependencyGraph __dependency_graph;
 
-	void __update_broken_successors(Solution&,
+	void __update_broken_successors(PreparedSolution&,
 			const dg::Element*, const dg::Element*, size_t priority);
 
 	struct Change
@@ -144,32 +157,37 @@ class SolutionStorage
 	vector< Change > __change_index;
 	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
 	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
+	void p_applyAction(PreparedSolution&, const Solution::Action&);
  public:
 	SolutionStorage(const Config&, const Cache& cache);
 
-	shared_ptr< Solution > cloneSolution(const shared_ptr< Solution >&);
-	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< Solution >&);
+	shared_ptr< Solution > cloneSolution(const shared_ptr< PreparedSolution >&);
+	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< PreparedSolution >&);
 
-	void prepareForResolving(Solution&,
+	void prepareForResolving(PreparedSolution&,
 			const map< string, const BinaryVersion* >&,
 			const map< string, dg::InitialPackageEntry >&,
 			const vector< dg::UserRelationExpression >&);
+
+	void assignAction(Solution& solution, unique_ptr< Solution::Action >&& action);
+	shared_ptr< PreparedSolution > prepareSolution(const shared_ptr< Solution >&);
+
 	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
 	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
-	bool verifyElement(const Solution&, const dg::Element*) const;
+	bool verifyElement(const PreparedSolution&, const dg::Element*) const;
 
 	// may include parameter itself
 	static const forward_list< const dg::Element* >&
 			getConflictingElements(const dg::Element*);
-	bool simulateSetPackageEntry(const Solution& solution,
+	bool simulateSetPackageEntry(const PreparedSolution&,
 			const dg::Element*, const dg::Element**) const;
-	void setRejection(Solution&, const dg::Element*, const dg::Element*);
-	void setPackageEntry(Solution&, const dg::Element*,
+	void setRejection(PreparedSolution&, const dg::Element*, const dg::Element*);
+	void setPackageEntry(PreparedSolution&, const dg::Element*,
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 
-	void processReasonElements(const Solution&, map< const dg::Element*, size_t >&,
+	void processReasonElements(const PreparedSolution&, map< const dg::Element*, size_t >&,
 			const IntroducedBy&, const dg::Element*,
 			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
 	pair< const dg::Element*, const dg::Element* > getDiversedElements(
