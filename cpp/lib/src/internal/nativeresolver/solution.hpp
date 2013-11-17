@@ -101,7 +101,6 @@ class Solution
 		const dg::Element* oldElementPtr; // may be NULL
 		const dg::Element* newElementPtr; // many not be NULL
 		shared_ptr< vector< const dg::Element* > > allActionNewElements;
-		ScoreChange profit;
 		IntroducedBy introducedBy;
 		size_t brokenElementPriority;
 	};

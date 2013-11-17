@@ -377,7 +377,8 @@ SolutionChooser __select_solution_chooser(const Config& config)
    by resolver */
 
 void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
-		Solution& solution, unique_ptr< Action >&& actionToApply, size_t oldSolutionId)
+		Solution& solution, unique_ptr< Action >&& actionToApply,
+		size_t actionPosition, size_t oldSolutionId)
 {
 	if (originalSolution.finished)
 	{
@@ -386,21 +387,22 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 
 	auto oldElementPtr = actionToApply->oldElementPtr;
 	auto newElementPtr = actionToApply->newElementPtr;
-	const ScoreChange& profit = actionToApply->profit;
+	auto scoreChange = p_getScoreChange(oldElementPtr, newElementPtr, actionPosition);
 
 	if (__config->getBool("debug::resolver"))
 	{
 		__mydebug_wrapper(originalSolution, oldSolutionId, "-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
-				solution.id, __score_manager.getScoreChangeString(profit),
+				solution.id, __score_manager.getScoreChangeString(scoreChange),
 				oldElementPtr ? oldElementPtr->toString() : "", newElementPtr->toString());
 	}
 
-	solution.score += __score_manager.getScoreChangeValue(profit);
+	solution.score += __score_manager.getScoreChangeValue(scoreChange);
 
 	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
 }
 
-void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& actions) const
+ScoreChange NativeResolverImpl::p_getScoreChange(
+		const dg::Element* oldElement, const dg::Element* newElement, size_t position) const
 {
 	auto getVersion = [](const dg::Element* elementPtr) -> const BinaryVersion*
 	{
@@ -416,56 +418,45 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 		return versionVertex->version;
 	};
 
-	size_t position = 0;
-	FORIT(actionIt, actions)
+	ScoreChange result;
+	switch (newElement->getUnsatisfiedType())
 	{
-		Action& action = **actionIt;
-
-		switch (action.newElementPtr->getUnsatisfiedType())
-		{
-			case dg::Unsatisfied::None:
-				action.profit = __score_manager.getVersionScoreChange(
-						getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
-				break;
-			case dg::Unsatisfied::Recommends:
-				action.profit = __score_manager.getUnsatisfiedRecommendsScoreChange();
-				break;
-			case dg::Unsatisfied::Suggests:
-				action.profit = __score_manager.getUnsatisfiedSuggestsScoreChange();
-				break;
-			case dg::Unsatisfied::Sync:
-				action.profit = __score_manager.getUnsatisfiedSynchronizationScoreChange();
-				break;
-			case dg::Unsatisfied::Custom:
-				action.profit = __score_manager.getCustomUnsatisfiedScoreChange(action.newElementPtr->getUnsatisfiedImportance());
-				break;
-		}
-		action.profit.setPosition(position);
-		++position;
+		case dg::Unsatisfied::None:
+			result = __score_manager.getVersionScoreChange(getVersion(oldElement), getVersion(newElement));
+			break;
+		case dg::Unsatisfied::Recommends:
+			result = __score_manager.getUnsatisfiedRecommendsScoreChange();
+			break;
+		case dg::Unsatisfied::Suggests:
+			result = __score_manager.getUnsatisfiedSuggestsScoreChange();
+			break;
+		case dg::Unsatisfied::Sync:
+			result = __score_manager.getUnsatisfiedSynchronizationScoreChange();
+			break;
+		case dg::Unsatisfied::Custom:
+			result = __score_manager.getCustomUnsatisfiedScoreChange(newElement->getUnsatisfiedImportance());
+			break;
 	}
+	result.setPosition(position);
+
+	return result;
 }
 
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
-	// sort them by "rank", from more good to more bad
-	std::stable_sort(actions.begin(), actions.end(),
-			[this](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
-			{
-				return this->__score_manager.getScoreChangeValue(right->profit)
-						< this->__score_manager.getScoreChangeValue(left->profit);
-			});
-
 	// apply all the solutions by one
 	bool onlyOneAction = (actions.size() == 1);
 	auto oldSolutionId = currentSolution->id;
+	size_t position = 0;
 	FORIT(actionIt, actions)
 	{
 		auto newSolution = onlyOneAction ?
 				__solution_storage->fakeCloneSolution(currentSolution) :
 				__solution_storage->cloneSolution(currentSolution);
-		__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt), oldSolutionId);
+		__pre_apply_action(*currentSolution, *newSolution,
+				std::move(*actionIt), position++, oldSolutionId);
 		callback(newSolution);
 	}
 }
@@ -1051,8 +1042,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			}
 			else
 			{
-				__calculate_profits(possibleActions);
-
 				auto callback = [&solutions](const shared_ptr< Solution >& solution)
 				{
 					solutions.insert(solution);
