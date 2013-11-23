@@ -151,23 +151,18 @@ class UnpreparedSolution: public Solution
 	shared_ptr< PreparedSolution > prepare() const;
 };
 
-SolutionStorage::Change::Change(size_t parentSolutionId_)
-	: parentSolutionId(parentSolutionId_)
-{}
-
 SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 	: __next_free_id(1), __dependency_graph(config, cache)
 {}
 
-size_t SolutionStorage::__get_new_solution_id(const Solution& parent)
+size_t SolutionStorage::__get_new_solution_id()
 {
-	__change_index.emplace_back(parent.id);
 	return __next_free_id++;
 }
 
 shared_ptr< Solution > SolutionStorage::fakeCloneSolution(const shared_ptr< PreparedSolution >& source)
 {
-	source->id = __get_new_solution_id(*source);
+	source->id = __get_new_solution_id();
 	++source->level;
 	return source;
 }
@@ -177,7 +172,7 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Prepared
 	auto cloned = std::make_shared< UnpreparedSolution >();
 
 	cloned->p_parent = source;
-	cloned->id = __get_new_solution_id(*source);
+	cloned->id = __get_new_solution_id();
 
 	// other parts should be done by calling prepare outside
 
@@ -350,23 +345,11 @@ void SolutionStorage::__update_broken_successors(PreparedSolution& solution,
 	}
 }
 
-void SolutionStorage::__update_change_index(size_t solutionId,
-		const dg::Element* newElementPtr, const PackageEntry& packageEntry)
-{
-	if (!packageEntry.sticked)
-	{
-		return; // not a "main" change
-	}
-
-	__change_index[solutionId].insertedElementPtr = newElementPtr;
-}
-
 void SolutionStorage::setPackageEntry(PreparedSolution& solution,
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr, size_t priority)
 {
 	__dependency_graph.unfoldElement(elementPtr);
-	__update_change_index(solution.id, elementPtr, packageEntry);
 
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
@@ -431,8 +414,6 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	{
 		__update_broken_successors(initialSolution, NULL, entry.first, 0);
 	}
-
-	__change_index.emplace_back(0);
 }
 
 bool SolutionStorage::verifyElement(const PreparedSolution& solution,
@@ -475,18 +456,6 @@ const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Eleme
 void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
 {
 	__dependency_graph.unfoldElement(elementPtr);
-}
-
-size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element* elementPtr) const
-{
-	while (solutionId != 0)
-	{
-		const auto& change = __change_index[solutionId];
-		if (change.insertedElementPtr == elementPtr) return solutionId;
-		solutionId = change.parentSolutionId;
-	}
-
-	return -1;
 }
 
 void SolutionStorage::processReasonElements(const PreparedSolution& solution,

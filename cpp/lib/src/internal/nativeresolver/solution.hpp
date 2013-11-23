@@ -142,23 +142,12 @@ class PreparedSolution: public Solution
 class SolutionStorage
 {
 	size_t __next_free_id;
-	size_t __get_new_solution_id(const Solution& parent);
+	size_t __get_new_solution_id();
 
 	dg::DependencyGraph __dependency_graph;
 
 	void __update_broken_successors(PreparedSolution&,
 			const dg::Element*, const dg::Element*, size_t priority);
-
-	struct Change
-	{
-		const dg::Element* insertedElementPtr;
-		size_t parentSolutionId;
-
-		explicit Change(size_t);
-	};
-	vector< Change > __change_index;
-	void __update_change_index(size_t, const dg::Element*, const PackageEntry&);
-	size_t __getInsertPosition(size_t solutionId, const dg::Element*) const;
 	void p_applyAction(PreparedSolution&, const Solution::Action&);
  public:
 	SolutionStorage(const Config&, const Cache& cache);
