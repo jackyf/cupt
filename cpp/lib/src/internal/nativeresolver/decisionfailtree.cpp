@@ -110,11 +110,28 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element
 	return true;
 }
 
+static std::pair< const dg::Element*, const dg::Element* > getDiversedElements(
+		const vector< const dg::Element* >& left, const vector< const dg::Element* >& right)
+{
+	auto leftIt = left.begin();
+	auto rightIt = right.begin();
+
+	// precondition: left and right are different solutions and therefore have
+	// diversed elements before both leftInsertedElements.end() and
+	// rightInsertedElements.end()
+	while (*leftIt == *rightIt)
+	{
+		++leftIt;
+		++rightIt;
+	}
+	return { *leftIt, *rightIt };
+}
+
 void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		const PreparedSolution& solution, const IntroducedBy& lastIntroducedBy)
 {
 	FailItem failItem;
-	failItem.solutionId = solution.id;
+	failItem.insertedElements = solution.getInsertedElements();
 
 	auto fillFailItemDecisions = [&]()
 	{
@@ -129,7 +146,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 	auto it = __fail_items.begin();
 	while (it != __fail_items.end())
 	{
-		auto diversedElements = solutionStorage.getDiversedElements(it->solutionId, failItem.solutionId);
+		auto diversedElements = getDiversedElements(it->insertedElements, failItem.insertedElements);
 		auto existingIsDominant = __is_dominant(*it, diversedElements.first);
 		if (existingIsDominant)
 		{

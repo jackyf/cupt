@@ -38,7 +38,7 @@ class DecisionFailTree
 	};
 	struct FailItem
 	{
-		size_t solutionId;
+		vector< const dg::Element* > insertedElements;
 		vector< Decision > decisions;
 	};
 	std::list< FailItem > __fail_items;

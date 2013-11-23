@@ -28,7 +28,7 @@ namespace internal {
 using std::make_pair;
 
 PackageEntry::PackageEntry(bool sticked_)
-	: sticked(sticked_), autoremoved(false)
+	: sticked(sticked_), autoremoved(false), level(0)
 {}
 
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
@@ -168,6 +168,7 @@ size_t SolutionStorage::__get_new_solution_id(const Solution& parent)
 shared_ptr< Solution > SolutionStorage::fakeCloneSolution(const shared_ptr< PreparedSolution >& source)
 {
 	source->id = __get_new_solution_id(*source);
+	++source->level;
 	return source;
 }
 
@@ -546,27 +547,6 @@ void SolutionStorage::processReasonElements(
 	}
 }
 
-pair< const dg::Element*, const dg::Element* > SolutionStorage::getDiversedElements(
-		size_t leftSolutionId, size_t rightSolutionId) const
-{
-	const auto* leftChangePtr = &__change_index[leftSolutionId];
-	const auto* rightChangePtr = &__change_index[rightSolutionId];
-
-	while (leftChangePtr->parentSolutionId != rightChangePtr->parentSolutionId)
-	{
-		if (leftChangePtr->parentSolutionId < rightChangePtr->parentSolutionId)
-		{
-			rightChangePtr = &__change_index[rightChangePtr->parentSolutionId];
-		}
-		else
-		{
-			leftChangePtr = &__change_index[leftChangePtr->parentSolutionId];
-		}
-	}
-
-	return { leftChangePtr->insertedElementPtr, rightChangePtr->insertedElementPtr };
-}
-
 void SolutionStorage::assignAction(Solution& solution, unique_ptr< Solution::Action >&& action)
 {
 	if (auto prepared = dynamic_cast< PreparedSolution* >(&solution))
@@ -624,6 +604,7 @@ void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
+	packageEntry.level = solution.level;
 	setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
 }
@@ -771,6 +752,25 @@ vector< const dg::Element* > PreparedSolution::getElements() const
 
 	__foreach_solution_element(intermediateMap, *__added_entries,
 			[&result](const PackageEntryMap::value_type& data) { if (data.second) result.push_back(data.first); });
+
+	return result;
+}
+
+vector< const dg::Element* > PreparedSolution::getInsertedElements() const
+{
+	vector< const dg::Element* > result(level, nullptr);
+
+	static const PackageEntryMap nullPackageEntryMap;
+	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
+
+	__foreach_solution_element(masterEntries, *__added_entries,
+			[&result](const PackageEntryMap::value_type& data)
+			{
+				if (!data.second) return;
+				const auto& level = data.second->level;
+				if (!level) return;
+				result[level-1] = data.first;
+			});
 
 	return result;
 }

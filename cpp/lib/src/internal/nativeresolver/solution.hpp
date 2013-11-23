@@ -64,6 +64,7 @@ struct PackageEntry
 	bool autoremoved;
 	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
+	size_t level;
 
 	PackageEntry(bool sticked_ = false);
 	PackageEntry(PackageEntry&&) = default;
@@ -132,6 +133,7 @@ class PreparedSolution: public Solution
 	size_t getLevel() const { return level; }
 
 	vector< const dg::Element* > getElements() const;
+	vector< const dg::Element* > getInsertedElements() const;
 	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
@@ -190,8 +192,6 @@ class SolutionStorage
 	void processReasonElements(const PreparedSolution&, map< const dg::Element*, size_t >&,
 			const IntroducedBy&, const dg::Element*,
 			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
-	pair< const dg::Element*, const dg::Element* > getDiversedElements(
-			size_t leftSolutionId, size_t rightSolutionId) const;
 };
 
 }
