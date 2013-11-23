@@ -3,6 +3,7 @@ cupt (2.7.0~) UNRELEASED; urgency=low
   * lib:
     - system/resolvers/native:
       - Reduced solution memory footprint.
+      - Reduced average CPU costs of postprocessing failed solutions.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:35:04 +0200
 

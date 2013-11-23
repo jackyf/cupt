@@ -115,7 +115,15 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 {
 	FailItem failItem;
 	failItem.solutionId = solution.id;
-	failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
+
+	auto fillFailItemDecisions = [&]()
+	{
+		if (failItem.decisions.empty())
+		{
+			failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
+		}
+	};
+
 	bool willBeAdded = true;
 
 	auto it = __fail_items.begin();
@@ -130,6 +138,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		}
 		else
 		{
+			fillFailItemDecisions();
 			if (__is_dominant(failItem, diversedElements.second))
 			{
 				it = __fail_items.erase(it);
@@ -143,6 +152,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 
 	if (willBeAdded)
 	{
+		fillFailItemDecisions();
 		__fail_items.push_back(std::move(failItem));
 	}
 }
