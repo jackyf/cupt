@@ -489,21 +489,10 @@ size_t SolutionStorage::__getInsertPosition(size_t solutionId, const dg::Element
 	return -1;
 }
 
-void SolutionStorage::processReasonElements(
-		const PreparedSolution& solution, map< const dg::Element*, size_t >& elementPositionCache,
+void SolutionStorage::processReasonElements(const PreparedSolution& solution,
 		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
 		const std::function< void (const IntroducedBy&, const dg::Element*) >& callback) const
 {
-	auto getElementPosition = [this, &solution, &elementPositionCache](const dg::Element* elementPtr)
-	{
-		auto& value = elementPositionCache[elementPtr];
-		if (!value)
-		{
-			value = __getInsertPosition(solution.id, elementPtr);
-		}
-		return value;
-	};
-
 	{ // version
 		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
 		{
@@ -521,27 +510,29 @@ void SolutionStorage::processReasonElements(
 			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
 			{
 				// not yet processed
+				auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
 
-				// verifying that conflicting element was added to a
-				// solution earlier than currently processed item
-				auto conflictingElementInsertedPosition = getElementPosition(conflictingElementPtr);
-				if (conflictingElementInsertedPosition == size_t(-1))
+				if (insertedElementPtr)
 				{
-					// conflicting element was not a resolver decision, so it can't
-					// have valid 'introducedBy' anyway
-					continue;
-				}
-				if (getElementPosition(insertedElementPtr) <= conflictingElementInsertedPosition)
-				{
-					// it means conflicting element was inserted to a solution _after_
-					// the current element, so it can't be a reason for it
-					continue;
+					// verifying that conflicting element was added to a
+					// solution earlier than currently processed item
+					auto conflictingElementInsertedPosition = conflictorPackageEntryPtr->level;
+					if (conflictingElementInsertedPosition == 0)
+					{
+						// conflicting element was not a resolver decision, so it can't
+						// have valid 'introducedBy' anyway
+						continue;
+					}
+					if (solution.getPackageEntry(insertedElementPtr)->level <= conflictingElementInsertedPosition)
+					{
+						// it means conflicting element was inserted to a solution _after_
+						// the current element, so it can't be a reason for it
+						continue;
+					}
 				}
 
 				// verified, queueing now
-				const IntroducedBy& candidateIntroducedBy =
-						solution.getPackageEntry(conflictingElementPtr)->introducedBy;
-				callback(candidateIntroducedBy, conflictingElementPtr);
+				callback(conflictorPackageEntryPtr->introducedBy, conflictingElementPtr);
 			}
 		}
 	}

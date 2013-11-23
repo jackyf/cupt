@@ -69,7 +69,6 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 {
 	vector< Decision > result;
 
-	map< const dg::Element*, size_t > elementPositionCache;
 	std::stack< Decision > chainStack;
 
 	chainStack.push(Decision { lastIntroducedBy, 0, NULL });
@@ -90,7 +89,7 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 			}
 		};
 
-		solutionStorage.processReasonElements(solution, elementPositionCache,
+		solutionStorage.processReasonElements(solution,
 				item.introducedBy, item.insertedElementPtr, std::cref(queueItem));
 	}
 

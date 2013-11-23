@@ -189,7 +189,7 @@ class SolutionStorage
 			PackageEntry&&, const dg::Element*, size_t);
 	void unfoldElement(const dg::Element*);
 
-	void processReasonElements(const PreparedSolution&, map< const dg::Element*, size_t >&,
+	void processReasonElements(const PreparedSolution&,
 			const IntroducedBy&, const dg::Element*,
 			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
 };
