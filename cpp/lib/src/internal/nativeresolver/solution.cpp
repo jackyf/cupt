@@ -549,17 +549,20 @@ static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& so
 	}
 }
 
-void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::Action& action)
+void SolutionStorage::p_setPackageEntryFromAction(PreparedSolution& solution, const Solution::Action& action)
 {
-	setRejections(*this, solution, action);
-
 	PackageEntry packageEntry;
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
 	packageEntry.level = solution.level;
 	setPackageEntry(solution, action.newElementPtr,
 			std::move(packageEntry), action.oldElementPtr);
+}
 
+void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::Action& action)
+{
+	setRejections(*this, solution, action);
+	p_setPackageEntryFromAction(solution, action);
 	p_updateBrokenSuccessors(solution,
 			action.oldElementPtr, action.newElementPtr, action.brokenElementPriority+1);
 }

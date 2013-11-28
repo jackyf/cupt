@@ -148,6 +148,7 @@ class SolutionStorage
 
 	void p_updateBrokenSuccessors(PreparedSolution&,
 			const dg::Element*, const dg::Element*, size_t priority);
+	inline void p_setPackageEntryFromAction(PreparedSolution&, const Solution::Action&);
 	void p_applyAction(PreparedSolution&, const Solution::Action&);
  public:
 	SolutionStorage(const Config&, const Cache& cache);
