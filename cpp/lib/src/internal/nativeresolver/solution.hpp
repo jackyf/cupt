@@ -146,7 +146,7 @@ class SolutionStorage
 
 	dg::DependencyGraph __dependency_graph;
 
-	void __update_broken_successors(PreparedSolution&,
+	void p_updateBrokenSuccessors(PreparedSolution&,
 			const dg::Element*, const dg::Element*, size_t priority);
 	void p_applyAction(PreparedSolution&, const Solution::Action&);
  public:
@@ -175,7 +175,7 @@ class SolutionStorage
 			const dg::Element*, const dg::Element**) const;
 	void setRejection(PreparedSolution&, const dg::Element*, const dg::Element*);
 	void setPackageEntry(PreparedSolution&, const dg::Element*,
-			PackageEntry&&, const dg::Element*, size_t);
+			PackageEntry&&, const dg::Element*);
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const PreparedSolution&,

@@ -343,7 +343,7 @@ bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solut
 					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
 				}
 				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), *elementPtrIt, (size_t)-1);
+						std::move(packageEntry), *elementPtrIt);
 			}
 		}
 	}

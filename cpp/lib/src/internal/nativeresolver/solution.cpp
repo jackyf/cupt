@@ -245,18 +245,12 @@ void SolutionStorage::setRejection(PreparedSolution& solution,
 			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
 
 	packageEntry.rejectedConflictors.push_front(elementPtr);
-	setPackageEntry(solution, conflictingElementPtr,
-			std::move(packageEntry), NULL, -1);
+	setPackageEntry(solution, conflictingElementPtr, std::move(packageEntry), nullptr);
 }
 
-void SolutionStorage::__update_broken_successors(PreparedSolution& solution,
+void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 		const dg::Element* oldElementPtr, const dg::Element* newElementPtr, size_t priority)
 {
-	if (priority == (size_t)-1)
-	{
-		return;
-	}
-
 	auto& bss = *solution.__broken_successors;
 
 	auto reverseDependencyExists = [this, &solution](const dg::Element* elementPtr)
@@ -347,7 +341,7 @@ void SolutionStorage::__update_broken_successors(PreparedSolution& solution,
 
 void SolutionStorage::setPackageEntry(PreparedSolution& solution,
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
-		const dg::Element* conflictingElementPtr, size_t priority)
+		const dg::Element* conflictingElementPtr)
 {
 	__dependency_graph.unfoldElement(elementPtr);
 
@@ -380,8 +374,6 @@ void SolutionStorage::setPackageEntry(PreparedSolution& solution,
 			solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
 		}
 	}
-
-	__update_broken_successors(solution, conflictingElementPtr, elementPtr, priority);
 }
 
 void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
@@ -412,7 +404,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	initialSolution.__added_entries->init(std::move(source));
 	for (const auto& entry: *initialSolution.__added_entries)
 	{
-		__update_broken_successors(initialSolution, NULL, entry.first, 0);
+		p_updateBrokenSuccessors(initialSolution, nullptr, entry.first, 0);
 	}
 }
 
@@ -566,7 +558,10 @@ void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::
 	packageEntry.introducedBy = action.introducedBy;
 	packageEntry.level = solution.level;
 	setPackageEntry(solution, action.newElementPtr,
-			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
+			std::move(packageEntry), action.oldElementPtr);
+
+	p_updateBrokenSuccessors(solution,
+			action.oldElementPtr, action.newElementPtr, action.brokenElementPriority+1);
 }
 
 shared_ptr< PreparedSolution > SolutionStorage::prepareSolution(const shared_ptr< Solution >& input)
