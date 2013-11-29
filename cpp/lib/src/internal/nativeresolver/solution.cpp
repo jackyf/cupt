@@ -343,8 +343,6 @@ void SolutionStorage::setPackageEntry(PreparedSolution& solution,
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr)
 {
-	__dependency_graph.unfoldElement(elementPtr);
-
 	auto it = solution.__added_entries->lower_bound(elementPtr);
 	if (it == solution.__added_entries->end() || it->first != elementPtr)
 	{
@@ -563,6 +561,7 @@ void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::
 {
 	setRejections(*this, solution, action);
 	p_setPackageEntryFromAction(solution, action);
+	__dependency_graph.unfoldElement(action.newElementPtr);
 	p_updateBrokenSuccessors(solution,
 			action.oldElementPtr, action.newElementPtr, action.brokenElementPriority+1);
 }
