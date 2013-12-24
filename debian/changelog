@@ -1,9 +1,11 @@
-cupt (2.6.4~) UNRELEASED; urgency=low
+cupt (2.6.4~) UNRELEASED; urgency=medium
 
   * lib:
     - system/worker:
       - 'renameSnapshot': don't accept invalid snapshot names.
       - Detect snapshot names having whitespace characters as invalid.
+      - 'updateReleaseAndIndexData': reimplemented needed subset of <future>.
+        Fixes FTBFS on armel. (Closes: #730974)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:33:35 +0200
 
