@@ -155,6 +155,9 @@ SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 	: __next_free_id(1), __dependency_graph(config, cache)
 {}
 
+SolutionStorage::~SolutionStorage()
+{}
+
 size_t SolutionStorage::__get_new_solution_id()
 {
 	return __next_free_id++;
@@ -398,9 +401,12 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
+	p_initialEntries.reset(new PackageEntryMap);
+	p_initialEntries->init(std::move(source));
+
+	initialSolution.__initial_entries = p_initialEntries.get();
 	initialSolution.p_initNonSharedStructures();
-	initialSolution.__added_entries->init(std::move(source));
-	for (const auto& entry: *initialSolution.__added_entries)
+	for (const auto& entry: *p_initialEntries)
 	{
 		p_updateBrokenSuccessors(initialSolution, nullptr, entry.first, 0);
 	}
@@ -653,42 +659,34 @@ void PreparedSolution::initEntriesFromParent(const PreparedSolution& parent)
 {
 	p_initNonSharedStructures();
 
-	if (!parent.__initial_entries)
+	__initial_entries = parent.__initial_entries;
+
+	if (!parent.__master_entries)
 	{
-		// parent is initial (top-level) solution
-		__initial_entries = parent.__added_entries;
+		// parent solution is a master solution, build a slave on top of it
+		__master_entries = parent.__added_entries;
 	}
 	else
 	{
-		__initial_entries = parent.__initial_entries;
-
-		if (!parent.__master_entries)
+		// this a slave solution
+		size_t& forkedCount = parent.__master_entries->forkedCount;
+		forkedCount += parent.__added_entries->size();
+		if (forkedCount > parent.__master_entries->size())
 		{
-			// parent solution is a master solution, build a slave on top of it
-			__master_entries = parent.__added_entries;
+			forkedCount = 0;
+
+			// master solution is overdiverted, build new master one
+			__added_entries->reserve(parent.__added_entries->size() +
+					parent.__master_entries->size());
+
+			__foreach_solution_element(*parent.__master_entries, *parent.__added_entries,
+					[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
 		}
 		else
 		{
-			// this a slave solution
-			size_t& forkedCount = parent.__master_entries->forkedCount;
-			forkedCount += parent.__added_entries->size();
-			if (forkedCount > parent.__master_entries->size())
-			{
-				forkedCount = 0;
-
-				// master solution is overdiverted, build new master one
-				__added_entries->reserve(parent.__added_entries->size() +
-						parent.__master_entries->size());
-
-				__foreach_solution_element(*parent.__master_entries, *parent.__added_entries,
-						[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
-			}
-			else
-			{
-				// build new slave solution from current
-				__master_entries = parent.__master_entries;
-				*__added_entries = *(parent.__added_entries);
-			}
+			// build new slave solution from current
+			__master_entries = parent.__master_entries;
+			*__added_entries = *(parent.__added_entries);
 		}
 	}
 
@@ -700,7 +698,7 @@ vector< const dg::Element* > PreparedSolution::getElements() const
 	vector< const dg::Element* > result;
 
 	static const PackageEntryMap nullPackageEntryMap;
-	const auto& initialEntries = __initial_entries ? *__initial_entries : nullPackageEntryMap;
+	const auto& initialEntries = *__initial_entries;
 	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
 
 	PackageEntryMap intermediateMap;
@@ -752,13 +750,10 @@ const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* element
 			return it->second.get();
 		}
 	}
-	if (__initial_entries)
+	it = __initial_entries->find(elementPtr);
+	if (it != __initial_entries->end())
 	{
-		it = __initial_entries->find(elementPtr);
-		if (it != __initial_entries->end())
-		{
-			return it->second.get();
-		}
+		return it->second.get();
 	}
 
 	return nullptr; // not found

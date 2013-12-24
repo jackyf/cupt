@@ -114,7 +114,7 @@ class PreparedSolution: public Solution
 {
 	friend class SolutionStorage;
 
-	shared_ptr< const PackageEntryMap > __initial_entries;
+	const PackageEntryMap* __initial_entries;
 	shared_ptr< const PackageEntryMap > __master_entries;
 	shared_ptr< PackageEntryMap > __added_entries;
 	unique_ptr< BrokenSuccessorMap > __broken_successors;
@@ -145,6 +145,7 @@ class SolutionStorage
 	size_t __get_new_solution_id();
 
 	dg::DependencyGraph __dependency_graph;
+	unique_ptr< PackageEntryMap > p_initialEntries;
 
 	void p_updateBrokenSuccessors(PreparedSolution&,
 			const dg::Element*, const dg::Element*, size_t priority);
@@ -152,6 +153,7 @@ class SolutionStorage
 	void p_applyAction(PreparedSolution&, const Solution::Action&);
  public:
 	SolutionStorage(const Config&, const Cache& cache);
+	~SolutionStorage();
 
 	shared_ptr< Solution > cloneSolution(const shared_ptr< PreparedSolution >&);
 	shared_ptr< Solution > fakeCloneSolution(const shared_ptr< PreparedSolution >&);
