@@ -225,6 +225,13 @@ void checkSnapshotName(const Snapshots& snapshots, const string& name)
 	{
 		fatal2(__("the system snapshot name '%s' cannot start with a '.'"), name);
 	}
+	for (auto c: name)
+	{
+		if (isspace(c))
+		{
+			fatal2(__("the system snapshot name '%s' cannot contain a whitespace character '%c'"), name, c);
+		}
+	}
 
 	{
 		auto existingNames = snapshots.getSnapshotNames();
