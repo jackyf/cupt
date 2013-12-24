@@ -201,33 +201,29 @@ const forward_list< const dg::Element* >& SolutionStorage::getConflictingElement
 }
 
 bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
-		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr) const
+		const dg::Element* element, const dg::Element** conflictingElementPtr) const
 {
-	const forward_list< const dg::Element* >& conflictingElementPtrs =
-			getConflictingElements(elementPtr);
-	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
+	for (auto conflictingElement: getConflictingElements(element))
 	{
-		if (*conflictingElementPtrIt == elementPtr)
-		{
-			continue;
-		}
-		if (auto packageEntryPtr = solution.getPackageEntry(*conflictingElementPtrIt))
+		if (conflictingElement == element) continue;
+
+		if (auto packageEntryPtr = solution.getPackageEntry(conflictingElement))
 		{
 			// there may be only one conflicting element in the solution
-			*conflictingElementPtrPtr = *conflictingElementPtrIt;
+			*conflictingElementPtr = conflictingElement;
 
-			return (!packageEntryPtr->sticked && packageEntryPtr->isModificationAllowed(elementPtr));
+			return (!packageEntryPtr->sticked && packageEntryPtr->isModificationAllowed(element));
 		}
 	}
 
 	// no conflicting elements in this solution
-	*conflictingElementPtrPtr = NULL;
-	if (auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr))
+	*conflictingElementPtr = nullptr;
+	if (auto versionElement = dynamic_cast< const dg::VersionElement* >(element))
 	{
 		if (versionElement->version)
 		{
-			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
-					(__dependency_graph).getCorrespondingEmptyElement(elementPtr);
+			*conflictingElementPtr = const_cast< dg::DependencyGraph& >
+					(__dependency_graph).getCorrespondingEmptyElement(element);
 		}
 	}
 	return true;
