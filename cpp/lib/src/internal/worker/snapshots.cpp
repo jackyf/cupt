@@ -384,11 +384,6 @@ void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 	{
 		fatal2(__("unable to find a snapshot named '%s'"), previousName);
 	}
-	if (std::find(snapshotNames.begin(), snapshotNames.end(), newName)
-			!= snapshotNames.end())
-	{
-		fatal2(__("the snapshot '%s' already exists"), newName);
-	}
 
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
 	auto newSnapshotDirectory = snapshots.getSnapshotDirectory(newName);
