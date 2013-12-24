@@ -6,6 +6,9 @@ cupt (2.6.4~) UNRELEASED; urgency=medium
       - Detect snapshot names having whitespace characters as invalid.
       - 'updateReleaseAndIndexData': reimplemented needed subset of <future>.
         Fixes FTBFS on armel. (Closes: #730974)
+  * debian:
+    - control:
+      - Bumped Standards-Version to 3.9.5, no changes needed.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:33:35 +0200
 
