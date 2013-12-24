@@ -369,6 +369,8 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 		const string& previousName, const string& newName)
 {
+	checkSnapshotName(snapshots, newName);
+
 	auto snapshotNames = snapshots.getSnapshotNames();
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), previousName)
 			== snapshotNames.end())

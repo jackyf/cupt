@@ -1,6 +1,8 @@
 cupt (2.6.4~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - system/worker:
+      - 'renameSnapshot': don't accept invalid snapshot names.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:33:35 +0200
 
