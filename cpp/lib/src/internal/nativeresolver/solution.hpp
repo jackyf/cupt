@@ -137,6 +137,7 @@ class PreparedSolution: public Solution
 	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
+	void setPackageEntry(const dg::Element*, PackageEntry&&, const dg::Element*);
 };
 
 class SolutionStorage
@@ -177,8 +178,6 @@ class SolutionStorage
 	bool simulateSetPackageEntry(const PreparedSolution&,
 			const dg::Element*, const dg::Element**) const;
 	void setRejection(PreparedSolution&, const dg::Element*, const dg::Element*);
-	void setPackageEntry(PreparedSolution&, const dg::Element*,
-			PackageEntry&&, const dg::Element*);
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const PreparedSolution&,

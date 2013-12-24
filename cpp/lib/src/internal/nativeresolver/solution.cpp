@@ -248,7 +248,7 @@ void SolutionStorage::setRejection(PreparedSolution& solution,
 			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
 
 	packageEntry.rejectedConflictors.push_front(elementPtr);
-	setPackageEntry(solution, conflictingElementPtr, std::move(packageEntry), nullptr);
+	solution.setPackageEntry(conflictingElementPtr, std::move(packageEntry), nullptr);
 }
 
 void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
@@ -342,15 +342,15 @@ void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 	}
 }
 
-void SolutionStorage::setPackageEntry(PreparedSolution& solution,
+void PreparedSolution::setPackageEntry(
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr)
 {
-	auto it = solution.__added_entries->lower_bound(elementPtr);
-	if (it == solution.__added_entries->end() || it->first != elementPtr)
+	auto it = __added_entries->lower_bound(elementPtr);
+	if (it == __added_entries->end() || it->first != elementPtr)
 	{
 		// there is no modifiable element in this solution
-		solution.__added_entries->insert(it,
+		__added_entries->insert(it,
 				make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
 	}
 	else
@@ -358,21 +358,21 @@ void SolutionStorage::setPackageEntry(PreparedSolution& solution,
 		if (conflictingElementPtr && it->second)
 		{
 			fatal2i("conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
+					id, elementPtr->toString(), conflictingElementPtr->toString());
 		}
 		it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
 	}
 
 	if (conflictingElementPtr)
 	{
-		auto forRemovalIt = solution.__added_entries->lower_bound(conflictingElementPtr);
-		if (forRemovalIt != solution.__added_entries->end() && forRemovalIt->first == conflictingElementPtr)
+		auto forRemovalIt = __added_entries->lower_bound(conflictingElementPtr);
+		if (forRemovalIt != __added_entries->end() && forRemovalIt->first == conflictingElementPtr)
 		{
 			forRemovalIt->second.reset();
 		}
 		else
 		{
-			solution.__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
+			__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
 		}
 	}
 }
@@ -559,8 +559,7 @@ void SolutionStorage::p_setPackageEntryFromAction(PreparedSolution& solution, co
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
 	packageEntry.level = solution.level;
-	setPackageEntry(solution, action.newElementPtr,
-			std::move(packageEntry), action.oldElementPtr);
+	solution.setPackageEntry(action.newElementPtr, std::move(packageEntry), action.oldElementPtr);
 }
 
 void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::Action& action)
