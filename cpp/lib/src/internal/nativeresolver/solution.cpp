@@ -21,6 +21,7 @@
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
+#include <internal/nativeresolver/cowmap.tpp>
 
 namespace cupt {
 namespace internal {
@@ -342,35 +343,8 @@ void PreparedSolution::setPackageEntry(
 		const dg::Element* elementPtr, PackageEntry&& packageEntry,
 		const dg::Element* conflictingElementPtr)
 {
-	auto it = __added_entries->lower_bound(elementPtr);
-	if (it == __added_entries->end() || it->first != elementPtr)
-	{
-		// there is no modifiable element in this solution
-		__added_entries->insert(it,
-				make_pair(elementPtr, std::make_shared< const PackageEntry >(std::move(packageEntry))));
-	}
-	else
-	{
-		if (conflictingElementPtr && it->second)
-		{
-			fatal2i("conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					id, elementPtr->toString(), conflictingElementPtr->toString());
-		}
-		it->second = std::make_shared< const PackageEntry >(std::move(packageEntry));
-	}
-
-	if (conflictingElementPtr)
-	{
-		auto forRemovalIt = __added_entries->lower_bound(conflictingElementPtr);
-		if (forRemovalIt != __added_entries->end() && forRemovalIt->first == conflictingElementPtr)
-		{
-			forRemovalIt->second.reset();
-		}
-		else
-		{
-			__added_entries->insert(forRemovalIt, { conflictingElementPtr, {} });
-		}
-	}
+	auto newData = std::make_shared< const PackageEntry >(std::move(packageEntry));
+	p_entries.set(elementPtr, std::move(newData), conflictingElementPtr);
 }
 
 void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
@@ -400,8 +374,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	p_initialEntries.reset(new PackageEntryMap);
 	p_initialEntries->init(std::move(source));
 
-	initialSolution.__initial_entries = p_initialEntries.get();
-	initialSolution.p_initNonSharedStructures();
+	initialSolution.p_entries.setInitialMap(p_initialEntries.get());
 	for (const auto& entry: *p_initialEntries)
 	{
 		p_updateBrokenSuccessors(initialSolution, nullptr, entry.first, 0);
@@ -593,46 +566,12 @@ Solution::~Solution()
 
 PreparedSolution::PreparedSolution()
 	: level(0), finished(false)
-{}
-
-PreparedSolution::~PreparedSolution()
-{}
-
-void PreparedSolution::p_initNonSharedStructures()
 {
-	__added_entries.reset(new PackageEntryMap);
 	__broken_successors.reset(new BrokenSuccessorMap);
 }
 
-template < typename CallbackType >
-void __foreach_solution_element(const PackageEntryMap& masterEntries, const PackageEntryMap& addedEntries,
-		CallbackType callback)
-{
-	class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
-	{
-		const CallbackType& __callback;
-	 public:
-		RepackInsertIterator(const CallbackType& callback_)
-			: __callback(callback_) {}
-		RepackInsertIterator& operator++() { return *this; }
-		RepackInsertIterator& operator*() { return *this; }
-		void operator=(const PackageEntryMap::value_type& data)
-		{
-			__callback(data);
-		}
-	};
-	struct Comparator
-	{
-		bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
-		{ return left.first < right.first; }
-	};
-	// it's important that parent's __added_entries come first,
-	// if two elements are present in both (i.e. an element is overriden)
-	// the new version of an element will be considered
-	std::set_union(addedEntries.begin(), addedEntries.end(),
-			masterEntries.begin(), masterEntries.end(),
-			RepackInsertIterator(callback), Comparator());
-}
+PreparedSolution::~PreparedSolution()
+{}
 
 shared_ptr< PreparedSolution > UnpreparedSolution::prepare() const
 {
@@ -652,68 +591,20 @@ shared_ptr< PreparedSolution > UnpreparedSolution::prepare() const
 
 void PreparedSolution::initEntriesFromParent(const PreparedSolution& parent)
 {
-	p_initNonSharedStructures();
-
-	__initial_entries = parent.__initial_entries;
-
-	if (!parent.__master_entries)
-	{
-		// parent solution is a master solution, build a slave on top of it
-		__master_entries = parent.__added_entries;
-	}
-	else
-	{
-		// this a slave solution
-		size_t& forkedCount = parent.__master_entries->forkedCount;
-		forkedCount += parent.__added_entries->size();
-		if (forkedCount > parent.__master_entries->size())
-		{
-			forkedCount = 0;
-
-			// master solution is overdiverted, build new master one
-			__added_entries->reserve(parent.__added_entries->size() +
-					parent.__master_entries->size());
-
-			__foreach_solution_element(*parent.__master_entries, *parent.__added_entries,
-					[this](const PackageEntryMap::value_type& data) { this->__added_entries->push_back(data); });
-		}
-		else
-		{
-			// build new slave solution from current
-			__master_entries = parent.__master_entries;
-			*__added_entries = *(parent.__added_entries);
-		}
-	}
-
+	p_entries = parent.p_entries;
 	*__broken_successors = *parent.__broken_successors;
 }
 
 vector< const dg::Element* > PreparedSolution::getElements() const
 {
-	vector< const dg::Element* > result;
-
-	static const PackageEntryMap nullPackageEntryMap;
-	const auto& initialEntries = *__initial_entries;
-	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
-
-	PackageEntryMap intermediateMap;
-	__foreach_solution_element(initialEntries, masterEntries,
-			[&intermediateMap](const PackageEntryMap::value_type& data) { intermediateMap.push_back(data); });
-
-	__foreach_solution_element(intermediateMap, *__added_entries,
-			[&result](const PackageEntryMap::value_type& data) { if (data.second) result.push_back(data.first); });
-
-	return result;
+	return p_entries.getKeys();
 }
 
 vector< const dg::Element* > PreparedSolution::getInsertedElements() const
 {
 	vector< const dg::Element* > result(level, nullptr);
 
-	static const PackageEntryMap nullPackageEntryMap;
-	const auto& masterEntries = __master_entries ? *__master_entries : nullPackageEntryMap;
-
-	__foreach_solution_element(masterEntries, *__added_entries,
+	p_entries.foreachModifiedEntry(
 			[&result](const PackageEntryMap::value_type& data)
 			{
 				if (!data.second) return;
@@ -732,26 +623,8 @@ const vector< BrokenSuccessor >& PreparedSolution::getBrokenSuccessors() const
 
 const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* elementPtr) const
 {
-	auto it = __added_entries->find(elementPtr);
-	if (it != __added_entries->end())
-	{
-		return it->second.get();
-	}
-	if (__master_entries)
-	{
-		it = __master_entries->find(elementPtr);
-		if (it != __master_entries->end())
-		{
-			return it->second.get();
-		}
-	}
-	it = __initial_entries->find(elementPtr);
-	if (it != __initial_entries->end())
-	{
-		return it->second.get();
-	}
-
-	return nullptr; // not found
+	auto entryData = p_entries.get< shared_ptr<const PackageEntry> >(elementPtr);
+	return entryData ? entryData->get() : nullptr;
 }
 
 }

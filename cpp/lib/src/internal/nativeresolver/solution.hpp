@@ -28,6 +28,7 @@
 
 #include <internal/nativeresolver/score.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
+#include <internal/nativeresolver/cowmap.hpp>
 
 namespace cupt {
 namespace internal {
@@ -114,12 +115,9 @@ class PreparedSolution: public Solution
 {
 	friend class SolutionStorage;
 
-	const PackageEntryMap* __initial_entries;
-	shared_ptr< const PackageEntryMap > __master_entries;
-	shared_ptr< PackageEntryMap > __added_entries;
+	CowMap< const dg::Element*, PackageEntryMap > p_entries;
 	unique_ptr< BrokenSuccessorMap > __broken_successors;
 
-	void p_initNonSharedStructures();
  public:
 	PreparedSolution();
 	~PreparedSolution();
