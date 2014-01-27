@@ -344,7 +344,18 @@ void PreparedSolution::setPackageEntry(
 		const dg::Element* conflictingElementPtr)
 {
 	auto newData = std::make_shared< const PackageEntry >(std::move(packageEntry));
-	p_entries.set(elementPtr, std::move(newData), conflictingElementPtr);
+	if (!p_entries.add(elementPtr, std::move(newData)))
+	{
+		if (conflictingElementPtr)
+		{
+			fatal2i("nativeresolver: conflicting elements in p_added: solution '%zu', in '%s', out '%s'",
+					id, elementPtr->toString(), conflictingElementPtr->toString());
+		}
+	}
+	if (conflictingElementPtr)
+	{
+		p_entries.remove(conflictingElementPtr);
+	}
 }
 
 void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,

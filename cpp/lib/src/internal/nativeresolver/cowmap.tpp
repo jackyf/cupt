@@ -71,35 +71,35 @@ void CowMap<KeyT,MapT>::setInitialMap(const MapT* map)
 
 template < typename KeyT, typename MapT >
 template < typename DataT >
-void CowMap<KeyT,MapT>::set(KeyT newKey, DataT&& data, KeyT oldKey)
+bool CowMap<KeyT,MapT>::add(KeyT newKey, DataT&& data)
 {
 	auto it = p_added->lower_bound(newKey);
 	if (it == p_added->end() || it->first != newKey)
 	{
 		// there is no modifiable element in this solution
 		p_added->insert(it, { newKey, std::move(data) });
+		return true;
 	}
 	else
 	{
-		if (oldKey && it->second)
-		{
-			fatal2i("cowmap: conflicting elements in p_added: in '%s', out '%s'",
-					newKey->toString(), oldKey->toString());
-		}
+		bool dataWasPresent = it->second;
 		it->second = std::move(data);
+		return !dataWasPresent;
 	}
+}
 
-	if (oldKey)
+template < typename KeyT, typename MapT >
+void CowMap<KeyT,MapT>::remove(KeyT key)
+{
+	auto it = p_added->lower_bound(key);
+	if (it != p_added->end() && it->first == key)
 	{
-		auto forRemovalIt = p_added->lower_bound(oldKey);
-		if (forRemovalIt != p_added->end() && forRemovalIt->first == oldKey)
-		{
-			forRemovalIt->second = DataT();
-		}
-		else
-		{
-			p_added->insert(forRemovalIt, { oldKey, {} });
-		}
+		typedef typename MapT::value_type::second_type DataT;
+		it->second = DataT();
+	}
+	else
+	{
+		p_added->insert(it, { key, {} });
 	}
 }
 

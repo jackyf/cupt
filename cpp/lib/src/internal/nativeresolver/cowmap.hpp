@@ -38,7 +38,8 @@ class CowMap
 	template < typename DataT >
 	const DataT* get(KeyT) const;
 	template < typename DataT >
-	void set(KeyT newKey, DataT&&, KeyT oldKey);
+	bool add(KeyT, DataT&&);
+	void remove(KeyT);
 	template < typename CallbackT >
 	void foreachModifiedEntry(const CallbackT&) const;
 };
