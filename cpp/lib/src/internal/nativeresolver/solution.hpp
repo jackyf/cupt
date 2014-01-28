@@ -116,7 +116,7 @@ class PreparedSolution: public Solution
 	friend class SolutionStorage;
 
 	CowMap< const dg::Element*, PackageEntryMap > p_entries;
-	unique_ptr< BrokenSuccessorMap > __broken_successors;
+	CowMap< const dg::Element*, BrokenSuccessorMap > p_brokenSuccessors;
 
  public:
 	PreparedSolution();
@@ -132,7 +132,7 @@ class PreparedSolution: public Solution
 
 	vector< const dg::Element* > getElements() const;
 	vector< const dg::Element* > getInsertedElements() const;
-	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
+	vector< BrokenSuccessor > getBrokenSuccessors() const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 	void setPackageEntry(const dg::Element*, PackageEntry&&, const dg::Element*);

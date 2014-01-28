@@ -44,7 +44,7 @@ void cowMapForeach(const MapT& masterEntries, const MapT& addedEntries, Callback
 	struct Comparator
 	{
 		bool operator()(const DataT& left, const DataT& right)
-		{ return left.first < right.first; }
+		{ return typename MapT::key_getter_t()(left) < typename MapT::key_getter_t()(right); }
 	};
 	// it's important that parent's __added_entries come first,
 	// if two elements are present in both (i.e. an element is overriden)
@@ -52,6 +52,17 @@ void cowMapForeach(const MapT& masterEntries, const MapT& addedEntries, Callback
 	std::set_union(addedEntries.begin(), addedEntries.end(),
 			masterEntries.begin(), masterEntries.end(),
 			CallbackIterator(callback), Comparator());
+}
+
+template < typename T >
+const typename T::second_type& getCowRecordData(const T& record)
+{
+	return record.second;
+}
+
+const size_t& getCowRecordData(const BrokenSuccessor& bs)
+{
+	return bs.priority;
 }
 
 }
@@ -71,36 +82,28 @@ void CowMap<KeyT,MapT>::setInitialMap(const MapT* map)
 
 template < typename KeyT, typename MapT >
 template < typename DataT >
-bool CowMap<KeyT,MapT>::add(KeyT newKey, DataT&& data)
+bool CowMap<KeyT,MapT>::add(KeyT key, DataT&& data)
 {
-	auto it = p_added->lower_bound(newKey);
-	if (it == p_added->end() || it->first != newKey)
+	auto it = p_added->lower_bound(key);
+	if (it != p_added->end() && typename MapT::key_getter_t()(*it) == key)
 	{
-		// there is no modifiable element in this solution
-		p_added->insert(it, { newKey, std::move(data) });
-		return true;
+		bool dataWasPresent = getCowRecordData(*it);
+		*it = { key, std::move(data) };
+		return !dataWasPresent;
 	}
 	else
 	{
-		bool dataWasPresent = it->second;
-		it->second = std::move(data);
-		return !dataWasPresent;
+		p_added->insert(it, { key, std::move(data) });
+		return true;
 	}
 }
 
 template < typename KeyT, typename MapT >
 void CowMap<KeyT,MapT>::remove(KeyT key)
 {
-	auto it = p_added->lower_bound(key);
-	if (it != p_added->end() && it->first == key)
-	{
-		typedef typename MapT::value_type::second_type DataT;
-		it->second = DataT();
-	}
-	else
-	{
-		p_added->insert(it, { key, {} });
-	}
+	typedef typename std::decay<decltype(getCowRecordData(typename MapT::value_type()))>::type DataT;
+
+	this->add(key, DataT());
 }
 
 template < typename KeyT, typename MapT >
@@ -172,20 +175,20 @@ const DataT* CowMap<KeyT,MapT>::get(KeyT key) const
 	auto it = p_added->find(key);
 	if (it != p_added->end())
 	{
-		return &it->second;
+		return &getCowRecordData(*it);
 	}
 	if (p_master)
 	{
 		it = p_master->find(key);
 		if (it != p_master->end())
 		{
-			return &it->second;
+			return &getCowRecordData(*it);
 		}
 	}
 	it = p_initial->find(key);
 	if (it != p_initial->end())
 	{
-		return &it->second;
+		return &getCowRecordData(*it);
 	}
 
 	return nullptr; // not found
