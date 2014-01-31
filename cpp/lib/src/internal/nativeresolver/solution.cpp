@@ -630,16 +630,22 @@ vector< const dg::Element* > PreparedSolution::getInsertedElements() const
 	return result;
 }
 
-vector< BrokenSuccessor > PreparedSolution::getBrokenSuccessors() const
+BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
+		const std::function< bool (BrokenSuccessor, BrokenSuccessor) >& comp) const
 {
-	vector< BrokenSuccessor > result;
+	BrokenSuccessor result{ nullptr, 0 };
 
 	p_brokenSuccessors.foreachModifiedEntry(
-			[&result](const BrokenSuccessor& bs)
+			[&result, &comp](const BrokenSuccessor& bs)
 			{
 				if (!bs.priority) return;
-				result.push_back(bs);
+
+				if (!result.elementPtr || comp(result, bs))
+				{
+					result = bs;
+				}
 			});
+
 	return result;
 }
 

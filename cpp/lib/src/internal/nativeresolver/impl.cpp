@@ -801,28 +801,25 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 		return left.elementPtr->id < right.elementPtr->id;
 	};
 
-	const auto& brokenSuccessors = solution.getBrokenSuccessors();
-	auto bestBrokenSuccessorIt = std::max_element(
-			brokenSuccessors.begin(), brokenSuccessors.end(), compareBrokenSuccessors);
-	if (bestBrokenSuccessorIt == brokenSuccessors.end())
+	BrokenPair result = { nullptr, solution.getMaxBrokenSuccessor(compareBrokenSuccessors) };
+
+	if (result.brokenSuccessor.elementPtr)
 	{
-		return BrokenPair{ nullptr, { nullptr, 0 } };
-	}
-	BrokenPair result = { nullptr, *bestBrokenSuccessorIt };
-	for (auto reverseDependencyPtr: solutionStorage.getPredecessorElements(bestBrokenSuccessorIt->elementPtr))
-	{
-		if (solution.getPackageEntry(reverseDependencyPtr))
+		for (auto reverseDependencyPtr: solutionStorage.getPredecessorElements(result.brokenSuccessor.elementPtr))
 		{
-			if (!result.versionElementPtr || (result.versionElementPtr->id < reverseDependencyPtr->id))
+			if (solution.getPackageEntry(reverseDependencyPtr))
 			{
-				result.versionElementPtr = reverseDependencyPtr;
+				if (!result.versionElementPtr || (result.versionElementPtr->id < reverseDependencyPtr->id))
+				{
+					result.versionElementPtr = reverseDependencyPtr;
+				}
 			}
 		}
-	}
-	if (!result.versionElementPtr)
-	{
-		fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s'",
-				bestBrokenSuccessorIt->elementPtr->toString());
+		if (!result.versionElementPtr)
+		{
+			fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s'",
+					result.brokenSuccessor.elementPtr->toString());
+		}
 	}
 
 	return result;

@@ -132,7 +132,7 @@ class PreparedSolution: public Solution
 
 	vector< const dg::Element* > getElements() const;
 	vector< const dg::Element* > getInsertedElements() const;
-	vector< BrokenSuccessor > getBrokenSuccessors() const;
+	BrokenSuccessor getMaxBrokenSuccessor(const std::function< bool (BrokenSuccessor, BrokenSuccessor) >&) const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 	void setPackageEntry(const dg::Element*, PackageEntry&&, const dg::Element*);
