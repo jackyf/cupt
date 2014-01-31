@@ -28,6 +28,7 @@
 
 #include <internal/nativeresolver/score.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
+#include <internal/nativeresolver/cowmap.hpp>
 
 namespace cupt {
 namespace internal {
@@ -114,12 +115,9 @@ class PreparedSolution: public Solution
 {
 	friend class SolutionStorage;
 
-	const PackageEntryMap* __initial_entries;
-	shared_ptr< const PackageEntryMap > __master_entries;
-	shared_ptr< PackageEntryMap > __added_entries;
-	unique_ptr< BrokenSuccessorMap > __broken_successors;
+	CowMap< const dg::Element*, PackageEntryMap > p_entries;
+	CowMap< const dg::Element*, BrokenSuccessorMap > p_brokenSuccessors;
 
-	void p_initNonSharedStructures();
  public:
 	PreparedSolution();
 	~PreparedSolution();
@@ -134,7 +132,7 @@ class PreparedSolution: public Solution
 
 	vector< const dg::Element* > getElements() const;
 	vector< const dg::Element* > getInsertedElements() const;
-	const vector< BrokenSuccessor >& getBrokenSuccessors() const;
+	BrokenSuccessor getMaxBrokenSuccessor(const std::function< bool (BrokenSuccessor, BrokenSuccessor) >&) const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
 	void setPackageEntry(const dg::Element*, PackageEntry&&, const dg::Element*);
