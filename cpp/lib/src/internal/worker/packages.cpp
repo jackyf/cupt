@@ -1837,25 +1837,28 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 
 	for (const string& command: _config->getList("dpkg::pre-install-pkgs"))
 	{
-		string commandBinary = getCommandBinaryForPreInstallPackagesHook(command);
-
-		string commandInput;
-		auto versionOfInput = _config->getInteger(
-				string("dpkg::tools::options::") + commandBinary + "::version");
-		if (versionOfInput == 2)
-		{
-			commandInput = __generate_input_for_preinstall_v2_hooks(actionGroups);
-		}
-		else
-		{
-			commandInput = p_generateInputForPreinstallV1Hooks(actionGroups);
-			if (commandInput.empty())
-			{
-				continue;
-			}
-		}
+		string commandInput = p_getCommandInputForPreinstallPackagesHook(command, actionGroups);
+		if (commandInput.empty()) continue;
 
 		__run_dpkg_command("pre", command, commandInput);
+	}
+}
+
+string PackagesWorker::p_getCommandInputForPreinstallPackagesHook(
+		const string& command, const vector<InnerActionGroup>& actionGroups)
+{
+	string commandBinary = getCommandBinaryForPreInstallPackagesHook(command);
+
+	auto versionOfInput = _config->getInteger(
+			string("dpkg::tools::options::") + commandBinary + "::version");
+
+	if (versionOfInput == 2)
+	{
+		return __generate_input_for_preinstall_v2_hooks(actionGroups);
+	}
+	else
+	{
+		return p_generateInputForPreinstallV1Hooks(actionGroups);
 	}
 }
 
