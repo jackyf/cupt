@@ -9,7 +9,7 @@ cupt.conf - configuration file for Cupt
 =head1 SYNOPSIS
 
 $APT_CONFIG, /etc/apt/apt.conf, /etc/apt/apt.conf.d/*,
-/etc/cupt/cupt.conf, /etc/cupt/cupt.conf.d/*
+$CUPT_PRE_CONFIG, /etc/cupt/pre.conf, /etc/cupt/cupt.conf, /etc/cupt/cupt.conf.d/*
 
 =head1 DESCRIPTION
 
@@ -273,6 +273,14 @@ L<apt.conf(5)>)
 
 string, relative directory path for additional Cupt configuration files (same
 format as L<apt.conf(5)>)
+
+=item cupt::directory::configuration::pre
+
+string, relative file path for the Cupt preconfiguration file which is read
+before paths of any other configuration files are calculated. This is the only
+place where one can effectively override default values of L<dir::etc> and
+L<cupt::directory::configuration> options and/or their suboptions. The
+environment variable B<CUPT_PRE_CONFIG> overrides this option if defined.
 
 =item cupt::directory::log
 

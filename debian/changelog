@@ -1,6 +1,8 @@
 cupt (2.7.0~) UNRELEASED; urgency=low
 
   * lib:
+    - config:
+      - New option 'cupt::directory::configuration::pre'.
     - system/resolvers/native:
       - Reduced solution memory footprint.
       - Reduced average CPU costs of postprocessing failed solutions.

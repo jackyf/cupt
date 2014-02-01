@@ -48,6 +48,9 @@ class ConfigImpl
 
 	void initializeVariables();
 	vector< string > getConfigurationFilePaths(Config*) const;
+	string getEnvBasedConfigurationFilePath(const Config*, const char*, const char*) const;
+	void parsePreConfiguration(const Config*, ConfigParser&);
+	void parseConfigurationFile(ConfigParser&, const string&);
 	void readConfigs(Config*);
 	void setArchitecture(Config*);
 	bool isOptionalOption(const string& optionName) const;
@@ -151,6 +154,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::directory::configuration", "etc/cupt" },
 		{ "cupt::directory::configuration::main", "cupt.conf" },
 		{ "cupt::directory::configuration::main-parts", "cupt.conf.d" },
+		{ "cupt::directory::configuration::pre", "pre.conf" },
 		{ "cupt::directory::log", "var/log/cupt.log" },
 		{ "cupt::directory::state", "var/lib/cupt" },
 		{ "cupt::directory::state::lists", "lists" },
@@ -299,13 +303,8 @@ vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
 	{ // APT files
 		result = getConfigurationPartsFilePaths(config->getPath("dir::etc::parts"), ignorePathRegexes);
 
-		string mainFilePath = config->getPath("dir::etc::main");
-		const char* envAptConfig = getenv("APT_CONFIG");
-		if (envAptConfig)
-		{
-			mainFilePath = envAptConfig;
-		}
-		if (internal::fs::fileExists(mainFilePath))
+		auto mainFilePath = getEnvBasedConfigurationFilePath(config, "APT_CONFIG", "dir::etc::main");
+		if (!mainFilePath.empty())
 		{
 			result.push_back(mainFilePath);
 		}
@@ -321,6 +320,18 @@ vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
 		}
 	}
 	return result;
+}
+
+string ConfigImpl::getEnvBasedConfigurationFilePath(const Config* config, const char* env, const char* optionName) const
+{
+	string path = config->getPath(optionName);
+	const char* envPath = getenv(env);
+	if (envPath)
+	{
+		path = envPath;
+	}
+
+	return internal::fs::fileExists(path) ? path : string();
 }
 
 void ConfigImpl::readConfigs(Config* config)
@@ -364,17 +375,33 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		for (const auto& configFile: getConfigurationFilePaths(config))
+		parsePreConfiguration(config, parser);
+
+		for (const auto& path: getConfigurationFilePaths(config))
 		{
-			try
-			{
-				parser.parse(configFile);
-			}
-			catch (Exception&)
-			{
-				warn2(__("skipped the configuration file '%s'"), configFile);
-			}
+			parseConfigurationFile(parser, path);
 		}
+	}
+}
+
+void ConfigImpl::parsePreConfiguration(const Config* config, ConfigParser& parser)
+{
+	auto path = getEnvBasedConfigurationFilePath(config, "CUPT_PRE_CONFIG", "cupt::directory::configuration::pre");
+	if (!path.empty())
+	{
+		parseConfigurationFile(parser, path);
+	}
+}
+
+void ConfigImpl::parseConfigurationFile(ConfigParser& parser, const string& path)
+{
+	try
+	{
+		parser.parse(path);
+	}
+	catch (Exception&)
+	{
+		warn2(__("skipped the configuration file '%s'"), path);
 	}
 }
 
