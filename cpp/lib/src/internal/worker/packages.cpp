@@ -1757,13 +1757,13 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 	result += writeOutConfiguration(*_config);
 
 	auto archivesDirectory = _get_archives_directory();
-	FORIT(actionGroupIt, actionGroups)
+	for (const auto& actionGroup: actionGroups)
 	{
-		FORIT(actionIt, *actionGroupIt)
+		for (const auto& action: actionGroup)
 		{
-			const auto& version = actionIt->version;
+			const auto& version = action.version;
 
-			string path = getActionForPreinstallPackagesHook(actionIt->type);
+			string path = getActionForPreinstallPackagesHook(action.type);
 			if (path.empty())
 			{
 				path = archivesDirectory + "/" + _get_archive_basename(version);
@@ -1781,7 +1781,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 					oldVersionString = installedVersion->versionString;
 				}
 			}
-			string newVersionString = (actionIt->type == InnerAction::Remove ? "-" : version->versionString);
+			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
 
 			string compareVersionStringsSign;
 			if (oldVersionString == "-")
