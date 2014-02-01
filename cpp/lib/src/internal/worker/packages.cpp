@@ -1822,10 +1822,8 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 {
 	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-install-packages hooks");
 
-	auto commands = _config->getList("dpkg::pre-install-pkgs");
-	FORIT(commandIt, commands)
+	for (const string& command: _config->getList("dpkg::pre-install-pkgs"))
 	{
-		string command = *commandIt;
 		string commandBinary = command;
 
 		auto spaceOffset = commandBinary.find(' ');
