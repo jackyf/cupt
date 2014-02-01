@@ -9,6 +9,8 @@ cupt (2.7.0~) UNRELEASED; urgency=low
     - system/worker:
       - 'changeSystem': for removal actions, change automatically installed
         flag after the action, not before.
+      - 'changeSystem': support VERSION 3 of preinstall hooks. Thanks to
+         James McCoy for the format analysis.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:35:04 +0200
 

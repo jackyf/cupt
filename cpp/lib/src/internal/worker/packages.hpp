@@ -102,7 +102,7 @@ class PackagesWorker: public virtual WorkerBase
 	void __do_dpkg_pre_actions();
 	void __do_dpkg_post_actions();
 	string p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>&);
-	string __generate_input_for_preinstall_v2_hooks(const vector< InnerActionGroup >&);
+	string p_generateInputForPreinstallV2OrV3Hooks(const vector<InnerActionGroup>&, bool);
 	string p_getCommandInputForPreinstallPackagesHook(const string&, const vector<InnerActionGroup>&);
 	void __do_dpkg_pre_packages_actions(const vector< InnerActionGroup >&);
 	void __clean_downloads(const Changeset& changeset);

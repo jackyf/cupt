@@ -1795,13 +1795,25 @@ static string getOldVersionString(const BinaryPackage* oldPackage)
 	return result;
 }
 
-string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
-		const vector< InnerActionGroup >& actionGroups)
+string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(
+		const vector<InnerActionGroup>& actionGroups, bool v3)
 {
 	// all hate undocumented formats...
-	string result = "VERSION 2\n";
+	string result = format2("VERSION %zu\n", size_t(v3 ? 3 : 2));
 
 	result += writeOutConfiguration(*_config);
+
+	auto writeOutVersionString = [v3](const string& versionString, const BinaryVersion* version)
+	{
+		if (v3)
+		{
+			return format2("%s %s -", versionString, version->architecture);
+		}
+		else
+		{
+			return versionString;
+		}
+	};
 
 	auto archivesDirectory = _get_archives_directory();
 	for (const auto& actionGroup: actionGroups)
@@ -1821,9 +1833,12 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 			string oldVersionString = getOldVersionString(_cache->getBinaryPackage(packageName));
 			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
 
-			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
+			result += format2("%s %s %s %s %s\n",
+					packageName,
+					writeOutVersionString(oldVersionString, version),
 					getCompareVersionStringsSignForPreinstallPackagesHook(oldVersionString, newVersionString),
-					newVersionString, path);
+					writeOutVersionString(newVersionString, version),
+					path);
 		}
 	}
 
@@ -1867,9 +1882,9 @@ string PackagesWorker::p_getCommandInputForPreinstallPackagesHook(
 	auto versionOfInput = _config->getInteger(
 			string("dpkg::tools::options::") + commandBinary + "::version");
 
-	if (versionOfInput == 2)
+	if (versionOfInput == 2 || versionOfInput == 3)
 	{
-		return __generate_input_for_preinstall_v2_hooks(actionGroups);
+		return p_generateInputForPreinstallV2OrV3Hooks(actionGroups, versionOfInput==3);
 	}
 	else
 	{
