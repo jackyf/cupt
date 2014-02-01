@@ -101,6 +101,7 @@ class PackagesWorker: public virtual WorkerBase
 	void __run_dpkg_command(const string&, const string&, const string&);
 	void __do_dpkg_pre_actions();
 	void __do_dpkg_post_actions();
+	string p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>&);
 	string __generate_input_for_preinstall_v2_hooks(const vector< InnerActionGroup >&);
 	void __do_dpkg_pre_packages_actions(const vector< InnerActionGroup >&);
 	void __clean_downloads(const Changeset& changeset);

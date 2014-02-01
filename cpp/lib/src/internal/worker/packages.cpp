@@ -1682,6 +1682,28 @@ void PackagesWorker::__do_dpkg_pre_actions()
 	}
 }
 
+string PackagesWorker::p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>& actionGroups)
+{
+	string result;
+
+	auto archivesDirectory = _get_archives_directory();
+	// new debs are pulled to command through STDIN, one by line
+	for (const auto& actionGroup: actionGroups)
+	{
+		for (const auto& action: actionGroup)
+		{
+			if (action.type == InnerAction::Unpack)
+			{
+				auto debPath = archivesDirectory + "/" + _get_archive_basename(action.version);
+				result += debPath;
+				result += "\n";
+			}
+		}
+	}
+
+	return result;
+}
+
 string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		const vector< InnerActionGroup >& actionGroups)
 {
@@ -1800,7 +1822,6 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 {
 	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-install-packages hooks");
 
-	auto archivesDirectory = _get_archives_directory();
 	auto commands = _config->getList("dpkg::pre-install-pkgs");
 	FORIT(commandIt, commands)
 	{
@@ -1822,19 +1843,7 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 		}
 		else
 		{
-			// new debs are pulled to command through STDIN, one by line
-			FORIT(actionGroupIt, actionGroups)
-			{
-				FORIT(actionIt, *actionGroupIt)
-				{
-					if (actionIt->type == InnerAction::Unpack)
-					{
-						auto debPath = archivesDirectory + "/" + _get_archive_basename(actionIt->version);
-						commandInput += debPath;
-						commandInput += "\n";
-					}
-				}
-			}
+			commandInput = p_generateInputForPreinstallV1Hooks(actionGroups);
 			if (commandInput.empty())
 			{
 				continue;
