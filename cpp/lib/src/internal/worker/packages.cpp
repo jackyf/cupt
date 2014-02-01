@@ -1777,6 +1777,21 @@ static string getCompareVersionStringsSignForPreinstallPackagesHook(
 	}
 }
 
+static string getOldVersionString(const BinaryPackage* oldPackage)
+{
+	string result = "-";
+
+	if (oldPackage)
+	{
+		if (auto installedVersion = oldPackage->getInstalledVersion())
+		{
+			result = installedVersion->versionString;
+		}
+	}
+
+	return result;
+}
+
 string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		const vector< InnerActionGroup >& actionGroups)
 {
@@ -1800,16 +1815,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 
 			const string& packageName = version->packageName;
 
-			string oldVersionString = "-";
-			auto oldPackage = _cache->getBinaryPackage(packageName);
-			if (oldPackage)
-			{
-				auto installedVersion = oldPackage->getInstalledVersion();
-				if (installedVersion)
-				{
-					oldVersionString = installedVersion->versionString;
-				}
-			}
+			string oldVersionString = getOldVersionString(_cache->getBinaryPackage(packageName));
 			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
 
 			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
