@@ -1818,19 +1818,26 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 	return result;
 }
 
+static string getCommandBinaryForPreInstallPackagesHook(const string& command)
+{
+	string commandBinary = command;
+
+	auto spaceOffset = commandBinary.find(' ');
+	if (spaceOffset != string::npos)
+	{
+		commandBinary.resize(spaceOffset);
+	}
+
+	return commandBinary;
+}
+
 void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGroup >& actionGroups)
 {
 	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-install-packages hooks");
 
 	for (const string& command: _config->getList("dpkg::pre-install-pkgs"))
 	{
-		string commandBinary = command;
-
-		auto spaceOffset = commandBinary.find(' ');
-		if (spaceOffset != string::npos)
-		{
-			commandBinary.resize(spaceOffset);
-		}
+		string commandBinary = getCommandBinaryForPreInstallPackagesHook(command);
 
 		string commandInput;
 		auto versionOfInput = _config->getInteger(
