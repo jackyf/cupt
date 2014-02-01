@@ -1732,6 +1732,22 @@ static string writeOutConfiguration(const Config& config)
 	return result;
 }
 
+static inline string getActionForPreinstallPackagesHook(InnerAction::Type actionType)
+{
+	switch (actionType)
+	{
+		case InnerAction::Configure:
+			return "**CONFIGURE**";
+		case InnerAction::Remove:
+			return "**REMOVE**";
+		case InnerAction::Unpack:
+			return string();
+		default:
+			fatal2i("worker: packages: getActionForPreinstallPackagesHook: invalid actionType");
+			return string();
+	}
+}
+
 string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		const vector< InnerActionGroup >& actionGroups)
 {
@@ -1745,26 +1761,14 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 	{
 		FORIT(actionIt, *actionGroupIt)
 		{
-			auto actionType = actionIt->type;
 			const auto& version = actionIt->version;
-			string path;
-			switch (actionType)
+
+			string path = getActionForPreinstallPackagesHook(actionIt->type);
+			if (path.empty())
 			{
-				case InnerAction::Configure:
-				{
-					path = "**CONFIGURE**";
-				}
-				break;
-				case InnerAction::Remove:
-				{
-					path = "**REMOVE**";
-				}
-				break;
-				case InnerAction::Unpack:
-				{
-					path = archivesDirectory + "/" + _get_archive_basename(version);
-				}
+				path = archivesDirectory + "/" + _get_archive_basename(version);
 			}
+
 			const string& packageName = version->packageName;
 
 			string oldVersionString = "-";
@@ -1777,7 +1781,7 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 					oldVersionString = installedVersion->versionString;
 				}
 			}
-			string newVersionString = (actionType == InnerAction::Remove ? "-" : version->versionString);
+			string newVersionString = (actionIt->type == InnerAction::Remove ? "-" : version->versionString);
 
 			string compareVersionStringsSign;
 			if (oldVersionString == "-")
