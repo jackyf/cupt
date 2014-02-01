@@ -1748,6 +1748,35 @@ static inline string getActionForPreinstallPackagesHook(InnerAction::Type action
 	}
 }
 
+static string getCompareVersionStringsSignForPreinstallPackagesHook(
+		const string& oldVersionString, const string& newVersionString)
+{
+	if (oldVersionString == "-")
+	{
+		return "<";
+	}
+	else if (newVersionString == "-")
+	{
+		return ">";
+	}
+	else
+	{
+		auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
+		if (comparisonResult < 0)
+		{
+			return "<";
+		}
+		else if (comparisonResult == 0)
+		{
+			return "=";
+		}
+		else
+		{
+			return ">";
+		}
+	}
+}
+
 string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		const vector< InnerActionGroup >& actionGroups)
 {
@@ -1783,34 +1812,9 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 			}
 			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
 
-			string compareVersionStringsSign;
-			if (oldVersionString == "-")
-			{
-				compareVersionStringsSign = "<";
-			}
-			else if (newVersionString == "-")
-			{
-				compareVersionStringsSign = ">";
-			}
-			else
-			{
-				auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
-				if (comparisonResult < 0)
-				{
-					compareVersionStringsSign = "<";
-				}
-				else if (comparisonResult == 0)
-				{
-					compareVersionStringsSign = "=";
-				}
-				else
-				{
-					compareVersionStringsSign = ">";
-				}
-			}
-
 			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
-					compareVersionStringsSign, newVersionString, path);
+					getCompareVersionStringsSignForPreinstallPackagesHook(oldVersionString, newVersionString),
+					newVersionString, path);
 		}
 	}
 
