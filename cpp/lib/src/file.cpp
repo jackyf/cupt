@@ -135,7 +135,7 @@ struct FileImpl
 	unique_ptr< StorageBuffer > readBuffer;
 
 	FileImpl(const string& path_, const char* mode, string& openError);
-	~FileImpl();
+	~FileImpl() noexcept(false);
 	template < typename ChunkSeekerT >
 	size_t unbufferedReadUntil(const ChunkSeekerT&, const char**);
 	inline size_t getLineImpl(const char**);
@@ -189,7 +189,7 @@ FileImpl::FileImpl(const string& path_, const char* mode, string& openError)
 	}
 }
 
-FileImpl::~FileImpl()
+FileImpl::~FileImpl() noexcept(false)
 {
 	if (handle)
 	{
@@ -357,7 +357,7 @@ File::File(File&& other)
 	other.__impl = nullptr;
 }
 
-File::~File()
+File::~File() noexcept(false)
 {
 	delete __impl;
 }
