@@ -85,6 +85,8 @@ struct Changeset
 	vector< pair< download::Manager::DownloadEntity, string > > downloads;
 };
 
+class Dpkg;
+
 class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
@@ -109,6 +111,7 @@ class PackagesWorker: public virtual WorkerBase
 	void __do_independent_auto_status_changes();
 	string __get_dpkg_action_command(const string&, const string&, const string&,
 			InnerAction::Type, const string&, const InnerActionGroup&, bool);
+	void p_processActionGroup(Dpkg&, const InnerActionGroup&);
  public:
 	PackagesWorker();
 

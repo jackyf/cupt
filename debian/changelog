@@ -6,6 +6,9 @@ cupt (2.7.0~) UNRELEASED; urgency=low
     - system/resolvers/native:
       - Reduced solution memory footprint.
       - Reduced average CPU costs of postprocessing failed solutions.
+    - system/worker:
+      - 'changeSystem': for removal actions, change automatically installed
+        flag after the action, not before.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:35:04 +0200
 

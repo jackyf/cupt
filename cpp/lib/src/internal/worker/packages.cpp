@@ -1998,6 +1998,19 @@ void PackagesWorker::__do_independent_auto_status_changes()
 	}
 }
 
+void PackagesWorker::p_processActionGroup(Dpkg& dpkg, const InnerActionGroup& actionGroup)
+{
+	if (actionGroup.getCompoundActionType() != InnerAction::Remove)
+	{
+		__change_auto_status(actionGroup);
+	}
+	dpkg.doActionGroup(actionGroup, *__actions_preview);
+	if (actionGroup.getCompoundActionType() == InnerAction::Remove)
+	{
+		__change_auto_status(actionGroup);
+	}
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2045,8 +2058,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			__do_dpkg_pre_packages_actions(changeset.actionGroups);
 			for (const auto& actionGroup: changeset.actionGroups)
 			{
-				__change_auto_status(actionGroup);
-				dpkg.doActionGroup(actionGroup, *__actions_preview);
+				p_processActionGroup(dpkg, actionGroup);
 			}
 			if (archivesSpaceLimit) __clean_downloads(changeset);
 			if (debugging) debug2("finished changeset");
