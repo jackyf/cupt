@@ -1716,6 +1716,9 @@ static string writeOutConfiguration(const Config& config)
 		}
 	};
 
+	// apt-listbugs wants it case-sensitively
+	printKeyValue("APT::Architecture", config.getString("apt::architecture"));
+
 	for (const string& key: config.getScalarOptionNames())
 	{
 		printKeyValue(key, config.getString(key));
