@@ -1704,43 +1704,41 @@ string PackagesWorker::p_generateInputForPreinstallV1Hooks(const vector<InnerAct
 	return result;
 }
 
+static string writeOutConfiguration(const Config& config)
+{
+	string result;
+
+	auto printKeyValue = [&result](const string& key, const string& value)
+	{
+		if (!value.empty())
+		{
+			result += (key + "=" + value + "\n");
+		}
+	};
+
+	for (const string& key: config.getScalarOptionNames())
+	{
+		printKeyValue(key, config.getString(key));
+	}
+	for (const string& key: config.getListOptionNames())
+	{
+		for (const string& value: config.getList(key))
+		{
+			printKeyValue(key + "::", value);
+		}
+	}
+	result += "\n";
+
+	return result;
+}
+
 string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 		const vector< InnerActionGroup >& actionGroups)
 {
 	// all hate undocumented formats...
 	string result = "VERSION 2\n";
 
-	{ // writing out a configuration
-		auto printKeyValue = [&result](const string& key, const string& value)
-		{
-			if (!value.empty())
-			{
-				result += (key + "=" + value + "\n");
-			}
-		};
-
-		{
-			auto regularKeys = _config->getScalarOptionNames();
-			FORIT(keyIt, regularKeys)
-			{
-				printKeyValue(*keyIt, _config->getString(*keyIt));
-			}
-		}
-		{
-			auto listKeys = _config->getListOptionNames();
-			FORIT(keyIt, listKeys)
-			{
-				const string& key = *keyIt;
-				auto values = _config->getList(key);
-				FORIT(valueIt, values)
-				{
-					printKeyValue(key + "::", *valueIt);
-				}
-			}
-		}
-
-		result += "\n";
-	}
+	result += writeOutConfiguration(*_config);
 
 	auto archivesDirectory = _get_archives_directory();
 	FORIT(actionGroupIt, actionGroups)
