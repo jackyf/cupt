@@ -15,8 +15,6 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <future>
-
 #include <algorithm>
 #include <queue>
 
@@ -32,6 +30,7 @@
 #include <internal/tagparser.hpp>
 #include <internal/common.hpp>
 #include <internal/indexofindex.hpp>
+#include <internal/exceptionlessfuture.hpp>
 
 #include <internal/worker/metadata.hpp>
 
@@ -1062,12 +1061,12 @@ bool MetadataWorker::p_runMetadataUpdateThreads(const shared_ptr< download::Prog
 	{ // download manager involved part
 		download::Manager downloadManager(_config, downloadProgress);
 
-		std::queue< std::future<bool> > threadReturnValues;
+		std::queue< ExceptionlessFuture<bool> > threadReturnValues;
 
 		for (const auto& indexEntry: _cache->getIndexEntries())
 		{
-			threadReturnValues.emplace(std::async(std::launch::async,
-					std::bind(&MetadataWorker::p_metadataUpdateThread, this, std::ref(downloadManager), indexEntry)));
+			threadReturnValues.emplace(
+					std::bind(&MetadataWorker::p_metadataUpdateThread, this, std::ref(downloadManager), indexEntry));
 		}
 		while (!threadReturnValues.empty())
 		{

@@ -18,6 +18,20 @@ cupt (2.7.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:35:04 +0200
 
+cupt (2.6.4) unstable; urgency=medium
+
+  * lib:
+    - system/worker:
+      - 'renameSnapshot': don't accept invalid snapshot names.
+      - Detect snapshot names having whitespace characters as invalid.
+      - 'updateReleaseAndIndexData': reimplemented needed subset of <future>.
+        Fixes FTBFS on armel. (Closes: #730974)
+  * debian:
+    - control:
+      - Bumped Standards-Version to 3.9.5, no changes needed.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 24 Dec 2013 20:59:30 +0200
+
 cupt (2.6.3) unstable; urgency=low
 
   * lib:

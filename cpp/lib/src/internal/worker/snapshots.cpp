@@ -225,6 +225,13 @@ void checkSnapshotName(const Snapshots& snapshots, const string& name)
 	{
 		fatal2(__("the system snapshot name '%s' cannot start with a '.'"), name);
 	}
+	for (auto c: name)
+	{
+		if (isspace(c))
+		{
+			fatal2(__("the system snapshot name '%s' cannot contain a whitespace character '%c'"), name, c);
+		}
+	}
 
 	{
 		auto existingNames = snapshots.getSnapshotNames();
@@ -369,16 +376,13 @@ void SnapshotsWorker::saveSnapshot(const Snapshots& snapshots, const string& nam
 void SnapshotsWorker::renameSnapshot(const Snapshots& snapshots,
 		const string& previousName, const string& newName)
 {
+	checkSnapshotName(snapshots, newName);
+
 	auto snapshotNames = snapshots.getSnapshotNames();
 	if (std::find(snapshotNames.begin(), snapshotNames.end(), previousName)
 			== snapshotNames.end())
 	{
 		fatal2(__("unable to find a snapshot named '%s'"), previousName);
-	}
-	if (std::find(snapshotNames.begin(), snapshotNames.end(), newName)
-			!= snapshotNames.end())
-	{
-		fatal2(__("the snapshot '%s' already exists"), newName);
 	}
 
 	auto previousSnapshotDirectory = snapshots.getSnapshotDirectory(previousName);
