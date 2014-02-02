@@ -30,7 +30,7 @@ class CUPT_API Pipe
 	internal::PipeData* __data;
 	Pipe(const Pipe&);
  public:
-	Pipe(const string& name);
+	Pipe(const string& name, bool leaveReaderOpenOnExec = false);
 	virtual ~Pipe();
 	void useAsReader();
 	void useAsWriter();
