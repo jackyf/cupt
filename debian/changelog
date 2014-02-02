@@ -12,6 +12,9 @@ cupt (2.7.0~) UNRELEASED; urgency=low
         flag after the action, not before.
       - 'changeSystem': support VERSION 3 of preinstall hooks. Thanks to
          James McCoy for the format analysis.
+      - 'changeSystem': support for sending hook input to any file descriptor
+        hooks want. Thanks to James McCoy for the report. Together with an
+        entry above this (Closes: 725979)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:35:04 +0200
 

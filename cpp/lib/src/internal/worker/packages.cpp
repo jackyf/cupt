@@ -1635,7 +1635,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 	return changesets;
 }
 
-void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& commandInput)
+void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const CommandInput& commandInput)
 {
 	auto errorId = format2(__("dpkg '%s' action '%s'"), flavor, command);
 	_run_external_command(Logger::Subsystem::Packages, command, commandInput, errorId);
@@ -1678,7 +1678,7 @@ void PackagesWorker::__do_dpkg_pre_actions()
 	auto commands = _config->getList("dpkg::pre-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("pre", *commandIt, "");
+		__run_dpkg_command("pre", *commandIt, {});
 	}
 }
 
@@ -1867,24 +1867,27 @@ void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGro
 
 	for (const string& command: _config->getList("dpkg::pre-install-pkgs"))
 	{
-		string commandInput = p_getCommandInputForPreinstallPackagesHook(command, actionGroups);
-		if (commandInput.empty()) continue;
+		auto commandInput = p_getCommandInputForPreinstallPackagesHook(command, actionGroups);
+		if (commandInput.buffer.empty()) continue;
+		setenv("APT_HOOK_INFO_FD", std::to_string(commandInput.fd).c_str(), 1);
 
 		__run_dpkg_command("pre", command, commandInput);
 	}
 }
 
-string PackagesWorker::p_getCommandInputForPreinstallPackagesHook(
+CommandInput PackagesWorker::p_getCommandInputForPreinstallPackagesHook(
 		const string& command, const vector<InnerActionGroup>& actionGroups)
 {
 	string commandBinary = getCommandBinaryForPreInstallPackagesHook(command);
 
-	auto versionOfInput = _config->getInteger(
-			string("dpkg::tools::options::") + commandBinary + "::version");
+	auto hookOptionNamePrefix = string("dpkg::tools::options::") + commandBinary;
+	auto versionOfInput = _config->getInteger(hookOptionNamePrefix+"::version");
 
 	if (versionOfInput == 2 || versionOfInput == 3)
 	{
-		return p_generateInputForPreinstallV2OrV3Hooks(actionGroups, versionOfInput==3);
+		CommandInput ci = p_generateInputForPreinstallV2OrV3Hooks(actionGroups, versionOfInput==3);
+		ci.fd = _config->getInteger(hookOptionNamePrefix+"::infofd");
+		return ci;
 	}
 	else
 	{
@@ -1899,7 +1902,7 @@ void PackagesWorker::__do_dpkg_post_actions()
 	auto commands = _config->getList("dpkg::post-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("post", *commandIt, "");
+		__run_dpkg_command("post", *commandIt, {});
 	}
 }
 

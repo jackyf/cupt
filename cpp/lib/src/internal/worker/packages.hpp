@@ -98,12 +98,12 @@ class PackagesWorker: public virtual WorkerBase
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
 	vector< Changeset > __get_changesets(GraphAndAttributes&,
 			const map< string, pair< download::Manager::DownloadEntity, string > >&);
-	void __run_dpkg_command(const string&, const string&, const string&);
+	void __run_dpkg_command(const string&, const string&, const CommandInput&);
 	void __do_dpkg_pre_actions();
 	void __do_dpkg_post_actions();
 	string p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>&);
 	string p_generateInputForPreinstallV2OrV3Hooks(const vector<InnerActionGroup>&, bool);
-	string p_getCommandInputForPreinstallPackagesHook(const string&, const vector<InnerActionGroup>&);
+	CommandInput p_getCommandInputForPreinstallPackagesHook(const string&, const vector<InnerActionGroup>&);
 	void __do_dpkg_pre_packages_actions(const vector< InnerActionGroup >&);
 	void __clean_downloads(const Changeset& changeset);
 	void __do_downloads(const vector< pair< download::Manager::DownloadEntity, string > >&,
