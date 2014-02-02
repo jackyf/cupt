@@ -37,6 +37,16 @@ using namespace cache;
 
 class Lock;
 
+struct CommandInput
+{
+	string buffer;
+	int fd;
+
+	CommandInput(const string& buffer_ = string(), int fd_ = 0)
+		: buffer(buffer_), fd(fd_)
+	{}
+};
+
 class WorkerBase
 {
 	friend class Dpkg;
@@ -55,7 +65,10 @@ class WorkerBase
 	string _get_archives_directory() const;
 	static string _get_archive_basename(const BinaryVersion*);
 	void _run_external_command(Logger::Subsystem, const string&,
-			const string& = "", const string& = "");
+			const CommandInput& = CommandInput(), const string& = "");
+	void p_invokeShellCommand(Logger::Subsystem, Logger::Level, const string&);
+	void p_runCommandWithInput(Logger::Subsystem, Logger::Level,
+			const string& command, const CommandInput&);
 
 	static Action::Type _download_dependent_action_types[4];
  public:

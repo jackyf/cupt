@@ -1112,7 +1112,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			FORIT(commandIt, preCommands)
 			{
 				auto errorId = format2("pre-invoke action '%s'", *commandIt);
-				_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
+				_run_external_command(Logger::Subsystem::Metadata, *commandIt, {}, errorId);
 			}
 		}
 
@@ -1155,7 +1155,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 		FORIT(commandIt, postCommands)
 		{
 			auto errorId = format2("post-invoke action '%s'", *commandIt);
-			_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
+			_run_external_command(Logger::Subsystem::Metadata, *commandIt, {}, errorId);
 		}
 		if (masterExitCode)
 		{
@@ -1164,7 +1164,7 @@ void MetadataWorker::updateReleaseAndIndexData(const shared_ptr< download::Progr
 			FORIT(commandIt, postSuccessCommands)
 			{
 				auto errorId = format2("post-invoke-success action '%s'", *commandIt);
-				_run_external_command(Logger::Subsystem::Metadata, *commandIt, "", errorId);
+				_run_external_command(Logger::Subsystem::Metadata, *commandIt, {}, errorId);
 			}
 		}
 	}
