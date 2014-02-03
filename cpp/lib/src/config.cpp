@@ -576,9 +576,18 @@ vector< string > Config::getList(const string& optionName) const
 	__builtin_unreachable();
 }
 
-bool __is_cupt_option(const string& optionName)
+static bool isFamilyOption(const string& optionName, const char* family)
 {
-	return optionName.compare(0, 6, "cupt::") == 0;
+	string prefix = string(family) + "::";
+	return optionName.compare(0, prefix.size(), prefix) == 0;
+}
+static inline bool isCuptOption(const string& optionName)
+{
+	return isFamilyOption(optionName, "cupt");
+}
+static bool isForeignOption(const string& optionName)
+{
+	return !isCuptOption(optionName) && !isFamilyOption(optionName, "dpkg");
 }
 
 void Config::setScalar(const string& optionName, const string& value)
@@ -600,13 +609,17 @@ void Config::setScalar(const string& optionName, const string& value)
 		}
 	}
 
-	if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
+	if (isForeignOption(normalizedOptionName))
+	{
+		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
+	}
+	else if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
 	{
 		__impl->regularVars[normalizedOptionName] = value;
 	}
 	else
 	{
-		if (__is_cupt_option(optionName))
+		if (isCuptOption(optionName))
 		{
 			warn2(__("an attempt to set the invalid scalar option '%s'"), optionName);
 		}
@@ -627,7 +640,7 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		if (__is_cupt_option(optionName))
+		if (isCuptOption(optionName))
 		{
 			warn2(__("an attempt to set the invalid list option '%s'"), optionName);
 		}

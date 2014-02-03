@@ -4,6 +4,8 @@ cupt (2.7.0~) UNRELEASED; urgency=low
     - Fixed not invoking std::terminate() when a pipe process fail.
     - config:
       - New option 'cupt::directory::configuration::pre'.
+      - 'setScalar': accept options from foreign families. They may be useful
+        for e.g. hooks.
     - system/resolvers/native:
       - Reduced solution memory footprint.
       - Reduced average CPU costs of postprocessing failed solutions.
