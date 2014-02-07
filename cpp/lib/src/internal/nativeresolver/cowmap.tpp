@@ -194,6 +194,12 @@ const DataT* CowMap<KeyT,MapT>::get(KeyT key) const
 	return nullptr; // not found
 }
 
+template < typename KeyT, typename MapT >
+void CowMap<KeyT,MapT>::shrinkToFit()
+{
+	p_added->shrinkToFit();
+}
+
 }
 }
 

@@ -66,6 +66,7 @@ class VectorBasedMap
 	void init(container_t&& container) { __container.swap(container); }
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
+	void shrinkToFit() { __container.shrink_to_fit(); }
 	const_iterator_t begin() const { return &*__container.begin(); }
 	const_iterator_t end() const { return &*__container.end(); }
 	const_iterator_t lower_bound(const key_t& key) const
@@ -551,9 +552,13 @@ void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::
 {
 	setRejections(*this, solution, action);
 	p_setPackageEntryFromAction(solution, action);
+	solution.p_entries.shrinkToFit();
+
 	__dependency_graph.unfoldElement(action.newElementPtr);
+
 	p_updateBrokenSuccessors(solution,
 			action.oldElementPtr, action.newElementPtr, action.brokenElementPriority+1);
+	solution.p_brokenSuccessors.shrinkToFit();
 }
 
 shared_ptr< PreparedSolution > SolutionStorage::prepareSolution(const shared_ptr< Solution >& input)

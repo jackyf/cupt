@@ -42,6 +42,8 @@ class CowMap
 	void remove(KeyT);
 	template < typename CallbackT >
 	void foreachModifiedEntry(const CallbackT&) const;
+
+	void shrinkToFit();
 };
 
 }
