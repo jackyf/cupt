@@ -97,10 +97,6 @@ class VectorBasedMap
 	{
 		__container.push_back(data);
 	}
-	const container_t& getContainer() const
-	{
-		return __container;
-	}
  public:
 	mutable size_t forkedCount;
 
