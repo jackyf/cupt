@@ -61,13 +61,14 @@ struct IntroducedBy
 
 struct PackageEntry
 {
+	const dg::Element* element;
 	bool sticked;
 	bool autoremoved;
 	forward_list< const dg::Element* > rejectedConflictors;
 	IntroducedBy introducedBy;
 	size_t level;
 
-	PackageEntry(bool sticked_ = false);
+	PackageEntry();
 	PackageEntry(PackageEntry&&) = default;
 	PackageEntry(const PackageEntry&) = default;
 
@@ -130,12 +131,12 @@ class PreparedSolution: public Solution
 	bool isFinished() const { return finished; }
 	size_t getLevel() const { return level; }
 
-	vector< const dg::Element* > getElements() const;
+	vector< const PackageEntry* > getEntries() const;
 	vector< const dg::Element* > getInsertedElements() const;
 	BrokenSuccessor getMaxBrokenSuccessor(const std::function< bool (BrokenSuccessor, BrokenSuccessor) >&) const;
 	// result becomes invalid after any setPackageEntry
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
-	void setPackageEntry(const dg::Element*, PackageEntry&&, const dg::Element*);
+	void setPackageEntry(const dg::Element*, PackageEntry&&);
 };
 
 class SolutionStorage

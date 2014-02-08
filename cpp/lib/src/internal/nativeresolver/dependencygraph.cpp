@@ -91,7 +91,12 @@ bool BasicVertex::asAuto() const
 	return true; // unreacahble
 }
 
-VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >::iterator& it)
+const Element* BasicVertex::getFamilyKey() const
+{
+	return this;
+}
+
+VersionVertex::VersionVertex(const FamilyMap::iterator& it)
 	: __related_element_ptrs_it(it)
 {}
 
@@ -103,7 +108,7 @@ string VersionVertex::toString() const
 
 const forward_list< const Element* >* VersionVertex::getRelatedElements() const
 {
-	return &__related_element_ptrs_it->second;
+	return &__related_element_ptrs_it->second.first;
 }
 
 const string& VersionVertex::getPackageName() const
@@ -122,6 +127,11 @@ string VersionVertex::toLocalizedString() const
 	{
 		return string(__("removed")) + ' ' + packageName;
 	}
+}
+
+const Element* VersionVertex::getFamilyKey() const
+{
+	return __related_element_ptrs_it->second.second;
 }
 
 typedef BinaryVersion::RelationTypes::Type RelationType;
@@ -564,7 +574,7 @@ class DependencyGraph::FillHelper
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
 
-	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
+	map< string, pair< forward_list< const Element* >, const Element* > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
 	unordered_map< string, map< string, const Element* > > __meta_anti_relation_expression_vertices;
@@ -603,7 +613,7 @@ class DependencyGraph::FillHelper
 
 			if (version)
 			{
-				for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName])
+				for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName].first)
 				{
 					auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
 					if (!existingVersion) continue;
@@ -624,11 +634,15 @@ class DependencyGraph::FillHelper
 		auto makeVertex = [this, &packageName, &version]() -> const VersionVertex*
 		{
 			auto relatedVertexPtrsIt = __package_name_to_vertex_ptrs.insert(
-					{ packageName, {} }).first;
+					{ packageName, { {}, nullptr } }).first;
 			auto vertexPtr(new VersionVertex(relatedVertexPtrsIt));
 			vertexPtr->version = version;
 			__dependency_graph.addVertex(vertexPtr);
-			relatedVertexPtrsIt->second.push_front(vertexPtr);
+			relatedVertexPtrsIt->second.first.push_front(vertexPtr);
+			if (!relatedVertexPtrsIt->second.second)
+			{
+				relatedVertexPtrsIt->second.second = vertexPtr; // family vertex
+			}
 			return vertexPtr;
 		};
 
@@ -951,13 +965,6 @@ class DependencyGraph::FillHelper
 	}
 };
 
-const shared_ptr< const PackageEntry >& getSharedPackageEntry(bool sticked)
-{
-	static const auto stickedOne = std::make_shared< const PackageEntry >(true);
-	static const auto notStickedOne = std::make_shared< const PackageEntry >(false);
-	return sticked ? stickedOne : notStickedOne;
-}
-
 vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
 		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
@@ -993,12 +1000,22 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 		const map< string, InitialPackageEntry >& initialPackages)
 {
 	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
+
+	auto generate = [&result](const Element* element, bool sticked)
+	{
+		auto packageEntry = std::make_shared<PackageEntry>();
+		packageEntry->element = element;
+		packageEntry->sticked = sticked;
+
+		result.emplace_back(element->getFamilyKey(), packageEntry);
+	};
+
 	for (const auto& it: initialPackages)
 	{
-		auto elementPtr = __fill_helper->getVertexPtr(it.first, it.second.version);
-		result.push_back({ elementPtr, getSharedPackageEntry(false) });
+		generate(__fill_helper->getVertexPtr(it.first, it.second.version), false);
 	}
-	result.emplace_back(__fill_helper->getDummyElementPtr(), getSharedPackageEntry(true));
+	generate(__fill_helper->getDummyElementPtr(), true);
+
 	return result;
 }
 

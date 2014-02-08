@@ -28,8 +28,8 @@ namespace internal {
 
 using std::make_pair;
 
-PackageEntry::PackageEntry(bool sticked_)
-	: sticked(sticked_), autoremoved(false), level(0)
+PackageEntry::PackageEntry()
+	: sticked(false), autoremoved(false), level(0)
 {}
 
 bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
@@ -246,7 +246,7 @@ void SolutionStorage::setRejection(PreparedSolution& solution,
 			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
 
 	packageEntry.rejectedConflictors.push_front(elementPtr);
-	solution.setPackageEntry(conflictingElementPtr, std::move(packageEntry), nullptr);
+	solution.setPackageEntry(conflictingElementPtr, std::move(packageEntry));
 }
 
 void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
@@ -344,22 +344,11 @@ void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 }
 
 void PreparedSolution::setPackageEntry(
-		const dg::Element* elementPtr, PackageEntry&& packageEntry,
-		const dg::Element* conflictingElementPtr)
+		const dg::Element* element, PackageEntry&& packageEntry)
 {
+	packageEntry.element = element;
 	auto newData = std::make_shared< const PackageEntry >(std::move(packageEntry));
-	if (!p_entries.add(elementPtr, std::move(newData)))
-	{
-		if (conflictingElementPtr)
-		{
-			fatal2i("nativeresolver: conflicting elements in p_added: solution '%zu', in '%s', out '%s'",
-					id, elementPtr->toString(), conflictingElementPtr->toString());
-		}
-	}
-	if (conflictingElementPtr)
-	{
-		p_entries.remove(conflictingElementPtr);
-	}
+	p_entries.add(element->getFamilyKey(), std::move(newData));
 }
 
 void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
@@ -376,7 +365,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	}
 	for (const auto& record: source)
 	{
-		__dependency_graph.unfoldElement(record.first);
+		__dependency_graph.unfoldElement(record.second->element);
 	}
 
 	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
@@ -394,7 +383,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	initialSolution.p_brokenSuccessors.setInitialMap(&nullBrokenSuccessorMap);
 	for (const auto& entry: *p_initialEntries)
 	{
-		p_updateBrokenSuccessors(initialSolution, nullptr, entry.first, 1);
+		p_updateBrokenSuccessors(initialSolution, nullptr, entry.second->element, 1);
 	}
 }
 
@@ -545,7 +534,7 @@ void SolutionStorage::p_setPackageEntryFromAction(PreparedSolution& solution, co
 	packageEntry.sticked = true;
 	packageEntry.introducedBy = action.introducedBy;
 	packageEntry.level = solution.level;
-	solution.setPackageEntry(action.newElementPtr, std::move(packageEntry), action.oldElementPtr);
+	solution.setPackageEntry(action.newElementPtr, std::move(packageEntry));
 }
 
 void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::Action& action)
@@ -614,9 +603,9 @@ void PreparedSolution::initEntriesFromParent(const PreparedSolution& parent)
 	p_brokenSuccessors = parent.p_brokenSuccessors;
 }
 
-vector< const dg::Element* > PreparedSolution::getElements() const
+vector<const PackageEntry*> PreparedSolution::getEntries() const
 {
-	return p_entries.getKeys();
+	return p_entries.getEntries<PackageEntry>();
 }
 
 vector< const dg::Element* > PreparedSolution::getInsertedElements() const
@@ -654,10 +643,12 @@ BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
 	return result;
 }
 
-const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* elementPtr) const
+const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* element) const
 {
-	auto entryData = p_entries.get< shared_ptr<const PackageEntry> >(elementPtr);
-	return entryData ? entryData->get() : nullptr;
+	auto entryData = p_entries.get< shared_ptr<const PackageEntry> >(element->getFamilyKey());
+	if (!entryData) return nullptr;
+	if ((*entryData)->element != element) return nullptr;
+	return entryData->get();
 }
 
 }

@@ -266,10 +266,9 @@ bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solut
 	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
 	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
 	{ // building dependency graph
-		auto elementPtrs = solution.getElements();
-		FORIT(elementPtrIt, elementPtrs)
+		for (auto packageEntry: solution.getEntries())
 		{
-			dependencyGraph.addVertex(*elementPtrIt);
+			dependencyGraph.addVertex(packageEntry->element);
 		}
 		FORIT(elementPtrIt, vertices)
 		{
@@ -342,7 +341,7 @@ bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solut
 				{
 					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
 				}
-				solution.setPackageEntry(emptyElementPtr, std::move(packageEntry), *elementPtrIt);
+				solution.setPackageEntry(emptyElementPtr, std::move(packageEntry));
 			}
 		}
 	}
@@ -661,8 +660,10 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	Resolver::Offer offer;
 	Resolver::SuggestedPackages& suggestedPackages = offer.suggestedPackages;
 
-	for (auto elementPtr: solution.getElements())
+	for (auto packageEntry: solution.getEntries())
 	{
+		auto elementPtr = packageEntry->element;
+
 		auto vertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 		if (vertex)
 		{
@@ -744,8 +745,9 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 
 void NativeResolverImpl::__final_verify_solution(const PreparedSolution& solution)
 {
-	for (auto element: solution.getElements())
+	for (auto packageEntry: solution.getEntries())
 	{
+		auto element = packageEntry->element;
 		for (auto successorElement: __solution_storage->getSuccessorElements(element))
 		{
 			if (!__solution_storage->verifyElement(solution, successorElement))
@@ -817,8 +819,8 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 		}
 		if (!result.versionElementPtr)
 		{
-			fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s'",
-					result.brokenSuccessor.elementPtr->toString());
+			fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s', solution '%zu'",
+					result.brokenSuccessor.elementPtr->toString(), solution.id);
 		}
 	}
 

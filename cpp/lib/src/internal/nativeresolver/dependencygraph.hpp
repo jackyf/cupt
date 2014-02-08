@@ -76,6 +76,7 @@ struct BasicVertex
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
 	virtual const RequestImportance& getUnsatisfiedImportance() const;
 	virtual bool asAuto() const;
+	virtual const Element* getFamilyKey() const;
 
 	BasicVertex();
 	virtual ~BasicVertex();
@@ -83,15 +84,17 @@ struct BasicVertex
 struct VersionVertex: public BasicVertex
 {
  private:
-	const map< string, forward_list< const Element* > >::iterator __related_element_ptrs_it;
+	typedef map< string, pair< forward_list< const Element* >, const Element* > > FamilyMap;
+	const FamilyMap::iterator __related_element_ptrs_it;
  public:
 	const BinaryVersion* version;
 
-	VersionVertex(const map< string, forward_list< const Element* > >::iterator&);
+	VersionVertex(const FamilyMap::iterator&);
 	string toString() const;
 	const forward_list< const Element* >* getRelatedElements() const;
 	const string& getPackageName() const;
 	string toLocalizedString() const;
+	const Element* getFamilyKey() const;
 };
 typedef VersionVertex VersionElement;
 

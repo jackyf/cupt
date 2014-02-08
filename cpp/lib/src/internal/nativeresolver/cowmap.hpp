@@ -33,12 +33,15 @@ class CowMap
 	CowMap();
 	void setInitialMap(const MapT*);
 	void operator=(const CowMap&);
-	vector<KeyT> getKeys() const;
+
+	// only for maps without removals
+	template < typename Data >
+	vector<const Data*> getEntries() const;
 
 	template < typename DataT >
 	const DataT* get(KeyT) const;
 	template < typename DataT >
-	bool add(KeyT, DataT&&);
+	void add(KeyT, DataT&&);
 	void remove(KeyT);
 	template < typename CallbackT >
 	void foreachModifiedEntry(const CallbackT&) const;

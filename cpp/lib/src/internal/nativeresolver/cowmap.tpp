@@ -82,19 +82,16 @@ void CowMap<KeyT,MapT>::setInitialMap(const MapT* map)
 
 template < typename KeyT, typename MapT >
 template < typename DataT >
-bool CowMap<KeyT,MapT>::add(KeyT key, DataT&& data)
+void CowMap<KeyT,MapT>::add(KeyT key, DataT&& data)
 {
 	auto it = p_added->lower_bound(key);
 	if (it != p_added->end() && typename MapT::key_getter_t()(*it) == key)
 	{
-		bool dataWasPresent = getCowRecordData(*it);
 		*it = { key, std::move(data) };
-		return !dataWasPresent;
 	}
 	else
 	{
 		p_added->insert(it, { key, std::move(data) });
-		return true;
 	}
 }
 
@@ -141,9 +138,10 @@ void CowMap<KeyT,MapT>::operator=(const CowMap& parent)
 }
 
 template < typename KeyT, typename MapT >
-vector<KeyT> CowMap<KeyT,MapT>::getKeys() const
+template < typename DataT >
+vector<const DataT*> CowMap<KeyT,MapT>::getEntries() const
 {
-	vector<KeyT> result;
+	vector<const DataT*> result;
 
 	static const MapT nullMap;
 	const auto& initial = *p_initial;
@@ -153,7 +151,7 @@ vector<KeyT> CowMap<KeyT,MapT>::getKeys() const
 	cowMapForeach(initial, master,
 			[&intermediateMap](const typename MapT::value_type& data) { intermediateMap.push_back(data); });
 	cowMapForeach(intermediateMap, *p_added,
-			[&result](const typename MapT::value_type& data) { if (data.second) result.push_back(data.first); });
+			[&result](const typename MapT::value_type& data) { result.push_back(&*data.second); });
 
 	return result;
 }
