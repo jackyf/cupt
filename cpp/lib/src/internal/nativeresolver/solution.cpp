@@ -93,10 +93,6 @@ class VectorBasedMap
 		__container.insert(__position_to_iterator(position), std::move(data));
 		return const_cast< iterator_t >(begin()) + distance;
 	}
-	void erase(const_iterator_t position)
-	{
-		__container.erase(__position_to_iterator(position));
-	}
 	void push_back(const data_t& data)
 	{
 		__container.push_back(data);
