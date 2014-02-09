@@ -595,7 +595,6 @@ vector< const dg::Element* > PreparedSolution::getInsertedElements() const
 	p_entries.foreachModifiedEntry(
 			[&result](const PackageEntryMap::value_type& data)
 			{
-				if (!data.second) return;
 				const auto& level = data.second->level;
 				if (!level) return;
 				result[level-1] = data.first;
