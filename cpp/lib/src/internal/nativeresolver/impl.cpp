@@ -36,6 +36,7 @@ using std::queue;
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __config(config), __cache(cache), __score_manager(*config, cache), __auto_removal_possibility(*__config)
 {
+	p_debugging = __config->getBool("debug::resolver");
 	__import_installed_versions();
 }
 
@@ -54,12 +55,10 @@ void NativeResolverImpl::__import_installed_versions()
 
 void NativeResolverImpl::__import_packages_to_reinstall()
 {
-	bool debugging = __config->getBool("debug::resolver");
-
 	auto reinstallRequiredPackageNames = __cache->getSystemState()->getReinstallRequiredPackageNames();
 	FORIT(packageNameIt, reinstallRequiredPackageNames)
 	{
-		if (debugging)
+		if (p_debugging)
 		{
 			debug2("the package '%s' needs a reinstall", *packageNameIt);
 		}
@@ -94,7 +93,7 @@ bool NativeResolverImpl::__prepare_version_no_stick(
 		return true; // there is such version installed already
 	}
 
-	if (__config->getBool("debug::resolver"))
+	if (p_debugging)
 	{
 		debug2("install package '%s', version '%s'", packageName, version->versionString);
 	}
@@ -124,7 +123,7 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 {
 	const string& annotation = !proposedAnnotation.empty() ? proposedAnnotation : getAnnotation(re, invert);
 	p_userRelationExpressions.push_back({ re, invert, annotation, importance, asAutomatic });
-	if (__config->getBool("debug::resolver"))
+	if (p_debugging)
 	{
 		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
 	}
@@ -324,8 +323,6 @@ bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solut
 	}
 
 	{ // looping through the candidates
-		bool debugging = __config->getBool("debug::resolver");
-
 		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
 
 		FORIT(elementPtrIt, vertices)
@@ -337,7 +334,7 @@ bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solut
 				PackageEntry packageEntry;
 				packageEntry.autoremoved = true;
 
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
 				}
@@ -384,7 +381,7 @@ void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
 	auto newElementPtr = actionToApply->newElementPtr;
 	auto scoreChange = p_getScoreChange(oldElementPtr, newElementPtr, actionPosition);
 
-	if (__config->getBool("debug::resolver"))
+	if (p_debugging)
 	{
 		__mydebug_wrapper(originalSolution, oldSolutionId, "-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
 				solution.id, __score_manager.getScoreChangeString(scoreChange),
@@ -690,14 +687,13 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	}
 
 	// suggest found solution
-	bool debugging = __config->getBool("debug::resolver");
-	if (debugging)
+	if (p_debugging)
 	{
 		__mydebug_wrapper(solution, "proposing this solution");
 	}
 
 	auto userAnswer = callback(offer);
-	if (debugging)
+	if (p_debugging)
 	{
 		if (userAnswer == Resolver::UserAnswer::Accept)
 		{
@@ -851,7 +847,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
 
-	const bool debugging = __config->getBool("debug::resolver");
+	const bool debugging = p_debugging;
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
 	bool thereWereSolutionsDropped = false;

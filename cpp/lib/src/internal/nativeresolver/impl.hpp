@@ -50,6 +50,7 @@ class NativeResolverImpl
 	typedef vector< unique_ptr< Action > > ActionContainer;
 
 	shared_ptr< const Config > __config;
+	bool p_debugging;
 	shared_ptr< const Cache > __cache;
 	map< string, bool > __auto_status_overrides;
 	unique_ptr< SolutionStorage > __solution_storage;
