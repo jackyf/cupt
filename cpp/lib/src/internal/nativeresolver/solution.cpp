@@ -197,17 +197,10 @@ const forward_list< const dg::Element* >& SolutionStorage::getConflictingElement
 bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
 		const dg::Element* element, const dg::Element** conflictingElementPtr) const
 {
-	for (auto conflictingElement: getConflictingElements(element))
+	if (auto familyPackageEntry = solution.getFamilyPackageEntry(element))
 	{
-		if (conflictingElement == element) continue;
-
-		if (auto packageEntryPtr = solution.getPackageEntry(conflictingElement))
-		{
-			// there may be only one conflicting element in the solution
-			*conflictingElementPtr = conflictingElement;
-
-			return (!packageEntryPtr->sticked && packageEntryPtr->isModificationAllowed(element));
-		}
+		*conflictingElementPtr = familyPackageEntry->element;
+		return (!familyPackageEntry->sticked && familyPackageEntry->isModificationAllowed(element));
 	}
 
 	// no conflicting elements in this solution
@@ -635,12 +628,17 @@ BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
 	return result;
 }
 
-const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* element) const
+const PackageEntry* PreparedSolution::getFamilyPackageEntry(const dg::Element* element) const
 {
 	auto entryData = p_entries.get< shared_ptr<const PackageEntry> >(element->getFamilyKey());
-	if (!entryData) return nullptr;
-	if ((*entryData)->element != element) return nullptr;
-	return entryData->get();
+	return entryData ? entryData->get() : nullptr;
+}
+
+const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* element) const
+{
+	auto packageEntry = getFamilyPackageEntry(element);
+	if (packageEntry && packageEntry->element != element) return nullptr;
+	return packageEntry;
 }
 
 }
