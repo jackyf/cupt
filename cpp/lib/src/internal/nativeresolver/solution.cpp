@@ -493,11 +493,9 @@ static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& so
 	}
 	else
 	{
-		const auto& uselessToRejectElements = SolutionStorage::getConflictingElements(action.newElementPtr);
-		auto uselessToReject = [&uselessToRejectElements](const dg::Element* element)
+		auto uselessToReject = [&action](const dg::Element* element)
 		{
-			return std::find(uselessToRejectElements.begin(), uselessToRejectElements.end(), element) !=
-					uselessToRejectElements.end();
+			return action.newElementPtr->getFamilyKey() == element->getFamilyKey();
 		};
 
 		for (auto element: *action.allActionNewElements)
