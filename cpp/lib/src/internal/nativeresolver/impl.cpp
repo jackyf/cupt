@@ -398,10 +398,6 @@ ScoreChange NativeResolverImpl::p_getScoreChange(
 {
 	auto getVersion = [](const dg::Element* elementPtr) -> const BinaryVersion*
 	{
-		if (!elementPtr)
-		{
-			return nullptr;
-		}
 		auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 		if (!versionVertex)
 		{
