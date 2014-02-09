@@ -177,7 +177,7 @@ class SolutionStorage
 			getConflictingElements(const dg::Element*);
 	bool simulateSetPackageEntry(const PreparedSolution&,
 			const dg::Element*, const dg::Element**) const;
-	void setRejection(PreparedSolution&, const dg::Element*, const dg::Element*);
+	void setRejection(PreparedSolution&, const dg::Element*);
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const PreparedSolution&,

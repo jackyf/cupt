@@ -216,15 +216,12 @@ bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
 	return true;
 }
 
-void SolutionStorage::setRejection(PreparedSolution& solution,
-		const dg::Element* elementPtr, const dg::Element* dontChangePtr)
+void SolutionStorage::setRejection(PreparedSolution& solution, const dg::Element* elementPtr)
 {
 	const dg::Element* conflictingElementPtr;
 	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
-	if (!conflictingElementPtr || conflictingElementPtr == dontChangePtr)
-	{
-		return;
-	}
+	if (!conflictingElementPtr) return;
+
 	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
 
 	PackageEntry packageEntry = (conflictorPackageEntryPtr ?
@@ -481,7 +478,7 @@ static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& so
 {
 	auto reject = [&](const dg::Element* element)
 	{
-		solutionStorage.setRejection(solution, element, action.newElementPtr);
+		solutionStorage.setRejection(solution, element);
 	};
 
 	if (!action.allActionNewElements) return; // nothing to reject
