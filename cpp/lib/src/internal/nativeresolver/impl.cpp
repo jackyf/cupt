@@ -491,7 +491,7 @@ static bool isRelationMoreWide(const GraphCessorListType& successorElementSucces
 }
 
 bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution& solution,
-		const dg::Element* candidateElement, const dg::Element* brokenElement, bool debugging)
+		const dg::Element* candidateElement, const dg::Element* brokenElement)
 {
 	__solution_storage->unfoldElement(candidateElement);
 
@@ -500,7 +500,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution&
 	{
 		if (successorElement == brokenElement)
 		{
-			if (debugging)
+			if (p_debugging)
 			{
 				__mydebug_wrapper(solution, "not considering %s: it has the same problem", candidateElement->toString());
 			}
@@ -522,7 +522,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution&
 		   terms of satisfying elements, the version won't be accepted as a resolution */
 		if (!isRelationMoreWide(__solution_storage->getSuccessorElements(successorElement), brokenElementSuccessorElements))
 		{
-			if (debugging)
+			if (p_debugging)
 			{
 				__mydebug_wrapper(solution, "not considering %s: it contains equal or less wide relation expression '%s'",
 						candidateElement->toString(), successorElement->toString());
@@ -536,8 +536,7 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution&
 
 void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		vector< unique_ptr< Action > >& actions, const PreparedSolution& solution,
-		const dg::Element* versionElementPtr, const dg::Element* brokenElementPtr,
-		bool debugging)
+		const dg::Element* versionElementPtr, const dg::Element* brokenElementPtr)
 {
 	auto versionPackageEntryPtr = solution.getPackageEntry(versionElementPtr);
 	if (versionPackageEntryPtr->sticked)
@@ -557,8 +556,7 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 		{
 			continue;
 		}
-		if (__makes_sense_to_modify_package(solution, *conflictingElementPtrIt,
-				brokenElementPtr, debugging))
+		if (__makes_sense_to_modify_package(solution, *conflictingElementPtrIt, brokenElementPtr))
 		{
 			// other version seems to be ok
 			unique_ptr< Action > action(new Action);
@@ -715,13 +713,13 @@ struct BrokenPair
 };
 
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
-		const PreparedSolution& solution, const BrokenPair& bp, bool debugging)
+		const PreparedSolution& solution, const BrokenPair& bp)
 {
 	auto brokenElementPtr = bp.brokenSuccessor.elementPtr;
 
 	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
 	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
-			bp.versionElementPtr, brokenElementPtr, debugging);
+			bp.versionElementPtr, brokenElementPtr);
 
 	for (auto& action: *possibleActionsPtr)
 	{
@@ -847,12 +845,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
 
-	const bool debugging = p_debugging;
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
 	bool thereWereSolutionsDropped = false;
 
-	if (debugging) debug2("started resolving");
+	if (p_debugging) debug2("started resolving");
 
 	__any_solution_was_found = false;
 	__decision_fail_tree.clear();
@@ -874,18 +871,18 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
 
-		auto problemFound = [this, &failCounts, &possibleActions, &currentSolution, debugging]
+		auto problemFound = [this, &failCounts, &possibleActions, &currentSolution]
 		{
 			auto bp = __get_broken_pair(*__solution_storage, *currentSolution, failCounts);
 			if (!bp.versionElementPtr) return false;
 
-			if (debugging)
+			if (p_debugging)
 			{
 				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
 						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
 						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
 			}
-			__generate_possible_actions(&possibleActions, *currentSolution, bp, debugging);
+			__generate_possible_actions(&possibleActions, *currentSolution, bp);
 			__fill_and_process_introduced_by(*currentSolution, bp, &possibleActions);
 
 			// mark package as failed one more time
@@ -899,7 +896,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			// if the solution was only just finished
 			if (!currentSolution->finished)
 			{
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "finished");
 				}
@@ -918,7 +915,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			// clean up automatically installed by resolver and now unneeded packages
 			if (!__clean_automatically_installed(*currentSolution))
 			{
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "auto-discarded");
 				}
@@ -952,7 +949,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 			if (possibleActions.empty())
 			{
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "no solutions");
 				}
@@ -965,7 +962,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 				};
 				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
 
-				__erase_worst_solutions(solutions, maxSolutionCount, debugging, thereWereSolutionsDropped);
+				__erase_worst_solutions(solutions, maxSolutionCount, p_debugging, thereWereSolutionsDropped);
 			}
 		}
 	}

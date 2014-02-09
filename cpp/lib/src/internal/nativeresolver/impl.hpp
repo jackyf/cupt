@@ -84,10 +84,9 @@ class NativeResolverImpl
 
 	void __final_verify_solution(const PreparedSolution&);
 
-	bool __makes_sense_to_modify_package(const PreparedSolution&, const dg::Element*,
-			const dg::Element*, bool);
+	bool __makes_sense_to_modify_package(const PreparedSolution&, const dg::Element*, const dg::Element*);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const PreparedSolution&,
-			const dg::Element*, const dg::Element*, bool);
+			const dg::Element*, const dg::Element*);
 
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const PreparedSolution&,
 			const dg::Element*);
@@ -98,7 +97,7 @@ class NativeResolverImpl
 			const PreparedSolution&, Resolver::CallbackType, bool);
 
 	void __fill_and_process_introduced_by(const PreparedSolution&, const BrokenPair&, ActionContainer* actionsPtr);
-	void __generate_possible_actions(vector< unique_ptr< Action > >*, const PreparedSolution&, const BrokenPair&, bool);
+	void __generate_possible_actions(vector< unique_ptr< Action > >*, const PreparedSolution&, const BrokenPair&);
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
