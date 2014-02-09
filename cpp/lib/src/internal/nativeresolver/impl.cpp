@@ -478,67 +478,57 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 	}
 }
 
-bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution& solution,
-		const dg::Element* candidateElementPtr, const dg::Element* brokenElementPtr,
-		bool debugging)
+static bool isRelationMoreWide(const GraphCessorListType& successorElementSuccessorElements, const GraphCessorListType& brokenElementSuccessorElements)
 {
+	const auto& bese = brokenElementSuccessorElements;
 
-	__solution_storage->unfoldElement(candidateElementPtr);
-
-	const GraphCessorListType& successorElementPtrs =
-			__solution_storage->getSuccessorElements(candidateElementPtr);
-	FORIT(successorElementPtrIt, successorElementPtrs)
+	for (auto element: successorElementSuccessorElements)
 	{
-		if (*successorElementPtrIt == brokenElementPtr)
+		bool notFound = (std::find(bese.begin(), bese.end(), element) == bese.end());
+		if (notFound)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution& solution,
+		const dg::Element* candidateElement, const dg::Element* brokenElement, bool debugging)
+{
+	__solution_storage->unfoldElement(candidateElement);
+
+	const auto& successorElements = __solution_storage->getSuccessorElements(candidateElement);
+	for (auto successorElement: successorElements)
+	{
+		if (successorElement == brokenElement)
 		{
 			if (debugging)
 			{
-				__mydebug_wrapper(solution, "not considering %s: it has the same problem",
-						candidateElementPtr->toString());
+				__mydebug_wrapper(solution, "not considering %s: it has the same problem", candidateElement->toString());
 			}
 			return false;
 		}
 	}
 
 	// let's try even harder to find if this candidate is really appropriate for us
-	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
-	const GraphCessorListType& brokenElementSuccessorElementPtrs =
-			__solution_storage->getSuccessorElements(brokenElementPtr);
-	FORIT(successorElementPtrIt, successorElementPtrs)
+	auto brokenElementTypePriority = brokenElement->getTypePriority();
+	const auto& brokenElementSuccessorElements = __solution_storage->getSuccessorElements(brokenElement);
+	for (auto successorElement: successorElements)
 	{
-		/* we check only successors with the same or bigger priority than
-		   currently broken one */
-		if ((*successorElementPtrIt)->getTypePriority() < brokenElementTypePriority)
+		// we check only successors with the same or bigger priority than currently broken one
+		if (successorElement->getTypePriority() < brokenElementTypePriority)
 		{
 			continue;
 		}
 		/* if any of such successors gives us equal or less "space" in
-		   terms of satisfying elements, the version won't be accepted as a
-		   resolution */
-		const GraphCessorListType& successorElementSuccessorElementPtrs =
-				__solution_storage->getSuccessorElements(*successorElementPtrIt);
-
-		bool isMoreWide = false;
-		FORIT(elementPtrIt, successorElementSuccessorElementPtrs)
-		{
-			bool notFound = (std::find(brokenElementSuccessorElementPtrs.begin(),
-					brokenElementSuccessorElementPtrs.end(), *elementPtrIt)
-					== brokenElementSuccessorElementPtrs.end());
-
-			if (notFound)
-			{
-				// more wide relation, can't say nothing bad with it at time being
-				isMoreWide = true;
-				break;
-			}
-		}
-
-		if (!isMoreWide)
+		   terms of satisfying elements, the version won't be accepted as a resolution */
+		if (!isRelationMoreWide(__solution_storage->getSuccessorElements(successorElement), brokenElementSuccessorElements))
 		{
 			if (debugging)
 			{
 				__mydebug_wrapper(solution, "not considering %s: it contains equal or less wide relation expression '%s'",
-						candidateElementPtr->toString(), (*successorElementPtrIt)->toString());
+						candidateElement->toString(), successorElement->toString());
 			}
 			return false;
 		}
