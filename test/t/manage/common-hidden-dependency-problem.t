@@ -74,7 +74,6 @@ sub test {
 }
 
 foreach (2..12) {
-	local $TODO = "improve algorithms" if $_ > 8;
 	test($_);
 }
 

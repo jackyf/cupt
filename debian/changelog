@@ -20,6 +20,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
+      - Implemented automatic quality adjustment.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
 

@@ -52,7 +52,6 @@ class ScoreManager
 {
 	shared_ptr< const Cache > __cache;
 	ssize_t __subscore_multipliers[ScoreChange::SubScore::Count];
-	ssize_t __quality_adjustment;
 	ssize_t __version_factor; // in percents
 	ssize_t __preferred_version_default_pin;
 
@@ -67,6 +66,8 @@ class ScoreManager
 	ScoreChange getUnsatisfiedSynchronizationScoreChange() const;
 	ScoreChange getCustomUnsatisfiedScoreChange(Resolver::RequestImportance) const;
 	string getScoreChangeString(const ScoreChange&) const;
+
+	ssize_t qualityAdjustment;
 };
 
 }
