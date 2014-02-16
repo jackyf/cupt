@@ -119,6 +119,8 @@ class PreparedSolution: public Solution
 	CowMap< const dg::Element*, PackageEntryMap > p_entries;
 	CowMap< const dg::Element*, BrokenSuccessorMap > p_brokenSuccessors;
 
+	const PackageEntry* getFamilyPackageEntry(const dg::Element*) const;
+	void setPackageEntry(const dg::Element*, PackageEntry&&);
  public:
 	PreparedSolution();
 	~PreparedSolution();
@@ -134,10 +136,8 @@ class PreparedSolution: public Solution
 	vector< const PackageEntry* > getEntries() const;
 	vector< const dg::Element* > getInsertedElements() const;
 	BrokenSuccessor getMaxBrokenSuccessor(const std::function< bool (BrokenSuccessor, BrokenSuccessor) >&) const;
-	// result becomes invalid after any setPackageEntry
-	const PackageEntry* getFamilyPackageEntry(const dg::Element*) const;
+
 	const PackageEntry* getPackageEntry(const dg::Element*) const;
-	void setPackageEntry(const dg::Element*, PackageEntry&&);
 };
 
 class SolutionStorage
