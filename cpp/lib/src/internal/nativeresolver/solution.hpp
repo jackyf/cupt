@@ -167,7 +167,6 @@ class SolutionStorage
 	void assignAction(Solution& solution, unique_ptr< Solution::Action >&& action);
 	shared_ptr< PreparedSolution > prepareSolution(const shared_ptr< Solution >&);
 
-	const dg::Element* getCorrespondingEmptyElement(const dg::Element*);
 	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
 	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
 	bool verifyElement(const PreparedSolution&, const dg::Element*) const;
@@ -178,6 +177,7 @@ class SolutionStorage
 	bool simulateSetPackageEntry(const PreparedSolution&,
 			const dg::Element*, const dg::Element**) const;
 	void setRejection(PreparedSolution&, const dg::Element*);
+	void setEmpty(PreparedSolution&, const dg::Element*);
 	void unfoldElement(const dg::Element*);
 
 	void processReasonElements(const PreparedSolution&,

@@ -231,6 +231,16 @@ void SolutionStorage::setRejection(PreparedSolution& solution, const dg::Element
 	solution.setPackageEntry(conflictingElementPtr, std::move(packageEntry));
 }
 
+void SolutionStorage::setEmpty(PreparedSolution& solution, const dg::Element* element)
+{
+	auto emptyElement = __dependency_graph.getCorrespondingEmptyElement(element);
+
+	PackageEntry packageEntry;
+	packageEntry.autoremoved = true;
+
+	solution.setPackageEntry(emptyElement, std::move(packageEntry));
+}
+
 void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 		const dg::Element* oldElementPtr, const dg::Element* newElementPtr, size_t priority)
 {
@@ -387,11 +397,6 @@ bool SolutionStorage::verifyElement(const PreparedSolution& solution, const dg::
 		}
 	}
 	return false;
-}
-
-const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
-{
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
 }
 
 void SolutionStorage::unfoldElement(const dg::Element* elementPtr)

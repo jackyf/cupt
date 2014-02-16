@@ -323,22 +323,18 @@ bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solut
 	}
 
 	{ // looping through the candidates
-		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
+		auto reachableElementPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
 
-		FORIT(elementPtrIt, vertices)
+		for (const auto& element: vertices)
 		{
-			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
+			if (!reachableElementPtrs.count(&element))
 			{
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
-
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-
+				__solution_storage->setEmpty(solution, element);
 				if (p_debugging)
 				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
+					__mydebug_wrapper(solution, "auto-removed '%s'", element->toString());
 				}
-				solution.setPackageEntry(emptyElementPtr, std::move(packageEntry));
+
 			}
 		}
 	}
