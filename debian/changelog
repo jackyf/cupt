@@ -6,6 +6,8 @@ cupt (2.7.0~) UNRELEASED; urgency=low
       - New option 'cupt::directory::configuration::pre'.
       - 'setScalar': accept options from foreign families. They may be useful
         for e.g. hooks.
+      - Option 'cupt::resolver::max-solution-count': increased default value
+        from 512 to 8192.
     - system/resolvers/native:
       - Reduced solution memory footprint.
       - Reduced average CPU costs of postprocessing failed solutions.
