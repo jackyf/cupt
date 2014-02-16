@@ -9,6 +9,9 @@ cupt (2.7.0~) UNRELEASED; urgency=low
     - system/resolvers/native:
       - Reduced solution memory footprint.
       - Reduced average CPU costs of postprocessing failed solutions.
+      - Apply some more heuristics to reject new solution tree branches early,
+        leading to from neglective/significant/major speed-ups depending on
+        the problem patterns.
     - system/worker:
       - 'changeSystem': for removal actions, change automatically installed
         flag after the action, not before.

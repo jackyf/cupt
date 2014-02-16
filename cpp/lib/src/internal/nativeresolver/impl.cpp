@@ -471,12 +471,19 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 	}
 }
 
-static bool isRelationMoreWide(const GraphCessorListType& successorElementSuccessorElements, const GraphCessorListType& brokenElementSuccessorElements)
+static bool isRelationMoreWide(const SolutionStorage& solutionStorage, const PreparedSolution& solution,
+		const GraphCessorListType& successorElementSuccessorElements, const GraphCessorListType& brokenElementSuccessorElements)
 {
 	const auto& bese = brokenElementSuccessorElements;
 
 	for (auto element: successorElementSuccessorElements)
 	{
+		const dg::Element* unused;
+		if (!solutionStorage.simulateSetPackageEntry(solution, element, &unused))
+		{
+			continue;
+		}
+
 		bool notFound = (std::find(bese.begin(), bese.end(), element) == bese.end());
 		if (notFound)
 		{
@@ -516,7 +523,8 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution&
 		}
 		/* if any of such successors gives us equal or less "space" in
 		   terms of satisfying elements, the version won't be accepted as a resolution */
-		if (!isRelationMoreWide(__solution_storage->getSuccessorElements(successorElement), brokenElementSuccessorElements))
+		if (!isRelationMoreWide(*__solution_storage, solution,
+					__solution_storage->getSuccessorElements(successorElement), brokenElementSuccessorElements))
 		{
 			if (p_debugging)
 			{
