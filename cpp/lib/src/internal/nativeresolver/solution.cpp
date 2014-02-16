@@ -369,35 +369,23 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	}
 }
 
-bool SolutionStorage::verifyElement(const PreparedSolution& solution,
-		const dg::Element* elementPtr) const
+bool SolutionStorage::verifyElement(const PreparedSolution& solution, const dg::Element* element) const
 {
-	const GraphCessorListType& successorElementPtrs =
-			getSuccessorElements(elementPtr);
-	FORIT(elementPtrIt, successorElementPtrs)
+	for (auto successor: getSuccessorElements(element))
 	{
-		if (solution.getPackageEntry(*elementPtrIt))
+		if (auto entry = solution.getFamilyPackageEntry(successor))
 		{
-			return true;
+			if (entry->element == successor) return true;
 		}
-	}
-
-	// second try, check for non-present empty elements as they are virtually present
-	FORIT(elementPtrIt, successorElementPtrs)
-	{
-		if (auto versionElement = dynamic_cast< const dg::VersionElement* >(*elementPtrIt))
+		else
 		{
-			if (!versionElement->version)
+			// check for non-present empty elements as they are virtually present
+			if (auto versionSuccessor = dynamic_cast< const dg::VersionElement* >(successor))
 			{
-				const dg::Element* conflictorPtr;
-				if (simulateSetPackageEntry(solution, versionElement, &conflictorPtr), !conflictorPtr)
-				{
-					return true;
-				}
+				if (!versionSuccessor->version) return true;
 			}
 		}
 	}
-
 	return false;
 }
 
