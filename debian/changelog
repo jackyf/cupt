@@ -1,4 +1,4 @@
-cupt (2.7.0~) UNRELEASED; urgency=low
+cupt (2.7.0) unstable; urgency=low
 
   * lib:
     - Fixed not invoking std::terminate() when a pipe process fail.
@@ -23,7 +23,7 @@ cupt (2.7.0~) UNRELEASED; urgency=low
         hooks want. Thanks to James McCoy for the report. Together with an
         entry above this (Closes: 725979)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 Nov 2013 14:35:04 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 22 Feb 2014 15:51:56 +0200
 
 cupt (2.6.4) unstable; urgency=medium
 
