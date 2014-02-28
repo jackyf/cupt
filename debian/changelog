@@ -1,6 +1,10 @@
 cupt (2.7.1~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - config:
+      - 'setScalar': for options from foreign families, save also their
+        normalized form if it's recognized/used. This regression was
+        introduced in 2.7.0. (Closes: #740141)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 26 Feb 2014 20:57:44 +0200
 

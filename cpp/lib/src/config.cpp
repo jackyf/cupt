@@ -613,7 +613,8 @@ void Config::setScalar(const string& optionName, const string& value)
 	{
 		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
 	}
-	else if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
+
+	if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
 	{
 		__impl->regularVars[normalizedOptionName] = value;
 	}
