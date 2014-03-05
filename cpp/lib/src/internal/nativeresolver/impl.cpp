@@ -474,8 +474,9 @@ static bool isRelationMoreWide(const SolutionStorage& solutionStorage, const Pre
 
 	for (auto element: successorElementSuccessorElements)
 	{
-		const dg::Element* unused;
-		if (!solutionStorage.simulateSetPackageEntry(solution, element, &unused))
+		const dg::Element* conflictingElement;
+		if (!solutionStorage.simulateSetPackageEntry(solution, element, &conflictingElement) &&
+				conflictingElement != element)
 		{
 			continue;
 		}

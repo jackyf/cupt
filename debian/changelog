@@ -1,6 +1,10 @@
 cupt (2.7.2~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - system/resolvers/native:
+      - Branch filtering heuristics: fixed skipping sticked but satisfying
+        elements. This could lead to skipping some valid solutions.
+        This regression was introduced in 2.7.0.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 05 Mar 2014 19:38:41 +0200
 
