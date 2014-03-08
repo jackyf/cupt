@@ -68,7 +68,7 @@ shared_ptr< const Reason > BasicVertex::getReason(const BasicVertex&) const
 	return shared_ptr< const Reason >(); // unreachable
 }
 
-const forward_list< const Element* >* BasicVertex::getRelatedElements() const
+const forward_list<Element>* BasicVertex::getRelatedElements() const
 {
 	fatal2i("getting related elements of '%s'", toString());
 	return NULL; // unreachable
@@ -91,7 +91,7 @@ bool BasicVertex::asAuto() const
 	return true; // unreacahble
 }
 
-const Element* BasicVertex::getFamilyKey() const
+Element BasicVertex::getFamilyKey() const
 {
 	return this;
 }
@@ -106,7 +106,7 @@ string VersionVertex::toString() const
 			(version ? version->versionString : "<not installed>");
 }
 
-const forward_list< const Element* >* VersionVertex::getRelatedElements() const
+const forward_list<Element>* VersionVertex::getRelatedElements() const
 {
 	return &__related_element_ptrs_it->second.first;
 }
@@ -129,7 +129,7 @@ string VersionVertex::toLocalizedString() const
 	}
 }
 
-const Element* VersionVertex::getFamilyKey() const
+Element VersionVertex::getFamilyKey() const
 {
 	return __related_element_ptrs_it->second.second;
 }
@@ -279,10 +279,10 @@ Unsatisfied::Type SynchronizeVertex::getUnsatisfiedType() const
 
 struct UnsatisfiedVertex: public BasicVertex
 {
-	const Element* parent;
+	Element parent;
 
 	string toString() const;
-	const forward_list< const Element* >* getRelatedElements() const;
+	const forward_list<Element>* getRelatedElements() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
@@ -292,7 +292,7 @@ string UnsatisfiedVertex::toString() const
 	return u + parent->toString();
 }
 
-const forward_list< const Element* >* UnsatisfiedVertex::getRelatedElements() const
+const forward_list<Element>* UnsatisfiedVertex::getRelatedElements() const
 {
 	return NULL;
 }
@@ -500,10 +500,9 @@ DependencyGraph::DependencyGraph(const Config& config, const Cache& cache)
 
 DependencyGraph::~DependencyGraph()
 {
-	const set< const Element* >& vertices = this->getVertices();
-	FORIT(elementIt, vertices)
+	for (auto element: this->getVertices())
 	{
-		delete *elementIt;
+		delete element;
 	}
 }
 
@@ -574,14 +573,14 @@ class DependencyGraph::FillHelper
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
 
-	map< string, pair< forward_list< const Element* >, const Element* > > __package_name_to_vertex_ptrs;
+	map< string, pair< forward_list<Element>, Element > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
-	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
-	unordered_map< string, map< string, const Element* > > __meta_anti_relation_expression_vertices;
-	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
-	const Element* p_dummyElementPtr;
+	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
+	unordered_map< string, map< string, Element > > __meta_anti_relation_expression_vertices;
+	unordered_map< string, list< pair< string, Element > > > __meta_synchronize_map;
+	Element p_dummyElementPtr;
 
-	set< const Element* > __unfolded_elements;
+	set<Element> __unfolded_elements;
 
 	bool __can_package_be_removed(const string& packageName) const
 	{
@@ -660,45 +659,45 @@ class DependencyGraph::FillHelper
 		return *elementPtrPtr;
 	}
 
-	const VersionElement* getVertexPtr(const BinaryVersion* version, bool overrideChecks = false)
+	VersionElement getVertexPtr(const BinaryVersion* version, bool overrideChecks = false)
 	{
 		return getVertexPtr(version->packageName, version, overrideChecks);
 	}
 
  private:
-	void addEdgeCustom(const Element* fromVertexPtr, const Element* toVertexPtr)
+	void addEdgeCustom(Element fromVertexPtr, Element toVertexPtr)
 	{
 		__dependency_graph.addEdge(fromVertexPtr, toVertexPtr);
 	}
 
-	const Element* getVertexPtrForRelationExpression(const RelationExpression* relationExpressionPtr,
+	Element getVertexPtrForRelationExpression(const RelationExpression* relationExpressionPtr,
 			const RelationType& dependencyType, bool* isNew)
 	{
 		auto hashKey = relationExpressionPtr->getHashString() + char('0' + dependencyType);
-		const Element*& elementPtr = __relation_expression_to_vertex_ptr.insert(
-				make_pair(std::move(hashKey), (const Element*)NULL)).first->second;
-		*isNew = !elementPtr;
-		if (!elementPtr)
+		Element& element = __relation_expression_to_vertex_ptr.insert(
+				make_pair(std::move(hashKey), nullptr)).first->second;
+		*isNew = !element;
+		if (!element)
 		{
 			auto vertex(new RelationExpressionVertex);
 			vertex->dependencyType = dependencyType;
 			vertex->relationExpressionPtr = relationExpressionPtr;
-			elementPtr = __dependency_graph.addVertex(vertex);
+			element = __dependency_graph.addVertex(vertex);
 		}
-		return elementPtr;
+		return element;
 	}
 
  public:
-	const Element* getVertexPtrForEmptyPackage(const string& packageName)
+	Element getVertexPtrForEmptyPackage(const string& packageName)
 	{
 		return getVertexPtr(packageName, nullptr);
 	}
 
  private:
 	void buildEdgesForAntiRelationExpression(
-			map< string, const Element* >* packageNameToSubElements,
+			map< string, Element >* packageNameToSubElements,
 			const vector< const BinaryVersion* > satisfyingVersions,
-			const std::function< const Element* (const string&) >& createVertex)
+			const std::function< Element (const string&) >& createVertex)
 	{
 		for (auto satisfyingVersion: satisfyingVersions)
 		{
@@ -730,11 +729,11 @@ class DependencyGraph::FillHelper
 		}
 	}
 	void processAntiRelation(const string& packageName,
-			const Element* vertexPtr, const RelationExpression& relationExpression,
+			Element vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
-		static const map< string, const Element* > emptyMap;
+		static const map< string, Element > emptyMap;
 		auto insertResult = __meta_anti_relation_expression_vertices.insert(
 				make_pair(std::move(hashKey), emptyMap));
 		bool isNewRelationExpressionVertex = insertResult.second;
@@ -764,7 +763,7 @@ class DependencyGraph::FillHelper
 	}
 
 	void processForwardRelation(const BinaryVersion* version,
-			const Element* vertexPtr, const RelationExpression& relationExpression,
+			Element vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		vector< const BinaryVersion* > satisfyingVersions;
@@ -821,13 +820,13 @@ class DependencyGraph::FillHelper
 		}
 	}
 
-	void processSynchronizations(const BinaryVersion*& version, const Element* vertexPtr)
+	void processSynchronizations(const BinaryVersion*& version, Element vertexPtr)
 	{
 		auto hashKey = version->sourcePackageName + ' ' + version->sourceVersionString;
-		static const list< pair< string, const Element* > > emptyList;
+		static const list< pair< string, Element > > emptyList;
 		auto insertResult = __meta_synchronize_map.insert(make_pair(hashKey, emptyList));
 		bool isNewMetaVertex = insertResult.second;
-		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
+		auto& subElementPtrs = insertResult.first->second;
 
 		if (isNewMetaVertex)
 		{
@@ -874,7 +873,7 @@ class DependencyGraph::FillHelper
 		}
 	}
 
-	const Element* createCustomUnsatisfiedElement(const Element* parent, const RequestImportance& importance)
+	Element createCustomUnsatisfiedElement(Element parent, const RequestImportance& importance)
 	{
 		auto vertex = new CustomUnsatisfiedVertex(importance);
 		vertex->parent = parent;
@@ -882,20 +881,20 @@ class DependencyGraph::FillHelper
 	}
 
  public:
-	void unfoldElement(const Element* elementPtr)
+	void unfoldElement(Element element)
 	{
-		if (!__unfolded_elements.insert(elementPtr).second)
+		if (!__unfolded_elements.insert(element).second)
 		{
 			return; // processed already
 		}
-		auto versionElementPtr = dynamic_cast< const VersionElement* >(elementPtr);
-		if (!versionElementPtr)
+		auto versionElement = dynamic_cast<VersionElement>(element);
+		if (!versionElement)
 		{
 			return; // nothing to process
 		}
 
 		// persistent one
-		auto version = versionElementPtr->version;
+		auto version = versionElement->version;
 		if (!version)
 		{
 			return;
@@ -910,31 +909,31 @@ class DependencyGraph::FillHelper
 			{
 				if (isDependencyAnti)
 				{
-					processAntiRelation(version->packageName, elementPtr, relationExpression, dependencyType);
+					processAntiRelation(version->packageName, element, relationExpression, dependencyType);
 				}
 				else
 				{
-					processForwardRelation(version, elementPtr, relationExpression, dependencyType);
+					processForwardRelation(version, element, relationExpression, dependencyType);
 				}
 			}
 		}
 
 		if (__synchronize_level && !version->isInstalled())
 		{
-			processSynchronizations(version, elementPtr);
+			processSynchronizations(version, element);
 		}
 	}
 
-	const Element* getDummyElementPtr() const
+	Element getDummyElementPtr() const
 	{
 		return p_dummyElementPtr;
 	}
 
 	void addUserRelationExpression(const UserRelationExpression& ure)
 	{
-		const Element* unsatisfiedElement = nullptr;
+		Element unsatisfiedElement = nullptr;
 
-		auto createVertex = [&](const string&) -> const Element*
+		auto createVertex = [&](const string&) -> Element
 		{
 			auto vertex = new UserRelationExpressionVertex(ure);
 			__dependency_graph.addVertex(vertex);
@@ -959,13 +958,13 @@ class DependencyGraph::FillHelper
 		}
 		else
 		{
-			map< string, const Element* > subElements;
+			map< string, Element > subElements;
 			buildEdgesForAntiRelationExpression(&subElements, satisfyingVersions, createVertex);
 		}
 	}
 };
 
-vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
+vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
 		const map< string, const BinaryVersion* >& oldPackages,
 		const map< string, InitialPackageEntry >& initialPackages)
 {
@@ -996,12 +995,12 @@ vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > Dependenc
 	return p_generateSolutionElements(initialPackages);
 }
 
-vector< pair< const dg::Element*, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
+vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
 		const map< string, InitialPackageEntry >& initialPackages)
 {
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > result;
+	vector< pair< Element, shared_ptr< const PackageEntry > > > result;
 
-	auto generate = [&result](const Element* element, bool sticked)
+	auto generate = [&result](Element element, bool sticked)
 	{
 		auto packageEntry = std::make_shared<PackageEntry>();
 		packageEntry->element = element;
@@ -1024,14 +1023,14 @@ void DependencyGraph::addUserRelationExpression(const UserRelationExpression& ur
 	__fill_helper->addUserRelationExpression(ure);
 }
 
-void DependencyGraph::unfoldElement(const Element* elementPtr)
+void DependencyGraph::unfoldElement(Element element)
 {
-	__fill_helper->unfoldElement(elementPtr);
+	__fill_helper->unfoldElement(element);
 }
 
-const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
+Element DependencyGraph::getCorrespondingEmptyElement(Element element)
 {
-	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
+	auto versionVertex = dynamic_cast<VersionElement>(element);
 	if (!versionVertex)
 	{
 		fatal2i("getting corresponding empty element for non-version vertex");

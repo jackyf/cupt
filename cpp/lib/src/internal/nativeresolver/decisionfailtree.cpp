@@ -25,17 +25,17 @@ namespace internal {
 string DecisionFailTree::__decisions_to_string(
 		const vector< Decision >& decisions)
 {
-	auto insertedElementPtrToString = [](const dg::Element* elementPtr) -> string
+	auto insertedElementPtrToString = [](dg::Element element) -> string
 	{
-		if (!elementPtr)
+		if (!element)
 		{
 			return __("no solutions"); // root
 		}
-		auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr);
+		auto versionElement = dynamic_cast<dg::VersionElement>(element);
 		if (!versionElement)
 		{
 			fatal2i("__fail_leaf_to_string: '%s' is not a version element",
-					elementPtr->toString());
+					element->toString());
 		}
 		return versionElement->toLocalizedString();
 	};
@@ -81,11 +81,11 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 
 		auto queueItem = [&chainStack, &item](
 				const IntroducedBy& introducedBy,
-				const dg::Element* insertedElementPtr)
+				dg::Element insertedElement)
 		{
 			if (!introducedBy.empty())
 			{
-				chainStack.push(Decision { introducedBy, item.level + 1, insertedElementPtr });
+				chainStack.push(Decision { introducedBy, item.level + 1, insertedElement });
 			}
 		};
 
@@ -97,11 +97,11 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 }
 
 // fail item is dominant if a diversed element didn't cause final breakage
-bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element* diversedElementPtr)
+bool DecisionFailTree::__is_dominant(const FailItem& failItem, dg::Element diversedElement)
 {
 	FORIT(it, failItem.decisions)
 	{
-		if (it->insertedElementPtr == diversedElementPtr)
+		if (it->insertedElementPtr == diversedElement)
 		{
 			return false;
 		}
@@ -109,8 +109,8 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element
 	return true;
 }
 
-static std::pair< const dg::Element*, const dg::Element* > getDiversedElements(
-		const vector< const dg::Element* >& left, const vector< const dg::Element* >& right)
+static std::pair< dg::Element, dg::Element > getDiversedElements(
+		const vector<dg::Element>& left, const vector<dg::Element>& right)
 {
 	auto leftIt = left.begin();
 	auto rightIt = right.begin();

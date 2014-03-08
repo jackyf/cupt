@@ -34,11 +34,11 @@ class DecisionFailTree
 	{
 		IntroducedBy introducedBy;
 		size_t level;
-		const dg::Element* insertedElementPtr;
+		dg::Element insertedElementPtr;
 	};
 	struct FailItem
 	{
-		vector< const dg::Element* > insertedElements;
+		vector< dg::Element > insertedElements;
 		vector< Decision > decisions;
 	};
 	std::list< FailItem > __fail_items;
@@ -46,7 +46,7 @@ class DecisionFailTree
 	static string __decisions_to_string(const vector< Decision >&);
 	static vector< Decision > __get_decisions(
 			const SolutionStorage& solutionStorage, const PreparedSolution& solution, const IntroducedBy&);
-	static bool __is_dominant(const FailItem&, const dg::Element*);
+	static bool __is_dominant(const FailItem&, dg::Element);
  public:
 	string toString() const;
 	void addFailedSolution(const SolutionStorage&, const PreparedSolution&, const IntroducedBy&);

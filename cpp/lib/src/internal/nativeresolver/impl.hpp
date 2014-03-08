@@ -72,27 +72,26 @@ class NativeResolverImpl
 	float __get_version_weight(const BinaryVersion*) const;
 	float __get_action_profit(const BinaryVersion*, const BinaryVersion*) const;
 
-	bool p_computeTargetAutoStatus(const string&, const PreparedSolution&, const dg::Element*) const;
-	AutoRemovalPossibility::Allow p_isCandidateForAutoRemoval(const PreparedSolution&, const dg::Element*);
+	bool p_computeTargetAutoStatus(const string&, const PreparedSolution&, dg::Element) const;
+	AutoRemovalPossibility::Allow p_isCandidateForAutoRemoval(const PreparedSolution&, dg::Element);
 	bool __clean_automatically_installed(PreparedSolution&);
 
 	void __pre_apply_action(const Solution&, Solution&, unique_ptr< Action > &&, size_t, size_t);
-	ScoreChange p_getScoreChange(const dg::Element*, const dg::Element*, size_t) const;
+	ScoreChange p_getScoreChange(dg::Element, dg::Element, size_t) const;
 	void __pre_apply_actions_to_solution_tree(
 			std::function< void (const shared_ptr< Solution >&) > callback,
 			const shared_ptr< PreparedSolution >&, vector< unique_ptr< Action > >&);
 
 	void __final_verify_solution(const PreparedSolution&);
 
-	bool __makes_sense_to_modify_package(const PreparedSolution&, const dg::Element*, const dg::Element*);
+	bool __makes_sense_to_modify_package(const PreparedSolution&, dg::Element, dg::Element);
 	void __add_actions_to_modify_package_entry(vector< unique_ptr< Action > >&, const PreparedSolution&,
-			const dg::Element*, const dg::Element*);
+			dg::Element, dg::Element);
 
-	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const PreparedSolution&,
-			const dg::Element*);
+	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const PreparedSolution&, dg::Element);
 	void __prepare_reject_requests(vector< unique_ptr< Action > >& actions) const;
 	void __fillSuggestedPackageReasons(const PreparedSolution&, const string&,
-			Resolver::SuggestedPackage&, const dg::Element*) const;
+			Resolver::SuggestedPackage&, dg::Element) const;
 	Resolver::UserAnswer::Type __propose_solution(
 			const PreparedSolution&, Resolver::CallbackType, bool);
 

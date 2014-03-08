@@ -32,10 +32,9 @@ PackageEntry::PackageEntry()
 	: sticked(false), autoremoved(false), level(0)
 {}
 
-bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
+bool PackageEntry::isModificationAllowed(dg::Element element) const
 {
-	auto findResult = std::find(rejectedConflictors.begin(),
-			rejectedConflictors.end(), elementPtr);
+	auto findResult = std::find(rejectedConflictors.begin(), rejectedConflictors.end(), element);
 	return (findResult == rejectedConflictors.end());
 }
 
@@ -43,7 +42,7 @@ template < class data_t, class KeyGetter >
 class VectorBasedMap
 {
  public:
-	typedef const dg::Element* key_t;
+	typedef dg::Element key_t;
 	typedef data_t value_type; // for set_union
 	typedef vector< data_t > container_t;
 	typedef data_t* iterator_t;
@@ -109,16 +108,15 @@ typedef shared_ptr< const PackageEntry > SPPE;
 
 struct PackageEntryMapKeyGetter
 {
-	const dg::Element* operator()(const pair< const dg::Element*, SPPE >& data)
+	dg::Element operator()(const pair< dg::Element, SPPE >& data)
 	{ return data.first; }
 };
-class PackageEntryMap: public VectorBasedMap<
-		pair< const dg::Element*, SPPE >, PackageEntryMapKeyGetter >
+class PackageEntryMap: public VectorBasedMap< pair< dg::Element, SPPE >, PackageEntryMapKeyGetter >
 {};
 
 struct BrokenSuccessorMapKeyGetter
 {
-	const dg::Element* operator()(const BrokenSuccessor& data) { return data.elementPtr; }
+	dg::Element operator()(const BrokenSuccessor& data) { return data.elementPtr; }
 };
 class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor, BrokenSuccessorMapKeyGetter >
 {};
@@ -176,26 +174,25 @@ shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Prepared
 	return cloned;
 }
 
-const GraphCessorListType& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getSuccessorElements(dg::Element elementPtr) const
 {
 	return __dependency_graph.getSuccessors(elementPtr);
 }
 
-const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getPredecessorElements(dg::Element elementPtr) const
 {
 	return __dependency_graph.getPredecessors(elementPtr);
 }
 
-const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(
-		const dg::Element* elementPtr)
+const forward_list<dg::Element>& SolutionStorage::getConflictingElements(dg::Element element)
 {
-	static const forward_list< const dg::Element* > nullList;
-	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
+	static const forward_list<dg::Element> nullList;
+	auto relatedElementPtrsPtr = element->getRelatedElements();
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }
 
 bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
-		const dg::Element* element, const dg::Element** conflictingElementPtr) const
+		dg::Element element, dg::Element* conflictingElementPtr) const
 {
 	if (auto familyPackageEntry = solution.getFamilyPackageEntry(element))
 	{
@@ -205,7 +202,7 @@ bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
 
 	// no conflicting elements in this solution
 	*conflictingElementPtr = nullptr;
-	if (auto versionElement = dynamic_cast< const dg::VersionElement* >(element))
+	if (auto versionElement = dynamic_cast<dg::VersionElement>(element))
 	{
 		if (versionElement->version)
 		{
@@ -216,22 +213,22 @@ bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
 	return true;
 }
 
-void SolutionStorage::setRejection(PreparedSolution& solution, const dg::Element* elementPtr)
+void SolutionStorage::setRejection(PreparedSolution& solution, dg::Element element)
 {
-	const dg::Element* conflictingElementPtr;
-	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
-	if (!conflictingElementPtr) return;
+	dg::Element conflictingElement;
+	simulateSetPackageEntry(solution, element, &conflictingElement);
+	if (!conflictingElement) return;
 
-	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
+	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElement);
 
 	PackageEntry packageEntry = (conflictorPackageEntryPtr ?
 			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
 
-	packageEntry.rejectedConflictors.push_front(elementPtr);
-	solution.setPackageEntry(conflictingElementPtr, std::move(packageEntry));
+	packageEntry.rejectedConflictors.push_front(element);
+	solution.setPackageEntry(conflictingElement, std::move(packageEntry));
 }
 
-void SolutionStorage::setEmpty(PreparedSolution& solution, const dg::Element* element)
+void SolutionStorage::setEmpty(PreparedSolution& solution, dg::Element element)
 {
 	auto emptyElement = __dependency_graph.getCorrespondingEmptyElement(element);
 
@@ -242,19 +239,19 @@ void SolutionStorage::setEmpty(PreparedSolution& solution, const dg::Element* el
 }
 
 void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
-		const dg::Element* oldElementPtr, const dg::Element* newElementPtr, size_t priority)
+		dg::Element oldElement, dg::Element newElement, size_t priority)
 {
 	auto& bss = solution.p_brokenSuccessors;
-	auto adaptedGetBs = [&bss](const dg::Element* element)
+	auto adaptedGetBs = [&bss](dg::Element element)
 	{
 		auto result = bss.get<size_t>(element);
 		if (result && !*result) result = nullptr;
 		return result;
 	};
 
-	auto reverseDependencyExists = [this, &solution](const dg::Element* elementPtr)
+	auto reverseDependencyExists = [this, &solution](dg::Element element)
 	{
-		for (auto reverseDependencyPtr: getPredecessorElements(elementPtr))
+		for (auto reverseDependencyPtr: getPredecessorElements(element))
 		{
 			if (solution.getPackageEntry(reverseDependencyPtr))
 			{
@@ -263,15 +260,15 @@ void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 		}
 		return false;
 	};
-	auto isPresent = [](const GraphCessorListType& container, const dg::Element* elementPtr)
+	auto isPresent = [](const GraphCessorListType& container, dg::Element element)
 	{
-		return std::find(container.begin(), container.end(), elementPtr) != container.end();
+		return std::find(container.begin(), container.end(), element) != container.end();
 	};
 
 	static const GraphCessorListType nullList;
 
-	const auto& successorsOfOld = oldElementPtr ? getSuccessorElements(oldElementPtr) : nullList;
-	const auto& successorsOfNew = getSuccessorElements(newElementPtr);
+	const auto& successorsOfOld = oldElement ? getSuccessorElements(oldElement) : nullList;
+	const auto& successorsOfNew = getSuccessorElements(newElement);
 	// check direct dependencies of the old element
 	for (auto successorPtr: successorsOfOld)
 	{
@@ -304,8 +301,8 @@ void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 		}
 	}
 
-	const auto& predecessorsOfOld = oldElementPtr ? getPredecessorElements(oldElementPtr) : nullList;
-	const auto& predecessorsOfNew = getPredecessorElements(newElementPtr);
+	const auto& predecessorsOfOld = oldElement ? getPredecessorElements(oldElement) : nullList;
+	const auto& predecessorsOfNew = getPredecessorElements(newElement);
 	// invalidate those which depend on the old element
 	for (auto predecessorElementPtr: predecessorsOfOld)
 	{
@@ -335,8 +332,7 @@ void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
 	}
 }
 
-void PreparedSolution::setPackageEntry(
-		const dg::Element* element, PackageEntry&& packageEntry)
+void PreparedSolution::setPackageEntry(dg::Element element, PackageEntry&& packageEntry)
 {
 	packageEntry.element = element;
 	auto newData = std::make_shared< const PackageEntry >(std::move(packageEntry));
@@ -360,8 +356,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 		__dependency_graph.unfoldElement(record.second->element);
 	}
 
-	auto comparator = [](const pair< const dg::Element*, SPPE >& left,
-			const pair< const dg::Element*, SPPE >& right)
+	auto comparator = [](const pair< dg::Element, SPPE >& left, const pair< dg::Element, SPPE >& right)
 	{
 		return left.first < right.first;
 	};
@@ -379,7 +374,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	}
 }
 
-bool SolutionStorage::verifyElement(const PreparedSolution& solution, const dg::Element* element) const
+bool SolutionStorage::verifyElement(const PreparedSolution& solution, dg::Element element) const
 {
 	for (auto successor: getSuccessorElements(element))
 	{
@@ -390,7 +385,7 @@ bool SolutionStorage::verifyElement(const PreparedSolution& solution, const dg::
 		else
 		{
 			// check for non-present empty elements as they are virtually present
-			if (auto versionSuccessor = dynamic_cast< const dg::VersionElement* >(successor))
+			if (auto versionSuccessor = dynamic_cast<dg::VersionElement>(successor))
 			{
 				if (!versionSuccessor->version) return true;
 			}
@@ -399,14 +394,14 @@ bool SolutionStorage::verifyElement(const PreparedSolution& solution, const dg::
 	return false;
 }
 
-void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
+void SolutionStorage::unfoldElement(dg::Element element)
 {
-	__dependency_graph.unfoldElement(elementPtr);
+	__dependency_graph.unfoldElement(element);
 }
 
 void SolutionStorage::processReasonElements(const PreparedSolution& solution,
-		const IntroducedBy& introducedBy, const dg::Element* insertedElementPtr,
-		const std::function< void (const IntroducedBy&, const dg::Element*) >& callback) const
+		const IntroducedBy& introducedBy, dg::Element insertedElement,
+		const std::function< void (const IntroducedBy&, dg::Element) >& callback) const
 {
 	{ // version
 		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
@@ -415,19 +410,19 @@ void SolutionStorage::processReasonElements(const PreparedSolution& solution,
 		}
 	}
 	// dependants
-	set< const dg::Element* > alreadyProcessedConflictors;
+	set<dg::Element> alreadyProcessedConflictors;
 	for (const auto& successor: getSuccessorElements(introducedBy.brokenElementPtr))
 	{
-		const dg::Element* conflictingElementPtr;
-		if (!simulateSetPackageEntry(solution, successor, &conflictingElementPtr))
+		dg::Element conflictingElement;
+		if (!simulateSetPackageEntry(solution, successor, &conflictingElement))
 		{
 			// conflicting element is surely exists here
-			if (alreadyProcessedConflictors.insert(conflictingElementPtr).second)
+			if (alreadyProcessedConflictors.insert(conflictingElement).second)
 			{
 				// not yet processed
-				auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
+				auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElement);
 
-				if (insertedElementPtr)
+				if (insertedElement)
 				{
 					// verifying that conflicting element was added to a
 					// solution earlier than currently processed item
@@ -438,7 +433,7 @@ void SolutionStorage::processReasonElements(const PreparedSolution& solution,
 						// have valid 'introducedBy' anyway
 						continue;
 					}
-					if (solution.getPackageEntry(insertedElementPtr)->level <= conflictingElementInsertedPosition)
+					if (solution.getPackageEntry(insertedElement)->level <= conflictingElementInsertedPosition)
 					{
 						// it means conflicting element was inserted to a solution _after_
 						// the current element, so it can't be a reason for it
@@ -447,7 +442,7 @@ void SolutionStorage::processReasonElements(const PreparedSolution& solution,
 				}
 
 				// verified, queueing now
-				callback(conflictorPackageEntryPtr->introducedBy, conflictingElementPtr);
+				callback(conflictorPackageEntryPtr->introducedBy, conflictingElement);
 			}
 		}
 	}
@@ -469,7 +464,7 @@ void SolutionStorage::assignAction(Solution& solution, unique_ptr< Solution::Act
 
 static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& solution, const Solution::Action& action)
 {
-	auto reject = [&](const dg::Element* element)
+	auto reject = [&](dg::Element element)
 	{
 		solutionStorage.setRejection(solution, element);
 	};
@@ -486,7 +481,7 @@ static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& so
 	}
 	else
 	{
-		auto uselessToReject = [&action](const dg::Element* element)
+		auto uselessToReject = [&action](dg::Element element)
 		{
 			return action.newElementPtr->getFamilyKey() == element->getFamilyKey();
 		};
@@ -581,9 +576,9 @@ vector<const PackageEntry*> PreparedSolution::getEntries() const
 	return p_entries.getEntries<PackageEntry>();
 }
 
-vector< const dg::Element* > PreparedSolution::getInsertedElements() const
+vector<dg::Element> PreparedSolution::getInsertedElements() const
 {
-	vector< const dg::Element* > result(level, nullptr);
+	vector<dg::Element> result(level, nullptr);
 
 	p_entries.foreachModifiedEntry(
 			[&result](const PackageEntryMap::value_type& data)
@@ -615,13 +610,13 @@ BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
 	return result;
 }
 
-const PackageEntry* PreparedSolution::getFamilyPackageEntry(const dg::Element* element) const
+const PackageEntry* PreparedSolution::getFamilyPackageEntry(dg::Element element) const
 {
 	auto entryData = p_entries.get< shared_ptr<const PackageEntry> >(element->getFamilyKey());
 	return entryData ? entryData->get() : nullptr;
 }
 
-const PackageEntry* PreparedSolution::getPackageEntry(const dg::Element* element) const
+const PackageEntry* PreparedSolution::getPackageEntry(dg::Element element) const
 {
 	auto packageEntry = getFamilyPackageEntry(element);
 	if (packageEntry && packageEntry->element != element) return nullptr;

@@ -44,8 +44,8 @@ using std::forward_list;
 
 struct IntroducedBy
 {
-	const dg::Element* versionElementPtr;
-	const dg::Element* brokenElementPtr;
+	dg::Element versionElementPtr;
+	dg::Element brokenElementPtr;
 
 	IntroducedBy() : versionElementPtr(NULL) {}
 	bool empty() const { return !versionElementPtr; }
@@ -61,10 +61,10 @@ struct IntroducedBy
 
 struct PackageEntry
 {
-	const dg::Element* element;
+	dg::Element element;
 	bool sticked;
 	bool autoremoved;
-	forward_list< const dg::Element* > rejectedConflictors;
+	forward_list<dg::Element> rejectedConflictors;
 	IntroducedBy introducedBy;
 	size_t level;
 
@@ -75,7 +75,7 @@ struct PackageEntry
 	PackageEntry& operator=(PackageEntry&&) = default;
 	PackageEntry& operator=(const PackageEntry&) = default;
 
-	bool isModificationAllowed(const dg::Element*) const;
+	bool isModificationAllowed(dg::Element) const;
 };
 
 class PackageEntryMap;
@@ -83,7 +83,7 @@ class BrokenSuccessorMap;
 
 struct BrokenSuccessor
 {
-	const dg::Element* elementPtr;
+	dg::Element elementPtr;
 	size_t priority;
 };
 
@@ -92,9 +92,9 @@ class Solution
  public:
 	struct Action
 	{
-		const dg::Element* oldElementPtr; // may be NULL
-		const dg::Element* newElementPtr; // many not be NULL
-		shared_ptr< vector< const dg::Element* > > allActionNewElements;
+		dg::Element oldElementPtr; // may be NULL
+		dg::Element newElementPtr; // many not be NULL
+		shared_ptr< vector<dg::Element> > allActionNewElements;
 		IntroducedBy introducedBy;
 		size_t brokenElementPriority;
 	};
@@ -116,11 +116,11 @@ class PreparedSolution: public Solution
 {
 	friend class SolutionStorage;
 
-	CowMap< const dg::Element*, PackageEntryMap > p_entries;
-	CowMap< const dg::Element*, BrokenSuccessorMap > p_brokenSuccessors;
+	CowMap< dg::Element, PackageEntryMap > p_entries;
+	CowMap< dg::Element, BrokenSuccessorMap > p_brokenSuccessors;
 
-	const PackageEntry* getFamilyPackageEntry(const dg::Element*) const;
-	void setPackageEntry(const dg::Element*, PackageEntry&&);
+	const PackageEntry* getFamilyPackageEntry(dg::Element) const;
+	void setPackageEntry(dg::Element, PackageEntry&&);
  public:
 	PreparedSolution();
 	~PreparedSolution();
@@ -134,10 +134,10 @@ class PreparedSolution: public Solution
 	size_t getLevel() const { return level; }
 
 	vector< const PackageEntry* > getEntries() const;
-	vector< const dg::Element* > getInsertedElements() const;
+	vector<dg::Element> getInsertedElements() const;
 	BrokenSuccessor getMaxBrokenSuccessor(const std::function< bool (BrokenSuccessor, BrokenSuccessor) >&) const;
 
-	const PackageEntry* getPackageEntry(const dg::Element*) const;
+	const PackageEntry* getPackageEntry(dg::Element) const;
 };
 
 class SolutionStorage
@@ -149,7 +149,7 @@ class SolutionStorage
 	unique_ptr< PackageEntryMap > p_initialEntries;
 
 	void p_updateBrokenSuccessors(PreparedSolution&,
-			const dg::Element*, const dg::Element*, size_t priority);
+			dg::Element, dg::Element, size_t priority);
 	inline void p_setPackageEntryFromAction(PreparedSolution&, const Solution::Action&);
 	void p_applyAction(PreparedSolution&, const Solution::Action&);
  public:
@@ -167,22 +167,19 @@ class SolutionStorage
 	void assignAction(Solution& solution, unique_ptr< Solution::Action >&& action);
 	shared_ptr< PreparedSolution > prepareSolution(const shared_ptr< Solution >&);
 
-	const GraphCessorListType& getSuccessorElements(const dg::Element*) const;
-	const GraphCessorListType& getPredecessorElements(const dg::Element*) const;
-	bool verifyElement(const PreparedSolution&, const dg::Element*) const;
+	const GraphCessorListType& getSuccessorElements(dg::Element) const;
+	const GraphCessorListType& getPredecessorElements(dg::Element) const;
+	bool verifyElement(const PreparedSolution&, dg::Element) const;
 
 	// may include parameter itself
-	static const forward_list< const dg::Element* >&
-			getConflictingElements(const dg::Element*);
-	bool simulateSetPackageEntry(const PreparedSolution&,
-			const dg::Element*, const dg::Element**) const;
-	void setRejection(PreparedSolution&, const dg::Element*);
-	void setEmpty(PreparedSolution&, const dg::Element*);
-	void unfoldElement(const dg::Element*);
+	static const forward_list<dg::Element>& getConflictingElements(dg::Element);
+	bool simulateSetPackageEntry(const PreparedSolution&, dg::Element, dg::Element*) const;
+	void setRejection(PreparedSolution&, dg::Element);
+	void setEmpty(PreparedSolution&, dg::Element);
+	void unfoldElement(dg::Element);
 
-	void processReasonElements(const PreparedSolution&,
-			const IntroducedBy&, const dg::Element*,
-			const std::function< void (const IntroducedBy&, const dg::Element*) >&) const;
+	void processReasonElements(const PreparedSolution&, const IntroducedBy&, dg::Element,
+			const std::function< void (const IntroducedBy&, dg::Element) >&) const;
 };
 
 }
