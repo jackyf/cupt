@@ -22,14 +22,12 @@
 #include <iostream>
 #include <algorithm>
 
-#include <boost/lexical_cast.hpp>
+using std::to_string;
 
 #include <cupt/common.hpp>
 #include <cupt/download/progresses/console.hpp>
 
 namespace cupt {
-
-using boost::lexical_cast;
 
 typedef download::Progress::DownloadRecord DownloadRecord;
 
@@ -190,10 +188,10 @@ string humanReadableDifftimeString(size_t time)
 	auto minutes = time / 60;
 	auto seconds = time % 60;
 
-	auto dayString = days < 1 ? "" : lexical_cast< string >(days) + "d";
-	auto hourString = hours < 1 && dayString.empty() ? "" : lexical_cast< string >(hours) + "h";
-	auto minuteString = minutes < 1 && hourString.empty() ? "" : lexical_cast< string >(minutes) + "m";
-	auto secondString = lexical_cast< string >(seconds) + "s";
+	auto dayString = days < 1 ? "" : to_string(days) + "d";
+	auto hourString = hours < 1 && dayString.empty() ? "" : to_string(hours) + "h";
+	auto minuteString = minutes < 1 && hourString.empty() ? "" : to_string(minutes) + "m";
+	auto secondString = to_string(seconds) + "s";
 
 	return dayString + hourString + minuteString + secondString;
 }
