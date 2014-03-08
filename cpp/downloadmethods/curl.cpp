@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2012 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2010-2014 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -16,9 +16,9 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <cstring>
+using std::to_string;
 
-#include <boost/lexical_cast.hpp>
-using boost::lexical_cast;
+#include <unistd.h>
 
 #include <curl/curl.h>
 
@@ -142,14 +142,12 @@ extern "C"
 			auto expectedSize = curlPtr->getExpectedDownloadSize();
 			if (expectedSize > 0)
 			{
-				(*callbackPtr)(vector< string >{ "expected-size",
-						lexical_cast< string >(expectedSize + *totalBytesPtr) });
+				(*callbackPtr)({ "expected-size", to_string(expectedSize + *totalBytesPtr) });
 			}
 		}
 
 		*totalBytesPtr += size;
-		(*callbackPtr)(vector< string >{ "downloading",
-				lexical_cast< string >(*totalBytesPtr), lexical_cast< string >(size) });
+		(*callbackPtr)({ "downloading", to_string(*totalBytesPtr), to_string(size) });
 
 		return size;
 	}
@@ -201,8 +199,7 @@ class CurlMethod: public cupt::download::Method
 
 			start:
 			ssize_t totalBytes = file.tell();
-			callback(vector< string > { "downloading",
-					lexical_cast< string >(totalBytes), lexical_cast< string >(0)});
+			callback({ "downloading", to_string(totalBytes), to_string(0)});
 			curl.setOption(CURLOPT_RESUME_FROM, totalBytes, "resume from");
 
 			string fileWriteError;
