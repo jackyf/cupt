@@ -53,6 +53,7 @@ class ProgressImpl
  public:
 	ProgressImpl();
 	void addChunk(size_t size);
+	void removeOldChunks(const struct timespec&);
 	size_t getDownloadSpeed() const;
 
 	uint64_t doneDownloadsSize;
@@ -88,24 +89,21 @@ float getTimeSpecDiff(const timespec& oldValue, const timespec& newValue)
 	return result;
 }
 
+void ProgressImpl::removeOldChunks(const struct timespec& currentTimeSpec)
+{
+	auto firstActualChunkIt = std::find_if(fetchedChunks.begin(), fetchedChunks.end(),
+			[&currentTimeSpec](const FetchedChunk& chunk)
+			{
+				return (getTimeSpecDiff(chunk.timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy);
+			});
+	fetchedChunks.erase(fetchedChunks.begin(), firstActualChunkIt);
+}
+
 void ProgressImpl::addChunk(size_t size)
 {
-	FetchedChunk chunk;
-	chunk.size = size;
-
 	auto currentTimeSpec = getCurrentTimeSpec();
-	chunk.timeSpec = currentTimeSpec;
-	fetchedChunks.push_back(std::move(chunk));
-
-	// cleaning old chunks
-	FORIT(it, fetchedChunks)
-	{
-		if (getTimeSpecDiff(it->timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy)
-		{
-			fetchedChunks.erase(fetchedChunks.begin(), it);
-			break;
-		}
-	}
+	fetchedChunks.push_back(FetchedChunk{ currentTimeSpec, size });
+	removeOldChunks(currentTimeSpec);
 }
 
 size_t ProgressImpl::getDownloadSpeed() const
