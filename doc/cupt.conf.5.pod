@@ -19,8 +19,8 @@ Cupt uses the same configuration syntax as L<apt.conf(5)>, which see.
 
 Firstly, Cupt uses following APT configuration variables:
 
-acquire::*::timeout, acquire::*::proxy, acquire::http::allowredirect,
-acquire::retries, apt::cache::allversions,
+acquire::*::dl-limit, acquire::*::timeout, acquire::*::proxy,
+acquire::http::allowredirect, acquire::retries, apt::cache::allversions,
 apt::cache::important, apt::cache::namesonly, apt::cache::recursedepends,
 apt::default-release, apt::install-recommends, apt::install-suggests,
 apt::neverautoremove, apt::get::assume-yes, apt::get::allowunauthenticated,
