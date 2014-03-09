@@ -215,20 +215,20 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 
 	string viewString = format2("%d%% ", overallDownloadPercent);
 
-	FORIT(it, records)
+	for (const auto& it: records)
 	{
 		string suffix;
-		if (it->record.phase == DownloadRecord::Phase::Postprocessed)
+		if (it.record.phase == DownloadRecord::Phase::Postprocessed)
 		{
 			suffix = " | postprocessing";
 		}
-		else if (it->record.size != (size_t)-1 && it->record.size != 0 /* no sense for empty files */)
+		else if (it.record.size != (size_t)-1 && it.record.size != 0 /* no sense for empty files */)
 		{
-			suffix = format2("/%s %.0f%%", humanReadableSizeString(it->record.size),
-					(float)it->record.downloadedSize / it->record.size * 100);
+			suffix = format2("/%s %.0f%%", humanReadableSizeString(it.record.size),
+					(float)it.record.downloadedSize / it.record.size * 100);
 		}
-		viewString += format2("[#%zu %s %s%s]", it->record.number, it->shortAlias,
-				humanReadableSizeString(it->record.downloadedSize), suffix);
+		viewString += format2("[#%zu %s %s%s]", it.record.number, it.shortAlias,
+				humanReadableSizeString(it.record.downloadedSize), suffix);
 	}
 	auto speedAndTimeAppendage = string("| ") + humanReadableSpeedString(speed) +
 			string(" | ETA: ") + humanReadableDifftimeString(overallEstimatedTime);
