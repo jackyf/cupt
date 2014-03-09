@@ -273,10 +273,9 @@ int showSourceVersions(Context& context)
 						p("  MD5", fileRecord.hashSums[HashSums::MD5]);
 						p("  SHA1", fileRecord.hashSums[HashSums::SHA1]);
 						p("  SHA256", fileRecord.hashSums[HashSums::SHA256]);
-						auto downloadInfo = version->getDownloadInfo();
-						FORIT(it, downloadInfo)
+						for (const auto& it: version->getDownloadInfo())
 						{
-							p("  URI", it->baseUri + "/" + it->directory + "/" + fileRecord.name);
+							p("  URI", it.baseUri + "/" + it.directory + "/" + fileRecord.name);
 						}
 					}
 				}
@@ -284,9 +283,9 @@ int showSourceVersions(Context& context)
 
 			if (version->others)
 			{
-				FORIT(it, (*(version->others)))
+				for (const auto& it: *(version->others))
 				{
-					p(it->first, it->second);
+					p(it.first, it.second);
 				}
 			}
 			cout << endl;
