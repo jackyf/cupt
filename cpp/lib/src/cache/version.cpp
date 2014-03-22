@@ -70,13 +70,13 @@ vector< Version::DownloadRecord > Version::getDownloadInfo() const
 
 	vector< DownloadRecord > result;
 
-	FORIT(sourceIt, sources)
+	for (const auto& source: sources)
 	{
-		const string& baseUri = sourceIt->release->baseUri;
+		const string& baseUri = source.release->baseUri;
 		if (!baseUri.empty())
 		{
 			DownloadRecord record;
-			record.directory = sourceIt->directory;
+			record.directory = source.directory;
 			record.baseUri = baseUri;
 
 			string fullDir = baseUri + "/" + record.directory;
