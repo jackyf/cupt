@@ -498,7 +498,7 @@ static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& so
 void SolutionStorage::p_setPackageEntryFromAction(PreparedSolution& solution, const Solution::Action& action)
 {
 	PackageEntry packageEntry;
-	packageEntry.sticked = true;
+	packageEntry.sticked = (action.brokenElementPriority > 0);
 	packageEntry.introducedBy = action.introducedBy;
 	packageEntry.level = solution.level;
 	solution.setPackageEntry(action.newElementPtr, std::move(packageEntry));
@@ -595,11 +595,9 @@ BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
 {
 	BrokenSuccessor result{ nullptr, 0 };
 
-	p_brokenSuccessors.foreachModifiedEntry(
-			[&result, &comp](const BrokenSuccessor& bs)
+	foreachBrokenSuccessor(
+			[&result, &comp](BrokenSuccessor bs)
 			{
-				if (!bs.priority) return;
-
 				if (!result.elementPtr || comp(result, bs))
 				{
 					result = bs;
@@ -607,6 +605,17 @@ BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
 			});
 
 	return result;
+}
+
+void PreparedSolution::foreachBrokenSuccessor(
+		const std::function< void (BrokenSuccessor) >& callback) const
+{
+	p_brokenSuccessors.foreachModifiedEntry(
+			[&callback](const BrokenSuccessor& bs)
+			{
+				if (!bs.priority) return;
+				callback(bs);
+			});
 }
 
 const PackageEntry* PreparedSolution::getFamilyPackageEntry(dg::Element element) const
