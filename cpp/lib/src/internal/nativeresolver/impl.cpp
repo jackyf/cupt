@@ -125,10 +125,10 @@ void NativeResolverImpl::upgrade()
 
 		if (preferredVersion == installedVersion) continue; // this package is already in the preferred shape
 
-		RelationExpression upgradeExpression(format2("%s (>> %s)", packageName, installedVersion->versionString));
+		RelationExpression notUpgradeExpression(format2("%s (<= %s)", packageName, installedVersion->versionString));
 
 		const string annotation = string("upgrade ") + packageName;
-		satisfyRelationExpression(upgradeExpression, false, annotation, RequestImportance::Wish, true);
+		satisfyRelationExpression(notUpgradeExpression, true, annotation, RequestImportance::Wish, true);
 	}
 }
 
