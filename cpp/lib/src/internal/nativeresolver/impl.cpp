@@ -828,6 +828,8 @@ void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 	{
 		if (auto action = p_chooseActionForPreSatisfy(solution, brokenElement))
 		{
+			action->introducedBy.versionElementPtr = __solution_storage->getPredecessorElements(brokenElement).front();
+			action->introducedBy.brokenElementPtr = brokenElement;
 			action->brokenElementPriority = 0; // don't stick
 			__solution_storage->assignAction(solution, std::move(action));
 		}
