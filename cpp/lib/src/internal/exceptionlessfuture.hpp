@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2013 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,46 +15,40 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
-#define CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
-
-#include <list>
-
-#include <internal/nativeresolver/solution.hpp>
-#include <internal/graph.hpp>
+#include <thread>
 
 namespace cupt {
 namespace internal {
 
-using std::unique_ptr;
+/* the whole point of this class is provide simple <future> facilities on
+   systems which lack them (#727621) */
 
-class DecisionFailTree
+template< typename ResultT >
+class ExceptionlessFuture
 {
-	struct Decision
-	{
-		IntroducedBy introducedBy;
-		size_t level;
-		dg::Element insertedElementPtr;
-	};
-	struct FailItem
-	{
-		vector< dg::Element > insertedElements;
-		vector< Decision > decisions;
-	};
-	std::list< FailItem > __fail_items;
-
-	static string __decisions_to_string(const vector< Decision >&);
-	static vector< Decision > __get_decisions(
-			const SolutionStorage& solutionStorage, const PreparedSolution& solution, const IntroducedBy&);
-	static bool __is_dominant(const FailItem&, dg::Element);
  public:
-	string toString() const;
-	void addFailedSolution(const SolutionStorage&, const PreparedSolution&, const IntroducedBy&);
-	void clear();
+	template< typename FunctorT >
+	ExceptionlessFuture(const FunctorT& functor)
+	{
+		p_thread = std::thread([this, functor]() { p_result = functor(); });
+	}
+	~ExceptionlessFuture()
+	{
+		if (p_thread.joinable())
+		{
+			p_thread.join();
+		}
+	}
+	ResultT get()
+	{
+		p_thread.join();
+		return p_result;
+	}
+ private:
+	std::thread p_thread;
+	ResultT p_result; // for our purposes and simplicity we assume copyability
 };
 
 }
 }
-
-#endif
 

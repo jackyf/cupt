@@ -273,10 +273,9 @@ int showSourceVersions(Context& context)
 						p("  MD5", fileRecord.hashSums[HashSums::MD5]);
 						p("  SHA1", fileRecord.hashSums[HashSums::SHA1]);
 						p("  SHA256", fileRecord.hashSums[HashSums::SHA256]);
-						auto downloadInfo = version->getDownloadInfo();
-						FORIT(it, downloadInfo)
+						for (const auto& it: version->getDownloadInfo())
 						{
-							p("  URI", it->baseUri + "/" + it->directory + "/" + fileRecord.name);
+							p("  URI", it.baseUri + "/" + it.directory + "/" + fileRecord.name);
 						}
 					}
 				}
@@ -284,9 +283,9 @@ int showSourceVersions(Context& context)
 
 			if (version->others)
 			{
-				FORIT(it, (*(version->others)))
+				for (const auto& it: *(version->others))
 				{
-					p(it->first, it->second);
+					p(it.first, it.second);
 				}
 			}
 			cout << endl;
@@ -327,12 +326,11 @@ int showRelations(Context& context, bool reverse)
 			/* installed */ true);
 
 	queue< const BinaryVersion* > versions;
-	FORIT(it, arguments)
+	for (const string& arg: arguments)
 	{
-		auto selectedVersions = selectBinaryVersionsWildcarded(*cache, *it);
-		FORIT(selectedVersionIt, selectedVersions)
+		for (auto selectedVersion: selectBinaryVersionsWildcarded(*cache, arg))
 		{
-			versions.push(*selectedVersionIt);
+			versions.push(selectedVersion);
 		}
 	}
 
@@ -379,14 +377,14 @@ int showRelations(Context& context, bool reverse)
 
 		cout << packageName << ' ' << versionString << ':' << endl;
 
-		FORIT(relationGroupIt, relationGroups)
+		for (const auto& relationGroup: relationGroups)
 		{
-			const string& caption = __(BinaryVersion::RelationTypes::strings[*relationGroupIt].c_str());
+			const string& caption = __(BinaryVersion::RelationTypes::strings[relationGroup].c_str());
 
 			if (!reverse)
 			{
 				// just plain normal dependencies
-				for (const auto& relationExpression: version->relations[*relationGroupIt])
+				for (const auto& relationExpression: version->relations[relationGroup])
 				{
 					cout << "  " << caption << ": " << relationExpression.toString() << endl;
 					if (recurse)
@@ -395,9 +393,9 @@ int showRelations(Context& context, bool reverse)
 						auto satisfyingVersions = cache->getSatisfyingVersions(relationExpression);
 						if (allVersions)
 						{
-							FORIT(satisfyingVersionIt, satisfyingVersions)
+							for (auto satisfyingVersion: satisfyingVersions)
 							{
-								versions.push(*satisfyingVersionIt);
+								versions.push(satisfyingVersion);
 							}
 						}
 						else
@@ -434,7 +432,7 @@ int showRelations(Context& context, bool reverse)
 				};
 				vector< ReverseRecord > reverseRecords;
 
-				reverseDependsIndex.foreachReverseDependency(version, *relationGroupIt,
+				reverseDependsIndex.foreachReverseDependency(version, relationGroup,
 						[&reverseRecords](const BinaryVersion* reverseVersion, const RelationExpression& relationExpression)
 						{
 							reverseRecords.push_back({ reverseVersion, &relationExpression });

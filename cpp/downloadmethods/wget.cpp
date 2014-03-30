@@ -23,8 +23,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <boost/lexical_cast.hpp>
-using boost::lexical_cast;
+using std::to_string;
 
 #include <cupt/config.hpp>
 #include <cupt/download/method.hpp>
@@ -67,11 +66,11 @@ class WgetMethod: public cupt::download::Method
 		}
 		p.push_back("wget"); // passed as a binary name, not parameter
 		p.push_back("--continue");
-		p.push_back(string("--tries=") + lexical_cast< string >(config.getInteger("acquire::retries")+1));
+		p.push_back(string("--tries=") + to_string(config.getInteger("acquire::retries")+1));
 		auto maxSpeedLimit = getIntegerAcquireSuboptionForUri(config, uri, "dl-limit");
 		if (maxSpeedLimit)
 		{
-			p.push_back(string("--limit-rate=") + lexical_cast< string >(maxSpeedLimit) + "k");
+			p.push_back(string("--limit-rate=") + to_string(maxSpeedLimit) + "k");
 		}
 		if (proxy == "DIRECT")
 		{
@@ -84,7 +83,7 @@ class WgetMethod: public cupt::download::Method
 		auto timeout = getIntegerAcquireSuboptionForUri(config, uri, "timeout");
 		if (timeout)
 		{
-			p.push_back(string("--timeout=") + lexical_cast< string >(timeout));
+			p.push_back(string("--timeout=") + to_string(timeout));
 		}
 		p.push_back(string(uri));
 		p.push_back(string("--output-document=") + targetPath);
@@ -106,8 +105,7 @@ class WgetMethod: public cupt::download::Method
 			ssize_t totalBytes = 0;
 			if (__get_file_size(targetPath, &totalBytes))
 			{
-				callback(vector< string > { "downloading",
-						lexical_cast< string >(totalBytes), lexical_cast< string >(0)});
+				callback({ "downloading", to_string(totalBytes), to_string(0)});
 			}
 
 			// wget executor
@@ -123,9 +121,7 @@ class WgetMethod: public cupt::download::Method
 					{
 						if (newTotalBytes != totalBytes)
 						{
-							callback(vector< string >{ "downloading",
-									lexical_cast< string >(newTotalBytes),
-									lexical_cast< string >(newTotalBytes - totalBytes) });
+							callback({ "downloading", to_string(newTotalBytes), to_string(newTotalBytes - totalBytes) });
 							totalBytes = newTotalBytes;
 						}
 					}

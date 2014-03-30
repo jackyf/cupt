@@ -4,7 +4,7 @@ Upstream-Maintainer: Eugene V. Lyubimkin
 Upstream-Name: Cupt
 
 Files: *
-Copyright: 2008-2011, Eugene V. Lyubimkin <jackyf@debian.org>
+Copyright: 2008-2013, Eugene V. Lyubimkin <jackyf@debian.org>
 License: GPL-3+
 
 Files: po/pl.po

@@ -97,6 +97,14 @@ void fillCommon(Version* v, const VersionParseParameters& initParams)
 
 }
 
+uint32_t tagValue2uint32(TagParser::StringRange stringRange)
+{
+	return string2uint32({
+			static_cast< string::const_iterator >(stringRange.first),
+			static_cast< string::const_iterator >(stringRange.second)
+	});
+}
+
 unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& initParams)
 {
 	typedef BinaryVersion::RelationTypes RelationTypes;
@@ -120,8 +128,8 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 			TAG(Version, v->versionString = tagValue.toString();)
 			TAG(Essential, v->essential = (tagValue.toString() == "yes");)
 			PARSE_PRIORITY
-			TAG(Size, v->file.size = internal::string2uint32(tagValue);)
-			TAG(Installed-Size, v->installedSize = internal::string2uint32(tagValue) * 1024;)
+			TAG(Size, v->file.size = tagValue2uint32(tagValue);)
+			TAG(Installed-Size, v->installedSize = tagValue2uint32(tagValue) * 1024;)
 			TAG(Architecture, v->architecture = tagValue.toString();)
 			TAG(Filename,
 			{

@@ -49,10 +49,16 @@ class ProgressImpl
 		struct timespec timeSpec;
 		size_t size;
 	};
-	list< FetchedChunk > fetchedChunks;
+	typedef list< FetchedChunk > FetchedChunks;
+	FetchedChunks fetchedChunks;
  public:
 	ProgressImpl();
 	void addChunk(size_t size);
+	void removeOldChunks(const struct timespec&);
+	// TODO: FetchedChunks::const_iterator after
+	// std::list::erase(const_iterator, const_iterator) gets implemented in all
+	// GCC versions we support
+	FetchedChunks::iterator findFirstActualChunk(const struct timespec&) const;
 	size_t getDownloadSpeed() const;
 
 	uint64_t doneDownloadsSize;
@@ -88,45 +94,37 @@ float getTimeSpecDiff(const timespec& oldValue, const timespec& newValue)
 	return result;
 }
 
+void ProgressImpl::removeOldChunks(const struct timespec& currentTimeSpec)
+{
+	fetchedChunks.erase(fetchedChunks.begin(), findFirstActualChunk(currentTimeSpec));
+}
+
 void ProgressImpl::addChunk(size_t size)
 {
-	FetchedChunk chunk;
-	chunk.size = size;
-
 	auto currentTimeSpec = getCurrentTimeSpec();
-	chunk.timeSpec = currentTimeSpec;
-	fetchedChunks.push_back(std::move(chunk));
-
-	// cleaning old chunks
-	FORIT(it, fetchedChunks)
-	{
-		if (getTimeSpecDiff(it->timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy)
-		{
-			fetchedChunks.erase(fetchedChunks.begin(), it);
-			break;
-		}
-	}
+	fetchedChunks.push_back(FetchedChunk{ currentTimeSpec, size });
+	removeOldChunks(currentTimeSpec);
 }
 
 size_t ProgressImpl::getDownloadSpeed() const
 {
-	auto currentTimeSpec = getCurrentTimeSpec();
-
-	auto it = fetchedChunks.begin();
-	for(; it != fetchedChunks.end(); ++it)
-	{
-		if (getTimeSpecDiff(it->timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy)
-		{
-			break;
-		}
-	}
 	size_t fetchedBytes = 0;
-	for(; it != fetchedChunks.end(); ++it)
+	for(auto it = findFirstActualChunk(getCurrentTimeSpec()); it != fetchedChunks.end(); ++it)
 	{
 		fetchedBytes += it->size;
 	}
 
 	return fetchedBytes / download::Progress::speedCalculatingAccuracy;
+}
+
+ProgressImpl::FetchedChunks::iterator ProgressImpl::findFirstActualChunk(const struct timespec& currentTimeSpec) const
+{
+	auto& chunks = const_cast<FetchedChunks&>(fetchedChunks);
+	return std::find_if(chunks.begin(), chunks.end(),
+			[&currentTimeSpec](const FetchedChunk& chunk)
+			{
+				return (getTimeSpecDiff(chunk.timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy);
+			});
 }
 
 }

@@ -65,10 +65,9 @@ using std::make_pair;
 
 typedef queue< vector< string > > MessageQueue;
 
-static void sendSocketMessage(int socket, const vector< string >& message)
+static void sendRawSocketMessage(int socket, const string& compactedMessage)
 {
-	auto compactedMessage = join("\1", message);
-	if (message.size() >= 0xFFFF)
+	if (compactedMessage.size() >= 0xFFFF)
 	{
 		fatal2i("sendSocketMessage: message size exceeded 64K");
 	}
@@ -79,6 +78,11 @@ static void sendSocketMessage(int socket, const vector< string >& message)
 	{
 		fatal2e(__("unable to send a socket message"));
 	}
+}
+
+static void sendSocketMessage(int socket, const vector< string >& message)
+{
+	sendRawSocketMessage(socket, join("\1", message));
 }
 
 static void sendSocketMessage(Pipe& pipe, const vector< string >& message)

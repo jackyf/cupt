@@ -48,6 +48,9 @@ class ConfigImpl
 
 	void initializeVariables();
 	vector< string > getConfigurationFilePaths(Config*) const;
+	string getEnvBasedConfigurationFilePath(const Config*, const char*, const char*) const;
+	void parsePreConfiguration(const Config*, ConfigParser&);
+	void parseConfigurationFile(ConfigParser&, const string&);
 	void readConfigs(Config*);
 	void setArchitecture(Config*);
 	bool isOptionalOption(const string& optionName) const;
@@ -151,6 +154,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::directory::configuration", "etc/cupt" },
 		{ "cupt::directory::configuration::main", "cupt.conf" },
 		{ "cupt::directory::configuration::main-parts", "cupt.conf.d" },
+		{ "cupt::directory::configuration::pre", "pre.conf" },
 		{ "cupt::directory::log", "var/log/cupt.log" },
 		{ "cupt::directory::state", "var/lib/cupt" },
 		{ "cupt::directory::state::lists", "lists" },
@@ -184,7 +188,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },
 		{ "cupt::resolver::keep-suggests", "no" },
-		{ "cupt::resolver::max-solution-count", "512" },
+		{ "cupt::resolver::max-solution-count", "8192" },
 		{ "cupt::resolver::no-remove", "no" },
 		{ "cupt::resolver::synchronize-by-source-versions", "none" },
 		{ "cupt::resolver::track-reasons", "no" },
@@ -299,13 +303,8 @@ vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
 	{ // APT files
 		result = getConfigurationPartsFilePaths(config->getPath("dir::etc::parts"), ignorePathRegexes);
 
-		string mainFilePath = config->getPath("dir::etc::main");
-		const char* envAptConfig = getenv("APT_CONFIG");
-		if (envAptConfig)
-		{
-			mainFilePath = envAptConfig;
-		}
-		if (internal::fs::fileExists(mainFilePath))
+		auto mainFilePath = getEnvBasedConfigurationFilePath(config, "APT_CONFIG", "dir::etc::main");
+		if (!mainFilePath.empty())
 		{
 			result.push_back(mainFilePath);
 		}
@@ -321,6 +320,18 @@ vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
 		}
 	}
 	return result;
+}
+
+string ConfigImpl::getEnvBasedConfigurationFilePath(const Config* config, const char* env, const char* optionName) const
+{
+	string path = config->getPath(optionName);
+	const char* envPath = getenv(env);
+	if (envPath)
+	{
+		path = envPath;
+	}
+
+	return internal::fs::fileExists(path) ? path : string();
 }
 
 void ConfigImpl::readConfigs(Config* config)
@@ -364,17 +375,33 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		for (const auto& configFile: getConfigurationFilePaths(config))
+		parsePreConfiguration(config, parser);
+
+		for (const auto& path: getConfigurationFilePaths(config))
 		{
-			try
-			{
-				parser.parse(configFile);
-			}
-			catch (Exception&)
-			{
-				warn2(__("skipped the configuration file '%s'"), configFile);
-			}
+			parseConfigurationFile(parser, path);
 		}
+	}
+}
+
+void ConfigImpl::parsePreConfiguration(const Config* config, ConfigParser& parser)
+{
+	auto path = getEnvBasedConfigurationFilePath(config, "CUPT_PRE_CONFIG", "cupt::directory::configuration::pre");
+	if (!path.empty())
+	{
+		parseConfigurationFile(parser, path);
+	}
+}
+
+void ConfigImpl::parseConfigurationFile(ConfigParser& parser, const string& path)
+{
+	try
+	{
+		parser.parse(path);
+	}
+	catch (Exception&)
+	{
+		warn2(__("skipped the configuration file '%s'"), path);
 	}
 }
 
@@ -549,9 +576,18 @@ vector< string > Config::getList(const string& optionName) const
 	__builtin_unreachable();
 }
 
-bool __is_cupt_option(const string& optionName)
+static bool isFamilyOption(const string& optionName, const char* family)
 {
-	return optionName.compare(0, 6, "cupt::") == 0;
+	string prefix = string(family) + "::";
+	return optionName.compare(0, prefix.size(), prefix) == 0;
+}
+static inline bool isCuptOption(const string& optionName)
+{
+	return isFamilyOption(optionName, "cupt");
+}
+static bool isForeignOption(const string& optionName)
+{
+	return !isCuptOption(optionName) && !isFamilyOption(optionName, "dpkg");
 }
 
 void Config::setScalar(const string& optionName, const string& value)
@@ -573,13 +609,18 @@ void Config::setScalar(const string& optionName, const string& value)
 		}
 	}
 
+	if (isForeignOption(normalizedOptionName))
+	{
+		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
+	}
+
 	if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
 	{
 		__impl->regularVars[normalizedOptionName] = value;
 	}
 	else
 	{
-		if (__is_cupt_option(optionName))
+		if (isCuptOption(optionName))
 		{
 			warn2(__("an attempt to set the invalid scalar option '%s'"), optionName);
 		}
@@ -600,7 +641,7 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		if (__is_cupt_option(optionName))
+		if (isCuptOption(optionName))
 		{
 			warn2(__("an attempt to set the invalid list option '%s'"), optionName);
 		}

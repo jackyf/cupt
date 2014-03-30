@@ -1179,6 +1179,8 @@ colors.
 
 == Adjusting configuration variables ==
 
+=== intro ===
+
 There are two types of configuration variables - **regular** (or **scalar**) and
 **list** ones.  Scalar options have a single scalar value, and list option's
 value is a list of strings. Modifying a scalar option means substituting its
@@ -1212,11 +1214,20 @@ To see the current configuration, use ``config-dump`` subcommand. Examples:
 
 You can distinguish list options there by figure brackets around the values.
 
-Cupt reads configuration first from APT configuration files (conforming to the
-APT documentation (//apt.conf(5)//)), then from Cupt-specific configuration
-files (see //cupt.conf(5)/cupt::directory::configuration//), then applies those
-specified in the command line using ``--option`` (or ``-o``) switch or by
-dedicated switches corresponding to the option.
+=== configuration sources ===
+
+Cupt reads configuration in the following order:
+
++ from Cupt preconfiguration file (see //cupt.conf(5)/cupt::directory::configuration::pre//)
+
++ from APT configuration files (conforming to the APT documentation (//apt.conf(5)//))
+
++ from Cupt-specific configuration files (see //cupt.conf(5)/cupt::directory::configuration//)
+
++ from the command line (``--option`` (or ``-o``) switches and dedicated switches corresponding to specific options)
+
+
+=== setting options using the command line ===
 
 To modify a regular option in the command line, use
 

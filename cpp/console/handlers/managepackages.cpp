@@ -987,12 +987,12 @@ void addActionToSummary(WA::Type actionType, const string& actionName,
 
 	auto getManualCountString = [manuallyInstalledCount, actionType, &colorizer]()
 	{
-		auto s = boost::lexical_cast< string >(manuallyInstalledCount);
+		auto s = std::to_string(manuallyInstalledCount);
 		return colorizeByActionType(colorizer, s, actionType, false);
 	};
 	auto getAutoCountString = [autoInstalledCount, actionType, &colorizer]()
 	{
-		auto s = boost::lexical_cast< string >(autoInstalledCount);
+		auto s = std::to_string(autoInstalledCount);
 		return colorizeByActionType(colorizer, s, actionType, true);
 	};
 

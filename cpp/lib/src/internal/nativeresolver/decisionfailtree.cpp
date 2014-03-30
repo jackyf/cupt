@@ -25,17 +25,17 @@ namespace internal {
 string DecisionFailTree::__decisions_to_string(
 		const vector< Decision >& decisions)
 {
-	auto insertedElementPtrToString = [](const dg::Element* elementPtr) -> string
+	auto insertedElementPtrToString = [](dg::Element element) -> string
 	{
-		if (!elementPtr)
+		if (!element)
 		{
 			return __("no solutions"); // root
 		}
-		auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr);
+		auto versionElement = dynamic_cast<dg::VersionElement>(element);
 		if (!versionElement)
 		{
 			fatal2i("__fail_leaf_to_string: '%s' is not a version element",
-					elementPtr->toString());
+					element->toString());
 		}
 		return versionElement->toLocalizedString();
 	};
@@ -64,12 +64,11 @@ string DecisionFailTree::toString() const
 }
 
 vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
-		const SolutionStorage& solutionStorage, const Solution& solution,
+		const SolutionStorage& solutionStorage, const PreparedSolution& solution,
 		const IntroducedBy& lastIntroducedBy)
 {
 	vector< Decision > result;
 
-	map< const dg::Element*, size_t > elementPositionCache;
 	std::stack< Decision > chainStack;
 
 	chainStack.push(Decision { lastIntroducedBy, 0, NULL });
@@ -82,15 +81,15 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 
 		auto queueItem = [&chainStack, &item](
 				const IntroducedBy& introducedBy,
-				const dg::Element* insertedElementPtr)
+				dg::Element insertedElement)
 		{
 			if (!introducedBy.empty())
 			{
-				chainStack.push(Decision { introducedBy, item.level + 1, insertedElementPtr });
+				chainStack.push(Decision { introducedBy, item.level + 1, insertedElement });
 			}
 		};
 
-		solutionStorage.processReasonElements(solution, elementPositionCache,
+		solutionStorage.processReasonElements(solution,
 				item.introducedBy, item.insertedElementPtr, std::cref(queueItem));
 	}
 
@@ -98,11 +97,11 @@ vector< DecisionFailTree::Decision > DecisionFailTree::__get_decisions(
 }
 
 // fail item is dominant if a diversed element didn't cause final breakage
-bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element* diversedElementPtr)
+bool DecisionFailTree::__is_dominant(const FailItem& failItem, dg::Element diversedElement)
 {
 	FORIT(it, failItem.decisions)
 	{
-		if (it->insertedElementPtr == diversedElementPtr)
+		if (it->insertedElementPtr == diversedElement)
 		{
 			return false;
 		}
@@ -110,18 +109,43 @@ bool DecisionFailTree::__is_dominant(const FailItem& failItem, const dg::Element
 	return true;
 }
 
+static std::pair< dg::Element, dg::Element > getDiversedElements(
+		const vector<dg::Element>& left, const vector<dg::Element>& right)
+{
+	auto leftIt = left.begin();
+	auto rightIt = right.begin();
+
+	// precondition: left and right are different solutions and therefore have
+	// diversed elements before both leftInsertedElements.end() and
+	// rightInsertedElements.end()
+	while (*leftIt == *rightIt)
+	{
+		++leftIt;
+		++rightIt;
+	}
+	return { *leftIt, *rightIt };
+}
+
 void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
-		const Solution& solution, const IntroducedBy& lastIntroducedBy)
+		const PreparedSolution& solution, const IntroducedBy& lastIntroducedBy)
 {
 	FailItem failItem;
-	failItem.solutionId = solution.id;
-	failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
+	failItem.insertedElements = solution.getInsertedElements();
+
+	auto fillFailItemDecisions = [&]()
+	{
+		if (failItem.decisions.empty())
+		{
+			failItem.decisions = __get_decisions(solutionStorage, solution, lastIntroducedBy);
+		}
+	};
+
 	bool willBeAdded = true;
 
 	auto it = __fail_items.begin();
 	while (it != __fail_items.end())
 	{
-		auto diversedElements = solutionStorage.getDiversedElements(it->solutionId, failItem.solutionId);
+		auto diversedElements = getDiversedElements(it->insertedElements, failItem.insertedElements);
 		auto existingIsDominant = __is_dominant(*it, diversedElements.first);
 		if (existingIsDominant)
 		{
@@ -130,6 +154,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 		}
 		else
 		{
+			fillFailItemDecisions();
 			if (__is_dominant(failItem, diversedElements.second))
 			{
 				it = __fail_items.erase(it);
@@ -143,6 +168,7 @@ void DecisionFailTree::addFailedSolution(const SolutionStorage& solutionStorage,
 
 	if (willBeAdded)
 	{
+		fillFailItemDecisions();
 		__fail_items.push_back(std::move(failItem));
 	}
 }

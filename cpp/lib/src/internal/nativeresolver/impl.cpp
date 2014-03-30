@@ -36,6 +36,7 @@ using std::queue;
 NativeResolverImpl::NativeResolverImpl(const shared_ptr< const Config >& config, const shared_ptr< const Cache >& cache)
 	: __config(config), __cache(cache), __score_manager(*config, cache), __auto_removal_possibility(*__config)
 {
+	p_debugging = __config->getBool("debug::resolver");
 	__import_installed_versions();
 }
 
@@ -53,12 +54,10 @@ void NativeResolverImpl::__import_installed_versions()
 
 void NativeResolverImpl::__import_packages_to_reinstall()
 {
-	bool debugging = __config->getBool("debug::resolver");
-
 	auto reinstallRequiredPackageNames = __cache->getSystemState()->getReinstallRequiredPackageNames();
 	for (const auto& packageName: reinstallRequiredPackageNames)
 	{
-		if (debugging)
+		if (p_debugging)
 		{
 			debug2("the package '%s' needs a reinstall", packageName);
 		}
@@ -82,8 +81,8 @@ void __mydebug_wrapper(const Solution& solution, const Args&... args)
 template < typename... Args >
 void __mydebug_wrapper(const Solution& solution, size_t id, const Args&... args)
 {
-	string levelString(solution.level, ' ');
-	debug2("%s(%u:%zd) %s", levelString, id, solution.score, format2(args...));
+	string levelString(solution.getLevel(), ' ');
+	debug2("%s(%u:%zd) %s", levelString, id, solution.getScore(), format2(args...));
 }
 
 void NativeResolverImpl::setAutomaticallyInstalledFlag(const string& packageName, bool flagValue)
@@ -106,7 +105,7 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 {
 	const string& annotation = !proposedAnnotation.empty() ? proposedAnnotation : getAnnotation(re, invert);
 	p_userRelationExpressions.push_back({ re, invert, annotation, importance, asAutomatic });
-	if (__config->getBool("debug::resolver"))
+	if (p_debugging)
 	{
 		debug2("on request '%s' strictly %ssatisfying relation '%s'", annotation, (invert? "un" : ""), re.toString());
 	}
@@ -138,11 +137,11 @@ struct SolutionScoreLess
 	bool operator()(const shared_ptr< Solution >& left,
 			const shared_ptr< Solution >& right) const
 	{
-		if (left->score < right->score)
+		if (left->getScore() < right->getScore())
 		{
 			return true;
 		}
-		if (left->score > right->score)
+		if (left->getScore() > right->getScore())
 		{
 			return false;
 		}
@@ -163,7 +162,7 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 	// defer the decision until all solutions are built
 	FORIT(solutionIt, solutions)
 	{
-		if (! (*solutionIt)->finished)
+		if (! (*solutionIt)->isFinished())
 		{
 			return solutionIt;
 		}
@@ -175,7 +174,7 @@ SolutionContainer::iterator __full_chooser(SolutionContainer& solutions)
 }
 
 bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
-		const Solution& solution, const dg::Element* elementPtr) const
+		const PreparedSolution& solution, dg::Element element) const
 {
 	auto overrideIt = __auto_status_overrides.find(packageName);
 	if (overrideIt != __auto_status_overrides.end())
@@ -188,7 +187,7 @@ bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
 		return __cache->isAutomaticallyInstalled(packageName);
 	}
 
-	auto packageEntryPtr = solution.getPackageEntry(elementPtr);
+	auto packageEntryPtr = solution.getPackageEntry(element);
 	if (!packageEntryPtr)
 	{
 		fatal2i("native resolver: new package does not have a package entry");
@@ -201,11 +200,11 @@ bool NativeResolverImpl::p_computeTargetAutoStatus(const string& packageName,
 }
 
 AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
-		const Solution& solution, const dg::Element* elementPtr)
+		const PreparedSolution& solution, dg::Element element)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
-	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
+	auto versionVertex = dynamic_cast< const dg::VersionVertex* >(element);
 	if (!versionVertex)
 	{
 		return Allow::No;
@@ -220,57 +219,47 @@ AutoRemovalPossibility::Allow NativeResolverImpl::p_isCandidateForAutoRemoval(
 	}
 
 	return __auto_removal_possibility.isAllowed(version, __old_packages.count(packageName),
-			p_computeTargetAutoStatus(packageName, solution, elementPtr));
+			p_computeTargetAutoStatus(packageName, solution, element));
 }
 
-bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
+bool NativeResolverImpl::__clean_automatically_installed(PreparedSolution& solution)
 {
 	typedef AutoRemovalPossibility::Allow Allow;
 
-	map< const dg::Element*, Allow > isCandidateForAutoRemovalCache;
+	map< dg::Element, Allow > isCandidateForAutoRemovalCache;
 	auto isCandidateForAutoRemoval = [this, &solution, &isCandidateForAutoRemovalCache]
-			(const dg::Element* elementPtr) -> Allow
+			(dg::Element element) -> Allow
 	{
-		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert( { elementPtr, {}});
+		auto cacheInsertionResult = isCandidateForAutoRemovalCache.insert( { element, {}});
 		auto& answer = cacheInsertionResult.first->second;
 		if (cacheInsertionResult.second)
 		{
-			answer = p_isCandidateForAutoRemoval(solution, elementPtr);
+			answer = p_isCandidateForAutoRemoval(solution, element);
 		}
 		return answer;
 	};
 
-	Graph< const dg::Element* > dependencyGraph;
-	auto mainVertexPtr = dependencyGraph.addVertex(NULL);
-	const set< const dg::Element* >& vertices = dependencyGraph.getVertices();
+	Graph<dg::Element> dependencyGraph;
+	auto mainVertexPtr = dependencyGraph.addVertex(nullptr);
+	const set<dg::Element>& vertices = dependencyGraph.getVertices();
 	{ // building dependency graph
-		auto elementPtrs = solution.getElements();
-		FORIT(elementPtrIt, elementPtrs)
+		for (auto packageEntry: solution.getEntries())
 		{
-			dependencyGraph.addVertex(*elementPtrIt);
+			dependencyGraph.addVertex(packageEntry->element);
 		}
-		FORIT(elementPtrIt, vertices)
+		for (const auto& element: vertices)
 		{
-			if (!*elementPtrIt)
+			if (!element) continue; // main vertex
+
+			for (auto successorElement: __solution_storage->getSuccessorElements(element))
 			{
-				continue; // main vertex
-			}
-			const GraphCessorListType& successorElementPtrs =
-					__solution_storage->getSuccessorElements(*elementPtrIt);
-			FORIT(successorElementPtrIt, successorElementPtrs)
-			{
-				if ((*successorElementPtrIt)->isAnti())
-				{
-					continue;
-				}
-				const GraphCessorListType& successorSuccessorElementPtrs =
-						__solution_storage->getSuccessorElements(*successorElementPtrIt);
+				if (successorElement->isAnti()) continue;
 
 				bool allRightSidesAreAutomatic = true;
-				const dg::Element* const* candidateElementPtrPtr = NULL;
-				FORIT(successorSuccessorElementPtrIt, successorSuccessorElementPtrs)
+				const dg::Element* candidateElementPtr = nullptr;
+				for (auto successorSuccessorElement: __solution_storage->getSuccessorElements(successorElement))
 				{
-					auto it = vertices.find(*successorSuccessorElementPtrIt);
+					auto it = vertices.find(successorSuccessorElement);
 					if (it != vertices.end())
 					{
 						switch (isCandidateForAutoRemoval(*it))
@@ -279,49 +268,42 @@ bool NativeResolverImpl::__clean_automatically_installed(Solution& solution)
 								allRightSidesAreAutomatic = false;
 								break;
 							case Allow::YesIfNoRDepends:
-								dependencyGraph.addEdgeFromPointers(&*elementPtrIt, &*it);
+								dependencyGraph.addEdge(&element, &*it);
 							case Allow::Yes:
-								if (!candidateElementPtrPtr) // not found yet
+								if (!candidateElementPtr) // not found yet
 								{
-									candidateElementPtrPtr = &*it;
+									candidateElementPtr = &*it;
 								}
 								break;
 						}
 					}
 				}
-				if (allRightSidesAreAutomatic && candidateElementPtrPtr)
+				if (allRightSidesAreAutomatic && candidateElementPtr)
 				{
-					dependencyGraph.addEdgeFromPointers(&*elementPtrIt, candidateElementPtrPtr);
+					dependencyGraph.addEdge(&element, candidateElementPtr);
 				}
 			}
 
-			if (isCandidateForAutoRemoval(*elementPtrIt) == Allow::No)
+			if (isCandidateForAutoRemoval(element) == Allow::No)
 			{
-				dependencyGraph.addEdgeFromPointers(mainVertexPtr, &*elementPtrIt);
+				dependencyGraph.addEdge(mainVertexPtr, &element);
 			}
 		}
 	}
 
 	{ // looping through the candidates
-		bool debugging = __config->getBool("debug::resolver");
+		auto reachableElementPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
 
-		auto reachableElementPtrPtrs = dependencyGraph.getReachableFrom(*mainVertexPtr);
-
-		FORIT(elementPtrIt, vertices)
+		for (const auto& element: vertices)
 		{
-			if (!reachableElementPtrPtrs.count(&*elementPtrIt))
+			if (!reachableElementPtrs.count(&element))
 			{
-				auto emptyElementPtr = __solution_storage->getCorrespondingEmptyElement(*elementPtrIt);
-
-				PackageEntry packageEntry;
-				packageEntry.autoremoved = true;
-
-				if (debugging)
+				__solution_storage->setEmpty(solution, element);
+				if (p_debugging)
 				{
-					__mydebug_wrapper(solution, "auto-removed '%s'", (*elementPtrIt)->toString());
+					__mydebug_wrapper(solution, "auto-removed '%s'", element->toString());
 				}
-				__solution_storage->setPackageEntry(solution, emptyElementPtr,
-						std::move(packageEntry), *elementPtrIt, (size_t)-1);
+
 			}
 		}
 	}
@@ -350,43 +332,38 @@ SolutionChooser __select_solution_chooser(const Config& config)
 }
 
 /* __pre_apply_action only prints debug info and changes level/score of the
-   solution, not modifying packages in it, economing RAM and CPU,
-   __post_apply_action will perform actual changes when the solution is picked up
-   by resolver */
-
+   solution, not necessarily modifying packages in it, saving RAM and CPU */
 void NativeResolverImpl::__pre_apply_action(const Solution& originalSolution,
-		Solution& solution, unique_ptr< Action >&& actionToApply, size_t oldSolutionId)
+		Solution& solution, unique_ptr< Action >&& actionToApply,
+		size_t actionPosition, size_t oldSolutionId)
 {
-	if (originalSolution.finished)
+	if (originalSolution.isFinished())
 	{
 		fatal2i("an attempt to make changes to already finished solution");
 	}
 
 	auto oldElementPtr = actionToApply->oldElementPtr;
 	auto newElementPtr = actionToApply->newElementPtr;
-	const ScoreChange& profit = actionToApply->profit;
+	auto scoreChange = p_getScoreChange(oldElementPtr, newElementPtr, actionPosition);
 
-	if (__config->getBool("debug::resolver"))
+	if (p_debugging)
 	{
 		__mydebug_wrapper(originalSolution, oldSolutionId, "-> (%u,Δ:[%s]) trying: '%s' -> '%s'",
-				solution.id, __score_manager.getScoreChangeString(profit),
+				solution.id, __score_manager.getScoreChangeString(scoreChange),
 				oldElementPtr ? oldElementPtr->toString() : "", newElementPtr->toString());
 	}
 
-	solution.score += __score_manager.getScoreChangeValue(profit);
+	solution.score += __score_manager.getScoreChangeValue(scoreChange);
 
-	solution.pendingAction = std::forward< unique_ptr< Action >&& >(actionToApply);
+	__solution_storage->assignAction(solution, std::move(actionToApply));
 }
 
-void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& actions) const
+ScoreChange NativeResolverImpl::p_getScoreChange(
+		dg::Element oldElement, dg::Element newElement, size_t position) const
 {
-	auto getVersion = [](const dg::Element* elementPtr) -> const BinaryVersion*
+	auto getVersion = [](dg::Element element) -> const BinaryVersion*
 	{
-		if (!elementPtr)
-		{
-			return nullptr;
-		}
-		auto versionVertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
+		auto versionVertex = dynamic_cast< const dg::VersionVertex* >(element);
 		if (!versionVertex)
 		{
 			return nullptr;
@@ -394,56 +371,45 @@ void NativeResolverImpl::__calculate_profits(vector< unique_ptr< Action > >& act
 		return versionVertex->version;
 	};
 
-	size_t position = 0;
-	FORIT(actionIt, actions)
+	ScoreChange result;
+	switch (newElement->getUnsatisfiedType())
 	{
-		Action& action = **actionIt;
-
-		switch (action.newElementPtr->getUnsatisfiedType())
-		{
-			case dg::Unsatisfied::None:
-				action.profit = __score_manager.getVersionScoreChange(
-						getVersion(action.oldElementPtr), getVersion(action.newElementPtr));
-				break;
-			case dg::Unsatisfied::Recommends:
-				action.profit = __score_manager.getUnsatisfiedRecommendsScoreChange();
-				break;
-			case dg::Unsatisfied::Suggests:
-				action.profit = __score_manager.getUnsatisfiedSuggestsScoreChange();
-				break;
-			case dg::Unsatisfied::Sync:
-				action.profit = __score_manager.getUnsatisfiedSynchronizationScoreChange();
-				break;
-			case dg::Unsatisfied::Custom:
-				action.profit = __score_manager.getCustomUnsatisfiedScoreChange(action.newElementPtr->getUnsatisfiedImportance());
-				break;
-		}
-		action.profit.setPosition(position);
-		++position;
+		case dg::Unsatisfied::None:
+			result = __score_manager.getVersionScoreChange(getVersion(oldElement), getVersion(newElement));
+			break;
+		case dg::Unsatisfied::Recommends:
+			result = __score_manager.getUnsatisfiedRecommendsScoreChange();
+			break;
+		case dg::Unsatisfied::Suggests:
+			result = __score_manager.getUnsatisfiedSuggestsScoreChange();
+			break;
+		case dg::Unsatisfied::Sync:
+			result = __score_manager.getUnsatisfiedSynchronizationScoreChange();
+			break;
+		case dg::Unsatisfied::Custom:
+			result = __score_manager.getCustomUnsatisfiedScoreChange(newElement->getUnsatisfiedImportance());
+			break;
 	}
+	result.setPosition(position);
+
+	return result;
 }
 
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
-		const shared_ptr< Solution >& currentSolution, vector< unique_ptr< Action > >& actions)
+		const shared_ptr< PreparedSolution >& currentSolution, vector< unique_ptr< Action > >& actions)
 {
-	// sort them by "rank", from more good to more bad
-	std::stable_sort(actions.begin(), actions.end(),
-			[this](const unique_ptr< Action >& left, const unique_ptr< Action >& right) -> bool
-			{
-				return this->__score_manager.getScoreChangeValue(right->profit)
-						< this->__score_manager.getScoreChangeValue(left->profit);
-			});
-
 	// apply all the solutions by one
 	bool onlyOneAction = (actions.size() == 1);
 	auto oldSolutionId = currentSolution->id;
+	size_t position = 0;
 	FORIT(actionIt, actions)
 	{
 		auto newSolution = onlyOneAction ?
 				__solution_storage->fakeCloneSolution(currentSolution) :
 				__solution_storage->cloneSolution(currentSolution);
-		__pre_apply_action(*currentSolution, *newSolution, std::move(*actionIt), oldSolutionId);
+		__pre_apply_action(*currentSolution, *newSolution,
+				std::move(*actionIt), position++, oldSolutionId);
 		callback(newSolution);
 	}
 }
@@ -470,91 +436,66 @@ void __erase_worst_solutions(SolutionContainer& solutions,
 	}
 }
 
-void __post_apply_action(SolutionStorage& solutionStorage, Solution& solution)
+static bool isRelationMoreWide(const SolutionStorage& solutionStorage, const PreparedSolution& solution,
+		const GraphCessorListType& successorElementSuccessorElements, const GraphCessorListType& brokenElementSuccessorElements)
 {
-	if (!solution.pendingAction)
+	const auto& bese = brokenElementSuccessorElements;
+
+	for (auto element: successorElementSuccessorElements)
 	{
-		fatal2i("__post_apply_action: no action to apply");
-	}
-	const auto& action = *solution.pendingAction;
-
-	{ // process elements to reject
-		FORIT(elementPtrIt, action.elementsToReject)
+		dg::Element conflictingElement;
+		if (!solutionStorage.simulateSetPackageEntry(solution, element, &conflictingElement) &&
+				conflictingElement != element)
 		{
-			solutionStorage.setRejection(solution, *elementPtrIt, action.newElementPtr);
+			continue;
 		}
-	};
 
-	PackageEntry packageEntry;
-	packageEntry.sticked = true;
-	packageEntry.introducedBy = action.introducedBy;
-	solutionStorage.setPackageEntry(solution, action.newElementPtr,
-			std::move(packageEntry), action.oldElementPtr, action.brokenElementPriority+1);
-
-	solution.pendingAction.reset();
+		bool notFound = (std::find(bese.begin(), bese.end(), element) == bese.end());
+		if (notFound)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
-bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solution,
-		const dg::Element* candidateElementPtr, const dg::Element* brokenElementPtr,
-		bool debugging)
+bool NativeResolverImpl::__makes_sense_to_modify_package(const PreparedSolution& solution,
+		dg::Element candidateElement, dg::Element brokenElement)
 {
+	__solution_storage->unfoldElement(candidateElement);
 
-	__solution_storage->unfoldElement(candidateElementPtr);
-
-	const GraphCessorListType& successorElementPtrs =
-			__solution_storage->getSuccessorElements(candidateElementPtr);
-	FORIT(successorElementPtrIt, successorElementPtrs)
+	const auto& successorElements = __solution_storage->getSuccessorElements(candidateElement);
+	for (auto successorElement: successorElements)
 	{
-		if (*successorElementPtrIt == brokenElementPtr)
+		if (successorElement == brokenElement)
 		{
-			if (debugging)
+			if (p_debugging)
 			{
-				__mydebug_wrapper(solution, "not considering %s: it has the same problem",
-						candidateElementPtr->toString());
+				__mydebug_wrapper(solution, "not considering %s: it has the same problem", candidateElement->toString());
 			}
 			return false;
 		}
 	}
 
 	// let's try even harder to find if this candidate is really appropriate for us
-	auto brokenElementTypePriority = brokenElementPtr->getTypePriority();
-	const GraphCessorListType& brokenElementSuccessorElementPtrs =
-			__solution_storage->getSuccessorElements(brokenElementPtr);
-	FORIT(successorElementPtrIt, successorElementPtrs)
+	auto brokenElementTypePriority = brokenElement->getTypePriority();
+	const auto& brokenElementSuccessorElements = __solution_storage->getSuccessorElements(brokenElement);
+	for (auto successorElement: successorElements)
 	{
-		/* we check only successors with the same or bigger priority than
-		   currently broken one */
-		if ((*successorElementPtrIt)->getTypePriority() < brokenElementTypePriority)
+		// we check only successors with the same or bigger priority than currently broken one
+		if (successorElement->getTypePriority() < brokenElementTypePriority)
 		{
 			continue;
 		}
 		/* if any of such successors gives us equal or less "space" in
-		   terms of satisfying elements, the version won't be accepted as a
-		   resolution */
-		const GraphCessorListType& successorElementSuccessorElementPtrs =
-				__solution_storage->getSuccessorElements(*successorElementPtrIt);
-
-		bool isMoreWide = false;
-		FORIT(elementPtrIt, successorElementSuccessorElementPtrs)
+		   terms of satisfying elements, the version won't be accepted as a resolution */
+		if (!isRelationMoreWide(*__solution_storage, solution,
+					__solution_storage->getSuccessorElements(successorElement), brokenElementSuccessorElements))
 		{
-			bool notFound = (std::find(brokenElementSuccessorElementPtrs.begin(),
-					brokenElementSuccessorElementPtrs.end(), *elementPtrIt)
-					== brokenElementSuccessorElementPtrs.end());
-
-			if (notFound)
-			{
-				// more wide relation, can't say nothing bad with it at time being
-				isMoreWide = true;
-				break;
-			}
-		}
-
-		if (!isMoreWide)
-		{
-			if (debugging)
+			if (p_debugging)
 			{
 				__mydebug_wrapper(solution, "not considering %s: it contains equal or less wide relation expression '%s'",
-						candidateElementPtr->toString(), (*successorElementPtrIt)->toString());
+						candidateElement->toString(), successorElement->toString());
 			}
 			return false;
 		}
@@ -564,35 +505,26 @@ bool NativeResolverImpl::__makes_sense_to_modify_package(const Solution& solutio
 }
 
 void NativeResolverImpl::__add_actions_to_modify_package_entry(
-		vector< unique_ptr< Action > >& actions, const Solution& solution,
-		const dg::Element* versionElementPtr, const dg::Element* brokenElementPtr,
-		bool debugging)
+		vector< unique_ptr< Action > >& actions, const PreparedSolution& solution,
+		dg::Element versionElement, dg::Element brokenElement)
 {
-	auto versionPackageEntryPtr = solution.getPackageEntry(versionElementPtr);
+	auto versionPackageEntryPtr = solution.getPackageEntry(versionElement);
 	if (versionPackageEntryPtr->sticked)
 	{
 		return;
 	}
 
-	const forward_list< const dg::Element* >& conflictingElementPtrs =
-			__solution_storage->getConflictingElements(versionElementPtr);
-	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
+	for (auto conflictingElement: __solution_storage->getConflictingElements(versionElement))
 	{
-		if (*conflictingElementPtrIt == versionElementPtr)
-		{
-			continue;
-		}
-		if (!versionPackageEntryPtr->isModificationAllowed(*conflictingElementPtrIt))
-		{
-			continue;
-		}
-		if (__makes_sense_to_modify_package(solution, *conflictingElementPtrIt,
-				brokenElementPtr, debugging))
+		if (conflictingElement == versionElement) continue;
+		if (!versionPackageEntryPtr->isModificationAllowed(conflictingElement)) continue;
+
+		if (__makes_sense_to_modify_package(solution, conflictingElement, brokenElement))
 		{
 			// other version seems to be ok
 			unique_ptr< Action > action(new Action);
-			action->oldElementPtr = versionElementPtr;
-			action->newElementPtr = *conflictingElementPtrIt;
+			action->oldElementPtr = versionElement;
+			action->newElementPtr = conflictingElement;
 
 			actions.push_back(std::move(action));
 		}
@@ -600,19 +532,17 @@ void NativeResolverImpl::__add_actions_to_modify_package_entry(
 }
 
 void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Action > >& actions,
-		const Solution& solution, const dg::Element* brokenElementPtr)
+		const PreparedSolution& solution, dg::Element brokenElement)
 {
-	const GraphCessorListType& successorElementPtrs =
-			__solution_storage->getSuccessorElements(brokenElementPtr);
 	// install one of versions package needs
-	FORIT(successorElementPtrIt, successorElementPtrs)
+	for (auto successorElement: __solution_storage->getSuccessorElements(brokenElement))
 	{
-		const dg::Element* conflictingElementPtr;
-		if (__solution_storage->simulateSetPackageEntry(solution, *successorElementPtrIt, &conflictingElementPtr))
+		dg::Element conflictingElement;
+		if (__solution_storage->simulateSetPackageEntry(solution, successorElement, &conflictingElement))
 		{
 			unique_ptr< Action > action(new Action);
-			action->oldElementPtr = conflictingElementPtr;
-			action->newElementPtr = *successorElementPtrIt;
+			action->oldElementPtr = conflictingElement;
+			action->newElementPtr = successorElement;
 
 			actions.push_back(std::move(action));
 		}
@@ -621,50 +551,31 @@ void NativeResolverImpl::__add_actions_to_fix_dependency(vector< unique_ptr< Act
 
 void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > >& actions) const
 {
-	// each next action receives one more additional reject request to not
-	// interfere with all previous solutions
-	vector< const dg::Element* > elementPtrs;
-	FORIT(actionIt, actions)
-	{
-		(*actionIt)->elementsToReject = elementPtrs;
+	if (actions.size() <= 1) return;
 
-		elementPtrs.push_back((*actionIt)->newElementPtr);
-	}
-	for (auto& actionPtr: actions)
+	auto allNewElements = std::make_shared< vector<dg::Element> >();
+	allNewElements->reserve(actions.size());
+
+	for (const auto& action: actions)
 	{
-		if (actionPtr->newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
-		{
-			actionPtr->elementsToReject = elementPtrs; // all
-		}
-		else
-		{
-			const auto& uselessToRejectElements = SolutionStorage::getConflictingElements(actionPtr->newElementPtr);
-			auto deleteIt = std::remove_if(actionPtr->elementsToReject.begin(), actionPtr->elementsToReject.end(),
-					[&uselessToRejectElements](const dg::Element* elementPtr)
-					{
-						return std::find(uselessToRejectElements.begin(), uselessToRejectElements.end(), elementPtr) !=
-								uselessToRejectElements.end();
-					});
-			actionPtr->elementsToReject.erase(deleteIt, actionPtr->elementsToReject.end());
-		}
+		action->allActionNewElements = allNewElements;
+		allNewElements->push_back(action->newElementPtr);
 	}
 }
 
-void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
-		Resolver::SuggestedPackage& suggestedPackage,
-		const dg::Element* elementPtr, map< const dg::Element*, size_t >& reasonProcessingCache) const
+void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& solution,
+		Resolver::SuggestedPackage& suggestedPackage, dg::Element element) const
 {
 	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
 
-	auto fillReasonElements = [&suggestedPackage]
-			(const IntroducedBy&, const dg::Element* elementPtr)
+	auto fillReasonElements = [&suggestedPackage](const IntroducedBy&, dg::Element element)
 	{
-		auto versionVertex = static_cast< const dg::VersionVertex* >(elementPtr);
+		auto versionVertex = static_cast< const dg::VersionVertex* >(element);
 		suggestedPackage.reasonPackageNames.push_back(versionVertex->getPackageName());
 	};
 
-	auto packageEntryPtr = solution.getPackageEntry(elementPtr);
+	auto packageEntryPtr = solution.getPackageEntry(element);
 	if (packageEntryPtr->autoremoved)
 	{
 		suggestedPackage.reasons.push_back(autoRemovalReason);
@@ -675,23 +586,23 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const Solution& solution,
 		if (!introducedBy.empty())
 		{
 			suggestedPackage.reasons.push_back(introducedBy.getReason());
-			__solution_storage->processReasonElements(solution, reasonProcessingCache,
-					introducedBy, elementPtr, std::cref(fillReasonElements));
+			__solution_storage->processReasonElements(solution,
+					introducedBy, element, std::cref(fillReasonElements));
 		}
 	}
 }
 
 Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
-		const Solution& solution, Resolver::CallbackType callback, bool trackReasons)
+		const PreparedSolution& solution, Resolver::CallbackType callback, bool trackReasons)
 {
 	// build "user-frienly" version of solution
 	Resolver::Offer offer;
 	Resolver::SuggestedPackages& suggestedPackages = offer.suggestedPackages;
 
-	map< const dg::Element*, size_t > reasonProcessingCache;
-
-	for (auto elementPtr: solution.getElements())
+	for (auto packageEntry: solution.getEntries())
 	{
+		auto elementPtr = packageEntry->element;
+
 		auto vertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
 		if (vertex)
 		{
@@ -706,7 +617,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 			if (trackReasons)
 			{
-				__fillSuggestedPackageReasons(solution, suggestedPackage, elementPtr, reasonProcessingCache);
+				__fillSuggestedPackageReasons(solution, suggestedPackage, elementPtr);
 			}
 			suggestedPackage.automaticallyInstalledFlag = p_computeTargetAutoStatus(packageName, solution, elementPtr);
 		}
@@ -728,14 +639,13 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	}
 
 	// suggest found solution
-	bool debugging = __config->getBool("debug::resolver");
-	if (debugging)
+	if (p_debugging)
 	{
 		__mydebug_wrapper(solution, "proposing this solution");
 	}
 
 	auto userAnswer = callback(offer);
-	if (debugging)
+	if (p_debugging)
 	{
 		if (userAnswer == Resolver::UserAnswer::Accept)
 		{
@@ -752,18 +662,18 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 struct BrokenPair
 {
-	const dg::Element* versionElementPtr;
+	dg::Element versionElement;
 	BrokenSuccessor brokenSuccessor;
 };
 
 void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action > >* possibleActionsPtr,
-		const Solution& solution, const BrokenPair& bp, bool debugging)
+		const PreparedSolution& solution, const BrokenPair& bp)
 {
-	auto brokenElementPtr = bp.brokenSuccessor.elementPtr;
+	auto brokenElement = bp.brokenSuccessor.elementPtr;
 
-	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElementPtr);
+	__add_actions_to_fix_dependency(*possibleActionsPtr, solution, brokenElement);
 	__add_actions_to_modify_package_entry(*possibleActionsPtr, solution,
-			bp.versionElementPtr, brokenElementPtr, debugging);
+			bp.versionElement, brokenElement);
 
 	for (auto& action: *possibleActionsPtr)
 	{
@@ -771,10 +681,11 @@ void NativeResolverImpl::__generate_possible_actions(vector< unique_ptr< Action 
 	}
 }
 
-void NativeResolverImpl::__final_verify_solution(const Solution& solution)
+void NativeResolverImpl::__final_verify_solution(const PreparedSolution& solution)
 {
-	for (auto element: solution.getElements())
+	for (auto packageEntry: solution.getEntries())
 	{
+		auto element = packageEntry->element;
 		for (auto successorElement: __solution_storage->getSuccessorElements(element))
 		{
 			if (!__solution_storage->verifyElement(solution, successorElement))
@@ -787,9 +698,9 @@ void NativeResolverImpl::__final_verify_solution(const Solution& solution)
 }
 
 BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
-		const Solution& solution, const map< const dg::Element*, size_t >& failCounts)
+		const PreparedSolution& solution, const map< dg::Element, size_t >& failCounts)
 {
-	auto failValue = [&failCounts](const dg::Element* e) -> size_t
+	auto failValue = [&failCounts](dg::Element e) -> size_t
 	{
 		auto it = failCounts.find(e);
 		return it != failCounts.end() ? it->second : 0u;
@@ -830,54 +741,45 @@ BrokenPair __get_broken_pair(const SolutionStorage& solutionStorage,
 		return left.elementPtr->id < right.elementPtr->id;
 	};
 
-	const auto& brokenSuccessors = solution.getBrokenSuccessors();
-	auto bestBrokenSuccessorIt = std::max_element(
-			brokenSuccessors.begin(), brokenSuccessors.end(), compareBrokenSuccessors);
-	if (bestBrokenSuccessorIt == brokenSuccessors.end())
+	BrokenPair result = { nullptr, solution.getMaxBrokenSuccessor(compareBrokenSuccessors) };
+
+	if (result.brokenSuccessor.elementPtr)
 	{
-		return BrokenPair{ nullptr, { nullptr, 0 } };
-	}
-	BrokenPair result = { nullptr, *bestBrokenSuccessorIt };
-	for (auto reverseDependencyPtr: solutionStorage.getPredecessorElements(bestBrokenSuccessorIt->elementPtr))
-	{
-		if (solution.getPackageEntry(reverseDependencyPtr))
+		for (auto reverseDependency: solutionStorage.getPredecessorElements(result.brokenSuccessor.elementPtr))
 		{
-			if (!result.versionElementPtr || (result.versionElementPtr->id < reverseDependencyPtr->id))
+			if (solution.getPackageEntry(reverseDependency))
 			{
-				result.versionElementPtr = reverseDependencyPtr;
+				if (!result.versionElement || (result.versionElement->id < reverseDependency->id))
+				{
+					result.versionElement = reverseDependency;
+				}
 			}
 		}
-	}
-	if (!result.versionElementPtr)
-	{
-		fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s'",
-				bestBrokenSuccessorIt->elementPtr->toString());
+		if (!result.versionElement)
+		{
+			fatal2i("__get_broken_pair: no existing in the solution predecessors for the broken successor '%s', solution '%zu'",
+					result.brokenSuccessor.elementPtr->toString(), solution.id);
+		}
 	}
 
 	return result;
 }
 
-shared_ptr< Solution > __get_next_current_solution(
+shared_ptr< PreparedSolution > __get_next_current_solution(
 		SolutionContainer& solutions, SolutionStorage& solutionStorage, const SolutionChooser& chooser)
 {
 	auto currentSolutionIt = chooser(solutions);
 	shared_ptr< Solution > currentSolution = *currentSolutionIt;
 	solutions.erase(currentSolutionIt);
 
-	if (currentSolution->pendingAction)
-	{
-		currentSolution->prepare();
-		__post_apply_action(solutionStorage, *currentSolution);
-	}
-
-	return currentSolution;
+	return solutionStorage.prepareSolution(currentSolution);
 }
 
 void NativeResolverImpl::__fill_and_process_introduced_by(
-		const Solution& solution, const BrokenPair& bp, ActionContainer* actionsPtr)
+		const PreparedSolution& solution, const BrokenPair& bp, ActionContainer* actionsPtr)
 {
 	IntroducedBy ourIntroducedBy;
-	ourIntroducedBy.versionElementPtr = bp.versionElementPtr;
+	ourIntroducedBy.versionElementPtr = bp.versionElement;
 	ourIntroducedBy.brokenElementPtr = bp.brokenSuccessor.elementPtr;
 
 	if (actionsPtr->empty() && !__any_solution_was_found)
@@ -897,17 +799,16 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
 
-	const bool debugging = __config->getBool("debug::resolver");
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
 	bool thereWereSolutionsDropped = false;
 
-	if (debugging) debug2("started resolving");
+	if (p_debugging) debug2("started resolving");
 
 	__any_solution_was_found = false;
 	__decision_fail_tree.clear();
 
-	shared_ptr< Solution > initialSolution(new Solution);
+	auto initialSolution = std::make_shared< PreparedSolution >();
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
 	__solution_storage->prepareForResolving(*initialSolution, __old_packages, p_userRelationExpressions);
 
@@ -915,7 +816,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	// for each package entry 'count' will contain the number of failures
 	// during processing these packages
-	map< const dg::Element*, size_t > failCounts;
+	map< dg::Element, size_t > failCounts;
 
 	while (!solutions.empty())
 	{
@@ -923,18 +824,18 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
 
-		auto problemFound = [this, &failCounts, &possibleActions, &currentSolution, debugging]
+		auto problemFound = [this, &failCounts, &possibleActions, &currentSolution]
 		{
 			auto bp = __get_broken_pair(*__solution_storage, *currentSolution, failCounts);
-			if (!bp.versionElementPtr) return false;
+			if (!bp.versionElement) return false;
 
-			if (debugging)
+			if (p_debugging)
 			{
 				__mydebug_wrapper(*currentSolution, "problem (%zu:%zu): %s: %s",
 						bp.brokenSuccessor.elementPtr->getTypePriority(), bp.brokenSuccessor.priority,
-						bp.versionElementPtr->toString(), bp.brokenSuccessor.elementPtr->toString());
+						bp.versionElement->toString(), bp.brokenSuccessor.elementPtr->toString());
 			}
-			__generate_possible_actions(&possibleActions, *currentSolution, bp, debugging);
+			__generate_possible_actions(&possibleActions, *currentSolution, bp);
 			__fill_and_process_introduced_by(*currentSolution, bp, &possibleActions);
 
 			// mark package as failed one more time
@@ -948,7 +849,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			// if the solution was only just finished
 			if (!currentSolution->finished)
 			{
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "finished");
 				}
@@ -967,7 +868,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			// clean up automatically installed by resolver and now unneeded packages
 			if (!__clean_automatically_installed(*currentSolution))
 			{
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "auto-discarded");
 				}
@@ -1001,22 +902,20 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 			if (possibleActions.empty())
 			{
-				if (debugging)
+				if (p_debugging)
 				{
 					__mydebug_wrapper(*currentSolution, "no solutions");
 				}
 			}
 			else
 			{
-				__calculate_profits(possibleActions);
-
 				auto callback = [&solutions](const shared_ptr< Solution >& solution)
 				{
 					solutions.insert(solution);
 				};
 				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
 
-				__erase_worst_solutions(solutions, maxSolutionCount, debugging, thereWereSolutionsDropped);
+				__erase_worst_solutions(solutions, maxSolutionCount, p_debugging, thereWereSolutionsDropped);
 			}
 		}
 	}

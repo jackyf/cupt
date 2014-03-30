@@ -63,7 +63,7 @@ class CUPT_API File
 	File(const string& path, const char* mode, string& error);
 	File(File&&);
 	/// destructor
-	virtual ~File();
+	virtual ~File() noexcept(false);
 	/// reads new line
 	/**
 	 * Reads new line (that is, a sequence of characters which ends with newline

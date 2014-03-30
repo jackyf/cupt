@@ -1,4 +1,120 @@
-cupt (2.6.0~) UNRELEASED; urgency=low
+cupt (2.8.0~) UNRELEASED; urgency=low
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 04 Mar 2014 21:16:49 +0200
+
+cupt (2.7.2) unstable; urgency=low
+
+  * lib:
+    - system/resolvers/native:
+      - Branch filtering heuristics: fixed skipping sticked but satisfying
+        elements. This could lead to skipping some valid solutions.
+        This regression was introduced in 2.7.0.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 05 Mar 2014 21:05:37 +0200
+
+cupt (2.7.1) unstable; urgency=low
+
+  * lib:
+    - config:
+      - 'setScalar': for options from foreign families, save also their
+        normalized form if it's recognized/used. This regression was
+        introduced in 2.7.0. (Closes: #740141)
+  * doc:
+    - news:
+      - Filled for 2.7.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 01 Mar 2014 11:47:46 +0200
+
+cupt (2.7.0) unstable; urgency=low
+
+  * lib:
+    - Fixed not invoking std::terminate() when a pipe process fail.
+    - config:
+      - New option 'cupt::directory::configuration::pre'.
+      - 'setScalar': accept options from foreign families. They may be useful
+        for e.g. hooks.
+      - Option 'cupt::resolver::max-solution-count': increased default value
+        from 512 to 8192.
+    - system/resolvers/native:
+      - Reduced solution memory footprint.
+      - Reduced average CPU costs of postprocessing failed solutions.
+      - Apply some more heuristics to reject new solution tree branches early,
+        leading to from neglective/significant/major speed-ups depending on
+        the problem patterns.
+    - system/worker:
+      - 'changeSystem': for removal actions, change automatically installed
+        flag after the action, not before.
+      - 'changeSystem': support VERSION 3 of preinstall hooks. Thanks to
+         James McCoy for the format analysis.
+      - 'changeSystem': support for sending hook input to any file descriptor
+        hooks want. Thanks to James McCoy for the report. Together with an
+        entry above this (Closes: 725979)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 22 Feb 2014 15:51:56 +0200
+
+cupt (2.6.4) unstable; urgency=medium
+
+  * lib:
+    - system/worker:
+      - 'renameSnapshot': don't accept invalid snapshot names.
+      - Detect snapshot names having whitespace characters as invalid.
+      - 'updateReleaseAndIndexData': reimplemented needed subset of <future>.
+        Fixes FTBFS on armel. (Closes: #730974)
+  * debian:
+    - control:
+      - Bumped Standards-Version to 3.9.5, no changes needed.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 24 Dec 2013 20:59:30 +0200
+
+cupt (2.6.3) unstable; urgency=low
+
+  * lib:
+    - Standard-conformance fixes to be buildable by g++-4.8.
+  * build system:
+    - Removed the restriction to build only with g++-4.6.
+  * debian:
+    - control:
+      - Removed 'g++-4.6' from Build-Depends.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 22 Oct 2013 23:05:55 +0300
+
+cupt (2.6.2) unstable; urgency=low
+
+  * lib:
+    - system/worker:
+      - 'changeSystem': fixed forgetting some multiplied dependencies if some
+        not changed installed packages has a dependency on some changed
+        package through more than one relation expression. This regression
+        was introduced in 2.2.0~rc1.
+    - system/resolvers/native:
+      - Reduced a memory footprint of unprepared solutions a bit.
+  * debian:
+    - control:
+      - Bumped Standards-Version to 3.9.4, no changes needed.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 12 Oct 2013 17:51:10 +0300
+
+cupt (2.6.1) experimental; urgency=low
+
+  * debian:
+    - cupt.manpages:
+      - Fixed installing cupt_functionalselectors.7.
+    - cupt.install:
+      - Fixed installing all generated HTML pages.
+    - rules:
+      - Don't attempt to install logrotate script in binary-arch target. Fixes
+        FTBFS for binary-only builds.
+  * doc:
+    - cmakelists:
+      - Fixed installing all generated HTML pages to /usr/share, not only
+        tutorial one.
+      - Fixed not installing build artefacts of 'show-upgradeable' example.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 05 Oct 2013 15:57:19 +0300
+
+cupt (2.6.0) experimental; urgency=low
 
   * console:
     - Managing packages:
@@ -156,9 +272,13 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - man/cupt.1:
       - Fixed the typo: suffix -> prefix in the 'pkgnames' command.
         (Closes: #689518)
+  * scripts:
+    - bash_completion:
+      - Suppress standard error messages in invocations of 'cupt'.
   * debian:
     - control:
       - Bumped the library API version.
+      - New binary package 'libcupt-common'.
   * build system:
     - Specify OUTPUT_NAME property for targets. As a side effect this
       obsoletes the custom cupt.bin install statement which prevented 'make
@@ -166,7 +286,26 @@ cupt (2.6.0~) UNRELEASED; urgency=low
     - doc:
       - Fixed 'make install' for out-of-tree builds.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 08 Apr 2012 10:59:48 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 30 Sep 2013 21:45:27 +0300
+
+cupt (2.5.11) unstable; urgency=low
+
+  * doc:
+    - man/cupt.conf.5:
+      - Fixed '--no-auto-remove' reference syntax. Fixes building with recent
+        pod2man. (Closes: #724133)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 27 Sep 2013 18:31:59 +0300
+
+cupt (2.5.10) unstable; urgency=low
+
+  * lib:
+    - download/manager:
+      - Avoid memory allocations in a signal handler when sending internal
+        pings. This could hang the download manager. Many thanks to
+        James McCoy for the final analysis. (Closes: #710239)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 25 Jun 2013 20:57:51 +0300
 
 cupt (2.5.9) unstable; urgency=low
 

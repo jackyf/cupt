@@ -31,6 +31,8 @@
 #include <internal/worker/packages.hpp>
 #include <internal/worker/dpkg.hpp>
 
+#include <unistd.h>
+
 namespace cupt {
 namespace internal {
 
@@ -263,7 +265,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 
 	auto addBasicEdge = [&gaa](const InnerAction* fromPtr, const InnerAction* toPtr)
 	{
-		gaa.graph.addEdgeFromPointers(fromPtr, toPtr);
+		gaa.graph.addEdge(fromPtr, toPtr);
 		gaa.attributes[make_pair(fromPtr, toPtr)].isFundamental = true;
 	};
 
@@ -400,34 +402,7 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			auto masterActionPtr = (direction == Direction::After ? currentActionPtr : gi.innerActionPtr);
 			auto slaveActionPtr = (direction == Direction::After ? gi.innerActionPtr : currentActionPtr);
 
-			// commented, because of #582423
-			/* bool replacesFound = false;
-			if (dependencyType == BinaryVersion::RelationTypes::Conflicts)
-			{
-				// this is Conflicts, in the case there are appropriate
-				// Replaces, the 'remove before' action dependency should not be created
-				const RelationLine& replaces = masterAction.version->relations[BinaryVersion::RelationTypes::Replaces];
-				FORIT(replacesRelationExpressionIt, replaces)
-				{
-					auto replacesSatisfyingVersions = cache->getSatisfyingVersions(*replacesRelationExpressionIt);
-
-					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), slaveAction.version);
-					if (std::find_if(replacesSatisfyingVersions.begin(), replacesSatisfyingVersions.end(),
-							predicate) != replacesSatisfyingVersions.end())
-					{
-						// yes, found Replaces, skip this action
-						replacesFound = true;
-						break;
-					}
-				}
-			}
-			if (replacesFound)
-			{
-				continue;
-			}
-			*/
-
-			gi.gaaPtr->graph.addEdgeFromPointers(slaveActionPtr, masterActionPtr);
+			gi.gaaPtr->graph.addEdge(slaveActionPtr, masterActionPtr);
 
 			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
 			// adding relation to attributes
@@ -574,21 +549,21 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	return virtualEdges;
 }
 
-bool __share_relation_expression(const GraphAndAttributes::Attribute& left,
-		const GraphAndAttributes::Attribute& right)
+const GraphAndAttributes::RelationInfoRecord* __get_shared_relation_info_record(
+		const GraphAndAttributes::Attribute& left, const GraphAndAttributes::Attribute& right)
 {
-	FORIT(leftRelationRecordIt, left.relationInfo)
+	for (const auto& leftRelationRecord: left.relationInfo)
 	{
-		FORIT(rightRelationRecordIt, right.relationInfo)
+		for (const auto& rightRelationRecord: right.relationInfo)
 		{
-			if (leftRelationRecordIt->dependencyType == rightRelationRecordIt->dependencyType &&
-					leftRelationRecordIt->relationExpression == rightRelationRecordIt->relationExpression)
+			if (leftRelationRecord.dependencyType == rightRelationRecord.dependencyType &&
+					leftRelationRecord.relationExpression == rightRelationRecord.relationExpression)
 			{
-				return true;
+				return &leftRelationRecord;
 			}
 		}
 	}
-	return false;
+	return nullptr;
 }
 
 void __for_each_package_sequence(const Graph< InnerAction >& graph,
@@ -603,7 +578,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
 
-			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& predecessors = graph.getPredecessors(&*innerActionIt);
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
@@ -614,7 +589,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 				}
 			}
 
-			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& successors = graph.getSuccessors(&*innerActionIt);
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
@@ -656,7 +631,7 @@ void __move_edge(GraphAndAttributes& gaa,
 	// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' should be deleted
 	// manually after the call of this function
 
-	gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
+	gaa.graph.addEdge(toPredecessorPtr, toSuccessorPtr);
 };
 
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
@@ -669,35 +644,37 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
-		const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
-		FORIT(predecessorVertexPtrIt, predecessors)
+		const auto& predecessors = gaa.graph.getPredecessors(fromPtr);
+		const auto& successors = gaa.graph.getSuccessors(toPtr);
+		for (auto predecessor: predecessors)
 		{
-			FORIT(successorVertexPtrIt, successors)
+			for (auto successor: successors)
 			{
-				if (*predecessorVertexPtrIt == *successorVertexPtrIt)
-				{
-					continue;
-				}
-				if (!__share_relation_expression(
-							gaa.attributes[make_pair(*predecessorVertexPtrIt, fromPtr)],
-							gaa.attributes[make_pair(toPtr, *successorVertexPtrIt)]))
-				{
-					continue;
-				}
+				if (predecessor == successor) continue;
 
-				__move_edge(gaa, *predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
-				__move_edge(gaa, toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
+				auto sharedRir = __get_shared_relation_info_record(
+						gaa.attributes[make_pair(predecessor, fromPtr)],
+						gaa.attributes[make_pair(toPtr, successor)]);
+				if (!sharedRir) continue;
+
+				gaa.graph.addEdge(predecessor, successor);
+				gaa.attributes[make_pair(predecessor, successor)].relationInfo.push_back(*sharedRir);
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
 					debug2("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
-							(*predecessorVertexPtrIt)->toString(), (*successorVertexPtrIt)->toString(), mediatorPackageName);
+							predecessor->toString(), successor->toString(), mediatorPackageName);
 				}
-
 			}
 		}
-
+		for (auto predecessor: predecessors)
+		{
+			gaa.attributes.erase(make_pair(predecessor, fromPtr));
+		}
+		for (auto successor: successors)
+		{
+			gaa.attributes.erase(make_pair(toPtr, successor));
+		}
 		gaa.graph.deleteVertex(*fromPtr);
 		gaa.graph.deleteVertex(*toPtr);
 	}
@@ -752,7 +729,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		setVirtual(fromAttribute);
 		__move_edge(gaa, fromPredecessorPtr, fromSuccessorPtr, toPredecessorPtr, toSuccessorPtr, debugging);
 
-		gaa.graph.deleteEdgeFromPointers(fromPredecessorPtr, fromSuccessorPtr);
+		gaa.graph.deleteEdge(fromPredecessorPtr, fromSuccessorPtr);
 		if (debugging)
 		{
 			debug2("deleting the edge '%s' -> '%s'",
@@ -772,7 +749,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					return; // this chain is not fully linked
 				}
 
-				const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr); // copying
+				const GraphCessorListType predecessors = gaa.graph.getPredecessors(fromPtr); // copying
 				FORIT(predecessorPtrIt, predecessors)
 				{
 					if (*predecessorPtrIt == toPtr)
@@ -786,7 +763,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					}
 				}
 
-				const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+				const GraphCessorListType successors = gaa.graph.getSuccessors(toPtr);
 				FORIT(successorPtrIt, successors)
 				{
 					if (*successorPtrIt == fromPtr)
@@ -836,7 +813,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr,
 			const InnerAction* unpackActionPtr)
 	{
-		if (gaa.graph.hasEdgeFromPointers(toPtr, fromPtr))
+		if (gaa.graph.hasEdge(toPtr, fromPtr))
 		{
 			return;
 		}
@@ -854,7 +831,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
 		FORIT(actionPtrIt, notFirstActions)
 		{
-			const GraphCessorListType& predecessors = gaa.graph.getPredecessorsFromPointer(*actionPtrIt);
+			const GraphCessorListType& predecessors = gaa.graph.getPredecessors(*actionPtrIt);
 			FORIT(predecessorIt, predecessors)
 			{
 				if (!reachableFromVertices.count(*predecessorIt))
@@ -862,7 +839,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 					// the fact we reached here means:
 					// 1) predecessorIt does not belong to a chain being adjusted
 					// 2) link 'predecessor' -> 'from' does not create a cycle
-					gaa.graph.addEdgeFromPointers(*predecessorIt, fromPtr);
+					gaa.graph.addEdge(*predecessorIt, fromPtr);
 					if (debugging)
 					{
 						debug2("setting priority link: '%s' -> '%s'",
@@ -937,7 +914,7 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 				{
 					debug2("new link: '%s' -> '%s'", fromPtr->toString(), toPtr->toString());
 				}
-				gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+				gaa.graph.addEdge(toPtr, fromPtr);
 			}
 		}
 	};
@@ -1027,7 +1004,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 				[&gaa](const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 				{
 					// priority edge for shorting distance between package subactions
-					gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+					gaa.graph.addEdge(toPtr, fromPtr);
 				});
 		__fill_graph_dependencies(_cache, gaa, debugging);
 		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
@@ -1108,7 +1085,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			auto newFromPtr = &*it;
 			auto oldFromPtr = gaa.graph.addVertex(*newFromPtr);
 
-			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
+			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessors(oldFromPtr);
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;
@@ -1132,7 +1109,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 					}
 					else
 					{
-						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+						miniGaa.graph.addEdge(newFromPtr, newToPtr);
 						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
 						if (debugging)
 						{
@@ -1170,7 +1147,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 
 						if (ignoring)
 						{
-							miniGaa.graph.addEdgeFromPointers(newPotentialFromPtr, newPotentialToPtr);
+							miniGaa.graph.addEdge(newPotentialFromPtr, newPotentialToPtr);
 							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] = potentialEdgeAttribute;
 						}
 						else
@@ -1658,7 +1635,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 	return changesets;
 }
 
-void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& commandInput)
+void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const CommandInput& commandInput)
 {
 	auto errorId = format2(__("dpkg '%s' action '%s'"), flavor, command);
 	_run_external_command(Logger::Subsystem::Packages, command, commandInput, errorId);
@@ -1701,115 +1678,167 @@ void PackagesWorker::__do_dpkg_pre_actions()
 	auto commands = _config->getList("dpkg::pre-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("pre", *commandIt, "");
+		__run_dpkg_command("pre", *commandIt, {});
 	}
 }
 
-string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
-		const vector< InnerActionGroup >& actionGroups)
+string PackagesWorker::p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>& actionGroups)
 {
-	// all hate undocumented formats...
-	string result = "VERSION 2\n";
-
-	{ // writing out a configuration
-		auto printKeyValue = [&result](const string& key, const string& value)
-		{
-			if (!value.empty())
-			{
-				result += (key + "=" + value + "\n");
-			}
-		};
-
-		{
-			auto regularKeys = _config->getScalarOptionNames();
-			FORIT(keyIt, regularKeys)
-			{
-				printKeyValue(*keyIt, _config->getString(*keyIt));
-			}
-		}
-		{
-			auto listKeys = _config->getListOptionNames();
-			FORIT(keyIt, listKeys)
-			{
-				const string& key = *keyIt;
-				auto values = _config->getList(key);
-				FORIT(valueIt, values)
-				{
-					printKeyValue(key + "::", *valueIt);
-				}
-			}
-		}
-
-		result += "\n";
-	}
+	string result;
 
 	auto archivesDirectory = _get_archives_directory();
-	FORIT(actionGroupIt, actionGroups)
+	// new debs are pulled to command through STDIN, one by line
+	for (const auto& actionGroup: actionGroups)
 	{
-		FORIT(actionIt, *actionGroupIt)
+		for (const auto& action: actionGroup)
 		{
-			auto actionType = actionIt->type;
-			const auto& version = actionIt->version;
-			string path;
-			switch (actionType)
+			if (action.type == InnerAction::Unpack)
 			{
-				case InnerAction::Configure:
-				{
-					path = "**CONFIGURE**";
-				}
-				break;
-				case InnerAction::Remove:
-				{
-					path = "**REMOVE**";
-				}
-				break;
-				case InnerAction::Unpack:
-				{
-					path = archivesDirectory + "/" + _get_archive_basename(version);
-				}
+				auto debPath = archivesDirectory + "/" + _get_archive_basename(action.version);
+				result += debPath;
+				result += "\n";
 			}
+		}
+	}
+
+	return result;
+}
+
+static string writeOutConfiguration(const Config& config)
+{
+	string result;
+
+	auto printKeyValue = [&result](const string& key, const string& value)
+	{
+		if (!value.empty())
+		{
+			result += (key + "=" + value + "\n");
+		}
+	};
+
+	// apt-listbugs wants it case-sensitively
+	printKeyValue("APT::Architecture", config.getString("apt::architecture"));
+
+	for (const string& key: config.getScalarOptionNames())
+	{
+		printKeyValue(key, config.getString(key));
+	}
+	for (const string& key: config.getListOptionNames())
+	{
+		for (const string& value: config.getList(key))
+		{
+			printKeyValue(key + "::", value);
+		}
+	}
+	result += "\n";
+
+	return result;
+}
+
+static inline string getActionForPreinstallPackagesHook(InnerAction::Type actionType)
+{
+	switch (actionType)
+	{
+		case InnerAction::Configure:
+			return "**CONFIGURE**";
+		case InnerAction::Remove:
+			return "**REMOVE**";
+		case InnerAction::Unpack:
+			return string();
+		default:
+			fatal2i("worker: packages: getActionForPreinstallPackagesHook: invalid actionType");
+			return string();
+	}
+}
+
+static string getCompareVersionStringsSignForPreinstallPackagesHook(
+		const string& oldVersionString, const string& newVersionString)
+{
+	if (oldVersionString == "-")
+	{
+		return "<";
+	}
+	else if (newVersionString == "-")
+	{
+		return ">";
+	}
+	else
+	{
+		auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
+		if (comparisonResult < 0)
+		{
+			return "<";
+		}
+		else if (comparisonResult == 0)
+		{
+			return "=";
+		}
+		else
+		{
+			return ">";
+		}
+	}
+}
+
+static string getOldVersionString(const BinaryPackage* oldPackage)
+{
+	string result = "-";
+
+	if (oldPackage)
+	{
+		if (auto installedVersion = oldPackage->getInstalledVersion())
+		{
+			result = installedVersion->versionString;
+		}
+	}
+
+	return result;
+}
+
+string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(
+		const vector<InnerActionGroup>& actionGroups, bool v3)
+{
+	// all hate undocumented formats...
+	string result = format2("VERSION %zu\n", size_t(v3 ? 3 : 2));
+
+	result += writeOutConfiguration(*_config);
+
+	auto writeOutVersionString = [v3](const string& versionString, const BinaryVersion* version)
+	{
+		if (v3)
+		{
+			return format2("%s %s -", versionString, version->architecture);
+		}
+		else
+		{
+			return versionString;
+		}
+	};
+
+	auto archivesDirectory = _get_archives_directory();
+	for (const auto& actionGroup: actionGroups)
+	{
+		for (const auto& action: actionGroup)
+		{
+			const auto& version = action.version;
+
+			string path = getActionForPreinstallPackagesHook(action.type);
+			if (path.empty())
+			{
+				path = archivesDirectory + "/" + _get_archive_basename(version);
+			}
+
 			const string& packageName = version->packageName;
 
-			string oldVersionString = "-";
-			auto oldPackage = _cache->getBinaryPackage(packageName);
-			if (oldPackage)
-			{
-				auto installedVersion = oldPackage->getInstalledVersion();
-				if (installedVersion)
-				{
-					oldVersionString = installedVersion->versionString;
-				}
-			}
-			string newVersionString = (actionType == InnerAction::Remove ? "-" : version->versionString);
+			string oldVersionString = getOldVersionString(_cache->getBinaryPackage(packageName));
+			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
 
-			string compareVersionStringsSign;
-			if (oldVersionString == "-")
-			{
-				compareVersionStringsSign = "<";
-			}
-			else if (newVersionString == "-")
-			{
-				compareVersionStringsSign = ">";
-			}
-			else
-			{
-				auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
-				if (comparisonResult < 0)
-				{
-					compareVersionStringsSign = "<";
-				}
-				else if (comparisonResult == 0)
-				{
-					compareVersionStringsSign = "=";
-				}
-				else
-				{
-					compareVersionStringsSign = ">";
-				}
-			}
-
-			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
-					compareVersionStringsSign, newVersionString, path);
+			result += format2("%s %s %s %s %s\n",
+					packageName,
+					writeOutVersionString(oldVersionString, version),
+					getCompareVersionStringsSignForPreinstallPackagesHook(oldVersionString, newVersionString),
+					writeOutVersionString(newVersionString, version),
+					path);
 		}
 	}
 
@@ -1819,52 +1848,50 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 	return result;
 }
 
+static string getCommandBinaryForPreInstallPackagesHook(const string& command)
+{
+	string commandBinary = command;
+
+	auto spaceOffset = commandBinary.find(' ');
+	if (spaceOffset != string::npos)
+	{
+		commandBinary.resize(spaceOffset);
+	}
+
+	return commandBinary;
+}
+
 void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGroup >& actionGroups)
 {
 	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-install-packages hooks");
 
-	auto archivesDirectory = _get_archives_directory();
-	auto commands = _config->getList("dpkg::pre-install-pkgs");
-	FORIT(commandIt, commands)
+	for (const string& command: _config->getList("dpkg::pre-install-pkgs"))
 	{
-		string command = *commandIt;
-		string commandBinary = command;
-
-		auto spaceOffset = commandBinary.find(' ');
-		if (spaceOffset != string::npos)
-		{
-			commandBinary.resize(spaceOffset);
-		}
-
-		string commandInput;
-		auto versionOfInput = _config->getInteger(
-				string("dpkg::tools::options::") + commandBinary + "::version");
-		if (versionOfInput == 2)
-		{
-			commandInput = __generate_input_for_preinstall_v2_hooks(actionGroups);
-		}
-		else
-		{
-			// new debs are pulled to command through STDIN, one by line
-			FORIT(actionGroupIt, actionGroups)
-			{
-				FORIT(actionIt, *actionGroupIt)
-				{
-					if (actionIt->type == InnerAction::Unpack)
-					{
-						auto debPath = archivesDirectory + "/" + _get_archive_basename(actionIt->version);
-						commandInput += debPath;
-						commandInput += "\n";
-					}
-				}
-			}
-			if (commandInput.empty())
-			{
-				continue;
-			}
-		}
+		auto commandInput = p_getCommandInputForPreinstallPackagesHook(command, actionGroups);
+		if (commandInput.buffer.empty()) continue;
+		setenv("APT_HOOK_INFO_FD", std::to_string(commandInput.fd).c_str(), 1);
 
 		__run_dpkg_command("pre", command, commandInput);
+	}
+}
+
+CommandInput PackagesWorker::p_getCommandInputForPreinstallPackagesHook(
+		const string& command, const vector<InnerActionGroup>& actionGroups)
+{
+	string commandBinary = getCommandBinaryForPreInstallPackagesHook(command);
+
+	auto hookOptionNamePrefix = string("dpkg::tools::options::") + commandBinary;
+	auto versionOfInput = _config->getInteger(hookOptionNamePrefix+"::version");
+
+	if (versionOfInput == 2 || versionOfInput == 3)
+	{
+		CommandInput ci = p_generateInputForPreinstallV2OrV3Hooks(actionGroups, versionOfInput==3);
+		ci.fd = _config->getInteger(hookOptionNamePrefix+"::infofd");
+		return ci;
+	}
+	else
+	{
+		return p_generateInputForPreinstallV1Hooks(actionGroups);
 	}
 }
 
@@ -1875,7 +1902,7 @@ void PackagesWorker::__do_dpkg_post_actions()
 	auto commands = _config->getList("dpkg::post-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("post", *commandIt, "");
+		__run_dpkg_command("post", *commandIt, {});
 	}
 }
 
@@ -2021,6 +2048,19 @@ void PackagesWorker::__do_independent_auto_status_changes()
 	}
 }
 
+void PackagesWorker::p_processActionGroup(Dpkg& dpkg, const InnerActionGroup& actionGroup)
+{
+	if (actionGroup.getCompoundActionType() != InnerAction::Remove)
+	{
+		__change_auto_status(actionGroup);
+	}
+	dpkg.doActionGroup(actionGroup, *__actions_preview);
+	if (actionGroup.getCompoundActionType() == InnerAction::Remove)
+	{
+		__change_auto_status(actionGroup);
+	}
+}
+
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
 {
 	auto debugging = _config->getBool("debug::worker");
@@ -2068,8 +2108,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 			__do_dpkg_pre_packages_actions(changeset.actionGroups);
 			for (const auto& actionGroup: changeset.actionGroups)
 			{
-				__change_auto_status(actionGroup);
-				dpkg.doActionGroup(actionGroup, *__actions_preview);
+				p_processActionGroup(dpkg, actionGroup);
 			}
 			if (archivesSpaceLimit) __clean_downloads(changeset);
 			if (debugging) debug2("finished changeset");

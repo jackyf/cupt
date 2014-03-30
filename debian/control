@@ -1,29 +1,31 @@
 Source: cupt
 Section: admin
 Priority: optional
-Build-Depends: debhelper (>= 7.4.10), g++-4.6,
+Build-Depends: debhelper (>= 7.4.10),
   libboost-program-options-dev (>= 1.42), libboost-dev (>= 1.42),
   libreadline6-dev, chrpath, libcurl4-gnutls-dev (>= 7.19.4),
   cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags, gettext
 Maintainer: Cupt developers <cupt-devel@lists.alioth.debian.org>
 Uploaders: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.9.3
+Standards-Version: 3.9.5
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
 Package: cupt-dbg
+Section: debug
+Priority: extra
 Architecture: any
 Depends: libcupt3-0 (= ${binary:Version}) | cupt (= ${binary:Version}) |
  libcupt3-0-downloadmethod-curl (= ${binary:Version}) |
- libcupt3-0-downloadmethod-wget (= ${binary:Version})
+ libcupt3-0-downloadmethod-wget (= ${binary:Version}),
+ ${misc:Depends}
 Description: alternative front-end for dpkg -- debugging symbols
  This package contains gdb debugging symbols for the Cupt packages.
 
 Package: libcupt3-0
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Conflicts: libcupt2-0
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt-common (>= ${source:Version})
 Breaks: debdelta (<< 0.31)
 Recommends: libcupt3-0-downloadmethod-curl | libcupt3-0-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
@@ -42,6 +44,16 @@ Description: alternative front-end for dpkg -- runtime library
   - worker for modifying system state.
  .
  See also description of 'cupt' package for more information.
+
+Package: libcupt-common
+Architecture: all
+Depends: ${misc:Depends}
+Conflicts: libcupt2-0
+Replaces: libcupt2-0
+Description: alternative front-end for dpkg -- runtime library (support files)
+ This package provides architecture-independent support parts for Cupt library.
+ .
+ See also description of libcupt3-0 package.
 
 Package: libcupt3-dev
 Section: libdevel

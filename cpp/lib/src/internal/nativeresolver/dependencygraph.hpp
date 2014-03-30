@@ -54,7 +54,7 @@ struct Unsatisfied
 };
 
 struct BasicVertex;
-typedef BasicVertex Element;
+typedef const BasicVertex* Element;
 struct BasicVertex
 {
  private:
@@ -65,10 +65,11 @@ struct BasicVertex
 	virtual size_t getTypePriority() const;
 	virtual shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	virtual bool isAnti() const;
-	virtual const forward_list< const Element* >* getRelatedElements() const;
+	virtual const forward_list<Element>* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
 	virtual const RequestImportance& getUnsatisfiedImportance() const;
 	virtual bool asAuto() const;
+	virtual Element getFamilyKey() const;
 
 	BasicVertex();
 	virtual ~BasicVertex();
@@ -76,17 +77,19 @@ struct BasicVertex
 struct VersionVertex: public BasicVertex
 {
  private:
-	const map< string, forward_list< const Element* > >::iterator __related_element_ptrs_it;
+	typedef map< string, pair< forward_list<Element>, Element > > FamilyMap;
+	const FamilyMap::iterator __related_element_ptrs_it;
  public:
 	const BinaryVersion* version;
 
-	VersionVertex(const map< string, forward_list< const Element* > >::iterator&);
+	VersionVertex(const FamilyMap::iterator&);
 	string toString() const;
-	const forward_list< const Element* >* getRelatedElements() const;
+	const forward_list<Element>* getRelatedElements() const;
 	const string& getPackageName() const;
 	string toLocalizedString() const;
+	Element getFamilyKey() const;
 };
-typedef VersionVertex VersionElement;
+typedef const VersionVertex* VersionElement;
 
 namespace {
 
@@ -102,7 +105,7 @@ struct PointeredAlreadyTraits
 
 }
 
-class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
+class DependencyGraph: protected Graph< Element, PointeredAlreadyTraits >
 {
 	const Config& __config;
 	const Cache& __cache;
@@ -112,22 +115,22 @@ class DependencyGraph: protected Graph< const Element*, PointeredAlreadyTraits >
 
 	std::unique_ptr< FillHelper > __fill_helper;
 
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
+	vector< pair< Element, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
 			const map< string, const BinaryVersion* >&);
  public:
-	typedef Graph< const Element*, PointeredAlreadyTraits > BaseT;
+	typedef Graph< Element, PointeredAlreadyTraits > BaseT;
 
 	DependencyGraph(const Config& config, const Cache& cache);
 	~DependencyGraph();
-	vector< pair< const Element*, shared_ptr< const PackageEntry > > > fill(
+	vector< pair< Element, shared_ptr< const PackageEntry > > > fill(
 			const map< string, const BinaryVersion* >&);
 	void addUserRelationExpression(const UserRelationExpression&);
 
-	const Element* getCorrespondingEmptyElement(const Element*);
-	void unfoldElement(const Element*);
+	Element getCorrespondingEmptyElement(Element);
+	void unfoldElement(Element);
 
-	using BaseT::getSuccessorsFromPointer;
-	using BaseT::getPredecessorsFromPointer;
+	using BaseT::getSuccessors;
+	using BaseT::getPredecessors;
 	using BaseT::CessorListType;
 };
 

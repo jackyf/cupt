@@ -30,6 +30,7 @@ struct PipeData
 	int* usedFdPtr;
 	string name;
 
+	void setCloseOnExecFlags(int pipeFdPair[2], size_t);
 	void close(int);
 };
 
@@ -41,7 +42,28 @@ void PipeData::close(int fd)
 	}
 }
 
-Pipe::Pipe(const string& name_)
+void PipeData::setCloseOnExecFlags(int pipeFdPair[2], size_t closeOnExecMask)
+{
+	// setting FD_CLOEXEC flags
+	for (size_t i = 0; i < 2; ++i)
+	{
+		if (!((i+1) & closeOnExecMask)) continue;
+
+		int fd = pipeFdPair[i];
+
+		int oldFdFlags = fcntl(fd, F_GETFD);
+		if (oldFdFlags < 0)
+		{
+			fatal2e(__("unable to create the '%s' pipe: unable to get file descriptor flags"), name);
+		}
+		if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
+		{
+			fatal2e(__("unable to create the '%s' pipe: unable to set the close-on-exec flag"), name);
+		}
+	}
+}
+
+Pipe::Pipe(const string& name_, bool leaveReaderOpenOnExec)
 	: __data(new internal::PipeData)
 {
 	__data->usedFdPtr = NULL;
@@ -52,20 +74,7 @@ Pipe::Pipe(const string& name_)
 		fatal2e(__("unable to create the '%s' pipe"), __data->name);
 	}
 
-	// setting FD_CLOEXEC flags
-	for (size_t i = 0; i < 2; ++i)
-	{
-		int fd = pipeFdPair[i];
-		int oldFdFlags = fcntl(fd, F_GETFD);
-		if (oldFdFlags < 0)
-		{
-			fatal2e(__("unable to create the '%s' pipe: unable to get file descriptor flags"), __data->name);
-		}
-		if (fcntl(fd, F_SETFD, oldFdFlags | FD_CLOEXEC) == -1)
-		{
-			fatal2e(__("unable to create the '%s' pipe: unable to set the close-on-exec flag"), __data->name);
-		}
-	}
+	__data->setCloseOnExecFlags(pipeFdPair, leaveReaderOpenOnExec?2:3);
 
 	__data->inputFd = pipeFdPair[0];
 	__data->outputFd = pipeFdPair[1];

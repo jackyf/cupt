@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2011 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2014 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,42 +15,38 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#ifndef CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
-#define CUPT_INTERNAL_NATIVERESOLVER_DECISIONFAILTREE_SEEN
-
-#include <list>
-
-#include <internal/nativeresolver/solution.hpp>
-#include <internal/graph.hpp>
+#ifndef CUPT_COW_MAP_SEEN
+#define CUPT_COW_MAP_SEEN
 
 namespace cupt {
 namespace internal {
 
-using std::unique_ptr;
-
-class DecisionFailTree
+template < typename KeyT, typename MapT >
+class CowMap
 {
-	struct Decision
-	{
-		IntroducedBy introducedBy;
-		size_t level;
-		dg::Element insertedElementPtr;
-	};
-	struct FailItem
-	{
-		vector< dg::Element > insertedElements;
-		vector< Decision > decisions;
-	};
-	std::list< FailItem > __fail_items;
+	const MapT* p_initial;
+	shared_ptr< const MapT > p_master;
+	shared_ptr< MapT > p_added;
 
-	static string __decisions_to_string(const vector< Decision >&);
-	static vector< Decision > __get_decisions(
-			const SolutionStorage& solutionStorage, const PreparedSolution& solution, const IntroducedBy&);
-	static bool __is_dominant(const FailItem&, dg::Element);
+	CowMap(const CowMap&) = delete;
  public:
-	string toString() const;
-	void addFailedSolution(const SolutionStorage&, const PreparedSolution&, const IntroducedBy&);
-	void clear();
+	CowMap();
+	void setInitialMap(const MapT*);
+	void operator=(const CowMap&);
+
+	// only for maps without removals
+	template < typename Data >
+	vector<const Data*> getEntries() const;
+
+	template < typename DataT >
+	const DataT* get(KeyT) const;
+	template < typename DataT >
+	void add(KeyT, DataT&&);
+	void remove(KeyT);
+	template < typename CallbackT >
+	void foreachModifiedEntry(const CallbackT&) const;
+
+	void shrinkToFit();
 };
 
 }

@@ -62,7 +62,7 @@ _cupt()
 				subcommand_type='query'
 				;;
 			search)
-				arguments='--case-sensitive --names-only -n'
+				arguments='--case-sensitive --names-only -n --fse'
 				;;
 			depends|rdepends)
 				subcommand_type='query'
@@ -72,7 +72,7 @@ _cupt()
 				arguments='list save load remove rename'
 				;;
 			markauto|unmarkauto)
-				package_name_arguments="$(${command} pkgnames ${cur} --installed-only)"
+				package_name_arguments="$(${command} pkgnames ${cur} --installed-only 2>/dev/null)"
 				;;
 			showauto)
 				arguments='--invert'
@@ -80,7 +80,7 @@ _cupt()
 		esac
 
 		if ([ "${subcommand_type}" == "query" ] || [ "${subcommand_type}" == "manage" ]) && [[ "${cur}" != -* ]]; then
-			package_name_arguments="$(${command} pkgnames ${cur})"
+			package_name_arguments="$(${command} pkgnames ${cur} 2>/dev/null)"
 		fi
 
 		if [ "${subcommand_type}" == "query" ]; then
@@ -92,9 +92,12 @@ _cupt()
 			# manage-specific options
 			arguments="${arguments} --no-remove --no-auto-remove --simulate -s \
 					--resolver=fair --resolver=full --max-solution-count= \
-					--no-install-recommends -R --show-archives -A --show-versions -V
+					--no-install-recommends -R --show-archives -A --show-versions -V --show-not-preferred
 					--show-size-changes -Z --show-reasons --show-deps -D \
 					--show-vendors -O --show-codenames -N --show-components -C \
+					--install --remove --satisfy --unsatisfy --markauto --unmarkauto --asauto=yes --asauto=no --asauto=default
+					--importance=must --importance=try --importance=wish --importance= --must --try --wish
+					--select=flexible --select=traditional --sf --st
 					--download-only -d \
 					--summary-only --no-summary \
 					--assume-yes --yes -y"

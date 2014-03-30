@@ -22,14 +22,12 @@
 #include <iostream>
 #include <algorithm>
 
-#include <boost/lexical_cast.hpp>
+using std::to_string;
 
 #include <cupt/common.hpp>
 #include <cupt/download/progresses/console.hpp>
 
 namespace cupt {
-
-using boost::lexical_cast;
 
 typedef download::Progress::DownloadRecord DownloadRecord;
 
@@ -190,10 +188,10 @@ string humanReadableDifftimeString(size_t time)
 	auto minutes = time / 60;
 	auto seconds = time % 60;
 
-	auto dayString = days < 1 ? "" : lexical_cast< string >(days) + "d";
-	auto hourString = hours < 1 && dayString.empty() ? "" : lexical_cast< string >(hours) + "h";
-	auto minuteString = minutes < 1 && hourString.empty() ? "" : lexical_cast< string >(minutes) + "m";
-	auto secondString = lexical_cast< string >(seconds) + "s";
+	auto dayString = days < 1 ? "" : to_string(days) + "d";
+	auto hourString = hours < 1 && dayString.empty() ? "" : to_string(hours) + "h";
+	auto minuteString = minutes < 1 && hourString.empty() ? "" : to_string(minutes) + "m";
+	auto secondString = to_string(seconds) + "s";
 
 	return dayString + hourString + minuteString + secondString;
 }
@@ -217,20 +215,20 @@ void ConsoleProgressImpl::updateView(vector< DownloadRecordForPrint > records,
 
 	string viewString = format2("%d%% ", overallDownloadPercent);
 
-	FORIT(it, records)
+	for (const auto& it: records)
 	{
 		string suffix;
-		if (it->record.phase == DownloadRecord::Phase::Postprocessed)
+		if (it.record.phase == DownloadRecord::Phase::Postprocessed)
 		{
 			suffix = " | postprocessing";
 		}
-		else if (it->record.size != (size_t)-1 && it->record.size != 0 /* no sense for empty files */)
+		else if (it.record.size != (size_t)-1 && it.record.size != 0 /* no sense for empty files */)
 		{
-			suffix = format2("/%s %.0f%%", humanReadableSizeString(it->record.size),
-					(float)it->record.downloadedSize / it->record.size * 100);
+			suffix = format2("/%s %.0f%%", humanReadableSizeString(it.record.size),
+					(float)it.record.downloadedSize / it.record.size * 100);
 		}
-		viewString += format2("[#%zu %s %s%s]", it->record.number, it->shortAlias,
-				humanReadableSizeString(it->record.downloadedSize), suffix);
+		viewString += format2("[#%zu %s %s%s]", it.record.number, it.shortAlias,
+				humanReadableSizeString(it.record.downloadedSize), suffix);
 	}
 	auto speedAndTimeAppendage = string("| ") + humanReadableSpeedString(speed) +
 			string(" | ETA: ") + humanReadableDifftimeString(overallEstimatedTime);

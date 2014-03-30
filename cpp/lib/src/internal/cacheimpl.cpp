@@ -485,8 +485,15 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const 
 	if (insertResult.second)
 	{
 		auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
-		cachedValue = cachefiles::getReleaseInfo(config, path, alias);
-		cachedValue->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
+		if (path.empty())
+		{
+			warn2(__("no release file present for '%s'"), alias);
+		}
+		else
+		{
+			cachedValue = cachefiles::getReleaseInfo(config, path, alias);
+			cachedValue->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
+		}
 	}
 	if (!cachedValue)
 	{
