@@ -135,6 +135,8 @@ class PreparedSolution: public Solution
 
 	vector< const PackageEntry* > getEntries() const;
 	vector<dg::Element> getInsertedElements() const;
+
+	void foreachBrokenSuccessor(const std::function< void (BrokenSuccessor) >& callback) const;
 	BrokenSuccessor getMaxBrokenSuccessor(const std::function< bool (BrokenSuccessor, BrokenSuccessor) >&) const;
 
 	const PackageEntry* getPackageEntry(dg::Element) const;

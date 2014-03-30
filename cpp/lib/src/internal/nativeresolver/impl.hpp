@@ -97,6 +97,9 @@ class NativeResolverImpl
 
 	void __fill_and_process_introduced_by(const PreparedSolution&, const BrokenPair&, ActionContainer* actionsPtr);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const PreparedSolution&, const BrokenPair&);
+
+	unique_ptr<Action> p_chooseActionForPreSatisfy(const PreparedSolution&, dg::Element);
+	void p_preSatisfyUserRequests(PreparedSolution&);
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);
 
