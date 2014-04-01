@@ -844,6 +844,10 @@ void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 	{
 		if (auto action = p_chooseActionForPreSatisfy(solution, brokenElement))
 		{
+			if (p_debugging)
+			{
+				debug2("pre-satisfying '%s' with '%s'", brokenElement->toString(), action->newElementPtr->toString());
+			}
 			action->introducedBy.versionElementPtr = __solution_storage->getPredecessorElements(brokenElement).front();
 			action->introducedBy.brokenElementPtr = brokenElement;
 			action->brokenElementPriority = 0; // don't stick
