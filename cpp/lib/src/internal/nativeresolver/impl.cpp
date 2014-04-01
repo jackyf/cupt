@@ -111,21 +111,37 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 	}
 }
 
+RelationExpression getNotHigherThanInstalledPinRelationExpression(const Cache& cache, const string& packageName)
+{
+	RelationExpression result;
+
+	auto package = cache.getBinaryPackage(packageName);
+	auto sortedPinnedVersions = cache.getSortedPinnedVersions(package);
+	auto installedVersion = package->getInstalledVersion();
+
+	if (sortedPinnedVersions.front().version == installedVersion) return result;
+
+	for (auto it = sortedPinnedVersions.rbegin(); it != sortedPinnedVersions.rend(); ++it)
+	{
+		Relation relation({ packageName.data(), packageName.data()+packageName.size() });
+		relation.relationType = Relation::Types::LiteralyEqual;
+		relation.versionString = it->version->versionString;
+		result.push_back(std::move(relation));
+
+		if (it->version == installedVersion) break;
+	}
+
+	return result;
+}
+
 void NativeResolverImpl::upgrade()
 {
 	for (const auto& item: __old_packages)
 	{
 		const string& packageName = item.first;
-		auto package = __cache->getBinaryPackage(packageName);
 
-		const auto installedVersion = item.second;
-		// if there is original version, then the preferred version should exist
-		auto preferredVersion = static_cast< const BinaryVersion* >(__cache->getPreferredVersion(package));
-		if (!preferredVersion) fatal2i("nativeresolver: upgrade: preferred version of '%s' doesn't exist", packageName);
-
-		if (preferredVersion == installedVersion) continue; // this package is already in the preferred shape
-
-		RelationExpression notUpgradeExpression(format2("%s (<= %s)", packageName, installedVersion->versionString));
+		RelationExpression notUpgradeExpression = getNotHigherThanInstalledPinRelationExpression(*__cache, packageName);
+		if (notUpgradeExpression.empty()) continue;
 
 		const string annotation = string("upgrade ") + packageName;
 		satisfyRelationExpression(notUpgradeExpression, true, annotation, RequestImportance::Wish, true);
