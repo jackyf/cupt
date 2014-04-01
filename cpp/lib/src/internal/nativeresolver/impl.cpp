@@ -832,6 +832,8 @@ unique_ptr<NativeResolverImpl::Action> NativeResolverImpl::p_chooseActionForPreS
 
 void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 {
+	if (p_debugging) debug2("pre-satisfying user requests:");
+
 	vector<dg::Element> userRequests;
 	solution.foreachBrokenSuccessor(
 			[&userRequests](BrokenSuccessor bs)
@@ -842,16 +844,20 @@ void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 
 	for (auto brokenElement: userRequests)
 	{
+		if (p_debugging) debug2("  considering '%s'", brokenElement->toString());
+
 		if (auto action = p_chooseActionForPreSatisfy(solution, brokenElement))
 		{
-			if (p_debugging)
-			{
-				debug2("pre-satisfying '%s' with '%s'", brokenElement->toString(), action->newElementPtr->toString());
-			}
+			if (p_debugging) debug2("    yes, with '%s'", action->newElementPtr->toString());
+
 			action->introducedBy.versionElementPtr = __solution_storage->getPredecessorElements(brokenElement).front();
 			action->introducedBy.brokenElementPtr = brokenElement;
 			action->brokenElementPriority = 0; // don't stick
 			__solution_storage->assignAction(solution, std::move(action));
+		}
+		else
+		{
+			if (p_debugging) debug2("    no");
 		}
 	};
 }
