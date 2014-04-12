@@ -3,6 +3,7 @@ cupt (2.8.0~) UNRELEASED; urgency=low
   * lib:
     - system/resolvers/native:
       - Pre-satisfy, when possible, user requests before doing anything else.
+      - 'upgrade': re-implemented in terms of 'satisfyRelationExpression'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 04 Mar 2014 21:16:49 +0200
 
