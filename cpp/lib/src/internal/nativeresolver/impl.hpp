@@ -58,7 +58,6 @@ class NativeResolverImpl
 	AutoRemovalPossibility __auto_removal_possibility;
 
 	map< string, const BinaryVersion* > __old_packages;
-	map< string, dg::InitialPackageEntry > __initial_packages;
 
 	vector< dg::UserRelationExpression > p_userRelationExpressions;
 
@@ -67,8 +66,6 @@ class NativeResolverImpl
 
 	void __import_installed_versions();
 	void __import_packages_to_reinstall();
-	bool __prepare_version_no_stick(const BinaryVersion*,
-			dg::InitialPackageEntry&);
 	float __get_version_weight(const BinaryVersion*) const;
 	float __get_action_profit(const BinaryVersion*, const BinaryVersion*) const;
 
@@ -90,8 +87,7 @@ class NativeResolverImpl
 
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const PreparedSolution&, dg::Element);
 	void __prepare_reject_requests(vector< unique_ptr< Action > >& actions) const;
-	void __fillSuggestedPackageReasons(const PreparedSolution&, const string&,
-			Resolver::SuggestedPackage&, dg::Element) const;
+	void __fillSuggestedPackageReasons(const PreparedSolution&, Resolver::SuggestedPackage&, dg::Element) const;
 	Resolver::UserAnswer::Type __propose_solution(
 			const PreparedSolution&, Resolver::CallbackType, bool);
 

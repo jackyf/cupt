@@ -47,7 +47,6 @@ void NativeResolverImpl::__import_installed_versions()
 	{
 		// just moving versions, don't try to install or remove some dependencies
 		__old_packages[version->packageName] = version;
-		__initial_packages[version->packageName].version = version;
 	}
 
 	__import_packages_to_reinstall();
@@ -56,16 +55,20 @@ void NativeResolverImpl::__import_installed_versions()
 void NativeResolverImpl::__import_packages_to_reinstall()
 {
 	auto reinstallRequiredPackageNames = __cache->getSystemState()->getReinstallRequiredPackageNames();
-	FORIT(packageNameIt, reinstallRequiredPackageNames)
+	for (const auto& packageName: reinstallRequiredPackageNames)
 	{
 		if (p_debugging)
 		{
-			debug2("the package '%s' needs a reinstall", *packageNameIt);
+			debug2("the package '%s' needs a reinstall", packageName);
 		}
 
-		// this also involves creating new entry in __initial_packages
-		auto& targetVersion = __initial_packages[*packageNameIt].version;
-		targetVersion = nullptr; // removed by default
+		const string annotation = "reinstall " + packageName;
+
+		auto installedVersion = __cache->getBinaryPackage(packageName)->getInstalledVersion();
+		RelationExpression installedExpression(format2("%s (= %s", packageName, installedVersion->versionString));
+		installedExpression[0].relationType = Relation::Types::LiteralyEqual;
+
+		satisfyRelationExpression(installedExpression, true, annotation, RequestImportance::Try, true);
 	}
 }
 
@@ -80,27 +83,6 @@ void __mydebug_wrapper(const Solution& solution, size_t id, const Args&... args)
 {
 	string levelString(solution.getLevel(), ' ');
 	debug2("%s(%u:%zd) %s", levelString, id, solution.getScore(), format2(args...));
-}
-
-// installs new version, but does not sticks it
-bool NativeResolverImpl::__prepare_version_no_stick(
-		const BinaryVersion* version, dg::InitialPackageEntry& initialPackageEntry)
-{
-	const string& packageName = version->packageName;
-	if (initialPackageEntry.version &&
-			initialPackageEntry.version->versionString == version->versionString)
-	{
-		return true; // there is such version installed already
-	}
-
-	if (p_debugging)
-	{
-		debug2("install package '%s', version '%s'", packageName, version->versionString);
-	}
-	initialPackageEntry.modified = true;
-	initialPackageEntry.version = version;
-
-	return true;
 }
 
 void NativeResolverImpl::setAutomaticallyInstalledFlag(const string& packageName, bool flagValue)
@@ -129,28 +111,40 @@ void NativeResolverImpl::satisfyRelationExpression(const RelationExpression& re,
 	}
 }
 
+RelationExpression getNotHigherThanInstalledPinRelationExpression(const Cache& cache, const string& packageName)
+{
+	RelationExpression result;
+
+	auto package = cache.getBinaryPackage(packageName);
+	auto sortedPinnedVersions = cache.getSortedPinnedVersions(package);
+	auto installedVersion = package->getInstalledVersion();
+
+	if (sortedPinnedVersions.front().version == installedVersion) return result;
+
+	for (auto it = sortedPinnedVersions.rbegin(); it != sortedPinnedVersions.rend(); ++it)
+	{
+		Relation relation({ packageName.data(), packageName.data()+packageName.size() });
+		relation.relationType = Relation::Types::LiteralyEqual;
+		relation.versionString = it->version->versionString;
+		result.push_back(std::move(relation));
+
+		if (it->version == installedVersion) break;
+	}
+
+	return result;
+}
+
 void NativeResolverImpl::upgrade()
 {
-	FORIT(it, __initial_packages)
+	for (const auto& item: __old_packages)
 	{
-		dg::InitialPackageEntry& initialPackageEntry = it->second;
-		if (!initialPackageEntry.version)
-		{
-			continue;
-		}
+		const string& packageName = item.first;
 
-		const string& packageName = it->first;
-		auto package = __cache->getBinaryPackage(packageName);
+		RelationExpression notUpgradeExpression = getNotHigherThanInstalledPinRelationExpression(*__cache, packageName);
+		if (notUpgradeExpression.empty()) continue;
 
-		// if there is original version, then the preferred version should exist
-		auto supposedVersion = static_cast< const BinaryVersion* >
-				(__cache->getPreferredVersion(package));
-		if (!supposedVersion)
-		{
-			fatal2i("supposed version doesn't exist");
-		}
-
-		__prepare_version_no_stick(supposedVersion, initialPackageEntry);
+		const string annotation = string("upgrade ") + packageName;
+		satisfyRelationExpression(notUpgradeExpression, true, annotation, RequestImportance::Wish, true);
 	}
 }
 
@@ -586,7 +580,7 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 }
 
 void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& solution,
-		const string& packageName, Resolver::SuggestedPackage& suggestedPackage, dg::Element element) const
+		Resolver::SuggestedPackage& suggestedPackage, dg::Element element) const
 {
 	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
@@ -611,11 +605,6 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& s
 			__solution_storage->processReasonElements(solution,
 					introducedBy, element, std::cref(fillReasonElements));
 		}
-		auto initialPackageIt = __initial_packages.find(packageName);
-		if (initialPackageIt != __initial_packages.end() && initialPackageIt->second.modified)
-		{
-			suggestedPackage.reasons.push_back(userReason);
-		}
 	}
 }
 
@@ -634,7 +623,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 		if (vertex)
 		{
 			const string& packageName = vertex->getPackageName();
-			if (!vertex->version && !__initial_packages.count(packageName))
+			if (!vertex->version && !__old_packages.count(packageName))
 			{
 				continue;
 			}
@@ -644,7 +633,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 			if (trackReasons)
 			{
-				__fillSuggestedPackageReasons(solution, packageName, suggestedPackage, elementPtr);
+				__fillSuggestedPackageReasons(solution, suggestedPackage, elementPtr);
 			}
 			suggestedPackage.automaticallyInstalledFlag = p_computeTargetAutoStatus(packageName, solution, elementPtr);
 		}
@@ -843,6 +832,8 @@ unique_ptr<NativeResolverImpl::Action> NativeResolverImpl::p_chooseActionForPreS
 
 void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 {
+	if (p_debugging) debug2("pre-satisfying user requests:");
+
 	vector<dg::Element> userRequests;
 	solution.foreachBrokenSuccessor(
 			[&userRequests](BrokenSuccessor bs)
@@ -853,10 +844,20 @@ void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 
 	for (auto brokenElement: userRequests)
 	{
+		if (p_debugging) debug2("  considering '%s'", brokenElement->toString());
+
 		if (auto action = p_chooseActionForPreSatisfy(solution, brokenElement))
 		{
+			if (p_debugging) debug2("    yes, with '%s'", action->newElementPtr->toString());
+
+			action->introducedBy.versionElementPtr = __solution_storage->getPredecessorElements(brokenElement).front();
+			action->introducedBy.brokenElementPtr = brokenElement;
 			action->brokenElementPriority = 0; // don't stick
 			__solution_storage->assignAction(solution, std::move(action));
+		}
+		else
+		{
+			if (p_debugging) debug2("    no");
 		}
 	};
 }
@@ -876,8 +877,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 
 	auto initialSolution = std::make_shared< PreparedSolution >();
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution,
-			__old_packages, __initial_packages, p_userRelationExpressions);
+	__solution_storage->prepareForResolving(*initialSolution, __old_packages, p_userRelationExpressions);
 	p_preSatisfyUserRequests(*initialSolution);
 
 	SolutionContainer solutions = { initialSolution };

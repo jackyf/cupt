@@ -163,7 +163,6 @@ class SolutionStorage
 
 	void prepareForResolving(PreparedSolution&,
 			const map< string, const BinaryVersion* >&,
-			const map< string, dg::InitialPackageEntry >&,
 			const vector< dg::UserRelationExpression >&);
 
 	void assignAction(Solution& solution, unique_ptr< Solution::Action >&& action);
