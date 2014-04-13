@@ -1,6 +1,9 @@
 cupt (2.7.3~) UNRELEASED; urgency=low
 
-  * 
+  * lib:
+    - system/resolvers/native:
+      - Fixed failing to satisfy 'remove x --no-remove'-kinds of requests.
+        This regression was introduced in 2.6.0.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 13 Apr 2014 15:13:07 +0300
 
