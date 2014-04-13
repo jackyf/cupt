@@ -54,10 +54,7 @@ struct CUPT_API SourceVersion: public Version
 	vector< string > binaryPackageNames; ///< array of binary package names, which are built out of
 	vector< string > architectures; ///< array of binary architectures on which this source version may be built
 
-	virtual bool areHashesEqual(const shared_ptr< const Version >& other) const;
-
-	/// parse version
-	static shared_ptr< SourceVersion > parseFromFile(const Version::InitializationParameters&);
+	virtual bool areHashesEqual(const Version* other) const;
 };
 
 } // namespace

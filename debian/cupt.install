@@ -1,2 +1,2 @@
 usr/bin
-usr/share/doc/tutorial* usr/share/doc/cupt
+usr/share/doc/*.html usr/share/doc/cupt

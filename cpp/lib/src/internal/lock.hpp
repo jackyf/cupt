@@ -32,7 +32,7 @@ class Lock
 	bool __debugging;
 
  public:
-	Lock(const shared_ptr< const Config >& config, const string& path);
+	Lock(const Config& config, const string& path);
 	~Lock();
 };
 

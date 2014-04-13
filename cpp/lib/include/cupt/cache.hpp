@@ -20,13 +20,12 @@
 
 /// @file
 
-#include <boost/xpressive/xpressive_fwd.hpp>
-
 #include <set>
+#include <map>
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
-#include <cupt/hashsums.hpp>
+#include <cupt/range.hpp>
 
 namespace cupt {
 
@@ -37,6 +36,7 @@ struct CacheImpl;
 }
 
 using std::set;
+using std::map;
 
 using namespace cache;
 
@@ -56,24 +56,34 @@ class CUPT_API Cache
 		string uri; ///< base index URI, as specified in source list
 		string distribution; ///< distribution part, e.g. @c lenny, @c squeeze
 		string component; ///< component part, e.g. @c main, @c contrib, @c non-free
-	};
-	/// @deprecated an internal structure, should not be used
-	struct IndexDownloadRecord
-	{
-		string uri;
-		uint32_t size;
-		HashSums hashSums;
-	};
-	/// @copydoc IndexDownloadRecord
-	struct LocalizationDownloadRecord
-	{
-		string uri;
-		string localPath;
+		map< string, string > options; ///< key-value options;
 	};
 	/// extended package information
 	struct ExtendedInfo
 	{
 		set< string > automaticallyInstalled; ///< names of automatically installed packages
+	};
+
+	class PackageNameIterator
+	{
+	 public:
+		typedef const string value_type;
+
+		class Impl;
+		PackageNameIterator(Impl* impl);
+		~PackageNameIterator();
+		PackageNameIterator(const PackageNameIterator&);
+		PackageNameIterator& operator=(const PackageNameIterator&);
+		PackageNameIterator(PackageNameIterator&&) = default;
+
+		bool operator==(const PackageNameIterator&) const;
+		bool operator!=(const PackageNameIterator&) const;
+
+		value_type& operator*() const;
+		PackageNameIterator& operator++();
+
+	 private:
+		Impl* p_impl;
 	};
 
  private:
@@ -89,10 +99,8 @@ class CUPT_API Cache
 	 * @param useSource whether to read source package metadata
 	 * @param useBinary whether to read binary package metadata
 	 * @param useInstalled whether to read dpkg metadata (installed binary packages)
-	 * @param packageNameGlobsToReinstall array of glob expressions, allow these packages to be re-installed
 	 */
-	Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled,
-			const vector< string >& packageNameGlobsToReinstall = vector< string >());
+	Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, bool useInstalled);
 	/// destructor
 	virtual ~Cache();
 
@@ -102,24 +110,24 @@ class CUPT_API Cache
 	vector< shared_ptr< const ReleaseInfo > > getSourceReleaseData() const;
 
 	/// gets the list of names of available binary packages
-	vector< string > getBinaryPackageNames() const;
+	Range< PackageNameIterator > getBinaryPackageNames() const;
 	/// gets BinaryPackage by name
 	/**
 	 * @param packageName name of the binary package
 	 * @return pointer to binary package if found, empty pointer if not
 	 */
-	shared_ptr< const BinaryPackage > getBinaryPackage(const string& packageName) const;
+	const BinaryPackage* getBinaryPackage(const string& packageName) const;
 	/// gets the list of names of available source packages
-	vector< string > getSourcePackageNames() const;
+	Range< PackageNameIterator > getSourcePackageNames() const;
 	/// gets SourcePackage by name
 	/**
 	 * @param packageName name of the source package
 	 * @return pointer to source package if found, empty pointer if not
 	 */
-	shared_ptr< const SourcePackage > getSourcePackage(const string& packageName) const;
+	const SourcePackage* getSourcePackage(const string& packageName) const;
 
 	/// gets all installed versions
-	vector< shared_ptr< const BinaryVersion > > getInstalledVersions() const;
+	vector< const BinaryVersion* > getInstalledVersions() const;
 
 	/// is binary package automatically installed?
 	/**
@@ -131,68 +139,47 @@ class CUPT_API Cache
 	/// gets list of available index entries
 	vector< IndexEntry > getIndexEntries() const;
 
-	/// @deprecated an internal method, should not be used
-	string getPathOfReleaseList(const IndexEntry& entry) const;
-	/// @copydoc getPathOfReleaseList
-	string getPathOfIndexList(const IndexEntry& entry) const;
-	/// @copydoc getPathOfReleaseList
-	string getPathOfExtendedStates() const;
-
-	/// @copydoc getPathOfReleaseList
-	string getDownloadUriOfReleaseList(const IndexEntry&) const;
-	/// @copydoc getPathOfReleaseList
-	vector< IndexDownloadRecord > getDownloadInfoOfIndexList(const IndexEntry&) const;
-	/// @copydoc getPathOfReleaseList
-	vector< LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(const IndexEntry&) const;
-
 	/// gets system state
-	shared_ptr< const system::State > getSystemState() const;
+	const system::State* getSystemState() const;
 
 	/// gets pin value for a version
-	ssize_t getPin(const shared_ptr< const Version >&) const;
+	ssize_t getPin(const Version*) const;
 
 	/// contains version and a corresponding pin value
 	struct PinnedVersion
 	{
-		shared_ptr< const Version > version; ///< version
+		const Version* version; ///< version
 		ssize_t pin; ///< pin value
-
-		/// trivial constructor
-		PinnedVersion(shared_ptr< const Version > _version, ssize_t _pin)
-			: version(_version), pin(_pin) {}
 	};
 	/// gets list of versions with pins of certain package
-	vector< PinnedVersion > getSortedPinnedVersions(const shared_ptr< const Package >&) const;
+	vector< PinnedVersion > getSortedPinnedVersions(const Package*) const;
 	/// gets version of highest pin from the package
-	shared_ptr< const Version > getPolicyVersion(const shared_ptr< const Package >&) const;
+	const Version* getPreferredVersion(const Package*) const;
 
 	/// gets list of binary versions which satisfy given relation expression
-	vector< shared_ptr< const BinaryVersion > > getSatisfyingVersions(const RelationExpression&) const;
+	vector< const BinaryVersion* > getSatisfyingVersions(const RelationExpression&) const;
 
 	/// gets extended info
 	const ExtendedInfo& getExtendedInfo() const;
 
-	/// gets localized short and long descriptions for the binary version
+	/// gets localized description for the binary version
 	/**
-	 * @return first pair element - short description, long pair element - long description;
-	 * if localized descriptions are not available, short description will be empty
+	 * @return localized description if available, version description otherwise
 	 */
-	pair< string, string > getLocalizedDescriptions(const shared_ptr< const BinaryVersion >&) const;
+	string getLocalizedDescription(const BinaryVersion*) const;
 
-	/// @copydoc getPathOfReleaseList
-	static bool verifySignature(const shared_ptr< const Config >&, const string& path);
 	/// gets a supposed system path of package copyright file for certain binary version
 	/**
 	 * You must not assume that the file actually exists even if installed
 	 * version is passed as parameter.
 	 */
-	static string getPathOfCopyright(const shared_ptr< const BinaryVersion >&);
+	static string getPathOfCopyright(const BinaryVersion*);
 	/// gets a supposed system path of package changelog file for certain binary version
 	/**
 	 * You must not assume that the file actually exists even if installed
 	 * version is passed as parameter.
 	 */
-	static string getPathOfChangelog(const shared_ptr< const BinaryVersion >&);
+	static string getPathOfChangelog(const BinaryVersion*);
 
 	/// controls internal caching
 	/**

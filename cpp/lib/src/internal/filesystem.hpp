@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2013 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -26,13 +26,15 @@ namespace fs {
 
 string filename(const string& path);
 string dirname(const string& path);
-string move(const string& oldPath, const string& newPath);
+bool move(const string& oldPath, const string& newPath);
 vector< string > glob(const string& param);
 // this version don't follow symbolic links
 vector< string > lglob(const string& directoryPath, const string& shellPattern);
 bool fileExists(const string& path);
 bool dirExists(const string& path);
 size_t fileSize(const string& path);
+time_t fileModificationTime(const string&);
+void mkpath(const string& path);
 
 }
 }

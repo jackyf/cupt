@@ -20,8 +20,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <boost/lexical_cast.hpp>
-using boost::lexical_cast;
+using std::to_string;
 
 #include <cupt/download/method.hpp>
 #include <cupt/download/uri.hpp>
@@ -39,38 +38,32 @@ class FileMethod: public download::Method
 		File targetFile(targetPath, "a", openError);
 		if (!openError.empty())
 		{
-			return sf("unable to open file '%s' for appending: %s",
-					targetPath.c_str(), openError.c_str());
+			return format2("unable to open the file '%s' for appending: %s", targetPath, openError);
 		}
 		auto totalBytes = targetFile.tell();
-		callback(vector< string > { "downloading",
-				lexical_cast< string >(totalBytes), lexical_cast< string >(0)});
+		callback({ "downloading", to_string(totalBytes), to_string(0)});
 
 		{ // determing the size
 			struct stat st;
 			if (::stat(sourcePath.c_str(), &st) == -1)
 			{
-				fatal("unable to stat() file '%s': EEE", sourcePath.c_str());
+				fatal2e(__("%s() failed: '%s'"), "stat", sourcePath);
 			}
-			callback(vector< string > { "expected-size",
-					lexical_cast< string >(st.st_size) });
+			callback({ "expected-size", to_string(st.st_size) });
 		}
 
 		{ // writing
-			char buffer[4096];
-			size_t size = sizeof(buffer);
-			while (sourceFile.getBlock(buffer, size), size)
+			while (auto rawBuffer = sourceFile.getBlock(4096))
 			{
-				targetFile.put(buffer, size);
-				totalBytes += size;
-				callback(vector< string > { "downloading",
-						lexical_cast< string >(totalBytes), lexical_cast< string >(size)});
+				targetFile.put(rawBuffer.data, rawBuffer.size);
+				totalBytes += rawBuffer.size;
+				callback({ "downloading", to_string(totalBytes), to_string(rawBuffer.size)});
 			}
 		}
 
 		return string();
 	}
-	string perform(const shared_ptr< const Config >& /* config */, const download::Uri& uri,
+	string perform(const Config&, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		auto sourcePath = uri.getOpaque();
@@ -81,8 +74,7 @@ class FileMethod: public download::Method
 		File sourceFile(sourcePath, "r", openError);
 		if (!openError.empty())
 		{
-			return sf("unable to open file '%s' for reading: %s",
-					sourcePath.c_str(), openError.c_str());
+			return format2("unable to open the file '%s' for reading: %s", sourcePath, openError);
 		}
 
 		if (protocol == "copy")
@@ -95,14 +87,13 @@ class FileMethod: public download::Method
 			unlink(targetPath.c_str()); // yep, no error handling;
 			if (symlink(sourcePath.c_str(), targetPath.c_str()) == -1)
 			{
-				return sf("unable to create symbolic link '%s' -> '%s': EEE",
-						targetPath.c_str(), sourcePath.c_str());
+				return format2e("unable to create symbolic link '%s' -> '%s'", targetPath, sourcePath);
 			}
 			return string();
 		}
 		else
 		{
-			fatal("internal error: a wrong scheme '%s' for the 'file' download method", protocol.c_str());
+			fatal2i("a wrong scheme '%s' for the 'file' download method", protocol);
 			return string(); // unreachable
 		}
 	}

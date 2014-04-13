@@ -56,12 +56,12 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 		auto colonPosition = memchr(__buffer+1, ':', __buffer_size - 1); // can't be very first
 		if (!colonPosition)
 		{
-			fatal2("didn't find a colon in the line '%s'", string(__buffer, __buffer_size));
+			fatal2(__("didn't find a colon in the line '%s'"), string(__buffer, __buffer_size));
 		}
-		tagName.first = decltype(tagName.first)(__buffer);
-		tagName.second = decltype(tagName.second)((const char*)colonPosition);
+		tagName.first = __buffer;
+		tagName.second = (const char*)colonPosition;
 		// getting tag value on a first line
-		tagValue.first = decltype(tagValue.first)((const char*)colonPosition+1);
+		tagValue.first = (const char*)colonPosition+1;
 		if (isblank(*tagValue.first))
 		{
 			++tagValue.first;
@@ -75,7 +75,6 @@ bool TagParser::parseNextLine(StringRange& tagName, StringRange& tagValue)
 void TagParser::parseAdditionalLines(string& lines)
 {
 	// now let's see if there are any additional lines for the tag
-	lines.clear();
 	while (__input->rawGetLine(__buffer, __buffer_size), (__buffer_size > 1 && isblank(__buffer[0])))
 	{
 		lines.append(__buffer, __buffer_size);

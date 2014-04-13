@@ -28,12 +28,26 @@
 namespace cupt {
 namespace internal {
 
+bool __get_flag_value(bool defaultValue, const string& packageName,
+		const map< string, bool >& overrides)
+{
+	bool result = defaultValue;
+
+	auto it = overrides.find(packageName);
+	if (it != overrides.end())
+	{
+		result = it->second;
+	}
+
+	return result;
+}
+
 void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
-		const Resolver::SuggestedPackage& suggestedPackage, bool purgeFlag)
+		const Resolver::SuggestedPackage& suggestedPackage, bool globalPurgeFlag)
 {
 	Action::Type action = Action::Count; // invalid
 
-	const shared_ptr< const BinaryVersion >& supposedVersion = suggestedPackage.version;
+	const auto& supposedVersion = suggestedPackage.version;
 	auto installedInfo = _cache->getSystemState()->getInstalledInfo(packageName);
 
 	if (supposedVersion)
@@ -52,7 +66,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			auto package = _cache->getBinaryPackage(packageName);
 			if (!package)
 			{
-				fatal2("internal error: the binary package '%s' does not exist", packageName);
+				fatal2i("the binary package '%s' does not exist", packageName);
 			}
 			auto installedVersion = package->getInstalledVersion();
 
@@ -80,12 +94,16 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 					}
 					else if (isImproperlyInstalled)
 					{
-						action = Action::Upgrade; // TODO/ABI Break/: Action::Reinstall
+						action = Action::Reinstall;
+					}
+					else if (supposedVersion->versionString != installedVersion->versionString)
+					{
+						action = Action::Reinstall;
 					}
 				}
 				else
 				{
-					if (installedVersion->versionString == supposedVersion->versionString)
+					if (installedVersion == supposedVersion)
 					{
 						// the same version, but the package was in some interim state
 						if (installedInfo->status == State::InstalledRecord::Status::TriggersPending)
@@ -111,6 +129,7 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 		// package is to be removed
 		if (installedInfo)
 		{
+			bool purgeFlag = __get_flag_value(globalPurgeFlag, packageName, __purge_overrides);
 			switch (installedInfo->status)
 			{
 				case State::InstalledRecord::Status::Installed:
@@ -138,20 +157,28 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 	if (action != Action::Count)
 	{
 		__actions_preview->groups[action][packageName] = suggestedPackage;
+	}
 
+	{ // does auto status need changing?
+		bool targetAutoStatus;
 		if (action == Action::Remove ||
 			(action == Action::Purge && installedInfo &&
 			installedInfo->status == State::InstalledRecord::Status::Installed))
 		{
-			/* in case of removing a package we delete the 'automatically
-			   installed' info regardless was this flag set or not so next
-			   time when this package is installed it has 'clean' info */
-			__actions_preview->autoFlagChanges[packageName] = false;
+			/* in case of removing a package we always delete the
+			   'automatically installed' info so next time when this package is
+			   installed it has 'clean' info */
+			targetAutoStatus = false;
 		}
-		else if (action == Action::Install && !suggestedPackage.manuallySelected)
+		else
 		{
-			// set 'automatically installed' for new non-manually selected packages
-			__actions_preview->autoFlagChanges[packageName] = true;
+			targetAutoStatus = suggestedPackage.automaticallyInstalledFlag;
+		}
+
+		bool currentAutoStatus = _cache->isAutomaticallyInstalled(packageName);
+		if (targetAutoStatus != currentAutoStatus)
+		{
+			__actions_preview->autoFlagChanges[packageName] = targetAutoStatus;
 		}
 	}
 }
@@ -162,17 +189,29 @@ void SetupAndPreviewWorker::__generate_actions_preview()
 
 	if (!__desired_state)
 	{
-		fatal2("worker desired state is not given");
+		fatal2(__("worker: the desired state is not given"));
 	}
 
-	const bool purge = _config->getBool("cupt::worker::purge");
+	const bool globalPurge = _config->getBool("cupt::worker::purge");
 
-	FORIT(desiredIt, *__desired_state)
+	set< string > processedPackageNames;
+	for (const auto& desired: *__desired_state)
 	{
-		const string& packageName = desiredIt->first;
-		const Resolver::SuggestedPackage& suggestedPackage = desiredIt->second;
+		const string& packageName = desired.first;
+		const Resolver::SuggestedPackage& suggestedPackage = desired.second;
 
-		__generate_action_preview(packageName, suggestedPackage, purge);
+		__generate_action_preview(packageName, suggestedPackage, globalPurge);
+		processedPackageNames.insert(packageName);
+	}
+	for (const auto& item: __purge_overrides)
+	{
+		const string& packageName = item.first;
+		if (processedPackageNames.count(packageName)) continue;
+
+		static const Resolver::SuggestedPackage suggestedPackageForPurge = {
+			nullptr, false, { std::make_shared< Resolver::UserReason >() }, {}
+		};
+		__generate_action_preview(packageName, suggestedPackageForPurge, globalPurge);
 	}
 }
 
@@ -184,16 +223,7 @@ void SetupAndPreviewWorker::setDesiredState(const Resolver::Offer& offer)
 
 void SetupAndPreviewWorker::setPackagePurgeFlag(const string& packageName, bool value)
 {
-	auto desiredIt = __desired_state->find(packageName);
-	if (desiredIt == __desired_state->end())
-	{
-		fatal2("there is no package '%s' in the desired state", packageName);
-	}
-	auto sourceActionType = value ? Action::Remove : Action::Purge;
-	__actions_preview->groups[sourceActionType].erase(packageName);
-
-	// and regenerate
-	__generate_action_preview(packageName, desiredIt->second, value);
+	__purge_overrides[packageName] = value;
 }
 
 shared_ptr< const Worker::ActionsPreview > SetupAndPreviewWorker::getActionsPreview() const
@@ -224,7 +254,7 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 		auto oldPackage = _cache->getBinaryPackage(packageName);
 		if (oldPackage)
 		{
-			const shared_ptr< const BinaryVersion >& oldVersion = oldPackage->getInstalledVersion();
+			const auto& oldVersion = oldPackage->getInstalledVersion();
 			if (oldVersion)
 			{
 				oldInstalledSize = oldVersion->installedSize;
@@ -233,10 +263,14 @@ map< string, ssize_t > SetupAndPreviewWorker::getUnpackedSizesPreview() const
 
 		// new part
 		ssize_t newInstalledSize = 0;
-		const shared_ptr< const BinaryVersion >& newVersion = __desired_state->find(packageName)->second.version;
-		if (newVersion)
+		auto desiredPackageIt = __desired_state->find(packageName);
+		if (desiredPackageIt != __desired_state->end())
 		{
-			newInstalledSize = newVersion->installedSize;
+			const auto& newVersion = __desired_state->find(packageName)->second.version;
+			if (newVersion)
+			{
+				newInstalledSize = newVersion->installedSize;
+			}
 		}
 
 		result[packageName] = newInstalledSize - oldInstalledSize;
@@ -252,16 +286,13 @@ pair< size_t, size_t > SetupAndPreviewWorker::getDownloadSizesPreview() const
 	size_t totalBytes = 0;
 	size_t needBytes = 0;
 
-	static const Action::Type affectedActionTypes[] = {
-			Action::Install, Action::Upgrade, Action::Downgrade };
-	for (size_t i = 0; i < sizeof(affectedActionTypes) / sizeof(Action::Type); ++i)
+	for (auto actionType: _download_dependent_action_types)
 	{
-		const Resolver::SuggestedPackages& suggestedPackages =
-			__actions_preview->groups[affectedActionTypes[i]];
+		const auto& suggestedPackages = __actions_preview->groups[actionType];
 
 		FORIT(it, suggestedPackages)
 		{
-			const shared_ptr< const BinaryVersion >& version = it->second.version;
+			const auto& version = it->second.version;
 			auto size = version->file.size;
 
 			totalBytes += size;

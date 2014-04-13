@@ -24,8 +24,6 @@ using std::map;
 
 #include <boost/lexical_cast.hpp>
 
-#include <common/regex.hpp>
-
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
 #include <cupt/file.hpp>
@@ -33,22 +31,60 @@ using std::map;
 #include <internal/common.hpp>
 #include <internal/configparser.hpp>
 #include <internal/filesystem.hpp>
+#include <internal/regex.hpp>
 
 namespace cupt {
 
 namespace internal {
 
-struct ConfigImpl
+class ConfigImpl
 {
+	vector< sregex > __optionalPatterns;
+	void __initOptionalPatterns();
+ public:
 	map< string, string > regularVars;
 	map< string, string > regularCompatibilityVars;
 	map< string, vector< string > > listVars;
-	vector< string > optionalPatterns;
 
 	void initializeVariables();
+	vector< string > getConfigurationFilePaths(Config*) const;
+	string getEnvBasedConfigurationFilePath(const Config*, const char*, const char*) const;
+	void parsePreConfiguration(const Config*, ConfigParser&);
+	void parseConfigurationFile(ConfigParser&, const string&);
 	void readConfigs(Config*);
+	void setArchitecture(Config*);
 	bool isOptionalOption(const string& optionName) const;
 };
+
+void ConfigImpl::__initOptionalPatterns()
+{
+	const char* optionalPatterns[] = {
+		// used APT vars
+		"acquire::*::*::proxy",
+		"acquire::*::proxy::*",
+		"acquire::*::proxy",
+		"acquire::*::*::dl-limit",
+		"acquire::*::dl-limit::*",
+		"acquire::*::dl-limit",
+		"acquire::*::*::timeout",
+		"acquire::*::timeout::*",
+		"acquire::*::timeout",
+		"dpkg::tools::options::*",
+		"dpkg::tools::options::*::*",
+
+		// used Cupt vars
+		"cupt::downloader::protocols::*::priority",
+		"cupt::downloader::protocols::*::methods",
+		"cupt::downloader::protocols::*::methods::*::priority",
+	};
+
+	const sregex convertRegex = sregex::compile("\\*");
+	for (const auto& pattern: optionalPatterns)
+	{
+		auto currentRegexString = regex_replace(string(pattern), convertRegex, "[^:]*?");
+		__optionalPatterns.emplace_back(sregex::compile(currentRegexString));
+	}
+}
 
 void ConfigImpl::initializeVariables()
 {
@@ -92,15 +128,6 @@ void ConfigImpl::initializeVariables()
 		{ "gpgv::trustedkeyring", "/var/lib/cupt/trusted.gpg" },
 		{ "quiet", "0" }, // bool, '0' instead of 'no' for apt-listchanges (#604130)
 
-		// unused APT vars
-		{ "apt::cache-limit", "0" },
-		{ "apt::get::show-upgraded", "no" },
-		{ "apt::get::build-dep-automatic", "yes" },
-		{ "acquire::pdiffs", "yes" },
-		{ "dir::log", "var/log/apt" },
-		{ "dir::log::history", "history.log" },
-		{ "dir::log::terminal", "term.log" },
-
 		// Cupt vars
 		{ "cupt::cache::limit-releases::by-archive::type", "none" },
 		{ "cupt::cache::limit-releases::by-codename::type", "none" },
@@ -111,14 +138,23 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
+		{ "cupt::console::actions-preview::show-archives", "no" },
+		{ "cupt::console::actions-preview::show-codenames", "no" },
+		{ "cupt::console::actions-preview::show-components", "no" },
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
+		{ "cupt::console::actions-preview::show-reasons", "no" },
+		{ "cupt::console::actions-preview::show-size-changes", "no" },
 		{ "cupt::console::actions-preview::show-summary", "yes" },
+		{ "cupt::console::actions-preview::show-vendors", "no" },
+		{ "cupt::console::actions-preview::show-versions", "no" },
+		{ "cupt::console::show-progress-messages", "yes" },
 		{ "cupt::console::use-colors", "no" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },
 		{ "cupt::directory::configuration::main", "cupt.conf" },
 		{ "cupt::directory::configuration::main-parts", "cupt.conf.d" },
+		{ "cupt::directory::configuration::pre", "pre.conf" },
 		{ "cupt::directory::log", "var/log/cupt.log" },
 		{ "cupt::directory::state", "var/lib/cupt" },
 		{ "cupt::directory::state::lists", "lists" },
@@ -139,26 +175,27 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods::wget::priority", "80" },
 		{ "cupt::downloader::protocols::http::methods::wget::priority", "80" },
 		{ "cupt::downloader::protocols::ftp::methods::wget::priority", "80" },
-		{ "cupt::languages::indexes", "environment" },
+		{ "cupt::languages::indexes", "environment,en" },
 		{ "cupt::update::check-release-files", "yes" },
 		{ "cupt::update::compression-types::gz::priority", "100" },
 		{ "cupt::update::compression-types::bz2::priority", "100" },
 		{ "cupt::update::compression-types::lzma::priority", "100" },
 		{ "cupt::update::compression-types::xz::priority", "100" },
 		{ "cupt::update::compression-types::uncompressed::priority", "100" },
-		{ "cupt::update::keep-bad-signatures", "yes" },
+		{ "cupt::update::generate-index-of-index", "yes" },
 		{ "cupt::update::use-index-diffs", "yes" },
 		{ "cupt::resolver::auto-remove", "yes" },
 		{ "cupt::resolver::external-command", "" },
 		{ "cupt::resolver::keep-recommends", "yes" },
 		{ "cupt::resolver::keep-suggests", "no" },
-		{ "cupt::resolver::max-solution-count", "512" },
+		{ "cupt::resolver::max-solution-count", "8192" },
 		{ "cupt::resolver::no-remove", "no" },
 		{ "cupt::resolver::synchronize-by-source-versions", "none" },
 		{ "cupt::resolver::track-reasons", "no" },
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "-5" },
-		{ "cupt::resolver::score::removal", "-1500" },
+		{ "cupt::resolver::score::removal", "-1800" },
+		{ "cupt::resolver::score::removal-of-autoinstalled", "1200" },
 		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
@@ -166,9 +203,11 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::quality-adjustment", "40" },
 		{ "cupt::resolver::score::unsatisfied-recommends", "-240" },
 		{ "cupt::resolver::score::unsatisfied-suggests", "-60" },
+		{ "cupt::resolver::score::unsatisfied-try", "-10000" },
+		{ "cupt::resolver::score::unsatisfied-wish", "-500" },
 		{ "cupt::resolver::score::failed-synchronization", "-80" },
 		{ "cupt::worker::archives-space-limit", "0" },
-		{ "cupt::worker::defer-triggers", "no" },
+		{ "cupt::worker::defer-triggers", "auto" },
 		{ "cupt::worker::download-only", "no" },
 		{ "cupt::worker::log", "yes" },
 		{ "cupt::worker::log::levels::metadata", "1" },
@@ -192,37 +231,6 @@ void ConfigImpl::initializeVariables()
 		{ "apt::get::purge", "cupt::worker::purge" },
 	};
 
-	optionalPatterns =
-	{
-		// used APT vars
-		"acquire::*::*::proxy",
-		"acquire::*::proxy::*",
-		"acquire::*::proxy",
-		"acquire::*::*::dl-limit",
-		"acquire::*::dl-limit::*",
-		"acquire::*::dl-limit",
-		"acquire::*::*::timeout",
-		"acquire::*::timeout::*",
-		"acquire::*::timeout",
-		"dpkg::tools::options::*",
-		"dpkg::tools::options::*::*",
-
-		// unused APT vars
-		"acquire::cdrom::*",
-		"acquire::compressiontypes::*",
-		"apt::archives::*",
-		"apt::periodic::*",
-		"aptlistbugs::*",
-		"unattended-upgrade::*",
-		"aptitude::*",
-		"dselect::*",
-
-		// used Cupt vars
-		"cupt::downloader::protocols::*::priority",
-		"cupt::downloader::protocols::*::methods",
-		"cupt::downloader::protocols::*::methods::*::priority",
-	};
-
 	listVars =
 	{
 		// used APT vars
@@ -230,18 +238,14 @@ void ConfigImpl::initializeVariables()
 		{ "apt::update::pre-invoke", vector< string > {} },
 		{ "apt::update::post-invoke", vector< string > {} },
 		{ "apt::update::post-invoke-success", vector< string > {} },
+		{ "dir::ignore-files-silently", { "~$", "\\.disabled$", "\\.bak$", "\\.dpkg-[a-z]+$" } },
 		{ "dpkg::options", vector< string > {} },
 		{ "dpkg::pre-install-pkgs", vector< string > {} },
 		{ "dpkg::pre-invoke", vector< string > {} },
 		{ "dpkg::post-invoke", vector< string > {} },
 
-		// unused APT vars
-		{ "rpm::pre-invoke", vector< string > {} },
-		{ "rpm::post-invoke", vector< string > {} },
-		{ "acquire::languages", vector< string > {} },
-		{ "apt::never-markauto-sections", vector< string > {} },
-
 		// Cupt vars
+		{ "cupt::cache::foreign-architectures", {} },
 		{ "cupt::cache::limit-releases::by-archive", vector< string > {} },
 		{ "cupt::cache::limit-releases::by-codename", vector< string > {} },
 		{ "cupt::downloader::protocols::file::methods", vector< string > { "file" } },
@@ -250,24 +254,84 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::downloader::protocols::https::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::http::methods", vector< string > { "curl", "wget" } },
 		{ "cupt::downloader::protocols::ftp::methods", vector< string > { "curl", "wget" } },
+		{ "cupt::resolver::no-autoremove-if-rdepends-exist", {} },
 	};
+
+	__initOptionalPatterns();
+}
+
+namespace {
+
+bool matchesAnyOfRegexes(const string& s, const vector< sregex >& regexes)
+{
+	smatch m;
+	return std::any_of(regexes.begin(), regexes.end(),
+			[&m, &s](const sregex& regex)
+			{
+				return regex_match(s, m, regex);
+			});
+}
+
+vector< string > getConfigurationPartsFilePaths(
+		const string& partsDirectoryPath, const vector< sregex >& ignorePathRegexes)
+{
+	using namespace std::placeholders;
+
+	vector< string > result = internal::fs::glob(partsDirectoryPath + "/*");
+	result.erase(std::remove_if(result.begin(), result.end(),
+			std::bind(matchesAnyOfRegexes, _1, ignorePathRegexes)), result.end());
+	return result;
+}
+
 }
 
 bool ConfigImpl::isOptionalOption(const string& optionName) const
 {
-	static const sregex convertRegex = sregex::compile("\\*");
-	smatch m;
-	FORIT(patternIt, optionalPatterns)
+	return matchesAnyOfRegexes(optionName, __optionalPatterns);
+}
+
+vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
+{
+	vector< sregex > ignorePathRegexes;
+	for (const auto& ignorePathRegexString: config->getList("dir::ignore-files-silently"))
 	{
-		auto currentRegexString = *patternIt;
-		currentRegexString = regex_replace(currentRegexString, convertRegex, "[^:]*?");
-		sregex currentRegex = sregex::compile(currentRegexString);
-		if (regex_match(optionName, m, currentRegex))
+		auto fullString = "^.*" + ignorePathRegexString + ".*$";
+		ignorePathRegexes.emplace_back(stringToRegex(fullString));
+	}
+
+	vector< string > result;
+	{ // APT files
+		result = getConfigurationPartsFilePaths(config->getPath("dir::etc::parts"), ignorePathRegexes);
+
+		auto mainFilePath = getEnvBasedConfigurationFilePath(config, "APT_CONFIG", "dir::etc::main");
+		if (!mainFilePath.empty())
 		{
-			return true;
+			result.push_back(mainFilePath);
 		}
 	}
-	return false;
+	{ // Cupt files
+		auto cuptParts = getConfigurationPartsFilePaths(
+				config->getPath("cupt::directory::configuration::main-parts"), ignorePathRegexes);
+		result.insert(result.end(), cuptParts.begin(), cuptParts.end());
+		auto mainFilePath = config->getPath("cupt::directory::configuration::main");
+		if (internal::fs::fileExists(mainFilePath))
+		{
+			result.push_back(mainFilePath);
+		}
+	}
+	return result;
+}
+
+string ConfigImpl::getEnvBasedConfigurationFilePath(const Config* config, const char* env, const char* optionName) const
+{
+	string path = config->getPath(optionName);
+	const char* envPath = getenv(env);
+	if (envPath)
+	{
+		path = envPath;
+	}
+
+	return internal::fs::fileExists(path) ? path : string();
 }
 
 void ConfigImpl::readConfigs(Config* config)
@@ -276,16 +340,16 @@ void ConfigImpl::readConfigs(Config* config)
 	{
 		if (value.size() < 2)
 		{
-			fatal2("internal error: unquoted simple value '%s'", value);
+			fatal2i("unquoted simple value '%s'", value);
 		}
 		return string(value.begin() + 1, value.end() - 1);
 	};
 
-	static auto regularHandler = [&config, unquoteValue](const string& name, const string& value)
+	static auto regularHandler = [&config](const string& name, const string& value)
 	{
 		config->setScalar(name, unquoteValue(value));
 	};
-	static auto listHandler = [&config, unquoteValue](const string& name, const string& value)
+	static auto listHandler = [&config](const string& name, const string& value)
 	{
 		config->setList(name, unquoteValue(value));
 	};
@@ -311,48 +375,34 @@ void ConfigImpl::readConfigs(Config* config)
 
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
-		vector< string > configFiles;
+		parsePreConfiguration(config, parser);
 
-		{ // APT files
-			string partsDir = config->getPath("dir::etc::parts");
-			configFiles = internal::fs::glob(partsDir + "/*");
-
-			string mainFilePath = config->getPath("dir::etc::main");
-			const char* envAptConfig = getenv("APT_CONFIG");
-			if (envAptConfig)
-			{
-				mainFilePath = envAptConfig;
-			}
-			if (internal::fs::fileExists(mainFilePath))
-			{
-				configFiles.push_back(mainFilePath);
-			}
-		}
-		{ // Cupt files
-			auto cuptParts = internal::fs::glob(config->getPath(
-					"cupt::directory::configuration::main-parts") + "/*");
-			configFiles.insert(configFiles.end(), cuptParts.begin(), cuptParts.end());
-			auto mainFilePath = config->getPath("cupt::directory::configuration::main");
-			if (internal::fs::fileExists(mainFilePath))
-			{
-				configFiles.push_back(mainFilePath);
-			}
-		}
-
-		FORIT(configFileIt, configFiles)
+		for (const auto& path: getConfigurationFilePaths(config))
 		{
-			try
-			{
-				parser.parse(*configFileIt);
-			}
-			catch (Exception&)
-			{
-				warn2("skipped configuration file '%s'", *configFileIt);
-			}
+			parseConfigurationFile(parser, path);
 		}
 	}
 }
 
+void ConfigImpl::parsePreConfiguration(const Config* config, ConfigParser& parser)
+{
+	auto path = getEnvBasedConfigurationFilePath(config, "CUPT_PRE_CONFIG", "cupt::directory::configuration::pre");
+	if (!path.empty())
+	{
+		parseConfigurationFile(parser, path);
+	}
+}
+
+void ConfigImpl::parseConfigurationFile(ConfigParser& parser, const string& path)
+{
+	try
+	{
+		parser.parse(path);
+	}
+	catch (Exception&)
+	{
+		warn2(__("skipped the configuration file '%s'"), path);
+	}
 }
 
 static string qx(const string& shellCommand)
@@ -361,15 +411,27 @@ static string qx(const string& shellCommand)
 	File file(shellCommand, "pr", openError); // reading from pipe
 	if (!openError.empty())
 	{
-		fatal2("unable to open pipe '%s': %s", shellCommand, openError);
+		fatal2(__("unable to open the pipe '%s': %s"), shellCommand, openError);
 	}
 	string result;
-	string block;
-	while (! file.getRecord(block).eof())
-	{
-		result += block;
-	}
+	file.getFile(result);
 	return result;
+}
+
+void ConfigImpl::setArchitecture(Config* config)
+{
+	const string dpkgPath = config->getPath("dir::bin::dpkg");
+	string architecture = qx(dpkgPath + " --print-architecture");
+	internal::chomp(architecture);
+	config->setScalar("apt::architecture", architecture);
+
+	string foreignArchitectures = qx(dpkgPath + " --print-foreign-architectures");
+	for (const auto& item: internal::split('\n', foreignArchitectures))
+	{
+		config->setList("cupt::cache::foreign-architectures", item);
+	}
+}
+
 }
 
 Config::Config()
@@ -377,11 +439,7 @@ Config::Config()
 	__impl = new internal::ConfigImpl;
 	__impl->initializeVariables();
 	__impl->readConfigs(this);
-
-	// setting architecture
-	string architecture = qx(getPath("dir::bin::dpkg") + " --print-architecture");
-	internal::chomp(architecture);
-	setScalar("apt::architecture", architecture);
+	__impl->setArchitecture(this);
 }
 
 Config::~Config()
@@ -438,7 +496,7 @@ string Config::getString(const string& optionName) const
 	}
 	else
 	{
-		fatal2("an attempt to get wrong scalar option '%s'", optionName);
+		fatal2(__("an attempt to get the invalid scalar option '%s'"), optionName);
 	}
 	__builtin_unreachable();
 }
@@ -494,7 +552,7 @@ ssize_t Config::getInteger(const string& optionName) const
 		}
 		catch (boost::bad_lexical_cast&)
 		{
-			fatal2("unable to convert '%s' to number", source);
+			fatal2(__("unable to convert '%s' to a number"), source);
 		}
 		return result; // we'll never return default value here
 	}
@@ -513,9 +571,23 @@ vector< string > Config::getList(const string& optionName) const
 	}
 	else
 	{
-		fatal2("an attempt to get wrong list option '%s'", optionName);
+		fatal2(__("an attempt to get the invalid list option '%s'"), optionName);
 	}
 	__builtin_unreachable();
+}
+
+static bool isFamilyOption(const string& optionName, const char* family)
+{
+	string prefix = string(family) + "::";
+	return optionName.compare(0, prefix.size(), prefix) == 0;
+}
+static inline bool isCuptOption(const string& optionName)
+{
+	return isFamilyOption(optionName, "cupt");
+}
+static bool isForeignOption(const string& optionName)
+{
+	return !isCuptOption(optionName) && !isFamilyOption(optionName, "dpkg");
 }
 
 void Config::setScalar(const string& optionName, const string& value)
@@ -537,13 +609,21 @@ void Config::setScalar(const string& optionName, const string& value)
 		}
 	}
 
+	if (isForeignOption(normalizedOptionName))
+	{
+		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
+	}
+
 	if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
 	{
 		__impl->regularVars[normalizedOptionName] = value;
 	}
 	else
 	{
-		warn2("an attempt to set wrong scalar option '%s'", optionName);
+		if (isCuptOption(optionName))
+		{
+			warn2(__("an attempt to set the invalid scalar option '%s'"), optionName);
+		}
 	}
 }
 
@@ -561,7 +641,10 @@ void Config::setList(const string& optionName, const string& value)
 	}
 	else
 	{
-		warn2("an attempt to set wrong list option '%s'", optionName);
+		if (isCuptOption(optionName))
+		{
+			warn2(__("an attempt to set the invalid list option '%s'"), optionName);
+		}
 	}
 }
 

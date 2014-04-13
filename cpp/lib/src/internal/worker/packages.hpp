@@ -36,7 +36,7 @@ using std::multimap;
 struct InnerAction
 {
 	enum Type { Remove, Unpack, Configure } type;
-	shared_ptr< const BinaryVersion > version;
+	const BinaryVersion* version;
 	bool fake;
 	mutable int16_t priority;
 	mutable const InnerAction* linkedFrom;
@@ -52,6 +52,7 @@ struct InnerActionGroup: public vector< InnerAction >
 	bool continued;
 
 	InnerActionGroup() : continued(false) {}
+	InnerAction::Type getCompoundActionType() const;
 };
 typedef pair< const InnerAction*, const InnerAction* > InnerActionPtrPair;
 struct GraphAndAttributes
@@ -84,25 +85,35 @@ struct Changeset
 	vector< pair< download::Manager::DownloadEntity, string > > downloads;
 };
 
+class Dpkg;
+
 class PackagesWorker: public virtual WorkerBase
 {
 	std::set< string > __auto_installed_package_names;
+	map< string, unique_ptr< BinaryVersion > > __fake_versions_for_purge;
 
+	const BinaryVersion* __get_fake_version_for_purge(const string&);
 	void __fill_actions(GraphAndAttributes&);
 	bool __build_actions_graph(GraphAndAttributes&);
 	map< string, pair< download::Manager::DownloadEntity, string > > __prepare_downloads();
 	vector< Changeset > __get_changesets(GraphAndAttributes&,
 			const map< string, pair< download::Manager::DownloadEntity, string > >&);
-	void __run_dpkg_command(const string&, const string&, const string&);
+	void __run_dpkg_command(const string&, const string&, const CommandInput&);
 	void __do_dpkg_pre_actions();
 	void __do_dpkg_post_actions();
-	string __generate_input_for_preinstall_v2_hooks(const vector< InnerActionGroup >&);
+	string p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>&);
+	string p_generateInputForPreinstallV2OrV3Hooks(const vector<InnerActionGroup>&, bool);
+	CommandInput p_getCommandInputForPreinstallPackagesHook(const string&, const vector<InnerActionGroup>&);
 	void __do_dpkg_pre_packages_actions(const vector< InnerActionGroup >&);
 	void __clean_downloads(const Changeset& changeset);
 	void __do_downloads(const vector< pair< download::Manager::DownloadEntity, string > >&,
 			const shared_ptr< download::Progress >&);
 	static void __check_graph_pre_depends(GraphAndAttributes& gaa, bool);
 	void __change_auto_status(const InnerActionGroup&);
+	void __do_independent_auto_status_changes();
+	string __get_dpkg_action_command(const string&, const string&, const string&,
+			InnerAction::Type, const string&, const InnerActionGroup&, bool);
+	void p_processActionGroup(Dpkg&, const InnerActionGroup&);
  public:
 	PackagesWorker();
 

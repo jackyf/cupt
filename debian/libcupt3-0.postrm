@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+	purge)
+		rm -rf /var/lib/cupt
+		rm -f /var/log/cupt.log*
+		;;
+esac
+
+#DEBHELPER#

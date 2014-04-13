@@ -25,6 +25,7 @@ using std::list;
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/sourcepackage.hpp>
 #include <cupt/cache/sourceversion.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
@@ -36,31 +37,36 @@ namespace dependencygraph {
 using cache::RelationExpression;
 using std::make_pair;
 
-InitialPackageEntry::InitialPackageEntry()
-	: sticked(false), modified(false)
+BasicVertex::~BasicVertex()
 {}
 
 size_t BasicVertex::getTypePriority() const
 {
-	fatal2("internal error: getting priority of '%s'", toString());
+	fatal2i("getting priority of '%s'", toString());
 	return 0; // unreachable
 }
 
+uint32_t BasicVertex::__next_id = 0;
+
+BasicVertex::BasicVertex()
+	: id(__next_id++)
+{}
+
 bool BasicVertex::isAnti() const
 {
-	fatal2("internal error: getting isAnti of '%s'", toString());
+	fatal2i("getting isAnti of '%s'", toString());
 	return false; // unreachable
 }
 
 shared_ptr< const Reason > BasicVertex::getReason(const BasicVertex&) const
 {
-	fatal2("internal error: getting reason of '%s'", toString());
+	fatal2i("getting reason of '%s'", toString());
 	return shared_ptr< const Reason >(); // unreachable
 }
 
-const forward_list< const Element* >* BasicVertex::getRelatedElements() const
+const forward_list<Element>* BasicVertex::getRelatedElements() const
 {
-	fatal2("internal error: getting related elements of '%s'", toString());
+	fatal2i("getting related elements of '%s'", toString());
 	return NULL; // unreachable
 }
 
@@ -69,7 +75,24 @@ Unsatisfied::Type BasicVertex::getUnsatisfiedType() const
 	return Unsatisfied::None;
 }
 
-VersionVertex::VersionVertex(const map< string, forward_list< const Element* > >::iterator& it)
+const RequestImportance& BasicVertex::getUnsatisfiedImportance() const
+{
+	fatal2i("getting unsatisfied importance of '%s'", toString());
+	return *(const RequestImportance*)nullptr; // unreachable
+}
+
+bool BasicVertex::asAuto() const
+{
+	fatal2i("getting asAuto of '%s'", toString());
+	return true; // unreacahble
+}
+
+Element BasicVertex::getFamilyKey() const
+{
+	return this;
+}
+
+VersionVertex::VersionVertex(const FamilyMap::iterator& it)
 	: __related_element_ptrs_it(it)
 {}
 
@@ -79,9 +102,9 @@ string VersionVertex::toString() const
 			(version ? version->versionString : "<not installed>");
 }
 
-const forward_list< const Element* >* VersionVertex::getRelatedElements() const
+const forward_list<Element>* VersionVertex::getRelatedElements() const
 {
-	return &__related_element_ptrs_it->second;
+	return &__related_element_ptrs_it->second.first;
 }
 
 const string& VersionVertex::getPackageName() const
@@ -94,12 +117,17 @@ string VersionVertex::toLocalizedString() const
 	const string& packageName = getPackageName();
 	if (version)
 	{
-		return __("installed ") + packageName + ' ' + version->versionString;
+		return string(__("installed")) + ' ' + packageName + ' ' + version->versionString;
 	}
 	else
 	{
-		return __("removed ") + packageName;
+		return string(__("removed")) + ' ' + packageName;
 	}
+}
+
+Element VersionVertex::getFamilyKey() const
+{
+	return __related_element_ptrs_it->second.second;
 }
 
 typedef BinaryVersion::RelationTypes::Type RelationType;
@@ -108,32 +136,28 @@ struct RelationExpressionVertex: public BasicVertex
 {
 	RelationType dependencyType;
 	const RelationExpression* relationExpressionPtr;
-	string specificPackageName;
 
 	string toString() const;
 	size_t getTypePriority() const;
 	shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	bool isAnti() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
+	bool asAuto() const
+	{
+		return true;
+	}
 };
 
 string RelationExpressionVertex::toString() const
 {
-	auto result = format2("%s '%s'", BinaryVersion::RelationTypes::rawStrings[dependencyType],
+	return format2("%s '%s'", BinaryVersion::RelationTypes::rawStrings[dependencyType],
 			relationExpressionPtr->toString());
-	if (!specificPackageName.empty())
-	{
-		result += string(" [") + specificPackageName + ']';
-	}
-	return result;
 }
 
 size_t RelationExpressionVertex::getTypePriority() const
 {
 	switch (dependencyType)
 	{
-		case BinaryVersion::RelationTypes::Conflicts:
-		case BinaryVersion::RelationTypes::Breaks:
 		case BinaryVersion::RelationTypes::PreDepends:
 		case BinaryVersion::RelationTypes::Depends:
 			return 3;
@@ -142,15 +166,14 @@ size_t RelationExpressionVertex::getTypePriority() const
 		case BinaryVersion::RelationTypes::Suggests:
 			return 1;
 		default:
-			fatal2("internal error: unsupported dependency type '%d'", int(dependencyType));
+			fatal2i("unsupported dependency type '%d'", int(dependencyType));
 	}
 	return 0; // unreacahble
 }
 
 bool RelationExpressionVertex::isAnti() const
 {
-	return dependencyType == BinaryVersion::RelationTypes::Conflicts ||
-			dependencyType == BinaryVersion::RelationTypes::Breaks;
+	return false;
 }
 
 shared_ptr< const Reason > RelationExpressionVertex::getReason(const BasicVertex& parent) const
@@ -160,7 +183,7 @@ shared_ptr< const Reason > RelationExpressionVertex::getReason(const BasicVertex
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal2("internal error: a parent of relation expression vertex is not a version vertex");
+		fatal2i("a parent of relation expression vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new OurReason(versionParent->version,
@@ -180,7 +203,6 @@ Unsatisfied::Type RelationExpressionVertex::getUnsatisfiedType() const
 	}
 }
 
-
 struct PositionPenaltyRelationExpressionVertex: public RelationExpressionVertex
 {
 	size_t position;
@@ -195,6 +217,28 @@ struct PositionPenaltyRelationExpressionVertex: public RelationExpressionVertex
 	string toString() const
 	{
 		return format2("position penalty #%zu (%s)", position, RelationExpressionVertex::toString());
+	}
+};
+
+struct AntiRelationExpressionVertex: public RelationExpressionVertex
+{
+	string specificPackageName;
+
+	string toString() const
+	{
+		return RelationExpressionVertex::toString() + " [" + specificPackageName + ']';
+	}
+	size_t getTypePriority() const
+	{
+		return 3;
+	}
+	bool isAnti() const
+	{
+		return true;
+	}
+	Unsatisfied::Type getUnsatisfiedType() const
+	{
+		return Unsatisfied::None;
 	}
 };
 
@@ -230,7 +274,7 @@ shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& paren
 	auto versionParent = dynamic_cast< const VersionVertex* >(&parent);
 	if (!versionParent)
 	{
-		fatal2("internal error: a parent of relation expression vertex is not a version vertex");
+		fatal2i("a parent of synchronize vertex is not a version vertex");
 	}
 	return shared_ptr< const Reason >(
 			new system::Resolver::SynchronizationReason(versionParent->version, targetPackageName));
@@ -248,10 +292,10 @@ Unsatisfied::Type SynchronizeVertex::getUnsatisfiedType() const
 
 struct UnsatisfiedVertex: public BasicVertex
 {
-	const Element* parent;
+	Element parent;
 
 	string toString() const;
-	const forward_list< const Element* >* getRelatedElements() const;
+	const forward_list<Element>* getRelatedElements() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
@@ -261,7 +305,7 @@ string UnsatisfiedVertex::toString() const
 	return u + parent->toString();
 }
 
-const forward_list< const Element* >* UnsatisfiedVertex::getRelatedElements() const
+const forward_list<Element>* UnsatisfiedVertex::getRelatedElements() const
 {
 	return NULL;
 }
@@ -271,36 +315,82 @@ Unsatisfied::Type UnsatisfiedVertex::getUnsatisfiedType() const
 	return parent->getUnsatisfiedType();
 }
 
-
-bool __are_versions_equal(const shared_ptr< const BinaryVersion >& left,
-		const shared_ptr< const BinaryVersion >& right)
+class CustomUnsatisfiedVertex: public UnsatisfiedVertex
 {
-	if (left)
+	RequestImportance importance;
+ public:
+	CustomUnsatisfiedVertex(const RequestImportance& importance_)
+		: importance(importance_)
+	{}
+	Unsatisfied::Type getUnsatisfiedType() const
 	{
-		return right && left->versionString == right->versionString;
+		return Unsatisfied::Custom;
 	}
-	else
+	const RequestImportance& getUnsatisfiedImportance() const
 	{
-		return !right;
+		return importance;
 	}
-}
+};
+
+class AnnotatedUserReason: public system::Resolver::UserReason
+{
+	string p_annotation;
+ public:
+	AnnotatedUserReason(const string& annotation)
+		: p_annotation(annotation)
+	{}
+	string toString() const
+	{
+		return UserReason::toString() + ": " + p_annotation;
+	}
+};
+
+struct UserRelationExpressionVertex: public BasicVertex
+{
+	bool invert;
+	bool asAutoFlag;
+	string annotation;
+
+	UserRelationExpressionVertex(const UserRelationExpression& ure)
+		: invert(ure.invert)
+		, asAutoFlag(ure.asAuto)
+		, annotation(ure.annotation)
+	{}
+	size_t getTypePriority() const
+	{
+		return 4;
+	}
+	bool isAnti() const
+	{
+		return invert;
+	}
+	bool asAuto() const
+	{
+		return asAutoFlag;
+	}
+	shared_ptr< const Reason > getReason(const BasicVertex&) const
+	{
+		return std::make_shared< const AnnotatedUserReason >(annotation);
+	}
+	string toString() const
+	{
+		return "custom: " + annotation;
+	}
+};
 
 bool __is_version_array_intersects_with_packages(
-		const vector< shared_ptr< const BinaryVersion > >& versions,
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
+		const vector< const BinaryVersion* >& versions,
+		const map< string, const BinaryVersion* >& oldPackages)
 {
-	FORIT(versionIt, versions)
+	for (const auto& version: versions)
 	{
-		const shared_ptr< const BinaryVersion >& version = *versionIt;
-		const string& packageName = version->packageName;
-
-		auto oldPackageIt = oldPackages.find(packageName);
+		auto oldPackageIt = oldPackages.find(version->packageName);
 		if (oldPackageIt == oldPackages.end())
 		{
 			continue;
 		}
 
-		if (version->versionString == oldPackageIt->second->versionString)
+		if (version == oldPackageIt->second)
 		{
 			return true;
 		}
@@ -309,7 +399,7 @@ bool __is_version_array_intersects_with_packages(
 	return false;
 }
 
-bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& version,
+bool __version_has_relation_expression(const BinaryVersion* version,
 		BinaryVersion::RelationTypes::Type dependencyType,
 		const RelationExpression& relationExpression)
 {
@@ -326,11 +416,11 @@ bool __version_has_relation_expression(const shared_ptr< const BinaryVersion >& 
 }
 
 bool __is_soft_dependency_ignored(const Config& config,
-		const shared_ptr< const BinaryVersion >& version,
+		const BinaryVersion* version,
 		BinaryVersion::RelationTypes::Type dependencyType,
 		const RelationExpression& relationExpression,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions,
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
+		const vector< const BinaryVersion* >& satisfyingVersions,
+		const map< string, const BinaryVersion* >& oldPackages)
 {
 	auto wasSatisfiedInPast = __is_version_array_intersects_with_packages(
 				satisfyingVersions, oldPackages);
@@ -357,7 +447,7 @@ bool __is_soft_dependency_ignored(const Config& config,
 	auto oldPackageIt = oldPackages.find(version->packageName);
 	if (oldPackageIt != oldPackages.end())
 	{
-		const shared_ptr< const BinaryVersion >& oldVersion = oldPackageIt->second;
+		auto& oldVersion = oldPackageIt->second;
 		if (__version_has_relation_expression(oldVersion,
 			dependencyType, relationExpression))
 		{
@@ -371,11 +461,11 @@ bool __is_soft_dependency_ignored(const Config& config,
 	return false;
 }
 
-bool __is_position_penalty_ignored(
+static bool __is_position_penalty_ignored(
 		BinaryVersion::RelationTypes::Type dependencyType,
 		const RelationExpression& relationExpression,
-		const vector< shared_ptr< const BinaryVersion > >& satisfyingVersions,
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages)
+		const vector<const BinaryVersion*>& satisfyingVersions,
+		const map<string, const BinaryVersion*>& oldPackages)
 {
 	if (__is_version_array_intersects_with_packages(
 				satisfyingVersions, oldPackages)) // was satisfied in the past?
@@ -409,7 +499,7 @@ vector< DependencyEntry > __get_dependency_groups(const Config& config)
 		auto installOptionName = string("apt::install-") + subname;
 		if (config.getBool(installOptionName))
 		{
-			warn2("a positive value of the option '%s' has no effect without a positive value of the option '%s'",
+			warn2(__("a positive value of the option '%s' has no effect without a positive value of the option '%s'"),
 					installOptionName, string("cupt::resolver::keep-") + subname);
 		}
 	};
@@ -448,22 +538,20 @@ DependencyGraph::DependencyGraph(const Config& config, const Cache& cache)
 
 DependencyGraph::~DependencyGraph()
 {
-	const set< const Element* >& vertices = this->getVertices();
-	FORIT(elementIt, vertices)
+	for (auto element: this->getVertices())
 	{
-		delete *elementIt;
+		delete element;
 	}
 }
 
-vector< string > __get_related_binary_package_names(const Cache& cache,
-		const shared_ptr< const BinaryVersion >& version)
+vector< string > __get_related_binary_package_names(const Cache& cache, const BinaryVersion* version)
 {
 	const string& sourcePackageName = version->sourcePackageName;
 
 	auto sourcePackage = cache.getSourcePackage(sourcePackageName);
 	if (sourcePackage)
 	{
-		auto sourceVersion = static_pointer_cast< const SourceVersion >(
+		auto sourceVersion = static_cast< const SourceVersion* >(
 				sourcePackage->getSpecificVersion(version->sourceVersionString));
 		if (sourceVersion)
 		{
@@ -476,18 +564,17 @@ vector< string > __get_related_binary_package_names(const Cache& cache,
 	return vector< string >();
 }
 
-vector< shared_ptr< const BinaryVersion > > __get_versions_by_source_version_string(const Cache& cache,
+vector< const BinaryVersion* > __get_versions_by_source_version_string(const Cache& cache,
 		const string& packageName, const string& sourceVersionString)
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	vector< const BinaryVersion* > result;
 	if (auto package = cache.getBinaryPackage(packageName))
 	{
-		auto versions = package->getVersions();
-		FORIT(versionIt, versions)
+		for (auto version: *package)
 		{
-			if ((*versionIt)->sourceVersionString == sourceVersionString)
+			if (version->sourceVersionString == sourceVersionString)
 			{
-				result.push_back(*versionIt);
+				result.push_back(version);
 			}
 		}
 	}
@@ -511,29 +598,28 @@ short __get_synchronize_level(const Config& config)
 	{
 		return 2;
 	}
-	fatal2("the option '%s' can have only values 'none', 'soft' or 'hard'", optionName);
+	fatal2(__("the option '%s' can have only values 'none', 'soft' or 'hard'"), optionName);
 	return 0; // unreachable
 }
 
 class DependencyGraph::FillHelper
 {
 	DependencyGraph& __dependency_graph;
-	const map< string, shared_ptr< const BinaryVersion > >& __old_packages;
-	const map< string, InitialPackageEntry >& __initial_packages;
+	const map< string, const BinaryVersion* >& __old_packages;
 	bool __debugging;
 
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
 
-	map< string, forward_list< const Element* > > __package_name_to_vertex_ptrs;
+	map< string, pair< forward_list<Element>, Element > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
-	unordered_map< string, const Element* > __relation_expression_to_vertex_ptr;
 
-	typedef list< pair< string, const Element* > > MetaElements;
+	typedef map<string, Element> MetaElements;
 	unordered_map< string, MetaElements > __meta_relation_expression_vertices;
-	unordered_map< string, list< pair< string, const Element* > > > __meta_synchronize_map;
+	unordered_map< string, list< pair< string, Element > > > __meta_synchronize_map;
+	Element p_dummyElementPtr;
 
-	set< const Element* > __unfolded_elements;
+	set<Element> __unfolded_elements;
 
 	bool __can_package_be_removed(const string& packageName) const
 	{
@@ -544,55 +630,67 @@ class DependencyGraph::FillHelper
 
  public:
 	FillHelper(DependencyGraph& dependencyGraph,
-			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
-			const map< string, InitialPackageEntry >& initialPackages)
-		: __dependency_graph(dependencyGraph),
-		__old_packages(oldPackages), __initial_packages(initialPackages),
-		__debugging(__dependency_graph.__config.getBool("debug::resolver"))
+			const map< string, const BinaryVersion* >& oldPackages)
+		: __dependency_graph(dependencyGraph)
+		, __old_packages(oldPackages)
+		, __debugging(__dependency_graph.__config.getBool("debug::resolver"))
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
+		p_dummyElementPtr = getVertexPtrForEmptyPackage("<user requests>");
 	}
 
-	const VersionVertex* getVertexPtr(const string& packageName, const shared_ptr< const BinaryVersion >& version)
+	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version, bool overrideChecks = false)
 	{
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
-			auto initialPackageIt = this->__initial_packages.find(packageName);
-			if (initialPackageIt != this->__initial_packages.end() && initialPackageIt->second.sticked)
-			{
-				if (!__are_versions_equal(version, initialPackageIt->second.version))
-				{
-					return false;
-				}
-			}
-
 			if (!version && !__can_package_be_removed(packageName))
 			{
 				return false;
+			}
+
+			if (version)
+			{
+				for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName].first)
+				{
+					auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
+					if (!existingVersion) continue;
+					if (versionstring::sameOriginal(version->versionString, existingVersion->versionString))
+					{
+						if (std::equal(version->relations,
+									version->relations + BinaryVersion::RelationTypes::Count,
+									existingVersion->relations))
+						{
+							return false; // no reasons to allow this version dependency-wise
+						}
+					}
+				}
 			}
 
 			return true;
 		};
 		auto makeVertex = [this, &packageName, &version]() -> const VersionVertex*
 		{
-			static const forward_list< const Element* > nullElementList;
 			auto relatedVertexPtrsIt = __package_name_to_vertex_ptrs.insert(
-					make_pair(packageName, nullElementList)).first;
+					{ packageName, { {}, nullptr } }).first;
 			auto vertexPtr(new VersionVertex(relatedVertexPtrsIt));
 			vertexPtr->version = version;
 			__dependency_graph.addVertex(vertexPtr);
-			relatedVertexPtrsIt->second.push_front(vertexPtr);
+			relatedVertexPtrsIt->second.first.push_front(vertexPtr);
+			if (!relatedVertexPtrsIt->second.second)
+			{
+				relatedVertexPtrsIt->second.second = vertexPtr; // family vertex
+			}
 			return vertexPtr;
 		};
 
-		string versionHashString = packageName + ' ' + (version ? version->versionString : "");
-		auto insertResult = __version_to_vertex_ptr.insert(
-				make_pair(std::move(versionHashString), (const VersionVertex*)NULL));
+		string versionHashString = packageName;
+		versionHashString.append((const char*)&version, sizeof(version));
+		auto insertResult = __version_to_vertex_ptr.insert({ std::move(versionHashString), nullptr });
 		bool isNew = insertResult.second;
 		const VersionVertex** elementPtrPtr = &insertResult.first->second;
 
-		if (isNew && isVertexAllowed())
+		if ((isNew && isVertexAllowed()) || (overrideChecks && !*elementPtrPtr))
 		{
 			// needs new vertex
 			*elementPtrPtr = makeVertex();
@@ -600,21 +698,21 @@ class DependencyGraph::FillHelper
 		return *elementPtrPtr;
 	}
 
-	const VersionElement* getVertexPtr(const shared_ptr< const BinaryVersion >& version)
+	VersionElement getVertexPtr(const BinaryVersion* version, bool overrideChecks = false)
 	{
-		return getVertexPtr(version->packageName, version);
+		return getVertexPtr(version->packageName, version, overrideChecks);
 	}
 
  private:
-	void addEdgeCustom(const Element* fromVertexPtr, const Element* toVertexPtr)
+	void addEdgeCustom(Element fromVertexPtr, Element toVertexPtr)
 	{
-		__dependency_graph.addEdgeFromPointers(fromVertexPtr, toVertexPtr);
+		__dependency_graph.addEdge(fromVertexPtr, toVertexPtr);
 	}
 
  public:
-	const Element* getVertexPtrForEmptyPackage(const string& packageName)
+	Element getVertexPtrForEmptyPackage(const string& packageName)
 	{
-		return getVertexPtr(packageName, shared_ptr< const BinaryVersion >());
+		return getVertexPtr(packageName, nullptr);
 	}
 
  private:
@@ -629,80 +727,77 @@ class DependencyGraph::FillHelper
 		return insertResult.first->second;
 	}
 
+	void buildEdgesForAntiRelationExpression(
+			MetaElements* packageNameToSubElements,
+			const vector< const BinaryVersion* > satisfyingVersions,
+			const std::function< Element (const string&) >& createVertex)
+	{
+		for (auto satisfyingVersion: satisfyingVersions)
+		{
+			const string& packageName = satisfyingVersion->packageName;
+			auto& subElement = (*packageNameToSubElements)[packageName];
+			if (subElement) continue;
+
+			subElement = createVertex(packageName);
+
+			auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
+			if (!package) fatal2i("the binary package '%s' doesn't exist", packageName);
+
+			for (auto packageVersion: *package)
+			{
+				if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
+							packageVersion) == satisfyingVersions.end())
+				{
+					if (auto queuedVersionPtr = getVertexPtr(packageVersion))
+					{
+						addEdgeCustom(subElement, queuedVersionPtr);
+					}
+				}
+			}
+
+			if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName))
+			{
+				addEdgeCustom(subElement, emptyPackageElementPtr);
+			}
+		}
+	}
+
 	void processAntiRelation(const string& packageName,
-			const Element* vertexPtr, const RelationExpression& relationExpression,
+			Element vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		bool isNewMetaVertex;
-		MetaElements& subElementPtrs = getRelationExpressionMetaVertex(
+		MetaElements& packageNameToSubElements = getRelationExpressionMetaVertex(
 				relationExpression, dependencyType, &isNewMetaVertex);
 
 		if (isNewMetaVertex)
 		{
-			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
-			// filling sub elements
-			map< string, list< const BinaryVersion* > > groupedSatisfiedVersions;
-			FORIT(satisfyingVersionIt, satisfyingVersions)
+			auto createVertex = [&](const string& packageName)
 			{
-				groupedSatisfiedVersions[(*satisfyingVersionIt)->packageName].push_back(
-						satisfyingVersionIt->get());
-			}
-
-			FORIT(groupIt, groupedSatisfiedVersions)
-			{
-				const string& packageName = groupIt->first;
-
-				auto subVertex(new RelationExpressionVertex);
+				auto subVertex(new AntiRelationExpressionVertex);
 				subVertex->dependencyType = dependencyType;
 				subVertex->relationExpressionPtr = &relationExpression;
 				subVertex->specificPackageName = packageName;
-				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
-				subElementPtrs.push_back(make_pair(packageName, subVertexPtr));
-
-				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
-				if (!package)
-				{
-					fatal2("internal error: the binary package '%s' doesn't exist", packageName);
-				}
-				auto packageVersions = package->getVersions();
-				const list< const BinaryVersion* >& subSatisfiedVersions = groupIt->second;
-				FORIT(packageVersionIt, packageVersions)
-				{
-					auto predicate = [&packageVersionIt](const BinaryVersion* left) -> bool
-					{
-						return *left == **packageVersionIt;
-					};
-					if (std::find_if(subSatisfiedVersions.begin(), subSatisfiedVersions.end(),
-								predicate) == subSatisfiedVersions.end())
-					{
-						if (auto queuedVersionPtr = getVertexPtr(*packageVersionIt))
-						{
-							addEdgeCustom(subVertexPtr, queuedVersionPtr);
-						}
-					}
-				}
-
-				if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName))
-				{
-					addEdgeCustom(subVertexPtr, emptyPackageElementPtr);
-				}
-			}
+				return __dependency_graph.addVertex(subVertex);
+			};
+			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
+			buildEdgesForAntiRelationExpression(&packageNameToSubElements, satisfyingVersions, createVertex);
 		}
-		FORIT(subElementPtrIt, subElementPtrs)
+		for (const auto& it: packageNameToSubElements)
 		{
-			if (subElementPtrIt->first == packageName)
+			if (it.first == packageName)
 			{
 				continue; // doesn't conflict with itself
 			}
-			addEdgeCustom(vertexPtr, subElementPtrIt->second);
+			addEdgeCustom(vertexPtr, it.second);
 		}
 	}
 
-	void processForwardRelation(const shared_ptr< const BinaryVersion >& version,
-			const Element* vertexPtr, const RelationExpression& relationExpression,
+	void processForwardRelation(const BinaryVersion* version,
+			Element vertexPtr, const RelationExpression& relationExpression,
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
-		vector< shared_ptr< const BinaryVersion > > satisfyingVersions;
+		vector< const BinaryVersion* > satisfyingVersions;
 		// very expensive, delay calculation as possible
 		bool calculatedSatisfyingVersions = false;
 
@@ -735,7 +830,7 @@ class DependencyGraph::FillHelper
 			vertex->dependencyType = dependencyType;
 			vertex->relationExpressionPtr = &relationExpression;
 			auto relationExpressionVertexPtr = __dependency_graph.addVertex(vertex);
-			subElementPtrs.push_back(make_pair(string(), relationExpressionVertexPtr)); // TODO: distinct container
+			subElementPtrs[""] = relationExpressionVertexPtr; // TODO: distinct container
 
 			// main subvertex
 			if (!calculatedSatisfyingVersions)
@@ -777,7 +872,7 @@ class DependencyGraph::FillHelper
 				auto subVertex(new PositionPenaltyRelationExpressionVertex(*vertex));
 				subVertex->position = (relationIt - relationExpression.begin());
 				auto subVertexPtr = __dependency_graph.addVertex(subVertex);
-				subElementPtrs.push_back(make_pair(string(), subVertexPtr));
+				subElementPtrs[relationIt->toString()] = subVertexPtr; // TODO: simple list?
 
 				FORIT(subSatisfyingVersionIt, subSatisfyingVersions)
 				{
@@ -802,14 +897,13 @@ class DependencyGraph::FillHelper
 		}
 	}
 
-	void processSynchronizations(const shared_ptr< const BinaryVersion >& version,
-			const Element* vertexPtr)
+	void processSynchronizations(const BinaryVersion*& version, Element vertexPtr)
 	{
 		auto hashKey = version->sourcePackageName + ' ' + version->sourceVersionString;
-		static const list< pair< string, const Element* > > emptyList;
+		static const list< pair< string, Element > > emptyList;
 		auto insertResult = __meta_synchronize_map.insert(make_pair(hashKey, emptyList));
 		bool isNewMetaVertex = insertResult.second;
-		list< pair< string, const Element* > >& subElementPtrs = insertResult.first->second;
+		auto& subElementPtrs = insertResult.first->second;
 
 		if (isNewMetaVertex)
 		{
@@ -856,110 +950,162 @@ class DependencyGraph::FillHelper
 		}
 	}
 
- public:
-	void unfoldElement(const Element* elementPtr)
+	Element createCustomUnsatisfiedElement(Element parent, const RequestImportance& importance)
 	{
-		if (!__unfolded_elements.insert(elementPtr).second)
+		auto vertex = new CustomUnsatisfiedVertex(importance);
+		vertex->parent = parent;
+		return __dependency_graph.addVertex(vertex);
+	}
+
+ public:
+	void unfoldElement(Element element)
+	{
+		if (!__unfolded_elements.insert(element).second)
 		{
 			return; // processed already
 		}
-		auto versionElementPtr = dynamic_cast< const VersionElement* >(elementPtr);
-		if (!versionElementPtr)
+		auto versionElement = dynamic_cast<VersionElement>(element);
+		if (!versionElement)
 		{
 			return; // nothing to process
 		}
 
 		// persistent one
-		auto version = versionElementPtr->version;
+		auto version = versionElement->version;
 		if (!version)
 		{
 			return;
 		}
 
-		FORIT(dependencyGroupIt, __dependency_groups)
+		for (const auto& dependencyGroup: __dependency_groups)
 		{
-			auto dependencyType = dependencyGroupIt->type;
-			auto isDependencyAnti = dependencyGroupIt->isAnti;
+			auto dependencyType = dependencyGroup.type;
+			auto isDependencyAnti = dependencyGroup.isAnti;
 
-			const RelationLine& relationLine = version->relations[dependencyType];
-			FORIT(relationExpressionIt, relationLine)
+			for (const auto& relationExpression: version->relations[dependencyType])
 			{
-				const RelationExpression& relationExpression = *relationExpressionIt;
-
 				if (isDependencyAnti)
 				{
-					processAntiRelation(version->packageName, elementPtr, relationExpression, dependencyType);
+					processAntiRelation(version->packageName, element, relationExpression, dependencyType);
 				}
 				else
 				{
-					processForwardRelation(version, elementPtr, relationExpression, dependencyType);
+					processForwardRelation(version, element, relationExpression, dependencyType);
 				}
 			}
 		}
 
 		if (__synchronize_level && !version->isInstalled())
 		{
-			processSynchronizations(version, elementPtr);
+			processSynchronizations(version, element);
+		}
+	}
+
+	Element getDummyElementPtr() const
+	{
+		return p_dummyElementPtr;
+	}
+
+	void addUserRelationExpression(const UserRelationExpression& ure)
+	{
+		Element unsatisfiedElement = nullptr;
+
+		auto createVertex = [&](const string&) -> Element
+		{
+			auto vertex = new UserRelationExpressionVertex(ure);
+			__dependency_graph.addVertex(vertex);
+			addEdgeCustom(p_dummyElementPtr, vertex);
+			if (ure.importance != RequestImportance::Must)
+			{
+				if (!unsatisfiedElement) unsatisfiedElement = createCustomUnsatisfiedElement(vertex, ure.importance);
+				addEdgeCustom(vertex, unsatisfiedElement);
+			}
+			return vertex;
+		};
+
+		auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(ure.expression);
+		if (!ure.invert)
+		{
+			static string dummy;
+			auto vertex = createVertex(dummy);
+			for (auto version: satisfyingVersions)
+			{
+				addEdgeCustom(vertex, getVertexPtr(version, true));
+			}
+		}
+		else
+		{
+			map< string, Element > subElements;
+			buildEdgesForAntiRelationExpression(&subElements, satisfyingVersions, createVertex);
 		}
 	}
 };
 
-vector< pair< const dg::Element*, PackageEntry > > DependencyGraph::fill(
-		const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
-		const map< string, InitialPackageEntry >& initialPackages)
+vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph::fill(
+		const map< string, const BinaryVersion* >& oldPackages)
 {
-	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages, initialPackages));
+	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages));
 
 	{ // getting elements from initial packages
-		FORIT(it, initialPackages)
+		for (const auto& item: oldPackages)
 		{
-			const InitialPackageEntry& initialPackageEntry = it->second;
-			const shared_ptr< const BinaryVersion >& initialVersion = initialPackageEntry.version;
+			const auto& oldVersion = item.second;
 
-			if (initialVersion)
+			__fill_helper->getVertexPtr(oldVersion);
+
+			const string& packageName = oldVersion->packageName;
+			auto package = __cache.getBinaryPackage(packageName);
+			for (auto version: *package)
 			{
-				__fill_helper->getVertexPtr(initialVersion);
-
-				if (!initialPackageEntry.sticked)
-				{
-					const string& packageName = it->first;
-					auto package = __cache.getBinaryPackage(packageName);
-					auto versions = package->getVersions();
-					FORIT(versionIt, versions)
-					{
-						__fill_helper->getVertexPtr(*versionIt);
-					}
-
-					__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
-				}
+				__fill_helper->getVertexPtr(version);
 			}
+
+			__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
 		}
 	}
 
-	vector< pair< const Element*, PackageEntry > > result;
-	{ // generating solution elements
-		FORIT(it, initialPackages)
-		{
-			auto elementPtr = __fill_helper->getVertexPtr(it->first, it->second.version);
-			PackageEntry packageEntry;
-			packageEntry.sticked = it->second.sticked;
-			result.push_back(make_pair(elementPtr, packageEntry));
-		}
+	return p_generateSolutionElements(oldPackages);
+}
+
+vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
+		const map< string, const BinaryVersion* >& oldPackages)
+{
+	vector< pair< Element, shared_ptr< const PackageEntry > > > result;
+
+	auto generate = [&result](Element element, bool sticked)
+	{
+		auto packageEntry = std::make_shared<PackageEntry>();
+		packageEntry->element = element;
+		packageEntry->sticked = sticked;
+
+		result.emplace_back(element->getFamilyKey(), packageEntry);
+	};
+
+	for (const auto& it: oldPackages)
+	{
+		generate(__fill_helper->getVertexPtr(it.second), false);
 	}
+	generate(__fill_helper->getDummyElementPtr(), true);
+
 	return result;
 }
 
-void DependencyGraph::unfoldElement(const Element* elementPtr)
+void DependencyGraph::addUserRelationExpression(const UserRelationExpression& ure)
 {
-	__fill_helper->unfoldElement(elementPtr);
+	__fill_helper->addUserRelationExpression(ure);
 }
 
-const Element* DependencyGraph::getCorrespondingEmptyElement(const Element* elementPtr)
+void DependencyGraph::unfoldElement(Element element)
 {
-	auto versionVertex = dynamic_cast< const VersionVertex* >(elementPtr);
+	__fill_helper->unfoldElement(element);
+}
+
+Element DependencyGraph::getCorrespondingEmptyElement(Element element)
+{
+	auto versionVertex = dynamic_cast<VersionElement>(element);
 	if (!versionVertex)
 	{
-		fatal2("internal error: getting corresponding empty element for non-version vertex");
+		fatal2i("getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
 	return __fill_helper->getVertexPtrForEmptyPackage(packageName);

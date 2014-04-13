@@ -15,6 +15,8 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <unistd.h>
+
 #include <cupt/common.hpp>
 #include <cupt/download/uri.hpp>
 #include <cupt/download/method.hpp>
@@ -24,16 +26,21 @@ namespace cupt {
 
 class DebdeltaMethod: public download::Method
 {
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		auto deltaCallback = [callback](const vector< string >& params)
 		{
 			if (!params.empty() && params[0] == "expected-size")
 			{
-				return; // ignore it
+				auto uiSizeParams = params;
+				uiSizeParams[0] = "ui-size";
+				callback(uiSizeParams);
 			}
-			callback(params);
+			else
+			{
+				callback(params);
+			}
 		};
 
 		// download delta file
@@ -46,23 +53,23 @@ class DebdeltaMethod: public download::Method
 		delete method;
 		if (!deltaDownloadResult.empty())
 		{
-			return sf(__("delta download failed: %s"), deltaDownloadResult.c_str());
+			return format2(__("delta download failed: %s"), deltaDownloadResult);
 		}
 
 		// invoking a deb patcher
-		auto patchCommand = sf("debpatch --accept-unsigned %s / %s >/dev/null",
-				deltaDownloadPath.c_str(), targetPath.c_str());
+		auto patchCommand = format2("debpatch --accept-unsigned %s / %s >/dev/null",
+				deltaDownloadPath, targetPath);
 		auto patchResult = ::system(patchCommand.c_str());
 
 		// remove delta anyway
 		if (unlink(deltaDownloadPath.c_str()) == -1)
 		{
-			warn("unable to remove file '%s': EEE", deltaDownloadPath.c_str());
+			warn2e(__("unable to remove the file '%s'"), deltaDownloadPath);
 		}
 
 		if (patchResult != 0)
 		{
-			return sf(__("debpatch returned error code %d"), patchResult);
+			return format2(__("debpatch returned error code %d"), patchResult);
 		}
 
 		// all went ok

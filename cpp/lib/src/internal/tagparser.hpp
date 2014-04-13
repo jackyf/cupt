@@ -31,10 +31,10 @@ namespace internal {
 class TagParser
 {
  public:
-	struct StringRange: public pair< string::const_iterator, string::const_iterator >
+	struct StringRange: public pair< const char*, const char* >
 	{
 	 public:
-		operator string() const
+		string toString() const
 		{
 			return string(first, second);
 		}

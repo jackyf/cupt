@@ -23,6 +23,7 @@ namespace cupt {
 class Config;
 class Cache;
 class File;
+class RequiredFile;
 class Pipe;
 class HashSums;
 

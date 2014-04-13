@@ -34,20 +34,20 @@ using std::multimap;
 class MethodFactoryImpl
 {
 	typedef download::Method* (*MethodBuilder)();
-	shared_ptr< const Config > __config;
+	const Config& __config;
 	map< string, MethodBuilder > __method_builders;
 	vector< void* > __dl_handles;
 
 	void __load_methods();
 	int __get_method_priority(const string& protocol, const string& methodName) const;
  public:
-	MethodFactoryImpl(const shared_ptr< const Config >&);
+	MethodFactoryImpl(const Config&);
 	~MethodFactoryImpl();
 	download::Method* getDownloadMethodForUri(const download::Uri& uri) const;
 };
 
 
-MethodFactoryImpl::MethodFactoryImpl(const shared_ptr< const Config >& config)
+MethodFactoryImpl::MethodFactoryImpl(const Config& config)
 	: __config(config)
 {
 	__load_methods();
@@ -59,7 +59,7 @@ MethodFactoryImpl::~MethodFactoryImpl()
 	{
 		if (dlclose(*dlHandleIt))
 		{
-			warn2("unable to unload dl handle '%p': %s", *dlHandleIt, dlerror());
+			warn2(__("unable to unload the dynamic library handle '%p': %s"), *dlHandleIt, dlerror());
 		}
 	}
 }
@@ -69,18 +69,18 @@ MethodFactoryImpl::~MethodFactoryImpl()
 #else
 	#define QUOTED(x) QUOTED_(x)
 	#define QUOTED_(x) # x
-	const string downloadMethodPath = "/usr/lib/cupt2-" QUOTED(SOVERSION) "/downloadmethods/";
+	const string downloadMethodPath = "/usr/lib/cupt3-" QUOTED(SOVERSION) "/downloadmethods/";
 	#undef QUOTED
 	#undef QUOTED_
 #endif
 
 void MethodFactoryImpl::__load_methods()
 {
-	auto debugging = __config->getBool("debug::downloader");
+	auto debugging = __config.getBool("debug::downloader");
 	auto paths = fs::glob(downloadMethodPath + "*.so");
 	if (paths.empty())
 	{
-		warn2("no download methods found");
+		warn2(__("no download methods found"));
 	}
 	FORIT(pathIt, paths)
 	{
@@ -92,30 +92,34 @@ void MethodFactoryImpl::__load_methods()
 			// also, it should start with 'lib'
 			if (methodName.size() < 4 || methodName.compare(0, 3, "lib"))
 			{
-				debug2("method filename '%s' does not start with 'lib', discarding it", methodName);
+				if (debugging)
+				{
+					debug2("the method filename '%s' does not start with 'lib', discarding it", methodName);
+				}
+				continue;
 			}
 			methodName = methodName.substr(3);
 		}
 
 		if (__method_builders.count(methodName))
 		{
-			warn2("not loading another copy of download method '%s'", methodName);
+			warn2(__("not loading another copy of the download method '%s'"), methodName);
 			continue;
 		}
 
 		auto dlHandle = dlopen(pathIt->c_str(), RTLD_NOW | RTLD_LOCAL);
 		if (!dlHandle)
 		{
-			warn2("unable to load download method '%s': dlopen: %s", methodName, dlerror());
+			warn2(__("unable to load the download method '%s': %s: %s"), methodName, "dlopen", dlerror());
 			continue;
 		}
 		MethodBuilder methodBuilder = reinterpret_cast< MethodBuilder >(dlsym(dlHandle, "construct"));
 		if (!methodBuilder)
 		{
-			warn2("unable to load download method '%s': dlsym: %s", methodName, dlerror());
+			warn2(__("unable to load the download method '%s': %s: %s"), methodName, "dlsym", dlerror());
 			if (dlclose(dlHandle))
 			{
-				warn2("unable to unload dl handle '%p': %s", dlHandle, dlerror());
+				warn2(__("unable to unload the dynamic library handle '%p': %s"), dlHandle, dlerror());
 			}
 			continue;
 		}
@@ -123,7 +127,7 @@ void MethodFactoryImpl::__load_methods()
 		__method_builders[methodName] = methodBuilder;
 		if (debugging)
 		{
-			debug2("loaded download method '%s'", methodName);
+			debug2("loaded the download method '%s'", methodName);
 		}
 	}
 }
@@ -133,22 +137,21 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 	auto protocol = uri.getProtocol();
 
 	auto optionName = string("cupt::downloader::protocols::") + protocol + "::methods";
-	auto availableHandlerNames = __config->getList(optionName);
+	auto availableHandlerNames = __config.getList(optionName);
 	if (availableHandlerNames.empty())
 	{
-		fatal2("no download handlers defined for '%s' protocol", protocol);
+		fatal2(__("no download handlers defined for the protocol '%s'"), protocol);
 	}
 
 	// not very effective, but readable and we hardly ever get >10 handlers for same protocol
 	multimap< int, string, std::greater< int > > prioritizedHandlerNames;
-	FORIT(handlerNameIt, availableHandlerNames)
+	for (const string& handlerName: availableHandlerNames)
 	{
-		const string& handlerName = *handlerNameIt;
 		prioritizedHandlerNames.insert(
 				make_pair(__get_method_priority(protocol, handlerName), handlerName));
 	}
 
-	bool debugging = __config->getBool("debug::downloader");
+	bool debugging = __config.getBool("debug::downloader");
 	FORIT(handlerIt, prioritizedHandlerNames)
 	{
 		const string& handlerName = handlerIt->second;
@@ -158,20 +161,20 @@ download::Method* MethodFactoryImpl::getDownloadMethodForUri(const download::Uri
 		{
 			if (debugging)
 			{
-				debug2("download handler '%s' (priority %d) for uri '%s' is not available",
+				debug2("the download handler '%s' (priority %d) for the uri '%s' is not available",
 						handlerName, handlerIt->first, (string)uri);
 			}
 			continue;
 		}
 		if (debugging)
 		{
-			debug2("selected download handler '%s' for uri '%s'", handlerName, (string)uri);
+			debug2("selected download handler '%s' for the uri '%s'", handlerName, (string)uri);
 		}
 
 		return (methodBuilderIt->second)();
 	}
 
-	fatal2("no download handlers available");
+	fatal2(__("no download handlers available for the protocol '%s'"), protocol);
 	return NULL; // unreachable
 }
 
@@ -179,7 +182,7 @@ int MethodFactoryImpl::__get_method_priority(const string& protocol, const strin
 {
 	string optionName = string("cupt::downloader::protocols::") + protocol +
 			"::methods::" + methodName + "::priority";
-	auto result = __config->getInteger(optionName);
+	auto result = __config.getInteger(optionName);
 	return result ? result : 100;
 }
 
@@ -187,7 +190,7 @@ int MethodFactoryImpl::__get_method_priority(const string& protocol, const strin
 
 namespace download {
 
-MethodFactory::MethodFactory(const shared_ptr< const Config >& config)
+MethodFactory::MethodFactory(const Config& config)
 {
 	__impl = new internal::MethodFactoryImpl(config);
 }

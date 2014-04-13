@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2014 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -16,9 +16,9 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <cstring>
+using std::to_string;
 
-#include <boost/lexical_cast.hpp>
-using boost::lexical_cast;
+#include <unistd.h>
 
 #include <curl/curl.h>
 
@@ -40,7 +40,7 @@ class CurlWrapper
 		__handle = curl_easy_init();
 		if (!__handle)
 		{
-			fatal("unable to create Curl handle");
+			fatal2(__("unable to create a Curl handle"));
 		}
 		__init();
 	}
@@ -49,7 +49,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value);
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set long Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2(__("unable to set the Curl option '%s': curl_easy_setopt failed: %s"),
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -58,7 +58,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value);
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set object Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2(__("unable to set the Curl option '%s': curl_easy_setopt failed: %s"),
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -67,7 +67,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value.c_str());
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set string Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2(__("unable to set the Curl option '%s': curl_easy_setopt failed: %s"),
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -76,7 +76,7 @@ class CurlWrapper
 		auto returnCode = curl_easy_setopt(__handle, optionName, value);
 		if (returnCode != CURLE_OK)
 		{
-			fatal("unable to set large Curl option '%s': curl_easy_setopt failed: %s",
+			fatal2(__("unable to set the Curl option '%s': curl_easy_setopt failed: %s"),
 					alias, curl_easy_strerror(returnCode));
 		}
 	}
@@ -84,6 +84,7 @@ class CurlWrapper
 	{
 		setOption(CURLOPT_FAILONERROR, 1, "fail on error");
 		setOption(CURLOPT_NETRC, CURL_NETRC_OPTIONAL, "netrc");
+		setOption(CURLOPT_USERAGENT, format2("Curl (libcupt/%s)", cupt::libraryVersion), "user-agent");
 		curl_easy_setopt(__handle, CURLOPT_ERRORBUFFER, __error_buffer);
 	}
 	ssize_t getExpectedDownloadSize() const
@@ -141,14 +142,12 @@ extern "C"
 			auto expectedSize = curlPtr->getExpectedDownloadSize();
 			if (expectedSize > 0)
 			{
-				(*callbackPtr)(vector< string >{ "expected-size",
-						lexical_cast< string >(expectedSize + *totalBytesPtr) });
+				(*callbackPtr)({ "expected-size", to_string(expectedSize + *totalBytesPtr) });
 			}
 		}
 
 		*totalBytesPtr += size;
-		(*callbackPtr)(vector< string >{ "downloading",
-				lexical_cast< string >(*totalBytesPtr), lexical_cast< string >(size) });
+		(*callbackPtr)({ "downloading", to_string(*totalBytesPtr), to_string(size) });
 
 		return size;
 	}
@@ -156,7 +155,7 @@ extern "C"
 
 class CurlMethod: public cupt::download::Method
 {
-	string perform(const shared_ptr< const Config >& config, const download::Uri& uri,
+	string perform(const Config& config, const download::Uri& uri,
 			const string& targetPath, const std::function< void (const vector< string >&) >& callback)
 	{
 		try
@@ -164,7 +163,7 @@ class CurlMethod: public cupt::download::Method
 			CurlWrapper curl;
 			// bad connections can return 'receive failure' transient error
 			// occasionally, give them several tries to finish the download
-			auto transientErrorsLeft = config->getInteger("acquire::retries");
+			auto transientErrorsLeft = config.getInteger("acquire::retries");
 
 			{ // setting options
 				curl.setOption(CURLOPT_URL, string(uri), "uri");
@@ -182,7 +181,7 @@ class CurlMethod: public cupt::download::Method
 				{
 					curl.setOption(CURLOPT_PROXY, proxy, "proxy");
 				}
-				if (uri.getProtocol() == "http" && config->getBool("acquire::http::allowredirect"))
+				if (uri.getProtocol() == "http" && config.getBool("acquire::http::allowredirect"))
 				{
 					curl.setOption(CURLOPT_FOLLOWLOCATION, 1, "follow-location");
 				}
@@ -196,17 +195,11 @@ class CurlMethod: public cupt::download::Method
 				curl.setOption(CURLOPT_WRITEFUNCTION, (void*)&curlWriteFunction, "write function");
 			}
 
-			string openError;
-			File file(targetPath, "a", openError);
-			if (!openError.empty())
-			{
-				fatal("unable to open file '%s': %s", targetPath.c_str(), openError.c_str());
-			}
+			RequiredFile file(targetPath, "a");
 
 			start:
 			ssize_t totalBytes = file.tell();
-			callback(vector< string > { "downloading",
-					lexical_cast< string >(totalBytes), lexical_cast< string >(0)});
+			callback({ "downloading", to_string(totalBytes), to_string(0)});
 			curl.setOption(CURLOPT_RESUME_FROM, totalBytes, "resume from");
 
 			string fileWriteError;
@@ -241,9 +234,9 @@ class CurlMethod: public cupt::download::Method
 				// transient errors handling
 				if (performResult == CURLE_RECV_ERROR && transientErrorsLeft)
 				{
-					if (config->getBool("debug::downloader"))
+					if (config.getBool("debug::downloader"))
 					{
-						debug("transient error while downloading '%s'", string(uri).c_str());
+						debug2("transient error while downloading '%s'", string(uri));
 					}
 					--transientErrorsLeft;
 					goto start;
@@ -251,14 +244,13 @@ class CurlMethod: public cupt::download::Method
 
 				if (performResult == CURLE_RANGE_ERROR)
 				{
-					if (config->getBool("debug::downloader"))
+					if (config.getBool("debug::downloader"))
 					{
-						debug("range command failed, need to restart from beginning while downloading '%s'",
-								string(uri).c_str());
+						debug2("range command failed, need to restart from beginning while downloading '%s'", string(uri));
 					}
 					if (unlink(targetPath.c_str()) == -1)
 					{
-						return sf(__("unable to delete target file for re-downloading: EEE"));
+						return format2e(__("unable to remove target file for re-downloading"));
 					}
 					goto start;
 				}
@@ -268,7 +260,7 @@ class CurlMethod: public cupt::download::Method
 		}
 		catch (Exception& e)
 		{
-			return sf(__("download method error: %s"), e.what());
+			return format2(__("download method error: %s"), e.what());
 		}
 	}
 };

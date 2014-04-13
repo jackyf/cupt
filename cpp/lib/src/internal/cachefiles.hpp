@@ -20,26 +20,33 @@
 
 #include <cupt/fwd.hpp>
 #include <cupt/cache.hpp>
+#include <cupt/hashsums.hpp>
 
 namespace cupt {
 namespace internal {
 namespace cachefiles {
 
 typedef Cache::IndexEntry IndexEntry;
-typedef Cache::IndexDownloadRecord FileDownloadRecord;
+struct FileDownloadRecord
+{
+	string uri;
+	uint32_t size;
+	HashSums hashSums;
+};
 
 string getPathOfIndexList(const Config&, const IndexEntry&);
 string getPathOfReleaseList(const Config&, const IndexEntry&);
+string getPathOfInReleaseList(const Config&, const IndexEntry&);
+string getPathOfMasterReleaseLikeList(const Config&, const IndexEntry&);
 string getPathOfExtendedStates(const Config&);
 
 string getDownloadUriOfReleaseList(const IndexEntry&);
+string getDownloadUriOfInReleaseList(const IndexEntry&);
 vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 		const Config&, const IndexEntry&);
 
-vector< string > getPathsOfLocalizedDescriptions(const Config&, const IndexEntry& entry);
-// TODO/API break/: deprecated, delete it
-vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
-		const Config&, const IndexEntry&);
+vector< pair< string, string > > getPathsOfLocalizedDescriptions(
+		const Config&, const IndexEntry& entry);
 
 vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(
 		const Config&, const IndexEntry&);
@@ -48,11 +55,22 @@ struct LocalizationDownloadRecord2
 	string filePart;
 	string localPath;
 };
+// TODO: remove when oldstable >> wheezy
 vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
 		const Config&, const IndexEntry&);
 
-bool verifySignature(const Config&, const string& releaseFilePath);
-shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config&, const string& path);
+struct LocalizationDownloadRecord3
+{
+	string localPath;
+	string language;
+	vector< FileDownloadRecord > fileDownloadRecords;
+};
+vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
+		const Config&, const IndexEntry&);
+
+bool verifySignature(const Config&, const string& path, const string& alias);
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config&,
+		const string& path, const string& alias);
 
 }
 }

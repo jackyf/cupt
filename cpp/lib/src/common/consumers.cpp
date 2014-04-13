@@ -19,8 +19,7 @@
 
 namespace cupt {
 
-void consumePackageName(string::const_iterator begin, string::const_iterator end,
-		string::const_iterator& resultEnd)
+void consumePackageName(const char* begin, const char* end, const char*& resultEnd)
 {
 	// "[a-z_0-9.+-]+"
 	resultEnd = begin; // start position, meaning no package name found
@@ -37,12 +36,15 @@ void consumePackageName(string::const_iterator begin, string::const_iterator end
 
 bool checkPackageName(const string& input, bool throwOnError)
 {
-	string::const_iterator resultEnd;
-	consumePackageName(input.begin(), input.end(), resultEnd);
-	bool result = (resultEnd == input.end());
+	auto begin = input.data();
+	auto end = begin + input.size();
+
+	const char* resultEnd;
+	consumePackageName(begin, end, resultEnd);
+	bool result = (resultEnd == end);
 	if (!result && throwOnError)
 	{
-		fatal2("invalid package name '%s'", input);
+		fatal2(__("invalid package name '%s'"), input);
 	}
 	return result;
 }
@@ -134,17 +136,17 @@ bool checkVersionString(const string& input, bool throwOnError)
 	bool result = __check_version_string(input, underscoresPresent, firstUpstreamCharacter);
 	if (!result && throwOnError)
 	{
-		fatal2("invalid version string '%s'", input);
+		fatal2(__("invalid version string '%s'"), input);
 	}
 	if (result)
 	{
 		if (underscoresPresent)
 		{
-			warn2("version string '%s': should not contain underscores", input);
+			warn2(__("version string '%s': should not contain underscores"), input);
 		}
 		if (firstUpstreamCharacter < '0' || firstUpstreamCharacter > '9')
 		{
-			warn2("version string '%s': first upstream character '%c' is not a digit",
+			warn2(__("version string '%s': first upstream character '%c' is not a digit"),
 					input, firstUpstreamCharacter);
 		}
 	}

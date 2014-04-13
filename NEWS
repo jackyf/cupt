@@ -1,3 +1,54 @@
+2.7
+ - Added pre-configuration, i.e. the possibility to change the options related
+   to the configuration itself before reading standard configuration files.
+ - Support for version 3 of APT preinstall hooks.
+ - Improvements in speed and memory usage of dependency resolver.
+
+2.6
+ - Subcommands 'markauto' and 'unmarkauto' are now first-class management
+   actions: can cause more actions in the same run (usually auto-removals) and
+   have positional counterparts '--markauto' and '--unmarkauto'.
+ - New options '--asauto=yes', '--asauto=no' and '--asauto=default' to control
+   whether packages, (directly) installed by some management action, should be
+   marked automatically or manually installed.
+ - New choice 'rc' (show reason chain) in the actions preview prompt.
+ - New options '--select=traditional' and '--select=flexible' to control how
+   many versions of packages are chosen for management actions.
+ - New options '--must', '--try', '--wish' and '--importance=' to control
+   management requests' importance, allowing specifying optional requests and
+   their priority.
+ - New 'functional selectors' ("FSE") syntax for advanced version selection in
+   any subcommands which accept binary/source version expressions. The
+   subcommand 'search' got a new option --fse.
+ - New, enabled by default, possibility to generate and use index-of-index
+   files to speed up building the package cache.
+ - General support for "[ key=value... ]" option syntax in sources.list.
+   Specific support for 'trusted=yes' and 'trusted=no' options.
+ - Apply id version suffixes (^<suffix>) to version strings to differentiate
+   versions with same version string but different/uncomparable hash sums, so
+   no versions are skipped anymore.
+ - Support for 'InRelease' metadata files.
+ - Numerous improvements in speed and memory usage.
+
+2.5
+ - New 'no longer needed' section in the actions preview.
+ - Translation diffs are supported now.
+ - Score calculation: for removals of packages which are not manually
+   installed, apply also the new 'removal-of-autoinstalled' score.
+ - Many improvements in the error and warning messages.
+ - Warnings about unknown non-Cupt-specific options are not printed anymore.
+
+2.4
+ - New subcommand 'iii'.
+ - New options '--show-archives', '--show-codenames', '--show-components',
+   '--show-vendors' for package management actions.
+ - New option '--show-dates' for 'policy' and 'policysrc' subcommands.
+ - Use normalized version priority in resolver score calculations.
+ - Enable deferring dpkg triggers (by default) if dpkg 1.16.1 or later is
+   detected.
+ - Support new index localization scheme (new 'Description-md5' field in
+   binary package indexes).
+
 2.3
  - New options '--include-archives', '--exclude-archives',
    '--include-codenames', --exclude-codenames'.

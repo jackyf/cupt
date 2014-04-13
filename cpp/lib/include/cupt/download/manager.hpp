@@ -71,6 +71,9 @@ class CUPT_API Manager
 		 * string as download result.
 		 */
 		std::function< string () > postAction;
+		bool optional; ///< @c true if failure to download this is not an error
+
+		DownloadEntity();
 	};
 
 	/// constructor

@@ -21,6 +21,7 @@
 
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
+#include <internal/nativeresolver/cowmap.tpp>
 
 namespace cupt {
 namespace internal {
@@ -28,61 +29,52 @@ namespace internal {
 using std::make_pair;
 
 PackageEntry::PackageEntry()
-	: sticked(false), autoremoved(false)
+	: sticked(false), autoremoved(false), level(0)
 {}
 
-PackageEntry::PackageEntry(PackageEntry&& other)
-	: sticked(other.sticked), autoremoved(other.autoremoved),
-	introducedBy(other.introducedBy)
+bool PackageEntry::isModificationAllowed(dg::Element element) const
 {
-	brokenSuccessors.swap(other.brokenSuccessors);
-	rejectedConflictors.swap(other.rejectedConflictors);
-}
-
-PackageEntry& PackageEntry::operator=(PackageEntry&& other)
-{
-	sticked = other.sticked;
-	autoremoved = other.autoremoved;
-	introducedBy = other.introducedBy;
-	brokenSuccessors.swap(other.brokenSuccessors);
-	rejectedConflictors.swap(other.rejectedConflictors);
-	return *this;
-}
-
-bool PackageEntry::isModificationAllowed(const dg::Element* elementPtr) const
-{
-	auto findResult = std::find(rejectedConflictors.begin(),
-			rejectedConflictors.end(), elementPtr);
+	auto findResult = std::find(rejectedConflictors.begin(), rejectedConflictors.end(), element);
 	return (findResult == rejectedConflictors.end());
 }
 
-template < class data_t, class Comparator, class KeyGetter >
-class PackageEntryMapBase
+template < class data_t, class KeyGetter >
+class VectorBasedMap
 {
  public:
-	typedef const dg::Element* key_t;
+	typedef dg::Element key_t;
 	typedef data_t value_type; // for set_union
 	typedef vector< data_t > container_t;
 	typedef data_t* iterator_t;
 	typedef const data_t* const_iterator_t;
+	typedef KeyGetter key_getter_t;
  private:
 	container_t __container;
 	typename container_t::iterator __position_to_iterator(const_iterator_t position)
 	{
 		return static_cast< typename container_t::iterator >(const_cast< iterator_t >(position));
 	}
+	struct __comparator
+	{
+		bool operator()(const data_t& data, const key_t& key) const
+		{
+			return KeyGetter()(data) < key;
+		}
+	};
  public:
+	void init(container_t&& container) { __container.swap(container); }
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
+	void shrinkToFit() { __container.shrink_to_fit(); }
 	const_iterator_t begin() const { return &*__container.begin(); }
 	const_iterator_t end() const { return &*__container.end(); }
 	const_iterator_t lower_bound(const key_t& key) const
 	{
-		return std::lower_bound(begin(), end(), key, Comparator());
+		return std::lower_bound(begin(), end(), key, __comparator());
 	}
 	iterator_t lower_bound(const key_t& key)
 	{
-		return const_cast< iterator_t >(((const PackageEntryMapBase*)this)->lower_bound(key));
+		return const_cast< iterator_t >(((const VectorBasedMap*)this)->lower_bound(key));
 	}
 	const_iterator_t find(const key_t& key) const
 	{
@@ -100,432 +92,543 @@ class PackageEntryMapBase
 		__container.insert(__position_to_iterator(position), std::move(data));
 		return const_cast< iterator_t >(begin()) + distance;
 	}
-	void erase(const_iterator_t position)
-	{
-		__container.erase(__position_to_iterator(position));
-	}
 	void push_back(const data_t& data)
 	{
 		__container.push_back(data);
 	}
-};
-
-struct PackageEntryMapComparator
-{
-	bool operator()(const pair< const dg::Element*, PackageEntry >& data, const dg::Element* key) const
-	{ return data.first < key; }
-};
-struct PackageEntryMapKeyGetter
-{
-	const dg::Element* operator()(const pair< const dg::Element*, PackageEntry >& data)
-	{ return data.first; }
-};
-class PackageEntryMap: public PackageEntryMapBase<
-		pair< const dg::Element*, PackageEntry >,
-		PackageEntryMapComparator, PackageEntryMapKeyGetter >
-{
  public:
 	mutable size_t forkedCount;
 
-	PackageEntryMap()
+	VectorBasedMap()
 		: forkedCount(0)
 	{}
 };
 
+typedef shared_ptr< const PackageEntry > SPPE;
 
-struct PackageEntrySetComparator
+struct PackageEntryMapKeyGetter
 {
-	bool operator()(const dg::Element* data, const dg::Element* key) const
-	{ return data < key; }
+	dg::Element operator()(const pair< dg::Element, SPPE >& data)
+	{ return data.first; }
 };
-struct PackageEntrySetKeyGetter
-{
-	const dg::Element* operator()(const dg::Element* data) { return data; }
-};
-class PackageEntrySet: public PackageEntryMapBase< const dg::Element*,
-		PackageEntrySetComparator, PackageEntrySetKeyGetter >
+class PackageEntryMap: public VectorBasedMap< pair< dg::Element, SPPE >, PackageEntryMapKeyGetter >
 {};
 
+struct BrokenSuccessorMapKeyGetter
+{
+	dg::Element operator()(const BrokenSuccessor& data) { return data.elementPtr; }
+};
+class BrokenSuccessorMap: public VectorBasedMap< BrokenSuccessor, BrokenSuccessorMapKeyGetter >
+{};
+
+class UnpreparedSolution: public Solution
+{
+ public:
+	shared_ptr< const PreparedSolution > p_parent;
+	std::unique_ptr< const Action > p_pendingAction;
+
+	ssize_t getScore() const
+	{
+		return p_parent->getScore() + score;
+	}
+	bool isFinished() const
+	{
+		return false;
+	}
+	size_t getLevel() const
+	{
+		return p_parent->getLevel() + 1;
+	}
+
+	shared_ptr< PreparedSolution > prepare() const;
+};
 
 SolutionStorage::SolutionStorage(const Config& config, const Cache& cache)
 	: __next_free_id(1), __dependency_graph(config, cache)
 {}
 
-shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< Solution >& source)
+SolutionStorage::~SolutionStorage()
+{}
+
+size_t SolutionStorage::__get_new_solution_id()
 {
-	shared_ptr< Solution > cloned(new Solution);
-	cloned->score = source->score;
-	cloned->level = source->level;
-	cloned->id = __next_free_id++;
-	cloned->finished = false;
+	return __next_free_id++;
+}
 
-	cloned->__parent = source;
+shared_ptr< Solution > SolutionStorage::fakeCloneSolution(const shared_ptr< PreparedSolution >& source)
+{
+	source->id = __get_new_solution_id();
+	++source->level;
+	return source;
+}
 
-	// other part should be done by calling prepare outside
+shared_ptr< Solution > SolutionStorage::cloneSolution(const shared_ptr< PreparedSolution >& source)
+{
+	auto cloned = std::make_shared< UnpreparedSolution >();
+
+	cloned->p_parent = source;
+	cloned->id = __get_new_solution_id();
+
+	// other parts should be done by calling prepare outside
 
 	return cloned;
 }
 
-const GraphCessorListType& SolutionStorage::getSuccessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getSuccessorElements(dg::Element elementPtr) const
 {
-	return __dependency_graph.getSuccessorsFromPointer(elementPtr);
+	return __dependency_graph.getSuccessors(elementPtr);
 }
 
-const GraphCessorListType& SolutionStorage::getPredecessorElements(const dg::Element* elementPtr) const
+const GraphCessorListType& SolutionStorage::getPredecessorElements(dg::Element elementPtr) const
 {
-	return __dependency_graph.getPredecessorsFromPointer(elementPtr);
+	return __dependency_graph.getPredecessors(elementPtr);
 }
 
-const forward_list< const dg::Element* >& SolutionStorage::getConflictingElements(
-		const dg::Element* elementPtr)
+const forward_list<dg::Element>& SolutionStorage::getConflictingElements(dg::Element element)
 {
-	static const forward_list< const dg::Element* > nullList;
-	auto relatedElementPtrsPtr = elementPtr->getRelatedElements();
+	static const forward_list<dg::Element> nullList;
+	auto relatedElementPtrsPtr = element->getRelatedElements();
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }
 
-bool SolutionStorage::simulateSetPackageEntry(const Solution& solution,
-		const dg::Element* elementPtr, const dg::Element** conflictingElementPtrPtr) const
+bool SolutionStorage::simulateSetPackageEntry(const PreparedSolution& solution,
+		dg::Element element, dg::Element* conflictingElementPtr) const
 {
-	const forward_list< const dg::Element* >& conflictingElementPtrs =
-			getConflictingElements(elementPtr);
-	FORIT(conflictingElementPtrIt, conflictingElementPtrs)
+	if (auto familyPackageEntry = solution.getFamilyPackageEntry(element))
 	{
-		if (*conflictingElementPtrIt == elementPtr)
-		{
-			continue;
-		}
-		if (auto packageEntryPtr = solution.getPackageEntry(*conflictingElementPtrIt))
-		{
-			// there may be only one conflicting element in the solution
-			*conflictingElementPtrPtr = *conflictingElementPtrIt;
-
-			return (!packageEntryPtr->sticked && packageEntryPtr->isModificationAllowed(elementPtr));
-		}
+		*conflictingElementPtr = familyPackageEntry->element;
+		return (!familyPackageEntry->sticked && familyPackageEntry->isModificationAllowed(element));
 	}
 
 	// no conflicting elements in this solution
-	*conflictingElementPtrPtr = NULL;
-	if (auto versionElement = dynamic_cast< const dg::VersionElement* >(elementPtr))
+	*conflictingElementPtr = nullptr;
+	if (auto versionElement = dynamic_cast<dg::VersionElement>(element))
 	{
 		if (versionElement->version)
 		{
-			*conflictingElementPtrPtr = const_cast< dg::DependencyGraph& >
-					(__dependency_graph).getCorrespondingEmptyElement(elementPtr);
+			*conflictingElementPtr = const_cast< dg::DependencyGraph& >
+					(__dependency_graph).getCorrespondingEmptyElement(element);
 		}
 	}
 	return true;
 }
 
-void SolutionStorage::setRejection(Solution& solution, const dg::Element* elementPtr)
+void SolutionStorage::setRejection(PreparedSolution& solution, dg::Element element)
 {
-	const dg::Element* conflictingElementPtr;
-	simulateSetPackageEntry(solution, elementPtr, &conflictingElementPtr);
-	if (!conflictingElementPtr)
-	{
-		return;
-	}
-	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElementPtr);
+	dg::Element conflictingElement;
+	simulateSetPackageEntry(solution, element, &conflictingElement);
+	if (!conflictingElement) return;
+
+	auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElement);
 
 	PackageEntry packageEntry = (conflictorPackageEntryPtr ?
 			PackageEntry(*conflictorPackageEntryPtr) : PackageEntry());
 
-	packageEntry.rejectedConflictors.push_front(elementPtr);
-	setPackageEntry(solution, conflictingElementPtr,
-			std::move(packageEntry), NULL);
+	packageEntry.rejectedConflictors.push_front(element);
+	solution.setPackageEntry(conflictingElement, std::move(packageEntry));
 }
 
-void SolutionStorage::setPackageEntry(Solution& solution,
-		const dg::Element* elementPtr, PackageEntry&& packageEntry,
-		const dg::Element* conflictingElementPtr)
+void SolutionStorage::setEmpty(PreparedSolution& solution, dg::Element element)
 {
-	__dependency_graph.unfoldElement(elementPtr);
+	auto emptyElement = __dependency_graph.getCorrespondingEmptyElement(element);
 
-	auto it = solution.__added_entries->lower_bound(elementPtr);
-	if (it == solution.__added_entries->end() || it->first != elementPtr)
+	PackageEntry packageEntry;
+	packageEntry.autoremoved = true;
+
+	solution.setPackageEntry(emptyElement, std::move(packageEntry));
+}
+
+void SolutionStorage::p_updateBrokenSuccessors(PreparedSolution& solution,
+		dg::Element oldElement, dg::Element newElement, size_t priority)
+{
+	auto& bss = solution.p_brokenSuccessors;
+	auto adaptedGetBs = [&bss](dg::Element element)
 	{
-		// there is no modifiable element in this solution
-		solution.__added_entries->insert(it, make_pair(elementPtr, std::move(packageEntry)));
+		auto result = bss.get<size_t>(element);
+		if (result && !*result) result = nullptr;
+		return result;
+	};
 
-		if (conflictingElementPtr)
+	auto reverseDependencyExists = [this, &solution](dg::Element element)
+	{
+		for (auto reverseDependencyPtr: getPredecessorElements(element))
 		{
-			auto forRemovalIt = solution.__added_entries->find(conflictingElementPtr);
-			if (forRemovalIt != solution.__added_entries->end())
+			if (solution.getPackageEntry(reverseDependencyPtr))
 			{
-				solution.__added_entries->erase(forRemovalIt);
+				return true;
 			}
-			// may be present in master too, act safe
-			solution.__removed_entries->insert(
-					solution.__removed_entries->lower_bound(conflictingElementPtr),
-					(const dg::Element*)conflictingElementPtr);
+		}
+		return false;
+	};
+	auto isPresent = [](const GraphCessorListType& container, dg::Element element)
+	{
+		return std::find(container.begin(), container.end(), element) != container.end();
+	};
+
+	static const GraphCessorListType nullList;
+
+	const auto& successorsOfOld = oldElement ? getSuccessorElements(oldElement) : nullList;
+	const auto& successorsOfNew = getSuccessorElements(newElement);
+	// check direct dependencies of the old element
+	for (auto successorPtr: successorsOfOld)
+	{
+		if (isPresent(successorsOfNew, successorPtr)) continue;
+
+		if (adaptedGetBs(successorPtr))
+		{
+			if (!reverseDependencyExists(successorPtr))
+			{
+				bss.remove(successorPtr);
+			}
 		}
 	}
-	else
+	// check direct dependencies of the new element
+	for (auto successorPtr: successorsOfNew)
 	{
-		if (conflictingElementPtr)
+		if (isPresent(successorsOfOld, successorPtr)) continue;
+
+		auto it = adaptedGetBs(successorPtr);
+		if (!it)
 		{
-			fatal2("internal error: conflicting elements in __added_entries: solution '%u', in '%s', out '%s'",
-					solution.id, elementPtr->toString(), conflictingElementPtr->toString());
+			if (!verifyElement(solution, successorPtr))
+			{
+				bss.add(successorPtr, priority);
+			}
 		}
-		it->second = std::move(packageEntry);
+		else
+		{
+			bss.add(successorPtr, std::max(*it, priority));
+		}
+	}
+
+	const auto& predecessorsOfOld = oldElement ? getPredecessorElements(oldElement) : nullList;
+	const auto& predecessorsOfNew = getPredecessorElements(newElement);
+	// invalidate those which depend on the old element
+	for (auto predecessorElementPtr: predecessorsOfOld)
+	{
+		if (isPresent(predecessorsOfNew, predecessorElementPtr)) continue;
+		if (isPresent(successorsOfNew, predecessorElementPtr)) continue;
+
+		if (reverseDependencyExists(predecessorElementPtr))
+		{
+			if (!verifyElement(solution, predecessorElementPtr))
+			{
+				// here we assume brokenSuccessors didn't
+				// contain predecessorElementPtr, since as old element was
+				// present, predecessorElementPtr was not broken
+				bss.add(predecessorElementPtr, priority);
+			}
+		}
+	}
+	// validate those which depend on the new element
+	for (auto predecessorElementPtr: predecessorsOfNew)
+	{
+		if (isPresent(predecessorsOfOld, predecessorElementPtr)) continue;
+
+		if (adaptedGetBs(predecessorElementPtr))
+		{
+			bss.remove(predecessorElementPtr);
+		}
 	}
 }
 
-void SolutionStorage::prepareForResolving(Solution& initialSolution,
-			const map< string, shared_ptr< const BinaryVersion > >& oldPackages,
-			const map< string, dg::InitialPackageEntry >& initialPackages)
+void PreparedSolution::setPackageEntry(dg::Element element, PackageEntry&& packageEntry)
 {
-	auto source = __dependency_graph.fill(oldPackages, initialPackages);
+	packageEntry.element = element;
+	auto newData = std::make_shared< const PackageEntry >(std::move(packageEntry));
+	p_entries.add(element->getFamilyKey(), std::move(newData));
+}
 
-	auto comparator = [](const pair< const dg::Element*, PackageEntry >& left,
-			const pair< const dg::Element*, PackageEntry >& right)
+void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
+			const map< string, const BinaryVersion* >& oldPackages,
+			const vector< dg::UserRelationExpression >& userRelationExpressions)
+{
+	auto source = __dependency_graph.fill(oldPackages);
+	/* User relation expressions must be processed before any unfoldElement() calls
+	   to early override version checks (if needed) for all explicitly required versions. */
+	for (const auto& userRelationExpression: userRelationExpressions)
+	{
+		__dependency_graph.addUserRelationExpression(userRelationExpression);
+	}
+	for (const auto& record: source)
+	{
+		__dependency_graph.unfoldElement(record.second->element);
+	}
+
+	auto comparator = [](const pair< dg::Element, SPPE >& left, const pair< dg::Element, SPPE >& right)
 	{
 		return left.first < right.first;
 	};
 	std::sort(source.begin(), source.end(), comparator);
 
-	initialSolution.__added_entries->reserve(source.size());
-	FORIT(it, source)
+	p_initialEntries.reset(new PackageEntryMap);
+	p_initialEntries->init(std::move(source));
+
+	initialSolution.p_entries.setInitialMap(p_initialEntries.get());
+	static const BrokenSuccessorMap nullBrokenSuccessorMap;
+	initialSolution.p_brokenSuccessors.setInitialMap(&nullBrokenSuccessorMap);
+	for (const auto& entry: *p_initialEntries)
 	{
-		__dependency_graph.unfoldElement(it->first);
-		initialSolution.__added_entries->push_back(*it);
+		p_updateBrokenSuccessors(initialSolution, nullptr, entry.second->element, 1);
 	}
 }
 
-bool SolutionStorage::verifyElement(const Solution& solution,
-		const dg::Element* elementPtr) const
+bool SolutionStorage::verifyElement(const PreparedSolution& solution, dg::Element element) const
 {
-	const GraphCessorListType& successorElementPtrs =
-			getSuccessorElements(elementPtr);
-	FORIT(elementPtrIt, successorElementPtrs)
+	for (auto successor: getSuccessorElements(element))
 	{
-		if (solution.getPackageEntry(*elementPtrIt))
+		if (auto entry = solution.getFamilyPackageEntry(successor))
 		{
-			return true;
+			if (entry->element == successor) return true;
 		}
-	}
-
-	// second try, check for non-present empty elements as they are virtually present
-	FORIT(elementPtrIt, successorElementPtrs)
-	{
-		if (auto versionElement = dynamic_cast< const dg::VersionElement* >(*elementPtrIt))
+		else
 		{
-			if (!versionElement->version)
+			// check for non-present empty elements as they are virtually present
+			if (auto versionSuccessor = dynamic_cast<dg::VersionElement>(successor))
 			{
-				const dg::Element* conflictorPtr;
-				if (simulateSetPackageEntry(solution, versionElement, &conflictorPtr), !conflictorPtr)
-				{
-					return true;
-				}
+				if (!versionSuccessor->version) return true;
 			}
 		}
 	}
-
 	return false;
 }
 
-const dg::Element* SolutionStorage::getCorrespondingEmptyElement(const dg::Element* elementPtr)
+void SolutionStorage::unfoldElement(dg::Element element)
 {
-	return __dependency_graph.getCorrespondingEmptyElement(elementPtr);
+	__dependency_graph.unfoldElement(element);
 }
 
-void SolutionStorage::unfoldElement(const dg::Element* elementPtr)
+void SolutionStorage::processReasonElements(const PreparedSolution& solution,
+		const IntroducedBy& introducedBy, dg::Element insertedElement,
+		const std::function< void (const IntroducedBy&, dg::Element) >& callback) const
 {
-	__dependency_graph.unfoldElement(elementPtr);
+	{ // version
+		if (auto packageEntryPtr = solution.getPackageEntry(introducedBy.versionElementPtr))
+		{
+			callback(packageEntryPtr->introducedBy, introducedBy.versionElementPtr);
+		}
+	}
+	// dependants
+	set<dg::Element> alreadyProcessedConflictors;
+	for (const auto& successor: getSuccessorElements(introducedBy.brokenElementPtr))
+	{
+		dg::Element conflictingElement;
+		if (!simulateSetPackageEntry(solution, successor, &conflictingElement))
+		{
+			// conflicting element is surely exists here
+			if (alreadyProcessedConflictors.insert(conflictingElement).second)
+			{
+				// not yet processed
+				auto conflictorPackageEntryPtr = solution.getPackageEntry(conflictingElement);
+
+				if (insertedElement)
+				{
+					// verifying that conflicting element was added to a
+					// solution earlier than currently processed item
+					auto conflictingElementInsertedPosition = conflictorPackageEntryPtr->level;
+					if (conflictingElementInsertedPosition == 0)
+					{
+						// conflicting element was not a resolver decision, so it can't
+						// have valid 'introducedBy' anyway
+						continue;
+					}
+					if (solution.getPackageEntry(insertedElement)->level <= conflictingElementInsertedPosition)
+					{
+						// it means conflicting element was inserted to a solution _after_
+						// the current element, so it can't be a reason for it
+						continue;
+					}
+				}
+
+				// verified, queueing now
+				callback(conflictorPackageEntryPtr->introducedBy, conflictingElement);
+			}
+		}
+	}
+}
+
+void SolutionStorage::assignAction(Solution& solution, unique_ptr< Solution::Action >&& action)
+{
+	if (auto prepared = dynamic_cast< PreparedSolution* >(&solution))
+	{
+		// apply immediately
+		p_applyAction(*prepared, *action);
+	}
+	else
+	{
+		auto unprepared = static_cast< UnpreparedSolution* >(&solution);
+		unprepared->p_pendingAction = std::move(action);
+	}
+}
+
+static void setRejections(SolutionStorage& solutionStorage, PreparedSolution& solution, const Solution::Action& action)
+{
+	auto reject = [&](dg::Element element)
+	{
+		solutionStorage.setRejection(solution, element);
+	};
+
+	if (!action.allActionNewElements) return; // nothing to reject
+
+	if (action.newElementPtr->getUnsatisfiedType() != dg::Unsatisfied::None)
+	{
+		// all
+		for (auto element: *action.allActionNewElements)
+		{
+			reject(element);
+		}
+	}
+	else
+	{
+		auto uselessToReject = [&action](dg::Element element)
+		{
+			return action.newElementPtr->getFamilyKey() == element->getFamilyKey();
+		};
+
+		for (auto element: *action.allActionNewElements)
+		{
+			if (element == action.newElementPtr) break;
+			if (uselessToReject(element)) continue;
+
+			reject(element);
+		}
+	}
+}
+
+void SolutionStorage::p_setPackageEntryFromAction(PreparedSolution& solution, const Solution::Action& action)
+{
+	PackageEntry packageEntry;
+	packageEntry.sticked = (action.brokenElementPriority > 0);
+	packageEntry.introducedBy = action.introducedBy;
+	packageEntry.level = solution.level;
+	solution.setPackageEntry(action.newElementPtr, std::move(packageEntry));
+}
+
+void SolutionStorage::p_applyAction(PreparedSolution& solution, const Solution::Action& action)
+{
+	setRejections(*this, solution, action);
+	p_setPackageEntryFromAction(solution, action);
+	solution.p_entries.shrinkToFit();
+
+	__dependency_graph.unfoldElement(action.newElementPtr);
+
+	p_updateBrokenSuccessors(solution,
+			action.oldElementPtr, action.newElementPtr, action.brokenElementPriority+1);
+	solution.p_brokenSuccessors.shrinkToFit();
+}
+
+shared_ptr< PreparedSolution > SolutionStorage::prepareSolution(const shared_ptr< Solution >& input)
+{
+	if (auto prepared = dynamic_pointer_cast< PreparedSolution >(input))
+	{
+		return prepared;
+	}
+	else
+	{
+		auto unprepared = static_pointer_cast< UnpreparedSolution >(input);
+		auto converted = unprepared->prepare();
+		p_applyAction(*converted, *unprepared->p_pendingAction);
+		return converted;
+	}
 }
 
 
 Solution::Solution()
-	: id(0), level(0), finished(false), score(0)
+	: id(0), score(0)
+{}
+
+Solution::~Solution()
+{}
+
+
+PreparedSolution::PreparedSolution()
+	: level(0), finished(false)
+{}
+
+PreparedSolution::~PreparedSolution()
+{}
+
+shared_ptr< PreparedSolution > UnpreparedSolution::prepare() const
 {
-	__added_entries.reset(new PackageEntryMap);
-	__removed_entries.reset(new PackageEntrySet);
-}
-
-void Solution::prepare()
-{
-	if (!__parent)
+	if (!p_parent)
 	{
-		fatal2("internal error: undefined master solution");
+		fatal2i("nativeresolver: solution: unprepared solution has no parent");
 	}
 
-	if (!__parent->__master_entries)
-	{
-		// parent solution is a master solution, build a slave on top of it
-		__master_entries = __parent->__added_entries;
-		*__removed_entries = (*__parent->__removed_entries);
-	}
-	else
-	{
-		// this a slave solution
-		size_t& forkedCount = __parent->__master_entries->forkedCount;
-		forkedCount += __parent->__added_entries->size();
-		if (forkedCount > __parent->__master_entries->size())
-		{
-			forkedCount = 0;
-
-			// master solution is overdiverted, build new master one
-			__added_entries->reserve(__parent->__added_entries->size() +
-					__parent->__master_entries->size());
-
-			class RepackInsertIterator: public std::iterator< std::output_iterator_tag, PackageEntryMap::value_type >
-			{
-				PackageEntryMap& __target;
-				PackageEntrySet& __exceptions;
-			 public:
-				RepackInsertIterator(PackageEntryMap& target, PackageEntrySet& exceptions)
-					: __target(target), __exceptions(exceptions) {}
-				RepackInsertIterator& operator++() { return *this; }
-				RepackInsertIterator& operator*() { return *this; }
-				void operator=(const PackageEntryMap::value_type& data)
-				{
-					auto presentIt = __exceptions.find(data.first);
-					if (presentIt == __exceptions.end())
-					{
-						__target.push_back(data);
-					}
-				}
-			};
-			struct Comparator
-			{
-				bool operator()(const PackageEntryMap::value_type& left, const PackageEntryMap::value_type& right)
-				{ return left.first < right.first; }
-			};
-			// it's important that parent's __added_entries come first,
-			// if two elements are present in both (i.e. an element is overriden)
-			// the new version of an element will be written
-			std::set_union(__parent->__added_entries->begin(), __parent->__added_entries->end(),
-					__parent->__master_entries->begin(), __parent->__master_entries->end(),
-					RepackInsertIterator(*__added_entries, *__parent->__removed_entries), Comparator());
-		}
-		else
-		{
-			// build new slave solution from current
-			__master_entries = __parent->__master_entries;
-			*__added_entries = *(__parent->__added_entries);
-			*__removed_entries = *(__parent->__removed_entries);
-		}
-	}
-
-	insertedElementPtrs = __parent->insertedElementPtrs;
-	__parent.reset();
-}
-
-vector< const dg::Element* > Solution::getElements() const
-{
-	vector< const dg::Element* > result;
-
-	if (__master_entries)
-	{
-		FORIT(it, *__master_entries)
-		{
-			if (__removed_entries->find(it->first) == __removed_entries->end())
-			{
-				result.push_back(it->first);
-			}
-		}
-	}
-	auto middleSize = result.size();
-	FORIT(it, *__added_entries)
-	{
-		result.push_back(it->first);
-	}
-
-	std::inplace_merge(result.begin(), result.begin() + middleSize, result.end());
-	result.erase(std::unique(result.begin(), result.end()), result.end());
+	auto result = std::make_shared< PreparedSolution >();
+	result->id = id;
+	result->score = getScore();
+	result->level = getLevel();
+	result->initEntriesFromParent(*p_parent);
 
 	return result;
 }
 
-vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > Solution::getBrokenPairs() const
+void PreparedSolution::initEntriesFromParent(const PreparedSolution& parent)
 {
-	vector< pair< const dg::Element*, PackageEntry::BrokenSuccessor > > result;
-	auto isEligible = [](PackageEntryMap::const_iterator_t it) -> bool
-	{
-		return !it->second.brokenSuccessors.empty();
-	};
-	auto processEntry = [this, &result, &isEligible](PackageEntryMap::const_iterator_t it)
-	{
-		if (isEligible(it))
-		{
-			if (__removed_entries->find(it->first) == __removed_entries->end())
+	p_entries = parent.p_entries;
+	p_brokenSuccessors = parent.p_brokenSuccessors;
+}
+
+vector<const PackageEntry*> PreparedSolution::getEntries() const
+{
+	return p_entries.getEntries<PackageEntry>();
+}
+
+vector<dg::Element> PreparedSolution::getInsertedElements() const
+{
+	vector<dg::Element> result(level, nullptr);
+
+	p_entries.foreachModifiedEntry(
+			[&result](const PackageEntryMap::value_type& data)
 			{
-				FORIT(brokenSuccessorIt, it->second.brokenSuccessors)
-				{
-					result.push_back(make_pair(it->first, *brokenSuccessorIt));
-				}
-			}
-		}
-	};
-
-	auto masterIt = __master_entries ? __master_entries->begin() : __added_entries->end();
-	auto masterEnd = __master_entries ? __master_entries->end() : __added_entries->end();
-	auto ownIt = __added_entries->begin();
-	auto ownEnd = __added_entries->end();
-
-	// it's, surprisingly, several times faster than std::set_union due to no indirection
-	while (masterIt != masterEnd && ownIt != ownEnd)
-	{
-		// speeding up a bit, usually most of masterIt won't be included anyway
-		if (!isEligible(masterIt))
-		{
-			++masterIt;
-			continue;
-		}
-
-		if (masterIt->first < ownIt->first)
-		{
-			processEntry(masterIt);
-			++masterIt;
-		}
-		else if (masterIt->first > ownIt->first)
-		{
-			processEntry(ownIt);
-			++ownIt;
-		}
-		else // equal keys
-		{
-			// own entry overrides master entry
-			processEntry(ownIt);
-			++masterIt;
-			++ownIt;
-		}
-	}
-	while (masterIt != masterEnd)
-	{
-		processEntry(masterIt);
-		++masterIt;
-	}
-	while (ownIt != ownEnd)
-	{
-		processEntry(ownIt);
-		++ownIt;
-	}
+				const auto& level = data.second->level;
+				if (!level) return;
+				result[level-1] = data.first;
+			});
 
 	return result;
 }
 
-const PackageEntry* Solution::getPackageEntry(const dg::Element* elementPtr) const
+BrokenSuccessor PreparedSolution::getMaxBrokenSuccessor(
+		const std::function< bool (BrokenSuccessor, BrokenSuccessor) >& comp) const
 {
-	auto it = __added_entries->find(elementPtr);
-	if (it != __added_entries->end())
-	{
-		return &it->second;
-	}
-	if (__master_entries)
-	{
-		it = __master_entries->find(elementPtr);
-		if (it != __master_entries->end())
-		{
-			if (__removed_entries->find(elementPtr) != __removed_entries->end())
-			{
-				return NULL;
-			}
-			return &it->second;
-		}
-	}
+	BrokenSuccessor result{ nullptr, 0 };
 
-	return NULL; // not found
+	foreachBrokenSuccessor(
+			[&result, &comp](BrokenSuccessor bs)
+			{
+				if (!result.elementPtr || comp(result, bs))
+				{
+					result = bs;
+				}
+			});
+
+	return result;
+}
+
+void PreparedSolution::foreachBrokenSuccessor(
+		const std::function< void (BrokenSuccessor) >& callback) const
+{
+	p_brokenSuccessors.foreachModifiedEntry(
+			[&callback](const BrokenSuccessor& bs)
+			{
+				if (!bs.priority) return;
+				callback(bs);
+			});
+}
+
+const PackageEntry* PreparedSolution::getFamilyPackageEntry(dg::Element element) const
+{
+	auto entryData = p_entries.get< shared_ptr<const PackageEntry> >(element->getFamilyKey());
+	return entryData ? entryData->get() : nullptr;
+}
+
+const PackageEntry* PreparedSolution::getPackageEntry(dg::Element element) const
+{
+	auto packageEntry = getFamilyPackageEntry(element);
+	if (packageEntry && packageEntry->element != element) return nullptr;
+	return packageEntry;
 }
 
 }

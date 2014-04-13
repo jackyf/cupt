@@ -17,6 +17,7 @@
 **************************************************************************/
 #include <map>
 #include <list>
+#include <set>
 
 #include <boost/lexical_cast.hpp>
 
@@ -32,6 +33,7 @@ typedef download::Progress::DownloadRecord DownloadRecord;
 
 using std::map;
 using std::list;
+using std::set;
 
 struct AliasPair
 {
@@ -47,24 +49,30 @@ class ProgressImpl
 		struct timespec timeSpec;
 		size_t size;
 	};
-	list< FetchedChunk > fetchedChunks;
+	typedef list< FetchedChunk > FetchedChunks;
+	FetchedChunks fetchedChunks;
  public:
 	ProgressImpl();
 	void addChunk(size_t size);
+	void removeOldChunks(const struct timespec&);
+	// TODO: FetchedChunks::const_iterator after
+	// std::list::erase(const_iterator, const_iterator) gets implemented in all
+	// GCC versions we support
+	FetchedChunks::iterator findFirstActualChunk(const struct timespec&) const;
 	size_t getDownloadSpeed() const;
 
 	uint64_t doneDownloadsSize;
 	uint64_t fetchedSize;
 	map< string, AliasPair > aliases;
 	size_t nextDownloadNumber;
-	uint64_t totalEstimatedSize;
 	time_t startTimestamp;
 	map< string, DownloadRecord > nowDownloading;
+	set< string > optionalUris;
 };
 
 ProgressImpl::ProgressImpl()
 	: doneDownloadsSize(0), fetchedSize(0), nextDownloadNumber(1),
-	totalEstimatedSize(-1), startTimestamp(time(NULL))
+	startTimestamp(time(NULL))
 {}
 
 struct timespec getCurrentTimeSpec()
@@ -72,7 +80,7 @@ struct timespec getCurrentTimeSpec()
 	struct timespec currentTimeSpec;
 	if (clock_gettime(CLOCK_REALTIME, &currentTimeSpec) == -1)
 	{
-		warn2e("unable to get system clock time: clock_gettime failed");
+		warn2e(__("%s() failed"), "clock_gettime");
 		currentTimeSpec.tv_sec = time(NULL);
 		currentTimeSpec.tv_nsec = 0;
 	}
@@ -86,40 +94,22 @@ float getTimeSpecDiff(const timespec& oldValue, const timespec& newValue)
 	return result;
 }
 
+void ProgressImpl::removeOldChunks(const struct timespec& currentTimeSpec)
+{
+	fetchedChunks.erase(fetchedChunks.begin(), findFirstActualChunk(currentTimeSpec));
+}
+
 void ProgressImpl::addChunk(size_t size)
 {
-	FetchedChunk chunk;
-	chunk.size = size;
-
 	auto currentTimeSpec = getCurrentTimeSpec();
-	chunk.timeSpec = currentTimeSpec;
-	fetchedChunks.push_back(std::move(chunk));
-
-	// cleaning old chunks
-	FORIT(it, fetchedChunks)
-	{
-		if (getTimeSpecDiff(it->timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy)
-		{
-			fetchedChunks.erase(fetchedChunks.begin(), it);
-			break;
-		}
-	}
+	fetchedChunks.push_back(FetchedChunk{ currentTimeSpec, size });
+	removeOldChunks(currentTimeSpec);
 }
 
 size_t ProgressImpl::getDownloadSpeed() const
 {
-	auto currentTimeSpec = getCurrentTimeSpec();
-
-	auto it = fetchedChunks.begin();
-	for(; it != fetchedChunks.end(); ++it)
-	{
-		if (getTimeSpecDiff(it->timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy)
-		{
-			break;
-		}
-	}
 	size_t fetchedBytes = 0;
-	for(; it != fetchedChunks.end(); ++it)
+	for(auto it = findFirstActualChunk(getCurrentTimeSpec()); it != fetchedChunks.end(); ++it)
 	{
 		fetchedBytes += it->size;
 	}
@@ -127,9 +117,26 @@ size_t ProgressImpl::getDownloadSpeed() const
 	return fetchedBytes / download::Progress::speedCalculatingAccuracy;
 }
 
+ProgressImpl::FetchedChunks::iterator ProgressImpl::findFirstActualChunk(const struct timespec& currentTimeSpec) const
+{
+	auto& chunks = const_cast<FetchedChunks&>(fetchedChunks);
+	return std::find_if(chunks.begin(), chunks.end(),
+			[&currentTimeSpec](const FetchedChunk& chunk)
+			{
+				return (getTimeSpecDiff(chunk.timeSpec, currentTimeSpec) < download::Progress::speedCalculatingAccuracy);
+			});
+}
+
 }
 
 namespace download {
+
+Progress::DownloadRecord::DownloadRecord()
+	: downloadedSize(0)
+	, size(-1)
+	, phase(Phase::Planned)
+	, sizeScaleFactor(1.f)
+{}
 
 float Progress::speedCalculatingAccuracy = 16;
 
@@ -145,6 +152,11 @@ void Progress::setShortAliasForUri(const string& uri, const string& alias)
 void Progress::setLongAliasForUri(const string& uri, const string& alias)
 {
 	__impl->aliases[uri].longAlias = alias;
+}
+
+void Progress::markAsOptional(const string& uri)
+{
+	__impl->optionalUris.insert(uri);
 }
 
 Progress::~Progress()
@@ -178,13 +190,48 @@ string Progress::getShortAliasForUri(const string& uri) const
 	}
 }
 
-void Progress::setTotalEstimatedSize(uint64_t size)
+bool Progress::isOptional(const string& uri) const
 {
-	__impl->totalEstimatedSize = size;
+	return __impl->optionalUris.count(uri);
 }
 
-void Progress::progress(const vector< string >& params)
+namespace {
+
+template < typename T >
+class VectorSuffix
 {
+ public:
+	VectorSuffix(const vector< T >& source)
+		: p_source(source)
+		, p_position(0)
+	{}
+
+	void slide(size_t count)
+	{
+		p_position += count;
+	}
+
+	const T& operator[](size_t offset) const
+	{
+		return p_source[p_position + offset];
+	}
+
+	size_t size() const
+	{
+		return p_source.size() - p_position;
+	}
+
+ private:
+	const vector< T >& p_source;
+	size_t p_position;
+};
+
+}
+
+void Progress::progress(const vector< string >& allParams)
+{
+	VectorSuffix<string> params(allParams);
+
 	if (params.size() == 1 && params[0] == "finish")
 	{
 		finishHook();
@@ -192,10 +239,19 @@ void Progress::progress(const vector< string >& params)
 	}
 	if (params.size() < 2)
 	{
-		fatal2("download progress: received progress message with less than 2 parameters");
+		fatal2(__("download progress: received a progress message with less than 2 total parameters"));
 	}
 	const string& uri = params[0];
 	const string& action = params[1];
+	params.slide(2);
+
+	auto assertParamCount = [&params, &action](size_t count)
+	{
+		if (params.size() != count)
+		{
+			fatal2(__("download progress: received a submessage '%s' with not %u parameters"), action, count);
+		}
+	};
 
 	if (action == "ping")
 	{
@@ -203,77 +259,66 @@ void Progress::progress(const vector< string >& params)
 	}
 	else if (action == "start")
 	{
-		if (params.size() > 3)
-		{
-			fatal2("download progress: received progress submessage 'start' with more than 1 parameters");
-		}
-		// new download
+		assertParamCount(0);
+
+		// new/started download
 		DownloadRecord& record = __impl->nowDownloading[uri];
+		record.phase = DownloadRecord::Phase::Started;
 		record.number = __impl->nextDownloadNumber++;
-		if (params.size() == 3)
-		{
-			record.size = lexical_cast< size_t >(params[2]);
-		}
-		else
-		{
-			record.size = -1;
-		}
-		record.downloadedSize = 0;
-		record.beingPostprocessed = false;
 
 		newDownloadHook(uri, record);
+		updateHook(true);
+	}
+	else if (action == "expected-size")
+	{
+		assertParamCount(1);
+
+		DownloadRecord& record = __impl->nowDownloading[uri];
+		record.size = lexical_cast< size_t >(params[0]);
 		updateHook(true);
 	}
 	else
 	{
 		// this is info about something that currently downloading
 		auto recordIt = __impl->nowDownloading.find(uri);
-		if (recordIt == __impl->nowDownloading.end())
+		if (recordIt == __impl->nowDownloading.end() || recordIt->second.phase < DownloadRecord::Phase::Started)
 		{
-			fatal2("download progress: received info for not started download, uri '%s'", uri);
+			fatal2(__("download progress: received an info for a not started download, URI '%s'"), uri);
 		}
 		DownloadRecord& record = recordIt->second;
 		if (action == "downloading")
 		{
-			if (params.size() != 4)
-			{
-				fatal2("download progress: received submessage 'downloading' with more than 2 parameters");
-			}
-			record.downloadedSize = lexical_cast< size_t >(params[2]);
-			auto bytesInFetchedPiece = lexical_cast< size_t >(params[3]);
+			assertParamCount(2);
+			record.downloadedSize = lexical_cast< size_t >(params[0]);
+			auto bytesInFetchedPiece = lexical_cast< size_t >(params[1]);
 			__impl->fetchedSize += bytesInFetchedPiece;
 			__impl->addChunk(bytesInFetchedPiece);
 			updateHook(false);
 		}
-		else if (action == "expected-size")
+		else if (action == "ui-size")
 		{
-			if (params.size() != 3)
+			assertParamCount(1);
+			size_t uiSize = lexical_cast< size_t >(params[0]);
+			if (record.size != -1u)
 			{
-				fatal2("download progress: received submessage 'expected-size' with more than 1 parameter");
+				record.sizeScaleFactor = (float)record.size / uiSize;
 			}
-			record.size = lexical_cast< size_t >(params[2]);
-			updateHook(true);
+			record.size = uiSize;
 		}
 		else if (action == "pre-done")
 		{
-			if (params.size() != 2)
-			{
-				fatal2("download progress: received submessage 'pre-done' with more than 0 parameters");
-			}
-			record.beingPostprocessed = true;
+			assertParamCount(0);
+			record.phase = DownloadRecord::Phase::Postprocessed;
 			updateHook(true);
 		}
 		else if (action == "done")
 		{
-			if (params.size() != 3)
-			{
-				fatal2("download progress: received submessage 'done' with more than 1 parameter");
-			}
-			const string& result = params[2];
+			assertParamCount(1);
+			const string& result = params[0];
 			if (result.empty()) // only if download succeeded
 			{
 				auto value = (record.size != (size_t)-1 ? record.size : record.downloadedSize);
-				__impl->doneDownloadsSize += value;
+				__impl->doneDownloadsSize += value*record.sizeScaleFactor;
 			}
 			finishedDownloadHook(uri, result);
 			__impl->nowDownloading.erase(recordIt);
@@ -281,7 +326,7 @@ void Progress::progress(const vector< string >& params)
 		}
 		else
 		{
-			fatal2("download progress: wrong action '%s' received", action);
+			fatal2(__("download progress: received the invalid action '%s'"), action);
 		}
 	}
 }
@@ -296,9 +341,9 @@ uint64_t Progress::getOverallDownloadedSize() const
 	// firstly, start up with filling size of already downloaded things
 	uint64_t result = __impl->doneDownloadsSize;
 	// count each amount bytes download for all active entries
-	FORIT(it, __impl->nowDownloading)
+	for (const auto& item: __impl->nowDownloading)
 	{
-		result += it->second.downloadedSize;
+		result += (item.second.downloadedSize * item.second.sizeScaleFactor);
 	}
 
 	return result;
@@ -306,28 +351,19 @@ uint64_t Progress::getOverallDownloadedSize() const
 
 uint64_t Progress::getOverallEstimatedSize() const
 {
-	if (__impl->totalEstimatedSize != (uint64_t)-1)
+	auto result = __impl->doneDownloadsSize;
+	for (const auto& item: __impl->nowDownloading)
 	{
-		// caller has specified the estimated size, just use it
-		return __impl->totalEstimatedSize;
-	}
-	else
-	{
-		// otherwise compute it based on data we have
-		auto result = __impl->doneDownloadsSize;
-		FORIT(it, __impl->nowDownloading)
+		// add or real estimated size, or downloaded size (for entries
+		// where download size hasn't been determined yet)
+		auto size = item.second.size;
+		if (size == (size_t)-1)
 		{
-			// add or real estimated size, or downloaded size (for entries
-			// where download size hasn't been determined yet)
-			auto size = it->second.size;
-			if (size == (size_t)-1)
-			{
-				size = it->second.downloadedSize;
-			}
-			result += size;
+			size = item.second.downloadedSize;
 		}
-		return result;
+		result += (size * item.second.sizeScaleFactor);
 	}
+	return result;
 }
 
 uint64_t Progress::getOverallFetchedSize() const

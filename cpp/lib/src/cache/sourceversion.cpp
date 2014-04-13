@@ -15,169 +15,19 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <common/regex.hpp>
-
-#include <cupt/file.hpp>
 #include <cupt/cache/sourceversion.hpp>
-#include <cupt/cache/releaseinfo.hpp>
 
-#include <internal/tagparser.hpp>
-#include <internal/versionparsemacro.hpp>
 #include <internal/common.hpp>
-#include <internal/regex.hpp>
 
 namespace cupt {
 namespace cache {
 
-shared_ptr< SourceVersion > SourceVersion::parseFromFile(const Version::InitializationParameters& initParams)
+bool SourceVersion::areHashesEqual(const Version* other) const
 {
-	auto v = new SourceVersion;
-
-	Source source;
-
-	v->packageName = initParams.packageName;
-	source.release = initParams.releaseInfo;
-
-	v->priority = Version::Priorities::Extra; // default value if not specified
-
-	{ // actual parsing
-		// go to starting byte of the entry
-		initParams.file->seek(initParams.offset);
-
-		internal::TagParser parser(initParams.file.get());
-		internal::TagParser::StringRange tagName, tagValue;
-
-		static const sregex checksumsLineRegex = sregex::compile(" ([[:xdigit:]]+) +(\\d+) +(.*)", regex_constants::optimize);
-		static const sregex dscPartRegex = sregex::compile("\\.dsc$", regex_constants::optimize);
-		static const sregex diffPartRegex = sregex::compile("\\.(?:diff\\.gz|debian\\.tar\\.\\w+)$", regex_constants::optimize);
-		smatch lineMatch;
-		smatch m;
-
-		auto parseChecksumRecord = [&](HashSums::Type hashSumType)
-		{
-			if (tagValue.first != tagValue.second)
-			{
-				fatal2("unexpected non-empty tag value '%s'", string(tagValue));
-			}
-			string block;
-			parser.parseAdditionalLines(block);
-			auto lines = internal::split('\n', block);
-			FORIT(lineIt, lines)
-			{
-				const string& line = *lineIt;
-
-				if (!regex_match(line, lineMatch, checksumsLineRegex))
-				{
-					fatal2("malformed line '%s'", line);
-				}
-				const string name = lineMatch[3];
-
-				SourceVersion::FileParts::Type part = (regex_search(name, m, dscPartRegex) ? SourceVersion::FileParts::Dsc :
-						(regex_search(name, m, diffPartRegex) ? SourceVersion::FileParts::Diff : SourceVersion::FileParts::Tarball));
-				bool foundRecord = false;
-				FORIT(recordIt, v->files[part])
-				{
-					if (recordIt->name == name)
-					{
-						recordIt->hashSums[hashSumType] = lineMatch[1];
-						foundRecord = true;
-						break;
-					}
-				}
-
-				if (!foundRecord)
-				{
-					SourceVersion::FileRecord& fileRecord =
-							(v->files[part].push_back(SourceVersion::FileRecord()), *(v->files[part].rbegin()));
-					fileRecord.name = name;
-					fileRecord.size = internal::string2uint32(lineMatch[2]);
-					fileRecord.hashSums[hashSumType] = lineMatch[1];
-				}
-			}
-		};
-
-		while (parser.parseNextLine(tagName, tagValue))
-		{
-			// parsing checksums and file names
-			TAG(Files, parseChecksumRecord(HashSums::MD5);)
-			TAG(Checksums-Sha1, parseChecksumRecord(HashSums::SHA1);)
-			TAG(Checksums-Sha256, parseChecksumRecord(HashSums::SHA256);)
-
-			TAG(Binary,
-			{
-				auto block = string(tagValue);
-				string additionalLines;
-				parser.parseAdditionalLines(additionalLines);
-				if (!additionalLines.empty())
-				{
-					auto lastCharacterIt = additionalLines.end() - 1;
-					if (*lastCharacterIt == '\n')
-					{
-						additionalLines.erase(lastCharacterIt);
-					}
-					FORIT(charIt, additionalLines)
-					{
-						if (*charIt == '\n')
-						{
-							*charIt = ' ';
-						}
-					}
-					block.append(additionalLines);
-				}
-
-				internal::processSpaceCommaSpaceDelimitedStrings(block.begin(), block.end(),
-						[&v](string::const_iterator a, string::const_iterator b)
-						{
-							v->binaryPackageNames.push_back(string(a, b));
-						});
-			})
-			TAG(Directory, source.directory = tagValue;)
-			TAG(Version, v->versionString = tagValue;)
-			PARSE_PRIORITY
-			TAG(Architecture, v->architectures = internal::split(' ', tagValue);)
-
-			if (Version::parseRelations)
-			{
-				TAG(Build-Depends, v->relations[RelationTypes::BuildDepends] = ArchitecturedRelationLine(tagValue);)
-				TAG(Build-Depends-Indep, v->relations[RelationTypes::BuildDependsIndep] = ArchitecturedRelationLine(tagValue);)
-				TAG(Build-Conflicts, v->relations[RelationTypes::BuildConflicts] = ArchitecturedRelationLine(tagValue);)
-				TAG(Build-Conflicts-Indep, v->relations[RelationTypes::BuildConflictsIndep] = ArchitecturedRelationLine(tagValue);)
-			}
-
-			if (Version::parseInfoOnly)
-			{
-				TAG(Section, v->section = tagValue;)
-				TAG(Maintainer, v->maintainer = tagValue;)
-				static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*", regex_constants::optimize);
-				TAG(Uploaders, v->uploaders = split(commaSeparatedRegex, tagValue);)
-				PARSE_OTHERS
-			}
-		}
-	}
-	checkVersionString(v->versionString);
-	v->sources.push_back(source);
-
-	if (v->versionString.empty())
-	{
-		fatal2("version string isn't defined");
-	}
-	if (v->architectures.empty())
-	{
-		warn2("source package %s, version %s: architectures aren't defined, setting them to 'all'",
-				v->packageName, v->versionString);
-		v->architectures.push_back("all");
-	}
-	// no need to verify hash sums for emptyness, it's guarantted by parsing algorithm above
-
-	return shared_ptr< SourceVersion >(v);
-}
-
-bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) const
-{
-	shared_ptr< const SourceVersion > o = dynamic_pointer_cast< const SourceVersion >(other);
+	auto o = dynamic_cast< const SourceVersion* >(other);
 	if (!o)
 	{
-		fatal2("internal error: areHashesEqual: non-source version parameter");
+		fatal2i("areHashesEqual: non-source version parameter");
 	}
 	for (size_t i = 0; i < SourceVersion::FileParts::Count; ++i)
 	{
@@ -200,10 +50,10 @@ bool SourceVersion::areHashesEqual(const shared_ptr< const Version >& other) con
 }
 
 const string SourceVersion::FileParts::strings[] = {
-	__("Tarball"), __("Diff"), __("Dsc")
+	N__("Tarball"), N__("Diff"), N__("Dsc")
 };
 const string SourceVersion::RelationTypes::strings[] = {
-	__("Build-Depends"), __("Build-Depends-Indep"), __("Build-Conflicts"), __("Build-Conflicts-Indep"),
+	N__("Build-Depends"), N__("Build-Depends-Indep"), N__("Build-Conflicts"), N__("Build-Conflicts-Indep"),
 };
 const char* SourceVersion::RelationTypes::rawStrings[] = {
 	"build-depends", "build-depend-indep", "build-conflicts", "build-conflicts-indep",

@@ -56,7 +56,7 @@ class CUPT_API Resolver
 	/// reason: asked by user
 	/**
 	 * This reason means that change was asked by "user" by calling @ref
-	 * installVersion, @ref removePackage etc. methods.
+	 * installVersion, @ref removeVersions etc. methods.
 	 */
 	struct UserReason: public Reason
 	{
@@ -80,12 +80,12 @@ class CUPT_API Resolver
 	 */
 	struct RelationExpressionReason: public Reason
 	{
-		shared_ptr< const BinaryVersion > version; ///< version that caused the change
+		const BinaryVersion* version; ///< version that caused the change
 		BinaryVersion::RelationTypes::Type dependencyType; ///< type of dependency that caused the change
 		RelationExpression relationExpression; ///< relation expression which caused the change
 
 		/// trivial constructor
-		RelationExpressionReason(const shared_ptr< const BinaryVersion >&,
+		RelationExpressionReason(const BinaryVersion*,
 				BinaryVersion::RelationTypes::Type, const RelationExpression&);
 		virtual string toString() const;
 	};
@@ -97,11 +97,11 @@ class CUPT_API Resolver
 	 */
 	struct SynchronizationReason: public Reason
 	{
-		shared_ptr< const BinaryVersion > version; ///< version that caused the change
+		const BinaryVersion* version; ///< version that caused the change
 		string relatedPackageName; ///< name of related binary package
 
 		/// trivial constructor
-		SynchronizationReason(const shared_ptr< const BinaryVersion >&, const string&);
+		SynchronizationReason(const BinaryVersion*, const string&);
 		virtual string toString() const;
 	};
 
@@ -111,10 +111,10 @@ class CUPT_API Resolver
 	 */
 	struct SuggestedPackage
 	{
-		shared_ptr< const BinaryVersion > version; ///< package version
-		// TODO/API break/: change the field to 'automaticallyInstalledFlag'
-		bool manuallySelected; ///< was this package version selected by user, not resolver?
+		const BinaryVersion* version; ///< package version
+		bool automaticallyInstalledFlag;
 		vector< shared_ptr< const Reason > > reasons; ///< list of resolver reasons if tracked
+		vector< string > reasonPackageNames; ///< changes in these packages caused the change in this package
 	};
 	typedef map< string, SuggestedPackage > SuggestedPackages; ///< suggested set of packages
 	/// the result of resolver's work
@@ -138,30 +138,73 @@ class CUPT_API Resolver
 	/// callback function type
 	typedef std::function< UserAnswer::Type (const Offer&) > CallbackType;
 
+	struct RequestImportance
+	{
+		typedef uint32_t Value;
+
+		static const Value Must;
+		static const Value Try;
+		static const Value Wish;
+
+		RequestImportance(Value value)
+			: p_value(value)
+		{}
+		operator Value() const
+		{
+			return p_value;
+		}
+     private:
+		Value p_value;
+	};
+
 	Resolver() {};
 
 	/**
-	 * Requests installation of the specific version.
+	 * Requests installation of one of the specific version(s).  If more than
+	 * one version is supplied, installing any of them will be enough to
+	 * satisfy this request.
+	 *
+	 * @param annotation passed to @ref satisfyRelationExpression
+	 * @param importance passed to @ref satisfyRelationExpression
 	 */
-	virtual void installVersion(const shared_ptr< const BinaryVersion >&) = 0;
+	void installVersion(const vector< const BinaryVersion* >&,
+			const string& annotation = string(), RequestImportance importance = RequestImportance::Must);
+	/**
+	 * Requests removal of all supplied versions.
+	 *
+	 * @param annotation passed to @ref satisfyRelationExpression
+	 * @param importance passed to @ref satisfyRelationExpression
+	 */
+	void removeVersions(const vector< const BinaryVersion* >&,
+			const string& annotation = string(), RequestImportance importance = RequestImportance::Must);
 	/**
 	 * Requests that specified relation expression is satisfied.
-	 */
-	virtual void satisfyRelationExpression(const RelationExpression&) = 0;
-	/**
-	 * Requests that specified relation expression is not satisfied.
-	 */
-	virtual void unsatisfyRelationExpression(const RelationExpression&) = 0;
-	/**
-	 * Requests that specified package is removed.
 	 *
-	 * @param packageName
+	 * @param invert if set to @c true, unsatisfies the expression rather than satisfy it
+	 * @param annotation user-friendly description of request; if empty,
+	 * standard one will be generated
+	 * @param importance specifies is the request mandatory, and if not, what is the penalty:
+	 * - Must: request is mandatory;
+	 * - Try: request is optional, penalty is the value of 'cupt::resolver::score::unsatisfied-try' option;
+	 * - Wish: request is optiona, penalty is the value of 'cupt::resolver::score::unsatisfied-wish' option;
+	 * - any other value: request is optional, penalty is the value itself.
+	 * @param asAutomatic if new packages are to be installed as a result of
+	 * perfoming this request, their 'automaticallyInstalledFlag' will have the
+	 * value of this parameter.
 	 */
-	virtual void removePackage(const string& packageName) = 0;
+	virtual void satisfyRelationExpression(const RelationExpression&,
+			bool invert = false, const string& annotation = string(), RequestImportance importance = RequestImportance::Must,
+			bool asAutomatic = false) = 0;
 	/**
-	 * Requests an upgrade of all installed packages (to their policy version).
+	 * Requests an upgrade of all installed packages (to their preferred version).
 	 */
 	virtual void upgrade() = 0;
+	/**
+	 * Requests that if a solution will have the package @a packageName,
+	 * its corresponding Offer::SuggestedPackage::automaticallyInstalledFlag
+	 * will have the value of @a flagValue.
+	 */
+	virtual void setAutomaticallyInstalledFlag(const string& packageName, bool flagValue) = 0;
 
 	/// perform a resolve computations
 	/**

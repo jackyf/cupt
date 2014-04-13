@@ -84,9 +84,41 @@ string getPathOfReleaseList(const Config& config, const IndexEntry& entry)
 	return getPathOfIndexEntry(config, entry) + "_Release";
 }
 
+string getPathOfInReleaseList(const Config& config, const IndexEntry& entry)
+{
+	return getPathOfIndexEntry(config, entry) + "_InRelease";
+}
+
+namespace {
+
+string selectNewerFile(const string& leftPath, const string& rightPath)
+{
+	bool leftExists = fs::fileExists(leftPath);
+	bool rightExists = fs::fileExists(rightPath);
+	if (!leftExists && !rightExists) return string();
+	if (!rightExists) return leftPath;
+	if (!leftExists) return rightPath;
+	return fs::fileModificationTime(leftPath) >= fs::fileModificationTime(rightPath) ?
+			leftPath : rightPath;
+}
+
+}
+
+string getPathOfMasterReleaseLikeList(const Config& config, const IndexEntry& entry)
+{
+	return selectNewerFile(
+			getPathOfInReleaseList(config, entry),
+			getPathOfReleaseList(config, entry));
+}
+
 string getDownloadUriOfReleaseList(const IndexEntry& entry)
 {
 	return getUriOfIndexEntry(entry) + "/Release";
+}
+
+string getDownloadUriOfInReleaseList(const IndexEntry& entry)
+{
+	return getUriOfIndexEntry(entry) + "/InRelease";
 }
 
 static string getIndexListSuffix(const Config& config, const IndexEntry& entry, char delimiter)
@@ -121,20 +153,19 @@ string getPathOfIndexList(const Config& config, const IndexEntry& entry)
 	return basePath + "_" + indexListSuffix;
 }
 
-static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
+static vector< FileDownloadRecord > getDownloadInfoFromRelease(
 		const Config& config, const IndexEntry& indexEntry, const string& suffix)
 {
 	auto baseUri = getUriOfIndexEntry(indexEntry);
+	// TODO: make cachefiles::getAlias* functions
+	auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
 
-	vector< Cache::IndexDownloadRecord > result;
-	{ // reading
-		string openError;
-		auto releaseFilePath = getPathOfReleaseList(config, indexEntry);
-		File releaseFile(releaseFilePath, "r", openError);
-		if (!openError.empty())
-		{
-			fatal2("unable to open release file '%s': %s", releaseFilePath, openError);
-		}
+	vector< FileDownloadRecord > result;
+
+	try
+	{
+		auto releaseFilePath = getPathOfMasterReleaseLikeList(config, indexEntry);
+		RequiredFile releaseFile(releaseFilePath, "r");
 
 		HashSums::Type currentHashSumType = HashSums::Count;
 		// now we need to find if this variant is present in the release file
@@ -154,17 +185,16 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 			{
 				currentHashSumType = HashSums::SHA256;
 			}
-			else if (line.find(suffix) != string::npos)
+			else if (line.empty() || !isspace(line[0])) // end of hash sum block
 			{
-				if (currentHashSumType == HashSums::Count)
-				{
-					fatal2("release line '%s' without previous hash sum declaration at release file '%s'",
-								line, releaseFilePath);
-				}
+				currentHashSumType = HashSums::Count;
+			}
+			else if (currentHashSumType != HashSums::Count && line.find(suffix) != string::npos)
+			{
 				static sregex hashSumsLineRegex = sregex::compile("\\s([[:xdigit:]]+)\\s+(\\d+)\\s+(.*)");
 				if (!regex_match(line, m, hashSumsLineRegex))
 				{
-					fatal2("malformed release line '%s' at file '%s'", line, releaseFilePath);
+					fatal2(__("malformed line '%s'"), line);
 				}
 
 				string name = m[3];
@@ -187,29 +217,32 @@ static vector< Cache::IndexDownloadRecord > getDownloadInfoFromRelease(
 				}
 				if (!foundRecord)
 				{
-					Cache::IndexDownloadRecord& record =
-							(result.push_back(Cache::IndexDownloadRecord()), *(result.rbegin()));
+					FileDownloadRecord& record =
+							(result.push_back(FileDownloadRecord()), *(result.rbegin()));
 					record.uri = uri;
 					record.size = string2uint32(m[2]);
 					record.hashSums[currentHashSumType] = m[1];
 				}
 			}
 		}
-	}
-
-	// checks
-	FORIT(recordIt, result)
-	{
-		if (recordIt->hashSums.empty())
+		// checks
+		FORIT(recordIt, result)
 		{
-			fatal2("no hash sums defined for index list URI '%s'", recordIt->uri);
+			if (recordIt->hashSums.empty())
+			{
+				fatal2(__("no hash sums defined for the index URI '%s'"), recordIt->uri);
+			}
 		}
+	}
+	catch (Exception&)
+	{
+		fatal2("unable to parse the release '%s'", alias);
 	}
 
 	return result;
 }
 
-vector< Cache::IndexDownloadRecord > getDownloadInfoOfIndexList(
+vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 		const Config& config, const IndexEntry& indexEntry)
 {
 	return getDownloadInfoFromRelease(config, indexEntry,
@@ -275,36 +308,28 @@ static vector< vector< string > > getChunksOfLocalizedDescriptions(
 	return result;
 }
 
-vector< string > getPathsOfLocalizedDescriptions(const Config& config, const IndexEntry& entry)
+static string extractLocalizationLanguage(const string& lastChunk)
 {
-	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
-	auto basePath = getPathOfIndexEntry(config, entry);
-
-	vector< string > result;
-	FORIT(chunkArrayIt, chunkArrays)
+	string result = lastChunk;
+	auto dashPosition = result.find('-');
+	if (dashPosition != string::npos)
 	{
-		result.push_back(basePath + "_" + join("_", *chunkArrayIt));
+		result.erase(0, dashPosition + 1);
 	}
-
 	return result;
 }
 
-vector< Cache::LocalizationDownloadRecord > getDownloadInfoOfLocalizedDescriptions(
+vector< pair< string, string > > getPathsOfLocalizedDescriptions(
 		const Config& config, const IndexEntry& entry)
 {
 	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
 	auto basePath = getPathOfIndexEntry(config, entry);
-	auto baseUri = getUriOfIndexEntry(entry);
 
-	vector< Cache::LocalizationDownloadRecord > result;
-
-	FORIT(chunkArrayIt, chunkArrays)
+	vector< pair< string, string > > result;
+	for (const auto& chunkArray: chunkArrays)
 	{
-		Cache::LocalizationDownloadRecord record;
-		record.localPath = basePath + "_" + join("_", *chunkArrayIt);
-		// yes, somewhy translations are always bzip2'ed
-		record.uri = baseUri + "/" + join("/", *chunkArrayIt) + ".bz2";
-		result.push_back(std::move(record));
+		auto path = basePath + "_" + join("_", chunkArray);
+		result.push_back({ extractLocalizationLanguage(chunkArray.back()), std::move(path) });
 	}
 
 	return result;
@@ -335,12 +360,57 @@ vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
 	return result;
 }
 
+vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
+		const Config& config, const IndexEntry& entry)
+{
+	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
+	auto basePath = getPathOfIndexEntry(config, entry);
+
+	vector< LocalizationDownloadRecord3 > result;
+
+	for (const auto& chunkArray: chunkArrays)
+	{
+		LocalizationDownloadRecord3 record;
+		record.fileDownloadRecords = getDownloadInfoFromRelease(config, entry,
+				entry.component + "/i18n/" + chunkArray.back());
+		if (record.fileDownloadRecords.empty())
+		{
+			continue;
+		}
+		record.localPath = basePath + "_" + join("_", chunkArray);
+		record.language = extractLocalizationLanguage(chunkArray.back());
+
+		result.push_back(std::move(record));
+	}
+
+	return result;
+}
+
 string getPathOfExtendedStates(const Config& config)
 {
 	return config.getPath("dir::state::extendedstates");
 }
 
-bool verifySignature(const Config& config, const string& path)
+namespace {
+
+bool openingForReadingSucceeds(const string& path, const string& fileType, bool debugging)
+{
+	string openError;
+	File file(path, "r", openError);
+	if (!openError.empty())
+	{
+		if (debugging)
+		{
+			debug2("unable to read %s file '%s': %s", fileType, path, openError);
+		}
+		return false;
+	}
+	return true;
+}
+
+}
+
+bool verifySignature(const Config& config, const string& path, const string& alias)
 {
 	auto debugging = config.getBool("debug::gpgv");
 	if (debugging)
@@ -349,10 +419,8 @@ bool verifySignature(const Config& config, const string& path)
 	}
 
 	auto keyringPath = config.getString("gpgv::trustedkeyring");
-	if (debugging)
-	{
-		debug2("keyring file is '%s'", keyringPath);
-	}
+	if (debugging) debug2("keyring file is '%s'", keyringPath);
+	if (!openingForReadingSucceeds(keyringPath, "keyring", debugging)) return false;
 
 	auto signaturePath = path + ".gpg";
 	if (debugging)
@@ -362,38 +430,14 @@ bool verifySignature(const Config& config, const string& path)
 
 	if (!fs::fileExists(signaturePath))
 	{
-		if (debugging)
-		{
-			debug2("signature file '%s' doesn't exist", signaturePath);
-		}
-		return 0;
+		if (debugging) debug2("signature file '%s' doesn't exist, omitting it and assuming self-signed file", signaturePath);
+		signaturePath.clear();
+	}
+	else
+	{
+		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return false;
 	}
 
-	// file checks
-	{
-		string openError;
-		File file(signaturePath, "r", openError);
-		if (!openError.empty())
-		{
-			if (debugging)
-			{
-				debug2("unable to read signature file '%s': %s", signaturePath, openError);
-			}
-			return false;
-		}
-	}
-	{
-		string openError;
-		File file(keyringPath, "r", openError);
-		if (!openError.empty())
-		{
-			if (debugging)
-			{
-				debug2("unable to read keyring file '%s': %s", keyringPath, openError);
-			}
-			return false;
-		}
-	}
 
 	bool verifyResult = false;
 	try
@@ -404,7 +448,7 @@ bool verifySignature(const Config& config, const string& path)
 		File gpgPipe(gpgCommand, "pr", openError);
 		if (!openError.empty())
 		{
-			fatal2("unable to open gpg pipe: %s", openError);
+			fatal2(__("unable to open the pipe '%s': %s"), gpgCommand, openError);
 		}
 
 		smatch m;
@@ -439,14 +483,14 @@ bool verifySignature(const Config& config, const string& path)
 		if (status.empty())
 		{
 			// no info from gpg at all
-			fatal2("gpg: '%s': no info received", path);
+			fatal2(__("gpg: '%s': no information"), alias);
 		}
 
 		// first line ought to be validness indicator
 		static const sregex messageRegex = sregex::compile("(\\w+) (.*)");
 		if (!regex_match(status, m, messageRegex))
 		{
-			fatal2("gpg: '%s': invalid status string '%s'", path, status);
+			fatal2(__("gpg: '%s': invalid status string '%s'"), alias, status);
 		}
 
 		string messageType = m[1];
@@ -455,14 +499,9 @@ bool verifySignature(const Config& config, const string& path)
 		if (messageType == "GOODSIG")
 		{
 			string furtherInfo = gpgGetLine();
-			if (furtherInfo.empty())
-			{
-				fatal2("gpg: '%s': error: unfinished status", path);
-			}
-
 			if (!regex_match(furtherInfo, m, messageRegex))
 			{
-				fatal2("gpg: '%s': invalid further info string '%s'", path, furtherInfo);
+				fatal2(__("gpg: '%s': invalid detailed information string '%s'"), alias, furtherInfo);
 			}
 
 			string furtherInfoType = m[1];
@@ -474,24 +513,24 @@ bool verifySignature(const Config& config, const string& path)
 			}
 			else if (furtherInfoType == "EXPSIG")
 			{
-				warn2("gpg: '%s': expired signature: %s", path, furtherInfoMessage);
+				warn2(__("gpg: '%s': expired signature: %s"), alias, furtherInfoMessage);
 			}
 			else if (furtherInfoType == "EXPKEYSIG")
 			{
-				warn2("gpg: '%s': expired key: %s", path, furtherInfoMessage);
+				warn2(__("gpg: '%s': expired key: %s"), alias, furtherInfoMessage);
 			}
 			else if (furtherInfoType == "REVKEYSIG")
 			{
-				warn2("gpg: '%s': revoked key: %s", path, furtherInfoMessage);
+				warn2(__("gpg: '%s': revoked key: %s"), alias, furtherInfoMessage);
 			}
 			else
 			{
-				warn2("gpg: '%s': unknown error: %s %s", path, furtherInfoType, furtherInfoMessage);
+				warn2(__("gpg: '%s': unknown error: %s %s"), alias, furtherInfoType, furtherInfoMessage);
 			}
 		}
 		else if (messageType == "BADSIG")
 		{
-			warn2("gpg: '%s': bad signature: %s", path, message);
+			warn2(__("gpg: '%s': bad signature: %s"), alias, message);
 		}
 		else if (messageType == "ERRSIG")
 		{
@@ -504,7 +543,7 @@ bool verifySignature(const Config& config, const string& path)
 			{
 				if (!regex_match(detail, m, messageRegex))
 				{
-					fatal2("gpg: '%s': invalid detailed info string '%s'", path, detail);
+					fatal2(__("gpg: '%s': invalid detailed information string '%s'"), alias, detail);
 				}
 				string detailType = m[1];
 				string detailMessage = m[2];
@@ -516,32 +555,32 @@ bool verifySignature(const Config& config, const string& path)
 					//
 					// NO_PUBKEY D4F5CE00FA0E9B9D
 					//
-					warn2("gpg: '%s': public key '%s' not found", path, detailMessage);
+					warn2(__("gpg: '%s': public key '%s' is not found"), alias, detailMessage);
 				}
 			}
 
 			if (!publicKeyWasNotFound)
 			{
-				warn2("gpg: '%s': could not verify signature: %s", path, message);
+				warn2(__("gpg: '%s': could not verify a signature: %s"), alias, message);
 			}
 		}
 		else if (messageType == "NODATA")
 		{
 			// no signature
-			warn2("gpg: '%s': empty signature", path);
+			warn2(__("gpg: '%s': empty signature"), alias);
 		}
 		else if (messageType == "KEYEXPIRED")
 		{
-			warn2("gpg: '%s': expired key: %s", path, message);
+			warn2(__("gpg: '%s': expired key: %s"), alias, message);
 		}
 		else
 		{
-			warn2("gpg: '%s': unknown message received: %s %s", path, messageType, message);
+			warn2(__("gpg: '%s': unknown message: %s %s"), alias, messageType, message);
 		}
 	}
 	catch (Exception&)
 	{
-		warn2("error while verifying signature for file '%s'", path);
+		warn2(__("unable to verify a signature for the '%s'"), alias);
 	}
 
 	if (debugging)
@@ -551,31 +590,26 @@ bool verifySignature(const Config& config, const string& path)
 	return verifyResult;
 }
 
-shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const string& path)
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
+		const string& path, const string& alias)
 {
 	shared_ptr< cache::ReleaseInfo > result(new cache::ReleaseInfo);
 	result->notAutomatic = false; // default
 	result->butAutomaticUpgrades = false; // default
 
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2("unable to open release file '%s': %s", path, openError);
-	}
-
-	size_t lineNumber = 1;
 	static sregex fieldRegex = sregex::compile("^((?:\\w|-)+?): (.*)"); // $ implied in regex
 	smatch matches;
 	try
 	{
+		RequiredFile file(path, "r");
+
 		string line;
 		while (! file.getLine(line).eof())
 		{
-			if (!regex_match(line, matches, fieldRegex))
-			{
-				break;
-			}
+			if (line.empty()) continue;
+			if (line[0] == '-') continue; // "----- BEGIN PGP SIGNED MESSAGE-----"
+			if (!regex_match(line, matches, fieldRegex)) break;
+
 			string fieldName = matches[1];
 			string fieldValue = matches[2];
 
@@ -632,20 +666,10 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 				}
 			}
 		}
-		++lineNumber;
 	}
 	catch (Exception&)
 	{
-		fatal2("error parsing release file '%s', line %u", path, lineNumber);
-	}
-
-	if (result->vendor.empty())
-	{
-		warn2("no vendor specified in release file '%s'", path);
-	}
-	if (result->archive.empty())
-	{
-		warn2("no archive specified in release file '%s'", path);
+		fatal2(__("unable to parse the release '%s'"), alias);
 	}
 
 	{ // checking Valid-Until
@@ -668,13 +692,13 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config, const stri
 				{
 					bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
 					(warnOnly ? warn2< string, string > : fatal2< string, string >)
-							("release file '%s' has expired (expiry time '%s')", path, result->validUntilDate);
+							(__("the release '%s' has expired (expiry time '%s')"), alias, result->validUntilDate);
 				}
 			}
 			else
 			{
-				warn2("unable to parse expiry time '%s' in release file '%s'",
-						result->validUntilDate, path);
+				warn2(__("unable to parse the expiry time '%s' in the release '%s'"),
+						result->validUntilDate, alias);
 			}
 		}
 	}

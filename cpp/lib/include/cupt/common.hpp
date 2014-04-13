@@ -68,6 +68,7 @@ using std::pair;
 using std::shared_ptr;
 using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
+using std::unique_ptr;
 
 /// message file descriptor
 /**
@@ -76,20 +77,10 @@ using std::dynamic_pointer_cast;
  */
 CUPT_API extern int messageFd;
 
-// TODO/API break/: remove fatal, warn, debug, simulate, sf
-/// @deprecated an internal method, should not be used
-void CUPT_API fatal(const char* format, ...);
-/// @deprecated an internal method, should not be used
-void CUPT_API warn(const char* format, ...);
-/// @deprecated an internal method, should not be used
-void CUPT_API debug(const char* format, ...);
-/// @deprecated an internal method, should not be used
-void CUPT_API simulate(const char* format, ...);
-
 /// @cond
-CUPT_API string sf(const string& format, ...);
 CUPT_API string join(const string& joiner, const vector< string >& parts);
 CUPT_API string humanReadableSizeString(uint64_t bytes);
+CUPT_API string globToRegexString(const string&);
 /// @endcond
 
 /// localizes message
@@ -97,7 +88,7 @@ CUPT_API string humanReadableSizeString(uint64_t bytes);
  * @param message input string
  * @return localized message
  */
-string CUPT_API __(const char* message);
+CUPT_API const char* __(const char* message);
 
 /// reads package name in range
 /**
@@ -117,8 +108,7 @@ string CUPT_API __(const char* message);
  * @endcode
  * @c "zzuf" will be printed
  */
-void CUPT_API consumePackageName(string::const_iterator begin, string::const_iterator end,
-		string::const_iterator& resultEnd);
+void CUPT_API consumePackageName(const char* begin, const char* end, const char*& resultEnd);
 
 /// checks package name for correctness
 /**

@@ -28,6 +28,8 @@ namespace internal {
 
 class SetupAndPreviewWorker: public virtual WorkerBase
 {
+	map< string, bool > __purge_overrides;
+
 	void __generate_action_preview(const string&,
 			const Resolver::SuggestedPackage&, bool);
 	void __generate_actions_preview();

@@ -1,0 +1,2317 @@
+# Translation of cupt to German.
+# Copyright (C) 2008-2011, Eugene V. Lyubimkin.
+# This file is distributed under the same license as the cupt package.
+# Copyright (C) of this file 2012 Chris Leick.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cupt 2.5\n"
+"Report-Msgid-Bugs-To: cupt-devel@lists.alioth.debian.org\n"
+"POT-Creation-Date: 2012-04-17 20:41+0300\n"
+"PO-Revision-Date: 2012-06-16 20:21+0200\n"
+"Last-Translator: Chris Leick <c.leick@vollbio.de>\n"
+"Language-Team: German <debian-l10n-german@lists.debian.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: console/cupt.cpp:40 console/cupt.cpp:49
+#, c-format
+msgid "the command '%s' doesn't accept arguments"
+msgstr "Der Befehl »%s« akzeptiert keine Argumente."
+
+#: console/cupt.cpp:82
+#, c-format
+msgid "error performing the command '%s'"
+msgstr "Fehler bei der Durchführung des Befehls »%s«"
+
+#: console/cupt.cpp:106
+msgid "prints a short help"
+msgstr "gibt eine kurze Hilfe aus"
+
+#: console/cupt.cpp:107
+msgid "prints versions of this program and the underlying library"
+msgstr ""
+"gibt Versionen dieses Programms und der zugrundeliegenden Bibliothek aus"
+
+#: console/cupt.cpp:108
+msgid "prints values of configuration variables"
+msgstr "gibt Werte von Konfigurationsvariablen aus"
+
+#: console/cupt.cpp:109
+msgid "prints the info about binary package(s)"
+msgstr "gibt die Informationen über Binärpakete aus"
+
+#: console/cupt.cpp:110
+msgid "prints the info about source packages(s)"
+msgstr "gibt die Informationen über Quellpakete aus"
+
+#: console/cupt.cpp:111
+msgid "searches for packages using regular expression(s)"
+msgstr "sucht mittels regulärer Ausdrücke nach Paketen"
+
+#: console/cupt.cpp:112
+msgid "prints dependencies of binary package(s)"
+msgstr "gibt Abhängigkeiten von Binärpaketen aus"
+
+#: console/cupt.cpp:113
+msgid "print reverse-dependencies of binary package(s)"
+msgstr "gibt Rückwärtsabhängigkeiten von Binärpaketen aus"
+
+#: console/cupt.cpp:114
+msgid "finds a dependency path between a package set and a package"
+msgstr ""
+"findet einen Abhängigkeitspfad zwischen einer Paketzusammenstellung und einem "
+"Paket"
+
+#: console/cupt.cpp:115
+msgid "prints the pin info for the binary package(s)"
+msgstr "gibt die Pin-Information für die Binärpakete aus"
+
+#: console/cupt.cpp:116
+msgid "prints the pin info for the source package(s)"
+msgstr "gibt die Pin-Information für die Quellpakete aus"
+
+#: console/cupt.cpp:117
+msgid "prints available package names"
+msgstr "gibt verfügbare Paketnamen aus"
+
+#: console/cupt.cpp:118
+msgid "views the Debian changelog(s) of binary package(s)"
+msgstr "betrachtet die Debian-Änderungsprotokolle von Binärpaketen"
+
+#: console/cupt.cpp:119
+msgid "views the Debian copyright(s) info of binary package(s)"
+msgstr "betrachtet die Debian-Copyrights von Binärpaketen"
+
+#: console/cupt.cpp:120
+msgid "views Debian screenshot web pages for binary package(s)"
+msgstr "betrachtet Debian-Bildschirmfoto-Webseiten von Binärpaketen"
+
+#: console/cupt.cpp:121
+msgid "updates repository metadata"
+msgstr "aktualisiert Depot-Metadaten"
+
+#: console/cupt.cpp:122
+msgid "installs/upgrades/downgrades binary package(s)"
+msgstr "installiert Binärpakete oder führt Up-/Downgrades durch"
+
+#: console/cupt.cpp:123
+msgid "reinstalls binary packages(s)"
+msgstr "installiert Binärpakete neu"
+
+#: console/cupt.cpp:124
+msgid "removes binary package(s)"
+msgstr "entfernt Binärpakete"
+
+#: console/cupt.cpp:125
+msgid "removes binary package(s) along with their configuration files"
+msgstr "entfernt Binärpakete mitsamt ihren Konfigurationsdateien"
+
+#: console/cupt.cpp:126
+msgid "\"install if installed\": upgrades/downgrades binary packages(s)"
+msgstr ""
+"»installiert, falls installiert«: führt Up-/Downgrades von Binärpaketen durch"
+
+#: console/cupt.cpp:127
+msgid "performs actions to make relation expressions satisfied"
+msgstr "führt Aktionen durch, um Beziehungsausdrücke zu erfüllen"
+
+#: console/cupt.cpp:128
+msgid ""
+"upgrades the system without removing non-automatically installed packages"
+msgstr ""
+"führt ein Upgrade des Systems durch, ohne nicht-automatisch installierte "
+"Pakete zu entfernen"
+
+#: console/cupt.cpp:129
+msgid "upgrades the system"
+msgstr "führt ein Upgrade des Systems durch"
+
+#: console/cupt.cpp:130
+msgid "does a two-stage full upgrade"
+msgstr "führt ein zweistufiges vollständiges Upgrade durch"
+
+#: console/cupt.cpp:131
+msgid "satisfies build dependencies for source package(s)"
+msgstr "erfüllt Bauabhängigkeiten von Quellpaketen"
+
+#: console/cupt.cpp:132
+msgid "fetches and unpacks source package(s)"
+msgstr "ruft Quellpakete ab und entpackt sie"
+
+#: console/cupt.cpp:133
+msgid "cleans the whole binary package cache"
+msgstr "bereinigt den ganzen Binärpaketzwischenspeicher"
+
+#: console/cupt.cpp:134
+msgid ""
+"cleans packages from the binary package cache if not available from "
+"repositories"
+msgstr ""
+"löscht Pakete aus dem Binärpaketzwischenspeicher, falls sie nicht im Depot "
+"verfügbar sind"
+
+#: console/cupt.cpp:135
+msgid "marks binary package(s) as automatically installed"
+msgstr "markiert Binärpakete als automatisch installiert"
+
+#: console/cupt.cpp:136
+msgid "marks binary package(s) as manually installed"
+msgstr "markiert Binärpakete als manuell installiert"
+
+#: console/cupt.cpp:137
+msgid "shows the list of manually or automatically installed packages"
+msgstr "zeigt die Liste manuell oder automatisch installierter Pakete an"
+
+#: console/cupt.cpp:138
+msgid "starts an interactive package manager shell"
+msgstr "startet eine interaktive Paketverwaltungs-Shell"
+
+#: console/cupt.cpp:139
+msgid "works with system snapshots"
+msgstr "arbeitet mit Momentaufnahmen des Systems"
+
+#: console/cupt.cpp:142
+#, c-format
+msgid "Usage: %s <action> [<parameters>]"
+msgstr "Aufruf:%s <Aktion> [<Parameter>]"
+
+#: console/cupt.cpp:144
+msgid "Actions:"
+msgstr "Aktionen:"
+
+#: console/misc.cpp:47
+#, c-format
+msgid ""
+"options '--include-%ss' and '--exclude-%ss' cannot be specified together"
+msgstr ""
+"Die Optionen »--include-%ss« und »--exclude-%ss« können nicht zusammen "
+"angegeben werden."
+
+#: console/misc.cpp:133
+msgid "no command specified"
+msgstr "kein Befehl angegeben"
+
+#: console/misc.cpp:174
+#, c-format
+msgid "invalid option syntax in '%s' (right is '<option>=<value>')"
+msgstr "ungültige Optionssyntax in »%s« (richtig ist »<Option>=<Wert>«)"
+
+#: console/misc.cpp:194 console/misc.cpp:231
+#, c-format
+msgid "failed to parse command-line options: %s"
+msgstr "Auswerten der Befehlszeilenoptionen fehlgeschlagen: %s"
+
+#: console/misc.cpp:198
+msgid "error while processing command-line options"
+msgstr "Fehler beim Verarbeiten von Befehlszeilenoptionen"
+
+#: console/misc.cpp:227
+#, c-format
+msgid "unknown option '%s'"
+msgstr "unbekannte Option »%s«"
+
+#: console/misc.cpp:278
+#, c-format
+msgid "unrecognized command '%s'"
+msgstr "Befehl »%s« wurde nicht erkannt"
+
+#: console/misc.cpp:288
+#, c-format
+msgid "extra arguments '%s' are not processed"
+msgstr "zusätzliche Argumente »%s« werden nicht verarbeitet"
+
+#: console/misc.cpp:298
+msgid "unable to redirect standard output to '/dev/null'"
+msgstr "Standardausgabe kann nicht nach »/dev/null/« umgeleitet werden"
+
+#: console/misc.cpp:318
+msgid "error while loading the configuration"
+msgstr "Fehler beim Laden der Konfiguration"
+
+#: console/misc.cpp:346
+msgid "error while creating the package cache"
+msgstr "Fehler beim Erstellen des Paketzwischenspeichers"
+
+#: console/handlers/download.cpp:61 console/handlers/misc.cpp:242
+msgid "no source package expressions specified"
+msgstr "keine Quellpaketausdrücke angegeben"
+
+#: console/handlers/download.cpp:160 console/handlers/download.cpp:356
+#: downloadmethods/debdelta.cpp:60 lib/src/internal/worker/metadata.cpp:296
+#: lib/src/internal/worker/metadata.cpp:442
+#: lib/src/internal/worker/metadata.cpp:534
+#: lib/src/internal/worker/metadata.cpp:625
+#: lib/src/internal/worker/metadata.cpp:976
+#: lib/src/internal/worker/packages.cpp:1692
+#: lib/src/internal/worker/archives.cpp:164
+#: lib/src/internal/worker/archives.cpp:198 lib/src/download/manager.cpp:511
+#, c-format
+msgid "unable to remove the file '%s'"
+msgstr "Datei »%s« kann nicht entfernt werden"
+
+#: console/handlers/download.cpp:162 lib/src/internal/worker/metadata.cpp:521
+#: lib/src/internal/worker/metadata.cpp:627
+#: lib/src/internal/worker/packages.cpp:1415
+msgid "hash sums mismatch"
+msgstr "Hash-Summen stimmen nicht überein"
+
+#: console/handlers/download.cpp:180 console/handlers/download.cpp:348
+#: lib/src/internal/worker/packages.cpp:2007
+msgid "there were download errors"
+msgstr "es gibt Fehler beim Herunterladen"
+
+#: console/handlers/download.cpp:192
+#, c-format
+msgid "dpkg-source on the file '%s' failed"
+msgstr "dpkg-source auf die Datei »%s« fehlgeschlagen"
+
+#: console/handlers/download.cpp:219 console/handlers/misc.cpp:63
+#: console/handlers/misc.cpp:344 console/handlers/misc.cpp:766
+msgid "no binary package expressions specified"
+msgstr "keine Binärpaketausdrücke angegeben"
+
+#: console/handlers/download.cpp:327 console/handlers/managepackages.cpp:1368
+#: lib/src/internal/worker/snapshots.cpp:184
+#: lib/src/internal/worker/metadata.cpp:1056
+#: lib/src/internal/worker/metadata.cpp:1087
+#: lib/src/download/progresses/console.cpp:88
+#: lib/src/download/progresses/console.cpp:92
+#: lib/src/download/progresses/console.cpp:105
+#: lib/src/download/manager.cpp:341 lib/src/download/manager.cpp:346
+#: lib/src/download/manager.cpp:356 lib/src/download/manager.cpp:366
+#: lib/src/download/manager.cpp:371 lib/src/download/manager.cpp:381
+#: lib/src/download/manager.cpp:763 lib/src/download/manager.cpp:768
+#: lib/src/download/progress.cpp:75
+#, c-format
+msgid "%s() failed"
+msgstr "%s() fehlgeschlagen"
+
+#: console/handlers/download.cpp:373
+#, c-format
+msgid "no info where to acquire %s for version '%s' of package '%s'"
+msgstr ""
+"keine Information, woher »%s« für Version »%s« des Pakets »%s« beschafft "
+"werden soll"
+
+#: console/handlers/managepackages.cpp:87 downloadmethods/curl.cpp:204
+#: lib/src/hashsums.cpp:106 lib/src/internal/cachefiles.cpp:140
+#: lib/src/internal/cachefiles.cpp:609 lib/src/internal/logger.cpp:59
+#: lib/src/internal/cacheimpl.cpp:244 lib/src/internal/cacheimpl.cpp:533
+#: lib/src/internal/cacheimpl.cpp:608 lib/src/internal/debdeltahelper.cpp:179
+#: lib/src/internal/pininfo.cpp:166 lib/src/internal/lock.cpp:45
+#: lib/src/internal/configparser.cpp:36
+#: lib/src/internal/worker/snapshots.cpp:78
+#: lib/src/internal/worker/metadata.cpp:388
+#: lib/src/internal/worker/metadata.cpp:790
+#: lib/src/internal/worker/packages.cpp:1948 lib/src/system/snapshots.cpp:129
+#, c-format
+msgid "unable to open the file '%s': %s"
+msgstr "Datei »%s« kann nicht geöffnet werden: %s"
+
+#: console/handlers/managepackages.cpp:235
+#, c-format
+msgid "unable to find binary package/expression '%s'"
+msgstr "Binärpaket/Ausdruck »%s« konnte nicht gefunden werden"
+
+#: console/handlers/managepackages.cpp:250
+#, c-format
+msgid "the package '%s' is not installed"
+msgstr "Das Paket »%s« ist nicht installiert."
+
+#: console/handlers/managepackages.cpp:263
+#, c-format
+msgid ""
+"the package '%s' cannot be reinstalled because there is no corresponding "
+"version (%s) available in repositories"
+msgstr ""
+"Das Paket »%s« kann nicht neu installiert werden, da in den Depots keine "
+"entsprechende Version (%s) verfügbar ist."
+
+#: console/handlers/managepackages.cpp:337
+#, c-format
+# Formulierung aus APT
+msgid "After unpacking %s will be used."
+msgstr "Nach dem Entpacken werden %s zusätzlich belegt sein."
+
+#: console/handlers/managepackages.cpp:340
+#, c-format
+msgid "After unpacking %s will be freed."
+msgstr "Nach dem Entpacken werden %s frei werden."
+
+#: console/handlers/managepackages.cpp:351
+#, c-format
+msgid "Need to get %s/%s of archives. "
+msgstr "%s/%s von Archiven müssen heruntergeladen werden."
+
+#: console/handlers/managepackages.cpp:468
+msgid "preferred"
+msgstr "bevorzugt"
+
+#: console/handlers/managepackages.cpp:517
+msgid "WARNING! The untrusted versions of the following packages will be used:"
+msgstr ""
+"WARNUNG! Die nicht vertrauenswürdigen Versionen der folgenden Pakete werden "
+"benutzt:"
+
+#: console/handlers/managepackages.cpp:556
+msgid "WARNING! The following essential packages will be removed:"
+msgstr "WARNUNG! Die folgenden essentiellen Pakete werden entfernt:"
+
+#: console/handlers/managepackages.cpp:589
+msgid "WARNING! The following packages on hold will change their state:"
+msgstr "WARNUNG! Die folgenden auf »hold« gesetzten Pakete ändern ihren Status:"
+
+#: console/handlers/managepackages.cpp:598
+msgid "reason: "
+msgstr "Grund:"
+
+#: console/handlers/managepackages.cpp:616
+msgid "Leave the following dependencies unresolved:"
+msgstr "Die folgenden Abhängigkeiten werden unaufgelöst gelassen:"
+
+#: console/handlers/managepackages.cpp:625
+#, c-format
+msgid "  %u dependency problems will stay unresolved"
+msgstr "  %u Abhängigkeitsprobleme werden ungelöst bleiben."
+
+#: console/handlers/managepackages.cpp:640
+msgid "Didn't confirm dangerous actions."
+msgstr "Gefährliche Aktionen wurden nicht bestätigt."
+
+#: console/handlers/managepackages.cpp:646
+msgid "Do you want to continue? [y/N/q/a/?] "
+msgstr "Möchten Sie fortfahren? [y/N/q/a/?] "
+
+#: console/handlers/managepackages.cpp:663
+msgid "Yes, do as I say!"
+msgstr "Ja, tu was vorgeschlagen wurde!"
+
+#: console/handlers/managepackages.cpp:664
+#, c-format
+msgid ""
+"Dangerous actions selected. Type '%s' if you want to continue, or anything "
+"else to go back:"
+msgstr ""
+"gefährliche Aktion ausgewählt. Geben Sie »%s« ein, falls Sie fortfahren "
+"möchten oder irgendetwas anderes, um zurückzugehen:"
+
+#: console/handlers/managepackages.cpp:685
+msgid "y: accept the solution"
+msgstr "y: die Lösung akzeptieren"
+
+#: console/handlers/managepackages.cpp:686
+msgid "n: reject the solution, try to find other ones"
+msgstr "n: die Lösung ablehnen, versuchen andere zu finden"
+
+#: console/handlers/managepackages.cpp:687
+msgid "q: reject the solution and exit"
+msgstr "q: die Lösung ablehnen und beenden"
+
+#: console/handlers/managepackages.cpp:688
+msgid "a: specify an additional binary package expression"
+msgstr "a: einen zusätzlichen Binärpaketausdruck angeben"
+
+#: console/handlers/managepackages.cpp:689
+msgid "?: output this help"
+msgstr "?: diese Hilfe ausgeben"
+
+#: console/handlers/managepackages.cpp:695
+msgid "Resolving further... "
+msgstr "Weitere auflösen …"
+
+#: console/handlers/managepackages.cpp:813
+#, c-format
+msgid "%s automatically installed packages %s"
+msgstr "%s automatisch installierte Pakete %s"
+
+#: console/handlers/managepackages.cpp:818
+#, c-format
+msgid "%s manually installed packages %s"
+msgstr "%s manuell installierte Pakete %s"
+
+#: console/handlers/managepackages.cpp:823
+#, c-format
+msgid "%s manually installed and %s automatically installed packages %s"
+msgstr "%s manuell installierte und %s automatisch installierte Pakete %s"
+
+#: console/handlers/managepackages.cpp:964
+msgid "will be installed"
+msgstr "wird installiert"
+
+#: console/handlers/managepackages.cpp:965
+msgid "will be removed"
+msgstr "wird entfernt"
+
+#: console/handlers/managepackages.cpp:966
+msgid "will be upgraded"
+msgstr "wird auf eine höhere Version gestuft"
+
+#: console/handlers/managepackages.cpp:967
+msgid "will be purged"
+msgstr "wird gelöscht"
+
+#: console/handlers/managepackages.cpp:968
+msgid "will be downgraded"
+msgstr "wird auf eine niedrigere Version gestuft"
+
+#: console/handlers/managepackages.cpp:969
+msgid "will be configured"
+msgstr "wird konfiguriert"
+
+#: console/handlers/managepackages.cpp:970
+msgid "will be deconfigured"
+msgstr "wird seine Konfiguration genommen"
+
+#: console/handlers/managepackages.cpp:971
+msgid "will have triggers processed"
+msgstr "wird verarbeitete Trigger haben"
+
+#: console/handlers/managepackages.cpp:972
+msgid "will have a not preferred version"
+msgstr "wird eine nicht bevorzugte Version haben"
+
+#: console/handlers/managepackages.cpp:973
+msgid "are no longer needed and thus will be auto-removed"
+msgstr "werden nicht länger benötigt und daher automatisch entfernt"
+
+#: console/handlers/managepackages.cpp:974
+msgid "are no longer needed and thus will be auto-purged"
+msgstr "werden nicht länger benötigt und daher automatisch vollständig entfernt"
+
+#: console/handlers/managepackages.cpp:1013
+#, c-format
+msgid "The following packages %s:"
+msgstr "Die folgenden Pakete %s:"
+
+#: console/handlers/managepackages.cpp:1032
+msgid "Action summary:"
+msgstr "Zusammenfassung der Aktion:"
+
+#: console/handlers/managepackages.cpp:1175
+msgid ""
+"options 'cupt::console::actions-preview::show-archives' and 'cupt::console::"
+"actions-preview::show-codenames' cannot be used together"
+msgstr ""
+"Die Optionen »cupt::console::actions-preview::show-archives« und "
+"»cupt::console::actions-preview::show-codenames« können nicht zusammen "
+"benutzt werden."
+
+#: console/handlers/managepackages.cpp:1219
+msgid "exactly one argument (the snapshot name) should be specified"
+msgstr ""
+"Exakt ein Argument (der Name der Momentaufnahme) sollte angegeben werden."
+
+#: console/handlers/managepackages.cpp:1242
+msgid "Building the package cache... "
+msgstr "Der Paketzwischenspeicher wird gebildet …"
+
+#: console/handlers/managepackages.cpp:1246
+# http://packages.debian.org/de/squeeze/worker
+msgid "Initializing package resolver and worker... "
+msgstr "Paketauflöser und Worker werden initialisiert …"
+
+#: console/handlers/managepackages.cpp:1251
+msgid "using an external resolver is not supported now"
+msgstr "Die Benutzung eines externen Auflösers wird derzeit nicht unterstützt."
+
+#: console/handlers/managepackages.cpp:1267
+msgid "Scheduling requested actions... "
+msgstr "Zeitplanung der angeforderten Aktionen …"
+
+#: console/handlers/managepackages.cpp:1274
+msgid "Resolving possible unmet dependencies... "
+msgstr "Möglicherweise nicht erfüllte Abhängigkeiten werden gelöst …"
+
+#: console/handlers/managepackages.cpp:1290
+msgid "Enter a package expression (empty to finish): "
+msgstr "Geben Sie einen Paketausdruck an (leer zum Beenden):"
+
+#: console/handlers/managepackages.cpp:1310
+msgid "Nothing to do."
+msgstr "nichts zu tun"
+
+#: console/handlers/managepackages.cpp:1318
+msgid "Performing requested actions:"
+msgstr "Angeforderte Aktionen werden durchgeführt:"
+
+#: console/handlers/managepackages.cpp:1325
+msgid "unable to do requested actions"
+msgstr "Angeforderte Aktionen können nicht durchgeführt werden"
+
+#: console/handlers/managepackages.cpp:1331
+msgid "Abandoned or no more solutions."
+msgstr "aufgegeben oder keine Lösungen mehr"
+
+#: console/handlers/managepackages.cpp:1340
+msgid "'dist-upgrade' command cannot be run in the shell mode"
+msgstr "Befehl »dist-upgrade« kann nicht im Shell-Modus ausgeführt werden"
+
+#: console/handlers/managepackages.cpp:1344
+msgid "[ upgrading package management tools ]"
+msgstr "[ Upgrade von Paketverwaltungswerkzeugen wird durchgeführt ]"
+
+#: console/handlers/managepackages.cpp:1350
+msgid "upgrading of the package management tools failed"
+msgstr "Upgrade von Paketverwaltungswerkzeugen fehlgeschlagen"
+
+#: console/handlers/managepackages.cpp:1356
+msgid "[ upgrading the system ]"
+msgstr "[ Upgrade des Systems wird durchgeführt ]"
+
+#: console/handlers/managepackages.cpp:1445 downloadmethods/file.cpp:52
+#: downloadmethods/wget.cpp:42 lib/src/file.cpp:36
+#: lib/src/internal/filesystem.cpp:69 lib/src/internal/filesystem.cpp:108
+#: lib/src/internal/filesystem.cpp:141
+#: lib/src/internal/worker/archives.cpp:111
+#, c-format
+msgid "%s() failed: '%s'"
+msgstr "%s() fehlgeschlagen: »%s«"
+
+#: console/handlers/managepackages.cpp:1451
+#, c-format
+msgid "Deleting '%s' <%s>..."
+msgstr "»%s« wird gelöscht <%s> …"
+
+#: console/handlers/managepackages.cpp:1455
+#, c-format
+msgid "Freed %s of disk space."
+msgstr "%s Plattenplatz wurde frei."
+
+#: console/handlers/managepackages.cpp:1457
+msgid "Deleting partial archives..."
+msgstr "Teilarchive werden gelöscht …"
+
+#: console/handlers/snapshot.cpp:41
+msgid "the action is not specified"
+msgstr "Die Aktion ist nicht angegeben."
+
+#: console/handlers/snapshot.cpp:62
+msgid "no snapshot name specified"
+msgstr "kein Name der Momentaufnahme angegeben"
+
+#: console/handlers/snapshot.cpp:86
+msgid "no previous snapshot name specified"
+msgstr "kein vorheriger Name der Momentaufnahme angegeben"
+
+#: console/handlers/snapshot.cpp:91
+msgid "no new snapshot name specified"
+msgstr "kein neuer Name der Momentaufnahme angegeben"
+
+#: console/handlers/snapshot.cpp:104
+#, c-format
+msgid "unsupported action '%s'"
+msgstr "nicht unterstützte Aktion »%s«"
+
+#: console/handlers/misc.cpp:116
+msgid "Pure virtual package, provided by"
+msgstr "rein virtuelles Paket, bereitgestellt durch"
+
+#: console/handlers/misc.cpp:129 console/handlers/misc.cpp:269
+msgid "Package"
+msgstr "Paket"
+
+#: console/handlers/misc.cpp:130 console/handlers/misc.cpp:271
+msgid "Version"
+msgstr "Version"
+
+#: console/handlers/misc.cpp:137
+msgid "on hold"
+msgstr "auf »hold«"
+
+#: console/handlers/misc.cpp:139 console/handlers/misc.cpp:145
+msgid "Status"
+msgstr "Status"
+
+#: console/handlers/misc.cpp:141
+msgid "Automatically installed"
+msgstr "automatisch installiert"
+
+#: console/handlers/misc.cpp:141 console/handlers/misc.cpp:154
+msgid "yes"
+msgstr "ja"
+
+#: console/handlers/misc.cpp:141
+msgid "no"
+msgstr "nein"
+
+#: console/handlers/misc.cpp:145 lib/src/system/state.cpp:316
+msgid "not installed"
+msgstr "nicht installiert"
+
+#: console/handlers/misc.cpp:147
+msgid "Source"
+msgstr "Quelle"
+
+#: console/handlers/misc.cpp:150
+msgid "Source version"
+msgstr "Quellversion"
+
+#: console/handlers/misc.cpp:154
+msgid "Essential"
+msgstr "Essentiell"
+
+#: console/handlers/misc.cpp:156 console/handlers/misc.cpp:272
+msgid "Priority"
+msgstr "Priorität"
+
+#: console/handlers/misc.cpp:157 console/handlers/misc.cpp:273
+msgid "Section"
+msgstr "Abschnitt"
+
+#: console/handlers/misc.cpp:160 console/handlers/misc.cpp:298
+msgid "Size"
+msgstr "Größe"
+
+#: console/handlers/misc.cpp:162
+msgid "Uncompressed size"
+msgstr "Unkomprimierte Größe"
+
+#: console/handlers/misc.cpp:163 console/handlers/misc.cpp:274
+msgid "Maintainer"
+msgstr "Betreuer"
+
+#: console/handlers/misc.cpp:164
+msgid "Architecture"
+msgstr "Architektur"
+
+#: console/handlers/misc.cpp:170 console/handlers/misc.cpp:285
+msgid "Release"
+msgstr "Veröffentlichung"
+
+#: console/handlers/misc.cpp:177
+msgid "Provides"
+msgstr "stellt bereit"
+
+#: console/handlers/misc.cpp:179
+msgid "Provided by"
+msgstr "wird bereitgestellt von"
+
+#: console/handlers/misc.cpp:205
+msgid "Description"
+msgstr "Beschreibung"
+
+#: console/handlers/misc.cpp:211
+msgid "Tags"
+msgstr "Markierungen"
+
+#: console/handlers/misc.cpp:270
+msgid "Binary"
+msgstr "Programm"
+
+#: console/handlers/misc.cpp:277
+msgid "Uploaders"
+msgstr "Hochladende"
+
+#: console/handlers/misc.cpp:279
+msgid "Architectures"
+msgstr "Architekturen"
+
+#: console/handlers/misc.cpp:489
+msgid "Reverse-"
+msgstr "Umgekehrt-"
+
+#: console/handlers/misc.cpp:577
+msgid ""
+"the option '--show-dates' can be used only with no package names supplied"
+msgstr ""
+"die Option »--show-dates« kann nur ohne mitgelieferte Paketnamen benutzt "
+"werden."
+
+#: console/handlers/misc.cpp:596 console/selectors.cpp:174
+#, c-format
+msgid "no versions available for the package '%s'"
+msgstr "keine Versionen verfügbar für das Paket »%s«"
+
+#: console/handlers/misc.cpp:615
+msgid "Installed"
+msgstr "installiert"
+
+#: console/handlers/misc.cpp:616
+msgid "<none>"
+msgstr "<keine>"
+
+#: console/handlers/misc.cpp:620
+msgid "Preferred"
+msgstr "bevorzugt"
+
+#: console/handlers/misc.cpp:621
+msgid "Version table"
+msgstr "Versionstabelle"
+
+#: console/handlers/misc.cpp:652
+msgid "signed"
+msgstr "signiert"
+
+#: console/handlers/misc.cpp:652
+msgid "unsigned"
+msgstr "nicht signiert"
+
+#: console/handlers/misc.cpp:678
+msgid "published"
+msgstr "veröffentlicht"
+
+#: console/handlers/misc.cpp:681
+msgid "does not expire"
+msgstr "läuft nicht ab"
+
+#: console/handlers/misc.cpp:685
+msgid "expires"
+msgstr "läuft ab"
+
+#: console/handlers/misc.cpp:900
+msgid "no binary package names specified"
+msgstr "keine Binärpaketnamen angegeben"
+
+#: console/handlers/search.cpp:60
+msgid "no search patterns specified"
+msgstr "keine Suchmuster angegeben"
+
+#: console/handlers/search.cpp:80 lib/src/internal/regex.cpp:55
+#: lib/src/internal/nativeresolver/autoremovalpossibility.cpp:47
+#, c-format
+msgid "invalid regular expression '%s'"
+msgstr "ungültiger regulärer Ausdruck »%s«"
+
+#: console/handlers/shell.cpp:98
+#, c-format
+msgid "unable to dynamically find libreadline.so.6: dlopen: %s"
+msgstr "libreadline.so.6 kann nicht dynamisch gefunden werden: dlopen: %s"
+
+#: console/handlers/shell.cpp:105 console/handlers/shell.cpp:111
+#, c-format
+msgid "unable to dynamically bind the symbol '%s': %s"
+msgstr "Das Symbol »%s« kann nicht dynamisch eingebunden werden: %s"
+
+#: console/handlers/shell.cpp:131
+#, c-format
+msgid "unable to open an internal shell pipe: %s"
+msgstr "eine interne Shell-Weiterleitung (Pipe) kann nicht geöffnet werden: %s"
+
+#: console/handlers/shell.cpp:170
+msgid "This is an interactive shell of the cupt package manager.\n"
+msgstr "Dies ist eine interaktive Shell der Paketverwaltung Cupt.\n"
+
+#: console/selectors.cpp:43
+#, c-format
+msgid "unable to find the binary package '%s'"
+msgstr "Binärpaket »%s« kann nicht gefunden werden"
+
+#: console/selectors.cpp:53
+#, c-format
+msgid "unable to find the source package '%s'"
+msgstr "Quellpaket »%s« kann nicht gefunden werden"
+
+#: console/selectors.cpp:86
+#, c-format
+msgid "unable to find the version '%s' for the package '%s'"
+msgstr "Version »%s« für das Paket »%s« kann nicht gefunden werden"
+
+#: console/selectors.cpp:103 console/selectors.cpp:107
+#, c-format
+msgid "bad distribution '%s' requested, use archive or codename"
+msgstr "falsche Distribution »%s« angefordert, Archiv oder Kodenamen benutzen"
+
+#: console/selectors.cpp:139
+#, c-format
+msgid "cannot find the distribution '%s' for the package '%s'"
+msgstr "die Distribution »%s« für das Paket »%s« kann nicht gefunden werden"
+
+#: console/selectors.cpp:155
+#, c-format
+msgid ""
+"several versions found for the package '%s' and the distribution '%s': %s;  "
+"you should explicitly select by version"
+msgstr ""
+"mehrere Versionen des Pakets »%s« und der Distribution »%s« gefunden: %s; Sie "
+"sollten Ihre Auswahl explizit nach Version treffen"
+
+#: console/selectors.cpp:207
+#, c-format
+msgid "unable to find an appropriate source or binary version for '%s'"
+msgstr ""
+"es kann keine geeignete Quell- oder Binärversion für »%s« gefunden werden"
+
+#: console/selectors.cpp:236
+#, c-format
+msgid "bad package name in the package expression '%s'"
+msgstr "falscher Paketname im Paketausdruck »%s«"
+
+#: console/selectors.cpp:270
+#, c-format
+msgid ""
+"no appropriate versions available for the wildcarded version expression '%s'"
+msgstr ""
+"keine geeigneten Versionen verfügbar, auf die der "
+"Platzhalterversionsausdruck »%s« passt"
+
+#: console/selectors.cpp:311
+#, c-format
+msgid "no packages available for the wildcarded expression '%s'"
+msgstr "keine Pakete verfügbar, auf die der Platzhalterausdruck »%s« passt"
+
+#: downloadmethods/debdelta.cpp:49
+#, c-format
+msgid "delta download failed: %s"
+msgstr "Delta-Download fehlgeschlagen: %s"
+
+#: downloadmethods/debdelta.cpp:65
+#, c-format
+msgid "debpatch returned error code %d"
+msgstr "Debpatch gab den Fehlerkode %d zurück"
+
+#: downloadmethods/curl.cpp:43
+msgid "unable to create a Curl handle"
+msgstr "es konnte kein Curl-Handle erzeugt werden"
+
+#: downloadmethods/curl.cpp:52 downloadmethods/curl.cpp:61
+#: downloadmethods/curl.cpp:70 downloadmethods/curl.cpp:79
+#, c-format
+msgid "unable to set the Curl option '%s': curl_easy_setopt failed: %s"
+msgstr ""
+"Curl-Option »%s« kann nicht gesetzt werden: curl_easy_setopt fehlgeschlagen: "
+"%s"
+
+#: downloadmethods/curl.cpp:261
+msgid "unable to remove target file for re-downloading"
+msgstr ""
+"Zieldatei für das erneute Herunterladen kann nicht entfernt werden"
+
+#: downloadmethods/curl.cpp:271
+#, c-format
+msgid "download method error: %s"
+msgstr "Methodenfehler beim Herunterladen: %s"
+
+#: downloadmethods/wget.cpp:137
+#, c-format
+msgid "unable to launch a wget process: %s"
+msgstr "Ein Wget-Prozess kann nicht gestartet werden: %s"
+
+#: lib/src/file.cpp:64
+msgid "pipe specification mode should be exactly 2 characters"
+msgstr "Pipe-Angabemodus sollte aus genau zwei Zeichen bestehen"
+
+#: lib/src/file.cpp:108
+#, c-format
+msgid "unable to close the pipe '%s'"
+msgstr "Die Pipe »%s« kann nicht geschlossen werden."
+
+#: lib/src/file.cpp:112
+#, c-format
+msgid "execution of the pipe '%s' failed: %s"
+msgstr "Ausführung der Pipe »%s« fehlgeschlagen: %s"
+
+#: lib/src/file.cpp:119
+#, c-format
+msgid "unable to close the file '%s'"
+msgstr "Datei »%s« kann nicht geschlossen werden."
+
+#: lib/src/file.cpp:148 lib/src/file.cpp:197
+#, c-format
+msgid "unable to read from the file '%s'"
+msgstr "Aus der Datei »%s« kann nicht gelesen werden."
+
+#: lib/src/file.cpp:247
+#, c-format
+msgid "an attempt to seek on the pipe '%s'"
+msgstr "ein Versuch auf der Pipe »%s« zu positionieren"
+
+#: lib/src/file.cpp:253
+#, c-format
+msgid "unable to seek on the file '%s'"
+msgstr "Auf der Datei »%s« kann nicht positioniert werden."
+
+#: lib/src/file.cpp:262
+#, c-format
+msgid "an attempt to tell a position on the pipe '%s'"
+msgstr "ein Versuch, eine Position auf der Pipe »%s« anzugeben"
+
+#: lib/src/file.cpp:269
+#, c-format
+msgid "unable to tell a position on the file '%s'"
+msgstr "Eine Position auf der Datei »%s« kann nicht angegeben werden."
+
+#: lib/src/file.cpp:286
+# gehört zu lib/src/file.cpp:287
+msgid "release"
+msgstr "veröffentlichen"
+
+#: lib/src/file.cpp:286
+# gehört zu lib/src/file.cpp:287
+msgid "obtain"
+msgstr "erhalten"
+
+#: lib/src/file.cpp:287
+#, c-format
+msgid "unable to %s a lock on the file '%s'"
+msgstr "Eine Sperrung zu %s ist für Datei »%s« nicht möglich."
+
+#: lib/src/file.cpp:296 lib/src/file.cpp:322
+#, c-format
+msgid "unable to write to the file '%s'"
+msgstr "In Datei »%s« kann nicht geschrieben werden."
+
+#: lib/src/hashsums.cpp:42
+#, c-format
+msgid "unable to open a gcrypt hash handle: %s"
+msgstr "Ein Gcrypt-Hash-Handle kann nicht geöffnet werden: %s"
+
+#: lib/src/hashsums.cpp:92
+#, c-format
+msgid "unsupported hash type '%zu'"
+msgstr "nicht unterstützter Hash-Typ »%zu«"
+
+#: lib/src/hashsums.cpp:128
+#, c-format
+# erstes Argument sha1 oder md5 etc; zweites: Datei
+msgid "unable to compute hash sums '%s' on '%s'"
+msgstr "»%s«-Hash-Summen auf »%s« können nicht berechnet werden."
+
+#: lib/src/hashsums.cpp:138 lib/src/cache/binaryversion.cpp:160
+msgid "no hash sums specified"
+msgstr "keine Hash-Summen angegeben"
+
+#: lib/src/config.cpp:360
+#, c-format
+msgid "skipped the configuration file '%s'"
+msgstr "Die Konfigurationsdatei »%s« wurde übersprungen."
+
+#: lib/src/config.cpp:374 lib/src/internal/cachefiles.cpp:452
+#: lib/src/internal/worker/base.cpp:108
+#, c-format
+msgid "unable to open the pipe '%s': %s"
+msgstr "Die Pipe »%s« kann nicht geöffnet werden: %s"
+
+#: lib/src/config.cpp:451
+#, c-format
+msgid "an attempt to get the invalid scalar option '%s'"
+msgstr "ein Versuch, die ungültige skalare Option »%s« zu bekommen"
+
+#: lib/src/config.cpp:507
+#, c-format
+msgid "unable to convert '%s' to a number"
+msgstr "»%s« kann nicht in eine Zahl umgewandelt werden."
+
+#: lib/src/config.cpp:526
+#, c-format
+msgid "an attempt to get the invalid list option '%s'"
+msgstr "ein Versuch, die ungültige Listenoption »%s« zu bekommen"
+
+#: lib/src/config.cpp:563
+#, c-format
+msgid "an attempt to set the invalid scalar option '%s'"
+msgstr "ein Versuch, die ungültige skalare Option »%s« zu setzen"
+
+#: lib/src/config.cpp:584
+#, c-format
+msgid "an attempt to set the invalid list option '%s'"
+msgstr "ein Versuch, die ungültige Listenoption »%s« zu setzen"
+
+#: lib/src/internal/cachefiles.cpp:165
+#, c-format
+msgid "no hash sum declarations before the line '%s'"
+msgstr "keine Hash-Summen-Deklarationen vor der Zeile »%s«"
+
+#: lib/src/internal/cachefiles.cpp:170 lib/src/cache/sourceversion.cpp:69
+#, c-format
+msgid "malformed line '%s'"
+msgstr "missgestaltete Zeile »%s«"
+
+#: lib/src/internal/cachefiles.cpp:206
+#, c-format
+msgid "no hash sums defined for the index URI '%s'"
+msgstr "keine Hash-Summen definiert für die Index-URI »%s«"
+
+#: lib/src/internal/cachefiles.cpp:487
+#, c-format
+msgid "gpg: '%s': no information"
+msgstr "gpg: »%s«: keine Information"
+
+#: lib/src/internal/cachefiles.cpp:494
+#, c-format
+msgid "gpg: '%s': invalid status string '%s'"
+msgstr "gpg: »%s«: ungültige Statuszeichenkette »%s«"
+
+#: lib/src/internal/cachefiles.cpp:505 lib/src/internal/cachefiles.cpp:547
+#, c-format
+msgid "gpg: '%s': invalid detailed information string '%s'"
+msgstr "gpg: »%s«: ungültige Zeichenkette der Detailinformation »%s«"
+
+#: lib/src/internal/cachefiles.cpp:517
+#, c-format
+msgid "gpg: '%s': expired signature: %s"
+msgstr "gpg: »%s«: abgelaufene Signatur: %s"
+
+#: lib/src/internal/cachefiles.cpp:521 lib/src/internal/cachefiles.cpp:575
+#, c-format
+msgid "gpg: '%s': expired key: %s"
+msgstr "gpg: »%s«: abgelaufener Schlüssel: %s"
+
+#: lib/src/internal/cachefiles.cpp:525
+#, c-format
+msgid "gpg: '%s': revoked key: %s"
+msgstr "gpg: »%s«: widerrufener Schlüssel: %s"
+
+#: lib/src/internal/cachefiles.cpp:529
+#, c-format
+msgid "gpg: '%s': unknown error: %s %s"
+msgstr "gpg: »%s«: unbekannter Fehler: %s %s"
+
+#: lib/src/internal/cachefiles.cpp:534
+#, c-format
+msgid "gpg: '%s': bad signature: %s"
+msgstr "gpg: »%s«: falsche Signatur: %s"
+
+#: lib/src/internal/cachefiles.cpp:559
+#, c-format
+msgid "gpg: '%s': public key '%s' is not found"
+msgstr "gpg: »%s«: öffentlicher Schlüssel »%s« wurde nicht gefunden"
+
+#: lib/src/internal/cachefiles.cpp:565
+#, c-format
+msgid "gpg: '%s': could not verify a signature: %s"
+msgstr "gpg: »%s«: Eine Signatur konnte nicht überprüft werden: %s"
+
+#: lib/src/internal/cachefiles.cpp:571
+#, c-format
+msgid "gpg: '%s': empty signature"
+msgstr "gpg: »%s«: leere Signatur"
+
+#: lib/src/internal/cachefiles.cpp:579
+#, c-format
+msgid "gpg: '%s': unknown message: %s %s"
+msgstr "gpg: »%s«: unbekannte Nachricht: %s %s"
+
+#: lib/src/internal/cachefiles.cpp:584
+#, c-format
+# %s = release
+msgid "unable to verify a signature for the '%s'"
+msgstr "Eine Signatur für »%s« kann nicht überprüft werden."
+
+#: lib/src/internal/cachefiles.cpp:678
+#, c-format
+msgid "unable to parse the release '%s'"
+msgstr "Veröffentlichung »%s« kann nicht ausgewertet werden."
+
+#: lib/src/internal/cachefiles.cpp:701
+#, c-format
+msgid "the release '%s' has expired (expiry time '%s')"
+msgstr "Die Veröffentlichung »%s« ist abgelaufen (Ablaufzeit »%s«)."
+
+#: lib/src/internal/cachefiles.cpp:706
+#, c-format
+msgid "unable to parse the expiry time '%s' in the release '%s'"
+msgstr ""
+"Die Ablaufzeit »%s« in der Veröffentlichung »%s« kann nicht ausgewertet "
+"werden."
+
+#: lib/src/internal/filesystem.cpp:84
+#, c-format
+msgid "unable to open the directory '%s'"
+msgstr "Das Verzeichnis »%s« kann nicht geöffnet werden."
+
+#: lib/src/internal/filesystem.cpp:98
+#, c-format
+msgid "unable to close the directory '%s'"
+msgstr "Das Verzeichnis »%s« kann nicht geschlossen werden."
+
+#: lib/src/internal/filesystem.cpp:164
+#, c-format
+msgid "the file '%s' does not exist"
+msgstr "Die Datei »%s« existiert nicht."
+
+#: lib/src/internal/filesystem.cpp:168
+#, c-format
+msgid "the file '%s' is not a regular file"
+msgstr "Die Datei »%s« ist keine normale Datei."
+
+#: lib/src/internal/filesystem.cpp:181
+#: lib/src/internal/worker/metadata.cpp:1034
+#, c-format
+msgid "unable to create the directory '%s'"
+msgstr "Das Verzeichnis »%s« kann nicht erstellt werden."
+
+#: lib/src/internal/cacheimpl.cpp:234
+msgid "unable to parse the sources list"
+msgstr "Die Quellenliste kann nicht ausgewertet werden."
+
+#: lib/src/internal/cacheimpl.cpp:270
+msgid "undefined source type"
+msgstr "undefinierter Quellentyp"
+
+#: lib/src/internal/cacheimpl.cpp:284
+msgid "incorrect source type"
+msgstr "falscher Quellentyp"
+
+#: lib/src/internal/cacheimpl.cpp:291
+msgid "undefined source uri"
+msgstr "undefinierte Quellen-URI"
+
+#: lib/src/internal/cacheimpl.cpp:300
+msgid "undefined source distribution"
+msgstr "undefinierte Quellen-Distribution"
+
+#: lib/src/internal/cacheimpl.cpp:333
+msgid "distribution doesn't end with a slash"
+msgstr "Distribution endet nicht mit einem Schrägstrich"
+
+#: lib/src/internal/cacheimpl.cpp:340 lib/src/internal/pininfo.cpp:320
+#, c-format
+msgid "(at the file '%s', line %u)"
+msgstr "(in der Datei »%s«, Zeile %u)"
+
+#: lib/src/internal/cacheimpl.cpp:384
+#, c-format
+msgid "the option '%s' can have only values 'none', 'include' or 'exclude'"
+msgstr ""
+"Die Option »%s« kann nur die Werte »none«, »include« oder »exclude« haben."
+
+#: lib/src/internal/cacheimpl.cpp:486 lib/src/internal/cacheimpl.cpp:509
+#, c-format
+msgid "skipped the index '%s'"
+msgstr "der Index »%s« wurde übersprungen"
+
+#: lib/src/internal/cacheimpl.cpp:516 lib/src/internal/worker/metadata.cpp:867
+#, c-format
+msgid "'%s' descriptions localization"
+msgstr "»%s«-Beschreibungslokalisierung"
+
+#: lib/src/internal/cacheimpl.cpp:517
+#, c-format
+msgid "%s for '%s'"
+msgstr "%s für »%s«"
+
+#: lib/src/internal/cacheimpl.cpp:569
+msgid "unable to find a Package line"
+msgstr "Eine »Package«-Zeile konnte nicht gefunden werden."
+
+#: lib/src/internal/cacheimpl.cpp:578
+#, c-format
+msgid "discarding this package version from the index '%s'"
+msgstr "Diese Paketversion wird von Index »%s« ausrangiert."
+
+#: lib/src/internal/cacheimpl.cpp:598 lib/src/internal/cacheimpl.cpp:665
+#, c-format
+msgid "unable to parse the index '%s'"
+msgstr "Der Index »%s« kann nicht ausgewertet werden."
+
+#: lib/src/internal/cacheimpl.cpp:653
+#, c-format
+msgid "unable to find the md5 hash in the record starting at byte '%u'"
+msgstr ""
+"Der MD5-Hash kann im Datensatz beginnend bei Byte »%u« nicht gefunden werden."
+
+#: lib/src/internal/cacheimpl.cpp:657
+#, c-format
+msgid "unable to find the translation in the record starting at byte '%u'"
+msgstr ""
+"Die Übersetzung kann im Datensatz beginnend bei Byte »%u« nicht gefunden "
+"werden."
+
+#: lib/src/internal/cacheimpl.cpp:735
+#, c-format
+msgid "unable to open the extended states file '%s': %s"
+msgstr "Die erweiterte Statusdatei »%s« kann nicht geöffnet werden: %s."
+
+#: lib/src/internal/cacheimpl.cpp:746
+#, c-format
+msgid "wrong tag: expected 'Package', got '%s'"
+msgstr "falsches Kennzeichen: »Package« wurde erwartet, »%s« erhalten"
+
+#: lib/src/internal/cacheimpl.cpp:764
+#, c-format
+msgid "bad value '%s' (should be 0 or 1) for the package '%s'"
+msgstr "falscher Wert »%s« (sollte 0 oder 1 sein) für das Paket »%s«"
+
+#: lib/src/internal/cacheimpl.cpp:772
+#, c-format
+msgid "didn't found the 'Auto-Installed' tag for the package '%s'"
+msgstr ""
+"Das Kennzeichen »Auto-Installed« wurde nicht für das Paket »%s« gefunden."
+
+#: lib/src/internal/cacheimpl.cpp:778
+msgid "unable to parse extended states"
+msgstr "Erweiterte Status können nicht ausgewertet werden."
+
+#: lib/src/internal/tagparser.cpp:59
+#, c-format
+msgid "didn't find a colon in the line '%s'"
+msgstr "In der Zeile »%s« wurde kein Doppelpunkt gefunden."
+
+#: lib/src/internal/debdeltahelper.cpp:46
+#, c-format
+msgid "failed to parse the debdelta configuration file '%s'"
+msgstr ""
+"Die Auswertung der Debdelta-Konfigurationsdatei »%s« ist fehlgeschlagen."
+
+#: lib/src/internal/debdeltahelper.cpp:62
+#, c-format
+msgid ""
+"debdeltahelper: received a version without a corresponding binary package in "
+"the cache: package '%s', version '%s'"
+msgstr ""
+"debdeltahelper: Im Zwischenspeicher wurde eine Version ohne entsprechendes "
+"Binärpaket gefunden: Paket »%s«, Version »%s«"
+
+#: lib/src/internal/debdeltahelper.cpp:213
+#, c-format
+msgid "unable to parse the key-value pair '%s' in the file '%s'"
+msgstr ""
+"Das Schlüssel-Wert-Paar »%s« in der Datei »%s« konnte nicht ausgewertet "
+"werden."
+
+#: lib/src/internal/pininfo.cpp:205
+msgid "invalid package/source line"
+msgstr "ungültige Paket-/Quellenzeile"
+
+#: lib/src/internal/pininfo.cpp:224
+msgid "no pin line"
+msgstr "Keine Pin-Zeile"
+
+#: lib/src/internal/pininfo.cpp:230
+msgid "invalid pin line"
+msgstr "ungültige Pin-Zeile"
+
+#: lib/src/internal/pininfo.cpp:247
+#, c-format
+msgid "invalid condition '%s'"
+msgstr "ungültige Bedingung »%s«"
+
+#: lib/src/internal/pininfo.cpp:260
+#, c-format
+msgid ""
+"invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"
+msgstr ""
+"ungültiger Bedingungstyp »%c« (sollte »a«, »v«, »c«, »n«, »o« oder »l« sein)"
+
+#: lib/src/internal/pininfo.cpp:287
+#, c-format
+msgid "invalid pin type '%s' (should be one of 'release', 'version', 'origin')"
+msgstr ""
+"ungültiger Pin-Typ »%s« (sollte »release«, »version« oder »origin« sein)"
+
+#: lib/src/internal/pininfo.cpp:295
+msgid "no priority line"
+msgstr "keine Prioritätszeile"
+
+#: lib/src/internal/pininfo.cpp:301
+msgid "invalid priority line"
+msgstr "ungültige Prioritätszeile"
+
+#: lib/src/internal/pininfo.cpp:310
+#, c-format
+msgid "invalid integer '%s'"
+msgstr "ungültige Ganzzahl »%s«"
+
+#: lib/src/internal/pininfo.cpp:464
+msgid "unable to parse preferences"
+msgstr "Einstellungen können nicht ausgewertet werden."
+
+#: lib/src/internal/nativeresolver/impl.cpp:123
+#: lib/src/internal/nativeresolver/impl.cpp:153
+#, c-format
+msgid "unable to re-schedule the package '%s'"
+msgstr "Für das Paket »%s« kann keine neue Zeitplanung durchgeführt werden."
+
+#: lib/src/internal/nativeresolver/impl.cpp:385
+#, c-format
+msgid "wrong resolver type '%s'"
+msgstr "falscher Auflösertyp »%s«"
+
+#: lib/src/internal/nativeresolver/impl.cpp:522
+#, c-format
+msgid ""
+"some solutions were dropped, you may want to increase the value of the '%s' "
+"option"
+msgstr ""
+"Einige Lösungen sind weggefallen, möglicherweise möchten Sie den Wert der "
+"Option »%s« erhöhen."
+
+#: lib/src/internal/nativeresolver/impl.cpp:1073
+#, c-format
+msgid ""
+"unable to resolve dependencies, because of:\n"
+"\n"
+"%s"
+msgstr ""
+"Abhängigkeiten können nicht aufgelöst werden aufgrund von:\n"
+"\n"
+"%s"
+
+#: lib/src/internal/nativeresolver/decisionfailtree.cpp:32
+msgid "no solutions"
+msgstr "keine Lösungen"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:106
+#: lib/src/system/state.cpp:317
+msgid "installed"
+msgstr "installiert"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:110
+msgid "removed"
+msgstr "entfernt"
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:375
+#, c-format
+msgid ""
+"a positive value of the option '%s' has no effect without a positive value "
+"of the option '%s'"
+msgstr ""
+"Ein positiver Wert der Option »%s« hat keine Auswirkungen ohne einen "
+"positiven Wert der Option »%s«."
+
+#: lib/src/internal/nativeresolver/dependencygraph.cpp:477
+#, c-format
+msgid "the option '%s' can have only values 'none', 'soft' or 'hard'"
+msgstr "Die Option »%s« kann nur die Werte »none«, »soft« oder »hard« annehmen."
+
+#: lib/src/internal/common.cpp:108
+msgid "too long number string"
+msgstr "zu lange Zahlenzeichenkette"
+
+#: lib/src/internal/common.cpp:115
+#, c-format
+msgid "invalid number '%s'"
+msgstr "ungültige Zahl »%s«"
+
+#: lib/src/internal/common.cpp:119
+#, c-format
+msgid "negative number '%s'"
+msgstr "negative Zahl »%s«"
+
+#: lib/src/internal/common.cpp:123
+#, c-format
+msgid "too big number '%s'"
+msgstr "zu große Zahl »%s«"
+
+#: lib/src/internal/configparser.cpp:57
+#, c-format
+msgid "unable to parse the config file '%s'"
+msgstr "Die Konfigurationsdatei »%s« kann nicht ausgewertet werden."
+
+#: lib/src/internal/configparser.cpp:265
+msgid "clear directive ('#clear')"
+msgstr "Bereinigungsdirektive (»#clear«)"
+
+#: lib/src/internal/configparser.cpp:266
+msgid "closing curly bracket ('}')"
+msgstr "schließende geschweifte Klammer (»}«)"
+
+#: lib/src/internal/configparser.cpp:267
+msgid "opening curly bracket ('{')"
+msgstr "öffnende geschweifte Klammer (»{«)"
+
+#: lib/src/internal/configparser.cpp:268
+msgid "semicolon (';')"
+msgstr "Strichpunkt (»;«)"
+
+#: lib/src/internal/configparser.cpp:269
+msgid "option value (quoted string)"
+msgstr "Optionswert (Zeichenkette in Anführungszeichen)"
+
+#: lib/src/internal/configparser.cpp:270
+msgid ""
+"option name (letters, numbers, slashes, points, dashes, double colons "
+"allowed)"
+msgstr ""
+"Optionsname (Buchstaben, Zahlen, Schrägstriche, Punkte, Bindestriche, "
+"Doppelpunkte erlaubt)"
+
+#: lib/src/internal/configparser.cpp:292
+#, c-format
+msgid "syntax error: line %u, character %u: expected: %s"
+msgstr "Syntaxfehler: Zeile %u, Zeichen %u: erwartet: %s"
+
+#: lib/src/internal/worker/snapshots.cpp:52
+#: lib/src/internal/worker/snapshots.cpp:57
+#, c-format
+msgid "unable to remove the partial snapshot directory '%s'"
+msgstr ""
+"Verzeichnis für teilweise Momentaufnahmen »%s« kann nicht entfernt werden"
+
+#: lib/src/internal/worker/snapshots.cpp:105
+#, c-format
+msgid "internal error: no binary package '%s'"
+msgstr "interner Fehler: kein Binärpaket »%s«"
+
+#: lib/src/internal/worker/snapshots.cpp:111
+#, c-format
+msgid "internal error: no installed version for the installed package '%s'"
+msgstr ""
+"interner Fehler: keine installierte Version für das installierte Paket »%s«"
+
+#: lib/src/internal/worker/snapshots.cpp:132
+#, c-format
+msgid ""
+"dpkg-repack produced either no or more than one Debian archive for the "
+"package '%s'"
+msgstr ""
+"Dpkg-repack produziert entweder kein oder mehr als ein Debian-Archiv für das "
+"Paket »%s«."
+
+#: lib/src/internal/worker/snapshots.cpp:142
+#: lib/src/internal/worker/snapshots.cpp:346
+#: lib/src/internal/worker/metadata.cpp:102
+#: lib/src/internal/worker/metadata.cpp:550
+#: lib/src/internal/worker/packages.cpp:1419
+#, c-format
+msgid "unable to rename '%s' to '%s'"
+msgstr "»%s« kann nicht in »%s« umbenannt werden."
+
+#: lib/src/internal/worker/snapshots.cpp:149
+#, c-format
+msgid "failed to repack the package '%s'"
+msgstr "erneutes Packen von Paket »%s« fehlgeschlagen"
+
+#: lib/src/internal/worker/snapshots.cpp:219
+msgid "the system snapshot name cannot be empty"
+msgstr "Der Name der Systemmomentaufnahme kann nicht leer sein."
+
+#: lib/src/internal/worker/snapshots.cpp:223
+#, c-format
+msgid "the system snapshot name '%s' cannot start with a '.'"
+msgstr ""
+"Der Name der Systemmomentaufnahme »%s« kann nicht mit einem ».« beginnen."
+
+#: lib/src/internal/worker/snapshots.cpp:230
+#, c-format
+msgid "the system snapshot named '%s' already exists"
+msgstr "Der Name der Systemmomentaufnahme »%s« existiert bereits."
+
+#: lib/src/internal/worker/snapshots.cpp:240
+msgid ""
+"the 'dpkg-repack' binary is not available, install the package 'dpkg-repack'"
+msgstr ""
+"Das Programm »dpkg-repack« ist nicht verfügbar, installieren Sie das Paket "
+"»dpkg-repack«."
+
+#: lib/src/internal/worker/snapshots.cpp:244
+msgid ""
+"the 'dpkg-scanpackages' binary is not available, install the package 'dpkg-"
+"dev'"
+msgstr ""
+"Das Programm »dpkg-scanpackages« ist nicht verfügbar, installieren Sie das "
+"Paket »dpkg-dev«."
+
+#: lib/src/internal/worker/snapshots.cpp:271
+#, c-format
+msgid "unable to create the snapshots directory '%s'"
+msgstr "Das Verzeichnis für Momentaufnahmen »%s« kann nicht erstellt werden."
+
+#: lib/src/internal/worker/snapshots.cpp:282
+#, c-format
+msgid "unable to create a temporary snapshot directory '%s'"
+msgstr ""
+"Ein Verzeichnis für temporäre Momentaufnahmen »%s« kann nicht erstellt werden."
+
+#: lib/src/internal/worker/snapshots.cpp:311
+msgid "unable to open the current directory"
+msgstr "Das aktuelle Verzeichnis kann nicht geöffnet werden."
+
+#: lib/src/internal/worker/snapshots.cpp:319
+#: lib/src/internal/worker/snapshots.cpp:356
+#, c-format
+msgid "unable to set the current directory to '%s'"
+msgstr "Das aktuelle Verzeichnis kann nicht auf »%s« gesetzt werden."
+
+#: lib/src/internal/worker/snapshots.cpp:339
+msgid "unable to return to a previous working directory"
+msgstr "In ein vorheriges Arbeitsverzeichnis kann nicht zurückgekehrt werden."
+
+#: lib/src/internal/worker/snapshots.cpp:362
+#, c-format
+msgid "unable to construct the system snapshot '%s'"
+msgstr "Die Systemmomentaufnahme »%s« kann nicht konstruiert werden."
+
+#: lib/src/internal/worker/snapshots.cpp:373
+#: lib/src/internal/worker/snapshots.cpp:404 lib/src/system/snapshots.cpp:95
+#, c-format
+msgid "unable to find a snapshot named '%s'"
+msgstr "Eine Momentaufnahme mit Namen »%s« kann nicht gefunden werden."
+
+#: lib/src/internal/worker/snapshots.cpp:378
+#, c-format
+msgid "the snapshot '%s' already exists"
+msgstr "Die Momentaufnahme »%s« existiert bereits"
+
+#: lib/src/internal/worker/snapshots.cpp:394
+#, c-format
+msgid "'%s' is not a valid snapshot"
+msgstr "»%s« ist keine gültige Momentaufnahme."
+
+#: lib/src/internal/worker/metadata.cpp:139
+#, c-format
+msgid "the '%s' uncompressor is not available, not downloading '%s'"
+msgstr ""
+"Das Dekomprimierungsprogramm »%s« ist nicht verfügbar, »%s« wird nicht "
+"heruntergeladen."
+
+#: lib/src/internal/worker/metadata.cpp:152
+#, c-format
+msgid "failed to uncompress '%s', '%s' returned the error %d"
+msgstr "»%s« zu dekomprimieren fehlgeschlagen, »%s« gab den Fehler %d zurück"
+
+#: lib/src/internal/worker/metadata.cpp:167
+#, c-format
+msgid "unknown file extension '%s', not downloading '%s'"
+msgstr "unbekannte Dateierweiterung »%s«, »%s« wird nicht heruntergeladen"
+
+#: lib/src/internal/worker/metadata.cpp:377
+#, c-format
+msgid "%s: failed to proceed"
+msgstr "%s: fortfahren fehlgeschlagen"
+
+#: lib/src/internal/worker/metadata.cpp:410
+#: lib/src/internal/worker/metadata.cpp:809
+#, c-format
+msgid "malformed 'hash-size-name' line '%s'"
+msgstr "missgestalteter »hash-size-name« in Zeile »%s«"
+
+#: lib/src/internal/worker/metadata.cpp:429
+#, c-format
+msgid "malformed 'hash-size' line '%s'"
+msgstr "missgestalteter »hash-size« in Zeile »%s«"
+
+#: lib/src/internal/worker/metadata.cpp:437
+msgid "failed to find the target hash sum"
+msgstr "Finden der Ziel-Hash-Summe fehlgeschlagen"
+
+#: lib/src/internal/worker/metadata.cpp:454
+#, c-format
+msgid "unable to copy '%s' to '%s'"
+msgstr "»%s« nach »%s« zu kopieren fehlgeschlagen"
+
+#: lib/src/internal/worker/metadata.cpp:472
+#, c-format
+msgid "unable to find a patch for the sha1 sum '%s'"
+msgstr "Patch für die SHA1-Summe »%s« konnte nicht gefunden werden"
+
+#: lib/src/internal/worker/metadata.cpp:481
+#, c-format
+msgid "unable to find a patch entry for the patch '%s'"
+msgstr "Ein Patch-Eintrag für den Patch »%s« konnte nicht gefunden werden"
+
+#: lib/src/internal/worker/metadata.cpp:527
+msgid "applying ed script failed"
+msgstr "Anwenden des Ed-Skripts fehlgeschlagen"
+
+#: lib/src/internal/worker/metadata.cpp:605
+#, c-format
+msgid "unable to remove an outdated partial file '%s'"
+msgstr "Eine veraltete Teildatei »%s« konnte nicht entfernt werden."
+
+#: lib/src/internal/worker/metadata.cpp:670
+msgid "index"
+msgstr "Index"
+
+#: lib/src/internal/worker/metadata.cpp:758
+#, c-format
+msgid "failed to download %s for '%s/%s'"
+msgstr "%s für »%s/%s« herunterzuladen fehlgeschlagen"
+
+#: lib/src/internal/worker/metadata.cpp:780
+#, c-format
+msgid "failed to parse localization data from '%s'"
+msgstr "Auswertung der Lokalisierungsdaten von »%s« fehlgeschlagen"
+
+#: lib/src/internal/worker/metadata.cpp:1001
+#, c-format
+msgid "unable to create the lists directory '%s'"
+msgstr "Das Listenverzeichnis »%s« kann nicht erstellt werden."
+
+#: lib/src/internal/worker/metadata.cpp:1041
+msgid "aborted downloading release and index data"
+msgstr "Herunterladen der Veröffentlichung und der Indexdaten abgebrochen"
+
+#: lib/src/internal/worker/metadata.cpp:1128
+msgid "there were errors while downloading release and index data"
+msgstr ""
+"Während des Herunterladens der Veröffentlichung und der Indexdaten traten "
+"Fehler auf."
+
+#: lib/src/internal/worker/packages.cpp:996
+#: lib/src/internal/worker/setupandpreview.cpp:165
+msgid "worker: the desired state is not given"
+msgstr "Worker: Der gewünschte Status ist nicht angegeben."
+
+#: lib/src/internal/worker/packages.cpp:1212
+#, c-format
+msgid "internal error: unable to schedule circular actions '%s'"
+msgstr ""
+"interner Fehler: Zeit für zyklische »%s«-Aktionen kann nicht geplant werden"
+
+#: lib/src/internal/worker/packages.cpp:1247
+#, c-format
+msgid "internal error: worker: a relation '%s' cannot be soft"
+msgstr "interner Fehler: Worker: Eine »%s«-Beziehung kann nicht weich sein."
+
+#: lib/src/internal/worker/packages.cpp:1339
+msgid "unable to create the archive downloads directory"
+msgstr "Das Archivherunterladeverzeichnis kann nicht erstellt werden."
+
+#: lib/src/internal/worker/packages.cpp:1363
+#, c-format
+msgid "no available download URIs for %s %s"
+msgstr "keine verfügbaren Herunterlade-URIs für %s %s"
+
+#: lib/src/internal/worker/packages.cpp:1410
+msgid "unable to find the downloaded file"
+msgstr "Die heruntergeladene Datei kann nicht gefunden werden."
+
+#: lib/src/internal/worker/packages.cpp:1431
+msgid "failed to prepare downloads"
+msgstr "Vorbereiten des Herunterladens fehlgeschlagen"
+
+#: lib/src/internal/worker/packages.cpp:1486
+#, c-format
+msgid "internal error: packages have been left unconfigured: '%s'"
+msgstr "interner Fehler: Pakete blieben unkonfiguriert: »%s«"
+
+#: lib/src/internal/worker/packages.cpp:1561
+#, c-format
+msgid ""
+"internal error: worker: __set_force_options_for_removals_if_needed: there is "
+"no installed record for the package '%s' which is to be removed"
+msgstr ""
+"interner Fehler: Worker: __set_force_options_for_removals_if_needed: Für das "
+"Paket »%s« ist dort kein installierter Datensatz, der zu entfernen ist"
+
+#: lib/src/internal/worker/packages.cpp:1628
+#, c-format
+msgid "unable to fit in the archives space limit '%zu', best try is '%zu'"
+msgstr ""
+"kann nicht in die Platzbeschränkung der Archive »%zu« eingepasst werden, "
+"bester Versuch ist »%zu«"
+
+#: lib/src/internal/worker/packages.cpp:1668
+#, c-format
+msgid "dpkg '%s' action '%s'"
+msgstr "dpkg »%s« Aktion »%s«"
+
+#: lib/src/internal/worker/packages.cpp:1699
+msgid "failed to clean downloaded archives"
+msgstr "Bereinigen heruntergeladener Archive fehlgeschlagen"
+
+#: lib/src/internal/worker/packages.cpp:1923
+msgid "marking as automatically installed"
+msgstr "als automatisch installiert markieren"
+
+#: lib/src/internal/worker/packages.cpp:1923
+msgid "marking as manually installed"
+msgstr "als manuell installiert markieren"
+
+#: lib/src/internal/worker/packages.cpp:1961
+#, c-format
+msgid "unable to renew extended states file: unable to rename '%s' to '%s'"
+msgstr ""
+"erweiterte Statusdatei kann nicht erneuert werden: »%s« kann nicht in »%s« "
+"umbenannt werden"
+
+#: lib/src/internal/worker/packages.cpp:1968
+msgid "failed to change the 'automatically installed' flag"
+msgstr "Die Markierung »automatisch installiert« zu ändern ist fehlgeschlagen."
+
+#: lib/src/internal/worker/archives.cpp:51
+#, c-format
+msgid "unable to remove the dangling APT compatibility symbolic link '%s'"
+msgstr ""
+"Der defekte symbolische APT-Kompatibilitätsverweis »%s« kann nicht entfernt "
+"werden."
+
+#: lib/src/internal/worker/archives.cpp:70
+#, c-format
+msgid "unable to create the APT compatibility symbolic link '%s' -> '%s'"
+msgstr ""
+"Der symbolische APT-Kompatibilitätsverweis »%s« -> »%s« kann nicht erstellt "
+"werden."
+
+#: lib/src/internal/worker/archives.cpp:153
+#, c-format
+msgid "the path '%s' lies outside the archives directory '%s'"
+msgstr "Der Pfad »%s« liegt außerhalb des Archivverzeichnisses »%s«."
+
+#: lib/src/internal/worker/archives.cpp:157
+#, c-format
+msgid "the path '%s' contains at least one '/../' substring"
+msgstr "Der Pfad »%s« enthält mindestens eine »/../«-Teilzeichenkette."
+
+#: lib/src/internal/worker/archives.cpp:204
+msgid "unable to remove partial archives"
+msgstr "Teilarchive können nicht entfernt werden."
+
+#: lib/src/internal/worker/base.cpp:92
+#, c-format
+msgid "unable to launch the command '%s'"
+msgstr "Der Befehl »%s« kann nicht aufgerufen werden."
+
+#: lib/src/internal/worker/base.cpp:97
+#, c-format
+msgid "the command '%s' failed: %s"
+msgstr "Der Befehl »%s« ist fehlgeschlagen: %s"
+
+#: lib/src/internal/worker/base.cpp:115
+#, c-format
+msgid "%s failed"
+msgstr "%s fehlgeschlagen"
+
+#: lib/src/internal/worker/setupandpreview.cpp:190
+#, c-format
+msgid "there is no package '%s' in the desired state"
+msgstr "Es gibt kein Paket »%s« im gewünschten Zustand."
+
+#: lib/src/common/consumers.cpp:45
+#, c-format
+msgid "invalid package name '%s'"
+msgstr "ungültiger Paketname »%s«"
+
+#: lib/src/common/consumers.cpp:137
+#, c-format
+msgid "invalid version string '%s'"
+msgstr "ungültige Versionszeichenkette »%s«"
+
+#: lib/src/common/consumers.cpp:143
+#, c-format
+msgid "version string '%s': should not contain underscores"
+msgstr "Versionszeichenkette »%s«: sollte keine Unterstriche enthalten"
+
+#: lib/src/common/consumers.cpp:147
+#, c-format
+msgid "version string '%s': first upstream character '%c' is not a digit"
+msgstr ""
+"Versionszeichenkette »%s«: erstes Upstream-Zeichen »%c« ist keine Ziffer"
+
+#: lib/src/download/progresses/console.cpp:139
+# Get: 123
+msgid "Get"
+msgstr "Geholt"
+
+#: lib/src/download/progresses/console.cpp:150
+msgid "Fail"
+msgstr "Gescheitert"
+
+#: lib/src/download/progresses/console.cpp:234
+#, c-format
+# Fetched Größe in Zeit
+msgid "Fetched %s in %s.\n"
+msgstr "%s wurden in %s abgeholt.\n"
+
+#: lib/src/download/methodfactory.cpp:62
+#: lib/src/download/methodfactory.cpp:118
+#, c-format
+msgid "unable to unload the dynamic library handle '%p': %s"
+msgstr "Das dynamische Bibliotheks-Handle »%p« konnte nicht entladen werden: %s"
+
+#: lib/src/download/methodfactory.cpp:83
+msgid "no download methods found"
+msgstr "keine Methoden zum Herunterladen gefunden"
+
+#: lib/src/download/methodfactory.cpp:102
+#, c-format
+msgid "not loading another copy of the download method '%s'"
+msgstr ""
+"Eine weitere Kopie der Methode zum Herunterladen »%s« wird nicht geladen."
+
+#: lib/src/download/methodfactory.cpp:109
+#: lib/src/download/methodfactory.cpp:115
+#, c-format
+msgid "unable to load the download method '%s': %s: %s"
+msgstr "Die Herunterlademethode »%s« kann nicht geladen werden: %s: %s"
+
+#: lib/src/download/methodfactory.cpp:139
+#, c-format
+msgid "no download handlers defined for the protocol '%s'"
+msgstr "keine Herunterlade-Handler für das Protokoll »%s« definiert"
+
+#: lib/src/download/methodfactory.cpp:173
+msgid "no download handlers available"
+msgstr "keine Herunterlade-Handler verfügbar"
+
+#: lib/src/download/method.cpp:61
+#, c-format
+msgid "the value '%s' of the suboption '%s' is not numeric"
+msgstr "Der Wert »%s« der Unteroption »%s« ist nicht numerisch."
+
+#: lib/src/download/manager.cpp:79
+msgid "unable to send a socket message"
+msgstr "Eine Socket-Nachricht kann nicht gesandt werden."
+
+#: lib/src/download/manager.cpp:96
+msgid "unable to receive a socket message length"
+msgstr "Eine Socket-Nachrichtenlänge kann nicht empfangen werden."
+
+#: lib/src/download/manager.cpp:101
+#, c-format
+msgid "unable to receive a socket message length: %s"
+msgstr "Eine Socket-Nachrichtenlänge kann nicht empfangen werden: %s"
+
+#: lib/src/download/manager.cpp:101 lib/src/download/manager.cpp:122
+msgid "partial message arrived"
+msgstr "Teilnachricht eingetroffen"
+
+#: lib/src/download/manager.cpp:114
+msgid "unable to receive a socket message"
+msgstr "Eine Socket-Nachricht kann nicht empfangen werden."
+
+#: lib/src/download/manager.cpp:118 lib/src/download/manager.cpp:122
+#, c-format
+msgid "unable to receive a socket message: %s"
+msgstr "Eine Socket-Nachricht kann nicht empfangen werden: %s"
+
+#: lib/src/download/manager.cpp:118
+msgid "unexpected end of stream"
+msgstr "unerwartetes Ende des Datenstroms"
+
+#: lib/src/download/manager.cpp:217
+msgid "unable to open the server socket"
+msgstr "Das Server-Socket kann nicht geöffnet werden."
+
+#: lib/src/download/manager.cpp:223
+#, c-format
+msgid "unable to bind the server socket to the file '%s'"
+msgstr "Das Server-Socket kann nicht an die Datei »%s« gebunden werden."
+
+#: lib/src/download/manager.cpp:227
+#, c-format
+msgid ""
+"unable to make the server socket on the file '%s' listen for connections"
+msgstr ""
+"Das Server-Socket kann nicht veranlasst werden, an der Datei »%s« auf "
+"eingehende Verbindungen zu warten."
+
+#: lib/src/download/manager.cpp:235
+msgid "unable to create the download worker process: fork() failed"
+msgstr ""
+"Der Worker-Prozess zum Herunterladen kann nicht erstellt werden: fork() "
+"fehlgeschlagen"
+
+#: lib/src/download/manager.cpp:281
+msgid "unable to shutdown the download worker process: waitpid() failed"
+msgstr ""
+"Der Worker-Prozess zum Herunterladen kann nicht beendet werden: waitpid() "
+"fehlgeschlagen"
+
+#: lib/src/download/manager.cpp:285
+#, c-format
+msgid "the download worker process exited abnormally: %s"
+msgstr "Der Worker-Prozess zum Herunterladen endete anomal: %s"
+
+#: lib/src/download/manager.cpp:291
+msgid "the download worker process aborted unexpectedly"
+msgstr "Der Worker-Prozess zum Herunterladen endete unerwartet."
+
+#: lib/src/download/manager.cpp:297
+msgid "unable to close the download server socket"
+msgstr "Das Server-Socket zum Herunterladen kann nicht geschlossen werden."
+
+#: lib/src/download/manager.cpp:302
+#, c-format
+msgid "unable to remove the download server socket file '%s'"
+msgstr ""
+"Die Server-Socket-Datei zum Herunterladen kann nicht entfernt werden: »%s«"
+
+#: lib/src/download/manager.cpp:316
+#, c-format
+msgid "download manager: unable to terminate a performer process (pid '%d')"
+msgstr ""
+"Herunterladeverwaltung: Ein ausführender Prozess kann nicht beendet werden "
+"(PID »%d«)"
+
+#: lib/src/download/manager.cpp:413
+msgid "waitpid on the performer process failed"
+msgstr "waitpid auf den ausführenden Prozess fehlgeschlagen"
+
+#: lib/src/download/manager.cpp:503
+#, c-format
+msgid "unable to kill the process %u"
+msgstr "Der Prozess %u kann nicht mit kill beendet werden."
+
+#: lib/src/download/manager.cpp:538
+#, c-format
+msgid "invalid expected size: expected '%zu', got '%zu'"
+msgstr "ungültige voraussichtliche Größe: »%zu« erwartet, »%zu« erhalten"
+
+#: lib/src/download/manager.cpp:555
+#, c-format
+msgid "downloaded more than expected: expected '%zu', downloaded '%zu'"
+msgstr ""
+"mehr als erwartet heruntergeladen: »%zu« erwartet, »%zu« heruntergeladen"
+
+#: lib/src/download/manager.cpp:639
+msgid "unable to create a performer process: fork() failed"
+msgstr "ausführender Prozess kann nicht erzeugt werden: fork() fehlgeschlagen"
+
+#: lib/src/download/manager.cpp:720
+msgid "unable to poll worker loop sockets"
+msgstr "Worker-Schleifen-Sockets können nicht abgefragt werden."
+
+#: lib/src/download/manager.cpp:738
+msgid "unable to accept new socket connection"
+msgstr "neue Socket-Verbindung kann nicht akzeptiert werden"
+
+#: lib/src/download/manager.cpp:848 lib/src/download/manager.cpp:1183
+msgid "unable to close the client socket"
+msgstr "Das Client-Socket kann nicht geschlossen werden."
+
+#: lib/src/download/manager.cpp:912
+msgid "download worker: polling the waiter socket failed"
+msgstr "Herunterlade-Worker: Abfragen des Warte-Sockets fehlgeschlagen"
+
+#: lib/src/download/manager.cpp:991
+msgid "passed a download entity with an empty target path"
+msgstr "eine Herunterladeinstanz mit einem leeren Zielpfad übergeben"
+
+#: lib/src/download/manager.cpp:995
+#, c-format
+msgid "passed distinct download entities with the same target path '%s'"
+msgstr ""
+"verschiedene Herunterladeinstanzen mit dem gleichen Zielpfad »%s« übergeben"
+
+#: lib/src/download/manager.cpp:1037
+msgid "download client: polling the client socket failed"
+msgstr "Herunterlade-Client: Abfrage des Client-Sockets fehlgeschlagen"
+
+#: lib/src/download/manager.cpp:1042
+msgid "download client: the download server socket timed out"
+msgstr "Herunterlade-Client: Zeitüberschreitung des Herunterlade-Server-Sockets"
+
+#: lib/src/download/manager.cpp:1070
+msgid "unable to open a client socket"
+msgstr "Ein Client-Socket kann nicht geöffnet werden."
+
+#: lib/src/download/manager.cpp:1074
+msgid "unable to connect to the server socket"
+msgstr "Verbindung zum Server-Socket ist nicht möglich."
+
+#: lib/src/download/manager.cpp:1150
+#, c-format
+msgid "the postprocessing action raised an exception '%s'"
+msgstr "Die Nachverarbeitungsaktion verursachte eine Ablaufunterbrechung »%s«."
+
+#: lib/src/download/manager.cpp:1154
+msgid "the postprocessing action raised an exception"
+msgstr "Die Nachverarbeitungsaktion verursachte eine Ablaufunterbrechung."
+
+#: lib/src/download/uri.cpp:42
+#, c-format
+msgid "unable to find a scheme (protocol) in the URI '%s'"
+msgstr "In der URI »%s« kann kein Schema (Protokoll) gefunden werden."
+
+#: lib/src/download/uri.cpp:53
+#, c-format
+msgid "there should be no or two slashes after a colon in the URI '%s'"
+msgstr ""
+"Nach einem Doppelpunkt sollten in der URI »%s« kein oder zwei Schrägstriche "
+"stehen."
+
+#: lib/src/download/progress.cpp:195
+msgid ""
+"download progress: received a progress message with less than 2 total "
+"parameters"
+msgstr ""
+"Herunterladefortschritt: Es wurde eine Fortschrittsnachricht mit weniger als "
+"zwei Parametern insgesamt empfangen."
+
+#: lib/src/download/progress.cpp:208 lib/src/download/progress.cpp:240
+#: lib/src/download/progress.cpp:252 lib/src/download/progress.cpp:261
+#: lib/src/download/progress.cpp:270
+#, c-format
+msgid ""
+"download progress: received a submessage '%s' with more than %u parameters"
+msgstr ""
+"Herunterladefortschritt: Es wurde eine Unternachricht »%s« mit mehr als %u "
+"Parametern empfangen."
+
+#: lib/src/download/progress.cpp:233
+#, c-format
+msgid ""
+"download progress: received an info for a not started download, URI '%s'"
+msgstr ""
+"Herunterladefortschritt: Es wurde eine Information über ein nicht gestartetes "
+"Herunterladen empfangen, URI »%s«."
+
+#: lib/src/download/progress.cpp:284
+#, c-format
+msgid "download progress: received the invalid action '%s'"
+msgstr ""
+"Herunterladefortschritt: Es wurde eine ungültige Aktion »%s« empfangen."
+
+#: lib/src/cache/sourceversion.cpp:60
+#, c-format
+msgid "unexpected non-empty tag value '%s'"
+msgstr "unerwarteter nicht leerer Markierungswert »%s«"
+
+#: lib/src/cache/sourceversion.cpp:160 lib/src/cache/binaryversion.cpp:149
+msgid "version string isn't defined"
+msgstr "Versionszeichenkette ist nicht definiert"
+
+#: lib/src/cache/sourceversion.cpp:164
+#, c-format
+# all ist nicht übersetzbar
+msgid ""
+"source package %s, version %s: architectures aren't defined, setting them to "
+"'all'"
+msgstr ""
+"Quellpaket »%s«, Version %s: Architekturen sind nicht definiert, sie werden "
+"auf »all« gesetzt."
+
+#: lib/src/cache/sourceversion.cpp:201
+msgid "Tarball"
+msgstr "Tarball"
+
+#: lib/src/cache/sourceversion.cpp:201
+msgid "Diff"
+msgstr "Diff"
+
+#: lib/src/cache/sourceversion.cpp:201
+msgid "Dsc"
+msgstr "Dsc"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Depends"
+msgstr "Build-Depends"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Depends-Indep"
+msgstr "Build-Depends-Indep"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Conflicts"
+msgstr "Build-Conflicts"
+
+#: lib/src/cache/sourceversion.cpp:204
+msgid "Build-Conflicts-Indep"
+msgstr "Build-Conflicts-Indep"
+
+#: lib/src/cache/binaryversion.cpp:153
+#, c-format
+msgid ""
+"binary package %s, version %s: architecture isn't defined, setting it to "
+"'all'"
+msgstr ""
+"Binärpaket »%s« Version %s: Architekturen sind nicht definiert, sie werden "
+"auf »all« gesetzt."
+
+#: lib/src/cache/binaryversion.cpp:182
+# keine Übersetzung analog zu APT (Tags)
+msgid "Pre-Depends"
+msgstr "Pre-Depends"
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Depends"
+msgstr "Depends"
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Recommends"
+msgstr "Recommends"
+
+#: lib/src/cache/binaryversion.cpp:182
+msgid "Suggests"
+msgstr "Suggests"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Enhances"
+msgstr "Enhances"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Conflicts"
+msgstr "Conflicts"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Breaks"
+msgstr "Breaks"
+
+#: lib/src/cache/binaryversion.cpp:183
+msgid "Replaces"
+msgstr "Replaces"
+
+#: lib/src/cache/relation.cpp:130
+#, c-format
+msgid "failed to parse a package name in the relation '%s'"
+msgstr "Auswertung eines Paketnamens in der Beziehung »%s« fehlgeschlagen"
+
+#: lib/src/cache/relation.cpp:144
+#, c-format
+msgid "failed to parse a version part in the relation '%s'"
+msgstr "Auswertung eines Versionsteils in der Beziehung »%s« fehlgeschlagen"
+
+#: lib/src/cache/relation.cpp:223
+#, c-format
+msgid "unable to parse architecture filters '%s'"
+msgstr "Architekturfilter »%s« können nicht ausgewertet werden."
+
+#: lib/src/cache/relation.cpp:275
+#, c-format
+msgid "non-negative architecture filter '%s'"
+msgstr "nicht negativer Architekturfilter »%s«"
+
+#: lib/src/cache/version.cpp:98
+msgid "required"
+msgstr "benötigt"
+
+#: lib/src/cache/version.cpp:98
+msgid "important"
+msgstr "wichtig"
+
+#: lib/src/cache/version.cpp:98
+msgid "standard"
+msgstr "Standard"
+
+#: lib/src/cache/version.cpp:98
+msgid "optional"
+msgstr "optional"
+
+#: lib/src/cache/version.cpp:98
+msgid "extra"
+msgstr "zusätzlich"
+
+#: lib/src/cache/package.cpp:61
+#, c-format
+msgid "error while parsing a version for the package '%s'"
+msgstr "Fehler beim Auswerten einer Version für das Paket »%s«"
+
+#: lib/src/cache/package.cpp:66
+msgid "no valid versions available, discarding the package"
+msgstr "keine gültigen Versionen verfügbar, das Paket wird verworfen"
+
+#: lib/src/cache/package.cpp:151
+#, c-format
+msgid ""
+"discarding a duplicate version with different hash sums: package: '%s', "
+"version: '%s', origin of discarded version: '%s', origins left: '%s'"
+msgstr ""
+"Eine doppelte Version mit verschiedenen Hash-Summen wird verworfen: Paket: "
+"»%s«, Version: »%s«, Ursprung der verworfenen Version: »%s«, verbleibende "
+"Ursprünge: »%s«"
+
+#: lib/src/cache/package.cpp:160
+#, c-format
+msgid "error while merging the version '%s' for the package '%s'"
+msgstr "Fehler beim Zusammenführen der Version »%s« für das Paket »%s«"
+
+#: lib/src/pipe.cpp:41
+#, c-format
+msgid "unable to close a part of the '%s' pipe"
+msgstr "Ein Teil der Pipe »%s« kann nicht geschlossen werden."
+
+#: lib/src/pipe.cpp:55
+#, c-format
+msgid "unable to create the '%s' pipe"
+msgstr "Die Pipe »%s« kann nicht erzeugt werden."
+
+#: lib/src/pipe.cpp:65
+#, c-format
+msgid "unable to create the '%s' pipe: unable to get file descriptor flags"
+msgstr ""
+"Die Pipe »%s« kann nicht erzeugt werden: Es können keine "
+"Dateideskriptormarkierungen erhalten werden."
+
+#: lib/src/pipe.cpp:69
+#, c-format
+msgid "unable to create the '%s' pipe: unable to set the close-on-exec flag"
+msgstr ""
+"Die Pipe »%s« kann nicht erzeugt werden: Die Markierung »close-on-exec« kann "
+"nicht gesetzt werden."
+
+#: lib/src/system/state.cpp:70 lib/src/system/state.cpp:91
+#: lib/src/system/state.cpp:115
+#, c-format
+msgid "malformed '%s' status indicator (for the package '%s')"
+msgstr "missgestaltete Statusanzeige »%s« (für das Paket »%s«)"
+
+#: lib/src/system/state.cpp:77 lib/src/system/state.cpp:98
+#, c-format
+msgid "no '%s' status indicator (for the package '%s')"
+msgstr "keine Statusanzeige »%s« (für das Paket »%s«)"
+
+#: lib/src/system/state.cpp:152
+#, c-format
+msgid "unable to open the dpkg status file '%s': %s"
+msgstr "Die Dpkg-Statusdatei »%s« kann nicht geöffnet werden: %s"
+
+#: lib/src/system/state.cpp:209
+msgid "no package name in the record"
+msgstr "kein Paketname im Datensatz"
+
+#: lib/src/system/state.cpp:239
+#, c-format
+msgid "error parsing the dpkg status file '%s'"
+msgstr "Fehler beim Auswerten der Dpkg-Statusdatei »%s«"
+
+#: lib/src/system/state.cpp:316
+msgid "unpacked"
+msgstr "entpackt"
+
+#: lib/src/system/state.cpp:316
+msgid "half-configured"
+msgstr "halb konfiguriert"
+
+#: lib/src/system/state.cpp:316
+msgid "half-installed"
+msgstr "halb installiert"
+
+#: lib/src/system/state.cpp:317
+msgid "config files"
+msgstr "Konfigurationsdateien"
+
+#: lib/src/system/state.cpp:317
+msgid "postinst failed"
+msgstr "Nachinstallation fehlgeschlagen"
+
+#: lib/src/system/state.cpp:317
+msgid "removal failed"
+msgstr "Entfernen fehlgeschlagen"
+
+#: lib/src/system/resolver.cpp:25
+msgid "user request"
+msgstr "Benutzeranfrage"
+
+#: lib/src/system/resolver.cpp:30
+msgid "auto-removal"
+msgstr "automatisches Entfernen"
+
+#: lib/src/system/resolver.cpp:44
+msgid "pre-depends on"
+msgstr "hängt vorher ab von"
+
+#: lib/src/system/resolver.cpp:45
+msgid "depends on"
+msgstr "hängt ab von"
+
+#: lib/src/system/resolver.cpp:46
+msgid "recommends"
+msgstr "empfiehlt"
+
+#: lib/src/system/resolver.cpp:47
+msgid "suggests"
+msgstr "schlägt vor"
+
+#: lib/src/system/resolver.cpp:48
+msgid "conflicts with"
+msgstr "kollidiert"
+
+#: lib/src/system/resolver.cpp:49
+msgid "breaks"
+msgstr "beschädigt"
+
+#: lib/src/system/resolver.cpp:55
+#, c-format
+msgid "unsupported reason dependency type '%s'"
+msgstr "nicht unterstützter ursächlicher Abhängigkeitstyp »%s«"
+
+#: lib/src/system/resolver.cpp:74
+#, c-format
+msgid "%s: synchronization with %s %s"
+msgstr "%s: Synchronisation mit %s %s"
+
+#: lib/src/system/snapshots.cpp:109
+#, c-format
+msgid "unable to open the format file '%s': %s"
+msgstr "Die Formatdatei »%s« kann nicht geöffnet werden: %s"
+
+#: lib/src/system/snapshots.cpp:116/
+#, c-format
+msgid "unsupported snapshot format '%s'"
+msgstr "nicht unterstütztes Momentaufnahmenformat »%s«"

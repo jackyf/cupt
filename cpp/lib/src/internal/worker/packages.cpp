@@ -26,8 +26,12 @@
 #include <internal/filesystem.hpp>
 #include <internal/debdeltahelper.hpp>
 #include <internal/lock.hpp>
+#include <internal/cachefiles.hpp>
 
 #include <internal/worker/packages.hpp>
+#include <internal/worker/dpkg.hpp>
+
+#include <unistd.h>
 
 namespace cupt {
 namespace internal {
@@ -61,6 +65,18 @@ string InnerAction::toString() const
 			" " + version->versionString;
 
 	return result;
+}
+
+InnerAction::Type InnerActionGroup::getCompoundActionType() const
+{
+	/* all actions within one group have, by algorithm,
+	   a) the same action name (so far, configures only)
+	   b) the same package name (linked actions)
+
+	   in both cases, we can choose the action type of the last action
+	   in the subgroup as effective
+	*/
+	return this->rbegin()->type;
 }
 
 
@@ -123,7 +139,7 @@ PackagesWorker::PackagesWorker()
 set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debugging)
 {
 	set< string > result;
-	queue< shared_ptr< const BinaryVersion > > toProcess;
+	queue< const BinaryVersion* > toProcess;
 
 	auto processRelationExpression = [&cache, &result, &toProcess, &debugging](const RelationExpression& relationExpression)
 	{
@@ -136,8 +152,7 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 				{
 					if (debugging)
 					{
-						debug("detected pseudo-essential package '%s'",
-								(*satisfyingVersionIt)->packageName.c_str());
+						debug2("detected pseudo-essential package '%s'", (*satisfyingVersionIt)->packageName);
 					}
 					toProcess.push(*satisfyingVersionIt);
 				}
@@ -178,6 +193,20 @@ set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debu
 	}
 
 	return result;
+}
+
+const BinaryVersion* PackagesWorker::__get_fake_version_for_purge(const string& packageName)
+{
+	auto& versionPtr = __fake_versions_for_purge[packageName];
+	if (!versionPtr)
+	{
+		versionPtr.reset(new BinaryVersion);
+		versionPtr->packageName = packageName;
+		versionPtr->versionString = "<dummy>";
+		versionPtr->essential = false;
+	}
+
+	return versionPtr.get();
 }
 
 void __set_action_priority(const InnerAction* actionPtr, const InnerAction* previousActionPtr)
@@ -224,6 +253,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 		{ Action::Install, vector< IA::Type >{ IA::Unpack, IA::Configure } },
 		{ Action::Upgrade, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
 		{ Action::Downgrade, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
+		{ Action::Reinstall, vector< IA::Type >{ IA::Remove, IA::Unpack, IA::Configure } },
 		{ Action::Configure, vector< IA::Type >{ IA::Configure } },
 		{ Action::Deconfigure, vector< IA::Type >{ IA::Remove } },
 		{ Action::Remove, vector< IA::Type >{ IA::Remove } },
@@ -235,7 +265,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 
 	auto addBasicEdge = [&gaa](const InnerAction* fromPtr, const InnerAction* toPtr)
 	{
-		gaa.graph.addEdgeFromPointers(fromPtr, toPtr);
+		gaa.graph.addEdge(fromPtr, toPtr);
 		gaa.attributes[make_pair(fromPtr, toPtr)].isFundamental = true;
 	};
 
@@ -259,7 +289,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 			{
 				const IA::Type& innerActionType = *innerActionTypeIt;
 
-				shared_ptr< const BinaryVersion > version;
+				const BinaryVersion* version = nullptr;
 				if (innerActionType == IA::Remove)
 				{
 					auto package = _cache->getBinaryPackage(packageName);
@@ -274,11 +304,7 @@ void PackagesWorker::__fill_actions(GraphAndAttributes& gaa)
 				}
 				if (!version)
 				{
-					auto versionPtr = new BinaryVersion;
-					versionPtr->packageName = packageName;
-					versionPtr->versionString = "<dummy>";
-					versionPtr->essential = false;
-					version.reset(versionPtr);
+					version = __get_fake_version_for_purge(packageName);
 				}
 
 				if (innerActionType != IA::Unpack)
@@ -340,6 +366,13 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 		BinaryVersion::RelationTypes::Type dependencyType, InnerAction::Type actionType,
 		Direction::Type direction)
 {
+	typedef BinaryVersion::RelationTypes RT;
+	if (gi.innerActionPtr->fake &&
+			(dependencyType != RT::PreDepends && dependencyType != RT::Depends))
+	{
+		return;
+	}
+
 	const set< InnerAction >& verticesMap = gi.gaaPtr->graph.getVertices();
 
 	InnerAction candidateAction;
@@ -369,34 +402,7 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 			auto masterActionPtr = (direction == Direction::After ? currentActionPtr : gi.innerActionPtr);
 			auto slaveActionPtr = (direction == Direction::After ? gi.innerActionPtr : currentActionPtr);
 
-			// commented, because of #582423
-			/* bool replacesFound = false;
-			if (dependencyType == BinaryVersion::RelationTypes::Conflicts)
-			{
-				// this is Conflicts, in the case there are appropriate
-				// Replaces, the 'remove before' action dependency should not be created
-				const RelationLine& replaces = masterAction.version->relations[BinaryVersion::RelationTypes::Replaces];
-				FORIT(replacesRelationExpressionIt, replaces)
-				{
-					auto replacesSatisfyingVersions = cache->getSatisfyingVersions(*replacesRelationExpressionIt);
-
-					auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), slaveAction.version);
-					if (std::find_if(replacesSatisfyingVersions.begin(), replacesSatisfyingVersions.end(),
-							predicate) != replacesSatisfyingVersions.end())
-					{
-						// yes, found Replaces, skip this action
-						replacesFound = true;
-						break;
-					}
-				}
-			}
-			if (replacesFound)
-			{
-				continue;
-			}
-			*/
-
-			gi.gaaPtr->graph.addEdgeFromPointers(slaveActionPtr, masterActionPtr);
+			gi.gaaPtr->graph.addEdge(slaveActionPtr, masterActionPtr);
 
 			bool fromVirtual = slaveActionPtr->fake || masterActionPtr->fake;
 			// adding relation to attributes
@@ -408,9 +414,9 @@ void __fill_action_dependencies(FillActionGeneralInfo& gi,
 
 			if (gi.debugging)
 			{
-				debug("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString().c_str(),
-						masterActionPtr->toString().c_str(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
-						relationExpressionIt->toString().c_str());
+				debug2("new action dependency: '%s' -> '%s', reason: '%s: %s'", slaveActionPtr->toString(),
+						masterActionPtr->toString(), BinaryVersion::RelationTypes::rawStrings[dependencyType],
+						relationExpressionIt->toString());
 			}
 		}
 	}
@@ -482,23 +488,9 @@ void __fill_graph_dependencies(const shared_ptr< const Cache >& cache,
 	}
 }
 
-const shared_ptr< const BinaryVersion > __create_virtual_version(
-		const shared_ptr< const BinaryVersion >& version)
-{
-	typedef BinaryVersion::RelationTypes RT;
-
-	shared_ptr< BinaryVersion > virtualVersion(new BinaryVersion);
-	virtualVersion->packageName = version->packageName;
-	virtualVersion->versionString = version->versionString;
-	virtualVersion->relations[RT::PreDepends] = version->relations[RT::PreDepends];
-	virtualVersion->relations[RT::Depends] = version->relations[RT::Depends];
-	virtualVersion->essential = false;
-	return virtualVersion;
-}
-
 void __create_virtual_edge(
-		const shared_ptr< const BinaryVersion >& fromVirtualVersion,
-		const shared_ptr< const BinaryVersion >& toVirtualVersion,
+		const BinaryVersion* fromVirtualVersion,
+		const BinaryVersion* toVirtualVersion,
 		vector< pair< InnerAction, InnerAction > >* virtualEdgesPtr)
 {
 	InnerAction from;
@@ -532,11 +524,6 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	   which goes into
 
 	   'install y' -> 'remove x'
-
-	   moreover, we split the installed version into virtual version by one
-	   relation expression, so different relation expressions of the same real
-	   version don't interact with each other, otherwise we'd get a full cyclic
-	   mess
 	*/
 	vector< pair< InnerAction, InnerAction > > virtualEdges;
 
@@ -548,37 +535,35 @@ vector< pair< InnerAction, InnerAction > > __create_virtual_actions(
 	}
 
 	auto installedVersions = cache->getInstalledVersions();
-	FORIT(installedVersionIt, installedVersions)
+	for (const auto& installedVersion: installedVersions)
 	{
-		const shared_ptr< const BinaryVersion > installedVersion = *installedVersionIt;
 		const string& packageName = installedVersion->packageName;
 		if (blacklistedPackageNames.count(packageName))
 		{
 			continue;
 		}
 
-		auto virtualVersion = __create_virtual_version(installedVersion);
-		__create_virtual_edge(virtualVersion, virtualVersion, &virtualEdges);
+		__create_virtual_edge(installedVersion, installedVersion, &virtualEdges);
 	}
 
 	return virtualEdges;
 }
 
-bool __share_relation_expression(const GraphAndAttributes::Attribute& left,
-		const GraphAndAttributes::Attribute& right)
+const GraphAndAttributes::RelationInfoRecord* __get_shared_relation_info_record(
+		const GraphAndAttributes::Attribute& left, const GraphAndAttributes::Attribute& right)
 {
-	FORIT(leftRelationRecordIt, left.relationInfo)
+	for (const auto& leftRelationRecord: left.relationInfo)
 	{
-		FORIT(rightRelationRecordIt, right.relationInfo)
+		for (const auto& rightRelationRecord: right.relationInfo)
 		{
-			if (leftRelationRecordIt->dependencyType == rightRelationRecordIt->dependencyType &&
-					leftRelationRecordIt->relationExpression == rightRelationRecordIt->relationExpression)
+			if (leftRelationRecord.dependencyType == rightRelationRecord.dependencyType &&
+					leftRelationRecord.relationExpression == rightRelationRecord.relationExpression)
 			{
-				return true;
+				return &leftRelationRecord;
 			}
 		}
 	}
-	return false;
+	return nullptr;
 }
 
 void __for_each_package_sequence(const Graph< InnerAction >& graph,
@@ -593,7 +578,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 			const InnerAction* fromPtr = &*innerActionIt;
 			const InnerAction* toPtr = &*innerActionIt;
 
-			const GraphCessorListType& predecessors = graph.getPredecessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& predecessors = graph.getPredecessors(&*innerActionIt);
 			FORIT(actionPtrIt, predecessors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Remove &&
@@ -604,7 +589,7 @@ void __for_each_package_sequence(const Graph< InnerAction >& graph,
 				}
 			}
 
-			const GraphCessorListType& successors = graph.getSuccessorsFromPointer(&*innerActionIt);
+			const GraphCessorListType& successors = graph.getSuccessors(&*innerActionIt);
 			FORIT(actionPtrIt, successors)
 			{
 				if ((*actionPtrIt)->type == InnerAction::Configure &&
@@ -627,9 +612,9 @@ void __move_edge(GraphAndAttributes& gaa,
 {
 	if (debugging)
 	{
-		debug("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
-				fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str(),
-				toPredecessorPtr->toString().c_str(), toSuccessorPtr->toString().c_str());
+		debug2("moving edge '%s' -> '%s' to edge '%s' -> '%s'",
+				fromPredecessorPtr->toString(), fromSuccessorPtr->toString(),
+				toPredecessorPtr->toString(), toSuccessorPtr->toString());
 	}
 
 	GraphAndAttributes::Attribute& toAttribute = gaa.attributes[make_pair(toPredecessorPtr, toSuccessorPtr)];
@@ -646,7 +631,7 @@ void __move_edge(GraphAndAttributes& gaa,
 	// edge 'fromPredecessorPtr' -> 'fromSuccessorPtr' should be deleted
 	// manually after the call of this function
 
-	gaa.graph.addEdgeFromPointers(toPredecessorPtr, toSuccessorPtr);
+	gaa.graph.addEdge(toPredecessorPtr, toSuccessorPtr);
 };
 
 void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
@@ -659,36 +644,37 @@ void __expand_and_delete_virtual_edges(GraphAndAttributes& gaa,
 		const InnerAction* toPtr = gaa.graph.addVertex(edgeIt->second);
 
 		// "multiplying" the dependencies
-		const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr);
-		const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
-		FORIT(predecessorVertexPtrIt, predecessors)
+		const auto& predecessors = gaa.graph.getPredecessors(fromPtr);
+		const auto& successors = gaa.graph.getSuccessors(toPtr);
+		for (auto predecessor: predecessors)
 		{
-			FORIT(successorVertexPtrIt, successors)
+			for (auto successor: successors)
 			{
-				if (*predecessorVertexPtrIt == *successorVertexPtrIt)
-				{
-					continue;
-				}
-				if (!__share_relation_expression(
-							gaa.attributes[make_pair(*predecessorVertexPtrIt, fromPtr)],
-							gaa.attributes[make_pair(toPtr, *successorVertexPtrIt)]))
-				{
-					continue;
-				}
+				if (predecessor == successor) continue;
 
-				__move_edge(gaa, *predecessorVertexPtrIt, fromPtr, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
-				__move_edge(gaa, toPtr, *successorVertexPtrIt, *predecessorVertexPtrIt, *successorVertexPtrIt, debugging);
+				auto sharedRir = __get_shared_relation_info_record(
+						gaa.attributes[make_pair(predecessor, fromPtr)],
+						gaa.attributes[make_pair(toPtr, successor)]);
+				if (!sharedRir) continue;
+
+				gaa.graph.addEdge(predecessor, successor);
+				gaa.attributes[make_pair(predecessor, successor)].relationInfo.push_back(*sharedRir);
 				if (debugging)
 				{
 					const string& mediatorPackageName = fromPtr->version->packageName;
-					debug("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
-							(*predecessorVertexPtrIt)->toString().c_str(), (*successorVertexPtrIt)->toString().c_str(),
-							mediatorPackageName.c_str());
+					debug2("multiplied action dependency: '%s' -> '%s', virtual mediator: '%s'",
+							predecessor->toString(), successor->toString(), mediatorPackageName);
 				}
-
 			}
 		}
-
+		for (auto predecessor: predecessors)
+		{
+			gaa.attributes.erase(make_pair(predecessor, fromPtr));
+		}
+		for (auto successor: successors)
+		{
+			gaa.attributes.erase(make_pair(toPtr, successor));
+		}
 		gaa.graph.deleteVertex(*fromPtr);
 		gaa.graph.deleteVertex(*toPtr);
 	}
@@ -713,9 +699,8 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 			if (relationRecordIt->reverse == neededValueOfReverse)
 			{
 				auto satisfyingVersions = cache.getSatisfyingVersions(relationRecordIt->relationExpression);
-				auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), antagonisticPtr->version);
-				if (std::find_if(satisfyingVersions.begin(), satisfyingVersions.end(),
-						predicate) == satisfyingVersions.end())
+				if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
+						antagonisticPtr->version) == satisfyingVersions.end())
 				{
 					return false;
 				}
@@ -744,11 +729,11 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 		setVirtual(fromAttribute);
 		__move_edge(gaa, fromPredecessorPtr, fromSuccessorPtr, toPredecessorPtr, toSuccessorPtr, debugging);
 
-		gaa.graph.deleteEdgeFromPointers(fromPredecessorPtr, fromSuccessorPtr);
+		gaa.graph.deleteEdge(fromPredecessorPtr, fromSuccessorPtr);
 		if (debugging)
 		{
-			debug("deleting the edge '%s' -> '%s'",
-					fromPredecessorPtr->toString().c_str(), fromSuccessorPtr->toString().c_str());
+			debug2("deleting the edge '%s' -> '%s'",
+					fromPredecessorPtr->toString(), fromSuccessorPtr->toString());
 		}
 	};
 
@@ -764,7 +749,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					return; // this chain is not fully linked
 				}
 
-				const GraphCessorListType predecessors = gaa.graph.getPredecessorsFromPointer(fromPtr); // copying
+				const GraphCessorListType predecessors = gaa.graph.getPredecessors(fromPtr); // copying
 				FORIT(predecessorPtrIt, predecessors)
 				{
 					if (*predecessorPtrIt == toPtr)
@@ -778,7 +763,7 @@ void __expand_linked_actions(const Cache& cache, GraphAndAttributes& gaa, bool d
 					}
 				}
 
-				const GraphCessorListType successors = gaa.graph.getSuccessorsFromPointer(toPtr);
+				const GraphCessorListType successors = gaa.graph.getSuccessors(toPtr);
 				FORIT(successorPtrIt, successors)
 				{
 					if (*successorPtrIt == fromPtr)
@@ -828,14 +813,13 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 	auto adjustPair = [&gaa, &debugging](const InnerAction* fromPtr, const InnerAction* toPtr,
 			const InnerAction* unpackActionPtr)
 	{
-		if (gaa.graph.hasEdgeFromPointers(toPtr, fromPtr))
+		if (gaa.graph.hasEdge(toPtr, fromPtr))
 		{
 			return;
 		}
 		if (debugging)
 		{
-			debug("adjusting the pair '%s' -> '%s':",
-					fromPtr->toString().c_str(), toPtr->toString().c_str());
+			debug2("adjusting the pair '%s' -> '%s':", fromPtr->toString(), toPtr->toString());
 		}
 
 		std::list< const InnerAction* > notFirstActions = { toPtr };
@@ -847,7 +831,7 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 		auto reachableFromVertices = gaa.graph.getReachableFrom(*fromPtr);
 		FORIT(actionPtrIt, notFirstActions)
 		{
-			const GraphCessorListType& predecessors = gaa.graph.getPredecessorsFromPointer(*actionPtrIt);
+			const GraphCessorListType& predecessors = gaa.graph.getPredecessors(*actionPtrIt);
 			FORIT(predecessorIt, predecessors)
 			{
 				if (!reachableFromVertices.count(*predecessorIt))
@@ -855,11 +839,11 @@ void __set_priority_links(GraphAndAttributes& gaa, bool debugging)
 					// the fact we reached here means:
 					// 1) predecessorIt does not belong to a chain being adjusted
 					// 2) link 'predecessor' -> 'from' does not create a cycle
-					gaa.graph.addEdgeFromPointers(*predecessorIt, fromPtr);
+					gaa.graph.addEdge(*predecessorIt, fromPtr);
 					if (debugging)
 					{
-						debug("setting priority link: '%s' -> '%s'",
-								(*predecessorIt)->toString().c_str(), fromPtr->toString().c_str());
+						debug2("setting priority link: '%s' -> '%s'",
+								(*predecessorIt)->toString(), fromPtr->toString());
 					}
 				}
 			}
@@ -899,8 +883,8 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 			if (!s.empty())
 			{
 				auto priority = __get_action_group_priority(preActionGroup);
-				debug("toposort: %s action group: '%s' (priority: %zd)",
-						(closing ? "selected" : "opened"), join(", ", s).c_str(), priority);
+				debug2("toposort: %s action group: '%s' (priority: %zd)",
+						(closing ? "selected" : "opened"), join(", ", s), priority);
 			}
 		}
 	};
@@ -928,10 +912,9 @@ bool __link_actions(GraphAndAttributes& gaa, bool debugging)
 				linkedSomething = true;
 				if (debugging)
 				{
-					debug("new link: '%s' -> '%s'",
-							fromPtr->toString().c_str(), toPtr->toString().c_str());
+					debug2("new link: '%s' -> '%s'", fromPtr->toString(), toPtr->toString());
 				}
-				gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+				gaa.graph.addEdge(toPtr, fromPtr);
 			}
 		}
 	};
@@ -984,13 +967,13 @@ void __iterate_over_graph(const Cache& cache, GraphAndAttributes& gaa,
 	{
 		if (debugging)
 		{
-			debug("building %saction graph: next iteration", maybeMini);
+			debug2("building %saction graph: next iteration", maybeMini);
 		}
 		__expand_linked_actions(cache, gaa, debugging);
 	} while (__link_actions(gaa, debugging));
 	if (debugging)
 	{
-		debug("building %saction graph: finished", maybeMini);
+		debug2("building %saction graph: finished", maybeMini);
 	}
 }
 
@@ -998,7 +981,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 {
 	if (!__desired_state)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "worker desired state is not given");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "worker: the desired state is not given");
 	}
 
 	bool debugging = _config->getBool("debug::worker");
@@ -1021,7 +1004,7 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 				[&gaa](const InnerAction* fromPtr, const InnerAction* toPtr, const InnerAction*)
 				{
 					// priority edge for shorting distance between package subactions
-					gaa.graph.addEdgeFromPointers(toPtr, fromPtr);
+					gaa.graph.addEdge(toPtr, fromPtr);
 				});
 		__fill_graph_dependencies(_cache, gaa, debugging);
 		__expand_and_delete_virtual_edges(gaa, virtualEdges, debugging);
@@ -1035,8 +1018,8 @@ bool PackagesWorker::__build_actions_graph(GraphAndAttributes& gaa)
 		FORIT(edgeIt, edges)
 		{
 			auto attributeLevel = gaa.attributes[make_pair(edgeIt->first, edgeIt->second)].getLevel();
-			debug("the present action dependency: '%s' -> '%s', %s",
-					edgeIt->first->toString().c_str(), edgeIt->second->toString().c_str(),
+			debug2("the present action dependency: '%s' -> '%s', %s",
+					edgeIt->first->toString(), edgeIt->second->toString(),
 					GraphAndAttributes::Attribute::levelStrings[attributeLevel]);
 		}
 	}
@@ -1102,7 +1085,7 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 			auto newFromPtr = &*it;
 			auto oldFromPtr = gaa.graph.addVertex(*newFromPtr);
 
-			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessorsFromPointer(oldFromPtr);
+			const GraphCessorListType& oldSuccessors = gaa.graph.getSuccessors(oldFromPtr);
 			FORIT(successorPtrIt, oldSuccessors)
 			{
 				auto oldToPtr = *successorPtrIt;
@@ -1121,18 +1104,16 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 						}
 						if (debugging)
 						{
-							debug("ignoring edge '%s' -> '%s'",
-									oldFromPtr->toString().c_str(), oldToPtr->toString().c_str());
+							debug2("ignoring edge '%s' -> '%s'", oldFromPtr->toString(), oldToPtr->toString());
 						}
 					}
 					else
 					{
-						miniGaa.graph.addEdgeFromPointers(newFromPtr, newToPtr);
+						miniGaa.graph.addEdge(newFromPtr, newToPtr);
 						miniGaa.attributes[make_pair(newFromPtr, newToPtr)] = oldAttribute;
 						if (debugging)
 						{
-							debug("adding edge '%s' -> '%s'",
-									newFromPtr->toString().c_str(), newToPtr->toString().c_str());
+							debug2("adding edge '%s' -> '%s'", newFromPtr->toString(), newToPtr->toString());
 						}
 					}
 
@@ -1153,22 +1134,32 @@ void __build_mini_action_graph(const shared_ptr< const Cache >& cache,
 							continue;
 						}
 
+						const auto& potentialEdgeAttribute = edgeToRestoreIt->second.second;
+						if (potentialEdgeAttribute.getLevel() < minimumAttributeLevel)
+						{
+							if (debugging)
+							{
+								debug2("  ignoring potential edge '%s' -> '%s'",
+										newPotentialFromPtr->toString(), newPotentialToPtr->toString());
+							}
+							continue;
+						}
+
 						if (ignoring)
 						{
-							miniGaa.graph.addEdgeFromPointers(newPotentialFromPtr, newPotentialToPtr);
-							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] =
-									edgeToRestoreIt->second.second;
+							miniGaa.graph.addEdge(newPotentialFromPtr, newPotentialToPtr);
+							miniGaa.attributes[make_pair(newPotentialFromPtr, newPotentialToPtr)] = potentialEdgeAttribute;
 						}
 						else
 						{
 							miniGaa.potentialEdges.insert(make_pair(
 									InnerActionPtrPair(newFromPtr, newToPtr),
-									make_pair(InnerActionPtrPair(newPotentialFromPtr, newPotentialToPtr), edgeToRestoreIt->second.second)));
+									make_pair(InnerActionPtrPair(newPotentialFromPtr, newPotentialToPtr), potentialEdgeAttribute)));
 						}
 						if (debugging)
 						{
-							debug("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
-									newPotentialFromPtr->toString().c_str(), newPotentialToPtr->toString().c_str());
+							debug2("  %s edge '%s' -> '%s'", (ignoring ? "restoring" : "transferring hidden"),
+									newPotentialFromPtr->toString(), newPotentialToPtr->toString());
 						}
 					}
 				}
@@ -1185,7 +1176,7 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 	typedef GraphAndAttributes::Attribute Attribute;
 	if (debugging)
 	{
-		debug("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
+		debug2("splitting heterogeneous actions, level %s", Attribute::levelStrings[level]);
 	}
 
 	auto dummyCallback = [](const vector< InnerAction >&, bool) {};
@@ -1205,8 +1196,8 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 				{
 					actionStrings.push_back(it->toString());
 				}
-				logger.loggedFatal(Logger::Subsystem::Packages, 2,
-						format2("internal error: unable to schedule circular actions '%s'", join(", ", actionStrings)));
+				logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+						format2, "internal error: unable to schedule circular actions '%s'", join(", ", actionStrings));
 			}
 
 			// we build a mini-graph with reduced number of edges
@@ -1240,9 +1231,9 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 								actionSubgroup.dpkgFlags.insert("--force-breaks");
 								break;
 							default:
-								logger.loggedFatal(Logger::Subsystem::Packages, 2,
-										format2("internal error: worker: a relation '%s' cannot be soft",
-										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]));
+								logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+										format2, "internal error: worker: a relation '%s' cannot be soft",
+										BinaryVersion::RelationTypes::rawStrings[*removedRelationIt]);
 						}
 					}
 				}
@@ -1285,31 +1276,16 @@ void __split_heterogeneous_actions(const shared_ptr< const Cache >& cache, Logge
 			{
 				strings.push_back(it->toString());
 			}
-			debug("split action group: %s", join(", ", strings).c_str());
+			debug2("split action group: %s", join(", ", strings));
 		}
 	}
 
 	newActionGroups.swap(actionGroups);
 }
 
-static string __get_codename_and_component_string(const Version& version, const string& baseUri)
-{
-	vector< string > parts;
-	FORIT(sourceIt, version.sources)
-	{
-		auto releaseInfo = sourceIt->release;
-		if (releaseInfo->baseUri != baseUri)
-		{
-			continue;
-		}
-		parts.push_back(releaseInfo->codename + '/' + releaseInfo->component);
-	}
-	return join(",", parts);
-}
-
 static string __get_long_alias_tail(const Version& version, const string& baseUri)
 {
-	return format2("%s %s %s", __get_codename_and_component_string(version, baseUri),
+	return format2("%s %s %s", version.getCodenameAndComponentString(baseUri),
 			version.packageName, version.versionString);
 }
 
@@ -1324,38 +1300,39 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 
 		if (!_config->getBool("cupt::worker::simulate"))
 		{
-			string partialDirectory = archivesDirectory + partialDirectorySuffix;
-			if (! fs::dirExists(partialDirectory))
+			try
 			{
-				if (mkdir(partialDirectory.c_str(), 0755) == -1)
-				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2e("unable to create partial directory '%s'", partialDirectory));
-				}
+				fs::mkpath(archivesDirectory);
+				string partialDirectory = archivesDirectory + partialDirectorySuffix;
+				fs::mkpath(partialDirectory);
+			}
+			catch (...)
+			{
+				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+						format2, "unable to create the archive downloads directory");
 			}
 		}
 
 
 		DebdeltaHelper debdeltaHelper;
 
-		static const vector< Action::Type > actions = { Action::Install, Action::Upgrade, Action::Downgrade };
-		FORIT(actionIt, actions)
+		for (auto actionType: _download_dependent_action_types)
 		{
-			const Resolver::SuggestedPackages& suggestedPackages = __actions_preview->groups[*actionIt];
+			const auto& suggestedPackages = __actions_preview->groups[actionType];
 			FORIT(it, suggestedPackages)
 			{
-				const shared_ptr< const BinaryVersion >& version = it->second.version;
+				const auto& version = it->second.version;
 
 				const string& packageName = version->packageName;
 				const string& versionString = version->versionString;
 
 				auto downloadInfo = version->getDownloadInfo();
 
-				// we need at least one real URI
+				// we need at least one real uri
 				if (downloadInfo.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2("no available download URIs for %s %s", packageName, versionString));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2, "no available download URIs for %s %s", packageName, versionString);
 				}
 
 				// paths
@@ -1402,15 +1379,18 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 				{
 					if (!fs::fileExists(downloadPath))
 					{
-						return __("unable to find downloaded file");
+						return __("unable to find the downloaded file");
 					}
 					if (!version->file.hashSums.verify(downloadPath))
 					{
 						unlink(downloadPath.c_str()); // intentionally ignore errors if any
 						return __("hash sums mismatch");
 					}
-
-					return fs::move(downloadPath, targetPath);
+					if (!fs::move(downloadPath, targetPath))
+					{
+						return format2e(__("unable to rename '%s' to '%s'"), downloadPath, targetPath);
+					}
+					return string();
 				};
 
 				auto downloadValue = std::make_pair(std::move(downloadEntity), targetPath);
@@ -1420,7 +1400,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to prepare downloads");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "failed to prepare downloads");
 	}
 
 	return downloads;
@@ -1474,8 +1454,8 @@ vector< Changeset > __split_action_groups_into_changesets(Logger& logger,
 		vector< string > unconfiguredPackageNames;
 		std::copy(unpackedPackageNames.begin(), unpackedPackageNames.end(),
 				std::back_inserter(unconfiguredPackageNames));
-		logger.loggedFatal(Logger::Subsystem::Packages, 2,
-				format2("internal error: packages stay unconfigured: '%s'", join(" ", unconfiguredPackageNames)));
+		logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+				format2, "internal error: packages have been left unconfigured: '%s'", join(" ", unconfiguredPackageNames));
 	}
 
 	return result;
@@ -1513,8 +1493,8 @@ size_t __get_max_download_amount(const vector< Changeset >& changesets, bool deb
 	}
 	if (debugging)
 	{
-		debug("the changeset download amounts: maximum: %s, all: %s",
-				humanReadableSizeString(result).c_str(), join(", ", amounts).c_str());
+		debug2("the changeset download amounts: maximum: %s, all: %s",
+				humanReadableSizeString(result), join(", ", amounts));
 	}
 
 	return result;
@@ -1549,10 +1529,10 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 					auto installedRecord = systemState->getInstalledInfo(packageName);
 					if (!installedRecord)
 					{
-						logger.loggedFatal(Logger::Subsystem::Packages, 2,
-								format2("internal error: worker: __set_force_options_for_removals_if_needed: "
+						logger.loggedFatal2(Logger::Subsystem::Packages, 2,
+								format2, "internal error: worker: __set_force_options_for_removals_if_needed: "
 								"there is no installed record for the package '%s' which is to be removed",
-								packageName));
+								packageName);
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
 					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
@@ -1610,15 +1590,15 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 		auto maxDownloadAmount = __get_max_download_amount(changesets, debugging);
 		if (debugging)
 		{
-			debug("the changeset download amounts: maximum: %s",
-					humanReadableSizeString(maxDownloadAmount).c_str());
+			debug2("the changeset download amounts: maximum: %s",
+					humanReadableSizeString(maxDownloadAmount));
 		}
 		if (maxDownloadAmount > archivesSpaceLimit)
 		{
 			// we failed to fit in limit
-			_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-					format2("unable to fit in archives space limit '%zu', best try is '%zu'",
-					archivesSpaceLimit, maxDownloadAmount));
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+					format2, "unable to fit in the archives space limit '%zu', best try is '%zu'",
+					archivesSpaceLimit, maxDownloadAmount);
 		}
 	}
 
@@ -1655,7 +1635,7 @@ vector< Changeset > PackagesWorker::__get_changesets(GraphAndAttributes& gaa,
 	return changesets;
 }
 
-void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const string& commandInput)
+void PackagesWorker::__run_dpkg_command(const string& flavor, const string& command, const CommandInput& commandInput)
 {
 	auto errorId = format2(__("dpkg '%s' action '%s'"), flavor, command);
 	_run_external_command(Logger::Subsystem::Packages, command, commandInput, errorId);
@@ -1666,7 +1646,7 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 	_logger->log(Logger::Subsystem::Packages, 2, "cleaning downloaded archives");
 	try
 	{
-		internal::Lock archivesLock(_config, _get_archives_directory() + "/lock");
+		internal::Lock archivesLock(*_config, _get_archives_directory() + "/lock");
 
 		bool simulating = _config->getBool("cupt::worker::simulate");
 		FORIT(it, changeset.downloads)
@@ -1680,15 +1660,15 @@ void PackagesWorker::__clean_downloads(const Changeset& changeset)
 			{
 				if (unlink(targetPath.c_str()) == -1)
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2e("unable to remove file '%s'", targetPath));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2e, "unable to remove the file '%s'", targetPath);
 				}
 			}
 		}
 	}
 	catch (...)
 	{
-		_logger->loggedFatal(Logger::Subsystem::Packages, 2, "failed to clean downloaded archives");
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "failed to clean downloaded archives");
 	}
 }
 
@@ -1698,115 +1678,167 @@ void PackagesWorker::__do_dpkg_pre_actions()
 	auto commands = _config->getList("dpkg::pre-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("pre", *commandIt, "");
+		__run_dpkg_command("pre", *commandIt, {});
 	}
 }
 
-string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
-		const vector< InnerActionGroup >& actionGroups)
+string PackagesWorker::p_generateInputForPreinstallV1Hooks(const vector<InnerActionGroup>& actionGroups)
 {
-	// all hate undocumented formats...
-	string result = "VERSION 2\n";
-
-	{ // writing out a configuration
-		auto printKeyValue = [&result](const string& key, const string& value)
-		{
-			if (!value.empty())
-			{
-				result += (key + "=" + value + "\n");
-			}
-		};
-
-		{
-			auto regularKeys = _config->getScalarOptionNames();
-			FORIT(keyIt, regularKeys)
-			{
-				printKeyValue(*keyIt, _config->getString(*keyIt));
-			}
-		}
-		{
-			auto listKeys = _config->getListOptionNames();
-			FORIT(keyIt, listKeys)
-			{
-				const string& key = *keyIt;
-				auto values = _config->getList(key);
-				FORIT(valueIt, values)
-				{
-					printKeyValue(key + "::", *valueIt);
-				}
-			}
-		}
-
-		result += "\n";
-	}
+	string result;
 
 	auto archivesDirectory = _get_archives_directory();
-	FORIT(actionGroupIt, actionGroups)
+	// new debs are pulled to command through STDIN, one by line
+	for (const auto& actionGroup: actionGroups)
 	{
-		FORIT(actionIt, *actionGroupIt)
+		for (const auto& action: actionGroup)
 		{
-			auto actionType = actionIt->type;
-			const shared_ptr< const BinaryVersion >& version = actionIt->version;
-			string path;
-			switch (actionType)
+			if (action.type == InnerAction::Unpack)
 			{
-				case InnerAction::Configure:
-				{
-					path = "**CONFIGURE**";
-				}
-				break;
-				case InnerAction::Remove:
-				{
-					path = "**REMOVE**";
-				}
-				break;
-				case InnerAction::Unpack:
-				{
-					path = archivesDirectory + "/" + _get_archive_basename(version);
-				}
+				auto debPath = archivesDirectory + "/" + _get_archive_basename(action.version);
+				result += debPath;
+				result += "\n";
 			}
+		}
+	}
+
+	return result;
+}
+
+static string writeOutConfiguration(const Config& config)
+{
+	string result;
+
+	auto printKeyValue = [&result](const string& key, const string& value)
+	{
+		if (!value.empty())
+		{
+			result += (key + "=" + value + "\n");
+		}
+	};
+
+	// apt-listbugs wants it case-sensitively
+	printKeyValue("APT::Architecture", config.getString("apt::architecture"));
+
+	for (const string& key: config.getScalarOptionNames())
+	{
+		printKeyValue(key, config.getString(key));
+	}
+	for (const string& key: config.getListOptionNames())
+	{
+		for (const string& value: config.getList(key))
+		{
+			printKeyValue(key + "::", value);
+		}
+	}
+	result += "\n";
+
+	return result;
+}
+
+static inline string getActionForPreinstallPackagesHook(InnerAction::Type actionType)
+{
+	switch (actionType)
+	{
+		case InnerAction::Configure:
+			return "**CONFIGURE**";
+		case InnerAction::Remove:
+			return "**REMOVE**";
+		case InnerAction::Unpack:
+			return string();
+		default:
+			fatal2i("worker: packages: getActionForPreinstallPackagesHook: invalid actionType");
+			return string();
+	}
+}
+
+static string getCompareVersionStringsSignForPreinstallPackagesHook(
+		const string& oldVersionString, const string& newVersionString)
+{
+	if (oldVersionString == "-")
+	{
+		return "<";
+	}
+	else if (newVersionString == "-")
+	{
+		return ">";
+	}
+	else
+	{
+		auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
+		if (comparisonResult < 0)
+		{
+			return "<";
+		}
+		else if (comparisonResult == 0)
+		{
+			return "=";
+		}
+		else
+		{
+			return ">";
+		}
+	}
+}
+
+static string getOldVersionString(const BinaryPackage* oldPackage)
+{
+	string result = "-";
+
+	if (oldPackage)
+	{
+		if (auto installedVersion = oldPackage->getInstalledVersion())
+		{
+			result = installedVersion->versionString;
+		}
+	}
+
+	return result;
+}
+
+string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(
+		const vector<InnerActionGroup>& actionGroups, bool v3)
+{
+	// all hate undocumented formats...
+	string result = format2("VERSION %zu\n", size_t(v3 ? 3 : 2));
+
+	result += writeOutConfiguration(*_config);
+
+	auto writeOutVersionString = [v3](const string& versionString, const BinaryVersion* version)
+	{
+		if (v3)
+		{
+			return format2("%s %s -", versionString, version->architecture);
+		}
+		else
+		{
+			return versionString;
+		}
+	};
+
+	auto archivesDirectory = _get_archives_directory();
+	for (const auto& actionGroup: actionGroups)
+	{
+		for (const auto& action: actionGroup)
+		{
+			const auto& version = action.version;
+
+			string path = getActionForPreinstallPackagesHook(action.type);
+			if (path.empty())
+			{
+				path = archivesDirectory + "/" + _get_archive_basename(version);
+			}
+
 			const string& packageName = version->packageName;
 
-			string oldVersionString = "-";
-			auto oldPackage = _cache->getBinaryPackage(packageName);
-			if (oldPackage)
-			{
-				auto installedVersion = oldPackage->getInstalledVersion();
-				if (installedVersion)
-				{
-					oldVersionString = installedVersion->versionString;
-				}
-			}
-			string newVersionString = (actionType == InnerAction::Remove ? "-" : version->versionString);
+			string oldVersionString = getOldVersionString(_cache->getBinaryPackage(packageName));
+			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
 
-			string compareVersionStringsSign;
-			if (oldVersionString == "-")
-			{
-				compareVersionStringsSign = "<";
-			}
-			else if (newVersionString == "-")
-			{
-				compareVersionStringsSign = ">";
-			}
-			else
-			{
-				auto comparisonResult = compareVersionStrings(oldVersionString, newVersionString);
-				if (comparisonResult < 0)
-				{
-					compareVersionStringsSign = "<";
-				}
-				else if (comparisonResult == 0)
-				{
-					compareVersionStringsSign = "=";
-				}
-				else
-				{
-					compareVersionStringsSign = ">";
-				}
-			}
-
-			result += format2("%s %s %s %s %s\n", packageName, oldVersionString,
-					compareVersionStringsSign, newVersionString, path);
+			result += format2("%s %s %s %s %s\n",
+					packageName,
+					writeOutVersionString(oldVersionString, version),
+					getCompareVersionStringsSignForPreinstallPackagesHook(oldVersionString, newVersionString),
+					writeOutVersionString(newVersionString, version),
+					path);
 		}
 	}
 
@@ -1816,52 +1848,50 @@ string PackagesWorker::__generate_input_for_preinstall_v2_hooks(
 	return result;
 }
 
+static string getCommandBinaryForPreInstallPackagesHook(const string& command)
+{
+	string commandBinary = command;
+
+	auto spaceOffset = commandBinary.find(' ');
+	if (spaceOffset != string::npos)
+	{
+		commandBinary.resize(spaceOffset);
+	}
+
+	return commandBinary;
+}
+
 void PackagesWorker::__do_dpkg_pre_packages_actions(const vector< InnerActionGroup >& actionGroups)
 {
 	_logger->log(Logger::Subsystem::Packages, 2, "running dpkg pre-install-packages hooks");
 
-	auto archivesDirectory = _get_archives_directory();
-	auto commands = _config->getList("dpkg::pre-install-pkgs");
-	FORIT(commandIt, commands)
+	for (const string& command: _config->getList("dpkg::pre-install-pkgs"))
 	{
-		string command = *commandIt;
-		string commandBinary = command;
-
-		auto spaceOffset = commandBinary.find(' ');
-		if (spaceOffset != string::npos)
-		{
-			commandBinary.resize(spaceOffset);
-		}
-
-		string commandInput;
-		auto versionOfInput = _config->getInteger(
-				string("dpkg::tools::options::") + commandBinary + "::version");
-		if (versionOfInput == 2)
-		{
-			commandInput = __generate_input_for_preinstall_v2_hooks(actionGroups);
-		}
-		else
-		{
-			// new debs are pulled to command through STDIN, one by line
-			FORIT(actionGroupIt, actionGroups)
-			{
-				FORIT(actionIt, *actionGroupIt)
-				{
-					if (actionIt->type == InnerAction::Unpack)
-					{
-						auto debPath = archivesDirectory + "/" + _get_archive_basename(actionIt->version);
-						commandInput += debPath;
-						commandInput += "\n";
-					}
-				}
-			}
-			if (commandInput.empty())
-			{
-				continue;
-			}
-		}
+		auto commandInput = p_getCommandInputForPreinstallPackagesHook(command, actionGroups);
+		if (commandInput.buffer.empty()) continue;
+		setenv("APT_HOOK_INFO_FD", std::to_string(commandInput.fd).c_str(), 1);
 
 		__run_dpkg_command("pre", command, commandInput);
+	}
+}
+
+CommandInput PackagesWorker::p_getCommandInputForPreinstallPackagesHook(
+		const string& command, const vector<InnerActionGroup>& actionGroups)
+{
+	string commandBinary = getCommandBinaryForPreInstallPackagesHook(command);
+
+	auto hookOptionNamePrefix = string("dpkg::tools::options::") + commandBinary;
+	auto versionOfInput = _config->getInteger(hookOptionNamePrefix+"::version");
+
+	if (versionOfInput == 2 || versionOfInput == 3)
+	{
+		CommandInput ci = p_generateInputForPreinstallV2OrV3Hooks(actionGroups, versionOfInput==3);
+		ci.fd = _config->getInteger(hookOptionNamePrefix+"::infofd");
+		return ci;
+	}
+	else
+	{
+		return p_generateInputForPreinstallV1Hooks(actionGroups);
 	}
 }
 
@@ -1872,7 +1902,7 @@ void PackagesWorker::__do_dpkg_post_actions()
 	auto commands = _config->getList("dpkg::post-invoke");
 	FORIT(commandIt, commands)
 	{
-		__run_dpkg_command("post", *commandIt, "");
+		__run_dpkg_command("post", *commandIt, {});
 	}
 }
 
@@ -1927,7 +1957,8 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 			{
 				__auto_installed_package_names.erase(packageName);
 			}
-			auto extendedInfoPath = _cache->getPathOfExtendedStates();
+			auto extendedInfoPath = cachefiles::getPathOfExtendedStates(*_config);
+			fs::mkpath(fs::dirname(extendedInfoPath));
 			auto tempPath = extendedInfoPath + ".cupt.tmp";
 
 			{
@@ -1935,8 +1966,8 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				File tempFile(tempPath, "w", errorString);
 				if (!errorString.empty())
 				{
-					_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-							format2("unable to open temporary file '%s': %s", tempPath, errorString));
+					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+							format2, "unable to open the file '%s': %s", tempPath, errorString);
 				}
 
 				// filling new info
@@ -1946,17 +1977,17 @@ void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, boo
 				}
 			}
 
-			auto moveResult = fs::move(tempPath, extendedInfoPath);
-			if (!moveResult.empty())
+			if (!fs::move(tempPath, extendedInfoPath))
 			{
-				_logger->loggedFatal(Logger::Subsystem::Packages, 3,
-						format2("unable to renew extended states file: %s", moveResult));
+				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+						format2e, "unable to renew extended states file: unable to rename '%s' to '%s'",
+						tempPath, extendedInfoPath);
 			}
 		}
 		catch (...)
 		{
-			_logger->loggedFatal(Logger::Subsystem::Packages, 2,
-					"failed to change the 'automatically installed' flag");
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 2,
+					format2, "failed to change the 'automatically installed' flag");
 		}
 	}
 }
@@ -1972,14 +2003,7 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		string downloadResult;
 		{
-			Lock lock(_config, archivesDirectory + "/lock");
-
-			uint64_t totalDownloadSize = 0;
-			FORIT(it, downloads)
-			{
-				totalDownloadSize += it->first.size;
-			}
-			downloadProgress->setTotalEstimatedSize(totalDownloadSize);
+			Lock lock(*_config, archivesDirectory + "/lock");
 
 			vector< download::Manager::DownloadEntity > params;
 			FORIT(it, downloads)
@@ -1995,24 +2019,46 @@ void PackagesWorker::__do_downloads(const vector< pair< download::Manager::Downl
 
 		if (!downloadResult.empty())
 		{
-			_logger->loggedFatal(Logger::Subsystem::Packages, 2, "there were download errors");
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 2, format2, "there were download errors");
 		}
 	}
 }
 
-string __get_dpkg_action_log(const InnerActionGroup& actionGroup,
-		InnerAction::Type actionType, const string& actionName)
+void PackagesWorker::__do_independent_auto_status_changes()
 {
-	vector< string > subResults;
-	FORIT(actionIt, actionGroup)
+	auto wasDoneAlready = [this](const string& packageName)
 	{
-		if (actionIt->type == actionType)
+		for (const auto& actionGroup: __actions_preview->groups)
 		{
-			subResults.push_back(actionName + ' ' + actionIt->version->packageName
-					+ ' ' + actionIt->version->versionString);
+			if (actionGroup.count(packageName))
+			{
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for (const auto& autoFlagChange: __actions_preview->autoFlagChanges)
+	{
+		const auto& packageName = autoFlagChange.first;
+		if (!wasDoneAlready(packageName))
+		{
+			markAsAutomaticallyInstalled(packageName, autoFlagChange.second);
 		}
 	}
-	return join(" & ", subResults);
+}
+
+void PackagesWorker::p_processActionGroup(Dpkg& dpkg, const InnerActionGroup& actionGroup)
+{
+	if (actionGroup.getCompoundActionType() != InnerAction::Remove)
+	{
+		__change_auto_status(actionGroup);
+	}
+	dpkg.doActionGroup(actionGroup, *__actions_preview);
+	if (actionGroup.getCompoundActionType() == InnerAction::Remove)
+	{
+		__change_auto_status(actionGroup);
+	}
 }
 
 void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downloadProgress)
@@ -2039,7 +2085,7 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 	vector< Changeset > changesets;
 	{
 		GraphAndAttributes gaa;
-		if (!__build_actions_graph(gaa))
+		if (!__build_actions_graph(gaa) && __actions_preview->autoFlagChanges.empty())
 		{
 			_logger->log(Logger::Subsystem::Packages, 1, "nothing to do");
 			return;
@@ -2051,170 +2097,24 @@ void PackagesWorker::changeSystem(const shared_ptr< download::Progress >& downlo
 
 	_logger->log(Logger::Subsystem::Packages, 1, "changing the system");
 
-	// doing or simulating the actions
-	auto dpkgBinary = _config->getPath("dir::bin::dpkg");
-	{
-		auto dpkgOptions = _config->getList("dpkg::options");
-		FORIT(optionIt, dpkgOptions)
-		{
-			dpkgBinary += " ";
-			dpkgBinary += *optionIt;
-		}
-	}
-
-	auto deferTriggers = _config->getBool("cupt::worker::defer-triggers");
-
 	__do_dpkg_pre_actions();
-
-	{ // make sure system is trigger-clean
-		_logger->log(Logger::Subsystem::Packages, 2, "running all package triggers");
-
-		auto command = dpkgBinary + " --triggers-only -a";
-		__run_dpkg_command("triggers-only", command, "");
-	}
-
-	auto archivesDirectory = _get_archives_directory();
-	FORIT(changesetIt, changesets)
 	{
-		const Changeset& changeset = *changesetIt;
-
-		if (debugging)
+		for (const Changeset& changeset: changesets)
 		{
-			debug("started changeset");
-		}
-		/* usually, all downloads are done before any install actions (first
-		   and only changeset) however, if 'cupt::worker::archives-space-limit'
-		   is turned on this is no longer the case, and we will do downloads/installs
-		   by portions ("changesets") */
-		__do_downloads(changeset.downloads, downloadProgress);
+			Dpkg dpkg(this);
 
-		__do_dpkg_pre_packages_actions(changeset.actionGroups);
-
-		FORIT(actionGroupIt, changeset.actionGroups)
-		{
-			/* all actions within one group have, by algorithm,
-			   a) the same action name (so far, configures only)
-			   b) the same package name (linked actions)
-
-			   in both cases, we can choose the action type of the last action
-			   in the subgroup as effective
-			*/
-			InnerAction::Type actionType = actionGroupIt->rbegin()->type;
-
-			string actionName;
-			switch (actionType)
+			if (debugging) debug2("started changeset");
+			__do_downloads(changeset.downloads, downloadProgress);
+			__do_dpkg_pre_packages_actions(changeset.actionGroups);
+			for (const auto& actionGroup: changeset.actionGroups)
 			{
-				case InnerAction::Remove:
-				{
-					const string& packageName = actionGroupIt->rbegin()->version->packageName;
-					actionName = __actions_preview->groups[Action::Purge].count(packageName) ?
-							"purge" : "remove";
-				}
-					break;
-				case InnerAction::Unpack:
-					actionName = "unpack";
-					break;
-				case InnerAction::Configure:
-					if (actionGroupIt->size() >= 2 && (actionGroupIt->rbegin() + 1)->type == InnerAction::Unpack)
-					{
-						actionName = "install"; // [remove+]unpack+configure
-					}
-					else
-					{
-						actionName = "configure";
-					}
-					break;
+				p_processActionGroup(dpkg, actionGroup);
 			}
-
-			__change_auto_status(*actionGroupIt);
-
-			{ // dpkg actions
-				auto dpkgCommand = dpkgBinary + " --" + actionName;
-				if (deferTriggers)
-				{
-					dpkgCommand += " --no-triggers";
-				}
-				// add necessary options if requested
-				string requestedDpkgOptions;
-				FORIT(dpkgFlagIt, actionGroupIt->dpkgFlags)
-				{
-					requestedDpkgOptions += string(" ") + *dpkgFlagIt;
-				}
-				dpkgCommand += requestedDpkgOptions;
-
-				/* the workaround for a dpkg bug #558151
-
-				   dpkg performs some IMHO useless checks for programs in PATH
-				   which breaks some upgrades of packages that contains important programs
-
-				   It is possible that this hack is not needed anymore with
-				   better scheduling heuristics of 2.x but we cannot
-				   re-evaluate it with lenny->squeeze (e)glibc upgrade since
-				   new Cupt requires new libgcc which in turn requires new
-				   glibc.
-				*/
-				dpkgCommand += " --force-bad-path";
-
-				FORIT(actionIt, *actionGroupIt)
-				{
-					if (actionIt->type != actionType)
-					{
-						continue; // will be true for non-last linked actions
-					}
-					string actionExpression;
-					if (actionName == "unpack" || actionName == "install")
-					{
-						const shared_ptr< const BinaryVersion > version = actionIt->version;
-						actionExpression = archivesDirectory + '/' + _get_archive_basename(version);
-					}
-					else
-					{
-						actionExpression = actionIt->version->packageName;
-					}
-					dpkgCommand += " ";
-					dpkgCommand += actionExpression;
-				}
-				{ // debug & logs
-					if (debugging)
-					{
-						vector< string > stringifiedActions;
-						FORIT(actionIt, *actionGroupIt)
-						{
-							stringifiedActions.push_back(actionIt->toString());
-						}
-						auto actionsString = join(" & ", stringifiedActions);
-						debug("do: (%s) %s%s", actionsString.c_str(), requestedDpkgOptions.c_str(),
-								actionGroupIt->continued ? " (continued)" : "");
-					}
-					_logger->log(Logger::Subsystem::Packages, 2,
-							__get_dpkg_action_log(*actionGroupIt, actionType, actionName));
-				}
-				_run_external_command(Logger::Subsystem::Packages, dpkgCommand);
-			};
+			if (archivesSpaceLimit) __clean_downloads(changeset);
+			if (debugging) debug2("finished changeset");
 		}
-		if (deferTriggers)
-		{
-			// triggers were not processed during actions perfomed before, do it now at once
-			_logger->log(Logger::Subsystem::Packages, 2, "running pending triggers");
-
-			string command = dpkgBinary + " --triggers-only --pending";
-			if (debugging)
-			{
-				debug("running triggers");
-			}
-			__run_dpkg_command("triggers", command, "");
-		}
-
-		if (archivesSpaceLimit)
-		{
-			__clean_downloads(changeset);
-		}
-		if (debugging)
-		{
-			debug("finished changeset");
-		}
+		__do_independent_auto_status_changes();
 	}
-
 	__do_dpkg_post_actions();
 }
 

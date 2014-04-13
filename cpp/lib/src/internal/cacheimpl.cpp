@@ -26,87 +26,94 @@
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/system/state.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/cacheimpl.hpp>
 #include <internal/filesystem.hpp>
 #include <internal/pininfo.hpp>
 #include <internal/tagparser.hpp>
 #include <internal/regex.hpp>
-#include <internal/common.hpp>
+#include <internal/parse.hpp>
 #include <internal/cachefiles.hpp>
+#include <internal/indexofindex.hpp>
+#include <internal/versionparse.hpp>
 
 namespace cupt {
 namespace internal {
+
+CacheImpl::CacheImpl()
+	: __smatch_ptr(new smatch)
+{}
+
+CacheImpl::~CacheImpl()
+{
+	delete __smatch_ptr;
+}
 
 void CacheImpl::processProvides(const string* packageNamePtr,
 		const char* providesStringStart, const char* providesStringEnd)
 {
 	auto callback = [this, &packageNamePtr](const char* tokenBeginIt, const char* tokenEndIt)
 	{
-		this->canProvide[string(tokenBeginIt, tokenEndIt)].insert(packageNamePtr);
-	};
-	processSpaceCommaSpaceDelimitedStrings(
-			providesStringStart, providesStringEnd, callback);
-}
-
-shared_ptr< Package > CacheImpl::newBinaryPackage(const string& packageName) const
-{
-	bool needsReinstall = false;
-	smatch m;
-	FORIT(regexPtrIt, packageNameRegexesToReinstall)
-	{
-		if (regex_search(packageName, m, **regexPtrIt))
+		auto& sublist = this->canProvide[string(tokenBeginIt, tokenEndIt)];
+		if (std::find(sublist.begin(), sublist.end(), packageNamePtr) == sublist.end())
 		{
-			needsReinstall = true;
-			break;
+			sublist.push_back(packageNamePtr);
 		}
-	}
-
-	return shared_ptr< Package >(new BinaryPackage(binaryArchitecture, needsReinstall));
+	};
+	parse::processSpaceCharSpaceDelimitedStrings(
+			providesStringStart, providesStringEnd, ',', callback);
 }
 
-shared_ptr< Package > CacheImpl::newSourcePackage(const string& /* packageName */) const
+Package* CacheImpl::newBinaryPackage() const
 {
-	return shared_ptr< Package >(new SourcePackage(binaryArchitecture));
+	return new BinaryPackage(binaryArchitecture.get());
 }
 
-shared_ptr< Package > CacheImpl::preparePackage(unordered_map< string, vector< PrePackageRecord > >& pre,
-		unordered_map< string, shared_ptr< Package > >& target, const string& packageName,
+Package* CacheImpl::newSourcePackage() const
+{
+	return new SourcePackage(binaryArchitecture.get());
+}
+
+Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageRecord > >& pre,
+		unordered_map< string, unique_ptr< Package > >& target, const string& packageName,
 		decltype(&CacheImpl::newBinaryPackage) packageBuilderMethod) const
 {
+	auto targetIt = target.find(packageName);
+	if (targetIt != target.end())
+	{
+		return targetIt->second.get();
+	}
+
 	auto preIt = pre.find(packageName);
 	if (preIt != pre.end())
 	{
-		shared_ptr< Package >& package = target[packageName];
-		if (!package)
-		{
-			// there was no such package before, and an insertion occured
-			// so, we need to create the package
-			package = (this->*packageBuilderMethod)(packageName);
-		}
+		auto& package = target[packageName];
+		package.reset( (this->*packageBuilderMethod)() );
+
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)
 		{
-			Version::InitializationParameters versionInitParams;
-			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first;
-			versionInitParams.file = preRecordIt->releaseInfoAndFile->second;
+			internal::VersionParseParameters versionInitParams;
+			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
+			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;
-			versionInitParams.packageName = packageName;
+			versionInitParams.packageNamePtr = &packageName;
 			package->addEntry(versionInitParams);
 		}
 		preRecord.clear();
-		return package;
+		return package.get();
 	}
 	else
 	{
-		return shared_ptr< Package >();
+		return nullptr;
 	}
 }
 
-vector< shared_ptr< const BinaryVersion > >
-CacheImpl::getSatisfyingVersions(const Relation& relation) const
+vector< const BinaryVersion* >
+CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 {
-	vector< shared_ptr< const BinaryVersion > > result;
+	vector< const BinaryVersion* > result;
 
 	const string& packageName = relation.packageName;
 
@@ -115,17 +122,16 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 	if (package)
 	{
 		// if such binary package exists
-		auto versions = package->getVersions();
-		FORIT(it, versions)
+		for (auto version: *package)
 		{
-			if (relation.isSatisfiedBy((*it)->versionString))
+			if (relation.isSatisfiedBy(version->versionString))
 			{
-				if ((*it)->isInstalled() &&
-						systemState->getInstalledInfo((*it)->packageName)->isBroken())
+				if (version->isInstalled() &&
+						systemState->getInstalledInfo(version->packageName)->isBroken())
 				{
 					continue;
 				}
-				result.push_back(*it);
+				result.push_back(version);
 			}
 		}
 	}
@@ -137,29 +143,26 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 		auto reverseProvidesIt = canProvide.find(packageName);
 		if (reverseProvidesIt != canProvide.end())
 		{
-			const set< const string* >& reverseProvides = reverseProvidesIt->second;
-			FORIT(it, reverseProvides)
+			for (const auto& it: reverseProvidesIt->second)
 			{
-				auto reverseProvidePackage = getBinaryPackage(**it);
+				auto reverseProvidePackage = getBinaryPackage(*it);
 				if (!reverseProvidePackage)
 				{
 					continue;
 				}
-				auto versions = reverseProvidePackage->getVersions();
-				FORIT(versionIt, versions)
+				for (auto version: *reverseProvidePackage)
 				{
-					if ((*versionIt)->isInstalled() &&
-							systemState->getInstalledInfo((*versionIt)->packageName)->isBroken())
+					if (version->isInstalled() &&
+							systemState->getInstalledInfo(version->packageName)->isBroken())
 					{
 						continue;
 					}
-					const vector< string >& realProvides = (*versionIt)->provides;
-					FORIT(realProvidesIt, realProvides)
+					for (const auto& realProvidesPackageName: version->provides)
 					{
-						if (*realProvidesIt == packageName)
+						if (realProvidesPackageName == packageName)
 						{
 							// ok, this particular version does provide this virtual package
-							result.push_back(*versionIt);
+							result.push_back(version);
 							break;
 						}
 					}
@@ -171,36 +174,16 @@ CacheImpl::getSatisfyingVersions(const Relation& relation) const
 	return result;
 }
 
-shared_ptr< const BinaryPackage > CacheImpl::getBinaryPackage(const string& packageName) const
+const BinaryPackage* CacheImpl::getBinaryPackage(const string& packageName) const
 {
-	auto it = binaryPackages.find(packageName);
-	if (it == binaryPackages.end())
-	{
-		auto prepareResult = preparePackage(preBinaryPackages,
-				binaryPackages, packageName, &CacheImpl::newBinaryPackage);
-		// can be empty/NULL also
-		return static_pointer_cast< const BinaryPackage >(prepareResult);
-	}
-	else
-	{
-		return static_pointer_cast< const BinaryPackage >(it->second);
-	}
+	return static_cast< const BinaryPackage* >(preparePackage(
+			preBinaryPackages, binaryPackages, packageName, &CacheImpl::newBinaryPackage));
 }
 
-shared_ptr< const SourcePackage > CacheImpl::getSourcePackage(const string& packageName) const
+const SourcePackage* CacheImpl::getSourcePackage(const string& packageName) const
 {
-	auto it = sourcePackages.find(packageName);
-	if (it == sourcePackages.end())
-	{
-		auto prepareResult = preparePackage(preSourcePackages,
-				sourcePackages, packageName, &CacheImpl::newSourcePackage);
-		// can be empty/NULL also
-		return static_pointer_cast< const SourcePackage >(prepareResult);
-	}
-	else
-	{
-		return static_pointer_cast< const SourcePackage >(it->second);
-	}
+	return static_cast< const SourcePackage* >(preparePackage(
+			preSourcePackages, sourcePackages, packageName, &CacheImpl::newSourcePackage));
 }
 
 void CacheImpl::parseSourcesLists()
@@ -223,24 +206,138 @@ void CacheImpl::parseSourcesLists()
 	}
 	catch (Exception&)
 	{
-		fatal2("error while parsing sources list");
+		fatal2(__("unable to parse the sources list"));
+	}
+}
+
+void stripComment(string& s)
+{
+	auto commentPosition = s.find('#');
+	if (commentPosition != string::npos)
+	{
+		s.erase(commentPosition);
+	}
+}
+
+static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry* entry)
+{
+	if (tokens.size() < 2) return;
+	auto openingBracketTokenIt = tokens.begin() + 1;
+	if (*openingBracketTokenIt != "[") return;
+
+	auto closingBracketTokenIt = std::find(openingBracketTokenIt+1, tokens.end(), "]");
+	if (closingBracketTokenIt == tokens.end())
+	{
+		fatal2(__("no closing token (']') for options"));
+	}
+
+	for (auto it = openingBracketTokenIt+1; it != closingBracketTokenIt; ++it)
+	{
+		const string& token = *it;
+		auto keyValueDelimiterPosition = token.find('=');
+		if (keyValueDelimiterPosition == string::npos)
+		{
+			fatal2(__("no key-value separator ('=') in the option token '%s'"), token);
+		}
+		entry->options[token.substr(0, keyValueDelimiterPosition)] = token.substr(keyValueDelimiterPosition+1);
+	}
+
+	tokens.erase(openingBracketTokenIt, closingBracketTokenIt+1);
+}
+
+static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
+{
+	typedef Cache::IndexEntry IndexEntry;
+
+	vector< string > tokens;
+	static const sregex tokenRegex = sregex::compile("[\\t ]+");
+	tokens = internal::split(tokenRegex, line);
+
+	IndexEntry entry;
+
+	// type
+	if (tokens.empty())
+	{
+		fatal2(__("undefined source type"));
+	}
+	else
+	{
+		if (tokens[0] == "deb")
+		{
+			entry.category = IndexEntry::Binary;
+		}
+		else if (tokens[0] == "deb-src")
+		{
+			entry.category = IndexEntry::Source;
+		}
+		else
+		{
+			fatal2(__("incorrect source type"));
+		}
+	}
+
+	parseOutKeyValueOptions(tokens, &entry);
+
+	// uri
+	if (tokens.size() < 2)
+	{
+		fatal2(__("undefined source uri"));
+	}
+	else
+	{
+		entry.uri = tokens[1];
+	}
+
+	if (tokens.size() < 3)
+	{
+		fatal2(__("undefined source distribution"));
+	}
+	else
+	{
+		entry.distribution = tokens[2];
+	}
+
+	if (*entry.uri.rbegin() == '/')
+	{
+		entry.uri.erase(entry.uri.end() - 1); // strip last '/' if present
+	}
+
+	if (tokens.size() > 3)
+	{
+		// there are components (sections) specified, it's a normal entry
+		for_each(tokens.begin() + 3, tokens.end(), [&indexEntries, &entry](const string& component)
+		{
+			entry.component = component;
+			indexEntries->push_back(entry);
+		});
+	}
+	else
+	{
+		// this a candidate for easy entry
+		// distribution must end with a slash
+		if (*entry.distribution.rbegin() == '/')
+		{
+			entry.distribution.erase(entry.distribution.end() - 1); // strip last '/' if present
+			entry.component = "";
+			indexEntries->push_back(entry);
+		}
+		else
+		{
+			fatal2(__("distribution doesn't end with a slash"));
+		}
 	}
 }
 
 void CacheImpl::parseSourceList(const string& path)
 {
-	string openError;
-	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		fatal2("unable to open file '%s': %s", path, openError);
-	}
+	RequiredFile file(path, "r");
 
 	string line;
 	static sregex toSkip = sregex::compile("^\\s*(?:#.*)?$");
+	size_t lineNumber = 0;
 
+	try
 	{
-		size_t lineNumber = 0;
 		while (! file.getLine(line).eof())
 		{
 			++lineNumber;
@@ -250,81 +347,14 @@ void CacheImpl::parseSourceList(const string& path)
 			{
 				continue;
 			}
-			vector< string > tokens;
-			tokens = internal::split(sregex::compile("[\\t ]+"), line);
+			stripComment(line);
 
-			IndexEntry entry;
-
-			// type
-			if (tokens.empty())
-			{
-				fatal2("undefined source type at file '%s', line %u", path, lineNumber);
-			}
-			else
-			{
-				if (tokens[0] == "deb")
-				{
-					entry.category = IndexEntry::Binary;
-				}
-				else if (tokens[0] == "deb-src")
-				{
-					entry.category = IndexEntry::Source;
-				}
-				else
-				{
-					fatal2("incorrect source type at file '%s', line %u", path, lineNumber);
-				}
-			}
-
-			// uri
-			if (tokens.size() < 2)
-			{
-				fatal2("undefined source uri at file '%s', line %u", path, lineNumber);
-			}
-			else
-			{
-				entry.uri = tokens[1];
-			}
-
-			if (tokens.size() < 3)
-			{
-				fatal2("undefined source distribution at file '%s', line %u", path, lineNumber);
-			}
-			else
-			{
-				entry.distribution = tokens[2];
-			}
-
-			if (*entry.uri.rbegin() == '/')
-			{
-				entry.uri.erase(entry.uri.end() - 1); // strip last '/' if present
-			}
-
-			if (tokens.size() > 3)
-			{
-				// there are components (sections) specified, it's a normal entry
-				for_each(tokens.begin() + 3, tokens.end(), [this, &entry](const string& component)
-				{
-					entry.component = component;
-					indexEntries.push_back(entry);
-				});
-			}
-			else
-			{
-				// this a candidate for easy entry
-				// distribution must end with a slash
-				if (*entry.distribution.rbegin() == '/')
-				{
-					entry.distribution.erase(entry.distribution.end() - 1); // strip last '/' if present
-					entry.component = "";
-					indexEntries.push_back(entry);
-				}
-				else
-				{
-					fatal2("distribution doesn't end with a slash at file '%s', line %u", path, lineNumber);
-				}
-			}
+			parseSourceListLine(line, &indexEntries);
 		}
+	}
+	catch (Exception&)
+	{
+		fatal2(__("(at the file '%s', line %u)"), path, lineNumber);
 	}
 }
 
@@ -368,7 +398,7 @@ class ReleaseLimits
 			{
 				try
 				{
-					fatal2("the option '%s' can have only values 'none', 'include' or 'exclude'",
+					fatal2(__("the option '%s' can have only values 'none', 'include' or 'exclude'"),
 							limitTypeOptionName);
 				}
 				catch (Exception&)
@@ -401,10 +431,8 @@ class ReleaseLimits
 void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 {
 	ReleaseLimits releaseLimits(*config);
-	FORIT(indexEntryIt, indexEntries)
+	for (const auto& entry: indexEntries)
 	{
-		const IndexEntry& entry = *indexEntryIt;
-
 		if (entry.category == IndexEntry::Binary && !useBinary)
 		{
 			continue;
@@ -418,6 +446,62 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 	}
 }
 
+static string getIndexEntryOptionValue(const Cache::IndexEntry& entry, const string& key)
+{
+	auto it = entry.options.find(key);
+	if (it == entry.options.end())
+	{
+		return string();
+	}
+	else
+	{
+		return it->second;
+	}
+}
+
+static bool getVerifiedBitForIndexEntry(const Cache::IndexEntry& entry,
+		const Config& config, const string& path, const string& alias)
+{
+	auto trustedOptionValue = getIndexEntryOptionValue(entry, "trusted");
+	if (trustedOptionValue == "yes")
+	{
+		return true;
+	}
+	else if (trustedOptionValue == "no")
+	{
+		return false;
+	}
+	else
+	{
+		return cachefiles::verifySignature(config, path, alias);
+	}
+}
+
+shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
+{
+	auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
+	auto insertResult = releaseInfoCache.insert({ path, {} });
+	auto& cachedValue = insertResult.first->second;
+	if (insertResult.second)
+	{
+		auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
+		if (path.empty())
+		{
+			warn2(__("no release file present for '%s'"), alias);
+		}
+		else
+		{
+			cachedValue = cachefiles::getReleaseInfo(config, path, alias);
+			cachedValue->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
+		}
+	}
+	if (!cachedValue)
+	{
+		throw Exception(""); // !cachedValue means that getReleaseInfo has failed before
+	}
+	return shared_ptr< ReleaseInfo > (new ReleaseInfo(*cachedValue));
+}
+
 void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 		const ReleaseLimits& releaseLimits)
 {
@@ -425,15 +509,14 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 
 	string indexAlias = indexEntry.uri + ' ' + indexEntry.distribution + ' ' +
 			indexEntry.component + ' ' +
-			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "source");
+			((indexEntry.category == IndexEntry::Binary) ? "(binary)" : "(source)");
 
+	shared_ptr< ReleaseInfo > releaseInfo;
 	try
 	{
-		auto releaseFilePath = cachefiles::getPathOfReleaseList(*config, indexEntry);
-		auto releaseInfo = cachefiles::getReleaseInfo(*config, releaseFilePath);
+		releaseInfo = getReleaseInfo(*config, indexEntry);
 		releaseInfo->component = indexEntry.component;
 		releaseInfo->baseUri = indexEntry.uri;
-		releaseInfo->verified = cachefiles::verifySignature(*config, releaseFilePath);
 
 		if (releaseLimits.isExcluded(*releaseInfo))
 		{
@@ -449,48 +532,53 @@ void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
 			sourceReleaseData.push_back(releaseInfo);
 		}
 
-		processIndexFile(indexFileToParse, indexEntry.category, releaseInfo);
+		processIndexFile(indexFileToParse, indexEntry.category, releaseInfo, indexAlias);
 	}
 	catch (Exception&)
 	{
-		warn2("skipped the index '%s'", indexAlias);
+		warn2(__("skipped the index '%s'"), indexAlias);
 	}
 
-	try  // processing translations if any
+	if (releaseInfo && Version::parseInfoOnly) // description is info-only field
 	{
-		auto descriptionTranslationPaths =
-				cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
-		FORIT(pathIt, descriptionTranslationPaths)
-		{
-			string errorString;
-			File file(*pathIt, "r", errorString);
-			if (errorString.empty())
-			{
-				processTranslationFile(*pathIt);
-			}
-		}
-	}
-	catch (Exception&)
-	{
-		warn2("skipped translations of the index '%s'", indexAlias);
+		processTranslationFiles(indexEntry, indexAlias);
 	}
 }
 
+void CacheImpl::processTranslationFiles(const IndexEntry& indexEntry,
+		const string& indexAlias)
+{
+	auto process = [this](const string& path, const string& localizationAlias)
+	{
+		try
+		{
+			if (fs::fileExists(path))
+			{
+				processTranslationFile(path, localizationAlias);
+			}
+		}
+		catch (Exception&)
+		{
+			warn2(__("skipped the index '%s'"), localizationAlias);
+		}
+	};
 
+	auto localizationRecords = cachefiles::getPathsOfLocalizedDescriptions(*config, indexEntry);
+	for (const auto& record: localizationRecords)
+	{
+		auto description = format2(__("'%s' descriptions localization"), record.first);
+		auto localizationAlias = format2(__("%s for '%s'"), description, indexAlias);
+		process(record.second, localizationAlias);
+	}
+}
 
 void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
-		shared_ptr< const ReleaseInfo > releaseInfo)
+		shared_ptr< const ReleaseInfo > releaseInfo, const string& alias)
 {
-	using std::make_pair;
-	auto prePackagesStorage = (category == IndexEntry::Binary ?
-			&preBinaryPackages : &preSourcePackages);
+	auto& prePackagesStorage = (category == IndexEntry::Binary ?
+			preBinaryPackages : preSourcePackages);
 
-	string openError;
-	shared_ptr< File > file(new File(path, "r", openError));
-	if (!openError.empty())
-	{
-		fatal2("unable to open index file '%s': %s", path, openError);
-	}
+	shared_ptr< File > file(new RequiredFile(path, "r"));
 
 	releaseInfoAndFileStorage.push_back(make_pair(releaseInfo, file));
 	PrePackageRecord prePackageRecord;
@@ -498,128 +586,116 @@ void CacheImpl::processIndexFile(const string& path, IndexEntry::Type category,
 
 	try
 	{
-		pair< const string, vector< PrePackageRecord > > pairForInsertion;
-		string& packageName = const_cast< string& > (pairForInsertion.first);
+		string packageName;
+		const string* persistentPackageNamePtr;
 
-		while (true)
-		{
-			const char* buf;
-			size_t size;
-			file->rawGetLine(buf, size);
-			if (file->eof())
-			{
-				break;
-			}
+		ioi::Record ioiRecord;
+		ioiRecord.offsetPtr = &prePackageRecord.offset;
+		ioiRecord.indexStringPtr = &packageName;
 
-			static const size_t packageAnchorLength = sizeof("Package: ") - 1;
-			if (size > packageAnchorLength && !memcmp("Package: ", buf, packageAnchorLength))
-			{
-				packageName.assign(buf + packageAnchorLength, size - packageAnchorLength - 1);
-			}
-			else
-			{
-				fatal2("unable to find correct Package line");
-			}
-
-			try
-			{
-				checkPackageName(packageName);
-			}
-			catch (Exception&)
-			{
-				warn2("discarding this package version from index file '%s'", path);
-				while (file->rawGetLine(buf, size), size > 1) {}
-				continue;
-			}
-
-			prePackageRecord.offset = file->tell();
-
-			auto it = prePackagesStorage->insert(pairForInsertion).first;
-			it->second.push_back(prePackageRecord);
-
-			while (file->rawGetLine(buf, size), size > 1)
-			{
-				static const size_t providesAnchorLength = sizeof("Provides: ") - 1;
-				if (*buf == 'P' && size > providesAnchorLength && !memcmp("rovides: ", buf+1, providesAnchorLength-1))
+		ioi::ps::Callbacks callbacks;
+		callbacks.main =
+				[this, &packageName, &alias, &prePackagesStorage, &prePackageRecord, &persistentPackageNamePtr]()
 				{
-					processProvides(&it->first, buf + providesAnchorLength, buf + size - 1);
-				}
-			}
-		}
+					try
+					{
+						checkPackageName(packageName);
+					}
+					catch (Exception&)
+					{
+						warn2(__("discarding this package version from the index '%s'"), alias);
+						return;
+					}
+
+					auto& prePackageRecords = prePackagesStorage[std::move(packageName)];
+					prePackageRecords.push_back(prePackageRecord);
+
+					persistentPackageNamePtr = (const string*)
+							((const char*)(&prePackageRecords) - offsetof(PrePackageMap::value_type, second));
+				};
+		callbacks.provides =
+				[this, &persistentPackageNamePtr](const char* begin, const char* end)
+				{
+					processProvides(persistentPackageNamePtr, begin, end);
+				};
+
+		ioi::ps::processIndex(path, callbacks, ioiRecord);
 	}
 	catch (Exception&)
 	{
-		fatal2("error parsing index file '%s'", path);
+		fatal2(__("unable to parse the index '%s'"), alias);
 	}
 }
 
-void CacheImpl::processTranslationFile(const string& path)
+void CacheImpl::processTranslationFile(const string& path, const string& alias)
 {
-	string errorString;
-	shared_ptr< File > file(new File(path, "r", errorString));
-	if (!errorString.empty())
-	{
-		fatal2("unable to open translation file '%s': %s", path, errorString);
-	}
+	translationFileStorage.emplace_back(path, "r");
 
+	File* file = &translationFileStorage.back();
 	try
 	{
-		TagParser parser(&*file);
-		TagParser::StringRange tagName, tagValue;
-
-		static const char descriptionSubPattern[] = "Description-";
-		static const size_t descriptionSubPatternSize = sizeof(descriptionSubPattern) - 1;
-
-		size_t recordPosition;
-
 		string md5;
 		TranslationPosition translationPosition;
 		translationPosition.file = file;
 
-		while ((recordPosition = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
-		{
-			bool hashSumFound = false;
-			bool translationFound = false;
+		ioi::Record ioiRecord = { &translationPosition.offset, &md5 };
 
-			do
-			{
-				if (tagName.equal(BUFFER_AND_SIZE("Description-md5")))
+		ioi::tr::Callbacks callbacks;
+		callbacks.main =
+				[this, &md5, &translationPosition]()
 				{
-					hashSumFound = true;
-					md5 = tagValue;
-				}
-				else if ((size_t)(tagName.second - tagName.first) > descriptionSubPatternSize &&
-						!memcmp(&*tagName.first, descriptionSubPattern, descriptionSubPatternSize))
-				{
-					translationFound = true;
-					translationPosition.offset = file->tell() - (tagValue.second - tagValue.first) - 1; // -1 for '\n'
-				}
-			} while (parser.parseNextLine(tagName, tagValue));
+					translations.insert({ std::move(md5), translationPosition });
+				};
 
-			if (!hashSumFound)
-			{
-				fatal2("unable to find md5 hash in a translation record starting at byte '%u'", recordPosition);
-			}
-			if (!translationFound)
-			{
-				fatal2("unable to find translation in a translation record starting at byte '%u'", recordPosition);
-			}
-
-			translations.insert(make_pair(std::move(md5), translationPosition));
-		}
+		ioi::tr::processIndex(path, callbacks, ioiRecord);
 	}
 	catch(Exception&)
 	{
-		fatal2("error parsing translation file '%s'", path);
+		fatal2(__("unable to parse the index '%s'"), alias);
 	}
 }
 
 void CacheImpl::parsePreferences()
 {
-	pinInfo.reset(new PinInfo(config, systemState));
+	pinInfo.reset(new PinInfo(config, systemState.get()));
 }
 
-ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const string& installedVersionString) const
+ssize_t CacheImpl::computePin(const Version* version, const BinaryPackage* binaryPackage) const
+{
+	auto getInstalledVersionString = [&binaryPackage]() -> const string&
+	{
+		static const string emptyString;
+		if (binaryPackage)
+		{
+			auto installedVersion = binaryPackage->getInstalledVersion();
+			if (installedVersion)
+			{
+				return installedVersion->versionString;
+			}
+		}
+		return emptyString;
+	};
+
+	const auto& installedVersionString = getInstalledVersionString();
+	auto result = pinInfo->getPin(version, installedVersionString);
+
+	if (version->versionString == installedVersionString)
+	{
+		for (const auto& otherVersion: *binaryPackage)
+		{
+			if (otherVersion == version) continue;
+			if (versionstring::sameOriginal(otherVersion->versionString, installedVersionString))
+			{
+				auto otherPin = getPin(otherVersion, [&binaryPackage]() { return binaryPackage; });
+				if (otherPin > result) result = otherPin;
+			}
+		}
+	}
+	return result;
+}
+
+ssize_t CacheImpl::getPin(const Version* version,
+		const std::function< const BinaryPackage* () >& getBinaryPackage) const
 {
 	if (Cache::memoize)
 	{
@@ -630,33 +706,28 @@ ssize_t CacheImpl::getPin(const shared_ptr< const Version >& version, const stri
 		}
 	}
 
-	auto result = pinInfo->getPin(version, installedVersionString);
+	auto result = computePin(version, getBinaryPackage());
 	if (Cache::memoize)
 	{
-		pinCache.insert(std::make_pair(version, result));
+		pinCache.insert({ version, result });
 	}
 	return result;
 }
 
-pair< string, string > CacheImpl::getLocalizedDescriptions(const shared_ptr< const BinaryVersion >& version) const
+string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 {
-	string source = version->shortDescription + "\n" + version->longDescription;
-	string sourceHash = HashSums::getHashOfString(HashSums::MD5, source);
+	const string& sourceHash = !version->descriptionHash.empty() ?
+			version->descriptionHash :
+			HashSums::getHashOfString(HashSums::MD5, version->description);
 
 	auto it = translations.find(sourceHash);
 	if (it != translations.end())
 	{
 		const TranslationPosition& position = it->second;
-		string combinedDescription;
 		position.file->seek(position.offset);
-		position.file->getRecord(combinedDescription);
-
-		auto firstNewLinePosition = combinedDescription.find('\n');
-
-		return make_pair(combinedDescription.substr(0, firstNewLinePosition),
-				combinedDescription.substr(firstNewLinePosition+1));
+		return position.file->getRecord().chompAsRecord();
 	}
-	return pair< string, string >();
+	return version->description;
 }
 
 void CacheImpl::parseExtendedStates()
@@ -676,7 +747,8 @@ void CacheImpl::parseExtendedStates()
 		File file(path, "r", openError);
 		if (!openError.empty())
 		{
-			fatal2("unable to open file '%s': %s", path, openError);
+			warn2(__("unable to open the extended states file '%s': %s"), path, openError);
+			return;
 		}
 
 		internal::TagParser parser(&file);
@@ -686,10 +758,10 @@ void CacheImpl::parseExtendedStates()
 		{
 			if (!tagName.equal("Package", 7))
 			{
-				fatal2("wrong tag: expected 'Package', got '%s' at file '%s'", string(tagName), path);
+				fatal2(__("wrong tag: expected 'Package', got '%s'"), tagName.toString());
 			}
 
-			string packageName = tagValue;
+			string packageName = tagValue.toString();
 
 			bool valueFound = false;
 			while (parser.parseNextLine(tagName, tagValue))
@@ -704,40 +776,28 @@ void CacheImpl::parseExtendedStates()
 					}
 					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
 					{
-						fatal2("bad value '%s' (should be 0 or 1) for the package '%s' at file '%s'",
-								string(tagValue), packageName, path);
+						fatal2(__("bad value '%s' (should be 0 or 1) for the package '%s'"),
+								tagValue.toString(), packageName);
 					}
 				}
 			}
 
 			if (!valueFound)
 			{
-				fatal2("no 'Auto-Installed' tag for the package '%s' at file '%s'", packageName, path);
+				fatal2(__("didn't found the 'Auto-Installed' tag for the package '%s'"), packageName);
 			}
 		}
 	}
 	catch (Exception&)
 	{
-		fatal2("error while parsing extended states");
+		fatal2(__("unable to parse extended states"));
 	}
 }
 
-vector< shared_ptr< const BinaryVersion > >
-CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) const
+vector< const BinaryVersion* >
+CacheImpl::getSatisfyingVersionsNonCached(const RelationExpression& relationExpression) const
 {
-	string memoizeKey;
-	if (Cache::memoize)
-	{
-		// caching results
-		memoizeKey = relationExpression.getHashString();
-		auto it = getSatisfyingVersionsCache.find(memoizeKey);
-		if (it != getSatisfyingVersionsCache.end())
-		{
-			return it->second;
-		}
-	}
-
-	auto result = getSatisfyingVersions(relationExpression[0]);
+	auto result = getSatisfyingVersionsNonCached(relationExpression[0]);
 
 	// now, if alternatives (OR groups) are present, we should add them too,
 	// without duplicates, but without sorting to not change the order, specified
@@ -745,24 +805,42 @@ CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) c
 	for (auto relationIt = relationExpression.begin() + 1;
 		relationIt != relationExpression.end(); ++relationIt)
 	{
-		auto source = getSatisfyingVersions(*relationIt);
-		FORIT(versionIt, source)
+		auto source = getSatisfyingVersionsNonCached(*relationIt);
+		for (const auto& version: source)
 		{
-			auto predicate = std::bind2nd(PointerEqual< const BinaryVersion >(), *versionIt);
-			if (std::find_if(result.begin(), result.end(), predicate) == result.end())
+			if (std::find(result.begin(), result.end(), version) == result.end())
 			{
-				result.push_back(*versionIt);
+				result.push_back(version);
 			}
 		}
 	}
 
+	return result;
+}
+
+vector< const BinaryVersion* >
+CacheImpl::getSatisfyingVersions(const RelationExpression& relationExpression) const
+{
 	if (Cache::memoize)
 	{
-		getSatisfyingVersionsCache.insert(
-				pair< const string, decltype(result) >(std::move(memoizeKey), result));
+		// caching results
+		auto key = relationExpression.getHashString();
+		auto it = getSatisfyingVersionsCache.find(key);
+		if (it != getSatisfyingVersionsCache.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			auto& result = getSatisfyingVersionsCache[std::move(key)];
+			result = getSatisfyingVersionsNonCached(relationExpression);
+			return result;
+		}
 	}
-
-	return result;
+	else
+	{
+		return getSatisfyingVersionsNonCached(relationExpression);
+	}
 }
 
 }

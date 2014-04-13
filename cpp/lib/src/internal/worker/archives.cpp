@@ -15,6 +15,8 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#include <unistd.h>
+
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
@@ -48,7 +50,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 			// a dangling symlink
 			if (unlink(debPath.c_str()) == -1)
 			{
-				warn2e("unable to delete dangling APT compatibility symbolic link '%s'", debPath);
+				warn2e(__("unable to remove the dangling APT compatibility symbolic link '%s'"), debPath);
 			}
 		}
 		else
@@ -67,7 +69,7 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 				{
 					if (symlink(pathBasename.c_str(), correctedPath.c_str()) == -1)
 					{
-						fatal2e("unable to create APT compatibility symbolic link '%s' -> '%s'",
+						fatal2e(__("unable to create the APT compatibility symbolic link '%s' -> '%s'"),
 								correctedPath, pathBasename);
 					}
 				}
@@ -76,31 +78,29 @@ void ArchivesWorker::__synchronize_apt_compat_symlinks()
 	}
 }
 
-vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getArchivesInfo() const
+vector< pair< string, const BinaryVersion* > > ArchivesWorker::getArchivesInfo() const
 {
-	map< string, shared_ptr< const BinaryVersion > > knownArchives;
+	map< string, const BinaryVersion* > knownArchives;
 
 	auto archivesDirectory = _get_archives_directory();
 
 	auto pathMaxLength = pathconf("/", _PC_PATH_MAX);
 	vector< char > pathBuffer(pathMaxLength + 1, '\0');
 
-	auto packageNames = _cache->getBinaryPackageNames();
-	FORIT(packageNameIt, packageNames)
+	for (const auto& packageName: _cache->getBinaryPackageNames())
 	{
-		auto package = _cache->getBinaryPackage(*packageNameIt);
+		auto package = _cache->getBinaryPackage(packageName);
 		if (!package)
 		{
 			continue;
 		}
 
-		auto versions = package->getVersions();
-		FORIT(versionIt, versions)
+		for (auto version: *package)
 		{
-			auto path = archivesDirectory + '/' + _get_archive_basename(*versionIt);
+			auto path = archivesDirectory + '/' + _get_archive_basename(version);
 			if (fs::fileExists(path))
 			{
-				knownArchives[path] = *versionIt;
+				knownArchives[path] = version;
 
 				// checking for symlinks
 				auto readlinkResult = readlink(path.c_str(), &pathBuffer[0], pathMaxLength);
@@ -108,7 +108,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 				{
 					if (errno != EINVAL)
 					{
-						warn2e("readlink on '%s' failed", path);
+						warn2e(__("%s() failed: '%s'"), "readlink", path);
 					}
 					// not a symlink
 				}
@@ -119,7 +119,7 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 					string targetPath(archivesDirectory + '/' + relativePath);
 					if (fs::fileExists(targetPath))
 					{
-						knownArchives[targetPath] = *versionIt;
+						knownArchives[targetPath] = version;
 					}
 				}
 			}
@@ -128,11 +128,11 @@ vector< pair< string, shared_ptr< const BinaryVersion > > > ArchivesWorker::getA
 
 	auto paths = fs::lglob(archivesDirectory, "*.deb");
 
-	vector< pair< string, shared_ptr< const BinaryVersion > > > result;
+	vector< pair< string, const BinaryVersion* > > result;
 
 	FORIT(pathIt, paths)
 	{
-		shared_ptr< const BinaryVersion > version; // empty by default
+		const BinaryVersion* version = nullptr;
 		auto knownPathIt = knownArchives.find(*pathIt);
 		if (knownPathIt != knownArchives.end())
 		{
@@ -150,18 +150,18 @@ void ArchivesWorker::deleteArchive(const string& path)
 	auto archivesDirectory = _get_archives_directory();
 	if (path.compare(0, archivesDirectory.size(), archivesDirectory))
 	{
-		fatal2("path '%s' lies outside archives directory '%s'", path, archivesDirectory);
+		fatal2(__("the path '%s' lies outside the archives directory '%s'"), path, archivesDirectory);
 	}
 	if (path.find("/../") != string::npos)
 	{
-		fatal2("path '%s' contains at least one '/../' substring", path);
+		fatal2(__("the path '%s' contains at least one '/../' substring"), path);
 	}
 
 	if (!_config->getBool("cupt::worker::simulate"))
 	{
 		if (unlink(path.c_str()) == -1)
 		{
-			fatal2e("unable to delete file '%s'", path);
+			fatal2e(__("unable to remove the file '%s'"), path);
 		}
 	}
 	else
@@ -195,13 +195,13 @@ void ArchivesWorker::deletePartialArchives()
 			if (unlink(pathIt->c_str()) == -1)
 			{
 				success = false;
-				warn2e("unable to delete file '%s'", (*pathIt));
+				warn2e(__("unable to remove the file '%s'"), (*pathIt));
 			}
 		}
 	}
 	if (!success)
 	{
-		fatal2("unable to delete partial archives");
+		fatal2(__("unable to remove partial archives"));
 	}
 }
 

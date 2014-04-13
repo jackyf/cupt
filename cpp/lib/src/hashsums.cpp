@@ -17,6 +17,8 @@
 **************************************************************************/
 #include <gcrypt.h>
 
+#include <mutex>
+
 #include <cupt/hashsums.hpp>
 #include <cupt/file.hpp>
 
@@ -39,7 +41,7 @@ class GcryptHasher
 		gcry_error_t gcryptError;
 		if ((gcryptError = gcry_md_open(&__gcrypt_handle, gcryptAlgorithm, 0)))
 		{
-			fatal2("unable to open gcrypt hash handle: %s", gcry_strerror(gcryptError));
+			fatal2(__("unable to open a gcrypt hash handle: %s"), gcry_strerror(gcryptError));
 		}
 		__digest_size = gcry_md_get_algo_dlen(gcryptAlgorithm);
 	}
@@ -70,16 +72,26 @@ class GcryptHasher
 	}
 };
 
+namespace {
+
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
+
+bool initGcrypt()
+{
+	gcry_control (GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+	gcry_check_version(NULL);
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+	return true;
+}
+
+std::once_flag gcryptInitFlag;
+
+}
+
 string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string& source)
 {
-	static bool initialized = false;
-	if (!initialized)
-	{
-		gcry_check_version(NULL);
-		gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
-		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
-		initialized = true;
-	}
+	std::call_once(gcryptInitFlag, initGcrypt);
 
 	int gcryptAlgorithm;
 	switch (hashType)
@@ -89,7 +101,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		case HashSums::SHA256: gcryptAlgorithm = GCRY_MD_SHA256; break;
 		default:
 			gcryptAlgorithm = 0; // to not see 'maybe used uninitialized' warning
-			fatal2("unsupported hash type '%zu'", size_t(hashType));
+			fatal2(__("unsupported hash type '%zu'"), size_t(hashType));
 	}
 
 	string result;
@@ -99,18 +111,11 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 
 		if (sourceType == Source::File)
 		{
-			string openError;
-			File file(source, "r", openError);
-			if (!openError.empty())
-			{
-				fatal2("unable to open file '%s': %s", source, openError);
-			}
+			RequiredFile file(source, "r");
 
-			char buffer[8192];
-			size_t size = sizeof(buffer);
-			while (file.getBlock(buffer, size), size)
+			while (auto rawBuffer = file.getBlock(8192))
 			{
-				gcryptHasher.process(buffer, size);
+				gcryptHasher.process(rawBuffer.data, rawBuffer.size);
 			}
 		}
 		else // string
@@ -125,7 +130,7 @@ string __get_hash(HashSums::Type hashType, Source::Type sourceType, const string
 		static string strings[HashSums::Count] = { "md5", "sha1", "sha256" };
 		string description = string(sourceType == Source::File ? "file" : "string") +
 				" '" + source + "'";
-		fatal2("unable to compute hash sums '%s' on '%s':", strings[hashType], description);
+		fatal2(__("unable to compute hash sums '%s' on '%s'"), strings[hashType], description);
 	}
 
 	return result;
@@ -135,7 +140,7 @@ void __assert_not_empty(const HashSums* hashSums)
 {
 	if (hashSums->empty())
 	{
-		fatal2("no hash sums specified");
+		fatal2(__("no hash sums specified"));
 	}
 }
 

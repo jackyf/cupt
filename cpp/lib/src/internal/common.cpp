@@ -105,84 +105,24 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 	size_t inputLength = input.second - input.first;
 	if (inputLength >= sizeof(buf))
 	{
-		fatal2("too long number string");
+		fatal2(__("too long number string"));
 	}
 	memcpy(buf, &(*input.first), inputLength);
 	errno = 0;
 	long long number = strtoll(buf, NULL, 10);
 	if (errno)
 	{
-		fatal2e("invalid number '%s'", buf);
+		fatal2e(__("invalid number '%s'"), buf);
 	}
 	if (number < 0)
 	{
-		fatal2("negative number '%s'", buf);
+		fatal2(__("negative number '%s'"), buf);
 	}
 	if (number >= 0x100000000LL) // uint32_t upper limit
 	{
-		fatal2("too big number '%s'", buf);
+		fatal2(__("too big number '%s'"), buf);
 	}
 	return uint32_t(number);
-}
-
-template < class IterType, char symbol >
-inline bool __find_space_symbol_space(const IterType& begin, const IterType& end,
-		IterType& resultBegin, IterType& resultEnd)
-{
-	IterType current = begin;
-	while (current != end)
-	{
-		if (*current == symbol)
-		{
-			// found!
-			resultBegin = current;
-			while (resultBegin != begin && *(resultBegin-1) == ' ')
-			{
-				--resultBegin;
-			}
-			resultEnd = current+1;
-			while (resultEnd != end && *resultEnd == ' ')
-			{
-				++resultEnd;
-			}
-			return true;
-		}
-		++current;
-	}
-	return false;
-}
-
-template< class IterType, char symbol >
-inline void __process_space_symbol_space_delimited_strings(IterType begin, IterType end,
-		const std::function< void (IterType, IterType) >& callback)
-{
-	IterType current = begin;
-	IterType delimiterBegin;
-	IterType delimiterEnd;
-	while (__find_space_symbol_space< IterType, symbol >(current, end, delimiterBegin, delimiterEnd))
-	{
-		callback(current, delimiterBegin);
-		current = delimiterEnd;
-	}
-	callback(current, end);
-}
-
-void processSpaceCommaSpaceDelimitedStrings(const char* begin, const char* end,
-		const std::function< void (const char*, const char*) >& callback)
-{
-	__process_space_symbol_space_delimited_strings<const char*, ','>(begin, end, callback);
-}
-
-void processSpaceCommaSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback)
-{
-	__process_space_symbol_space_delimited_strings<string::const_iterator, ','>(begin, end, callback);
-}
-
-void processSpacePipeSpaceDelimitedStrings(string::const_iterator begin, string::const_iterator end,
-		const std::function< void (string::const_iterator, string::const_iterator) >& callback)
-{
-	__process_space_symbol_space_delimited_strings<string::const_iterator, '|'>(begin, end, callback);
 }
 
 } // namespace

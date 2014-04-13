@@ -1,23 +1,33 @@
 Source: cupt
 Section: admin
 Priority: optional
-Build-Depends: debhelper (>= 7.4.10), g++-4.6,
+Build-Depends: debhelper (>= 7.4.10),
   libboost-program-options-dev (>= 1.42), libboost-dev (>= 1.42),
   libreadline6-dev, chrpath, libcurl4-gnutls-dev (>= 7.19.4),
-  cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags
-Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
+  cmake (>= 2.6), doxygen, libgcrypt11-dev, txt2tags, gettext
+Maintainer: Cupt developers <cupt-devel@lists.alioth.debian.org>
+Uploaders: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.9.2
+Standards-Version: 3.9.5
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
-Package: libcupt2-0
+Package: cupt-dbg
+Section: debug
+Priority: extra
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Conflicts: libcupt2-0-experimental
-Breaks: debdelta (<< 0.31), libcupt2-0-downloadmethod-curl (<< 2.2.0~rc1),
-  libcupt2-0-downloadmethod-wget (<< 2.2.0~rc1)
-Recommends: libcupt2-0-downloadmethod-curl | libcupt2-0-downloadmethod-wget, bzip2, gpgv, ed
+Depends: libcupt3-0 (= ${binary:Version}) | cupt (= ${binary:Version}) |
+ libcupt3-0-downloadmethod-curl (= ${binary:Version}) |
+ libcupt3-0-downloadmethod-wget (= ${binary:Version}),
+ ${misc:Depends}
+Description: alternative front-end for dpkg -- debugging symbols
+ This package contains gdb debugging symbols for the Cupt packages.
+
+Package: libcupt3-0
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt-common (>= ${source:Version})
+Breaks: debdelta (<< 0.31)
+Recommends: libcupt3-0-downloadmethod-curl | libcupt3-0-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
 Description: alternative front-end for dpkg -- runtime library
  This is a Cupt library implementing front-end to dpkg.
@@ -35,29 +45,39 @@ Description: alternative front-end for dpkg -- runtime library
  .
  See also description of 'cupt' package for more information.
 
-Package: libcupt2-dev
+Package: libcupt-common
+Architecture: all
+Depends: ${misc:Depends}
+Conflicts: libcupt2-0
+Replaces: libcupt2-0
+Description: alternative front-end for dpkg -- runtime library (support files)
+ This package provides architecture-independent support parts for Cupt library.
+ .
+ See also description of libcupt3-0 package.
+
+Package: libcupt3-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends}, libcupt2-0 (= ${binary:Version})
-Conflicts: libcupt2-dev-experimental
-Suggests: libcupt2-doc
+Depends: ${misc:Depends}, libcupt3-0 (= ${binary:Version})
+Conflicts: libcupt2-dev
+Suggests: libcupt3-doc
 Description: alternative front-end for dpkg -- development files
  This package provides headers for Cupt library.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
 
-Package: libcupt2-doc
+Package: libcupt3-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}
 Description: alternative front-end for dpkg -- library documentation
  This package provides documentation for Cupt library.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
 
 Package: cupt
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt2-0 (>= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt3-0 (>= ${binary:Version})
 Breaks: daptup (<< 0.12.2~)
 Suggests: sensible-utils, libreadline6
 Description: alternative front-end for dpkg -- console interface
@@ -71,7 +91,7 @@ Description: alternative front-end for dpkg -- console interface
  Some features:
   - strict full-case resolver;
   - resolver reasons tracking;
-  - command-line and APT-like option name checker;
+  - command-line and 'cupt::*' option name checker;
   - case-sensitive search;
   - pinning by source package name;
   - pinning by package groups using shell-like patterns;
@@ -85,21 +105,25 @@ Description: alternative front-end for dpkg -- console interface
   - system snapshots (needs packages 'dpkg-dev' and 'dpkg-repack').
  .
  Its interface is mostly like apt-get/aptitude console interface.
+ .
+ Cupt has built-in support for APT repositories using the file:// or copy://
+ URL schemas. For access to remote repositories using HTTP or FTP, install a
+ download method such as libcupt3-0-downloadmethod-curl.
 
-Package: libcupt2-0-downloadmethod-curl
+Package: libcupt3-0-downloadmethod-curl
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: alternative front-end for dpkg -- libcurl download method
  This package provides http(s) and ftp download handlers for Cupt library
  using libcurl.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
 
-Package: libcupt2-0-downloadmethod-wget
+Package: libcupt3-0-downloadmethod-wget
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, wget
 Description: alternative front-end for dpkg -- wget download method
  This package provides http(s) and ftp download handlers for Cupt library
  using wget.
  .
- See also description of libcupt2-0 package.
+ See also description of libcupt3-0 package.
