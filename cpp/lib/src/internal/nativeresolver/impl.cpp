@@ -842,6 +842,13 @@ void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
 				userRequests.push_back(bs.elementPtr);
 			});
 
+	// for reproduceability
+	std::sort(userRequests.begin(), userRequests.end(),
+			[](dg::Element left, dg::Element right)
+			{
+				return left->id < right->id;
+			});
+
 	for (auto brokenElement: userRequests)
 	{
 		if (p_debugging) debug2("  considering '%s'", brokenElement->toString());
