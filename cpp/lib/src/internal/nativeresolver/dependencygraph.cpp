@@ -92,6 +92,17 @@ Element BasicVertex::getFamilyKey() const
 	return this;
 }
 
+
+struct ExtendedBasicVertex: public BasicVertex
+{
+	virtual const string& getSpecificPackageName() const
+	{
+		fatal2i("getting getSpecificPackageName of '%s'", toString());
+		__builtin_unreachable();
+	}
+};
+
+
 VersionVertex::VersionVertex(const FamilyMap::iterator& it)
 	: __related_element_ptrs_it(it)
 {}
@@ -132,7 +143,7 @@ Element VersionVertex::getFamilyKey() const
 
 typedef BinaryVersion::RelationTypes::Type RelationType;
 
-struct RelationExpressionVertex: public BasicVertex
+struct RelationExpressionVertex: public ExtendedBasicVertex
 {
 	RelationType dependencyType;
 	const RelationExpression* relationExpressionPtr;
@@ -222,6 +233,10 @@ struct AntiRelationExpressionVertex: public RelationExpressionVertex
 	Unsatisfied::Type getUnsatisfiedType() const
 	{
 		return Unsatisfied::None;
+	}
+	const string& getSpecificPackageName() const
+	{
+		return specificPackageName;
 	}
 };
 
@@ -328,11 +343,12 @@ class AnnotatedUserReason: public system::Resolver::UserReason
 	}
 };
 
-struct UserRelationExpressionVertex: public BasicVertex
+struct UserRelationExpressionVertex: public ExtendedBasicVertex
 {
 	bool invert;
 	bool asAutoFlag;
 	string annotation;
+	string specificPackageName;
 
 	UserRelationExpressionVertex(const UserRelationExpression& ure)
 		: invert(ure.invert)
@@ -358,6 +374,10 @@ struct UserRelationExpressionVertex: public BasicVertex
 	string toString() const
 	{
 		return "custom: " + annotation;
+	}
+	const string& getSpecificPackageName() const
+	{
+		return specificPackageName;
 	}
 };
 
@@ -572,7 +592,7 @@ class DependencyGraph::FillHelper
 	map< string, pair< forward_list<Element>, Element > > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
-	unordered_map< string, map< string, Element > > __meta_anti_relation_expression_vertices;
+	unordered_map< string, list<const ExtendedBasicVertex*> > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, Element > > > __meta_synchronize_map;
 	Element p_dummyElementPtr;
 
@@ -690,15 +710,30 @@ class DependencyGraph::FillHelper
 	}
 
  private:
+	const ExtendedBasicVertex*& getOrCreateListSubElement(
+			list<const ExtendedBasicVertex*>& l, const string& packageName)
+	{
+		for (auto& e: l)
+		{
+			if (e->getSpecificPackageName() == packageName)
+			{
+				return e;
+			}
+		}
+
+		l.push_back(nullptr);
+		return l.back();
+	}
+
 	void buildEdgesForAntiRelationExpression(
-			map< string, Element >* packageNameToSubElements,
+			list<const ExtendedBasicVertex*>* packageNameToSubElements,
 			const vector< const BinaryVersion* > satisfyingVersions,
-			const std::function< Element (const string&) >& createVertex)
+			const std::function< const ExtendedBasicVertex* (const string&) >& createVertex)
 	{
 		for (auto satisfyingVersion: satisfyingVersions)
 		{
 			const string& packageName = satisfyingVersion->packageName;
-			auto& subElement = (*packageNameToSubElements)[packageName];
+			auto& subElement = getOrCreateListSubElement(*packageNameToSubElements, packageName);
 			if (subElement) continue;
 
 			subElement = createVertex(packageName);
@@ -729,9 +764,9 @@ class DependencyGraph::FillHelper
 			BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		auto hashKey = relationExpression.getHashString() + char('0' + dependencyType);
-		static const map< string, Element > emptyMap;
+		static const list<const ExtendedBasicVertex*> emptyList;
 		auto insertResult = __meta_anti_relation_expression_vertices.insert(
-				make_pair(std::move(hashKey), emptyMap));
+				make_pair(std::move(hashKey), emptyList));
 		bool isNewRelationExpressionVertex = insertResult.second;
 		auto& packageNameToSubElements = insertResult.first->second;
 
@@ -743,18 +778,19 @@ class DependencyGraph::FillHelper
 				subVertex->dependencyType = dependencyType;
 				subVertex->relationExpressionPtr = &relationExpression;
 				subVertex->specificPackageName = packageName;
-				return __dependency_graph.addVertex(subVertex);
+				__dependency_graph.addVertex(subVertex);
+				return subVertex;
 			};
 			auto satisfyingVersions = __dependency_graph.__cache.getSatisfyingVersions(relationExpression);
 			buildEdgesForAntiRelationExpression(&packageNameToSubElements, satisfyingVersions, createVertex);
 		}
 		for (const auto& it: packageNameToSubElements)
 		{
-			if (it.first == packageName)
+			if (it->getSpecificPackageName() == packageName)
 			{
 				continue; // doesn't conflict with itself
 			}
-			addEdgeCustom(vertexPtr, it.second);
+			addEdgeCustom(vertexPtr, it);
 		}
 	}
 
@@ -929,9 +965,10 @@ class DependencyGraph::FillHelper
 	{
 		Element unsatisfiedElement = nullptr;
 
-		auto createVertex = [&](const string&) -> Element
+		auto createVertex = [&](const string& packageName) -> const ExtendedBasicVertex*
 		{
 			auto vertex = new UserRelationExpressionVertex(ure);
+			vertex->specificPackageName = packageName;
 			__dependency_graph.addVertex(vertex);
 			addEdgeCustom(p_dummyElementPtr, vertex);
 			if (ure.importance != RequestImportance::Must)
@@ -954,7 +991,7 @@ class DependencyGraph::FillHelper
 		}
 		else
 		{
-			map< string, Element > subElements;
+			list<const ExtendedBasicVertex*> subElements;
 			buildEdgesForAntiRelationExpression(&subElements, satisfyingVersions, createVertex);
 		}
 	}
