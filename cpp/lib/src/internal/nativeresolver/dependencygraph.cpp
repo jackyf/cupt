@@ -704,9 +704,9 @@ class DependencyGraph::FillHelper
 	}
 
  public:
-	Element getVertexPtrForEmptyPackage(const string& packageName)
+	Element getVertexPtrForEmptyPackage(const string& packageName, bool overrideChecks = false)
 	{
-		return getVertexPtr(packageName, nullptr);
+		return getVertexPtr(packageName, nullptr, overrideChecks);
 	}
 
  private:
@@ -728,7 +728,8 @@ class DependencyGraph::FillHelper
 	void buildEdgesForAntiRelationExpression(
 			list<const ExtendedBasicVertex*>* packageNameToSubElements,
 			const vector< const BinaryVersion* > satisfyingVersions,
-			const std::function< const ExtendedBasicVertex* (const string&) >& createVertex)
+			const std::function< const ExtendedBasicVertex* (const string&) >& createVertex,
+			bool overrideChecks = false)
 	{
 		for (auto satisfyingVersion: satisfyingVersions)
 		{
@@ -746,14 +747,14 @@ class DependencyGraph::FillHelper
 				if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
 							packageVersion) == satisfyingVersions.end())
 				{
-					if (auto queuedVersionPtr = getVertexPtr(packageVersion))
+					if (auto queuedVersionPtr = getVertexPtr(packageVersion, overrideChecks))
 					{
 						addEdgeCustom(subElement, queuedVersionPtr);
 					}
 				}
 			}
 
-			if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName))
+			if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName, overrideChecks))
 			{
 				addEdgeCustom(subElement, emptyPackageElementPtr);
 			}
@@ -992,7 +993,7 @@ class DependencyGraph::FillHelper
 		else
 		{
 			list<const ExtendedBasicVertex*> subElements;
-			buildEdgesForAntiRelationExpression(&subElements, satisfyingVersions, createVertex);
+			buildEdgesForAntiRelationExpression(&subElements, satisfyingVersions, createVertex, true);
 		}
 	}
 };
