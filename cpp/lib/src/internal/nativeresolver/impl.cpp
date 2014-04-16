@@ -65,7 +65,7 @@ void NativeResolverImpl::__import_packages_to_reinstall()
 		const string annotation = "reinstall " + packageName;
 
 		auto installedVersion = __cache->getBinaryPackage(packageName)->getInstalledVersion();
-		RelationExpression installedExpression(format2("%s (= %s", packageName, installedVersion->versionString));
+		RelationExpression installedExpression(format2("%s (= %s)", packageName, installedVersion->versionString));
 		installedExpression[0].relationType = Relation::Types::LiteralyEqual;
 
 		satisfyRelationExpression(installedExpression, true, annotation, RequestImportance::Try, true);
