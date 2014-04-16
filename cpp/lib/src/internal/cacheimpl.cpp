@@ -127,7 +127,8 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 			if (relation.isSatisfiedBy(version->versionString))
 			{
 				if (version->isInstalled() &&
-						systemState->getInstalledInfo(version->packageName)->isBroken())
+						systemState->getInstalledInfo(version->packageName)->isBroken() &&
+						relation.relationType != Relation::Types::LiteralyEqual)
 				{
 					continue;
 				}
