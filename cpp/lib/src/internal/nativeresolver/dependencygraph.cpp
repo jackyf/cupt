@@ -34,6 +34,8 @@ namespace cupt {
 namespace internal {
 namespace dependencygraph {
 
+enum VertexTypePriority { Zero, SuggestsRelationExpression, RecommendsRelationExpression, WishRequest, TryRequest, StrongRelationExpression, MustRequest };
+
 using cache::RelationExpression;
 using std::make_pair;
 
@@ -43,7 +45,7 @@ BasicVertex::~BasicVertex()
 size_t BasicVertex::getTypePriority() const
 {
 	fatal2i("getting priority of '%s'", toString());
-	return 0; // unreachable
+	return VertexTypePriority::Zero; // unreachable
 }
 
 uint32_t BasicVertex::__next_id = 0;
@@ -171,15 +173,15 @@ size_t RelationExpressionVertex::getTypePriority() const
 	{
 		case BinaryVersion::RelationTypes::PreDepends:
 		case BinaryVersion::RelationTypes::Depends:
-			return 3;
+			return VertexTypePriority::StrongRelationExpression;
 		case BinaryVersion::RelationTypes::Recommends:
-			return 2;
+			return VertexTypePriority::RecommendsRelationExpression;
 		case BinaryVersion::RelationTypes::Suggests:
-			return 1;
+			return VertexTypePriority::SuggestsRelationExpression;
 		default:
 			fatal2i("unsupported dependency type '%d'", int(dependencyType));
 	}
-	return 0; // unreacahble
+	return VertexTypePriority::Zero; // unreacahble
 }
 
 bool RelationExpressionVertex::isAnti() const
@@ -224,7 +226,7 @@ struct AntiRelationExpressionVertex: public RelationExpressionVertex
 	}
 	size_t getTypePriority() const
 	{
-		return 3;
+		return VertexTypePriority::StrongRelationExpression;
 	}
 	bool isAnti() const
 	{
@@ -264,7 +266,7 @@ string SynchronizeVertex::toString() const
 
 size_t SynchronizeVertex::getTypePriority() const
 {
-	return isHard ? 3 : 2;
+	return isHard ? VertexTypePriority::StrongRelationExpression : VertexTypePriority::WishRequest;
 }
 
 shared_ptr< const Reason > SynchronizeVertex::getReason(const BasicVertex& parent) const
@@ -343,21 +345,39 @@ class AnnotatedUserReason: public system::Resolver::UserReason
 	}
 };
 
+static inline uint8_t getTypePriorityForUserRequest(const UserRelationExpression& ure)
+{
+	if (ure.importance == RequestImportance::Must)
+	{
+		return VertexTypePriority::MustRequest;
+	}
+	else if (ure.importance == RequestImportance::Try)
+	{
+		return VertexTypePriority::TryRequest;
+	}
+	else
+	{
+		return VertexTypePriority::WishRequest;
+	}
+}
+
 struct UserRelationExpressionVertex: public ExtendedBasicVertex
 {
 	bool invert;
 	bool asAutoFlag;
+	uint16_t typePriority;
 	string annotation;
 	string specificPackageName;
 
 	UserRelationExpressionVertex(const UserRelationExpression& ure)
 		: invert(ure.invert)
 		, asAutoFlag(ure.asAuto)
+		, typePriority(getTypePriorityForUserRequest(ure))
 		, annotation(ure.annotation)
 	{}
 	size_t getTypePriority() const
 	{
-		return 4;
+		return typePriority;
 	}
 	bool isAnti() const
 	{
