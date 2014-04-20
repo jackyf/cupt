@@ -811,64 +811,6 @@ void NativeResolverImpl::__fill_and_process_introduced_by(
 	}
 }
 
-unique_ptr<NativeResolverImpl::Action> NativeResolverImpl::p_chooseActionForPreSatisfy(const PreparedSolution& solution, dg::Element brokenElement)
-{
-	vector<unique_ptr<Action>> possibleActions;
-	__add_actions_to_fix_dependency(possibleActions, solution, brokenElement);
-	if (possibleActions.empty()) return {};
-
-	auto bestActionIt = std::max_element(possibleActions.begin(), possibleActions.end(),
-			[this](const unique_ptr<Action>& left, const unique_ptr<Action>& right)
-			{
-				auto getScore = [this](const Action& action)
-				{
-					return __score_manager.getScoreChangeValue(
-							p_getScoreChange(action.oldElementPtr, action.newElementPtr, 0));
-				};
-				return getScore(*left) < getScore(*right);
-			});
-	return std::move(*bestActionIt);
-}
-
-void NativeResolverImpl::p_preSatisfyUserRequests(PreparedSolution& solution)
-{
-	if (p_debugging) debug2("pre-satisfying user requests:");
-
-	vector<dg::Element> userRequests;
-	solution.foreachBrokenSuccessor(
-			[&userRequests](BrokenSuccessor bs)
-			{
-				if (bs.elementPtr->getTypePriority() != 4) return; // not a user request
-				userRequests.push_back(bs.elementPtr);
-			});
-
-	// for reproduceability
-	std::sort(userRequests.begin(), userRequests.end(),
-			[](dg::Element left, dg::Element right)
-			{
-				return left->id < right->id;
-			});
-
-	for (auto brokenElement: userRequests)
-	{
-		if (p_debugging) debug2("  considering '%s'", brokenElement->toString());
-
-		if (auto action = p_chooseActionForPreSatisfy(solution, brokenElement))
-		{
-			if (p_debugging) debug2("    yes, with '%s'", action->newElementPtr->toString());
-
-			action->introducedBy.versionElementPtr = __solution_storage->getPredecessorElements(brokenElement).front();
-			action->introducedBy.brokenElementPtr = brokenElement;
-			action->brokenElementPriority = 0; // don't stick
-			__solution_storage->assignAction(solution, std::move(action));
-		}
-		else
-		{
-			if (p_debugging) debug2("    no");
-		}
-	};
-}
-
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
@@ -885,7 +827,6 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	auto initialSolution = std::make_shared< PreparedSolution >();
 	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
 	__solution_storage->prepareForResolving(*initialSolution, __old_packages, p_userRelationExpressions);
-	p_preSatisfyUserRequests(*initialSolution);
 
 	SolutionContainer solutions = { initialSolution };
 
