@@ -45,6 +45,9 @@ struct CUPT_API BinaryVersion: public Version
 	bool essential; ///< has version 'essential' flag?
 	RelationLine relations[RelationTypes::Count]; ///< relations with other binary versions
 	vector< string > provides; ///< array of virtual package names
+	/// @cond
+	string multiarch;
+	/// @endcond
 	string description;
 	string descriptionHash; ///< MD5 hash sum value of the full description
 	string tags; ///< tags

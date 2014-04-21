@@ -22,5 +22,5 @@ END
 my $cupt = TestCupt::setup('packages' => $packages);
 
 like(get_first_offer("$cupt install abc"), regex_offer(), "package doesn't conflict with itself");
-like(get_first_offer("$cupt install abc def"), qr/no solutions/, "conflicting packages cannot be installed together");
+like(get_first_offer("$cupt install abc def"), regex_no_solutions(), "conflicting packages cannot be installed together");
 
