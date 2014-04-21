@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2010-2014 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -27,7 +27,8 @@ void consumePackageName(const char* begin, const char* end, const char*& resultE
 			(*resultEnd >= 'a' && *resultEnd <= 'z') ||
 			*resultEnd == '_' ||
 			(*resultEnd >= '0' && *resultEnd <= '9') ||
-			*resultEnd == '.' || *resultEnd == '+' || *resultEnd == '-')
+			*resultEnd == '.' || *resultEnd == '+' || *resultEnd == '-' ||
+			*resultEnd == ':')
 		  )
 	{
 		++resultEnd;

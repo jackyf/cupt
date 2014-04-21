@@ -3,6 +3,7 @@ cupt (2.8.0~) UNRELEASED; urgency=low
   * lib:
     - system/resolvers/native:
       - 'upgrade': re-implemented in terms of 'satisfyRelationExpression'.
+    - 'consumePackageName': allow ':' character.
   * test:
     - Introduced.
 

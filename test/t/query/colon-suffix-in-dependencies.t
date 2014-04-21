@@ -17,7 +17,6 @@ sub stdout {
 
 my $abc1output = stdout("$cupt depends abc=1");
 like($abc1output, qr/Depends: def.*\n/, "colon is allowed (versionless dependency)");
-local $TODO = "unimplemented";
 like($abc1output, qr/Depends: def:xyz\n/, "colon is parsed (versionless dependency)");
 
 my $abc2output = stdout("$cupt depends abc=2");
