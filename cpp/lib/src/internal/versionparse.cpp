@@ -194,6 +194,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 					internal::parse::processSpaceCharSpaceDelimitedStrings(
 							tagValue.first, tagValue.second, ',', callback);
 				})
+				TAG(Multi-Arch, v->multiarch = tagValue.toString();)
 			}
 
 			if (Version::parseInfoOnly)

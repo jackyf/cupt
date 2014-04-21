@@ -110,15 +110,11 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 	}
 }
 
-vector< const BinaryVersion* >
-CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
+template < bool multiarchAllowedRequired >
+static inline void addSatisfyingPackageVersions(
+		vector<const BinaryVersion*>* result, const Relation& relation,
+		const BinaryPackage* package, const system::State& systemState)
 {
-	vector< const BinaryVersion* > result;
-
-	const string& packageName = relation.packageName;
-
-	auto package = getBinaryPackage(packageName);
-
 	if (package)
 	{
 		// if such binary package exists
@@ -127,14 +123,41 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 			if (relation.isSatisfiedBy(version->versionString))
 			{
 				if (version->isInstalled() &&
-						systemState->getInstalledInfo(version->packageName)->isBroken() &&
+						systemState.getInstalledInfo(version->packageName)->isBroken() &&
 						relation.relationType != Relation::Types::LiteralyEqual)
 				{
 					continue;
 				}
-				result.push_back(version);
+				if (multiarchAllowedRequired && version->multiarch != "allowed")
+				{
+					continue;
+				}
+
+				result->push_back(version);
 			}
 		}
+	}
+}
+
+vector< const BinaryVersion* >
+CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
+{
+	vector< const BinaryVersion* > result;
+
+	const string& packageName = relation.packageName;
+
+	{ // real package
+		size_t colonPosition = packageName.find(':');
+		if (colonPosition == string::npos)
+		{
+			addSatisfyingPackageVersions<false>(&result, relation, getBinaryPackage(packageName), *systemState);
+		}
+		else if (packageName.compare(colonPosition+1, string::npos, "any", 3) == 0)
+		{
+			auto realPackageName = packageName.substr(0, colonPosition);
+			addSatisfyingPackageVersions<true>(&result, relation, getBinaryPackage(realPackageName), *systemState);
+		}
+		// otherwise unsupported
 	}
 
 	// virtual package can only be considered if no relation sign is specified

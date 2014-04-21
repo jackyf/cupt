@@ -3,6 +3,9 @@ cupt (2.8.0~) UNRELEASED; urgency=low
   * lib:
     - system/resolvers/native:
       - 'upgrade': re-implemented in terms of 'satisfyRelationExpression'.
+    - cache:
+      - 'getSatisfyingVersions': minimal single-arch support for ':any'
+        suffixes.
     - 'consumePackageName': allow ':' character.
   * test:
     - Introduced.
