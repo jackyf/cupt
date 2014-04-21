@@ -30,13 +30,9 @@ my $cupt = TestCupt::setup(
 		'packages' => $packages,
 );
 
-my $output = `yes 'N' | $cupt -s remove --sf xyz/installed 2>&1`;
+my $output = get_all_offers("$cupt remove --sf xyz/installed");
 
 like($output, regex_offer(), "resolving succeeded");
-
-my $r = regex_offer();
-my @offer_count = ($output =~ /$r/g);
-
-is(scalar @offer_count, 3, "three solutions (removal + two of 'xyz 2') are offered") or
+is(get_offer_count($output), 3, "three solutions (removal + two of 'xyz 2') are offered") or
 		diag $output;
 

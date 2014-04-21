@@ -9,7 +9,10 @@ our @EXPORT = qw(
 	compose_package_record
 	entail
 	regex_offer
+	regex_no_solutions
 	get_first_offer
+	get_all_offers
+	get_offer_count
 );
 use Exporter qw(import);
 use Cwd;
@@ -145,9 +148,27 @@ sub regex_offer {
 	return qr/(?:Do you want to continue?|Nothing to do.)/;
 }
 
+sub regex_no_solutions {
+	return qr/no solutions/;
+}
+
 sub get_first_offer {
 	my ($command) = @_;
 	return `echo 'q' | $command -s 2>&1`;
+}
+
+sub get_all_offers {
+	my ($command) = @_;
+	return `yes 'N' | $command -s 2>&1`;
+}
+
+sub get_offer_count {
+	my ($input) = @_;
+
+	my $r = regex_offer();
+	my @offer_count = ($input =~ /$r/g);
+
+	return scalar @offer_count;
 }
 
 1;
