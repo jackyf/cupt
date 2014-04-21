@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -e
+
+TESTS_PATH=$1
+BINARY_UNDER_TEST_PATH=$2
+prove -r --timer -I${TESTS_PATH} t/$PROVE_FILTER :: $BINARY_UNDER_TEST_PATH
