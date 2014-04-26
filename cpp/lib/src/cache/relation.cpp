@@ -145,9 +145,14 @@ void Relation::__init(const char* start, const char* end)
 			fatal2(__("failed to parse a version part in the relation '%s'"), unparsed);
 		}
 	}
-	else
+	else if (current == end)
 	{
 		relationType = Types::None;
+	}
+	else
+	{
+		// bad character in the middle of package name
+		fatal2(__("failed to parse a package name in the relation '%s'"), string(start, end));
 	}
 }
 
