@@ -5,6 +5,7 @@ use warnings;
 
 our @EXPORT = qw(
 	exitcode
+	stdout
 	compose_installed_record
 	compose_package_record
 	entail
@@ -126,6 +127,11 @@ END
 
 sub exitcode {
 	return system($_[0] . " >/dev/null 2>&1");
+}
+
+sub stdout {
+	my $command = $_[0];
+	return `$command 2>/dev/null`;
 }
 
 sub compose_installed_record {

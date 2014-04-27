@@ -184,6 +184,7 @@ int showBinaryVersions(Context& context)
 							+ '/' + version->file.name);
 				}
 			}
+			p("Multi-Arch", version->multiarch);
 			p("MD5", version->file.hashSums[HashSums::MD5]);
 			p("SHA1", version->file.hashSums[HashSums::SHA1]);
 			p("SHA256", version->file.hashSums[HashSums::SHA256]);

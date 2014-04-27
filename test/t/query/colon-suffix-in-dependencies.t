@@ -10,11 +10,6 @@ my $packages =
 
 my $cupt = TestCupt::setup('packages' => $packages);
 
-sub stdout {
-	my $command = $_[0];
-	return `$command 2>/dev/null`;
-}
-
 my $abc1output = stdout("$cupt depends abc=1");
 like($abc1output, qr/Depends: def.*\n/, "colon is allowed (versionless dependency)");
 like($abc1output, qr/Depends: def:xyz\n/, "colon is parsed (versionless dependency)");
