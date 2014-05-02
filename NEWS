@@ -1,3 +1,6 @@
+2.8
+ - Added minimal support for <package>:any syntax.
+
 2.7
  - Added pre-configuration, i.e. the possibility to change the options related
    to the configuration itself before reading standard configuration files.
