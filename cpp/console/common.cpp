@@ -35,7 +35,7 @@ ReverseDependsIndex< VersionT >::ReverseDependsIndex(const Cache& cache)
 template < typename VersionT >
 void ReverseDependsIndex< VersionT >::add(RelationTypeT relationType)
 {
-	auto insertResult = __data.insert({ relationType, {} });
+	auto insertResult = __data.insert({ relationType, PerRelationType() });
 	if (insertResult.second)
 	{
 		__add(relationType, &insertResult.first->second);

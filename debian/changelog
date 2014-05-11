@@ -1,6 +1,8 @@
 cupt (2.8.1~) UNRELEASED; urgency=medium
 
-  * 
+  * lib,console:
+    - Used more explicit syntax for initialization of some STL structures.
+      Fixes builds with g++-4.9. (Closes: #746840)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 14:56:15 +0300
 

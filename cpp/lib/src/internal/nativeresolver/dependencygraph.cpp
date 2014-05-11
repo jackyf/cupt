@@ -609,7 +609,8 @@ class DependencyGraph::FillHelper
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
 
-	map< string, pair< forward_list<Element>, Element > > __package_name_to_vertex_ptrs;
+	typedef pair< forward_list<Element>, Element > RelatedVertexPtrs;
+	map< string, RelatedVertexPtrs > __package_name_to_vertex_ptrs;
 	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list<const ExtendedBasicVertex*> > __meta_anti_relation_expression_vertices;
@@ -669,7 +670,7 @@ class DependencyGraph::FillHelper
 		auto makeVertex = [this, &packageName, &version]() -> const VersionVertex*
 		{
 			auto relatedVertexPtrsIt = __package_name_to_vertex_ptrs.insert(
-					{ packageName, { {}, nullptr } }).first;
+					{ packageName, RelatedVertexPtrs() }).first;
 			auto vertexPtr(new VersionVertex(relatedVertexPtrsIt));
 			vertexPtr->version = version;
 			__dependency_graph.addVertex(vertexPtr);
