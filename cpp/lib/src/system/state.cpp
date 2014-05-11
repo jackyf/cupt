@@ -229,8 +229,7 @@ void StateData::parseDpkgStatus()
 			}
 
 			// add parsed info to installed_info
-			installedInfo.insert(pair< const string, unique_ptr<const InstalledRecord> >(
-					std::move(packageName), std::move(installedRecord)));
+			installedInfo.emplace(std::move(packageName), std::move(installedRecord));
 		}
 	}
 	catch (Exception&)
