@@ -1,6 +1,8 @@
 cupt (2.9.0~) UNRELEASED; urgency=medium
 
-  * 
+  * lib:
+    - system/state:
+      [API break] 'getInstalledInfo': returns raw pointer.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
 

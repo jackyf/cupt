@@ -263,16 +263,16 @@ State::~State()
 	delete __data;
 }
 
-shared_ptr< const State::InstalledRecord > State::getInstalledInfo(const string& packageName) const
+const State::InstalledRecord* State::getInstalledInfo(const string& packageName) const
 {
 	auto it = __data->installedInfo.find(packageName);
 	if (it == __data->installedInfo.end())
 	{
-		return shared_ptr< const InstalledRecord >();
+		return nullptr;
 	}
 	else
 	{
-		return it->second;
+		return it->second.get();
 	}
 }
 

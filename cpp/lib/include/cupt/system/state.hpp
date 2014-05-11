@@ -82,7 +82,7 @@ class CUPT_API State
 	 * @param packageName
 	 * @return pointer to InstalledRecord if found, empty pointer if not
 	 */
-	shared_ptr< const InstalledRecord > getInstalledInfo(const string& packageName) const;
+	const InstalledRecord* getInstalledInfo(const string& packageName) const;
 	/// gets installed package names
 	/**
 	 * @return array of package names
