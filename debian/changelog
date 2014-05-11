@@ -1,3 +1,9 @@
+cupt (2.8.1~) UNRELEASED; urgency=medium
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 14:56:15 +0300
+
 cupt (2.8.0) experimental; urgency=low
 
   * lib:
