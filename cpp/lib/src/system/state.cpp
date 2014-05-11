@@ -41,13 +41,12 @@ struct StateData
 {
 	shared_ptr< const Config > config;
 	internal::CacheImpl* cacheImpl;
-	map< string, shared_ptr< const InstalledRecord > > installedInfo;
+	map<string, unique_ptr< const InstalledRecord >> installedInfo;
 
 	void parseDpkgStatus();
 };
 
-void parseStatusSubstrings(const string& packageName, const string& input,
-		const shared_ptr< InstalledRecord >& installedRecord)
+void parseStatusSubstrings(const string& packageName, const string& input, InstalledRecord* installedRecord)
 {
 	// status should be a triplet delimited by spaces (i.e. 2 ones)
 	internal::TagParser::StringRange current;
@@ -208,8 +207,8 @@ void StateData::parseDpkgStatus()
 			{
 				fatal2(__("no package name in the record"));
 			}
-			auto installedRecord = std::make_shared< InstalledRecord >();
-			parseStatusSubstrings(packageName, status, installedRecord);
+			unique_ptr<InstalledRecord> installedRecord(new InstalledRecord());
+			parseStatusSubstrings(packageName, status, installedRecord.get());
 
 			if (packageHasFullEntryInfo(*installedRecord))
 			{
@@ -230,7 +229,7 @@ void StateData::parseDpkgStatus()
 			}
 
 			// add parsed info to installed_info
-			installedInfo.insert(pair< const string, shared_ptr< const InstalledRecord > >(
+			installedInfo.insert(pair< const string, unique_ptr<const InstalledRecord> >(
 					std::move(packageName), std::move(installedRecord)));
 		}
 	}
