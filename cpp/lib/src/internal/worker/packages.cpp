@@ -1924,12 +1924,12 @@ void PackagesWorker::__change_auto_status(const InnerActionGroup& actionGroup)
 		auto it = autoFlagChanges.find(packageName);
 		if (it != autoFlagChanges.end() && it->second == targetStatus)
 		{
-			markAsAutomaticallyInstalled(packageName, targetStatus);
+			p_markAsAutomaticallyInstalled(packageName, targetStatus);
 		}
 	}
 }
 
-void PackagesWorker::markAsAutomaticallyInstalled(const string& packageName, bool targetStatus)
+void PackagesWorker::p_markAsAutomaticallyInstalled(const string& packageName, bool targetStatus)
 {
 	auto simulating = _config->getBool("cupt::worker::simulate");
 
@@ -2043,7 +2043,7 @@ void PackagesWorker::__do_independent_auto_status_changes()
 		const auto& packageName = autoFlagChange.first;
 		if (!wasDoneAlready(packageName))
 		{
-			markAsAutomaticallyInstalled(packageName, autoFlagChange.second);
+			p_markAsAutomaticallyInstalled(packageName, autoFlagChange.second);
 		}
 	}
 }

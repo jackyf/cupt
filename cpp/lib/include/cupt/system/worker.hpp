@@ -126,13 +126,6 @@ class CUPT_API Worker
 	pair< size_t, size_t > getDownloadSizesPreview() const;
 
 	/**
-	 * Marks a package as automatically or manually installed.
-	 *
-	 * @param packageName
-	 * @param value if @c true, marks as automatically installed, if @c false, marks as manually installed
-	 */
-	void setAutomaticallyInstalledFlag(const string& packageName, bool value);
-	/**
 	 * Modifies the system to achieve the desired state set by
 	 * @ref setDesiredState.
 	 *

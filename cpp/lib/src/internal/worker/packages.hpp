@@ -114,10 +114,10 @@ class PackagesWorker: public virtual WorkerBase
 	string __get_dpkg_action_command(const string&, const string&, const string&,
 			InnerAction::Type, const string&, const InnerActionGroup&, bool);
 	void p_processActionGroup(Dpkg&, const InnerActionGroup&);
+	void p_markAsAutomaticallyInstalled(const string& packageName, bool targetStatus);
  public:
 	PackagesWorker();
 
-	void markAsAutomaticallyInstalled(const string& packageName, bool targetStatus);
 	void changeSystem(const shared_ptr< download::Progress >&);
 };
 
