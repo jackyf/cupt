@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 use strict;
 use warnings;
@@ -28,13 +28,13 @@ my $cupt = TestCupt::setup(
 );
 
 sub get_output {
-	my ($synch_type) = @_;
+	my ($synch_type, $params) = @_;
 
-	return get_first_offer("$cupt install xyz1 -V -o cupt::resolver::synchronize-by-source-versions=$synch_type");
+	return get_first_offer("$cupt install xyz1 -V -o cupt::resolver::synchronize-by-source-versions=$synch_type $params");
 }
 
 subtest "soft" => sub {
-	my $output = get_output('soft');
+	my $output = get_output('soft', "");
 
 	like($output, regex_offer(), "resolving succeeded");
 	like($output, qr/xyz3 .* -> 2/, "'xyz3' package is updated");
@@ -43,10 +43,16 @@ subtest "soft" => sub {
 };
 
 subtest "hard, removal possible" => sub {
-	my $output = get_output('hard');
+	my $output = get_output('hard', "");
 
 	like($output, regex_offer(), "resolved succeeded");
 	like($output, qr/xyz3 .* -> 2/, "'xyz3' package is updated");
 	like($output, qr/xyz4/, "'xyz4' package is removed");
+};
+
+subtest "hard, removal prohibited" => sub {
+	my $output = get_output('hard', "--no-remove");
+
+	like($output, regex_no_solutions(), "no solutions");
 };
 
