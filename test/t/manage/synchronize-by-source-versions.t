@@ -4,46 +4,15 @@ use Test::More tests => 3;
 use strict;
 use warnings;
 
-my $dpkg_status = <<END;
-Package: xyz1
-Status: install ok installed
-Source: xyz-source
-Version: 1
-Architecture: all
-
-Package: xyz2
-Status: install ok installed
-Source: xyz-source
-Version: 2
-Architecture: all
-
-Package: xyz3
-Status: install ok installed
-Source: xyz-source
-Version: 1
-Architecture: all
-END
-
-my $packages = <<END;
-Package: xyz1
-Source: xyz-source
-Version: 2
-Architecture: all
-SHA1: 1
-
-Package: xyz2
-Source: xyz-source
-Version: 2
-Architecture: all
-SHA1: 2
-
-Package: xyz3
-Source: xyz-source
-Version: 2
-Architecture: all
-SHA1: 3
-END
-
+my $source_line = "Source: xyz-source\n";
+my $dpkg_status =
+		entail(compose_installed_record('xyz1', '1') . $source_line) .
+		entail(compose_installed_record('xyz2', '2') . $source_line) .
+		entail(compose_installed_record('xyz3', '1') . $source_line);
+my $packages =
+		entail(compose_package_record('xyz1', '2') . $source_line) .
+		entail(compose_package_record('xyz2', '2') . $source_line) .
+		entail(compose_package_record('xyz3', '2') . $source_line);
 my $sources = <<END;
 Package: xyz-source
 Version: 2
