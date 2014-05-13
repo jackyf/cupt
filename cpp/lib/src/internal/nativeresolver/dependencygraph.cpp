@@ -866,14 +866,13 @@ class DependencyGraph::FillHelper
 
 		if (isNewMetaVertex)
 		{
-			auto packageNames = __get_related_binary_package_names(__dependency_graph.__cache, version);
-			FORIT(packageNameIt, packageNames)
+			for (const auto& packageName: __get_related_binary_package_names(__dependency_graph.__cache, version))
 			{
-				auto package = __dependency_graph.__cache.getBinaryPackage(*packageNameIt);
+				auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
 				if (!package) continue;
 
 				auto syncVertex = new SynchronizeVertex(__synchronize_level > 1);
-				syncVertex->targetPackageName = *packageNameIt;
+				syncVertex->targetPackageName = packageName;
 				auto syncVertexPtr = __dependency_graph.addVertex(syncVertex);
 
 				for (auto relatedVersion: *package)
@@ -887,7 +886,7 @@ class DependencyGraph::FillHelper
 					}
 				}
 
-				if (auto emptyVersionPtr = getVertexPtrForEmptyPackage(*packageNameIt, package))
+				if (auto emptyVersionPtr = getVertexPtrForEmptyPackage(packageName, package))
 				{
 					addEdgeCustom(syncVertexPtr, emptyVersionPtr);
 				}
@@ -899,7 +898,7 @@ class DependencyGraph::FillHelper
 					addEdgeCustom(syncVertexPtr, __dependency_graph.addVertex(unsatisfiedVertex));
 				}
 
-				subElementPtrs.push_back(make_pair(*packageNameIt, syncVertexPtr));
+				subElementPtrs.push_back(make_pair(packageName, syncVertexPtr));
 			}
 		}
 
