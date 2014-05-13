@@ -635,7 +635,7 @@ class DependencyGraph::FillHelper
 	{
 		__synchronize_level = __get_synchronize_level(__dependency_graph.__config);
 		__dependency_groups= __get_dependency_groups(__dependency_graph.__config);
-		p_dummyElementPtr = getVertexPtrForEmptyPackage("<user requests>");
+		p_dummyElementPtr = getVertexPtrForEmptyPackage("<user requests>", nullptr);
 	}
 
  private:
@@ -697,9 +697,9 @@ class DependencyGraph::FillHelper
 		return getVertexPtr(packageName, version, hashValue, isVertexAllowed, overrideChecks);
 	}
 
-	Element getVertexPtrForEmptyPackage(const string& packageName, bool overrideChecks = false)
+	Element getVertexPtrForEmptyPackage(const string& packageName, const BinaryPackage* package, bool overrideChecks = false)
 	{
-		const void* hashValue = __dependency_graph.__cache.getBinaryPackage(packageName);
+		const void* hashValue = package;
 		auto isVertexAllowed = [this, &packageName]() -> bool
 		{
 			return __can_package_be_removed(packageName);
@@ -775,7 +775,7 @@ class DependencyGraph::FillHelper
 				}
 			}
 
-			if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName, overrideChecks))
+			if (auto emptyPackageElementPtr = getVertexPtrForEmptyPackage(packageName, package, overrideChecks))
 			{
 				addEdgeCustom(subElement, emptyPackageElementPtr);
 			}
@@ -887,10 +887,8 @@ class DependencyGraph::FillHelper
 			auto packageNames = __get_related_binary_package_names(__dependency_graph.__cache, version);
 			FORIT(packageNameIt, packageNames)
 			{
-				if (!__dependency_graph.__cache.getBinaryPackage(*packageNameIt))
-				{
-					continue;
-				}
+				auto package = __dependency_graph.__cache.getBinaryPackage(*packageNameIt);
+				if (!package) continue;
 
 				auto syncVertex = new SynchronizeVertex(__synchronize_level > 1);
 				syncVertex->targetPackageName = *packageNameIt;
@@ -906,7 +904,7 @@ class DependencyGraph::FillHelper
 					}
 				}
 
-				if (auto emptyVersionPtr = getVertexPtrForEmptyPackage(*packageNameIt))
+				if (auto emptyVersionPtr = getVertexPtrForEmptyPackage(*packageNameIt, package))
 				{
 					addEdgeCustom(syncVertexPtr, emptyVersionPtr);
 				}
@@ -1043,7 +1041,7 @@ vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph:
 				__fill_helper->getVertexPtrForVersion(version);
 			}
 
-			__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
+			__fill_helper->getVertexPtrForEmptyPackage(packageName, package); // also, empty one
 		}
 	}
 
@@ -1091,7 +1089,8 @@ Element DependencyGraph::getCorrespondingEmptyElement(Element element)
 		fatal2i("getting corresponding empty element for non-version vertex");
 	}
 	const string& packageName = versionVertex->getPackageName();
-	return __fill_helper->getVertexPtrForEmptyPackage(packageName);
+	auto package = __cache.getBinaryPackage(packageName);
+	return __fill_helper->getVertexPtrForEmptyPackage(packageName, package);
 }
 
 }
