@@ -562,21 +562,6 @@ vector< string > __get_related_binary_package_names(const Cache& cache, const Bi
 	return vector< string >();
 }
 
-vector< const BinaryVersion* > __get_versions_by_source_version_string(
-		const BinaryPackage* package, const string& sourceVersionString)
-{
-	vector< const BinaryVersion* > result;
-	for (auto version: *package)
-	{
-		if (version->sourceVersionString == sourceVersionString)
-		{
-			result.push_back(version);
-		}
-	}
-
-	return result;
-}
-
 short __get_synchronize_level(const Config& config)
 {
 	const string optionName = "cupt::resolver::synchronize-by-source-versions";
@@ -891,12 +876,14 @@ class DependencyGraph::FillHelper
 				syncVertex->targetPackageName = *packageNameIt;
 				auto syncVertexPtr = __dependency_graph.addVertex(syncVertex);
 
-				auto relatedVersions = __get_versions_by_source_version_string(package, version->sourceVersionString);
-				FORIT(relatedVersionIt, relatedVersions)
+				for (auto relatedVersion: *package)
 				{
-					if (auto relatedVersionVertexPtr = getVertexPtrForVersion(*relatedVersionIt))
+					if (relatedVersion->sourceVersionString == version->sourceVersionString)
 					{
-						addEdgeCustom(syncVertexPtr, relatedVersionVertexPtr);
+						if (auto relatedVersionVertexPtr = getVertexPtrForVersion(relatedVersion))
+						{
+							addEdgeCustom(syncVertexPtr, relatedVersionVertexPtr);
+						}
 					}
 				}
 
