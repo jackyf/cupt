@@ -611,7 +611,7 @@ class DependencyGraph::FillHelper
 
 	typedef pair< forward_list<Element>, Element > RelatedVertexPtrs;
 	map< string, RelatedVertexPtrs > __package_name_to_vertex_ptrs;
-	unordered_map< string, const VersionVertex* > __version_to_vertex_ptr;
+	unordered_map<const void*, const VersionVertex*> __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list<const ExtendedBasicVertex*> > __meta_anti_relation_expression_vertices;
 	unordered_map< string, list< pair< string, Element > > > __meta_synchronize_map;
@@ -682,9 +682,10 @@ class DependencyGraph::FillHelper
 			return vertexPtr;
 		};
 
-		string versionHashString = packageName;
-		versionHashString.append((const char*)&version, sizeof(version));
-		auto insertResult = __version_to_vertex_ptr.insert({ std::move(versionHashString), nullptr });
+		auto hash = version ?
+				static_cast<const void*>(version) :
+				static_cast<const void*>(__dependency_graph.__cache.getBinaryPackage(packageName));
+		auto insertResult = __version_to_vertex_ptr.insert({ hash, nullptr });
 		bool isNew = insertResult.second;
 		const VersionVertex** elementPtrPtr = &insertResult.first->second;
 
