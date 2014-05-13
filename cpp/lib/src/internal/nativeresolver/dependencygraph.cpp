@@ -117,7 +117,7 @@ string VersionVertex::toString() const
 
 const forward_list<Element>* VersionVertex::getRelatedElements() const
 {
-	return &__related_element_ptrs_it->second.first;
+	return &__related_element_ptrs_it->second;
 }
 
 const string& VersionVertex::getPackageName() const
@@ -140,7 +140,7 @@ string VersionVertex::toLocalizedString() const
 
 Element VersionVertex::getFamilyKey() const
 {
-	return __related_element_ptrs_it->second.second;
+	return __related_element_ptrs_it->second.front();
 }
 
 typedef BinaryVersion::RelationTypes::Type RelationType;
@@ -592,7 +592,7 @@ class DependencyGraph::FillHelper
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
 
-	typedef pair< forward_list<Element>, Element > RelatedVertexPtrs;
+	typedef forward_list<Element> RelatedVertexPtrs;
 	map< string, RelatedVertexPtrs > __package_name_to_vertex_ptrs;
 	unordered_map<const void*, const VersionVertex*> __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
@@ -634,11 +634,13 @@ class DependencyGraph::FillHelper
 			auto vertexPtr(new VersionVertex(relatedVertexPtrsIt));
 			vertexPtr->version = version;
 			__dependency_graph.addVertex(vertexPtr);
-			relatedVertexPtrsIt->second.first.push_front(vertexPtr);
-			if (!relatedVertexPtrsIt->second.second)
-			{
-				relatedVertexPtrsIt->second.second = vertexPtr; // family vertex
-			}
+
+			auto& relatedVertexes = relatedVertexPtrsIt->second;
+			// keep first element (family key) always the same
+			relatedVertexes.insert_after(
+					relatedVertexes.empty() ? relatedVertexes.before_begin() : relatedVertexes.begin(),
+					vertexPtr);
+
 			return vertexPtr;
 		};
 
@@ -661,7 +663,7 @@ class DependencyGraph::FillHelper
 		const void* hashValue = version;
 		auto isVertexAllowed = [this, &packageName, &version]() -> bool
 		{
-			for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName].first)
+			for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName])
 			{
 				auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
 				if (!existingVersion) continue;

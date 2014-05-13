@@ -77,7 +77,7 @@ struct BasicVertex
 struct VersionVertex: public BasicVertex
 {
  private:
-	typedef map< string, pair< forward_list<Element>, Element > > FamilyMap;
+	typedef map< string, forward_list<Element> > FamilyMap;
 	const FamilyMap::iterator __related_element_ptrs_it;
  public:
 	const BinaryVersion* version;
