@@ -562,18 +562,15 @@ vector< string > __get_related_binary_package_names(const Cache& cache, const Bi
 	return vector< string >();
 }
 
-vector< const BinaryVersion* > __get_versions_by_source_version_string(const Cache& cache,
-		const string& packageName, const string& sourceVersionString)
+vector< const BinaryVersion* > __get_versions_by_source_version_string(
+		const BinaryPackage* package, const string& sourceVersionString)
 {
 	vector< const BinaryVersion* > result;
-	if (auto package = cache.getBinaryPackage(packageName))
+	for (auto version: *package)
 	{
-		for (auto version: *package)
+		if (version->sourceVersionString == sourceVersionString)
 		{
-			if (version->sourceVersionString == sourceVersionString)
-			{
-				result.push_back(version);
-			}
+			result.push_back(version);
 		}
 	}
 
@@ -894,8 +891,7 @@ class DependencyGraph::FillHelper
 				syncVertex->targetPackageName = *packageNameIt;
 				auto syncVertexPtr = __dependency_graph.addVertex(syncVertex);
 
-				auto relatedVersions = __get_versions_by_source_version_string(
-						__dependency_graph.__cache, *packageNameIt, version->sourceVersionString);
+				auto relatedVersions = __get_versions_by_source_version_string(package, version->sourceVersionString);
 				FORIT(relatedVersionIt, relatedVersions)
 				{
 					if (auto relatedVersionVertexPtr = getVertexPtrForVersion(*relatedVersionIt))
