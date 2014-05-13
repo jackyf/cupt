@@ -638,35 +638,12 @@ class DependencyGraph::FillHelper
 		p_dummyElementPtr = getVertexPtrForEmptyPackage("<user requests>");
 	}
 
-	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version, bool overrideChecks = false)
+ private:
+	template< typename IsVertexAllowedT >
+	const VersionVertex* getVertexPtr(const string& packageName, const BinaryVersion* version,
+			const void* hashValue, const IsVertexAllowedT& isVertexAllowed,
+			bool overrideChecks = false)
 	{
-		auto isVertexAllowed = [this, &packageName, &version]() -> bool
-		{
-			if (!version && !__can_package_be_removed(packageName))
-			{
-				return false;
-			}
-
-			if (version)
-			{
-				for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName].first)
-				{
-					auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
-					if (!existingVersion) continue;
-					if (versionstring::sameOriginal(version->versionString, existingVersion->versionString))
-					{
-						if (std::equal(version->relations,
-									version->relations + BinaryVersion::RelationTypes::Count,
-									existingVersion->relations))
-						{
-							return false; // no reasons to allow this version dependency-wise
-						}
-					}
-				}
-			}
-
-			return true;
-		};
 		auto makeVertex = [this, &packageName, &version]() -> const VersionVertex*
 		{
 			auto relatedVertexPtrsIt = __package_name_to_vertex_ptrs.insert(
@@ -682,10 +659,7 @@ class DependencyGraph::FillHelper
 			return vertexPtr;
 		};
 
-		auto hash = version ?
-				static_cast<const void*>(version) :
-				static_cast<const void*>(__dependency_graph.__cache.getBinaryPackage(packageName));
-		auto insertResult = __version_to_vertex_ptr.insert({ hash, nullptr });
+		auto insertResult = __version_to_vertex_ptr.insert({ hashValue, nullptr });
 		bool isNew = insertResult.second;
 		const VersionVertex** elementPtrPtr = &insertResult.first->second;
 
@@ -697,9 +671,40 @@ class DependencyGraph::FillHelper
 		return *elementPtrPtr;
 	}
 
-	VersionElement getVertexPtr(const BinaryVersion* version, bool overrideChecks = false)
+ public:
+	VersionElement getVertexPtrForVersion(const BinaryVersion* version, bool overrideChecks = false)
 	{
-		return getVertexPtr(version->packageName, version, overrideChecks);
+		const auto& packageName = version->packageName;
+		const void* hashValue = version;
+		auto isVertexAllowed = [this, &packageName, &version]() -> bool
+		{
+			for (const BasicVertex* bv: __package_name_to_vertex_ptrs[packageName].first)
+			{
+				auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
+				if (!existingVersion) continue;
+				if (versionstring::sameOriginal(version->versionString, existingVersion->versionString))
+				{
+					if (std::equal(version->relations,
+								version->relations + BinaryVersion::RelationTypes::Count,
+								existingVersion->relations))
+					{
+						return false; // no reasons to allow this version dependency-wise
+					}
+				}
+			}
+			return true;
+		};
+		return getVertexPtr(packageName, version, hashValue, isVertexAllowed, overrideChecks);
+	}
+
+	Element getVertexPtrForEmptyPackage(const string& packageName, bool overrideChecks = false)
+	{
+		const void* hashValue = __dependency_graph.__cache.getBinaryPackage(packageName);
+		auto isVertexAllowed = [this, &packageName]() -> bool
+		{
+			return __can_package_be_removed(packageName);
+		};
+		return getVertexPtr(packageName, nullptr, hashValue, isVertexAllowed, overrideChecks);
 	}
 
  private:
@@ -723,12 +728,6 @@ class DependencyGraph::FillHelper
 			element = __dependency_graph.addVertex(vertex);
 		}
 		return element;
-	}
-
- public:
-	Element getVertexPtrForEmptyPackage(const string& packageName, bool overrideChecks = false)
-	{
-		return getVertexPtr(packageName, nullptr, overrideChecks);
 	}
 
  private:
@@ -769,7 +768,7 @@ class DependencyGraph::FillHelper
 				if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
 							packageVersion) == satisfyingVersions.end())
 				{
-					if (auto queuedVersionPtr = getVertexPtr(packageVersion, overrideChecks))
+					if (auto queuedVersionPtr = getVertexPtrForVersion(packageVersion, overrideChecks))
 					{
 						addEdgeCustom(subElement, queuedVersionPtr);
 					}
@@ -860,7 +859,7 @@ class DependencyGraph::FillHelper
 
 		FORIT(satisfyingVersionIt, satisfyingVersions)
 		{
-			if (auto queuedVersionPtr = getVertexPtr(*satisfyingVersionIt))
+			if (auto queuedVersionPtr = getVertexPtrForVersion(*satisfyingVersionIt))
 			{
 				addEdgeCustom(relationExpressionVertexPtr, queuedVersionPtr);
 			}
@@ -901,7 +900,7 @@ class DependencyGraph::FillHelper
 						__dependency_graph.__cache, *packageNameIt, version->sourceVersionString);
 				FORIT(relatedVersionIt, relatedVersions)
 				{
-					if (auto relatedVersionVertexPtr = getVertexPtr(*relatedVersionIt))
+					if (auto relatedVersionVertexPtr = getVertexPtrForVersion(*relatedVersionIt))
 					{
 						addEdgeCustom(syncVertexPtr, relatedVersionVertexPtr);
 					}
@@ -1014,7 +1013,7 @@ class DependencyGraph::FillHelper
 			auto vertex = createVertex(dummy);
 			for (auto version: satisfyingVersions)
 			{
-				addEdgeCustom(vertex, getVertexPtr(version, true));
+				addEdgeCustom(vertex, getVertexPtrForVersion(version, true));
 			}
 		}
 		else
@@ -1035,13 +1034,13 @@ vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph:
 		{
 			const auto& oldVersion = item.second;
 
-			__fill_helper->getVertexPtr(oldVersion);
+			__fill_helper->getVertexPtrForVersion(oldVersion);
 
 			const string& packageName = oldVersion->packageName;
 			auto package = __cache.getBinaryPackage(packageName);
 			for (auto version: *package)
 			{
-				__fill_helper->getVertexPtr(version);
+				__fill_helper->getVertexPtrForVersion(version);
 			}
 
 			__fill_helper->getVertexPtrForEmptyPackage(packageName); // also, empty one
@@ -1067,7 +1066,7 @@ vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph:
 
 	for (const auto& it: oldPackages)
 	{
-		generate(__fill_helper->getVertexPtr(it.second), false);
+		generate(__fill_helper->getVertexPtrForVersion(it.second), false);
 	}
 	generate(__fill_helper->getDummyElementPtr(), true);
 
