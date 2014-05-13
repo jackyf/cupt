@@ -542,7 +542,7 @@ DependencyGraph::~DependencyGraph()
 	}
 }
 
-vector< string > __get_related_binary_package_names(const Cache& cache, const BinaryVersion* version)
+const vector<string>& __get_related_binary_package_names(const Cache& cache, const BinaryVersion* version)
 {
 	const string& sourcePackageName = version->sourcePackageName;
 
@@ -559,7 +559,8 @@ vector< string > __get_related_binary_package_names(const Cache& cache, const Bi
 		}
 	}
 
-	return vector< string >();
+	static vector<string> nullResult;
+	return nullResult;
 }
 
 short __get_synchronize_level(const Config& config)
