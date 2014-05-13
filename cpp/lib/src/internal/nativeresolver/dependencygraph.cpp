@@ -887,6 +887,11 @@ class DependencyGraph::FillHelper
 			auto packageNames = __get_related_binary_package_names(__dependency_graph.__cache, version);
 			FORIT(packageNameIt, packageNames)
 			{
+				if (!__dependency_graph.__cache.getBinaryPackage(*packageNameIt))
+				{
+					continue;
+				}
+
 				auto syncVertex = new SynchronizeVertex(__synchronize_level > 1);
 				syncVertex->targetPackageName = *packageNameIt;
 				auto syncVertexPtr = __dependency_graph.addVertex(syncVertex);
