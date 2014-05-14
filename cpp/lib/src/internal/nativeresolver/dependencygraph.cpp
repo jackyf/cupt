@@ -30,6 +30,22 @@ using std::list;
 #include <internal/nativeresolver/solution.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
 
+namespace std {
+
+template< typename T >
+class hash< pair<T, T> >
+{
+ public:
+	size_t operator()(const pair<T, T>& p) const
+	{
+		return p_hasher(p.first) ^ p_hasher(p.second);
+	}
+ private:
+	hash<T> p_hasher;
+};
+
+}
+
 namespace cupt {
 namespace internal {
 namespace dependencygraph {
@@ -597,7 +613,7 @@ class DependencyGraph::FillHelper
 	unordered_map<const void*, const VersionVertex*> __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list<const ExtendedBasicVertex*> > __meta_anti_relation_expression_vertices;
-	unordered_map< string, list< pair< string, Element > > > __meta_synchronize_map;
+	unordered_map< pair<string,string>, list< pair< string, Element > > > __meta_synchronize_map;
 	Element p_dummyElementPtr;
 
 	set<Element> __unfolded_elements;
@@ -861,7 +877,7 @@ class DependencyGraph::FillHelper
 
 	void processSynchronizations(const BinaryVersion*& version, Element vertexPtr)
 	{
-		auto hashKey = version->sourcePackageName + ' ' + version->sourceVersionString;
+		auto hashKey = make_pair(version->sourcePackageName, version->sourceVersionString);
 		static const list< pair< string, Element > > emptyList;
 		auto insertResult = __meta_synchronize_map.insert(make_pair(hashKey, emptyList));
 		bool isNewMetaVertex = insertResult.second;
