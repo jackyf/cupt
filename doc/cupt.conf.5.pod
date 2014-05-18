@@ -198,6 +198,11 @@ actions preview. False by default.
 boolean, if true, details of planned actions will be shown in the
 actions preview. True by default.
 
+=item cupt::console::actions-preview::show-empty-versions
+
+boolean, if true, empty versions (i.e. removed or not installed packages) will
+be shown as '<empty>' instead of being omitted
+
 =item cupt::console::actions-preview::show-size-changes
 
 boolean, if true, a change in the disk space usage will be shown for each

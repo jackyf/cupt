@@ -1,6 +1,8 @@
 cupt (2.9.0~) UNRELEASED; urgency=medium
 
   * lib:
+    - config:
+      - New option 'cupt::console::actions-preview::show-empty-versions'.
     - system/state:
       [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:
