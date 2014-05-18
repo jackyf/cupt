@@ -17,7 +17,7 @@ subtest "reinstreq without candidates" => sub {
 
 	my $output = get_first_offer("$cupt install -V -o debug::resolver=yes");
 	like($output, regex_offer(), "there is an offer");
-	like($output, qr/abc \[1\^installed\]/, "package 'abc' is removed");
+	is(get_offered_version($output, 'abc'), get_empty_version(), "package 'abc' is removed");
 };
 
 subtest "reinstreq with candidates" => sub {
@@ -33,7 +33,7 @@ END
 
 	my $output = get_first_offer("$cupt install -V -o debug::resolver=yes");
 	like($output, regex_offer(), "there is an offer");
-	like($output, qr/abc \[1\^installed -> 1\]/, "package 'abc' is reinstalled");
+	is(get_offered_version($output, 'abc'), '1', "package 'abc' is reinstalled");
 
 	#system("cgdb -- --args $cupt install -s -V -o debug::resolver=yes");
 };
