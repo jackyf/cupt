@@ -613,7 +613,7 @@ class DependencyGraph::FillHelper
 	unordered_map<const void*, const VersionVertex*> __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
 	unordered_map< string, list<const ExtendedBasicVertex*> > __meta_anti_relation_expression_vertices;
-	unordered_map< pair<string,string>, list< pair< string, Element > > > __meta_synchronize_map;
+	unordered_map< pair<string,string>, list<const SynchronizeVertex*> > __meta_synchronize_map;
 	Element p_dummyElementPtr;
 
 	set<Element> __unfolded_elements;
@@ -878,7 +878,7 @@ class DependencyGraph::FillHelper
 	void processSynchronizations(const BinaryVersion*& version, Element vertexPtr)
 	{
 		auto hashKey = make_pair(version->sourcePackageName, version->sourceVersionString);
-		static const list< pair< string, Element > > emptyList;
+		static const list<const SynchronizeVertex*> emptyList;
 		auto insertResult = __meta_synchronize_map.insert(make_pair(hashKey, emptyList));
 		bool isNewMetaVertex = insertResult.second;
 		auto& subElementPtrs = insertResult.first->second;
@@ -892,7 +892,7 @@ class DependencyGraph::FillHelper
 
 				auto syncVertex = new SynchronizeVertex(__synchronize_level > 1);
 				syncVertex->targetPackageName = packageName;
-				auto syncVertexPtr = __dependency_graph.addVertex(syncVertex);
+				__dependency_graph.addVertex(syncVertex);
 
 				for (auto relatedVersion: *package)
 				{
@@ -900,34 +900,34 @@ class DependencyGraph::FillHelper
 					{
 						if (auto relatedVersionVertexPtr = getVertexPtrForVersion(relatedVersion))
 						{
-							addEdgeCustom(syncVertexPtr, relatedVersionVertexPtr);
+							addEdgeCustom(syncVertex, relatedVersionVertexPtr);
 						}
 					}
 				}
 
 				if (auto emptyVersionPtr = getVertexPtrForEmptyPackage(packageName, package))
 				{
-					addEdgeCustom(syncVertexPtr, emptyVersionPtr);
+					addEdgeCustom(syncVertex, emptyVersionPtr);
 				}
 
 				if (__synchronize_level == 1) // soft
 				{
 					auto unsatisfiedVertex = new UnsatisfiedVertex;
-					unsatisfiedVertex->parent = syncVertexPtr;
-					addEdgeCustom(syncVertexPtr, __dependency_graph.addVertex(unsatisfiedVertex));
+					unsatisfiedVertex->parent = syncVertex;
+					addEdgeCustom(syncVertex, __dependency_graph.addVertex(unsatisfiedVertex));
 				}
 
-				subElementPtrs.push_back(make_pair(packageName, syncVertexPtr));
+				subElementPtrs.push_back(syncVertex);
 			}
 		}
 
-		FORIT(subElementPtrIt, subElementPtrs)
+		for (const auto& subElement: subElementPtrs)
 		{
-			if (subElementPtrIt->first == version->packageName)
+			if (subElement->targetPackageName == version->packageName)
 			{
-				continue; // don't synchronize with itself
+				continue; // don't synchronize with itself, it's always satisfied
 			}
-			addEdgeCustom(vertexPtr, subElementPtrIt->second);
+			addEdgeCustom(vertexPtr, subElement);
 		}
 	}
 
