@@ -8,6 +8,7 @@ our @EXPORT = qw(
 	stdout
 	compose_installed_record
 	compose_package_record
+	compose_autoinstalled_record
 	entail
 	regex_offer
 	regex_no_solutions
@@ -150,6 +151,12 @@ sub compose_package_record {
 	return "Package: $package_name\nVersion: $version_string\nArchitecture: all\nSHA1: abcdef\n";
 }
 
+sub compose_autoinstalled_record {
+	my ($package_name) = @_;
+
+	return "Package: $package_name\nAuto-Installed: 1\n";
+}
+
 sub entail {
 	return $_[0] . "\n";
 }
@@ -193,6 +200,10 @@ sub get_offered_version {
 	my ($offer, $package_name) = @_;
 
 	my ($version) = ($offer =~ m/^$package_name \[.*? -> (.*?)\]/m);
+
+	if (!defined($version) and ($offer =~ m/^$package_name/m)) {
+		return "<no version info>";
+	}
 
 	return $version // get_unchanged_version();
 }
