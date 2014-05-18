@@ -15,7 +15,8 @@ subtest "':any' limits out non-Multi-Arch packages, subtest1" => sub {
 
 	is(get_offer_count($output), 1, "only one offer") or
 			return diag($output);
-	like($output, qr/abc \[2\]/, "'abc 2' is offered");
+	is(get_offered_version($output, 'abc'), '2', "'abc 2' is offered") or
+			diag($output);
 };
 
 subtest "':any' limits out non-Multi-Arch packages, subtest2" => sub {

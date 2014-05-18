@@ -14,6 +14,9 @@ our @EXPORT = qw(
 	get_first_offer
 	get_all_offers
 	get_offer_count
+	get_empty_version
+	get_unchanged_version
+	get_offered_version
 );
 use Exporter qw(import);
 use Cwd;
@@ -32,6 +35,7 @@ dir::state::status "../dpkg/status";
 cupt::directory "<dir>";
 cupt::console::use-colors "no";
 cupt::console::actions-preview::show-summary "no";
+cupt::console::actions-preview::show-empty-versions "yes";
 cupt::console::show-progress-messages "no";
 END
 
@@ -175,6 +179,22 @@ sub get_offer_count {
 	my @offer_count = ($input =~ /$r/g);
 
 	return scalar @offer_count;
+}
+
+sub get_unchanged_version {
+	return "<unchanged>";
+}
+
+sub get_empty_version {
+	return "<empty>";
+}
+
+sub get_offered_version {
+	my ($offer, $package_name) = @_;
+
+	my ($version) = ($offer =~ m/^$package_name \[.*? -> (.*?)\]/m);
+
+	return $version // get_unchanged_version();
 }
 
 1;

@@ -24,4 +24,4 @@ my $cupt = TestCupt::setup('packages' => $packages);
 my $output = get_first_offer("$cupt install -V --importance=3000 abc --importance=2500 --satisfy vp- -o debug::resolver=yes");
 
 like($output, regex_offer(), "resolving succeeded");
-like($output, qr/abc \[2\]/, "abc is offered");
+is(get_offered_version($output, 'abc'), '2', "abc is offered");
