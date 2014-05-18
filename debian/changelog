@@ -1,6 +1,8 @@
 cupt (2.8.3~) UNRELEASED; urgency=medium
 
-  * 
+  * lib:
+    - config:
+      - New option 'cupt::console::actions-preview::show-empty-versions'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 03 Oct 2014 22:38:21 +0300
 

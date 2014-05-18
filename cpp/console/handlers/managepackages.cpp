@@ -475,6 +475,7 @@ struct VersionInfoFlags
 	DistributionType distributionType;
 	bool component;
 	bool vendor;
+	bool showEmpty;
 
 	VersionInfoFlags(const Config& config)
 	{
@@ -493,6 +494,7 @@ struct VersionInfoFlags
 		}
 		component = config.getBool("cupt::console::actions-preview::show-components");
 		vendor = config.getBool("cupt::console::actions-preview::show-vendors");
+		showEmpty = config.getBool("cupt::console::actions-preview::show-empty-versions");
 	}
 	bool empty() const
 	{
@@ -512,7 +514,7 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 	{
 		if (!version)
 		{
-			return "";
+			return flags.showEmpty ? "<empty>" : "";
 		}
 		string result;
 		if (flags.versionString)

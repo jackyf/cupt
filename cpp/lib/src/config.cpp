@@ -141,6 +141,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::actions-preview::show-archives", "no" },
 		{ "cupt::console::actions-preview::show-codenames", "no" },
 		{ "cupt::console::actions-preview::show-components", "no" },
+		{ "cupt::console::actions-preview::show-empty-versions", "no" },
 		{ "cupt::console::actions-preview::show-not-preferred", "for-upgrades" },
 		{ "cupt::console::actions-preview::show-details", "yes" },
 		{ "cupt::console::actions-preview::show-reasons", "no" },
