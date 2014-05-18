@@ -4,9 +4,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - config:
       - New option 'cupt::console::actions-preview::show-empty-versions'.
     - system/state:
-      [API break] 'getInstalledInfo': returns raw pointer.
+      - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:
-      [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
+      - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
 
