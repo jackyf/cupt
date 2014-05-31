@@ -79,8 +79,6 @@ void ReverseDependsIndex< VersionT >::__add(RelationTypeT relationType, PerRelat
 
 	for (const string& packageName: TP::getPackageNames(__cache))
 	{
-		set< string > usedKeys;
-
 		auto package = TP::getPackage(__cache, packageName);
 		for (const auto& version: *package)
 		{
@@ -91,9 +89,10 @@ void ReverseDependsIndex< VersionT >::__add(RelationTypeT relationType, PerRelat
 				for (const auto& satisfyingVersion: satisfyingVersions)
 				{
 					const string& satisfyingPackageName = satisfyingVersion->packageName;
-					if (usedKeys.insert(satisfyingPackageName).second)
+					auto& packageList = (*storage)[satisfyingPackageName];
+					if (packageList.back() != package)
 					{
-						(*storage)[satisfyingPackageName].push_back(package);
+						packageList.push_back(package);
 					}
 				}
 			}
