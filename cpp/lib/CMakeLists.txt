@@ -59,7 +59,7 @@ add_library(libcupt3 SHARED
 	./src/versionstring.cpp
 )
 set_target_properties(libcupt3 PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
-target_link_libraries(libcupt3 dl rt gcrypt)
+target_link_libraries(libcupt3 dl rt gcrypt -Wl,--no-undefined)
 
 install(TARGETS libcupt3 DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
