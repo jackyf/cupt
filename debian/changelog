@@ -1,11 +1,11 @@
-cupt (2.8.2~) UNRELEASED; urgency=medium
+cupt (2.8.2) unstable; urgency=medium
 
   * test:
     - cmakelists:
       - Avoided trying symlinking a directory to itself for in-tree builds.
         Makes building succeed with CMake 3.0. (Closes: #758446)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 20 Aug 2014 21:47:09 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 20 Aug 2014 22:12:47 +0300
 
 cupt (2.8.1) unstable; urgency=medium
 
