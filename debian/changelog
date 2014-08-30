@@ -1,5 +1,9 @@
 cupt (2.9.0~) UNRELEASED; urgency=medium
 
+  * console:
+    - 'functional selectors':
+      - Fixed crashing when non-first argument to and() contains binary
+        relation functions.
   * lib:
     - config:
       - New option 'cupt::console::actions-preview::show-empty-versions'.

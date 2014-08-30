@@ -71,9 +71,6 @@ eis("reverse-replaces($peee)", qw(ddd));
 eis("reverse-depends($peee)", ());
 eis("reverse-enhances($pbbb)", ());
 
-TODO: {
-	local $TODO = 'bug';
-	eis("depends($paaa) & reverse-conflicts($pbbb)", qw(ccc));
-}
+eis("depends($paaa) & reverse-conflicts($pbbb)", qw(ccc));
 eis("recommends(reverse-depends(reverse-suggests($peee)))", qw(ddd));
 
