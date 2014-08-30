@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 our @EXPORT = qw(
+	get_inc_code
 	exitcode
 	stdout
 	compose_installed_record
@@ -24,6 +25,20 @@ use Cwd;
 use IO::File;
 use File::Path qw(make_path);
 use File::Basename;
+use File::Spec;
+
+sub get_inc_path {
+	my ($includee) = @_;
+	my $test_dir = $INC[0];
+	my $test_module_dir = (File::Spec->splitpath($0))[1];
+	my $file = "$test_dir/$test_module_dir/$includee.inc";
+	return $file;
+}
+
+sub get_inc_code {
+	my $path = get_inc_path($_[0]);
+	return `cat $path`;
+}
 
 sub setup {
 	generate_environment(@_);
