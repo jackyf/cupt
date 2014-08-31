@@ -2,8 +2,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
 
   * console:
     - 'functional selectors':
-      - Fixed crashing when non-first argument to and() contains binary
-        relation functions.
+      - Fixed crashing when non-first argument to and() contains package
+        relationship functions.
       - New function 'source-to-binary'.
   * lib:
     - config:

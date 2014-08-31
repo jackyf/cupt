@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 use strict;
 use warnings;
@@ -43,4 +43,6 @@ eis("source-to-binary(reverse-build-depends($pbx))", qw(bm));
 eis("source-to-binary(reverse-build-conflicts($pby))", qw(bn));
 eis("source-to-binary(reverse-build-depends-indep($pbx))", qw(bn));
 eis("source-to-binary(reverse-build-conflicts-indep($pby))", qw(bm));
+
+eis("$pbx & build-depends($psm)", qw(bx));
 

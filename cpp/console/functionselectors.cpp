@@ -178,7 +178,7 @@ class VersionSet
 	std::map< string, FSResult > __variables;
 
 	VersionSet(const VersionSet& from, FSResult&& versions)
-		: __binary_getter(from.__binary_getter)
+		: __binary_getter(from.__binary_getter), __source_getter(from.__source_getter)
 		, __filtered(true), __versions(std::move(versions)), __variables(from.__variables)
 	{}
  public:
