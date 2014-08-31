@@ -820,6 +820,36 @@ class BinaryToSourceFS: public TransformFS
 	}
 };
 
+class SourceToBinaryFS: public TransformFS
+{
+ public:
+	SourceToBinaryFS(const Arguments& arguments)
+		: TransformFS(false, arguments)
+	{}
+ protected:
+	FSResult _transform(Context& context, const SPCV& version) const
+	{
+		auto sourceVersion = static_cast< const SourceVersion* >(version);
+
+		FSResult result;
+
+		for (const auto& packageName: sourceVersion->binaryPackageNames)
+		{
+			if (auto binaryPackage = context.cache.getBinaryPackage(packageName))
+			{
+				for (auto binaryVersion: *binaryPackage)
+				{
+					if (binaryVersion->sourceVersionString == sourceVersion->versionString)
+					{
+						context.mergeFsResults(&result, { binaryVersion });
+					}
+				}
+			}
+		}
+		return result;
+	}
+};
+
 class PackageIsInstalledFS: public PredicateFS
 {
  protected:
@@ -929,6 +959,8 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 		CONSTRUCT_FS("build-depends-indep", DependencyFS<SRT::Type>(SRT::BuildDependsIndep, arguments))
 		CONSTRUCT_FS("build-conflicts", DependencyFS<SRT::Type>(SRT::BuildConflicts, arguments))
 		CONSTRUCT_FS("build-conflicts-indep", DependencyFS<SRT::Type>(SRT::BuildConflictsIndep, arguments))
+
+		CONSTRUCT_FS("source-to-binary", SourceToBinaryFS(arguments))
 	}
 	else
 	{
