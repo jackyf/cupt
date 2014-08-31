@@ -13,6 +13,11 @@ my $packages =
 
 my $cupt = TestCupt::setup('packages' => $packages);
 
+sub get_output {
+	my ($argument) = @_;
+	return stdout("$cupt rdepends $argument");
+}
+
 sub get_rdepends_lines {
 	my ($output) = @_;
 	my @lines = split(/\n/, $output);
@@ -21,7 +26,7 @@ sub get_rdepends_lines {
 }
 
 subtest "not satisfying versionful" => sub {
-	my $output = `$cupt rdepends xyz=10`;
+	my $output = get_output('xyz=10');
 	my @lines = get_rdepends_lines($output);
 
 	is(scalar @lines, 1, "1 answer") or
@@ -30,7 +35,7 @@ subtest "not satisfying versionful" => sub {
 };
 
 subtest "satisfying versionful" => sub {
-	my $output = `$cupt rdepends xyz=30`;
+	my $output = get_output('xyz=30');
 	my @lines = get_rdepends_lines($output);
 
 	is(scalar @lines, 2, "2 answers") or

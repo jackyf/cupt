@@ -19,7 +19,7 @@ sub get_rdepends_lines {
 	return @lines;
 }
 
-my $output = `$cupt rdepends xyz`;
+my $output = stdout("$cupt rdepends xyz");
 my @lines = get_rdepends_lines($output);
 
 is(scalar @lines, 3, "3 answers") or
