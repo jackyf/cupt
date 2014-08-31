@@ -116,7 +116,7 @@ sub generate_packages_sources {
 
 	generate_release();
 	
-	my $sources_list_suffix = "$scheme:///$server $archive $component";
+	my $sources_list_suffix = "[ trusted=yes ] $scheme:///$server $archive $component";
 
 	if ($packages_content ne '') {
 		generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
