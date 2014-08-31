@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 16;
+use Test::More tests => 17;
 
 use strict;
 use warnings;
@@ -39,4 +39,6 @@ eis("xor($pa|$pb,$pb|$pc)", qw(a c));
 eis("or($pa|$pb) & or($pb|$pc)", qw(b));
 eis("or(or($pa,$pb), or($pb,$pc))", qw(a b c));
 eis("and(not($pa), not($pb), not($pc))", qw(d));
+
+eis("$pa & with(_v, $pa, _v)", qw(a));
 
