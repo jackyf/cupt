@@ -1,6 +1,8 @@
 sub eis {
 	my ($pattern, @expected) = @_;
 
+	@expected = sort @expected;
+
 	my $out = `$cupt search --fse '$pattern' 2>&1`;
 	my @sout = split(/\n/, $out);
 	s/ -.*// for @sout;
