@@ -37,8 +37,5 @@ eis('maintainer(/One.*/)', qw(a i));
 eis('maintainer(.*mail.*)', qw(a));
 eis('section(//)', qw(i p));
 eis('section(doc)', qw(a));
-TODO: {
-	local $TODO = 'bug';
-	eis('field(Special-property-field, /.+/)', qw(i));
-}
+eis('field(Special-property-field, /.+/)', qw(i));
 

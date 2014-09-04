@@ -5,6 +5,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Fixed crashing when non-first argument to and() contains package
         relationship or defining functions.
       - New function 'source-to-binary'.
+    - 'search':
+      - FSE mode: enabled parsing of unknown version fields.
   * lib:
     - config:
       - New option 'cupt::console::actions-preview::show-empty-versions'.

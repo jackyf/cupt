@@ -172,6 +172,7 @@ int search(Context& context)
 
 	if (variables.count("fse"))
 	{
+		Version::parseOthers = true;
 		auto cache = context.getCache(true, true, true);
 		searchByFSE(*cache, patterns);
 	}
