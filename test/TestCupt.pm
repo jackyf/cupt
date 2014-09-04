@@ -73,7 +73,10 @@ sub generate_environment {
 	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
 	generate_file('etc/apt/sources.list', '');
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
-	generate_packages_sources($options{'packages'}//'', $options{'sources'}//'');
+	generate_packages_sources(
+		$options{'packages'}//'',
+		$options{'sources'}//'',
+		$options{'trusted'}//1);
 }
 
 my $architecture = 'z128';
@@ -84,7 +87,6 @@ sub generate_binary_command {
 	my $command = $ARGV[0];
 	if (defined $options{'packages'} or defined $options{'dpkg_status'}) {
 		$command .= " -o apt::architecture=$architecture";
-		$command .= " -o cupt::console::allow-untrusted=yes";
 	}
 	return $command;
 }
@@ -110,13 +112,14 @@ my $component = 'main';
 my $list_prefix = "var/lib/cupt/lists/${scheme}____${server}_dists_${archive}";
 
 sub generate_packages_sources {
-	my ($packages_content, $sources_content) = @_;
+	my ($packages_content, $sources_content, $is_trusted) = @_;
 
 	($packages_content ne '' or $sources_content ne '') or return;
 
 	generate_release();
 	
-	my $sources_list_suffix = "[ trusted=yes ] $scheme:///$server $archive $component";
+	my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '');
+	$sources_list_suffix .= "$scheme:///$server $archive $component";
 
 	if ($packages_content ne '') {
 		generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
@@ -155,9 +158,10 @@ sub stdout {
 }
 
 sub compose_installed_record {
-	my ($package_name, $version_string) = @_;
+	my ($package_name, $version_string, %options) = @_;
 
-	return "Package: $package_name\nStatus: install ok installed\nVersion: $version_string\nArchitecture: all\n";
+	my $want = ($options{'on-hold'}//0) ? 'hold' : 'install';
+	return "Package: $package_name\nStatus: $want ok installed\nVersion: $version_string\nArchitecture: all\n";
 }
 
 sub compose_package_record {
