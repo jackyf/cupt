@@ -107,7 +107,9 @@ sub generate_binary_command {
 	my %options = @_;
 
 	my $command = $ARGV[0];
-	if (defined $options{'packages'} or defined $options{'dpkg_status'}) {
+	if (defined $options{'packages'} or
+		defined $options{'packages2'} or
+		defined $options{'dpkg_status'}) {
 		$command .= " -o apt::architecture=$architecture";
 	}
 	return $command;
