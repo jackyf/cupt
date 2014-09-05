@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 3;
+use Test::More tests => 7;
 
 use strict;
 use warnings;
@@ -12,7 +12,9 @@ my $cupt = TestCupt::setup(
 		entail(compose_installed_record('y', '1')) .
 		entail(compose_installed_record('obs', '1')),
 	'packages' =>
-		entail(compose_package_record('e', '1')) ,
+		entail(compose_package_record('e', '1')) .
+		entail(compose_package_record('rz', '30') . "Recommends: z\n") .
+		entail(compose_package_record('z', '3')) ,
 	'packages2' =>
 		[
 			[
@@ -44,7 +46,7 @@ my $cupt_options = <<'END';
 END
 $cupt_options =~ s/\n/ /g;
 
-sub test {
+sub test_f {
 	my ($f_version, $expected_e_version, $expected_y_version) = @_;
 
 	my $command = "install f=$f_version";
@@ -56,7 +58,19 @@ sub test {
 	}
 } 
 
-test('0.9', get_empty_version(), get_empty_version());
-test('1.0', get_empty_version(), get_unchanged_version());
-test('1.1', get_unchanged_version(), get_unchanged_version());
+sub test_z {
+	my ($command) = @_;
+
+	my $output = get_first_offer("$cupt $cupt_options $command");
+	is(get_offered_version($output, 'z'), 3, "z: $command") or diag($output);
+}
+
+test_f('0.9', get_empty_version(), get_empty_version());
+test_f('1.0', get_empty_version(), get_unchanged_version());
+test_f('1.1', get_unchanged_version(), get_unchanged_version());
+
+test_z('--try install z');
+test_z('--wish install z');
+test_z('--try install rz');
+test_z('--wish install rz');
 
