@@ -14,6 +14,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
+    - system/resolvers/native:
+      - Halved the version normalized score calculation skew, current score
+        system allows that.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
 

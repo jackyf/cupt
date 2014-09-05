@@ -67,6 +67,6 @@ TODO: {
 	local $TODO = 'ajust score';
 	test(25, 'try', 0 => 0);
 	test(50, 'try', 0 => 0);
-	test(100, 'try', 0 => 0);
 }
+test(100, 'try', 0 => 0);
 		

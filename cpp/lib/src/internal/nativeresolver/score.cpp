@@ -84,7 +84,7 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 
 ssize_t ScoreManager::__get_version_weight(const BinaryVersion* version) const
 {
-	return version ? (__cache->getPin(version) - __preferred_version_default_pin + 600) : 0;
+	return version ? (__cache->getPin(version) - __preferred_version_default_pin + 300) : 0;
 }
 
 ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVersion,

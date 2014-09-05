@@ -73,9 +73,6 @@ test_z('--try install z', 3);
 test_z('--wish install z', 3);
 test_z('--try install rz', 3);
 test_z('--wish install rz', 3);
-TODO: {
-	local $TODO = 'too high score';
-	test_z('--importance=50 install z', get_unchanged_version());
-	test_z('--importance=1 install z', get_unchanged_version());
-}
+test_z('--importance=50 install z', get_unchanged_version());
+test_z('--importance=1 install z', get_unchanged_version());
 
