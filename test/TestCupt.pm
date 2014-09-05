@@ -73,10 +73,32 @@ sub generate_environment {
 	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
 	generate_file('etc/apt/sources.list', '');
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
-	generate_packages_sources(
-		$options{'packages'}//'',
-		$options{'sources'}//'',
-		$options{'trusted'}//1);
+	generate_packages_sources(unify_packages_and_sources_option(\%options));
+}
+
+my $default_archive = 'testing';
+
+sub unify_ps_option {
+	my ($options, $type) = @_;
+
+	my $result = $options->{"${type}2"}//[];
+
+	my $content_of_default_archive = $options->{$type}//'';
+	if ($content_of_default_archive) {
+		push @$result, [ 'archive' => $default_archive, 'content' => $content_of_default_archive ]; 
+	}
+	foreach my $entry (@$result) {
+		push @$entry, 'type' => $type;
+	}
+
+	return @$result;
+}
+
+sub unify_packages_and_sources_option {
+	my ($options) = @_;
+
+	return (unify_ps_option($options, 'packages'),
+			unify_ps_option($options, 'sources'));
 }
 
 my $architecture = 'z128';
@@ -107,32 +129,39 @@ sub generate_file {
 
 my $scheme = 'file';
 my $server = 'nonexistent';
-my $archive = 'testing';
 my $component = 'main';
-my $list_prefix = "var/lib/cupt/lists/${scheme}____${server}_dists_${archive}";
 
 sub generate_packages_sources {
-	my ($packages_content, $sources_content, $is_trusted) = @_;
-
-	($packages_content ne '' or $sources_content ne '') or return;
-
-	generate_release();
+	foreach my $entry (@_) {
+		my %e = @$entry;
+		my $archive = $e{'archive'} // $default_archive;
+		generate_release($archive);
 	
-	my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '');
-	$sources_list_suffix .= "$scheme:///$server $archive $component";
+		my $is_trusted = $e{'trusted'}//1;
+		my $content = $e{'content'};
+		my $list_prefix = get_list_prefix($archive);
 
-	if ($packages_content ne '') {
-		generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
-		generate_file("${list_prefix}_${component}_binary-${architecture}_Packages", $packages_content);
-	}
+		my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '');
+		$sources_list_suffix .= "$scheme:///$server $archive $component";
 
-	if ($sources_content ne '') {
-		generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
-		generate_file("${list_prefix}_${component}_source_Sources", $sources_content);
+		if ($e{'type'} eq 'packages') {
+			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
+			generate_file("${list_prefix}_${component}_binary-${architecture}_Packages", $content);
+		} else {
+			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
+			generate_file("${list_prefix}_${component}_source_Sources", $content);
+		}
 	}
 }
 
+sub get_list_prefix {
+	my ($archive) = @_;
+	return "var/lib/cupt/lists/${scheme}____${server}_dists_${archive}";
+}
+
 sub generate_release {
+	my ($archive) = @_;
+
 	my $content = <<END;
 Origin: Debian
 Label: Debian
@@ -143,6 +172,7 @@ Valid-Until: Mon, 07 Oct 2033 14:44:53 UTC
 Architectures: $architecture all
 Components: $component
 END
+	my $list_prefix = get_list_prefix($archive);
 	generate_file("${list_prefix}_Release", $content);
 }
 

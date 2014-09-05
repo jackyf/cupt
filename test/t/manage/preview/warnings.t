@@ -8,11 +8,16 @@ my $cupt = TestCupt::setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('a', '1') . "Essential: yes\n") .
 		entail(compose_installed_record('h', '3', 'on-hold'=>1)),
-	'packages' =>
-		entail(compose_package_record('b', '2')) .
-		entail(compose_package_record('h', '3')) .
-		entail(compose_package_record('h', '4')),
-	'trusted' => 0
+	'packages2' =>
+		[
+			[
+				'trusted' => 0,
+				'content' =>
+					entail(compose_package_record('b', '2')) .
+					entail(compose_package_record('h', '3')) .
+					entail(compose_package_record('h', '4')),
+			],
+		],
 );
 
 like(get_first_offer("$cupt remove a"), qr/warning.*essential.*remov/i, "removing an essential package issues a warning");
