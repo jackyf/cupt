@@ -248,7 +248,7 @@ sub get_empty_version {
 sub get_offered_version {
 	my ($offer, $package_name) = @_;
 
-	my ($version) = ($offer =~ m/^$package_name \[.*? -> (.*?)\]/m);
+	my ($version) = ($offer =~ m/^$package_name(?:\(a\))? \[.*? -> (.*?)\]/m);
 
 	if (!defined($version) and ($offer =~ m/^$package_name/m)) {
 		return "<no version info>";
