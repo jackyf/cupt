@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 7;
+use Test::More tests => 9;
 
 use strict;
 use warnings;
@@ -59,18 +59,23 @@ sub test_f {
 } 
 
 sub test_z {
-	my ($command) = @_;
+	my ($command, $expected_version) = @_;
 
 	my $output = get_first_offer("$cupt $cupt_options $command");
-	is(get_offered_version($output, 'z'), 3, "z: $command") or diag($output);
+	is(get_offered_version($output, 'z'), $expected_version, "z: $command") or diag($output);
 }
 
 test_f('0.9', get_empty_version(), get_empty_version());
 test_f('1.0', get_empty_version(), get_unchanged_version());
 test_f('1.1', get_unchanged_version(), get_unchanged_version());
 
-test_z('--try install z');
-test_z('--wish install z');
-test_z('--try install rz');
-test_z('--wish install rz');
+test_z('--try install z', 3);
+test_z('--wish install z', 3);
+test_z('--try install rz', 3);
+test_z('--wish install rz', 3);
+TODO: {
+	local $TODO = 'too high score';
+	test_z('--importance=50 install z', get_unchanged_version());
+	test_z('--importance=1 install z', get_unchanged_version());
+}
 
