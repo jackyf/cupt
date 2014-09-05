@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 9;
+use Test::More tests => 11;
 
 use strict;
 use warnings;
@@ -53,6 +53,7 @@ sub test {
 test(1, 'wish', 1 => 1);
 test(5, 'wish', 1 => 1);
 test(25, 'wish', 1 => 1);
+test(50, 'wish', 1 => 1);
 test(100, 'wish', 1 => 1);
 
 TODO: {
@@ -65,6 +66,7 @@ test(5, 'try', 0 => 1);
 TODO: {
 	local $TODO = 'ajust score';
 	test(25, 'try', 0 => 0);
+	test(50, 'try', 0 => 0);
 	test(100, 'try', 0 => 0);
 }
 		
