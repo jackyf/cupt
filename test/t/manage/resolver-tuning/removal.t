@@ -105,7 +105,7 @@ sub test_group {
 
 	my $group_comment = "latest: $latest_versions_available, default release enabled: $default_release_enabled, archive: $archive";
 
-	local $TODO = "improve score system" unless (not $latest_versions_available and not $default_release_enabled);
+	local $TODO = "improve score system" if $default_release_enabled;
 
 	subtest $group_comment => sub {
 		TODO: {

@@ -44,10 +44,7 @@ foreach (-5000, -2000, -1000, -500, -200, 0, 100, 300, 500, 700, 900, 1200, 2000
 	$pin_of_zzz = $_;
 	setup();
 
-	TODO: {
-		local $TODO = 'improve score algorithm' if ($pin_of_zzz <= 0);
-		test('mmm', '1');
-	}
+	test('mmm', '1');
 	test('nnn', '2');
 }
 
