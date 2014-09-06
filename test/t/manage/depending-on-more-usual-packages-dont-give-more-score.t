@@ -1,40 +1,36 @@
 use TestCupt;
-use Test::More tests => 2;
+use Test::More tests => 26;
 
-my $preferences = <<END;
-Package: bb1
-Pin: version *
-Pin-Priority: 700
+my $cupt;
+my $pin_of_zzz;
 
-Package: bb2
-Pin: version *
-Pin-Priority: 600
-
-Package: bb3
-Pin: version *
-Pin-Priority: 500
-END
-
-my $cupt = TestCupt::setup(
-	'packages' =>
-		entail(compose_package_record('mmm', '0') . "Depends: bb1 | bb2\n") .
-		entail(compose_package_record('nnn', '0') . "Depends: bb2 | bb3\n") .
-		entail(compose_package_record('bb1', '1') . "Recommends: zzz\n") .
-		entail(compose_package_record('bb2', '2') . "Depends: ccc\n") .
-		entail(compose_package_record('bb3', '3') . "Recommends: zzz\n") .
-		entail(compose_package_record('ccc', '100') . "Recommends: zzz\n"),
-	'preferences' => $preferences,
-);
+sub setup {
+	$cupt = TestCupt::setup(
+		'packages' =>
+			entail(compose_package_record('mmm', '0') . "Depends: bb1 | bb2\n") .
+			entail(compose_package_record('nnn', '0') . "Depends: bb2 | bb3\n") .
+			entail(compose_package_record('bb1', '1') . "Recommends: zzz\n") .
+			entail(compose_package_record('bb2', '2') . "Depends: ccc\n") .
+			entail(compose_package_record('bb3', '3') . "Recommends: zzz\n") .
+			entail(compose_package_record('ccc', '100') . "Recommends: zzz\n") .
+			entail(compose_package_record('zzz', '8')),
+		'preferences' =>
+			compose_pin_record('bb1', '*', 700) .
+			compose_pin_record('bb2', '*', 600) .
+			compose_pin_record('bb3', '*', 500) .
+			compose_pin_record('zzz', '*', $pin_of_zzz),
+	);
+}
 
 sub get_first_offer_for {
 	my ($package) = @_;
-	return get_first_offer("$cupt install $package -V");
+	return get_first_offer("$cupt install $package -V -o debug::resolver=yes");
 }
 
 sub test {
 	my ($package, $bb_version) = @_;
 
-	subtest $package => sub {
+	subtest "$package, pin of zzz: $pin_of_zzz" => sub {
 		my $output = get_first_offer_for($package);
 		for my $version (1..3) {
 			my $bb_package = "bb$version";
@@ -44,8 +40,14 @@ sub test {
 	};
 }
 
-TODO: {
-	local $TODO = 'improve score algorithm';
-	test('mmm', '1');
+foreach (-5000, -2000, -1000, -500, -200, 0, 100, 300, 500, 700, 900, 1200, 2000) {
+	$pin_of_zzz = $_;
+	setup();
+
+	TODO: {
+		local $TODO = 'improve score algorithm' if ($pin_of_zzz <= 0);
+		test('mmm', '1');
+	}
+	test('nnn', '2');
 }
-test('nnn', '2');
+
