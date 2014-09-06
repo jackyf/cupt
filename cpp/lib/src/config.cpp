@@ -207,6 +207,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::unsatisfied-try", "-10000" },
 		{ "cupt::resolver::score::unsatisfied-wish", "-500" },
 		{ "cupt::resolver::score::failed-synchronization", "-80" },
+		{ "cupt::resolver::score::version-factor", "100" },
 		{ "cupt::worker::archives-space-limit", "0" },
 		{ "cupt::worker::defer-triggers", "auto" },
 		{ "cupt::worker::download-only", "no" },

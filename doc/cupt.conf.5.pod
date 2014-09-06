@@ -571,6 +571,10 @@ some source version synchronization cannot be performed (when
 L<cupt::resolver::synchronize-source-versions|/cupt::resolver::synchronize-source-versions>
 is 'soft')
 
+=item version-factor
+
+defines (in percents), how much version score difference affects the action score
+
 =back
 
 =item cupt::worker::archives-space-limit
