@@ -1,18 +1,39 @@
 use TestCupt;
-use Test::More tests => 19;
+use Test::More tests => 4;
 
 use strict;
 use warnings;
 
-my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('eip', '1') . "Essential: yes\n") .
-		entail(compose_installed_record('mip', '0')) .
-		entail(compose_installed_record('aip', '0')) ,
-	'extended_states' =>
-		entail(compose_autoinstalled_record('aip')) .
-		entail(compose_autoinstalled_record('eip')),
-);
+my $cupt;
+
+sub setup {
+	my ($latest_versions_available, $archive) = @_;
+
+	my $packages = '';
+	if ($latest_versions_available) {
+		$packages =
+				entail(compose_package_record('eip', '0')) .
+				entail(compose_package_record('mip', '0')) .
+				entail(compose_package_record('aip', '0'));
+	}
+
+	$cupt = TestCupt::setup(
+		'dpkg_status' =>
+			entail(compose_installed_record('eip', '0') . "Essential: yes\n") .
+			entail(compose_installed_record('mip', '0')) .
+			entail(compose_installed_record('aip', '0')) ,
+		'extended_states' =>
+			entail(compose_autoinstalled_record('aip')) .
+			entail(compose_autoinstalled_record('eip')),
+		'packages2' =>
+			[
+				[
+					'archive' => $archive,
+					'content' => $packages,
+				],
+			],
+	);
+}
 
 sub compose_score_argument {
 	my ($name, $value) = @_;
@@ -25,6 +46,7 @@ sub get_printable_score {
 }
 
 my $request_type;
+my $default_release_enabled;
 
 sub get_first_offer_for {
 	my ($r_score, $ra_score, $re_score) = @_;
@@ -34,14 +56,24 @@ sub get_first_offer_for {
 			compose_score_argument('removal-of-autoinstalled', $ra_score) . ' ' .
 			compose_score_argument('removal-of-essential', $re_score);
 
-	return get_first_offer("$cupt remove $request_type '*' -V $score_arguments --no-auto-remove -o debug::resolver=yes"); 
+	my $cupt_options = "--no-auto-remove -o debug::resolver=yes";
+	if ($default_release_enabled) {
+		$cupt_options .= " -t tomorrow";
+	}
+	return get_first_offer("$cupt remove $request_type '*' -V $score_arguments $cupt_options"); 
 }
 
 sub eis {
 	my ($offer, $package, $result) = @_;
 
 	my $expected_version = $result ? get_unchanged_version() : get_empty_version();
-	is(get_offered_version($offer, $package), $expected_version, $package) or diag($offer);
+	is(get_offered_version($offer, $package), $expected_version, $package) or
+			diag(get_debug_part($offer));
+}
+
+sub get_debug_part {
+	my ($input) = @_;
+	return join("\n", grep { m/^D:/ } split("\n", $input));
 }
 
 sub test {
@@ -66,35 +98,55 @@ sub test {
 
 }
 
-TODO: {
-	local $TODO = 'increase removal-of-automatic option';
+sub test_group {
+	my ($latest_versions_available, $archive) = @_;
 
-	$request_type = '--wish';
-	test(undef, undef, undef, 1, 1, 0);
+	setup($latest_versions_available, $archive);
+
+	my $group_comment = "latest: $latest_versions_available, default release enabled: $default_release_enabled, archive: $archive";
+
+	local $TODO = "improve score system" unless (not $latest_versions_available and not $default_release_enabled);
+
+	subtest $group_comment => sub {
+		TODO: {
+			local $TODO = 'increase removal-of-automatic option';
+
+			$request_type = '--wish';
+			test(undef, undef, undef, 1, 1, 0);
+		}
+
+		$request_type = '--try';
+		test(undef, undef, undef, 1, 0, 0);
+
+		$request_type = '--must';
+		test(undef, undef, undef, 0, 0, 0);
+		test(-100_000_000, -100_000_100, -100_000_000, 0, 0, 0);
+
+		$request_type = '--importance=0';
+		test(undef, undef, undef, 1, 1, 1);
+		test(500, undef, undef, 1, 0, 0);
+		test(-1000, 1200, undef, 1, 1, 0);
+		test(undef, undef, -200, 1, 1, 1);
+		test(50, 50, -50, 0, 0, 0);
+		test(undef, undef, 2000, 0, 1, 1);
+		test(-500, undef, 2000, 0, 1, 0);
+
+		test(-200, 20, 20, 1, 1, 1);
+		test(-500, 700, -300, 1, 1, 0);
+		test(-300, 700, -300, 0, 1, 0);
+		test(500, 200, -1000, 1, 0, 0);
+		test(100, -200, 0, 1, 0, 1);
+		test(4000, 4000, -10000, 1, 0, 0);
+		test(-2000, 1500, 5000, 0, 1, 1);
+		test(100, -1000, 1200, 0, 0, 1);
+		test(100, 200, 300, 0, 0, 0);
+	};
 }
 
-$request_type = '--try';
-test(undef, undef, undef, 1, 0, 0);
-
-$request_type = '--must';
-test(undef, undef, undef, 0, 0, 0);
-
-$request_type = '--importance=0';
-test(undef, undef, undef, 1, 1, 1);
-test(500, undef, undef, 1, 0, 0);
-test(-1000, 1200, undef, 1, 1, 0);
-test(undef, undef, -200, 1, 1, 1);
-test(50, 50, -50, 0, 0, 0);
-test(undef, undef, 2000, 0, 1, 1);
-test(-500, undef, 2000, 0, 1, 0);
-
-test(-200, 20, 20, 1, 1, 1);
-test(-500, 700, -300, 1, 1, 0);
-test(-300, 700, -300, 0, 1, 0);
-test(500, 200, -1000, 1, 0, 0);
-test(100, -200, 0, 1, 0, 1);
-test(4000, 4000, -10000, 1, 0, 0);
-test(-2000, 1500, 5000, 0, 1, 1);
-test(100, -1000, 1200, 0, 0, 1);
-test(100, 200, 300, 0, 0, 0);
+foreach my $latest_versions_available (0, 1) {
+	foreach (0, 1) {
+		$default_release_enabled = $_;
+		test_group($latest_versions_available, 'today');
+	}
+}
 
