@@ -108,12 +108,8 @@ sub test_group {
 	local $TODO = "improve score system" if $default_release_enabled;
 
 	subtest $group_comment => sub {
-		TODO: {
-			local $TODO = 'increase removal-of-automatic option';
-
-			$request_type = '--wish';
-			test(undef, undef, undef, 1, 1, 0);
-		}
+		$request_type = '--wish';
+		test(undef, undef, undef, 1, 1, 0);
 
 		$request_type = '--try';
 		test(undef, undef, undef, 1, 0, 0);
