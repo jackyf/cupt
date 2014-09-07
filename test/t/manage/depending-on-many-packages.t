@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 11;
+use Test::More tests => 17;
 
 use strict;
 use warnings;
@@ -42,7 +42,7 @@ sub test {
 	my $expected_version = $expected_result ? '9000' : get_unchanged_version();
 
 	my $archive_comment = $archive // 'default';
-	my $comment = "$command_priority, $archive_comment archive, depends on $count packages";
+	my $comment = "$command_priority, $archive_comment archive, depends on $count packages --> $expected_result";
 
 	my $cupt_options = $release_is_default ? '' : '-o apt::default-release=xyz';
 
@@ -55,18 +55,18 @@ test(5, 'wish', 1 => 1);
 test(25, 'wish', 1 => 1);
 test(50, 'wish', 1 => 1);
 test(100, 'wish', 1 => 1);
+test(300, 'wish', 1 => 1);
+test(1000, 'wish', 1 => 1);
 
-TODO: {
-	local $TODO = 'ajust score';
-	test(1, 'wish', 0 => 0);
-}
+test(1, 'wish', 0 => 1);
+test(3, 'wish', 0 => 0);
+test(10, 'wish', 0 => 0);
+test(20, 'wish', 0 => 0);
 
 test(1, 'try', 0 => 1);
 test(5, 'try', 0 => 1);
-TODO: {
-	local $TODO = 'ajust score';
-	test(25, 'try', 0 => 0);
-	test(50, 'try', 0 => 0);
-}
+test(25, 'try', 0 => 1);
 test(100, 'try', 0 => 0);
+test(200, 'try', 0 => 0);
+test(500, 'try', 0 => 0);
 		
