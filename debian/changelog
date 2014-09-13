@@ -11,6 +11,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - config:
       - New option 'cupt::console::actions-preview::show-empty-versions'.
       - New option 'cupt::resolver::score::version-factor'.
+      - New option 'cupt::resolver::max-leaf-count'.
     - system/state:
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:

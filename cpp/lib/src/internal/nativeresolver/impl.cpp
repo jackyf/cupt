@@ -811,12 +811,21 @@ void NativeResolverImpl::__fill_and_process_introduced_by(
 	}
 }
 
+static inline void checkLeafLimit(size_t leafCount, size_t maxLeafCount)
+{
+	if (leafCount > maxLeafCount)
+	{
+		fatal2(__("leaf count limit exceeded"));
+	}
+}
+
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
 
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
+	const size_t maxLeafCount = __config->getInteger("cupt::resolver::max-leaf-count");
 	bool thereWereSolutionsDropped = false;
 
 	if (p_debugging) debug2("started resolving");
@@ -834,8 +843,11 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	// during processing these packages
 	map< dg::Element, size_t > failCounts;
 
+	size_t leafCount = 0;
 	while (!solutions.empty())
 	{
+		checkLeafLimit(++leafCount, maxLeafCount);
+
 		vector< unique_ptr< Action > > possibleActions;
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);

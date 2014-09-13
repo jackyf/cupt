@@ -439,6 +439,11 @@ suggested packages or not. False by default.
 
 boolean, see L<cupt(1)> L<--no-auto-remove|/--no-auto-remove>
 
+=item cupt::resolver::max-leaf-count
+
+integer, specifies how many leaves the solution tree will grow before resolver
+will give up. -1 means infinite. -1 by default.
+
 =item cupt::resolver::max-solution-count
 
 integer, positive, see L<cupt(1)> L<--max-solution-count|/--max-solution-count>
