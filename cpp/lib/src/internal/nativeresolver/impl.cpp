@@ -411,6 +411,14 @@ ScoreChange NativeResolverImpl::p_getScoreChange(
 	return result;
 }
 
+static inline void checkLeafLimit(size_t leafCount, size_t maxLeafCount)
+{
+	if (leafCount > maxLeafCount)
+	{
+		fatal2(__("leaf count limit exceeded"));
+	}
+}
+
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< PreparedSolution >& currentSolution, vector< unique_ptr< Action > >& actions)
@@ -424,31 +432,10 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		auto newSolution = onlyOneAction ?
 				__solution_storage->fakeCloneSolution(currentSolution) :
 				__solution_storage->cloneSolution(currentSolution);
+		checkLeafLimit(newSolution->id, p_maxLeafCount);
 		__pre_apply_action(*currentSolution, *newSolution,
 				std::move(*actionIt), position++, oldSolutionId);
 		callback(newSolution);
-	}
-}
-
-void __erase_worst_solutions(SolutionContainer& solutions,
-		size_t maxSolutionCount, bool debugging, bool& thereWereDrops)
-{
-	// don't allow solution tree to grow unstoppably
-	while (solutions.size() > maxSolutionCount)
-	{
-		// drop the worst solution
-		auto worstSolutionIt = solutions.begin();
-		if (debugging)
-		{
-			__mydebug_wrapper(**worstSolutionIt, "dropped");
-		}
-		solutions.erase(worstSolutionIt);
-		if (!thereWereDrops)
-		{
-			thereWereDrops = true;
-			warn2(__("some solutions were dropped, you may want to increase the value of the '%s' option"),
-					"cupt::resolver::max-solution-count");
-		}
 	}
 }
 
@@ -811,31 +798,54 @@ void NativeResolverImpl::__fill_and_process_introduced_by(
 	}
 }
 
-static inline void checkLeafLimit(size_t leafCount, size_t maxLeafCount)
+static void increaseQualityAdjustment(ssize_t* qa)
 {
-	if (leafCount > maxLeafCount)
+	const uint16_t slowDownFactor = 10;
+	const auto& oldQa = *qa;
+
+	ssize_t n = cbrt(oldQa*slowDownFactor);
+	ssize_t newQa;
+	do
 	{
-		fatal2(__("leaf count limit exceeded"));
-	}
+		++n;
+		newQa = n*n*n / slowDownFactor;
+	} while (newQa <= oldQa);
+
+	*qa = newQa;
 }
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
+{
+	auto initialSolution = std::make_shared< PreparedSolution >();
+	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
+	__solution_storage->prepareForResolving(*initialSolution, __old_packages, p_userRelationExpressions);
+
+	auto& sqa = __score_manager.qualityAdjustment;
+	sqa = __config->getInteger("cupt::resolver::score::quality-adjustment");
+
+	Resolve2Result subresult;
+	while ((subresult = p_resolve2(initialSolution, callback)) == Resolve2Result::HitSolutionTreeLimit)
+	{
+		if (p_debugging) debug2("hit solution tree limit, old quality adjustment '%zd'", sqa);
+		increaseQualityAdjustment(&sqa);
+		if (p_debugging) debug2("restarting with quality adjustment '%zd'", sqa);
+	}
+
+	return subresult == Resolve2Result::Yes;
+}
+
+auto NativeResolverImpl::p_resolve2(const shared_ptr<PreparedSolution>& initialSolution, Resolver::CallbackType callback) -> Resolve2Result
 {
 	auto solutionChooser = __select_solution_chooser(*__config);
 
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
-	const size_t maxLeafCount = __config->getInteger("cupt::resolver::max-leaf-count");
-	bool thereWereSolutionsDropped = false;
+	p_maxLeafCount = __config->getInteger("cupt::resolver::max-leaf-count");
 
 	if (p_debugging) debug2("started resolving");
 
 	__any_solution_was_found = false;
 	__decision_fail_tree.clear();
-
-	auto initialSolution = std::make_shared< PreparedSolution >();
-	__solution_storage.reset(new SolutionStorage(*__config, *__cache));
-	__solution_storage->prepareForResolving(*initialSolution, __old_packages, p_userRelationExpressions);
 
 	SolutionContainer solutions = { initialSolution };
 
@@ -843,11 +853,8 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 	// during processing these packages
 	map< dg::Element, size_t > failCounts;
 
-	size_t leafCount = 0;
 	while (!solutions.empty())
 	{
-		checkLeafLimit(++leafCount, maxLeafCount);
-
 		vector< unique_ptr< Action > > possibleActions;
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
@@ -916,10 +923,10 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			{
 				case Resolver::UserAnswer::Accept:
 					// yeah, this is end of our tortures
-					return true;
+					return Resolve2Result::Yes;
 				case Resolver::UserAnswer::Abandon:
 					// user has selected abandoning all further efforts
-					return false;
+					return Resolve2Result::No;
 				case Resolver::UserAnswer::Decline:
 					; // caller hasn't accepted this solution, well, go next...
 			}
@@ -937,13 +944,16 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 			}
 			else
 			{
+				if (solutions.size()+possibleActions.size() > maxSolutionCount)
+				{
+					return Resolve2Result::HitSolutionTreeLimit;
+				}
+
 				auto callback = [&solutions](const shared_ptr< Solution >& solution)
 				{
 					solutions.insert(solution);
 				};
 				__pre_apply_actions_to_solution_tree(callback, currentSolution, possibleActions);
-
-				__erase_worst_solutions(solutions, maxSolutionCount, p_debugging, thereWereSolutionsDropped);
 			}
 		}
 	}
@@ -953,7 +963,7 @@ bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 		fatal2(__("unable to resolve dependencies, because of:\n\n%s"),
 				__decision_fail_tree.toString());
 	}
-	return false;
+	return Resolve2Result::No;
 }
 
 }

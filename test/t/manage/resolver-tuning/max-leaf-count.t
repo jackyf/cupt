@@ -20,7 +20,7 @@ sub test {
 
 test(10 => 1);
 test(4 => 1);
-test(3 => 0);
+test(3 => 1);
 test(2 => 0);
 test(0 => 0);
 

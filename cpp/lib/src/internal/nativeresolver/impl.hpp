@@ -51,6 +51,7 @@ class NativeResolverImpl
 
 	shared_ptr< const Config > __config;
 	bool p_debugging;
+	size_t p_maxLeafCount;
 	shared_ptr< const Cache > __cache;
 	map< string, bool > __auto_status_overrides;
 	unique_ptr< SolutionStorage > __solution_storage;
@@ -93,6 +94,9 @@ class NativeResolverImpl
 
 	void __fill_and_process_introduced_by(const PreparedSolution&, const BrokenPair&, ActionContainer* actionsPtr);
 	void __generate_possible_actions(vector< unique_ptr< Action > >*, const PreparedSolution&, const BrokenPair&);
+
+	enum class Resolve2Result { Yes, No, HitSolutionTreeLimit };
+	Resolve2Result p_resolve2(const shared_ptr<PreparedSolution>&, Resolver::CallbackType);
 
  public:
 	NativeResolverImpl(const shared_ptr< const Config >&, const shared_ptr< const Cache >&);

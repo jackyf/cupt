@@ -104,9 +104,10 @@ for my $count (100) {
 				my $failure_expected =
 						$test_index == 25 || $test_index == 30 ||
 						$test_index == 35 || $test_index == 40 ||
-						$test_index == 45 || $test_index == 50 ||
-						$test_index == 50 || $test_index == 55 ||
-						($test_index >= 60 && $test_index <= 80);
+						($test_index >= 61 && $test_index <= 63) ||
+						($test_index >= 66 && $test_index <= 68) ||
+						($test_index >= 71 && $test_index <= 73) ||
+						($test_index >= 76 && $test_index <= 79);
 				local $TODO = 'improve algorithms' if $failure_expected;
 				test($count, $installed_density, $experimental_density, $conflicts_density);
 			}

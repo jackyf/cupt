@@ -31,7 +31,6 @@ namespace internal {
 ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >& cache)
 	: __cache(cache)
 {
-	__quality_adjustment = config.getInteger("cupt::resolver::score::quality-adjustment");
 	__version_factor = config.getInteger("cupt::resolver::score::version-factor");
 	__preferred_version_default_pin = config.getString("apt::default-release").empty() ?
 			500 : 990;
@@ -177,7 +176,7 @@ ScoreChange ScoreManager::getCustomUnsatisfiedScoreChange(Resolver::RequestImpor
 ssize_t ScoreManager::getScoreChangeValue(const ScoreChange& scoreChange) const
 {
 	// quality correction makes backtracking more/less possible
-	ssize_t result = __quality_adjustment;
+	ssize_t result = qualityAdjustment;
 
 	for (size_t i = 0; i < ScoreChange::SubScore::Count; ++i)
 	{
