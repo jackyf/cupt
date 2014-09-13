@@ -202,7 +202,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
 		{ "cupt::resolver::score::position-penalty", "-2" },
-		{ "cupt::resolver::score::quality-adjustment", "40" },
+		{ "cupt::resolver::score::quality-adjustment", "10" },
 		{ "cupt::resolver::score::unsatisfied-recommends", "-240" },
 		{ "cupt::resolver::score::unsatisfied-suggests", "-60" },
 		{ "cupt::resolver::score::unsatisfied-try", "-10000" },
