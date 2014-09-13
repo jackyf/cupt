@@ -54,6 +54,7 @@ cupt::console::use-colors "no";
 cupt::console::actions-preview::show-summary "no";
 cupt::console::actions-preview::show-empty-versions "yes";
 cupt::console::show-progress-messages "no";
+cupt::resolver::max-leaf-count "1000000";
 END
 
 sub generate_environment {
