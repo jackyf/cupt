@@ -411,6 +411,14 @@ ScoreChange NativeResolverImpl::p_getScoreChange(
 	return result;
 }
 
+static inline void checkLeafLimit(size_t leafCount, size_t maxLeafCount)
+{
+	if (leafCount > maxLeafCount)
+	{
+		fatal2(__("leaf count limit exceeded"));
+	}
+}
+
 void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		std::function< void (const shared_ptr< Solution >&) > callback,
 		const shared_ptr< PreparedSolution >& currentSolution, vector< unique_ptr< Action > >& actions)
@@ -424,6 +432,7 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 		auto newSolution = onlyOneAction ?
 				__solution_storage->fakeCloneSolution(currentSolution) :
 				__solution_storage->cloneSolution(currentSolution);
+		checkLeafLimit(newSolution->id, p_maxLeafCount);
 		__pre_apply_action(*currentSolution, *newSolution,
 				std::move(*actionIt), position++, oldSolutionId);
 		callback(newSolution);
@@ -805,14 +814,6 @@ static void increaseQualityAdjustment(ssize_t* qa)
 	*qa = newQa;
 }
 
-static inline void checkLeafLimit(size_t leafCount, size_t maxLeafCount)
-{
-	if (leafCount > maxLeafCount)
-	{
-		fatal2(__("leaf count limit exceeded"));
-	}
-}
-
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
 {
 	auto initialSolution = std::make_shared< PreparedSolution >();
@@ -839,7 +840,7 @@ auto NativeResolverImpl::p_resolve2(const shared_ptr<PreparedSolution>& initialS
 
 	const bool trackReasons = __config->getBool("cupt::resolver::track-reasons");
 	const size_t maxSolutionCount = __config->getInteger("cupt::resolver::max-solution-count");
-	const size_t maxLeafCount = __config->getInteger("cupt::resolver::max-leaf-count");
+	p_maxLeafCount = __config->getInteger("cupt::resolver::max-leaf-count");
 
 	if (p_debugging) debug2("started resolving");
 
@@ -852,11 +853,8 @@ auto NativeResolverImpl::p_resolve2(const shared_ptr<PreparedSolution>& initialS
 	// during processing these packages
 	map< dg::Element, size_t > failCounts;
 
-	size_t leafCount = 0;
 	while (!solutions.empty())
 	{
-		checkLeafLimit(++leafCount, maxLeafCount);
-
 		vector< unique_ptr< Action > > possibleActions;
 
 		auto currentSolution = __get_next_current_solution(solutions, *__solution_storage, solutionChooser);
