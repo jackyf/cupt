@@ -800,18 +800,10 @@ void NativeResolverImpl::__fill_and_process_introduced_by(
 
 static void increaseQualityAdjustment(ssize_t* qa)
 {
-	const uint16_t slowDownFactor = 10;
-	const auto& oldQa = *qa;
+	const float factor = 1.45f;
 
-	ssize_t n = cbrt(oldQa*slowDownFactor);
-	ssize_t newQa;
-	do
-	{
-		++n;
-		newQa = n*n*n / slowDownFactor;
-	} while (newQa <= oldQa);
-
-	*qa = newQa;
+	*qa += 1;
+	*qa *= factor;
 }
 
 bool NativeResolverImpl::resolve(Resolver::CallbackType callback)
