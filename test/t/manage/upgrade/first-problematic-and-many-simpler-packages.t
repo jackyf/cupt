@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 5;
+use Test::More tests => 8;
 
 use strict;
 use warnings;
@@ -55,4 +55,8 @@ test_with_package_count(1);
 test_with_package_count(10);
 test_with_package_count(100);
 test_with_package_count(1000);
+test_with_package_count(2000);
+test_with_package_count(4000);
+test_with_package_count(7000);
 test_with_package_count(10000);
+
