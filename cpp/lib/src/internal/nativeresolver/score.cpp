@@ -32,6 +32,7 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 	: __cache(cache)
 {
 	__version_factor = config.getInteger("cupt::resolver::score::version-factor");
+	__negative_version_factor = config.getInteger("cupt::resolver::score::negative-version-factor");
 	__preferred_version_default_pin = config.getString("apt::default-release").empty() ?
 			500 : 990;
 
@@ -131,7 +132,9 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 
 ssize_t ScoreManager::p_getFactoredVersionScore(ssize_t inputScore) const
 {
-	return inputScore * __version_factor / 100;
+	auto s1 = inputScore * __version_factor / 100;
+	auto s2 = s1 >= 0 ? s1 : (s1 * __negative_version_factor / 100);
+	return s2;
 }
 
 ScoreChange ScoreManager::getUnsatisfiedRecommendsScoreChange() const

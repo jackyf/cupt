@@ -580,6 +580,11 @@ is 'soft')
 
 defines (in percents), how much version score difference affects the action score
 
+=item negative-version-factor
+
+defines (in percents) scaling of negative version scores (applied after
+B<version-factor>)
+
 =back
 
 =item cupt::worker::archives-space-limit
