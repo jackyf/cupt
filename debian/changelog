@@ -17,6 +17,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         from 8192 to 32000.
       - Option 'cupt::resolver::score::quality-adjustment': changed default
         value from 40 to 0.
+      - Option 'cupt::resolver::score::removal-of-autoinstalled': changed
+        default value from 1200 to 1400.
     - system/state:
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:

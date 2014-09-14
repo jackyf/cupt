@@ -197,7 +197,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::resolver::type", "fair" },
 		{ "cupt::resolver::score::new", "0" },
 		{ "cupt::resolver::score::removal", "-1800" },
-		{ "cupt::resolver::score::removal-of-autoinstalled", "1500" },
+		{ "cupt::resolver::score::removal-of-autoinstalled", "1400" },
 		{ "cupt::resolver::score::removal-of-essential", "-200000" },
 		{ "cupt::resolver::score::upgrade", "100" },
 		{ "cupt::resolver::score::downgrade", "-800" },
