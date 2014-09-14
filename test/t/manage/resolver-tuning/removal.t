@@ -105,8 +105,6 @@ sub test_group {
 
 	my $group_comment = "latest: $latest_versions_available, default release enabled: $default_release_enabled, archive: $archive";
 
-	local $TODO = "improve score system" if $default_release_enabled;
-
 	subtest $group_comment => sub {
 		$request_type = '--wish';
 		test(undef, undef, undef, 1, 1, 0);
@@ -127,11 +125,11 @@ sub test_group {
 		test(undef, undef, 2000, 0, 1, 1);
 		test(-500, undef, 2000, 0, 1, 0);
 
-		test(-200, 20, 20, 1, 1, 1);
-		test(-500, 700, -400, 1, 1, 0);
-		test(-300, 700, -300, 0, 1, 0);
-		test(500, 200, -1000, 1, 0, 0);
-		test(100, -300, 0, 1, 0, 1);
+		test(-400, 20, 20, 1, 1, 1);
+		test(-500, 700, -600, 1, 1, 0);
+		test(-400, 700, -250, 0, 1, 0);
+		test(500, 200, -1100, 1, 0, 0);
+		test(100, -500, 0, 1, 0, 1);
 		test(4000, 4000, -10000, 1, 0, 0);
 		test(-2000, 1500, 5000, 0, 1, 1);
 		test(100, -1000, 1200, 0, 0, 1);
