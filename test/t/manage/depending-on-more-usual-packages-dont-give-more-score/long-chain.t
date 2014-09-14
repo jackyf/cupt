@@ -46,7 +46,6 @@ sub test {
 }
 
 foreach (1..13) {
-	local $TODO = 'decrease starting quality adjustment' if $_ >= 9;
 	test(2**$_);
 }
 

@@ -53,9 +53,9 @@ sub test {
 
 test(1, undef,  1);
 test(2, undef,  1);
+test(3, undef,  1);
 TODO: {
 	local $TODO = 'adjust default value';
-	test(3, undef,  1);
 	test(5, undef,  1);
 }
 test(10, undef,  0);
