@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 17;
+use Test::More tests => 18;
 
 use strict;
 use warnings;
@@ -59,14 +59,15 @@ test(300, 'wish', 1 => 1);
 test(1000, 'wish', 1 => 1);
 
 test(1, 'wish', 0 => 1);
-test(3, 'wish', 0 => 0);
+test(3, 'wish', 0 => 1);
+test(6, 'wish', 0 => 0);
 test(10, 'wish', 0 => 0);
 test(20, 'wish', 0 => 0);
 
 test(1, 'try', 0 => 1);
 test(5, 'try', 0 => 1);
 test(25, 'try', 0 => 1);
-test(100, 'try', 0 => 0);
+test(100, 'try', 0 => 1);
 test(200, 'try', 0 => 0);
 test(500, 'try', 0 => 0);
 		

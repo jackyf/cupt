@@ -95,20 +95,10 @@ sub test {
 	}
 }
 
-my $test_index = 0;
 for my $count (100) {
 	for my $experimental_density (2, 8, 20, 50, 90) {
 		for my $conflicts_density (5, 10, 20, 40) {
 			for my $installed_density (99, 90, 80, 60, 20) {
-				++$test_index;
-				my $failure_expected =
-						$test_index == 25 || $test_index == 30 ||
-						$test_index == 35 || $test_index == 40 ||
-						($test_index >= 61 && $test_index <= 63) ||
-						($test_index >= 66 && $test_index <= 68) ||
-						($test_index >= 71 && $test_index <= 73) ||
-						($test_index >= 76 && $test_index <= 79);
-				local $TODO = 'improve algorithms' if $failure_expected;
 				test($count, $installed_density, $experimental_density, $conflicts_density);
 			}
 		}
