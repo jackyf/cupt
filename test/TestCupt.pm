@@ -139,7 +139,8 @@ sub generate_packages_sources {
 	foreach my $entry (@_) {
 		my %e = @$entry;
 		my $archive = $e{'archive'} // $default_archive;
-		generate_release($archive);
+		my $not_automatic = $e{'not-automatic'} // 0;
+		generate_release($archive, $not_automatic);
 	
 		my $is_trusted = $e{'trusted'}//1;
 		my $content = $e{'content'};
@@ -164,7 +165,7 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my ($archive) = @_;
+	my ($archive, $not_automatic) = @_;
 
 	my $content = <<END;
 Origin: Debian
@@ -176,6 +177,9 @@ Valid-Until: Mon, 07 Oct 2033 14:44:53 UTC
 Architectures: $architecture all
 Components: $component
 END
+	if ($not_automatic) {
+		$content .= "NotAutomatic: yes\n";
+	}
 	my $list_prefix = get_list_prefix($archive);
 	generate_file("${list_prefix}_Release", $content);
 }
