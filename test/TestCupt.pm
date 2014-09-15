@@ -140,7 +140,8 @@ sub generate_packages_sources {
 		my %e = @$entry;
 		my $archive = $e{'archive'} // $default_archive;
 		my $not_automatic = $e{'not-automatic'} // 0;
-		generate_release($archive, $not_automatic);
+		my $but_automatic_upgrades = $e{'but-automatic-upgrades'} // 0;
+		generate_release($archive, $not_automatic, $but_automatic_upgrades);
 	
 		my $is_trusted = $e{'trusted'}//1;
 		my $content = $e{'content'};
@@ -165,7 +166,7 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my ($archive, $not_automatic) = @_;
+	my ($archive, $not_automatic, $but_automatic_upgrades) = @_;
 
 	my $content = <<END;
 Origin: Debian
@@ -179,6 +180,9 @@ Components: $component
 END
 	if ($not_automatic) {
 		$content .= "NotAutomatic: yes\n";
+		if ($but_automatic_upgrades) {
+			$content .= "ButAutomaticUpgrades: yes\n";
+		}
 	}
 	my $list_prefix = get_list_prefix($archive);
 	generate_file("${list_prefix}_Release", $content);
