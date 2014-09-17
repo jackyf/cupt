@@ -45,11 +45,8 @@ sub test {
 	is(get_offered_version($offer, 'aa'), $expected_aa_version, $comment) or diag($offer);
 }
 
-TODO: {
-	local $TODO = 'restore more negative influence of not-automatic sources';
-	test(1 => 0);
-	test(2 => 0);
-}
+test(1 => 0);
+test(2 => 0);
 test(3 => 1);
 test(5 => 1);
 test(10 => 1);
