@@ -37,21 +37,15 @@ sub test {
 
 test(undef, 0 => 0);
 test(undef, 1 => 0);
-TODO: {
-	local $TODO = 'adjust downgrade pin addendum';
-	test(undef, 2 => 0);
-	test(undef, 3 => 0);
-	test(undef, 5 => 0);
-}
+test(undef, 2 => 0);
+test(undef, 3 => 0);
+test(undef, 5 => 0);
 test(undef, 8 => 1);
 test(undef, 13 => 1);
 test(undef, 20 => 1);
 test(undef, 40 => 1);
 
-TODO: {
-	local $TODO = 'bug';
-	test(+5000, 1 => 0);
-}
+test(+5000, 1 => 0);
 test(+10000, 1 => 1);
 test(-100000, 40 => 0);
 
