@@ -1,2 +1,5 @@
 doc/cupt_tutorial.7
 doc/cupt_functionalselectors.7
+doc/cupt.1
+doc/cupt.conf.5
+doc/cupt_vs_apt.5
