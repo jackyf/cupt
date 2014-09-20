@@ -4,9 +4,7 @@ use Test::More tests => 12;
 use strict;
 use warnings;
 
-sub generate_n_installed_packages {
-	return join('', map { entail(compose_installed_record("p$_", 1) . "Provides: p\n") } (1..$_[0]));
-}
+eval get_inc_code('common');
 
 sub setup_cupt {
 	return TestCupt::setup(
