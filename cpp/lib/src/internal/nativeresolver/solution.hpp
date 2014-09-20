@@ -24,7 +24,6 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
 
-#include <internal/nativeresolver/score.hpp>
 #include <internal/nativeresolver/dependencygraph.hpp>
 #include <internal/nativeresolver/cowmap.hpp>
 
