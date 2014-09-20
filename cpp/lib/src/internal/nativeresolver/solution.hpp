@@ -18,7 +18,6 @@
 #ifndef CUPT_INTERNAL_SOLUTION_SEEN
 #define CUPT_INTERNAL_SOLUTION_SEEN
 
-#include <bitset>
 #include <map>
 #include <forward_list>
 #include <cstring>
