@@ -20,7 +20,6 @@
 
 #include <map>
 #include <forward_list>
-#include <cstring>
 
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
