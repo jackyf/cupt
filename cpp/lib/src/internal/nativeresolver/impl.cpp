@@ -427,14 +427,14 @@ void NativeResolverImpl::__pre_apply_actions_to_solution_tree(
 	bool onlyOneAction = (actions.size() == 1);
 	auto oldSolutionId = currentSolution->id;
 	size_t position = 0;
-	FORIT(actionIt, actions)
+	for (auto& action: actions)
 	{
 		auto newSolution = onlyOneAction ?
 				__solution_storage->fakeCloneSolution(currentSolution) :
 				__solution_storage->cloneSolution(currentSolution);
 		checkLeafLimit(newSolution->id, p_maxLeafCount);
 		__pre_apply_action(*currentSolution, *newSolution,
-				std::move(*actionIt), position++, oldSolutionId);
+				std::move(action), position++, oldSolutionId);
 		callback(newSolution);
 	}
 }
