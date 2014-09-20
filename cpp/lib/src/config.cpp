@@ -132,7 +132,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::limit-releases::by-archive::type", "none" },
 		{ "cupt::cache::limit-releases::by-codename::type", "none" },
 		{ "cupt::cache::pin::addendums::downgrade", "-80000" },
-		{ "cupt::cache::pin::addendums::hold", "1000000" },
+		{ "cupt::cache::pin::addendums::hold", "9000000" },
 		{ "cupt::cache::pin::addendums::not-automatic", "-36000" },
 		{ "cupt::cache::pin::addendums::but-automatic-upgrades", "36200" },
 		{ "cupt::cache::release-file-expiration::ignore", "no" },

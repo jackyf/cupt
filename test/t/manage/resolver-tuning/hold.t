@@ -33,12 +33,9 @@ sub test {
 test(0 => 0);
 test(5 => 0);
 test(20 => 0);
-TODO: {
-	local $TODO = 'regression';
-	test(100 => 0);
-	test(200 => 0);
-	test(500 => 0);
-}
+test(100 => 0);
+test(200 => 0);
+test(500 => 0);
 test(1000 => 1);
 test(2000 => 1);
 test(5000 => 1);
