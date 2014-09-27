@@ -139,26 +139,26 @@ static inline void addSatisfyingPackageVersions(
 	}
 }
 
-vector< const BinaryVersion* >
-CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
+void CacheImpl::addRealPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
 {
-	vector< const BinaryVersion* > result;
-
 	const string& packageName = relation.packageName;
 
-	{ // real package
-		size_t colonPosition = packageName.find(':');
-		if (colonPosition == string::npos)
-		{
-			addSatisfyingPackageVersions<false>(&result, relation, getBinaryPackage(packageName), *systemState);
-		}
-		else if (packageName.compare(colonPosition+1, string::npos, "any", 3) == 0)
-		{
-			auto realPackageName = packageName.substr(0, colonPosition);
-			addSatisfyingPackageVersions<true>(&result, relation, getBinaryPackage(realPackageName), *systemState);
-		}
-		// otherwise unsupported
+	size_t colonPosition = packageName.find(':');
+	if (colonPosition == string::npos)
+	{
+		addSatisfyingPackageVersions<false>(result, relation, getBinaryPackage(packageName), *systemState);
 	}
+	else if (packageName.compare(colonPosition+1, string::npos, "any", 3) == 0)
+	{
+		auto realPackageName = packageName.substr(0, colonPosition);
+		addSatisfyingPackageVersions<true>(result, relation, getBinaryPackage(realPackageName), *systemState);
+	}
+	// otherwise unsupported
+}
+
+void CacheImpl::addVirtualPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
+{
+	const string& packageName = relation.packageName;
 
 	// virtual package can only be considered if no relation sign is specified
 	if (relation.relationType == Relation::Types::None)
@@ -186,7 +186,7 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 						if (realProvidesPackageName == packageName)
 						{
 							// ok, this particular version does provide this virtual package
-							result.push_back(version);
+							result->push_back(version);
 							break;
 						}
 					}
@@ -194,6 +194,15 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 			}
 		}
 	}
+}
+
+vector< const BinaryVersion* >
+CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
+{
+	vector< const BinaryVersion* > result;
+
+	addRealPackageSatisfyingVersions(&result, relation);
+	addVirtualPackageSatisfyingVersions(&result, relation);
 
 	return result;
 }
