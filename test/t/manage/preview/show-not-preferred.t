@@ -25,9 +25,5 @@ sub get_not_preferred_regex {
 }
 
 like(get_first_offer("$cupt install --show-not-preferred"), get_not_preferred_regex('l m n'), 'm and n and l can be upgraded');
-
-TODO: {
-	local $TODO = 'of 2 same pin versions, higher one should be chosen';
-	like(get_first_offer("$cupt safe-upgrade"), get_not_preferred_regex('m'), 'm cannot be upgraded to the latest version');
-}
+like(get_first_offer("$cupt safe-upgrade"), get_not_preferred_regex('m'), 'm cannot be upgraded to the latest version');
 

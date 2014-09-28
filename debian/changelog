@@ -26,6 +26,11 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
       - Implemented automatic quality adjustment.
+      - For equal-scored version change variants, propose higher versions
+        first. The regression for some typical upgrade situations was
+        introduced in 2.8.0, the regression for some typical non-upgrade
+        user requests was introduced in 2.6.0, and many non-typical cases
+        probably never worked before.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

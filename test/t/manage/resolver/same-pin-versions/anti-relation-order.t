@@ -20,9 +20,6 @@ test("$ccp '$p (= 6)-'", [ 5, 4, 3, $ev ], 'version 6 disallowed by real relatio
 test("$ccp v5or4-", [ 6, 3, $ev ], 'some versions disallowed by virtual relation');
 test("$ccp v5or4- v6or4-", [ 3, $ev ], 'some version disallowed, crossed virtual relations');
 # sorting required
-TODO: {
-	local $TODO = 'sorting not implemented';
-	test("$ccp '$p (= 3)-'", [ 6, 5, 4, $ev ], 'version 3 disallowed by real relation');
-	test("$ccp vxorp3-", [ 6, 5, 4, $ev ], 'version 3 disallowed by virtual relation');
-}
+test("$ccp '$p (= 3)-'", [ 6, 5, 4, $ev ], 'version 3 disallowed by real relation');
+test("$ccp vxorp3-", [ 6, 5, 4, $ev ], 'version 3 disallowed by virtual relation');
 
