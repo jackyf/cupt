@@ -763,8 +763,9 @@ class DependencyGraph::FillHelper
 			auto package = __dependency_graph.__cache.getBinaryPackage(packageName);
 			if (!package) fatal2i("the binary package '%s' doesn't exist", packageName);
 
-			for (auto packageVersion: *package)
+			for (auto pinnedVersion: __dependency_graph.__cache.getSortedPinnedVersions(package))
 			{
+				auto packageVersion = static_cast<const BinaryVersion*>(pinnedVersion.version);
 				if (std::find(satisfyingVersions.begin(), satisfyingVersions.end(),
 							packageVersion) == satisfyingVersions.end())
 				{

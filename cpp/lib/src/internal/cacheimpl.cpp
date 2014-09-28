@@ -196,6 +196,15 @@ void CacheImpl::addVirtualPackageSatisfyingVersions(vector<const BinaryVersion*>
 	}
 }
 
+static inline void sortByPackageNameAndVersion(vector<const BinaryVersion*>* result)
+{
+	std::sort(result->begin(), result->end(), [](const BinaryVersion* left, const BinaryVersion* right)
+			{
+				return std::forward_as_tuple(left->packageName, right->versionString) <
+						std::forward_as_tuple(right->packageName, left->versionString);
+			});
+}
+
 vector< const BinaryVersion* >
 CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 {
@@ -203,6 +212,7 @@ CacheImpl::getSatisfyingVersionsNonCached(const Relation& relation) const
 
 	addRealPackageSatisfyingVersions(&result, relation);
 	addVirtualPackageSatisfyingVersions(&result, relation);
+	sortByPackageNameAndVersion(&result);
 
 	return result;
 }

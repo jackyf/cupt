@@ -44,9 +44,6 @@ sub test_group {
 $middle_candidate_exists = 0;
 test_group();
 
-TODO: {
-	local $TODO = 'fix!';
-	$middle_candidate_exists = 1;
-	test_group();
-}
+$middle_candidate_exists = 1;
+test_group();
 
