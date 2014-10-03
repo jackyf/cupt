@@ -29,7 +29,14 @@ use File::Spec;
 sub get_inc_path {
 	my ($includee) = @_;
 	my $test_dir = $INC[0];
+
 	my $test_module_dir = (File::Spec->splitpath($0))[1];
+	{
+		my @parts = File::Spec->splitdir($test_module_dir);
+		$parts[0] = 't';
+		$test_module_dir = File::Spec->catdir(@parts);
+	}
+
 	my $file = "$test_dir/$test_module_dir/$includee.inc";
 	return $file;
 }
