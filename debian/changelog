@@ -1,3 +1,9 @@
+cupt (2.8.3~) UNRELEASED; urgency=medium
+
+  * 
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 03 Oct 2014 22:38:21 +0300
+
 cupt (2.8.2) unstable; urgency=medium
 
   * test:
