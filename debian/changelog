@@ -1,4 +1,4 @@
-cupt (2.8.3~) UNRELEASED; urgency=medium
+cupt (2.8.3) unstable; urgency=medium
 
   * lib:
     - config:
@@ -10,7 +10,7 @@ cupt (2.8.3~) UNRELEASED; urgency=medium
         user requests was introduced in 2.6.0, and many non-typical cases
         probably never worked before.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 03 Oct 2014 22:38:21 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 04 Oct 2014 12:52:34 +0300
 
 cupt (2.8.2) unstable; urgency=medium
 
