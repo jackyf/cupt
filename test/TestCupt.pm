@@ -16,6 +16,7 @@ our @EXPORT = qw(
 	regex_no_solutions
 	get_first_offer
 	get_all_offers
+	split_offers
 	get_offer_count
 	get_empty_version
 	get_unchanged_version
@@ -250,6 +251,12 @@ sub get_first_offer {
 sub get_all_offers {
 	my ($command) = @_;
 	return `yes 'N' | $command -s 2>&1`;
+}
+
+sub split_offers {
+	my @result = split(regex_offer(), $_[0]);
+	pop @result; # last one will be 'no solutions anymore'
+	return @result;
 }
 
 sub get_offer_count {

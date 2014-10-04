@@ -20,8 +20,7 @@ sub test {
 	my ($command, $expected_versions, $comment) = @_;
 
 	my $output = get_all_offers("$cupt $command -V");
-	my @offers = split(regex_offer(), $output);
-	pop @offers; # last one will be 'no solutions anymore'
+	my @offers = split_offers($output);
 
 	my @proposed_versions = map { get_offered_version($_, $p) } @offers;
 
