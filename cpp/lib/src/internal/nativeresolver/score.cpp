@@ -90,17 +90,29 @@ ssize_t ScoreManager::__get_version_weight(const BinaryVersion* version) const
 ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVersion,
 		const BinaryVersion* supposedVersion) const
 {
+	ScoreChange scoreChange;
+	p_addVersionChangeWeight(&scoreChange, originalVersion, supposedVersion);
+	p_addVersionChangeClass(&scoreChange, originalVersion, supposedVersion);
+	return scoreChange;
+}
+
+void ScoreManager::p_addVersionChangeWeight(ScoreChange* scoreChange,
+		const BinaryVersion* originalVersion, const BinaryVersion* supposedVersion) const
+{
 	auto supposedVersionWeight = __get_version_weight(supposedVersion);
 	auto originalVersionWeight = __get_version_weight(originalVersion);
 
 	auto value = p_getFactoredVersionScore(supposedVersionWeight - originalVersionWeight);
 
-	ScoreChange scoreChange;
-	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
+	scoreChange->__subscores[ScoreChange::SubScore::Version] = value;
+}
 
+void ScoreManager::p_addVersionChangeClass(ScoreChange* scoreChange,
+		const BinaryVersion* originalVersion, const BinaryVersion* supposedVersion) const
+{
 	auto includeSubScore = [&scoreChange](ScoreChange::SubScore::Type sst)
 	{
-		scoreChange.__subscores[sst] = 1;
+		scoreChange->__subscores[sst] = 1;
 	};
 
 	if (!originalVersion)
@@ -133,8 +145,6 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 			includeSubScore(ScoreChange::SubScore::Downgrade);
 		}
 	}
-
-	return scoreChange;
 }
 
 ssize_t ScoreManager::p_getFactoredVersionScore(ssize_t inputScore) const

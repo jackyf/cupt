@@ -57,6 +57,8 @@ class ScoreManager
 	ssize_t __preferred_version_default_pin;
 
 	ssize_t __get_version_weight(const BinaryVersion* version) const;
+	void p_addVersionChangeWeight(ScoreChange*, const BinaryVersion*, const BinaryVersion*) const;
+	void p_addVersionChangeClass(ScoreChange*, const BinaryVersion*, const BinaryVersion*) const;
 	inline ssize_t p_getFactoredVersionScore(ssize_t) const;
  public:
 	ScoreManager(const Config&, const shared_ptr< const Cache >&);
