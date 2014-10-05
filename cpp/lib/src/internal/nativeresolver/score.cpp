@@ -125,9 +125,16 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 	}
 	else
 	{
-		auto scoreType = compareVersionStrings(originalVersion->versionString,
-				supposedVersion->versionString) < 0 ? ScoreChange::SubScore::Upgrade : ScoreChange::SubScore::Downgrade;
-		includeSubScore(scoreType);
+		auto comparisonResult = compareVersionStrings(
+				originalVersion->versionString, supposedVersion->versionString);
+		if (comparisonResult < 0)
+		{
+			includeSubScore(ScoreChange::SubScore::Upgrade);
+		}
+		else if (comparisonResult > 0)
+		{
+			includeSubScore(ScoreChange::SubScore::Downgrade);
+		}
 	}
 
 	return scoreChange;

@@ -36,8 +36,5 @@ sub test
 test('0.9', ''  => [ '1', '0.9' ], 'reinstall offered before good-pin downgrade');
 test('1.1', ''  => [ '1.1', '1' ], 'reinstall offered after normal-pin problemless upgrade');
 test('1.4', ''  => [ '1.4', '1' ], 'reinstall offered after low-pin problemless upgrade');
-TODO: {
-	local $TODO = 'reinstall score is too negative';
-	test('2', "Recommends: inv2\n"  => [ '1', '2' ], 'reinstall offered before unsatisfied-recommends upgrade');
-}
+test('2', "Recommends: inv2\n"  => [ '1', '2' ], 'reinstall offered before unsatisfied-recommends upgrade');
 
