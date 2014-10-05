@@ -97,35 +97,38 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 	auto value = p_getFactoredVersionScore(supposedVersionWeight - originalVersionWeight);
 
 	ScoreChange scoreChange;
+	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
 
-	ScoreChange::SubScore::Type scoreType;
+	auto includeSubScore = [&scoreChange](ScoreChange::SubScore::Type sst)
+	{
+		scoreChange.__subscores[sst] = 1;
+	};
+
 	if (!originalVersion)
 	{
-		scoreType = ScoreChange::SubScore::New;
+		includeSubScore(ScoreChange::SubScore::New);
 	}
 	else if (!supposedVersion)
 	{
-		scoreType = ScoreChange::SubScore::Removal;
+		includeSubScore(ScoreChange::SubScore::Removal);
 
 		auto binaryPackage = __cache->getBinaryPackage(originalVersion->packageName);
 		auto installedVersion = binaryPackage->getInstalledVersion();
 		if (installedVersion && installedVersion->essential)
 		{
-			scoreChange.__subscores[ScoreChange::SubScore::RemovalOfEssential] = 1;
+			includeSubScore(ScoreChange::SubScore::RemovalOfEssential);
 		}
 		if (__cache->isAutomaticallyInstalled(originalVersion->packageName))
 		{
-			scoreChange.__subscores[ScoreChange::SubScore::RemovalOfAuto] = 1;
+			includeSubScore(ScoreChange::SubScore::RemovalOfAuto);
 		}
 	}
 	else
 	{
-		scoreType = compareVersionStrings(originalVersion->versionString,
+		auto scoreType = compareVersionStrings(originalVersion->versionString,
 				supposedVersion->versionString) < 0 ? ScoreChange::SubScore::Upgrade : ScoreChange::SubScore::Downgrade;
+		includeSubScore(scoreType);
 	}
-
-	scoreChange.__subscores[ScoreChange::SubScore::Version] = value;
-	scoreChange.__subscores[scoreType] = 1;
 
 	return scoreChange;
 }
