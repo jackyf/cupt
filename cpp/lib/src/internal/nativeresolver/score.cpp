@@ -20,7 +20,6 @@
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binaryversion.hpp>
-#include <cupt/cache/binarypackage.hpp>
 #include <cupt/system/resolver.hpp>
 
 #include <internal/nativeresolver/score.hpp>
@@ -112,9 +111,7 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 	{
 		includeSubScore(ScoreChange::SubScore::Removal);
 
-		auto binaryPackage = __cache->getBinaryPackage(originalVersion->packageName);
-		auto installedVersion = binaryPackage->getInstalledVersion();
-		if (installedVersion && installedVersion->essential)
+		if (originalVersion->essential)
 		{
 			includeSubScore(ScoreChange::SubScore::RemovalOfEssential);
 		}
