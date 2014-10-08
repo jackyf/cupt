@@ -28,6 +28,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - 'setScalar': accept any option from 'dpkg' family without filtering.
     - system/state:
       - [API break] 'getInstalledInfo': returns raw pointer.
+      - [ABI break] Removed handling of longly obsolete Status fields. Patch by
+        Guillem Jover. (Closes: #764468)
     - system/worker:
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
       - Debdelta helper: use debdelta sources file path as relative to 'dir'

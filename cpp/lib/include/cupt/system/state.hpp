@@ -54,14 +54,14 @@ class CUPT_API State
 		struct Flag
 		{
 			/// type
-			enum Type { Ok, Reinstreq, Hold, HoldAndReinstreq, Count };
+			enum Type { Ok, Reinstreq, Count };
 		};
 		/// package installation status
 		struct Status
 		{
 			/// type
 			enum Type { NotInstalled, Unpacked, HalfConfigured, HalfInstalled, ConfigFiles,
-				PostInstFailed, RemovalFailed, Installed, TriggersPending, TriggersAwaited, Count };
+				Installed, TriggersPending, TriggersAwaited, Count };
 			static const string strings[]; ///< string values of correspoding types
 		};
 		Want::Type want;

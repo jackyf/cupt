@@ -1536,7 +1536,7 @@ void __set_force_options_for_removals_if_needed(const Cache& cache,
 								packageName);
 					}
 					typedef system::State::InstalledRecord::Flag IRFlag;
-					if (installedRecord->flag == IRFlag::Reinstreq || installedRecord->flag == IRFlag::HoldAndReinstreq)
+					if (installedRecord->flag == IRFlag::Reinstreq)
 					{
 						actionGroupIt->dpkgFlags.insert("--force-remove-reinstreq");
 						removeReinstreqFlagIsSet = true;

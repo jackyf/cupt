@@ -84,8 +84,6 @@ void parseStatusSubstrings(const string& packageName, const string& input, Insta
 #define CHECK_FLAG(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->flag = InstalledRecord::Flag:: value; } else
 		CHECK_FLAG("ok", Ok)
 		CHECK_FLAG("reinstreq", Reinstreq)
-		CHECK_FLAG("hold", Hold)
-		CHECK_FLAG("hold-reinstreq", HoldAndReinstreq)
 		{ // else
 			fatal2(__("malformed '%s' status indicator (for the package '%s')"), "error", packageName);
 		}
@@ -106,8 +104,6 @@ void parseStatusSubstrings(const string& packageName, const string& input, Insta
 		CHECK_STATUS("unpacked", Unpacked)
 		CHECK_STATUS("half-configured", HalfConfigured)
 		CHECK_STATUS("half-installed", HalfInstalled)
-		CHECK_STATUS("post-inst-failed", PostInstFailed)
-		CHECK_STATUS("removal-failed", RemovalFailed)
 		CHECK_STATUS("triggers-pending", TriggersPending)
 		CHECK_STATUS("triggers-awaited", TriggersAwaited)
 		{ // else
@@ -300,7 +296,6 @@ vector< string > State::getReinstallRequiredPackageNames() const
 		const InstalledRecord::Flag::Type& flag = it->second->flag;
 		const InstalledRecord::Status::Type& status = it->second->status;
 		if (flag == InstalledRecord::Flag::Reinstreq ||
-				flag == InstalledRecord::Flag::HoldAndReinstreq ||
 				status == InstalledRecord::Status::HalfInstalled)
 		{
 			result.push_back(it->first);
@@ -317,7 +312,7 @@ string State::getArchitecture() const
 
 const string State::InstalledRecord::Status::strings[] = {
 	N__("not installed"), N__("unpacked"), N__("half-configured"), N__("half-installed"),
-	N__("config files"), N__("postinst failed"), N__("removal failed"), N__("installed")
+	N__("config files"), N__("installed")
 };
 
 }
