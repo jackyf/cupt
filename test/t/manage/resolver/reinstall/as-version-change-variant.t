@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 use strict;
 use warnings;
@@ -15,6 +15,7 @@ sub setup_cupt {
 			entail(compose_package_record('pp', 1)),
 		'preferences' =>
 			compose_pin_record('pp', '0.9', 1100) .
+			compose_pin_record('pp', '1.3', 400) .
 			compose_pin_record('pp', '1.4', 200),
 	);
 }
@@ -35,6 +36,7 @@ sub test
 
 test('0.9', ''  => [ '1', '0.9' ], 'reinstall offered before good-pin downgrade');
 test('1.1', ''  => [ '1.1', '1' ], 'reinstall offered after normal-pin problemless upgrade');
-test('1.4', ''  => [ '1.4', '1' ], 'reinstall offered after low-pin problemless upgrade');
+test('1.3', ''  => [ '1.3', '1' ], 'reinstall offered after middle-pin problemless upgrade');
+test('1.4', ''  => [ '1', '1.4' ], 'reinstall offered before low-pin problemless upgrade');
 test('2', "Recommends: inv2\n"  => [ '1', '2' ], 'reinstall offered before unsatisfied-recommends upgrade');
 
