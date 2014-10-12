@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 20;
+use Test::More tests => 34;
 
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ sub generate_package_chain_removing_i {
 	return $result;
 }
 
-my $lot_of_installed_packages = join('', map { entail(compose_installed_record("p$_", 5)) } (1..2**14));
+my $lot_of_installed_packages = join('', map { entail(compose_installed_record("p$_", 5)) } (1..32));
 
 sub test {
 	my ($packages_were_installed, $count) = @_;
@@ -49,15 +49,14 @@ sub test {
 	is(get_offered_version($offer, 'a'), 4, "a 6 depends on the bad chain of $count $chain_type packages --> a 4 is offered");
 }
 
-sub test_group {
-	my ($packages_were_installed, $maximum_index) = @_;
-
-	foreach (0..$maximum_index) {
-		local $TODO = 'score of non-explicitly-requested-by-user upgrades is too big' if ($packages_were_installed && $_ >= 3);
-		test($packages_were_installed, 2**$_);
-	}
+# new packages
+foreach (0..13) {
+	test(0, 2**$_);
 }
 
-test_group(0, 13);
-test_group(1, 5);
+# upgraded packages
+foreach (1..20) {
+	local $TODO = 'score of non-explicitly-requested-by-user upgrades could be smaller' if ($_ >= 8);
+	test(1, $_);
+}
 
