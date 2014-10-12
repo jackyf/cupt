@@ -30,8 +30,9 @@ namespace internal {
 ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >& cache)
 	: __cache(cache)
 {
-	__version_factor = config.getInteger("cupt::resolver::score::version-factor");
-	__negative_version_factor = config.getInteger("cupt::resolver::score::negative-version-factor");
+	p_versionFactors.common = config.getInteger("cupt::resolver::score::version-factor");
+	p_versionFactors.negative = config.getInteger("cupt::resolver::score::negative-version-factor");
+	p_versionFactors.priorityDowngrade = config.getInteger("cupt::resolver::score::version-factor::priority-downgrade");
 	__preferred_version_default_pin = config.getString("apt::default-release").empty() ?
 			500 : 990;
 
@@ -82,11 +83,6 @@ ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >
 	}
 }
 
-ssize_t ScoreManager::__get_version_weight(const BinaryVersion* version) const
-{
-	return version ? (__cache->getPin(version) - __preferred_version_default_pin) : 0;
-}
-
 ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVersion,
 		const BinaryVersion* supposedVersion) const
 {
@@ -99,10 +95,24 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 void ScoreManager::p_addVersionChangeWeight(ScoreChange* scoreChange,
 		const BinaryVersion* originalVersion, const BinaryVersion* supposedVersion) const
 {
-	auto supposedVersionWeight = __get_version_weight(supposedVersion);
-	auto originalVersionWeight = __get_version_weight(originalVersion);
+	auto getWeight = [this](const BinaryVersion* bv)
+	{
+		return bv ? (__cache->getPin(bv) - __preferred_version_default_pin) : 0;
+	};
+	auto getPriority = [this](const BinaryVersion* bv, ssize_t ifNull)
+	{
+		return bv ? __cache->getPin(bv) : ifNull;
+	};
 
-	auto value = p_getFactoredVersionScore(supposedVersionWeight - originalVersionWeight);
+	auto supposedVersionWeight = getWeight(supposedVersion);
+	auto originalVersionWeight = getWeight(originalVersion);
+
+	auto supposedVersionPriority = getPriority(supposedVersion, __preferred_version_default_pin);
+	auto originalVersionPriority = getPriority(originalVersion, 0);
+
+	auto value = p_getFactoredVersionScore(
+			supposedVersionWeight - originalVersionWeight,
+			supposedVersionPriority - originalVersionPriority);
 
 	scoreChange->__subscores[ScoreChange::SubScore::Version] = value;
 }
@@ -147,11 +157,27 @@ void ScoreManager::p_addVersionChangeClass(ScoreChange* scoreChange,
 	}
 }
 
-ssize_t ScoreManager::p_getFactoredVersionScore(ssize_t inputScore) const
+ssize_t ScoreManager::p_getFactoredVersionScore(ssize_t weightDiff, ssize_t priorityDiff) const
 {
-	auto s1 = inputScore * __version_factor / 100;
-	auto s2 = s1 >= 0 ? s1 : (s1 * __negative_version_factor / 100);
-	return s2;
+	auto s = weightDiff;
+
+	auto applyFactor = [&s](ssize_t factor)
+	{
+		s *= factor;
+		s /= 100;
+	};
+
+	if (priorityDiff < 0)
+	{
+		applyFactor(p_versionFactors.priorityDowngrade);
+	}
+	applyFactor(p_versionFactors.common);
+	if (s < 0)
+	{
+		applyFactor(p_versionFactors.negative);
+	}
+
+	return s;
 }
 
 ScoreChange ScoreManager::getUnsatisfiedRecommendsScoreChange() const

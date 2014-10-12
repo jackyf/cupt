@@ -585,6 +585,13 @@ defines (in percents), how much version score difference affects the action scor
 defines (in percents) scaling of negative version scores (applied after
 B<version-factor>)
 
+=item version-factor::priority-downgrade
+
+defines (in percents) scaling of version score if version priority difference
+is negative. For calculations regarding this factor, if there is no original
+version, its priority is 0, if there is no supposed version, its priority is
+the default priority for versions from a default package archive.
+
 =back
 
 =item cupt::worker::archives-space-limit

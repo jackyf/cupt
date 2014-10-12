@@ -52,14 +52,17 @@ class ScoreManager
 {
 	shared_ptr< const Cache > __cache;
 	ssize_t __subscore_multipliers[ScoreChange::SubScore::Count];
-	ssize_t __version_factor; // in percents
-	ssize_t __negative_version_factor; // ditto
 	ssize_t __preferred_version_default_pin;
+	struct
+	{
+		ssize_t common;
+		ssize_t negative;
+		ssize_t priorityDowngrade;
+	} p_versionFactors; // all in percents
 
-	ssize_t __get_version_weight(const BinaryVersion* version) const;
 	void p_addVersionChangeWeight(ScoreChange*, const BinaryVersion*, const BinaryVersion*) const;
 	void p_addVersionChangeClass(ScoreChange*, const BinaryVersion*, const BinaryVersion*) const;
-	inline ssize_t p_getFactoredVersionScore(ssize_t) const;
+	ssize_t p_getFactoredVersionScore(ssize_t, ssize_t) const;
  public:
 	ScoreManager(const Config&, const shared_ptr< const Cache >&);
 	ssize_t getScoreChangeValue(const ScoreChange&) const;

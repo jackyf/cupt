@@ -37,7 +37,7 @@ sub setup_cupt {
 
 my $pin;
 my $test_number = 0;
-my @failing_test_numbers = (3, 9, 14, 15, 19, 20, 21, 26, 27, 32, 33);
+my @failing_test_numbers = (3, 9, 15, 21, 33);
 
 sub test {
 	my ($release_is_default, $lockstep_count, $ip_upgrade_expected) = @_;
