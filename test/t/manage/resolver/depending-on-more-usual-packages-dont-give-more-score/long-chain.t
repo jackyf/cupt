@@ -53,7 +53,7 @@ sub test_group {
 	my ($packages_were_installed, $maximum_index) = @_;
 
 	foreach (0..$maximum_index) {
-		local $TODO = 'score of non-explicitly-requested-by-user upgrades is too big' if ($packages_were_installed && $_ >= 2);
+		local $TODO = 'score of non-explicitly-requested-by-user upgrades is too big' if ($packages_were_installed && $_ >= 3);
 		test($packages_were_installed, 2**$_);
 	}
 }

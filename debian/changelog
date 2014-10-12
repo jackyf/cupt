@@ -17,7 +17,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Option 'cupt::resolver::score::quality-adjustment': changed default
         value from 40 to 0.
       - Option 'cupt::resolver::score::removal-of-autoinstalled': changed
-        default value from 1200 to 1400.
+        default value from 1200 to 1500.
       - Option 'cupt::resolver::score::upgrade': changed default value
         from 100 to 20.
     - system/state:
@@ -29,6 +29,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Implemented automatic quality adjustment.
       - Fixed not applying downgrade score for reinstalls. This regression
         was introduced in 2.6.0.
+      - Significantly reduced not-user score part of upgrades.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
