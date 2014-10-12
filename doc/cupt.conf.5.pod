@@ -580,7 +580,7 @@ is 'soft')
 
 defines (in percents), how much version score difference affects the action score
 
-=item negative-version-factor
+=item version-factor::negative
 
 defines (in percents) scaling of negative version scores (applied after
 B<version-factor>)

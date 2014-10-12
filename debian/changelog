@@ -10,7 +10,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
   * lib:
     - config:
       - New option 'cupt::resolver::score::version-factor::common'.
-      - New option 'cupt::resolver::score::negative-version-factor'.
+      - New option 'cupt::resolver::score::version-factor::negative'.
       - New option
         'cupt::resolver::score::version-factor::priority-downgrade'.
       - New option 'cupt::resolver::max-leaf-count'.
