@@ -26,6 +26,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
+        (Closes: #754480)
       - Implemented automatic quality adjustment.
       - Fixed not applying downgrade score for reinstalls. This regression
         was introduced in 2.6.0.
