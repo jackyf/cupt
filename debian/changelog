@@ -9,7 +9,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - FSE mode: enabled parsing of unknown version fields.
   * lib:
     - config:
-      - New option 'cupt::resolver::score::version-factor'.
+      - New option 'cupt::resolver::score::version-factor::common'.
       - New option 'cupt::resolver::score::negative-version-factor'.
       - New option
         'cupt::resolver::score::version-factor::priority-downgrade'.

@@ -30,7 +30,7 @@ namespace internal {
 ScoreManager::ScoreManager(const Config& config, const shared_ptr< const Cache >& cache)
 	: __cache(cache)
 {
-	p_versionFactors.common = config.getInteger("cupt::resolver::score::version-factor");
+	p_versionFactors.common = config.getInteger("cupt::resolver::score::version-factor::common");
 	p_versionFactors.negative = config.getInteger("cupt::resolver::score::negative-version-factor");
 	p_versionFactors.priorityDowngrade = config.getInteger("cupt::resolver::score::version-factor::priority-downgrade");
 	__preferred_version_default_pin = config.getString("apt::default-release").empty() ?

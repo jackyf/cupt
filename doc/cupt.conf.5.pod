@@ -576,7 +576,7 @@ some source version synchronization cannot be performed (when
 L<cupt::resolver::synchronize-source-versions|/cupt::resolver::synchronize-source-versions>
 is 'soft')
 
-=item version-factor
+=item version-factor::common
 
 defines (in percents), how much version score difference affects the action score
 
