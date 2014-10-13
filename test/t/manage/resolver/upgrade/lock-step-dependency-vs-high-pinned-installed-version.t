@@ -51,12 +51,21 @@ sub test {
 	my $cupt = setup_cupt($pin, $lockstep_count);
 
 	my $parameters = ($release_is_default ? '-t tf' : '');
-	my $offer = get_first_offer("$cupt -V $parameters safe-upgrade -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt -V $parameters safe-upgrade");
 
 	++$test_number;
 	local $TODO = 'too small pin influence' if grep { $_ == $test_number } @failing_test_numbers;
 
-	is(get_offered_version($offer, 'ip'), $expected_ip_version, $comment) or diag($offer);
+	subtest $comment => sub {
+		like($offer, regex_offer, 'resolving succeeded');
+
+		is(get_offered_version($offer, 'ip'), $expected_ip_version, 'ip');
+
+		for (1..$lockstep_count) {
+			my $package = "p$_";
+			is(get_offered_version($offer, $package), $expected_ip_version, $package);
+		}
+	}
 }
 
 sub test_subgroup {

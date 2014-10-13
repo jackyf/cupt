@@ -281,10 +281,6 @@ sub get_offered_version {
 
 	my ($version) = ($offer =~ m/^$package_name(?:\(a\))? \[.*? -> (.*?)\]/m);
 
-	if (!defined($version) and ($offer =~ m/^$package_name/m)) {
-		return "<no version info>";
-	}
-
 	return $version // get_unchanged_version();
 }
 
