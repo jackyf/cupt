@@ -36,8 +36,6 @@ sub setup_cupt {
 }
 
 my $pin;
-my $test_number = 0;
-my @failing_test_numbers = (3, 9);
 
 sub test {
 	my ($release_is_default, $lockstep_count, $ip_upgrade_expected) = @_;
@@ -52,9 +50,6 @@ sub test {
 
 	my $parameters = ($release_is_default ? '-t tf' : '');
 	my $offer = get_first_offer("$cupt -V $parameters safe-upgrade");
-
-	++$test_number;
-	local $TODO = 'too small pin influence' if grep { $_ == $test_number } @failing_test_numbers;
 
 	subtest $comment => sub {
 		like($offer, regex_offer, 'resolving succeeded');
@@ -89,9 +84,9 @@ sub test_group {
 $pin = 2000;
 test_group(1, 2);
 
-$pin = 7000;
+$pin = 5000;
 test_group(4, 7);
 
-$pin = 25000;
-test_group(14, 27);
+$pin = 18000;
+test_group(14, 25);
 
