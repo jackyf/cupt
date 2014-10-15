@@ -28,8 +28,5 @@ sub test {
 }
 
 test('install --no-remove --try xyz=2 --wish def=31');
-TODO: {
-	local $TODO = 'fix --no-remove';
-	test('safe-upgrade');
-}
+test('safe-upgrade');
 

@@ -7,6 +7,12 @@ cupt (2.8.4~) UNRELEASED; urgency=medium
     - cache:
       - Version pinning: fixed matching version strings of installed versions.
         (Closes: #764238)
+    - system/resolvers/native:
+      - Reverted 'fixed failing to satisfy 'remove x --no-remove'-kinds of
+        requests', so 'no-remove' option works again for any kind of user
+        requests. This now includes explicit ones as well, so
+        'remove x --no-remove' are now expected to fail if 'x' is manually
+        installed package. The regression was introduced in 2.7.3.
   * cmakelists:
     - Added '-pthread' to compiling and linking flags. (Closes: #760489)
 

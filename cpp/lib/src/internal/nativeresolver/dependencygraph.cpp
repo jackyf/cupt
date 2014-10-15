@@ -725,9 +725,9 @@ class DependencyGraph::FillHelper
 	}
 
  public:
-	Element getVertexPtrForEmptyPackage(const string& packageName, bool overrideChecks = false)
+	Element getVertexPtrForEmptyPackage(const string& packageName, bool /* overrideChecks */ = false)
 	{
-		return getVertexPtr(packageName, nullptr, overrideChecks);
+		return getVertexPtr(packageName, nullptr, false);
 	}
 
  private:
