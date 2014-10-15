@@ -698,14 +698,14 @@ class DependencyGraph::FillHelper
 		return getVertexPtr(packageName, version, hashValue, isVertexAllowed, overrideChecks);
 	}
 
-	Element getVertexPtrForEmptyPackage(const string& packageName, const BinaryPackage* package, bool overrideChecks = false)
+	Element getVertexPtrForEmptyPackage(const string& packageName, const BinaryPackage* package, bool /* overrideChecks */ = false)
 	{
 		const void* hashValue = package;
 		auto isVertexAllowed = [this, &packageName]() -> bool
 		{
 			return __can_package_be_removed(packageName);
 		};
-		return getVertexPtr(packageName, nullptr, hashValue, isVertexAllowed, overrideChecks);
+		return getVertexPtr(packageName, nullptr, hashValue, isVertexAllowed, false);
 	}
 
  private:
