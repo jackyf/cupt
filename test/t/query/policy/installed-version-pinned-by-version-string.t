@@ -15,11 +15,8 @@ my $cupt = TestCupt::setup(
 
 my $output = stdout("$cupt policy pp");
 
-my ($result_priority) = ($output =~ m/\Q1.2.3-4\E.* (\d+)/m);
-$result_priority //= '<undefined>';
-
 TODO: {
 	local $TODO = 'fix!';
-	is($result_priority, 11782) or diag($output);
+	is(get_version_priority($output, '1.2.3-4'), 11782) or diag($output);
 }
 
