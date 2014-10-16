@@ -22,6 +22,7 @@ our @EXPORT = qw(
 	get_empty_version
 	get_unchanged_version
 	get_offered_version
+	get_version_priority
 );
 use Exporter qw(import);
 use Cwd;
@@ -288,6 +289,14 @@ sub get_offered_version {
 	my ($version) = ($offer =~ m/^$package_name(?:\(a\))? \[.*? -> (.*?)\]/m);
 
 	return $version // get_unchanged_version();
+}
+
+sub get_version_priority {
+	my ($policy_output, $version) = @_;
+
+	my ($result) = ($policy_output =~ m/\Q$version\E.* (-?\d+)/a);
+
+	return ($result // '');
 }
 
 1;
