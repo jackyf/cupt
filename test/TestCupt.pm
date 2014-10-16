@@ -7,6 +7,7 @@ our @EXPORT = qw(
 	get_inc_code
 	exitcode
 	stdout
+	stdall
 	compose_installed_record
 	compose_package_record
 	entail
@@ -158,6 +159,11 @@ sub exitcode {
 sub stdout {
 	my $command = $_[0];
 	return `$command 2>/dev/null`;
+}
+
+sub stdall {
+	my ($command) = @_;
+	return `$command 2>&1`;
 }
 
 sub compose_installed_record {
