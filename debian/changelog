@@ -1,6 +1,9 @@
 cupt (2.8.4~) UNRELEASED; urgency=medium
 
-  * 
+  * lib:
+    - cache:
+      - Version pinning: fixed matching version strings of installed versions.
+        (Closes: #764238)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Oct 2014 14:38:36 +0300
 

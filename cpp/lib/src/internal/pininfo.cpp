@@ -26,6 +26,7 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/state.hpp>
 #include <cupt/download/uri.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/pininfo.hpp>
 #include <internal/filesystem.hpp>
@@ -364,7 +365,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_search(version->versionString, m, regex);
+					matched = regex_search(versionstring::getOriginal(version->versionString), m, regex);
 					break;
 #define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \
