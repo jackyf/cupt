@@ -38,6 +38,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         requests. This now includes explicit ones as well, so
         'remove x --no-remove' are now expected to fail if 'x' is manually
         installed package. The regression was introduced in 2.7.3.
+    - cache:
+      - Version pinning: fixed matching version strings of installed versions.
+        (Closes: #764238)
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

@@ -15,8 +15,5 @@ my $cupt = TestCupt::setup(
 
 my $output = stdout("$cupt policy pp");
 
-TODO: {
-	local $TODO = 'fix!';
-	is(get_version_priority($output, '1.2.3-4'), 11782) or diag($output);
-}
+is(get_version_priority($output, '1.2.3-4'), 11782) or diag($output);
 
