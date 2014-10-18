@@ -1,6 +1,9 @@
 cupt (2.8.4~) UNRELEASED; urgency=medium
 
   * lib:
+    - system/worker:
+      - 'changeSystem': preinstall hooks: pass original version strings of
+        installed versions, not id-suffixed ones. (Closes: #764754)
     - cache:
       - Version pinning: fixed matching version strings of installed versions.
         (Closes: #764238)
