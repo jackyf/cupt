@@ -19,7 +19,7 @@ IF(NOT EXISTS /usr/include/readline/readline.h)
 	message(FATAL_ERROR "missing GNU Readline library")
 ENDIF(NOT EXISTS /usr/include/readline/readline.h)
 
-set(CMAKE_CXX_FLAGS "-ggdb -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
+set(CMAKE_CXX_FLAGS "-pthread -ggdb -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
 
 OPTION(VERBOSE "is build verbose")
 IF(VERBOSE)
@@ -40,8 +40,9 @@ IF(OPTIMIZE GREATER 0)
 	ENDIF(OPTIMIZE GREATER 1)
 ENDIF(OPTIMIZE GREATER 0)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed")
-set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--as-needed")
+set(OUR_LINKER_FLAGS "-pthread -Wl,--as-needed")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OUR_LINKER_FLAGS}")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${OUR_LINKER_FLAGS}")
 
 set(CUPT_SOVERSION 0)
 

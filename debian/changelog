@@ -7,6 +7,8 @@ cupt (2.8.4~) UNRELEASED; urgency=medium
     - cache:
       - Version pinning: fixed matching version strings of installed versions.
         (Closes: #764238)
+  * cmakelists:
+    - Added '-pthread' to compiling and linking flags. (Closes: #760489)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Oct 2014 14:38:36 +0300
 
