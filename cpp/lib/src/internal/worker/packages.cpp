@@ -22,6 +22,7 @@
 #include <cupt/system/state.hpp>
 #include <cupt/file.hpp>
 #include <cupt/download/progress.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/filesystem.hpp>
 #include <internal/debdeltahelper.hpp>
@@ -1788,7 +1789,7 @@ static string getOldVersionString(const BinaryPackage* oldPackage)
 	{
 		if (auto installedVersion = oldPackage->getInstalledVersion())
 		{
-			result = installedVersion->versionString;
+			result = versionstring::getOriginal(installedVersion->versionString);
 		}
 	}
 

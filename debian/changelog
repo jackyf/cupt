@@ -26,6 +26,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
+      - 'changeSystem': preinstall hooks: pass original version strings of
+        installed versions, not id-suffixed ones. (Closes: #764754)
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
         (Closes: #754480)

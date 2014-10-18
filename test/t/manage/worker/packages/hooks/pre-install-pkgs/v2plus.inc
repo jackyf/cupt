@@ -21,10 +21,7 @@ sub test_line {
 		my @fields = split(m/ /, $line);
 		is(scalar @fields, $package_line_field_count, 'field count') or return;
 
-		TODO: {
-			local $TODO = 'strip version string id suffix';
-			is($fields[1], $original_version, 'original version');
-		}
+		is($fields[1], $original_version, 'original version');
 		is($fields[$version_sign_field_index], $version_sign, 'version sign');
 		is($fields[$version_sign_field_index+1], $supposed_version, 'supposed version');
 	}
