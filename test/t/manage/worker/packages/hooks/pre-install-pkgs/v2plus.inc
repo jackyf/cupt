@@ -1,9 +1,3 @@
-use TestCupt;
-use Test::More tests => 1;
-
-use strict;
-use warnings;
-
 my $cupt = TestCupt::setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('dpkg', '2')) .
@@ -25,14 +19,14 @@ sub test_line {
 		isnt($line, undef, 'line found') or return;
 
 		my @fields = split(m/ /, $line);
-		is(scalar @fields, 9, 'field count') or return;
+		is(scalar @fields, $package_line_field_count, 'field count') or return;
 
 		TODO: {
 			local $TODO = 'strip version string id suffix';
 			is($fields[1], $original_version, 'original version');
 		}
-		is($fields[4], $version_sign, 'version sign');
-		is($fields[5], $supposed_version, 'supposed version');
+		is($fields[$version_sign_field_index], $version_sign, 'version sign');
+		is($fields[$version_sign_field_index+1], $supposed_version, 'supposed version');
 	}
 }
 
@@ -44,17 +38,17 @@ sub test_remove_line {
 	test_line(@_, '**REMOVE**');
 }
 
-my $hook_options = '-o dpkg::pre-install-pkgs::=v3hook -o dpkg::tools::options::v3hook::version=3';
+my $hook_options = "-o dpkg::pre-install-pkgs::=vhook -o dpkg::tools::options::vhook::version=$hook_version";
 my $confirmation = "y\nYes, do as I say!";
 my $offer = stdall("echo '$confirmation' | $cupt -s full-upgrade --remove aaa --satisfy 'bbb (<< 0.98)' $hook_options");
 
 subtest 'the hook is run with proper input' => sub {
-	my ($input) = ($offer =~ m/running command 'v3hook' with the input.-8<-\n(.*)->8-/s);
+	my ($input) = ($offer =~ m/running command 'vhook' with the input.-8<-\n(.*)->8-/s);
 
 	isnt($input, undef, 'hook is run') or return;
 
 	$input =~ m/^(.*)\n(.*)\n/;
-	is($1, 'VERSION 3', 'first input line is hook version');
+	is($1, "VERSION $hook_version", 'first input line is hook version');
 	like($2, qr/^APT::Architecture=/, 'second input line is original-cased apt architecture');
 
 	test_remove_line($input, 'aaa', '2.3', '-', '>');
