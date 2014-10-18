@@ -30,7 +30,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         installed versions, not id-suffixed ones. (Closes: #764754)
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
-        (Closes: #754480)
+        (Closes: #754480, #622939)
       - Implemented automatic quality adjustment.
       - Fixed not applying downgrade score for reinstalls. This regression
         was introduced in 2.6.0.
