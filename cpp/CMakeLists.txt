@@ -65,6 +65,5 @@ include_directories(.)
 
 add_subdirectory(console)
 add_subdirectory(lib)
-# add_subdirectory(precompiled)
 add_subdirectory(downloadmethods)
 
