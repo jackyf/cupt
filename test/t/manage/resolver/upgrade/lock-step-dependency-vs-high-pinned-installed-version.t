@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 36;
+use Test::More tests => 48;
 
 use strict;
 use warnings;
@@ -36,6 +36,7 @@ sub setup_cupt {
 }
 
 my $pin;
+my $priority_downgrade_score;
 
 sub test {
 	my ($release_is_default, $lockstep_count, $ip_upgrade_expected) = @_;
@@ -43,12 +44,17 @@ sub test {
 	$lockstep_count = int($lockstep_count);
 	my $expected_ip_version = ($ip_upgrade_expected ? '1.8' : get_unchanged_version());
 
-	my $comment = "high pin: $pin, release is default: $release_is_default, " .
+	my $priority_downgrade_score_comment = 'priority downgrade score: ' . ($priority_downgrade_score // 'default');
+	my $comment = "$priority_downgrade_score_comment, high pin: $pin, " .
+			"release is default: $release_is_default, " .
 			"lock-step count: $lockstep_count, upgrade expected: $ip_upgrade_expected";
 
 	my $cupt = setup_cupt($pin, $lockstep_count);
 
-	my $parameters = ($release_is_default ? '-t tf' : '');
+	my $parameters = ($release_is_default ? '-t tf ' : '');
+	if (defined $priority_downgrade_score) {
+		$parameters .= "-o cupt::resolver::score::version-factor::priority-downgrade=$priority_downgrade_score";
+	}
 	my $offer = get_first_offer("$cupt -V $parameters safe-upgrade");
 
 	subtest $comment => sub {
@@ -89,4 +95,11 @@ test_group(4, 7);
 
 $pin = 18000;
 test_group(14, 25);
+
+$pin = 1000;
+$priority_downgrade_score = 6000;
+test_subgroup(0, 4, 8);
+
+$priority_downgrade_score = 300000;
+test_subgroup(1, 4, 8);
 
