@@ -26,8 +26,6 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
-      - 'changeSystem': preinstall hooks: pass original version strings of
-        installed versions, not id-suffixed ones. (Closes: #764754)
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
         (Closes: #754480, #622939)
@@ -35,21 +33,31 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Fixed not applying downgrade score for reinstalls. This regression
         was introduced in 2.6.0.
       - Significantly reduced not-user score part of upgrades.
+  * doc:
+    - cmakelists:
+      - Added rules building man pages from PODs.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
+
+cupt (2.8.4) unstable; urgency=medium
+
+  * lib:
+    - system/worker:
+      - 'changeSystem': preinstall hooks: pass original version strings of
+        installed versions, not id-suffixed ones. (Closes: #764754)
+    - cache:
+      - Version pinning: fixed matching version strings of installed versions.
+        (Closes: #764238)
+    - system/resolvers/native:
       - Reverted 'fixed failing to satisfy 'remove x --no-remove'-kinds of
         requests', so 'no-remove' option works again for any kind of user
         requests. This now includes explicit ones as well, so
         'remove x --no-remove' are now expected to fail if 'x' is manually
         installed package. The regression was introduced in 2.7.3.
-    - cache:
-      - Version pinning: fixed matching version strings of installed versions.
-        (Closes: #764238)
-  * doc:
-    - cmakelists:
-      - Added rules building man pages from PODs.
   * cmakelists:
     - Added '-pthread' to compiling and linking flags. (Closes: #760489)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Oct 2014 20:50:23 +0300
 
 cupt (2.8.3) unstable; urgency=medium
 
