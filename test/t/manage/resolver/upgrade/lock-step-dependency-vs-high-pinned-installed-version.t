@@ -87,14 +87,14 @@ sub test_group {
 	test_subgroup(1, @_);
 }
 
-$pin = 2000;
-test_group(1, 2);
+$pin = 1600;
+test_group(2, 5);
 
-$pin = 5000;
-test_group(4, 7);
+$pin = 3000;
+test_group(7, 12);
 
-$pin = 18000;
-test_group(14, 25);
+$pin = 8000;
+test_group(22, 33);
 
 $pin = 1000;
 $priority_downgrade_score = 6000;

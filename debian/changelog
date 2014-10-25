@@ -13,6 +13,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - New option 'cupt::resolver::score::version-factor::negative'.
       - New option
         'cupt::resolver::score::version-factor::priority-downgrade'.
+        (Closes: #764755)
       - New option 'cupt::resolver::max-leaf-count'.
       - Option 'cupt::resolver::max-solution-count': increased default value
         from 8192 to 32000.
