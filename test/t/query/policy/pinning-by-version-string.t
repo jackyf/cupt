@@ -1,42 +1,25 @@
 use TestCupt;
 use Test::More tests => 22;
 
-sub setup_cupt {
-	my ($version, $pin_expression) = @_;
+use strict;
+use warnings;
 
-	return TestCupt::setup(
-		'packages2' =>
-			[
-				[
-					'trusted' => 0,
-					'content' => entail(compose_package_record('abc', $version)),
-				],
-			],
-		'preferences' =>
-			compose_version_pin_record('abc', $pin_expression, 927),
-	);
-}
-
-my %match_mapper = (
-	-1 => [ '', "isn't considered: broken" ],
-	0  => [ 500, "doesn't match" ],
-	1  => [ 927, 'matches' ],
-);
+eval(get_inc_code('pinning'));
 
 sub test {
 	my ($version, $pin_expression, $match_expected) = @_;
 
-	my $cupt = setup_cupt($version, $pin_expression);
-
-	my $output = stdall("$cupt policy abc");
-
-	my $expected_priority = $match_mapper{$match_expected}->[0];
-
-	my $match_comment = $match_mapper{$match_expected}->[1];
-	my $comment = "'$version' $match_comment '$pin_expression'";
-
-	is(get_version_priority($output, $version), $expected_priority, $comment)
-			or diag($output);
+	test_pinning(
+		{
+			'package' => 'abc',
+			'version' => $version,
+			'package_content' => '',
+			'package_comment' => $version,
+			'first_pin_line' => 'Package: abc',
+			'pin_expression' => "version $pin_expression"
+		},
+		$match_expected
+	);
 }
 
 test('2', '2', 1);
