@@ -15,10 +15,10 @@ sub setup_cupt {
 			entail(compose_package_record('pp', 3)) .
 			entail(compose_package_record('pp', 4)),
 		'preferences' =>
-			compose_pin_record('pp', 1, $base_priority) .
-			compose_pin_record('pp', 2, $base_priority+100) .
-			compose_pin_record('pp', 3, $base_priority-100) .
-			compose_pin_record('pp', 4, $base_priority)
+			compose_version_pin_record('pp', 1, $base_priority) .
+			compose_version_pin_record('pp', 2, $base_priority+100) .
+			compose_version_pin_record('pp', 3, $base_priority-100) .
+			compose_version_pin_record('pp', 4, $base_priority)
 	);
 }
 

@@ -59,9 +59,9 @@ sub setup {
 			entail(compose_package_record('ttt1', '1.z') . "Breaks: imp\n") .
 			compose_branches(@_),
 		'preferences' =>
-			compose_pin_record('*', '*a', 400) .
-			compose_pin_record('*', '*b', 300) .
-			compose_pin_record('*', '*c', 200),
+			compose_version_pin_record('*', '*a', 400) .
+			compose_version_pin_record('*', '*b', 300) .
+			compose_version_pin_record('*', '*c', 200),
 	);
 }
 

@@ -15,7 +15,7 @@ sub setup_cupt {
 			entail(compose_package_record('newp', 3)) .
 			entail(compose_package_record('mm', 4) . "Depends: ii (>= 2) | newp\n"),
 		'preferences' =>
-			compose_pin_record('newp', '*', $new_pin),
+			compose_version_pin_record('newp', '*', $new_pin),
 	);
 }
 

@@ -39,7 +39,7 @@ sub setup_cupt {
 				],
 			],
 		'preferences' =>
-			compose_pin_record('uu', '*', 300),
+			compose_version_pin_record('uu', '*', 300),
 	);
 }
 

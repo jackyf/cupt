@@ -19,7 +19,7 @@ sub test {
 			entail(compose_package_record('ppp', 5) . "Depends: newdep\n" . $bad_relation) .
 			entail(compose_package_record('newdep', 3)),
 		'preferences' =>
-			compose_pin_record('ppp', 5, $lower_pin),
+			compose_version_pin_record('ppp', 5, $lower_pin),
 	);
 
 	my $offer = get_first_offer("$cupt -V full-upgrade -o debug::resolver=yes");

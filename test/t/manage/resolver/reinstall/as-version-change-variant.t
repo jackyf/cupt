@@ -14,8 +14,8 @@ sub setup_cupt {
 			entail(compose_package_record('pp', $version) . $relation) .
 			entail(compose_package_record('pp', 1)),
 		'preferences' =>
-			compose_pin_record('pp', '0.9', 1100) .
-			compose_pin_record('pp', '1.3', 400) ,
+			compose_version_pin_record('pp', '0.9', 1100) .
+			compose_version_pin_record('pp', '1.3', 400) ,
 	);
 }
 

@@ -11,7 +11,7 @@ our @EXPORT = qw(
 	compose_installed_record
 	compose_package_record
 	compose_autoinstalled_record
-	compose_pin_record
+	compose_version_pin_record
 	entail
 	regex_offer
 	regex_no_solutions
@@ -233,7 +233,7 @@ sub compose_autoinstalled_record {
 	return "Package: $package_name\nAuto-Installed: 1\n";
 }
 
-sub compose_pin_record {
+sub compose_version_pin_record {
 	my ($package_name, $version_string, $pin) = @_;
 	return "Package: $package_name\nPin: version $version_string\nPin-Priority: $pin\n\n";
 }

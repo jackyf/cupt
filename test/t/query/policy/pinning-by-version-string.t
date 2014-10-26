@@ -13,7 +13,7 @@ sub setup_cupt {
 				],
 			],
 		'preferences' =>
-			compose_pin_record('abc', $pin_expression, 927),
+			compose_version_pin_record('abc', $pin_expression, 927),
 	);
 }
 

@@ -31,7 +31,7 @@ sub setup_cupt {
 				],
 			],
 		'preferences' =>
-			compose_pin_record('ip', '1.6*', $high_pin),
+			compose_version_pin_record('ip', '1.6*', $high_pin),
 	);
 }
 

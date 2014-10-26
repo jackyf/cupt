@@ -10,7 +10,7 @@ my $cupt = TestCupt::setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('pp', '1.2.3-4')),
 	'preferences' =>
-		compose_pin_record('pp', '1.2.3-4', 11782),
+		compose_version_pin_record('pp', '1.2.3-4', 11782),
 );
 
 my $output = stdout("$cupt policy pp");

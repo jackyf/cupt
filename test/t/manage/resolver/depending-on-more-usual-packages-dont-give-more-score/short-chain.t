@@ -15,10 +15,10 @@ sub setup {
 			entail(compose_package_record('ccc', '100') . "Recommends: zzz\n") .
 			entail(compose_package_record('zzz', '8')),
 		'preferences' =>
-			compose_pin_record('bb1', '*', 700) .
-			compose_pin_record('bb2', '*', 600) .
-			compose_pin_record('bb3', '*', 500) .
-			compose_pin_record('zzz', '*', $pin_of_zzz),
+			compose_version_pin_record('bb1', '*', 700) .
+			compose_version_pin_record('bb2', '*', 600) .
+			compose_version_pin_record('bb3', '*', 500) .
+			compose_version_pin_record('zzz', '*', $pin_of_zzz),
 	);
 }
 
