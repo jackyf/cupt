@@ -93,6 +93,7 @@ my $default_archive = 'testing';
 my $default_codename = 'jessie';
 my $default_label = 'Debian';
 my $default_component = 'main';
+my $default_version = '18.1';
 
 sub unify_ps_option {
 	my ($options, $type) = @_;
@@ -155,10 +156,11 @@ sub generate_packages_sources {
 		my $codename = $e{'codename'} // $default_codename;
 		my $label = $e{'label'} // $default_label;
 		my $component = $e{'component'} // $default_component;
+		my $version = $e{'version'} // $default_version;
 		my $not_automatic = $e{'not-automatic'} // 0;
 		my $but_automatic_upgrades = $e{'but-automatic-upgrades'} // 0;
 		generate_release($archive, $codename,
-				$component, $label,
+				$component, $version, $label,
 				$not_automatic, $but_automatic_upgrades);
 	
 		my $is_trusted = $e{'trusted'}//1;
@@ -184,10 +186,11 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my ($archive, $codename, $component, $label, $not_automatic, $but_automatic_upgrades) = @_;
+	my ($archive, $codename, $component, $version, $label, $not_automatic, $but_automatic_upgrades) = @_;
 
 	my $content = <<END;
 Origin: Debian
+Version: $version
 Label: $label
 Suite: $archive
 Codename: $codename

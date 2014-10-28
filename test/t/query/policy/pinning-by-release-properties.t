@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 22;
+use Test::More tests => 31;
 
 use strict;
 use warnings;
@@ -18,6 +18,7 @@ sub test {
 				'codename' => 'ccccc',
 				'label' => 'SuperSecret',
 				'component' => 'contrib',
+				'version' => '6.2',
 			},
 			'package_content' => '',
 			'package_comment' => '',
@@ -53,4 +54,14 @@ test('c=non-free' => 0);
 test('c=garbagfzz' => 0);
 test('c=/main|contrib/' => 1);
 test('c=/+/' => -1);
+
+test('v=6.2' => 1);
+test('v=6.1' => 0);
+test('v=6' => 0);
+test('v=6.*' => 1);
+test('v=7.*' => 0);
+test('v=2*' => 0);
+test('v=/2/' => 1);
+test('v=/3/' => 0);
+test('vv=z' => -1);
 
