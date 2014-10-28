@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 31;
+use Test::More tests => 36;
 
 use strict;
 use warnings;
@@ -19,6 +19,7 @@ sub test {
 				'label' => 'SuperSecret',
 				'component' => 'contrib',
 				'version' => '6.2',
+				'vendor' => 'Mint',
 			},
 			'package_content' => '',
 			'package_comment' => '',
@@ -64,4 +65,10 @@ test('v=2*' => 0);
 test('v=/2/' => 1);
 test('v=/3/' => 0);
 test('vv=z' => -1);
+
+test('o=Mint' => 1);
+test('o=Debian' => 0);
+test('o=*int' => 1);
+test('o=/u/' => 0);
+test('ooo=ppp' => -1);
 
