@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 8;
+use Test::More tests => 16;
 
 use strict;
 use warnings;
@@ -15,8 +15,9 @@ sub test {
 			'version' => 3,
 			'archive' => 'aaaaa',
 			'codename' => 'ccccc',
+			'label' => 'SuperSecret',
 			'package_content' => '',
-			'package_comment' => $property,
+			'package_comment' => '',
 			'first_pin_line' => 'Package: *',
 			'pin_expression' => "release $property",
 		},
@@ -33,3 +34,13 @@ test('n=ccccc' => 1);
 test('n=cccc1' => 0);
 test('n=XXX' => 0);
 test('nnjpi' => -1);
+
+test('l=SuperSecret' => 1);
+test('l=Secret' => 0);
+test('l=supersecret' => 0);
+test('l=/upe/' => 1);
+test('l=/upp/' => 0);
+test('l=*Secret*' => 1);
+test('l=Secret*' => 0);
+test('laskdfasdfl=%&^...*' => -1);
+

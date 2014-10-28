@@ -11,6 +11,7 @@ sub setup_cupt {
 					'content' => entail(compose_package_record($p{'package'}, $p{'version'}) . $p{'package_content'}),
 					'archive' => $p{'archive'},
 					'codename' => $p{'codename'},
+					'label' => $p{'label'},
 				],
 			],
 		'preferences' => compose_pin_record($p{'first_pin_line'}, $p{'pin_expression'}, 927),
