@@ -13,9 +13,11 @@ sub test {
 		{
 			'package' => 'zzz',
 			'version' => 3,
-			'archive' => 'aaaaa',
-			'codename' => 'ccccc',
-			'label' => 'SuperSecret',
+			'release_properties' => {
+				'archive' => 'aaaaa',
+				'codename' => 'ccccc',
+				'label' => 'SuperSecret',
+			},
 			'package_content' => '',
 			'package_comment' => '',
 			'first_pin_line' => 'Package: *',
