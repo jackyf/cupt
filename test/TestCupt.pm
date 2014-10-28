@@ -92,6 +92,7 @@ sub generate_environment {
 my $default_archive = 'testing';
 my $default_codename = 'jessie';
 my $default_label = 'Debian';
+my $default_component = 'main';
 
 sub unify_ps_option {
 	my ($options, $type) = @_;
@@ -146,7 +147,6 @@ sub generate_file {
 
 my $scheme = 'file';
 my $server = 'nonexistent';
-my $component = 'main';
 
 sub generate_packages_sources {
 	foreach my $entry (@_) {
@@ -154,9 +154,11 @@ sub generate_packages_sources {
 		my $archive = $e{'archive'} // $default_archive;
 		my $codename = $e{'codename'} // $default_codename;
 		my $label = $e{'label'} // $default_label;
+		my $component = $e{'component'} // $default_component;
 		my $not_automatic = $e{'not-automatic'} // 0;
 		my $but_automatic_upgrades = $e{'but-automatic-upgrades'} // 0;
-		generate_release($archive, $codename, $label,
+		generate_release($archive, $codename,
+				$component, $label,
 				$not_automatic, $but_automatic_upgrades);
 	
 		my $is_trusted = $e{'trusted'}//1;
@@ -182,7 +184,7 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my ($archive, $codename, $label, $not_automatic, $but_automatic_upgrades) = @_;
+	my ($archive, $codename, $component, $label, $not_automatic, $but_automatic_upgrades) = @_;
 
 	my $content = <<END;
 Origin: Debian

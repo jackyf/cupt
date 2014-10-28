@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 16;
+use Test::More tests => 22;
 
 use strict;
 use warnings;
@@ -17,6 +17,7 @@ sub test {
 				'archive' => 'aaaaa',
 				'codename' => 'ccccc',
 				'label' => 'SuperSecret',
+				'component' => 'contrib',
 			},
 			'package_content' => '',
 			'package_comment' => '',
@@ -45,4 +46,11 @@ test('l=/upp/' => 0);
 test('l=*Secret*' => 1);
 test('l=Secret*' => 0);
 test('laskdfasdfl=%&^...*' => -1);
+
+test('c=contrib' => 1);
+test('c=main' => 0);
+test('c=non-free' => 0);
+test('c=garbagfzz' => 0);
+test('c=/main|contrib/' => 1);
+test('c=/+/' => -1);
 
