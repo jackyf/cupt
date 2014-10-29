@@ -8,7 +8,7 @@ sub setup_cupt {
 			[
 				[
 					'trusted' => 0,
-					'content' => entail(compose_package_record($p{'package'}, $p{'version'}) . $p{'package_content'}),
+					'content' => entail(compose_package_record($p{'package'}, $p{'version'}) . ($p{'package_content'}//'')),
 					%{$p{'release_properties'} // {}},
 				],
 			],

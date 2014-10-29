@@ -147,8 +147,8 @@ sub generate_file {
 	undef $fh;
 }
 
-my $scheme = 'file';
-my $server = 'nonexistent';
+my $default_scheme = 'file';
+my $default_server = '/nonexistent';
 
 sub generate_packages_sources {
 	foreach my $entry (@_) {
@@ -159,18 +159,21 @@ sub generate_packages_sources {
 		my $component = $e{'component'} // $default_component;
 		my $version = $e{'version'} // $default_version;
 		my $vendor = $e{'vendor'} // $default_vendor;
+		my $scheme = $e{'scheme'} // $default_scheme;
+		my $server = $e{'hostname'} // $default_server;
 		my $not_automatic = $e{'not-automatic'} // 0;
 		my $but_automatic_upgrades = $e{'but-automatic-upgrades'} // 0;
-		generate_release($archive, $codename,
+		generate_release($scheme, $server,
+				$archive, $codename,
 				$component, $vendor, $version, $label,
 				$not_automatic, $but_automatic_upgrades);
 	
 		my $is_trusted = $e{'trusted'}//1;
 		my $content = $e{'content'};
-		my $list_prefix = get_list_prefix($archive);
+		my $list_prefix = get_list_prefix($scheme, $server, $archive);
 
 		my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '');
-		$sources_list_suffix .= "$scheme:///$server $archive $component";
+		$sources_list_suffix .= "$scheme://$server $archive $component";
 
 		if ($e{'type'} eq 'packages') {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
@@ -183,12 +186,13 @@ sub generate_packages_sources {
 }
 
 sub get_list_prefix {
-	my ($archive) = @_;
-	return "var/lib/cupt/lists/${scheme}____${server}_dists_${archive}";
+	my ($scheme, $server, $archive) = @_;
+	$server =~ s{/}{_}g;
+	return "var/lib/cupt/lists/${scheme}___${server}_dists_${archive}";
 }
 
 sub generate_release {
-	my ($archive, $codename, $component, $vendor, $version, $label, $not_automatic, $but_automatic_upgrades) = @_;
+	my ($scheme, $server, $archive, $codename, $component, $vendor, $version, $label, $not_automatic, $but_automatic_upgrades) = @_;
 
 	my $content = <<END;
 Origin: $vendor
@@ -207,7 +211,7 @@ END
 			$content .= "ButAutomaticUpgrades: yes\n";
 		}
 	}
-	my $list_prefix = get_list_prefix($archive);
+	my $list_prefix = get_list_prefix($scheme, $server, $archive);
 	generate_file("${list_prefix}_Release", $content);
 }
 
