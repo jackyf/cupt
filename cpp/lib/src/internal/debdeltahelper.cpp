@@ -33,10 +33,12 @@ namespace internal {
 
 DebdeltaHelper::DebdeltaHelper(const Config& config)
 {
-	if (fs::fileExists("/usr/bin/debpatch"))
+	auto prefixDir = config.getPath("dir");
+
+	if (fs::fileExists(prefixDir + "/usr/bin/debpatch"))
 	{
 		// fill debdelta sources only if patches is available
-		const string sourcesPath = config.getPath("dir") + "/etc/debdelta/sources.conf";
+		const string sourcesPath = prefixDir + "/etc/debdelta/sources.conf";
 		if (fs::fileExists(sourcesPath))
 		{
 			try
