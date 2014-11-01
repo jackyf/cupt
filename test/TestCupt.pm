@@ -86,6 +86,7 @@ sub generate_environment {
 	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
 	generate_file('etc/apt/sources.list', '');
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
+	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'}//'');
 	generate_packages_sources(unify_packages_and_sources_option(\%options));
 }
 
