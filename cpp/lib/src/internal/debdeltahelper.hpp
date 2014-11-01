@@ -36,7 +36,7 @@ class DebdeltaHelper
 		string baseUri;
 		string uri;
 	};
-	DebdeltaHelper();
+	DebdeltaHelper(const Config& config);
 	vector< DownloadRecord > getDownloadInfo(const cache::BinaryVersion*,
 			const shared_ptr< const Cache >&);
 };

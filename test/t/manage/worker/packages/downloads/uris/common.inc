@@ -13,10 +13,7 @@ my @downloads = ($output =~ m/^S: downloading: (.*)$/mg);
 
 subtest 'planned downloads' => sub {
 	is(scalar @downloads, 2, "2 downloads are planned");
-	TODO: {
-		local $TODO = 'debdelta configuration should be read from relative paths, not absolute';
-		is($downloads[0], $expected_bbb, 'download of bbb');
-	}
+	is($downloads[0], $expected_bbb, 'download of bbb');
 	is($downloads[1], $expected_ccc, 'download of ccc');
 } or diag($output);
 

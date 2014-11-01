@@ -27,6 +27,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
+      - Debdelta helper: use debdelta sources file path as relative to 'dir'
+        option, not as absolute path.
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
         (Closes: #754480, #622939)

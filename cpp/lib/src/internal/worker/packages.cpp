@@ -1315,7 +1315,7 @@ map< string, pair< download::Manager::DownloadEntity, string > > PackagesWorker:
 		}
 
 
-		DebdeltaHelper debdeltaHelper;
+		DebdeltaHelper debdeltaHelper(*_config);
 
 		for (auto actionType: _download_dependent_action_types)
 		{

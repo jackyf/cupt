@@ -17,6 +17,7 @@
 **************************************************************************/
 #include <common/regex.hpp>
 
+#include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/binaryversion.hpp>
@@ -30,12 +31,12 @@
 namespace cupt {
 namespace internal {
 
-DebdeltaHelper::DebdeltaHelper()
+DebdeltaHelper::DebdeltaHelper(const Config& config)
 {
 	if (fs::fileExists("/usr/bin/debpatch"))
 	{
 		// fill debdelta sources only if patches is available
-		static const string sourcesPath = "/etc/debdelta/sources.conf";
+		const string sourcesPath = config.getPath("dir") + "/etc/debdelta/sources.conf";
 		if (fs::fileExists(sourcesPath))
 		{
 			try
