@@ -15,14 +15,14 @@ my $cupt = TestCupt::setup(
 		entail(compose_package_record('z', '3')) ,
 	'packages2' =>
 		[
-			[
+			{
 				'archive' => 'x1y2',
 				'content' =>
 					entail(compose_package_record('y', '1')) .
 					entail(compose_package_record('ne', '2') . "Breaks: e\n") .
 					entail(compose_package_record('ny', '2') . "Breaks: y\n") .
 					entail(compose_package_record('nobs', '2') . "Breaks: obs\n"),
-			],
+			},
 		],
 	'extended_states' =>
 		entail(compose_autoinstalled_record('e')) .

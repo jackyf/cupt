@@ -10,13 +10,13 @@ my $cupt = TestCupt::setup(
 		entail(compose_installed_record('h', '3', 'on-hold'=>1)),
 	'packages2' =>
 		[
-			[
+			{
 				'trusted' => 0,
 				'content' =>
 					entail(compose_package_record('b', '2')) .
 					entail(compose_package_record('h', '3')) .
 					entail(compose_package_record('h', '4')),
-			],
+			},
 		],
 );
 

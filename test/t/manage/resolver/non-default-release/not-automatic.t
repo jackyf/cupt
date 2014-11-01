@@ -19,17 +19,17 @@ sub setup_cupt {
 			generate_100_installed_packages(),
 		'packages2' =>
 			[
-				[
+				{
 					'archive' => 'eexxpp',
 					'not-automatic' => 1,
 					'content' =>
 						entail(compose_package_record('aa', '66')),
-				],
-				[
+				},
+				{
 					'archive' => 'normal',
 					'content' =>
 						entail(compose_package_record('aa', '5') . 'Breaks: ' . generate_n_package_list(@_) . "\n")
-				],
+				},
 			],
 	);
 }

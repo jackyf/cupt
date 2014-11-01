@@ -69,8 +69,8 @@ sub generate_space {
 
 	$result{'dpkg_status'} = $installed;
 	$result{'packages2'} = [
-		[ 'archive' => 'unstable', 'content' => $normal ],
-		[ 'archive' => 'experimental', 'content' => $experimental ],
+		{ 'archive' => 'unstable', 'content' => $normal },
+		{ 'archive' => 'experimental', 'content' => $experimental },
 	];
 	$result{'expected'} = \%expected;
 

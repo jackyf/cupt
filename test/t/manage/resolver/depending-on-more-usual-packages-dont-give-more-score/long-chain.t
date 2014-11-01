@@ -30,17 +30,17 @@ sub test {
 			($packages_were_installed ? $lot_of_installed_packages : ''),
 		'packages2' =>
 			[
-				[
+				{
 					'archive' => 'kk',
 					'content' =>
 						entail(compose_package_record('a', '6') . "Depends: p1 (>= 7)\n") .
 						generate_package_chain_removing_i($count),
-				],
-				[
+				},
+				{
 					'archive' => 'qq',
 					'content' =>
 						entail(compose_package_record('a', '4')),
-				],
+				},
 			],
 	);
 

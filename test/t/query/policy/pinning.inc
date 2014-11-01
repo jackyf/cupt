@@ -29,11 +29,11 @@ sub setup_cupt {
 	return TestCupt::setup(
 		'packages2' =>
 			[
-				[
+				{
 					'trusted' => 0,
 					'content' => entail(compose_package_record($p{'package'}, $p{'version'}) . ($p{'package_content'}//'')),
 					%{$p{'release_properties'} // {}},
-				],
+				},
 			],
 		'preferences' => compose_preferences($pin_records),
 	);

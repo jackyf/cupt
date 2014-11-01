@@ -103,10 +103,10 @@ sub unify_ps_option {
 
 	my $content_of_default_archive = $options->{$type}//'';
 	if ($content_of_default_archive) {
-		push @$result, [ 'archive' => $default_archive, 'content' => $content_of_default_archive ]; 
+		push @$result, { 'archive' => $default_archive, 'content' => $content_of_default_archive }; 
 	}
 	foreach my $entry (@$result) {
-		push @$entry, 'type' => $type;
+		$entry->{'type'} = $type;
 	}
 
 	return @$result;
@@ -152,7 +152,7 @@ my $default_server = '/nonexistent';
 
 sub generate_packages_sources {
 	foreach my $entry (@_) {
-		my %e = @$entry;
+		my %e = %$entry;
 		my $archive = $e{'archive'} // $default_archive;
 		my $codename = $e{'codename'} // $default_codename;
 		my $label = $e{'label'} // $default_label;

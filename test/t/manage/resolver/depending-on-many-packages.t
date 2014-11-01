@@ -31,11 +31,11 @@ sub test {
 	my $cupt = TestCupt::setup(
 		'packages2' =>
 		[
-			[
+			{
 				'archive' => $archive,
 				'content' => entail(compose_package_record('big', '9000') . "Depends: " . join(',', @many_package_list) . "\n") .
 						$many_package_entries,
-			],
+			},
 		],
 	);
 

@@ -27,10 +27,10 @@ sub setup {
 			entail(compose_autoinstalled_record('eip')),
 		'packages2' =>
 			[
-				[
+				{
 					'archive' => $archive,
 					'content' => $packages,
-				],
+				},
 			],
 	);
 }

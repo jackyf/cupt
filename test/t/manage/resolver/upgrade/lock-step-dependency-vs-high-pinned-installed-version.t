@@ -23,12 +23,12 @@ sub setup_cupt {
 			generate_n_lockstep_dependers($lockstep_count, '1.6', \&compose_installed_record),
 		'packages2' =>
 			[
-				[
+				{
 					'archive' => 'tf',
 					'content' =>
 						entail(compose_package_record('ip', '1.8')) .
 						generate_n_lockstep_dependers($lockstep_count, '1.8', \&compose_package_record),
-				],
+				},
 			],
 		'preferences' =>
 			compose_version_pin_record('ip', '1.6*', $high_pin),
