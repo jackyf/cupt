@@ -91,7 +91,8 @@ sub generate_environment {
 	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
 	generate_file('etc/apt/sources.list', '');
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
-	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'}//'');
+	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'});
+	generate_file('usr/bin/debpatch', $options{'debpatch'});
 	generate_packages_sources(unify_packages_and_sources_option(\%options));
 }
 
@@ -141,6 +142,8 @@ sub generate_binary_command {
 
 sub generate_file {
 	my ($target_path, $content, $mode) = @_;
+	return if not defined $content;
+
 	$mode = $mode // '>';
 
 	make_path(dirname($target_path));
