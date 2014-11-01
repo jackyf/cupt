@@ -71,11 +71,16 @@ END
 sub generate_environment {
 	my %options = @_;
 
-	if (cwd() !~ m/env$/) {
+	if (cwd() !~ m/\/env$/) {
 		mkdir 'env';
 		chdir "env" or
 				die "cannot change directory to 'env': $!";
 	}
+	if (cwd() =~ m/\/env$/ && -e 'pre.conf' && -d 'etc' && -d 'var') {
+		system("rm -r *") == 0
+				or die ("cannot clean the environment");
+	}
+
 	my $cwd = cwd();
 
 	$pre_conf =~ s/<dir>/$cwd/g;
