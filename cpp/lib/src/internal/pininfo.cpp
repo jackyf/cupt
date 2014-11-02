@@ -177,14 +177,14 @@ void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpress
 	static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
 	auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
 
-	FORIT(subExpressionIt, subExpressions)
+	for (const auto& subExpression: subExpressions)
 	{
 		PinEntry::Condition condition;
 
 		static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
-		if (!regex_match(*subExpressionIt, m, subExpressionRegex))
+		if (!regex_match(subExpression, m, subExpressionRegex))
 		{
-			fatal2(__("invalid condition '%s'"), *subExpressionIt);
+			fatal2(__("invalid condition '%s'"), subExpression);
 		}
 
 		char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
