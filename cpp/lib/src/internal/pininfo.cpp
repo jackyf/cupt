@@ -161,10 +161,10 @@ void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, sma
 	condition.type = (string(m[1]) == "Package" ?
 			PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
 
-	vector< string > parts = split(' ', m[2]);
-	FORIT(it, parts)
+	vector<string> parts = split(' ', m[2]);
+	for (auto& part: parts)
 	{
-		*it = pinStringToRegexString(*it);
+		part = pinStringToRegexString(part);
 	}
 	condition.value = stringToRegex(join("|", parts));
 
