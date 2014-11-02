@@ -54,6 +54,7 @@ class PinInfo
 	void init();
 	void loadData(const string& path);
 	static void loadFirstPinRecordLine(PinEntry*, const string&, smatch&);
+	static void loadReleaseConditions(PinEntry*, const string&, smatch&);
 	ssize_t getOriginalAptPin(const Version*) const;
 	void adjustUsingPinSettings(const Version*, ssize_t& priority) const;
  public:

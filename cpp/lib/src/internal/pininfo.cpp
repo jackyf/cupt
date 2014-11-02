@@ -172,6 +172,39 @@ void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, sma
 	pinEntry->conditions.push_back(std::move(condition));
 }
 
+void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpression, smatch& m)
+{
+	static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
+	auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
+
+	FORIT(subExpressionIt, subExpressions)
+	{
+		PinEntry::Condition condition;
+
+		static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
+		if (!regex_match(*subExpressionIt, m, subExpressionRegex))
+		{
+			fatal2(__("invalid condition '%s'"), *subExpressionIt);
+		}
+
+		char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
+		switch (subExpressionType)
+		{
+			case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
+			case 'v': condition.type = PinEntry::Condition::ReleaseVersion; break;
+			case 'c': condition.type = PinEntry::Condition::ReleaseComponent; break;
+			case 'n': condition.type = PinEntry::Condition::ReleaseCodename; break;
+			case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
+			case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
+			default:
+				fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"),
+						subExpressionType);
+		}
+		condition.value = stringToRegex(pinStringToRegexString(m[2]));
+		pinEntry->conditions.push_back(std::move(condition));
+	}
+}
+
 void PinInfo::loadData(const string& path)
 {
 	using boost::lexical_cast;
@@ -238,35 +271,7 @@ void PinInfo::loadData(const string& path)
 				string pinExpression = m[2];
 				if (pinType == "release")
 				{
-					static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
-					auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
-
-					FORIT(subExpressionIt, subExpressions)
-					{
-						PinEntry::Condition condition;
-
-						static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
-						if (!regex_match(*subExpressionIt, m, subExpressionRegex))
-						{
-							fatal2(__("invalid condition '%s'"), *subExpressionIt);
-						}
-
-						char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
-						switch (subExpressionType)
-						{
-							case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
-							case 'v': condition.type = PinEntry::Condition::ReleaseVersion; break;
-							case 'c': condition.type = PinEntry::Condition::ReleaseComponent; break;
-							case 'n': condition.type = PinEntry::Condition::ReleaseCodename; break;
-							case 'o': condition.type = PinEntry::Condition::ReleaseVendor; break;
-							case 'l': condition.type = PinEntry::Condition::ReleaseLabel; break;
-							default:
-								fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"),
-										subExpressionType);
-						}
-						condition.value = stringToRegex(pinStringToRegexString(m[2]));
-						pinEntry.conditions.push_back(std::move(condition));
-					}
+					loadReleaseConditions(&pinEntry, pinExpression, m);
 				}
 				else if (pinType == "version")
 				{
