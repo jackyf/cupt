@@ -132,6 +132,8 @@ ssize_t PinInfo::getPin(const Version* version, const string& installedVersionSt
 	return result;
 }
 
+namespace {
+
 string pinStringToRegexString(const string& input)
 {
 	if (input.size() >= 2 && input[0] == '/' && *input.rbegin() == '/')
@@ -142,6 +144,31 @@ string pinStringToRegexString(const string& input)
 	{
 		return globToRegexString(input);
 	}
+}
+
+}
+
+void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
+{
+	PinEntry::Condition condition;
+
+	static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
+	if (!regex_match(line, m, packageOrSourceRegex))
+	{
+		fatal2(__("invalid package/source line"));
+	}
+
+	condition.type = (string(m[1]) == "Package" ?
+			PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
+
+	vector< string > parts = split(' ', m[2]);
+	FORIT(it, parts)
+	{
+		*it = pinStringToRegexString(*it);
+	}
+	condition.value = stringToRegex(join("|", parts));
+
+	pinEntry->conditions.push_back(std::move(condition));
 }
 
 void PinInfo::loadData(const string& path)
@@ -191,25 +218,7 @@ void PinInfo::loadData(const string& path)
 			// ok, real triad should be here
 			PinEntry pinEntry;
 
-			{ // processing first line
-				PinEntry::Condition condition;
-				static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
-				if (!regex_match(line, m, packageOrSourceRegex))
-				{
-					fatal2(__("invalid package/source line"));
-				}
-
-				condition.type = (string(m[1]) == "Package" ?
-						PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
-
-				vector< string > parts = split(' ', m[2]);
-				FORIT(it, parts)
-				{
-					*it = pinStringToRegexString(*it);
-				}
-				condition.value = stringToRegex(join("|", parts));
-				pinEntry.conditions.push_back(std::move(condition));
-			}
+			loadFirstPinRecordLine(&pinEntry, line, m);
 
 			{ // processing second line
 				getNextLine();
