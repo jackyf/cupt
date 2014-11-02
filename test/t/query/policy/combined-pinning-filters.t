@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 8;
+use Test::More tests => 14;
 
 use strict;
 use warnings;
@@ -35,4 +35,11 @@ test('Package: *', 'release a=green, n=red' => 0);
 
 test('Package: mno', 'release a=green, n=blue' => 1);
 test('Package: xno', 'release a=green, n=blue' => 0);
+
+test('Package: xyz mno', 'version *' => 1);
+test('Package: mno xxx *', 'version *' => 1);
+test('Package: *m* *a*', 'version *' => 1);
+test('Package: *n* nop *o*', 'version *' => 1);
+test('Package: lll kkk', 'version *' => 0);
+test('Package: *x* *y* *p* *q*', 'version *' => 0);
 
