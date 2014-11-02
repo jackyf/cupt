@@ -158,7 +158,8 @@ void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, sma
 		fatal2(__("invalid package/source line"));
 	}
 
-	condition.type = (string(m[1]) == "Package" ?
+	auto firstCharacter = *(m[1].first);
+	condition.type = (firstCharacter == 'P' ?
 			PinEntry::Condition::PackageName : PinEntry::Condition::SourcePackageName);
 
 	vector<string> parts = split(' ', m[2]);
