@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 36;
+use Test::More tests => 40;
 
 use strict;
 use warnings;
@@ -71,4 +71,9 @@ test('o=Debian' => 0);
 test('o=*int' => 1);
 test('o=/u/' => 0);
 test('ooo=ppp' => -1);
+
+test('=Mint' => -1);
+test('m=/u/' => -1);
+test('x=*' => -1);
+test('bb=f' => -1);
 
