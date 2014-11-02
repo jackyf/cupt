@@ -187,7 +187,7 @@ void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpress
 			fatal2(__("invalid condition '%s'"), subExpression);
 		}
 
-		char subExpressionType = string(m[1])[0]; // if regex matched, it is one-letter string
+		char subExpressionType = *(m[1].first); // if regex matched, it is one-letter string
 		switch (subExpressionType)
 		{
 			case 'a': condition.type = PinEntry::Condition::ReleaseArchive; break;
