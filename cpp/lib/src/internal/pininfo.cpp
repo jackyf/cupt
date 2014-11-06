@@ -172,6 +172,44 @@ void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, sma
 	pinEntry->conditions.push_back(std::move(condition));
 }
 
+void PinInfo::loadSecondPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
+{
+	static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
+	if (!regex_match(line, m, pinRegex))
+	{
+		fatal2(__("invalid pin line"));
+	}
+
+	string pinType = m[1];
+	string pinExpression = m[2];
+	if (pinType == "release")
+	{
+		loadReleaseConditions(pinEntry, pinExpression, m);
+	}
+	else if (pinType == "version")
+	{
+		PinEntry::Condition condition;
+		condition.type = PinEntry::Condition::Version;
+		condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+		pinEntry->conditions.push_back(std::move(condition));
+	}
+	else if (pinType == "origin")
+	{
+		PinEntry::Condition condition;
+		condition.type = PinEntry::Condition::HostName;
+		if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
+		{
+			pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
+		}
+		condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+		pinEntry->conditions.push_back(std::move(condition));
+	}
+	else
+	{
+		fatal2(__("invalid pin type '%s' (should be one of 'release', 'version', 'origin')"), pinType);
+	}
+}
+
 void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpression, smatch& m)
 {
 	static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
@@ -261,40 +299,7 @@ void PinInfo::loadData(const string& path)
 					fatal2(__("no pin line"));
 				}
 
-				static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
-				if (!regex_match(line, m, pinRegex))
-				{
-					fatal2(__("invalid pin line"));
-				}
-
-				string pinType = m[1];
-				string pinExpression = m[2];
-				if (pinType == "release")
-				{
-					loadReleaseConditions(&pinEntry, pinExpression, m);
-				}
-				else if (pinType == "version")
-				{
-					PinEntry::Condition condition;
-					condition.type = PinEntry::Condition::Version;
-					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(std::move(condition));
-				}
-				else if (pinType == "origin")
-				{
-					PinEntry::Condition condition;
-					condition.type = PinEntry::Condition::HostName;
-					if (pinExpression.size() >= 2 && *pinExpression.begin() == '"' && *pinExpression.rbegin() == '"')
-					{
-						pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
-					}
-					condition.value = stringToRegex(pinStringToRegexString(pinExpression));
-					pinEntry.conditions.push_back(std::move(condition));
-				}
-				else
-				{
-					fatal2(__("invalid pin type '%s' (should be one of 'release', 'version', 'origin')"), pinType);
-				}
+				loadSecondPinRecordLine(&pinEntry, line, m);
 			}
 
 			{ // processing third line
