@@ -243,10 +243,28 @@ void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpress
 	}
 }
 
-void PinInfo::loadData(const string& path)
+void PinInfo::loadThirdPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
 {
 	using boost::lexical_cast;
 
+	static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
+	if (!regex_match(line, m, priorityRegex))
+	{
+		fatal2(__("invalid priority line"));
+	}
+
+	try
+	{
+		pinEntry->priority = lexical_cast< ssize_t >(string(m[1]));
+	}
+	catch (boost::bad_lexical_cast&)
+	{
+		fatal2(__("invalid integer '%s'"), string(m[1]));
+	}
+}
+
+void PinInfo::loadData(const string& path)
+{
 	// we are parsing triads like:
 
 	// Package: perl perl-modules
@@ -309,20 +327,7 @@ void PinInfo::loadData(const string& path)
 					fatal2(__("no priority line"));
 				}
 
-				static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
-				if (!regex_match(line, m, priorityRegex))
-				{
-					fatal2(__("invalid priority line"));
-				}
-
-				try
-				{
-					pinEntry.priority = lexical_cast< ssize_t >(string(m[1]));
-				}
-				catch (boost::bad_lexical_cast&)
-				{
-					fatal2(__("invalid integer '%s'"), string(m[1]));
-				}
+				loadThirdPinRecordLine(&pinEntry, line, m);
 			}
 
 			// adding to storage
