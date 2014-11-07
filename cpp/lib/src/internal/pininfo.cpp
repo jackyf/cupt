@@ -146,6 +146,25 @@ string pinStringToRegexString(const string& input)
 	}
 }
 
+bool isPinRecordComment(const string& line, smatch& m)
+{
+	// empty lines and lines with comments
+	static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
+	if (regex_match(line, m, commentRegex))
+	{
+		return true;
+	}
+
+	// special explanation lines, equal to comments
+	static const sregex explanationRegex = sregex::compile("Explanation:");
+	if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 }
 
 void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
@@ -291,19 +310,7 @@ void PinInfo::loadData(const string& path)
 	{
 		while (!getNextLine().eof())
 		{
-			// skip all empty lines and lines with comments
-			static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
-			if (regex_match(line, m, commentRegex))
-			{
-				continue;
-			}
-
-			// skip special explanation lines, they are just comments
-			static const sregex explanationRegex = sregex::compile("Explanation:");
-			if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
-			{
-				continue;
-			}
+			if (isPinRecordComment(line, m)) continue;
 
 			// ok, real triad should be here
 			PinEntry pinEntry;
