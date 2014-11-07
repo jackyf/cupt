@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 20;
+use Test::More tests => 23;
 
 use strict;
 use warnings;
@@ -45,4 +45,9 @@ test("# this is comment\n${valid_record}" => 1);
 test("Explanation: this is explanation\n${valid_record}" => 1);
 test("     # this is another comment\nExplanation: explaining more" => 1);
 test("# a lot of\nExplanation: different\n# stuff \nExplanation: can be put\n  ### before\n${valid_record}" => 1);
+
+my $valid_first_two_lines = "Package: eee\nPin: version *\n";
+test("${valid_first_two_lines}Pin-Priority: ehh\n", 0);
+test("${valid_first_two_lines}Pin-Priority: -22m\n", 0);
+test("${valid_first_two_lines}Pin-Priority: --33\n", 0);
 
