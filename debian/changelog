@@ -23,6 +23,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         default value from 1200 to 1500.
       - Option 'cupt::resolver::score::upgrade': changed default value
         from 100 to 20.
+      - 'setScalar': when doing APT-to-Cupt option translation, also-set
+        original-case APT option instead of normalised-case APT option.
     - system/state:
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:

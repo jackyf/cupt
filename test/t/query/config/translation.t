@@ -27,10 +27,7 @@ sub test_pair {
 sub test_group {
 	my ($from, $to) = @_;
 	test_pair($from, $to);
-	TODO: {
-		local $TODO = 'fix';
-		test_pair(uc($from), $to);
-	}
+	test_pair(uc($from), $to);
 }
 
 test_group('apt::get::allowunauthenticated', 'cupt::console::allow-untrusted');

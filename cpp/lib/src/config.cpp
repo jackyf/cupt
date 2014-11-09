@@ -603,6 +603,11 @@ void Config::setScalar(const string& optionName, const string& value)
 		*charIt = std::tolower(*charIt);
 	}
 
+	if (isForeignOption(normalizedOptionName))
+	{
+		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
+	}
+
 	{ // translation to cupt variable names
 		auto it = __impl->regularCompatibilityVars.find(normalizedOptionName);
 		if (it != __impl->regularCompatibilityVars.end())
@@ -612,11 +617,6 @@ void Config::setScalar(const string& optionName, const string& value)
 
 			normalizedOptionName = it->second;
 		}
-	}
-
-	if (isForeignOption(normalizedOptionName))
-	{
-		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
 	}
 
 	if (__impl->regularVars.count(normalizedOptionName) || __impl->isOptionalOption(normalizedOptionName))
