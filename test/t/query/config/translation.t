@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 8;
+use Test::More tests => 16;
 
 use strict;
 use warnings;
@@ -19,9 +19,18 @@ sub test {
 	};
 }
 
-sub test_group {
+sub test_pair {
 	test(@_, 'yes');
 	test(@_, 'no');
+}
+
+sub test_group {
+	my ($from, $to) = @_;
+	test_pair($from, $to);
+	TODO: {
+		local $TODO = 'fix';
+		test_pair(uc($from), $to);
+	}
 }
 
 test_group('apt::get::allowunauthenticated', 'cupt::console::allow-untrusted');
