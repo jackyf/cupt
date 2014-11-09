@@ -4,9 +4,9 @@ use Test::More tests => 19;
 use strict;
 use warnings;
 
-my $cupt = TestCupt::setup();
+eval get_inc_code('common');
 
-my $warning_regex = qr/^W:/m;
+my $cupt = TestCupt::setup();
 
 sub test {
 	my ($option, $result) = @_;
@@ -14,15 +14,7 @@ sub test {
 	my $value = '54';
 	my $output = stdall("$cupt config-dump -o $option=$value 2>&1 | egrep '$option|^W'");
 
-	subtest "$option => $result" => sub {
-		if ($result) {
-			like($output, qr/^\Q$option "$value"\E/, 'option set successfully');
-			unlike($output, $warning_regex, 'no warnings');
-		} else {
-			unlike($output, qr/^\Q$option\E/, 'option not present');
-			like($output, $warning_regex, 'warning issued');
-		}
-	}
+	test_option($output, $option, ($result ? $value : undef));
 }
 
 test('acquire::aaa::proxy' => 1);
