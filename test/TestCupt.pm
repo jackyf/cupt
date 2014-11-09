@@ -181,7 +181,7 @@ sub generate_packages_sources {
 		my $content = $e{'content'};
 		my $list_prefix = get_list_prefix($scheme, $server, $archive);
 
-		my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '');
+		my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '[ trusted=no ] ');
 		$sources_list_suffix .= "$scheme://$server $archive $component";
 
 		if ($e{'type'} eq 'packages') {
