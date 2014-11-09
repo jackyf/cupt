@@ -58,31 +58,33 @@ class ConfigImpl
 
 void ConfigImpl::__initOptionalPatterns()
 {
+#define SEP "::"
+#define WORD "[^:]*?"
 	const char* optionalPatterns[] = {
 		// used APT vars
-		"acquire::*::*::proxy",
-		"acquire::*::proxy::*",
-		"acquire::*::proxy",
-		"acquire::*::*::dl-limit",
-		"acquire::*::dl-limit::*",
-		"acquire::*::dl-limit",
-		"acquire::*::*::timeout",
-		"acquire::*::timeout::*",
-		"acquire::*::timeout",
-		"dpkg::tools::options::*",
-		"dpkg::tools::options::*::*",
+		"acquire" SEP WORD SEP WORD SEP "proxy",
+		"acquire" SEP WORD SEP "proxy" SEP WORD,
+		"acquire" SEP WORD SEP "proxy",
+		"acquire" SEP WORD SEP WORD SEP "dl-limit",
+		"acquire" SEP WORD SEP "dl-limit" SEP WORD,
+		"acquire" SEP WORD SEP "dl-limit",
+		"acquire" SEP WORD SEP "timeout",
+		"acquire" SEP WORD SEP "timeout" SEP WORD,
+		"acquire" SEP WORD SEP WORD SEP "timeout",
+		"dpkg::tools::options" SEP WORD,
+		"dpkg::tools::options" SEP WORD SEP WORD,
 
 		// used Cupt vars
-		"cupt::downloader::protocols::*::priority",
-		"cupt::downloader::protocols::*::methods",
-		"cupt::downloader::protocols::*::methods::*::priority",
+		"cupt::downloader::protocols" SEP WORD SEP "priority",
+		"cupt::downloader::protocols" SEP WORD SEP "methods",
+		"cupt::downloader::protocols" SEP WORD SEP "methods" SEP WORD SEP "priority",
 	};
+#undef SEP
+#undef WORD
 
-	const sregex convertRegex = sregex::compile("\\*");
 	for (const auto& pattern: optionalPatterns)
 	{
-		auto currentRegexString = regex_replace(string(pattern), convertRegex, "[^:]*?");
-		__optionalPatterns.emplace_back(sregex::compile(currentRegexString));
+		__optionalPatterns.emplace_back(sregex::compile(pattern));
 	}
 }
 
