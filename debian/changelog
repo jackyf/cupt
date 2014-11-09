@@ -25,6 +25,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         from 100 to 20.
       - 'setScalar': when doing APT-to-Cupt option translation, also-set
         original-case APT option instead of normalised-case APT option.
+      - 'setScalar': accept any option from 'dpkg' family without filtering.
     - system/state:
       - [API break] 'getInstalledInfo': returns raw pointer.
     - system/worker:

@@ -590,10 +590,6 @@ static inline bool isCuptOption(const string& optionName)
 {
 	return isFamilyOption(optionName, "cupt");
 }
-static bool isForeignOption(const string& optionName)
-{
-	return !isCuptOption(optionName) && !isFamilyOption(optionName, "dpkg");
-}
 
 void Config::setScalar(const string& optionName, const string& value)
 {
@@ -603,7 +599,7 @@ void Config::setScalar(const string& optionName, const string& value)
 		*charIt = std::tolower(*charIt);
 	}
 
-	if (isForeignOption(normalizedOptionName))
+	if (!isCuptOption(normalizedOptionName))
 	{
 		__impl->regularVars[optionName /* <-- non-normalized one */] = value;
 	}

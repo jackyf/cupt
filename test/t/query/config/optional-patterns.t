@@ -25,13 +25,10 @@ test('acquire::ppp::qqq::rrr::proxy' => 1);
 my $dto = 'dpkg::tools::options';
 test("${dto}::lll" => 1);
 test("${dto}::lll::mmm" => 1);
-TODO: {
-	local $TODO = 'accept unknown options also from dpkg family';
-	test("${dto}::lll:mmm" => 1);
-	test("${dto}::lll::mmm::nnn" => 1);
-	test("${dto}::YOO___~1::version" => 1);
-	test('dpkg::klb' => 1);
-}
+test("${dto}::lll:mmm" => 1);
+test("${dto}::lll::mmm::nnn" => 1);
+test("${dto}::YOO___~1::version" => 1);
+test('dpkg::klb' => 1);
 test('pkg::klb' => 1);
 
 test('cupt::downloader::protocols::mmp::priority' => 1);
