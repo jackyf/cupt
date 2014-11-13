@@ -39,6 +39,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Fixed not applying downgrade score for reinstalls. This regression
         was introduced in 2.6.0.
       - Significantly reduced not-user score part of upgrades.
+    - versionstring:
+      - [API break] 'getOriginal': return StringRange.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

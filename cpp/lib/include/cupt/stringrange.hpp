@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2014 by Eugene V. Lyubimkin                             *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -15,24 +15,39 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
-#include <cupt/versionstring.hpp>
+#ifndef CUPT_STRINGRANGE_SEEN
+#define CUPT_STRINGRANGE_SEEN
+
+#include <cupt/range.hpp>
+
+#include <algorithm>
 
 namespace cupt {
-namespace versionstring {
 
-char idSuffixDelimiter = '^';
-
-//TODO: VersionString class?
-StringRange getOriginal(const StringRange& s)
+struct StringRange: public Range<const char*>
 {
-	return { s.first, s.find(idSuffixDelimiter) };
+	typedef Range<const char*> Base;
+
+	StringRange(const string& s)
+		: Base(&*s.begin(), &*s.end())
+	{}
+
+	StringRange(Iterator a, Iterator b)
+		: Base(a, b)
+	{}
+
+	string toStdString() const
+	{
+		return string(begin(), end());
+	}
+
+	Iterator find(char c) const
+	{
+		return std::find(begin(), end(), c);
+	}
+};
+
 }
 
-bool sameOriginal(const string& left, const string& right)
-{
-	return left.compare(0, left.rfind(idSuffixDelimiter),
-			right, 0, right.rfind(idSuffixDelimiter)) == 0;
-}
+#endif
 
-}
-}

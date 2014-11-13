@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2012 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2012-2014 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -18,13 +18,15 @@
 #ifndef CUPT_VERSIONSTRING_SEEN
 #define CUPT_VERSIONSTRING_SEEN
 
+#include <cupt/stringrange.hpp>
+
 // FIXME: document
 namespace cupt {
 namespace versionstring {
 
 CUPT_API extern char idSuffixDelimiter;
 
-CUPT_API string getOriginal(const string& versionString);
+CUPT_API StringRange getOriginal(const StringRange& versionString);
 bool sameOriginal(const string& leftVersionString, const string& rightVersionString);
 
 }

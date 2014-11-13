@@ -73,7 +73,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		return result; // nothing to try
 	}
 
-	auto mangleVersionString = [](const string& input)
+	auto mangleVersionString = [](StringRange input)
 	{
 		// I hate http uris, hadn't I told this before, hm...
 		const string doubleEscapedColon = "%253a";

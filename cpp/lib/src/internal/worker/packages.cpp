@@ -1789,7 +1789,7 @@ static string getOldVersionString(const BinaryPackage* oldPackage)
 	{
 		if (auto installedVersion = oldPackage->getInstalledVersion())
 		{
-			result = versionstring::getOriginal(installedVersion->versionString);
+			result = versionstring::getOriginal(installedVersion->versionString).toStdString();
 		}
 	}
 

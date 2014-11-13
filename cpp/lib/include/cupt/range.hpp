@@ -15,6 +15,9 @@
 *   Free Software Foundation, Inc.,                                       *
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
+#ifndef CUPT_RANGE_SEEN
+#define CUPT_RANGE_SEEN
+
 #include <utility>
 #include <vector>
 
@@ -35,7 +38,7 @@ struct Range: public std::pair< IteratorT, IteratorT >
 	{
 		return Base::second;
 	}
-	typedef typename std::decay<typename IteratorT::value_type>::type Value;
+	typedef typename std::decay<decltype(*std::declval<IteratorT>())>::type Value;
 	auto asVector() const -> std::vector< Value >
 	{
 		vector< Value > result;
@@ -45,7 +48,11 @@ struct Range: public std::pair< IteratorT, IteratorT >
 		}
 		return result;
 	}
+
+	typedef IteratorT Iterator;
 };
 
 }
+
+#endif
 
