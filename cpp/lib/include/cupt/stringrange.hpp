@@ -26,6 +26,10 @@ namespace cupt {
 
 struct StringRange: public Range<const char*>
 {
+	// for boost::range
+	typedef Iterator iterator;
+	typedef Iterator const_iterator;
+
 	typedef Range<const char*> Base;
 
 	StringRange(const string& s)

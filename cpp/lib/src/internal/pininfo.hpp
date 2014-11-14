@@ -22,6 +22,7 @@
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
+#include <cupt/stringrange.hpp>
 
 namespace cupt {
 namespace internal {
@@ -53,10 +54,10 @@ class PinInfo
 
 	void init();
 	void loadData(const string& path);
-	static void loadFirstPinRecordLine(PinEntry*, const string&, smatch&);
-	static void loadSecondPinRecordLine(PinEntry*, const string&, smatch&);
-	static void loadReleaseConditions(PinEntry*, const string&, smatch&);
-	static void loadThirdPinRecordLine(PinEntry*, const string&, smatch&);
+	static void loadFirstPinRecordLine(PinEntry*, StringRange, cmatch&);
+	static void loadSecondPinRecordLine(PinEntry*, StringRange, cmatch&);
+	static void loadReleaseConditions(PinEntry*, const string&, cmatch&);
+	static void loadThirdPinRecordLine(PinEntry*, StringRange, cmatch&);
 	ssize_t getOriginalAptPin(const Version*) const;
 	void adjustUsingPinSettings(const Version*, ssize_t& priority) const;
  public:

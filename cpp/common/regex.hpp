@@ -25,9 +25,14 @@ namespace cupt {
 using boost::xpressive::sregex;
 using boost::xpressive::sregex_token_iterator;
 using boost::xpressive::smatch;
+
+using boost::xpressive::cregex;
+using boost::xpressive::cmatch;
+
 using boost::xpressive::regex_match;
 using boost::xpressive::regex_search;
 using boost::xpressive::regex_error;
+
 namespace regex_constants = boost::xpressive::regex_constants;
 
 }

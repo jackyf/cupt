@@ -146,17 +146,17 @@ string pinStringToRegexString(const string& input)
 	}
 }
 
-bool isPinRecordComment(const string& line, smatch& m)
+bool isPinRecordComment(StringRange line, cmatch& m)
 {
 	// empty lines and lines with comments
-	static const sregex commentRegex = sregex::compile("\\s*(?:#.*)?");
+	static const cregex commentRegex = cregex::compile("\\s*(?:#.*)?");
 	if (regex_match(line, m, commentRegex))
 	{
 		return true;
 	}
 
 	// special explanation lines, equal to comments
-	static const sregex explanationRegex = sregex::compile("Explanation:");
+	static const cregex explanationRegex = cregex::compile("Explanation:");
 	if (regex_search(line, m, explanationRegex, regex_constants::match_continuous))
 	{
 		return true;
@@ -167,11 +167,11 @@ bool isPinRecordComment(const string& line, smatch& m)
 
 }
 
-void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
+void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, StringRange line, cmatch& m)
 {
 	PinEntry::Condition condition;
 
-	static const sregex packageOrSourceRegex = sregex::compile("(Package|Source): (.*)");
+	static const cregex packageOrSourceRegex = cregex::compile("(Package|Source): (.*)");
 	if (!regex_match(line, m, packageOrSourceRegex))
 	{
 		fatal2(__("invalid package/source line"));
@@ -191,9 +191,9 @@ void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, const string& line, sma
 	pinEntry->conditions.push_back(std::move(condition));
 }
 
-void PinInfo::loadSecondPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
+void PinInfo::loadSecondPinRecordLine(PinEntry* pinEntry, StringRange line, cmatch& m)
 {
-	static const sregex pinRegex = sregex::compile("Pin: (\\w+?) (.*)");
+	static const cregex pinRegex = cregex::compile("Pin: (\\w+?) (.*)");
 	if (!regex_match(line, m, pinRegex))
 	{
 		fatal2(__("invalid pin line"));
@@ -229,7 +229,7 @@ void PinInfo::loadSecondPinRecordLine(PinEntry* pinEntry, const string& line, sm
 	}
 }
 
-void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpression, smatch& m)
+void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpression, cmatch& m)
 {
 	static const sregex commaSeparatedRegex = sregex::compile("\\s*,\\s*");
 	auto subExpressions = internal::split(commaSeparatedRegex, pinExpression);
@@ -238,8 +238,8 @@ void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpress
 	{
 		PinEntry::Condition condition;
 
-		static const sregex subExpressionRegex = sregex::compile("(\\w)=(.*)");
-		if (!regex_match(subExpression, m, subExpressionRegex))
+		static const cregex subExpressionRegex = cregex::compile("(\\w)=(.*)");
+		if (!regex_match(static_cast<StringRange>(subExpression), m, subExpressionRegex))
 		{
 			fatal2(__("invalid condition '%s'"), subExpression);
 		}
@@ -262,11 +262,11 @@ void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpress
 	}
 }
 
-void PinInfo::loadThirdPinRecordLine(PinEntry* pinEntry, const string& line, smatch& m)
+void PinInfo::loadThirdPinRecordLine(PinEntry* pinEntry, StringRange line, cmatch& m)
 {
 	using boost::lexical_cast;
 
-	static const sregex priorityRegex = sregex::compile("Pin-Priority: (.*)");
+	static const cregex priorityRegex = cregex::compile("Pin-Priority: (.*)");
 	if (!regex_match(line, m, priorityRegex))
 	{
 		fatal2(__("invalid priority line"));
@@ -296,7 +296,7 @@ void PinInfo::loadData(const string& path)
 
 	RequiredFile file(path, "r");
 
-	smatch m;
+	cmatch m;
 
 	string line;
 	size_t lineNumber = 0;
