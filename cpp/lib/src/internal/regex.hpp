@@ -25,7 +25,19 @@ namespace internal {
 
 vector< string > split(const sregex&, const string&);
 
-sregex stringToRegex(const string& input);
+template< typename RegexT >
+RegexT stringToRegex(const string& input)
+{
+	try
+	{
+		return RegexT::compile(input);
+	}
+	catch (regex_error& e)
+	{
+		fatal2(__("invalid regular expression '%s'"), input);
+	}
+}
+
 sregex globToRegex(const string& glob);
 
 }

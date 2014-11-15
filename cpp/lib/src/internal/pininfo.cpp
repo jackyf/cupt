@@ -186,7 +186,7 @@ void PinInfo::loadFirstPinRecordLine(PinEntry* pinEntry, StringRange line, cmatc
 	{
 		part = pinStringToRegexString(part);
 	}
-	condition.value = stringToRegex(join("|", parts));
+	condition.value = stringToRegex<cregex>(join("|", parts));
 
 	pinEntry->conditions.push_back(std::move(condition));
 }
@@ -209,7 +209,7 @@ void PinInfo::loadSecondPinRecordLine(PinEntry* pinEntry, StringRange line, cmat
 	{
 		PinEntry::Condition condition;
 		condition.type = PinEntry::Condition::Version;
-		condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+		condition.value = stringToRegex<cregex>(pinStringToRegexString(pinExpression));
 		pinEntry->conditions.push_back(std::move(condition));
 	}
 	else if (pinType == "origin")
@@ -220,7 +220,7 @@ void PinInfo::loadSecondPinRecordLine(PinEntry* pinEntry, StringRange line, cmat
 		{
 			pinExpression = pinExpression.substr(1, pinExpression.size() - 2); // trimming quotes
 		}
-		condition.value = stringToRegex(pinStringToRegexString(pinExpression));
+		condition.value = stringToRegex<cregex>(pinStringToRegexString(pinExpression));
 		pinEntry->conditions.push_back(std::move(condition));
 	}
 	else
@@ -257,7 +257,7 @@ void PinInfo::loadReleaseConditions(PinEntry* pinEntry, const string& pinExpress
 				fatal2(__("invalid condition type '%c' (should be one of 'a', 'v', 'c', 'n', 'o', 'l')"),
 						subExpressionType);
 		}
-		condition.value = stringToRegex(pinStringToRegexString(m[2]));
+		condition.value = stringToRegex<cregex>(pinStringToRegexString(m[2]));
 		pinEntry->conditions.push_back(std::move(condition));
 	}
 }
@@ -369,7 +369,7 @@ string getHostNameInAptPreferencesStyle(const string& baseUri)
 
 void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) const
 {
-	smatch m;
+	cmatch m;
 
 	FORIT(pinEntryIt, settings)
 	{
@@ -383,7 +383,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 			switch (condition.type)
 			{
 				case PinEntry::Condition::PackageName:
-					matched = regex_search(version->packageName, m, regex);
+					matched = regex_search(static_cast<StringRange>(version->packageName), m, regex);
 					break;
 				case PinEntry::Condition::SourcePackageName:
 					{
@@ -393,11 +393,11 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 							matched = false;
 							break;
 						}
-						matched = regex_search(binaryVersion->sourcePackageName, m, regex);
+						matched = regex_search(static_cast<StringRange>(binaryVersion->sourcePackageName), m, regex);
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_search(versionstring::getOriginal(version->versionString).toStdString(), m, regex);
+					matched = regex_search(versionstring::getOriginal(version->versionString), m, regex);
 					break;
 #define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \
@@ -405,7 +405,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 					FORIT(sourceIt, version->sources) \
 					{ \
 						const ReleaseInfo* release = sourceIt->release; \
-						if (regex_search(expression, m, regex)) \
+						if (regex_search(static_cast<StringRange>(expression), m, regex)) \
 						{ \
 							matched = true; \
 							break; \

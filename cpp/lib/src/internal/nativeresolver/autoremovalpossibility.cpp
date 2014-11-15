@@ -35,7 +35,7 @@ class AutoRemovalPossibilityImpl
 	{
 		for (const auto& regexString: config.getList(optionName))
 		{
-			regexes.push_back(stringToRegex(regexString));
+			regexes.push_back(stringToRegex<sregex>(regexString));
 		}
 	}
 

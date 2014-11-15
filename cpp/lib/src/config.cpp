@@ -303,7 +303,7 @@ vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
 	for (const auto& ignorePathRegexString: config->getList("dir::ignore-files-silently"))
 	{
 		auto fullString = "^.*" + ignorePathRegexString + ".*$";
-		ignorePathRegexes.emplace_back(stringToRegex(fullString));
+		ignorePathRegexes.emplace_back(stringToRegex<sregex>(fullString));
 	}
 
 	vector< string > result;

@@ -41,7 +41,7 @@ class PinInfo
 					ReleaseVendor, ReleaseVersion, ReleaseComponent, ReleaseLabel, HostName };
 
 			Type type;
-			sregex value;
+			cregex value;
 		};
 
 		vector< Condition > conditions;

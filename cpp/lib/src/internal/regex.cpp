@@ -30,20 +30,9 @@ vector< string > split(const sregex& regex, const string& str)
 	return result;
 }
 
-sregex stringToRegex(const string& input)
-{
-	try
-	{
-		return sregex::compile(input);
-	}
-	catch (regex_error& e)
-	{
-		fatal2(__("invalid regular expression '%s'"), input);
-	}
-}
 sregex globToRegex(const string& glob)
 {
-	return stringToRegex(globToRegexString(glob));
+	return stringToRegex<sregex>(globToRegexString(glob));
 }
 
 }
