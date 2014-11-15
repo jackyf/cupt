@@ -36,7 +36,6 @@ sub test {
 			"installed version is available: $is_installed_version_available, " .
 			"preferred candidate is broken: $is_preferred_candidate_broken";
 
-	local $TODO = 'fix' if ($command eq 'install' && ($middle_candidate_exists || !$is_preferred_candidate_broken));
 	is(get_offered_version($offer, 'sh'), $expected_version, $comment) or diag($offer);
 }
 

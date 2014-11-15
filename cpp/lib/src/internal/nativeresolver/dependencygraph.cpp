@@ -1039,9 +1039,10 @@ vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph:
 void DependencyGraph::p_populatePackage(const string& packageName)
 {
 	auto package = __cache.getBinaryPackage(packageName);
-	for (auto version: *package)
+	for (auto item: __cache.getSortedPinnedVersions(package))
 	{
-		__fill_helper->getVertexPtrForVersion(version);
+		auto binaryVersion = static_cast<const BinaryVersion*>(item.version);
+		__fill_helper->getVertexPtrForVersion(binaryVersion);
 	}
 
 	__fill_helper->getVertexPtrForEmptyPackage(packageName, package); // also, empty one
