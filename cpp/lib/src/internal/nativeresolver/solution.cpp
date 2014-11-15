@@ -184,9 +184,9 @@ const GraphCessorListType& SolutionStorage::getPredecessorElements(dg::Element e
 	return __dependency_graph.getPredecessors(elementPtr);
 }
 
-const forward_list<dg::Element>& SolutionStorage::getConflictingElements(dg::Element element)
+const vector<dg::Element>& SolutionStorage::getConflictingElements(dg::Element element)
 {
-	static const forward_list<dg::Element> nullList;
+	static const vector<dg::Element> nullList;
 	auto relatedElementPtrsPtr = element->getRelatedElements();
 	return relatedElementPtrsPtr? *relatedElementPtrsPtr : nullList;
 }

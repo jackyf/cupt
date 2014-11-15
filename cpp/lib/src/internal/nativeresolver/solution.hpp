@@ -170,7 +170,7 @@ class SolutionStorage
 	bool verifyElement(const PreparedSolution&, dg::Element) const;
 
 	// may include parameter itself
-	static const forward_list<dg::Element>& getConflictingElements(dg::Element);
+	static const vector<dg::Element>& getConflictingElements(dg::Element);
 	bool simulateSetPackageEntry(const PreparedSolution&, dg::Element, dg::Element*) const;
 	void setRejection(PreparedSolution&, dg::Element);
 	void setEmpty(PreparedSolution&, dg::Element);

@@ -19,8 +19,8 @@
 #define CUPT_INTERNAL_NATIVERESOLVER_DEPENDENCY_GRAPH_SEEN
 
 #include <map>
-#include <forward_list>
-using std::forward_list;
+#include <vector>
+using std::vector;
 
 #include <cupt/common.hpp>
 #include <cupt/fwd.hpp>
@@ -65,7 +65,7 @@ struct BasicVertex
 	virtual size_t getTypePriority() const;
 	virtual shared_ptr< const Reason > getReason(const BasicVertex& parent) const;
 	virtual bool isAnti() const;
-	virtual const forward_list<Element>* getRelatedElements() const;
+	virtual const vector<Element>* getRelatedElements() const;
 	virtual Unsatisfied::Type getUnsatisfiedType() const;
 	virtual const RequestImportance& getUnsatisfiedImportance() const;
 	virtual bool asAuto() const;
@@ -77,14 +77,14 @@ struct BasicVertex
 struct VersionVertex: public BasicVertex
 {
  private:
-	typedef map< string, forward_list<Element> > FamilyMap;
+	typedef map< string, vector<Element> > FamilyMap;
 	const FamilyMap::iterator __related_element_ptrs_it;
  public:
 	const BinaryVersion* version;
 
 	VersionVertex(const FamilyMap::iterator&);
 	string toString() const;
-	const forward_list<Element>* getRelatedElements() const;
+	const vector<Element>* getRelatedElements() const;
 	const string& getPackageName() const;
 	string toLocalizedString() const;
 	Element getFamilyKey() const;

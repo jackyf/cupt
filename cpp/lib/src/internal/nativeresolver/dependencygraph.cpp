@@ -82,7 +82,7 @@ shared_ptr< const Reason > BasicVertex::getReason(const BasicVertex&) const
 	return shared_ptr< const Reason >(); // unreachable
 }
 
-const forward_list<Element>* BasicVertex::getRelatedElements() const
+const vector<Element>* BasicVertex::getRelatedElements() const
 {
 	fatal2i("getting related elements of '%s'", toString());
 	return NULL; // unreachable
@@ -131,7 +131,7 @@ string VersionVertex::toString() const
 			(version ? version->versionString : "<not installed>");
 }
 
-const forward_list<Element>* VersionVertex::getRelatedElements() const
+const vector<Element>* VersionVertex::getRelatedElements() const
 {
 	return &__related_element_ptrs_it->second;
 }
@@ -311,7 +311,7 @@ struct UnsatisfiedVertex: public BasicVertex
 	Element parent;
 
 	string toString() const;
-	const forward_list<Element>* getRelatedElements() const;
+	const vector<Element>* getRelatedElements() const;
 	Unsatisfied::Type getUnsatisfiedType() const;
 };
 
@@ -321,7 +321,7 @@ string UnsatisfiedVertex::toString() const
 	return u + parent->toString();
 }
 
-const forward_list<Element>* UnsatisfiedVertex::getRelatedElements() const
+const vector<Element>* UnsatisfiedVertex::getRelatedElements() const
 {
 	return NULL;
 }
@@ -608,7 +608,7 @@ class DependencyGraph::FillHelper
 	int __synchronize_level;
 	vector< DependencyEntry > __dependency_groups;
 
-	typedef forward_list<Element> RelatedVertexPtrs;
+	typedef vector<Element> RelatedVertexPtrs;
 	map< string, RelatedVertexPtrs > __package_name_to_vertex_ptrs;
 	unordered_map<const void*, const VersionVertex*> __version_to_vertex_ptr;
 	unordered_map< string, Element > __relation_expression_to_vertex_ptr;
@@ -653,9 +653,7 @@ class DependencyGraph::FillHelper
 
 			auto& relatedVertexes = relatedVertexPtrsIt->second;
 			// keep first element (family key) always the same
-			relatedVertexes.insert_after(
-					relatedVertexes.empty() ? relatedVertexes.before_begin() : relatedVertexes.begin(),
-					vertexPtr);
+			relatedVertexes.push_back(vertexPtr);
 
 			return vertexPtr;
 		};
