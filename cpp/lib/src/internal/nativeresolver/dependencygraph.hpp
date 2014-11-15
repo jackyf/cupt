@@ -117,6 +117,7 @@ class DependencyGraph: protected Graph< Element, PointeredAlreadyTraits >
 
 	vector< pair< Element, shared_ptr< const PackageEntry > > > p_generateSolutionElements(
 			const map< string, const BinaryVersion* >&);
+	void p_populatePackage(const string& packageName);
  public:
 	typedef Graph< Element, PointeredAlreadyTraits > BaseT;
 

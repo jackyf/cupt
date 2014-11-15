@@ -1031,21 +1031,22 @@ vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph:
 		for (const auto& item: oldPackages)
 		{
 			const auto& oldVersion = item.second;
-
-			__fill_helper->getVertexPtrForVersion(oldVersion);
-
-			const string& packageName = oldVersion->packageName;
-			auto package = __cache.getBinaryPackage(packageName);
-			for (auto version: *package)
-			{
-				__fill_helper->getVertexPtrForVersion(version);
-			}
-
-			__fill_helper->getVertexPtrForEmptyPackage(packageName, package); // also, empty one
+			p_populatePackage(oldVersion->packageName);
 		}
 	}
 
 	return p_generateSolutionElements(oldPackages);
+}
+
+void DependencyGraph::p_populatePackage(const string& packageName)
+{
+	auto package = __cache.getBinaryPackage(packageName);
+	for (auto version: *package)
+	{
+		__fill_helper->getVertexPtrForVersion(version);
+	}
+
+	__fill_helper->getVertexPtrForEmptyPackage(packageName, package); // also, empty one
 }
 
 vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph::p_generateSolutionElements(
