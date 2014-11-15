@@ -30,6 +30,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'getInstalledInfo': returns raw pointer.
       - [ABI break] Removed handling of longly obsolete Status fields. Patch by
         Guillem Jover. (Closes: #764468)
+      - InstalledRecord::Status::strings: added strings for trigger-related
+        states. Fixes crash on trying to stringify such states.
     - system/worker:
       - [API break] 'setAutomaticallyInstalledFlag': removed as obsolete.
       - Debdelta helper: use debdelta sources file path as relative to 'dir'

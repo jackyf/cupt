@@ -312,8 +312,11 @@ string State::getArchitecture() const
 
 const string State::InstalledRecord::Status::strings[] = {
 	N__("not installed"), N__("unpacked"), N__("half-configured"), N__("half-installed"),
-	N__("config files"), N__("installed")
+	N__("config files"), N__("installed"), N__("triggers-pending"), N__("triggers-awaited")
 };
+
+typedef State::InstalledRecord::Status SIS;
+static_assert(sizeof(SIS::strings)/sizeof(SIS::strings[0]) == SIS::Count, "status string misdefined");
 
 }
 }

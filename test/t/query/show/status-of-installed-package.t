@@ -28,11 +28,8 @@ test('install', 'ok', 'installed' => '');
 test('install', 'ok', 'half-installed' => '');
 test('install', 'ok', 'unpacked' => '');
 test('install', 'ok', 'half-configured' => '');
-TODO: {
-	local $TODO = 'fix crash on triggers-* states';
-	test('install', 'ok', 'triggers-awaited' => '');
-	test('install', 'ok', 'triggers-pending' => '');
-}
+test('install', 'ok', 'triggers-awaited' => '');
+test('install', 'ok', 'triggers-pending' => '');
 
 test('install', 'ok', 'triggers' => 'status');
 test('install', 'ok', 'triggers-ok' => 'status');
