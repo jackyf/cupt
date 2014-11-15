@@ -1027,12 +1027,10 @@ vector< pair< dg::Element, shared_ptr< const PackageEntry > > > DependencyGraph:
 {
 	__fill_helper.reset(new DependencyGraph::FillHelper(*this, oldPackages));
 
-	{ // getting elements from initial packages
-		for (const auto& item: oldPackages)
-		{
-			const auto& oldVersion = item.second;
-			p_populatePackage(oldVersion->packageName);
-		}
+	for (const auto& item: oldPackages)
+	{
+		const auto& oldVersion = item.second;
+		p_populatePackage(oldVersion->packageName);
 	}
 
 	return p_generateSolutionElements(oldPackages);
