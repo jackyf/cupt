@@ -6,8 +6,10 @@ my $cupt = TestCupt::setup(
 		entail(compose_installed_record('ccc', '1.8.1-5')) ,
 	'packages' =>
 		entail(compose_package_record('bbb', '0.97-4')) .
-		entail(compose_package_record('ccc', '1.8.1-6') . "Depends: ddd\n") .
-		entail(compose_package_record('ddd', '4:4.11.0-3')) ,
+		entail(compose_package_record('ccc', '1.8.1-6') . "Depends: ddd, eee\n") .
+		entail(compose_package_record('ddd', '4:4.11.0-3')) .
+		entail(compose_package_record('eee', '22') . "Depends: brk\n") .
+		entail(compose_package_record('eee', '22', 'sha' => 'dffe') . "Suggests: brk\n") ,
 );
 
 sub test_line {
@@ -52,5 +54,9 @@ subtest 'the hook is run with proper input' => sub {
 	test_configure_line($input, 'bbb', '0.99-1', '0.97-4', '>');
 	test_configure_line($input, 'ccc', '1.8.1-5', '1.8.1-6', '<');
 	test_configure_line($input, 'ddd', '-', '4:4.11.0-3', '<');
+	TODO: {
+		local $TODO = 'fix stripping version id suffix';
+		test_configure_line($input, 'eee', '-', '22', '<');
+	}
 } or diag($offer);
 
