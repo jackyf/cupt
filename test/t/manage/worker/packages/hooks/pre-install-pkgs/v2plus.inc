@@ -54,9 +54,6 @@ subtest 'the hook is run with proper input' => sub {
 	test_configure_line($input, 'bbb', '0.99-1', '0.97-4', '>');
 	test_configure_line($input, 'ccc', '1.8.1-5', '1.8.1-6', '<');
 	test_configure_line($input, 'ddd', '-', '4:4.11.0-3', '<');
-	TODO: {
-		local $TODO = 'fix stripping version id suffix';
-		test_configure_line($input, 'eee', '-', '22', '<');
-	}
+	test_configure_line($input, 'eee', '-', '22', '<');
 } or diag($offer);
 

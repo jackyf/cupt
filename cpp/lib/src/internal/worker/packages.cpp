@@ -1796,6 +1796,11 @@ static string getOldVersionString(const BinaryPackage* oldPackage)
 	return result;
 }
 
+static string getNewVersionString(const BinaryVersion* version)
+{
+	return versionstring::getOriginal(version->versionString).toStdString();
+}
+
 string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(
 		const vector<InnerActionGroup>& actionGroups, bool v3)
 {
@@ -1832,7 +1837,7 @@ string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(
 			const string& packageName = version->packageName;
 
 			string oldVersionString = getOldVersionString(_cache->getBinaryPackage(packageName));
-			string newVersionString = (action.type == InnerAction::Remove ? "-" : version->versionString);
+			string newVersionString = (action.type == InnerAction::Remove ? "-" : getNewVersionString(version));
 
 			result += format2("%s %s %s %s %s\n",
 					packageName,
