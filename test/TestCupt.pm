@@ -248,9 +248,10 @@ sub compose_installed_record {
 }
 
 sub compose_package_record {
-	my ($package_name, $version_string) = @_;
+	my ($package_name, $version_string, %options) = @_;
 
-	return "Package: $package_name\nVersion: $version_string\nArchitecture: all\nSHA1: abcdef\n";
+	my $sha = ($options{'sha'} // 'abcdef');
+	return "Package: $package_name\nVersion: $version_string\nArchitecture: all\nSHA1: $sha\n";
 }
 
 sub compose_autoinstalled_record {
