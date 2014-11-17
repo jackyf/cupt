@@ -95,24 +95,35 @@ ScoreChange ScoreManager::getVersionScoreChange(const BinaryVersion* originalVer
 void ScoreManager::p_addVersionChangeWeight(ScoreChange* scoreChange,
 		const BinaryVersion* originalVersion, const BinaryVersion* supposedVersion) const
 {
-	auto getWeight = [this](const BinaryVersion* bv)
+	struct WeightAndPriority
 	{
-		return bv ? (__cache->getPin(bv) - __preferred_version_default_pin) : 0;
+		ssize_t weight;
+		ssize_t priority;
 	};
-	auto getPriority = [this](const BinaryVersion* bv, ssize_t ifNull)
+	auto getWeightAndPriority = [this](const BinaryVersion* bv, ssize_t priorityIfNull)
 	{
-		return bv ? __cache->getPin(bv) : ifNull;
+		WeightAndPriority result;
+
+		if (bv)
+		{
+			result.priority = __cache->getPin(bv);
+			result.weight = result.priority - __preferred_version_default_pin;
+		}
+		else
+		{
+			result.weight = 0;
+			result.priority = priorityIfNull;
+		}
+
+		return result;
 	};
 
-	auto supposedVersionWeight = getWeight(supposedVersion);
-	auto originalVersionWeight = getWeight(originalVersion);
-
-	auto supposedVersionPriority = getPriority(supposedVersion, __preferred_version_default_pin);
-	auto originalVersionPriority = getPriority(originalVersion, 0);
+	auto ofOriginal = getWeightAndPriority(originalVersion, 0);
+	auto ofSupposed = getWeightAndPriority(supposedVersion, __preferred_version_default_pin);
 
 	auto value = p_getFactoredVersionScore(
-			supposedVersionWeight - originalVersionWeight,
-			supposedVersionPriority - originalVersionPriority);
+			ofSupposed.weight - ofOriginal.weight,
+			ofSupposed.priority - ofOriginal.priority);
 
 	scoreChange->__subscores[ScoreChange::SubScore::Version] = value;
 }
