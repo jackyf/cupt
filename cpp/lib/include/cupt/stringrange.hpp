@@ -49,6 +49,17 @@ struct StringRange: public Range<const char*>
 	{
 		return std::find(begin(), end(), c);
 	}
+
+	size_t size() const
+	{
+		return end() - begin();
+	}
+
+	bool equal(StringRange other) const
+	{
+		return size() == other.size() &&
+				std::equal(begin(), end(), other.begin());
+	}
 };
 
 }
