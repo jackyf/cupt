@@ -28,11 +28,5 @@ StringRange getOriginal(const StringRange& s)
 	return { s.first, s.find(idSuffixDelimiter) };
 }
 
-bool sameOriginal(const string& left, const string& right)
-{
-	return left.compare(0, left.rfind(idSuffixDelimiter),
-			right, 0, right.rfind(idSuffixDelimiter)) == 0;
-}
-
 }
 }

@@ -49,6 +49,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         because of a broken relation), propose higher versions first.
     - versionstring:
       - [API break] 'getOriginal': return StringRange.
+      - [API break] 'sameOriginal': removed as obsolete.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
