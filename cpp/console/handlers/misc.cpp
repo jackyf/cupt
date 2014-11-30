@@ -60,6 +60,13 @@ string getPrintableInstalledStatus(const Cache& cache, const string& packageName
 	return status;
 }
 
+vector<string> toStrings(const vector<Relation>& input)
+{
+	vector<string> result;
+	for (const auto& elem: input) { result.push_back(elem.toString()); }
+	return result;
+}
+
 }
 
 int showBinaryVersions(Context& context)
@@ -174,7 +181,7 @@ int showBinaryVersions(Context& context)
 			{
 				p(__(BinaryVersion::RelationTypes::strings[i].c_str()), version->relations[i].toString());
 			}
-			p(__("Provides"), join(", ", version->provides));
+			p(__("Provides"), join(", ", toStrings(version->provides)));
 			auto reverseProvides = getReverseProvides(packageName);
 			p(__("Provided by"), reverseProvides.toString());
 			{

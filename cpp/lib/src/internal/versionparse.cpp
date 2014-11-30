@@ -189,7 +189,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 				{
 					auto callback = [&v](const char* begin, const char* end)
 					{
-						v->provides.push_back(string(begin, end));
+						v->provides.emplace_back(std::make_pair(begin, end));
 					};
 					internal::parse::processSpaceCharSpaceDelimitedStrings(
 							tagValue.first, tagValue.second, ',', callback);

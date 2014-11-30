@@ -585,9 +585,9 @@ class ProvidesFS: public RegexMatchBaseFS
 	bool _match(const Cache&, const SPCV& v) const
 	{
 		auto version = static_cast< const BinaryVersion* >(v);
-		for (const string& virtualPackageName: version->provides)
+		for (const auto& elem: version->provides)
 		{
-			if (_matcher.match(virtualPackageName))
+			if (_matcher.match(elem.packageName))
 			{
 				return true;
 			}

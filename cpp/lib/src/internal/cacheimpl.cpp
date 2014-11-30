@@ -156,39 +156,53 @@ void CacheImpl::addRealPackageSatisfyingVersions(vector<const BinaryVersion*>* r
 	// otherwise unsupported
 }
 
-void CacheImpl::addVirtualPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
-{
-	const string& packageName = relation.packageName;
+namespace {
 
-	// virtual package can only be considered if no relation sign is specified
+bool providesChunkMatchesRelation(const Relation& providesChunk, const Relation& relation)
+{
+	if (providesChunk.packageName != relation.packageName)
+	{
+		return false;
+	}
 	if (relation.relationType == Relation::Types::None)
 	{
-		// looking for reverse-provides
-		auto reverseProvidesIt = canProvide.find(packageName);
-		if (reverseProvidesIt != canProvide.end())
+		return true;
+	}
+	if (providesChunk.relationType != Relation::Types::Equal)
+	{
+		return false;
+	}
+	return relation.isSatisfiedBy(providesChunk.versionString);
+}
+
+}
+
+void CacheImpl::addVirtualPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
+{
+	auto reverseProvidesIt = canProvide.find(relation.packageName);
+	if (reverseProvidesIt != canProvide.end())
+	{
+		for (const auto& it: reverseProvidesIt->second)
 		{
-			for (const auto& it: reverseProvidesIt->second)
+			auto reverseProvidePackage = getBinaryPackage(*it);
+			if (!reverseProvidePackage)
 			{
-				auto reverseProvidePackage = getBinaryPackage(*it);
-				if (!reverseProvidePackage)
+				continue;
+			}
+			for (auto version: *reverseProvidePackage)
+			{
+				if (version->isInstalled() &&
+						systemState->getInstalledInfo(version->packageName)->isBroken())
 				{
 					continue;
 				}
-				for (auto version: *reverseProvidePackage)
+				for (const auto& providesChunk: version->provides)
 				{
-					if (version->isInstalled() &&
-							systemState->getInstalledInfo(version->packageName)->isBroken())
+					if (providesChunkMatchesRelation(providesChunk, relation))
 					{
-						continue;
-					}
-					for (const auto& realProvidesPackageName: version->provides)
-					{
-						if (realProvidesPackageName == packageName)
-						{
-							// ok, this particular version does provide this virtual package
-							result->push_back(version);
-							break;
-						}
+						// ok, this particular version does provide this virtual package
+						result->push_back(version);
+						break;
 					}
 				}
 			}

@@ -50,9 +50,14 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - versionstring:
       - [API break] 'getOriginal': return StringRange.
       - [API break] 'sameOriginal': removed as obsolete.
+    - cache/binaryversion:
+      - [API break] 'provides': are now versioned.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
+  * debian:
+    - control:
+      - Added 'Breaks: dpkg (<< 1.17.11~)' for version provides support.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
 
