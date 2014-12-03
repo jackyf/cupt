@@ -97,8 +97,6 @@ sub test_comparison {
 foreach (@data) {
 	my ($v1, $v2, $expected_result) = @$_;
 
-	local $TODO = 'fix underscores' if ($v1 =~ m/_/);
-
 	test_is_correct($v1);
 	test_is_correct($v2);
 	test_comparison($v1, $v2, $expected_result);

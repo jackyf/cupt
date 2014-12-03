@@ -101,14 +101,15 @@ bool __check_version_string(const string& input,
 	firstUpstreamCharacter = *current;
 	while (current != upstream.second)
 	{
-		if (!(__check_version_symbol(*current) || (colonAllowed && *current == ':')))
-		{
-			return false;
-		}
 		if (*current == '_')
 		{
 			underscoresPresent = true;
 		}
+		else if (!(__check_version_symbol(*current) || (colonAllowed && *current == ':')))
+		{
+			return false;
+		}
+
 		++current;
 	}
 
@@ -116,14 +117,15 @@ bool __check_version_string(const string& input,
 	current = revision.first;
 	while (current != revision.second)
 	{
-		if (!__check_version_symbol(*current))
-		{
-			return false;
-		}
 		if (*current == '_')
 		{
 			underscoresPresent = true;
 		}
+		else if (!__check_version_symbol(*current))
+		{
+			return false;
+		}
+
 		++current;
 	}
 

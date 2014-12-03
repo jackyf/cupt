@@ -52,6 +52,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] 'sameOriginal': removed as obsolete.
     - cache/binaryversion:
       - [API break] 'provides': are now versioned.
+    - common:
+      - 'checkVersionString': accept underscores (with warnings) again. This
+        regression was introduced in 2.0.0~alpha1.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
