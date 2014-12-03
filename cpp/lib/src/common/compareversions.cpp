@@ -25,42 +25,35 @@
 
 namespace cupt {
 
-typedef pair< string::const_iterator, string::const_iterator > StringAnchorPair;
+typedef const char* Anchor;
+typedef StringRange StringAnchorPair;
 
 void __divide_versions_parts(const string& versionString, StringAnchorPair& epoch,
 		StringAnchorPair& upstream, StringAnchorPair& revision)
 {
-	epoch.first = versionString.begin();
+	auto originalVersionString = versionstring::getOriginal(versionString);
 
-	auto position = versionString.rfind(versionstring::idSuffixDelimiter);
-	if (position != string::npos)
-	{
-		revision.second = versionString.begin() + position;
-	}
-	else
-	{
-		revision.second = versionString.end();
-	}
+	epoch.first = originalVersionString.begin();
+	revision.second = originalVersionString.end();
 
-	position = versionString.find(':');
+	auto position = versionString.find(':');
 	if (position != string::npos)
 	{
 		// we found an epoch
-		auto it = versionString.begin() + position;
+		auto it = epoch.first + position;
 		epoch.second = it;
 		upstream.first = it + 1;
 	}
 	else
 	{
-		epoch.second = epoch.first;
-		upstream.first = versionString.begin();
+		upstream.first = epoch.second = epoch.first;
 	}
 
 	position = versionString.rfind('-');
 	if (position != string::npos)
 	{
 		// found a revision
-		auto it = versionString.begin() + position;
+		auto it = epoch.first + position;
 		upstream.second = it;
 		revision.first = it + 1;
 	}
@@ -71,8 +64,7 @@ void __divide_versions_parts(const string& versionString, StringAnchorPair& epoc
 	}
 }
 
-void __consume_number(string::const_iterator& substringStart,
-		string::const_iterator& substringEnd, const string::const_iterator& end)
+void __consume_number(Anchor& substringStart, Anchor& substringEnd, const Anchor& end)
 {
 	// skipping leading zeroes
 	while (substringStart != end && *substringStart == '0')
@@ -94,12 +86,12 @@ static short inline __get_modified_ascii_value(char c)
 
 int __compare_version_part(StringAnchorPair left, StringAnchorPair right)
 {
-	string::const_iterator leftSubstringStart;
-	string::const_iterator rightSubstringStart;
-	string::const_iterator leftSubstringEnd = left.first;
-	string::const_iterator rightSubstringEnd = right.first;
-	const string::const_iterator& leftEnd = left.second;
-	const string::const_iterator& rightEnd = right.second;
+	decltype(left.first)  leftSubstringStart;
+	decltype(right.first) rightSubstringStart;
+	auto leftSubstringEnd = left.first;
+	auto rightSubstringEnd = right.first;
+	const auto leftEnd = left.second;
+	const auto rightEnd = right.second;
 
 	bool numberMode = false;
 
@@ -222,8 +214,8 @@ int compareVersionStrings(const string& left, const string& right)
 		return upstreamComparisonResult;
 	}
 
-	static const string zeroRevision = "0";
-	static const auto zeroRevisionAnchorPair = make_pair(zeroRevision.begin(), zeroRevision.end());
+	static const char* zeroRevision = "0";
+	static const StringAnchorPair zeroRevisionAnchorPair(zeroRevision, zeroRevision + 1);
 
 	// ok, checking revisions
 	const StringAnchorPair* leftAnchorPair;

@@ -19,7 +19,7 @@
 #include <cerrno>
 #include <map>
 
-#include <cupt/common.hpp>
+#include <internal/common.hpp>
 
 namespace cupt {
 namespace internal {
@@ -99,7 +99,7 @@ bool architectureMatch(const string& architecture, const string& pattern)
 	return it->second;
 }
 
-uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input)
+uint32_t string2uint32(StringRange input)
 {
 	char buf[16] = {0};
 	size_t inputLength = input.second - input.first;
@@ -107,7 +107,7 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 	{
 		fatal2(__("too long number string"));
 	}
-	memcpy(buf, &(*input.first), inputLength);
+	memcpy(buf, input.first, inputLength);
 	errno = 0;
 	long long number = strtoll(buf, NULL, 10);
 	if (errno)
@@ -124,6 +124,12 @@ uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > in
 	}
 	return uint32_t(number);
 }
+
+uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input)
+{
+	return string2uint32(StringRange{ &*input.first, &*input.second });
+}
+
 
 } // namespace
 } // namespace

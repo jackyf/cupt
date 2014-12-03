@@ -27,9 +27,13 @@ template < typename IteratorT >
 struct Range: public std::pair< IteratorT, IteratorT >
 {
 	typedef std::pair< IteratorT, IteratorT > Base;
+
+	Range()
+	{}
 	Range(const IteratorT& from, const IteratorT& to)
 		: Base(from, to)
 	{}
+
 	IteratorT begin() const
 	{
 		return Base::first;

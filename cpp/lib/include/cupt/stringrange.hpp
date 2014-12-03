@@ -32,6 +32,9 @@ struct StringRange: public Range<const char*>
 
 	typedef Range<const char*> Base;
 
+	StringRange()
+	{}
+
 	StringRange(const string& s)
 		: Base(&*s.begin(), &*s.end())
 	{}

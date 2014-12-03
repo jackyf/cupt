@@ -16,6 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <cupt/common.hpp>
+#include <cupt/stringrange.hpp>
 
 namespace cupt {
 
@@ -51,7 +52,7 @@ bool checkPackageName(const string& input, bool throwOnError)
 }
 
 // kind of HACK: I want to use this function, but don't want to create a header for it
-typedef pair< string::const_iterator, string::const_iterator > StringAnchorPair;
+typedef StringRange StringAnchorPair;
 void __divide_versions_parts(const string& versionString,
 		StringAnchorPair& epoch, StringAnchorPair& upstream, StringAnchorPair& revision);
 
@@ -81,7 +82,7 @@ bool __check_version_string(const string& input,
 	__divide_versions_parts(input, epoch, upstream, revision);
 
 	// checking epoch
-	string::const_iterator current = epoch.first;
+	auto current = epoch.first;
 	while (current != epoch.second)
 	{
 		if (*current < '0' || *current > '9')

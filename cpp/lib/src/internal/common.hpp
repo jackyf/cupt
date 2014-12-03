@@ -21,6 +21,7 @@
 #include <sys/wait.h>
 
 #include <cupt/common.hpp>
+#include <cupt/stringrange.hpp>
 
 namespace cupt {
 namespace internal {
@@ -33,6 +34,7 @@ string getWaitStatusDescription(int status);
 
 // we may use following instead of boost::lexical_cast<> because of speed
 uint32_t string2uint32(pair< string::const_iterator, string::const_iterator > input);
+uint32_t string2uint32(StringRange input);
 
 bool architectureMatch(const string& architecture, const string& pattern);
 
