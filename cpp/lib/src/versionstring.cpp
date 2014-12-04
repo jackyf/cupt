@@ -17,15 +17,15 @@
 **************************************************************************/
 #include <cupt/versionstring.hpp>
 
+#include <internal/common.hpp>
+
 namespace cupt {
 namespace versionstring {
-
-char idSuffixDelimiter = '^';
 
 //TODO: VersionString class?
 StringRange getOriginal(const StringRange& s)
 {
-	return { s.first, s.find(idSuffixDelimiter) };
+	return { s.first, s.find(internal::idSuffixDelimiter) };
 }
 
 }

@@ -38,6 +38,8 @@ uint32_t string2uint32(StringRange input);
 
 bool architectureMatch(const string& architecture, const string& pattern);
 
+const char idSuffixDelimiter = '^';
+
 } // namespace
 } // namespace
 

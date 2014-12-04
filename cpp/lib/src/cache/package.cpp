@@ -25,6 +25,7 @@
 #include <cupt/versionstring.hpp>
 
 #include <internal/versionparse.hpp>
+#include <internal/common.hpp>
 
 namespace cupt {
 namespace cache {
@@ -71,7 +72,7 @@ inline bool __is_installed(const Version* version)
 
 void addVersionIdSuffix(string* dest, const string& suffix)
 {
-	*dest += versionstring::idSuffixDelimiter;
+	*dest += internal::idSuffixDelimiter;
 	*dest += suffix;
 }
 

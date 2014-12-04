@@ -24,8 +24,6 @@
 namespace cupt {
 namespace versionstring {
 
-CUPT_API extern char idSuffixDelimiter;
-
 CUPT_API StringRange getOriginal(const StringRange& versionString);
 
 }
