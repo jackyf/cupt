@@ -61,10 +61,22 @@ vector< const Version* > Package::getVersions() const
 	return result;
 }
 
-static inline bool __is_installed(const Version* version)
+namespace {
+
+inline bool __is_installed(const Version* version)
 {
 	auto binaryVersion = dynamic_cast< const BinaryVersion* >(version);
 	return (binaryVersion && binaryVersion->isInstalled());
+}
+
+void addVersionIdSuffix(string* dest, const string& suffix)
+{
+	*dest += versionstring::idSuffixDelimiter;
+	*dest += suffix;
+}
+
+const string installedSuffix = "installed";
+
 }
 
 void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
@@ -81,8 +93,7 @@ void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 		{
 			// no way to know is this version the same as in repositories,
 			// until for example #667665 is implemented
-			parsedVersion->versionString += versionstring::idSuffixDelimiter;
-			parsedVersion->versionString += "installed";
+			addVersionIdSuffix(&parsedVersion->versionString, installedSuffix);
 			__parsed_versions.push_back(std::move(parsedVersion));
 		}
 		else
@@ -120,8 +131,7 @@ void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 				if (clashed)
 				{
 					static size_t idCounter = 0;
-					parsedVersion->versionString += versionstring::idSuffixDelimiter;
-					parsedVersion->versionString += format2("dhs%zu", idCounter++);
+					addVersionIdSuffix(&parsedVersion->versionString, format2("dhs%zu", idCounter++));
 				}
 				__parsed_versions.push_back(std::move(parsedVersion));
 			}
