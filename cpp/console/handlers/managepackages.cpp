@@ -350,7 +350,7 @@ static void processReinstallExpression(ManagePackagesContext& mpc, const string&
 	{
 		fatal2(__("the package '%s' is not installed"), packageExpression);
 	}
-	const string targetVersionString = versionstring::getOriginal(installedVersion->versionString).toStdString();
+	const string targetVersionString = getOriginalVersionString(installedVersion->versionString).toStdString();
 	auto targetVersion = package->getSpecificVersion(targetVersionString);
 	if (!targetVersion)
 	{

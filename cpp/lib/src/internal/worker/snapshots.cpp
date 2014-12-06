@@ -137,7 +137,7 @@ void SnapshotsWorker::__do_repacks(const vector< string >& installedPackageNames
 				}
 				const string& badFilename = files[0];
 				auto goodFilename = format2("%s_%s_%s.deb", packageName,
-						versionstring::getOriginal(version->versionString), architecture);
+						getOriginalVersionString(version->versionString), architecture);
 
 				if (!fs::move(badFilename, goodFilename))
 				{

@@ -50,6 +50,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - versionstring:
       - [API break] 'getOriginal': return StringRange.
       - [API break] 'sameOriginal': removed as obsolete.
+      - [API break] 'getOriginal': moved out of 'versionstring' namespace.
     - cache/binaryversion:
       - [API break] 'provides': are now versioned.
     - common:

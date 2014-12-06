@@ -105,7 +105,7 @@ void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
 			bool merged = false;
 			for (const auto& presentVersion: __parsed_versions)
 			{
-				if (!versionstring::getOriginal(presentVersion->versionString).equal(parsedVersionString))
+				if (!getOriginalVersionString(presentVersion->versionString).equal(parsedVersionString))
 				{
 					continue;
 				}

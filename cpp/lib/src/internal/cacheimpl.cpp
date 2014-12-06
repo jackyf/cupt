@@ -741,8 +741,8 @@ ssize_t CacheImpl::computePin(const Version* version, const BinaryPackage* binar
 		for (const auto& otherVersion: *binaryPackage)
 		{
 			if (otherVersion == version) continue;
-			if (versionstring::getOriginal(otherVersion->versionString).equal(
-					versionstring::getOriginal(installedVersionString)))
+			if (getOriginalVersionString(otherVersion->versionString).equal(
+					getOriginalVersionString(installedVersionString)))
 			{
 				auto otherPin = getPin(otherVersion, [&binaryPackage]() { return binaryPackage; });
 				if (otherPin > result) result = otherPin;

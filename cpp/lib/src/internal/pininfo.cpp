@@ -397,7 +397,7 @@ void PinInfo::adjustUsingPinSettings(const Version* version, ssize_t& priority) 
 					}
 					break;
 				case PinEntry::Condition::Version:
-					matched = regex_search(versionstring::getOriginal(version->versionString), m, regex);
+					matched = regex_search(getOriginalVersionString(version->versionString), m, regex);
 					break;
 #define RELEASE_CASE(constant, expression) \
 				case PinEntry::Condition::constant: \

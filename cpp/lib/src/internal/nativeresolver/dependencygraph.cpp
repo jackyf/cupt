@@ -681,8 +681,8 @@ class DependencyGraph::FillHelper
 			{
 				auto existingVersion = (static_cast< const VersionVertex* >(bv))->version;
 				if (!existingVersion) continue;
-				if (versionstring::getOriginal(version->versionString).equal(
-						versionstring::getOriginal(existingVersion->versionString)))
+				if (getOriginalVersionString(version->versionString).equal(
+						getOriginalVersionString(existingVersion->versionString)))
 				{
 					if (std::equal(version->relations,
 								version->relations + BinaryVersion::RelationTypes::Count,

@@ -45,7 +45,7 @@ struct Range: public std::pair< IteratorT, IteratorT >
 	typedef typename std::decay<decltype(*std::declval<IteratorT>())>::type Value;
 	auto asVector() const -> std::vector< Value >
 	{
-		vector< Value > result;
+		std::vector< Value > result;
 		for (const auto& element: *this)
 		{
 			result.push_back(element);

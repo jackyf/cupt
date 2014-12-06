@@ -1789,7 +1789,7 @@ static string getOldVersionString(const BinaryPackage* oldPackage)
 	{
 		if (auto installedVersion = oldPackage->getInstalledVersion())
 		{
-			result = versionstring::getOriginal(installedVersion->versionString).toStdString();
+			result = getOriginalVersionString(installedVersion->versionString).toStdString();
 		}
 	}
 
@@ -1798,7 +1798,7 @@ static string getOldVersionString(const BinaryPackage* oldPackage)
 
 static string getNewVersionString(const BinaryVersion* version)
 {
-	return versionstring::getOriginal(version->versionString).toStdString();
+	return getOriginalVersionString(version->versionString).toStdString();
 }
 
 string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(

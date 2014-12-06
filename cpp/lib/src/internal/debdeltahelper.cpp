@@ -155,7 +155,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			// not very reliable :(
 			string appendage = version->sources[0].directory + '/';
 			appendage += join("_", vector< string >{ packageName,
-					mangleVersionString(versionstring::getOriginal(installedVersion->versionString)),
+					mangleVersionString(getOriginalVersionString(installedVersion->versionString)),
 					mangleVersionString(version->versionString),
 					version->architecture });
 			appendage += ".debdelta";

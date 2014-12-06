@@ -20,6 +20,7 @@
 
 #include <cupt/range.hpp>
 
+#include <string>
 #include <algorithm>
 
 namespace cupt {
@@ -35,7 +36,7 @@ struct StringRange: public Range<const char*>
 	StringRange()
 	{}
 
-	StringRange(const string& s)
+	StringRange(const std::string& s)
 		: Base(&*s.begin(), &*s.end())
 	{}
 
@@ -43,9 +44,9 @@ struct StringRange: public Range<const char*>
 		: Base(a, b)
 	{}
 
-	string toStdString() const
+	std::string toStdString() const
 	{
-		return string(begin(), end());
+		return std::string(begin(), end());
 	}
 
 	Iterator find(char c) const

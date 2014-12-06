@@ -31,7 +31,7 @@ typedef StringRange StringAnchorPair;
 void __divide_versions_parts(const string& versionString, StringAnchorPair& epoch,
 		StringAnchorPair& upstream, StringAnchorPair& revision)
 {
-	auto originalVersionString = versionstring::getOriginal(versionString);
+	auto originalVersionString = getOriginalVersionString(versionString);
 
 	epoch.first = originalVersionString.begin();
 	revision.second = originalVersionString.end();

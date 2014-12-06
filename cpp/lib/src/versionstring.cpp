@@ -20,13 +20,10 @@
 #include <internal/common.hpp>
 
 namespace cupt {
-namespace versionstring {
 
-//TODO: VersionString class?
-StringRange getOriginal(const StringRange& s)
+StringRange getOriginalVersionString(const StringRange& s)
 {
 	return { s.first, s.find(internal::idSuffixDelimiter) };
 }
 
-}
 }

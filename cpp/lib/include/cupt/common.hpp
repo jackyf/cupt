@@ -30,6 +30,8 @@
 #include <memory>
 #include <stdexcept>
 
+#include <cupt/stringrange.hpp>
+
 /** @namespace cupt */
 namespace cupt {
 
@@ -135,6 +137,18 @@ bool CUPT_API checkVersionString(const string& versionString, bool throwOnError 
  * cache::Package, you should use this function to test their equality.
  */
 int CUPT_API compareVersionStrings(const string& left, const string& right);
+
+/// gets the original part of possibly Cupt-modified version string
+/**
+ * Cupt may apply Cupt-specific id suffixes to original version strings for
+ * its own use, mainly for distinguishing version which declare same version
+ * strings in the metadata but (possibly) having different content.
+ *
+ * This function tells the version string as it was seen in the metadata.
+ *
+ * @param versionString
+ */
+CUPT_API StringRange getOriginalVersionString(const StringRange& versionString);
 
 } // namespace
 
