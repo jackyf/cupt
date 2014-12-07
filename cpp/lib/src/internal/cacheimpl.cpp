@@ -27,6 +27,7 @@
 #include <cupt/system/state.hpp>
 #include <cupt/file.hpp>
 #include <cupt/versionstring.hpp>
+#include <cupt/packagename.hpp>
 
 #include <internal/cacheimpl.hpp>
 #include <internal/filesystem.hpp>

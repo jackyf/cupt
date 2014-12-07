@@ -16,6 +16,7 @@
 *   51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA               *
 **************************************************************************/
 #include <cupt/common.hpp>
+#include <cupt/packagename.hpp>
 #include <cupt/versionstring.hpp>
 
 namespace cupt {

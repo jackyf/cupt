@@ -40,6 +40,7 @@ using std::endl;
 #include <cupt/system/worker.hpp>
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
+#include <cupt/packagename.hpp>
 #include <cupt/versionstring.hpp>
 
 typedef Worker::Action WA;

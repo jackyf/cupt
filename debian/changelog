@@ -56,8 +56,10 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - common:
       - 'checkVersionString': accept underscores (with warnings) again. This
         regression was introduced in 2.0.0~alpha1.
-      - [API break]: 'checkVersionString', 'compareVersionStrings': moved to
+      - [API break] 'checkVersionString', 'compareVersionStrings': moved to
         'versionstring' header.
+      - [API break] 'checkPackageName', 'consumePackageName': moved to
+        'packagename' header.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

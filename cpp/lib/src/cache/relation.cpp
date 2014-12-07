@@ -19,6 +19,7 @@
 
 #include <cupt/common.hpp>
 #include <cupt/cache/relation.hpp>
+#include <cupt/packagename.hpp>
 #include <cupt/versionstring.hpp>
 
 #include <internal/common.hpp>

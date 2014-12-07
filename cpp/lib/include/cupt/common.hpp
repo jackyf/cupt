@@ -90,34 +90,6 @@ CUPT_API string globToRegexString(const string&);
  */
 CUPT_API const char* __(const char* message);
 
-/// reads package name in range
-/**
- * Tries to read as more characters as possible from the @a begin, which form a
- * valid package name, until @a end.
- *
- * @param begin range begin iterator
- * @param end range end iterator
- * @param [in,out] resultEnd consumed range end iterator
- *
- * @par Example:
- * @code
- * string input = "zzuf (>= 1.2)";
- * string::const_iterator resultEnd;
- * consumePackageName(input.begin(), input.end(), resultEnd);
- * cout << string(input.begin(), resultEnd) << endl;
- * @endcode
- * @c "zzuf" will be printed
- */
-void CUPT_API consumePackageName(const char* begin, const char* end, const char*& resultEnd);
-
-/// checks package name for correctness
-/**
- * @param packageName package name
- * @param throwOnError if set to @c true, function will throw exception if @a packageName is not correct
- * @return @c true if the @a packageName is correct, @c false if @a packageName is not correct and @a throwOnError is @c false
- */
-bool CUPT_API checkPackageName(const string& packageName, bool throwOnError = true);
-
 } // namespace
 
 #include <cupt/format2.hpp>

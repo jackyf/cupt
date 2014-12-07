@@ -31,6 +31,7 @@ using std::stack;
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/system/state.hpp>
+#include <cupt/packagename.hpp>
 
 #include "../common.hpp"
 #include "../handlers.hpp"
