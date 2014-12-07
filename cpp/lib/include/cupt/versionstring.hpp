@@ -21,6 +21,8 @@
 #include <cupt/common.hpp>
 #include <cupt/stringrange.hpp>
 
+/*! @file */
+
 namespace cupt {
 
 /// checks version string for correctness

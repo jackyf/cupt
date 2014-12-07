@@ -20,6 +20,8 @@
 
 #include <cupt/common.hpp>
 
+/*! @file */
+
 namespace cupt {
 
 /// reads package name in range
