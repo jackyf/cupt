@@ -19,6 +19,7 @@
 #include <functional>
 
 #include <common/regex.hpp>
+#include <cupt/versionstring.hpp>
 
 #include "common.hpp"
 #include "selectors.hpp"

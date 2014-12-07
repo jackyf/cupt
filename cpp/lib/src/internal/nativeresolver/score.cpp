@@ -21,6 +21,7 @@
 #include <cupt/cache.hpp>
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/resolver.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/nativeresolver/score.hpp>
 

@@ -23,6 +23,7 @@
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/system/state.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/cacheimpl.hpp>
 #include <internal/filesystem.hpp>

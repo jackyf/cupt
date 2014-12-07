@@ -19,6 +19,7 @@
 #include <cupt/cache/binaryversion.hpp>
 #include <cupt/cache/sourceversion.hpp>
 #include <cupt/cache/releaseinfo.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/common.hpp>
 #include <internal/tagparser.hpp>

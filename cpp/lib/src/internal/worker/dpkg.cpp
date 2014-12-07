@@ -18,6 +18,7 @@
 #include <cupt/config.hpp>
 #include <cupt/cache.hpp>
 #include <cupt/cache/binarypackage.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/worker/dpkg.hpp>
 

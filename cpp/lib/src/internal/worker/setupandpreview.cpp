@@ -20,6 +20,7 @@
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/system/state.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/filesystem.hpp>
 
