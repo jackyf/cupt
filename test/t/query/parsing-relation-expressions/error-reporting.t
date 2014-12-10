@@ -4,11 +4,12 @@ use Test::More tests => 15 + 18;
 use strict;
 use warnings;
 
+my $cupt = TestCupt::setup();
+
 sub test {
 	my ($relation, $expected_error_string, $error_part) = @_;
 	$expected_error_string = 'E: ' . $expected_error_string;
 
-	my $cupt = TestCupt::setup();
 	my $output = stdall("$cupt -s satisfy '$relation-'");
 
 	my $comment = "relation '$relation' has broken $error_part";
