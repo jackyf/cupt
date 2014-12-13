@@ -117,27 +117,47 @@ bool Relation::__parse_versioned_info(const char* current, const char* end)
 	return (current == end);
 }
 
-void Relation::__init(const char* start, const char* end)
+const char* Relation::p_parsePackagePart(const char* start, const char* end)
 {
 	const char* current;
 	consumePackageName(start, end, current);
-	if (current != start)
+	if (current == start)
 	{
-		// package name is here
-		packageName.assign(start, current);
+		return nullptr;
 	}
-	else
-	{
-		// no package name, bad
-		string unparsed(start, end);
-		fatal2(__("failed to parse a package name in the relation '%s'"), unparsed);
-	}
+
+	// package name is here
+	packageName.assign(start, current);
 
 	while (current != end && *current == ' ')
 	{
 		++current;
 	}
-	if (current != end && *current == '(')
+
+	if (current == end)
+	{
+		relationType = Types::None;
+		return current;
+	}
+	else if (*current == '(')
+	{
+		return current;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+void Relation::__init(const char* start, const char* end)
+{
+	const char* current = p_parsePackagePart(start, end);
+	if (!current)
+	{
+		// bad character in the middle of package name
+		fatal2(__("failed to parse a package name in the relation '%s'"), string(start, end));
+	}
+	else if (current != end)
 	{
 		++current;
 		// okay, here we should have a versoined info
@@ -146,15 +166,6 @@ void Relation::__init(const char* start, const char* end)
 			string unparsed(start, end);
 			fatal2(__("failed to parse a version part in the relation '%s'"), unparsed);
 		}
-	}
-	else if (current == end)
-	{
-		relationType = Types::None;
-	}
-	else
-	{
-		// bad character in the middle of package name
-		fatal2(__("failed to parse a package name in the relation '%s'"), string(start, end));
 	}
 }
 

@@ -30,6 +30,7 @@ struct CUPT_API Relation
 {
  private:
 	CUPT_LOCAL bool __parse_versioned_info(const char*, const char*);
+	CUPT_LOCAL const char* p_parsePackagePart(const char*, const char*);
 	CUPT_LOCAL void __init(const char*, const char*);
  public:
 	/// %relation type
