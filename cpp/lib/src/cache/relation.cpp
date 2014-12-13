@@ -129,24 +129,17 @@ const char* Relation::p_parsePackagePart(const char* start, const char* end)
 	// package name is here
 	packageName.assign(start, current);
 
-	while (current != end && *current == ' ')
+	relationType = Types::None;
+
+	while (current != end && *current != '(')
 	{
+		if (*current != ' ')
+		{
+			return nullptr;
+		}
 		++current;
 	}
-
-	if (current == end)
-	{
-		relationType = Types::None;
-		return current;
-	}
-	else if (*current == '(')
-	{
-		return current;
-	}
-	else
-	{
-		return nullptr;
-	}
+	return current;
 }
 
 void Relation::__init(const char* start, const char* end)
