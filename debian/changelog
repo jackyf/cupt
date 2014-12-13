@@ -60,6 +60,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         'versionstring' header.
       - [API break] 'checkPackageName', 'consumePackageName': moved to
         'packagename' header.
+    - cache/relation:
+      - [ABI break] Relation: new member 'architecture'.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

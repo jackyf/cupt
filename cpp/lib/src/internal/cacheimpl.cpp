@@ -142,17 +142,15 @@ static inline void addSatisfyingPackageVersions(
 
 void CacheImpl::addRealPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
 {
-	const string& packageName = relation.packageName;
+	auto package = getBinaryPackage(relation.packageName);
 
-	size_t colonPosition = packageName.find(':');
-	if (colonPosition == string::npos)
+	if (relation.architecture.empty())
 	{
-		addSatisfyingPackageVersions<false>(result, relation, getBinaryPackage(packageName), *systemState);
+		addSatisfyingPackageVersions<false>(result, relation, package, *systemState);
 	}
-	else if (packageName.compare(colonPosition+1, string::npos, "any", 3) == 0)
+	else if (relation.architecture.compare(0, string::npos, "any", 3) == 0)
 	{
-		auto realPackageName = packageName.substr(0, colonPosition);
-		addSatisfyingPackageVersions<true>(result, relation, getBinaryPackage(realPackageName), *systemState);
+		addSatisfyingPackageVersions<true>(result, relation, package, *systemState);
 	}
 	// otherwise unsupported
 }

@@ -120,16 +120,21 @@ bool Relation::__parse_versioned_info(const char* current, const char* end)
 const char* Relation::p_parsePackagePart(const char* start, const char* end)
 {
 	const char* current;
+
 	consumePackageName(start, end, current);
-	if (current == start)
-	{
-		return nullptr;
-	}
+	if (current == start) return nullptr;
 
-	// package name is here
 	packageName.assign(start, current);
-
 	relationType = Types::None;
+
+	if (current != end && *current == ':')
+	{
+		start = current+1;
+		consumePackageName(start, end, current);
+		if (current == start) return nullptr;
+
+		architecture.assign(start, current);
+	}
 
 	while (current != end && *current != '(')
 	{
@@ -173,6 +178,11 @@ Relation::~Relation()
 string Relation::toString() const
 {
 	string result = packageName;
+	if (!architecture.empty())
+	{
+		result += ':';
+		result += architecture;
+	}
 	if (relationType != Types::None)
 	{
 		// there is versioned info

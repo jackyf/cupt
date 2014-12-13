@@ -41,9 +41,10 @@ struct CUPT_API Relation
 		/// string values of corresponding types
 		static const string strings[];
 	};
-	string packageName; ///< package name
-	Types::Type relationType; ///< relation type
-	string versionString; ///< version string
+	string packageName;
+	string architecture;
+	Types::Type relationType;
+	string versionString;
 
 	/// constructor
 	/**

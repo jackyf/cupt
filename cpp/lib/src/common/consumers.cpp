@@ -29,8 +29,7 @@ void consumePackageName(const char* begin, const char* end, const char*& resultE
 			(*resultEnd >= 'a' && *resultEnd <= 'z') ||
 			*resultEnd == '_' ||
 			(*resultEnd >= '0' && *resultEnd <= '9') ||
-			*resultEnd == '.' || *resultEnd == '+' || *resultEnd == '-' ||
-			*resultEnd == ':')
+			*resultEnd == '.' || *resultEnd == '+' || *resultEnd == '-')
 		  )
 	{
 		++resultEnd;
