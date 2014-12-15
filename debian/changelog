@@ -60,6 +60,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         'versionstring' header.
       - [API break] 'checkPackageName', 'consumePackageName': moved to
         'packagename' header.
+      - [API break] 'checkPackageName': first parameter's type is now
+        StringRange.
     - cache/relation:
       - [ABI break] Relation: new member 'architecture'.
   * doc:

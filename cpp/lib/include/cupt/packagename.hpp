@@ -19,6 +19,7 @@
 #define CUPT_PACKAGENAME_SEEN
 
 #include <cupt/common.hpp>
+#include <cupt/stringrange.hpp>
 
 /*! @file */
 
@@ -50,7 +51,7 @@ void CUPT_API consumePackageName(const char* begin, const char* end, const char*
  * @param throwOnError if set to @c true, function will throw exception if @a packageName is not correct
  * @return @c true if the @a packageName is correct, @c false if @a packageName is not correct and @a throwOnError is @c false
  */
-bool CUPT_API checkPackageName(const string& packageName, bool throwOnError = true);
+bool CUPT_API checkPackageName(StringRange packageName, bool throwOnError = true);
 
 }
 

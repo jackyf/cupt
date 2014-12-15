@@ -36,17 +36,14 @@ void consumePackageName(const char* begin, const char* end, const char*& resultE
 	}
 }
 
-bool checkPackageName(const string& input, bool throwOnError)
+bool checkPackageName(StringRange input, bool throwOnError)
 {
-	auto begin = input.data();
-	auto end = begin + input.size();
-
 	const char* resultEnd;
-	consumePackageName(begin, end, resultEnd);
-	bool result = (resultEnd == end);
+	consumePackageName(input.begin(), input.end(), resultEnd);
+	bool result = (resultEnd == input.end());
 	if (!result && throwOnError)
 	{
-		fatal2(__("invalid package name '%s'"), input);
+		fatal2(__("invalid package name '%s'"), input.toStdString());
 	}
 	return result;
 }
