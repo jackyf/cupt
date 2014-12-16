@@ -1,10 +1,11 @@
 use TestCupt;
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 use strict;
 use warnings;
 
 my $past_date = 'Mon, 07 Oct 2013 14:44:53 UTC';
+my $corrupted_date = '#%(&Y(&9';
 
 my $cupt = TestCupt::setup(
 	'packages2' =>
@@ -18,7 +19,12 @@ my $cupt = TestCupt::setup(
 				'archive' => 'bbb',
 				'valid-until' => $past_date,
 				'content' => '',
-			}
+			},
+			{
+				'archive' => 'ccc',
+				'valid-until' => $corrupted_date,
+				'content' => '',
+			},
 		]
 );
 
@@ -31,6 +37,9 @@ subtest "release with 'valid-until' date in the past is invalid by default" => s
 	like($output, qr/^E: the release '.* bbb' has expired/, 'warning is printed');
 	like($output, qr/\Qhas expired (expiry time '$past_date')\E/, 'expiry date is printed');
 };
+
+like($output, qr/^\QW: unable to parse the expiry time '$corrupted_date'\E/m,
+		"warning is printed for non-parseable 'valid-until' date");
 
 
 $output = stdall("$cupt policy -o cupt::cache::release-file-expiration::ignore=yes");
