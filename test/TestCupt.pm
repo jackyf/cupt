@@ -172,10 +172,11 @@ sub generate_packages_sources {
 		my $server = $e{'hostname'} // $default_server;
 		my $not_automatic = $e{'not-automatic'} // 0;
 		my $but_automatic_upgrades = $e{'but-automatic-upgrades'} // 0;
+		my $valid_until = $e{'valid-until'} // 'Mon, 07 Oct 2033 14:44:53 UTC';
 		generate_release($scheme, $server,
 				$archive, $codename,
 				$component, $vendor, $version, $label,
-				$not_automatic, $but_automatic_upgrades);
+				$not_automatic, $but_automatic_upgrades, $valid_until);
 	
 		my $is_trusted = $e{'trusted'}//1;
 		my $content = $e{'content'};
@@ -201,7 +202,8 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my ($scheme, $server, $archive, $codename, $component, $vendor, $version, $label, $not_automatic, $but_automatic_upgrades) = @_;
+	my ($scheme, $server, $archive, $codename, $component, $vendor, $version, $label,
+			$not_automatic, $but_automatic_upgrades, $valid_until) = @_;
 
 	my $content = <<END;
 Origin: $vendor
@@ -210,7 +212,7 @@ Label: $label
 Suite: $archive
 Codename: $codename
 Date: Mon, 30 Sep 2013 14:44:53 UTC
-Valid-Until: Mon, 07 Oct 2033 14:44:53 UTC
+Valid-Until: $valid_until
 Architectures: $architecture all
 Components: $component
 END
