@@ -5,3 +5,8 @@ sub setup_for_worker {
 	return TestCupt::setup(%p);
 }
 
+sub get_worker_command {
+	my ($cupt, $command) = @_;
+	return "$cupt -s -y $command";
+}
+

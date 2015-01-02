@@ -12,7 +12,7 @@ sub test_uris {
 		'debpatch' => $p{'debpatch'},
 	);
 
-	my $output = stdall("$cupt -s -y install bbb ccc --remove aaa");
+	my $output = stdall(get_worker_command($cupt, "install bbb ccc --remove aaa"));
 
 	my @downloads = ($output =~ m/^S: downloading: (.*)$/mg);
 
