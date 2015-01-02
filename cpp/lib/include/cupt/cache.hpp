@@ -145,14 +145,14 @@ class CUPT_API Cache
 	/// gets pin value for a version
 	ssize_t getPin(const Version*) const;
 
-	/// contains version and a corresponding pin value
-	struct PinnedVersion
+	/// contains version and its corresponding priority
+	struct VersionWithPriority
 	{
-		const Version* version; ///< version
-		ssize_t pin; ///< pin value
+		const Version* version;
+		ssize_t priority;
 	};
 	/// gets list of versions with pins of certain package
-	vector< PinnedVersion > getSortedPinnedVersions(const Package*) const;
+	vector<VersionWithPriority> getSortedPinnedVersions(const Package*) const;
 	/// gets version of highest pin from the package
 	const Version* getPreferredVersion(const Package*) const;
 

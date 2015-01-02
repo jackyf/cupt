@@ -180,9 +180,9 @@ ssize_t Cache::getPin(const Version* version) const
 	return __impl->getPin(version, getBinaryPackageFromVersion);
 }
 
-vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* package) const
+vector<Cache::VersionWithPriority> Cache::getSortedPinnedVersions(const Package* package) const
 {
-	vector< Cache::PinnedVersion > result;
+	vector<Cache::VersionWithPriority> result;
 
 	auto getBinaryPackage = [&package]()
 	{
@@ -190,23 +190,14 @@ vector< Cache::PinnedVersion > Cache::getSortedPinnedVersions(const Package* pac
 	};
 	for (const auto& version: *package)
 	{
-		result.push_back(PinnedVersion { version, __impl->getPin(version, getBinaryPackage) });
+		result.push_back(VersionWithPriority { version, __impl->getPin(version, getBinaryPackage) });
 	}
 
-	auto sorter = [](const PinnedVersion& left, const PinnedVersion& right) -> bool
+	auto sorter = [](const VersionWithPriority& left, const VersionWithPriority& right) -> bool
 	{
-		if (left.pin < right.pin)
-		{
-			return false;
-		}
-		else if (left.pin > right.pin)
-		{
-			return true;
-		}
-		else
-		{
-			return compareVersionStrings(left.version->versionString, right.version->versionString) > 0;
-		}
+		if (left.priority < right.priority) return false;
+		if (left.priority > right.priority) return true;
+		return compareVersionStrings(left.version->versionString, right.version->versionString) > 0;
 	};
 	std::stable_sort(result.begin(), result.end(), sorter);
 

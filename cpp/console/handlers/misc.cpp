@@ -562,10 +562,9 @@ int policy(Context& context, bool source)
 			for (const auto& pinnedVersion: pinnedVersions)
 			{
 				const auto& version = pinnedVersion.version;
-				auto pin = pinnedVersion.pin;
 
 				cout << format2(" %s %s %zd\n",
-						(version == installedVersion ? "***" : "   "), version->versionString, pin);
+						(version == installedVersion ? "***" : "   "), version->versionString, pinnedVersion.priority);
 
 				for (const auto& source: version->sources)
 				{
