@@ -1,9 +1,10 @@
+eval get_inc_code('../../common');
+
 sub test_uris {
 	my (%p) = @_;
 
-	my $cupt = TestCupt::setup(
+	my $cupt = setup_for_worker(
 		'dpkg_status' =>
-			entail(compose_installed_record('dpkg', 0)) .
 			entail(compose_installed_record('aaa', 1)) .
 			entail(compose_installed_record('bbb', 2)),
 		'packages2' => $p{'packages2'},
