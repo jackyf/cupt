@@ -38,6 +38,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         option, not as absolute path.
       - 'changeSystem': preinstall hooks: pass original version strings of
         supposed versions, not id-suffixed ones.
+      - 'changeSystem': dpkg commands: run '--triggers-only --pending' even if
+        trigger deferring is switched off (see #766758 for discussion).
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
         (Closes: #754480, #622939)

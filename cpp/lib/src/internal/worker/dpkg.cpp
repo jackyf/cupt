@@ -199,11 +199,8 @@ void Dpkg::p_runPendingTriggers()
 
 Dpkg::~Dpkg()
 {
-	if (p_shouldDeferTriggers)
-	{
-		// triggers were not processed during actions perfomed before, do it now at once
-		p_runPendingTriggers();
-	}
+	// triggers might be not processed due to '--no-triggers' or dependency problems (see #766758)
+	p_runPendingTriggers();
 }
 
 void Dpkg::doActionGroup(const InnerActionGroup& actionGroup, const Worker::ActionsPreview& actionsPreview)
