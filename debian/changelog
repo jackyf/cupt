@@ -68,6 +68,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [ABI break] Relation: new member 'architecture'.
     - cache:
       - [API break] PinnedVersion: renamed to VersionWithPriority.
+      - [API break] 'getSortedPinnedVersions': renamed to
+        getSortedVersionsWithPriorities.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

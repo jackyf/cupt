@@ -151,8 +151,8 @@ class CUPT_API Cache
 		const Version* version;
 		ssize_t priority;
 	};
-	/// gets list of versions with pins of certain package
-	vector<VersionWithPriority> getSortedPinnedVersions(const Package*) const;
+	/// gets list of versions with priorities of certain package
+	vector<VersionWithPriority> getSortedVersionsWithPriorities(const Package*) const;
 	/// gets version of highest pin from the package
 	const Version* getPreferredVersion(const Package*) const;
 

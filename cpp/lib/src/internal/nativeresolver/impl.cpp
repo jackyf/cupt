@@ -116,7 +116,7 @@ RelationExpression getNotHigherThanInstalledPinRelationExpression(const Cache& c
 	RelationExpression result;
 
 	auto package = cache.getBinaryPackage(packageName);
-	auto sortedPinnedVersions = cache.getSortedPinnedVersions(package);
+	auto sortedPinnedVersions = cache.getSortedVersionsWithPriorities(package);
 	auto installedVersion = package->getInstalledVersion();
 
 	if (sortedPinnedVersions.front().version == installedVersion) return result;

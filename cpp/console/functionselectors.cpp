@@ -121,7 +121,7 @@ class VersionSetGetter
 	void __add_package_to_result(const string& packageName, FSResult* result) const
 	{
 		// we call getSortedPinnedVersions() to place versions of the same package in the preference order
-		for (auto&& pinnedVersion: __cache.getSortedPinnedVersions(__get_package(packageName)))
+		for (auto&& pinnedVersion: __cache.getSortedVersionsWithPriorities(__get_package(packageName)))
 		{
 			result->emplace_back(std::move(pinnedVersion.version));
 		}

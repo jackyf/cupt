@@ -180,7 +180,7 @@ ssize_t Cache::getPin(const Version* version) const
 	return __impl->getPin(version, getBinaryPackageFromVersion);
 }
 
-vector<Cache::VersionWithPriority> Cache::getSortedPinnedVersions(const Package* package) const
+vector<Cache::VersionWithPriority> Cache::getSortedVersionsWithPriorities(const Package* package) const
 {
 	vector<Cache::VersionWithPriority> result;
 
@@ -206,7 +206,7 @@ vector<Cache::VersionWithPriority> Cache::getSortedPinnedVersions(const Package*
 
 const Version* Cache::getPreferredVersion(const Package* package) const
 {
-	auto sortedPinnedVersions = getSortedPinnedVersions(package);
+	auto sortedPinnedVersions = getSortedVersionsWithPriorities(package);
 	// not assuming the package have at least valid version...
 	if (sortedPinnedVersions.empty())
 	{

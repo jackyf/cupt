@@ -557,7 +557,7 @@ int policy(Context& context, bool source)
 			cout << format2("  %s: %s\n", __("Preferred"), preferredVersion->versionString);
 			cout << format2("  %s:\n",  __("Version table"));
 
-			auto pinnedVersions = cache->getSortedPinnedVersions(package);
+			auto pinnedVersions = cache->getSortedVersionsWithPriorities(package);
 
 			for (const auto& pinnedVersion: pinnedVersions)
 			{
