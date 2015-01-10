@@ -829,9 +829,12 @@ void CacheImpl::p_parseExtendedStatesContent(File& contentFile)
 		}
 
 		string packageName = tagValue.toString();
+		auto& rawRecord = extendedInfo.raw[packageName];
 
 		while (parser.parseNextLine(tagName, tagValue))
 		{
+			rawRecord[tagName.toString()] = tagValue.toString();
+
 			if (tagName.equal(BUFFER_AND_SIZE("Auto-Installed")))
 			{
 				if (tagValue.equal(BUFFER_AND_SIZE("1")))
