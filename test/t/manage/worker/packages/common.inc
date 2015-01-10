@@ -7,7 +7,13 @@ sub setup_for_worker {
 }
 
 sub get_worker_command {
-	my ($cupt, $command) = @_;
-	return "$cupt -s -y $command";
+	my ($cupt, $command, %params) = @_;
+
+	my $options = '-y';
+	if ($params{'simulate'}//1) {
+		$options .= ' -s';
+	}
+
+	return "$cupt $options $command";
 }
 

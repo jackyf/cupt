@@ -6,6 +6,8 @@ use warnings;
 our @EXPORT = qw(
 	get_inc_code
 	exitcode
+	get_extended_states_path
+	get_dpkg_path
 	stdout
 	stdall
 	compose_installed_record
@@ -52,6 +54,15 @@ sub get_inc_code {
 	return `cat $path`;
 }
 
+sub get_extended_states_path {
+	return 'var/lib/apt/extended_states';
+}
+
+my $dpkg_path = '/bin/true';
+sub get_dpkg_path {
+	return $dpkg_path;
+}
+
 sub setup {
 	generate_environment(@_);
 	return generate_binary_command(@_);
@@ -59,6 +70,7 @@ sub setup {
 
 my $pre_conf = <<END;
 dir "<dir>";
+dir::bin::dpkg "$dpkg_path";
 dir::state::status "../dpkg/status";
 cupt::directory "<dir>";
 cupt::console::use-colors "no";
@@ -87,13 +99,15 @@ sub generate_environment {
 	generate_file('pre.conf', $pre_conf);
 	$ENV{'CUPT_PRE_CONFIG'} = "./pre.conf";
 
-	generate_file('var/lib/apt/extended_states', $options{'extended_states'}//'');
+	generate_file(get_extended_states_path(), $options{'extended_states'}//'');
 	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
 	generate_file('etc/apt/sources.list', '');
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
 	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'});
 	generate_file('usr/bin/debpatch', $options{'debpatch'});
 	generate_packages_sources(unify_packages_and_sources_option(\%options));
+	generate_file('var/log/cupt.log', '');
+	generate_file('var/lib/cupt/lock', '');
 }
 
 my $default_archive = 'testing';

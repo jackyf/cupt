@@ -8,7 +8,7 @@ eval get_inc_code('../common');
 
 sub compose_dpkg_aux_command {
 	my ($command) = @_;
-	return "/usr/bin/dpkg $command";
+	return get_dpkg_path . " $command";
 }
 
 my $cupt = setup_for_worker(
