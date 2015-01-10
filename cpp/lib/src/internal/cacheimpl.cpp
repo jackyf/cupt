@@ -789,12 +789,12 @@ string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 
 void CacheImpl::parseExtendedStates()
 {
-	// we are parsing duals like:
+	// we are mainly parsing duals like:
 
 	// Package: perl
 	// Auto-Installed: 1
 
-	// but, rarely another fields may be present, we need to ignore them
+	// but another fields may be present
 
 	try
 	{
@@ -808,39 +808,44 @@ void CacheImpl::parseExtendedStates()
 			return;
 		}
 
-		internal::TagParser parser(&file);
-		internal::TagParser::StringRange tagName, tagValue;
-
-		while (parser.parseNextLine(tagName, tagValue) && !file.eof())
-		{
-			if (!tagName.equal("Package", 7))
-			{
-				fatal2(__("wrong tag: expected 'Package', got '%s'"), tagName.toString());
-			}
-
-			string packageName = tagValue.toString();
-
-			while (parser.parseNextLine(tagName, tagValue))
-			{
-				if (tagName.equal(BUFFER_AND_SIZE("Auto-Installed")))
-				{
-					if (tagValue.equal(BUFFER_AND_SIZE("1")))
-					{
-						// adding to storage
-						extendedInfo.automaticallyInstalled.insert(packageName);
-					}
-					else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
-					{
-						fatal2(__("bad value '%s' (should be 0 or 1) for the package '%s'"),
-								tagValue.toString(), packageName);
-					}
-				}
-			}
-		}
+		p_parseExtendedStatesContent(file);
 	}
 	catch (Exception&)
 	{
 		fatal2(__("unable to parse extended states"));
+	}
+}
+
+void CacheImpl::p_parseExtendedStatesContent(File& contentFile)
+{
+	internal::TagParser parser(&contentFile);
+	internal::TagParser::StringRange tagName, tagValue;
+
+	while (parser.parseNextLine(tagName, tagValue) && !contentFile.eof())
+	{
+		if (!tagName.equal("Package", 7))
+		{
+			fatal2(__("wrong tag: expected 'Package', got '%s'"), tagName.toString());
+		}
+
+		string packageName = tagValue.toString();
+
+		while (parser.parseNextLine(tagName, tagValue))
+		{
+			if (tagName.equal(BUFFER_AND_SIZE("Auto-Installed")))
+			{
+				if (tagValue.equal(BUFFER_AND_SIZE("1")))
+				{
+					// adding to storage
+					extendedInfo.automaticallyInstalled.insert(packageName);
+				}
+				else if (!tagValue.equal(BUFFER_AND_SIZE("0")))
+				{
+					fatal2(__("bad value '%s' (should be 0 or 1) for the package '%s'"),
+							tagValue.toString(), packageName);
+				}
+			}
+		}
 	}
 }
 

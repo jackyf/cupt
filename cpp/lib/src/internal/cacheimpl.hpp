@@ -82,6 +82,7 @@ class CacheImpl
 			shared_ptr< const ReleaseInfo >, const string&);
 	void processTranslationFiles(const IndexEntry&, const string&);
 	void processTranslationFile(const string& path, const string&);
+	void p_parseExtendedStatesContent(File& content);
 
 	void addRealPackageSatisfyingVersions(vector<const BinaryVersion*>*, const Relation&) const;
 	void addVirtualPackageSatisfyingVersions(vector<const BinaryVersion*>*, const Relation&) const;
