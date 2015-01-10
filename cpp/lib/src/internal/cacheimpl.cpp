@@ -820,12 +820,10 @@ void CacheImpl::parseExtendedStates()
 
 			string packageName = tagValue.toString();
 
-			bool valueFound = false;
 			while (parser.parseNextLine(tagName, tagValue))
 			{
 				if (tagName.equal(BUFFER_AND_SIZE("Auto-Installed")))
 				{
-					valueFound = true;
 					if (tagValue.equal(BUFFER_AND_SIZE("1")))
 					{
 						// adding to storage
@@ -837,11 +835,6 @@ void CacheImpl::parseExtendedStates()
 								tagValue.toString(), packageName);
 					}
 				}
-			}
-
-			if (!valueFound)
-			{
-				fatal2(__("didn't found the 'Auto-Installed' tag for the package '%s'"), packageName);
 			}
 		}
 	}

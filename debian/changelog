@@ -70,6 +70,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - [API break] PinnedVersion: renamed to VersionWithPriority.
       - [API break] 'getSortedPinnedVersions': renamed to
         getSortedVersionsWithPriorities.
+      - Parsing extended states: don't choke on records without
+        'Auto-Installed' field.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
