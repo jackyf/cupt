@@ -31,8 +31,6 @@ my $cupt = setup_for_worker(
 		$initial_extended_states_content
 );
 
-local $TODO = 'not implemented';
-
 subtest "the test" => sub {
 	my $output = stdall(get_worker_command($cupt, 'unmarkauto aa --no-auto-remove', 'simulate'=>0));
 	is($?, 0, 'unmarkauto succeeded')

@@ -40,6 +40,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         supposed versions, not id-suffixed ones.
       - 'changeSystem': dpkg commands: run '--triggers-only --pending' even if
         trigger deferring is switched off (see #766758 for discussion).
+      - 'changeSystem': preserve unknown fields when writing to extended
+        states file.
     - system/resolvers/native:
       - Removed the version normalized score calculation skew.
         (Closes: #754480, #622939)

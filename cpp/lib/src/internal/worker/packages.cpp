@@ -1983,10 +1983,13 @@ static void fillExtendedStatesFile(File& file, const Cache::ExtendedInfo::Raw& i
 		const auto& packageName = packageRecord.first;
 		const auto& fieldData = packageRecord.second;
 
-		if (fieldData.count("Auto-Installed"))
+		if (!fieldData.empty())
 		{
 			file.put(format2("Package: %s\n", packageName));
-			file.put("Auto-Installed: 1\n");
+			for (const auto& fieldRecord: fieldData)
+			{
+				file.put(format2("%s: %s\n", fieldRecord.first, fieldRecord.second));
+			}
 			file.put("\n");
 		}
 	}
