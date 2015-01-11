@@ -128,6 +128,7 @@ sub unify_ps_option {
 	}
 	foreach my $entry (@$result) {
 		$entry->{'type'} = $type;
+		$entry->{'downloads'} = ($options->{'downloads'} // 0);
 	}
 
 	return @$result;
@@ -170,6 +171,18 @@ sub generate_file {
 	undef $fh;
 }
 
+sub generate_downloads {
+	my ($packages_content) = @_;
+
+	for my $record (split(/\n\n/, $packages_content)) {
+		my ($package) = ($record =~ m/^Package: (.*)$/m);
+		my ($version) = ($record =~ m/^Version: (.*)$/m);
+		my ($architecture) = ($record =~ m/^Architecture: (.*)$/m);
+
+		generate_file("var/cache/apt/archives/${package}_${version}_${architecture}.deb", '');
+	}
+}
+
 my $default_scheme = 'file';
 my $default_server = '/nonexistent';
 
@@ -202,6 +215,9 @@ sub generate_packages_sources {
 		if ($e{'type'} eq 'packages') {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
 			generate_file("${list_prefix}_${component}_binary-${architecture}_Packages", $content);
+			if ($e{'downloads'}) {
+				generate_downloads($content);
+			}
 		} else {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
 			generate_file("${list_prefix}_${component}_source_Sources", $content);
@@ -266,7 +282,8 @@ sub compose_installed_record {
 sub compose_package_record {
 	my ($package_name, $version_string, %options) = @_;
 
-	my $sha = ($options{'sha'} // 'abcdef');
+	my $sha1_of_empty_file = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
+	my $sha = ($options{'sha'} // $sha1_of_empty_file);
 	return "Package: $package_name\nVersion: $version_string\nArchitecture: all\nSHA1: $sha\n";
 }
 
