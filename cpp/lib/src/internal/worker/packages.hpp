@@ -115,6 +115,7 @@ class PackagesWorker: public virtual WorkerBase
 			InnerAction::Type, const string&, const InnerActionGroup&, bool);
 	void p_processActionGroup(Dpkg&, const InnerActionGroup&);
 	void p_markAsAutomaticallyInstalled(const string& packageName, bool targetStatus);
+	void p_writeExtendedStateFile();
  public:
 	PackagesWorker();
 

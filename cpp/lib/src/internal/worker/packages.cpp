@@ -1963,38 +1963,44 @@ void PackagesWorker::p_markAsAutomaticallyInstalled(const string& packageName, b
 			{
 				__auto_installed_package_names.erase(packageName);
 			}
-			auto extendedInfoPath = cachefiles::getPathOfExtendedStates(*_config);
-			fs::mkpath(fs::dirname(extendedInfoPath));
-			auto tempPath = extendedInfoPath + ".cupt.tmp";
 
-			{
-				string errorString;
-				File tempFile(tempPath, "w", errorString);
-				if (!errorString.empty())
-				{
-					_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-							format2, "unable to open the file '%s': %s", tempPath, errorString);
-				}
-
-				// filling new info
-				FORIT(packageNameIt, __auto_installed_package_names)
-				{
-					tempFile.put(format2("Package: %s\nAuto-Installed: 1\n\n", *packageNameIt));
-				}
-			}
-
-			if (!fs::move(tempPath, extendedInfoPath))
-			{
-				_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
-						format2e, "unable to renew extended states file: unable to rename '%s' to '%s'",
-						tempPath, extendedInfoPath);
-			}
+			p_writeExtendedStateFile();
 		}
 		catch (...)
 		{
 			_logger->loggedFatal2(Logger::Subsystem::Packages, 2,
 					format2, "failed to change the 'automatically installed' flag");
 		}
+	}
+}
+
+void PackagesWorker::p_writeExtendedStateFile()
+{
+	auto extendedInfoPath = cachefiles::getPathOfExtendedStates(*_config);
+	fs::mkpath(fs::dirname(extendedInfoPath));
+	auto tempPath = extendedInfoPath + ".cupt.tmp";
+
+	{
+		string errorString;
+		File tempFile(tempPath, "w", errorString);
+		if (!errorString.empty())
+		{
+			_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+					format2, "unable to open the file '%s': %s", tempPath, errorString);
+		}
+
+		// filling new info
+		FORIT(packageNameIt, __auto_installed_package_names)
+		{
+			tempFile.put(format2("Package: %s\nAuto-Installed: 1\n\n", *packageNameIt));
+		}
+	}
+
+	if (!fs::move(tempPath, extendedInfoPath))
+	{
+		_logger->loggedFatal2(Logger::Subsystem::Packages, 3,
+				format2e, "unable to renew extended states file: unable to rename '%s' to '%s'",
+				tempPath, extendedInfoPath);
 	}
 }
 
