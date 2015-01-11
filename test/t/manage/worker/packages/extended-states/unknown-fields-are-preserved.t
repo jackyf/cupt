@@ -21,7 +21,7 @@ END
 (my $expected_extended_states_content = $initial_extended_states_content)
 		=~ s/(Package: aa\n)Auto-Installed: 1\n/$1/;
 
-eval get_inc_code('../common');
+eval get_inc_code('common');
 
 my $cupt = setup_for_worker(
 	'dpkg_status' =>
@@ -30,13 +30,6 @@ my $cupt = setup_for_worker(
 	'extended_states' =>
 		$initial_extended_states_content
 );
-
-sub get_new_extended_states_content {
-	open(my $fd, '<', get_extended_states_path()) or
-			return '<file not found>';
-	my $result = do { local $/; <$fd> };
-	return $result;
-}
 
 local $TODO = 'not implemented';
 
