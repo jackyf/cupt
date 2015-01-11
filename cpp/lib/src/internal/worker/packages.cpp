@@ -134,7 +134,7 @@ typedef Graph< InnerAction >::CessorListType GraphCessorListType;
 
 PackagesWorker::PackagesWorker()
 {
-	__auto_installed_package_names = _cache->getExtendedInfo().automaticallyInstalled;
+	p_actualExtendedInfo = _cache->getExtendedInfo().raw;
 }
 
 set< string > __get_pseudo_essential_package_names(const Cache& cache, bool debugging)
@@ -1955,13 +1955,15 @@ void PackagesWorker::p_markAsAutomaticallyInstalled(const string& packageName, b
 	{
 		try
 		{
+			static const string autoFlagField = "Auto-Installed";
+			auto& record = p_actualExtendedInfo[packageName];
 			if (targetStatus)
 			{
-				__auto_installed_package_names.insert(packageName);
+				record[autoFlagField] = "1";
 			}
 			else
 			{
-				__auto_installed_package_names.erase(packageName);
+				record.erase(autoFlagField);
 			}
 
 			p_writeExtendedStateFile();
@@ -1970,6 +1972,22 @@ void PackagesWorker::p_markAsAutomaticallyInstalled(const string& packageName, b
 		{
 			_logger->loggedFatal2(Logger::Subsystem::Packages, 2,
 					format2, "failed to change the 'automatically installed' flag");
+		}
+	}
+}
+
+static void fillExtendedStatesFile(File& file, const Cache::ExtendedInfo::Raw& input)
+{
+	for (const auto& packageRecord: input)
+	{
+		const auto& packageName = packageRecord.first;
+		const auto& fieldData = packageRecord.second;
+
+		if (fieldData.count("Auto-Installed"))
+		{
+			file.put(format2("Package: %s\n", packageName));
+			file.put("Auto-Installed: 1\n");
+			file.put("\n");
 		}
 	}
 }
@@ -1989,11 +2007,7 @@ void PackagesWorker::p_writeExtendedStateFile()
 					format2, "unable to open the file '%s': %s", tempPath, errorString);
 		}
 
-		// filling new info
-		FORIT(packageNameIt, __auto_installed_package_names)
-		{
-			tempFile.put(format2("Package: %s\nAuto-Installed: 1\n\n", *packageNameIt));
-		}
+		fillExtendedStatesFile(tempFile, p_actualExtendedInfo);
 	}
 
 	if (!fs::move(tempPath, extendedInfoPath))

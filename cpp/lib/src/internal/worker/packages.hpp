@@ -89,7 +89,7 @@ class Dpkg;
 
 class PackagesWorker: public virtual WorkerBase
 {
-	std::set< string > __auto_installed_package_names;
+	Cache::ExtendedInfo::Raw p_actualExtendedInfo;
 	map< string, unique_ptr< BinaryVersion > > __fake_versions_for_purge;
 
 	const BinaryVersion* __get_fake_version_for_purge(const string&);
