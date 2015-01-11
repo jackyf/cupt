@@ -61,7 +61,8 @@ class CUPT_API Cache
 	/// extended package information
 	struct ExtendedInfo
 	{
-		map<string, map<string, string>> raw; ///< all fields and values in the format "map: (package name) -> (map: field -> value)"
+		typedef map<string, map<string, string>> Raw;
+		Raw raw; ///< all fields and values in the format "map: (package name) -> (map: field -> value)"
 		set< string > automaticallyInstalled; ///< names of automatically installed packages
 	};
 
