@@ -16,15 +16,12 @@ my $cupt = TestCupt::setup(
 		entail(compose_autoinstalled_record('zz')) ,
 );
 
+eval get_inc_code('common');
+
 sub test {
 	my ($package, $expected_output) = @_;
-	$expected_output =~ s/(\w+) (\d):/$1 $2^installed:/g;
 
-	subtest $package => sub {
-		my $output = stdall("$cupt why $package");
-		is($?, 0, 'operation succeeded');
-		is($output, $expected_output, 'output is correct');
-	}
+	test_why($package, '', $expected_output, $package);
 }
 
 test('aa' => '');
