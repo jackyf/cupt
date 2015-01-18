@@ -2,7 +2,8 @@ sub test_why_raw {
 	my ($package, $options, $main_check, $description) = @_;
 
 	subtest $description => sub {
-		my $output = stdall("$cupt why $options $package");
+		my $command = "$cupt why $options $package";
+		my $output = stdall($command);
 		is($?, 0, 'operation succeeded');
 		$main_check->($output);
 	};
