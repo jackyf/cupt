@@ -39,6 +39,39 @@ struct VersionsAndLinks
 {
 	queue<const BinaryVersion*> versions;
 	map<const BinaryVersion*, PathEntry> links;
+
+	void addStartingVersion(const BinaryVersion* version)
+	{
+		versions.push(version);
+		links[version]; // create empty PathEntry for version
+	}
+
+	void initialise(const Cache& cache, const vector<string>& arguments)
+	{
+		if (!arguments.empty())
+		{
+			// selected packages
+			FORIT(argumentIt, arguments)
+			{
+				auto selectedVersions = selectBinaryVersionsWildcarded(cache, *argumentIt);
+				FORIT(it, selectedVersions)
+				{
+					addStartingVersion(*it);
+				}
+			}
+		}
+		else
+		{
+			// the whole system
+			for (const auto& installedVersion: cache.getInstalledVersions())
+			{
+				if (!cache.isAutomaticallyInstalled(installedVersion->packageName))
+				{
+					addStartingVersion(installedVersion);
+				}
+			}
+		}
+	}
 };
 
 int findDependencyChain(Context& context)
@@ -71,37 +104,7 @@ int findDependencyChain(Context& context)
 	auto leafVersion = selectBinaryVersionsWildcarded(*cache, leafPackageExpression, true)[0];
 
 	VersionsAndLinks val;
-
-	auto addStartingVersion = [&val](const BinaryVersion* version)
-	{
-		val.versions.push(version);
-		val.links[version]; // create empty PathEntry for version
-	};
-
-	if (!arguments.empty())
-	{
-		// selected packages
-		FORIT(argumentIt, arguments)
-		{
-			auto selectedVersions = selectBinaryVersionsWildcarded(*cache, *argumentIt);
-			FORIT(it, selectedVersions)
-			{
-				addStartingVersion(*it);
-			}
-		}
-	}
-	else
-	{
-		// the whole system
-		auto installedVersions = cache->getInstalledVersions();
-		for (const auto& installedVersion: installedVersions)
-		{
-			if (!cache->isAutomaticallyInstalled(installedVersion->packageName))
-			{
-				addStartingVersion(installedVersion);
-			}
-		}
-	}
+	val.initialise(*cache, arguments);
 
 	auto config = context.getConfig();
 
