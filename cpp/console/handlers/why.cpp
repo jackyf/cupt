@@ -35,6 +35,12 @@ struct PathEntry
 	const RelationExpression* relationExpressionPtr;
 };
 
+struct VersionsAndLinks
+{
+	queue<const BinaryVersion*> versions;
+	map<const BinaryVersion*, PathEntry> links;
+};
+
 int findDependencyChain(Context& context)
 {
 	// turn off info parsing, we don't need it, only relations
@@ -64,13 +70,12 @@ int findDependencyChain(Context& context)
 	arguments.erase(arguments.end() - 1);
 	auto leafVersion = selectBinaryVersionsWildcarded(*cache, leafPackageExpression, true)[0];
 
-	queue< const BinaryVersion* > versions;
-	map< const BinaryVersion*, PathEntry  > links;
+	VersionsAndLinks val;
 
-	auto addStartingVersion = [&versions, &links](const BinaryVersion* version)
+	auto addStartingVersion = [&val](const BinaryVersion* version)
 	{
-		versions.push(version);
-		links[version]; // create empty PathEntry for version
+		val.versions.push(version);
+		val.links[version]; // create empty PathEntry for version
 	};
 
 	if (!arguments.empty())
@@ -112,10 +117,10 @@ int findDependencyChain(Context& context)
 		relationGroups.push_back(BinaryVersion::RelationTypes::Suggests);
 	}
 
-	while (!versions.empty())
+	while (!val.versions.empty())
 	{
-		auto version = versions.front();
-		versions.pop();
+		auto version = val.versions.front();
+		val.versions.pop();
 
 		if (version == leafVersion)
 		{
@@ -123,8 +128,8 @@ int findDependencyChain(Context& context)
 			stack< PathEntry > path;
 			const BinaryVersion* currentVersion = version;
 
-			decltype(links.find(currentVersion)) it;
-			while ((it = links.find(currentVersion)), it->second.version)
+			decltype(val.links.find(currentVersion)) it;
+			while ((it = val.links.find(currentVersion)), it->second.version)
 			{
 				const PathEntry& pathEntry = it->second;
 				path.push(pathEntry);
@@ -152,7 +157,7 @@ int findDependencyChain(Context& context)
 				auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
 				for (const auto& newVersion: satisfyingVersions)
 				{
-					auto insertResult = links.insert({ newVersion, PathEntry() });
+					auto insertResult = val.links.insert({ newVersion, PathEntry() });
 					if (insertResult.second)
 					{
 						// new element
@@ -162,7 +167,7 @@ int findDependencyChain(Context& context)
 						// the pointer is valid because .version is alive
 						newPathEntry.relationExpressionPtr = &*relationExpressionIt;
 
-						versions.push(newVersion);
+						val.versions.push(newVersion);
 					}
 				}
 			}
