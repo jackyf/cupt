@@ -115,14 +115,8 @@ vector<BinaryVersion::RelationTypes::Type> getSignificantRelationGroups(const Co
 	return result;
 }
 
-int findDependencyChain(Context& context)
+std::tuple<shared_ptr<const Cache>, vector<string>> parseArguments(Context& context)
 {
-	// turn off info parsing, we don't need it, only relations
-	if(!shellMode)
-	{
-		Version::parseInfoOnly = false;
-	}
-
 	vector< string > arguments;
 
 	bpo::options_description options("");
@@ -139,6 +133,21 @@ int findDependencyChain(Context& context)
 
 	auto cache = context.getCache(/* source */ false, /* binary */ !installedOnly,
 			/* installed */ true);
+
+	return make_tuple(std::move(cache), std::move(arguments));
+}
+
+int findDependencyChain(Context& context)
+{
+	// turn off info parsing, we don't need it, only relations
+	if(!shellMode)
+	{
+		Version::parseInfoOnly = false;
+	}
+
+	vector<string> arguments;
+	shared_ptr<const Cache> cache;
+	std::tie(cache, arguments) = parseArguments(context);
 
 	auto leafPackageExpression = *(arguments.rbegin());
 	arguments.erase(arguments.end() - 1);
