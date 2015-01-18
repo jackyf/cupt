@@ -28,6 +28,13 @@ using std::stack;
 using std::cout;
 using std::endl;
 
+struct PathEntry
+{
+	const BinaryVersion* version;
+	BinaryVersion::RelationTypes::Type dependencyType;
+	const RelationExpression* relationExpressionPtr;
+};
+
 int findDependencyChain(Context& context)
 {
 	// turn off info parsing, we don't need it, only relations
@@ -58,12 +65,6 @@ int findDependencyChain(Context& context)
 	auto leafVersion = selectBinaryVersionsWildcarded(*cache, leafPackageExpression, true)[0];
 
 	queue< const BinaryVersion* > versions;
-	struct PathEntry
-	{
-		const BinaryVersion* version;
-		BinaryVersion::RelationTypes::Type dependencyType;
-		const RelationExpression* relationExpressionPtr;
-	};
 	map< const BinaryVersion*, PathEntry  > links;
 
 	auto addStartingVersion = [&versions, &links](const BinaryVersion* version)
