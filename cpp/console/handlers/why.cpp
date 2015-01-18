@@ -74,6 +74,29 @@ struct VersionsAndLinks
 	}
 };
 
+void printPath(const VersionsAndLinks& val, const BinaryVersion* version)
+{
+	stack<PathEntry> path;
+	const BinaryVersion* currentVersion = version;
+
+	decltype(val.links.find(currentVersion)) it;
+	while ((it = val.links.find(currentVersion)), it->second.version)
+	{
+		const PathEntry& pathEntry = it->second;
+		path.push(pathEntry);
+		currentVersion = pathEntry.version;
+	}
+	while (!path.empty())
+	{
+		const auto& pathEntry = path.top();
+		path.pop();
+		cout << format2("%s %s: %s: %s",
+				pathEntry.version->packageName, pathEntry.version->versionString,
+				__(BinaryVersion::RelationTypes::strings[pathEntry.dependencyType].c_str()),
+				pathEntry.relationExpressionPtr->toString()) << endl;
+	}
+}
+
 int findDependencyChain(Context& context)
 {
 	// turn off info parsing, we don't need it, only relations
@@ -127,26 +150,7 @@ int findDependencyChain(Context& context)
 
 		if (version == leafVersion)
 		{
-			// we found a path, re-walk it
-			stack< PathEntry > path;
-			const BinaryVersion* currentVersion = version;
-
-			decltype(val.links.find(currentVersion)) it;
-			while ((it = val.links.find(currentVersion)), it->second.version)
-			{
-				const PathEntry& pathEntry = it->second;
-				path.push(pathEntry);
-				currentVersion = pathEntry.version;
-			}
-			while (!path.empty())
-			{
-				PathEntry pathEntry = path.top();
-				path.pop();
-				cout << format2("%s %s: %s: %s",
-						pathEntry.version->packageName, pathEntry.version->versionString,
-						__(BinaryVersion::RelationTypes::strings[pathEntry.dependencyType].c_str()),
-						pathEntry.relationExpressionPtr->toString()) << endl;
-			}
+			printPath(val, version); // we found a path, re-walk it
 			break;
 		}
 
