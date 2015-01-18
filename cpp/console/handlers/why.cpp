@@ -97,6 +97,24 @@ void printPath(const VersionsAndLinks& val, const BinaryVersion* version)
 	}
 }
 
+vector<BinaryVersion::RelationTypes::Type> getSignificantRelationGroups(const Config& config)
+{
+	vector<BinaryVersion::RelationTypes::Type> result;
+
+	result.push_back(BinaryVersion::RelationTypes::PreDepends);
+	result.push_back(BinaryVersion::RelationTypes::Depends);
+	if (config.getBool("cupt::resolver::keep-recommends"))
+	{
+		result.push_back(BinaryVersion::RelationTypes::Recommends);
+	}
+	if (config.getBool("cupt::resolver::keep-suggests"))
+	{
+		result.push_back(BinaryVersion::RelationTypes::Suggests);
+	}
+
+	return result;
+}
+
 int findDependencyChain(Context& context)
 {
 	// turn off info parsing, we don't need it, only relations
@@ -131,17 +149,7 @@ int findDependencyChain(Context& context)
 
 	auto config = context.getConfig();
 
-	vector< BinaryVersion::RelationTypes::Type > relationGroups;
-	relationGroups.push_back(BinaryVersion::RelationTypes::PreDepends);
-	relationGroups.push_back(BinaryVersion::RelationTypes::Depends);
-	if (config->getBool("cupt::resolver::keep-recommends"))
-	{
-		relationGroups.push_back(BinaryVersion::RelationTypes::Recommends);
-	}
-	if (config->getBool("cupt::resolver::keep-suggests"))
-	{
-		relationGroups.push_back(BinaryVersion::RelationTypes::Suggests);
-	}
+	auto relationGroups = getSignificantRelationGroups(*config);
 
 	while (!val.versions.empty())
 	{
