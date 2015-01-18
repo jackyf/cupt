@@ -4,7 +4,12 @@ sub test_why_raw {
 	subtest $description => sub {
 		my $command = "$cupt why $options $package";
 		my $output = stdall($command);
-		is($?, 0, 'operation succeeded');
+		my $exit_code = $?;
+		if ($output !~ m/^E: /) {
+			is($exit_code, 0, 'operation succeeded');
+		} else {
+			isnt($exit_code, 0, 'operation failed');
+		}
 		$main_check->($output);
 	};
 }

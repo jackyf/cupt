@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 use strict;
 use warnings;
@@ -27,7 +27,7 @@ eval get_inc_code('common');
 sub test {
 	my ($package, $expected_output) = @_;
 
-	test_why($package, '', $expected_output, $package);
+	test_why($package, '', $expected_output, ($package || '<no arguments>'));
 }
 
 test('aa' => '');
@@ -37,4 +37,6 @@ test('zz' => "aa 0: Depends: xx\nxx 1: Depends: zz (<= 4)\n");
 test('pp' => "aa 0: Depends: pp | qq\n");
 test('qq' => "aa 0: Depends: pp | qq\n");
 test('rr' => "aa 0: Pre-Depends: rr\n");
+
+test('' => "E: no binary package expressions specified\nE: error performing the command 'why'\n");
 
