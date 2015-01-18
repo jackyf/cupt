@@ -9,6 +9,7 @@ add_executable(cupt.bin
 	handlers/shell.cpp
 	handlers/download.cpp
 	handlers/snapshot.cpp
+	handlers/why.cpp
 	colorizer.cpp
 	functionselectors.cpp
 	selectors.cpp)
