@@ -72,6 +72,30 @@ struct VersionsAndLinks
 			}
 		}
 	}
+
+	void addVersionRelationExpressions(const Cache& cache,
+			const BinaryVersion* version, BinaryVersion::RelationTypes::Type dependencyType)
+	{
+		for (const auto& relationExpression: version->relations[dependencyType])
+		{
+			// insert recursive depends into queue
+			for (const auto& newVersion: cache.getSatisfyingVersions(relationExpression))
+			{
+				auto insertResult = links.insert({ newVersion, PathEntry() });
+				if (insertResult.second)
+				{
+					// new element
+					PathEntry& newPathEntry = insertResult.first->second;
+					newPathEntry.version = version;
+					newPathEntry.dependencyType = dependencyType;
+					// the pointer is valid because .version is alive
+					newPathEntry.relationExpressionPtr = &relationExpression;
+
+					versions.push(newVersion);
+				}
+			}
+		}
+	}
 };
 
 void printPath(const VersionsAndLinks& val, const BinaryVersion* version)
@@ -176,30 +200,9 @@ int findDependencyChain(Context& context)
 			break;
 		}
 
-		FORIT(dependencyTypeIt, relationGroups)
+		for (auto dependencyType: relationGroups)
 		{
-			auto dependencyType = *dependencyTypeIt;
-
-			FORIT(relationExpressionIt, version->relations[dependencyType])
-			{
-				// insert recursive depends into queue
-				auto satisfyingVersions = cache->getSatisfyingVersions(*relationExpressionIt);
-				for (const auto& newVersion: satisfyingVersions)
-				{
-					auto insertResult = val.links.insert({ newVersion, PathEntry() });
-					if (insertResult.second)
-					{
-						// new element
-						PathEntry& newPathEntry = insertResult.first->second;
-						newPathEntry.version = version;
-						newPathEntry.dependencyType = dependencyType;
-						// the pointer is valid because .version is alive
-						newPathEntry.relationExpressionPtr = &*relationExpressionIt;
-
-						val.versions.push(newVersion);
-					}
-				}
-			}
+			val.addVersionRelationExpressions(*cache, version, dependencyType);
 		}
 	}
 
