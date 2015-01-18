@@ -137,6 +137,13 @@ std::tuple<shared_ptr<const Cache>, vector<string>> parseArguments(Context& cont
 	return make_tuple(std::move(cache), std::move(arguments));
 }
 
+const BinaryVersion* extractLeafVersion(const Cache& cache, vector<string>* arguments)
+{
+	auto leafPackageExpression = arguments->back();
+	arguments->erase(arguments->end() - 1);
+	return selectBinaryVersionsWildcarded(cache, leafPackageExpression, true)[0];
+}
+
 int findDependencyChain(Context& context)
 {
 	// turn off info parsing, we don't need it, only relations
@@ -149,9 +156,7 @@ int findDependencyChain(Context& context)
 	shared_ptr<const Cache> cache;
 	std::tie(cache, arguments) = parseArguments(context);
 
-	auto leafPackageExpression = *(arguments.rbegin());
-	arguments.erase(arguments.end() - 1);
-	auto leafVersion = selectBinaryVersionsWildcarded(*cache, leafPackageExpression, true)[0];
+	auto leafVersion = extractLeafVersion(*cache, &arguments);
 
 	VersionsAndLinks val;
 	val.initialise(*cache, arguments);
