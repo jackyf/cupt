@@ -7,54 +7,13 @@ use warnings;
 my $cupt;
 
 eval get_inc_code('common');
-
-my %dep_letters = (
-	'D' => 'Depends',
-	'R' => 'Recommends',
-	'S' => 'Suggests',
-);
-
-sub setup_cupt {
-	my $links = shift;
-
-	my %sorted_deps;
-	my %autoflags;
-
-	foreach my $link (@$links) {
-		my ($from, $type, $to) = split(' ', $link);
-
-		if (length($to) == 3) {
-			$autoflags{$to} = 1;
-		}
-
-		$sorted_deps{$to} //= {};
-		push @{$sorted_deps{$from}->{$type}}, $to;
-	}
-
-	my $installed_packages = '';
-	while (my ($package, $deplines) = each %sorted_deps) {
-		$installed_packages .= compose_installed_record($package, 0);
-
-		while (my ($dep_letter, $dependees) = each %$deplines) {
-			$installed_packages .= $dep_letters{$dep_letter};
-			$installed_packages .= ': ';
-			$installed_packages .= join(', ', @$dependees);
-			$installed_packages .= "\n";
-		}
-
-		$installed_packages .= "\n";
-	}
-
-	my $extended_states = join('', map { entail(compose_autoinstalled_record($_)) } keys %autoflags);
-
-	$cupt = TestCupt::setup('dpkg_status' => $installed_packages, 'extended_states' => $extended_states);
-}
+eval get_inc_code('setup-from-links');
 
 sub test {
 	my ($dependency_graph, $expected_chain_head) = @_;
 
 	my $package = 'xxx';
-	$cupt = setup_cupt($dependency_graph);
+	$cupt = setup_cupt_from_links($dependency_graph);
 
 	my $options = '-o cupt::resolver::keep-suggests=yes';
 
