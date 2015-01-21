@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use strict;
 use warnings;
@@ -32,6 +32,7 @@ test(['aa S xxx', 'bb D xxx'] => 'bb');
 test(['aa S xxx', 'bb R xxx'] => 'bb');
 test(['aa S xxx', 'bb R qqq', 'qqq D xxx'] => 'bb');
 test(['aa S xxx', 'bb R qqq', 'qqq R xxx'] => 'bb');
+test(['aa S xxx', 'bb R qqq', 'qqq R yyy', 'yyy R xxx'] => 'aa');
 test(['aa D ppp', 'ppp S xxx', 'bb R qqq', 'qqq D xxx'] => 'bb');
 test(['aa D ppp', 'ppp S xxx', 'bb R qqq', 'qqq R xxx'] => 'bb');
 test(['aa S ppp', 'ppp S xxx', 'bb R qq1', 'qq1 R qq2', 'qq2 R qq3', 'qq3 R qq4', 'qq4 R xxx'] => 'bb');
