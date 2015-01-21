@@ -21,7 +21,7 @@
 #include "../selectors.hpp"
 
 #include <queue>
-using std::queue;
+using std::priority_queue;
 #include <stack>
 using std::stack;
 
@@ -30,20 +30,31 @@ using std::endl;
 
 struct PathEntry
 {
-	const BinaryVersion* version;
+	size_t length = 0;
+	const BinaryVersion* version = nullptr;
 	BinaryVersion::RelationTypes::Type dependencyType;
 	const RelationExpression* relationExpressionPtr;
 };
 
+struct Edge
+{
+	const BinaryVersion* version;
+	PathEntry pathEntry;
+
+	bool operator<(const Edge& other) const
+	{
+		return pathEntry.length > other.pathEntry.length;
+	}
+};
+
 struct VersionsAndLinks
 {
-	queue<const BinaryVersion*> versions;
+	priority_queue<Edge> versions;
 	map<const BinaryVersion*, PathEntry> links;
 
 	void addStartingVersion(const BinaryVersion* version)
 	{
-		versions.push(version);
-		links[version]; // create empty PathEntry for version
+		versions.push({ version, PathEntry() });
 	}
 
 	void initialise(const Cache& cache, const vector<string>& arguments)
@@ -73,26 +84,30 @@ struct VersionsAndLinks
 		}
 	}
 
-	void addVersionRelationExpressions(const Cache& cache,
-			const BinaryVersion* version, BinaryVersion::RelationTypes::Type dependencyType)
+	bool setEdge(const Edge& edge)
 	{
+		auto insertResult = links.insert({ edge.version, edge.pathEntry });
+		return insertResult.second;
+	}
+
+	void addVersionRelationExpressions(const Cache& cache,
+			Edge edge, BinaryVersion::RelationTypes::Type dependencyType)
+	{
+		auto version = edge.version;
+		auto newLength = edge.pathEntry.length + 1;
+
 		for (const auto& relationExpression: version->relations[dependencyType])
 		{
 			// insert recursive depends into queue
 			for (const auto& newVersion: cache.getSatisfyingVersions(relationExpression))
 			{
-				auto insertResult = links.insert({ newVersion, PathEntry() });
-				if (insertResult.second)
-				{
-					// new element
-					PathEntry& newPathEntry = insertResult.first->second;
-					newPathEntry.version = version;
-					newPathEntry.dependencyType = dependencyType;
-					// the pointer is valid because .version is alive
-					newPathEntry.relationExpressionPtr = &relationExpression;
+				PathEntry newPathEntry;
+				newPathEntry.length = newLength;
+				newPathEntry.version = version;
+				newPathEntry.dependencyType = dependencyType;
+				newPathEntry.relationExpressionPtr = &relationExpression;
 
-					versions.push(newVersion);
-				}
+				versions.push({ newVersion, newPathEntry });
 			}
 		}
 	}
@@ -191,18 +206,23 @@ int findDependencyChain(Context& context)
 
 	while (!val.versions.empty())
 	{
-		auto version = val.versions.front();
+		auto edge = val.versions.top();
 		val.versions.pop();
 
-		if (version == leafVersion)
+		bool isNewEdge = val.setEdge(edge);
+
+		if (edge.version == leafVersion)
 		{
-			printPath(val, version); // we found a path, re-walk it
+			printPath(val, edge.version); // we found a path, re-walk it
 			break;
 		}
 
-		for (auto dependencyType: relationGroups)
+		if (isNewEdge)
 		{
-			val.addVersionRelationExpressions(*cache, version, dependencyType);
+			for (auto dependencyType: relationGroups)
+			{
+				val.addVersionRelationExpressions(*cache, edge, dependencyType);
+			}
 		}
 	}
 
