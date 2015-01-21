@@ -7,6 +7,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - New function 'source-to-binary'.
     - 'search':
       - FSE mode: enabled parsing of unknown version fields.
+    - 'why':
+      - Prefer any number of (Pre-)Depends over 1 Recommends.
+      - Prefer 2 Recommends over 1 Suggests.
   * lib:
     - config:
       - New option 'cupt::resolver::score::version-factor::common'.

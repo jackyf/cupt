@@ -8,7 +8,7 @@ my $cupt = TestCupt::setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aa', 7)) .
 		entail(compose_installed_record('bb', 8)) .
-		entail(compose_installed_record('mm', 6) . "Depends: xxx\n") .
+		entail(compose_installed_record('mm', 6) . "Recommends: xxx\n") .
 		entail(compose_installed_record('xxx', 15)) ,
 	'packages' =>
 		entail(compose_package_record('aa', 10) . "Recommends: xxx\n") .
@@ -40,14 +40,14 @@ test('bb' => '');
 test('bb=12' => "bb 12: Depends: xxx (>= 14)\n");
 test('bb=11' => "bb 11: Depends: xxx\n");
 test('cc' => '');
-test('mm' => "mm 6: Depends: xxx\n");
+test('mm' => "mm 6: Recommends: xxx\n");
 test('xxx' => '');
 
 test('aa bb' => "aa 10: Recommends: xxx\n");
 test('c*' => '');
 test('??', "aa 10: Recommends: xxx\n");
 
-test('??', "mm 6: Depends: xxx\n", 1);
+test('??', "mm 6: Recommends: xxx\n", 1);
 test('aa', '', 1);
 test('aa bb', '', 1);
 

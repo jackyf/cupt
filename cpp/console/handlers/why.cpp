@@ -47,6 +47,19 @@ struct Edge
 	}
 };
 
+inline size_t getDependencyTypePenalty(BinaryVersion::RelationTypes::Type dp)
+{
+	switch (dp)
+	{
+		case BinaryVersion::RelationTypes::Recommends:
+			return 1;
+		case BinaryVersion::RelationTypes::Suggests:
+			return 3;
+		default:
+			return 0;
+	}
+}
+
 struct VersionsAndLinks
 {
 	priority_queue<Edge> versions;
@@ -94,7 +107,7 @@ struct VersionsAndLinks
 			Edge edge, BinaryVersion::RelationTypes::Type dependencyType)
 	{
 		auto version = edge.version;
-		auto newLength = edge.pathEntry.length + 1;
+		auto newLength = edge.pathEntry.length + getDependencyTypePenalty(dependencyType);
 
 		for (const auto& relationExpression: version->relations[dependencyType])
 		{
