@@ -10,6 +10,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - 'why':
       - Prefer any number of (Pre-)Depends over 1 Recommends.
       - Prefer 2 Recommends over 1 Suggests.
+      - Apply penalties for non-first relations. (Closes: #772558)
   * lib:
     - config:
       - New option 'cupt::resolver::score::version-factor::common'.

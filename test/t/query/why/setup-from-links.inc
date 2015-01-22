@@ -11,14 +11,18 @@ sub setup_cupt_from_links {
 	my %autoflags;
 
 	foreach my $link (@$links) {
-		my ($from, $type, $to) = split(' ', $link);
+		my ($from, $type, $tos) = split(' ', $link);
 
-		if (length($to) > 2) {
-			$autoflags{$to} = 1;
+		my @tos = split('\|', $tos);
+		foreach my $to (@tos) {
+			if (length($to) > 2) {
+				$autoflags{$to} = 1;
+			}
+
+			$sorted_deps{$to} //= {};
 		}
 
-		$sorted_deps{$to} //= {};
-		push @{$sorted_deps{$from}->{$type}}, $to;
+		push @{$sorted_deps{$from}->{$type}}, $tos;
 	}
 
 	my $installed_packages = '';

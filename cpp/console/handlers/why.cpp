@@ -52,9 +52,9 @@ inline size_t getDependencyTypePenalty(BinaryVersion::RelationTypes::Type dp)
 	switch (dp)
 	{
 		case BinaryVersion::RelationTypes::Recommends:
-			return 1;
+			return 5;
 		case BinaryVersion::RelationTypes::Suggests:
-			return 3;
+			return 14;
 		default:
 			return 0;
 	}
@@ -111,16 +111,18 @@ struct VersionsAndLinks
 
 		for (const auto& relationExpression: version->relations[dependencyType])
 		{
-			// insert recursive depends into queue
+			size_t index = 0;
 			for (const auto& newVersion: cache.getSatisfyingVersions(relationExpression))
 			{
 				PathEntry newPathEntry;
-				newPathEntry.length = newLength;
+				newPathEntry.length = newLength + index;
 				newPathEntry.version = version;
 				newPathEntry.dependencyType = dependencyType;
 				newPathEntry.relationExpressionPtr = &relationExpression;
 
 				versions.push({ newVersion, newPathEntry });
+
+				++index;
 			}
 		}
 	}
