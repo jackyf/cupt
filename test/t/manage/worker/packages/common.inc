@@ -17,3 +17,46 @@ sub get_worker_command {
 	return "$cupt $options $command";
 }
 
+sub parse_dpkg_commands {
+	my $output = shift;
+
+	my $skip_triggers = 1;
+	my $skip_bad_path = 1;
+	my $package_simplifier = sub {
+		return (s!.*/(\w+)_(\w+)_\w+\.deb$!<$1 $2>!r);
+	};
+
+	my $dpkg = get_dpkg_path();
+	my @lines = ($output =~ m/^S: running command '$dpkg (.*)'$/mg);
+
+	my $parse_line = sub {
+		my @tokens = split(' ');
+
+		my $subcommand = shift @tokens;
+		if ($skip_triggers && ($subcommand =~ m/trigger/)) {
+			return ();
+		}
+
+		my @options;
+		my @packages;
+
+		foreach (@tokens) {
+			if ($skip_triggers && (m/trigger/)) {
+				next;
+			}
+			if ($skip_bad_path && (m/--force-bad-path/)) {
+				next;
+			}
+
+			my $target = (m/^--/ ? \@options : \@packages);
+			push @$target, $_;
+		}
+
+		@packages = map(&$package_simplifier, @packages);
+
+		return [$subcommand, \@options, \@packages];
+	};
+
+	return map(&$parse_line, @lines);
+}
+
