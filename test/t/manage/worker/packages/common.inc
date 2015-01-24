@@ -23,7 +23,7 @@ sub parse_dpkg_commands {
 	my $skip_triggers = 1;
 	my $skip_bad_path = 1;
 	my $package_simplifier = sub {
-		return (s!.*/(\w+)_(\w+)_\w+\.deb$!<$1 $2>!r);
+		return (s!.*/((?:\w|-)+)_(\w+)_\w+\.deb$!<$1 $2>!r);
 	};
 
 	my $dpkg = get_dpkg_path();
