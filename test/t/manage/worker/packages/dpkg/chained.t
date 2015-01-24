@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 use strict;
 use warnings;
@@ -56,3 +56,14 @@ test_dpkg_sequence('install predepends-lockstep-master' =>
 		['--remove', [], ['predepends-lockstep-master']],
 		['--install', [], ['<slave 5>']],
 		['--install', [], ['<predepends-lockstep-master 5>']]);
+
+$cupt = setup_for_worker(
+	'packages' =>
+		entail(compose_package_record('circular-dep-1', 6) . "Depends: circular-dep-2\n") .
+		entail(compose_package_record('circular-dep-2', 7) . "Depends: circular-dep-1\n") ,
+);
+test_dpkg_sequence('install circular-dep-1',
+		['--unpack', [], ['<circular-dep-1 6>']],
+		['--unpack', [], ['<circular-dep-2 7>']],
+		['--configure', [], ['circular-dep-2', 'circular-dep-1']]);
+
