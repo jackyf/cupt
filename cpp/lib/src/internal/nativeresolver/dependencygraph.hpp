@@ -35,7 +35,7 @@ using cupt::cache::RelationExpression;
 namespace cupt {
 namespace internal {
 
-class PackageEntry;
+struct PackageEntry;
 
 namespace dependencygraph {
 

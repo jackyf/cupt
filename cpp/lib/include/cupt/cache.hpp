@@ -31,7 +31,7 @@ namespace cupt {
 
 namespace internal {
 
-struct CacheImpl;
+class CacheImpl;
 
 }
 

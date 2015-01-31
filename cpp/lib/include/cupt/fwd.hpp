@@ -32,15 +32,15 @@ namespace cache {
 class Package;
 class BinaryPackage;
 class SourcePackage;
-class Version;
-class BinaryVersion;
+struct Version;
+struct BinaryVersion;
 class SourceVersion;
 class ReleaseInfo;
 
-class Relation;
-class ArchitecturedRelation;
-class RelationExpression;
-class ArchitecturedRelationExpression;
+struct Relation;
+struct ArchitecturedRelation;
+struct RelationExpression;
+struct ArchitecturedRelationExpression;
 
 }
 
