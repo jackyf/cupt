@@ -1809,7 +1809,7 @@ string PackagesWorker::p_generateInputForPreinstallV2OrV3Hooks(
 
 	result += writeOutConfiguration(*_config);
 
-	auto writeOutVersionString = [v3](const string& versionString, const BinaryVersion* version)
+	auto writeOutVersionString = [v3](const string& versionString, const BinaryVersion* version) -> string
 	{
 		if (v3)
 		{
