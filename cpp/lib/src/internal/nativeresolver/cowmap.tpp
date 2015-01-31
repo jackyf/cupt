@@ -143,7 +143,7 @@ vector<const DataT*> CowMap<KeyT,MapT>::getEntries() const
 {
 	vector<const DataT*> result;
 
-	static const MapT nullMap;
+	static const MapT nullMap = {};
 	const auto& initial = *p_initial;
 	const auto& master = p_master ? *p_master : nullMap;
 
@@ -160,7 +160,7 @@ template < typename KeyT, typename MapT >
 template < typename CallbackT >
 void CowMap<KeyT,MapT>::foreachModifiedEntry(const CallbackT& callback) const
 {
-	static const MapT nullMap;
+	static const MapT nullMap = {};
 	const auto& master = p_master ? *p_master : nullMap;
 
 	cowMapForeach(master, *p_added, callback);

@@ -365,7 +365,7 @@ void SolutionStorage::prepareForResolving(PreparedSolution& initialSolution,
 	p_initialEntries->init(std::move(source));
 
 	initialSolution.p_entries.setInitialMap(p_initialEntries.get());
-	static const BrokenSuccessorMap nullBrokenSuccessorMap;
+	static const BrokenSuccessorMap nullBrokenSuccessorMap = {};
 	initialSolution.p_brokenSuccessors.setInitialMap(&nullBrokenSuccessorMap);
 	for (const auto& entry: *p_initialEntries)
 	{
