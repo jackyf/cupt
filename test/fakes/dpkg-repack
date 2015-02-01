@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+print "[fakes/dpkg-repack] @ARGV\n";
+
+my $package = $ARGV[1];
+system("touch ${package}_.deb");
+
