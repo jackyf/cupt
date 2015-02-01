@@ -1,12 +1,24 @@
+sub test_snapshot_command {
+	my ($arguments, $expected_error, $description) = @_;
+
+	my $output;
+	subtest $description => sub {
+		$output = stdall("$cupt snapshot $arguments");
+		my $exit_code = $?;
+
+		if (defined $expected_error) {
+			isnt($exit_code, 0, 'negative exit code');
+			like($output, $expected_error, 'error message printed');
+		} else {
+			is($exit_code, 0, 'positive exit code');
+			unlike($output, qr/^E: /m, "no errors");
+		}
+	} or diag($output);
+}
+
 sub save_snapshot {
 	my $name = shift;
-
-	subtest "saving snapshot $name" => sub {
-		my $output = stdall("$cupt snapshot save $name");
-		is($?, 0, "positive exit code")
-				or diag($output);
-		unlike($output, qr/^E: /m, "no errors");
-	};
+	test_snapshot_command("save $name", undef, "saving snapshot $name");
 }
 
 my $list_command = "$cupt snapshot list";
