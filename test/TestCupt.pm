@@ -34,9 +34,13 @@ use File::Path qw(make_path);
 use File::Basename;
 use File::Spec;
 
+sub get_test_dir {
+	return $INC[0];
+}
+
 sub get_inc_path {
 	my ($includee) = @_;
-	my $test_dir = $INC[0];
+	my $test_dir = get_test_dir();
 
 	my $test_module_dir = (File::Spec->splitpath($0))[1];
 	{
@@ -93,6 +97,8 @@ sub generate_environment {
 				or die ("cannot clean the environment");
 	}
 
+	setup_fakes();
+
 	my $cwd = cwd();
 
 	$pre_conf =~ s/<dir>/$cwd/g;
@@ -108,6 +114,11 @@ sub generate_environment {
 	generate_packages_sources(unify_packages_and_sources_option(\%options));
 	generate_file('var/log/cupt.log', '');
 	generate_file('var/lib/cupt/lock', '');
+}
+
+sub setup_fakes {
+	my $test_dir = get_test_dir();
+	$ENV{'PATH'} = "$test_dir/fakes:" . $ENV{'PATH'};
 }
 
 my $default_archive = 'testing';
