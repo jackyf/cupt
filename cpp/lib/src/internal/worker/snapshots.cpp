@@ -215,6 +215,18 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 	createTextFile(path, lines, _logger, simulating);
 }
 
+static const char* findProhibitedCharactersInSnapshotName(const string& name)
+{
+	for (const auto& c: name)
+	{
+		if (isspace(c))
+		{
+			return &c;
+		}
+	}
+	return nullptr;
+}
+
 void checkSnapshotName(const Snapshots& snapshots, const string& name)
 {
 	if (name.empty())
@@ -225,12 +237,10 @@ void checkSnapshotName(const Snapshots& snapshots, const string& name)
 	{
 		fatal2(__("the system snapshot name '%s' cannot start with a '.'"), name);
 	}
-	for (auto c: name)
+
+	if (auto badChar = findProhibitedCharactersInSnapshotName(name))
 	{
-		if (isspace(c))
-		{
-			fatal2(__("the system snapshot name '%s' cannot contain a whitespace character '%c'"), name, c);
-		}
+		fatal2(__("the system snapshot name '%s' cannot contain a character '%c'"), name, *badChar);
 	}
 
 	{
