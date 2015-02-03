@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 20;
+use Test::More tests => 22;
 
 use strict;
 use warnings;
@@ -18,6 +18,8 @@ test_good_name('abcdef', 'lower letters');
 test_good_name('abc-def', 'dash');
 test_good_name('abc_def', 'underscore');
 test_good_name('ndjnvjodsnadsnvhansdvasodvnaosdhjqiuewohfqiuwe', 'long');
+test_good_name('20091005', 'digits');
+test_good_name('fgh4i', 'mixed lower letters and digits');
 
 
 sub test_bad_name {
