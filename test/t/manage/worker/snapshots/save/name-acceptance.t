@@ -28,10 +28,7 @@ sub test_bad_name {
 	test_snapshot_command("save '$name'", $snapshot_name_error_regex, "bad: $description");
 }
 
-TODO: {
-	local $TODO = 'bug';
-	test_bad_name('', 'empty');
-}
+test_bad_name('', 'empty');
 test_bad_name('uuu www', 'space');
 test_bad_name('.abc', 'dot at the beginning'); 
 test_bad_name('../uuu', 'parent directory at the beginning');

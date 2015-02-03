@@ -219,7 +219,7 @@ void checkSnapshotName(const Snapshots& snapshots, const string& name)
 {
 	if (name.empty())
 	{
-		fatal2(__("the system snapshot name cannot be empty"));
+		fatal2(__("the system snapshot name '' cannot be empty"));
 	}
 	if (name[0] == '.')
 	{
