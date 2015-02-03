@@ -217,9 +217,19 @@ void SnapshotsWorker::__create_release_file(const string& temporarySnapshotDirec
 
 static const char* findProhibitedCharactersInSnapshotName(const string& name)
 {
+	auto isProhibited = [](char c)
+	{
+		if (!isascii(c)) return true;
+		if (isdigit(c)) return false;
+		if (islower(c)) return false;
+		if (c == '-') return false;
+		if (c == '_') return false;
+		return true;
+	};
+
 	for (const auto& c: name)
 	{
-		if (isspace(c))
+		if (isProhibited(c))
 		{
 			return &c;
 		}
