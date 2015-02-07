@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 1 + 5;
+use Test::More tests => 1 + 8;
 use IPC::Run3;
 
 use strict;
@@ -66,3 +66,19 @@ test_load_changes(
 		{ 'aaa' => 1, 'ccc' => 3, 'ddd' => $ev },
 		'aaa and ccc restored, ddd removed'
 );
+test_load_changes(
+		[ 'aaa' => 1, 'bbb' => 20, 'ccc' => 3 ],
+		{ 'bbb' => 2 },
+		'bbb downgraded',
+);
+test_load_changes(
+		[ 'aaa' => '1~rc5', 'bbb' => 2, 'ccc' => 3 ],
+		{ 'aaa' => 1 },
+		'aaa upgraded'
+);
+test_load_changes(
+		[ 'aaa' => 1, 'ccc' => 30, 'ddd' => 4 ],
+		{ 'bbb' => 2, 'ccc' => 3, 'ddd' => $ev },
+		'the mix'
+);
+
