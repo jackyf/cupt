@@ -25,6 +25,7 @@ our @EXPORT = qw(
 	get_empty_version
 	get_unchanged_version
 	get_offered_version
+	get_offered_versions
 	get_version_priority
 );
 use Exporter qw(import);
@@ -359,10 +360,19 @@ sub get_empty_version {
 	return "<empty>";
 }
 
+my $offer_version_regex = qr/(?:\(a\))? \[.*? -> (.*?)\]/;
+
+sub get_offered_versions {
+	my ($offer) = @_;
+
+	my %pairs = ($offer =~ m/^(.*?)$offer_version_regex/mg);
+	return \%pairs;
+}
+
 sub get_offered_version {
 	my ($offer, $package_name) = @_;
 
-	my ($version) = ($offer =~ m/^$package_name(?:\(a\))? \[.*? -> (.*?)\]/m);
+	my ($version) = ($offer =~ m/^$package_name$offer_version_regex/m);
 
 	return $version // get_unchanged_version();
 }
