@@ -1,7 +1,27 @@
 #!/usr/bin/perl
 
+use File::stat;
+
 use strict;
 use warnings;
 
-print "[fakes/dpkg-scanpackages] @ARGV\n";
+print STDERR "[fakes/dpkg-scanpackages] @ARGV\n";
+
+my $dir = $ARGV[0];
+
+foreach my $deb_path (glob("$dir/*.deb")) {
+	my $st = stat($deb_path);
+
+	my ($name, $version, $architecture) = ($deb_path =~ m@(.*)_(.*)_(.*?)\.deb$@);
+	$name =~ s@.*/@@;
+	my $size = $st->size;
+	my ($sha1) = (`sha1sum $deb_path` =~ m/(.*?) /);
+
+	print "Package: $name\n";
+	print "Version: $version\n";
+	print "Architecture: $architecture\n";
+	print "Size: $size\n";
+	print "SHA1: $sha1\n";
+	print "\n";
+}
 
