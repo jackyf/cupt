@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 use strict;
 use warnings;
@@ -40,5 +40,18 @@ test(
 test(
 	sub { system("echo 2 > $snapshot_path/format"); },
 	"unsupported snapshot format '2'"
+);
+
+test(
+	sub { system("mv $snapshot_path ${snapshot_path}%"); },
+	"unable to find a snapshot named '$snapshot_name'"
+);
+
+test(
+	sub {
+		my $pfile = glob("$snapshot_path/*Packages");
+		system("echo '' > $pfile");
+	},
+	"unable to find snapshot version for the package '.*'"
 );
 
