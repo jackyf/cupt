@@ -67,11 +67,11 @@ vector< string > SnapshotsImpl::getSnapshotNames() const
 	vector< string > result;
 
 	auto snapshotPaths = fs::glob(getSnapshotsDirectory() + "/*");
-
-	FORIT(pathIt, snapshotPaths)
+	for (const auto& path: snapshotPaths)
 	{
-		result.push_back(fs::filename(*pathIt));
+		result.push_back(fs::filename(path));
 	}
+
 	return result;
 }
 
