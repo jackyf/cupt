@@ -21,10 +21,10 @@ sub save_snapshot {
 	test_snapshot_command("save $name", undef, "saving snapshot $name");
 }
 
-my $list_command = "$cupt snapshot list";
-
 sub test_snapshot_list {
 	my ($expected_output, $description) = @_;
+
+	my $list_command = "$cupt snapshot list";
 
 	my $output = stdall($list_command);
 	is($output, $expected_output, $description);
