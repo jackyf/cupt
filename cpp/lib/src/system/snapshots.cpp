@@ -92,6 +92,23 @@ static void assertSnapshotPresent(const vector<string>& names, const string& nam
 	}
 }
 
+static void assertSnapshotFormat(const string& snapshotDirectory)
+{
+	// currently we support none and '1'
+	auto formatPath = snapshotDirectory + "/format";
+	if (fs::fileExists(formatPath))
+	{
+		RequiredFile file(formatPath, "r");
+		string content;
+		file.getFile(content);
+		chomp(content);
+		if (content != "1")
+		{
+			fatal2(__("unsupported snapshot format '%s'"), content);
+		}
+	}
+}
+
 void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		const Cache& cache, system::Resolver& resolver)
 {
@@ -99,20 +116,8 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 
 	auto snapshotDirectory = getSnapshotDirectory(snapshotName);
 
-	{ // checking snapshot format, current we support none and '1'
-		auto formatPath = snapshotDirectory + "/format";
-		if (fs::fileExists(formatPath))
-		{
-			RequiredFile file(formatPath, "r");
-			string content;
-			file.getFile(content);
-			chomp(content);
-			if (content != "1")
-			{
-				fatal2(__("unsupported snapshot format '%s'"), content);
-			}
-		}
-	}
+	assertSnapshotFormat(snapshotDirectory);
+
 
 	std::set< string > toBeInstalledPackageNames;
 
