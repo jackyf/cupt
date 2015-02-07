@@ -122,6 +122,22 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 	loadVersionsIntoResolver(snapshotDirectory, cache, resolver);
 }
 
+static const BinaryVersion* findSnapshotVersion(const BinaryPackage* package)
+{
+	for (auto version: *package)
+	{
+		for (const auto& source: version->sources)
+		{
+			if (source.release->archive == "snapshot")
+			{
+				return version;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 void SnapshotsImpl::loadVersionsIntoResolver(
 		const string& snapshotDirectory,
 		const Cache& cache, system::Resolver& resolver)
@@ -143,23 +159,14 @@ void SnapshotsImpl::loadVersionsIntoResolver(
 
 			toBeInstalledPackageNames.insert(packageName);
 
-			for (auto version: *package)
+			if (auto version = findSnapshotVersion(package))
 			{
-				for (const auto& source: version->sources)
-				{
-					if (source.release->archive == "snapshot")
-					{
-						resolver.installVersion({ version });
-						goto next_file_line;
-					}
-				}
+				resolver.installVersion({ version });
 			}
-
-			// not found
-			fatal2i("unable to find snapshot version for the package '%s'", packageName);
-
-			next_file_line:
-			;
+			else
+			{
+				fatal2i("unable to find snapshot version for the package '%s'", packageName);
+			}
 		}
 	}
 
