@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 use strict;
 use warnings;
@@ -21,14 +21,15 @@ sub setup_cupt {
 }
 
 sub test {
-	my ($corrupter, $description) = @_;
+	my ($corrupter, $error, $description) = @_;
+	$description //= $error;
 
 	setup_cupt();
 
 	subtest $description => sub {
 		save_snapshot($snapshot_name);
 		$corrupter->();
-		test_snapshot_command("load $snapshot_name", qr/^E:.* $description$/m, 'error message printed');
+		test_snapshot_command("load $snapshot_name", qr/^E:.* $error$/m, "error message '$error' printed");
 	}
 }
 
@@ -52,6 +53,22 @@ test(
 		my $pfile = glob("$snapshot_path/*Packages");
 		system("echo '' > $pfile");
 	},
-	"unable to find snapshot version for the package '.*'"
+	"unable to find snapshot version for the package '.*'",
+	'broken Packages'
+);
+
+test(
+	sub {
+		my $rfile = glob("$snapshot_path/*Release");
+		system("echo 'y17341732' > $rfile");
+	},
+	".*",
+	"broken Release"
+);
+
+test(
+	sub { system("echo 'deb fttps://corr $snapshot_name/' > $snapshot_path/source"); },
+	".*",
+	'broken snapshot repository source file'
 );
 
