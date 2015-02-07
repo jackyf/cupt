@@ -84,17 +84,18 @@ void SnapshotsImpl::setupConfigForSnapshotOnly(const string& snapshotName)
 	__config->setScalar("dir::etc::sourceparts", "/non-existent");
 }
 
+static void assertSnapshotPresent(const vector<string>& names, const string& name)
+{
+	if (std::find(names.begin(), names.end(), name) == names.end())
+	{
+		fatal2(__("unable to find a snapshot named '%s'"), name);
+	}
+}
+
 void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 		const Cache& cache, system::Resolver& resolver)
 {
-	{
-		auto snapshotNames = getSnapshotNames();
-		if (std::find(snapshotNames.begin(), snapshotNames.end(), snapshotName)
-				== snapshotNames.end())
-		{
-			fatal2(__("unable to find a snapshot named '%s'"), snapshotName);
-		}
-	}
+	assertSnapshotPresent(getSnapshotNames(), snapshotName);
 
 	auto snapshotDirectory = getSnapshotDirectory(snapshotName);
 
