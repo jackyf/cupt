@@ -36,6 +36,7 @@ namespace internal {
 class SnapshotsImpl
 {
 	shared_ptr< Config > __config;
+	void loadVersionsIntoResolver(const string&, const Cache&, system::Resolver&);
  public:
 	SnapshotsImpl(const shared_ptr< Config >& config);
 	vector< string > getSnapshotNames() const;
@@ -118,7 +119,13 @@ void SnapshotsImpl::setupResolverForSnapshotOnly(const string& snapshotName,
 
 	assertSnapshotFormat(snapshotDirectory);
 
+	loadVersionsIntoResolver(snapshotDirectory, cache, resolver);
+}
 
+void SnapshotsImpl::loadVersionsIntoResolver(
+		const string& snapshotDirectory,
+		const Cache& cache, system::Resolver& resolver)
+{
 	std::set< string > toBeInstalledPackageNames;
 
 	{
