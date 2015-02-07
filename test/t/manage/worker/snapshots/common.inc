@@ -1,9 +1,12 @@
+use IPC::Run3;
+
 sub test_snapshot_command {
 	my ($arguments, $expected_error, $description) = @_;
 
 	my $output;
 	subtest $description => sub {
-		$output = stdall("$cupt snapshot $arguments");
+		my $output;
+		run3("$cupt snapshot $arguments", \undef, \$output, \$output);
 		my $exit_code = $?;
 
 		if (defined $expected_error) {
