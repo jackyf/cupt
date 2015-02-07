@@ -31,9 +31,6 @@ setup_with('aaa' => 1, 'ccc' => 3);
 run3("tar -x", \$snapshots_tar);
 my $offer = get_first_offer("$cupt snapshot load -V sn");
 
-TODO: {
-	local $TODO = 'fix (not) reinstalling same versions';
-	is_deeply(get_offered_versions($offer), { 'bbb' => 2 }, 'bbb is removed')
-			or diag($offer);
-}
+is_deeply(get_offered_versions($offer), { 'bbb' => 2 }, 'bbb is removed')
+		or diag($offer);
 

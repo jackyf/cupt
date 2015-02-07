@@ -25,6 +25,7 @@
 #include <cupt/cache/releaseinfo.hpp>
 #include <cupt/cache/binarypackage.hpp>
 #include <cupt/file.hpp>
+#include <cupt/versionstring.hpp>
 
 #include <internal/common.hpp>
 #include <internal/filesystem.hpp>
@@ -138,6 +139,18 @@ static const BinaryVersion* findSnapshotVersion(const BinaryPackage* package)
 	return nullptr;
 }
 
+static bool isReinstall(const BinaryVersion* version, const BinaryPackage* package)
+{
+	if (auto installedVersion = package->getInstalledVersion())
+	{
+		if (getOriginalVersionString(installedVersion->versionString).equal(version->versionString))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void SnapshotsImpl::loadVersionsIntoResolver(
 		const string& snapshotDirectory,
 		const Cache& cache, system::Resolver& resolver)
@@ -161,7 +174,10 @@ void SnapshotsImpl::loadVersionsIntoResolver(
 
 			if (auto version = findSnapshotVersion(package))
 			{
-				resolver.installVersion({ version });
+				if (!isReinstall(version, package))
+				{
+					resolver.installVersion({ version });
+				}
 			}
 			else
 			{

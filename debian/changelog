@@ -82,6 +82,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Parsing extended states: don't choke on records without
         'Auto-Installed' field.
       - [ABI break] ExtendedInfo: new member 'raw'.
+    - system/snapshots:
+      - 'setupResolverForSnapshotOnly': don't reinstall equal versions.
+        The regression was introduced in 2.6.0.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
