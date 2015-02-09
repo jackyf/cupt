@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010 by Eugene V. Lyubimkin                             *
+*   Copyright (C) 2010-2015 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -34,8 +34,8 @@ class BinaryPackage;
 class SourcePackage;
 struct Version;
 struct BinaryVersion;
-class SourceVersion;
-class ReleaseInfo;
+struct SourceVersion;
+struct ReleaseInfo;
 
 struct Relation;
 struct ArchitecturedRelation;
