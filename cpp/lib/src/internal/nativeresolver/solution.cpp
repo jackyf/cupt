@@ -45,15 +45,11 @@ class VectorBasedMap
 	typedef dg::Element key_t;
 	typedef data_t value_type; // for set_union
 	typedef vector< data_t > container_t;
-	typedef data_t* iterator_t;
-	typedef const data_t* const_iterator_t;
+	typedef typename container_t::iterator iterator_t;
+	typedef typename container_t::const_iterator const_iterator_t;
 	typedef KeyGetter key_getter_t;
  private:
 	container_t __container;
-	typename container_t::iterator __position_to_iterator(const_iterator_t position)
-	{
-		return static_cast< typename container_t::iterator >(const_cast< iterator_t >(position));
-	}
 	struct __comparator
 	{
 		bool operator()(const data_t& data, const key_t& key) const
@@ -66,15 +62,15 @@ class VectorBasedMap
 	size_t size() const { return __container.size(); }
 	void reserve(size_t size) { __container.reserve(size); }
 	void shrinkToFit() { __container.shrink_to_fit(); }
-	const_iterator_t begin() const { return &*__container.begin(); }
-	const_iterator_t end() const { return &*__container.end(); }
+	const_iterator_t begin() const { return __container.begin(); }
+	const_iterator_t end() const { return __container.end(); }
 	const_iterator_t lower_bound(const key_t& key) const
 	{
 		return std::lower_bound(begin(), end(), key, __comparator());
 	}
 	iterator_t lower_bound(const key_t& key)
 	{
-		return const_cast< iterator_t >(((const VectorBasedMap*)this)->lower_bound(key));
+		return std::lower_bound(__container.begin(), __container.end(), key, __comparator());
 	}
 	const_iterator_t find(const key_t& key) const
 	{
@@ -88,9 +84,7 @@ class VectorBasedMap
 	// this insert() is called only for unexisting elements
 	iterator_t insert(const_iterator_t position, data_t&& data)
 	{
-		auto distance = position - begin();
-		__container.insert(__position_to_iterator(position), std::move(data));
-		return const_cast< iterator_t >(begin()) + distance;
+		return __container.insert(position, std::move(data));
 	}
 	void push_back(const data_t& data)
 	{
