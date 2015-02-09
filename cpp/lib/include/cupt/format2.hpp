@@ -130,7 +130,7 @@ __attribute ((noreturn)) void fatal2(const string& format, const Args&... args)
 }
 
 template < typename... Args >
-void fatal2i(const char* format, const Args&... args)
+[[noreturn]] void fatal2i(const char* format, const Args&... args)
 {
 	fatal2((string("internal error: ") + format), args...);
 }
