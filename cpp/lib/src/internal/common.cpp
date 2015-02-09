@@ -17,6 +17,8 @@
 **************************************************************************/
 #include <cstring>
 #include <cerrno>
+#include <cstdlib>
+
 #include <map>
 
 #include <internal/common.hpp>
