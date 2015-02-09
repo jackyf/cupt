@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstddef>
+#include <cstdlib>
 
 #include <libgen.h>
 #include <glob.h>
