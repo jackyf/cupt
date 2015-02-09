@@ -20,6 +20,8 @@
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
+#include <clocale>
+#include <cstdlib>
 
 #include <algorithm>
 
