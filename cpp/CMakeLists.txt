@@ -20,6 +20,7 @@ IF(NOT EXISTS /usr/include/readline/readline.h)
 ENDIF(NOT EXISTS /usr/include/readline/readline.h)
 
 set(CMAKE_CXX_FLAGS "-pthread -ggdb -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security") # yes, we should move type-safe alternative eventually
 
 OPTION(VERBOSE "is build verbose")
 IF(VERBOSE)
