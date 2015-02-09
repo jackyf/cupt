@@ -21,6 +21,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cerrno>
 
 #include <string>
 
