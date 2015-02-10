@@ -28,7 +28,7 @@ namespace cupt {
 namespace internal {
 
 class CacheImpl;
-class StateData;
+struct StateData;
 
 }
 

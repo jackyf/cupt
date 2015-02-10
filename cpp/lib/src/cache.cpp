@@ -33,8 +33,9 @@ namespace cupt {
 typedef internal::CacheImpl::PrePackageMap PrePackageMap;
 typedef internal::CacheImpl::PrePackageRecord PrePackageRecord;
 
-struct Cache::PackageNameIterator::Impl: public PrePackageMap::const_iterator
+class Cache::PackageNameIterator::Impl: public PrePackageMap::const_iterator
 {
+ public:
 	Impl(PrePackageMap::const_iterator it)
 		: PrePackageMap::const_iterator(it)
 	{}
