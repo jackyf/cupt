@@ -8,6 +8,7 @@ our @EXPORT = qw(
 	exitcode
 	get_extended_states_path
 	get_dpkg_path
+	get_binary_architecture
 	stdout
 	stdall
 	compose_installed_record
@@ -66,6 +67,11 @@ sub get_extended_states_path {
 my $dpkg_path = '/bin/true';
 sub get_dpkg_path {
 	return $dpkg_path;
+}
+
+my $architecture = 'z128';
+sub get_binary_architecture {
+	return $architecture;
 }
 
 sub setup {
@@ -152,8 +158,6 @@ sub unify_packages_and_sources_option {
 	return (unify_ps_option($options, 'packages'),
 			unify_ps_option($options, 'sources'));
 }
-
-my $architecture = 'z128';
 
 sub generate_binary_command {
 	my %options = @_;
