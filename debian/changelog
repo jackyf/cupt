@@ -88,6 +88,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.
+    - examples:
+      - Added 'show-available' example.
   * debian:
     - control:
       - Added 'Breaks: dpkg (<< 1.17.11~)' for versioned provides support.

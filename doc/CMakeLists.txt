@@ -69,4 +69,5 @@ install(DIRECTORY examples DESTINATION share/doc/lib FILES_MATCHING PATTERN "*.c
 install(DIRECTORY ${ODIR}/reference/html DESTINATION share/doc/lib)
 install(DIRECTORY ${ODIR}/reference/man DESTINATION share FILES_MATCHING PATTERN cupt*)
 
-add_subdirectory(examples/show-upgradeable)
+add_subdirectory(examples)
+
