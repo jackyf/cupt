@@ -85,6 +85,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - system/snapshots:
       - 'setupResolverForSnapshotOnly': don't reinstall equal versions.
         The regression was introduced in 2.6.0.
+    - cache/package:
+      - [API break] Constructor: removed 'binaryArchitecture' parameter.
   * doc:
     - cmakelists:
       - Added rules building man pages from PODs.

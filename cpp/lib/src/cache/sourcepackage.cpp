@@ -25,8 +25,8 @@
 namespace cupt {
 namespace cache {
 
-SourcePackage::SourcePackage(const string* binaryArchitecture)
-	: Package(binaryArchitecture)
+SourcePackage::SourcePackage()
+	: Package()
 {}
 
 unique_ptr< Version > SourcePackage::_parse_version(const internal::VersionParseParameters& initParams) const
@@ -34,7 +34,7 @@ unique_ptr< Version > SourcePackage::_parse_version(const internal::VersionParse
 	return internal::parseSourceVersion(initParams);
 }
 
-bool SourcePackage::_is_architecture_appropriate(const Version*) const
+bool SourcePackage::_is_architecture_appropriate(const string&, const Version*) const
 {
 	return true;
 }

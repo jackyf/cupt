@@ -32,14 +32,11 @@ class CUPT_API BinaryPackage: public Package
  protected:
 	/// @cond
 	CUPT_LOCAL virtual unique_ptr< Version > _parse_version(const internal::VersionParseParameters&) const;
-	CUPT_LOCAL virtual bool _is_architecture_appropriate(const Version*) const;
+	CUPT_LOCAL virtual bool _is_architecture_appropriate(const string&, const Version*) const;
 	/// @endcond
  public:
 	/// constructor
-	/**
-	 * @param binaryArchitecture system binary architecture
-	 */
-	BinaryPackage(const string* binaryArchitecture);
+	BinaryPackage();
 	/// gets list of versions
 	vector< const BinaryVersion* > getVersions() const;
 	/// gets installed version

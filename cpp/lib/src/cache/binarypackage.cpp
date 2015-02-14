@@ -24,8 +24,8 @@
 namespace cupt {
 namespace cache {
 
-BinaryPackage::BinaryPackage(const string* binaryArchitecture)
-	: Package(binaryArchitecture)
+BinaryPackage::BinaryPackage()
+	: Package()
 {}
 
 unique_ptr< Version > BinaryPackage::_parse_version(const internal::VersionParseParameters& initParams) const
@@ -33,7 +33,7 @@ unique_ptr< Version > BinaryPackage::_parse_version(const internal::VersionParse
 	return internal::parseBinaryVersion(initParams);
 }
 
-bool BinaryPackage::_is_architecture_appropriate(const Version* version) const
+bool BinaryPackage::_is_architecture_appropriate(const string& binaryArchitecture, const Version* version) const
 {
 	auto binaryVersion = static_cast< const BinaryVersion* >(version);
 	if (binaryVersion->isInstalled())
@@ -41,7 +41,7 @@ bool BinaryPackage::_is_architecture_appropriate(const Version* version) const
 		return true;
 	}
 	auto architecture = binaryVersion->architecture;
-	return (architecture == "all" || architecture == *_binary_architecture);
+	return (architecture == "all" || architecture == binaryArchitecture);
 }
 
 vector< const BinaryVersion* > BinaryPackage::getVersions() const

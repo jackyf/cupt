@@ -30,15 +30,14 @@
 namespace cupt {
 namespace cache {
 
-Package::Package(const string* binaryArchitecture)
-	: _binary_architecture(binaryArchitecture)
+Package::Package()
 {}
 
 void Package::addEntry(const internal::VersionParseParameters& initParams)
 {
 	try
 	{
-		__merge_version(_parse_version(initParams));
+		__merge_version(*initParams.binaryArchitecturePtr, _parse_version(initParams));
 	}
 	catch (Exception& e)
 	{
@@ -80,9 +79,9 @@ const string installedSuffix = "installed";
 
 }
 
-void Package::__merge_version(unique_ptr< Version >&& parsedVersion)
+void Package::__merge_version(const string& binaryArchitecture, unique_ptr< Version >&& parsedVersion)
 {
-	if (!_is_architecture_appropriate(parsedVersion.get()))
+	if (!_is_architecture_appropriate(binaryArchitecture, parsedVersion.get()))
 	{
 		return; // skip this version
 	}

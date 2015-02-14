@@ -26,6 +26,7 @@ namespace internal {
 
 struct VersionParseParameters
 {
+	const string* binaryArchitecturePtr;
 	const string* packageNamePtr;
 	File* file; ///< file to read from
 	uint32_t offset; ///< version record offset in @ref file

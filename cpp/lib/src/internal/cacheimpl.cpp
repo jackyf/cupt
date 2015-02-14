@@ -68,12 +68,12 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 
 Package* CacheImpl::newBinaryPackage() const
 {
-	return new BinaryPackage(binaryArchitecture.get());
+	return new BinaryPackage();
 }
 
 Package* CacheImpl::newSourcePackage() const
 {
-	return new SourcePackage(binaryArchitecture.get());
+	return new SourcePackage();
 }
 
 Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageRecord > >& pre,
@@ -92,14 +92,16 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 		auto& package = target[packageName];
 		package.reset( (this->*packageBuilderMethod)() );
 
+		internal::VersionParseParameters versionInitParams;
+		versionInitParams.packageNamePtr = &packageName;
+		versionInitParams.binaryArchitecturePtr = binaryArchitecture.get();
+
 		vector< PrePackageRecord >& preRecord = preIt->second;
 		FORIT(preRecordIt, preRecord)
 		{
-			internal::VersionParseParameters versionInitParams;
 			versionInitParams.releaseInfo = preRecordIt->releaseInfoAndFile->first.get();
 			versionInitParams.file = preRecordIt->releaseInfoAndFile->second.get();
 			versionInitParams.offset = preRecordIt->offset;
-			versionInitParams.packageNamePtr = &packageName;
 			package->addEntry(versionInitParams);
 		}
 		preRecord.clear();
