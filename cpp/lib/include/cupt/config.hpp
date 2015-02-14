@@ -26,7 +26,7 @@ namespace cupt {
 
 namespace internal {
 
-struct ConfigImpl;
+class ConfigImpl;
 
 }
 

@@ -19,6 +19,7 @@
 #define CUPT_INTERNAL_FILESYSTEM_SEEN
 
 #include <cupt/common.hpp>
+#include <ctime>
 
 namespace cupt {
 namespace internal {

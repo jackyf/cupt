@@ -929,6 +929,7 @@ static string colorizeByActionType(const Colorizer& colorizer,
 	switch (actionType)
 	{
 		case WA::Install: color = Colorizer::Cyan; break;
+		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wswitch"
 		case WA::Remove: case fakeAutoRemove: color = Colorizer::Yellow; break;
 		case WA::Upgrade: color = Colorizer::Green; break;
@@ -1141,6 +1142,7 @@ Resolver::SuggestedPackages getSuggestedPackagesByAction(const Cache& cache,
 {
 	switch (actionType)
 	{
+		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wswitch"
 		case fakeNotPreferredVersionAction:
 			return generateNotPreferredVersionList(cache, offer.suggestedPackages);

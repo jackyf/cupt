@@ -21,6 +21,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cerrno>
 
 #include <string>
 
@@ -121,7 +122,7 @@ string format2e(const string& format, const Args&... args)
 CUPT_API void __mwrite_line(const char*, const string&);
 
 template < typename... Args >
-__attribute ((noreturn)) void fatal2(const string& format, const Args&... args)
+[[noreturn]] void fatal2(const string& format, const Args&... args)
 {
 	auto errorString = format2(format, args...);
 	__mwrite_line("E: ", errorString);
@@ -129,13 +130,13 @@ __attribute ((noreturn)) void fatal2(const string& format, const Args&... args)
 }
 
 template < typename... Args >
-void fatal2i(const char* format, const Args&... args)
+[[noreturn]] void fatal2i(const char* format, const Args&... args)
 {
 	fatal2((string("internal error: ") + format), args...);
 }
 
 template < typename... Args >
-void fatal2e(const string& format, const Args&... args)
+[[noreturn]] void fatal2e(const string& format, const Args&... args)
 {
 	auto errorString = format2e(format, args...);
 	__mwrite_line("E: ", errorString);

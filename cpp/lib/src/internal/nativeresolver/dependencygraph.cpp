@@ -1,5 +1,5 @@
 /**************************************************************************
-*   Copyright (C) 2010-2011 by Eugene V. Lyubimkin                        *
+*   Copyright (C) 2010-2015 by Eugene V. Lyubimkin                        *
 *                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License                  *
@@ -33,7 +33,7 @@ using std::list;
 namespace std {
 
 template< typename T >
-class hash< pair<T, T> >
+struct hash< pair<T, T> >
 {
  public:
 	size_t operator()(const pair<T, T>& p) const

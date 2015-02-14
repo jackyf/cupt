@@ -32,6 +32,7 @@
 #include <internal/worker/packages.hpp>
 #include <internal/worker/dpkg.hpp>
 
+#include <cstdlib>
 #include <unistd.h>
 
 namespace cupt {

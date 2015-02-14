@@ -98,12 +98,9 @@ void fillCommon(Version* v, const VersionParseParameters& initParams)
 
 }
 
-uint32_t tagValue2uint32(TagParser::StringRange stringRange)
+uint32_t tagValue2uint32(TagParser::StringRange tsr)
 {
-	return string2uint32({
-			static_cast< string::const_iterator >(stringRange.first),
-			static_cast< string::const_iterator >(stringRange.second)
-	});
+	return string2uint32(StringRange{tsr.first, tsr.second});
 }
 
 unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& initParams)
