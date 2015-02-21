@@ -12,6 +12,7 @@ our @EXPORT = qw(
 	stdout
 	stdall
 	compose_installed_record
+	compose_removed_record
 	compose_package_record
 	compose_autoinstalled_record
 	compose_version_pin_record
@@ -288,11 +289,24 @@ sub stdall {
 	return `$command 2>&1`;
 }
 
+sub compose_status_record {
+	my ($package_name, $status, $version_string) = @_;
+
+	return "Package: $package_name\nStatus: $status\nVersion: $version_string\nArchitecture: all\n";
+}
+
 sub compose_installed_record {
 	my ($package_name, $version_string, %options) = @_;
 
 	my $want = ($options{'on-hold'}//0) ? 'hold' : 'install';
-	return "Package: $package_name\nStatus: $want ok installed\nVersion: $version_string\nArchitecture: all\n";
+
+	return compose_status_record($package_name, "$want ok installed", $version_string);
+}
+
+sub compose_removed_record {
+	my ($package_name) = @_;
+
+	return compose_status_record($package_name, 'deinstall ok config-files' , 0);
 }
 
 sub compose_package_record {
