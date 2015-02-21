@@ -33,7 +33,7 @@ bool BinaryVersion::areHashesEqual(const Version* other) const
 	auto o = dynamic_cast< const BinaryVersion* >(other);
 	if (!o)
 	{
-		fatal2i("areHashesEqual: non-binary version parameter");
+		fatal2i("areHashesEqual: non-binary version parameter"); /// LCOV_EXCL_LINE
 	}
 	return file.hashSums.match(o->file.hashSums);
 }
