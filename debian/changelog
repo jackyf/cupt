@@ -45,6 +45,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
         option, not as absolute path.
       - 'changeSystem': preinstall hooks: pass original version strings of
         supposed versions, not id-suffixed ones.
+      - 'changeSystem': preinstall hooks v3: pass '-' instead of empty string
+        as architecture for purged versions.
       - 'changeSystem': dpkg commands: run '--triggers-only --pending' even if
         trigger deferring is switched off (see #766758 for discussion).
       - 'changeSystem': preserve unknown fields when writing to extended

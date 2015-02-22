@@ -206,6 +206,7 @@ const BinaryVersion* PackagesWorker::__get_fake_version_for_purge(const string& 
 		versionPtr->packageName = packageName;
 		versionPtr->versionString = "<dummy>";
 		versionPtr->essential = false;
+		versionPtr->architecture = "-";
 	}
 
 	return versionPtr.get();

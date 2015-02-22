@@ -8,6 +8,7 @@ sub test_line {
 
 		my @fields = split(m/ /, $line);
 		is(scalar @fields, $package_line_field_count, 'field count') or return;
+		is(0, (grep { $_ eq '' } @fields), 'no empty fields');
 
 		is($fields[1], $original_version, 'original version');
 		is($fields[$version_sign_field_index], $version_sign, 'version sign');
