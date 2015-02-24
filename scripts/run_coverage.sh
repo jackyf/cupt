@@ -32,5 +32,5 @@ lcov $CAPTURE_OPTIONS --capture --output-file ${OUTPUT}.tests
 lcov -a ${OUTPUT}.initial -a ${OUTPUT}.tests -o $OUTPUT
 
 # visualise
-genhtml --output-directory html --prefix $ABSOLUTE_SOURCE_ROOT_PATH $OUTPUT
+genhtml --output-directory html --prefix $ABSOLUTE_SOURCE_ROOT_PATH $OUTPUT --no-function-coverage
 
