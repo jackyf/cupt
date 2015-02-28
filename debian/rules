@@ -12,7 +12,7 @@ override_dh_auto_configure:
 	dh_auto_configure -- $(CMAKE_OPTIONS)
 
 override_dh_auto_install-arch:
-	$(MAKE) install
+	dh_auto_install
 	chrpath --delete $(CURDIR)/debian/tmp/usr/bin/cupt
 	install -m644 scripts/bash_completion $(CURDIR)/debian/cupt/etc/bash_completion.d/cupt
 
