@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-CMAKE_OPTIONS = -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/tmp/usr
+CMAKE_OPTIONS = -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=/usr
 ifeq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
 	CMAKE_OPTIONS += -DCMAKE_BUILD_TYPE=RelWithDebInfo
 else
