@@ -1,10 +1,10 @@
 #!/usr/bin/make -f
 
 CMAKE_OPTIONS = -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=$(CURDIR)/debian/tmp/usr
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
-	CMAKE_OPTIONS += -DOPTIMIZE=0
+ifeq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
+	CMAKE_OPTIONS += -DCMAKE_BUILD_TYPE=RelWithDebInfo
 else
-	CMAKE_OPTIONS += -DOPTIMIZE=2
+	CMAKE_OPTIONS += -DCMAKE_BUILD_TYPE=Debug
 endif
 
 
