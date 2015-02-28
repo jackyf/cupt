@@ -1,6 +1,5 @@
 #!/usr/bin/make -f
 
-PERL ?= /usr/bin/perl
 CMAKE_OPTIONS = -DLOCAL:bool=OFF
 ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
 	CMAKE_OPTIONS += -DOPTIMIZE=0
