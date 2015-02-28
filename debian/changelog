@@ -97,6 +97,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
   * debian:
     - control:
       - Added 'Breaks: dpkg (<< 1.17.11~)' for versioned provides support.
+    - rules:
+      - Enable dh_auto_configure's build system autodetection.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
 
