@@ -75,12 +75,11 @@ struct VersionsAndLinks
 		if (!arguments.empty())
 		{
 			// selected packages
-			FORIT(argumentIt, arguments)
+			for (const auto& argument: arguments)
 			{
-				auto selectedVersions = selectBinaryVersionsWildcarded(cache, *argumentIt);
-				FORIT(it, selectedVersions)
+				for (auto version: selectBinaryVersionsWildcarded(cache, argument))
 				{
-					addStartingVersion(*it);
+					addStartingVersion(version);
 				}
 			}
 		}
