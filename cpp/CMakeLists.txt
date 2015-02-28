@@ -23,11 +23,6 @@ set(CMAKE_CXX_FLAGS "-pthread -ggdb -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_S
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security") # yes, we should move type-safe alternative eventually
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 
-OPTION(VERBOSE "is build verbose")
-IF(VERBOSE)
-	set(CMAKE_VERBOSE_MAKEFILE TRUE)
-ENDIF()
-
 OPTION(LOCAL "is build local" ON)
 IF(LOCAL)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUPT_LOCAL_BUILD")
