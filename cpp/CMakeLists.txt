@@ -1,23 +1,23 @@
 IF(NOT EXISTS /usr/include/boost/xpressive/xpressive_dynamic.hpp)
 	message(FATAL_ERROR "missing Boost.Xpressive library")
-ENDIF(NOT EXISTS /usr/include/boost/xpressive/xpressive_dynamic.hpp)
+ENDIF()
 
 IF(NOT EXISTS /usr/include/boost/program_options.hpp)
 	message(FATAL_ERROR "missing Boost.ProgramOptions library")
-ENDIF(NOT EXISTS /usr/include/boost/program_options.hpp)
+ENDIF()
 
 find_package(Boost 1.42.0)
 IF(Boost_FOUND)
 	IF(Boost_VERSION LESS 104200)
 		message(FATAL_ERROR "need Boost of version 1.42.0")
 	ENDIF(Boost_VERSION LESS 104200)
-ELSE(Boost_FOUND)
+ELSE()
 	message(FATAL_ERROR "missing Boost")
-ENDIF(Boost_FOUND)
+ENDIF()
 
 IF(NOT EXISTS /usr/include/readline/readline.h)
 	message(FATAL_ERROR "missing GNU Readline library")
-ENDIF(NOT EXISTS /usr/include/readline/readline.h)
+ENDIF()
 
 set(CMAKE_CXX_FLAGS "-pthread -ggdb -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security") # yes, we should move type-safe alternative eventually
@@ -26,12 +26,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 OPTION(VERBOSE "is build verbose")
 IF(VERBOSE)
 	set(CMAKE_VERBOSE_MAKEFILE TRUE)
-ENDIF(VERBOSE)
+ENDIF()
 
 OPTION(LOCAL "is build local" ON)
 IF(LOCAL)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUPT_LOCAL_BUILD")
-ENDIF(LOCAL)
+ENDIF()
 
 OPTION(OPTIMIZE "is build optimized")
 IF(OPTIMIZE GREATER 0)
@@ -60,9 +60,9 @@ execute_process(
 IF(CUPT_VERSION)
 	message(STATUS "Detected Cupt version: ${CUPT_VERSION}")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUPT_VERSION=${CUPT_VERSION}")
-ELSE(CUPT_VERSION)
+ELSE()
 	message(FATAL_ERROR "Unable to detect Cupt version.")
-ENDIF(CUPT_VERSION)
+ENDIF()
 
 include_directories(.)
 
