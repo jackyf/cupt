@@ -55,7 +55,7 @@ function(process_pod _name _section)
 	list(APPEND POD_MANS ${MAN_FILE})
 	set(POD_MANS ${POD_MANS} PARENT_SCOPE)
 
-	install(FILES ${MAN_FILE} DESTINATION share/doc)
+	install(FILES ${ODIR}/${MAN_FILE} DESTINATION share/doc)
 endfunction()
 
 process_pod(cupt 1)
