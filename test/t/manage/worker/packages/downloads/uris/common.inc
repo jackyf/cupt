@@ -1,6 +1,17 @@
 eval get_inc_code('../../common');
 
 sub test_uris {
+	my ($comment, $cupt, $subcommand, $uris) = @_;
+
+	my $output = stdall(get_worker_command($cupt, $subcommand));
+
+	my @downloads = ($output =~ m/^S: downloading: (.*)$/mg);
+
+	is_deeply(\@downloads, $uris, $comment)
+			or diag($output);
+}
+
+sub test_uris_for_bbb_and_ccc {
 	my (%p) = @_;
 
 	my $cupt = setup_for_worker(
@@ -12,14 +23,7 @@ sub test_uris {
 		'debpatch' => $p{'debpatch'},
 	);
 
-	my $output = stdall(get_worker_command($cupt, "install bbb ccc --remove aaa"));
-
-	my @downloads = ($output =~ m/^S: downloading: (.*)$/mg);
-
-	subtest $p{'comment'} => sub {
-		is(scalar @downloads, 2, "2 downloads are planned");
-		is($downloads[0], $p{'expected_bbb'}, 'download of bbb');
-		is($downloads[1], $p{'expected_ccc'}, 'download of ccc');
-	} or diag($output);
+	test_uris($p{'comment'}, $cupt, "install bbb ccc --remove aaa",
+			[ $p{'expected_bbb'}, $p{'expected_ccc'} ]);
 };
 

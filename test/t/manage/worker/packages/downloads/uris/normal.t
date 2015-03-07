@@ -6,7 +6,7 @@ use warnings;
 
 eval get_inc_code('common');
 
-test_uris(
+test_uris_for_bbb_and_ccc(
 	'comment' => 'planned downloads',
 	'packages2' => [
 		{

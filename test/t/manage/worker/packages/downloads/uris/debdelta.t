@@ -33,7 +33,7 @@ sub test {
 
 	$parameters{'comment'} = "debpatch is present: $debpatch_present, version of bbb: $version_of_bbb";
 
-	test_uris(%parameters);
+	test_uris_for_bbb_and_ccc(%parameters);
 }
 
 sub compose_bbb_debdelta_addendum {
