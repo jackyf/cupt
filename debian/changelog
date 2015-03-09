@@ -14,6 +14,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - 'snapshot save':
       - Accept only snapshot names made of whitelist characters (lowercase
         latin letters, digits, dash, underscore).
+    - Version selecting:
+      - Fixed '<package>=<version>' syntax for versions with id suffixes.
   * lib:
     - config:
       - New option 'cupt::resolver::score::version-factor::common'.

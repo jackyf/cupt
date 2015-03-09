@@ -73,7 +73,7 @@ string convertWildcardedExpressionToFse(const string& expression)
 		else // exact version string
 		{
 			checkVersionString(remainder);
-			additionalFseRule = format2("version(%s)", remainder);
+			additionalFseRule = format2("version(%s)", globToRegexString(remainder));
 		}
 
 		return format2("%s & %s", getPackageNameFse(packageGlobExpression), additionalFseRule);
