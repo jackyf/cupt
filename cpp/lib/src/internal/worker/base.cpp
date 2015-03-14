@@ -50,8 +50,6 @@ WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_pt
 
 	string lockPath = _config->getPath("cupt::directory::state") + "/lock";
 	__lock = new Lock(*_config, lockPath);
-
-	signal(SIGPIPE, SIG_IGN);
 }
 
 WorkerBase::~WorkerBase()
@@ -145,6 +143,13 @@ static void writeBufferToFd(Pipe& pipe, const string& buffer, const string& pipe
 	pipe.useAsReader(); // close the writer fd
 }
 
+static void readTheRest(Pipe& pipe)
+{
+	int fd = pipe.getReaderFd();
+	char unused[1024];
+	while (read(fd, unused, sizeof(unused))) {};
+}
+
 class ScopedThread
 {
  public:
@@ -175,7 +180,7 @@ void WorkerBase::p_runCommandWithInput(Logger::Subsystem subsystem, Logger::Leve
 
 	auto fdAmendedCommand = format2("bash -c '(%s) %s'", command, getRedirectionSuffix(inputPipe->getReaderFd(), input.fd));
 	p_invokeShellCommand(subsystem, level, fdAmendedCommand);
-	inputPipe->useAsWriter(); // close the reader fd
+	readTheRest(*inputPipe);
 }
 
 const string WorkerBase::partialDirectorySuffix = "/partial";

@@ -31,6 +31,7 @@ sub test {
 
 		is($?, 0, 'exit code indicates success');
 		$checker->($output);
+		unlike($output, qr/unable to close a part/, 'no fd closing warning messages');
 	} or diag($output);
 }
 
