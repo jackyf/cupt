@@ -50,6 +50,8 @@ WorkerBase::WorkerBase(const shared_ptr< const Config >& config, const shared_pt
 
 	string lockPath = _config->getPath("cupt::directory::state") + "/lock";
 	__lock = new Lock(*_config, lockPath);
+
+	signal(SIGPIPE, SIG_IGN);
 }
 
 WorkerBase::~WorkerBase()
@@ -173,6 +175,7 @@ void WorkerBase::p_runCommandWithInput(Logger::Subsystem subsystem, Logger::Leve
 
 	auto fdAmendedCommand = format2("bash -c '(%s) %s'", command, getRedirectionSuffix(inputPipe->getReaderFd(), input.fd));
 	p_invokeShellCommand(subsystem, level, fdAmendedCommand);
+	inputPipe->useAsWriter(); // close the reader fd
 }
 
 const string WorkerBase::partialDirectorySuffix = "/partial";
