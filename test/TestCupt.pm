@@ -314,7 +314,10 @@ sub compose_package_record {
 
 	my $sha1_of_empty_file = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
 	my $sha = ($options{'sha'} // $sha1_of_empty_file);
-	return "Package: $package_name\nVersion: $version_string\nArchitecture: all\nSHA1: $sha\n";
+
+	my $arch = ($options{'architecture'} // 'all');
+
+	return "Package: $package_name\nVersion: $version_string\nArchitecture: $arch\nSHA1: $sha\n";
 }
 
 sub compose_autoinstalled_record {
