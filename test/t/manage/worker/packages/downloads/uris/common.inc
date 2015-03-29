@@ -1,4 +1,4 @@
-eval get_inc_code('../../common');
+require(get_rinclude_path(__FILE__, '../../common'));
 
 sub test_uris {
 	my ($comment, $cupt, $subcommand, $uris) = @_;

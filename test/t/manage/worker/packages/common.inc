@@ -60,3 +60,5 @@ sub parse_dpkg_commands {
 	return map(&$parse_line, @lines);
 }
 
+1;
+

@@ -4,7 +4,7 @@ use Test::More tests => 4;
 use strict;
 use warnings;
 
-eval get_inc_code('common');
+require(get_rinclude_path(__FILE__, '../common'));
 
 my $debdelta_conf = <<END;
 [our archive]

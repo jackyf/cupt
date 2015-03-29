@@ -4,7 +4,7 @@ use Test::More tests => 3;
 use strict;
 use warnings;
 
-eval get_inc_code('common');
+require(get_rinclude_path(__FILE__, 'common'));
 
 my $cupt = setup_for_worker(
 	'packages2' => [

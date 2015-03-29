@@ -4,7 +4,7 @@ use Test::More tests => 1;
 use strict;
 use warnings;
 
-eval get_inc_code('common');
+require(get_rinclude_path(__FILE__, 'common'));
 
 test_uris_for_bbb_and_ccc(
 	'comment' => 'planned downloads',
