@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 7;
+use Test::More tests => 11;
 
 use strict;
 use warnings;
@@ -45,8 +45,10 @@ sub generate_expected_uri {
 	return $result;
 }
 
+my $conf;
+
 sub test {
-	my ($comment, $conf, $package_sources, $expected_debdelta_variants) = @_;
+	my ($comment, $package_sources, $expected_debdelta_variants) = @_;
 
 	my $cupt = setup_for_worker(
 		'debdelta_conf' => $conf,
@@ -65,19 +67,35 @@ my $d1 = 'http://deltas.info/pub';
 my $d2 = 'ftp://chunks.net/bar3/cafe5';
 
 
+$conf = "\n";
 test('no debdelta sources',
-		"\n", [ {} ], []);
+		[ {} ], []);
 
+$conf = "[pah]\ndelta_uri=$d1\nLabel=lll\n\n";
 test('debdelta source with label which does not match',
-		"[pah]\ndelta_uri=$d1\nLabel=lll\n\n", [ {} ], []);
+		[ {} ], []);
 test('debdelta source with label which matches',
-		"[pah]\ndelta_uri=$d1\nLabel=lll\n\n", [ {'label'=>'lll'} ], [ $d1 ]);
+		[ {'label'=>'lll'} ], [ $d1 ]);
+
+$conf = "[umm]\ndelta_uri=$d1\nArchive=aaa\n\n";
 test('debdelta source with archive which does not match',
-		"[umm]\ndelta_uri=$d1\nArchive=aaa\n\n", [ {} ], []);
+		[ {} ], []);
 test('debdelta source with archive which matches',
-		"[umm]\ndelta_uri=$d1\nArchive=aaa\n\n", [ {'archive'=>'aaa'} ], [ $d1 ]);
+		[ {'archive'=>'aaa'} ], [ $d1 ]);
+
+$conf = "[doh]\ndelta_uri=$d1\nOrigin=vvv\n\n";
 test('debdelta source with vendor which does not match',
-		"[doh]\ndelta_uri=$d1\nOrigin=vvv\n\n", [ {} ], []);
+		[ {} ], []);
 test('debdelta source with vendor which matches',
-		"[doh]\ndelta_uri=$d1\nOrigin=vvv\n\n", [ {'vendor'=>'vvv'} ], [ $d1 ]);
+		[ {'vendor'=>'vvv'} ], [ $d1 ]);
+
+$conf = "[huh]\ndelta_uri=$d1\nArchive=aaa\nOrigin=vvv\n\n";
+test('debdelta source with archive and vendor, nothing matches',
+		[ {'archive'=>'boo', 'vendor'=>'boo'} ], []);
+test('debdelta source with archive and vendor, only archive matches',
+		[ {'archive'=>'aaa', 'vendor'=>'boo'} ], []);
+test('debdelta source with archive and vendor, only vendor matches',
+		[ {'archive'=>'boo', 'vendor'=>'vvv'} ], []);
+test('debdelta source with archive and vendor, both match',
+		[ {'archive'=>'aaa', 'vendor'=>'vvv'} ], [ $d1 ]);
 
