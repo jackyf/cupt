@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 11;
+use Test::More tests => 18;
 
 use strict;
 use warnings;
@@ -65,6 +65,7 @@ sub test {
 
 my $d1 = 'http://deltas.info/pub';
 my $d2 = 'ftp://chunks.net/bar3/cafe5';
+my $d3 = 'https://t.org/qwerty';
 
 
 $conf = "\n";
@@ -98,4 +99,34 @@ test('debdelta source with archive and vendor, only vendor matches',
 		[ {'archive'=>'boo', 'vendor'=>'vvv'} ], []);
 test('debdelta source with archive and vendor, both match',
 		[ {'archive'=>'aaa', 'vendor'=>'vvv'} ], [ $d1 ]);
+
+$conf = <<END;
+[s1]
+delta_uri=$d1
+Archive=aaa
+
+[s2]
+delta_uri=$d2
+Label=lll
+
+[s3]
+delta_uri=$d3
+Origin=vvv
+Archive=exp
+
+END
+test('debdelta multi-source, no matches 1',
+		[ {} ], []);
+test('debdelta multi-source, no matches 2',
+		[ {'archive'=>'boo', 'label'=>'boo'} ], []);
+test('debdelta multi-source, s1 matches',
+		[ {'archive'=>'aaa'} ], [ $d1 ]);
+test('debdelta multi-source, s2 matches',
+		[ {'label'=>'lll'} ], [ $d2 ]);
+test('debdelta multi-source, s3 matches',
+		[ {'archive'=>'exp', 'vendor'=>'vvv'} ], [ $d3 ]);
+test('debdelta multi-source, s1 and s2 match',
+		[ {'archive'=>'aaa', 'label'=>'lll'} ], [ $d1, $d2 ]);
+test('debdelta multi-source, s2 and s3 match',
+		[ {'archive'=>'exp', 'vendor'=>'vvv', 'label'=>'lll'} ], [ $d2, $d3 ]);
 
