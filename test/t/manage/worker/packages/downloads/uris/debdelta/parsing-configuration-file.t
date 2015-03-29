@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 18;
+use Test::More tests => 23;
 
 use strict;
 use warnings;
@@ -100,6 +100,15 @@ test('debdelta source with archive and vendor, only vendor matches',
 test('debdelta source with archive and vendor, both match',
 		[ {'archive'=>'aaa', 'vendor'=>'vvv'} ], [ $d1 ]);
 
+test('multiple version sources, nothing matches',
+		[ {'archive'=>'boo'}, {'vendor'=>'boo'} ], []);
+test('multiple version sources, first matches',
+		[ {'archive'=>'aaa', 'vendor'=>'vvv'}, {'label'=>'lll'} ], [ $d1 ]);
+test('multiple version sources, second matches',
+		[ {'archive'=>'arh'}, {'archive'=>'aaa', 'vendor'=>'vvv'} ], [ $d1 ]);
+test('multiple version sources, matches across several sources',
+		[ {'archive'=>'aaa'}, {'vendor'=>'vvv'} ], [ $d1 ]);
+
 $conf = <<END;
 [s1]
 delta_uri=$d1
@@ -129,4 +138,6 @@ test('debdelta multi-source, s1 and s2 match',
 		[ {'archive'=>'aaa', 'label'=>'lll'} ], [ $d1, $d2 ]);
 test('debdelta multi-source, s2 and s3 match',
 		[ {'archive'=>'exp', 'vendor'=>'vvv', 'label'=>'lll'} ], [ $d2, $d3 ]);
+test('debdelta multi-source, s1 and s2 and s3 match',
+		[ {'archive'=>'aaa'}, {'archive'=>'exp', 'label'=>'lll'}, {'vendor'=>'vvv'} ], [ $d1, $d2, $d3 ]);
 
