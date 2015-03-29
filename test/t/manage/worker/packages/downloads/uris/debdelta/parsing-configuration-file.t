@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 5;
+use Test::More tests => 7;
 
 use strict;
 use warnings;
@@ -64,8 +64,10 @@ sub test {
 my $d1 = 'http://deltas.info/pub';
 my $d2 = 'ftp://chunks.net/bar3/cafe5';
 
+
 test('no debdelta sources',
 		"\n", [ {} ], []);
+
 test('debdelta source with label which does not match',
 		"[pah]\ndelta_uri=$d1\nLabel=lll\n\n", [ {} ], []);
 test('debdelta source with label which matches',
@@ -74,4 +76,8 @@ test('debdelta source with archive which does not match',
 		"[umm]\ndelta_uri=$d1\nArchive=aaa\n\n", [ {} ], []);
 test('debdelta source with archive which matches',
 		"[umm]\ndelta_uri=$d1\nArchive=aaa\n\n", [ {'archive'=>'aaa'} ], [ $d1 ]);
+test('debdelta source with vendor which does not match',
+		"[doh]\ndelta_uri=$d1\nOrigin=vvv\n\n", [ {} ], []);
+test('debdelta source with vendor which matches',
+		"[doh]\ndelta_uri=$d1\nOrigin=vvv\n\n", [ {'vendor'=>'vvv'} ], [ $d1 ]);
 
