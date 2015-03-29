@@ -5,6 +5,7 @@ use warnings;
 
 our @EXPORT = qw(
 	get_inc_code
+	get_rinclude_path
 	exitcode
 	get_extended_states_path
 	get_dpkg_path
@@ -59,6 +60,12 @@ sub get_inc_path {
 sub get_inc_code {
 	my $path = get_inc_path($_[0]);
 	return `cat $path`;
+}
+
+sub get_rinclude_path {
+	my ($from, $includee) = @_;
+	my $from_dir = (File::Spec->splitpath($from))[1];
+	return "$from_dir/$includee.inc";
 }
 
 sub get_extended_states_path {
