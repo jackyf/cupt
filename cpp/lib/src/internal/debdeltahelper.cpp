@@ -95,6 +95,30 @@ static DebdeltaHelper::DownloadRecord generateDownloadRecord(
 	return record;
 }
 
+static bool isReleasePropertyPresent(const ReleaseInfo& releaseInfo,
+		const string& key, const string& value)
+{
+	const string* releaseValue;
+	if (key == "Origin")
+	{
+		releaseValue = &releaseInfo.vendor;
+	}
+	else if (key == "Label")
+	{
+		releaseValue = &releaseInfo.label;
+	}
+	else if (key == "Archive")
+	{
+		releaseValue = &releaseInfo.archive;
+	}
+	else
+	{
+		return false;
+	}
+
+	return (*releaseValue == value);
+}
+
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
@@ -136,26 +160,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			bool found = false;
 			FORIT(sourceIt, version->sources)
 			{
-				const ReleaseInfo* releaseInfo = sourceIt->release;
-				string releaseValue;
-				if (key == "Origin")
-				{
-					releaseValue = releaseInfo->vendor;
-				}
-				else if (key == "Label")
-				{
-					releaseValue = releaseInfo->label;
-				}
-				else if (key == "Archive")
-				{
-					releaseValue = releaseInfo->archive;
-				}
-				else
-				{
-					continue;
-				}
-
-				if (releaseValue == value)
+				if (isReleasePropertyPresent(*sourceIt->release, key, value))
 				{
 					found = true;
 					break;
