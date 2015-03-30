@@ -132,6 +132,25 @@ static bool isReleasePropertyPresent(const Version* version,
 	return false;
 }
 
+static bool allSourcePropertiesMatch(const map<string, string>& sourceMap, const BinaryVersion* version)
+{
+	for (const auto& keyValue: sourceMap)
+	{
+		const string& key = keyValue.first;
+		if (key == "delta_uri")
+		{
+			continue;
+		}
+		const string& value = keyValue.second;
+
+		if (!isReleasePropertyPresent(version, key, value))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
@@ -161,26 +180,13 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			continue;
 		}
 
-		FORIT(keyValueIt, sourceMap)
+		if (!allSourcePropertiesMatch(sourceMap, version))
 		{
-			const string& key = keyValueIt->first;
-			if (key == "delta_uri")
-			{
-				continue;
-			}
-			const string& value = keyValueIt->second;
-
-			if (!isReleasePropertyPresent(version, key, value))
-			{
-				goto next_source;
-			}
+			continue;
 		}
 
 		// suitable
 		result.push_back(generateDownloadRecord(deltaUriIt->second, version, installedVersion));
-
-		next_source:
-		;
 	}
 
 	return result;
