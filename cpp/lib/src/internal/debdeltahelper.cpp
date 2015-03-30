@@ -75,6 +75,26 @@ static string httpMangleVersionString(StringRange input)
 	return result;
 }
 
+static DebdeltaHelper::DownloadRecord generateDownloadRecord(
+		const string& deltaUri, const BinaryVersion* version, const Version* installedVersion)
+{
+	string baseUri = "debdelta:" + deltaUri;
+
+	// not very reliable :(
+	string appendage = version->sources[0].directory + '/';
+	appendage += join("_", vector< string >{ version->packageName,
+			httpMangleVersionString(getOriginalVersionString(installedVersion->versionString)),
+			httpMangleVersionString(version->versionString),
+			version->architecture });
+	appendage += ".debdelta";
+
+	DebdeltaHelper::DownloadRecord record;
+	record.baseUri = baseUri;
+	record.uri = baseUri + '/' + appendage;
+
+	return record;
+}
+
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
@@ -148,23 +168,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			}
 		}
 
-		{
-			// suitable
-			string baseUri = "debdelta:" + deltaUriIt->second;
-
-			// not very reliable :(
-			string appendage = version->sources[0].directory + '/';
-			appendage += join("_", vector< string >{ packageName,
-					httpMangleVersionString(getOriginalVersionString(installedVersion->versionString)),
-					httpMangleVersionString(version->versionString),
-					version->architecture });
-			appendage += ".debdelta";
-
-			DownloadRecord record;
-			record.baseUri = baseUri;
-			record.uri = baseUri + '/' + appendage;
-			result.push_back(std::move(record));
-		}
+		// suitable
+		result.push_back(generateDownloadRecord(deltaUriIt->second, version, installedVersion));
 
 		next_source:
 		;
