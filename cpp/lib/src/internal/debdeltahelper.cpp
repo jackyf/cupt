@@ -53,6 +53,28 @@ DebdeltaHelper::DebdeltaHelper(const Config& config)
 	}
 }
 
+static string httpMangleVersionString(StringRange input)
+{
+	// I hate http uris, hadn't I told this before, hm...
+	const string doubleEscapedColon = "%253a";
+
+	string result;
+	// replacing
+	for (const char c: input)
+	{
+		if (c != ':')
+		{
+			result += c;
+		}
+		else
+		{
+			result += doubleEscapedColon;
+		}
+	}
+
+	return result;
+}
+
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
@@ -72,28 +94,6 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 	{
 		return result; // nothing to try
 	}
-
-	auto mangleVersionString = [](StringRange input)
-	{
-		// I hate http uris, hadn't I told this before, hm...
-		const string doubleEscapedColon = "%253a";
-
-		string result;
-		// replacing
-		for (const char c: input)
-		{
-			if (c != ':')
-			{
-				result += c;
-			}
-			else
-			{
-				result += doubleEscapedColon;
-			}
-		}
-
-		return result;
-	};
 
 	FORIT(sourceIt, __sources)
 	{
@@ -155,8 +155,8 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			// not very reliable :(
 			string appendage = version->sources[0].directory + '/';
 			appendage += join("_", vector< string >{ packageName,
-					mangleVersionString(getOriginalVersionString(installedVersion->versionString)),
-					mangleVersionString(version->versionString),
+					httpMangleVersionString(getOriginalVersionString(installedVersion->versionString)),
+					httpMangleVersionString(version->versionString),
 					version->architecture });
 			appendage += ".debdelta";
 
