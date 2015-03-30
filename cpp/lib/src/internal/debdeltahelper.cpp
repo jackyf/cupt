@@ -171,9 +171,9 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		return result; // nothing to try
 	}
 
-	FORIT(sourceIt, __sources)
+	for (const auto& source: __sources)
 	{
-		const map< string, string >& sourceMap = sourceIt->second;
+		const auto& sourceMap = source.second;
 		auto deltaUriIt = sourceMap.find("delta_uri");
 		if (deltaUriIt == sourceMap.end())
 		{
