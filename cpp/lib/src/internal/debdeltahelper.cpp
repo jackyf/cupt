@@ -119,6 +119,19 @@ static bool isReleasePropertyPresent(const ReleaseInfo& releaseInfo,
 	return (*releaseValue == value);
 }
 
+static bool isReleasePropertyPresent(const Version* version,
+		const string& key, const string& value)
+{
+	for (const auto& source: version->sources)
+	{
+		if (isReleasePropertyPresent(*source.release, key, value))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 		const cache::BinaryVersion* version,
 		const shared_ptr< const Cache >& cache)
@@ -157,17 +170,7 @@ vector< DebdeltaHelper::DownloadRecord > DebdeltaHelper::getDownloadInfo(
 			}
 			const string& value = keyValueIt->second;
 
-			bool found = false;
-			FORIT(sourceIt, version->sources)
-			{
-				if (isReleasePropertyPresent(*sourceIt->release, key, value))
-				{
-					found = true;
-					break;
-				}
-			}
-
-			if (!found)
+			if (!isReleasePropertyPresent(version, key, value))
 			{
 				goto next_source;
 			}
