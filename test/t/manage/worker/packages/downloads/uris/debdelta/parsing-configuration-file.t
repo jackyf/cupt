@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 23;
+use Test::More tests => 25;
 
 use strict;
 use warnings;
@@ -140,4 +140,29 @@ test('debdelta multi-source, s2 and s3 match',
 		[ {'archive'=>'exp', 'vendor'=>'vvv', 'label'=>'lll'} ], [ $d2, $d3 ]);
 test('debdelta multi-source, s1 and s2 and s3 match',
 		[ {'archive'=>'aaa'}, {'archive'=>'exp', 'label'=>'lll'}, {'vendor'=>'vvv'} ], [ $d1, $d2, $d3 ]);
+
+
+$conf = <<END;
+[s1]
+Archive=aaa
+
+[s2]
+Archive=aaa
+delta_uri=$d2
+
+END
+test('debdelta source blocking issues, delta_uri field missing',
+		[ {'archive'=>'aaa'} ], [ $d2 ]);
+
+$conf = <<END;
+[s1]
+delta_uri=$d2
+SomeField=someValue
+
+[s2]
+delta_uri=$d3
+
+END
+test('debdelta source blocking issues, unknown field prevents usage',
+		[ {} ], [ $d3 ]);
 
