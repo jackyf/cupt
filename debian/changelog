@@ -17,6 +17,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - Version selecting:
       - Fixed '<package>=<version>' syntax for versions with id suffixes.
   * lib:
+    - Bumped API version to 4.
     - config:
       - New option 'cupt::resolver::score::version-factor::common'.
       - New option 'cupt::resolver::score::version-factor::negative'.

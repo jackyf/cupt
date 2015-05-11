@@ -29,18 +29,18 @@ Package: cupt-dbg
 Section: debug
 Priority: extra
 Architecture: any
-Depends: libcupt3-0 (= ${binary:Version}) | cupt (= ${binary:Version}) |
- libcupt3-0-downloadmethod-curl (= ${binary:Version}) |
- libcupt3-0-downloadmethod-wget (= ${binary:Version}),
+Depends: libcupt4-0 (= ${binary:Version}) | cupt (= ${binary:Version}) |
+ libcupt4-0-downloadmethod-curl (= ${binary:Version}) |
+ libcupt4-0-downloadmethod-wget (= ${binary:Version}),
  ${misc:Depends}
 Description: flexible package manager -- debugging symbols
  This package contains gdb debugging symbols for the Cupt packages.
 
-Package: libcupt3-0
+Package: libcupt4-0
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt-common (>= ${source:Version})
 Breaks: debdelta (<< 0.31), dpkg (<< 1.17.11~)
-Recommends: libcupt3-0-downloadmethod-curl | libcupt3-0-downloadmethod-wget, bzip2, gpgv, ed
+Recommends: libcupt4-0-downloadmethod-curl | libcupt4-0-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
 Description: flexible package manager -- runtime library
  This is a Cupt library implementing high-level package manager for Debian and
@@ -68,31 +68,31 @@ Replaces: libcupt2-0
 Description: flexible package manager -- runtime library (support files)
  This package provides architecture-independent support parts for Cupt library.
  .
- See also description of libcupt3-0 package.
+ See also description of libcupt4-0 package.
 
-Package: libcupt3-dev
+Package: libcupt4-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends}, libcupt3-0 (= ${binary:Version})
+Depends: ${misc:Depends}, libcupt4-0 (= ${binary:Version})
 Conflicts: libcupt2-dev
-Suggests: libcupt3-doc
+Suggests: libcupt4-doc
 Description: flexible package manager -- development files
  This package provides headers for Cupt library.
  .
- See also description of libcupt3-0 package.
+ See also description of libcupt4-0 package.
 
-Package: libcupt3-doc
+Package: libcupt4-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}
 Description: flexible package manager -- library documentation
  This package provides documentation for Cupt library.
  .
- See also description of libcupt3-0 package.
+ See also description of libcupt4-0 package.
 
 Package: cupt
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt3-0 (>= ${binary:Version})
+Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt4-0 (>= ${binary:Version})
 Breaks: daptup (<< 0.12.2~)
 Suggests: sensible-utils, libreadline6
 Description: flexible package manager -- console interface
@@ -123,22 +123,22 @@ Description: flexible package manager -- console interface
  .
  Cupt has built-in support for APT repositories using the file:// or copy://
  URL schemas. For access to remote repositories using HTTP or FTP, install a
- download method such as libcupt3-0-downloadmethod-curl.
+ download method such as libcupt4-0-downloadmethod-curl.
 
-Package: libcupt3-0-downloadmethod-curl
+Package: libcupt4-0-downloadmethod-curl
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: flexible package manager -- libcurl download method
  This package provides http(s) and ftp download handlers for Cupt library
  using libcurl.
  .
- See also description of libcupt3-0 package.
+ See also description of libcupt4-0 package.
 
-Package: libcupt3-0-downloadmethod-wget
+Package: libcupt4-0-downloadmethod-wget
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, wget
 Description: flexible package manager -- wget download method
  This package provides http(s) and ftp download handlers for Cupt library
  using wget.
  .
- See also description of libcupt3-0 package.
+ See also description of libcupt4-0 package.
