@@ -101,6 +101,8 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - reference:
       - Removed timestamps from documentation. Makes builds reproducible.
         Patch by Chris Lamb. (Closes: #777576)
+    - news:
+      - Moved to actual 'doc' directory.
   * debian:
     - control:
       - Added 'Breaks: dpkg (<< 1.17.11~)' for versioned provides support.
