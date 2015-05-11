@@ -1,3 +1,14 @@
+2.9
+ - The dependency resolver got an automatic quality bar adjustment
+   algorithm, based on problem's complexity. This makes manual setting of the
+   'quality-adjustment' score option unnecessary for many cases where it was
+   needed before. Default values of many score options were revisited to take
+   advantage of the new algorithm, including removing a starting positive bias.
+ - Support for versioned provides.
+ - 'why' subcommand: now prefers more strong and "more left" relations.
+ - New 'cupt::resolver::score::version-factor::*' option family.
+ - New FSE 'source-to-binary'.
+
 2.8
  - Added minimal support for <package>:any syntax.
 
