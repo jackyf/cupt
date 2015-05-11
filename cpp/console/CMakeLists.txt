@@ -14,6 +14,6 @@ add_executable(cupt.bin
 	functionselectors.cpp
 	selectors.cpp)
 set_property(TARGET cupt.bin PROPERTY OUTPUT_NAME cupt)
-target_link_libraries(cupt.bin libcupt3 boost_program_options)
+target_link_libraries(cupt.bin libcupt boost_program_options)
 
 install(TARGETS cupt.bin DESTINATION bin)

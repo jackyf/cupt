@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDOWNLOADMETHODS_DIR=${PASSED_DOWNLOADM
 
 include_directories(include)
 include_directories(src)
-add_library(libcupt3 SHARED
+add_library(libcupt SHARED
 	./src/internal/common.cpp
 	./src/internal/configparser.cpp
 	./src/internal/nativeresolver/impl.cpp
@@ -64,8 +64,8 @@ add_library(libcupt3 SHARED
 	./src/hashsums.cpp
 	./src/versionstring.cpp
 )
-set_target_properties(libcupt3 PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
-target_link_libraries(libcupt3 dl rt gcrypt -Wl,--no-undefined)
+set_target_properties(libcupt PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME cupt3)
+target_link_libraries(libcupt dl rt gcrypt -Wl,--no-undefined)
 
-install(TARGETS libcupt3 DESTINATION lib)
+install(TARGETS libcupt DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
