@@ -98,6 +98,9 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
       - Added rules building man pages from PODs.
     - examples:
       - Added 'show-available' example.
+    - reference:
+      - Removed timestamps from documentation. Makes builds reproducible.
+        Patch by Chris Lamb. (Closes: #777576)
   * debian:
     - control:
       - Added 'Breaks: dpkg (<< 1.17.11~)' for versioned provides support.
