@@ -35,6 +35,7 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${OUR_LINKER_FLAGS}"
 
 set(CUPT_API_VERSION 3)
 set(CUPT_SOVERSION 0)
+set(CUPT_RELATIVE_DOWNLOADMETHODS_DIR "lib/cupt${CUPT_API_VERSION}-${CUPT_SOVERSION}/downloadmethods"
 
 # detect version from debian/changelog
 execute_process(

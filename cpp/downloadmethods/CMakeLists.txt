@@ -17,4 +17,4 @@ set_property(TARGET downloadmethod-file PROPERTY OUTPUT_NAME file)
 target_link_libraries(downloadmethod-file libcupt3)
 
 install(TARGETS downloadmethod-file downloadmethod-wget downloadmethod-curl downloadmethod-debdelta
-		DESTINATION lib/cupt${CUPT_API_VERSION}-${CUPT_SOVERSION}/downloadmethods)
+		DESTINATION ${CUPT_RELATIVE_DOWNLOADMETHODS_DIR})
