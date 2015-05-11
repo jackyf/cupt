@@ -64,20 +64,16 @@ MethodFactoryImpl::~MethodFactoryImpl()
 	}
 }
 
-#ifdef CUPT_LOCAL_BUILD
-	const string downloadMethodPath = "downloadmethods/";
-#else
-	#define QUOTED(x) QUOTED_(x)
-	#define QUOTED_(x) # x
-	const string downloadMethodPath = "/usr/lib/cupt3-" QUOTED(SOVERSION) "/downloadmethods/";
-	#undef QUOTED
-	#undef QUOTED_
-#endif
+#define QUOTED(x) QUOTED_(x)
+#define QUOTED_(x) # x
+static const string downloadMethodPath = QUOTED(DOWNLOADMETHODS_DIR);
+#undef QUOTED
+#undef QUOTED_
 
 void MethodFactoryImpl::__load_methods()
 {
 	auto debugging = __config.getBool("debug::downloader");
-	auto paths = fs::glob(downloadMethodPath + "*.so");
+	auto paths = fs::glob(downloadMethodPath + "/*.so");
 	if (paths.empty())
 	{
 		warn2(__("no download methods found"));

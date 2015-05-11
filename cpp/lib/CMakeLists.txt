@@ -1,4 +1,10 @@
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOVERSION=${CUPT_SOVERSION} -fvisibility=hidden")
+if (LOCAL)
+	set(PASSED_DOWNLOADMETHODS_DIR "downloadmethods")
+else()
+	set(PASSED_DOWNLOADMETHODS_DIR "/usr/${CUPT_RELATIVE_DOWNLOADMETHODS_DIR}")
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDOWNLOADMETHODS_DIR=${PASSED_DOWNLOADMETHODS_DIR} -fvisibility=hidden")
 
 include_directories(include)
 include_directories(src)
