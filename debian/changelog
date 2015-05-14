@@ -1,4 +1,4 @@
-cupt (2.9.0~) UNRELEASED; urgency=medium
+cupt (2.9.0) experimental; urgency=low
 
   * console:
     - 'functional selectors':
@@ -116,7 +116,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
     - cupt.manpages:
       - Grab man pages from preinstallation directory, not source directory.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 11 May 2014 21:26:32 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 14 May 2015 15:11:56 +0300
 
 cupt (2.8.4) unstable; urgency=medium
 
