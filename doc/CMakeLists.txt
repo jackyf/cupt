@@ -16,6 +16,7 @@ add_custom_command(
 
 	COMMAND mkdir -p ${DOXYGEN_OUTPUT_DIRECTORY}
 	COMMAND sh -c "( cat Doxyfile; echo \"OUTPUT_DIRECTORY=${DOXYGEN_OUTPUT_DIRECTORY}\" ) | doxygen -"
+	COMMAND find ${DOXYGEN_OUTPUT_DIRECTORY} -name "*.js" -delete
 	COMMAND touch ${ODIR}/doxygen-stamp
 
 	VERBATIM
