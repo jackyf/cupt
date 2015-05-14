@@ -21,7 +21,7 @@ Build-Depends:
 Maintainer: Cupt developers <cupt-devel@lists.alioth.debian.org>
 Uploaders: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 Vcs-Git: git://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 

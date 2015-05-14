@@ -107,6 +107,7 @@ cupt (2.9.0~) UNRELEASED; urgency=medium
   * debian:
     - control:
       - Added 'Breaks: dpkg (<< 1.17.11~)' for versioned provides support.
+      - Bumped Standards-Version to 3.9.6, no changes needed.
     - rules:
       - Enabled dh_auto_configure's build system autodetection.
       - Use -DCMAKE_BUILD_TYPE instead of -DOPTIMIZE.
