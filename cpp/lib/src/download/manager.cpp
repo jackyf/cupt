@@ -709,7 +709,7 @@ void doNothing(int)
 void makeSyscallsRestartable()
 {
 	struct sigaction action;
-	memset(&action, sizeof(action), 0);
+	memset(&action, 0, sizeof(action));
 	action.sa_handler = doNothing;
 	if (sigemptyset(&action.sa_mask) == -1)
 	{
