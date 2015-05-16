@@ -10,6 +10,7 @@ our @EXPORT = qw(
 	get_extended_states_path
 	get_dpkg_path
 	get_binary_architecture
+	setup
 	stdout
 	stdall
 	compose_installed_record
