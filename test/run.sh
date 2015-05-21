@@ -3,6 +3,7 @@
 set -e
 
 TESTS_PATH=$1
+RUNNER="perl -Mwarnings -Mstrict -I${TESTS_PATH}"
 BINARY_UNDER_TEST_PATH=${PROVE_BINARY:-$2}
-prove -r --timer $PROVE_PARAMS -I${TESTS_PATH} tt/$PROVE_FILTER :: "$BINARY_UNDER_TEST_PATH"
+prove --exec "$RUNNER" -r --timer $PROVE_PARAMS tt/$PROVE_FILTER :: "$BINARY_UNDER_TEST_PATH"
 
