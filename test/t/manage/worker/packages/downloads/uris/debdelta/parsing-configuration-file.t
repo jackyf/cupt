@@ -4,7 +4,7 @@ use Test::More tests => 25;
 use strict;
 use warnings;
 
-require(get_rinclude_path(__FILE__, '../common'));
+require(get_rinclude_path('../common'));
 
 my $package = 'ppp';
 my $old_version = 8;

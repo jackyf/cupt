@@ -65,7 +65,7 @@ sub get_inc_code {
 
 sub get_rinclude_path {
 	my (undef, $from, undef) = caller();
-	my (undef, $includee) = @_;
+	my ($includee) = @_;
 	my $from_dir = (File::Spec->splitpath($from))[1];
 	return "$from_dir/$includee.inc";
 }

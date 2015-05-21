@@ -1,4 +1,4 @@
-require(get_rinclude_path(__FILE__, '../../common'));
+require(get_rinclude_path('../../common'));
 
 sub test_uris {
 	my ($comment, $cupt, $subcommand, $uris) = @_;
