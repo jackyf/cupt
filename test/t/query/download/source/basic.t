@@ -11,16 +11,16 @@ my $package = 'pkg12';
 my $version = '5.4-3';
 my $pv = "${package}_${version}";
 
-my %downloads = (
-	'tarball' => {
+my @downloads = (
+	{
 		'name' => "$pv-X.tar.gz",
 		'content' => 'X-file',
 	},
-	'diff' => {
+	{
 		'name' => "$pv-Y.diff.gz",
 		'content' => 'Y-file',
 	},
-	'dsc' => {
+	{
 		'name' => "$pv-Z.dsc",
 		'content' => 'Z-file',
 	}
@@ -29,8 +29,7 @@ my %downloads = (
 sub compose_source_package {
 	my $result = compose_package_record($package, $version);
 	$result .= "Checksums-Sha1:\n";
-	foreach my $type (keys %downloads) {
-		my $record = $downloads{$type};
+	foreach my $record (@downloads) {
 		my $name = $record->{'name'};
 		my $size = length($record->{'content'});
 		my $sha1 = sha1_hex($record->{'content'});
@@ -41,17 +40,17 @@ sub compose_source_package {
 
 
 sub check_file {
-	my $type = shift;
-	my $name = $downloads{$type}->{'name'};
-	my $expected_content = $downloads{$type}->{'content'};
-	is(stdall("cat $name"), $expected_content, "$type is downloaded and its content is right");
+	my $record = shift;
+	my $name = $record->{'name'};
+	my $expected_content = $record->{'content'};
+	is(stdall("cat $name"), $expected_content, "$name is downloaded and its content is right");
 }
 
 my $repo_suffix = 'somerepofiles';
 
 sub populate_downloads {
 	mkdir $repo_suffix;
-	foreach my $value (values %downloads) {
+	foreach my $value (@downloads) {
 		my $name = "$repo_suffix/" . $value->{'name'};
 		my $content = $value->{'content'};
 		run3("cat", \$content, $name, \undef);
@@ -79,9 +78,9 @@ sub prepare {
 subtest 'default' => sub {
 	my $cupt = prepare();
 	my $output = stdall("$cupt source $package");
-	check_file('tarball');
-	check_file('diff');
-	check_file('dsc');
+	foreach (@downloads) {
+		check_file($_);
+	}
 	like($output, qr/\Q[fakes\/dpkg-source]\E -x $pv-Z.dsc$/, 'dpkg-source call');
 }
 
