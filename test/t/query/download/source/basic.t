@@ -4,9 +4,6 @@ use Digest::SHA qw(sha1_hex);
 use Cwd;
 use IPC::Run3;
 
-use strict;
-use warnings;
-
 my $package = 'pkg12';
 my $version = '5.4-3';
 my $pv = "${package}_${version}";
