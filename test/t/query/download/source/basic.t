@@ -1,4 +1,3 @@
-use TestCupt;
 use Test::More tests => 1;
 use Digest::SHA qw(sha1_hex);
 use Cwd;
