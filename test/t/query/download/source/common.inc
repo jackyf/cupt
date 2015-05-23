@@ -59,8 +59,6 @@ sub populate_downloads {
 sub prepare {
 	my $sp = shift;
 
-	setup();
-
 	my $cupt = setup(
 		'sources2' => [
 			{

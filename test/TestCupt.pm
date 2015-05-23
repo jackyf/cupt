@@ -3,6 +3,22 @@ package TestCupt;
 use strict;
 use warnings;
 
+use Cwd;
+my $start_dir;
+
+sub enter_test_env {
+	if (cwd() !~ m/\/env$/) {
+		mkdir 'env';
+		chdir "env" or
+				die "cannot change directory to 'env': $!";
+	}
+}
+
+BEGIN {
+	$start_dir = cwd();
+	enter_test_env();
+}
+
 our @EXPORT = qw(
 	get_inc_code
 	get_rinclude_path
@@ -33,7 +49,6 @@ our @EXPORT = qw(
 	get_version_priority
 );
 use Exporter qw(import);
-use Cwd;
 use IO::File;
 use File::Path qw(make_path);
 use File::Basename;
@@ -67,6 +82,9 @@ sub get_rinclude_path {
 	my (undef, $from, undef) = caller();
 	my ($includee) = @_;
 	my $from_dir = (File::Spec->splitpath($from))[1];
+	if (! File::Spec->file_name_is_absolute($from_dir)) {
+		$from_dir = "$start_dir/$from_dir";
+	}
 	return "$from_dir/$includee.inc";
 }
 
@@ -104,11 +122,6 @@ END
 sub generate_environment {
 	my %options = @_;
 
-	if (cwd() !~ m/\/env$/) {
-		mkdir 'env';
-		chdir "env" or
-				die "cannot change directory to 'env': $!";
-	}
 	if (cwd() =~ m/\/env$/ && -e 'pre.conf' && -d 'etc' && -d 'var') {
 		system("rm -r *") == 0
 				or die ("cannot clean the environment");
