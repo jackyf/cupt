@@ -423,7 +423,7 @@ sub get_offered_version {
 sub get_version_priority {
 	my ($policy_output, $version) = @_;
 
-	my ($result) = ($policy_output =~ m/\Q$version\E.* (-?\d+)/a);
+	my ($result) = ($policy_output =~ m/ \Q$version\E.* (-?\d+)$/ma);
 
 	return ($result // '');
 }
