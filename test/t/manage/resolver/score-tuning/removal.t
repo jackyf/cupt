@@ -6,7 +6,7 @@ use warnings;
 
 my $cupt;
 
-sub setup {
+sub lsetup {
 	my ($latest_versions_available, $archive) = @_;
 
 	my $packages = '';
@@ -101,7 +101,7 @@ sub test {
 sub test_group {
 	my ($latest_versions_available, $archive) = @_;
 
-	setup($latest_versions_available, $archive);
+	lsetup($latest_versions_available, $archive);
 
 	my $group_comment = "latest: $latest_versions_available, default release enabled: $default_release_enabled, archive: $archive";
 
