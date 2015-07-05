@@ -51,7 +51,7 @@ sub compose_branches {
 
 my $cupt;
 
-sub setup {
+sub lsetup {
 	$cupt = TestCupt::setup(
 		'dpkg_status' =>
 			entail(compose_installed_record('imp', 0)),
@@ -66,7 +66,7 @@ sub setup {
 }
 
 sub test {
-	setup(@_);
+	lsetup(@_);
 
 	my $offer = get_first_offer("$cupt -V satisfy 'ttt1 | vvv1'");
 	is(get_offered_version($offer, 'imp'), get_empty_version(), "package 'imp' gets removed ($branches_comment)") or
