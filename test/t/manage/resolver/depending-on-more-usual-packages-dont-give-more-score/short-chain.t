@@ -4,8 +4,8 @@ use Test::More tests => 26;
 my $cupt;
 my $pin_of_zzz;
 
-sub setup {
-	$cupt = TestCupt::setup(
+sub lsetup {
+	$cupt = setup(
 		'packages' =>
 			entail(compose_package_record('mmm', '0') . "Depends: bb1 | bb2\n") .
 			entail(compose_package_record('nnn', '0') . "Depends: bb2 | bb3\n") .
@@ -42,7 +42,7 @@ sub test {
 
 foreach (-5000, -2000, -1000, -500, -200, 0, 100, 300, 500, 700, 900, 1200, 2000) {
 	$pin_of_zzz = $_;
-	setup();
+	lsetup();
 
 	test('mmm', '1');
 	test('nnn', '2');
