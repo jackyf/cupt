@@ -1,5 +1,4 @@
 use Digest::SHA qw(sha1_hex);
-use Cwd;
 use IPC::Run3;
 
 use strict;
@@ -63,7 +62,7 @@ sub prepare {
 		'sources2' => [
 			{
 				'scheme' => 'copy',
-				'hostname' => cwd() . "/$repo_suffix",
+				'hostname' => "./$repo_suffix",
 				'content' => entail(compose_source_record($sp->{'package'}, $sp->{'version'}, %$sp)),
 			},
 		],
