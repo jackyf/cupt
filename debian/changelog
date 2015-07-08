@@ -5,6 +5,10 @@ cupt (2.9.1~) UNRELEASED; urgency=medium
       - Pass absolute path of 'downloadmethods' directory for local builds.
         Makes downloading work when locally built cupt binary is called from
         non-usual locations.
+  * test:
+    - TestCupt:
+      - Made the regex parsing 'cupt policy' output stricter. This reduces
+        the probability of false negatives.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 May 2015 12:53:55 +0300
 
