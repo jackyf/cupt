@@ -10,9 +10,10 @@ my ($dsc_file) = grep { m/dsc$/ } (map { $_->{'name'} } @$files);
 sub test {
 	my ($option_line, $dpkg_source_call_expected) = @_;
 
+	my $output;
 	subtest "options: '$option_line'" => sub {
 		my $cupt = prepare($sp);
-		my $output = stdall("$cupt source $option_line $package");
+		$output = stdall("$cupt source $option_line $package");
 		foreach (@$files) {
 			check_file($_);
 		}
@@ -21,7 +22,7 @@ sub test {
 		} else {
 			unlike($output, qr/dpkg-source/, 'no dpkg-source call');
 		}
-	}
+	} or diag($output);
 }
 
 test("", 1);
