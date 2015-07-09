@@ -4,7 +4,7 @@ else()
 	set(PASSED_DOWNLOADMETHODS_DIR "/usr/${CUPT_RELATIVE_DOWNLOADMETHODS_DIR}")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDOWNLOADMETHODS_DIR=${PASSED_DOWNLOADMETHODS_DIR} -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fvisibility=hidden")
 
 include_directories(include)
 include_directories(src)
@@ -64,6 +64,8 @@ add_library(libcupt SHARED
 	./src/hashsums.cpp
 	./src/versionstring.cpp
 )
+set_source_files_properties(./src/download/methodfactory.cpp
+		PROPERTIES COMPILE_FLAGS "-DDOWNLOADMETHODS_DIR=${PASSED_DOWNLOADMETHODS_DIR}")
 set_target_properties(libcupt PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME "cupt${CUPT_API_VERSION}")
 target_link_libraries(libcupt dl rt gcrypt -Wl,--no-undefined)
 
