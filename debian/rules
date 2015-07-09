@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-CMAKE_OPTIONS = -DLOCAL:bool=OFF -DCMAKE_INSTALL_PREFIX=/usr
+CMAKE_OPTIONS = -DCMAKE_INSTALL_PREFIX=/usr
 ifeq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
 	CMAKE_OPTIONS += -DCMAKE_BUILD_TYPE=RelWithDebInfo
 else
@@ -12,6 +12,7 @@ override_dh_auto_configure:
 	dh_auto_configure -- $(CMAKE_OPTIONS)
 
 override_dh_auto_install-arch:
+	dh_auto_configure -- -DLOCAL:bool=off
 	dh_auto_install
 	chrpath --delete $(CURDIR)/debian/tmp/usr/bin/cupt
 	install -m644 scripts/bash_completion $(CURDIR)/debian/cupt/etc/bash_completion.d/cupt
