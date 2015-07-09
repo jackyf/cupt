@@ -65,7 +65,7 @@ add_library(libcupt SHARED
 	./src/versionstring.cpp
 )
 set_source_files_properties(./src/download/methodfactory.cpp
-		PROPERTIES COMPILE_FLAGS "-DDOWNLOADMETHODS_DIR=${PASSED_DOWNLOADMETHODS_DIR}")
+		PROPERTIES COMPILE_FLAGS "-DDOWNLOADMETHODS_DIR=\\\"${PASSED_DOWNLOADMETHODS_DIR}\\\"")
 set_target_properties(libcupt PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME "cupt${CUPT_API_VERSION}")
 target_link_libraries(libcupt dl rt gcrypt -Wl,--no-undefined)
 
