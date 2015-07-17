@@ -1,4 +1,4 @@
-cupt (2.9.1~) UNRELEASED; urgency=medium
+cupt (2.9.1) unstable; urgency=medium
 
   * lib:
     - cmakelists:
@@ -10,7 +10,7 @@ cupt (2.9.1~) UNRELEASED; urgency=medium
       - Made the regex parsing 'cupt policy' output stricter. This reduces
         the probability of false negatives.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 16 May 2015 12:53:55 +0300
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 17 Jul 2015 08:32:43 +0300
 
 cupt (2.9.0) experimental; urgency=low
 
