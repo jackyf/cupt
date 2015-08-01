@@ -74,7 +74,7 @@ Package: libcupt4-dev
 Section: libdevel
 Architecture: any
 Depends: ${misc:Depends}, libcupt4-0 (= ${binary:Version})
-Conflicts: libcupt2-dev
+Conflicts: libcupt2-dev, libcupt3-dev
 Suggests: libcupt4-doc
 Description: flexible package manager -- development files
  This package provides headers for Cupt library.
