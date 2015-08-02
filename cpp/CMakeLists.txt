@@ -19,7 +19,7 @@ IF(NOT EXISTS /usr/include/readline/readline.h)
 	message(FATAL_ERROR "missing GNU Readline library")
 ENDIF()
 
-set(CMAKE_CXX_FLAGS "-pthread -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Wextra -std=gnu++0x -fPIC -I${CMAKE_SOURCE_DIR}/cpp/ -include common/common.hpp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security") # yes, we should move type-safe alternative eventually
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 
