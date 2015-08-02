@@ -3,6 +3,7 @@ cupt (2.9.2~) UNRELEASED; urgency=medium
   * cmakelists:
     - Temporarily added a compiler switch to use old C++11 ABI. To be removed
       when Boost libraries (which we link to) get rebuilt with new C++11 ABI.
+    - Removed some obsolete/unneeded include directories.
   * debian:
     - control:
       - Added forgotten Conflicts between libcupt4-dev and libcupt3-dev.
