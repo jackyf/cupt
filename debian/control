@@ -7,6 +7,7 @@ Build-Depends:
   cmake (>= 2.6),
   chrpath,
   gettext,
+  bash-completion,
 # runtime libraries
   libboost-program-options-dev (>= 1.42),
   libboost-dev (>= 1.42),

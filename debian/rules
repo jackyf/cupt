@@ -14,7 +14,6 @@ override_dh_auto_install-arch:
 	dh_auto_configure -- $(CMAKE_OPTIONS) -DLOCAL:bool=off
 	dh_auto_install
 	chrpath --delete $(CURDIR)/debian/tmp/usr/bin/cupt
-	install -m644 scripts/bash_completion $(CURDIR)/debian/cupt/etc/bash_completion.d/cupt
 
 override_dh_auto_install-indep:
 	install -m644 scripts/logrotate $(CURDIR)/debian/libcupt-common/etc/logrotate.d/cupt
@@ -23,4 +22,4 @@ override_dh_strip:
 	dh_strip --dbg-package=cupt-dbg
 
 %:
-	dh --parallel $@
+	dh --parallel $@ --with bash-completion
