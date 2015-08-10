@@ -47,8 +47,10 @@ struct StateData
 	shared_ptr<File> openDpkgStatusFile() const;
 };
 
-void parseStatusSubstrings(const string& packageName, const string& input, InstalledRecord* installedRecord)
+InstalledRecord parseStatusSubstrings(const string& packageName, const string& input)
 {
+	InstalledRecord result;
+
 	// status should be a triplet delimited by spaces (i.e. 2 ones)
 	internal::TagParser::StringRange current;
 
@@ -60,7 +62,7 @@ void parseStatusSubstrings(const string& packageName, const string& input, Insta
 		++current.second;
 	}
 	{ // want
-#define CHECK_WANT(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->want = InstalledRecord::Want:: value; } else
+#define CHECK_WANT(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { result.want = InstalledRecord::Want:: value; } else
 		CHECK_WANT("install", Install)
 		CHECK_WANT("deinstall", Deinstall)
 		CHECK_WANT("unknown", Unknown)
@@ -82,7 +84,7 @@ void parseStatusSubstrings(const string& packageName, const string& input, Insta
 		++current.second;
 	}
 	{ // flag
-#define CHECK_FLAG(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->flag = InstalledRecord::Flag:: value; } else
+#define CHECK_FLAG(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { result.flag = InstalledRecord::Flag:: value; } else
 		CHECK_FLAG("ok", Ok)
 		CHECK_FLAG("reinstreq", Reinstreq)
 		{ // else
@@ -98,7 +100,7 @@ void parseStatusSubstrings(const string& packageName, const string& input, Insta
 	current.first = current.second + 1;
 	current.second = end;
 	{ // status
-#define CHECK_STATUS(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { installedRecord->status = InstalledRecord::Status:: value; } else
+#define CHECK_STATUS(str, value) if (current.equal(BUFFER_AND_SIZE(str))) { result.status = InstalledRecord::Status:: value; } else
 		CHECK_STATUS("installed", Installed)
 		CHECK_STATUS("not-installed", NotInstalled)
 		CHECK_STATUS("config-files", ConfigFiles)
@@ -111,6 +113,8 @@ void parseStatusSubstrings(const string& packageName, const string& input, Insta
 			fatal2(__("malformed '%s' status indicator (for the package '%s')"), "status", packageName);
 		}
 	}
+
+	return result;
 }
 
 static bool packageHasFullEntryInfo(const InstalledRecord& record)
@@ -245,8 +249,7 @@ void StateData::parseDpkgStatus()
 			if (!parser.parseRecord(&parsed))
 				continue;
 
-			InstalledRecord installedRecord;
-			parseStatusSubstrings(packageName, parsed.status, &installedRecord);
+			auto installedRecord = parseStatusSubstrings(packageName, parsed.status);
 
 			if (packageHasFullEntryInfo(installedRecord))
 			{
