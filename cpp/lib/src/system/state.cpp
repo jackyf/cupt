@@ -152,6 +152,12 @@ shared_ptr<File> StateData::openDpkgStatusFile() const
 
 namespace {
 
+/*
+ Records are similar to apt Packages ones, with two differences:
+ 1) 'Status' field: see header for possible values
+ 2) purged packages contain only 'Package', 'Status', 'Priority'
+	and 'Section' fields.
+*/
 class OurParser
 {
 	string& p_packageName;
@@ -220,13 +226,6 @@ class OurParser
 void StateData::parseDpkgStatus()
 {
 	auto file = openDpkgStatusFile();
-
-	/*
-	 Status lines are similar to apt Packages ones, with two differences:
-	 1) 'Status' field: see header for possible values
-	 2) purged packages contain only 'Package', 'Status', 'Priority'
-	    and 'Section' fields.
-	*/
 
 	auto installedSource = createVersionSource(cacheImpl, "installed", file);
 	auto improperlyInstalledSource = createVersionSource(cacheImpl, "improperly-installed", file);
