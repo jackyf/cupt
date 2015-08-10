@@ -150,6 +150,73 @@ shared_ptr<File> StateData::openDpkgStatusFile() const
 	return file;
 }
 
+namespace {
+
+class OurParser
+{
+	string& p_packageName;
+	File& p_file;
+	internal::TagParser p_parser;
+	internal::TagParser::StringRange p_tagName;
+	internal::TagParser::StringRange p_tagValue;
+
+ public:
+	struct Output
+	{
+		string status;
+		string provides;
+	};
+
+	OurParser(string& packageName, File& file)
+		: p_packageName(packageName)
+		, p_file(file)
+		, p_parser(&p_file)
+	{}
+
+	bool moreInfo()
+	{
+		return p_parser.parseNextLine(p_tagName, p_tagValue) && !p_file.eof();
+	}
+
+	bool parseRecord(Output* o)
+	{
+		bool parsedTagsByIndex[4] = {0};
+		bool& packageNameIsPresent = parsedTagsByIndex[0];
+		bool& versionIsPresent = parsedTagsByIndex[2];
+		do
+		{
+#define TAG(str, index, code) \
+			if (!parsedTagsByIndex[index] && p_tagName.equal(BUFFER_AND_SIZE(str))) \
+			{ \
+				code; \
+				parsedTagsByIndex[index] = true; \
+				continue; \
+			} \
+
+			TAG("Package", 0, p_packageName = p_tagValue.toString())
+			TAG("Status", 1, o->status = p_tagValue.toString())
+			TAG("Version", 2, ;)
+			TAG("Provides", 3, o->provides = p_tagValue.toString())
+#undef TAG
+		} while (p_parser.parseNextLine(p_tagName, p_tagValue));
+
+		if (!versionIsPresent)
+		{
+			return false;
+		}
+
+		// we don't check package name for correctness - even if it's incorrect, we can't decline installed packages :(
+		if (!packageNameIsPresent || p_packageName.empty())
+		{
+			fatal2(__("no package name in the record"));
+		}
+
+		return true;
+	}
+};
+
+}
+
 void StateData::parseDpkgStatus()
 {
 	auto file = openDpkgStatusFile();
@@ -170,48 +237,19 @@ void StateData::parseDpkgStatus()
 
 	try
 	{
-		internal::TagParser parser(file.get());
-		internal::TagParser::StringRange tagName, tagValue;
-
 		pair< const string, vector< internal::CacheImpl::PrePackageRecord > > pairForInsertion;
 		string& packageName = const_cast< string& >(pairForInsertion.first);
 
-		while ((prePackageRecord.offset = file->tell()), (parser.parseNextLine(tagName, tagValue) && !file->eof()))
+		OurParser parser(packageName, *file);
+
+		while ((prePackageRecord.offset = file->tell()), parser.moreInfo())
 		{
-			string status;
-			string provides;
-			bool parsedTagsByIndex[4] = {0};
-			bool& packageNameIsPresent = parsedTagsByIndex[0];
-			bool& versionIsPresent = parsedTagsByIndex[2];
-			do
-			{
-#define TAG(str, index, code) \
-				if (!parsedTagsByIndex[index] && tagName.equal(BUFFER_AND_SIZE(str))) \
-				{ \
-					code; \
-					parsedTagsByIndex[index] = true; \
-					continue; \
-				} \
-
-				TAG("Package", 0, packageName = tagValue.toString())
-				TAG("Status", 1, status = tagValue.toString())
-				TAG("Version", 2, ;)
-				TAG("Provides", 3, provides = tagValue.toString())
-#undef TAG
-			} while (parser.parseNextLine(tagName, tagValue));
-
-			if (!versionIsPresent)
-			{
+			OurParser::Output parsed;
+			if (!parser.parseRecord(&parsed))
 				continue;
-			}
-			// we don't check package name for correctness - even if it's incorrect, we can't decline installed packages :(
 
-			if (!packageNameIsPresent || packageName.empty())
-			{
-				fatal2(__("no package name in the record"));
-			}
 			unique_ptr<InstalledRecord> installedRecord(new InstalledRecord());
-			parseStatusSubstrings(packageName, status, installedRecord.get());
+			parseStatusSubstrings(packageName, parsed.status, installedRecord.get());
 
 			if (packageHasFullEntryInfo(*installedRecord))
 			{
@@ -224,6 +262,7 @@ void StateData::parseDpkgStatus()
 				auto it = preBinaryPackages->insert(pairForInsertion).first;
 				it->second.push_back(prePackageRecord);
 
+				const auto& provides = parsed.provides;
 				if (!provides.empty())
 				{
 					cacheImpl->processProvides(&it->first,
