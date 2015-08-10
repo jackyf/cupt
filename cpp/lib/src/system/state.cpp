@@ -156,6 +156,11 @@ shared_ptr<File> StateData::openDpkgStatusFile() const
 
 namespace {
 
+inline bool empty(internal::TagParser::StringRange input)
+{
+	return input.first == input.second;
+}
+
 /*
  Records are similar to apt Packages ones, with two differences:
  1) 'Status' field: see header for possible values
@@ -190,10 +195,16 @@ class OurParser
 
 	bool parseRecord(Output* o)
 	{
+		if (!p_tagName.equal(BUFFER_AND_SIZE("Package")) || empty(p_tagValue))
+		{
+			fatal2(__("no package name in the record"));
+		}
+		p_packageName = p_tagValue.toString();
+
 		bool parsedTagsByIndex[4] = {0};
 		bool& packageNameIsPresent = parsedTagsByIndex[0];
 		bool& versionIsPresent = parsedTagsByIndex[2];
-		do
+		while (p_parser.parseNextLine(p_tagName, p_tagValue))
 		{
 #define TAG(str, index, code) \
 			if (!parsedTagsByIndex[index] && p_tagName.equal(BUFFER_AND_SIZE(str))) \
@@ -203,22 +214,15 @@ class OurParser
 				continue; \
 			} \
 
-			TAG("Package", 0, p_packageName = p_tagValue.toString())
 			TAG("Status", 1, o->status = p_tagValue.toString())
 			TAG("Version", 2, ;)
 			TAG("Provides", 3, o->provides = p_tagValue.toString())
 #undef TAG
-		} while (p_parser.parseNextLine(p_tagName, p_tagValue));
+		}
 
 		if (!versionIsPresent)
 		{
 			return false;
-		}
-
-		// we don't check package name for correctness - even if it's incorrect, we can't decline installed packages :(
-		if (!packageNameIsPresent || p_packageName.empty())
-		{
-			fatal2(__("no package name in the record"));
 		}
 
 		return true;
