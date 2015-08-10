@@ -41,7 +41,7 @@ struct StateData
 {
 	shared_ptr< const Config > config;
 	internal::CacheImpl* cacheImpl;
-	map<string, unique_ptr< const InstalledRecord >> installedInfo;
+	map<string, InstalledRecord> installedInfo;
 
 	void parseDpkgStatus();
 	shared_ptr<File> openDpkgStatusFile() const;
@@ -247,15 +247,15 @@ void StateData::parseDpkgStatus()
 			if (!parser.parseRecord(&parsed))
 				continue;
 
-			unique_ptr<InstalledRecord> installedRecord(new InstalledRecord());
-			parseStatusSubstrings(packageName, parsed.status, installedRecord.get());
+			InstalledRecord installedRecord;
+			parseStatusSubstrings(packageName, parsed.status, &installedRecord);
 
-			if (packageHasFullEntryInfo(*installedRecord))
+			if (packageHasFullEntryInfo(installedRecord))
 			{
 				// this conditions mean that package is installed or
 				// semi-installed, regardless it has full entry info, so add it
 				// (info) to cache
-				prePackageRecord.releaseInfoAndFile = installedRecord->isBroken() ?
+				prePackageRecord.releaseInfoAndFile = installedRecord.isBroken() ?
 						improperlyInstalledSource : installedSource;
 
 				auto it = preBinaryPackages->insert(pairForInsertion).first;
@@ -270,7 +270,7 @@ void StateData::parseDpkgStatus()
 			}
 
 			// add parsed info to installed_info
-			installedInfo.emplace(std::move(packageName), std::move(installedRecord));
+			installedInfo.emplace(std::move(packageName), installedRecord);
 		}
 	}
 	catch (Exception&)
@@ -311,7 +311,7 @@ const State::InstalledRecord* State::getInstalledInfo(const string& packageName)
 	}
 	else
 	{
-		return it->second.get();
+		return &it->second;
 	}
 }
 
@@ -321,7 +321,7 @@ vector< string > State::getInstalledPackageNames() const
 
 	FORIT(it, __data->installedInfo)
 	{
-		const InstalledRecord& installedRecord = *(it->second);
+		const InstalledRecord& installedRecord = it->second;
 
 		if (internal::packageHasFullEntryInfo(installedRecord))
 		{
@@ -338,8 +338,8 @@ vector< string > State::getReinstallRequiredPackageNames() const
 
 	FORIT(it, __data->installedInfo)
 	{
-		const InstalledRecord::Flag::Type& flag = it->second->flag;
-		const InstalledRecord::Status::Type& status = it->second->status;
+		const auto& flag = it->second.flag;
+		const auto& status = it->second.status;
 		if (flag == InstalledRecord::Flag::Reinstreq ||
 				status == InstalledRecord::Status::HalfInstalled)
 		{
