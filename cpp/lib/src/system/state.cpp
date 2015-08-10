@@ -197,7 +197,7 @@ void StateData::parseDpkgStatus()
 			{
 				continue;
 			}
-			// we don't check package name for correctness - even if it's incorrent, we can't decline installed packages :(
+			// we don't check package name for correctness - even if it's incorrect, we can't decline installed packages :(
 
 			if (!packageNameIsPresent)
 			{
