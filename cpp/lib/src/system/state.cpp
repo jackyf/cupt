@@ -199,7 +199,7 @@ void StateData::parseDpkgStatus()
 			}
 			// we don't check package name for correctness - even if it's incorrect, we can't decline installed packages :(
 
-			if (!packageNameIsPresent)
+			if (!packageNameIsPresent || packageName.empty())
 			{
 				fatal2(__("no package name in the record"));
 			}

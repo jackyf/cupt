@@ -16,11 +16,8 @@ sub test {
 }
 
 test('Packge: def');
-TODO: {
-	local $TODO = 'bug: empty package name';
-	test('Package: ');
-	test('Package:');
-}
+test('Package: ');
+test('Package:');
 test('P: def');
 test('Q: def');
 test('package: def');
