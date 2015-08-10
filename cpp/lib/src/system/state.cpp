@@ -236,9 +236,7 @@ void StateData::parseDpkgStatus()
 
 	try
 	{
-		pair< const string, vector< internal::CacheImpl::PrePackageRecord > > pairForInsertion;
-		string& packageName = const_cast< string& >(pairForInsertion.first);
-
+		string packageName;
 		OurParser parser(packageName, *file);
 
 		while ((prePackageRecord.offset = file->tell()), parser.moreInfo())
@@ -258,7 +256,8 @@ void StateData::parseDpkgStatus()
 				prePackageRecord.releaseInfoAndFile = installedRecord.isBroken() ?
 						improperlyInstalledSource : installedSource;
 
-				auto it = preBinaryPackages->insert(pairForInsertion).first;
+				auto it = preBinaryPackages->emplace(std::piecewise_construct,
+						std::forward_as_tuple(packageName), std::forward_as_tuple()).first;
 				it->second.push_back(prePackageRecord);
 
 				const auto& provides = parsed.provides;
