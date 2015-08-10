@@ -11,14 +11,14 @@ sub descript {
 	return "Description: " . $_[0] . "\n";
 }
 
-my $installed = 
-		entail(compose_installed_record('aadz', '1')) .
-		entail(compose_installed_record('zzbq', '2')) .
-		entail(compose_installed_record('aadm', '38') . descript($description1)) .
-		entail(compose_installed_record('dupl', '10') . descript($description1)) .
-		entail(compose_installed_record('dupl', '20') . descript($description2));
+my $packages = 
+		entail(compose_package_record('aadz', '1')) .
+		entail(compose_package_record('zzbq', '2')) .
+		entail(compose_package_record('aadm', '38') . descript($description1)) .
+		entail(compose_package_record('dupl', '10') . descript($description1)) .
+		entail(compose_package_record('dupl', '20') . descript($description2));
 
-my $cupt = TestCupt::setup('dpkg_status' => $installed);
+my $cupt = TestCupt::setup('packages' => $packages);
 
 sub get_line_count {
 	return ($_[0] =~ tr/\n//);

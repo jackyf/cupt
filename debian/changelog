@@ -1,6 +1,9 @@
 cupt (2.9.3~) UNRELEASED; urgency=medium
 
-  * 
+  * lib:
+    - cache/package:
+      - Disallow more than 1 installed version per package. This fixes data
+        inconsistencies which may lead to crashes. (Closes: #794430)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Aug 2015 17:44:44 +0300
 

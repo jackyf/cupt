@@ -58,6 +58,7 @@ class CUPT_API Package
 	vector< unique_ptr< Version > > __parsed_versions;
 
 	CUPT_LOCAL void __merge_version(const string&, unique_ptr< Version >&&);
+	CUPT_LOCAL void p_mergeInstalledVersion(unique_ptr< Version >&&);
 
 	Package(const Package&);
 	Package& operator=(const Package&);

@@ -4,12 +4,12 @@ use Test::More tests => 2;
 use strict;
 use warnings;
 
-my $dpkg_status =
-		entail(compose_installed_record('abc', '1')) .
-		entail(compose_installed_record('abc', '2') . "Depends: xyz\n") .
-		entail(compose_installed_record('xyz', '3'));
+my $packages =
+		entail(compose_package_record('abc', '1')) .
+		entail(compose_package_record('abc', '2') . "Depends: xyz\n") .
+		entail(compose_package_record('xyz', '3'));
 
-my $cupt = TestCupt::setup('dpkg_status' => $dpkg_status);
+my $cupt = TestCupt::setup('packages' => $packages);
 
 my $output = stdout("$cupt rdepends xyz");
 

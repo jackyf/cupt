@@ -79,6 +79,19 @@ const string installedSuffix = "installed";
 
 }
 
+void Package::p_mergeInstalledVersion(unique_ptr<Version>&& parsedVersion)
+{
+	if (!__parsed_versions.empty())
+	{
+		fatal2("more than one installed version per package is not supported");
+	}
+
+	// no way to know is this version the same as in repositories,
+	// until for example #667665 is implemented
+	addVersionIdSuffix(&parsedVersion->versionString, installedSuffix);
+	__parsed_versions.push_back(std::move(parsedVersion));
+}
+
 void Package::__merge_version(const string& binaryArchitecture, unique_ptr< Version >&& parsedVersion)
 {
 	if (!_is_architecture_appropriate(binaryArchitecture, parsedVersion.get()))
@@ -91,10 +104,7 @@ void Package::__merge_version(const string& binaryArchitecture, unique_ptr< Vers
 	{
 		if (__is_installed(parsedVersion.get()))
 		{
-			// no way to know is this version the same as in repositories,
-			// until for example #667665 is implemented
-			addVersionIdSuffix(&parsedVersion->versionString, installedSuffix);
-			__parsed_versions.push_back(std::move(parsedVersion));
+			p_mergeInstalledVersion(std::move(parsedVersion));
 		}
 		else
 		{
