@@ -44,6 +44,7 @@ struct StateData
 	map<string, unique_ptr< const InstalledRecord >> installedInfo;
 
 	void parseDpkgStatus();
+	shared_ptr<File> openDpkgStatusFile() const;
 };
 
 void parseStatusSubstrings(const string& packageName, const string& input, InstalledRecord* installedRecord)
@@ -137,15 +138,21 @@ VersionSource* createVersionSource(internal::CacheImpl* cacheImpl,
 	return &*(cacheImpl->releaseInfoAndFileStorage.rbegin());
 }
 
-void StateData::parseDpkgStatus()
+shared_ptr<File> StateData::openDpkgStatusFile() const
 {
 	string path = config->getPath("dir::state::status");
 	string openError;
-	shared_ptr< File > file(new File(path, "r", openError));
+	shared_ptr<File> file(new File(path, "r", openError));
 	if (!openError.empty())
 	{
 		fatal2(__("unable to open the dpkg status file '%s': %s"), path, openError);
 	}
+	return file;
+}
+
+void StateData::parseDpkgStatus()
+{
+	auto file = openDpkgStatusFile();
 
 	/*
 	 Status lines are similar to apt Packages ones, with two differences:
@@ -230,7 +237,7 @@ void StateData::parseDpkgStatus()
 	}
 	catch (Exception&)
 	{
-		fatal2(__("error parsing the dpkg status file '%s'"), path);
+		fatal2(__("error parsing the dpkg status file"));
 	}
 }
 
