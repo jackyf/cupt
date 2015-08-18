@@ -202,7 +202,6 @@ class OurParser
 		p_packageName = p_tagValue.toString();
 
 		bool parsedTagsByIndex[4] = {0};
-		bool& packageNameIsPresent = parsedTagsByIndex[0];
 		bool& versionIsPresent = parsedTagsByIndex[2];
 		while (p_parser.parseNextLine(p_tagName, p_tagValue))
 		{
