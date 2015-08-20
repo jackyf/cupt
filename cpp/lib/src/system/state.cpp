@@ -203,6 +203,7 @@ class OurParser
 
 		bool parsedTagsByIndex[4] = {0};
 		bool& versionIsPresent = parsedTagsByIndex[2];
+		bool& statusIsPresent = parsedTagsByIndex[1];
 		while (p_parser.parseNextLine(p_tagName, p_tagValue))
 		{
 #define TAG(str, index, code) \
@@ -222,6 +223,10 @@ class OurParser
 		if (!versionIsPresent)
 		{
 			return false;
+		}
+		if (!statusIsPresent)
+		{
+			fatal2(__("no status line in the record"));
 		}
 
 		return true;

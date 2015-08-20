@@ -25,14 +25,13 @@ sub test {
 	$record =~ s/\n/{newline}/g;
 	my $name = "dummy records: $record_position, record: '$record', expected result: $expected_result";
 
-	local $TODO = ($expected_result==0 ? 'not implemented yet' : undef);
 	subtest $name => sub {
 		if ($expected_result == 2) {
 			is($output, "ppp\n");
 		} elsif ($expected_result) {
 			is($output, '');
 		} else {
-			like($output, qr/^E: no status line in the record$/);
+			like($output, qr/^E: no status line in the record$/m);
 		}
 	} or diag($installed);
 }

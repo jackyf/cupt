@@ -8,6 +8,8 @@ cupt (2.9.3~) UNRELEASED; urgency=medium
       - Parsing dpkg status file: error out on empty package names.
       - Parsing dpkg status file: require 'Package' tag first for every
         record.
+      - Parsing dpkg status file: require 'Status' tag for every versioned
+        record.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Aug 2015 17:44:44 +0300
 
