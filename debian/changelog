@@ -12,6 +12,9 @@ cupt (2.9.3~) UNRELEASED; urgency=medium
         record.
       - Parsing dpkg status file: do not stop reading when met with a newline
         instead of a first tag.
+  * debian:
+    - control:
+      - Bumped the ABI suffix from 0 to 1 for the GCC5 C++11 ABI transition.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Aug 2015 17:44:44 +0300
 
