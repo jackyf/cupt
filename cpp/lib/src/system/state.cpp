@@ -190,7 +190,8 @@ class OurParser
 
 	bool moreInfo()
 	{
-		return p_parser.parseNextLine(p_tagName, p_tagValue) && !p_file.eof();
+		p_parser.parseNextLine(p_tagName, p_tagValue);
+		return !p_file.eof();
 	}
 
 	bool parseRecord(Output* o)

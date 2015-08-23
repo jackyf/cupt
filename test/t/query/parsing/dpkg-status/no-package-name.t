@@ -22,9 +22,6 @@ test('P: def');
 test('Q: def');
 test('package: def');
 test('PaCKage: def');
-TODO: {
-	local $TODO = 'bug: no package line when no version line';
-	test("\n");
-	test('');
-}
+test("\n");
+test('');
 

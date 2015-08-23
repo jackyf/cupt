@@ -5,6 +5,7 @@ my $status = 'Status: install ok installed';
 sub test {
 	my ($lines, $result) = @_;
 	my $record = "Package: ppp\n$status\n$lines\n";
+	$record =~ s/\n\n/\n/;
 	my $cupt = setup('dpkg_status' => entail($record));
 
 	$lines =~ s/\n/{newline}/g;
