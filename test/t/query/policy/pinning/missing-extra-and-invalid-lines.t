@@ -51,14 +51,15 @@ test("uuu\nppp\nqwerqwer: a\n" => 0, [1, $e_inv_ps]);
 test("\nHmm" => 0, [2, $e_inv_ps]);
 test("\n\n#abc\n\nHmm" => 0, [5, $e_inv_ps]);
 
+my $e_inv_pin = "invalid pin line";
 test("Package: aaa\n" => 0, [2, "no pin line"]);
-test("Package: bbb\nPin-Priority: 34\n" => 0, [2, "invalid pin line"]);
+test("Package: bbb\nPin-Priority: 34\n" => 0, [2, $e_inv_pin]);
 test("Package: ddd\nPin: version *\n" => 0, [3, "no priority line"]);
 test("Pin-Priority: 25\n" => 0, [1, $e_inv_ps]);
 test("Pin: release a=yyy\nPin-Priority: 1000" => 0, [1, $e_inv_ps]);
 
-test("Package: aaa\nPackage: bbb\nPin: version *\nPin-Priority: 10\n" => 0);
-test("Package: bbb\n\nPin: version *\nPin-Priority: 199\n" => 0);
+test("Package: aaa\nPackage: bbb\nPin: version *\nPin-Priority: 10\n" => 0, [2, $e_inv_pin]);
+test("Package: bbb\n\nPin: version *\nPin-Priority: 199\n" => 0, [2, $e_inv_pin]);
 
 test("  \n$valid_record" => 1);
 test(" _ \n$valid_record" => 0);
