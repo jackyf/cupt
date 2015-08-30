@@ -47,6 +47,7 @@ our @EXPORT = qw(
 	get_offered_version
 	get_offered_versions
 	get_version_priority
+	to_one_line
 );
 use Exporter qw(import);
 use IO::File;
@@ -426,6 +427,12 @@ sub get_version_priority {
 	my ($result) = ($policy_output =~ m/ \Q$version\E.* (-?\d+)$/ma);
 
 	return ($result // '');
+}
+
+sub to_one_line {
+	my $t = shift;
+	$t =~ s/\n/{newline}/g;
+	return $t;
 }
 
 1;
