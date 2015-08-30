@@ -62,9 +62,9 @@ test("Package: aaa\nPackage: bbb\nPin: version *\nPin-Priority: 10\n" => 0, [2, 
 test("Package: bbb\n\nPin: version *\nPin-Priority: 199\n" => 0, [2, $e_inv_pin]);
 
 test("  \n$valid_record" => 1);
-test(" _ \n$valid_record" => 0);
-test("${valid_record}Qwerty: asdf\n" => 0);
-test("Some: field\n${valid_record}" => 0);
+test(" _ \n$valid_record" => 0, [1, $e_inv_ps]);
+test("${valid_record}Qwerty: asdf\n" => 0, [4, $e_inv_ps]);
+test("Some: field\n${valid_record}" => 0, [1, $e_inv_ps]);
 test("${valid_record}\n${valid_record}" => 1);
 
 test("# this is comment\n${valid_record}" => 1);
