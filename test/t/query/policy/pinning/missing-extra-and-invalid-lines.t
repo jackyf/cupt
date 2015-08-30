@@ -1,4 +1,4 @@
-use Test::More tests => 25;
+use Test::More tests => 27;
 use IPC::Run3;
 
 use strict;
@@ -73,7 +73,10 @@ test("     # this is another comment\nExplanation: explaining more" => 1);
 test("# a lot of\nExplanation: different\n# stuff \nExplanation: can be put\n  ### before\n${valid_record}" => 1);
 
 my $valid_first_two_lines = "Package: eee\nPin: version *\n";
-test("${valid_first_two_lines}Pin-Priority: ehh\n", 0);
-test("${valid_first_two_lines}Pin-Priority: -22m\n", 0);
-test("${valid_first_two_lines}Pin-Priority: --33\n", 0);
+my $e_inv_priority = "invalid priority line";
+test("${valid_first_two_lines}In-priority: 123\n" => 0, [3, $e_inv_priority]);
+test("${valid_first_two_lines}%*Raj" => 0, [3, $e_inv_priority]);
+test("${valid_first_two_lines}Pin-Priority: ehh\n" => 0, [3, "invalid integer 'ehh'"]);
+test("${valid_first_two_lines}Pin-Priority: -22m\n" => 0, [3, "invalid integer '-22m'"]);
+test("${valid_first_two_lines}Pin-Priority: --33\n" => 0, [3, "invalid integer '--33'"]);
 
