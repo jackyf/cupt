@@ -1,6 +1,8 @@
 cupt (2.9.4~) UNRELEASED; urgency=medium
 
-  * 
+  * debian/rules:
+    - Fixed calling CMake's install before trying to copy translation files to
+      a target package.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 30 Aug 2015 15:59:20 +0300
 
