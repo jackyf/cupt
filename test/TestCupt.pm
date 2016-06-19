@@ -134,6 +134,7 @@ sub generate_environment {
 
 	$pre_conf =~ s/<dir>/$cwd/g;
 	generate_file('pre.conf', $pre_conf);
+	$ENV{'APT_CONFIG'} = '';
 	$ENV{'CUPT_PRE_CONFIG'} = "./pre.conf";
 
 	generate_file(get_extended_states_path(), $options{'extended_states'}//'');

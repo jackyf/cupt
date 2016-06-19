@@ -1,6 +1,10 @@
 cupt (2.9.5~) UNRELEASED; urgency=medium
 
-  * 
+  * test:
+    - TestCupt:
+      - Make sure APT_CONFIG environment variable is not pre-set. Fixes FTBFS
+        if the building tool or environment uses APT_CONFIG for own purposes
+        (like newer sbuild). Patch by Adam Conrad, thanks! (Closes: #819605).
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Jun 2016 16:23:40 +0200
 
