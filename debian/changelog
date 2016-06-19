@@ -1,4 +1,4 @@
-cupt (2.9.5~) UNRELEASED; urgency=medium
+cupt (2.9.5) unstable; urgency=medium
 
   * test:
     - TestCupt:
@@ -9,7 +9,7 @@ cupt (2.9.5~) UNRELEASED; urgency=medium
     - control:
       - Bumped Standards-Version to 3.9.8, no changes needed.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Jun 2016 16:23:40 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Jun 2016 16:39:02 +0200
 
 cupt (2.9.4) unstable; urgency=medium
 
