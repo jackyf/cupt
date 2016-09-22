@@ -19,16 +19,9 @@ IF(NOT EXISTS /usr/include/readline/readline.h)
 	message(FATAL_ERROR "missing GNU Readline library")
 ENDIF()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Wextra -std=gnu++0x -fPIC -include common/common.hpp")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security") # yes, we should move type-safe alternative eventually
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
-
 OPTION(LOCAL "is build local" ON)
 
-
-set(OUR_LINKER_FLAGS "-pthread -Wl,--as-needed")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OUR_LINKER_FLAGS}")
-set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${OUR_LINKER_FLAGS}")
+include(flags.cmake)
 
 set(CUPT_API_VERSION 4)
 set(CUPT_SOVERSION 1)
