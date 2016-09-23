@@ -1,11 +1,11 @@
-cupt (2.9.6~) unstable; urgency=medium
+cupt (2.9.6) unstable; urgency=medium
 
   * cmakelists:
     - Detect a GCC6 lambda capture optimisation bug (#838438), and lower the
       optimization level if found. This avoids miscompilation on armel/armhf.
       (Closes: #836588)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Thu, 22 Sep 2016 19:10:08 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 23 Sep 2016 10:48:07 +0200
 
 cupt (2.9.5) unstable; urgency=medium
 
