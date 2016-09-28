@@ -16,6 +16,7 @@ override_dh_auto_install-arch:
 	chrpath --delete $(CURDIR)/debian/tmp/usr/bin/cupt
 
 override_dh_auto_install-indep:
+	dh_auto_install -i
 	install -m644 scripts/logrotate $(CURDIR)/debian/libcupt-common/etc/logrotate.d/cupt
 
 override_dh_strip:

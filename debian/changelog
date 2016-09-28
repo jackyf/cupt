@@ -1,8 +1,38 @@
 cupt (2.10.0~) UNRELEASED; urgency=low
 
-  * 
+  *
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 25 Dec 2015 14:00:31 +0100
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
+
+cupt (2.9.6) unstable; urgency=medium
+
+  * cmakelists:
+    - Detect a GCC6 lambda capture optimisation bug (#838438), and lower the
+      optimization level if found. This avoids miscompilation on armel/armhf.
+      (Closes: #836588)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 23 Sep 2016 10:48:07 +0200
+
+cupt (2.9.5) unstable; urgency=medium
+
+  * test:
+    - TestCupt:
+      - Make sure APT_CONFIG environment variable is not pre-set. Fixes FTBFS
+        if the building tool or environment uses APT_CONFIG for own purposes
+        (like newer sbuild). Patch by Adam Conrad, thanks! (Closes: #819605).
+  * debian
+    - control:
+      - Bumped Standards-Version to 3.9.8, no changes needed.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Jun 2016 16:39:02 +0200
+
+cupt (2.9.4) unstable; urgency=medium
+
+  * debian/rules:
+    - Fixed calling CMake's install before trying to copy translation files to
+      a target package (Closes: #806010).
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 14 Feb 2016 13:36:37 +0100
 
 cupt (2.9.3) unstable; urgency=medium
 
