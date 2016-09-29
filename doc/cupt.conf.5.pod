@@ -261,6 +261,11 @@ allow colors.
 
 =back
 
+=item cupt::console::warnings::removal-of-essential
+
+boolean, treat removals of essential packages as dangerous action. True
+by default.
+
 =item cupt::directory
 
 string, base directory for all cupt::directory::* options

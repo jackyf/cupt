@@ -720,7 +720,10 @@ void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 	{
 		checkForUntrustedPackages(actionsPreview, isDangerousAction);
 	}
-	checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
+	if (config.getBool("cupt::console::warnings::removal-of-essential"))
+	{
+		checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
+	}
 	checkForIgnoredHolds(cache, actionsPreview, isDangerousAction);
 	checkForMultiArchSystem(config, isDangerousAction);
 

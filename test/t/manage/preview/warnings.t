@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 use strict;
 use warnings;
@@ -24,6 +24,8 @@ my $cupt = TestCupt::setup(
 my $remove_of_essential_warning_regex = qr/warning.*essential.*remov/i;
 like(get_first_offer("$cupt remove a"), $remove_of_essential_warning_regex, "removing an essential package issues a warning");
 unlike(get_first_offer("$cupt remove p"), $remove_of_essential_warning_regex, "removing not essential package doesn't issue a warning");
+unlike(get_first_offer("$cupt remove a -o cupt::console::warnings::removal-of-essential=no"),
+		$remove_of_essential_warning_regex, "removing an essential package issues a warning");
 
 my $untrusted_warning_regex = qr/warning.*untrusted/i;
 like(get_first_offer("$cupt install b"), $untrusted_warning_regex, "dealing with untrusted packages issues a warning");
