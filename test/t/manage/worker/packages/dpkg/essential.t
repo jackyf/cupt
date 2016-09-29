@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 use strict;
 use warnings;
@@ -33,6 +33,8 @@ test_dpkg_sequence('install ess # ess is essential package',
 		['--remove', ['--force-depends'], ['aux']],
 		['--unpack', ['--force-depends'], ['<ess 1>']],
 		['--configure', [], ['ess']]);
+test_dpkg_sequence('remove ess # removing an essential package',
+		['--remove', ['--force-remove-essential'], ['ess']]);
 
 setup_aux_between_ess_1(0, entail(compose_installed_record('highest', 3) . "Essential: yes\nDepends: ess\n"));
 test_dpkg_sequence('install ess # ess is a regular dependency of essential',
