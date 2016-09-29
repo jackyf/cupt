@@ -1,11 +1,12 @@
 use TestCupt;
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use strict;
 use warnings;
 
 my $cupt = TestCupt::setup(
 	'dpkg_status' =>
+		entail(compose_installed_record('p', '5')) .
 		entail(compose_installed_record('a', '1') . "Essential: yes\n") .
 		entail(compose_installed_record('h', '3', 'on-hold'=>1)),
 	'packages2' =>
@@ -20,7 +21,9 @@ my $cupt = TestCupt::setup(
 		],
 );
 
-like(get_first_offer("$cupt remove a"), qr/warning.*essential.*remov/i, "removing an essential package issues a warning");
+my $remove_of_essential_warning_regex = qr/warning.*essential.*remov/i;
+like(get_first_offer("$cupt remove a"), $remove_of_essential_warning_regex, "removing an essential package issues a warning");
+unlike(get_first_offer("$cupt remove p"), $remove_of_essential_warning_regex, "removing not essential package doesn't issue a warning");
 
 my $untrusted_warning_regex = qr/warning.*untrusted/i;
 like(get_first_offer("$cupt install b"), $untrusted_warning_regex, "dealing with untrusted packages issues a warning");
