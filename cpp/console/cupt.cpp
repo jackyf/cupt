@@ -24,6 +24,8 @@ using std::endl;
 #include "cupt.hpp"
 #include "misc.hpp"
 
+#include "version.hpp"
+
 void showOwnVersion();
 void showHelp(const char*);
 

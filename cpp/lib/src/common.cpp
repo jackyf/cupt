@@ -26,6 +26,8 @@
 
 #include <internal/common.hpp>
 
+#include "version.hpp"
+
 namespace cupt {
 
 #define QUOTED(x) QUOTED_(x)
