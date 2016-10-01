@@ -1,6 +1,8 @@
 cupt (2.9.7~) UNRELEASED; urgency=medium
 
-  * 
+  * lib:
+    - cache/relation:
+      - ArchitecturedRelation: don't choke on build profiles.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Sep 2016 13:26:35 +0200
 

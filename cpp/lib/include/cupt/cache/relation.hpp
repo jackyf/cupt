@@ -85,6 +85,7 @@ struct CUPT_API ArchitecturedRelation: public Relation
 {
  private:
 	CUPT_LOCAL const char* p_parseArchitectures(const char*, const char*);
+	CUPT_LOCAL const char* p_parseProfiles(const char*, const char*);
 	CUPT_LOCAL void __init(const char*, const char*, const char*);
  public:
 	/// architecture filters

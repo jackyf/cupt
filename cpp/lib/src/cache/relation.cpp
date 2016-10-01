@@ -40,6 +40,48 @@ const char* parseWhitespace(const char* start, const char* end)
 	return current;
 }
 
+template <typename CallbackT>
+const char* parseEnclosedWordList(const char* start, const char* end,
+		char openingChar, char closingChar, const char* failMessage, const CallbackT& callback)
+{
+	auto current = start;
+	if (current == end || *current != openingChar)
+	{
+		return current; // no architectures
+	}
+	++current;
+
+	const char* wordStart = nullptr;
+	bool foundClosingBracket = false;
+	while (current != end && !foundClosingBracket)
+	{
+		if (*current == ' ' || *current == closingChar)
+		{
+			if (wordStart)
+			{
+				callback(wordStart, current);
+				wordStart = nullptr;
+			}
+			foundClosingBracket = (*current == closingChar);
+		}
+		else
+		{
+			if (!wordStart)
+			{
+				wordStart = current;
+			}
+		}
+		++current;
+	}
+
+	if (!foundClosingBracket)
+	{
+		fatal2(failMessage, string(start, end));
+	}
+
+	return current;
+}
+
 }
 
 const char* Relation::p_parseVersionPart(const char* current, const char* end)
@@ -251,7 +293,14 @@ const string Relation::Types::strings[] = { "<<", "=", ">>", "<=", ">=", "===" }
 void ArchitecturedRelation::__init(const char* start, const char* suffixStart, const char* end)
 {
 	auto current = p_parseArchitectures(suffixStart, end);
-	current = parseWhitespace(current, end);
+	const char* prevCurrent;
+	do
+	{
+		prevCurrent = current;
+		current = parseWhitespace(current, end);
+		current = p_parseProfiles(current, end);
+	} while (current != prevCurrent);
+
 	if (current != end)
 	{
 		fatal2(__("failed to parse a suffix in the relation '%s'"), string(start, end));
@@ -260,42 +309,16 @@ void ArchitecturedRelation::__init(const char* start, const char* suffixStart, c
 
 const char* ArchitecturedRelation::p_parseArchitectures(const char* start, const char* end)
 {
-	auto current = start;
-	if (current == end || *current != '[')
-	{
-		return current; // no architectures
-	}
-	++current;
+	return parseEnclosedWordList(start, end, '[', ']',
+			__("unable to parse architecture filters '%s'"),
+			[this](const char* a, const char* b){ architectureFilters.emplace_back(a, b); });
+}
 
-	const char* wordStart = nullptr;
-	bool foundClosingBracket = false;
-	while (current != end && !foundClosingBracket)
-	{
-		if (*current == ' ' || *current == ']')
-		{
-			if (wordStart)
-			{
-				architectureFilters.emplace_back(wordStart, current);
-				wordStart = nullptr;
-			}
-			foundClosingBracket = (*current == ']');
-		}
-		else
-		{
-			if (!wordStart)
-			{
-				wordStart = current;
-			}
-		}
-		++current;
-	}
-
-	if (!foundClosingBracket)
-	{
-		fatal2(__("unable to parse architecture filters '%s'"), string(start, end));
-	}
-
-	return current;
+const char* ArchitecturedRelation::p_parseProfiles(const char* start, const char* end)
+{
+	return parseEnclosedWordList(start, end, '<', '>',
+			__("unable to parse build profiles '%s'"),
+			[](const char*, const char*){}); // TODO: save build-profiles
 }
 
 thread_local static const char* parentEnd;
