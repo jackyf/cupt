@@ -158,7 +158,7 @@ void Relation::__init(const char* start, const char* end)
 	else if (current != end)
 	{
 		++current;
-		// okay, here we should have a versoined info
+		// okay, here we should have a versioned info
 		if (!__parse_versioned_info(current, end))
 		{
 			string unparsed(start, end);
