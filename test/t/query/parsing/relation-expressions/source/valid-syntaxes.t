@@ -1,4 +1,4 @@
-use Test::More tests => 17;
+use Test::More tests => 18;
 
 my $package = 'qqw';
 
@@ -23,6 +23,7 @@ test('sdf  (<<2)', 'sdf (<< 2)', 'whitespaces');
 test('sdf1 (<< 2) | sdf2 (<< 3)', 'sdf1 (<< 2) | sdf2 (<< 3)', 'complex relation');
 test('sdf [armb]', 'sdf [armb]', '1 positive architecture');
 test('sdf  [ oi  ]', 'sdf [oi]', '1 positive architecture, whitespaces');
+test('sdf[!oi]   ', 'sdf [!oi]', '1 positive architecture, more whitespaces');
 test('sdf [armb ppq]', 'sdf [armb ppq]', '2 positive architectures');
 test('ter [!z1]', 'ter [!z1]', '1 negative architecture');
 test('ter[ !z1   ]', 'ter [!z1]', '1 negative architecture, whitespaces');

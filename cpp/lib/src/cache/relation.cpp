@@ -28,6 +28,20 @@
 namespace cupt {
 namespace cache {
 
+namespace {
+
+const char* parseWhitespace(const char* start, const char* end)
+{
+	auto current = start;
+	while (current != end && *current == ' ')
+	{
+		++current;
+	}
+	return current;
+}
+
+}
+
 const char* Relation::p_parseVersionPart(const char* current, const char* end)
 {
 	// parse relation
@@ -43,7 +57,7 @@ const char* Relation::p_parseVersionPart(const char* current, const char* end)
 		return nullptr; // wrong symbols
 	}
 
-	current = p_parseWhitespace(current, end);
+	current = parseWhitespace(current, end);
 
 	auto versionStringEnd = current;
 	while (versionStringEnd != end && *versionStringEnd != ')' && *versionStringEnd != ' ')
@@ -53,7 +67,7 @@ const char* Relation::p_parseVersionPart(const char* current, const char* end)
 	versionString.assign(current, versionStringEnd);
 	checkVersionString(versionString);
 
-	current = p_parseWhitespace(versionStringEnd, end);
+	current = parseWhitespace(versionStringEnd, end);
 
 	if (current == end || *current != ')')
 	{
@@ -144,16 +158,6 @@ const char* Relation::p_parsePackagePart(const char* start, const char* end)
 	return current;
 }
 
-const char* Relation::p_parseWhitespace(const char* start, const char* end)
-{
-	auto current = start;
-	while (current != end && *current == ' ')
-	{
-		++current;
-	}
-	return current;
-}
-
 const char* Relation::__init(const char* start, const char* end)
 {
 	const char* current = p_parsePackagePart(start, end);
@@ -161,13 +165,13 @@ const char* Relation::__init(const char* start, const char* end)
 	{
 		fatal2(__("failed to parse a package name in the relation '%s'"), string(start, end));
 	}
-	current = p_parseWhitespace(current, end);
+	current = parseWhitespace(current, end);
 	current = p_parseVersionPart(current, end);
 	if (!current)
 	{
 		fatal2(__("failed to parse a version part in the relation '%s'"), string(start, end));
 	}
-	return p_parseWhitespace(current, end);
+	return parseWhitespace(current, end);
 }
 
 Relation::Relation(pair<const char*, const char*> input)
@@ -246,22 +250,52 @@ const string Relation::Types::strings[] = { "<<", "=", ">>", "<=", ">=", "===" }
 
 void ArchitecturedRelation::__init(const char* start, const char* suffixStart, const char* end)
 {
-	if (suffixStart == end)
-	{
-		return; // no architecture filters
-	}
-	if (*suffixStart != '[')
+	auto current = p_parseArchitectures(suffixStart, end);
+	current = parseWhitespace(current, end);
+	if (current != end)
 	{
 		fatal2(__("failed to parse a suffix in the relation '%s'"), string(start, end));
 	};
-	if (*(end-1) != ']')
-	{
-		fatal2(__("unable to parse architecture filters '%s'"), string(suffixStart, end));
-	}
-	++suffixStart;
-	--end;
+}
 
-	architectureFilters = internal::split(' ', string(suffixStart, end));
+const char* ArchitecturedRelation::p_parseArchitectures(const char* start, const char* end)
+{
+	auto current = start;
+	if (current == end || *current != '[')
+	{
+		return current; // no architectures
+	}
+	++current;
+
+	const char* wordStart = nullptr;
+	bool foundClosingBracket = false;
+	while (current != end && !foundClosingBracket)
+	{
+		if (*current == ' ' || *current == ']')
+		{
+			if (wordStart)
+			{
+				architectureFilters.emplace_back(wordStart, current);
+				wordStart = nullptr;
+			}
+			foundClosingBracket = (*current == ']');
+		}
+		else
+		{
+			if (!wordStart)
+			{
+				wordStart = current;
+			}
+		}
+		++current;
+	}
+
+	if (!foundClosingBracket)
+	{
+		fatal2(__("unable to parse architecture filters '%s'"), string(start, end));
+	}
+
+	return current;
 }
 
 thread_local static const char* parentEnd;

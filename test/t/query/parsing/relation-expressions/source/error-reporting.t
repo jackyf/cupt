@@ -16,7 +16,7 @@ sub test {
 	like($output, qr/^E: unable to parse architecture filters \Q'$broken_part'\E/m, $desc);
 }
 
-test('sdf [armb] ', '[armb] ', 'space after closing bracket');
+test('sdf [armb ', '[armb ', 'unclosed list of architectures');
 test('sdf  [', '[', 'no architectures');
 test('sdf [armb, ppq]', '[armb', 'wrong architecture delimiter');
 
