@@ -3,6 +3,9 @@ cupt (2.9.7~) UNRELEASED; urgency=medium
   * lib:
     - cache/relation:
       - ArchitecturedRelation: don't choke on build profiles.
+  * debian:
+    - cupt.dirs:
+      - Don't create empty and obsolete /etc/bash_completion.d/ directory.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Sep 2016 13:26:35 +0200
 
