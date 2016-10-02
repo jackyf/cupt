@@ -1,4 +1,4 @@
-cupt (2.9.7~) UNRELEASED; urgency=medium
+cupt (2.9.7) unstable; urgency=medium
 
   * lib:
     - cache/relation:
@@ -8,7 +8,7 @@ cupt (2.9.7~) UNRELEASED; urgency=medium
       - Don't create empty and obsolete /etc/bash_completion.d/ directory.
       - Don't create /usr/bin, it's created automatically by install targets.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Sep 2016 13:26:35 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 02 Oct 2016 16:59:13 +0200
 
 cupt (2.9.6) unstable; urgency=medium
 
