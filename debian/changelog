@@ -6,6 +6,7 @@ cupt (2.9.7~) UNRELEASED; urgency=medium
   * debian:
     - cupt.dirs:
       - Don't create empty and obsolete /etc/bash_completion.d/ directory.
+      - Don't create /usr/bin, it's created automatically by install targets.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Sep 2016 13:26:35 +0200
 
