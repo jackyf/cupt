@@ -109,6 +109,7 @@ sub setup {
 }
 
 my $pre_conf = <<END;
+apt::architecture "$architecture";
 dir "<dir>";
 dir::bin::dpkg "$dpkg_path";
 dir::state::status "../dpkg/status";
@@ -186,14 +187,7 @@ sub unify_packages_and_sources_option {
 
 sub generate_binary_command {
 	my %options = @_;
-
-	my $command = $ARGV[0];
-	if (defined $options{'packages'} or
-		defined $options{'packages2'} or
-		defined $options{'dpkg_status'}) {
-		$command .= " -o apt::architecture=$architecture";
-	}
-	return $command;
+	return $ARGV[0];
 }
 
 sub generate_file {

@@ -3,6 +3,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
   * lib:
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.
+      - Don't ask dpkg for architectures if the 'apt::architecture' option
+        was already set via configuration file.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
 

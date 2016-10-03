@@ -428,6 +428,11 @@ static string qx(const string& shellCommand)
 
 void ConfigImpl::setArchitecture(Config* config)
 {
+	if (!config->getString("apt::architecture").empty())
+	{
+		return; // manually set, do not override
+	}
+
 	const string dpkgPath = config->getPath("dir::bin::dpkg");
 	string architecture = qx(dpkgPath + " --print-architecture");
 	internal::chomp(architecture);
