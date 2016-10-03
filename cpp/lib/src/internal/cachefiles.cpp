@@ -419,25 +419,37 @@ bool gpgLineShouldBeSkipped(const string& line)
 	return false;
 }
 
+string composeGpgvKeyringOptions(const Config& config)
+{
+	bool keyringFound = false;
+	auto debugging = config.getBool("debug::gpgv");
+
+	string result;
+	auto considerKeyring = [&](const string& keyring)
+	{
+		if (debugging) debug2("keyring file is '%s'", keyring);
+		if (openingForReadingSucceeds(keyring, "keyring", debugging))
+		{
+			keyringFound = true;
+			result += format2(" --keyring %s", keyring);
+		}
+	};
+
+	considerKeyring(config.getPath("dir::etc::trusted"));
+	for (const auto& keyring: config.getConfigurationPartPaths("dir::etc::trustedparts"))
+	{
+		considerKeyring(keyring);
+	}
+
+	return keyringFound ? result : string{};
 }
 
-bool verifySignature(const Config& config, const string& path, const string& alias)
+string composeGpgvCommand(const Config& config, const string& path)
 {
 	auto debugging = config.getBool("debug::gpgv");
-	if (debugging)
-	{
-		debug2("verifying file '%s'", path);
-	}
-
-	auto keyringPath = config.getString("gpgv::trustedkeyring");
-	if (debugging) debug2("keyring file is '%s'", keyringPath);
-	if (!openingForReadingSucceeds(keyringPath, "keyring", debugging)) return false;
 
 	auto signaturePath = path + ".gpg";
-	if (debugging)
-	{
-		debug2("signature file is '%s'", signaturePath);
-	}
+	if (debugging) debug2("signature file is '%s'", signaturePath);
 
 	if (!fs::fileExists(signaturePath))
 	{
@@ -446,15 +458,21 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 	}
 	else
 	{
-		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return false;
+		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return {};
 	}
 
+	string keyringOptions = composeGpgvKeyringOptions(config);
+	if (keyringOptions.empty()) return {};
 
-	bool verifyResult = false;
+	return format2("gpgv --status-fd 1 %s %s %s 2>/dev/null || true",
+			keyringOptions, signaturePath, path);
+}
+
+bool runGpgCommand(const string& gpgCommand, const string& alias, bool debugging)
+{
+	if (debugging) debug2("gpgv command is '%s'", gpgCommand);
 	try
 	{
-		string gpgCommand = string("gpgv --status-fd 1 --keyring ") + keyringPath +
-				' ' + signaturePath + ' ' + path + " 2>/dev/null || true";
 		string openError;
 		File gpgPipe(gpgCommand, "pr", openError);
 		if (!openError.empty())
@@ -497,7 +515,7 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 
 		if (messageType == "GOODSIG")
 		{
-			verifyResult = 1;
+			return true;
 		}
 		else if (messageType == "EXPSIG")
 		{
@@ -551,11 +569,24 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 	{
 		warn2(__("unable to verify a signature for the '%s'"), alias);
 	}
+	return false;
+}
 
-	if (debugging)
+}
+
+bool verifySignature(const Config& config, const string& path, const string& alias)
+{
+	auto debugging = config.getBool("debug::gpgv");
+	if (debugging) debug2("verifying file '%s'", path);
+
+	bool verifyResult = false;
+	auto gpgCommand = composeGpgvCommand(config, path);
+	if (!gpgCommand.empty())
 	{
-		debug2("the verify result is %u", (unsigned int)verifyResult);
+		verifyResult = runGpgCommand(gpgCommand, alias, debugging);
 	}
+
+	if (debugging) debug2("the verify result is %u", (unsigned int)verifyResult);
 	return verifyResult;
 }
 

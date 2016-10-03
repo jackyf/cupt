@@ -6,6 +6,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Don't ask dpkg for architectures if the 'apt::architecture' option
         was already set via configuration file.
       - New method 'getConfigurationPartPaths'.
+    - cache:
+      - Verifying repository signatures: use APT keyrings directly, now that
+        they're finally world-readable.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
 

@@ -125,6 +125,8 @@ void ConfigImpl::initializeVariables()
 		{ "dir::etc::main", "apt.conf" },
 		{ "dir::etc::preferences", "preferences" },
 		{ "dir::etc::preferencesparts", "preferences.d" },
+		{ "dir::etc::trusted", "trusted.gpg" },
+		{ "dir::etc::trustedparts", "trusted.gpg.d" },
 		{ "dir::state", "var/lib/apt" },
 		{ "dir::state::extendedstates", "extended_states" },
 		{ "dir::state::lists", "lists" },
