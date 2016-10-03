@@ -6,6 +6,18 @@ cupt (2.10.0~) UNRELEASED; urgency=low
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
 
+cupt (2.9.7) unstable; urgency=medium
+
+  * lib:
+    - cache/relation:
+      - ArchitecturedRelation: don't choke on build profiles.
+  * debian:
+    - cupt.dirs:
+      - Don't create empty and obsolete /etc/bash_completion.d/ directory.
+      - Don't create /usr/bin, it's created automatically by install targets.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 02 Oct 2016 16:59:13 +0200
+
 cupt (2.9.6) unstable; urgency=medium
 
   * cmakelists:

@@ -29,9 +29,12 @@ namespace cache {
 struct CUPT_API Relation
 {
  private:
-	CUPT_LOCAL bool __parse_versioned_info(const char*, const char*);
+	CUPT_LOCAL const char* p_parseVersionPart(const char*, const char*);
+	CUPT_LOCAL const char* p_parseRelationSymbols(const char*, const char*);
 	CUPT_LOCAL const char* p_parsePackagePart(const char*, const char*);
-	CUPT_LOCAL void __init(const char*, const char*);
+	CUPT_LOCAL const char* __init(const char*, const char*);
+ protected:
+	Relation(pair<const char*, const char*> input, char const* * end);
  public:
 	/// %relation type
 	struct Types
@@ -81,7 +84,9 @@ struct CUPT_API Relation
 struct CUPT_API ArchitecturedRelation: public Relation
 {
  private:
-	CUPT_LOCAL void __init(const char*, const char*);
+	CUPT_LOCAL const char* p_parseArchitectures(const char*, const char*);
+	CUPT_LOCAL const char* p_parseProfiles(const char*, const char*);
+	CUPT_LOCAL void __init(const char*, const char*, const char*);
  public:
 	/// architecture filters
 	vector< string > architectureFilters;
