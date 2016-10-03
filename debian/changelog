@@ -9,6 +9,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - cache:
       - Verifying repository signatures: use APT keyrings directly, now that
         they're finally world-readable.
+      - Removed the 'copy the keyring' hack, introduced in 2.2.2.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
 

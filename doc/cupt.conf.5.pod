@@ -32,7 +32,7 @@ dir::etc::parts, dir::etc::main, dir::etc::preferences,
 dir::ignore-files-silently, dir::state, dir::state::extendedstates,
 dir::state::status, dir::etc::trusted, dir::etc::trustedparts
 dpkg::options, dpkg::pre-invoke, dpkg::post-invoke,
-dpkg::pre-install-pkgs, gpgv::trustedkeyring, quiet
+dpkg::pre-install-pkgs, quiet
 
 See L<apt.conf(5)> for their meanings.
 

@@ -91,21 +91,6 @@ Cache::Cache(shared_ptr< const Config > config, bool useSource, bool useBinary, 
 	__impl->config = config;
 	__impl->binaryArchitecture.reset(new string(config->getString("apt::architecture")));
 
-	{ // ugly hack to copy trusted keyring from APT whenever possible, see #647001
-		auto cuptKeyringPath = config->getString("gpgv::trustedkeyring");
-		auto tempPath = cuptKeyringPath + ".new.temp";
-
-		auto result = std::system(format2("rm -f %s &&"
-				"(apt-key exportall | gpg --batch --no-default-keyring --keyring %s --import) >/dev/null 2>/dev/null &&"
-				"chmod -f +r %s",
-				tempPath, tempPath, tempPath).c_str());
-		if (result == 0)
-		{
-			internal::fs::move(tempPath, cuptKeyringPath); // ignoring errors
-		}
-		unlink(tempPath.c_str()); // in case of system() or move() above failed
-	}
-
 	__impl->parseSourcesLists();
 
 	if (useInstalled)
