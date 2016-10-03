@@ -49,6 +49,7 @@ our @EXPORT = qw(
 	get_version_priority
 	to_one_line
 	generate_file
+	get_keyring_paths
 );
 use Exporter qw(import);
 use IO::File;
@@ -222,6 +223,16 @@ sub generate_downloads {
 my $default_scheme = 'file';
 my $default_server = '/nonexistent';
 
+sub get_trusted_option_string {
+	my $is_trusted = shift;
+	$is_trusted //= 1;
+	if ($is_trusted eq 'check') {
+		return '';
+	} else {
+		return $is_trusted ? '[ trusted=yes ] ' : '[ trusted=no ] ';
+	}
+}
+
 sub generate_packages_sources {
 	foreach my $entry (@_) {
 		my %e = %$entry;
@@ -239,13 +250,12 @@ sub generate_packages_sources {
 		generate_release($scheme, $server,
 				$archive, $codename,
 				$component, $vendor, $version, $label,
-				$not_automatic, $but_automatic_upgrades, $valid_until);
+				$not_automatic, $but_automatic_upgrades, $valid_until, $e{'signer'});
 	
-		my $is_trusted = $e{'trusted'}//1;
 		my $content = $e{'content'};
 		my $list_prefix = get_list_prefix($scheme, $server, $archive);
 
-		my $sources_list_suffix = ($is_trusted ? '[ trusted=yes ] ' : '[ trusted=no ] ');
+		my $sources_list_suffix = get_trusted_option_string($e{'trusted'});
 		$sources_list_suffix .= "$scheme://$server $archive $component";
 
 		if ($e{'type'} eq 'packages') {
@@ -269,7 +279,7 @@ sub get_list_prefix {
 
 sub generate_release {
 	my ($scheme, $server, $archive, $codename, $component, $vendor, $version, $label,
-			$not_automatic, $but_automatic_upgrades, $valid_until) = @_;
+			$not_automatic, $but_automatic_upgrades, $valid_until, $signer) = @_;
 
 	my $content = <<END;
 Origin: $vendor
@@ -289,7 +299,18 @@ END
 		}
 	}
 	my $list_prefix = get_list_prefix($scheme, $server, $archive);
-	generate_file("${list_prefix}_Release", $content);
+	my $path = "${list_prefix}_Release";
+	generate_file($path, $content);
+
+	if (defined $signer) {
+		my ($is_inline, $signature) = $signer->($path);
+		if ($is_inline) {
+			generate_file("${list_prefix}_InRelease", $signature);
+			unlink($path);
+		} else {
+			generate_file("$path.gpg", $signature);
+		}
+	}
 }
 
 # helpers
@@ -429,6 +450,11 @@ sub to_one_line {
 	my $t = shift;
 	$t =~ s/\n/{newline}/g;
 	return $t;
+}
+
+sub get_keyring_paths {
+	my $dir = get_test_dir() . '/gpg';
+	return ("$dir/mock1k.gpg", "$dir/mock4k.gpg");
 }
 
 1;
