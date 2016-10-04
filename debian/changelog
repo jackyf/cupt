@@ -1,10 +1,10 @@
-cupt (2.9.8~) UNRELEASED; urgency=high
+cupt (2.9.8) unstable; urgency=high
 
   * lib:
     - cache:
       - Verifying repository signatures: ported to gpgv v2.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 03 Oct 2016 18:27:16 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 04 Oct 2016 08:40:30 +0200
 
 cupt (2.9.7) unstable; urgency=medium
 
