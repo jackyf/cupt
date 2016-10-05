@@ -48,6 +48,7 @@ our @EXPORT = qw(
 	get_offered_versions
 	get_version_priority
 	to_one_line
+	generate_file
 );
 use Exporter qw(import);
 use IO::File;
