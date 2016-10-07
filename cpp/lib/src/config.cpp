@@ -649,7 +649,7 @@ void Config::setList(const string& optionName, const string& value)
 	}
 }
 
-vector<string> Config::getConfigurationPartPaths(const string& option)
+vector<string> Config::getConfigurationPartPaths(const string& option) const
 {
 	using namespace std::placeholders;
 

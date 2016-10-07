@@ -95,7 +95,7 @@ class CUPT_API Config
 	/**
 	 * @param optionName
 	 */
-	vector<string> getConfigurationPartPaths(const string& optionName);
+	vector<string> getConfigurationPartPaths(const string& optionName) const;
 };
 
 } // namespace
