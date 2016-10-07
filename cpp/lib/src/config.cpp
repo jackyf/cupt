@@ -41,13 +41,15 @@ class ConfigImpl
 {
 	vector< sregex > __optionalPatterns;
 	void __initOptionalPatterns();
+	void p_onPreConfigurationComplete(Config*);
  public:
 	map< string, string > regularVars;
 	map< string, string > regularCompatibilityVars;
 	map< string, vector< string > > listVars;
+	vector< sregex > ignorePathRegexes;
 
 	void initializeVariables();
-	vector< string > getConfigurationFilePaths(Config*) const;
+	vector<string> getMainConfigurationPaths(Config*) const;
 	string getEnvBasedConfigurationFilePath(const Config*, const char*, const char*) const;
 	void parsePreConfiguration(const Config*, ConfigParser&);
 	void parseConfigurationFile(ConfigParser&, const string&);
@@ -280,17 +282,6 @@ bool matchesAnyOfRegexes(const string& s, const vector< sregex >& regexes)
 			});
 }
 
-vector< string > getConfigurationPartsFilePaths(
-		const string& partsDirectoryPath, const vector< sregex >& ignorePathRegexes)
-{
-	using namespace std::placeholders;
-
-	vector< string > result = internal::fs::glob(partsDirectoryPath + "/*");
-	result.erase(std::remove_if(result.begin(), result.end(),
-			std::bind(matchesAnyOfRegexes, _1, ignorePathRegexes)), result.end());
-	return result;
-}
-
 }
 
 bool ConfigImpl::isOptionalOption(const string& optionName) const
@@ -298,18 +289,11 @@ bool ConfigImpl::isOptionalOption(const string& optionName) const
 	return matchesAnyOfRegexes(optionName, __optionalPatterns);
 }
 
-vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
+vector< string > ConfigImpl::getMainConfigurationPaths(Config* config) const
 {
-	vector< sregex > ignorePathRegexes;
-	for (const auto& ignorePathRegexString: config->getList("dir::ignore-files-silently"))
-	{
-		auto fullString = "^.*" + ignorePathRegexString + ".*$";
-		ignorePathRegexes.emplace_back(stringToRegex<sregex>(fullString));
-	}
-
-	vector< string > result;
+	vector<string> result;
 	{ // APT files
-		result = getConfigurationPartsFilePaths(config->getPath("dir::etc::parts"), ignorePathRegexes);
+		result = config->getConfigurationPartPaths("dir::etc::parts");
 
 		auto mainFilePath = getEnvBasedConfigurationFilePath(config, "APT_CONFIG", "dir::etc::main");
 		if (!mainFilePath.empty())
@@ -318,8 +302,7 @@ vector< string > ConfigImpl::getConfigurationFilePaths(Config* config) const
 		}
 	}
 	{ // Cupt files
-		auto cuptParts = getConfigurationPartsFilePaths(
-				config->getPath("cupt::directory::configuration::main-parts"), ignorePathRegexes);
+		auto cuptParts = config->getConfigurationPartPaths("cupt::directory::configuration::main-parts");
 		result.insert(result.end(), cuptParts.begin(), cuptParts.end());
 		auto mainFilePath = config->getPath("cupt::directory::configuration::main");
 		if (internal::fs::fileExists(mainFilePath))
@@ -384,8 +367,8 @@ void ConfigImpl::readConfigs(Config* config)
 	internal::ConfigParser parser(regularHandler, listHandler, clearHandler);
 	{
 		parsePreConfiguration(config, parser);
-
-		for (const auto& path: getConfigurationFilePaths(config))
+		p_onPreConfigurationComplete(config);
+		for (const auto& path: getMainConfigurationPaths(config))
 		{
 			parseConfigurationFile(parser, path);
 		}
@@ -442,6 +425,15 @@ void ConfigImpl::setArchitecture(Config* config)
 	for (const auto& item: internal::split('\n', foreignArchitectures))
 	{
 		config->setList("cupt::cache::foreign-architectures", item);
+	}
+}
+
+void ConfigImpl::p_onPreConfigurationComplete(Config* config)
+{
+	for (const auto& ignorePathRegexString: config->getList("dir::ignore-files-silently"))
+	{
+		auto fullString = "^.*" + ignorePathRegexString + ".*$";
+		ignorePathRegexes.emplace_back(stringToRegex<sregex>(fullString));
 	}
 }
 
@@ -655,6 +647,17 @@ void Config::setList(const string& optionName, const string& value)
 			warn2(__("an attempt to set the invalid list option '%s'"), optionName);
 		}
 	}
+}
+
+vector<string> Config::getConfigurationPartPaths(const string& option)
+{
+	using namespace std::placeholders;
+
+	auto partsDirectoryPath = getPath(option);
+	vector< string > result = internal::fs::glob(partsDirectoryPath + "/*");
+	result.erase(std::remove_if(result.begin(), result.end(),
+			std::bind(internal::matchesAnyOfRegexes, _1, __impl->ignorePathRegexes)), result.end());
+	return result;
 }
 
 } // namespace

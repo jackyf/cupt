@@ -5,6 +5,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - New option 'cupt::console::warnings::removal-of-essential'.
       - Don't ask dpkg for architectures if the 'apt::architecture' option
         was already set via configuration file.
+      - New method 'getConfigurationPartPaths'.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
 

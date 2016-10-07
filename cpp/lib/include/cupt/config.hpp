@@ -49,9 +49,9 @@ class CUPT_API Config
 	Config& operator=(const Config& other);
 
 	/// returns scalar option names
-	vector< string > getScalarOptionNames() const;
+	vector<string> getScalarOptionNames() const;
 	/// returns list option names
-	vector< string > getListOptionNames() const;
+	vector<string> getListOptionNames() const;
 
 	/// sets new value for the scalar option
 	/**
@@ -91,6 +91,11 @@ class CUPT_API Config
 	 * @param optionName
 	 */
 	string getPath(const string& optionName) const;
+	/// gets paths of non-ignored configuration part files
+	/**
+	 * @param optionName
+	 */
+	vector<string> getConfigurationPartPaths(const string& optionName);
 };
 
 } // namespace
