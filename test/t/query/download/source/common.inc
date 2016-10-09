@@ -1,5 +1,4 @@
 use Digest::SHA qw(sha1_hex);
-use IPC::Run3;
 
 use strict;
 use warnings;
@@ -51,7 +50,7 @@ sub populate_downloads {
 	foreach my $value (@$files) {
 		my $name = "$repo_suffix/" . $value->{'name'};
 		my $content = $value->{'content'};
-		run3("cat", \$content, $name, \undef);
+		generate_file($name, $content);
 	}
 }
 
