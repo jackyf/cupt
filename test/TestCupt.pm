@@ -233,40 +233,43 @@ sub get_trusted_option_string {
 	}
 }
 
+sub fill_ps_entry {
+	my $e = shift;
+	$e->{'archive'} //= $default_archive;
+	$e->{'codename'} //= $default_codename;
+	$e->{'label'} //= $default_label;
+	$e->{'component'} //= $default_component;
+	$e->{'version'} //= $default_version;
+	$e->{'vendor'} //= $default_vendor;
+	$e->{'scheme'} //= $default_scheme;
+	$e->{'hostname'} //= $default_server;
+	$e->{'server'} = $e->{hostname};
+	$e->{'not-automatic'} //= 0;
+	$e->{'but-automatic-upgrades'} //= 0;
+	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
+}
+
 sub generate_packages_sources {
 	foreach my $entry (@_) {
+		fill_ps_entry($entry);
 		my %e = %$entry;
-		my $archive = $e{'archive'} // $default_archive;
-		my $codename = $e{'codename'} // $default_codename;
-		my $label = $e{'label'} // $default_label;
-		my $component = $e{'component'} // $default_component;
-		my $version = $e{'version'} // $default_version;
-		my $vendor = $e{'vendor'} // $default_vendor;
-		my $scheme = $e{'scheme'} // $default_scheme;
-		my $server = $e{'hostname'} // $default_server;
-		my $not_automatic = $e{'not-automatic'} // 0;
-		my $but_automatic_upgrades = $e{'but-automatic-upgrades'} // 0;
-		my $valid_until = $e{'valid-until'} // 'Mon, 07 Oct 2033 14:44:53 UTC';
-		generate_release($scheme, $server,
-				$archive, $codename,
-				$component, $vendor, $version, $label,
-				$not_automatic, $but_automatic_upgrades, $valid_until, $e{'signer'});
-	
-		my $content = $e{'content'};
-		my $list_prefix = get_list_prefix($scheme, $server, $archive);
 
-		my $sources_list_suffix = get_trusted_option_string($e{'trusted'});
-		$sources_list_suffix .= "$scheme://$server $archive $component";
+		generate_release($entry);
 
-		if ($e{'type'} eq 'packages') {
+		my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
+
+		my $sources_list_suffix = get_trusted_option_string($e{trusted});
+		$sources_list_suffix .= "$e{scheme}://$e{server} $e{archive} $e{component}";
+
+		if ($e{type} eq 'packages') {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
-			generate_file("${list_prefix}_${component}_binary-${architecture}_Packages", $content);
-			if ($e{'downloads'}) {
-				generate_downloads($content);
+			generate_file("${list_prefix}_$e{component}_binary-${architecture}_Packages", $e{content});
+			if ($e{downloads}) {
+				generate_downloads($e{content});
 			}
 		} else {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
-			generate_file("${list_prefix}_${component}_source_Sources", $content);
+			generate_file("${list_prefix}_$e{component}_source_Sources", $e{content});
 		}
 	}
 }
@@ -278,32 +281,32 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my ($scheme, $server, $archive, $codename, $component, $vendor, $version, $label,
-			$not_automatic, $but_automatic_upgrades, $valid_until, $signer) = @_;
+	my $entry = shift;
+	my %e = %$entry;
 
 	my $content = <<END;
-Origin: $vendor
-Version: $version
-Label: $label
-Suite: $archive
-Codename: $codename
+Origin: $e{vendor}
+Version: $e{version}
+Label: $e{label}
+Suite: $e{archive}
+Codename: $e{codename}
 Date: Mon, 30 Sep 2013 14:44:53 UTC
-Valid-Until: $valid_until
+Valid-Until: $e{'valid-until'}
 Architectures: $architecture all
-Components: $component
+Components: $e{component}
 END
-	if ($not_automatic) {
+	if ($e{'not-automatic'}) {
 		$content .= "NotAutomatic: yes\n";
-		if ($but_automatic_upgrades) {
+		if ($e{'but-automatic-upgrades'}) {
 			$content .= "ButAutomaticUpgrades: yes\n";
 		}
 	}
-	my $list_prefix = get_list_prefix($scheme, $server, $archive);
+	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
 	my $path = "${list_prefix}_Release";
 	generate_file($path, $content);
 
-	if (defined $signer) {
-		my ($is_inline, $signature) = $signer->($path);
+	if (defined $e{signer}) {
+		my ($is_inline, $signature) = $e{signer}->($path);
 		if ($is_inline) {
 			generate_file("${list_prefix}_InRelease", $signature);
 			unlink($path);
