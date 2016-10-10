@@ -248,6 +248,27 @@ sub fill_ps_entry {
 	$e->{'not-automatic'} //= 0;
 	$e->{'but-automatic-upgrades'} //= 0;
 	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
+	$e->{'callback'} = \&local_ps_callback;
+}
+
+sub local_ps_callback {
+	my ($kind, $entry, $content) = @_;
+	my %e = %$entry;
+
+	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
+
+	my $path;
+	if ($kind eq 'Packages') {
+		$path = "${list_prefix}_$e{component}_binary-$e{architecture}_Packages";
+	} elsif ($kind eq 'Sources') {
+		$path = "${list_prefix}_$e{component}_source_Sources";
+	} elsif ($kind =~ m/Release/) {
+		$path = "${list_prefix}_$kind";
+	} else {
+		die "wrong kind $kind";
+	}
+	generate_file($path, $content);
+	return $path;
 }
 
 sub generate_packages_sources {
@@ -255,23 +276,21 @@ sub generate_packages_sources {
 		fill_ps_entry($entry);
 		my %e = %$entry;
 
-		generate_release($entry);
-
-		my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
-
 		my $sources_list_suffix = get_trusted_option_string($e{trusted});
 		$sources_list_suffix .= "$e{scheme}://$e{server} $e{archive} $e{component}";
 
 		if ($e{type} eq 'packages') {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
-			generate_file("${list_prefix}_$e{component}_binary-$e{architecture}_Packages", $e{content});
+			$e{callback}->('Packages', $entry, $e{content});
 			if ($e{downloads}) {
 				generate_downloads($e{content});
 			}
 		} else {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
-			generate_file("${list_prefix}_$e{component}_source_Sources", $e{content});
+			$e{callback}->('Sources', $entry, $e{content});
 		}
+
+		generate_release($entry);
 	}
 }
 
@@ -302,17 +321,15 @@ END
 			$content .= "ButAutomaticUpgrades: yes\n";
 		}
 	}
-	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
-	my $path = "${list_prefix}_Release";
-	generate_file($path, $content);
+	my $path = $e{callback}->('Release', $entry, $content);
 
 	if (defined $e{signer}) {
 		my ($is_inline, $signature) = $e{signer}->($path);
 		if ($is_inline) {
-			generate_file("${list_prefix}_InRelease", $signature);
+			$e{callback}->('InRelease', $entry, $signature);
 			unlink($path);
 		} else {
-			generate_file("$path.gpg", $signature);
+			$e{callback}->('Release.gpg', $entry, $signature);
 		}
 	}
 }
