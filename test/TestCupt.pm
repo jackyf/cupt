@@ -244,6 +244,7 @@ sub fill_ps_entry {
 	$e->{'scheme'} //= $default_scheme;
 	$e->{'hostname'} //= $default_server;
 	$e->{'server'} = $e->{hostname};
+	$e->{'architecture'} //= $architecture;
 	$e->{'not-automatic'} //= 0;
 	$e->{'but-automatic-upgrades'} //= 0;
 	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
@@ -263,7 +264,7 @@ sub generate_packages_sources {
 
 		if ($e{type} eq 'packages') {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
-			generate_file("${list_prefix}_$e{component}_binary-${architecture}_Packages", $e{content});
+			generate_file("${list_prefix}_$e{component}_binary-$e{architecture}_Packages", $e{content});
 			if ($e{downloads}) {
 				generate_downloads($e{content});
 			}
@@ -292,7 +293,7 @@ Suite: $e{archive}
 Codename: $e{codename}
 Date: Mon, 30 Sep 2013 14:44:53 UTC
 Valid-Until: $e{'valid-until'}
-Architectures: $architecture all
+Architectures: $e{architecture} all
 Components: $e{component}
 END
 	if ($e{'not-automatic'}) {
