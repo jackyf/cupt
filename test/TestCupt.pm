@@ -316,14 +316,10 @@ sub compose_sums_record {
 	my %qqq;
 	my $records = shift;
 	foreach my $record (@$records) {
-		printf "PNKD: %s\n", join(' ', keys %qqq);
 		while (my ($name, $value) = each %{$record->{sums}}) {
-			printf "PNKA: %s\n", join(' ', keys %qqq);
 			$qqq{$name} //= "$name:\n";
 			$qqq{$name} .= " $value $record->{size} $record->{path}\n";
-			printf "PNKB: %s\n", join(' ', keys %qqq);
 		}
-		printf "PNKE: %s\n", join(' ', keys %qqq);
 	}
 	return join('', values %qqq);
 }
