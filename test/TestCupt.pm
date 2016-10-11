@@ -279,6 +279,8 @@ sub local_ps_callback {
 		$path = "${list_prefix}_$e{component}_source_Sources";
 	} elsif ($kind =~ m/Release/) {
 		$path = "${list_prefix}_$kind";
+	} elsif ($kind =~ m/Translation/) {
+		$path = "${list_prefix}_$e{component}_i18n_$kind";
 	} else {
 		die "wrong kind $kind";
 	}
@@ -371,6 +373,10 @@ sub generate_packages_sources {
 		if (exists $e{sources}) {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
 			$e{callback}->('Sources', $entry, join_records_if_needed($e{sources}));
+		}
+
+		while (my ($lang, $content) = each %{$e{translations}}) {
+			$e{callback}->("Translation-$lang", $entry, join_records_if_needed($content));
 		}
 
 		generate_release($entry);
