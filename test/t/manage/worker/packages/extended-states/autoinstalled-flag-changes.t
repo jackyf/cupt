@@ -24,10 +24,12 @@ sub test {
 		'dpkg_status' =>
 			entail(compose_installed_record('aa', 1)) .
 			entail(compose_installed_record('bb', 1)) ,
-		'packages' =>
-			entail(compose_package_record('bb', 2)) .
-			entail(compose_package_record('cc', 2) . "Depends: bb (= 2)\n"),
-		'downloads' => 1,
+		'releases' => [{
+			'packages' =>
+				entail(compose_package_record('bb', 2)) .
+				entail(compose_package_record('cc', 2) . "Depends: bb (= 2)\n"),
+			'deb-caches' => 1,
+		}],
 		'extended_states' =>
 			entail(compose_autoinstalled_record('bb')),
 	);

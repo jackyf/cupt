@@ -165,28 +165,40 @@ my $default_component = 'main';
 my $default_version = '18.1';
 my $default_vendor = 'Debian';
 
-sub unify_ps_option {
+sub convert_v1_to_releases {
 	my ($options, $type) = @_;
-
-	my $result = $options->{"${type}2"}//[];
 
 	my $content_of_default_archive = $options->{$type}//'';
 	if ($content_of_default_archive) {
-		push @$result, { 'archive' => $default_archive, 'content' => $content_of_default_archive }; 
+		return { $type => $content_of_default_archive };
+	} else {
+		return ();
 	}
-	foreach my $entry (@$result) {
-		$entry->{'type'} = $type;
-		$entry->{'downloads'} = ($options->{'downloads'} // 0);
-	}
+}
 
-	return @$result;
+sub convert_v2_to_releases {
+	my ($options, $type) = @_;
+
+	my $entries = $options->{"${type}2"};
+	foreach my $entry (@$entries) {
+		$entry->{$type} = $entry->{content};
+		delete $entry->{content};
+	}
+	return @$entries;
+}
+
+sub convert_older_option_structures_to_releases {
+	my ($options, $type) = @_;
+	return (convert_v1_to_releases($options, $type),
+			convert_v2_to_releases($options, $type));
 }
 
 sub unify_packages_and_sources_option {
 	my ($options) = @_;
 
-	return (unify_ps_option($options, 'packages'),
-			unify_ps_option($options, 'sources'));
+	return (@{$options->{"releases"}//[]},
+			convert_older_option_structures_to_releases($options, 'packages'),
+			convert_older_option_structures_to_releases($options, 'sources'));
 }
 
 sub generate_binary_command {
@@ -210,7 +222,7 @@ sub generate_file {
 	undef $fh;
 }
 
-sub generate_downloads {
+sub generate_deb_caches {
 	my ($packages_content) = @_;
 
 	for my $record (split(/\n\n/, $packages_content)) {
@@ -331,6 +343,15 @@ sub remote_ps_callback {
 	return generate_remote_file($entry, $subpath, $content);
 }
 
+sub join_records_if_needed {
+	my $input = shift;
+	if (ref($input) eq 'ARRAY') {
+		return join("\n", @$input);
+	} else {
+		return $input;
+	}
+}
+
 sub generate_packages_sources {
 	foreach my $entry (@_) {
 		fill_ps_entry($entry);
@@ -339,15 +360,17 @@ sub generate_packages_sources {
 		my $sources_list_suffix = get_trusted_option_string($e{trusted});
 		$sources_list_suffix .= "$e{scheme}://$e{server} $e{archive} $e{component}";
 
-		if ($e{type} eq 'packages') {
+		if (exists $e{packages}) {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
-			$e{callback}->('Packages', $entry, $e{content});
-			if ($e{downloads}) {
-				generate_downloads($e{content});
+			my $content = join_records_if_needed($e{packages});
+			$e{callback}->('Packages', $entry, $content);
+			if ($e{'deb-caches'}) {
+				generate_deb_caches($content);
 			}
-		} else {
+		}
+		if (exists $e{sources}) {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
-			$e{callback}->('Sources', $entry, $e{content});
+			$e{callback}->('Sources', $entry, join_records_if_needed($e{sources}));
 		}
 
 		generate_release($entry);

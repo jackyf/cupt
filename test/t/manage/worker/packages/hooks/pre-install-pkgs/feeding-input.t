@@ -15,8 +15,10 @@ sub get_many_packages {
 }
 
 my $cupt = setup_for_worker(
-	'packages' => get_many_packages(),
-	'downloads' => 1,
+	'releases' => [{
+		'packages' => get_many_packages(),
+		'deb-caches' => 1,
+	}]
 );
 
 sub test {
