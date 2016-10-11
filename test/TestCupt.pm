@@ -3,7 +3,9 @@ package TestCupt;
 use strict;
 use warnings;
 
+use Digest::SHA qw(sha1_hex sha256_hex);
 use Cwd;
+
 my $start_dir;
 
 sub enter_test_env {
@@ -220,8 +222,8 @@ sub generate_downloads {
 	}
 }
 
-my $default_scheme = 'file';
-my $default_server = '/nonexistent';
+my $default_scheme = 'copy';
+my $default_server = './localrepo';
 
 sub get_trusted_option_string {
 	my $is_trusted = shift;
@@ -235,6 +237,7 @@ sub get_trusted_option_string {
 
 sub fill_ps_entry {
 	my $e = shift;
+	$e->{'location'} //= 'local';
 	$e->{'archive'} //= $default_archive;
 	$e->{'codename'} //= $default_codename;
 	$e->{'label'} //= $default_label;
@@ -248,7 +251,7 @@ sub fill_ps_entry {
 	$e->{'not-automatic'} //= 0;
 	$e->{'but-automatic-upgrades'} //= 0;
 	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
-	$e->{'callback'} = \&local_ps_callback;
+	$e->{'callback'} = $e->{location} eq 'remote' ? \&remote_ps_callback : \&local_ps_callback;
 }
 
 sub local_ps_callback {
@@ -269,6 +272,63 @@ sub local_ps_callback {
 	}
 	generate_file($path, $content);
 	return $path;
+}
+
+sub get_content_sums {
+	my $content = shift;
+	return {
+		'SHA1' => sha1_hex($content),
+		'SHA256' => sha256_hex($content),
+	}
+}
+
+sub generate_remote_file {
+	my ($e, $subpath, $content) = @_;
+
+	my $dist_prefix = "$e->{hostname}/dists/$e->{archive}";
+
+	push @{$e->{_ps_files}}, {
+		'path' => $subpath,
+		'size' => length($content),
+		'sums' => get_content_sums($content),
+	};
+
+	my $path = "$dist_prefix/$subpath";
+	generate_file($path, $content);
+	return $path;
+}
+
+sub compose_sums_record {
+	my %qqq;
+	my $records = shift;
+	foreach my $record (@$records) {
+		printf "PNKD: %s\n", join(' ', keys %qqq);
+		while (my ($name, $value) = each %{$record->{sums}}) {
+			printf "PNKA: %s\n", join(' ', keys %qqq);
+			$qqq{$name} //= "$name:\n";
+			$qqq{$name} .= " $value $record->{size} $record->{path}\n";
+			printf "PNKB: %s\n", join(' ', keys %qqq);
+		}
+		printf "PNKE: %s\n", join(' ', keys %qqq);
+	}
+	return join('', values %qqq);
+}
+
+sub remote_ps_callback {
+	my ($kind, $entry, $content) = @_;
+	my %e = %$entry;
+
+	my $subpath;
+	if ($kind =~ m/Release/) {
+		$content .= compose_sums_record($entry->{_ps_files});
+		$subpath = $kind;
+	} elsif ($kind eq 'Packages') {
+		$subpath = "$e{component}/binary-$e{architecture}/$kind";
+	} elsif ($kind eq 'Sources') {
+		$subpath = "$e{component}/source/$kind";
+	}
+
+	return generate_remote_file($entry, $subpath, $content);
 }
 
 sub generate_packages_sources {
