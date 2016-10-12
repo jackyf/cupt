@@ -358,7 +358,7 @@ sub generate_packages_sources {
 		my $sources_list_suffix = get_trusted_option_string($e{trusted});
 		$sources_list_suffix .= "$e{scheme}://$e{server} $e{archive} $e{component}";
 
-		if (exists $e{packages}) {
+		if (defined $e{packages}) {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
 			my $content = join_records_if_needed($e{packages});
 			$e{callback}->('Packages', $entry, $content);
@@ -366,7 +366,7 @@ sub generate_packages_sources {
 				generate_deb_caches($content);
 			}
 		}
-		if (exists $e{sources}) {
+		if (defined $e{sources}) {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
 			$e{callback}->('Sources', $entry, join_records_if_needed($e{sources}));
 		}
