@@ -337,6 +337,10 @@ sub remote_ps_callback {
 		$subpath = "$e{component}/binary-$e{architecture}/$kind";
 	} elsif ($kind eq 'Sources') {
 		$subpath = "$e{component}/source/$kind";
+	} elsif ($kind =~ m/Translation/) {
+		$subpath = "$e{component}/i18n/$kind";
+	} else {
+		die "wrong kind $kind";
 	}
 
 	return generate_remote_file($entry, $subpath, $content);
