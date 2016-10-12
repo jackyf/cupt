@@ -12,16 +12,6 @@ my $desc_da = "sø";
 my $hash_tag = 'Description-md5';
 my $desc_tag = 'Description';
 
-sub compose_translation_record {
-	my ($package, $lang, $hash, $desc) = @_;
-	my $result = '';
-	if (defined($package)) {
-		$result .= "Package: $package\n";
-	}
-	$result .= "$hash_tag: $hash\n";
-	$result .= "$desc_tag-$lang: $desc\n";
-}
-
 sub compose_desc_addendum {
 	my ($hash, $desc) = @_;
 

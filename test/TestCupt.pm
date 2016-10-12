@@ -37,6 +37,7 @@ our @EXPORT = qw(
 	compose_autoinstalled_record
 	compose_version_pin_record
 	compose_pin_record
+	compose_translation_record
 	entail
 	regex_offer
 	regex_no_solutions
@@ -480,6 +481,16 @@ sub compose_pin_record {
 sub compose_version_pin_record {
 	my ($package_name, $version_string, $priority) = @_;
 	return compose_pin_record("Package: $package_name", "version $version_string", $priority);
+}
+
+sub compose_translation_record {
+	my ($package, $lang, $hash, $desc) = @_;
+	my $result = '';
+	if (defined($package)) {
+		$result .= "Package: $package\n";
+	}
+	$result .= "Description-md5: $hash\n";
+	$result .= "Description-$lang: $desc\n";
 }
 
 sub entail {
