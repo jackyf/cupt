@@ -775,16 +775,16 @@ ssize_t CacheImpl::getPin(const Version* version,
 
 string CacheImpl::getLocalizedDescription(const BinaryVersion* version) const
 {
-	const string& sourceHash = !version->descriptionHash.empty() ?
-			version->descriptionHash :
-			HashSums::getHashOfString(HashSums::MD5, version->description);
-
-	auto it = translations.find(sourceHash);
-	if (it != translations.end())
+	const auto& hash = version->descriptionHash;
+	if (!hash.empty())
 	{
-		const TranslationPosition& position = it->second;
-		position.file->seek(position.offset);
-		return position.file->getRecord().chompAsRecord();
+		auto it = translations.find(hash);
+		if (it != translations.end())
+		{
+			const TranslationPosition& position = it->second;
+			position.file->seek(position.offset);
+			return position.file->getRecord().chompAsRecord();
+		}
 	}
 	return version->description;
 }
