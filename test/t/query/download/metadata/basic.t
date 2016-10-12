@@ -1,5 +1,6 @@
 use Test::More tests => 1;
-use IPC::Run3;
+
+require(get_rinclude_path('common'));
 
 sub compose_release_dict {
 	my ($packages, $sources) = @_;
@@ -21,16 +22,6 @@ my $cupt = setup(
 		])
 	]
 );
-
-sub check_exit_code {
-	my ($command, $expected_success, $desc) = @_;
-	my $checker = $expected_success ? \&is : \&isnt;
-
-	my $output;
-	run3($command, \undef, \$output, \$output);
-	$checker->($?, 0, $desc);
-	diag($output);
-}
 
 subtest "simple update" => sub {
 	check_exit_code("$cupt show abc", 0, 'no packages available at this point');
