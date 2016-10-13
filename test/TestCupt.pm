@@ -328,7 +328,7 @@ sub local_ps_callback {
 		die "wrong kind $kind";
 	}
 	generate_file($path, $content);
-	return ($path, $content);
+	return $path;
 }
 
 sub remote_ps_callback {
@@ -349,8 +349,7 @@ sub remote_ps_callback {
 		die "wrong kind $kind";
 	}
 
-	generate_remote_file($entry, $subpath, $content);
-	return $content;
+	return generate_remote_file($entry, $subpath, $content);
 }
 
 sub join_records_if_needed {
@@ -419,7 +418,7 @@ END
 		}
 	}
 
-	(my $path, $content) = $e{callback}->('Release', $entry, $content);
+	my $path = $e{callback}->('Release', $entry, $content);
 
 	my $variants = $e{variants}{sign};
 	if (not in_array('orig', $variants)) {
