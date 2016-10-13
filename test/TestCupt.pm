@@ -268,6 +268,7 @@ sub fill_ps_entry {
 	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
 
 	$e->{'variants'}->{'sign'} //= ['orig'];
+	$e->{'variants'}->{'compress'} //= ['orig'];
 	my @keyrings = get_keyring_paths();
 	$e->{'hooks'}->{'signer'} //= get_good_signer($keyrings[0]);
 	$e->{'callback'} = $e->{location} eq 'remote' ? \&remote_ps_callback : \&local_ps_callback;
@@ -339,7 +340,7 @@ sub remote_ps_callback {
 	if ($kind =~ m/Release/) {
 		$content .= compose_sums_record($entry->{_ps_files});
 		$subpath = $kind;
-	} elsif ($kind eq 'Packages') {
+	} elsif ($kind =~ m/Packages/) {
 		$subpath = "$e{component}/binary-$e{architecture}/$kind";
 	} elsif ($kind eq 'Sources') {
 		$subpath = "$e{component}/source/$kind";
@@ -361,6 +362,26 @@ sub join_records_if_needed {
 	}
 }
 
+sub create_package_file_with_callbacks{
+	my ($kind, $entry, $content) = @_;
+	my $variants = $entry->{variants}->{compress};
+	my $path = $entry->{callback}->($kind, $entry, $content);
+	if (not in_array('orig', $variants)) {
+		unlink($path);
+	}
+	my $compress_via = sub {
+		my ($variant, $compressor) = @_;
+		if (in_array($variant, $variants)) {
+			run3("$compressor -c", \$content, \my $compressed, \my $stderr);
+			die "$compressor: $stderr" if $?;
+			$entry->{callback}->("$kind.$variant", $entry, $compressed);
+		}
+	};
+	$compress_via->('xz', 'xz');
+	$compress_via->('gz', 'gzip');
+	$compress_via->('bz2', 'bzip2');
+}
+
 sub generate_packages_sources {
 	foreach my $entry (@_) {
 		fill_ps_entry($entry);
@@ -372,18 +393,18 @@ sub generate_packages_sources {
 		if (defined $e{packages}) {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
 			my $content = join_records_if_needed($e{packages});
-			$e{callback}->('Packages', $entry, $content);
+			create_package_file_with_callbacks('Packages', $entry, $content);
 			if ($e{'deb-caches'}) {
 				generate_deb_caches($content);
 			}
 		}
 		if (defined $e{sources}) {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
-			$e{callback}->('Sources', $entry, join_records_if_needed($e{sources}));
+			create_package_file_with_callbacks('Sources', $entry, join_records_if_needed($e{sources}));
 		}
 
 		while (my ($lang, $content) = each %{$e{translations}}) {
-			$e{callback}->("Translation-$lang", $entry, join_records_if_needed($content));
+			create_package_file_with_callbacks("Translation-$lang", $entry, join_records_if_needed($content));
 		}
 
 		generate_release($entry);
