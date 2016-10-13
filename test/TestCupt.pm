@@ -271,6 +271,7 @@ sub fill_ps_entry {
 	$e->{'variants'}->{'compress'} //= ['orig'];
 	my @keyrings = get_keyring_paths();
 	$e->{'hooks'}->{'signer'} //= get_good_signer($keyrings[0]);
+	$e->{'hooks'}->{'file'} //= sub { return $_[3]; };
 	$e->{'callback'} = $e->{location} eq 'remote' ? \&remote_ps_callback : \&local_ps_callback;
 }
 
@@ -280,22 +281,6 @@ sub get_content_sums {
 		'SHA1' => sha1_hex($content),
 		'SHA256' => sha256_hex($content),
 	}
-}
-
-sub generate_remote_file {
-	my ($e, $subpath, $content) = @_;
-
-	my $dist_prefix = "$e->{hostname}/dists/$e->{archive}";
-
-	push @{$e->{_ps_files}}, {
-		'path' => $subpath,
-		'size' => length($content),
-		'sums' => get_content_sums($content),
-	};
-
-	my $path = "$dist_prefix/$subpath";
-	generate_file($path, $content);
-	return $path;
 }
 
 sub compose_sums_record {
@@ -311,25 +296,22 @@ sub compose_sums_record {
 }
 
 sub local_ps_callback {
-	my ($kind, $entry, $content) = @_;
+	my ($kind, $entry, undef) = @_;
 	my %e = %$entry;
 
 	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
 
-	my $path;
 	if ($kind eq 'Packages') {
-		$path = "${list_prefix}_$e{component}_binary-$e{architecture}_Packages";
+		return "${list_prefix}_$e{component}_binary-$e{architecture}_Packages";
 	} elsif ($kind eq 'Sources') {
-		$path = "${list_prefix}_$e{component}_source_Sources";
+		return "${list_prefix}_$e{component}_source_Sources";
 	} elsif ($kind =~ m/Release/) {
-		$path = "${list_prefix}_$kind";
+		return "${list_prefix}_$kind";
 	} elsif ($kind =~ m/Translation/) {
-		$path = "${list_prefix}_$e{component}_i18n_$kind";
+		return "${list_prefix}_$e{component}_i18n_$kind";
 	} else {
 		die "wrong kind $kind";
 	}
-	generate_file($path, $content);
-	return $path;
 }
 
 sub remote_ps_callback {
@@ -338,7 +320,6 @@ sub remote_ps_callback {
 
 	my $subpath;
 	if ($kind =~ m/Release/) {
-		$content .= compose_sums_record($entry->{_ps_files});
 		$subpath = $kind;
 	} elsif ($kind =~ m/Packages/) {
 		$subpath = "$e{component}/binary-$e{architecture}/$kind";
@@ -350,7 +331,13 @@ sub remote_ps_callback {
 		die "wrong kind $kind";
 	}
 
-	return generate_remote_file($entry, $subpath, $content);
+	push @{$entry->{_ps_files}}, {
+		'path' => $subpath,
+		'size' => length($content),
+		'sums' => get_content_sums($content),
+	};
+
+	return "$e{hostname}/dists/$e{archive}/$subpath";
 }
 
 sub join_records_if_needed {
@@ -362,10 +349,22 @@ sub join_records_if_needed {
 	}
 }
 
-sub create_package_file_with_callbacks{
-	my ($kind, $entry, $content) = @_;
+sub call_file_callback_with_hooks {
+	my ($kind, $entry, $pre_content) = @_;
+	my $hook = $entry->{hooks}->{file};
+
+	my $main_content = $hook->('pre', $kind, $entry, $pre_content);
+	my $path = $entry->{callback}->($kind, $entry, $main_content);
+	my $post_content = $hook->('post', $kind, $entry, $main_content);
+	generate_file($path, $post_content);
+	return ($path, $main_content);
+}
+
+sub generate_file_with_variants {
+	my ($kind, $entry, $pre_content) = @_;
 	my $variants = $entry->{variants}->{compress};
-	my $path = $entry->{callback}->($kind, $entry, $content);
+
+	my ($path, $content) = call_file_callback_with_hooks($kind, $entry, $pre_content);
 	if (not in_array('orig', $variants)) {
 		unlink($path);
 	}
@@ -374,7 +373,7 @@ sub create_package_file_with_callbacks{
 		if (in_array($variant, $variants)) {
 			run3("$compressor -c", \$content, \my $compressed, \my $stderr);
 			die "$compressor: $stderr" if $?;
-			$entry->{callback}->("$kind.$variant", $entry, $compressed);
+			call_file_callback_with_hooks("$kind.$variant", $entry, $compressed);
 		}
 	};
 	$compress_via->('xz', 'xz');
@@ -393,18 +392,18 @@ sub generate_packages_sources {
 		if (defined $e{packages}) {
 			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
 			my $content = join_records_if_needed($e{packages});
-			create_package_file_with_callbacks('Packages', $entry, $content);
+			generate_file_with_variants('Packages', $entry, $content);
 			if ($e{'deb-caches'}) {
 				generate_deb_caches($content);
 			}
 		}
 		if (defined $e{sources}) {
 			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
-			create_package_file_with_callbacks('Sources', $entry, join_records_if_needed($e{sources}));
+			generate_file_with_variants('Sources', $entry, join_records_if_needed($e{sources}));
 		}
 
 		while (my ($lang, $content) = each %{$e{translations}}) {
-			create_package_file_with_callbacks("Translation-$lang", $entry, join_records_if_needed($content));
+			generate_file_with_variants("Translation-$lang", $entry, join_records_if_needed($content));
 		}
 
 		generate_release($entry);
@@ -421,7 +420,7 @@ sub generate_release {
 	my $entry = shift;
 	my %e = %$entry;
 
-	my $content = <<END;
+	my $pre_content = <<END;
 Origin: $e{vendor}
 Version: $e{version}
 Label: $e{label}
@@ -433,13 +432,14 @@ Architectures: $e{architecture} all
 Components: $e{component}
 END
 	if ($e{'not-automatic'}) {
-		$content .= "NotAutomatic: yes\n";
+		$pre_content .= "NotAutomatic: yes\n";
 		if ($e{'but-automatic-upgrades'}) {
-			$content .= "ButAutomaticUpgrades: yes\n";
+			$pre_content .= "ButAutomaticUpgrades: yes\n";
 		}
 	}
+	$pre_content .= compose_sums_record($e{_ps_files});
 
-	my $path = $e{callback}->('Release', $entry, $content);
+	my ($path, $content) = call_file_callback_with_hooks('Release', $entry, $pre_content);
 
 	my $variants = $e{variants}{sign};
 	if (not in_array('orig', $variants)) {
@@ -447,10 +447,10 @@ END
 	}
 	my $signer = $e{hooks}{signer};
 	if (in_array('inline', $variants)) {
-		$e{callback}->('InRelease', $entry, $signer->(1, $content));
+		call_file_callback_with_hooks('InRelease', $entry, $signer->(1, $content));
 	}
 	if (in_array('detached', $variants)) {
-		$e{callback}->('Release.gpg', $entry, $signer->(0, $content));
+		call_file_callback_with_hooks('Release.gpg', $entry, $signer->(0, $content));
 	}
 }
 
