@@ -267,28 +267,6 @@ sub fill_ps_entry {
 	$e->{'callback'} = $e->{location} eq 'remote' ? \&remote_ps_callback : \&local_ps_callback;
 }
 
-sub local_ps_callback {
-	my ($kind, $entry, $content) = @_;
-	my %e = %$entry;
-
-	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
-
-	my $path;
-	if ($kind eq 'Packages') {
-		$path = "${list_prefix}_$e{component}_binary-$e{architecture}_Packages";
-	} elsif ($kind eq 'Sources') {
-		$path = "${list_prefix}_$e{component}_source_Sources";
-	} elsif ($kind =~ m/Release/) {
-		$path = "${list_prefix}_$kind";
-	} elsif ($kind =~ m/Translation/) {
-		$path = "${list_prefix}_$e{component}_i18n_$kind";
-	} else {
-		die "wrong kind $kind";
-	}
-	generate_file($path, $content);
-	return $path;
-}
-
 sub get_content_sums {
 	my $content = shift;
 	return {
@@ -325,6 +303,28 @@ sub compose_sums_record {
 	return join('', values %qqq);
 }
 
+sub local_ps_callback {
+	my ($kind, $entry, $content) = @_;
+	my %e = %$entry;
+
+	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
+
+	my $path;
+	if ($kind eq 'Packages') {
+		$path = "${list_prefix}_$e{component}_binary-$e{architecture}_Packages";
+	} elsif ($kind eq 'Sources') {
+		$path = "${list_prefix}_$e{component}_source_Sources";
+	} elsif ($kind =~ m/Release/) {
+		$path = "${list_prefix}_$kind";
+	} elsif ($kind =~ m/Translation/) {
+		$path = "${list_prefix}_$e{component}_i18n_$kind";
+	} else {
+		die "wrong kind $kind";
+	}
+	generate_file($path, $content);
+	return $content;
+}
+
 sub remote_ps_callback {
 	my ($kind, $entry, $content) = @_;
 	my %e = %$entry;
@@ -343,7 +343,8 @@ sub remote_ps_callback {
 		die "wrong kind $kind";
 	}
 
-	return generate_remote_file($entry, $subpath, $content);
+	generate_remote_file($entry, $subpath, $content);
+	return $content;
 }
 
 sub join_records_if_needed {
@@ -411,13 +412,12 @@ END
 			$content .= "ButAutomaticUpgrades: yes\n";
 		}
 	}
-	my $path = $e{callback}->('Release', $entry, $content);
+	$content = $e{callback}->('Release', $entry, $content);
 
 	if (defined $e{signer}) {
-		my ($is_inline, $signature) = $e{signer}->($path);
+		my ($is_inline, $signature) = $e{signer}->($content);
 		if ($is_inline) {
 			$e{callback}->('InRelease', $entry, $signature);
-			unlink($path);
 		} else {
 			$e{callback}->('Release.gpg', $entry, $signature);
 		}

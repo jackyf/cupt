@@ -1,4 +1,5 @@
 use Test::More tests => 5+5+7+5;
+use IPC::Run3;
 
 my $apt_keyring_dir = 'etc/apt/trusted.gpg.d/';
 my $apt_keyring_file = 'etc/apt/trusted.gpg';
@@ -10,8 +11,8 @@ sub get_good_signer {
 	$is_inline //= 0;
 	my $command = ($is_inline ? '--clearsign' : '--detach-sign');
 	return sub {
-		my ($file) = @_;
-		my $output = `gpg2 --no-default-keyring --keyring $keyring --output - $command $file`;
+		my ($input) = @_;
+		run3("gpg2 --no-default-keyring --keyring $keyring --output - $command", \$input, \my $output);
 		return ($is_inline, $output);
 	};
 }
