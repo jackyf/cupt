@@ -5,6 +5,7 @@ use warnings;
 
 use Digest::SHA qw(sha1_hex sha256_hex);
 use Cwd;
+use IPC::Run3;
 
 my $start_dir;
 
@@ -53,6 +54,7 @@ our @EXPORT = qw(
 	to_one_line
 	generate_file
 	get_keyring_paths
+	get_good_signer
 );
 use Exporter qw(import);
 use IO::File;
@@ -264,6 +266,10 @@ sub fill_ps_entry {
 	$e->{'not-automatic'} //= 0;
 	$e->{'but-automatic-upgrades'} //= 0;
 	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
+
+	$e->{'variants'}->{'sign'} //= ['orig'];
+	my @keyrings = get_keyring_paths();
+	$e->{'hooks'}->{'signer'} //= get_good_signer($keyrings[0]);
 	$e->{'callback'} = $e->{location} eq 'remote' ? \&remote_ps_callback : \&local_ps_callback;
 }
 
@@ -322,7 +328,7 @@ sub local_ps_callback {
 		die "wrong kind $kind";
 	}
 	generate_file($path, $content);
-	return $content;
+	return ($path, $content);
 }
 
 sub remote_ps_callback {
@@ -412,15 +418,19 @@ END
 			$content .= "ButAutomaticUpgrades: yes\n";
 		}
 	}
-	$content = $e{callback}->('Release', $entry, $content);
 
-	if (defined $e{signer}) {
-		my ($is_inline, $signature) = $e{signer}->($content);
-		if ($is_inline) {
-			$e{callback}->('InRelease', $entry, $signature);
-		} else {
-			$e{callback}->('Release.gpg', $entry, $signature);
-		}
+	(my $path, $content) = $e{callback}->('Release', $entry, $content);
+
+	my $variants = $e{variants}{sign};
+	if (not in_array('orig', $variants)) {
+		unlink($path);
+	}
+	my $signer = $e{hooks}{signer};
+	if (in_array('inline', $variants)) {
+		$e{callback}->('InRelease', $entry, $signer->(1, $content));
+	}
+	if (in_array('detached', $variants)) {
+		$e{callback}->('Release.gpg', $entry, $signer->(0, $content));
 	}
 }
 
@@ -576,6 +586,21 @@ sub to_one_line {
 sub get_keyring_paths {
 	my $dir = get_test_dir() . '/gpg';
 	return ("$dir/mock1k.gpg", "$dir/mock4k.gpg");
+}
+
+sub get_good_signer {
+	my $keyring = shift;
+	return sub {
+		my ($is_inline, $input) = @_;
+		my $command = ($is_inline ? '--sign' : '--detach-sign');
+		run3("gpg2 --no-default-keyring --keyring $keyring --output - --armor $command", \$input, \my $output);
+		return $output;
+	};
+}
+
+sub in_array {
+	my ($elem, $array) = @_;
+	return grep { $_ eq $elem } @$array;
 }
 
 1;

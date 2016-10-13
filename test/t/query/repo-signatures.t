@@ -1,24 +1,16 @@
-use Test::More tests => 5+5+7+5;
-use IPC::Run3;
+use Test::More tests => 5 + 5*3 + 7*5;
 
 my $apt_keyring_dir = 'etc/apt/trusted.gpg.d/';
 my $apt_keyring_file = 'etc/apt/trusted.gpg';
 
 my ($keyring1, $keyring2) = get_keyring_paths();
 
-sub get_good_signer {
-	my ($keyring, $is_inline) = @_;
-	$is_inline //= 0;
-	my $command = ($is_inline ? '--clearsign' : '--detach-sign');
-	return sub {
-		my ($input) = @_;
-		run3("gpg2 --no-default-keyring --keyring $keyring --output - $command", \$input, \my $output);
-		return ($is_inline, $output);
-	};
+sub bad_signer {
+	return 'garbage';
 }
 
-sub bad_signer {
-	return (0, 'garbage');
+sub no_signer {
+	return undef;
 }
 
 sub link_keyring {
@@ -31,14 +23,20 @@ sub link_keyring {
 }
 
 sub get_output {
-	my ($files, $signer) = @_;
+	my ($files, $signer, $sign_variants) = @_;
+	$sign_variants //= ['orig','detached'];
 
 	my $cupt = setup(
 		'packages2' => [
 			{
 				'content' => entail(compose_package_record('p', 1)),
-				'signer' => $signer,
-				'trusted' => 'check'
+				'trusted' => 'check',
+				'hooks' => {
+					'signer' => $signer,
+				},
+				'variants' => {
+					'sign' => $sign_variants,
+				}
 			}
 		]
 	);
@@ -52,10 +50,10 @@ sub get_output {
 }
 
 sub test {
-	my ($files, $signer, $expected_result, $desc) = @_;
+	my ($input, $expected_result, $desc) = @_;
 	$desc .= " --> " . ($expected_result?"trusted":"untrusted");
 
-	my $output = get_output($files, $signer);
+	my $output = get_output(@$input);
 	if ($expected_result) {
 		like($output, qr/^Version: 1$/m, $desc);
 	} else {
@@ -63,31 +61,37 @@ sub test {
 	}
 }
 
-test([], undef, 0, 'no signature, no keyrings');
-test([], \&bad_signer, 0, 'bad signature, no keyrings');
-test([$keyring1], undef, 0, 'no signature, keyring 1');
-test([$keyring1], \&bad_signer, 0, 'bad signature, keyring 1');
-test([$keyring1, $keyring2], \&bad_signer, 0, 'bad signature, keyring 1+2');
+test([[], \&no_signer], 0, 'no signature, no keyrings');
+test([[], \&bad_signer], 0, 'bad signature, no keyrings');
+test([[$keyring1], \&no_signer], 0, 'no signature, keyring 1');
+test([[$keyring1], \&bad_signer], 0, 'bad signature, keyring 1');
+test([[$keyring1, $keyring2], \&bad_signer], 0, 'bad signature, keyring 1+2');
 
-test([], get_good_signer($keyring1), 0, 'key 1, no keyrings');
-test([], get_good_signer($keyring2), 0, 'key 2, no keyrings');
-test([$keyring1], get_good_signer($keyring2), 0, 'key 2, keyring 1');
-test([$keyring2], get_good_signer($keyring1), 0, 'key 1, keyring 2');
-test([undef, $keyring2], get_good_signer($keyring1), 0, 'key1, keyring 2 (location 2)');
+sub test_good_signer {
+	my ($files, $key, $expected_result, $desc) = @_;
 
-my $key1_signer = get_good_signer($keyring1);
-test([$keyring1], $key1_signer, 1, 'key 1, keyring 1');
-test([undef, $keyring1], $key1_signer, 1, 'key 1, keyring 1 (location 2)');
-test([undef, undef, $keyring1], $key1_signer, 1, 'key 1, keyring 1 (location 3)');
-test([$keyring1, $keyring2], $key1_signer, 1, 'key 1, keyring 1+2');
-test([undef, $keyring1, $keyring2], $key1_signer, 1, 'key 1, keyring 1+2 (location 2)');
-test([$keyring2, $keyring1], $key1_signer, 1, 'key 1, keyring 2+1');
-test([$keyring2, undef, $keyring1], $key1_signer, 1, 'key 1, keyring 2+1 (location 2)');
+	my $keyring = $key == 1 ? $keyring1 : $keyring2;
+	my $signer = get_good_signer($keyring);
+	test([$files, $signer] => $expected_result, "key $key (detached), $desc");
+	test([$files, $signer, ['orig','inline']] => $expected_result, "key $key (inline), $desc");
+	test([$files, $signer, ['orig','detached','inline']] => $expected_result, "key $key (inline + detached), $desc");
+	if ($expected_result) {
+		test([$files, $signer, ['detached']] => 0, "key $key (detached without original), $desc");
+		test([$files, $signer, ['inline']] => $expected_result, "key $key (inline without original), $desc");
+	}
+}
 
-my $key1_inline_signer = get_good_signer($keyring1, 1);
-test([], $key1_inline_signer, 0, 'key 1 (inline), no keyrings)');
-test([$keyring2], $key1_inline_signer, 0, 'key 1 (inline), keyring 2');
-test([undef, $keyring2], $key1_inline_signer, 0, 'key 1 (inline), keyring 2 (location 2)');
-test([$keyring1], $key1_inline_signer, 1, 'key 1 (inline), keyring 1');
-test([$keyring1, undef, $keyring2], $key1_inline_signer, 1, 'key 1 (inline), keyring 1+2');
+test_good_signer([], 1, 0, 'no keyrings');
+test_good_signer([], 2, 0, 'no keyrings');
+test_good_signer([$keyring1], 2, 0, 'keyring 1');
+test_good_signer([$keyring2], 1, 0, 'keyring 2');
+test_good_signer([undef, $keyring2], 1, 0, 'keyring 2 (location 2)');
+
+test_good_signer([$keyring1], 1, 1, 'keyring 1');
+test_good_signer([undef, $keyring1], 1, 1, 'keyring 1 (location 2)');
+test_good_signer([undef, undef, $keyring1], 1, 1, 'keyring 1 (location 3)');
+test_good_signer([$keyring1, $keyring2], 1, 1, 'keyring 1+2');
+test_good_signer([undef, $keyring1, $keyring2], 1, 1, 'keyring 1+2 (location 2)');
+test_good_signer([$keyring2, $keyring1], 1, 1, 'keyring 2+1');
+test_good_signer([$keyring2, undef, $keyring1], 1, 1, 'keyring 2+1 (location 2)');
 
