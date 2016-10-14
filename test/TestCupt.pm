@@ -154,7 +154,10 @@ sub generate_environment {
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
 	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'});
 	generate_file('usr/bin/debpatch', $options{'debpatch'});
-	generate_packages_sources(unify_packages_and_sources_option(\%options));
+
+	my @releases = unify_releases(\%options);
+	generate_sources_list(@releases);
+	generate_packages_sources(@releases);
 }
 
 sub setup_fakes {
@@ -203,6 +206,14 @@ sub unify_packages_and_sources_option {
 	return (@{$options->{"releases"}//[]},
 			convert_older_option_structures_to_releases($options, 'packages'),
 			convert_older_option_structures_to_releases($options, 'sources'));
+}
+
+sub unify_releases {
+	my @result = unify_packages_and_sources_option(@_);
+	foreach my $entry (@result) {
+		fill_ps_entry($entry);
+	}
+	return @result;
 }
 
 sub generate_binary_command {
@@ -382,24 +393,35 @@ sub generate_file_with_variants {
 	$compress_via->('bz2', 'bzip2');
 }
 
+sub generate_sources_list {
+	my $result = '';
+	foreach my $e (@_) {
+		my $sources_list_suffix = get_trusted_option_string($e->{trusted});
+		$sources_list_suffix .= "$e->{scheme}://$e->{server} $e->{archive} $e->{component}";
+
+		if (defined $e->{packages}) {
+			$result .= "deb $sources_list_suffix\n";
+		}
+		if (defined $e->{sources}) {
+			$result .= "deb-src $sources_list_suffix\n";
+		}
+	}
+	generate_file('etc/apt/sources.list', $result);
+}
+
 sub generate_packages_sources {
 	foreach my $entry (@_) {
-		fill_ps_entry($entry);
 		my %e = %$entry;
 
-		my $sources_list_suffix = get_trusted_option_string($e{trusted});
-		$sources_list_suffix .= "$e{scheme}://$e{server} $e{archive} $e{component}";
-
 		if (defined $e{packages}) {
-			generate_file('etc/apt/sources.list', "deb $sources_list_suffix\n", '>>');
 			my $content = join_records_if_needed($e{packages});
 			generate_file_with_variants('Packages', $entry, $content);
 			if ($e{'deb-caches'}) {
 				generate_deb_caches($content);
 			}
 		}
+
 		if (defined $e{sources}) {
-			generate_file('etc/apt/sources.list', "deb-src $sources_list_suffix\n", '>>');
 			generate_file_with_variants('Sources', $entry, join_records_if_needed($e{sources}));
 		}
 
