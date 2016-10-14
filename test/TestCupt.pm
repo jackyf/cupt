@@ -145,6 +145,9 @@ sub generate_environment {
 	$ENV{'APT_CONFIG'} = '';
 	$ENV{'CUPT_PRE_CONFIG'} = "./pre.conf";
 
+	make_path('var/log');
+	make_path('var/lib/cupt');
+
 	generate_file(get_extended_states_path(), $options{'extended_states'}//'');
 	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
 	generate_file('etc/apt/sources.list', '');
@@ -152,8 +155,6 @@ sub generate_environment {
 	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'});
 	generate_file('usr/bin/debpatch', $options{'debpatch'});
 	generate_packages_sources(unify_packages_and_sources_option(\%options));
-	generate_file('var/log/cupt.log', '');
-	generate_file('var/lib/cupt/lock', '');
 }
 
 sub setup_fakes {
