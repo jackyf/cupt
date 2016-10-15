@@ -30,6 +30,7 @@ our @EXPORT = qw(
 	get_dpkg_path
 	get_binary_architecture
 	setup
+	update_remote_releases
 	stdout
 	stdall
 	compose_installed_record
@@ -158,6 +159,14 @@ sub generate_environment {
 	my @releases = unify_releases(\%options);
 	generate_sources_list(@releases);
 	generate_packages_sources(@releases);
+}
+
+sub update_remote_releases {
+	foreach (@_) {
+		die if $_->{location} ne 'remote';
+		fill_ps_entry($_);
+	}
+	generate_packages_sources(@_);
 }
 
 sub setup_fakes {
