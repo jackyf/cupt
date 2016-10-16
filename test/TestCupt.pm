@@ -383,14 +383,23 @@ sub call_file_callback_with_hooks {
 	return ($path, $main_content);
 }
 
+sub call_file_callback_with_hooks_for_orig {
+	my ($kind, $entry, $pre_content, $variants) = @_;
+
+	if (not in_array('orig', $variants)) {
+		my $path = $entry->{callback}->($kind, $entry, undef);
+		return ($path, $pre_content);
+	} else {
+		return call_file_callback_with_hooks($kind, $entry, $pre_content);
+	}
+}
+
 sub generate_file_with_variants {
 	my ($kind, $entry, $pre_content) = @_;
 	my $variants = $entry->{variants}->{compress};
 
-	my ($path, $content) = call_file_callback_with_hooks($kind, $entry, $pre_content);
-	if (not in_array('orig', $variants)) {
-		unlink($path);
-	}
+	my ($path, $content) = call_file_callback_with_hooks_for_orig($kind, $entry, $pre_content, $variants);
+
 	my $compress_via = sub {
 		my ($variant, $compressor) = @_;
 		if (in_array($variant, $variants)) {
@@ -473,12 +482,9 @@ END
 	}
 	$pre_content .= compose_sums_record($e{_ps_files});
 
-	my ($path, $content) = call_file_callback_with_hooks('Release', $entry, $pre_content);
-
 	my $variants = $e{variants}{sign};
-	if (not in_array('orig', $variants)) {
-		unlink($path);
-	}
+	my ($path, $content) = call_file_callback_with_hooks_for_orig('Release', $entry, $pre_content, $variants);
+
 	my $signer = $e{hooks}{signer};
 	if (in_array('inline', $variants)) {
 		call_file_callback_with_hooks('InRelease', $entry, $signer->(1, $content));
