@@ -352,11 +352,13 @@ sub remote_ps_callback {
 		die "wrong kind $kind";
 	}
 
-	push @{$entry->{_ps_files}}, {
-		'path' => $subpath,
-		'size' => length($content),
-		'sums' => get_content_sums($content),
-	};
+	if (defined $content) {
+		push @{$entry->{_ps_files}}, {
+			'path' => $subpath,
+			'size' => length($content),
+			'sums' => get_content_sums($content),
+		};
+	}
 
 	return "$e{hostname}/dists/$e{archive}/$subpath";
 }
