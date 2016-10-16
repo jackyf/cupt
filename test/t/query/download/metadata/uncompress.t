@@ -1,4 +1,4 @@
-use Test::More tests => 5+3+3 + 5*3;
+use Test::More tests => 5+3+3 + 5*4;
 
 require(get_rinclude_path('common'));
 
@@ -34,6 +34,10 @@ sub size_modifier {
 
 sub byte_modifier {
 	return substr($_[0], 0, 16) . 'foo' . substr($_[0], 19);
+}
+
+sub remover {
+	return undef;
 }
 
 sub corrupter {
@@ -72,6 +76,7 @@ sub test_corruptions {
 }
 
 test_corruptions('pre', \&size_modifier, 'compressor error');
+test_corruptions('post', \&remover, 'not available');
 test_corruptions('post', \&size_modifier, 'wrong size');
 test_corruptions('post', \&byte_modifier, 'wrong hash sum');
 
