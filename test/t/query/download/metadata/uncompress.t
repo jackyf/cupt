@@ -1,4 +1,4 @@
-use Test::More tests => 5+3+3 + 5*4;
+use Test::More tests => 5+3+3+2 + 5*4;
 
 require(get_rinclude_path('common'));
 
@@ -45,8 +45,9 @@ sub corrupter {
 	return sub {
 		my ($stage, $kind, $entry, $content) = @_;
 		my ($compressor) = ($kind =~ m/.*\.(.*)$/);
+		$compressor //= '-';
+		return $content if $kind =~ m/Release/;
 		return $content unless $stage eq $do_stage;
-		return $content unless defined $compressor;
 		return $content unless grep { $compressor eq $_ } split(/,/,$do_compressors);
 		return $modifier->($content);
 	}
@@ -65,6 +66,9 @@ test('xz', undef, 1, 'only xz');
 test('bz2,xz', undef, 1, 'bzip2, xz');
 test('gz,xz', undef, 1, 'gzip, xz');
 test('', undef, 0, 'no files');
+
+test('orig', corrupter('post', \&remover, '-'), 0, 'even original not available');
+test('orig,gz', corrupter('post', \&remover, '-'), 1, 'original not available but gz is');
 
 sub test_corruptions {
 	my ($stage, $modifier, $corrupter_comment) = @_;
