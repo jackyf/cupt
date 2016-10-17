@@ -6,8 +6,7 @@ require(get_rinclude_path('../common'));
 sub get_corrupter {
 	my $kind_regex = shift;
 	return sub {
-		my ($stage, $kind, $entry, $content) = @_;
-		return $content unless $stage eq 'post';
+		my (undef, $kind, undef, $content) = @_;
 		return $content unless ($kind =~ $kind_regex);
 		return '30urjak;sdas';
 	}
@@ -23,7 +22,7 @@ sub check {
 	my ($cupt, $release, $corrupter, $expected_result, $desc) = @_;
 	$release = dclone($release);
 
-	$release->{hooks}->{file} = $corrupter;
+	$release->{hooks}->{diff}->{write} = $corrupter;
 	update_remote_releases($release);
 
 	my $output = stdall("$cupt update -o cupt::languages::indexes=de,nl");

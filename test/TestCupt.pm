@@ -6,6 +6,8 @@ use warnings;
 use Digest::SHA qw(sha1_hex sha256_hex);
 use Cwd;
 use IPC::Run3;
+use List::MoreUtils qw(part each_array);
+use MIME::QuotedPrint;
 
 my $start_dir;
 
@@ -271,6 +273,73 @@ sub get_trusted_option_string {
 	}
 }
 
+sub fill_hook {
+	my ($e, $key, $converter) = @_;
+	my $pass = sub { return $_[3]; };
+	my $orig_only = sub { return ($_[0] eq 'orig' ? $_[3] : undef); };
+
+	$e->{hooks}->{$key} //= {};
+	my $h = $e->{hooks}->{$key};
+	$h->{input} //= $orig_only;
+	$h->{convert} //= $converter;
+	$h->{seal} //= $pass;
+	$h->{write} //= $pass;
+}
+
+sub get_compressor_by_variant {
+	my $ext = shift;
+	my $map = { gz => 'gzip', 'bz2' => 'bzip2', xz => 'xz' };
+	return $map->{$ext};
+}
+
+sub get_path_extension {
+	my $input = shift;
+	my ($extension) = ($input =~ m/.*\.(.*)$/);
+	return $extension;
+}
+
+sub get_ed_diff {
+	my ($from, $to) = @_;
+	my $from_fh = File::Temp->new();
+	print $from_fh $from;
+	my $to_fh = File::Temp->new();
+	print $to_fh $to;
+	return `diff --ed $from_fh $to_fh`;
+}
+
+sub fill_hooks {
+	my $e = shift;
+
+	my @keyrings = get_keyring_paths();
+	fill_hook($e, 'sign', get_good_signer($keyrings[0]));
+
+	fill_hook($e, 'compress', sub {
+		my ($variant, undef, undef, $content) = @_;
+		my $compressor = get_compressor_by_variant($variant);
+		die $variant unless defined $compressor;
+		run3("$compressor -c", \$content, \my $compressed, \my $stderr);
+		die "$compressor: $stderr" if $?;
+		return $compressed;
+	});
+
+	fill_hook($e, 'diff', sub {
+		my (undef, $kind, $entry, $content) = @_;
+		if ($kind =~ m!(.*)/Index$!) {
+			return compose_diff_index($1, $entry, $content);
+		} else {
+			my ($from, $to) = @$content;
+			if ($kind !~ m/z$/) { # not compressed
+				push @{$entry->{_diff_history}}, {
+					'path' => $kind,
+					'size' => length($from),
+					'sums' => get_content_sums($from),
+				};
+			}
+			return get_ed_diff($from, $to);
+		}
+	});
+}
+
 sub fill_ps_entry {
 	my $e = shift;
 	$e->{'location'} //= 'local';
@@ -287,13 +356,8 @@ sub fill_ps_entry {
 	$e->{'not-automatic'} //= 0;
 	$e->{'but-automatic-upgrades'} //= 0;
 	$e->{'valid-until'} //= 'Mon, 07 Oct 2033 14:44:53 UTC';
-
-	$e->{'variants'}->{'sign'} //= ['orig'];
-	$e->{'variants'}->{'compress'} //= ['orig'];
-	my @keyrings = get_keyring_paths();
-	$e->{'hooks'}->{'signer'} //= get_good_signer($keyrings[0]);
-	$e->{'hooks'}->{'file'} //= sub { return $_[3]; };
 	$e->{'callback'} = $e->{location} eq 'remote' ? \&remote_ps_callback : \&local_ps_callback;
+	fill_hooks($e);
 }
 
 sub get_content_sums {
@@ -305,11 +369,13 @@ sub get_content_sums {
 }
 
 sub compose_sums_record {
+	my ($records, $header_suffix) = @_;
+	$header_suffix //= '';
+
 	my %qqq;
-	my $records = shift;
 	foreach my $record (@$records) {
 		while (my ($name, $value) = each %{$record->{sums}}) {
-			$qqq{$name} //= "$name:\n";
+			$qqq{$name} //= "$name$header_suffix:\n";
 			$qqq{$name} .= " $value $record->{size} $record->{path}\n";
 		}
 	}
@@ -353,7 +419,8 @@ sub remote_ps_callback {
 	}
 
 	if (defined $content) {
-		push @{$entry->{_ps_files}}, {
+		my $section = ($kind =~ /diff/ and $kind !~ m/Index$/) ? '_diff_files' : '_ps_files';
+		push @{$entry->{$section}}, {
 			'path' => $subpath,
 			'size' => length($content),
 			'sums' => get_content_sums($content),
@@ -372,45 +439,110 @@ sub join_records_if_needed {
 	}
 }
 
-sub call_file_callback_with_hooks {
-	my ($kind, $entry, $pre_content) = @_;
-	my $hook = $entry->{hooks}->{file};
+sub call_hooks {
+	my ($kind, $entry, $pre_input, @apply) = @_;
 
-	my $main_content = $hook->('pre', $kind, $entry, $pre_content);
-	my $path = $entry->{callback}->($kind, $entry, $main_content);
-	my $post_content = $hook->('post', $kind, $entry, $main_content);
-	generate_file($path, $post_content);
-	return ($path, $main_content);
+	my $wrap_hook = sub {
+		my ($group, $name, $variant) = @_;
+		my $hook = $entry->{hooks}->{$group}->{$name};
+		die "no hook: $group, $name" unless defined $hook;
+		return sub {
+			my ($in) = @_;
+			my $out = $hook->($variant, $kind, $entry, $in);
+			my $printable = defined($out) ?
+					encode_qp(to_one_line(substr($out, 0, 90)), '') : "<undef>";
+			#print "--- Hook: $kind -> $variant:$group/$name -> $printable\n";
+			return $out;
+		};
+	};
+
+	my $path;
+	my $path_hook = sub {
+		my $content = shift;
+		$path = $entry->{callback}->($kind, $entry, $content);
+		return $content;
+	};
+
+	my @process_queue;
+	my @write_queue;
+	foreach (@apply) {
+		my ($group, $variant) = @$_;
+		push @process_queue, $wrap_hook->($group, 'input', $variant);
+		if ($variant ne 'orig') {
+			push @process_queue, $wrap_hook->($group, 'convert', $variant);
+		}
+		push @process_queue, $wrap_hook->($group, 'seal', $variant);
+		push @write_queue, $wrap_hook->($group, 'write', $variant);
+	}
+
+	my $content = $pre_input;
+	foreach my $hook (@process_queue, $path_hook, @write_queue) {
+		$content = $hook->($content);
+		return unless defined $content;
+	}
+
+	generate_file($path, $content);
 }
 
-sub call_file_callback_with_hooks_for_orig {
-	my ($kind, $entry, $pre_content, $variants) = @_;
+sub zip_adjacent {
+	my @shifted = @_;
+	shift @shifted;
+	pop @_;
 
-	if (not in_array('orig', $variants)) {
-		my $path = $entry->{callback}->($kind, $entry, undef);
-		return ($path, $pre_content);
-	} else {
-		return call_file_callback_with_hooks($kind, $entry, $pre_content);
-	}
+	return each_array(@_, @shifted);
+}
+
+sub compose_diff_index {
+	my ($kind, $entry, $target_content) = @_;
+
+	my $filter_diff_kind = sub {
+		return () unless ($_->{path} =~ m!\Q$kind/\E(.*)!);
+		$_->{path} = $1;
+		return $_;
+	};
+
+	my $get_diff_records = sub {
+		my $files = shift;
+		my @result = map(&$filter_diff_kind, @$files);
+		return \@result;
+	};
+
+	my $result = sprintf("SHA1-Current: %s %s\n", sha1_hex($target_content), length($target_content));
+
+	$result .= compose_sums_record($get_diff_records->($entry->{_diff_history}), '-History');
+
+	my $patch_records = $get_diff_records->($entry->{_diff_files});
+	my ($orig_patch_records, $compressed_patch_records) =
+			part { defined(get_path_extension($_->{path})) ? 1 : 0 } @$patch_records;
+	$result .= compose_sums_record($orig_patch_records, '-Patches');
+	$result .= compose_sums_record($compressed_patch_records, '-Download');
+
+	return $result;
 }
 
 sub generate_file_with_variants {
-	my ($kind, $entry, $pre_content) = @_;
-	my $variants = $entry->{variants}->{compress};
+	my ($kind, $entry, $pre_input, $previous) = @_;
 
-	my ($path, $content) = call_file_callback_with_hooks_for_orig($kind, $entry, $pre_content, $variants);
+	call_hooks($kind, $entry, $pre_input, [qw(diff orig)], [qw(compress orig)]);
+	call_hooks("$kind.gz", $entry, $pre_input, [qw(diff orig)], [qw(compress gz)]);
+	call_hooks("$kind.bz2", $entry, $pre_input, [qw(diff orig)], [qw(compress bz2)]);
+	call_hooks("$kind.xz", $entry, $pre_input, [qw(diff orig)], [qw(compress xz)]);
 
-	my $compress_via = sub {
-		my ($variant, $compressor) = @_;
-		if (in_array($variant, $variants)) {
-			run3("$compressor -c", \$content, \my $compressed, \my $stderr);
-			die "$compressor: $stderr" if $?;
-			call_file_callback_with_hooks("$kind.$variant", $entry, $compressed);
+	if (defined $previous) {
+		my @keys = sort keys %$previous;
+		my $adjacent_it = zip_adjacent(@keys);
+		my $last_content;
+		while (my ($from_key, $to_key) = $adjacent_it->()) {
+			my $diffkind = "$kind.diff/$to_key";
+			my $from_content = join_records_if_needed($previous->{$from_key});
+			my $to_content = join_records_if_needed($previous->{$to_key});
+			my $diff_input = [$from_content,$to_content];
+			call_hooks($diffkind, $entry, $diff_input, [qw(diff diff)], [qw(compress orig)]);
+			call_hooks("$diffkind.gz", $entry, $diff_input, [qw(diff diff)], [qw(compress gz)]);
+			$last_content = $to_content;
 		}
-	};
-	$compress_via->('xz', 'xz');
-	$compress_via->('gz', 'gzip');
-	$compress_via->('bz2', 'bzip2');
+		call_hooks("$kind.diff/Index", $entry, $last_content, [qw(diff diff)], [qw(compress orig)]);
+	}
 }
 
 sub generate_sources_list {
@@ -435,7 +567,7 @@ sub generate_packages_sources {
 
 		if (defined $e{packages}) {
 			my $content = join_records_if_needed($e{packages});
-			generate_file_with_variants('Packages', $entry, $content);
+			generate_file_with_variants('Packages', $entry, $content, $e{previous}{packages});
 			if ($e{'deb-caches'}) {
 				generate_deb_caches($content);
 			}
@@ -446,7 +578,8 @@ sub generate_packages_sources {
 		}
 
 		while (my ($lang, $content) = each %{$e{translations}}) {
-			generate_file_with_variants("Translation-$lang", $entry, join_records_if_needed($content));
+			generate_file_with_variants("Translation-$lang", $entry,
+					join_records_if_needed($content), $e{previous}{translations}{$lang});
 		}
 
 		generate_release($entry);
@@ -482,16 +615,9 @@ END
 	}
 	$pre_content .= compose_sums_record($e{_ps_files});
 
-	my $variants = $e{variants}{sign};
-	my ($path, $content) = call_file_callback_with_hooks_for_orig('Release', $entry, $pre_content, $variants);
-
-	my $signer = $e{hooks}{signer};
-	if (in_array('inline', $variants)) {
-		call_file_callback_with_hooks('InRelease', $entry, $signer->(1, $content));
-	}
-	if (in_array('detached', $variants)) {
-		call_file_callback_with_hooks('Release.gpg', $entry, $signer->(0, $content));
-	}
+	call_hooks('Release', $entry, $pre_content, [qw(sign orig)]);
+	call_hooks('InRelease', $entry, $pre_content, [qw(sign inline)]);
+	call_hooks('Release.gpg', $entry, $pre_content, [qw(sign detached)]);
 }
 
 # helpers
@@ -651,16 +777,11 @@ sub get_keyring_paths {
 sub get_good_signer {
 	my $keyring = shift;
 	return sub {
-		my ($is_inline, $input) = @_;
-		my $command = ($is_inline ? '--sign' : '--detach-sign');
+		my ($variant, undef, undef, $input) = @_;
+		my $command = ($variant eq 'inline' ? '--sign' : '--detach-sign');
 		run3("gpg2 --no-default-keyring --keyring $keyring --output - --armor $command", \$input, \my $output);
 		return $output;
 	};
-}
-
-sub in_array {
-	my ($elem, $array) = @_;
-	return grep { $_ eq $elem } @$array;
 }
 
 1;

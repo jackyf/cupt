@@ -7,18 +7,27 @@ my $other_big_record = compose_package_record('other', 0) . join('', map { "X-Cr
 
 my $record = compose_package_record('abcd', 3);
 
+sub get_variant_filter_hook {
+	my @compresses = @_;
+	return sub {
+		my ($variant, undef, undef, $content) = @_;
+		(grep { $variant eq $_ } @compresses) ? $content : undef;
+	}
+}
+
 sub test {
-	my ($compresses, $hook, $expected_result, $comment) = @_;
+	my ($input, $expected_result, $comment) = @_;
+	my ($compresses, $hook_stage, $hook) = @$input;
 	my $cupt = setup(
 		'releases' => [{
 			'packages' => [ $record, $other_big_record ],
 			'location' => 'remote',
-			'variants' => {
-				'compress' => [split(/,/, $compresses)],
-			},
 			'hooks' => {
-				'file' => $hook,
-			}
+				'compress' => {
+					'input' => get_variant_filter_hook(split(/,/, $compresses)),
+					defined($hook) ? ($hook_stage => $hook) : (),
+				},
+			},
 		}]
 	);
 
@@ -41,46 +50,42 @@ sub remover {
 }
 
 sub corrupter {
-	my ($do_stage, $modifier, $do_compressors) = @_;
+	my ($modifier, $do_variants) = @_;
 	return sub {
-		my ($stage, $kind, $entry, $content) = @_;
-		my ($compressor) = ($kind =~ m/.*\.(.*)$/);
-		$compressor //= '-';
-		return $content if $kind =~ m/Release/;
-		return $content unless $stage eq $do_stage;
-		return $content unless grep { $compressor eq $_ } split(/,/,$do_compressors);
+		my ($variant, undef, undef, $content) = @_;
+		return $content unless grep { $variant eq $_ } split(/,/,$do_variants);
 		return $modifier->($content);
 	}
 }
 
-test('orig', undef, 1, 'not compressed');
-test('orig,gz', undef, 1, 'orig, gzip');
-test('orig,bz2', undef, 1, 'orig, bzip2');
-test('orig,xz', undef, 1, 'orig, xz');
-test('orig,gz,bz2,xz', undef, 1, 'orig, xz');
+test(['orig'] => 1, 'not compressed');
+test(['orig,gz'] => 1, 'orig, gzip');
+test(['orig,bz2'] => 1, 'orig, bzip2');
+test(['orig,xz'] => 1, 'orig, xz');
+test(['orig,gz,bz2,xz'] => 1, 'orig, xz');
 
-test('gz', undef, 1, 'only gz');
-test('bz2', undef, 1, 'only bzip2');
-test('xz', undef, 1, 'only xz');
+test(['gz'] => 1, 'only gz');
+test(['bz2'] => 1, 'only bzip2');
+test(['xz'] => 1, 'only xz');
 
-test('bz2,xz', undef, 1, 'bzip2, xz');
-test('gz,xz', undef, 1, 'gzip, xz');
-test('', undef, 0, 'no files');
+test(['bz2,xz'] => 1, 'bzip2, xz');
+test(['gz,xz'] => 1, 'gzip, xz');
+test([''] => 0, 'no files');
 
-test('orig', corrupter('post', \&remover, '-'), 0, 'even original not available');
-test('orig,gz', corrupter('post', \&remover, '-'), 1, 'original not available but gz is');
+test(['orig', 'write', corrupter(\&remover, 'orig')] => 0, 'even original not available');
+test(['orig,gz', 'write', corrupter(\&remover, 'orig')] => 1, 'original not available but gz is');
 
 sub test_corruptions {
 	my ($stage, $modifier, $corrupter_comment) = @_;
-	test('gz', corrupter($stage, $modifier, 'gz'), 0, "only gz (corrupted) - $corrupter_comment");
-	test('gz,xz', corrupter($stage, $modifier, 'gz'), 1, "gz (corrupted), xz - $corrupter_comment");
-	test('gz,xz', corrupter($stage, $modifier, 'xz'), 1, "gz, xz (corrupted) - $corrupter_comment");
-	test('gz,xz', corrupter($stage, $modifier, 'gz,xz'), 0, "all compressed are corrupted - $corrupter_comment");
-	test('orig,gz,xz', corrupter($stage, $modifier, 'gz,xz'), 1, "all compressed corrupted but original present - $corrupter_comment");
+	test(['gz', $stage, corrupter($modifier, 'gz')] => 0, "only gz (corrupted) - $corrupter_comment");
+	test(['gz,xz', $stage, corrupter($modifier, 'gz')] => 1, "gz (corrupted), xz - $corrupter_comment");
+	test(['gz,xz', $stage, corrupter($modifier, 'xz')] => 1, "gz, xz (corrupted) - $corrupter_comment");
+	test(['gz,xz', $stage, corrupter($modifier, 'gz,xz')] => 0, "all compressed are corrupted - $corrupter_comment");
+	test(['orig,gz,xz', $stage, corrupter($modifier, 'gz,xz')] => 1, "all compressed corrupted but original present - $corrupter_comment");
 }
 
-test_corruptions('pre', \&size_modifier, 'compressor error');
-test_corruptions('post', \&remover, 'not available');
-test_corruptions('post', \&size_modifier, 'wrong size');
-test_corruptions('post', \&byte_modifier, 'wrong hash sum');
+test_corruptions('seal', \&size_modifier, 'compressor error');
+test_corruptions('write', \&remover, 'not available');
+test_corruptions('write', \&size_modifier, 'wrong size');
+test_corruptions('write', \&byte_modifier, 'wrong hash sum');
 

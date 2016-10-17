@@ -19,6 +19,7 @@ Build-Depends:
   txt2tags,
 # test suite
   libipc-run3-perl,
+  liblist-moreutils-perl,
   locales-all
 Maintainer: Cupt developers <cupt-devel@lists.alioth.debian.org>
 Uploaders: Eugene V. Lyubimkin <jackyf@debian.org>

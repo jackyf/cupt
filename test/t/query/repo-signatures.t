@@ -22,6 +22,15 @@ sub link_keyring {
 	}
 }
 
+sub get_variant_filter_hook {
+	my $variants = shift;
+	return sub {
+		my ($variant, undef, undef, $content) = @_;
+		my $found = grep { $variant eq $_ } @$variants;
+		return $found ? $content : undef;
+	}
+}
+
 sub get_output {
 	my ($files, $signer, $sign_variants) = @_;
 	$sign_variants //= ['orig','detached'];
@@ -32,11 +41,11 @@ sub get_output {
 				'content' => entail(compose_package_record('p', 1)),
 				'trusted' => 'check',
 				'hooks' => {
-					'signer' => $signer,
+					'sign' => {
+						'input' => get_variant_filter_hook($sign_variants),
+						'convert' => $signer,
+					},
 				},
-				'variants' => {
-					'sign' => $sign_variants,
-				}
 			}
 		]
 	);
