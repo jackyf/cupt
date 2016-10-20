@@ -107,7 +107,7 @@ std::function< string () > generateMovingSub(const SharedTempPath& downloadPath,
 	};
 };
 
-bool generateUncompressingSub(const download::Uri& uri, const string& downloadPath,
+bool generateUncompressingSub(const download::Uri& uri, const SharedTempPath& downloadPath,
 		const string& targetPath, std::function< string () >& sub)
 {
 	auto filenameExtension = getFilenameExtension(uri);
@@ -146,15 +146,13 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 		sub = [uncompressorName, downloadPath, targetPath]() -> string
 		{
-			SharedTempPath uncompressedPath { downloadPath + ".uncompressed" };
+			SharedTempPath uncompressedPath { (string)downloadPath + ".uncompressed" };
 			auto uncompressingResult = ::system(format2("%s %s -c > %s",
-					uncompressorName, downloadPath, string(uncompressedPath)).c_str());
-			// anyway, remove the compressed file, ignoring errors if any
-			unlink(downloadPath.c_str());
+					uncompressorName, (string)downloadPath, string(uncompressedPath)).c_str());
 			if (uncompressingResult)
 			{
 				return format2(__("failed to uncompress '%s', '%s' returned the error %d"),
-						downloadPath, uncompressorName, uncompressingResult);
+						(string)downloadPath, uncompressorName, uncompressingResult);
 			}
 			return generateMovingSub(uncompressedPath, targetPath)();
 		};
@@ -163,7 +161,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 	else if (filenameExtension.empty())
 	{
 		// no extension
-		sub = generateMovingSub(SharedTempPath(downloadPath), targetPath);
+		sub = generateMovingSub(downloadPath, targetPath);
 		return true;
 	}
 	else
@@ -498,7 +496,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
 			auto unpackedPath = baseDownloadPath + '.' + patchName;
-			auto downloadPath = unpackedPath + ".gz";
+			SharedTempPath downloadPath { unpackedPath + ".gz" };
 
 			download::Manager::DownloadEntity downloadEntity;
 
@@ -595,7 +593,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 	{
 		uncompressingSub = []() -> string { return ""; }; // is not a final file
 	}
-	else if (!generateUncompressingSub(uri, downloadPath, targetPath, uncompressingSub))
+	else if (!generateUncompressingSub(uri, SharedTempPath(downloadPath), targetPath, uncompressingSub))
 	{
 		return false;
 	}
