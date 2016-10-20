@@ -33,6 +33,7 @@
 #include <internal/exceptionlessfuture.hpp>
 
 #include <internal/worker/metadata.hpp>
+#include <internal/worker/temppath.hpp>
 
 namespace cupt {
 namespace internal {
@@ -89,18 +90,19 @@ string getFilenameExtension(const string& source)
 	}
 };
 
-std::function< string () > generateMovingSub(const string& downloadPath, const string& targetPath)
+std::function< string () > generateMovingSub(const SharedTempPath& downloadPath, const string& targetPath)
 {
-	return [downloadPath, targetPath]() -> string
+	return [downloadPath=downloadPath, targetPath]() mutable -> string
 	{
 		ioi::removeIndexOfIndex(targetPath);
 		if (fs::move(downloadPath, targetPath))
 		{
+			downloadPath.abandon();
 			return "";
 		}
 		else
 		{
-			return format2e(__("unable to rename '%s' to '%s'"), downloadPath, targetPath);
+			return format2e(__("unable to rename '%s' to '%s'"), (string)downloadPath, targetPath);
 		}
 	};
 };
@@ -144,9 +146,9 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 
 		sub = [uncompressorName, downloadPath, targetPath]() -> string
 		{
-			auto uncompressedPath = downloadPath + ".uncompressed";
+			SharedTempPath uncompressedPath { downloadPath + ".uncompressed" };
 			auto uncompressingResult = ::system(format2("%s %s -c > %s",
-					uncompressorName, downloadPath, uncompressedPath).c_str());
+					uncompressorName, downloadPath, string(uncompressedPath)).c_str());
 			// anyway, remove the compressed file, ignoring errors if any
 			unlink(downloadPath.c_str());
 			if (uncompressingResult)
@@ -161,7 +163,7 @@ bool generateUncompressingSub(const download::Uri& uri, const string& downloadPa
 	else if (filenameExtension.empty())
 	{
 		// no extension
-		sub = generateMovingSub(downloadPath, targetPath);
+		sub = generateMovingSub(SharedTempPath(downloadPath), targetPath);
 		return true;
 	}
 	else
@@ -255,7 +257,7 @@ bool MetadataWorker::__downloadReleaseLikeFile(download::Manager& downloadManage
 
 	auto alias = indexEntry.distribution + ' ' + name;
 	auto longAlias = indexEntry.uri + ' ' + alias;
-	auto downloadPath = getDownloadPath(targetPath);
+	SharedTempPath downloadPath { getDownloadPath(targetPath) };
 
 	_logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 	{

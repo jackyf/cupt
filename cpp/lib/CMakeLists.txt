@@ -40,6 +40,7 @@ add_library(libcupt SHARED
 	./src/internal/worker/setupandpreview.cpp
 	./src/internal/worker/packages.cpp
 	./src/internal/worker/snapshots.cpp
+	./src/internal/worker/temppath.cpp
 	./src/internal/regex.cpp
 	./src/internal/cachefiles.cpp
 	./src/internal/logger.cpp

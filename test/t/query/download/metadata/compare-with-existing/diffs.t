@@ -1,4 +1,5 @@
 use Test::More tests => 2+5+3+2+10;
+use Test::Dir;
 
 my $desc_translation_hash = '111ccc';
 
@@ -53,6 +54,12 @@ sub get_corruption_hook_kv {
 	});
 }
 
+sub check_no_partial_files {
+	my $partial_dir = 'var/lib/cupt/lists/partial';
+	dir_exists_ok($partial_dir);
+	dir_empty_ok($partial_dir);
+}
+
 sub test {
 	my ($input, $exp_version, $exp_description, $comment) = @_;
 
@@ -92,6 +99,7 @@ sub test {
 	subtest $comment => sub {
 		my () = @_;
 		system("$cupt update");
+		check_no_partial_files();
 		my $output = stdall("$cupt show pabc");
 		like($output, qr/^Version: \Q$exp_version\E$/m, 'version is right');
 		like($output, qr/^Description: \Q$exp_description\E$/m, 'description is right');
