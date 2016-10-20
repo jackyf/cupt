@@ -390,11 +390,6 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			' ' + getUriBasename(baseUri);
 	auto baseLongAlias = indexEntry.uri + ' ' + baseAlias;
 
-	auto fail = [baseLongAlias]()
-	{
-		warn2(__("%s: failed to proceed"), baseLongAlias);
-	};
-
 	try
 	{
 		{ // parsing diff index
@@ -555,8 +550,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					vector< download::Manager::DownloadEntity >{ downloadEntity });
 			if (!downloadError.empty())
 			{
-				fail();
-				return false;
+				throw std::runtime_error(""); // error message is reported already by download manager
 			}
 		}
 
@@ -569,7 +563,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 	}
 	catch (...)
 	{
-		fail();
+		warn2(__("%s: failed to proceed"), baseLongAlias);
 		return false;
 	}
 }
