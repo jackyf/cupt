@@ -407,8 +407,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			while (diffIndexParser.parseNextLine(fieldName, fieldValue))
 			{
 				bool isHistory = fieldName.equal(BUFFER_AND_SIZE("SHA1-History"));
-				bool isPatchInfo = fieldName.equal(BUFFER_AND_SIZE("SHA1-Patches"));
-				if (isHistory || isPatchInfo)
+				bool isDownloadInfo = fieldName.equal(BUFFER_AND_SIZE("SHA1-Download"));
+				if (isHistory || isDownloadInfo)
 				{
 					string block;
 					diffIndexParser.parseAdditionalLines(block);
@@ -483,20 +483,21 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			}
 
 			const string& patchName = historyIt->second.first;
-			auto patchIt = patches.find(patchName);
+			auto patchFileName = patchName + ".gz";
+			auto patchIt = patches.find(patchFileName);
 			if (patchIt == patches.end())
 			{
 				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
 						piddedFormat2, "unable to find a patch entry for the patch '%s'", patchName);
 			}
 
-			string patchSuffix = "/" + patchName + ".gz";
+			string patchSuffix = "/" + patchFileName;
 			auto alias = baseAlias + patchSuffix;
 			auto longAlias = baseLongAlias + patchSuffix;
 			logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
+			SharedTempPath downloadPath { baseDownloadPath + '.' + patchFileName };
 			SharedTempPath unpackedPath { baseDownloadPath + '.' + patchName };
-			SharedTempPath downloadPath { (string)unpackedPath + ".gz" };
 
 			download::Manager::DownloadEntity downloadEntity;
 
@@ -505,7 +506,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					alias, longAlias);
 			downloadEntity.extendedUris.push_back(std::move(extendedUri));
 			downloadEntity.targetPath = downloadPath;
-			downloadEntity.size = (size_t)-1;
+			downloadEntity.size = patchIt->second.second;
 
 			HashSums patchHashSums;
 			patchHashSums[HashSums::SHA1] = patchIt->second.first;
@@ -513,9 +514,14 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			std::function< string () > uncompressingSub;
 			generateUncompressingSub(patchUri, downloadPath, unpackedPath, uncompressingSub);
 
-			downloadEntity.postAction = [&patchHashSums,
+			downloadEntity.postAction = [&patchHashSums, &downloadPath,
 					&uncompressingSub, &patchedPath, &unpackedPath]() -> string
 			{
+				if (!patchHashSums.verify(downloadPath))
+				{
+					return __("hash sums mismatch");
+				}
+
 				auto partialDirectory = fs::dirname(patchedPath);
 				auto patchedPathBasename = fs::filename(patchedPath);
 
@@ -525,10 +531,6 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 					return result;
 				}
 
-				if (!patchHashSums.verify(unpackedPath))
-				{
-					return __("hash sums mismatch");
-				}
 				if (::system(format2("(cat %s && echo w) | (cd %s && red -s - %s >/dev/null)",
 							(string)unpackedPath, partialDirectory, patchedPathBasename).c_str()))
 				{

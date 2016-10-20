@@ -54,6 +54,11 @@ sub get_corruption_hook_kv {
 	});
 }
 
+sub byte_changer {
+	$_[0]=~s/./%/;
+	return $_[0];
+}
+
 sub check_no_partial_files {
 	my $partial_dir = 'var/lib/cupt/lists/partial';
 	dir_exists_ok($partial_dir);
@@ -142,10 +147,10 @@ test({@matching_params} => @new, 'hooks: no');
 test({@matching_params, hook=>[8,'write',undef]} => @old, 'hooks: first diff missing');
 test({@matching_params, hook=>[9,'write',undef]} => @old, 'hooks: last diff missing');
 test({@matching_params, hook=>['Index','write',undef]} => @old, 'hooks: diff index missing');
-test({@matching_params, hook=>['Index','write',"Tuias: iaps\n"]} => @old, 'hooks: diff index size do not match');
-test({@matching_params, hook=>['Index','write',sub{$_[0]=~s/./%/; return $_[0]}]} => @old, 'hooks: diff index hash sums do not match');
+test({@matching_params, hook=>['Index','write',"Tuias: iaps\n"]} => @old, 'hooks: diff index size does not match');
+test({@matching_params, hook=>['Index','write',\&byte_changer]} => @old, 'hooks: diff index hash sums do not match');
 test({@matching_params, hook=>['Index','seal',"Tuias: iaps\n"]} => @old, 'hooks: garbage in a diff index');
-test({@matching_params, hook=>[8,'write',')&)791723']} => @old, 'hooks: garbage in compressed file');
-test({@matching_params, hook=>['9$','seal',')&)791723']} => @old, 'hooks: diff hash sums do not match');
+test({@matching_params, hook=>[8,'write',')&)791723']} => @old, 'hooks: compressed diff size does not match');
+test({@matching_params, hook=>[8,'write',\&byte_changer]} => @old, 'hooks: compressed diff hash sums do not match');
 test({@matching_params, hook=>[8,'seal','701jjasds70']} => @old, 'hooks: garbage in a diff');
 

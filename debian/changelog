@@ -15,6 +15,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - system/worker:
       - 'updateReleaseAndIndexData': fixed removing partial uncompressed file
         if uncompressing of a temporary file failed.
+      - 'updateReleaseAndIndexData': use new '*-Download' sections in
+        diff indexes to check size and hash sums of individual diff earlier.
   * debian:
     - control:
       - Added build-dependency on locales-all (for locale-specific tests).
