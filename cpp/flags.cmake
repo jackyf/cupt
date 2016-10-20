@@ -11,7 +11,7 @@ if (${LAMBDA_CAPTURE_OPT_RESULT} EQUAL 77)
 	message("Detected lambda capture misoptimisation, switching to -O1. See #838438.")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Wextra -std=gnu++0x -fPIC -include common/common.hpp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Wall -Wextra -std=gnu++14 -fPIC -include common/common.hpp")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-security") # yes, we should move type-safe alternative eventually
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 
