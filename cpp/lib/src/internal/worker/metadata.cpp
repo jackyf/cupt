@@ -375,7 +375,7 @@ static const sregex checksumsLineRegex = sregex::compile(
 bool __download_and_apply_patches(download::Manager& downloadManager,
 		const cachefiles::FileDownloadRecord& downloadRecord,
 		const cachefiles::IndexEntry& indexEntry, const string& baseDownloadPath,
-		const string& diffIndexPath, const string& targetPath,
+		const string& diffIndexPath_, const string& targetPath,
 		Logger* logger)
 {
 	// total hash -> { name of the patch-to-apply, total size }
@@ -392,10 +392,9 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 
 	auto patchedPath = baseDownloadPath + ".patched";
 
-	auto cleanUp = [patchedPath, diffIndexPath]()
+	auto cleanUp = [patchedPath]()
 	{
 		unlink(patchedPath.c_str());
-		unlink(diffIndexPath.c_str());
 	};
 	auto fail = [baseLongAlias, &cleanUp]()
 	{
@@ -406,12 +405,14 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 	try
 	{
 		{ // parsing diff index
+			SharedTempPath diffIndexPath(diffIndexPath_);
+
 			string openError;
 			File diffIndexFile(diffIndexPath, "r", openError);
 			if (!openError.empty())
 			{
 				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-						piddedFormat2e, "unable to open the file '%s': %s", diffIndexPath, openError);
+						piddedFormat2e, "unable to open the file '%s': %s", string(diffIndexPath), openError);
 			}
 
 			TagParser diffIndexParser(&diffIndexFile);
@@ -462,10 +463,6 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
 						piddedFormat2, "failed to find the target hash sum");
 			}
-		}
-		if (unlink(diffIndexPath.c_str()) == -1)
-		{
-			warn2(__("unable to remove the file '%s'"), diffIndexPath);
 		}
 
 		HashSums subTargetHashSums;
