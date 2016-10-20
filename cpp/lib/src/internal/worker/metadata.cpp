@@ -390,15 +390,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			' ' + getUriBasename(baseUri);
 	auto baseLongAlias = indexEntry.uri + ' ' + baseAlias;
 
-	auto patchedPath = baseDownloadPath + ".patched";
-
-	auto cleanUp = [patchedPath]()
+	auto fail = [baseLongAlias]()
 	{
-		unlink(patchedPath.c_str());
-	};
-	auto fail = [baseLongAlias, &cleanUp]()
-	{
-		cleanUp();
 		warn2(__("%s: failed to proceed"), baseLongAlias);
 	};
 
@@ -471,10 +464,11 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 
 		const string initialSha1Sum = currentSha1Sum;
 
-		if (::system(format2("cp %s %s", targetPath, patchedPath).c_str()))
+		SharedTempPath patchedPath { baseDownloadPath + ".patched" };
+		if (::system(format2("cp %s %s", targetPath, (string)patchedPath).c_str()))
 		{
 			logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-					piddedFormat2, "unable to copy '%s' to '%s'", targetPath, patchedPath);
+					piddedFormat2, "unable to copy '%s' to '%s'", targetPath, (string)patchedPath);
 		}
 
 		while (currentSha1Sum != wantedHashSum)
@@ -486,7 +480,6 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				{
 					logger->log(Logger::Subsystem::Metadata, 3, __get_pidded_string(
 							"no matching index patches found, presumably the local index is too old"));
-					cleanUp();
 					return false; // local index is too old
 				}
 				else
@@ -570,7 +563,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 		if (!fs::move(patchedPath, targetPath))
 		{
 			logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-					piddedFormat2e, "unable to rename '%s' to '%s'", patchedPath, targetPath);
+					piddedFormat2e, "unable to rename '%s' to '%s'", (string)patchedPath, targetPath);
 		}
 		return true;
 	}
