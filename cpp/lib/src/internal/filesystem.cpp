@@ -58,6 +58,11 @@ bool move(const string& oldPath, const string& newPath)
 	return (rename(oldPath.c_str(), newPath.c_str()) != -1);
 }
 
+bool remove(const string& path)
+{
+	return (unlink(path.c_str()) != -1);
+}
+
 vector< string > glob(const string& param)
 {
 	vector< string > strings;
