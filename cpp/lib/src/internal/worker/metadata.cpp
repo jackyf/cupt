@@ -495,8 +495,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			auto longAlias = baseLongAlias + patchSuffix;
 			logger->log(Logger::Subsystem::Metadata, 3, __get_download_log_message(longAlias));
 
-			auto unpackedPath = baseDownloadPath + '.' + patchName;
-			SharedTempPath downloadPath { unpackedPath + ".gz" };
+			SharedTempPath unpackedPath { baseDownloadPath + '.' + patchName };
+			SharedTempPath downloadPath { (string)unpackedPath + ".gz" };
 
 			download::Manager::DownloadEntity downloadEntity;
 
@@ -513,7 +513,7 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			std::function< string () > uncompressingSub;
 			generateUncompressingSub(patchUri, downloadPath, unpackedPath, uncompressingSub);
 
-			downloadEntity.postAction = [&patchHashSums, &subTargetHashSums,
+			downloadEntity.postAction = [&patchHashSums,
 					&uncompressingSub, &patchedPath, &unpackedPath]() -> string
 			{
 				auto partialDirectory = fs::dirname(patchedPath);
@@ -522,27 +522,19 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 				string result = uncompressingSub();
 				if (!result.empty())
 				{
-					return result; // unpackedPath is not yet created
+					return result;
 				}
 
 				if (!patchHashSums.verify(unpackedPath))
 				{
-					result = __("hash sums mismatch");
-					goto out;
+					return __("hash sums mismatch");
 				}
 				if (::system(format2("(cat %s && echo w) | (cd %s && red -s - %s >/dev/null)",
-							unpackedPath, partialDirectory, patchedPathBasename).c_str()))
+							(string)unpackedPath, partialDirectory, patchedPathBasename).c_str()))
 				{
-					result = __("applying ed script failed");
-					goto out;
+					return __("applying ed script failed");
 				}
-				subTargetHashSums.fill(patchedPath);
-			 out:
-				if (unlink(unpackedPath.c_str()) == -1)
-				{
-					warn2e(__("unable to remove the file '%s'"), unpackedPath);
-				}
-				return result;
+				return {};
 			};
 			auto downloadError = downloadManager.download(
 					vector< download::Manager::DownloadEntity >{ downloadEntity });
@@ -550,6 +542,8 @@ bool __download_and_apply_patches(download::Manager& downloadManager,
 			{
 				throw std::runtime_error(""); // error message is reported already by download manager
 			}
+
+			subTargetHashSums.fill(patchedPath);
 		}
 
 		if (!fs::move(patchedPath, targetPath))
