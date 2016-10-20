@@ -1,4 +1,4 @@
-use Test::More tests => 2+5+3+2+10;
+use Test::More tests => 2+5+3+2+11;
 use Test::Dir;
 
 my $desc_translation_hash = '111ccc';
@@ -43,8 +43,7 @@ sub get_corruption_hook_kv {
 	return () unless defined $input;
 	my ($difffile, $hookname, $override_content) = @$input;
 	return ($hookname => sub {
-		my ($variant, $kind, undef, $content) = @_;
-		return $content unless $variant eq 'diff';
+		my (undef, $kind, undef, $content) = @_;
 		return $content unless $kind =~ m!/$difffile!;
 		if (ref($override_content) eq 'CODE') {
 			return $override_content->($content);
@@ -87,6 +86,7 @@ sub test {
 			},
 			'compress' => {
 				'input' => get_input_hook('orig,gz'),
+				(get_corruption_hook_kv($input->{zhook}))
 			},
 		},
 		'previous' => {
@@ -152,5 +152,6 @@ test({@matching_params, hook=>['Index','write',\&byte_changer]} => @old, 'hooks:
 test({@matching_params, hook=>['Index','seal',"Tuias: iaps\n"]} => @old, 'hooks: garbage in a diff index');
 test({@matching_params, hook=>[8,'write',')&)791723']} => @old, 'hooks: compressed diff size does not match');
 test({@matching_params, hook=>[8,'write',\&byte_changer]} => @old, 'hooks: compressed diff hash sums do not match');
+test({@matching_params, zhook=>[8,'seal','uqojds']} => @old, 'hooks: garbage in compressed diff');
 test({@matching_params, hook=>[8,'seal','701jjasds70']} => @old, 'hooks: garbage in a diff');
 
