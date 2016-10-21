@@ -39,6 +39,8 @@ sub test {
 
 	subtest "order: $order" => sub {
 		check_exit_code("$cupt update -o cupt::languages::indexes=$order", 1, 'metadata update succeeded');
+		check_no_partial_files();
+
 		my @got_files = glob("$dir/*");
 		my %got_translations = map(&fetch_pair_if_translation, @got_files);
 		my @got_langs = sort keys %got_translations;
