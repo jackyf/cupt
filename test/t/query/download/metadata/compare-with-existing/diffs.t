@@ -1,5 +1,6 @@
 use Test::More tests => 2+5+3+2+11;
-use Test::Dir;
+
+require(get_rinclude_path('../common'));
 
 my $desc_translation_hash = '111ccc';
 
@@ -56,12 +57,6 @@ sub get_corruption_hook_kv {
 sub byte_changer {
 	$_[0]=~s/./%/;
 	return $_[0];
-}
-
-sub check_no_partial_files {
-	my $partial_dir = 'var/lib/cupt/lists/partial';
-	dir_exists_ok($partial_dir);
-	dir_empty_ok($partial_dir);
 }
 
 sub test {

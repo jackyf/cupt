@@ -44,6 +44,7 @@ sub test {
 			'releases' => [ map { compose_release(@$_) } @inputs ]
 		);
 		check_exit_code("$cupt update", 1, 'update succeeded');
+		check_no_partial_files();
 		foreach (@inputs) {
 			my ($binary_package, $source_package, $archive) = @$_;
 			check_archive_packages($cupt, 'binary', $binary_package, $archive);
