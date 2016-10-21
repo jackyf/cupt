@@ -158,17 +158,17 @@ sub generate_environment {
 	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'});
 	generate_file('usr/bin/debpatch', $options{'debpatch'});
 
-	my @releases = unify_releases(\%options);
+	my @releases = unify_releases(unify_packages_and_sources_option(\%options));
 	generate_sources_list(@releases);
 	generate_packages_sources(@releases);
 }
 
 sub update_remote_releases {
-	foreach (@_) {
+	my @releases = unify_releases(@_);
+	foreach (@releases) {
 		die if $_->{location} ne 'remote';
-		fill_ps_entry($_);
 	}
-	generate_packages_sources(@_);
+	generate_packages_sources(@releases);
 }
 
 sub setup_fakes {
@@ -220,9 +220,20 @@ sub unify_packages_and_sources_option {
 }
 
 sub unify_releases {
-	my @result = unify_packages_and_sources_option(@_);
-	foreach my $entry (@result) {
-		fill_ps_entry($entry);
+	my $component_unifier = sub {
+		return $_ if defined $_->{components};
+		my $the_component = {};
+		foreach my $key (qw(component packages sources translations previous deb-caches)) {
+			$the_component->{$key} = $_->{$key};
+			delete $_->{$key};
+		}
+		$_->{components} = [];
+		push @{$_->{components}}, $the_component;
+		return $_;
+	};
+	my @result = map(&$component_unifier, @_);
+	foreach my $release (@result) {
+		fill_release($release);
 	}
 	return @result;
 }
@@ -329,7 +340,7 @@ sub fill_hooks {
 		} else {
 			my ($from, $to) = @$content;
 			if ($kind !~ m/z$/) { # not compressed
-				push @{$entry->{_diff_history}}, {
+				push @{$entry->{release}{_diff_history}}, {
 					'path' => $kind,
 					'size' => length($from),
 					'sums' => get_content_sums($from),
@@ -340,13 +351,15 @@ sub fill_hooks {
 	});
 }
 
-sub fill_ps_entry {
+sub fill_release {
 	my $e = shift;
 	$e->{'location'} //= 'local';
 	$e->{'archive'} //= $default_archive;
 	$e->{'codename'} //= $default_codename;
 	$e->{'label'} //= $default_label;
-	$e->{'component'} //= $default_component;
+	foreach (@{$e->{'components'}}) {
+		$_->{'component'} //= $default_component;
+	}
 	$e->{'version'} //= $default_version;
 	$e->{'vendor'} //= $default_vendor;
 	$e->{'scheme'} //= $default_scheme;
@@ -384,18 +397,19 @@ sub compose_sums_record {
 
 sub local_ps_callback {
 	my ($kind, $entry, undef) = @_;
-	my %e = %$entry;
+	my %e = %{$entry->{release}};
+	my $component = $entry->{component};
 
 	my $list_prefix = get_list_prefix($e{scheme}, $e{server}, $e{archive});
 
 	if ($kind eq 'Packages') {
-		return "${list_prefix}_$e{component}_binary-$e{architecture}_Packages";
+		return "${list_prefix}_${component}_binary-$e{architecture}_Packages";
 	} elsif ($kind eq 'Sources') {
-		return "${list_prefix}_$e{component}_source_Sources";
+		return "${list_prefix}_${component}_source_Sources";
 	} elsif ($kind =~ m/Release/) {
 		return "${list_prefix}_$kind";
 	} elsif ($kind =~ m/Translation/) {
-		return "${list_prefix}_$e{component}_i18n_$kind";
+		return "${list_prefix}_${component}_i18n_$kind";
 	} else {
 		die "wrong kind $kind";
 	}
@@ -403,24 +417,25 @@ sub local_ps_callback {
 
 sub remote_ps_callback {
 	my ($kind, $entry, $content) = @_;
-	my %e = %$entry;
+	my %e = %{$entry->{release}};
+	my $component = $entry->{component};
 
 	my $subpath;
 	if ($kind =~ m/Release/) {
 		$subpath = $kind;
 	} elsif ($kind =~ m/Packages/) {
-		$subpath = "$e{component}/binary-$e{architecture}/$kind";
+		$subpath = "$component/binary-$e{architecture}/$kind";
 	} elsif ($kind eq 'Sources') {
-		$subpath = "$e{component}/source/$kind";
+		$subpath = "$component/source/$kind";
 	} elsif ($kind =~ m/Translation/) {
-		$subpath = "$e{component}/i18n/$kind";
+		$subpath = "$component/i18n/$kind";
 	} else {
 		die "wrong kind $kind";
 	}
 
 	if (defined $content) {
 		my $section = ($kind =~ /diff/ and $kind !~ m/Index$/) ? '_diff_files' : '_ps_files';
-		push @{$entry->{$section}}, {
+		push @{$entry->{release}{$section}}, {
 			'path' => $subpath,
 			'size' => length($content),
 			'sums' => get_content_sums($content),
@@ -441,10 +456,11 @@ sub join_records_if_needed {
 
 sub call_hooks {
 	my ($kind, $entry, $pre_input, @apply) = @_;
+	my $release = $entry->{release};
 
 	my $wrap_hook = sub {
 		my ($group, $name, $variant) = @_;
-		my $hook = $entry->{hooks}->{$group}->{$name};
+		my $hook = $release->{hooks}->{$group}->{$name};
 		die "no hook: $group, $name" unless defined $hook;
 		return sub {
 			my ($in) = @_;
@@ -459,7 +475,7 @@ sub call_hooks {
 	my $path;
 	my $path_hook = sub {
 		my $content = shift;
-		$path = $entry->{callback}->($kind, $entry, $content);
+		$path = $release->{callback}->($kind, $entry, $content);
 		return $content;
 	};
 
@@ -494,6 +510,7 @@ sub zip_adjacent {
 
 sub compose_diff_index {
 	my ($kind, $entry, $target_content) = @_;
+	my $release = $entry->{release};
 
 	my $filter_diff_kind = sub {
 		return () unless ($_->{path} =~ m!\Q$kind/\E(.*)!);
@@ -509,9 +526,9 @@ sub compose_diff_index {
 
 	my $result = sprintf("SHA1-Current: %s %s\n", sha1_hex($target_content), length($target_content));
 
-	$result .= compose_sums_record($get_diff_records->($entry->{_diff_history}), '-History');
+	$result .= compose_sums_record($get_diff_records->($release->{_diff_history}), '-History');
 
-	my $patch_records = $get_diff_records->($entry->{_diff_files});
+	my $patch_records = $get_diff_records->($release->{_diff_files});
 	my ($orig_patch_records, $compressed_patch_records) =
 			part { defined(get_path_extension($_->{path})) ? 1 : 0 } @$patch_records;
 	$result .= compose_sums_record($orig_patch_records, '-Patches');
@@ -548,41 +565,51 @@ sub generate_file_with_variants {
 sub generate_sources_list {
 	my $result = '';
 	foreach my $e (@_) {
-		my $sources_list_suffix = get_trusted_option_string($e->{trusted});
-		$sources_list_suffix .= "$e->{scheme}://$e->{server} $e->{archive} $e->{component}";
+		my $get_components_for = sub {
+			my $key = shift;
+			return map { defined($_->{$key}) ? ($_->{component}) : () } @{$e->{components}}; 
+		};
 
-		if (defined $e->{packages}) {
-			$result .= "deb $sources_list_suffix\n";
+		my $common_line = get_trusted_option_string($e->{trusted});
+		$common_line .= "$e->{scheme}://$e->{server} $e->{archive}";
+
+		my @components = $get_components_for->('packages');
+		if (@components) {
+			$result .= "deb $common_line @components\n";
 		}
-		if (defined $e->{sources}) {
-			$result .= "deb-src $sources_list_suffix\n";
+
+		@components = $get_components_for->('sources');
+		if (@components) {
+			$result .= "deb-src $common_line @components\n";
 		}
 	}
 	generate_file('etc/apt/sources.list', $result);
 }
 
 sub generate_packages_sources {
-	foreach my $entry (@_) {
-		my %e = %$entry;
+	foreach my $release (@_) {
+		foreach my $c (@{$release->{components}}) {
+			my $entry = { 'release' => $release, 'component' => $c->{component} };
 
-		if (defined $e{packages}) {
-			my $content = join_records_if_needed($e{packages});
-			generate_file_with_variants('Packages', $entry, $content, $e{previous}{packages});
-			if ($e{'deb-caches'}) {
-				generate_deb_caches($content);
+			if (defined $c->{packages}) {
+				my $content = join_records_if_needed($c->{packages});
+				generate_file_with_variants('Packages', $entry, $content, $c->{previous}{packages});
+				if ($c->{'deb-caches'}) {
+					generate_deb_caches($content);
+				}
+			}
+
+			if (defined $c->{sources}) {
+				generate_file_with_variants('Sources', $entry, join_records_if_needed($c->{sources}));
+			}
+
+			while (my ($lang, $content) = each %{$c->{translations}}) {
+				generate_file_with_variants("Translation-$lang", $entry,
+						join_records_if_needed($content), $c->{previous}{translations}{$lang});
 			}
 		}
 
-		if (defined $e{sources}) {
-			generate_file_with_variants('Sources', $entry, join_records_if_needed($e{sources}));
-		}
-
-		while (my ($lang, $content) = each %{$e{translations}}) {
-			generate_file_with_variants("Translation-$lang", $entry,
-					join_records_if_needed($content), $e{previous}{translations}{$lang});
-		}
-
-		generate_release($entry);
+		generate_release($release);
 	}
 }
 
@@ -593,9 +620,10 @@ sub get_list_prefix {
 }
 
 sub generate_release {
-	my $entry = shift;
-	my %e = %$entry;
+	my $release = shift;
+	my %e = %$release;
 
+	my @components = map { $_->{component} } @{$e{components}}; 
 	my $pre_content = <<END;
 Origin: $e{vendor}
 Version: $e{version}
@@ -605,7 +633,7 @@ Codename: $e{codename}
 Date: Mon, 30 Sep 2013 14:44:53 UTC
 Valid-Until: $e{'valid-until'}
 Architectures: $e{architecture} all
-Components: $e{component}
+Components: @components
 END
 	if ($e{'not-automatic'}) {
 		$pre_content .= "NotAutomatic: yes\n";
@@ -615,6 +643,7 @@ END
 	}
 	$pre_content .= compose_sums_record($e{_ps_files});
 
+	my $entry = { 'release' => $release, 'component' => undef };
 	call_hooks('Release', $entry, $pre_content, [qw(sign orig)]);
 	call_hooks('InRelease', $entry, $pre_content, [qw(sign inline)]);
 	call_hooks('Release.gpg', $entry, $pre_content, [qw(sign detached)]);
