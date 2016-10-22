@@ -38,11 +38,11 @@
 namespace cupt {
 namespace internal {
 
-enum class MetadataWorker::IndexType { Packages, PackagesDiff, LocalizationFile, LocalizationFileDiff };
+enum class MetadataWorker::IndexType { Packages, PackagesDiff, Translation, TranslationDiff };
 
 bool MetadataWorker::__is_diff_type(const IndexType& indexType)
 {
-	return indexType == IndexType::PackagesDiff || indexType == IndexType::LocalizationFileDiff;
+	return indexType == IndexType::PackagesDiff || indexType == IndexType::TranslationDiff;
 }
 
 string MetadataWorker::__get_indexes_directory() const
@@ -736,9 +736,9 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager, const ca
 			{
 				indexType = IndexType::PackagesDiff;
 			}
-			else if (indexType == IndexType::LocalizationFile)
+			else if (indexType == IndexType::Translation)
 			{
-				indexType = IndexType::LocalizationFileDiff;
+				indexType = IndexType::TranslationDiff;
 			}
 			else
 			{
@@ -766,7 +766,7 @@ void MetadataWorker::__update_translations(download::Manager& downloadManager,
 	for (const auto& record: downloadInfoV3)
 	{
 		IndexUpdateInfo info;
-		info.type = IndexType::LocalizationFile;
+		info.type = IndexType::Translation;
 		info.label = format2(__("'%s' descriptions localization"), record.language);
 		info.targetPath = record.localPath;
 		info.downloadInfo = record.fileDownloadRecords;
