@@ -38,7 +38,7 @@
 namespace cupt {
 namespace internal {
 
-enum class MetadataWorker::IndexType { Packages, PackagesDiff, Localization, LocalizationFile, LocalizationFileDiff };
+enum class MetadataWorker::IndexType { Packages, PackagesDiff, LocalizationFile, LocalizationFileDiff };
 
 bool MetadataWorker::__is_diff_type(const IndexType& indexType)
 {
@@ -585,7 +585,7 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 	}
 
 	std::function< string () > uncompressingSub;
-	if (__is_diff_type(indexType) || indexType == IndexType::Localization)
+	if (__is_diff_type(indexType))
 	{
 		uncompressingSub = []() -> string { return ""; }; // is not a final file
 	}
@@ -640,11 +640,6 @@ bool MetadataWorker::__download_index(download::Manager& downloadManager,
 		{
 			return __download_and_apply_patches(downloadManager, downloadRecord,
 					indexEntry, baseDownloadPath, downloadPath, targetPath, _logger);
-		}
-		else if (indexType == IndexType::Localization)
-		{
-			return __download_translations(downloadManager, indexEntry,
-					uri, downloadPath, longAlias, sourceFileChanged, _logger);
 		}
 		return true;
 	}
@@ -764,147 +759,21 @@ bool MetadataWorker::__update_index(download::Manager& downloadManager, const ca
 	return false;
 }
 
-bool MetadataWorker::__download_translations(download::Manager& downloadManager,
-		const cachefiles::IndexEntry& indexEntry, const string& localizationIndexUri,
-		const string& localizationIndexPath, const string& localizationIndexLongAlias,
-		bool sourceFileChanged, Logger* logger)
-{
-	auto downloadInfo = cachefiles::getDownloadInfoOfLocalizedDescriptions2(*_config, indexEntry);
-
-	map< string, cachefiles::FileDownloadRecord > availableLocalizations;
-
-	{ // parsing localization index
-		auto cleanUp = [localizationIndexPath]()
-		{
-			unlink(localizationIndexPath.c_str());
-		};
-		auto fail = [localizationIndexLongAlias, &cleanUp]()
-		{
-			cleanUp();
-			warn2(__("failed to parse localization data from '%s'"), localizationIndexLongAlias);
-		};
-
-		try
-		{
-			string openError;
-			File localizationIndexFile(localizationIndexPath, "r", openError);
-			if (!openError.empty())
-			{
-				logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-						piddedFormat2e, "unable to open the file '%s': %s", localizationIndexPath, openError);
-			}
-
-			TagParser localizationIndexParser(&localizationIndexFile);
-			TagParser::StringRange fieldName, fieldValue;
-			smatch m;
-			while (localizationIndexParser.parseNextLine(fieldName, fieldValue))
-			{
-				if (fieldName.equal(BUFFER_AND_SIZE("SHA1")))
-				{
-					string block;
-					localizationIndexParser.parseAdditionalLines(block);
-					auto lines = internal::split('\n', block);
-					FORIT(lineIt, lines)
-					{
-						const string& line = *lineIt;
-						if (!regex_match(line, m, checksumsLineRegex))
-						{
-							logger->loggedFatal2(Logger::Subsystem::Metadata, 3,
-									piddedFormat2, "malformed 'hash-size-name' line '%s'", line);
-						}
-
-						cachefiles::FileDownloadRecord record;
-						record.uri = getBaseUri(localizationIndexUri) + '/' + m[3];
-						record.size = string2uint32(m[2]);
-						record.hashSums[HashSums::SHA1] = m[1];
-
-						string searchKey = m[3];
-						auto filenameExtension = getFilenameExtension(searchKey);
-						if (!filenameExtension.empty())
-						{
-							searchKey.erase(searchKey.size() - filenameExtension.size());
-						}
-
-						availableLocalizations[searchKey] = record;
-					}
-				}
-			}
-		}
-		catch (...)
-		{
-			fail();
-			return false;
-		}
-		cleanUp();
-	}
-
-	bool result = true;
-	FORIT(downloadRecordIt, downloadInfo)
-	{
-		auto it = availableLocalizations.find(downloadRecordIt->filePart);
-		if (it == availableLocalizations.end())
-		{
-			continue; // not found
-		}
-
-		const string& targetPath = downloadRecordIt->localPath;
-		if (!__download_index(downloadManager, it->second, IndexType::LocalizationFile, indexEntry,
-				getDownloadPath(targetPath), targetPath, sourceFileChanged))
-		{
-			result = false;
-		}
-	}
-
-	return result;
-}
-
 void MetadataWorker::__update_translations(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry, bool indexFileChanged)
 {
 	auto downloadInfoV3 = cachefiles::getDownloadInfoOfLocalizedDescriptions3(*_config, indexEntry);
-	if (!downloadInfoV3.empty()) // full info is available directly in Release file
+	for (const auto& record: downloadInfoV3)
 	{
-		for (const auto& record: downloadInfoV3)
-		{
-			IndexUpdateInfo info;
-			info.type = IndexType::LocalizationFile;
-			info.label = format2(__("'%s' descriptions localization"), record.language);
-			info.targetPath = record.localPath;
-			info.downloadInfo = record.fileDownloadRecords;
-			bool unused;
-			__update_index(downloadManager, indexEntry, std::move(info), indexFileChanged, unused);
-		}
-		return;
-	}
-
-	if (cachefiles::getDownloadInfoOfLocalizedDescriptions2(*_config, indexEntry).empty())
-	{
-		return;
-	}
-
-	{ // downloading translation index
-		auto localizationIndexDownloadInfo =
-				cachefiles::getDownloadInfoOfLocalizationIndex(*_config, indexEntry);
-		if (localizationIndexDownloadInfo.empty())
-		{
-			_logger->log(Logger::Subsystem::Metadata, 3,
-					__get_pidded_string("no localization file index was found in the release, skipping downloading localization files"));
-			return;
-		}
-		if (localizationIndexDownloadInfo.size() > 1)
-		{
-			_logger->log(Logger::Subsystem::Metadata, 3,
-					__get_pidded_string("more than one localization file index was found in the release, skipping downloading localization files"));
-			return;
-		}
-
-		// downloading file containing localized descriptions
-		auto baseDownloadPath = getDownloadPath(cachefiles::getPathOfIndexList(*_config, indexEntry)) + "_l10n_Index";
-		__download_index(downloadManager, localizationIndexDownloadInfo[0], IndexType::Localization,
-				indexEntry, baseDownloadPath, "" /* unused */, indexFileChanged);
+		IndexUpdateInfo info;
+		info.type = IndexType::LocalizationFile;
+		info.label = format2(__("'%s' descriptions localization"), record.language);
+		info.targetPath = record.localPath;
+		info.downloadInfo = record.fileDownloadRecords;
+		bool unused;
+		__update_index(downloadManager, indexEntry, std::move(info), indexFileChanged, unused);
 	}
 }
-
 
 bool MetadataWorker::__update_release_and_index_data(download::Manager& downloadManager,
 		const cachefiles::IndexEntry& indexEntry)

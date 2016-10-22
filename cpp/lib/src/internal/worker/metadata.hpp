@@ -53,8 +53,6 @@ class MetadataWorker: public virtual WorkerBase
 			bool releaseFileChanged, bool& indexFileChanged);
 	void __update_translations(download::Manager& downloadManager,
 			const cachefiles::IndexEntry&, bool indexFileChanged);
-	bool __download_translations(download::Manager&, const cachefiles::IndexEntry& indexEntry,
-			const string&, const string&, const string&, bool, Logger* logger);
 	void __list_cleanup(const string&);
 	bool p_runMetadataUpdateThreads(const shared_ptr< download::Progress >&);
 	bool p_metadataUpdateThread(download::Manager&, const cachefiles::IndexEntry&);

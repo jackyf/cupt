@@ -48,17 +48,6 @@ vector< FileDownloadRecord > getDownloadInfoOfIndexList(
 vector< pair< string, string > > getPathsOfLocalizedDescriptions(
 		const Config&, const IndexEntry& entry);
 
-vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(
-		const Config&, const IndexEntry&);
-struct LocalizationDownloadRecord2
-{
-	string filePart;
-	string localPath;
-};
-// TODO: remove when oldstable >> wheezy
-vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
-		const Config&, const IndexEntry&);
-
 struct LocalizationDownloadRecord3
 {
 	string localPath;

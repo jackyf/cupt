@@ -17,6 +17,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         if uncompressing of a temporary file failed.
       - 'updateReleaseAndIndexData': use new '*-Download' sections in
         diff indexes to check size and hash sums of individual diff earlier.
+      - 'updateReleaseAndIndexData': dropped the obsolete way of downloading
+        translation files via localication index (even oldstable has them in
+        Release files).
   * debian:
     - control:
       - Added build-dependency on locales-all (for locale-specific tests).

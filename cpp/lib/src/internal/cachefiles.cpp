@@ -335,31 +335,6 @@ vector< pair< string, string > > getPathsOfLocalizedDescriptions(
 	return result;
 }
 
-vector< FileDownloadRecord > getDownloadInfoOfLocalizationIndex(const Config& config,
-		const IndexEntry& entry)
-{
-	return getDownloadInfoFromRelease(config, entry, entry.component + "/i18n/Index");
-}
-
-vector< LocalizationDownloadRecord2 > getDownloadInfoOfLocalizedDescriptions2(
-		const Config& config, const IndexEntry& entry)
-{
-	auto chunkArrays = getChunksOfLocalizedDescriptions(config, entry);
-	auto basePath = getPathOfIndexEntry(config, entry);
-
-	vector< LocalizationDownloadRecord2 > result;
-
-	FORIT(chunkArrayIt, chunkArrays)
-	{
-		LocalizationDownloadRecord2 record;
-		record.localPath = basePath + "_" + join("_", *chunkArrayIt);
-		record.filePart = *(chunkArrayIt->rbegin()); // i.e. 'Translation-xyz' part
-		result.push_back(std::move(record));
-	}
-
-	return result;
-}
-
 vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
 		const Config& config, const IndexEntry& entry)
 {
