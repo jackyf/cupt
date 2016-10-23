@@ -1,9 +1,3 @@
-if (LOCAL)
-	set(PASSED_DOWNLOADMETHODS_DIR "${CMAKE_CURRENT_BINARY_DIR}/../downloadmethods")
-else()
-	set(PASSED_DOWNLOADMETHODS_DIR "/usr/${CUPT_RELATIVE_DOWNLOADMETHODS_DIR}")
-endif()
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fvisibility=hidden")
 include_directories(include)
 include_directories(src)
@@ -15,8 +9,6 @@ add_library(libcupt-download-part OBJECT
 	./src/download/methodfactory.cpp
 	./src/download/progress.cpp
 	./src/download/progresses/console.cpp)
-set_target_properties(libcupt-download-part
-		PROPERTIES COMPILE_FLAGS "-DDOWNLOADMETHODS_DIR=\\\"${PASSED_DOWNLOADMETHODS_DIR}\\\"")
 
 add_library(libcupt SHARED
 	./src/internal/common.cpp

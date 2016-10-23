@@ -25,6 +25,8 @@
 
 #include <internal/filesystem.hpp>
 
+#include "version.hpp"
+
 namespace cupt {
 namespace internal {
 

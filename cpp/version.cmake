@@ -1,6 +1,12 @@
 set(CUPT_API_VERSION 4)
 set(CUPT_SOVERSION 1)
+
 set(CUPT_RELATIVE_DOWNLOADMETHODS_DIR "lib/cupt${CUPT_API_VERSION}-${CUPT_SOVERSION}/downloadmethods")
+if (LOCAL)
+	set(DOWNLOADMETHODS_DIR "${CMAKE_CURRENT_BINARY_DIR}/downloadmethods")
+else()
+	set(DOWNLOADMETHODS_DIR "/usr/${CUPT_RELATIVE_DOWNLOADMETHODS_DIR}")
+endif()
 
 # detect version from debian/changelog
 execute_process(
