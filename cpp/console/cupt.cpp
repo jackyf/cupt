@@ -92,11 +92,7 @@ int mainEx(int argc, char* argv[], Context& context)
 
 void showOwnVersion()
 {
-	#define QUOTED(x) QUOTED_(x)
-	#define QUOTED_(x) # x
-	cout << "executable: " << QUOTED(CUPT_VERSION) << endl;
-	#undef QUOTED
-	#undef QUOTED_
+	cout << "executable: " << CUPT_VERSION << endl;
 	cout << "library: " << cupt::libraryVersion << endl;
 }
 

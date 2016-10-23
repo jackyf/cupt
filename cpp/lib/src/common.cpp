@@ -30,11 +30,7 @@
 
 namespace cupt {
 
-#define QUOTED(x) QUOTED_(x)
-#define QUOTED_(x) # x
-const char* const libraryVersion = QUOTED(CUPT_VERSION);
-#undef QUOTED
-#undef QUOTED_
+const char* const libraryVersion = CUPT_VERSION;
 
 string __errno2string(int savedErrno)
 {
