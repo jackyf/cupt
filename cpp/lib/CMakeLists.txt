@@ -2,14 +2,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fvisibility=hidden")
 include_directories(include)
 include_directories(src)
 
-add_library(libcupt-download-part OBJECT
-	./src/download/uri.cpp
-	./src/download/manager.cpp
-	./src/download/method.cpp
-	./src/download/methodfactory.cpp
-	./src/download/progress.cpp
-	./src/download/progresses/console.cpp)
-
 add_library(libcupt SHARED
 	./src/internal/common.cpp
 	./src/internal/configparser.cpp
@@ -54,13 +46,18 @@ add_library(libcupt SHARED
 	./src/system/resolvers/native.cpp
 	./src/system/worker.cpp
 	./src/system/snapshots.cpp
+	./src/download/uri.cpp
+	./src/download/manager.cpp
+	./src/download/method.cpp
+	./src/download/methodfactory.cpp
+	./src/download/progress.cpp
+	./src/download/progresses/console.cpp
 	./src/common.cpp
 	./src/common/compareversions.cpp
 	./src/common/consumers.cpp
 	./src/file.cpp
 	./src/hashsums.cpp
 	./src/versionstring.cpp
-	$<TARGET_OBJECTS:libcupt-download-part>
 )
 set_target_properties(libcupt PROPERTIES SOVERSION ${CUPT_SOVERSION} OUTPUT_NAME "cupt${CUPT_API_VERSION}")
 target_link_libraries(libcupt dl rt gcrypt -Wl,--no-undefined)
