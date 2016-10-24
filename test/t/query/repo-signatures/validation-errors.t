@@ -1,4 +1,4 @@
-use Test::More tests => 5;
+use Test::More tests => 7;
 
 require(get_rinclude_path('common'));
 
@@ -28,4 +28,19 @@ my $expired_key_options = '--faked-system-time 20150220T154812';
 test([[$expired_keyring], get_good_signer($expired_keyring, $expired_key_options)] => "expired key");
 
 test([[$good_keyring_revoked], get_good_signer($good_keyring)] => 'revoked key');
+
+test([[$good_keyring], \&bad_signer] => 'empty signature');
+
+sub other_input_hook {
+	my ($variant, undef, undef, $content) = @_;
+	if ($variant eq 'orig') {
+		return $content;
+	} elsif ($variant eq 'detached') {
+		$content =~ s/.//;
+		return $content;
+	} else {
+		return undef;
+	}
+}
+test([[$good_keyring], get_good_signer($good_keyring), undef, ['input' => \&other_input_hook ]] => 'bad signature');
 
