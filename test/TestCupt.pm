@@ -815,7 +815,7 @@ sub get_good_signer {
 	return sub {
 		my ($variant, undef, undef, $input) = @_;
 		my $command = ($variant eq 'inline' ? '--clearsign' : '--detach-sign');
-		run3("gpg2 --no-default-keyring --keyring $keyring --output - --armor $options $command",
+		run3("gpg --no-default-keyring --keyring $keyring --output - --armor $options $command",
 				\$input, \my $output, \my $stderr);
 		die $stderr if $?;
 		return $output;
