@@ -1,9 +1,10 @@
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 require(get_rinclude_path('common'));
 
 my $good_keyring = get_keyring_path('good-1');
 my $other_good_keyring = get_keyring_path('good-2');
+my $expired_keyring = get_keyring_path('expired');
 
 sub test {
 	my ($input, $expected_error) = @_;
@@ -21,4 +22,7 @@ test([[$other_good_keyring], get_good_signer($good_keyring)] => "public key '.*'
 
 my $expired_sig_options = '--faked-system-time 20161020T154812 --default-sig-expire 2016-10-22';
 test([[$good_keyring], get_good_signer($good_keyring, $expired_sig_options)] => "expired signature");
+
+my $expired_key_options = '--faked-system-time 20150220T154812';
+test([[$expired_keyring], get_good_signer($expired_keyring, $expired_key_options)] => "expired key");
 

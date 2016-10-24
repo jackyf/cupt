@@ -803,6 +803,7 @@ sub get_keyring_path {
 	my %map = (
 		'good-1' => "$dir/mock1k.gpg",
 		'good-2' => "$dir/mock4k.gpg",
+		'expired' => "$dir/expired.gpg",
 	);
 	return $map{$kind};
 }

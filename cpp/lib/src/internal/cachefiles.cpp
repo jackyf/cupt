@@ -385,7 +385,8 @@ bool openingForReadingSucceeds(const string& path, const string& fileType, bool 
 
 bool gpgLineShouldBeSkipped(const string& line)
 {
-	static const vector<string> ignoreTypes = { "SIG_ID ", "NEWSIG", "KEY_CONSIDERED " };
+	static const vector<string> ignoreTypes =
+			{ "SIG_ID ", "NEWSIG", "KEY_CONSIDERED ", "KEYEXPIRED " };
 	for (const auto& type: ignoreTypes)
 	{
 		if (line.find(type) != string::npos)

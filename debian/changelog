@@ -9,6 +9,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - cache:
       - Verifying repository signatures: use APT keyrings directly, now that
         they're finally world-readable.
+      - Verifying repository signatures: display better error message when
+        a key has expired.
       - Removed the 'copy the keyring' hack, introduced in 2.2.2.
       - Removed support of localized descriptions without a description hash
         present in the original index (even oldstable has them).
