@@ -19,6 +19,8 @@ Build-Depends:
   txt2tags,
 # test suite
   gpgv (>= 2),
+  gnupg (>= 2),
+  ed,
   libipc-run3-perl,
   liblist-moreutils-perl,
   libtest-dir-perl,
