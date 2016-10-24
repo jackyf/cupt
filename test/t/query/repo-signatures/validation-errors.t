@@ -2,7 +2,8 @@ use Test::More tests => 3;
 
 require(get_rinclude_path('common'));
 
-my ($good_keyring, $other_good_keyring) = get_keyring_paths();
+my $good_keyring = get_keyring_path('good-1');
+my $other_good_keyring = get_keyring_path('good-2');
 
 sub test {
 	my ($input, $expected_error) = @_;

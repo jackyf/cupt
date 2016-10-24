@@ -2,7 +2,8 @@ use Test::More tests => 5 + 5*3 + 7*5;
 
 require(get_rinclude_path('common'));
 
-my ($keyring1, $keyring2) = get_keyring_paths();
+my $keyring1 = get_keyring_path('good-1');
+my $keyring2 = get_keyring_path('good-2');
 
 sub test {
 	my ($input, $expected_result, $desc) = @_;

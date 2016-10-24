@@ -56,7 +56,7 @@ our @EXPORT = qw(
 	get_version_priority
 	to_one_line
 	generate_file
-	get_keyring_paths
+	get_keyring_path
 	get_good_signer
 );
 use Exporter qw(import);
@@ -321,8 +321,7 @@ sub get_ed_diff {
 sub fill_hooks {
 	my $e = shift;
 
-	my @keyrings = get_keyring_paths();
-	fill_hook($e, 'sign', get_good_signer($keyrings[0]));
+	fill_hook($e, 'sign', get_good_signer(get_keyring_path('good-1')));
 
 	fill_hook($e, 'compress', sub {
 		my ($variant, undef, undef, $content) = @_;
@@ -798,9 +797,14 @@ sub to_one_line {
 	return $t;
 }
 
-sub get_keyring_paths {
+sub get_keyring_path {
+	my $kind = shift;
 	my $dir = get_test_dir() . '/gpg';
-	return ("$dir/mock1k.gpg", "$dir/mock4k.gpg");
+	my %map = (
+		'good-1' => "$dir/mock1k.gpg",
+		'good-2' => "$dir/mock4k.gpg",
+	);
+	return $map{$kind};
 }
 
 sub get_good_signer {
