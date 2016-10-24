@@ -98,7 +98,7 @@ sub test {
 
 	subtest $comment => sub {
 		my () = @_;
-		system("$cupt update");
+		stdall("$cupt update");
 		check_no_partial_files();
 		my $output = stdall("$cupt show pabc");
 		like($output, qr/^Version: \Q$exp_version\E$/m, 'version is right');

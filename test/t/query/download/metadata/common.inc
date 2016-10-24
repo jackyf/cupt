@@ -7,8 +7,7 @@ sub check_exit_code {
 
 	my $output;
 	run3($command, \undef, \$output, \$output);
-	$checker->($?, 0, $desc);
-	diag($output);
+	$checker->($?, 0, $desc) or diag($output);
 }
 
 sub check_no_partial_files {

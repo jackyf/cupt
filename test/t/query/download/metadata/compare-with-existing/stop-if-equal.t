@@ -27,8 +27,7 @@ sub check {
 
 	my $output = stdall("$cupt update -o cupt::languages::indexes=de,nl");
 	my $checker = $expected_result ? \&unlike : \&like;
-	$checker->($output, qr/W: failed to download/, $desc);
-	diag($output);
+	$checker->($output, qr/W: failed to download/, $desc) or diag($output);
 }
 
 sub test {
