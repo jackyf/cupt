@@ -1,4 +1,4 @@
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 require(get_rinclude_path('common'));
 
@@ -44,3 +44,11 @@ sub other_input_hook {
 }
 test([[$good_keyring], get_good_signer($good_keyring), undef, ['input' => \&other_input_hook ]] => 'bad signature');
 
+sub unknown_signature_hash_algorighm {
+	my ($variant, undef, undef, $content) = @_;
+	return $content unless $variant eq 'inline';
+	$content =~ s/^Hash: .*/Hash: SHA377/m;
+	return $content;
+}
+test([[$good_keyring], get_good_signer($good_keyring), ['inline'], ['seal' => \&unknown_signature_hash_algorighm]] =>
+		'could not verify a signature');
