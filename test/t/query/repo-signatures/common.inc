@@ -29,7 +29,7 @@ sub get_variant_filter_hook {
 }
 
 sub get_output {
-	my ($files, $signer, $sign_variants) = @_;
+	my ($files, $signer, $sign_variants, $hooks) = @_;
 	$sign_variants //= ['orig','detached'];
 
 	my $cupt = setup(
@@ -41,6 +41,7 @@ sub get_output {
 					'sign' => {
 						'input' => get_variant_filter_hook($sign_variants),
 						'convert' => $signer,
+						@$hooks,
 					},
 				},
 			}
