@@ -805,6 +805,7 @@ sub get_keyring_path {
 		'good-2' => "$dir/mock4k.gpg",
 		'expired' => "$dir/expired.gpg",
 		'revoke-for-good-1' => "$dir/mock1k-revoke.gpg",
+		'secrets' => "$dir/secrets.asc",
 	);
 	return $map{$kind};
 }
@@ -814,11 +815,24 @@ sub get_good_signer {
 	$options //= '';
 	return sub {
 		my ($variant, undef, undef, $input) = @_;
-		my $command = ($variant eq 'inline' ? '--clearsign' : '--detach-sign');
-		run3("gpg --no-default-keyring --keyring $keyring --output - --armor $options $command",
-				\$input, \my $output, \my $stderr);
+
+		my $sign_command = ($variant eq 'inline' ? '--clearsign' : '--detach-sign');
+		my $secrets = get_keyring_path('secrets');
+
+		# Signing a file F using a key K - how hard could it be? Involves
+		# temporary homes, agents, daemons, session management, key imports.
+		#
+		# - http://stackoverflow.com/a/39848044
+		# - https://lists.debian.org/debian-devel/2016/10/msg00267.html
+		my $op_dir = File::Temp->newdir('gnupghome-XXXXXX');
+		my $agent_prefix = "GNUPGHOME=$op_dir gpg-agent --daemon";
+		my $import_part = "gpg --import $secrets";
+		my $sign_part = "gpg --no-default-keyring --keyring $keyring --output - --armor $options $sign_command";
+
+		run3("$agent_prefix sh -c '$import_part && $sign_part'", \$input, \my $stdout, \my $stderr);
 		die $stderr if $?;
-		return $output;
+
+		return $stdout;
 	};
 }
 
