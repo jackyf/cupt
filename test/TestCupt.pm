@@ -804,6 +804,7 @@ sub get_keyring_path {
 		'good-1' => "$dir/mock1k.gpg",
 		'good-2' => "$dir/mock4k.gpg",
 		'expired' => "$dir/expired.gpg",
+		'revoke-for-good-1' => "$dir/mock1k-revoke.gpg",
 	);
 	return $map{$kind};
 }
