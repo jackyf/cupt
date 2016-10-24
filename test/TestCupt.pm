@@ -804,11 +804,14 @@ sub get_keyring_paths {
 }
 
 sub get_good_signer {
-	my $keyring = shift;
+	my ($keyring, $options) = @_;
+	$options //= '';
 	return sub {
 		my ($variant, undef, undef, $input) = @_;
 		my $command = ($variant eq 'inline' ? '--sign' : '--detach-sign');
-		run3("gpg2 --no-default-keyring --keyring $keyring --output - --armor $command", \$input, \my $output);
+		run3("gpg2 --no-default-keyring --keyring $keyring --output - --armor $options $command",
+				\$input, \my $output, \my $stderr);
+		die $stderr if $?;
 		return $output;
 	};
 }
