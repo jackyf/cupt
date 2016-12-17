@@ -1,6 +1,8 @@
 cupt (2.9.9~) UNRELEASED; urgency=medium
 
-  * 
+  * console:
+    - 'shell': switched to libreadline7 from libreadline6. Patch by
+      Sven Joachim. (Closes: #845358)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 17 Dec 2016 17:56:37 +0100
 

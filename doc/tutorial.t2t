@@ -723,10 +723,10 @@ Install the package ``lightspark``, remove the packae ``gnash``, and make sure t
 Install the package ``sieve-connect``, upgrade or remove the package ``iceweasel``
 if it is installed and has the version lower than ``3.5.20``.
 
-- ``cupt install libv4l-0 cupt --iii libreadline6 vlc*``
+- ``cupt install libv4l-0 cupt --iii libreadline7 vlc*``
 
 Install packages ``libv4l-0`` and ``cupt``, install the preferred version of
-``libreadline6`` if it's installed already, install the preferred versions of
+``libreadline7`` if it's installed already, install the preferred versions of
 packages which names start with ``vlc`` and which are installed already .
 
 - ``cupt remove youtube-dl --install clive --satisfy "iceweasel (>= 4)" --purge cvs subversion --install git --unsatisfy "xinput (<< 1.5)"``

@@ -778,8 +778,8 @@ msgstr "ungültiger regulärer Ausdruck »%s«"
 
 #: console/handlers/shell.cpp:98
 #, c-format
-msgid "unable to dynamically find libreadline.so.6: dlopen: %s"
-msgstr "libreadline.so.6 kann nicht dynamisch gefunden werden: dlopen: %s"
+msgid "unable to dynamically find libreadline.so.7: dlopen: %s"
+msgstr "libreadline.so.7 kann nicht dynamisch gefunden werden: dlopen: %s"
 
 #: console/handlers/shell.cpp:105 console/handlers/shell.cpp:111
 #, c-format
