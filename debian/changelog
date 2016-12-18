@@ -6,6 +6,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Don't ask dpkg for architectures if the 'apt::architecture' option
         was already set via configuration file.
       - New method 'getConfigurationPartPaths'.
+      - Enable colored output on terminals by default.
     - cache:
       - Verifying repository signatures: use APT keyrings directly, now that
         they're finally world-readable.

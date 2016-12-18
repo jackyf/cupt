@@ -156,7 +156,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::actions-preview::show-vendors", "no" },
 		{ "cupt::console::actions-preview::show-versions", "no" },
 		{ "cupt::console::show-progress-messages", "yes" },
-		{ "cupt::console::use-colors", "no" },
+		{ "cupt::console::use-colors", "auto" },
 		{ "cupt::console::warnings::removal-of-essential", "yes" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },

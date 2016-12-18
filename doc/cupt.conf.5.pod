@@ -239,7 +239,7 @@ boolean, if true, package management actions will print stage messages
 =item cupt::console::use-colors
 
 string, specifies whether to use colors in the console interface. Defaults to
-"no".
+"auto".
 
 For now concerns only the action preview.
 

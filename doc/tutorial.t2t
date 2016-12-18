@@ -1177,6 +1177,9 @@ In the colored output different colors specify different actions types.
 Manually installed package names and potentially unsafe actions have bold
 colors.
 
+Starting from Cupt 2.10, colors are enabled on terminals by default (``auto``
+setting).
+
 == Adjusting configuration variables ==
 
 === intro ===
