@@ -408,17 +408,6 @@ bool openingForReadingSucceeds(const string& path, const string& fileType, bool 
 	return true;
 }
 
-bool gpgLineShouldBeSkipped(const string& line)
-{
-	static const vector<string> ignoreTypes = { "SIG_ID ", "NEWSIG", "KEY_CONSIDERED " };
-	for (const auto& type: ignoreTypes)
-	{
-		if (line.find(type) != string::npos)
-			return true;
-	}
-	return false;
-}
-
 }
 
 bool verifySignature(const Config& config, const string& path, const string& alias)
@@ -463,88 +452,78 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 		}
 
 		smatch m;
-		auto gpgGetLine = [&gpgPipe, &m, &debugging]() -> string
-		{
-			static const sregex gnupgPrefixRegex = sregex::compile("\\[GNUPG:\\] ");
-			string result;
 
-			do
+		static const sregex gnupgPrefixRegex = sregex::compile("\\[GNUPG:\\] ");
+		string result;
+
+		while (!gpgPipe.getLine(result).eof())
+		{
+			if (debugging) debug2("fetched '%s' from gpg pipe", result);
+			result = regex_replace(result, gnupgPrefixRegex, "");
+
+			const auto& status = result;
+			if (status.empty())
 			{
-				gpgPipe.getLine(result);
-				if (debugging && !gpgPipe.eof()) debug2("fetched '%s' from gpg pipe", result);
-				result = regex_replace(result, gnupgPrefixRegex, "");
-			} while (!gpgPipe.eof() && gpgLineShouldBeSkipped(result));
-
-			return gpgPipe.eof() ? "" : result;
-		};
-
-		auto status = gpgGetLine();
-		if (status.empty())
-		{
-			// no info from gpg at all
-			fatal2(__("gpg: '%s': no information"), alias);
-		}
-
-		// first line ought to be validness indicator
-		static const sregex messageRegex = sregex::compile("(\\w+) (.*)");
-		if (!regex_match(status, m, messageRegex))
-		{
-			fatal2(__("gpg: '%s': invalid status string '%s'"), alias, status);
-		}
-
-		string messageType = m[1];
-		string message = m[2];
-
-		if (messageType == "GOODSIG")
-		{
-			verifyResult = 1;
-		}
-		else if (messageType == "EXPSIG")
-		{
-			warn2(__("gpg: '%s': expired signature: %s"), alias, message);
-		}
-		else if (messageType == "EXPKEYSIG")
-		{
-			warn2(__("gpg: '%s': expired key: %s"), alias, message);
-		}
-		else if (messageType == "REVKEYSIG")
-		{
-			warn2(__("gpg: '%s': revoked key: %s"), alias, message);
-		}
-		else if (messageType == "BADSIG")
-		{
-			warn2(__("gpg: '%s': bad signature: %s"), alias, message);
-		}
-		else if (messageType == "ERRSIG")
-		{
-			// gpg was not able to verify signature
-			auto parts = split(' ', message); // <keyid> <pkalgo> <hashalgo> <sig_class> <time> <rc>
-			if (parts.size() != 6)
-			{
-				fatal2(__("gpg: '%s': invalid detailed information string '%s'"), alias, message);
+				// no info from gpg at all
+				fatal2(__("gpg: '%s': no information"), alias);
 			}
-			const auto& rc = parts.back();
 
-			if (rc == "9")
+			static const sregex messageRegex = sregex::compile("(\\w+) (.*)");
+			if (!regex_match(status, m, messageRegex))
 			{
-				warn2(__("gpg: '%s': public key '%s' is not found"), alias, parts[0]);
+				continue;
 			}
-			else if (rc == "4")
+
+			string messageType = m[1];
+			string message = m[2];
+
+			if (messageType == "GOODSIG")
 			{
-				warn2(__("gpg: '%s': unknown algorithm '%s/%s'"), alias, parts[1], parts[2]);
+				verifyResult = 1;
 			}
-			else
+			else if (messageType == "EXPSIG")
 			{
-				warn2(__("gpg: '%s': could not verify a signature: %s"), alias, message);
+				warn2(__("gpg: '%s': expired signature: %s"), alias, message);
 			}
-		}
-		else if (messageType == "NODATA")
-		{
-			warn2(__("gpg: '%s': empty signature"), alias);
-		}
-		else
-		{
-			warn2(__("gpg: '%s': unknown message: %s %s"), alias, messageType, message);
+			else if (messageType == "EXPKEYSIG")
+			{
+				warn2(__("gpg: '%s': expired key: %s"), alias, message);
+			}
+			else if (messageType == "REVKEYSIG")
+			{
+				warn2(__("gpg: '%s': revoked key: %s"), alias, message);
+			}
+			else if (messageType == "BADSIG")
+			{
+				warn2(__("gpg: '%s': bad signature: %s"), alias, message);
+			}
+			else if (messageType == "ERRSIG")
+			{
+				// gpg was not able to verify signature
+				auto parts = split(' ', message); // <keyid> <pkalgo> <hashalgo> <sig_class> <time> <rc>
+				if (parts.size() != 6)
+				{
+					fatal2(__("gpg: '%s': invalid detailed information string '%s'"), alias, message);
+				}
+				const auto& rc = parts.back();
+
+				if (rc == "9")
+				{
+					warn2(__("gpg: '%s': public key '%s' is not found"), alias, parts[0]);
+				}
+				else if (rc == "4")
+				{
+					warn2(__("gpg: '%s': unknown algorithm '%s/%s'"), alias, parts[1], parts[2]);
+				}
+				else
+				{
+					warn2(__("gpg: '%s': could not verify a signature: %s"), alias, message);
+				}
+			}
+			else if (messageType == "NODATA")
+			{
+				warn2(__("gpg: '%s': empty signature"), alias);
+			}
 		}
 	}
 	catch (Exception&)
