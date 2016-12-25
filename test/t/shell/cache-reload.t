@@ -1,4 +1,4 @@
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 require(get_rinclude_path('common'));
 
@@ -42,4 +42,6 @@ test(['show --installed-only xyz'] => 1);
 test(['showauto qwe'] => 1);
 
 test(['update'] => 1);
+
+test(['showsrc xyz', 'show abc', 'showsrc xyz'] => 0);
 

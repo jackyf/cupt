@@ -363,17 +363,16 @@ shared_ptr< const Cache > Context::getCache(
 		try
 		{
 			__cache.reset(new Cache(__config, useSource, useBinary, useInstalled));
+			__used_source = useSource;
+			__used_binary = useBinary;
+			__used_installed = useInstalled;
+			__valid = true;
 		}
 		catch (Exception&)
 		{
 			fatal2(__("error while creating the package cache"));
 		}
 	}
-
-	__used_source = useSource;
-	__used_binary = useBinary;
-	__used_installed = useInstalled;
-	__valid = true;
 
 	return __cache;
 }
