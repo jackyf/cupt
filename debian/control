@@ -24,6 +24,7 @@ Build-Depends:
   libipc-run3-perl,
   liblist-moreutils-perl,
   libtest-dir-perl,
+  libexpect-simple-perl,
   locales-all
 Maintainer: Cupt developers <cupt-devel@lists.alioth.debian.org>
 Uploaders: Eugene V. Lyubimkin <jackyf@debian.org>
