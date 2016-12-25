@@ -22,7 +22,6 @@ sub test {
 	my $output_normal = stdall("$cupt $command");
 	my $output_shell = $cupt_shell->execute($command);
 	is($output_shell, $output_normal, "comparing output for '$command'$extra_comment");
-	diag($output_shell);
 }
 
 sub test_manage {
