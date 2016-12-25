@@ -1,4 +1,4 @@
-use Test::More tests => 3+5+2+3;
+use Test::More tests => 2+2+5+2+3;
 
 require(get_rinclude_path('common'));
 
@@ -32,9 +32,11 @@ sub test_manage {
 }
 
 TODO: {
-	local $TODO = 'fix help in shell';
+	local $TODO = 'fix help/version in shell';
 	test('help');
+	test('version');
 }
+
 test('policy');
 test('policysrc');
 
