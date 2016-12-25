@@ -378,11 +378,6 @@ shared_ptr< const Cache > Context::getCache(
 	return __cache;
 }
 
-void Context::clearCache()
-{
-	__cache.reset();
-}
-
 void Context::invalidate()
 {
 	__valid = false;

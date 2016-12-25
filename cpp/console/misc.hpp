@@ -39,7 +39,6 @@ class Context
 	shared_ptr< Config > getConfig();
 	shared_ptr< const Cache > getCache(
 			bool useSource, bool useBinary, bool useInstalled);
-	void clearCache();
 	void invalidate();
 
 	vector< string > unparsed;
