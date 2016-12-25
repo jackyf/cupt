@@ -152,7 +152,7 @@ sub generate_environment {
 	make_path('var/lib/cupt');
 
 	generate_file(get_extended_states_path(), $options{'extended_states'}//'');
-	generate_file('var/lib/dpkg/status', $options{'dpkg_status'}//'');
+	generate_file('var/lib/dpkg/status', join_records_if_needed($options{'dpkg_status'}//''));
 	generate_file('etc/apt/sources.list', '');
 	generate_file('etc/apt/preferences', $options{'preferences'}//'');
 	generate_file('etc/debdelta/sources.conf', $options{'debdelta_conf'});
