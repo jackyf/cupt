@@ -1,4 +1,4 @@
-use Test::More tests => 12;
+use Test::More tests => 14;
 
 require(get_rinclude_path('common'));
 
@@ -32,6 +32,7 @@ test(['policy'] => 0);
 
 test(['remove -y abc'] => 1);
 test(['remove abc\nn'] => 0);
+test(['remove -y -s abc'] => 0);
 
 test(['show abc', 'show xyz'] => 0);
 test(['show abc', 'showsrc xyz'] => 1);
@@ -41,7 +42,8 @@ test(['badcmd'] => 1);
 test(['show --installed-only xyz'] => 1);
 test(['showauto qwe'] => 1);
 
-test(['update'] => 1);
+test(['show abc', 'update'] => 2);
+test(['show abc', 'update -s'] => 0);
 
 test(['showsrc xyz', 'show abc', 'showsrc xyz'] => 0);
 

@@ -379,6 +379,8 @@ shared_ptr< const Cache > Context::getCache(
 
 void Context::invalidate()
 {
+	if (__config && __config->getBool("cupt::worker::simulate"))
+		return;
 	__valid = false;
 }
 

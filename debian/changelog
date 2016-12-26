@@ -4,6 +4,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.
+      - Don't rebuild the cache if simulation is on.
   * lib:
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.
