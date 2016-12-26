@@ -1,4 +1,4 @@
-use Test::More tests => 2+2+5+2+3;
+use Test::More tests => 2+2+5+3+3;
 
 require(get_rinclude_path('common'));
 
@@ -50,6 +50,7 @@ TODO: {
 
 test('show --installed-only bb');
 test('show aa', 'non-installed package after --installed-only');
+test('show --installed-only aa', '--installed-only after the cache is populated with also non-installed packages');
 
 test_manage('install aa');
 test_manage('remove bb');
