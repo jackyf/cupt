@@ -11,7 +11,7 @@ Build-Depends:
 # runtime libraries
   libboost-program-options-dev (>= 1.42),
   libboost-dev (>= 1.42),
-  libreadline6-dev,
+  libreadline-dev,
   libcurl4-gnutls-dev (>= 7.19.4),
   libgcrypt11-dev,
 # documentation
@@ -102,7 +102,7 @@ Package: cupt
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt4-1 (>= ${binary:Version})
 Breaks: daptup (<< 0.12.2~)
-Suggests: sensible-utils, libreadline6
+Suggests: sensible-utils, libreadline7
 Description: flexible package manager -- console interface
  This package provides a console interface to Cupt library, which implements
  high-level package manager for Debian and derivatives. Cupt is written with
@@ -123,7 +123,7 @@ Description: flexible package manager -- console interface
   - support of LZMA-compressed indexes;
   - source versions synchronization;
   - 'shell' subcommand (to get command history, search etc. working, install
-    the package 'libreadline6');
+    the package 'libreadline7');
   - integration with debdelta (to get it, install the package 'debdelta');
   - system snapshots (needs packages 'dpkg-dev' and 'dpkg-repack').
  .

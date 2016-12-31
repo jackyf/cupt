@@ -17,8 +17,6 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         they're finally world-readable.
       - Verifying repository signatures: display better error message when
         a key has expired.
-      - Verifying repository signatures: ignore unknown status lines from
-        gpgv.
       - Removed the 'copy the keyring' hack, introduced in 2.2.2.
       - Removed support of localized descriptions without a description hash
         present in the original index (even oldstable has them).
@@ -41,6 +39,20 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Added build-dependency on gpgv, gnupg, ed (for tests).
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
+
+cupt (2.9.9) unstable; urgency=medium
+
+  * console:
+    - 'shell': switched to libreadline7 from libreadline6. Patch by
+      Sven Joachim. (Closes: #845358)
+  * lib:
+    - cache:
+      - Verifying repository signatures: ignore unknown status lines from
+        gpgv.
+      - Fixed pre-parsing versioned provides when all provides for a particular
+        package are versioned.
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Tue, 27 Dec 2016 20:12:27 +0100
 
 cupt (2.9.8) unstable; urgency=high
 

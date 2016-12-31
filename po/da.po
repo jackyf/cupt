@@ -765,8 +765,8 @@ msgstr "ugyldigt regulært udtryk »%s«"
 
 #: console/handlers/shell.cpp:98
 #, c-format
-msgid "unable to dynamically find libreadline.so.6: dlopen: %s"
-msgstr "kan ikke dynamsik finde libreadline.so.6: dlopen: %s"
+msgid "unable to dynamically find libreadline.so.7: dlopen: %s"
+msgstr "kan ikke dynamsik finde libreadline.so.7: dlopen: %s"
 
 #: console/handlers/shell.cpp:105 console/handlers/shell.cpp:111
 #, c-format

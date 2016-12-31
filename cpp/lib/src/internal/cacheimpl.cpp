@@ -56,7 +56,10 @@ void CacheImpl::processProvides(const string* packageNamePtr,
 {
 	auto callback = [this, &packageNamePtr](const char* tokenBeginIt, const char* tokenEndIt)
 	{
-		auto& sublist = this->canProvide[string(tokenBeginIt, tokenEndIt)];
+		const char* packageNameEndIt;
+		consumePackageName(tokenBeginIt, tokenEndIt, packageNameEndIt);
+
+		auto& sublist = this->canProvide[string(tokenBeginIt, packageNameEndIt)];
 		if (std::find(sublist.begin(), sublist.end(), packageNamePtr) == sublist.end())
 		{
 			sublist.push_back(packageNamePtr);

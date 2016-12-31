@@ -91,10 +91,10 @@ class Readline
 
 	static void init()
 	{
-		auto handle = dlopen("libreadline.so.6", RTLD_NOW);
+		auto handle = dlopen("libreadline.so.7", RTLD_NOW);
 		if (!handle)
 		{
-			warn2(__("unable to dynamically find libreadline.so.6: dlopen: %s"), dlerror());
+			warn2(__("unable to dynamically find libreadline.so.7: dlopen: %s"), dlerror());
 			return;
 		}
 
