@@ -1,17 +1,10 @@
-use TestCupt;
 use Test::More tests => 2;
 
-use strict;
-use warnings;
+my $cupt;
+eval get_inc_code('common');
+set_parse_skip_triggers(0);
 
-eval get_inc_code('../common');
-
-sub compose_dpkg_aux_command {
-	my ($command) = @_;
-	return get_dpkg_path . " $command";
-}
-
-my $cupt = setup_for_worker(
+$cupt = setup_for_worker(
 	'packages' => entail(compose_package_record('aa', 1))
 );
 
@@ -19,10 +12,9 @@ sub test {
 	my ($params, $name) = @_;
 
 	my $output = stdall(get_worker_command($cupt, "install aa $params"));
+	my @commands = parse_dpkg_commands($output);
 
-	my @commands = ($output =~ m/^S: running command '(.*)'/mg);
-
-	is($commands[-1], compose_dpkg_aux_command('--triggers-only --pending'), $name);
+	is_deeply($commands[-1], ['--triggers-only', ['--pending'], []], $name);
 }
 
 test('', 'after-trigger command is given by default');
