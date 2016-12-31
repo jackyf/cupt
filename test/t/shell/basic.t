@@ -3,7 +3,10 @@ use Test::More tests => 2+2+5+3+3;
 require(get_rinclude_path('common'));
 
 my $cupt = setup(
-	'dpkg_status' => [ compose_installed_record('bb', '2.1-4') ],
+	'dpkg_status' => [
+		compose_installed_record('aa', '0.2016'),
+		compose_installed_record('bb', '2.1-4'),
+	],
 	'packages' => [
 		compose_package_record('aa', 3) . "Description: aa-desc\n",
 		compose_package_record('dd', 4) . "Rtb: xy8pas\n",
@@ -19,9 +22,13 @@ sub test {
 	my ($command, $extra_comment) = @_;
 	$extra_comment = defined($extra_comment) ? " ($extra_comment)" : "";
 
-	my $output_normal = stdall("$cupt $command");
-	my $output_shell = $cupt_shell->execute($command);
-	is($output_shell, $output_normal, "comparing output for '$command'$extra_comment");
+	subtest "'$command'$extra_comment" => sub {
+		my $output_normal = stdall("$cupt $command");
+		is($?, 0, 'command succeeded')
+				or diag($output_normal);
+		my $output_shell = $cupt_shell->execute($command);
+		is($output_shell, $output_normal, "comparing output");
+	}
 }
 
 sub test_manage {
