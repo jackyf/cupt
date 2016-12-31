@@ -13,15 +13,27 @@ sub new {
 		'Prompt' => "cupt> ",
 		'DisconnectCmd' => 'q',
 	});
+	$o->{_error} = '';
 	return bless($o, $class);
 }
 
 sub execute {
 	my ($self, $text) = @_;
 
-	$self->{_impl}->send($text);
-	my $result = $self->{_impl}->before();
+	if ($self->{_error}) {
+		return 'Previously: ' . $self->{_error};
+	}
 
+	my $result;
+	eval {
+		$self->{_impl}->send($text);
+	};
+	if ($@) {
+		$self->{_error} = $self->{_impl}->before() . "\n\n" . $@;
+		return $self->{_error};
+	}
+
+	$result = $self->{_impl}->before();
 	$result =~ s/\r//g;
 	$result =~ s/^\Q$text\E\n//;
 	return $result;
