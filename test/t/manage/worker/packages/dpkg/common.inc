@@ -1,10 +1,14 @@
 eval get_inc_code('../common');
 die($@) if $@;
 
+my $skip_triggers = 1;
+sub set_parse_skip_triggers {
+	$skip_triggers = shift;
+}
+
 sub parse_dpkg_commands {
 	my $output = shift;
 
-	my $skip_triggers = 1;
 	my $skip_bad_path = 1;
 	my $package_simplifier = sub {
 		return (s!.*/((?:\w|-)+)_(\w+)_\w+\.deb$!<$1 $2>!r);
