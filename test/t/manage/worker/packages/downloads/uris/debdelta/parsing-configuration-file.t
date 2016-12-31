@@ -50,7 +50,7 @@ my $conf;
 sub test {
 	my ($comment, $package_sources, $expected_debdelta_variants) = @_;
 
-	my $cupt = setup_for_worker(
+	my $cupt = setup(
 		'debdelta_conf' => $conf,
 		'debpatch' => '',
 		'dpkg_status' =>

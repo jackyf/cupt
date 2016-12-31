@@ -7,7 +7,7 @@ use warnings;
 my $cupt;
 eval get_inc_code('common');
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('cc', 3)) ,
 	'packages' =>
@@ -19,7 +19,7 @@ test_dpkg_sequence('install aa' =>
 		['--install', [], ['<bb 2>']],
 		['--install', [], ['<aa 1>']]);
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('lockstep-master', 1) . "Depends: lockstep-slave (= 1)\n") .
 		entail(compose_installed_record('lockstep-slave', 1)) ,
@@ -32,7 +32,7 @@ test_dpkg_sequence('install lockstep-master' =>
 		['--install', [], ['<lockstep-slave 2>']],
 		['--configure', [], ['lockstep-master']]);
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('libx', 1)) ,
 	'packages' =>
@@ -44,7 +44,7 @@ test_dpkg_sequence('install libx' =>
 		['--install', [], ['<libx-common 3>']],
 		['--configure', [], ['libx']]);
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('predepends-lockstep-master', 4) . "Pre-Depends: slave (= 4)\n") .
 		entail(compose_installed_record('slave', 4)) ,
@@ -57,7 +57,7 @@ test_dpkg_sequence('install predepends-lockstep-master' =>
 		['--install', [], ['<slave 5>']],
 		['--install', [], ['<predepends-lockstep-master 5>']]);
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'packages' =>
 		entail(compose_package_record('circular-dep-1', 6) . "Depends: circular-dep-2\n") .
 		entail(compose_package_record('circular-dep-2', 7) . "Depends: circular-dep-1\n") ,

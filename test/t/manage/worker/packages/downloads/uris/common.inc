@@ -14,7 +14,7 @@ sub test_uris {
 sub test_uris_for_bbb_and_ccc {
 	my (%p) = @_;
 
-	my $cupt = setup_for_worker(
+	my $cupt = setup(
 		'dpkg_status' =>
 			entail(compose_installed_record('aaa', 1)) .
 			entail(compose_installed_record('bbb', 2)),

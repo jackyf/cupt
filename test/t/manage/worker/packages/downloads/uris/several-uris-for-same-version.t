@@ -6,7 +6,7 @@ use warnings;
 
 require(get_rinclude_path('common'));
 
-my $cupt = setup_for_worker(
+my $cupt = setup(
 	'packages2' => [
 		{
 			'content' =>

@@ -1,8 +1,3 @@
-sub setup_for_worker {
-	my (%p) = @_;
-	return TestCupt::setup(%p);
-}
-
 sub get_worker_command {
 	my ($cupt, $command, %params) = @_;
 

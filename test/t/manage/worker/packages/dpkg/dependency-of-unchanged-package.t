@@ -13,7 +13,7 @@ sub test {
 	my $dep = ($strong_dependency ? 'Depends' : 'Recommends');
 	my $expected_options = ($strong_dependency ? ['--force-depends'] : []);
 
-	$cupt = setup_for_worker(
+	$cupt = setup(
 		'dpkg_status' =>
 			entail(compose_installed_record('unchanged', 1) . "$dep: mta\n") .
 			entail(compose_installed_record('exim4', 2) . "Provides: mta\nConflicts: mta\n"),

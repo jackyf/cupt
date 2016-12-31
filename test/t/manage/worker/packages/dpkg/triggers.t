@@ -4,7 +4,7 @@ my $cupt;
 eval get_inc_code('common');
 set_parse_skip_triggers(0);
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'packages' => entail(compose_package_record('aa', 1))
 );
 

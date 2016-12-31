@@ -12,7 +12,7 @@ sub setup_aux_between_ess_1 {
 
 	my $ess_field = ($ess_is_essential ? "Essential: yes\n" : '');
 
-	$cupt = setup_for_worker(
+	$cupt = setup(
 		'dpkg_status' =>
 			entail(compose_installed_record('ess', 0) . $ess_field . "Depends: aux\n") .
 			entail(compose_installed_record('aux', 2)) .
@@ -51,7 +51,7 @@ test_dpkg_sequence('install ess # ess is a pre-dependency of essential',
 sub setup_aux_between_ess_2 {
 	my ($additional_installed) = @_;
 
-	$cupt = setup_for_worker(
+	$cupt = setup(
 		'dpkg_status' =>
 			entail(compose_installed_record('ess', 0)) .
 			$additional_installed ,

@@ -23,7 +23,7 @@ END
 
 eval get_inc_code('common');
 
-my $cupt = setup_for_worker(
+my $cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aa', 1)) .
 		entail(compose_installed_record('bb', 2)),

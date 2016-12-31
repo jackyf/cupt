@@ -48,7 +48,7 @@ sub test {
 
 eval get_inc_code('../../common');
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aaa', '2.3')) .
 		entail(compose_installed_record('bbb', '0.99-1')) .
@@ -70,7 +70,7 @@ test("full-upgrade --remove aaa --satisfy 'bbb (<< 0.98)'",
 			test_configure_line($input, 'eee', '-', '22', '<');
 		});
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_removed_record('fff'))
 );

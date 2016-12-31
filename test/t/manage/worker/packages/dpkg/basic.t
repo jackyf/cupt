@@ -8,7 +8,7 @@ my $cupt;
 
 eval get_inc_code('common');
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('bb', 2) . "Depends: dd\n") .
 		entail(compose_installed_record('dd', 6)) ,

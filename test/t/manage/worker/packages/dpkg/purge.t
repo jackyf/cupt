@@ -7,7 +7,7 @@ use warnings;
 my $cupt;
 eval get_inc_code('common');
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aa', 1)) .
 		entail(compose_removed_record('bb')) ,

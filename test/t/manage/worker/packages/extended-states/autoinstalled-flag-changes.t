@@ -20,7 +20,7 @@ sub check_autoflag {
 sub test {
 	my ($command, $package, $expected_autoflag_state) = @_;
 
-	my $cupt = setup_for_worker(
+	my $cupt = setup(
 		'dpkg_status' =>
 			entail(compose_installed_record('aa', 1)) .
 			entail(compose_installed_record('bb', 1)) ,

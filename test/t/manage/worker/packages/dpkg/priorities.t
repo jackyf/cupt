@@ -7,7 +7,7 @@ use warnings;
 my $cupt;
 eval get_inc_code('common');
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aa', 1)) .
 		entail(compose_installed_record('bb', 2)) ,
@@ -20,7 +20,7 @@ test_dpkg_sequence('remove aa --install bb cc # action type priority',
 		['--install', [], ['<cc 4>']],
 		['--remove', [], ['aa']]);
 
-$cupt = setup_for_worker(
+$cupt = setup(
 	'packages' =>
 		entail(compose_package_record('dd', 4)) .
 		entail(compose_package_record('aa', 1)) .

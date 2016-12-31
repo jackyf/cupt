@@ -14,7 +14,7 @@ sub get_many_packages {
 	join('', map(&$get_package, (1..800)));
 }
 
-my $cupt = setup_for_worker(
+my $cupt = setup(
 	'releases' => [{
 		'packages' => get_many_packages(),
 		'deb-caches' => 1,
