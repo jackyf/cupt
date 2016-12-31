@@ -89,17 +89,7 @@ bool shouldDeferTriggers(const Config& config, const Cache& cache)
 	const string& optionName = "cupt::worker::defer-triggers";
 	if (config.getString(optionName) == "auto")
 	{
-		auto dpkgPackage = cache.getBinaryPackage("dpkg");
-		if (!dpkgPackage)
-		{
-			fatal2i("no 'dpkg' binary package available");
-		}
-		auto dpkgInstalledVersion = dpkgPackage->getInstalledVersion();
-		if (!dpkgInstalledVersion)
-		{
-			fatal2i("no installed version for 'dpkg' binary package");
-		}
-		return (compareVersionStrings(dpkgInstalledVersion->versionString, "1.16.1") != -1); // >=
+		return true;
 	}
 	else
 	{
