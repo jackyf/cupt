@@ -23,11 +23,7 @@ sub test {
 	$extra_comment = defined($extra_comment) ? " ($extra_comment)" : "";
 
 	subtest "'$command'$extra_comment" => sub {
-		my $output_normal = stdall("$cupt $command");
-		is($?, 0, 'command succeeded')
-				or diag($output_normal);
-		my $output_shell = $cupt_shell->execute($command);
-		is($output_shell, $output_normal, "comparing output");
+		test_output_identical_with_non_shell($cupt, $cupt_shell, $command);
 	}
 }
 
