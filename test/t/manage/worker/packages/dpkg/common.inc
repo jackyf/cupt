@@ -36,7 +36,7 @@ sub parse_dpkg_commands {
 				next;
 			}
 
-			my $target = (m/^--/ ? \@options : \@packages);
+			my $target = (m/^-/ ? \@options : \@packages);
 			push @$target, $_;
 		}
 
