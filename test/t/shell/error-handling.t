@@ -1,4 +1,4 @@
-use Test::More tests => 4+7;
+use Test::More tests => 4+6;
 
 require(get_rinclude_path('common'));
 
@@ -26,12 +26,8 @@ test('ls --lat');
 
 test('%abc def');
 test('!abc def');
-TODO: {
-	local $TODO = 'fix escaping shell special characters';
-	test('#br');
-	test('dpkg -l | grep geo');
-	test('$abc def');
-	test('-abc def');
-	test('(ls)');
-}
+test('#br');
+test('dpkg -l | grep geo');
+test('$abc def');
+test('(ls)');
 

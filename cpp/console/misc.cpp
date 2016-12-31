@@ -288,25 +288,22 @@ void checkNoExtraArguments(const vector< string >& arguments)
 	}
 }
 
-vector< string > convertLineToShellArguments(const string& line)
+vector<string> convertLineToShellArguments(const string& line)
 {
-	vector< string > arguments;
-
-	// kind of hack to get arguments as it was real shell
-	// if you know easier way, let me know :)
-	string errorString;
-	// 'A' - to not let echo interpret $word as an option
-	string shellCommand = format2("(for word in %s; do echo A$word; done)", line);
-	File pipe(shellCommand, "pr", errorString);
-	if (!errorString.empty())
+	auto normalisedLine = line;
+	for (auto& c: normalisedLine)
 	{
-		fatal2(__("unable to open an internal shell pipe: %s"), errorString);
+		if (c == '\'')
+			c = '\"';
 	}
 
+	std::stringstream lineStream(normalisedLine);
+
+	vector<string> arguments;
 	string argument;
-	while (!pipe.getLine(argument).eof())
+	while (lineStream >> std::quoted(argument))
 	{
-		arguments.push_back(argument.substr(1));
+		arguments.push_back(argument);
 	}
 
 	return arguments;
