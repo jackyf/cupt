@@ -34,10 +34,10 @@ sub test_manage {
 }
 
 TODO: {
-	local $TODO = 'fix help/version in shell';
+	local $TODO = 'fix help usage argv[0] in shell';
 	test('help');
-	test('version');
 }
+test('version');
 
 test('policy');
 test('policysrc');

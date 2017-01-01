@@ -34,6 +34,14 @@ int main(int argc, char* argv[])
 	setlocale(LC_ALL, "");
 	cupt::messageFd = STDERR_FILENO;
 
+	Context context;
+	return mainEx(argc, argv, context);
+}
+
+namespace {
+
+bool showHelpOrOwnVersion(int argc, char* argv[])
+{
 	if (argc > 1)
 	{
 		if (!strcmp(argv[1], "version") || !strcmp(argv[1], "--version") || !strcmp(argv[1], "-v"))
@@ -43,7 +51,7 @@ int main(int argc, char* argv[])
 				warn2(__("the command '%s' doesn't accept arguments"), argv[1]);
 			}
 			showOwnVersion();
-			return 0;
+			return true;
 		}
 		if (!strcmp(argv[1], "help") || !strcmp(argv[1], "--help") || !strcmp(argv[1], "-h"))
 		{
@@ -52,23 +60,27 @@ int main(int argc, char* argv[])
 				warn2(__("the command '%s' doesn't accept arguments"), argv[1]);
 			}
 			showHelp(argv[0]);
-			return 0;
+			return true;
 		}
 	}
 	else
 	{
 		showHelp(argv[0]);
-		return 0;
+		return true;
 	}
 
-	Context context;
-	return mainEx(argc, argv, context);
+	return false;
+}
+
 }
 
 int mainEx(int argc, char* argv[], Context& context)
 {
 	try
 	{
+		if (showHelpOrOwnVersion(argc, argv))
+			return 0;
+
 		auto command = parseCommonOptions(argc, argv, /* in */ *context.getConfig(),
 				/* out */ context.unparsed);
 		context.argc = argc;
