@@ -7,8 +7,7 @@ use warnings;
 sub test {
 	my ($desired, $flag, $state, $error) = @_;
 	
-	my $status_line = "Status: $desired $flag $state";
-	my $inst_record = "Package: pp\n$status_line\nVersion: 1\nArchitecture: all\n";
+	my $inst_record = compose_status_record('pp', "$desired $flag $state", 1);
 	my $cupt = TestCupt::setup('dpkg_status' => $inst_record);
 
 	my $output = stdall("$cupt show pp");
