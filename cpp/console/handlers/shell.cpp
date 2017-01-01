@@ -115,13 +115,13 @@ class Readline
 char* (*Readline::__dl_readline)(const char*) = NULL;
 void (*Readline::__dl_add_history)(const char*) = NULL;
 
-void convertLineToArgcArgv(const string& line, int& argc, char**& argv)
+void convertLineToArgcArgv(const string& cuptCommand, const string& line, int& argc, char**& argv)
 {
 	auto arguments = convertLineToShellArguments(line);
 
 	argc = arguments.size() + 1;
 	argv = new char*[argc];
-	argv[0] = strdup("cupt-shell");
+	argv[0] = strdup(cuptCommand.c_str());
 	for (int i = 1; i < argc; ++i)
 	{
 		argv[i] = strdup(arguments[i-1].c_str());
@@ -151,6 +151,7 @@ int shell(Context& context)
 	cout << __("This is an interactive shell of the cupt package manager.\n");
 
 	const shared_ptr< Config > oldConfig(new Config(*(context.getConfig())));
+	const string cuptCommand = context.argv[0];
 
 	Readline term(/* prompt */ "cupt> ");
 	string line;
@@ -159,7 +160,7 @@ int shell(Context& context)
 		int argc;
 		char** argv;
 
-		convertLineToArgcArgv(line, argc, argv);
+		convertLineToArgcArgv(cuptCommand, line, argc, argv);
 
 		mainEx(argc, argv, context);
 

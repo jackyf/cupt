@@ -33,10 +33,7 @@ sub test_manage {
 	test(@params);
 }
 
-TODO: {
-	local $TODO = 'fix help usage argv[0] in shell';
-	test('help');
-}
+test('help');
 test('version');
 
 test('policy');
