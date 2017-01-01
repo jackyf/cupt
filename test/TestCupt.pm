@@ -37,6 +37,7 @@ our @EXPORT = qw(
 	stdall
 	compose_installed_record
 	compose_removed_record
+	compose_status_record
 	compose_package_record
 	compose_autoinstalled_record
 	compose_version_pin_record
