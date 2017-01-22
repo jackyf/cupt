@@ -1,4 +1,4 @@
-use Test::More tests => 2;
+use Test::More tests => 7;
 
 my %actions = (
 	'installed' => {
@@ -13,6 +13,24 @@ my %actions = (
 	'removed' => {
 		'pre_package' => compose_installed_record('c', 2),
 		'command' => 'remove c',
+	},
+	'purged' => {
+		'pre_package' => compose_installed_record('d', 9),
+		'command' => 'purge d',
+	},
+	'downgraded' => {
+		'pre_package' => compose_installed_record('e', 7),
+		'post_package' => compose_package_record('e', 2),
+		'command' => 'install e=2',
+	},
+	'configured' => {
+		'pre_package' => compose_status_record('f', 'install ok unpacked', 8),
+	},
+	'deconfigured' => {
+		'pre_package' => compose_status_record('h', 'deinstall reinstreq half-installed', 3),
+	},
+	'triggers' => {
+		'pre_package' => compose_status_record('g', 'install ok triggers-pending', 76),
 	},
 );
 
@@ -37,4 +55,9 @@ sub test {
 
 test('installed', 'upgraded');
 test('upgraded', 'removed');
+test('removed', 'purged');
+test('purged', 'downgraded');
+test('downgraded', 'configured');
+test('configured', 'triggers');
+test('triggers', 'deconfigured');
 
