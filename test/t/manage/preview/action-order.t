@@ -30,7 +30,7 @@ sub test {
 	my @commands = map { "--$_" } @{extract_records($first, $second, 'command')};
 	my $combined_command = join(' ', 'install', @commands);
 
-	my $expected_regex = qr/$first.*\n{2,}.*$second/s;
+	my $expected_regex = qr/ $first.*\n{2,}.* $second/s;
 	my $output = get_first_offer("$cupt $combined_command");
 	like($output, $expected_regex, "relative order: $first -> $second");
 }
