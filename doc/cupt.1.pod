@@ -791,6 +791,10 @@ unsatisfy the rest of relation expressions
 
 "install if installed" (see L</iii> subcommand) the rest of packages
 
+=item --reinstall
+
+reinstall the rest of packages
+
 =item --markauto
 
 mark as automatically installed (see L</markauto> subcommand) the rest of packages

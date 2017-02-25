@@ -1,4 +1,4 @@
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 my %actions = (
 	'installed' => {
@@ -32,6 +32,11 @@ my %actions = (
 	'triggers' => {
 		'pre_package' => compose_status_record('g', 'install ok triggers-pending', 76),
 	},
+	'reinstalled' => {
+		'pre_package' => compose_installed_record('h', 2),
+		'post_package' => compose_package_record('h', 2),
+		'command' => 'reinstall h',
+	},
 );
 
 sub extract_records {
@@ -50,9 +55,10 @@ sub test {
 
 	my $expected_regex = qr/ $first.*\n{2,}.* $second/s;
 	my $output = get_first_offer("$cupt $combined_command");
-	like($output, $expected_regex, "relative order: $first -> $second");
+	like($output, $expected_regex, "relative order: $first -> $second ($combined_command)");
 }
 
+test('reinstalled', 'installed');
 test('installed', 'upgraded');
 test('upgraded', 'removed');
 test('removed', 'purged');

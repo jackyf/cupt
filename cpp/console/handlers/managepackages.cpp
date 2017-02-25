@@ -394,6 +394,7 @@ static bool processPositionalOption(ManagePackagesContext& mpc, const string& ar
 	else if (arg == "--markauto") mpc.mode = ManagePackages::Markauto;
 	else if (arg == "--unmarkauto") mpc.mode = ManagePackages::Unmarkauto;
 	else if (arg == "--iii") mpc.mode = ManagePackages::InstallIfInstalled;
+	else if (arg == "--reinstall") mpc.mode = ManagePackages::Reinstall;
 	else if (arg == "--asauto=yes") mpc.autoinstall = ManagePackagesContext::AutoInstall::Yes;
 	else if (arg == "--asauto=no") mpc.autoinstall = ManagePackagesContext::AutoInstall::No;
 	else if (arg == "--asauto=default") mpc.autoinstall = ManagePackagesContext::AutoInstall::Nop;

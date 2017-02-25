@@ -1,6 +1,7 @@
 cupt (2.10.0~) UNRELEASED; urgency=low
 
   * console:
+    - New positional action override option '--reinstall'.
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.
