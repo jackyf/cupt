@@ -1,4 +1,4 @@
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 my %actions = (
 	'installed' => {
@@ -46,6 +46,11 @@ my %actions = (
 		'autodb' => compose_autoinstalled_record('j'),
 		'command' => 'unmarkauto j',
 	},
+	'not preferred' => {
+		'pre_package' => compose_installed_record('k', 1),
+		'post_package' => compose_package_record('k', 4),
+		'command' => 'install --show-not-preferred',
+	}
 );
 
 sub extract_records {
@@ -78,4 +83,5 @@ test('purged', 'downgraded');
 test('downgraded', 'configured');
 test('configured', 'triggers');
 test('triggers', 'deconfigured');
+test('deconfigured', 'not preferred');
 
