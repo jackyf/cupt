@@ -1,4 +1,4 @@
-use Test::More tests => 8;
+use Test::More tests => 10;
 
 my %actions = (
 	'installed' => {
@@ -37,6 +37,15 @@ my %actions = (
 		'post_package' => compose_package_record('h', 2),
 		'command' => 'reinstall h',
 	},
+	'marked as auto' => {
+		'pre_package' => compose_installed_record('i', 1),
+		'command' => 'markauto i --no-auto-remove',
+	},
+	'marked as manual' => {
+		'pre_package' => compose_installed_record('j', 9),
+		'autodb' => compose_autoinstalled_record('j'),
+		'command' => 'unmarkauto j',
+	},
 );
 
 sub extract_records {
@@ -49,6 +58,7 @@ sub test {
 	my $cupt = setup(
 		'dpkg_status' => extract_records($first, $second, 'pre_package'),
 		'packages' => extract_records($first, $second, 'post_package'),
+		'extended_states' => extract_records($first, $second, 'autodb'),
 	);
 	my @commands = map { "--$_" } @{extract_records($first, $second, 'command')};
 	my $combined_command = join(' ', 'install', @commands);
@@ -58,6 +68,8 @@ sub test {
 	like($output, $expected_regex, "relative order: $first -> $second ($combined_command)");
 }
 
+test('marked as auto', 'marked as manual');
+test('marked as manual', 'reinstalled');
 test('reinstalled', 'installed');
 test('installed', 'upgraded');
 test('upgraded', 'removed');
