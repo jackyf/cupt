@@ -1,6 +1,7 @@
 cupt (2.9.10~) UNRELEASED; urgency=medium
 
-  *
+  * lib:
+    - Added missing includes for GCC7. (Closes: #853362)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Sep 2017 16:02:58 +0200
 

@@ -20,6 +20,7 @@
 
 #include <unordered_map>
 #include <list>
+#include <functional>
 
 #include <boost/xpressive/xpressive_fwd.hpp>
 

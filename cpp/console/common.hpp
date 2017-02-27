@@ -23,6 +23,7 @@
 using std::unordered_map;
 #include <list>
 using std::list;
+#include <functional>
 
 #include <cupt/common.hpp>
 #include <cupt/config.hpp>
