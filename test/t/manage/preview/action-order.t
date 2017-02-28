@@ -1,4 +1,4 @@
-use Test::More tests => 11;
+use Test::More tests => 13;
 
 my %actions = (
 	'installed' => {
@@ -50,6 +50,15 @@ my %actions = (
 		'pre_package' => compose_installed_record('k', 1),
 		'post_package' => compose_package_record('k', 4),
 		'command' => 'install --show-not-preferred',
+	},
+	'auto-removed' => {
+		'pre_package' => compose_installed_record('l', 5),
+		'autodb' => compose_autoinstalled_record('l'),
+	},
+	'auto-purged' => {
+		'pre_package' => compose_installed_record('m', 6),
+		'autodb' => compose_autoinstalled_record('m'),
+		'command' => '-o apt::get::purge=yes',
 	}
 );
 
@@ -84,4 +93,6 @@ test('downgraded', 'configured');
 test('configured', 'triggers');
 test('triggers', 'deconfigured');
 test('deconfigured', 'not preferred');
+test('not preferred', 'auto-removed');
+test('not preferred', 'auto-purged');
 
