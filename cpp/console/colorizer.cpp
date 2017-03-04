@@ -68,7 +68,8 @@ string Colorizer::colorize(const string& input, Color color, bool bold) const
 
 	if (__enabled)
 	{
-		return format2("\e[%c;3%cm", bold ? '1' : '0', color) + input + noColor;
+		auto boldPrefix = bold ? "1;" : "";
+		return format2("\e[%s3%cm", boldPrefix, color) + input + noColor;
 	}
 	else
 	{
