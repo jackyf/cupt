@@ -955,15 +955,7 @@ static void printPackageName(const Colorizer& colorizer, const string& packageNa
 		WA::Type actionType, const Resolver::SuggestedPackage& suggestedPackage)
 {
 	bool isAutoInstalled = wasOrWillBePackageAutoInstalled(suggestedPackage);
-
 	cout << colorizeByActionType(colorizer, packageName, actionType, isAutoInstalled);
-	if (actionType == WA::Remove || actionType == WA::Purge)
-	{
-		if (isAutoInstalled && !colorizer.enabled())
-		{
-			cout << "(a)";
-		}
-	}
 }
 
 static string colorizeActionName(const Colorizer& colorizer, const string& actionName, WA::Type actionType)
@@ -1023,14 +1015,31 @@ void addActionToSummary(WA::Type actionType, const string& actionName,
 	*summaryStreamPtr << endl;
 }
 
+struct PackageIndicators
+{
+	bool manuallyInstalled = false;
+	bool autoInstalled = false;
+
+	PackageIndicators(const Config& config, const Colorizer& colorizer)
+	{
+		if (colorizer.enabled())
+			return;
+		const string optionPrefix("cupt::console::actions-preview::package-indicators");
+		manuallyInstalled = config.getBool(optionPrefix + "::manually-installed");
+		autoInstalled = config.getBool(optionPrefix + "::automatically-installed");
+	}
+};
+
 struct PackageChangeInfoFlags
 {
 	bool sizeChange;
 	bool reasons;
 	VersionInfoFlags versionFlags;
+	PackageIndicators packageIndicators;
 
-	PackageChangeInfoFlags(const Config& config, WA::Type actionType)
+	PackageChangeInfoFlags(const Config& config, WA::Type actionType, const Colorizer& colorizer)
 		: versionFlags(config)
+		, packageIndicators(config, colorizer)
 	{
 		sizeChange = (config.getBool("cupt::console::actions-preview::show-size-changes") &&
 				actionType != fakeNotPreferredVersionAction);
@@ -1043,42 +1052,44 @@ struct PackageChangeInfoFlags
 	}
 };
 
+static void printPackageIndicators(const Resolver::SuggestedPackage& suggestedPackage, PackageIndicators indicators)
+{
+	bool isAutoInstalled = wasOrWillBePackageAutoInstalled(suggestedPackage);
+	if (indicators.autoInstalled && isAutoInstalled)
+		cout << "{a}";
+	if (indicators.manuallyInstalled && !isAutoInstalled)
+		cout << "{m}";
+}
+
 void showPackageChanges(const Config& config, const Cache& cache, Colorizer& colorizer, WA::Type actionType,
 		const Resolver::SuggestedPackages& actionSuggestedPackages,
 		const map< string, ssize_t >& unpackedSizesPreview)
 {
-	PackageChangeInfoFlags showFlags(config, actionType);
+	PackageChangeInfoFlags showFlags(config, actionType, colorizer);
 
 	for (const auto& it: actionSuggestedPackages)
 	{
 		const string& packageName = it.first;
-		printPackageName(colorizer, packageName, actionType, it.second);
+		const auto& suggestedPackage = it.second;
 
-		showVersionInfoIfNeeded(cache, packageName, it.second, actionType, showFlags.versionFlags);
+		printPackageName(colorizer, packageName, actionType, suggestedPackage);
+		printPackageIndicators(suggestedPackage, showFlags.packageIndicators);
+
+		showVersionInfoIfNeeded(cache, packageName, suggestedPackage, actionType, showFlags.versionFlags);
 
 		if (showFlags.sizeChange)
-		{
 			showSizeChange(unpackedSizesPreview.find(packageName)->second);
-		}
 
 		if (!showFlags.packagesTakeSameLine())
-		{
-			cout << endl; // put newline
-		}
+			cout << endl;
 		else
-		{
-			cout << ' '; // put a space between package names
-		}
+			cout << ' ';
 
 		if (showFlags.reasons)
-		{
-			showReason(it.second);
-		}
+			showReason(suggestedPackage);
 	}
 	if (showFlags.packagesTakeSameLine())
-	{
 		cout << endl;
-	}
 	cout << endl;
 }
 

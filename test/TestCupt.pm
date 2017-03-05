@@ -735,8 +735,14 @@ sub regex_no_solutions {
 }
 
 sub get_first_offer {
-	my ($command) = @_;
-	return `echo 'q' | $command -s 2>&1`;
+	my ($command, %options) = @_;
+
+	my $args = '';
+	if ($options{'disable-package-indicators'}//1) {
+		$args .= ' -o cupt::console::actions-preview::package-indicators::manually-installed=no';
+	}
+
+	return `echo 'q' | $command $args -s 2>&1`;
 }
 
 sub get_all_offers {
@@ -767,7 +773,7 @@ sub get_empty_version {
 	return "<empty>";
 }
 
-my $offer_version_regex = qr/(?:\(a\))? \[.*? -> (.*?)\]/;
+my $offer_version_regex = qr/(?:{\w})? \[.*? -> (.*?)\]/;
 
 sub get_offered_versions {
 	my ($offer) = @_;

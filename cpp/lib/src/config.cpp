@@ -144,6 +144,8 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::cache::release-file-expiration::ignore", "no" },
 		{ "cupt::console::allow-untrusted", "no" },
 		{ "cupt::console::assume-yes", "no" },
+		{ "cupt::console::actions-preview::package-indicators::manually-installed", "auto"},
+		{ "cupt::console::actions-preview::package-indicators::automatically-installed", "no"},
 		{ "cupt::console::actions-preview::show-archives", "no" },
 		{ "cupt::console::actions-preview::show-codenames", "no" },
 		{ "cupt::console::actions-preview::show-components", "no" },

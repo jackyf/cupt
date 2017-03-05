@@ -2,6 +2,11 @@ cupt (2.10.0~) UNRELEASED; urgency=low
 
   * console:
     - New positional action override option '--reinstall'.
+    - Action preview prompt: removed printing "(a)" suffix for removed/purged
+      automatically installed packages. Instead, introduced all-action
+      package indicators: "{m}" for manually installed packages, "{a}" for
+      automatically installed ones. Those 2 affect only non-color output mode.
+      Only "{m}" is enabled by default.
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.
@@ -17,6 +22,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         was already set via configuration file.
       - New method 'getConfigurationPartPaths'.
       - Enable colored output on terminals by default.
+      - New options in 'cupt::console::actions-preview' family:
+        'package-indicators::manually-installed' and
+        'package-indicators::automatically-installed'.
     - cache:
       - Verifying repository signatures: use APT keyrings directly, now that
         they're finally world-readable.

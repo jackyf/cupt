@@ -275,7 +275,7 @@ plasma-widgets-workspace
 
 The following packages will be removed:
 
-libgsasl7(a) libntlm0(a) msmtp(a) msmtp-mta 
+libgsasl7 libntlm0 msmtp msmtp-mta
 
 Action summary:
   1 manually installed and 3 automatically installed packages will be installed
@@ -291,9 +291,6 @@ the summary of planned changes, the total download amount of packages (83.4MiB),
 the download amount considering the cache of already downloaded archives
 (25.7MiB), an estimate of difference in disk usage after the actions
 (+3512KiB), a user prompt what to do.
-
-For removed and purged packages, a suffix **(a)** is appended to a package name
-if a package was automatically installed.
 
 The following answers to a user prompt are available:
 
@@ -1123,7 +1120,7 @@ choice **a**. Example:
  
  The following packages will be removed:
  
- libeggdbus-1-0(a) librasqal2(a)
+ libeggdbus-1-0 librasqal2
  
  Need to get 62.3MiB/62.3MiB of archives. After unpacking 105MiB will be used.
  Do you want to continue? [y/N/q/a/?] a
@@ -1148,7 +1145,7 @@ choice **a**. Example:
  
  The following packages will be removed:
  
- librasqal2(a)
+ librasqal2
  
  Leave the following dependencies unresolved:
  

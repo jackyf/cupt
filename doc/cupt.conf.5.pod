@@ -154,6 +154,16 @@ boolean, don't treat using untrusted packages as dangerous action
 
 boolean, see L<cupt(1)> L<--assume-yes|/--assume-yes>
 
+=item cupt::console::actions-preview::package-indicators::manually-installed
+
+boolean, whether to print C<{m}> prefix for manually installed packages
+in non-color mode. Enabled by default.
+
+=item cupt::console::actions-preview::package-indicators::automatically-installed
+
+boolean, whether to print C<{a}> prefix for automatically installed packages
+in non-color mode. Disabled by default.
+
 =item cupt::console::actions-preview::show-not-preferred
 
 string, determines whether packages which will have a not preferred version
