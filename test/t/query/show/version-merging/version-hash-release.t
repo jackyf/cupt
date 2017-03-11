@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 11;
-
-use strict;
-use warnings;
 
 sub setup_cupt {
 	my $input = shift;
@@ -13,16 +9,16 @@ sub setup_cupt {
 	foreach my $record (@$input) {
 		my $release = $record->[2];
 		if ($release ne $current_release) {
-			push @packages, { 'archive' => $release, 'hostname' => $release, 'content' => '' };
+			push @packages, { 'archive' => $release, 'hostname' => $release, 'packages' => [] };
 			$current_release = $release;
 		}
 
 		my $version = $record->[0];
 		my $hash = $record->[1];
-		$packages[-1]->{'content'} .= entail(compose_package_record('pkg', $version, 'sha' => $hash));
+		push @{$packages[-1]->{'packages'}}, compose_package_record('pkg', $version, 'sha' => $hash);
 	}
 
-	return TestCupt::setup('packages2' => \@packages);
+	return TestCupt::setup('releases' => \@packages);
 }
 
 sub extract_version_and_uri {
