@@ -15,16 +15,16 @@ sub generate_space {
 	my ($count, $installed_density, $experimental_density, $conflicts_density) = @_;
 	my %result;
 
-	my $installed = '';
-	my $normal = '';
-	my $experimental = '';
+	my @installed;
+	my @normal;
+	my @experimental;
 	my %expected;
 
 	my %by_type_indexes;
 
 	my @packages = qw(na1 na2);
 	foreach my $package (@packages) {
-		$normal .= entail(compose_package_record($package, 1));
+		push @normal, compose_package_record($package, 1);
 	}
 	foreach my $index (0..$count-1) {
 		my $package = sprintf("p%02d", $index);
@@ -46,9 +46,9 @@ sub generate_space {
 		}
 
 		if ($is_installed) {
-			$installed .= entail(compose_installed_record($package, 1));
+			push @installed, compose_installed_record($package, 1);
 		}
-		$normal .= entail(compose_package_record($package, 2));
+		push @normal, compose_package_record($package, 2);
 		if ($is_experimental) {
 			my $record = compose_package_record($package, 3);
 			$record .= "Recommends: " . $packages[-1] . ', ' . $packages[-2] . "\n";
@@ -61,16 +61,16 @@ sub generate_space {
 				$expected{$package} = 3;
 			}
 
-			$experimental .= entail($record);
+			push @experimental, $record;
 		}
 
 		push @packages, $package;
 	}
 
-	$result{'dpkg_status'} = $installed;
-	$result{'packages2'} = [
-		{ 'archive' => 'unstable', 'content' => $normal },
-		{ 'archive' => 'experimental', 'content' => $experimental },
+	$result{'dpkg_status'} = \@installed;
+	$result{'releases'} = [
+		{ 'archive' => 'unstable', 'packages' => \@normal },
+		{ 'archive' => 'experimental', 'packages' => \@experimental },
 	];
 	$result{'expected'} = \%expected;
 
