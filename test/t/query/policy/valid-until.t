@@ -1,29 +1,25 @@
-use TestCupt;
 use Test::More tests => 4;
-
-use strict;
-use warnings;
 
 my $past_date = 'Mon, 07 Oct 2013 14:44:53 UTC';
 my $corrupted_date = '#%(&Y(&9';
 
 my $cupt = TestCupt::setup(
-	'packages2' =>
+	'releases' =>
 		[
 			{
 				'archive' => 'aaa',
 				'valid-until' => 'Tue, 01 Jan 2030 00:00:00 UTC',
-				'content' => '',
+				'packages' => [],
 			},
 			{
 				'archive' => 'bbb',
 				'valid-until' => $past_date,
-				'content' => '',
+				'packages' => [],
 			},
 			{
 				'archive' => 'ccc',
 				'valid-until' => $corrupted_date,
-				'content' => '',
+				'packages' => [],
 			},
 		]
 );
