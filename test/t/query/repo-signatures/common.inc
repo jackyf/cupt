@@ -1,4 +1,3 @@
-
 my $apt_keyring_dir = 'etc/apt/trusted.gpg.d/';
 my $apt_keyring_file = 'etc/apt/trusted.gpg';
 
@@ -33,9 +32,9 @@ sub get_output {
 	$sign_variants //= ['orig','detached'];
 
 	my $cupt = setup(
-		'packages2' => [
+		'releases' => [
 			{
-				'content' => entail(compose_package_record('p', 1)),
+				'packages' => [ compose_package_record('p', 1) ],
 				'trusted' => 'check',
 				'hooks' => {
 					'sign' => {
