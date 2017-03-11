@@ -1,20 +1,17 @@
-use TestCupt;
 use Test::More tests => 4;
-
-use strict;
-use warnings;
 
 my $cupt;
 
 sub lsetup {
 	my ($latest_versions_available, $archive) = @_;
 
-	my $packages = '';
+	my $packages = [];
 	if ($latest_versions_available) {
-		$packages =
-				entail(compose_package_record('eip', '0')) .
-				entail(compose_package_record('mip', '0')) .
-				entail(compose_package_record('aip', '0'));
+		$packages = [
+			compose_package_record('eip', '0'),
+			compose_package_record('mip', '0'),
+			compose_package_record('aip', '0'),
+		];
 	}
 
 	$cupt = TestCupt::setup(
@@ -25,13 +22,12 @@ sub lsetup {
 		'extended_states' =>
 			entail(compose_autoinstalled_record('aip')) .
 			entail(compose_autoinstalled_record('eip')),
-		'packages2' =>
-			[
-				{
-					'archive' => $archive,
-					'content' => $packages,
-				},
-			],
+		'releases' => [
+			{
+				'archive' => $archive,
+				'packages' => $packages,
+			},
+		],
 	);
 }
 
