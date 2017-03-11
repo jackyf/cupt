@@ -1,35 +1,32 @@
-use TestCupt;
 use Test::More tests => 48;
-
-use strict;
-use warnings;
 
 sub generate_lockstep_depender {
 	my ($number, $version, $generator) = @_;
-	return entail($generator->("p$number", $version) . "Depends: ip (= $version)\n");
+	return $generator->("p$number", $version) . "Depends: ip (= $version)\n";
 }
 
 sub generate_n_lockstep_dependers {
 	my ($count, $version, $generator) = @_;
-	return join('', map { generate_lockstep_depender($_, $version, $generator) } (1..$count));
+	return map { generate_lockstep_depender($_, $version, $generator) } (1..$count);
 }
 
 sub setup_cupt {
 	my ($high_pin, $lockstep_count) = @_;
 
 	return TestCupt::setup(
-		'dpkg_status' =>
-			entail(compose_installed_record('ip', '1.6')) .
+		'dpkg_status' => [
+			compose_installed_record('ip', '1.6'),
 			generate_n_lockstep_dependers($lockstep_count, '1.6', \&compose_installed_record),
-		'packages2' =>
-			[
-				{
-					'archive' => 'tf',
-					'content' =>
-						entail(compose_package_record('ip', '1.8')) .
-						generate_n_lockstep_dependers($lockstep_count, '1.8', \&compose_package_record),
-				},
-			],
+		],
+		'releases' => [
+			{
+				'archive' => 'tf',
+				'packages' => [
+					compose_package_record('ip', '1.8'),
+					generate_n_lockstep_dependers($lockstep_count, '1.8', \&compose_package_record),
+				],
+			},
+		],
 		'preferences' =>
 			compose_version_pin_record('ip', '1.6*', $high_pin),
 	);
