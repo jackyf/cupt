@@ -1,34 +1,34 @@
-use TestCupt;
 use Test::More tests => 9;
 
-use strict;
-use warnings;
-
 my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('e', '1')) .
-		entail(compose_installed_record('y', '1')) .
-		entail(compose_installed_record('obs', '1')),
-	'packages' =>
-		entail(compose_package_record('e', '1')) .
-		entail(compose_package_record('rz', '30') . "Recommends: z\n") .
-		entail(compose_package_record('z', '3')) ,
-	'packages2' =>
-		[
-			{
-				'archive' => 'x1y2',
-				'content' =>
-					entail(compose_package_record('y', '1')) .
-					entail(compose_package_record('ne', '2') . "Breaks: e\n") .
-					entail(compose_package_record('ny', '2') . "Breaks: y\n") .
-					entail(compose_package_record('nobs', '2') . "Breaks: obs\n"),
-			},
-		],
-	'extended_states' =>
-		entail(compose_autoinstalled_record('e')) .
-		entail(compose_autoinstalled_record('y')) .
-		entail(compose_autoinstalled_record('obs')),
-				
+	'dpkg_status' => [
+		compose_installed_record('e', '1'),
+		compose_installed_record('y', '1'),
+		compose_installed_record('obs', '1'),
+	],
+	'releases' => [
+		{
+			'packages' => [
+				compose_package_record('e', '1'),
+				compose_package_record('rz', '30') . "Recommends: z\n",
+				compose_package_record('z', '3'),
+			],
+		},
+		{
+			'archive' => 'x1y2',
+			'packages' => [
+				compose_package_record('y', '1'),
+				compose_package_record('ne', '2') . "Breaks: e\n",
+				compose_package_record('ny', '2') . "Breaks: y\n",
+				compose_package_record('nobs', '2') . "Breaks: obs\n",
+			],
+		},
+	],
+	'extended_states' => [
+		compose_autoinstalled_record('e'),
+		compose_autoinstalled_record('y'),
+		compose_autoinstalled_record('obs'),
+	],
 );
 
 my $cupt_options = <<'END';
