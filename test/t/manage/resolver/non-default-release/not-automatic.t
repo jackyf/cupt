@@ -1,11 +1,7 @@
-use TestCupt;
 use Test::More tests => 6;
 
-use strict;
-use warnings;
-
 sub generate_100_installed_packages {
-	return join('', map { entail(compose_installed_record("p$_", 1)) } (1..100));
+	return map { compose_installed_record("p$_", 1) } (1..100);
 }
 
 sub generate_n_package_list {
@@ -14,23 +10,21 @@ sub generate_n_package_list {
 }
 
 sub setup_cupt {
-	return TestCupt::setup(
-		'dpkg_status' =>
-			generate_100_installed_packages(),
-		'packages2' =>
-			[
-				{
-					'archive' => 'eexxpp',
-					'not-automatic' => 1,
-					'content' =>
-						entail(compose_package_record('aa', '66')),
-				},
-				{
-					'archive' => 'normal',
-					'content' =>
-						entail(compose_package_record('aa', '5') . 'Breaks: ' . generate_n_package_list(@_) . "\n")
-				},
-			],
+	return setup(
+		'dpkg_status' => [ generate_100_installed_packages() ],
+		'releases' => [
+			{
+				'archive' => 'eexxpp',
+				'not-automatic' => 1,
+				'packages' => [ compose_package_record('aa', '66') ],
+			},
+			{
+				'archive' => 'normal',
+				'packages' => [
+					compose_package_record('aa', '5') . 'Breaks: ' . generate_n_package_list(@_) . "\n",
+				],
+			},
+		],
 	);
 }
 
