@@ -1,43 +1,18 @@
-use TestCupt;
 use Test::More tests => 19;
-
-use strict;
-use warnings;
-
-my @many_package_list;
-my $many_package_entries;
-
-sub generate_many_packages {
-	my ($count) = @_;
-
-	@many_package_list = ();
-	$many_package_entries = '';
-
-	for my $index (1..$count) {
-		my $name = "p$index";
-
-		push @many_package_list, $name;
-
-		$many_package_entries .= entail(compose_package_record($name, '0'));
-	}
-}
 
 sub test {
 	my ($count, $command_priority, $release_is_default, $expected_result) = @_;
 
-	generate_many_packages($count);
+	my @many_package_list = map { "p$_" } (1..$count);
 
 	my $archive = $release_is_default ? undef : 'other';
-	my $cupt = TestCupt::setup(
-		'packages2' =>
-		[
-			{
-				'archive' => $archive,
-				'content' => entail(compose_package_record('big', '9000') . "Depends: " . join(',', @many_package_list) . "\n") .
-						$many_package_entries,
-			},
+	my $cupt = setup('releases' => [{
+		'archive' => $archive,
+		'packages' => [
+			compose_package_record('big', '9000') . "Depends: " . join(',', @many_package_list) . "\n",
+			(map { compose_package_record($_, 0) } @many_package_list)
 		],
-	);
+	}]);
 
 	my $expected_version = $expected_result ? '9000' : get_unchanged_version();
 
