@@ -1,24 +1,21 @@
-use TestCupt;
 use Test::More tests => 7;
 
-use strict;
-use warnings;
-
-my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('p', '5')) .
-		entail(compose_installed_record('a', '1') . "Essential: yes\n") .
-		entail(compose_installed_record('h', '3', 'on-hold'=>1)),
-	'packages2' =>
-		[
-			{
-				'trusted' => 0,
-				'content' =>
-					entail(compose_package_record('b', '2')) .
-					entail(compose_package_record('h', '3')) .
-					entail(compose_package_record('h', '4')),
-			},
-		],
+my $cupt = setup(
+	'dpkg_status' => [
+		compose_installed_record('p', '5'),
+		compose_installed_record('a', '1') . "Essential: yes\n",
+		compose_installed_record('h', '3', 'on-hold'=>1),
+	],
+	'releases' => [
+		{
+			'trusted' => 0,
+			'packages' => [
+				compose_package_record('b', '2'),
+				compose_package_record('h', '3'),
+				compose_package_record('h', '4'),
+			],
+		},
+	],
 );
 
 my $remove_of_essential_warning_regex = qr/warning.*essential.*remov/i;
