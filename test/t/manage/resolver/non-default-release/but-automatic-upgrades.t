@@ -1,45 +1,38 @@
-use TestCupt;
 use Test::More tests => 7;
-
-use strict;
-use warnings;
 
 sub setup_cupt {
 	my ($installed_version) = @_;
 
 	my $installed = defined $installed_version ?
-			entail(compose_installed_record('aa', $installed_version)) :
-			'';
+			[ compose_installed_record('aa', $installed_version) ] : [];
 
-	return TestCupt::setup(
-		'dpkg_status' =>
-			$installed,
-		'packages2' =>
-			[
-				{
-					'archive' => 'stable',
-					'content' =>
-						entail(compose_package_record('aa', '1.0')) .
-						entail(compose_package_record('uu', '0')),
-				},
-				{
-					'archive' => 'stable-backports',
-					'not-automatic' => 1,
-					'but-automatic-upgrades' => 1,
-					'content' => entail(compose_package_record('aa', '1.2')),
-				},
-				{
-					'archive' => 'unstable',
-					'content' => entail(compose_package_record('newp', 4) . "Depends: aa (>= 1.1) | uu\n"),
-				},
-				{
-					'archive' => 'experimental',
-					'not-automatic' => 1,
-					'content' => entail(compose_package_record('aa', '2.0')),
-				},
-			],
-		'preferences' =>
-			compose_version_pin_record('uu', '*', 300),
+	return setup(
+		'dpkg_status' => $installed,
+		'releases' => [
+			{
+				'archive' => 'stable',
+				'packages' => [
+					compose_package_record('aa', '1.0'),
+					compose_package_record('uu', '0'),
+				],
+			},
+			{
+				'archive' => 'stable-backports',
+				'not-automatic' => 1,
+				'but-automatic-upgrades' => 1,
+				'packages' => [ compose_package_record('aa', '1.2') ],
+			},
+			{
+				'archive' => 'unstable',
+				'packages' => [ compose_package_record('newp', 4) . "Depends: aa (>= 1.1) | uu\n" ],
+			},
+			{
+				'archive' => 'experimental',
+				'not-automatic' => 1,
+				'packages' => [ compose_package_record('aa', '2.0') ],
+			},
+		],
+		'preferences' => compose_version_pin_record('uu', '*', 300),
 	);
 }
 
