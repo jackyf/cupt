@@ -15,10 +15,11 @@ sub test_uris_for_bbb_and_ccc {
 	my (%p) = @_;
 
 	my $cupt = setup(
-		'dpkg_status' =>
-			entail(compose_installed_record('aaa', 1)) .
-			entail(compose_installed_record('bbb', 2)),
-		'packages2' => $p{'packages2'},
+		'dpkg_status' => [
+			compose_installed_record('aaa', 1) ,
+			compose_installed_record('bbb', 2) ,
+		],
+		'releases' => $p{'releases'},
 		'debdelta_conf' => $p{'debdelta_conf'},
 		'debpatch' => $p{'debpatch'},
 	);

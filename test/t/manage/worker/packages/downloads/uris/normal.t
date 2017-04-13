@@ -1,18 +1,15 @@
-use TestCupt;
 use Test::More tests => 1;
-
-use strict;
-use warnings;
 
 require(get_rinclude_path('common'));
 
 test_uris_for_bbb_and_ccc(
 	'comment' => 'planned downloads',
-	'packages2' => [
+	'releases' => [
 		{
-			'content' =>
-				entail(compose_package_record('bbb', 3) . "Filename: xxx/yyy.deb\n") .
-				entail(compose_package_record('ccc', 4) . "Filename: pool/aux/c/ccc/ccc_4_testarch.deb\n"),
+			'packages' => [
+				compose_package_record('bbb', 3) . "Filename: xxx/yyy.deb\n" ,
+				compose_package_record('ccc', 4) . "Filename: pool/aux/c/ccc/ccc_4_testarch.deb\n" ,
+			],
 			'scheme' => 'http',
 			'hostname' => 'ftp.fi.debian.org/debian',
 		},

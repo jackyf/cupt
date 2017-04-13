@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 25;
-
-use strict;
-use warnings;
 
 require(get_rinclude_path('../common'));
 
@@ -14,14 +10,13 @@ my $standard_uri_prefix = 'debs.net/xyz';
 my $uri_file_dir = 'qpr';
 my $uri_file_path = "$uri_file_dir/im.deb";
 
-sub generate_packages2 {
+sub generate_releases {
 	my ($package_sources) = @_;
 
 	my $generate_from_one_source = sub {
 		my $source = $_;
-
 		return {
-			'content' => entail(compose_package_record($package, $new_version) . "Filename: $uri_file_path\n"),
+			'packages' => [ compose_package_record($package, $new_version) . "Filename: $uri_file_path\n" ],
 			'scheme' => $standard_scheme,
 			'hostname' => $standard_uri_prefix,
 			'archive' => ($source->{'archive'} // 'somearchive'),
@@ -55,7 +50,7 @@ sub test {
 		'debpatch' => '',
 		'dpkg_status' =>
 			entail(compose_installed_record($package, $old_version)),
-		'packages2' => generate_packages2($package_sources),
+		'releases' => generate_releases($package_sources),
 	);
 
 	my $expected_uri = generate_expected_uri($expected_debdelta_variants);

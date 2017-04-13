@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 4;
-
-use strict;
-use warnings;
 
 require(get_rinclude_path('../common'));
 
@@ -20,12 +16,13 @@ sub test {
 	my %parameters = (
 		'debdelta_conf' => $debdelta_conf,
 		'debpatch' => ($debpatch_present ? '' : undef),
-		'packages2' => [
+		'releases' => [
 			{
-				'content' =>
-					entail(compose_package_record('bbb', $version_of_bbb, 'architecture'=>$arch_of_bbb) . "Filename: pool/b/bbb5.deb\n") .
-					entail(compose_package_record('ccc', 4) . "Filename: pool/c/ccc4.deb\n") .
-					entail(compose_package_record('eee', 5)) ,
+				'packages' => [
+					compose_package_record('bbb', $version_of_bbb, 'architecture'=>$arch_of_bbb) . "Filename: pool/b/bbb5.deb\n" ,
+					compose_package_record('ccc', 4) . "Filename: pool/c/ccc4.deb\n" ,
+					compose_package_record('eee', 5) ,
+				],
 				'scheme' => 'https',
 				'hostname' => 'debs.net',
 			},
