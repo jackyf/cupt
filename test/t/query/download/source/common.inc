@@ -58,11 +58,11 @@ sub prepare {
 	my $sp = shift;
 
 	my $cupt = setup(
-		'sources2' => [
+		'releases' => [
 			{
 				'scheme' => 'copy',
 				'hostname' => "./$repo_suffix",
-				'content' => entail(compose_source_record($sp->{'package'}, $sp->{'version'}, %$sp)),
+				'sources' => [ compose_source_record($sp->{'package'}, $sp->{'version'}, %$sp) ],
 			},
 		],
 	);
