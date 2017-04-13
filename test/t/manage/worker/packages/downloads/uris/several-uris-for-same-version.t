@@ -1,29 +1,27 @@
-use TestCupt;
 use Test::More tests => 3;
-
-use strict;
-use warnings;
 
 require(get_rinclude_path('common'));
 
 my $cupt = setup(
-	'packages2' => [
+	'releases' => [
 		{
-			'content' =>
-				entail(compose_package_record('lll', 0) . "Filename: pool/0.deb\n") .
-				entail(compose_package_record('mmm', 3) . "Filename: pool/1.deb\n") ,
+			'packages' => [
+				compose_package_record('lll', 0) . "Filename: pool/0.deb\n" ,
+				compose_package_record('mmm', 3) . "Filename: pool/1.deb\n" ,
+			],
 			'scheme' => 'https',
 			'hostname' => 'qq.uu',
 		},
 		{
-			'content' =>
-				entail(compose_package_record('lll', 0) . "Filename: pool/0.deb\n") .
-				entail(compose_package_record('mmm', 3) . "Filename: pool/2.deb\n") ,
+			'packages' => [
+				compose_package_record('lll', 0) . "Filename: pool/0.deb\n" ,
+				compose_package_record('mmm', 3) . "Filename: pool/2.deb\n" ,
+			],
 			'scheme' => 'ftp',
 			'hostname' => 'ftp.ret',
 		},
 		{
-			'content' => entail(compose_package_record('mmm', 3, 'sha' => 'fed') . "Filename: pool/3.deb\n"),
+			'packages' => [ compose_package_record('mmm', 3, 'sha' => 'fed') . "Filename: pool/3.deb\n" ],
 			'scheme' => 'http',
 			'hostname' => 'blabla.uu',
 		}
