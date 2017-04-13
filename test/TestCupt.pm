@@ -81,7 +81,7 @@ sub get_inc_path {
 		$test_module_dir = File::Spec->catdir(@parts);
 	}
 
-	my $file = "$test_dir/$test_module_dir/$includee.inc";
+	my $file = "$test_dir/$test_module_dir/$includee.pl";
 	return $file;
 }
 
@@ -97,7 +97,7 @@ sub get_rinclude_path {
 	if (! File::Spec->file_name_is_absolute($from_dir)) {
 		$from_dir = "$start_dir/$from_dir";
 	}
-	return "$from_dir/$includee.inc";
+	return "$from_dir/$includee.pl";
 }
 
 sub get_extended_states_path {
