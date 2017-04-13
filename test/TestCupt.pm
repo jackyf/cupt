@@ -195,21 +195,9 @@ sub convert_v1_to_releases {
 	}
 }
 
-sub convert_v2_to_releases {
-	my ($options, $type) = @_;
-
-	my $entries = $options->{"${type}2"};
-	foreach my $entry (@$entries) {
-		$entry->{$type} = $entry->{content};
-		delete $entry->{content};
-	}
-	return @$entries;
-}
-
 sub convert_older_option_structures_to_releases {
 	my ($options, $type) = @_;
-	return (convert_v1_to_releases($options, $type),
-			convert_v2_to_releases($options, $type));
+	return convert_v1_to_releases($options, $type);
 }
 
 sub unify_packages_and_sources_option {
