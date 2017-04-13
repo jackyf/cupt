@@ -1,12 +1,8 @@
-use TestCupt;
 use Test::More tests => 14*3;
-
-use strict;
-use warnings;
 
 eval get_inc_code('../common');
 
-my $cupt = TestCupt::setup();
+my $cupt = setup();
 
 sub test_group {
 	my ($template_option) = @_;
