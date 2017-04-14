@@ -7,7 +7,7 @@ use warnings;
 my $cupt;
 
 eval get_inc_code('common');
-eval get_inc_code('setup-from-links');
+require(get_rinclude_path('setup-from-links'));
 
 sub build_up_setup_data {
 	my ($package, $level) = @_;
@@ -31,7 +31,7 @@ sub setup_cupt {
 	my $level = shift;
 
 	my @links = build_up_setup_data('zz', $level);
-	setup_cupt_from_links(\@links);
+	return setup_cupt_from_links(\@links);
 }
 
 sub test {
