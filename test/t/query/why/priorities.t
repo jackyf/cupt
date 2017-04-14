@@ -1,15 +1,13 @@
 use Test::More tests => 22;
 
-my $cupt;
-
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 require(get_rinclude_path('setup-from-links'));
 
 sub test {
 	my ($dependency_graph, $expected_chain_head) = @_;
 
 	my $package = 'xxx';
-	$cupt = setup_cupt_from_links($dependency_graph);
+	my $cupt = setup_cupt_from_links($dependency_graph);
 
 	my $options = '-o cupt::resolver::keep-suggests=yes';
 
