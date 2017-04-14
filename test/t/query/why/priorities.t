@@ -3,7 +3,7 @@ use Test::More tests => 22;
 my $cupt;
 
 eval get_inc_code('common');
-eval get_inc_code('setup-from-links');
+require(get_rinclude_path('setup-from-links'));
 
 sub test {
 	my ($dependency_graph, $expected_chain_head) = @_;
