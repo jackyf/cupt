@@ -1,5 +1,7 @@
 use Test::More tests => 3;
 
+require(get_rinclude_path('common'));
+
 my $cupt = setup(
 	'dpkg_status' => [
 		compose_installed_record('aa', 1) . "Depends: bb\n" ,
@@ -13,8 +15,6 @@ my $cupt = setup(
 		compose_autoinstalled_record('xx') ,
 	],
 );
-
-eval get_inc_code('common');
 
 sub test {
 	my ($package, $expected_result) = @_;
