@@ -15,7 +15,7 @@ sub test {
 
 	my $graph_comment = join(", ", @$dependency_graph);
 	my $comment = "($graph_comment), $package --> $expected_chain_head";
-	test_why_regex($package, $options, qr/^$expected_chain_head /, $comment);
+	test_why_regex($cupt, $package, $options, qr/^$expected_chain_head /, $comment);
 }
 
 test(['aa D xxx', 'bb R xxx'] => 'aa');

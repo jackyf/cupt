@@ -32,7 +32,7 @@ sub test {
 		$options .= '--installed-only';
 	}
 
-	test_why("$from xxx", $options, $expected_result, "from: [$from], options: [$options]");
+	test_why($cupt, "$from xxx", $options, $expected_result, "from: [$from], options: [$options]");
 }
 
 test('aa' => "aa 10: Recommends: xxx\n");

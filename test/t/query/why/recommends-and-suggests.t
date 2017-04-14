@@ -21,7 +21,7 @@ sub test {
 	my $options = "-o cupt::resolver::keep-recommends=$recommends_is_on " .
 			"-o cupt::resolver::keep-suggests=$suggests_is_on";
 
-	test_why('zz', $options, $expected_output, "recommends: $recommends_is_on, suggests: $suggests_is_on");
+	test_why($cupt, 'zz', $options, $expected_output, "recommends: $recommends_is_on, suggests: $suggests_is_on");
 }
 
 test(0, 0, '');

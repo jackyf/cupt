@@ -21,7 +21,7 @@ eval get_inc_code('common');
 
 sub test {
 	my ($package, $expected_result) = @_;
-	test_why($package, '', $expected_result, $package);
+	test_why($cupt, $package, '', $expected_result, $package);
 }
 
 test('bb', "aa 1: Depends: bb\n");

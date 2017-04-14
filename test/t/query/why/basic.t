@@ -27,7 +27,7 @@ eval get_inc_code('common');
 sub test {
 	my ($package, $expected_output) = @_;
 
-	test_why($package, '', $expected_output, ($package || '<no arguments>'));
+	test_why($cupt, $package, '', $expected_output, ($package || '<no arguments>'));
 }
 
 test('aa' => '');

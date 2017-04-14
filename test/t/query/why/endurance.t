@@ -35,7 +35,7 @@ sub test {
 	$cupt = setup_cupt($level);
 
 	my $last_package = 'zz' . ('1' x $level);
-	test_why_regex($last_package, '', qr/^zz /, "level $level");
+	test_why_regex($cupt, $last_package, '', qr/^zz /, "level $level");
 }
 
 foreach (1..9) {
