@@ -41,6 +41,6 @@ sub setup_cupt_from_links {
 
 	my $extended_states = join('', map { entail(compose_autoinstalled_record($_)) } keys %autoflags);
 
-	$cupt = TestCupt::setup('dpkg_status' => $installed_packages, 'extended_states' => $extended_states);
+	return TestCupt::setup('dpkg_status' => $installed_packages, 'extended_states' => $extended_states);
 }
 
