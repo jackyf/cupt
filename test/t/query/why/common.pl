@@ -36,3 +36,5 @@ sub test_why_regex {
 	test_why_raw($cupt, $package, $options, $main_check, $description);
 }
 
+1;
+
