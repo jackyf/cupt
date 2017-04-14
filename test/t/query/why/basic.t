@@ -1,25 +1,23 @@
-use TestCupt;
 use Test::More tests => 8;
 
-use strict;
-use warnings;
-
-my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aa', 0) . "Depends: xx, yy (>> 1), pp | qq\nPre-Depends: rr\n") .
-		entail(compose_installed_record('xx', 1) . "Depends: zz (<= 4)\n") .
-		entail(compose_installed_record('yy', 2)) .
-		entail(compose_installed_record('zz', 3)) .
-		entail(compose_installed_record('pp', 4)) .
-		entail(compose_installed_record('qq', 5)) .
-		entail(compose_installed_record('rr', 6)) ,
-	'extended_states' =>
-		entail(compose_autoinstalled_record('xx')) .
-		entail(compose_autoinstalled_record('yy')) .
-		entail(compose_autoinstalled_record('zz')) .
-		entail(compose_autoinstalled_record('pp')) .
-		entail(compose_autoinstalled_record('qq')) .
-		entail(compose_autoinstalled_record('rr')) ,
+my $cupt = setup(
+	'dpkg_status' => [
+		compose_installed_record('aa', 0) . "Depends: xx, yy (>> 1), pp | qq\nPre-Depends: rr\n" ,
+		compose_installed_record('xx', 1) . "Depends: zz (<= 4)\n" ,
+		compose_installed_record('yy', 2) ,
+		compose_installed_record('zz', 3) ,
+		compose_installed_record('pp', 4) ,
+		compose_installed_record('qq', 5) ,
+		compose_installed_record('rr', 6) ,
+	],
+	'extended_states' => [
+		compose_autoinstalled_record('xx') ,
+		compose_autoinstalled_record('yy') ,
+		compose_autoinstalled_record('zz') ,
+		compose_autoinstalled_record('pp') ,
+		compose_autoinstalled_record('qq') ,
+		compose_autoinstalled_record('rr') ,
+	],
 );
 
 eval get_inc_code('common');
