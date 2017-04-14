@@ -1,5 +1,7 @@
 use Test::More tests => 13;
 
+require(get_rinclude_path('common'));
+
 my $cupt = setup(
 	'dpkg_status' => [
 		compose_installed_record('aa', 7) ,
@@ -16,8 +18,6 @@ my $cupt = setup(
 	],
 	'extended_states' => [ compose_autoinstalled_record('xxx') ],
 );
-
-eval get_inc_code('common');
 
 sub test {
 	my ($from, $expected_result, $installed_only) = @_;
