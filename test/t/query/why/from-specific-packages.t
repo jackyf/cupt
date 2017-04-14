@@ -1,23 +1,20 @@
-use TestCupt;
 use Test::More tests => 13;
 
-use strict;
-use warnings;
-
-my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aa', 7)) .
-		entail(compose_installed_record('bb', 8)) .
-		entail(compose_installed_record('mm', 6) . "Recommends: xxx\n") .
-		entail(compose_installed_record('xxx', 15)) ,
-	'packages' =>
-		entail(compose_package_record('aa', 10) . "Recommends: xxx\n") .
-		entail(compose_package_record('bb', 11) . "Depends: xxx\n") .
-		entail(compose_package_record('bb', 12) . "Depends: xxx (>= 14)\n") .
-		entail(compose_package_record('bb', 13) . "Depends: xxx (>= 16)\n") .
-		entail(compose_package_record('cc', 14)) ,
-	'extended_states' =>
-		entail(compose_autoinstalled_record('xxx')),
+my $cupt = setup(
+	'dpkg_status' => [
+		compose_installed_record('aa', 7) ,
+		compose_installed_record('bb', 8) ,
+		compose_installed_record('mm', 6) . "Recommends: xxx\n" ,
+		compose_installed_record('xxx', 15) ,
+	],
+	'packages' => [
+		compose_package_record('aa', 10) . "Recommends: xxx\n" ,
+		compose_package_record('bb', 11) . "Depends: xxx\n" ,
+		compose_package_record('bb', 12) . "Depends: xxx (>= 14)\n" ,
+		compose_package_record('bb', 13) . "Depends: xxx (>= 16)\n" ,
+		compose_package_record('cc', 14) ,
+	],
+	'extended_states' => [ compose_autoinstalled_record('xxx') ],
 );
 
 eval get_inc_code('common');
