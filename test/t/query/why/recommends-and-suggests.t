@@ -4,6 +4,8 @@ use Test::More tests => 4;
 use strict;
 use warnings;
 
+require(get_rinclude_path('common'));
+
 my $cupt = TestCupt::setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aa', 1) . "Recommends: zz\n") .
@@ -12,8 +14,6 @@ my $cupt = TestCupt::setup(
 	'extended_states' =>
 		entail(compose_autoinstalled_record('zz')),
 );
-
-eval get_inc_code('common');
 
 sub test {
 	my ($recommends_is_on, $suggests_is_on, $expected_output) = @_;
