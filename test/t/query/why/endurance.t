@@ -1,8 +1,6 @@
 use Test::More tests => 9;
 
-my $cupt;
-
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 require(get_rinclude_path('setup-from-links'));
 
 sub build_up_setup_data {
@@ -32,7 +30,7 @@ sub setup_cupt {
 
 sub test {
 	my $level = shift;
-	$cupt = setup_cupt($level);
+	my $cupt = setup_cupt($level);
 
 	my $last_package = 'zz' . ('1' x $level);
 	test_why_regex($cupt, $last_package, '', qr/^zz /, "level $level");
