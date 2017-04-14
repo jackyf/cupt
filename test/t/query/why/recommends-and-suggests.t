@@ -1,18 +1,14 @@
-use TestCupt;
 use Test::More tests => 4;
-
-use strict;
-use warnings;
 
 require(get_rinclude_path('common'));
 
-my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aa', 1) . "Recommends: zz\n") .
-		entail(compose_installed_record('bb', 1) . "Suggests: zz\n") .
-		entail(compose_installed_record('zz', 555)),
-	'extended_states' =>
-		entail(compose_autoinstalled_record('zz')),
+my $cupt = setup(
+	'dpkg_status' => [
+		compose_installed_record('aa', 1) . "Recommends: zz\n" ,
+		compose_installed_record('bb', 1) . "Suggests: zz\n" ,
+		compose_installed_record('zz', 555) ,
+	],
+	'extended_states' => [ compose_autoinstalled_record('zz') ],
 );
 
 sub test {
