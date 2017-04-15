@@ -1,6 +1,6 @@
 use Test::More tests => 40;
 
-eval(get_inc_code('pinning'));
+require(get_rinclude_path('pinning'));
 
 sub test {
 	my ($property, $expected_result) = @_;
