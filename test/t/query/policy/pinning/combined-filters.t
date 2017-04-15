@@ -1,6 +1,6 @@
 use Test::More tests => 14;
 
-eval get_inc_code('pinning');
+require(get_rinclude_path('pinning'));
 
 sub test {
 	my ($first_pin_line, $pin_expression, $expected_result) = @_;
