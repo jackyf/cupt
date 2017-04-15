@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 12;
-
-use strict;
-use warnings;
 
 eval(get_inc_code('pinning'));
 
