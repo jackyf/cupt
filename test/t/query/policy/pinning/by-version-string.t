@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 22;
-
-use strict;
-use warnings;
 
 require(get_rinclude_path('pinning'));
 
