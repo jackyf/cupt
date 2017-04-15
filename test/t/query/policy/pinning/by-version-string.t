@@ -4,7 +4,7 @@ use Test::More tests => 22;
 use strict;
 use warnings;
 
-eval(get_inc_code('pinning'));
+require(get_rinclude_path('pinning'));
 
 sub test {
 	my ($version, $pin_expression, $match_expected) = @_;
