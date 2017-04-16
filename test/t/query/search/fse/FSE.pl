@@ -17,3 +17,5 @@ sub pn {
 	return 'package:name(' . $_[0] . ')';
 }
 
+1;
+
