@@ -1,5 +1,5 @@
 sub eis {
-	my ($pattern, @expected) = @_;
+	my ($cupt, $pattern, @expected) = @_;
 
 	@expected = sort @expected;
 

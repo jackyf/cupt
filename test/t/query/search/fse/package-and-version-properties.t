@@ -27,15 +27,15 @@ my $cupt = TestCupt::setup(
 
 eval(get_inc_code('FSE'));
 
-eis('package:installed()', qw(i a));
-eis('package:automatically-installed()', qw(a));
+eis($cupt, 'package:installed()', qw(i a));
+eis($cupt, 'package:automatically-installed()', qw(a));
 
-eis('trusted', qw(p));
-eis('priority(extra)', qw(i p));
-eis('priority(standard)', qw(a));
-eis('maintainer(/One.*/)', qw(a i));
-eis('maintainer(.*mail.*)', qw(a));
-eis('section(//)', qw(i p));
-eis('section(doc)', qw(a));
-eis('field(Special-property-field, /.+/)', qw(i));
+eis($cupt, 'trusted', qw(p));
+eis($cupt, 'priority(extra)', qw(i p));
+eis($cupt, 'priority(standard)', qw(a));
+eis($cupt, 'maintainer(/One.*/)', qw(a i));
+eis($cupt, 'maintainer(.*mail.*)', qw(a));
+eis($cupt, 'section(//)', qw(i p));
+eis($cupt, 'section(doc)', qw(a));
+eis($cupt, 'field(Special-property-field, /.+/)', qw(i));
 

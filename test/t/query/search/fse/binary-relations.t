@@ -44,33 +44,33 @@ my $pccc = pn('ccc');
 my $peee = pn('eee');
 my $pddd = pn('ddd');
 
-eis("pre-depends($pccc)", qw(eee));
-eis("depends($paaa)", qw(bbb ccc));
-eis("recommends($paaa)", qw(ddd));
-eis("suggests($pbbb)", qw(eee));
-eis("enhances($pccc)", qw(aaa));
-eis("conflicts($pccc)", qw(bbb));
-eis("breaks($peee)", qw(ccc));
-eis("replaces($pddd)", qw(eee));
+eis($cupt, "pre-depends($pccc)", qw(eee));
+eis($cupt, "depends($paaa)", qw(bbb ccc));
+eis($cupt, "recommends($paaa)", qw(ddd));
+eis($cupt, "suggests($pbbb)", qw(eee));
+eis($cupt, "enhances($pccc)", qw(aaa));
+eis($cupt, "conflicts($pccc)", qw(bbb));
+eis($cupt, "breaks($peee)", qw(ccc));
+eis($cupt, "replaces($pddd)", qw(eee));
 
-eis("conflicts($paaa)", ());
-eis("recommends($pccc)", ());
+eis($cupt, "conflicts($paaa)", ());
+eis($cupt, "recommends($pccc)", ());
 
 
-eis("reverse-pre-depends($peee)", qw(ccc));
-eis("reverse-depends($pbbb)", qw(aaa));
-eis("reverse-depends($pccc)", qw(aaa));
-eis("reverse-depends(or($pbbb,$pccc))", qw(aaa));
-eis("reverse-recommends($pddd)", qw(aaa));
-eis("reverse-suggests($peee)", qw(bbb));
-eis("reverse-enhances($paaa)", qw(ccc));
-eis("reverse-conflicts($pbbb)", qw(ccc));
-eis("reverse-breaks($pccc)", qw(eee));
-eis("reverse-replaces($peee)", qw(ddd));
+eis($cupt, "reverse-pre-depends($peee)", qw(ccc));
+eis($cupt, "reverse-depends($pbbb)", qw(aaa));
+eis($cupt, "reverse-depends($pccc)", qw(aaa));
+eis($cupt, "reverse-depends(or($pbbb,$pccc))", qw(aaa));
+eis($cupt, "reverse-recommends($pddd)", qw(aaa));
+eis($cupt, "reverse-suggests($peee)", qw(bbb));
+eis($cupt, "reverse-enhances($paaa)", qw(ccc));
+eis($cupt, "reverse-conflicts($pbbb)", qw(ccc));
+eis($cupt, "reverse-breaks($pccc)", qw(eee));
+eis($cupt, "reverse-replaces($peee)", qw(ddd));
 
-eis("reverse-depends($peee)", ());
-eis("reverse-enhances($pbbb)", ());
+eis($cupt, "reverse-depends($peee)", ());
+eis($cupt, "reverse-enhances($pbbb)", ());
 
-eis("depends($paaa) & reverse-conflicts($pbbb)", qw(ccc));
-eis("recommends(reverse-depends(reverse-suggests($peee)))", qw(ddd));
+eis($cupt, "depends($paaa) & reverse-conflicts($pbbb)", qw(ccc));
+eis($cupt, "recommends(reverse-depends(reverse-suggests($peee)))", qw(ddd));
 

@@ -31,18 +31,18 @@ eval(get_inc_code('FSE'));
 my $psm = pn('sm');
 my $psn = pn('sn');
 
-eis("build-depends($psm)", qw(bx));
-eis("build-conflicts($psn)", qw(by));
-eis("build-depends-indep($psn)", qw(bx));
-eis("build-conflicts-indep($psm)", qw(by));
+eis($cupt, "build-depends($psm)", qw(bx));
+eis($cupt, "build-conflicts($psn)", qw(by));
+eis($cupt, "build-depends-indep($psn)", qw(bx));
+eis($cupt, "build-conflicts-indep($psm)", qw(by));
 
 my $pbx = pn('bx');
 my $pby = pn('by');
 
-eis("source-to-binary(reverse-build-depends($pbx))", qw(bm));
-eis("source-to-binary(reverse-build-conflicts($pby))", qw(bn));
-eis("source-to-binary(reverse-build-depends-indep($pbx))", qw(bn));
-eis("source-to-binary(reverse-build-conflicts-indep($pby))", qw(bm));
+eis($cupt, "source-to-binary(reverse-build-depends($pbx))", qw(bm));
+eis($cupt, "source-to-binary(reverse-build-conflicts($pby))", qw(bn));
+eis($cupt, "source-to-binary(reverse-build-depends-indep($pbx))", qw(bn));
+eis($cupt, "source-to-binary(reverse-build-conflicts-indep($pby))", qw(bm));
 
-eis("$pbx & build-depends($psm)", qw(bx));
+eis($cupt, "$pbx & build-depends($psm)", qw(bx));
 

@@ -44,10 +44,10 @@ sub bd_bts {
 	return 'build-depends(binary-to-source(' . $_[0] . '))';
 }
 
-eis(bd_bts('Pn(a)'), qw(bd1));
-eis(bd_bts('Pn(b)'), ());
-eis(bd_bts('Pn(c)'), qw(bd2));
-eis(bd_bts('Pn(d)'), ());
-eis(bd_bts('Pn(missing)'), ());
-eis(bd_bts('Pn(a)|Pn(c)'), qw(bd1 bd2));
+eis($cupt, bd_bts('Pn(a)'), qw(bd1));
+eis($cupt, bd_bts('Pn(b)'), ());
+eis($cupt, bd_bts('Pn(c)'), qw(bd2));
+eis($cupt, bd_bts('Pn(d)'), ());
+eis($cupt, bd_bts('Pn(missing)'), ());
+eis($cupt, bd_bts('Pn(a)|Pn(c)'), qw(bd1 bd2));
 

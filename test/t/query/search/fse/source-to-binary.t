@@ -27,10 +27,10 @@ my $cupt = TestCupt::setup('packages' => $packages, 'sources' => $sources);
 
 eval(get_inc_code('FSE'));
 
-eis("source-to-binary(Pn(sn))", ());
-eis("source-to-binary(Pn(sm))", qw(bm bm2));
-eis("source-to-binary(Pn(sm)) & version(1)", ());
-eis("source-to-binary(Pn(sm)) & version(10)", qw(bm bm2));
-eis("source-to-binary(Pn(sm)) & version(100)", ());
-eis("source-to-binary(Pn(sm)) & version(11)", qw(bm));
+eis($cupt, "source-to-binary(Pn(sn))", ());
+eis($cupt, "source-to-binary(Pn(sm))", qw(bm bm2));
+eis($cupt, "source-to-binary(Pn(sm)) & version(1)", ());
+eis($cupt, "source-to-binary(Pn(sm)) & version(10)", qw(bm bm2));
+eis($cupt, "source-to-binary(Pn(sm)) & version(100)", ());
+eis($cupt, "source-to-binary(Pn(sm)) & version(11)", qw(bm));
 

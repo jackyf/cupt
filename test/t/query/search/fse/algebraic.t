@@ -19,26 +19,26 @@ my $pb = pn('b');
 my $pc = pn('c');
 my $pnone = pn('none');
 
-eis("and($pa)", qw(a));
-eis("and($pa,$pa)", qw(a));
-eis("$pa&$pb", ());
+eis($cupt, "and($pa)", qw(a));
+eis($cupt, "and($pa,$pa)", qw(a));
+eis($cupt, "$pa&$pb", ());
 
-eis("$pa|$pb", qw(a b));
-eis("or($pa)", qw(a));
-eis("or($pa,$pa)", qw(a));
+eis($cupt, "$pa|$pb", qw(a b));
+eis($cupt, "or($pa)", qw(a));
+eis($cupt, "or($pa,$pa)", qw(a));
 
-eis("not($pa)", qw(b c d));
-eis("not($pnone)", qw(a b c d));
-eis("not(package:name(.*))", ());
-eis("not($pa|$pb)", qw(c d));
+eis($cupt, "not($pa)", qw(b c d));
+eis($cupt, "not($pnone)", qw(a b c d));
+eis($cupt, "not(package:name(.*))", ());
+eis($cupt, "not($pa|$pb)", qw(c d));
 
-eis("xor($pa,$pb)", qw(a b));
-eis("xor($pa,$pa)", ());
-eis("xor($pa|$pb,$pb|$pc)", qw(a c));
+eis($cupt, "xor($pa,$pb)", qw(a b));
+eis($cupt, "xor($pa,$pa)", ());
+eis($cupt, "xor($pa|$pb,$pb|$pc)", qw(a c));
 
-eis("or($pa|$pb) & or($pb|$pc)", qw(b));
-eis("or(or($pa,$pb), or($pb,$pc))", qw(a b c));
-eis("and(not($pa), not($pb), not($pc))", qw(d));
+eis($cupt, "or($pa|$pb) & or($pb|$pc)", qw(b));
+eis($cupt, "or(or($pa,$pb), or($pb,$pc))", qw(a b c));
+eis($cupt, "and(not($pa), not($pb), not($pc))", qw(d));
 
-eis("$pa & with(_v, $pa, _v)", qw(a));
+eis($cupt, "$pa & with(_v, $pa, _v)", qw(a));
 
