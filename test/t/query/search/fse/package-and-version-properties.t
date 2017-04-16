@@ -1,5 +1,7 @@
 use Test::More tests => 10;
 
+require(get_rinclude_path('FSE'));
+
 my @installed;
 push @installed, compose_installed_record('i', '1') . <<END;
 Priority: extra
@@ -17,8 +19,6 @@ my $cupt = setup(
 	'packages' => [ compose_package_record('p', '2') ],
 	'extended_states' => compose_autoinstalled_record('a')
 );
-
-eval(get_inc_code('FSE'));
 
 eis($cupt, 'package:installed()', qw(i a));
 eis($cupt, 'package:automatically-installed()', qw(a));
