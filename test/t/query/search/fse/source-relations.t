@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 9;
-
-use strict;
-use warnings;
 
 my $source1 = compose_package_record('sm', '1') . <<END;
 Binary: bm
@@ -16,15 +12,16 @@ Build-Conflicts: by
 Build-Depends-Indep: bx
 END
 
-my $sources = entail($source1) . entail($source2);
+my $sources = [ $source1, $source2 ];
 
-my $packages =
-		entail(compose_package_record('bx', '3')) .
-		entail(compose_package_record('by', '4')) .
-		entail(compose_package_record('bm', '1')) .
-		entail(compose_package_record('bn', '2'));
+my $packages = [
+	compose_package_record('bx', '3') ,
+	compose_package_record('by', '4') ,
+	compose_package_record('bm', '1') ,
+	compose_package_record('bn', '2')
+];
 
-my $cupt = TestCupt::setup('packages' => $packages, 'sources' => $sources);
+my $cupt = setup('packages' => $packages, 'sources' => $sources);
 
 eval(get_inc_code('FSE'));
 
