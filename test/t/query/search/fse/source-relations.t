@@ -1,5 +1,7 @@
 use Test::More tests => 9;
 
+require(get_rinclude_path('FSE'));
+
 my $source1 = compose_package_record('sm', '1') . <<END;
 Binary: bm
 Build-Depends: bx
@@ -22,8 +24,6 @@ my $packages = [
 ];
 
 my $cupt = setup('packages' => $packages, 'sources' => $sources);
-
-eval(get_inc_code('FSE'));
 
 my $psm = pn('sm');
 my $psn = pn('sn');
