@@ -1,15 +1,11 @@
-use TestCupt;
 use Test::More tests => 17;
 
-use strict;
-use warnings;
-
-my $installed =
-		entail(compose_installed_record('a', '1')) .
-		entail(compose_installed_record('b', '2')) .
-		entail(compose_installed_record('c', '3')) .
-		entail(compose_installed_record('d', '4'));
-
+my $installed = [
+	compose_installed_record('a', '1') ,
+	compose_installed_record('b', '2') ,
+	compose_installed_record('c', '3') ,
+	compose_installed_record('d', '4') ,
+];
 my $cupt = TestCupt::setup('dpkg_status' => $installed);
 
 eval(get_inc_code('FSE'));
