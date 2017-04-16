@@ -1,27 +1,20 @@
-use TestCupt;
 use Test::More tests => 10;
 
-use strict;
-use warnings;
-
-my $installed = entail(compose_installed_record('i', '1') . <<END);
+my @installed;
+push @installed, compose_installed_record('i', '1') . <<END;
 Priority: extra
 Maintainer: One Two
 Special-property-field: Special String
 END
-
-$installed .= entail(compose_installed_record('a', '3') . <<'END' );
+push @installed, compose_installed_record('a', '3') . <<'END';
 Priority: standard
 Section: doc
 Maintainer: One Three <one.three@mail.tld>
 END
 
-my $packages =
-		entail(compose_package_record('p', '2'));
-
-my $cupt = TestCupt::setup(
-	'dpkg_status' => $installed,
-	'packages' => $packages,
+my $cupt = setup(
+	'dpkg_status' => \@installed,
+	'packages' => [ compose_package_record('p', '2') ],
 	'extended_states' => compose_autoinstalled_record('a')
 );
 
