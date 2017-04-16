@@ -1,5 +1,7 @@
 use Test::More tests => 17;
 
+require(get_rinclude_path('FSE'));
+
 my $installed = [
 	compose_installed_record('a', '1') ,
 	compose_installed_record('b', '2') ,
@@ -7,8 +9,6 @@ my $installed = [
 	compose_installed_record('d', '4') ,
 ];
 my $cupt = TestCupt::setup('dpkg_status' => $installed);
-
-eval(get_inc_code('FSE'));
 
 my $pa = pn('a');
 my $pb = pn('b');
