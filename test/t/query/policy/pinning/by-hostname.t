@@ -1,6 +1,6 @@
 use Test::More tests => 34;
 
-eval get_inc_code('pinning');
+require(get_rinclude_path('pinning'));
 
 my $scheme;
 my $hostname;
