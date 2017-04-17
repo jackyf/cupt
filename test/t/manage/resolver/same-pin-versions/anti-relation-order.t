@@ -4,9 +4,9 @@ use Test::More tests => 6;
 use strict;
 use warnings;
 
-my $installed = entail(compose_installed_record('ppp', 0));
-
 eval get_inc_code('relation-common');
+
+init([ compose_installed_record('ppp', 0) ]);
 
 my $p = 'ppp';
 my $ev = get_empty_version();

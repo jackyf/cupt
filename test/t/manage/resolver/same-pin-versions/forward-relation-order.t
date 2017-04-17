@@ -1,8 +1,8 @@
 use Test::More tests => 15;
 
-my $installed = '';
-
 eval get_inc_code('relation-common');
+
+init('');
 
 my $p = 'ppp';
 my $q = 'qqq';
