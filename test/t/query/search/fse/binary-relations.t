@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 24;
-
-use strict;
-use warnings;
 
 my $inst1 = compose_installed_record('aaa', 10) . <<END;
 Depends: bbb | ccc
@@ -27,14 +23,8 @@ my $inst5 = compose_installed_record('eee', 9) . <<END;
 Breaks: ccc
 END
 
-my $installed =
-		entail($inst1) .
-		entail($inst2) .
-		entail($inst3) .
-		entail($inst4) .
-		entail($inst5);
-
-my $cupt = TestCupt::setup('dpkg_status' => $installed);
+my $installed = [ $inst1, $inst2, $inst3, $inst4, $inst5 ];
+my $cupt = setup('dpkg_status' => $installed);
 
 eval(get_inc_code('FSE'));
 
