@@ -1,20 +1,17 @@
-use TestCupt;
 use Test::More tests => 9;
-
-use strict;
-use warnings;
 
 eval get_inc_code('common');
 
 sub setup_cupt {
-	return TestCupt::setup(
+	return setup(
 		'dpkg_status' =>
 			generate_n_installed_packages(@_) .
 			entail(compose_installed_record('h', 1, 'on-hold'=>1)),
-		'packages' =>
-			entail(compose_package_record('cc', 8) . "Depends: h (= 2)\n") .
-			entail(compose_package_record('cc', 4) . "Breaks: p\n") .
-			entail(compose_package_record('h', 2)),
+		'packages' => [
+			compose_package_record('cc', 8) . "Depends: h (= 2)\n" ,
+			compose_package_record('cc', 4) . "Breaks: p\n" ,
+			compose_package_record('h', 2) ,
+		],
 	);
 }
 
