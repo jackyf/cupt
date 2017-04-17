@@ -1,20 +1,17 @@
-use TestCupt;
 use Test::More tests => 12;
-
-use strict;
-use warnings;
 
 eval get_inc_code('common');
 
 sub setup_cupt {
-	return TestCupt::setup(
+	return setup(
 		'dpkg_status' =>
 			generate_n_installed_packages(@_) .
 			entail(compose_installed_record('down', '1.0')),
-		'packages' =>
-			entail(compose_package_record('down', '0.9')) .
-			entail(compose_package_record('bb', 6) . "Depends: down (<< 1)\n") .
-			entail(compose_package_record('bb', 3) . "Breaks: p\n"),
+		'packages' => [
+			compose_package_record('down', '0.9') ,
+			compose_package_record('bb', 6) . "Depends: down (<< 1)\n" ,
+			compose_package_record('bb', 3) . "Breaks: p\n" ,
+		],
 	);
 }
 
