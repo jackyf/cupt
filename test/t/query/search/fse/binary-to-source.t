@@ -1,5 +1,7 @@
 use Test::More tests => 6;
 
+require(get_rinclude_path('FSE'));
+
 my $sources = [
 	compose_package_record('ss', '1') . "Build-Depends: bd1\n" ,
 	compose_package_record('ss', '2') . "Build-Depends: bd2\n" ,
@@ -15,8 +17,6 @@ my $packages = [
 ];
 
 my $cupt = setup('packages' => $packages, 'sources' => $sources);
-
-eval(get_inc_code('FSE'));
 
 sub bd_bts {
 	return 'build-depends(binary-to-source(' . $_[0] . '))';
