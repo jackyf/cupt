@@ -1,42 +1,20 @@
-use TestCupt;
 use Test::More tests => 6;
 
-use strict;
-use warnings;
+my $sources = [
+	compose_package_record('ss', '1') . "Build-Depends: bd1\n" ,
+	compose_package_record('ss', '2') . "Build-Depends: bd2\n" ,
+];
 
-my $source1 = compose_package_record('ss', '1') . <<END;
-Build-Depends: bd1
-END
+my $packages = [
+	compose_package_record('a', '1') . "Source: ss\n" ,
+	compose_package_record('b', '3') . "Source: ss\n" ,
+	compose_package_record('c', '4') . "Source: ss (2)\n" ,
+	compose_package_record('d', '1') . "Source: diffs\n" ,
+	compose_package_record('bd1', '0') ,
+	compose_package_record('bd2', '0') ,
+];
 
-my $source2 = compose_package_record('ss', '2') . <<END;
-Build-Depends: bd2
-END
-
-my $sources = entail($source1) . entail($source2);
-
-my $package1 = compose_package_record('a', '1') . <<END;
-Source: ss
-END
-
-my $package2 = compose_package_record('b', '3') . <<END;
-Source: ss
-END
-
-my $package3 = compose_package_record('c', '4') . <<END;
-Source: ss (2)
-END
-
-my $package4 = compose_package_record('d', '1') . <<END;
-Source: diffs
-END
-
-my $packages =
-		entail($package1) . entail($package2) . entail($package3) .
-		entail($package4) .
-		entail(compose_package_record('bd1', '0')) .
-		entail(compose_package_record('bd2', '0'));
-
-my $cupt = TestCupt::setup('packages' => $packages, 'sources' => $sources);
+my $cupt = setup('packages' => $packages, 'sources' => $sources);
 
 eval(get_inc_code('FSE'));
 
