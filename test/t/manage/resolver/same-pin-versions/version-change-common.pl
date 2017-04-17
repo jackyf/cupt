@@ -57,3 +57,5 @@ sub run_tests {
 	test_group();
 }
 
+1;
+
