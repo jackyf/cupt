@@ -1,5 +1,7 @@
 use Test::More tests => 6;
 
+require(get_rinclude_path('FSE'));
+
 my $sources = [
 	compose_package_record('sm', '10') . "Binary: bm, bm2\n" ,
 	compose_package_record('sn', '2') ,
@@ -14,8 +16,6 @@ my $packages = [
 ];
 
 my $cupt = setup('packages' => $packages, 'sources' => $sources);
-
-eval(get_inc_code('FSE'));
 
 eis($cupt, "source-to-binary(Pn(sn))", ());
 eis($cupt, "source-to-binary(Pn(sm))", qw(bm bm2));
