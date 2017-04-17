@@ -1,5 +1,7 @@
 use Test::More tests => 24;
 
+require(get_rinclude_path('FSE'));
+
 my $inst1 = compose_installed_record('aaa', 10) . <<END;
 Depends: bbb | ccc
 Recommends: ddd
@@ -25,8 +27,6 @@ END
 
 my $installed = [ $inst1, $inst2, $inst3, $inst4, $inst5 ];
 my $cupt = setup('dpkg_status' => $installed);
-
-eval(get_inc_code('FSE'));
 
 my $paaa = pn('aaa');
 my $pbbb = pn('bbb');
