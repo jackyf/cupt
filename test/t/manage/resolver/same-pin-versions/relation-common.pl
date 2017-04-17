@@ -35,3 +35,5 @@ sub test {
 	is_deeply(\@proposed_versions, $expected_versions, $comment) or diag($output);
 }
 
+1;
+
