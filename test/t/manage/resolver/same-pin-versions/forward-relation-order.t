@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 15;
-
-use strict;
-use warnings;
 
 my $installed = '';
 
