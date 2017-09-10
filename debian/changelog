@@ -1,4 +1,4 @@
-cupt (2.9.10~) UNRELEASED; urgency=medium
+cupt (2.9.10) unstable; urgency=medium
 
   * lib:
     - Added missing includes for GCC7. (Closes: #853362)
@@ -6,7 +6,7 @@ cupt (2.9.10~) UNRELEASED; urgency=medium
     - Depend on libgcrypt20-dev instead of libgcrypt11-dev (which became
       a transitional package (Closes: #864099)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Sep 2017 16:02:58 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Sep 2017 16:35:01 +0200
 
 cupt (2.9.9) unstable; urgency=medium
 
