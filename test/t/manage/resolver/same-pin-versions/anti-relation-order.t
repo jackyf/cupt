@@ -1,6 +1,6 @@
 use Test::More tests => 6;
 
-eval get_inc_code('relation-common');
+require(get_rinclude_path('relation-common'));
 
 init([ compose_installed_record('ppp', 0) ]);
 
