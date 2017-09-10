@@ -2,6 +2,9 @@ cupt (2.9.10~) UNRELEASED; urgency=medium
 
   * lib:
     - Added missing includes for GCC7. (Closes: #853362)
+  * debian/control:
+    - Depend on libgcrypt20-dev instead of libgcrypt11-dev (which became
+      a transitional package (Closes: #864099)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Sep 2017 16:02:58 +0200
 
