@@ -49,7 +49,7 @@ sub parse_dpkg_commands {
 }
 
 sub test_dpkg_sequence {
-	my ($user_command, @expected) = @_;
+	my ($cupt, $user_command, @expected) = @_;
 
 	my $comment = $user_command;
 	$user_command =~ s/#.*//;

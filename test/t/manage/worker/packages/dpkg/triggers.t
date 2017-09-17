@@ -1,10 +1,9 @@
 use Test::More tests => 4;
 
-my $cupt;
 eval get_inc_code('common');
 set_parse_skip_triggers(0);
 
-$cupt = setup(
+my $cupt = setup(
 	'packages' => entail(compose_package_record('aa', 1))
 );
 
@@ -12,7 +11,7 @@ sub test {
 	my ($params, $triggers_enabled, $name) = @_;
 
 	# after-trigger command is given even when triggers are not deferred (see #766758)
-	test_dpkg_sequence("install aa $params",
+	test_dpkg_sequence($cupt, "install aa $params",
 			['--triggers-only', ['-a'], []],
 			['--install', $triggers_enabled?['--no-triggers']:[], ['<aa 1>']],
 			['--triggers-only', ['--pending'], []]);
