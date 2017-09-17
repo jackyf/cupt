@@ -15,7 +15,6 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         simple word parser (simple one-level shell quotes still allowed).
       - 'version' and 'help' commands now work also here.
   * lib:
-    - Added missing includes for GCC7. (Closes: #853362)
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.
       - Don't ask dpkg for architectures if the 'apt::architecture' option
@@ -52,6 +51,16 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Added build-dependency on gpgv, gnupg, ed (for tests).
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
+
+cupt (2.9.10) unstable; urgency=medium
+
+  * lib:
+    - Added missing includes for GCC7. (Closes: #853362)
+  * debian/control:
+    - Depend on libgcrypt20-dev instead of libgcrypt11-dev (which became
+      a transitional package (Closes: #864099)
+
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Sep 2017 16:35:01 +0200
 
 cupt (2.9.9) unstable; urgency=medium
 

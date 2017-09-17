@@ -13,7 +13,7 @@ Build-Depends:
   libboost-dev (>= 1.42),
   libreadline-dev,
   libcurl4-gnutls-dev (>= 7.19.4),
-  libgcrypt11-dev,
+  libgcrypt20-dev,
 # documentation
   doxygen,
   txt2tags,
