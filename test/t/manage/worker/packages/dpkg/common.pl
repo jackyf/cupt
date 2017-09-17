@@ -54,10 +54,13 @@ sub test_dpkg_sequence {
 	my $comment = $user_command;
 	$user_command =~ s/#.*//;
 
-	my $output = stdall(get_worker_command($cupt, $user_command));
+	my $output;
+	subtest "$comment" => sub {
+		$output = stdall(get_worker_command($cupt, $user_command));
+		is($?, 0, "command succeeded");
 
-	my @parsed_output = parse_dpkg_commands($output);
-	is_deeply(\@parsed_output, \@expected, $comment) or
-			diag($output);
+		my @parsed_output = parse_dpkg_commands($output);
+		is_deeply(\@parsed_output, \@expected, 'dpkg sequence')
+	} or diag($output);
 }
 
