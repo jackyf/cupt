@@ -1,6 +1,6 @@
 use Test::More tests => 5;
 
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 
 my $cupt = setup(
 	'dpkg_status' => [ compose_installed_record('cc', 3) ],
