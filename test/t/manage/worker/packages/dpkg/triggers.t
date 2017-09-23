@@ -1,6 +1,6 @@
 use Test::More tests => 4;
 
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 set_parse_skip_triggers(0);
 
 my $cupt = setup(
