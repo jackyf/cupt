@@ -1,15 +1,12 @@
-use TestCupt;
 use Test::More tests => 5;
-
-use strict;
-use warnings;
 
 eval get_inc_code('common');
 
 my $cupt = setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aa', 1)) .
-		entail(compose_removed_record('bb')) ,
+	'dpkg_status' => [
+		compose_installed_record('aa', 1) ,
+		compose_removed_record('bb') ,
+	],
 );
 
 test_dpkg_sequence($cupt, 'remove aa # removing installed package',
