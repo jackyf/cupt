@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 2;
-
-use strict;
-use warnings;
 
 eval get_inc_code('common');
 
@@ -13,11 +9,13 @@ sub test {
 	my $expected_options = ($strong_dependency ? ['--force-depends'] : []);
 
 	my $cupt = setup(
-		'dpkg_status' =>
-			entail(compose_installed_record('unchanged', 1) . "$dep: mta\n") .
-			entail(compose_installed_record('exim4', 2) . "Provides: mta\nConflicts: mta\n"),
-		'packages' =>
-			entail(compose_package_record('postfix', 3) . "Provides: mta\nConflicts: mta\n"),
+		'dpkg_status' => [
+			compose_installed_record('unchanged', 1) . "$dep: mta\n" ,
+			compose_installed_record('exim4', 2) . "Provides: mta\nConflicts: mta\n" ,
+		],
+		'packages' => [
+			compose_package_record('postfix', 3) . "Provides: mta\nConflicts: mta\n" ,
+		],
 	);
 
 	test_dpkg_sequence($cupt, "install postfix # $dep",
