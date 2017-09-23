@@ -1,3 +1,5 @@
+require(get_rinclude_path('../../common'));
+
 my $hook_version;
 my $package_line_field_count;
 my $version_sign_field_index;
@@ -48,8 +50,6 @@ sub test {
 		$line_tests->($input);
 	} or diag($offer);
 }
-
-eval get_inc_code('../../common');
 
 sub set_parameters {
 	($hook_version, $package_line_field_count, $version_sign_field_index) = @_;
