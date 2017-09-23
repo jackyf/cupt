@@ -26,10 +26,9 @@ sub test_remove_line {
 
 my $hook_options = "-o dpkg::pre-install-pkgs::=vhook -o dpkg::tools::options::vhook::version=$hook_version";
 my $confirmation = "y\nYes, do as I say!";
-my $cupt;
 
 sub test {
-	my ($subcommand, $line_tests) = @_;
+	my ($cupt, $subcommand, $line_tests) = @_;
 
 	my $offer = stdall("echo '$confirmation' | $cupt -s $subcommand $hook_options");
 
@@ -48,7 +47,7 @@ sub test {
 
 eval get_inc_code('../../common');
 
-$cupt = setup(
+my $cupt = setup(
 	'dpkg_status' =>
 		entail(compose_installed_record('aaa', '2.3')) .
 		entail(compose_installed_record('bbb', '0.99-1')) .
@@ -60,7 +59,7 @@ $cupt = setup(
 		entail(compose_package_record('eee', '22') . "Depends: brk\n") .
 		entail(compose_package_record('eee', '22', 'sha' => 'dffe') . "Suggests: brk\n") ,
 );
-test("full-upgrade --remove aaa --satisfy 'bbb (<< 0.98)'",
+test($cupt, "full-upgrade --remove aaa --satisfy 'bbb (<< 0.98)'",
 		sub {
 			my $input = shift;
 			test_remove_line($input, 'aaa', '2.3', '-', '>');
@@ -74,7 +73,7 @@ $cupt = setup(
 	'dpkg_status' =>
 		entail(compose_removed_record('fff'))
 );
-test("purge fff",
+test($cupt, "purge fff",
 		sub {
 			test_remove_line(shift, 'fff', '-', '-', '<');
 		});
