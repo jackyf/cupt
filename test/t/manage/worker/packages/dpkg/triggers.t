@@ -4,7 +4,7 @@ eval get_inc_code('common');
 set_parse_skip_triggers(0);
 
 my $cupt = setup(
-	'packages' => entail(compose_package_record('aa', 1))
+	'packages' => [ compose_package_record('aa', 1) ],
 );
 
 sub test {
