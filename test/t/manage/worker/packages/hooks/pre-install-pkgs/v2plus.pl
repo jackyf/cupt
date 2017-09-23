@@ -1,3 +1,7 @@
+my $hook_version;
+my $package_line_field_count;
+my $version_sign_field_index;
+
 sub test_line {
 	my ($input, $package, $original_version, $supposed_version, $version_sign, $last_field) = @_;
 
@@ -24,12 +28,12 @@ sub test_remove_line {
 	test_line(@_, '**REMOVE**');
 }
 
-my $hook_options = "-o dpkg::pre-install-pkgs::=vhook -o dpkg::tools::options::vhook::version=$hook_version";
 my $confirmation = "y\nYes, do as I say!";
 
 sub test {
 	my ($cupt, $subcommand, $line_tests) = @_;
 
+	my $hook_options = "-o dpkg::pre-install-pkgs::=vhook -o dpkg::tools::options::vhook::version=$hook_version";
 	my $offer = stdall("echo '$confirmation' | $cupt -s $subcommand $hook_options");
 
 	subtest "the hook is run with proper input (subcommand: $subcommand)" => sub {
@@ -47,7 +51,12 @@ sub test {
 
 eval get_inc_code('../../common');
 
+sub set_parameters {
+	($hook_version, $package_line_field_count, $version_sign_field_index) = @_;
+}
+
 sub do_tests {
+
 	my $cupt = setup(
 		'dpkg_status' => [
 			compose_installed_record('aaa', '2.3') ,
