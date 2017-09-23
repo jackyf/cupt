@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 9;
-
-use strict;
-use warnings;
 
 eval get_inc_code('common');
 
@@ -12,12 +8,14 @@ sub setup_aux_between_ess_1 {
 	my $ess_field = ($ess_is_essential ? "Essential: yes\n" : '');
 
 	return setup(
-		'dpkg_status' =>
-			entail(compose_installed_record('ess', 0) . $ess_field . "Depends: aux\n") .
-			entail(compose_installed_record('aux', 2)) .
+		'dpkg_status' => [
+			compose_installed_record('ess', 0) . $ess_field . "Depends: aux\n" ,
+			compose_installed_record('aux', 2) ,
 			$additional_installed ,
-		'packages' =>
-			entail(compose_package_record('ess', 1) . $ess_field . "Breaks: aux\n"),
+		],
+		'packages' => [
+			compose_package_record('ess', 1) . $ess_field . "Breaks: aux\n" ,
+		],
 	);
 }
 
