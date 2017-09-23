@@ -1,5 +1,4 @@
-eval get_inc_code('../common');
-die($@) if $@;
+require(get_rinclude_path('../common'));
 
 my $skip_triggers = 1;
 sub set_parse_skip_triggers {
