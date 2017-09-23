@@ -1,6 +1,6 @@
 use Test::More tests => 9;
 
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 
 sub setup_aux_between_ess_1 {
 	my ($ess_is_essential, $additional_installed) = @_;
