@@ -48,16 +48,18 @@ sub test {
 eval get_inc_code('../../common');
 
 my $cupt = setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aaa', '2.3')) .
-		entail(compose_installed_record('bbb', '0.99-1')) .
-		entail(compose_installed_record('ccc', '1.8.1-5')) ,
-	'packages' =>
-		entail(compose_package_record('bbb', '0.97-4')) .
-		entail(compose_package_record('ccc', '1.8.1-6') . "Depends: ddd, eee\n") .
-		entail(compose_package_record('ddd', '4:4.11.0-3')) .
-		entail(compose_package_record('eee', '22') . "Depends: brk\n") .
-		entail(compose_package_record('eee', '22', 'sha' => 'dffe') . "Suggests: brk\n") ,
+	'dpkg_status' => [
+		compose_installed_record('aaa', '2.3') ,
+		compose_installed_record('bbb', '0.99-1') ,
+		compose_installed_record('ccc', '1.8.1-5') ,
+	],
+	'packages' => [
+		compose_package_record('bbb', '0.97-4') ,
+		compose_package_record('ccc', '1.8.1-6') . "Depends: ddd, eee\n" ,
+		compose_package_record('ddd', '4:4.11.0-3') ,
+		compose_package_record('eee', '22') . "Depends: brk\n" ,
+		compose_package_record('eee', '22', 'sha' => 'dffe') . "Suggests: brk\n" ,
+	],
 );
 test($cupt, "full-upgrade --remove aaa --satisfy 'bbb (<< 0.98)'",
 		sub {
@@ -69,10 +71,7 @@ test($cupt, "full-upgrade --remove aaa --satisfy 'bbb (<< 0.98)'",
 			test_configure_line($input, 'eee', '-', '22', '<');
 		});
 
-$cupt = setup(
-	'dpkg_status' =>
-		entail(compose_removed_record('fff'))
-);
+$cupt = setup('dpkg_status' => [ compose_removed_record('fff') ]);
 test($cupt, "purge fff",
 		sub {
 			test_remove_line(shift, 'fff', '-', '-', '<');
