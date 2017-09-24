@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 1;
-
-use strict;
-use warnings;
 
 my $initial_extended_states_content = <<END;
 Package: aa
@@ -24,11 +20,11 @@ END
 eval get_inc_code('common');
 
 my $cupt = setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aa', 1)) .
-		entail(compose_installed_record('bb', 2)),
-	'extended_states' =>
-		$initial_extended_states_content
+	'dpkg_status' => [
+		compose_installed_record('aa', 1) ,
+		compose_installed_record('bb', 2) ,
+	],
+	'extended_states' => $initial_extended_states_content
 );
 
 subtest "the test" => sub {
