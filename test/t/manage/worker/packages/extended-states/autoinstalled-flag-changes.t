@@ -1,8 +1,4 @@
-use TestCupt;
 use Test::More tests => 18;
-
-use strict;
-use warnings;
 
 eval get_inc_code('common');
 
@@ -21,17 +17,18 @@ sub test {
 	my ($command, $package, $expected_autoflag_state) = @_;
 
 	my $cupt = setup(
-		'dpkg_status' =>
-			entail(compose_installed_record('aa', 1)) .
-			entail(compose_installed_record('bb', 1)) ,
+		'dpkg_status' => [
+			compose_installed_record('aa', 1) ,
+			compose_installed_record('bb', 1) ,
+		],
 		'releases' => [{
-			'packages' =>
-				entail(compose_package_record('bb', 2)) .
-				entail(compose_package_record('cc', 2) . "Depends: bb (= 2)\n"),
+			'packages' => [
+				compose_package_record('bb', 2) ,
+				compose_package_record('cc', 2) . "Depends: bb (= 2)\n" ,
+			],
 			'deb-caches' => 1,
 		}],
-		'extended_states' =>
-			entail(compose_autoinstalled_record('bb')),
+		'extended_states' => [ compose_autoinstalled_record('bb') ],
 	);
 
 	my $output = stdall(get_worker_command($cupt, "$command --no-auto-remove", 'simulate'=>0));
