@@ -436,7 +436,7 @@ sub remote_ps_callback {
 sub join_records_if_needed {
 	my $input = shift;
 	if (ref($input) eq 'ARRAY') {
-		return join("\n", @$input);
+		return join('', map { "$_\n" } @$input);
 	} else {
 		return $input;
 	}

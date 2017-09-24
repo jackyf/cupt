@@ -46,7 +46,7 @@ sub test {
 		my @got_langs = sort keys %got_translations;
 		is_deeply(\@got_langs, $expected_translations, 'downloaded right translation files');
 		while (my ($lang, $path) = each %got_translations) {
-			is(`cat $path`, get_translation_record_for_lang($lang), "content is right for translation '$lang'");
+			is(`cat $path`, get_translation_record_for_lang($lang)."\n", "content is right for translation '$lang'");
 		}
 	}
 }
