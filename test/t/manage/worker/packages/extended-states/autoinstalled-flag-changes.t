@@ -1,6 +1,6 @@
 use Test::More tests => 18;
 
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 
 sub check_autoflag {
 	my ($new_extended_states, $package, $expected_autoflag_state) = @_;
