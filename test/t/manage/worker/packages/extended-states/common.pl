@@ -1,4 +1,4 @@
-eval get_inc_code('../common');
+require(get_rinclude_path('../common'));
 
 sub get_new_extended_states_content {
 	open(my $fd, '<', get_extended_states_path()) or
