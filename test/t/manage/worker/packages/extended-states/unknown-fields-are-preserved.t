@@ -17,7 +17,7 @@ END
 (my $expected_extended_states_content = $initial_extended_states_content)
 		=~ s/(Package: aa\n)Auto-Installed: 1\n/$1/;
 
-eval get_inc_code('common');
+require(get_rinclude_path('common'));
 
 my $cupt = setup(
 	'dpkg_status' => [
