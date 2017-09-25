@@ -1,7 +1,7 @@
 use Test::More tests => 1 + 8;
 use IPC::Run3;
 
-eval get_inc_code('../common');
+require(get_rinclude_path('../common'));
 
 
 sub compose_dpkg_status {
