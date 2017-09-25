@@ -33,3 +33,5 @@ sub test_snapshot_list {
 	is($output, $expected_output, $description);
 }
 
+1;
+
