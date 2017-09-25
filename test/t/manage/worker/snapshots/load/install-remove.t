@@ -1,27 +1,21 @@
-use TestCupt;
 use Test::More tests => 1 + 8;
 use IPC::Run3;
-
-use strict;
-use warnings;
-
-my $cupt;
 
 eval get_inc_code('../common');
 
 
 sub compose_dpkg_status {
 	my %input = @_;
-	my @records = map { entail(compose_installed_record($_, $input{$_})) } (keys %input);
-	return join('', @records);
+	my @records = map { compose_installed_record($_, $input{$_}) } (keys %input);
+	return [ @records ];
 }
 
 sub setup_with {
-	$cupt = TestCupt::setup('dpkg_status' => compose_dpkg_status(@_));
+	return TestCupt::setup('dpkg_status' => compose_dpkg_status(@_));
 }
 
 
-setup_with('aaa' => 1, 'bbb' => 2, 'ccc' => 3);
+my $cupt = setup_with('aaa' => 1, 'bbb' => 2, 'ccc' => 3);
 
 save_snapshot($cupt, 'sn');
 run3("tar -c var/lib/cupt", \undef, \my $snapshots_tar);
@@ -30,7 +24,7 @@ run3("tar -c var/lib/cupt", \undef, \my $snapshots_tar);
 sub test_load_changes {
 	my ($setup_params, $expected_offered_versions, $description) = @_;
 
-	setup_with(@$setup_params);
+	$cupt = setup_with(@$setup_params);
 
 	run3("tar -x", \$snapshots_tar);
 	my $offer = get_first_offer("$cupt snapshot load -V sn");
