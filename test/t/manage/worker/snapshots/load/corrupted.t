@@ -1,10 +1,4 @@
-use TestCupt;
 use Test::More tests => 6;
-
-use strict;
-use warnings;
-
-my $cupt;
 
 eval get_inc_code('../common');
 
@@ -13,10 +7,11 @@ my $snapshot_name = '201501';
 my $snapshot_path = "var/lib/cupt/snapshots/$snapshot_name";
 
 sub setup_cupt {
-	$cupt = TestCupt::setup(
-		'dpkg_status' =>
-			entail(compose_installed_record('ooo', 1)) .
-			entail(compose_installed_record('ppp', 2)) ,
+	return TestCupt::setup(
+		'dpkg_status' => [
+			compose_installed_record('ooo', 1) ,
+			compose_installed_record('ppp', 2) ,
+		],
 	);
 }
 
@@ -24,7 +19,7 @@ sub test {
 	my ($corrupter, $error, $description) = @_;
 	$description //= $error;
 
-	setup_cupt();
+	my $cupt = setup_cupt();
 
 	subtest $description => sub {
 		save_snapshot($cupt, $snapshot_name);
