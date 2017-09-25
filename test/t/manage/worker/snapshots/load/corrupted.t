@@ -1,6 +1,6 @@
 use Test::More tests => 6;
 
-eval get_inc_code('../common');
+require(get_rinclude_path('../common'));
 
 
 my $snapshot_name = '201501';
