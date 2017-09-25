@@ -23,7 +23,7 @@ sub setup_with {
 
 setup_with('aaa' => 1, 'bbb' => 2, 'ccc' => 3);
 
-save_snapshot('sn');
+save_snapshot($cupt, 'sn');
 run3("tar -c var/lib/cupt", \undef, \my $snapshots_tar);
 
 

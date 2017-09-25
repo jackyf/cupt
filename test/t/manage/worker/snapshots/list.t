@@ -12,9 +12,9 @@ my $cupt = TestCupt::setup(
 eval get_inc_code('common');
 
 
-save_snapshot('xyz');
-test_snapshot_list("xyz\n", "listing one snapshot");
+save_snapshot($cupt, 'xyz');
+test_snapshot_list($cupt, "xyz\n", "listing one snapshot");
 
-save_snapshot('klm');
-test_snapshot_list("klm\nxyz\n", "listing two snapshots");
+save_snapshot($cupt, 'klm');
+test_snapshot_list($cupt, "klm\nxyz\n", "listing two snapshots");
 

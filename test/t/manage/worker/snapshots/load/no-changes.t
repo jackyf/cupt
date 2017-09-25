@@ -12,7 +12,7 @@ my $cupt = TestCupt::setup(
 eval get_inc_code('../common');
 
 
-save_snapshot('sn1');
+save_snapshot($cupt, 'sn1');
 
 my $offer = get_first_offer("$cupt snapshot load sn1");
 like($offer, regex_offer(), 'load succeeded');

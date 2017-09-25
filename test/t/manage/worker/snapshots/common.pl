@@ -1,7 +1,7 @@
 use IPC::Run3;
 
 sub test_snapshot_command {
-	my ($arguments, $expected_error, $description) = @_;
+	my ($cupt, $arguments, $expected_error, $description) = @_;
 
 	my $output;
 	subtest $description => sub {
@@ -20,12 +20,12 @@ sub test_snapshot_command {
 }
 
 sub save_snapshot {
-	my $name = shift;
-	test_snapshot_command("save $name", undef, "saving snapshot $name");
+	my ($cupt, $name) = @_;
+	test_snapshot_command($cupt, "save $name", undef, "saving snapshot $name");
 }
 
 sub test_snapshot_list {
-	my ($expected_output, $description) = @_;
+	my ($cupt, $expected_output, $description) = @_;
 
 	my $list_command = "$cupt snapshot list";
 

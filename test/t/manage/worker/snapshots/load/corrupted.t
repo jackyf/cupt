@@ -27,9 +27,9 @@ sub test {
 	setup_cupt();
 
 	subtest $description => sub {
-		save_snapshot($snapshot_name);
+		save_snapshot($cupt, $snapshot_name);
 		$corrupter->();
-		test_snapshot_command("load $snapshot_name", qr/^E:.* $error$/m, "error message '$error' printed");
+		test_snapshot_command($cupt, "load $snapshot_name", qr/^E:.* $error$/m, "error message '$error' printed");
 	}
 }
 

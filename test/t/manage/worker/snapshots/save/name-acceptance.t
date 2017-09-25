@@ -11,7 +11,7 @@ eval get_inc_code('../common');
 
 sub test_good_name {
 	my ($name, $description) = @_;
-	test_snapshot_command("save '$name'", undef, "good: $description");
+	test_snapshot_command($cupt, "save '$name'", undef, "good: $description");
 }
 
 test_good_name('abcdef', 'lower letters');
@@ -25,7 +25,7 @@ test_good_name('fgh4i', 'mixed lower letters and digits');
 sub test_bad_name {
 	my ($name, $description) = @_;
 	my $snapshot_name_error_regex = qr/^E: the system snapshot name \Q'$name'\E cannot/m;
-	test_snapshot_command("save '$name'", $snapshot_name_error_regex, "bad: $description");
+	test_snapshot_command($cupt, "save '$name'", $snapshot_name_error_regex, "bad: $description");
 }
 
 test_bad_name('', 'empty');
