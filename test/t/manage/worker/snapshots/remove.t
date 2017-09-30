@@ -1,8 +1,8 @@
 use Test::More tests => 6;
 
-my $cupt = setup();
+require(get_rinclude_path('common'));
 
-eval get_inc_code('common');
+my $cupt = setup();
 
 test_snapshot_command($cupt, "remove", qr/^E: no snapshot name specified$/m, 'no arguments');
 test_snapshot_command($cupt, "remove xyz", qr/^E: unable to find a snapshot named 'xyz'$/m, 'snapshot does not exist');
