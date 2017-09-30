@@ -1,9 +1,8 @@
 use Test::More tests => 22;
 
+require(get_rinclude_path('../common'));
+
 my $cupt = setup();
-
-eval get_inc_code('../common');
-
 
 sub test_good_name {
 	my ($name, $description) = @_;
