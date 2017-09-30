@@ -1,8 +1,8 @@
 use Test::More tests => 6;
 
-my $cupt = setup();
+require(get_rinclude_path('common'));
 
-eval get_inc_code('common');
+my $cupt = setup();
 
 test_snapshot_command($cupt, "rename", qr/^E: no previous snapshot name specified$/m, 'no arguments supplied');
 test_snapshot_command($cupt, "rename tyu", qr/^E: no new snapshot name specified$/m, 'one argument supplied');
