@@ -25,7 +25,6 @@ BEGIN {
 }
 
 our @EXPORT = qw(
-	get_inc_code
 	get_rinclude_path
 	exitcode
 	get_extended_states_path
@@ -68,26 +67,6 @@ use File::Spec;
 
 sub get_test_dir {
 	return $INC[0];
-}
-
-sub get_inc_path {
-	my ($includee) = @_;
-	my $test_dir = get_test_dir();
-
-	my $test_module_dir = (File::Spec->splitpath($0))[1];
-	{
-		my @parts = File::Spec->splitdir($test_module_dir);
-		$parts[0] = 't';
-		$test_module_dir = File::Spec->catdir(@parts);
-	}
-
-	my $file = "$test_dir/$test_module_dir/$includee.pl";
-	return $file;
-}
-
-sub get_inc_code {
-	my $path = get_inc_path($_[0]);
-	return `cat $path`;
 }
 
 sub get_rinclude_path {
