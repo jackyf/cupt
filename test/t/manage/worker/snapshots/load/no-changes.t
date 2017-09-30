@@ -1,11 +1,10 @@
 use Test::More tests => 3;
 
+require(get_rinclude_path('../common'));
+
 my $cupt = setup(
 	'dpkg_status' => [ compose_installed_record('abc', 3) ]
 );
-
-eval get_inc_code('../common');
-
 
 save_snapshot($cupt, 'sn1');
 
