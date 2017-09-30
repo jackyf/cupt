@@ -1,12 +1,7 @@
-use TestCupt;
 use Test::More tests => 4;
 
-use strict;
-use warnings;
-
 my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('aa', 1)) ,
+	'dpkg_status' => [ compose_installed_record('aa', 1) ]
 );
 
 eval get_inc_code('common');
