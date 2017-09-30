@@ -1,9 +1,8 @@
 use Test::More tests => 9;
 
+require(get_rinclude_path('../common'));
+
 my $cupt = setup();
-
-eval get_inc_code('../common');
-
 
 test_snapshot_command($cupt, 'save', qr/^E: no snapshot name/m, 'no arguments');
 
