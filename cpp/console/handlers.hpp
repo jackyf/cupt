@@ -43,7 +43,7 @@ struct ManagePackages
 {
 	enum Mode { FullUpgrade, SafeUpgrade, Install, Reinstall, Purge, Remove,
 			Satisfy, Unsatisfy, Markauto, Unmarkauto, BuildDepends, LoadSnapshot,
-			InstallIfInstalled };
+			InstallIfInstalled, SelfUpgrade };
 };
 int managePackages(Context&, ManagePackages::Mode);
 int distUpgrade(Context&);

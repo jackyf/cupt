@@ -146,6 +146,9 @@ static string getRequestAnnotation(ManagePackages::Mode mode, const string& expr
 
 static void preProcessMode(ManagePackagesContext& mpc)
 {
+	if (mpc.mode == ManagePackages::SelfUpgrade) {
+		mpc.mode = ManagePackages::Install;
+	}
 	if (mpc.mode == ManagePackages::FullUpgrade || mpc.mode == ManagePackages::SafeUpgrade)
 	{
 		if (mpc.mode == ManagePackages::SafeUpgrade)
@@ -1430,6 +1433,11 @@ void parseManagementOptions(Context& context, ManagePackages::Mode mode,
 			showNotPreferredConfigValue == "yes" ||
 			((mode == ManagePackages::FullUpgrade || mode == ManagePackages::SafeUpgrade) &&
 					showNotPreferredConfigValue == "for-upgrades");
+
+	if (mode == ManagePackages::SelfUpgrade)
+	{
+		packageExpressions = {"dpkg", "cupt"};
+	}
 }
 
 Resolver* getResolver(const shared_ptr< const Config >& config,
@@ -1600,9 +1608,7 @@ int distUpgrade(Context& context)
 	{ // 1st stage: upgrading of package management tools
 		cout << __("[ upgrading package management tools ]") << endl;
 		cout << endl;
-		context.unparsed.push_back("dpkg");
-		context.unparsed.push_back("cupt");
-		if (managePackages(context, ManagePackages::Install) != 0)
+		if (managePackages(context, ManagePackages::SelfUpgrade) != 0)
 		{
 			fatal2(__("upgrading of the package management tools failed"));
 		}

@@ -14,6 +14,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Replaced argument parsing algorithm from a shell invocation to a
         simple word parser (simple one-level shell quotes still allowed).
       - 'version' and 'help' commands now work also here.
+    - 'dist-upgrade':
+      - Do not apply positional arguments on the first stage (when upgrading
+        package management tools).
   * lib:
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.
