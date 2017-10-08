@@ -65,7 +65,7 @@ struct CUPT_API Relation
 	string toString() const;
 	/// is relation satisfied by @a otherVersionString
 	/**
-	 * This method checks @ref relationType and @ref versionString against @a
+	 * This method checks @a relationType and @a versionString against @a
 	 * otherVersionString.
 	 *
 	 * @param otherVersionString version string to compare
