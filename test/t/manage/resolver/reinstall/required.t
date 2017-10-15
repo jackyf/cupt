@@ -34,7 +34,5 @@ END
 	my $output = get_first_offer("$cupt install -o debug::resolver=yes");
 	like($output, regex_offer(), "there is an offer");
 	is(get_offered_version($output, 'abc'), '1', "package 'abc' is reinstalled");
-
-	#system("cgdb -- --args $cupt install -s -V -o debug::resolver=yes");
 };
 
