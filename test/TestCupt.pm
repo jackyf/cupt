@@ -7,7 +7,7 @@ use Digest::SHA qw(sha1_hex sha256_hex);
 use Cwd;
 use IPC::Run3;
 use List::MoreUtils qw(part each_array);
-use MIME::QuotedPrint;
+# use MIME::QuotedPrint;
 
 my $start_dir;
 
@@ -433,9 +433,8 @@ sub call_hooks {
 		return sub {
 			my ($in) = @_;
 			my $out = $hook->($variant, $kind, $entry, $in);
-			my $printable = defined($out) ?
-					encode_qp(to_one_line(substr($out, 0, 90)), '') : "<undef>";
-			#print "--- Hook: $kind -> $variant:$group/$name -> $printable\n";
+			# my $printable = defined($out) ? encode_qp(to_one_line(substr($out, 0, 90)), '') : "<undef>";
+			# print "--- Hook: $kind -> $variant:$group/$name -> $printable\n";
 			return $out;
 		};
 	};
