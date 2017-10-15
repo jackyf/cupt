@@ -52,6 +52,6 @@ sub get_output {
 	link_keyring($files->[1] => "$apt_keyring_dir/first.gpg");
 	link_keyring($files->[2] => "$apt_keyring_dir/second.gpg");
 
-	return stdall("$cupt -o debug::gpgv=yes show 'trusted()'");
+	return stdall("$cupt show 'trusted()'");
 }
 
