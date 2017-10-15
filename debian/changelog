@@ -7,6 +7,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       package indicators: "{m}" for manually installed packages, "{a}" for
       automatically installed ones. Those 2 affect only non-color output mode.
       Only "{m}" is enabled by default.
+    - Action preview prompt: fixed an internal error on showing versions for
+      to-be-purged removed packages.
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.

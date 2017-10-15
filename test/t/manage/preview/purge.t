@@ -1,5 +1,5 @@
 use TestCupt;
-use Test::More tests => 12;
+use Test::More tests => 14;
 
 use strict;
 use warnings;
@@ -34,6 +34,14 @@ sub test {
 			or diag($output);
 }
 
+sub test_shown_versions {
+	my ($whether_show_empty, $expected_version_part) = @_;
+	my $show_versions_arg = "-o cupt::console::actions-preview::show-versions=yes";
+	my $show_empty_arg = "-o cupt::console::actions-preview::show-empty-versions=$whether_show_empty";
+	my $output = get_first_offer("$cupt $show_versions_arg $show_empty_arg purge dd");
+	like($output, qr/dd \Q$expected_version_part\E/, "show-version on versionless purges (show empty: $whether_show_empty)");
+}
+
 test('simple remove', 'remove aa' => [ 'aa', '' ]);
 test('simple purge', 'purge aa' => [ '', 'aa' ]);
 test('remove all', "remove '*'" => [ 'aa bb', '' ]);
@@ -46,4 +54,7 @@ test('purge subcommand does not touch dependent packages', 'purge bb' => [ 'aa',
 test('apt::get::purge affects all packages', 'remove bb -o apt::get::purge=yes' => [ '', 'aa bb' ]);
 test('cupt::worker::purge affects all packages', 'remove bb -o cupt::worker::purge=yes' => [ '', 'aa bb' ]);
 test('purge configuration option overwrites --remove', 'purge --remove aa -o cupt::worker::purge=yes' => [ '', 'aa' ]);
+
+test_shown_versions('yes', '[<empty> -> <empty>]');
+test_shown_versions('no', '[]');
 

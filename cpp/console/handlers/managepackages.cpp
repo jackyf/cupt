@@ -564,12 +564,7 @@ void showVersionInfoIfNeeded(const Cache& cache, const string& packageName,
 	};
 
 	auto package = cache.getBinaryPackage(packageName);
-	if (!package)
-	{
-		fatal2i("no binary package '%s' available", packageName);
-	}
-
-	string oldVersionString = getVersionString(package->getInstalledVersion());
+	string oldVersionString = getVersionString(package ? package->getInstalledVersion() : nullptr);
 	string newVersionString = getVersionString(suggestedPackage.version);
 
 	if (!oldVersionString.empty() && !newVersionString.empty() &&
