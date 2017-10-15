@@ -56,7 +56,7 @@ sub get_first_offer_for {
 	if ($default_release_enabled) {
 		$cupt_options .= " -t tomorrow";
 	}
-	return get_first_offer("$cupt remove $request_type '*' -V $score_arguments $cupt_options"); 
+	return get_first_offer("$cupt remove $request_type '*' $score_arguments $cupt_options"); 
 }
 
 sub eis {

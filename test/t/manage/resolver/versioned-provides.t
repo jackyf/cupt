@@ -30,7 +30,7 @@ sub get_cupt {
 sub test {
 	my ($relation_suffix, $expected_result) = @_;
 
-	my $output = get_all_offers("$cupt -V satisfy 'pp $relation_suffix'");
+	my $output = get_all_offers("$cupt satisfy 'pp $relation_suffix'");
 
 	my @versions = map { get_offered_version($_, 'aa') } split_offers($output);
 

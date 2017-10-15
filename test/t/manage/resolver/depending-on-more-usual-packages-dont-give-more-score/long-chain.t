@@ -40,7 +40,7 @@ sub test {
 		],
 	);
 
-	my $offer = get_first_offer("$cupt install -t kk --sf a -V");
+	my $offer = get_first_offer("$cupt install -t kk --sf a");
 	my $chain_type = ($packages_were_installed ? 'upgraded' : 'new');
 	is(get_offered_version($offer, 'a'), 4, "a 6 depends on the bad chain of $count $chain_type packages --> a 4 is offered");
 }

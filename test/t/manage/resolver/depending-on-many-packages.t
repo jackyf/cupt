@@ -21,7 +21,7 @@ sub test {
 
 	my $cupt_options = $release_is_default ? '' : '-o apt::default-release=xyz';
 
-	my $output = get_first_offer("$cupt -V --$command_priority $cupt_options install big -o debug::resolver=yes");
+	my $output = get_first_offer("$cupt --$command_priority $cupt_options install big -o debug::resolver=yes");
 	is(get_offered_version($output, 'big'), $expected_version, $comment) or diag($output);
 }
 

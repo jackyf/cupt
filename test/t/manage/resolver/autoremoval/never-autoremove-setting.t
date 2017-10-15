@@ -10,7 +10,7 @@ my $cupt = TestCupt::setup(
 		entail(compose_autoinstalled_record('def'))
 );
 
-my $offer = get_first_offer("$cupt install -o apt::neverautoremove::=ab.* -V");
+my $offer = get_first_offer("$cupt install -o apt::neverautoremove::=ab.*");
 
 like($offer, regex_offer(), "no-action install succeeded");
 is(get_offered_version($offer, 'abc'), get_unchanged_version(), "'abc' is not touched");

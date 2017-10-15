@@ -41,7 +41,7 @@ sub test_with_package_count {
 	subtest "upgrade succeeds for $count" => sub {
 		my $cupt = TestCupt::setup('dpkg_status' => $installed, 'packages' => $packages);
 
-		my $output = get_first_offer("$cupt full-upgrade -V --wish kproblematic -o cupt::console::actions-preview::show-summary=yes");
+		my $output = get_first_offer("$cupt full-upgrade --wish kproblematic -o cupt::console::actions-preview::show-summary=yes");
 		like($output, regex_offer(), "there is an offer") or
 				return;
 

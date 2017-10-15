@@ -27,7 +27,7 @@ sub test_load_changes {
 	$cupt = setup_with(@$setup_params);
 
 	run3("tar -x", \$snapshots_tar);
-	my $offer = get_first_offer("$cupt snapshot load -V sn");
+	my $offer = get_first_offer("$cupt snapshot load sn");
 
 	is_deeply(get_offered_versions($offer), $expected_offered_versions, $description)
 			or diag($offer);

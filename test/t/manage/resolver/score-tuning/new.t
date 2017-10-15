@@ -17,7 +17,7 @@ sub test {
 	my ($new_score, $expected_n1, $expected_n2) = @_;
 
 	my $new_option = defined $new_score ? "-o cupt::resolver::score::new=$new_score" : '';
-	my $offer = get_first_offer("$cupt --importance=10 install n1 -V $new_option");
+	my $offer = get_first_offer("$cupt --importance=10 install n1 $new_option");
 
 	my $score_comment = ($new_score // 'default');
 

@@ -17,7 +17,7 @@ my $cupt = TestCupt::setup(
 sub get_first_offer_for {
 	my ($score) = @_;
 	my $score_option = defined $score ? "-o cupt::resolver::score::version-factor::common=$score" : '';
-	return get_first_offer("$cupt install --importance=150 --satisfy other_tt -V -o debug::resolver=yes $score_option");
+	return get_first_offer("$cupt install --importance=150 --satisfy other_tt -o debug::resolver=yes $score_option");
 }
 
 sub test {

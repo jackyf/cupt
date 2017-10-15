@@ -23,7 +23,7 @@ sub test {
 	my $expected_bb_version = ($bb_expected ? '3' : get_unchanged_version());
 
 	my $cupt = setup_cupt($from, $to);
-	my $options = "-V -o apt::install-suggests=yes -o cupt::resolver::keep-suggests=yes";
+	my $options = "-o apt::install-suggests=yes -o cupt::resolver::keep-suggests=yes";
 	my $output = get_first_offer("$cupt install aa=2 $options");
 
 	my $comment = "from: '$from', to: '$to', expected: $bb_expected";

@@ -11,7 +11,7 @@ my $packages =
 my $cupt = TestCupt::setup('packages' => $packages);
 
 subtest "':any' limits out non-Multi-Arch packages, subtest1" => sub {
-	my $output = get_all_offers("$cupt satisfy -V 'abc:any'");
+	my $output = get_all_offers("$cupt satisfy 'abc:any'");
 
 	is(get_offer_count($output), 1, "only one offer") or
 			return diag($output);

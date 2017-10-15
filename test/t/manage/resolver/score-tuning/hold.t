@@ -19,7 +19,7 @@ sub test {
 	my ($count, $upgrade_h_expected) = @_;
 
 	my $cupt = setup_cupt($count);
-	my $offer = get_first_offer("$cupt install --select=flexible cc -V");
+	my $offer = get_first_offer("$cupt install --select=flexible cc");
 
 	my $expected_cc_version = $upgrade_h_expected ? 8 : 4;
 

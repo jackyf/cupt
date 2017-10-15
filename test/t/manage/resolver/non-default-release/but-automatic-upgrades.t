@@ -40,7 +40,7 @@ sub test {
 	my ($installed_version, $command, $expected_version) = @_;
 
 	my $cupt = setup_cupt($installed_version);
-	my $offer = get_first_offer("$cupt $command -V -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt $command -o debug::resolver=yes");
 
 	my $iv_comment = ($installed_version // '<none>');
 	my $comment = "installed version: $iv_comment, command: $command, expected version: $expected_version";

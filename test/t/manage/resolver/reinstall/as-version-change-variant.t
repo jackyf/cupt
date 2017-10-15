@@ -25,7 +25,7 @@ sub test
 
 	my $cupt = setup_cupt($version, $relation);
 
-	my $output = get_all_offers("$cupt install --no-remove -V -o debug::resolver=yes");
+	my $output = get_all_offers("$cupt install --no-remove -o debug::resolver=yes");
 	my @offers = split_offers($output);
 
 	my @offered_versions = map { get_offered_version($_, 'pp') } @offers;

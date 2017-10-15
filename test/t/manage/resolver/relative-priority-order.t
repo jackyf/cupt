@@ -26,7 +26,7 @@ sub test {
 	my ($base_priority) = @_;
 
 	my $cupt = setup_cupt($base_priority);
-	my $output = get_all_offers("$cupt -V satisfy 'pp (>= 2)'");
+	my $output = get_all_offers("$cupt satisfy 'pp (>= 2)'");
 
 	my @offered_versions = map { get_offered_version($_, 'pp') } split_offers($output);
 

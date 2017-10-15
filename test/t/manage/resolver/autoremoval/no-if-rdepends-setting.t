@@ -12,7 +12,7 @@ my $cupt = TestCupt::setup(
 		entail(compose_autoinstalled_record('slave3'))
 );
 
-my $offer = get_first_offer("$cupt install -o cupt::resolver::no-autoremove-if-rdepends-exist::=slave2* -V");
+my $offer = get_first_offer("$cupt install -o cupt::resolver::no-autoremove-if-rdepends-exist::=slave2*");
 
 like($offer, regex_offer(), "no-action install succeeded");
 is(get_offered_version($offer, 'slave1'), get_unchanged_version(), "'slave1' is not touched (manually installed)");

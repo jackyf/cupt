@@ -18,7 +18,7 @@ my $cupt = setup(
 sub test {
 	my ($text, $arguments, $expected_versions) = @_;
 
-	my $output = get_first_offer("$cupt -V dist-upgrade $arguments");
+	my $output = get_first_offer("$cupt dist-upgrade $arguments");
 	is_deeply(get_offered_versions($output), $expected_versions, $text) or diag($output);
 }
 

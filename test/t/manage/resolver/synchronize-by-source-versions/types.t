@@ -30,7 +30,7 @@ my $cupt = TestCupt::setup(
 sub get_output {
 	my ($synch_type, $params) = @_;
 
-	return get_first_offer("$cupt install xyz1 -V -o cupt::resolver::synchronize-by-source-versions=$synch_type $params");
+	return get_first_offer("$cupt install xyz1 -o cupt::resolver::synchronize-by-source-versions=$synch_type $params");
 }
 
 subtest "soft" => sub {

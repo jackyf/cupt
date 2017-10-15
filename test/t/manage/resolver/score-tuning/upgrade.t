@@ -21,7 +21,7 @@ sub test {
 	my $cupt = setup_cupt($count);
 
 	my $upgrade_option = defined $score ? "-o cupt::resolver::score::upgrade=$score" : '';
-	my $offer = get_first_offer("$cupt install --select=flexible bb -V $upgrade_option -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt install --select=flexible bb $upgrade_option -o debug::resolver=yes");
 
 	my $score_comment = ($score // 'default');
 	my $comment = "upgrade score: $score_comment, breaks $count packages, upgrade expected: $upgrade_expected";

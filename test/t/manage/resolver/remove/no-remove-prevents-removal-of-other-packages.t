@@ -18,7 +18,7 @@ sub test {
 	my ($command) = @_;
 
 	my $options = '-o cupt::resolver::score::removal=100000 -o debug::resolver=yes';
-	my $offer = get_first_offer("$cupt -V $command $options");
+	my $offer = get_first_offer("$cupt $command $options");
 
 	subtest "$command" => sub {
 		like($offer, regex_offer(), "resolving succeeded");

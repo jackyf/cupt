@@ -29,7 +29,7 @@ sub test {
 
 sub test_manage {
 	my @params = @_;
-	$params[0] .= " -s -y -VN";
+	$params[0] .= " -s -y -N";
 	test(@params);
 }
 

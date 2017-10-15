@@ -14,7 +14,7 @@ my $cupt = TestCupt::setup(
 sub test {
 	my ($comment, $request, $expected_version) = @_;
 
-	my $output = get_first_offer("$cupt install -V --sf $request");
+	my $output = get_first_offer("$cupt install --sf $request");
 	my $actual_version = get_offered_version($output, 'pp');
 
 	is($actual_version, $expected_version, $comment)

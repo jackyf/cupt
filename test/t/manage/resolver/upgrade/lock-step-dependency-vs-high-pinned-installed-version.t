@@ -52,7 +52,7 @@ sub test {
 	if (defined $priority_downgrade_score) {
 		$parameters .= "-o cupt::resolver::score::version-factor::priority-downgrade=$priority_downgrade_score";
 	}
-	my $offer = get_first_offer("$cupt -V $parameters safe-upgrade");
+	my $offer = get_first_offer("$cupt $parameters safe-upgrade");
 
 	subtest $comment => sub {
 		like($offer, regex_offer, 'resolving succeeded');

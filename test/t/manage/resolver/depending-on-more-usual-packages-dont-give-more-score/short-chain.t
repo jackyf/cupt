@@ -24,7 +24,7 @@ sub lsetup {
 
 sub get_first_offer_for {
 	my ($package) = @_;
-	return get_first_offer("$cupt install $package -V -o debug::resolver=yes");
+	return get_first_offer("$cupt install $package -o debug::resolver=yes");
 }
 
 sub test {

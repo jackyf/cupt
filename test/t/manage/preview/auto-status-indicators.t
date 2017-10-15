@@ -3,8 +3,7 @@ use Term::ANSIColor;
 
 sub compose_options {
 	my ($color_value, $manual_value, $auto_value) = @_;
-	my $result = '-V'; # force multi-line output for easier regexing
-	$result .= " -o cupt::console::use-colors=$color_value";
+	my $result = " -o cupt::console::use-colors=$color_value";
 	my $indicators_prefix = 'cupt::console::actions-preview::package-indicators';
 	$result .= " -o ${indicators_prefix}::manually-installed=$manual_value" if defined($manual_value);
 	$result .= " -o ${indicators_prefix}::automatically-installed=$auto_value" if defined($auto_value);

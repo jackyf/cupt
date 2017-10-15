@@ -68,7 +68,7 @@ sub lsetup {
 sub test {
 	lsetup(@_);
 
-	my $offer = get_first_offer("$cupt -V satisfy 'ttt1 | vvv1'");
+	my $offer = get_first_offer("$cupt satisfy 'ttt1 | vvv1'");
 	is(get_offered_version($offer, 'imp'), get_empty_version(), "package 'imp' gets removed ($branches_comment)") or
 			diag($offer);
 }

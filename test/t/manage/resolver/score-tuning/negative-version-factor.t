@@ -36,7 +36,7 @@ sub setup_cupt {
 sub get_first_offer_for {
 	my ($cupt, $score) = @_;
 	my $score_option = defined $score ? "-o cupt::resolver::score::version-factor::negative=$score" : '';
-	return get_first_offer("$cupt install -t na --importance=160 a=2 -V -o debug::resolver=yes $score_option");
+	return get_first_offer("$cupt install -t na --importance=160 a=2 -o debug::resolver=yes $score_option");
 }
 
 sub test {

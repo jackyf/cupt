@@ -32,7 +32,6 @@ my $cupt = TestCupt::setup(
 );
 
 my $cupt_options = <<'END';
--V
 -o apt::default-release=x1y2
 --no-auto-remove
 -o debug::resolver=yes

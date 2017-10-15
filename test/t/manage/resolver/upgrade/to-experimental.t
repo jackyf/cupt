@@ -81,7 +81,7 @@ sub test {
 	my %space = generate_space(@_);
 	my $cupt = TestCupt::setup(%space);
 
-	my $offer = get_first_offer("$cupt -V -t experimental full-upgrade");
+	my $offer = get_first_offer("$cupt -t experimental full-upgrade");
 	my $comment = "c: " . $_[0] . ", ed: " . $_[2] . ", cd: " . $_[3] . ", id: " . $_[1];
 
 	subtest $comment => sub {

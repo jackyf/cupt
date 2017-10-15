@@ -27,7 +27,7 @@ sub init {
 sub test {
 	my ($command, $expected_versions, $comment) = @_;
 
-	my $output = get_all_offers("$cupt $command -V");
+	my $output = get_all_offers("$cupt $command");
 	my @offers = split_offers($output);
 
 	my @proposed_versions = map { get_offered_version($_, $p) } @offers;

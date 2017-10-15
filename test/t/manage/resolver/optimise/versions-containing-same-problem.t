@@ -16,7 +16,7 @@ my $cupt = TestCupt::setup(
 		entail(compose_package_record('pi', '1.2-3') . "Depends: nnn (>= 2)\n") ,
 );
 
-my $output = get_all_offers("$cupt --no-remove -V install -o cupt::resolver::max-leaf-count=6 -o debug::resolver=yes");
+my $output = get_all_offers("$cupt --no-remove install -o cupt::resolver::max-leaf-count=6 -o debug::resolver=yes");
 
 like($output, regex_offer(), "resolving succeeded") or diag($output);
 

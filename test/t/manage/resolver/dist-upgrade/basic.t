@@ -26,7 +26,7 @@ sub test {
 	my $cupt = setup_with(@$installed_versions);
 
 	subtest $text => sub {
-		my $process = CuptInteractive->new("$cupt -s -V dist-upgrade", "Do you want to continue? [y/N/q/a/rc/?]");
+		my $process = CuptInteractive->new("$cupt -s dist-upgrade", "Do you want to continue? [y/N/q/a/rc/?]");
 		my $output = $process->initial_output();
 		if (scalar(keys %$expected_tools_upgrade_versions) > 0) {
 			my $first_stage_versions = get_offered_versions($output);

@@ -20,7 +20,7 @@ my $cupt = TestCupt::setup(
 		'sources' => $sources
 );
 
-my $output = get_first_offer("$cupt install xyz1 -V -o cupt::resolver::synchronize-by-source-versions=hard");
+my $output = get_first_offer("$cupt install xyz1 -o cupt::resolver::synchronize-by-source-versions=hard");
 
 like($output, regex_offer(), "resolving succeeded, not existing packages doesn't cause problems");
 like($output, qr/xyz1 .* -> 2/, "'xyz1' package is updated");
