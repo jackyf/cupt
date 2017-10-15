@@ -385,18 +385,13 @@ bool openingForReadingSucceeds(const string& path, const string& fileType, bool 
 
 string composeGpgvKeyringOptions(const Config& config)
 {
-	bool keyringFound = false;
 	auto debugging = config.getBool("debug::gpgv");
 
 	string result;
 	auto considerKeyring = [&](const string& keyring)
 	{
 		if (debugging) debug2("keyring file is '%s'", keyring);
-		if (openingForReadingSucceeds(keyring, "keyring", debugging))
-		{
-			keyringFound = true;
-			result += format2(" --keyring %s", keyring);
-		}
+		result += format2(" --keyring %s", keyring);
 	};
 
 	considerKeyring(config.getPath("dir::etc::trusted"));
@@ -405,7 +400,7 @@ string composeGpgvKeyringOptions(const Config& config)
 		considerKeyring(keyring);
 	}
 
-	return keyringFound ? result : string{};
+	return result;
 }
 
 string composeGpgvCommand(const Config& config, const string& path)
@@ -425,11 +420,8 @@ string composeGpgvCommand(const Config& config, const string& path)
 		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return {};
 	}
 
-	string keyringOptions = composeGpgvKeyringOptions(config);
-	if (keyringOptions.empty()) return {};
-
 	return format2("gpgv --status-fd 1 %s %s %s 2>/dev/null || true",
-			keyringOptions, signaturePath, path);
+			composeGpgvKeyringOptions(config), signaturePath, path);
 }
 
 bool isNotGoodSignature(const string& alias, const string& messageType, const string& message)

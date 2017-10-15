@@ -17,9 +17,9 @@ sub test {
 	}
 }
 
-test([[], get_good_signer($good_keyring)] => 'unable to read keyring file');
-
-test([[$other_good_keyring], get_good_signer($good_keyring)] => "public key '.*' is not found");
+my $key_not_found_message = "public key '.*' is not found";
+test([[], get_good_signer($good_keyring)] => $key_not_found_message);
+test([[$other_good_keyring], get_good_signer($good_keyring)] => $key_not_found_message);
 
 my $expired_sig_options = '--faked-system-time 20161020T154812 --default-sig-expire 2016-10-22';
 test([[$good_keyring], get_good_signer($good_keyring, $expired_sig_options)] => "expired signature");
