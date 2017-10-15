@@ -213,14 +213,12 @@ sub generate_binary_command {
 }
 
 sub generate_file {
-	my ($target_path, $content, $mode) = @_;
+	my ($target_path, $content) = @_;
 	return if not defined $content;
-
-	$mode = $mode // '>';
 
 	make_path(dirname($target_path));
 
-	my $fh = IO::File->new("$mode $target_path");
+	my $fh = IO::File->new($target_path, "w");
 	defined($fh) or die "cannot open '$target_path' for writing: $!";
 
 	print $fh $content;
