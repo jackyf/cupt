@@ -368,18 +368,11 @@ string getPathOfExtendedStates(const Config& config)
 
 namespace {
 
-bool openingForReadingSucceeds(const string& path, const string& fileType, bool debugging)
+bool openingForReadingSucceeds(const string& path)
 {
 	string openError;
 	File file(path, "r", openError);
-	if (!openError.empty())
-	{
-		if (debugging)
-		{
-			debug2("unable to read %s file '%s': %s", fileType, path, openError);
-		}
-		return false;
-	}
+	return openError.empty();
 	return true;
 }
 
@@ -415,9 +408,10 @@ string composeGpgvCommand(const Config& config, const string& path)
 		if (debugging) debug2("signature file '%s' doesn't exist, omitting it and assuming self-signed file", signaturePath);
 		signaturePath.clear();
 	}
-	else
+	else if (!openingForReadingSucceeds(signaturePath))
 	{
-		if (!openingForReadingSucceeds(signaturePath, "signature", debugging)) return {};
+		if (debugging) debug2("signature file '%s' is not accessible", signaturePath);
+		signaturePath.clear();
 	}
 
 	return format2("gpgv --status-fd 1 %s %s %s 2>/dev/null || true",
@@ -532,15 +526,11 @@ bool runGpgCommand(const string& gpgCommand, const string& alias, bool debugging
 
 bool verifySignature(const Config& config, const string& path, const string& alias)
 {
-	auto debugging = config.getBool("debug::gpgv");
+	const auto debugging = config.getBool("debug::gpgv");
 	if (debugging) debug2("verifying file '%s'", path);
 
-	bool verifyResult = false;
-	auto gpgCommand = composeGpgvCommand(config, path);
-	if (!gpgCommand.empty())
-	{
-		verifyResult = runGpgCommand(gpgCommand, alias, debugging);
-	}
+	const auto gpgCommand = composeGpgvCommand(config, path);
+	const bool verifyResult = runGpgCommand(gpgCommand, alias, debugging);
 
 	if (debugging) debug2("the verify result is %u", (unsigned int)verifyResult);
 	return verifyResult;

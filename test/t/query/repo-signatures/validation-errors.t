@@ -1,4 +1,4 @@
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 require(get_rinclude_path('common'));
 
@@ -43,6 +43,14 @@ sub other_input_hook {
 	}
 }
 test([[$good_keyring], get_good_signer($good_keyring), undef, ['input' => \&other_input_hook ]] => 'bad signature');
+
+sub remove_read_permission {
+	my ($variant, undef, undef, $path) = @_;
+	if ($variant eq 'detached') {
+		chmod(0220, $path);
+	}
+}
+test([[$good_keyring], get_good_signer($good_keyring), ['orig', 'detached'], ['file' => \&remove_read_permission ]] => 'empty signature');
 
 sub unknown_signature_hash_algorighm {
 	my ($variant, undef, undef, $content) = @_;

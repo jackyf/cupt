@@ -36,6 +36,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         a key has expired.
       - Verifying repository signatures: display 'public key not found'
         warning message also if there are no available keyrings.
+      - Verifying repository signatures: treat unaccessible detached
+        signatures as missing (results in better diagnostics).
       - Removed the 'copy the keyring' hack, introduced in 2.2.2.
       - Removed support of localized descriptions without a description hash
         present in the original index (even oldstable has them).
