@@ -14,7 +14,7 @@ sub test {
 	my ($comment, $available_version, $regex) = @_;
 
 	my $cupt = setup_cupt($available_version);
-	my $offer = get_first_offer("$cupt reinstall pp");
+	my $offer = get_first_offer("$cupt -o cupt::console::actions-preview::show-versions=no reinstall pp");
 
 	like($offer, $regex, $comment);
 }

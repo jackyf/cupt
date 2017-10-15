@@ -24,6 +24,11 @@ sub get_not_preferred_regex {
 	return qr/not preferred.*\n\n^$line\s*$/im
 }
 
-like(get_first_offer("$cupt install --show-not-preferred"), get_not_preferred_regex('l m n'), 'm and n and l can be upgraded');
-like(get_first_offer("$cupt safe-upgrade"), get_not_preferred_regex('m'), 'm cannot be upgraded to the latest version');
+sub our_first_offer {
+	my ($cupt, $arguments) = @_;
+	return get_first_offer("$cupt -o cupt::console::actions-preview::show-versions=no $arguments");
+}
+
+like(our_first_offer($cupt, "install --show-not-preferred"), get_not_preferred_regex('l m n'), 'm and n and l can be upgraded');
+like(our_first_offer($cupt, "safe-upgrade"), get_not_preferred_regex('m'), 'm cannot be upgraded to the latest version');
 

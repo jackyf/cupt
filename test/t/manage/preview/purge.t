@@ -28,7 +28,7 @@ my $cupt = TestCupt::setup(
 sub test {
 	my ($comment, $subcommand, $expected_result) = @_;
 
-	my $output = get_first_offer("$cupt $subcommand");
+	my $output = get_first_offer("$cupt -o cupt::console::actions-preview::show-versions=no $subcommand");
 
 	is_deeply(extract_removed_and_purged_packages($output), $expected_result, $comment)
 			or diag($output);

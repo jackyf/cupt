@@ -106,6 +106,7 @@ dir::state::status "../dpkg/status";
 cupt::directory "<dir>";
 cupt::console::use-colors "no";
 cupt::console::actions-preview::show-summary "no";
+cupt::console::actions-preview::show-versions "yes";
 cupt::console::actions-preview::show-empty-versions "yes";
 cupt::console::show-progress-messages "no";
 cupt::resolver::max-leaf-count "1000000";
