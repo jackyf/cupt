@@ -262,6 +262,7 @@ sub fill_hook {
 	$h->{convert} //= $converter;
 	$h->{seal} //= $pass;
 	$h->{write} //= $pass;
+	$h->{file} //= $pass;
 }
 
 sub get_compressor_by_variant {
@@ -463,6 +464,9 @@ sub call_hooks {
 	}
 
 	generate_file($path, $content);
+
+	my ($last_group, $last_variant) = @{$apply[-1]};
+	$wrap_hook->($last_group, 'file', $last_variant)->($path);
 }
 
 sub zip_adjacent {
