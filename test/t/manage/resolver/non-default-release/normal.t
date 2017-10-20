@@ -34,7 +34,6 @@ my $cupt = TestCupt::setup(
 my $cupt_options = <<'END';
 -o apt::default-release=x1y2
 --no-auto-remove
--o debug::resolver=yes
 END
 $cupt_options =~ s/\n/ /g;
 

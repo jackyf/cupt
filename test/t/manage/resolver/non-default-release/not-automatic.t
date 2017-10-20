@@ -32,7 +32,7 @@ sub test {
 	my ($count, $expected_exp) = @_;
 
 	my $cupt = setup_cupt($count);
-	my $offer = get_first_offer("$cupt install --select=flexible aa -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt install --select=flexible aa");
 
 	my $expected_aa_version = $expected_exp ? 66 : 5;
 	my $comment = "breaks $count packages, expecting package from eexxpp: $expected_exp";
