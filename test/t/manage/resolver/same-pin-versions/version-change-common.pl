@@ -29,7 +29,7 @@ sub test {
 	my ($is_installed_version_available, $is_preferred_candidate_broken) = @_;
 	my $cupt = setup_cupt(@_);
 
-	my $offer = get_first_offer("$cupt $command -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt $command");
 
 	my $expected_version = $is_preferred_candidate_broken ? '2+u0' : '2+u1';
 	my $comment = "middle candidate exists: $middle_candidate_exists, " .
