@@ -29,7 +29,7 @@ sub test {
 
 	my $cupt = setup_cupt($valid1, $valid2, $valid3);
 
-	my $output = get_first_offer("$cupt $command -o debug::resolver=yes");
+	my $output = get_first_offer("$cupt $command");
 
 	my $comment = "command: $command, 1st valid: $valid1, 2nd valid: $valid2, 3rd valid: $valid3, expected suffix: '$expected_suffix'";
 	is(get_offered_version($output, 'ttt'), "4$expected_suffix", $comment)
