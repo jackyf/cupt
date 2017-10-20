@@ -15,7 +15,7 @@ END
 subtest "reinstreq without candidates" => sub {
 	my $cupt = TestCupt::setup('dpkg_status' => $installed);
 
-	my $output = get_first_offer("$cupt install -o debug::resolver=yes");
+	my $output = get_first_offer("$cupt install");
 	like($output, regex_offer(), "there is an offer");
 	is(get_offered_version($output, 'abc'), get_empty_version(), "package 'abc' is removed");
 };
@@ -31,7 +31,7 @@ END
 
 	my $cupt = TestCupt::setup('dpkg_status' => $installed, 'packages' => $packages);
 
-	my $output = get_first_offer("$cupt install -o debug::resolver=yes");
+	my $output = get_first_offer("$cupt install");
 	like($output, regex_offer(), "there is an offer");
 	is(get_offered_version($output, 'abc'), '1', "package 'abc' is reinstalled");
 };
