@@ -14,7 +14,7 @@ my $cupt = TestCupt::setup(
 sub test {
 	my ($score, $expected_ie_version) = @_;
 
-	my $cupt_options = "-o cupt::resolver::score::removal-of-essential=$score -o debug::resolver=yes";
+	my $cupt_options = "-o cupt::resolver::score::removal-of-essential=$score";
 	my $upgrade_request = '--importance=500 --install ie=2';
 	my $remove_request = '--importance=20000 --remove ie';
 	my $offer = get_first_offer("$cupt install $upgrade_request $remove_request $upgrade_request $cupt_options");

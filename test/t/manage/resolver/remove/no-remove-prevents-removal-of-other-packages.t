@@ -17,7 +17,7 @@ my $cupt = TestCupt::setup(
 sub test {
 	my ($command) = @_;
 
-	my $options = '-o cupt::resolver::score::removal=100000 -o debug::resolver=yes';
+	my $options = '-o cupt::resolver::score::removal=100000';
 	my $offer = get_first_offer("$cupt $command $options");
 
 	subtest "$command" => sub {
