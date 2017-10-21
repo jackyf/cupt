@@ -3,6 +3,36 @@ include_directories(include)
 include_directories(src)
 
 add_library(libcupt SHARED
+	./include/cupt/versionstring.hpp
+	./include/cupt/fwd.hpp
+	./include/cupt/system/worker.hpp
+	./include/cupt/system/resolvers/native.hpp
+	./include/cupt/system/resolver.hpp
+	./include/cupt/system/snapshots.hpp
+	./include/cupt/system/state.hpp
+	./include/cupt/stringrange.hpp
+	./include/cupt/download/method.hpp
+	./include/cupt/download/methodfactory.hpp
+	./include/cupt/download/progresses/console.hpp
+	./include/cupt/download/manager.hpp
+	./include/cupt/download/progress.hpp
+	./include/cupt/download/uri.hpp
+	./include/cupt/file.hpp
+	./include/cupt/packagename.hpp
+	./include/cupt/format2.hpp
+	./include/cupt/common.hpp
+	./include/cupt/config.hpp
+	./include/cupt/cache/package.hpp
+	./include/cupt/cache/version.hpp
+	./include/cupt/cache/binaryversion.hpp
+	./include/cupt/cache/binarypackage.hpp
+	./include/cupt/cache/sourcepackage.hpp
+	./include/cupt/cache/sourceversion.hpp
+	./include/cupt/cache/releaseinfo.hpp
+	./include/cupt/cache/relation.hpp
+	./include/cupt/hashsums.hpp
+	./include/cupt/range.hpp
+	./include/cupt/cache.hpp
 	./src/internal/common.cpp
 	./src/internal/configparser.cpp
 	./src/internal/nativeresolver/impl.cpp
