@@ -10,6 +10,6 @@ my $cupt = TestCupt::setup(
 		entail(compose_package_record('b', 1)),
 );
 
-my $offer = get_first_offer("$cupt install a -o cupt::resolver::max-leaf-count=1 -o debug::resolver=yes");
+my $offer = get_first_offer("$cupt install a -o cupt::resolver::max-leaf-count=1");
 like($offer, regex_offer());
 
