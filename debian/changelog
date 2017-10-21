@@ -53,6 +53,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         installed, it's enough that dpkg binary is available.
   * debian:
     - control:
+      - Bumped the ABI suffix from 1 to 2.
       - Added build-dependency on locales-all (for locale-specific tests).
       - Added build-dependency on liblist-moreutils-perl (for tests).
       - Added build-dependency on libtest-dir-perl (for tests).
