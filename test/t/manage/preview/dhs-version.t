@@ -1,14 +1,11 @@
-use TestCupt;
 use Test::More tests => 2;
 
-use strict;
-use warnings;
-
-my $cupt = TestCupt::setup(
-	'packages' =>
-		entail(compose_package_record('pp', 5) . "Depends: not-existing\n") .
-		entail(compose_package_record('pp', 5, 'sha' => 'abc1')) .
-		entail(compose_package_record('pp', 5, 'sha' => 'abc2') . "Recommends: not-existing\n"),
+my $cupt = setup(
+	'packages' => [
+		compose_package_record('pp', 5) . "Depends: not-existing\n" ,
+		compose_package_record('pp', 5, 'sha' => 'abc1') ,
+		compose_package_record('pp', 5, 'sha' => 'abc2') . "Recommends: not-existing\n" ,
+	],
 );
 
 sub test {
