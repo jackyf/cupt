@@ -23,7 +23,7 @@ sub test {
 	my ($new_pin, $upgrade_expected) = @_;
 
 	my $cupt = setup_cupt($new_pin);
-	my $offer = get_first_offer("$cupt install mm -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt install mm");
 
 	my $comment = "new package of pin $new_pin vs upgrade of existing one, upgrade expected: $upgrade_expected";
 
