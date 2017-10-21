@@ -636,11 +636,12 @@ void checkForUntrustedPackages(const Worker::ActionsPreview& actionsPreview,
 	}
 }
 
-void checkForRemovalOfEssentialPackages(const Cache& cache,
-		const Worker::ActionsPreview& actionsPreview, bool* isDangerous)
+void checkForRemovalOfPackages(const Cache& cache,
+		const Worker::ActionsPreview& actionsPreview, bool* isDangerous,
+		const char* desc, const std::function<bool(const BinaryVersion*)>& predicate)
 {
-	vector< string > essentialPackageNames;
-	// generate loud warning for unsigned versions
+	vector<string> affectedPackageNames;
+
 	const WA::Type affectedActionTypes[] = { WA::Remove, WA::Purge };
 	for (auto actionType: affectedActionTypes)
 	{
@@ -653,21 +654,37 @@ void checkForRemovalOfEssentialPackages(const Cache& cache,
 				auto version = package->getInstalledVersion();
 				if (version) // may return false when purge of config-files package when candidates available
 				{
-					if (version->essential)
+					if (predicate(version))
 					{
-						essentialPackageNames.push_back(packageName);
+						affectedPackageNames.push_back(packageName);
 					}
 				}
 			}
 		}
 	}
 
-	if (!essentialPackageNames.empty())
+	if (!affectedPackageNames.empty())
 	{
 		*isDangerous = true;
-		cout << __("WARNING! The following essential packages will be removed:") << endl;
-		printByLine(essentialPackageNames);
+		cout << __(desc) << endl;
+		printByLine(affectedPackageNames);
 	}
+}
+
+void checkForRemovalOfEssentialPackages(const Cache& cache,
+		const Worker::ActionsPreview& actionsPreview, bool* isDangerous)
+{
+	const char desc[] = "WARNING! The following essential packages will be removed:";
+	checkForRemovalOfPackages(cache, actionsPreview, isDangerous, desc,
+							  [](const BinaryVersion* v) { return v->essential; });
+}
+
+void checkForRemovalOfImportantPackages(const Cache& cache,
+		const Worker::ActionsPreview& actionsPreview, bool* isDangerous)
+{
+	const char desc[] = "WARNING! The following important packages will be removed:";
+	checkForRemovalOfPackages(cache, actionsPreview, isDangerous, desc,
+							  [](const BinaryVersion* v) { return v->important; });
 }
 
 void checkForIgnoredHolds(const Cache& cache,
@@ -722,6 +739,10 @@ void checkAndPrintDangerousActions(const Config& config, const Cache& cache,
 	if (config.getBool("cupt::console::warnings::removal-of-essential"))
 	{
 		checkForRemovalOfEssentialPackages(cache, actionsPreview, isDangerousAction);
+	}
+	if (config.getBool("cupt::console::warnings::removal-of-important"))
+	{
+		checkForRemovalOfImportantPackages(cache, actionsPreview, isDangerousAction);
 	}
 	checkForIgnoredHolds(cache, actionsPreview, isDangerousAction);
 	checkForMultiArchSystem(config, isDangerousAction);

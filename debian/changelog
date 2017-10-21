@@ -9,6 +9,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       Only "{m}" is enabled by default.
     - Action preview prompt: fixed an internal error on showing versions for
       to-be-purged removed packages.
+    - Action preview prompt: warn (by default) when removing important
+      packages (the ones marked as 'Important: yes').
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.
@@ -22,6 +24,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
   * lib:
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.
+      - New option 'cupt::console::warnings::removal-of-important'.
       - Don't ask dpkg for architectures if the 'apt::architecture' option
         was already set via configuration file.
       - New method 'getConfigurationPartPaths'.
@@ -41,6 +44,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Removed the 'copy the keyring' hack, introduced in 2.2.2.
       - Removed support of localized descriptions without a description hash
         present in the original index (even oldstable has them).
+    - cache/binaryversion:
+      - [ABI break] New member 'important'.
     - system/worker:
       - 'updateReleaseAndIndexData': fixed removing partial uncompressed file
         if uncompressing of a temporary file failed.

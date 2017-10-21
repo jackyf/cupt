@@ -277,6 +277,11 @@ allow colors.
 boolean, treat removals of essential packages as dangerous action. True
 by default.
 
+=item cupt::console::warnings::removal-of-important
+
+boolean, treat removals of important packages as dangreous action. True
+by default.
+
 =item cupt::directory
 
 string, base directory for all cupt::directory::* options

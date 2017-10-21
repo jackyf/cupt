@@ -160,6 +160,7 @@ void ConfigImpl::initializeVariables()
 		{ "cupt::console::show-progress-messages", "yes" },
 		{ "cupt::console::use-colors", "auto" },
 		{ "cupt::console::warnings::removal-of-essential", "yes" },
+		{ "cupt::console::warnings::removal-of-important", "yes" },
 		{ "cupt::directory", "/" },
 		{ "cupt::directory::configuration", "etc/cupt" },
 		{ "cupt::directory::configuration::main", "cupt.conf" },

@@ -111,6 +111,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 	fillCommon(v.get(), initParams);
 
 	v->essential = false;
+	v->important = false;
 	v->installedSize = 0;
 	v->file.size = 0;
 
@@ -125,6 +126,7 @@ unique_ptr< BinaryVersion > parseBinaryVersion(const VersionParseParameters& ini
 		{
 			TAG(Version, v->versionString = tagValue.toString();)
 			TAG(Essential, v->essential = (tagValue.toString() == "yes");)
+			TAG(Important, v->important = (tagValue.toString() == "yes");)
 			PARSE_PRIORITY
 			TAG(Size, v->file.size = tagValue2uint32(tagValue);)
 			TAG(Installed-Size, v->installedSize = tagValue2uint32(tagValue) * 1024;)

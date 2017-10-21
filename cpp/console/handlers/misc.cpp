@@ -159,6 +159,9 @@ int showBinaryVersions(Context& context)
 			{
 				p(__("Essential"), __("yes"));
 			}
+			if (version->important) {
+				p(__("Important"), __("yes"));
+			}
 			p(__("Priority"), __(Version::Priorities::strings[version->priority].c_str()));
 			p(__("Section"), version->section);
 			if (version->file.size)
