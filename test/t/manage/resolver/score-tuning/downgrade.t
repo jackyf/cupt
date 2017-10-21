@@ -21,7 +21,7 @@ sub test {
 	my $cupt = setup_cupt($count);
 
 	my $downgrade_option = defined $downgrade_score ? "-o cupt::resolver::score::downgrade=$downgrade_score" : '';
-	my $offer = get_first_offer("$cupt install --select=flexible bb $downgrade_option -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt install --select=flexible bb $downgrade_option");
 
 	my $score_comment = ($downgrade_score // 'default');
 	my $comment = "downgrade score: $score_comment, breaks $count packages, downgrade expected: $downgrade_expected";

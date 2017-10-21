@@ -13,7 +13,7 @@ my $cupt = TestCupt::setup(
 
 sub test {
 	my ($limit, $expected_result) = @_;
-	my $offer = get_first_offer("$cupt install l1 -o cupt::resolver::max-leaf-count=$limit -o debug::resolver=yes");
+	my $offer = get_first_offer("$cupt install l1 -o cupt::resolver::max-leaf-count=$limit");
 	my $result = ($offer =~ regex_offer()) || 0;
 	is($result, $expected_result, "when limit is $limit, expect $expected_result") or diag($offer);
 }

@@ -52,7 +52,7 @@ sub get_first_offer_for {
 			compose_score_argument('removal-of-autoinstalled', $ra_score) . ' ' .
 			compose_score_argument('removal-of-essential', $re_score);
 
-	my $cupt_options = "--no-auto-remove -o debug::resolver=yes";
+	my $cupt_options = "--no-auto-remove";
 	if ($default_release_enabled) {
 		$cupt_options .= " -t tomorrow";
 	}
@@ -64,12 +64,7 @@ sub eis {
 
 	my $expected_version = $result ? get_unchanged_version() : get_empty_version();
 	is(get_offered_version($offer, $package), $expected_version, $package) or
-			diag(get_debug_part($offer));
-}
-
-sub get_debug_part {
-	my ($input) = @_;
-	return join("\n", grep { m/^D:/ } split("\n", $input));
+			diag($offer);
 }
 
 sub test {
