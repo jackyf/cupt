@@ -316,9 +316,19 @@ const char* ArchitecturedRelation::p_parseArchitectures(const char* start, const
 
 const char* ArchitecturedRelation::p_parseProfiles(const char* start, const char* end)
 {
+	bool isNewList = true;
+	auto callback = [this, &isNewList](const char* a, const char* b){
+		if (isNewList)
+		{
+			buildProfiles.emplace_back();
+			isNewList = false;
+		}
+		auto& lastList = buildProfiles.back();
+		lastList.emplace_back(a, b);
+	};
+
 	return parseEnclosedWordList(start, end, '<', '>',
-			__("unable to parse build profiles '%s'"),
-			[](const char*, const char*){}); // TODO: save build-profiles
+			__("unable to parse build profiles '%s'"), callback);
 }
 
 thread_local static const char* parentEnd;
@@ -331,13 +341,14 @@ ArchitecturedRelation::ArchitecturedRelation(pair<const char*, const char*> inpu
 
 string ArchitecturedRelation::toString() const
 {
-	static const string openingBracket = "[";
-	static const string closingBracket = "]";
-	static const string space = " ";
 	string result = Relation::toString();
 	if (!architectureFilters.empty())
 	{
-		result += space + openingBracket + join(" ", architectureFilters) + closingBracket;
+		result += string(" [") + join(" ", architectureFilters) + ']';
+	}
+	for (const auto& profileList: buildProfiles)
+	{
+		result += string(" <") + join(" ", profileList) + '>';
 	}
 	return result;
 }

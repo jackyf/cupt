@@ -46,6 +46,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         present in the original index (even oldstable has them).
     - cache/binaryversion:
       - [ABI break] New member 'important'.
+    - cache/sourceversion:
+      - [ABI break] New member 'buildProfiles'.
     - system/worker:
       - 'updateReleaseAndIndexData': fixed removing partial uncompressed file
         if uncompressing of a temporary file failed.
