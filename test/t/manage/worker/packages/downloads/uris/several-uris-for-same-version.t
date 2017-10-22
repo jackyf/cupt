@@ -29,9 +29,6 @@ my $cupt = setup(
 );
 
 test_uris('2 uris for lll 0, same filename', $cupt, 'install lll', [ 'https://qq.uu/pool/0.deb | ftp://ftp.ret/pool/0.deb' ]);
-TODO: {
-	local $TODO = 'not implemented';
-	test_uris('2 uris for mmm 3, different filenames', $cupt, 'install mmm', [ 'https://qq.uu/pool/1.deb | ftp://ftp.ret/pool/2.deb' ]);
-}
+test_uris('2 uris for mmm 3, different filenames', $cupt, 'install mmm', [ 'https://qq.uu/pool/1.deb | ftp://ftp.ret/pool/1.deb' ]);
 test_uris('1 uri for "another" mm 3', $cupt, 'install "Ru(.*blabla.*)"', [ 'http://blabla.uu/pool/3.deb' ]);
 
