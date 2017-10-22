@@ -234,7 +234,7 @@ struct CUPT_API ArchitecturedRelationLine: public vector< ArchitecturedRelationE
 	/// converts to RelationLine given system architecture
 	/**
 	 * Filters ArchitecturedRelationLine using binary system architecture.
-	 * Throws out architectured relation expressions, where @ref
+	 * Throws out architectured relation expressions, where @a
 	 * ArchitecturedRelation::architectureFilters do not match system architecture. Matching
 	 * architectured relation expressions are converted to relation
 	 * expressions.
