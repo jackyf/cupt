@@ -84,7 +84,7 @@ void debugActionCommand(const InnerActionGroup& actionGroup, const string& reque
 			actionGroup.continued ? " (continued)" : "");
 }
 
-bool shouldDeferTriggers(const Config& config, const Cache& cache)
+bool shouldDeferTriggers(const Config& config)
 {
 	const string& optionName = "cupt::worker::defer-triggers";
 	if (config.getString(optionName) == "auto")
@@ -172,7 +172,7 @@ void Dpkg::p_makeSureThatSystemIsTriggerClean()
 Dpkg::Dpkg(WorkerBase* wb) :
 	p_base(wb),
 	p_fullCommand(getFullBinaryCommand(*wb->_config)),
-	p_shouldDeferTriggers(shouldDeferTriggers(*wb->_config, *wb->_cache)),
+	p_shouldDeferTriggers(shouldDeferTriggers(*wb->_config)),
 	p_archivesDirectoryPath(wb->_get_archives_directory()),
 	p_debugging(wb->_config->getBool("debug::worker"))
 {
