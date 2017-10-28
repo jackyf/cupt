@@ -234,9 +234,13 @@ static void processBuildDependsExpression(ManagePackagesContext& mpc, const stri
 				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
 		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildDependsIndep]
 				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
+		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildDependsArch]
+				.toRelationLine(architecture), ManagePackages::Satisfy, annotation);
 		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildConflicts]
 				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildConflictsIndep]
+				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
+		__satisfy_or_unsatisfy(mpc, version->relations[SourceVersion::RelationTypes::BuildConflictsArch]
 				.toRelationLine(architecture), ManagePackages::Unsatisfy, annotation);
 	}
 }

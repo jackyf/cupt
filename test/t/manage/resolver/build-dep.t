@@ -1,4 +1,4 @@
-use Test::More tests => 5+2+3+4+1;
+use Test::More tests => 5+2+4+5+1;
 
 sub test {
 	my ($text, $pp_tags, $expected_changes) = @_;
@@ -34,6 +34,11 @@ sub bdi {
 	return "Build-Depends-Indep: $arg\n";
 }
 
+sub bda {
+	my $arg = shift;
+	return "Build-Depends-Arch: $arg\n";
+}
+
 sub bc {
 	my $arg = shift;
 	return "Build-Conflicts: $arg\n";
@@ -42,6 +47,11 @@ sub bc {
 sub bci {
 	my $arg = shift;
 	return "Build-Conflicts-Indep: $arg\n";
+}
+
+sub bca {
+	my $arg = shift;
+	return "Build-Conflicts-Arch: $arg\n";
 }
 
 my $nv = get_empty_version();
@@ -58,12 +68,14 @@ test('suggests are ignored', [bd('qq')] => {'qq' => 1});
 test('build-depends-indep', [bdi('xx')] => {'xx' => 1});
 test('build-depends-indep plus build-depends',
 		[bd('xx'), bdi('nn')] => {'xx' => 1, 'nn' => 1});
+test('build-depends-arch', [bda('xx')] => {'xx' => 1});
 test('tag order does not matter', [bdi('xx'), bd('nn')] => {'xx' => 1, 'nn' => 1});
 
 test('conflicts with non-installed', [bc('unkn')] => {});
 test('conflicts with installed', [bc('yy')] => {'yy' => $nv});
 test('versioned conflicts', [bc('yy (= 1)')] => {'yy' => 3});
 test('build-conflicts-indep', [bci('yy')] => {'yy' => $nv});
+test('build-conflicts-arch', [bca('yy')] => {'yy' => $nv});
 
-test('many tags', [bc('unkn'), bci('yy'), bdi('nn')] => {'yy' => $nv, 'nn' => 1});
+test('many tags', [bc('unkn'), bci('yy'), bdi('nn'), bca('unkn2')] => {'yy' => $nv, 'nn' => 1});
 
