@@ -959,8 +959,10 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 
 		CONSTRUCT_FS("build-depends", DependencyFS<SRT::Type>(SRT::BuildDepends, arguments))
 		CONSTRUCT_FS("build-depends-indep", DependencyFS<SRT::Type>(SRT::BuildDependsIndep, arguments))
+		CONSTRUCT_FS("build-depends-arch", DependencyFS<SRT::Type>(SRT::BuildDependsArch, arguments))
 		CONSTRUCT_FS("build-conflicts", DependencyFS<SRT::Type>(SRT::BuildConflicts, arguments))
 		CONSTRUCT_FS("build-conflicts-indep", DependencyFS<SRT::Type>(SRT::BuildConflictsIndep, arguments))
+		CONSTRUCT_FS("build-conflicts-arch", DependencyFS<SRT::Type>(SRT::BuildConflictsArch, arguments))
 
 		CONSTRUCT_FS("source-to-binary", SourceToBinaryFS(arguments))
 	}
@@ -970,8 +972,10 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 
 		CONSTRUCT_FS("reverse-build-depends", ReverseBuildDependencyFS(SRT::BuildDepends, arguments))
 		CONSTRUCT_FS("reverse-build-depends-indep", ReverseBuildDependencyFS(SRT::BuildDependsIndep, arguments))
+		CONSTRUCT_FS("reverse-build-depends-arch", ReverseBuildDependencyFS(SRT::BuildDependsArch, arguments))
 		CONSTRUCT_FS("reverse-build-conflicts", ReverseBuildDependencyFS(SRT::BuildConflicts, arguments))
 		CONSTRUCT_FS("reverse-build-conflicts-indep", ReverseBuildDependencyFS(SRT::BuildConflictsIndep, arguments))
+		CONSTRUCT_FS("reverse-build-conflicts-arch", ReverseBuildDependencyFS(SRT::BuildConflictsArch, arguments))
 
 		CONSTRUCT_FS("binary-to-source", BinaryToSourceFS(arguments))
 	}

@@ -21,6 +21,10 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - 'dist-upgrade':
       - Do not apply positional arguments on the first stage (when upgrading
         package management tools).
+    - 'functional selectors':
+      - New functions 'build-depends-arch' and 'build-conflicts-arch'.
+      - New functions 'reverse-build-depends-arch' and
+        'reverse-build-conflicts-arch.
   * lib:
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.

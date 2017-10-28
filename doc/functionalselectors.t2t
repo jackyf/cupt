@@ -164,8 +164,10 @@ versions which satisfy the build-time dependency of type //relation type// for
 || Function name | Short alias | //Relation type// |
 | ``build-depends`` | ``Zbd`` | Build-Depends |
 | ``build-depends-indep`` | ``Zbdi`` | Build-Depends-Indep |
+| ``build-depends-arch`` |  | Build-Depends-Arch |
 | ``build-conflicts`` | ``Zbc`` | Build-Conflicts |
 | ``build-conflicts-indep`` | ``Zbci`` | Build-Conflicts-Indep |
+| ``build-conflicts-arch`` |  | Build-Conflicts-Arch |
 
 === reverse dependencies ===
 
@@ -178,8 +180,10 @@ build-dependency of type //relation type// (see the following table).
 || Function name | Short alias | //Relation type// |
 | ``reverse-build-depends`` | ``ZRbd`` | Build-Depends |
 | ``reverse-build-depends-indep`` | ``ZRbdi`` | Build-Depends-Indep |
+| ``reverse-build-depends-arch`` |  | Build-Depends-Arch |
 | ``reverse-build-conflicts`` | ``ZRbc`` | Build-Conflicts |
 | ``reverse-build-conflicts-indep`` | ``ZRbci`` | Build-Conflicts-Indep |
+| ``reverse-build-conflicts-arch`` |  | Build-Conflicts-Arch |
 
 == Metafunctions ==
 
