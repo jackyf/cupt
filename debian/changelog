@@ -48,6 +48,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - [ABI break] New member 'important'.
     - cache/sourceversion:
       - [ABI break] New member 'buildProfiles'.
+      - [ABI break] 'RelationTypes': new values 'BuildDependsArch' and
+        'BuildConflictsArch'.
     - system/worker:
       - 'updateReleaseAndIndexData': fixed removing partial uncompressed file
         if uncompressing of a temporary file failed.

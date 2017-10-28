@@ -352,8 +352,10 @@ unique_ptr< SourceVersion > parseSourceVersion(const VersionParseParameters& ini
 			{
 				TAG(Build-Depends, v->relations[RelationTypes::BuildDepends] = ArchitecturedRelationLine(tagValue);)
 				TAG(Build-Depends-Indep, v->relations[RelationTypes::BuildDependsIndep] = ArchitecturedRelationLine(tagValue);)
+				TAG(Build-Depends-Arch, v->relations[RelationTypes::BuildDependsArch] = ArchitecturedRelationLine(tagValue);)
 				TAG(Build-Conflicts, v->relations[RelationTypes::BuildConflicts] = ArchitecturedRelationLine(tagValue);)
 				TAG(Build-Conflicts-Indep, v->relations[RelationTypes::BuildConflictsIndep] = ArchitecturedRelationLine(tagValue);)
+				TAG(Build-Conflicts-Arch, v->relations[RelationTypes::BuildConflictsArch] = ArchitecturedRelationLine(tagValue);)
 			}
 
 			if (Version::parseInfoOnly)

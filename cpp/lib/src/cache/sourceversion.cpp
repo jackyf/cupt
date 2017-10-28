@@ -53,10 +53,12 @@ const string SourceVersion::FileParts::strings[] = {
 	N__("Tarball"), N__("Diff"), N__("Dsc")
 };
 const string SourceVersion::RelationTypes::strings[] = {
-	N__("Build-Depends"), N__("Build-Depends-Indep"), N__("Build-Conflicts"), N__("Build-Conflicts-Indep"),
+	N__("Build-Depends"), N__("Build-Depends-Indep"), N__("Build-Depends-Arch"),
+	N__("Build-Conflicts"), N__("Build-Conflicts-Indep"), N__("Build-Conflicts-Arch"),
 };
 const char* SourceVersion::RelationTypes::rawStrings[] = {
-	"build-depends", "build-depend-indep", "build-conflicts", "build-conflicts-indep",
+	"build-depends", "build-depends-indep", "build-depends-arch",
+	"build-conflicts", "build-conflicts-indep", "build-conflicts-arch"
 };
 
 }

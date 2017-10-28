@@ -34,7 +34,8 @@ struct CUPT_API SourceVersion: public Version
 	struct RelationTypes
 	{
 		/// type
-		enum Type { BuildDepends, BuildDependsIndep, BuildConflicts, BuildConflictsIndep, Count };
+		enum Type { BuildDepends, BuildDependsIndep, BuildDependsArch,
+					BuildConflicts, BuildConflictsIndep, BuildConflictsArch, Count };
 		static const string strings[]; ///< @copydoc BinaryVersion::RelationTypes::strings
 		static const char* rawStrings[]; ///< @copydoc BinaryVersion::RelationTypes::rawStrings
 	};

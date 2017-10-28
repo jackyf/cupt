@@ -1,4 +1,4 @@
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 my $orig = "aaa(<<  3.2~xyz+1 )";
 my $parsed = "aaa (<< 3.2~xyz+1)";
@@ -24,6 +24,8 @@ sub test {
 
 test('Build-Depends');
 test('Build-Depends-Indep');
+test('Build-Depends-Arch');
 test('Build-Conflicts');
 test('Build-Conflicts-Indep');
+test('Build-Conflicts-Arch');
 
