@@ -1,4 +1,4 @@
-use Test::More tests => 6+6+1;
+use Test::More tests => 10+10+1;
 
 require(get_rinclude_path('FSE'));
 
@@ -32,9 +32,13 @@ my $psm = pn('sm');
 my $psn = pn('sn');
 
 eis($cupt, "build-depends($psm)", qw(bx));
+eis($cupt, "Zbd($psm)", qw(bx));
 eis($cupt, "build-conflicts($psn)", qw(by));
+eis($cupt, "Zbc($psn)", qw(by));
 eis($cupt, "build-depends-indep($psn)", qw(bx));
+eis($cupt, "Zbdi($psn)", qw(bx));
 eis($cupt, "build-conflicts-indep($psm)", qw(by));
+eis($cupt, "Zbci($psm)", qw(by));
 eis($cupt, "build-depends-arch($psn)", qw(bz));
 eis($cupt, "build-conflicts-arch($psm)", qw(bz));
 
@@ -43,9 +47,13 @@ my $pby = pn('by');
 my $pbz = pn('bz');
 
 eis($cupt, "source-to-binary(reverse-build-depends($pbx))", qw(bm));
+eis($cupt, "source-to-binary(ZRbd($pbx))", qw(bm));
 eis($cupt, "source-to-binary(reverse-build-conflicts($pby))", qw(bn));
+eis($cupt, "source-to-binary(ZRbc($pby))", qw(bn));
 eis($cupt, "source-to-binary(reverse-build-depends-indep($pbx))", qw(bn));
+eis($cupt, "source-to-binary(ZRbdi($pbx))", qw(bn));
 eis($cupt, "source-to-binary(reverse-build-conflicts-indep($pby))", qw(bm));
+eis($cupt, "source-to-binary(ZRbci($pby))", qw(bm));
 eis($cupt, "source-to-binary(reverse-build-depends-arch($pbz))", qw(bn));
 eis($cupt, "source-to-binary(reverse-build-conflicts-arch($pbz))", qw(bm));
 
