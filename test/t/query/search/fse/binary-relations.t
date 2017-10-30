@@ -1,4 +1,4 @@
-use Test::More tests => 24;
+use Test::More tests => 16 + 2 + 18 + 2 + 2;
 
 require(get_rinclude_path('FSE'));
 
@@ -35,28 +35,44 @@ my $peee = pn('eee');
 my $pddd = pn('ddd');
 
 eis($cupt, "pre-depends($pccc)", qw(eee));
+eis($cupt, "Ypd($pccc)", qw(eee));
 eis($cupt, "depends($paaa)", qw(bbb ccc));
+eis($cupt, "Yd($paaa)", qw(bbb ccc));
 eis($cupt, "recommends($paaa)", qw(ddd));
+eis($cupt, "Yr($paaa)", qw(ddd));
 eis($cupt, "suggests($pbbb)", qw(eee));
+eis($cupt, "Ys($pbbb)", qw(eee));
 eis($cupt, "enhances($pccc)", qw(aaa));
+eis($cupt, "Ye($pccc)", qw(aaa));
 eis($cupt, "conflicts($pccc)", qw(bbb));
+eis($cupt, "Yc($pccc)", qw(bbb));
 eis($cupt, "breaks($peee)", qw(ccc));
+eis($cupt, "Yb($peee)", qw(ccc));
 eis($cupt, "replaces($pddd)", qw(eee));
+eis($cupt, "Yrp($pddd)", qw(eee));
 
 eis($cupt, "conflicts($paaa)", ());
 eis($cupt, "recommends($pccc)", ());
 
 
 eis($cupt, "reverse-pre-depends($peee)", qw(ccc));
+eis($cupt, "YRpd($peee)", qw(ccc));
 eis($cupt, "reverse-depends($pbbb)", qw(aaa));
+eis($cupt, "YRd($pbbb)", qw(aaa));
 eis($cupt, "reverse-depends($pccc)", qw(aaa));
 eis($cupt, "reverse-depends(or($pbbb,$pccc))", qw(aaa));
 eis($cupt, "reverse-recommends($pddd)", qw(aaa));
+eis($cupt, "YRr($pddd)", qw(aaa));
 eis($cupt, "reverse-suggests($peee)", qw(bbb));
+eis($cupt, "YRs($peee)", qw(bbb));
 eis($cupt, "reverse-enhances($paaa)", qw(ccc));
+eis($cupt, "YRe($paaa)", qw(ccc));
 eis($cupt, "reverse-conflicts($pbbb)", qw(ccc));
+eis($cupt, "YRc($pbbb)", qw(ccc));
 eis($cupt, "reverse-breaks($pccc)", qw(eee));
+eis($cupt, "YRb($pccc)", qw(eee));
 eis($cupt, "reverse-replaces($peee)", qw(ddd));
+eis($cupt, "YRrp($peee)", qw(ddd));
 
 eis($cupt, "reverse-depends($peee)", ());
 eis($cupt, "reverse-enhances($pbbb)", ());
