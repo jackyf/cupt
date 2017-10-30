@@ -1136,13 +1136,17 @@ void processAliases(string* functionNamePtr, vector< string >* argumentsPtr)
 
 			{ "Zbd", "build-depends" },
 			{ "Zbdi", "build-depends-indep" },
+			{ "Zbda", "build-depends-arch" },
 			{ "Zbc", "build-conflicts" },
 			{ "Zbci", "build-conflicts-indep" },
+			{ "Zbca", "build-conflicts-arch" },
 
 			{ "ZRbd", "reverse-build-depends" },
 			{ "ZRbdi", "reverse-build-depends-indep" },
+			{ "ZRbda", "reverse-build-depends-arch" },
 			{ "ZRbc", "reverse-build-conflicts" },
 			{ "ZRbci", "reverse-build-conflicts-indep" },
+			{ "ZRbca", "reverse-build-conflicts-arch" },
 
 			{ "Ra", "release:archive" },
 			{ "Rn", "release:codename" },

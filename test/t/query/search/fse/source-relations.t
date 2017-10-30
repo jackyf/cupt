@@ -1,4 +1,4 @@
-use Test::More tests => 10+10+1;
+use Test::More tests => 12+12+1;
 
 require(get_rinclude_path('FSE'));
 
@@ -40,7 +40,9 @@ eis($cupt, "Zbdi($psn)", qw(bx));
 eis($cupt, "build-conflicts-indep($psm)", qw(by));
 eis($cupt, "Zbci($psm)", qw(by));
 eis($cupt, "build-depends-arch($psn)", qw(bz));
+eis($cupt, "Zbda($psn)", qw(bz));
 eis($cupt, "build-conflicts-arch($psm)", qw(bz));
+eis($cupt, "Zbca($psm)", qw(bz));
 
 my $pbx = pn('bx');
 my $pby = pn('by');
@@ -55,7 +57,9 @@ eis($cupt, "source-to-binary(ZRbdi($pbx))", qw(bn));
 eis($cupt, "source-to-binary(reverse-build-conflicts-indep($pby))", qw(bm));
 eis($cupt, "source-to-binary(ZRbci($pby))", qw(bm));
 eis($cupt, "source-to-binary(reverse-build-depends-arch($pbz))", qw(bn));
+eis($cupt, "source-to-binary(ZRbda($pbz))", qw(bn));
 eis($cupt, "source-to-binary(reverse-build-conflicts-arch($pbz))", qw(bm));
+eis($cupt, "source-to-binary(ZRbca($pbz))", qw(bm));
 
 eis($cupt, "$pbx & build-depends($psm)", qw(bx));
 
