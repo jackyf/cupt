@@ -1,4 +1,4 @@
-use Test::More tests => 10;
+use Test::More tests => 6 + 15;
 
 require(get_rinclude_path('FSE'));
 
@@ -20,15 +20,26 @@ my $cupt = setup(
 	'extended_states' => compose_autoinstalled_record('a')
 );
 
+eis($cupt, 'package:name(a)', qw(a));
+eis($cupt, 'Pn(a)', qw(a));
 eis($cupt, 'package:installed()', qw(i a));
+eis($cupt, 'Pi()', qw(i a));
 eis($cupt, 'package:automatically-installed()', qw(a));
+eis($cupt, 'Pai()', qw(a));
 
+eis($cupt, 'version(3.*)', qw(a));
+eis($cupt, 'v(3.*)', qw(a));
 eis($cupt, 'trusted', qw(p));
+eis($cupt, 't', qw(p));
 eis($cupt, 'priority(extra)', qw(i p));
+eis($cupt, 'p(extra)', qw(i p));
 eis($cupt, 'priority(standard)', qw(a));
 eis($cupt, 'maintainer(/One.*/)', qw(a i));
+eis($cupt, 'm(/One.*/)', qw(a i));
 eis($cupt, 'maintainer(.*mail.*)', qw(a));
 eis($cupt, 'section(//)', qw(i p));
+eis($cupt, 's(//)', qw(i p));
 eis($cupt, 'section(doc)', qw(a));
 eis($cupt, 'field(Special-property-field, /.+/)', qw(i));
+eis($cupt, 'f(Special-property-field, /.+/)', qw(i));
 
