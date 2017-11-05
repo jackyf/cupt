@@ -51,6 +51,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Removed the 'copy the keyring' hack, introduced in 2.2.2.
       - Removed support of localized descriptions without a description hash
         present in the original index (even oldstable has them).
+    - cache:
+      - 'getSatisfyingVersions': provisional single-arch support for ':native'
+        suffixes.
     - cache/binaryversion:
       - [ABI break] New member 'important'.
     - cache/sourceversion:

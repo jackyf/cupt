@@ -116,25 +116,44 @@ Package* CacheImpl::preparePackage(unordered_map< string, vector< PrePackageReco
 	}
 }
 
-template < bool multiarchAllowedRequired >
-static inline void addSatisfyingPackageVersions(
-		vector<const BinaryVersion*>* result, const Relation& relation,
-		const BinaryPackage* package, const system::State& systemState)
+static bool versionSatisfiesRelation(const BinaryVersion* version, const Relation& relation)
 {
-	if (package)
+	if (relation.isSatisfiedBy(version->versionString))
 	{
-		// if such binary package exists
+		if (relation.architecture.empty())
+		{
+			return true;
+		}
+		else if (relation.architecture.compare(0, string::npos, "any", 3) == 0)
+		{
+			return version->multiarch.compare(0, string::npos, "allowed", 7) == 0;
+		}
+		else if (relation.architecture.compare(0, string::npos, "native", 6) == 0)
+		{
+			return version->multiarch.compare(0, string::npos, "foreign", 7) == 0;
+		}
+		else
+		{
+			return false; // unsupported / invalid
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void CacheImpl::addRealPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
+{
+	if (auto package = getBinaryPackage(relation.packageName))
+	{
 		for (auto version: *package)
 		{
-			if (relation.isSatisfiedBy(version->versionString))
+			if (versionSatisfiesRelation(version, relation))
 			{
 				if (version->isInstalled() &&
-						systemState.getInstalledInfo(version->packageName)->isBroken() &&
+						systemState->getInstalledInfo(version->packageName)->isBroken() &&
 						relation.relationType != Relation::Types::LiteralyEqual)
-				{
-					continue;
-				}
-				if (multiarchAllowedRequired && version->multiarch != "allowed")
 				{
 					continue;
 				}
@@ -143,21 +162,6 @@ static inline void addSatisfyingPackageVersions(
 			}
 		}
 	}
-}
-
-void CacheImpl::addRealPackageSatisfyingVersions(vector<const BinaryVersion*>* result, const Relation& relation) const
-{
-	auto package = getBinaryPackage(relation.packageName);
-
-	if (relation.architecture.empty())
-	{
-		addSatisfyingPackageVersions<false>(result, relation, package, *systemState);
-	}
-	else if (relation.architecture.compare(0, string::npos, "any", 3) == 0)
-	{
-		addSatisfyingPackageVersions<true>(result, relation, package, *systemState);
-	}
-	// otherwise unsupported
 }
 
 namespace {
