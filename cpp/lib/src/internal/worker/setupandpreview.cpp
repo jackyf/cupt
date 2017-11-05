@@ -77,10 +77,8 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 			}
 			else
 			{
-				bool isImproperlyInstalled = installedInfo->isBroken();
-
-				if (installedInfo->status == State::InstalledRecord::Status::Installed ||
-						isImproperlyInstalled)
+				const bool isImproperlyInstalled = installedInfo->isBroken();
+				if (installedInfo->status == State::InstalledRecord::Status::Installed || isImproperlyInstalled)
 				{
 					auto versionComparisonResult = compareVersionStrings(
 							supposedVersion->versionString, installedVersion->versionString);
@@ -92,10 +90,6 @@ void SetupAndPreviewWorker::__generate_action_preview(const string& packageName,
 					else if (versionComparisonResult < 0)
 					{
 						action = Action::Downgrade;
-					}
-					else if (isImproperlyInstalled)
-					{
-						action = Action::Reinstall;
 					}
 					else if (supposedVersion->versionString != installedVersion->versionString)
 					{

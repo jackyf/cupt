@@ -11,6 +11,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       to-be-purged removed packages.
     - Action preview prompt: warn (by default) when removing important
       packages (the ones marked as 'Important: yes').
+    - Action preview prompt: fixed showing broken installed packages as to
+      be reinstalled if an user prevented their automatic
+      removal/reinstallation.
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.
