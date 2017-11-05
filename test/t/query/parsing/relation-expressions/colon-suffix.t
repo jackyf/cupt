@@ -1,15 +1,15 @@
-use Test::More tests => 4;
+use Test::More tests => 2;
 
-my $cupt = setup('packages' => [
-	compose_package_record('abc', '1') . "Depends: def:xyz\n" ,
-	compose_package_record('abc', '2') . "Depends: klm:aaa (>= 1.2.3)\n" ,
-]);
+sub test {
+	my ($text, $expected_dep) = @_;
 
-my $abc1output = stdout("$cupt depends abc=1");
-like($abc1output, qr/Depends: def.*\n/, "colon is allowed (versionless dependency)");
-like($abc1output, qr/Depends: def:xyz\n/, "colon is parsed (versionless dependency)");
+	my $cupt = setup('packages' =>
+			[ compose_package_record('abc', 1) . "Depends: $expected_dep\n" ]);
 
-my $abc2output = stdout("$cupt depends abc=2");
-like($abc2output, qr/Depends: klm.* \(>= 1.2.3\)\n/, "colon is allowed (versioned dependency)");
-like($abc2output, qr/Depends: klm:aaa \(>= 1.2.3\)\n/, "colon is parsed (versioned dependency)");
+	my $output = stdout("$cupt depends abc");
+	like($output, qr/Depends: \Q$expected_dep\E\n/, $text);
+}
+
+test('versionless dependency', 'def:xyz');
+test('versioned dependency', "klm:aaa (>= 1.2.3)");
 
