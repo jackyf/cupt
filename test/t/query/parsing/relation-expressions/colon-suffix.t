@@ -1,14 +1,9 @@
-use TestCupt;
 use Test::More tests => 4;
 
-use strict;
-use warnings;
-
-my $packages =
-		entail(compose_package_record('abc', '1') . "Depends: def:xyz\n") .
-		entail(compose_package_record('abc', '2') . "Depends: klm:aaa (>= 1.2.3)\n");
-
-my $cupt = TestCupt::setup('packages' => $packages);
+my $cupt = setup('packages' => [
+	compose_package_record('abc', '1') . "Depends: def:xyz\n" ,
+	compose_package_record('abc', '2') . "Depends: klm:aaa (>= 1.2.3)\n" ,
+]);
 
 my $abc1output = stdout("$cupt depends abc=1");
 like($abc1output, qr/Depends: def.*\n/, "colon is allowed (versionless dependency)");
