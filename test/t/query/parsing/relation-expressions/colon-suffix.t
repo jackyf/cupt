@@ -1,4 +1,4 @@
-use Test::More tests => 2;
+use Test::More tests => 4;
 
 sub test {
 	my ($text, $expected_dep) = @_;
@@ -12,4 +12,6 @@ sub test {
 
 test('versionless dependency', 'def:xyz');
 test('versioned dependency', "klm:aaa (>= 1.2.3)");
+test(':any', 'def5:any');
+test(':native', 'kyy13:native');
 
