@@ -644,8 +644,9 @@ sub compose_installed_record {
 	my ($package_name, $version_string, %options) = @_;
 
 	my $want = ($options{'on-hold'}//0) ? 'hold' : 'install';
+	my $status_line = $options{'status-line'} // "$want ok installed";
 
-	return compose_status_record($package_name, "$want ok installed", $version_string);
+	return compose_status_record($package_name, $status_line, $version_string);
 }
 
 sub compose_removed_record {
