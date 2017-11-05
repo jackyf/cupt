@@ -1,12 +1,11 @@
-use TestCupt;
 use Test::More tests => 2;
 
 sub setup_cupt {
 	my ($available_version) = @_;
 
-	return TestCupt::setup(
-		'dpkg_status' => entail(compose_installed_record('pp', '4.5-1')),
-		'packages' => entail(compose_package_record('pp', $available_version)),
+	return setup(
+		'dpkg_status' => [ compose_installed_record('pp', '4.5-1') ],
+		'packages' => [ compose_package_record('pp', $available_version) ],
 	);
 }
 
