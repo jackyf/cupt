@@ -933,6 +933,7 @@ CommonFS* constructFSByName(const string& functionName, const CommonFS::Argument
 		CONSTRUCT_FS("source-package", RegexMatchFS(BINARY_VERSION_MEMBER(sourcePackageName), arguments))
 		CONSTRUCT_FS("source-version", RegexMatchFS(BINARY_VERSION_MEMBER(sourceVersionString), arguments))
 		CONSTRUCT_FS("essential", BoolMatchFS(BINARY_VERSION_MEMBER(essential), arguments))
+		CONSTRUCT_FS("important", BoolMatchFS(BINARY_VERSION_MEMBER(important), arguments))
 		CONSTRUCT_FS("installed", BoolMatchFS(BINARY_VERSION_MEMBER(isInstalled()), arguments))
 		CONSTRUCT_FS("description", RegexMatchFS(BINARY_VERSION_MEMBER(description), arguments))
 		CONSTRUCT_FS("package:installed", PackageIsInstalledFS(arguments))

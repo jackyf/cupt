@@ -1,4 +1,4 @@
-use Test::More tests => 3+3+3+2+3+4;
+use Test::More tests => 3+3+3+2+1+3+4;
 
 require(get_rinclude_path('FSE'));
 
@@ -20,7 +20,7 @@ END
 
 my $cupt = setup(
 	'dpkg_status' => \@installed,
-	'packages' => [ compose_package_record('zz', '1') ],
+	'packages' => [ compose_package_record('zz', '1') . "Important: yes\n" ],
 );
 
 eis($cupt, 'installed', qw(xx yy));
@@ -37,6 +37,8 @@ eis($cupt, 'sv(1)', qw(yy zz));
 
 eis($cupt, 'essential', qw(yy));
 eis($cupt, 'e', qw(yy));
+
+eis($cupt, 'important', qw(zz));
 
 eis($cupt, 'description(oqwo)', qw());
 eis($cupt, 'description(.*oqwo.*)', qw(yy));

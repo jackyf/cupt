@@ -28,6 +28,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - New functions 'build-depends-arch' and 'build-conflicts-arch'.
       - New functions 'reverse-build-depends-arch' and
         'reverse-build-conflicts-arch.
+      - New function 'important';
   * lib:
     - config:
       - New option 'cupt::console::warnings::removal-of-essential'.

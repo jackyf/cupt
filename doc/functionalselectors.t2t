@@ -105,6 +105,7 @@ Apply only to binary versions.
 | %regex_syntax(source-package)% | ``sp`` | source package matches //regex// |
 | %regex_syntax(source-version)% | ``sv`` | source version string matches //regex// |
 | ``essential()`` | ``e`` | have 'Essential' flag set |
+| ``important()`` |  | have 'Important' flag set |
 | ``installed()`` | ``i`` | are installed in the system |
 | %regex_syntax(description)% | ``d`` | description matches //regex// |
 | %regex_syntax(provides)% | ``o`` | provides at least one virtual package which matches //regex// |
