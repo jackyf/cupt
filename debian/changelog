@@ -71,6 +71,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         Release files).
       - 'changeSystem': do not require anymore that 'dpkg' binary package is
         installed, it's enough that dpkg binary is available.
+  * doc:
+    - reference:
+      - Fixed Doxygen warnings about obsolete Doxyfile tags.
   * debian:
     - control:
       - Bumped the ABI suffix from 1 to 2.
