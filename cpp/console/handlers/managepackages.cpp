@@ -358,17 +358,28 @@ static void processReinstallExpression(ManagePackagesContext& mpc, const string&
 	{
 		fatal2(__("the package '%s' is not installed"), packageExpression);
 	}
-	const string targetVersionString = getOriginalVersionString(installedVersion->versionString).toStdString();
-	auto targetVersion = package->getSpecificVersion(targetVersionString);
-	if (targetVersion)
+	const auto targetVersionString = getOriginalVersionString(installedVersion->versionString);
+
+	std::vector<const BinaryVersion*> candidates;
+	for (auto version: *package)
 	{
-		mpc.resolver->installVersion({ static_cast< const BinaryVersion* >(targetVersion) },
-				getRequestAnnotation(mpc.mode, packageExpression), mpc.importance);
+		if (version != installedVersion)
+		{
+			if (getOriginalVersionString(version->versionString).equal(targetVersionString))
+			{
+				candidates.push_back(version);
+			}
+		}
+	}
+
+	if (!candidates.empty())
+	{
+		mpc.resolver->installVersion(candidates, getRequestAnnotation(mpc.mode, packageExpression), mpc.importance);
 	}
 	else
 	{
 		const auto message = format2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
-				packageExpression, targetVersionString);
+				packageExpression, targetVersionString.toStdString());
 		if (mpc.importance == Resolver::RequestImportance::Must)
 		{
 			fatal2(message);

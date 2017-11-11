@@ -27,6 +27,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - 'reinstall':
       - Make non-must reinstall requests non-fatal even if there are no
         reinstallation candidates.
+      - Also consider candidates having same version but different hash sums.
     - 'functional selectors':
       - New functions 'build-depends-arch' and 'build-conflicts-arch'.
       - New functions 'reverse-build-depends-arch' and
