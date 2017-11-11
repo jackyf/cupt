@@ -360,13 +360,24 @@ static void processReinstallExpression(ManagePackagesContext& mpc, const string&
 	}
 	const string targetVersionString = getOriginalVersionString(installedVersion->versionString).toStdString();
 	auto targetVersion = package->getSpecificVersion(targetVersionString);
-	if (!targetVersion)
+	if (targetVersion)
 	{
-		fatal2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
-				packageExpression, targetVersionString);
+		mpc.resolver->installVersion({ static_cast< const BinaryVersion* >(targetVersion) },
+				getRequestAnnotation(mpc.mode, packageExpression), mpc.importance);
 	}
-	mpc.resolver->installVersion({ static_cast< const BinaryVersion* >(targetVersion) },
-			getRequestAnnotation(mpc.mode, packageExpression), mpc.importance);
+	else
+	{
+		const auto message = format2(__("the package '%s' cannot be reinstalled because there is no corresponding version (%s) available in repositories"),
+				packageExpression, targetVersionString);
+		if (mpc.importance == Resolver::RequestImportance::Must)
+		{
+			fatal2(message);
+		}
+		else
+		{
+			warn2(message);
+		}
+	}
 }
 
 static bool processNumericImportanceOption(ManagePackagesContext& mpc, const string& arg)

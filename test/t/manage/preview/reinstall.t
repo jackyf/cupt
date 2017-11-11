@@ -1,4 +1,4 @@
-use Test::More tests => 3;
+use Test::More tests => 3+1+4;
 
 my $cupt = setup(
 	'dpkg_status' => [
@@ -20,9 +20,22 @@ sub test {
 	like($offer, $regex, $comment);
 }
 
-test('there is a reinstall candidate', 'pp', qr/will be reinstalled:\n\npp\s*\n/);
-test('there are no reinstall candidates (some other version available)', 'qq',
-		qr/\QE: the package 'qq' cannot be reinstalled because there is no corresponding version (2) available in repositories\E/);
-test('there are no reinstall candidates (no other versions available)', 'rr',
-		qr/\QE: the package 'rr' cannot be reinstalled because there is no corresponding version (0) available in repositories\E/);
+sub not_avail_regex {
+	my ($type, $name, $version) = @_;
+	return qr/\Q$type: the package '$name' cannot be reinstalled because there is no corresponding version ($version) available in repositories\E/;
+}
+
+my $pp_yes_regex = qr/will be reinstalled:\n\npp\s*\n/;
+
+test('there is a reinstall candidate', 'pp', $pp_yes_regex);
+test('there are no reinstall candidates (some other version available)', 'qq', not_avail_regex('E', 'qq', 2));
+test('there are no reinstall candidates (no other versions available)', 'rr', not_avail_regex('E', 'rr', 0));
+
+test('wish of a available reinstall', '--wish pp', $pp_yes_regex);
+
+my $qq_soft_no_regex = not_avail_regex('W', 'qq', 2);
+test('wish of an unavailable reinstall', '--wish qq', $qq_soft_no_regex);
+test('try of an unavailable reinstall', '--try qq', $qq_soft_no_regex);
+test('big priority request of an unavailable reinstall', '--importance=1000000 qq', $qq_soft_no_regex);
+test('wish of a available and unavailable', '--wish pp qq', $pp_yes_regex);
 

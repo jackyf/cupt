@@ -24,6 +24,9 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - 'dist-upgrade':
       - Do not apply positional arguments on the first stage (when upgrading
         package management tools).
+    - 'reinstall':
+      - Make non-must reinstall requests non-fatal even if there are no
+        reinstallation candidates.
     - 'functional selectors':
       - New functions 'build-depends-arch' and 'build-conflicts-arch'.
       - New functions 'reverse-build-depends-arch' and
