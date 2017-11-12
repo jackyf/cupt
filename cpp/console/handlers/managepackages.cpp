@@ -74,6 +74,7 @@ struct ManagePackagesContext
 	const Cache* cache;
 	Resolver* resolver;
 	Worker* worker;
+	bool oneLetterSuffixDeprecationWarningIssued = false;
 
 	typedef vector< VersionChoices > SelectedVersions;
 
@@ -260,6 +261,8 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 		// "localizing" action to make it modifiable by package modifiers
 		if (!packageExpression.empty())
 		{
+			const auto oldPackageExpression = packageExpression;
+
 			const char& lastLetter = *(packageExpression.end() - 1);
 			if (lastLetter == '+')
 			{
@@ -270,6 +273,12 @@ static void processInstallOrRemoveExpression(ManagePackagesContext& mpc, string 
 			{
 				localMode = ManagePackages::Remove;
 				packageExpression.erase(packageExpression.end() - 1);
+			}
+
+			if (!mpc.oneLetterSuffixDeprecationWarningIssued && oldPackageExpression != packageExpression)
+			{
+				warn2("Package suffixes '+' and '-' are deprecated. Please use '--install' and '--remove', respectively.");
+				mpc.oneLetterSuffixDeprecationWarningIssued = true;
 			}
 		}
 	}

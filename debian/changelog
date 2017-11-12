@@ -14,6 +14,8 @@ cupt (2.10.0~) UNRELEASED; urgency=low
     - Action preview prompt: fixed showing broken installed packages as to
       be reinstalled if an user prevented their automatic
       removal/reinstallation.
+    - Package action modifier suffixes '+' and '-' are now deprecated.
+      They still work (for now) but produce a warning when used.
     - 'shell':
       - Don't rebuild the cache when the last action required less cache
         parts than the current one, but all needed parts were loaded before.
