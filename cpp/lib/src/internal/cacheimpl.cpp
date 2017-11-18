@@ -544,12 +544,12 @@ static bool getVerifiedBitForIndexEntry(const Cache::IndexEntry& entry,
 
 shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
 {
-	auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
-	auto insertResult = releaseInfoCache.insert({ path, {} });
+	const auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
+	auto insertResult = releaseInfoCache.insert({ alias, {} });
 	auto& cachedValue = insertResult.first->second;
 	if (insertResult.second)
 	{
-		auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
+		auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
 		if (path.empty())
 		{
 			warn2(__("no release file present for '%s'"), alias);
