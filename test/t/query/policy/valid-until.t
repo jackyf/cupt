@@ -37,7 +37,7 @@ subtest "release with 'valid-until' date in the past is invalid by default" => s
 subtest "non-parseable 'valid-until' date" => sub {
 	my $output = get_output($corrupted_date, '');
 	like($output, $presency_regex, 'treated as valid');
-	like($output, qr/^\QW: unable to parse the expiry time '$corrupted_date'\E/m, 'warning is printed');
+	like($output, qr/^\QW: unable to parse the expiry time '$corrupted_date' in the release \E'.* aaa'$/m, 'warning is printed');
 };
 
 subtest 'expiration check globally suppressed' => sub {
