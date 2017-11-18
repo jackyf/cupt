@@ -536,6 +536,38 @@ bool verifySignature(const Config& config, const string& path, const string& ali
 	return verifyResult;
 }
 
+void verifyReleaseValidityDate(const string& date, const Config& config, const string& releaseAlias)
+{
+	if (date.empty()) {
+		return;
+	}
+
+	struct tm validUntilTm;
+	memset(&validUntilTm, 0, sizeof(validUntilTm));
+	struct tm currentTm;
+
+	auto oldTimeSpec = setlocale(LC_TIME, "C");
+	auto parseResult = strptime(date.c_str(), "%a, %d %b %Y %T UTC", &validUntilTm);
+	setlocale(LC_TIME, oldTimeSpec);
+	if (parseResult) // success
+	{
+		time_t localTime = time(NULL);
+		gmtime_r(&localTime, &currentTm);
+		// sanely, we should use timegm() here, but it's not portable,
+		// so we use mktime() which is enough for comparing two UTC tm's
+		if (mktime(&currentTm) > mktime(&validUntilTm))
+		{
+			bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
+			(warnOnly ? warn2< string, string > : fatal2< string, string >)
+					(__("the release '%s' has expired (expiry time '%s')"), releaseAlias, date);
+		}
+	}
+	else
+	{
+		warn2(__("unable to parse the expiry time '%s' in the release '%s'"), date, releaseAlias);
+	}
+}
+
 shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 		const string& path, const string& alias)
 {
@@ -618,36 +650,7 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 		fatal2(__("unable to parse the release '%s'"), alias);
 	}
 
-	{ // checking Valid-Until
-		if (!result->validUntilDate.empty())
-		{
-			struct tm validUntilTm;
-			memset(&validUntilTm, 0, sizeof(validUntilTm));
-			struct tm currentTm;
-
-			auto oldTimeSpec = setlocale(LC_TIME, "C");
-			auto parseResult = strptime(result->validUntilDate.c_str(), "%a, %d %b %Y %T UTC", &validUntilTm);
-			setlocale(LC_TIME, oldTimeSpec);
-			if (parseResult) // success
-			{
-				time_t localTime = time(NULL);
-				gmtime_r(&localTime, &currentTm);
-				// sanely, we should use timegm() here, but it's not portable,
-				// so we use mktime() which is enough for comparing two UTC tm's
-				if (mktime(&currentTm) > mktime(&validUntilTm))
-				{
-					bool warnOnly = config.getBool("cupt::cache::release-file-expiration::ignore");
-					(warnOnly ? warn2< string, string > : fatal2< string, string >)
-							(__("the release '%s' has expired (expiry time '%s')"), alias, result->validUntilDate);
-				}
-			}
-			else
-			{
-				warn2(__("unable to parse the expiry time '%s' in the release '%s'"),
-						result->validUntilDate, alias);
-			}
-		}
-	}
+	verifyReleaseValidityDate(result->validUntilDate, config, alias);
 
 	return result;
 }

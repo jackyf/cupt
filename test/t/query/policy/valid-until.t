@@ -1,4 +1,4 @@
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 sub get_output {
 	my ($vu, $arguments) = @_;
@@ -21,6 +21,13 @@ my $past_date = 'Mon, 07 Oct 2013 14:44:53 UTC';
 my $corrupted_date = '#%(&Y(&9';
 my $presency_regex = qr/a=aaa/;
 my $expiry_regex = qr/the release '.* aaa' has expired/;
+
+subtest "empty 'valid-until' is okay" => sub {
+	my $output = get_output('', '');
+	like($output, $presency_regex, 'is present');
+	unlike($output, qr/^E:/, 'no errors');
+	unlike($output, qr/^W:/, 'no warnings');
+};
 
 subtest "release with 'valid-until' in the future is valid" => sub {
 	my $output = get_output($future_date, '');
