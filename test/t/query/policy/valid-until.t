@@ -8,7 +8,11 @@ sub get_output {
 			{
 				'archive' => 'aaa',
 				'valid-until' => $vu,
-				'packages' => [],
+				# more than one component to catch possible caching errors
+				'components' => [
+					{ 'component' => 'ccx', 'packages' => [] },
+					{ 'component' => 'ccy', 'packages' => [] },
+				],
 			},
 		]
 	);
