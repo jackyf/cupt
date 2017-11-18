@@ -241,13 +241,25 @@ sub generate_deb_caches {
 my $default_scheme = 'copy';
 my $default_server = './localrepo';
 
-sub get_trusted_option_string {
-	my $is_trusted = shift;
-	$is_trusted //= 1;
-	if ($is_trusted eq 'check') {
-		return '';
+sub get_sources_list_option_string {
+	my $e = shift;
+
+	my @parts;
+
+	my $is_trusted = $e->{'trusted'} // 1;
+	if ($is_trusted ne 'check') {
+		push @parts, ($is_trusted ? 'trusted=yes' : 'trusted=no');
+	}
+
+	my $check_valid_until = $e->{'check-valid-until'};
+	if (defined($check_valid_until)) {
+		push @parts, "check-valid-until=$check_valid_until";
+	}
+
+	if (scalar @parts) {
+		return "[ " . join(',', @parts) . " ] ";
 	} else {
-		return $is_trusted ? '[ trusted=yes ] ' : '[ trusted=no ] ';
+		return '';
 	}
 }
 
@@ -539,7 +551,7 @@ sub generate_sources_list {
 			return map { defined($_->{$key}) ? ($_->{component}) : () } @{$e->{components}}; 
 		};
 
-		my $common_line = get_trusted_option_string($e->{trusted});
+		my $common_line = get_sources_list_option_string($e);
 		$common_line .= "$e->{scheme}://$e->{server} $e->{archive}";
 
 		my @components = $get_components_for->('packages');
