@@ -299,12 +299,14 @@ static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry*
 	for (auto it = openingBracketTokenIt+1; it != closingBracketTokenIt; ++it)
 	{
 		const string& token = *it;
-		auto keyValueDelimiterPosition = token.find('=');
-		if (keyValueDelimiterPosition == string::npos)
-		{
-			fatal2(__("no key-value separator ('=') in the option token '%s'"), token);
-		}
-		entry->options[token.substr(0, keyValueDelimiterPosition)] = token.substr(keyValueDelimiterPosition+1);
+		parse::processSpaceCharSpaceDelimitedStrings(token.begin(), token.end(), ',', [&entry](auto from, auto to) {
+			auto keyValueDelimiterPosition = std::find(from, to, '=');
+			if (keyValueDelimiterPosition == to)
+			{
+				fatal2(__("no key-value separator ('=') in the option token '%s'"), std::string(from, to));
+			}
+			entry->options[string(from, keyValueDelimiterPosition)] = string(keyValueDelimiterPosition+1, to);
+		});
 	}
 
 	tokens.erase(openingBracketTokenIt, closingBracketTokenIt+1);
