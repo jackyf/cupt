@@ -62,6 +62,8 @@ add_library(libcupt SHARED
 	./src/internal/basepackageiterator.cpp
 	./src/internal/indexofindex.cpp
 	./src/internal/versionparse.cpp
+	./src/internal/parse.hpp
+	./src/internal/parse.tpp
 	./src/config.cpp
 	./src/cache.cpp
 	./src/cache/relation.cpp
