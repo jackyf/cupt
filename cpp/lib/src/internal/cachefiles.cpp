@@ -650,8 +650,6 @@ shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
 		fatal2(__("unable to parse the release '%s'"), alias);
 	}
 
-	verifyReleaseValidityDate(result->validUntilDate, config, alias);
-
 	return result;
 }
 

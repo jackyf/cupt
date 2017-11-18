@@ -60,6 +60,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
         present in the original index (even oldstable has them).
       - Parsing release files: fixed displaying 'no release file present'
         warnings if more than one release file is missing.
+      - Support for 'check-valid-until=no' option in sources.list.
       - 'getSatisfyingVersions': provisional single-arch support for ':native'
         suffixes.
     - cache/binaryversion:

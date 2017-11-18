@@ -513,7 +513,10 @@ void CacheImpl::processIndexEntries(bool useBinary, bool useSource)
 	}
 }
 
-static string getIndexEntryOptionValue(const Cache::IndexEntry& entry, const string& key)
+namespace
+{
+
+string getIndexEntryOptionValue(const Cache::IndexEntry& entry, const string& key)
 {
 	auto it = entry.options.find(key);
 	if (it == entry.options.end())
@@ -526,7 +529,7 @@ static string getIndexEntryOptionValue(const Cache::IndexEntry& entry, const str
 	}
 }
 
-static bool getVerifiedBitForIndexEntry(const Cache::IndexEntry& entry,
+bool getVerifiedBitForIndexEntry(const Cache::IndexEntry& entry,
 		const Config& config, const string& path, const string& alias)
 {
 	auto trustedOptionValue = getIndexEntryOptionValue(entry, "trusted");
@@ -544,23 +547,45 @@ static bool getVerifiedBitForIndexEntry(const Cache::IndexEntry& entry,
 	}
 }
 
-shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
+void validateValidUntil(const Config& config, const Cache::IndexEntry& entry,
+		const ReleaseInfo& releaseInfo, const string& alias)
+{
+	if (getIndexEntryOptionValue(entry, "check-valid-until") == "no")
+	{
+		return;
+	}
+
+	cachefiles::verifyReleaseValidityDate(releaseInfo.validUntilDate, config, alias);
+}
+
+shared_ptr<ReleaseInfo> getReleaseInfoNotCached(const Config& config, const Cache::IndexEntry& indexEntry,
+												const string& alias)
+{
+	const auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
+	if (path.empty())
+	{
+		warn2(__("no release file present for '%s'"), alias);
+		return nullptr;
+	}
+	else
+	{
+		auto result = cachefiles::getReleaseInfo(config, path, alias);
+		validateValidUntil(config, indexEntry, *result, alias);
+		result->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
+		return result;
+	}
+}
+
+}
+
+shared_ptr<ReleaseInfo> CacheImpl::getReleaseInfo(const Config& config, const IndexEntry& indexEntry)
 {
 	const auto alias = indexEntry.uri + ' ' + indexEntry.distribution;
 	auto insertResult = releaseInfoCache.insert({ alias, {} });
 	auto& cachedValue = insertResult.first->second;
 	if (insertResult.second)
 	{
-		auto path = cachefiles::getPathOfMasterReleaseLikeList(config, indexEntry);
-		if (path.empty())
-		{
-			warn2(__("no release file present for '%s'"), alias);
-		}
-		else
-		{
-			cachedValue = cachefiles::getReleaseInfo(config, path, alias);
-			cachedValue->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
-		}
+		cachedValue = getReleaseInfoNotCached(config, indexEntry, alias);
 	}
 	if (!cachedValue)
 	{
@@ -569,8 +594,7 @@ shared_ptr< ReleaseInfo > CacheImpl::getReleaseInfo(const Config& config, const 
 	return shared_ptr< ReleaseInfo > (new ReleaseInfo(*cachedValue));
 }
 
-void CacheImpl::processIndexEntry(const IndexEntry& indexEntry,
-		const ReleaseLimits& releaseLimits)
+void CacheImpl::processIndexEntry(const IndexEntry& indexEntry, const ReleaseLimits& releaseLimits)
 {
 	string indexFileToParse = cachefiles::getPathOfIndexList(*config, indexEntry);
 

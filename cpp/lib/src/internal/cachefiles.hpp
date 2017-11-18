@@ -57,9 +57,10 @@ struct LocalizationDownloadRecord3
 vector< LocalizationDownloadRecord3 > getDownloadInfoOfLocalizedDescriptions3(
 		const Config&, const IndexEntry&);
 
-bool verifySignature(const Config&, const string& path, const string& alias);
 shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config&,
 		const string& path, const string& alias);
+void verifyReleaseValidityDate(const string& date, const Config& config, const string& alias);
+bool verifySignature(const Config&, const string& path, const string& alias);
 
 }
 }

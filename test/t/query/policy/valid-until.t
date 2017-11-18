@@ -1,7 +1,7 @@
-use Test::More tests => 5;
+use Test::More tests => 7;
 
 sub get_output {
-	my ($vu, $arguments) = @_;
+	my ($vu, $arguments, @release_attributes) = @_;
 
 	my $cupt = setup(
 		'releases' => [
@@ -13,6 +13,7 @@ sub get_output {
 					{ 'component' => 'ccx', 'packages' => [] },
 					{ 'component' => 'ccy', 'packages' => [] },
 				],
+				@release_attributes,
 			},
 		]
 	);
@@ -38,11 +39,13 @@ subtest "release with 'valid-until' in the future is valid" => sub {
 	like($output, $presency_regex);
 };
 
+my $normal_past_date_output;
 subtest "release with 'valid-until' date in the past is invalid by default" => sub {
 	my $output = get_output($past_date, '');
 	unlike($output, $presency_regex, "not present in the release list");
 	like($output, qr/^E: $expiry_regex/, 'error is printed');
 	like($output, qr/\Qhas expired (expiry time '$past_date')\E/, 'expiry date is printed');
+	$normal_past_date_output = $output;
 };
 
 subtest "non-parseable 'valid-until' date" => sub {
@@ -56,5 +59,16 @@ subtest 'expiration check globally suppressed' => sub {
 	like($output, $presency_regex, 'is present');
 	like($output, qr/^W: $expiry_regex/, 'warning is printed');
 	like($output, qr/\Qhas expired (expiry time '$past_date')\E/, 'expiry date is printed');
+};
+
+subtest 'expiration check locally disabled' => sub {
+	my $output = get_output($past_date, '', 'check-valid-until' => 'no');
+	like($output, $presency_regex, 'treated as valid');
+	unlike($output, $expiry_regex, 'no warnings or errors');
+};
+
+subtest 'expiration check locally enabled (noop)' => sub {
+	my $output = get_output($past_date, '', 'check-valid-until' => 'yes');
+	is($output, $normal_past_date_output);
 };
 
