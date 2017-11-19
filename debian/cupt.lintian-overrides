@@ -1,0 +1,4 @@
+# Lintian calls man with MANWIDTH=80. There is now a Cupt configuration
+# option which is longer than 80 characters. It shouldn't be broken
+# into several lines.
+cupt binary: manpage-has-errors-from-man *cupt.conf*: can't break line
