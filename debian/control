@@ -47,7 +47,7 @@ Description: flexible package manager -- debugging symbols
 Package: libcupt4-2
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt-common (>= ${source:Version})
-Breaks: debdelta (<< 0.31), dpkg (<< 1.17.11~), gpgv (<< 2~)
+Breaks: dpkg (<< 1.17.11~), gpgv (<< 2~)
 Recommends: libcupt4-2-downloadmethod-curl | libcupt4-2-downloadmethod-wget, bzip2, gpgv, ed
 Suggests: cupt, lzma, xz-utils, debdelta (>= 0.31), dpkg-dev, dpkg-repack
 Description: flexible package manager -- runtime library
@@ -101,7 +101,6 @@ Description: flexible package manager -- library documentation
 Package: cupt
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt4-2 (>= ${binary:Version})
-Breaks: daptup (<< 0.12.2~)
 Suggests: sensible-utils, libreadline7
 Description: flexible package manager -- console interface
  This package provides a console interface to Cupt library, which implements

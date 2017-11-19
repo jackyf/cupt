@@ -90,6 +90,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Added build-dependency on libtest-dir-perl (for tests).
       - Added build-dependency on libexpect-simple-perl (for shell tests).
       - Added build-dependency on gpgv, gnupg, ed (for tests).
+      - Removed 'breaks' of very old versions of daptup and debdelta.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
 
