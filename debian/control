@@ -45,6 +45,7 @@ Description: flexible package manager -- debugging symbols
  This package contains gdb debugging symbols for the Cupt packages.
 
 Package: libcupt4-2
+Section: libs
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libcupt-common (>= ${source:Version})
 Breaks: dpkg (<< 1.17.11~), gpgv (<< 2~)
