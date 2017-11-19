@@ -1,4 +1,4 @@
-cupt (2.10.0~) UNRELEASED; urgency=low
+cupt (2.10.0) unstable; urgency=low
 
   * console:
     - New positional action override option '--reinstall'.
@@ -93,7 +93,7 @@ cupt (2.10.0~) UNRELEASED; urgency=low
       - Removed 'breaks' of very old versions of daptup and debdelta.
       - Moved 'libcupt4-2' to sections 'libs', as lintian suggests.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Wed, 28 Sep 2016 13:10:13 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 19 Nov 2017 12:46:03 +0100
 
 cupt (2.9.10) unstable; urgency=medium
 
