@@ -21,7 +21,7 @@ sub test {
 	my ($comment, $hook_command, $checker) = @_;
 
 	my $hook_options = "-o dpkg::pre-install-pkgs::='$hook_command' ";
-	my $command = get_worker_command("timeout 30s $cupt", "install '*xyz*' $hook_options", 'simulate'=>0);
+	my $command = get_worker_command("timeout 90s $cupt", "install '*xyz*' $hook_options", 'simulate'=>0);
 
 	my $output;
 	subtest $comment => sub {

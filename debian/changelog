@@ -1,6 +1,10 @@
 cupt (2.10.1~) UNRELEASED; urgency=medium
 
-  * 
+  * test:
+    - t/manage/worker/packages/hooks/pre-install-pkgs/feeding-input.t:
+      Increased hang-check timeout from 30s to 90s, giving more time to
+      HPPA buildds. Thanks to John David Anglin for the investigation and
+      Aaron M. Ucko for the report. (Closes: #882238)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Mar 2018 20:08:30 +0200
 
