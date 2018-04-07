@@ -50,17 +50,27 @@ class CUPT_API Resolver
 	 protected:
 		CUPT_LOCAL Reason() {};
 	 public:
-		virtual ~Reason() {}; // polymorphic
+		virtual ~Reason() {};
 		virtual string toString() const = 0; ///< returns localized reason description
 	};
 	/// reason: asked by user
 	/**
-	 * This reason means that change was asked by "user" by calling @ref
+	 * This reason means that a change was asked by "user" by calling @ref
 	 * installVersion, @ref removeVersions etc. methods.
 	 */
 	struct UserReason: public Reason
 	{
 		virtual string toString() const;
+	};
+	/// reason: implicitly changed by resolver
+	/**
+	 * This reason means that a change was done without an explicit user request,
+	 * but because a resolver decided it was a good idea to do it, usually to
+	 * maintain the system in a good shape.
+	 */
+	struct ImplicitReason: public Reason
+	{
+		virtual string toString() const override;
 	};
 	/// reason: auto-removal
 	/**

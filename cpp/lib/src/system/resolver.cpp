@@ -25,6 +25,11 @@ string Resolver::UserReason::toString() const
 	return __("user request");
 }
 
+string Resolver::ImplicitReason::toString() const
+{
+	return __("implicit");
+}
+
 string Resolver::AutoRemovalReason::toString() const
 {
 	return __("auto-removal");
