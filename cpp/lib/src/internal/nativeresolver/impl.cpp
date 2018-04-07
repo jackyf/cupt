@@ -569,7 +569,6 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& solution,
 		Resolver::SuggestedPackage& suggestedPackage, dg::Element element) const
 {
-	static const shared_ptr< const Reason > userReason(new UserReason);
 	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
 
 	auto fillReasonElements = [&suggestedPackage](const IntroducedBy&, dg::Element element)
