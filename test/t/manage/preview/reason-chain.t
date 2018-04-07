@@ -1,19 +1,17 @@
-use TestCupt;
 use Test::More tests => 6;
 
-use strict;
-use warnings;
-
 my $cupt = TestCupt::setup(
-	'dpkg_status' =>
-		entail(compose_installed_record('broken', '4') . "Depends: subbroken1 | subbroken2\n") .
-		entail(compose_installed_record('subbroken1', '5')) .
-		entail(compose_installed_record('subbroken2', '6')),
-	'packages' =>
-		entail(compose_package_record('top', '1') . "Depends: middle\n") .
-		entail(compose_package_record('middle', '2') . "Pre-Depends: bottom\n") .
-		entail(compose_package_record('bottom', '3') . "Breaks: broken\n") .
-		entail(compose_package_record('subalt', '7') . "Breaks: subbroken1, subbroken2\n"),
+	'dpkg_status' => [
+		compose_installed_record('broken', '4') . "Depends: subbroken1 | subbroken2\n" ,
+		compose_installed_record('subbroken1', '5') ,
+		compose_installed_record('subbroken2', '6') ,
+	],
+	'packages' => [
+		compose_package_record('top', '1') . "Depends: middle\n" ,
+		compose_package_record('middle', '2') . "Pre-Depends: bottom\n" ,
+		compose_package_record('bottom', '3') . "Breaks: broken\n" ,
+		compose_package_record('subalt', '7') . "Breaks: subbroken1, subbroken2\n" ,
+	],
 );
 
 sub get_reason_chain {
