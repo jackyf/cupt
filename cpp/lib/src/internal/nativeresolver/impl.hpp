@@ -88,7 +88,7 @@ class NativeResolverImpl
 
 	void __add_actions_to_fix_dependency(vector< unique_ptr< Action > >&, const PreparedSolution&, dg::Element);
 	void __prepare_reject_requests(vector< unique_ptr< Action > >& actions) const;
-	void __fillSuggestedPackageReasons(const PreparedSolution&, Resolver::SuggestedPackage&, dg::Element) const;
+	void __fillSuggestedPackageReasons(const PreparedSolution&, Resolver::SuggestedPackage&, dg::VersionElement) const;
 	Resolver::UserAnswer::Type __propose_solution(
 			const PreparedSolution&, Resolver::CallbackType, bool);
 

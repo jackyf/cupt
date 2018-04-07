@@ -566,14 +566,28 @@ void NativeResolverImpl::__prepare_reject_requests(vector< unique_ptr< Action > 
 	}
 }
 
-void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& solution,
-		Resolver::SuggestedPackage& suggestedPackage, dg::Element element) const
+class OurImplicitReason: public Resolver::ImplicitReason
 {
-	static const shared_ptr< const Reason > autoRemovalReason(new AutoRemovalReason);
+ public:
+	OurImplicitReason(const string& description)
+		: p_description(description)
+	{}
+	string toString() const override {
+		return ImplicitReason::toString() + ": " + p_description;
+	}
+ private:
+	string p_description;
+};
+
+void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& solution,
+		Resolver::SuggestedPackage& suggestedPackage, dg::VersionElement element) const
+{
+	static const auto autoRemovalReason = std::make_shared<AutoRemovalReason>();
+	static const auto autoConfigureReason = std::make_shared<OurImplicitReason>("configuring partially installed packages");
 
 	auto fillReasonElements = [&suggestedPackage](const IntroducedBy&, dg::Element element)
 	{
-		auto versionVertex = static_cast< const dg::VersionVertex* >(element);
+		auto versionVertex = static_cast<dg::VersionElement>(element);
 		suggestedPackage.reasonPackageNames.push_back(versionVertex->getPackageName());
 	};
 
@@ -590,6 +604,11 @@ void NativeResolverImpl::__fillSuggestedPackageReasons(const PreparedSolution& s
 			suggestedPackage.reasons.push_back(introducedBy.getReason());
 			__solution_storage->processReasonElements(solution,
 					introducedBy, element, std::cref(fillReasonElements));
+		} else if (element->version) {
+			auto ii = __cache->getSystemState()->getInstalledInfo(element->getPackageName());
+			if (ii->status != State::InstalledRecord::Status::Installed) {
+				suggestedPackage.reasons.push_back(autoConfigureReason);
+			}
 		}
 	}
 }
@@ -605,7 +624,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 	{
 		auto elementPtr = packageEntry->element;
 
-		auto vertex = dynamic_cast< const dg::VersionVertex* >(elementPtr);
+		auto vertex = dynamic_cast<dg::VersionElement>(elementPtr);
 		if (vertex)
 		{
 			const string& packageName = vertex->getPackageName();
@@ -619,7 +638,7 @@ Resolver::UserAnswer::Type NativeResolverImpl::__propose_solution(
 
 			if (trackReasons)
 			{
-				__fillSuggestedPackageReasons(solution, suggestedPackage, elementPtr);
+				__fillSuggestedPackageReasons(solution, suggestedPackage, vertex);
 			}
 			suggestedPackage.automaticallyInstalledFlag = p_computeTargetAutoStatus(packageName, solution, elementPtr);
 		}

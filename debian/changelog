@@ -8,6 +8,9 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
   * lib:
     - system/resolver:
       - New class 'ImplicitReason'.
+    - system/resolvers/native:
+      - Add an appropriate reason for packages which will be implicitly
+        auto-configured.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Mar 2018 20:08:30 +0200
 
