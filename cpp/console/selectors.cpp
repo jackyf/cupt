@@ -108,13 +108,13 @@ static vector< const VersionType* > __convert_version_type(list< const Version* 
 
 template < typename VersionType, typename QueryProcessor >
 vector< const VersionType* > __select_using_function(const Cache& cache,
-		const string& expression, QueryProcessor queryProcessor, bool binary, bool throwOnError)
+		const string& expression, QueryProcessor queryProcessor, bool binary, bool throwOnEmptyResult)
 {
 	FunctionalSelector selector(cache);
 	auto query = selector.parseQuery(expression, binary);
 
 	auto result = __convert_version_type< VersionType >((selector.*queryProcessor)(*query));
-	if (throwOnError && result.empty())
+	if (throwOnEmptyResult && result.empty())
 	{
 		fatal2(__("the function expression '%s' selected nothing"), expression);
 	}
