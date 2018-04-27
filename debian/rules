@@ -6,21 +6,22 @@ else
 	CMAKE_OPTIONS += -DCMAKE_BUILD_TYPE=Debug
 endif
 
+BUILD_DIRECTORY=b/
 
 override_dh_auto_configure:
-	dh_auto_configure -- $(CMAKE_OPTIONS)
+	dh_auto_configure -B${BUILD_DIRECTORY} -- $(CMAKE_OPTIONS)
 
 override_dh_auto_install-arch:
-	dh_auto_configure -- $(CMAKE_OPTIONS) -DLOCAL:bool=off
-	dh_auto_install
+	dh_auto_configure -B${BUILD_DIRECTORY} -- $(CMAKE_OPTIONS) -DLOCAL:bool=off
+	dh_auto_install -B${BUILD_DIRECTORY}
 	chrpath --delete $(CURDIR)/debian/tmp/usr/bin/cupt
 
 override_dh_auto_install-indep:
-	dh_auto_install -i
+	dh_auto_install -B${BUILD_DIRECTORY} -i
 	install -m644 scripts/logrotate $(CURDIR)/debian/libcupt-common/etc/logrotate.d/cupt
 
 override_dh_strip:
 	dh_strip --dbg-package=cupt-dbg
 
 %:
-	dh $@ --parallel --with bash-completion
+	dh $@ -B${BUILD_DIRECTORY} --parallel --with bash-completion

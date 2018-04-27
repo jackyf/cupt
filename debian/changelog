@@ -25,6 +25,8 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
       - Introduced, with "3.0 (native)".
     - rules:
       - Pass '--parallel' after dh sequence name.
+      - Use one-letter name for the build directory, since gpg-agent (used
+        in the test suite) has a limit for socket path length.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Mar 2018 20:08:30 +0200
 
