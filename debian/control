@@ -34,7 +34,7 @@ Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
 Package: cupt-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: any
 Depends: libcupt4-2 (= ${binary:Version}) | cupt (= ${binary:Version}) |
  libcupt4-2-downloadmethod-curl (= ${binary:Version}) |

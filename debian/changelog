@@ -15,6 +15,8 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
     - control:
       - Maintainer address is again myself instead of Alioth mailing list.
       - Bumped Standards-Version to 4.1.3, no changes needed.
+      - Priority for 'cupt-dbg' is changed to 'optional', as suggested by
+        lintian.
     - compat:
       - Bumped to 9.
     - source/format:
