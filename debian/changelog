@@ -17,6 +17,8 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
       - Bumped Standards-Version to 4.1.3, no changes needed.
     - compat:
       - Bumped to 9.
+    - source/format:
+      - Introduced, with "3.0 (native)".
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Mar 2018 20:08:30 +0200
 
