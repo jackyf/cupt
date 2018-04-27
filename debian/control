@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Build-Depends:
 # build system
-  debhelper (>= 7.4.10),
+  debhelper (>= 9),
   cmake (>= 2.6),
   chrpath,
   gettext,
