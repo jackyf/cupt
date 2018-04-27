@@ -11,6 +11,8 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
     - system/resolvers/native:
       - Add an appropriate reason for packages which will be implicitly
         auto-configured.
+  * cmakelists:
+    - Pass '-Wno-format-security' after environment-provided compile flags.
   * debian:
     - control:
       - Maintainer address is again myself instead of Alioth mailing list.
