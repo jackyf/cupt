@@ -11,6 +11,9 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
     - system/resolvers/native:
       - Add an appropriate reason for packages which will be implicitly
         auto-configured.
+  * debian:
+    - control:
+      - Maintainer address is again myself instead of Alioth mailing list.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Mar 2018 20:08:30 +0200
 
