@@ -1,4 +1,4 @@
-cupt (2.10.1~) UNRELEASED; urgency=medium
+cupt (2.10.1) unstable; urgency=medium
 
   * test:
     - t/manage/worker/packages/hooks/pre-install-pkgs/feeding-input.t:
@@ -28,7 +28,7 @@ cupt (2.10.1~) UNRELEASED; urgency=medium
       - Use one-letter name for the build directory, since gpg-agent (used
         in the test suite) has a limit for socket path length.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Fri, 30 Mar 2018 20:08:30 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 28 Apr 2018 11:21:13 +0200
 
 cupt (2.10.0) unstable; urgency=low
 
