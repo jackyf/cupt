@@ -1,4 +1,4 @@
-cupt (2.10.2~) unstable; urgency=medium
+cupt (2.10.2) unstable; urgency=medium
 
   * lib:
     - cache:
@@ -7,7 +7,7 @@ cupt (2.10.2~) unstable; urgency=medium
         than 6 fields for 'ERRSIG' status messages. Thanks to Santiago Vila
         for the report. (Closes: #902457)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 28 Jul 2018 10:57:21 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sat, 28 Jul 2018 11:56:13 +0200
 
 cupt (2.10.1) unstable; urgency=medium
 
