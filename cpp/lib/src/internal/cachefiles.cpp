@@ -439,12 +439,12 @@ bool isNotGoodSignature(const string& alias, const string& messageType, const st
 	else if (messageType == "ERRSIG")
 	{
 		// gpg was not able to verify signature
-		auto parts = split(' ', message); // <keyid> <pkalgo> <hashalgo> <sig_class> <time> <rc>
-		if (parts.size() != 6)
+		const auto parts = split(' ', message); // <keyid> <pkalgo> <hashalgo> <sig_class> <time> <rc> [...]
+		if (parts.size() < 6)
 		{
 			fatal2(__("gpg: '%s': invalid detailed information string '%s'"), alias, message);
 		}
-		const auto& rc = parts.back();
+		const auto& rc = parts[5];
 
 		if (rc == "9")
 		{
