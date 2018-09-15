@@ -29,7 +29,7 @@ Build-Depends:
 Maintainer: Eugene V. Lyubimkin <jackyf@debian.org>
 Homepage: http://wiki.debian.org/Cupt
 Standards-Version: 4.1.3
-Vcs-Git: git://github.com/jackyf/cupt.git
+Vcs-Git: https://github.com/jackyf/cupt.git
 Vcs-Browser: https://github.com/jackyf/cupt/tree/master
 
 Package: cupt-dbg
