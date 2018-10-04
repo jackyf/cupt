@@ -1,8 +1,12 @@
 cupt (2.10.3~) UNRELEASED; urgency=low
 
+  [ Eugene V. Lyubimkin ]
   * debian:
     - control:
       - Use https for Homepage and Vcs-Git fields. Patch by Jelmer Vernooĳ.
+
+  [ Jelmer Vernooĳ ]
+  * Transition to automatic debug package (from: cupt-dbg).
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 23 Sep 2018 13:33:35 +0200
 

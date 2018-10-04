@@ -21,7 +21,7 @@ override_dh_auto_install-indep:
 	install -m644 scripts/logrotate $(CURDIR)/debian/libcupt-common/etc/logrotate.d/cupt
 
 override_dh_strip:
-	dh_strip --dbg-package=cupt-dbg
+	dh_strip --dbgsym-migration='cupt-dbg (<< 2.10.3~)'
 
 %:
 	dh $@ -B${BUILD_DIRECTORY} --parallel --with bash-completion
