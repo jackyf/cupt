@@ -7,6 +7,7 @@ cupt (2.10.3~) UNRELEASED; urgency=low
 
   [ Jelmer Vernooĳ ]
   * Transition to automatic debug package (from: cupt-dbg).
+  * Trim trailing whitespace.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 23 Sep 2018 13:33:35 +0200
 
@@ -596,7 +597,7 @@ cupt (2.6.0) experimental; urgency=low
       - Action preview prompt: removed the 'one expression per line'
         limitation while processing 'a' choice.
       - Action preview prompt: new choice 'rc' ("show reason chain").
-      - The option 'cupt::console::actions-preview::show-summary' got a new 
+      - The option 'cupt::console::actions-preview::show-summary' got a new
         value variant "auto".
       - Warn and require extra confirmation for actions on MultiArch-enabled
         systems. (Closes: #710052)
@@ -607,7 +608,7 @@ cupt (2.6.0) experimental; urgency=low
     - 'shell':
       - Don't rebuild the cache uselessly when a package management action
         was suggested but not confirmed by user.
-    - New 'functional selectors' syntax for advanced version selection. 
+    - New 'functional selectors' syntax for advanced version selection.
     - 'search':
       - New option '--fse'.
     - 'tar-metadata':
@@ -2426,7 +2427,7 @@ cupt (1.1.0) unstable; urgency=high
         'get_source_package_names' method.
       - Create Cupt::Cache::Package objects only by demand. Reduced time to
         build a cache by 5-10%.
-      - 'new': added the switch '-allow-reinstall'. 
+      - 'new': added the switch '-allow-reinstall'.
       - Package:
         - Changed internal structure to hold additonal parameters.
         - [API break] 'o_binary_architecture': removed, not needed anymore.
