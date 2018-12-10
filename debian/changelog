@@ -1,4 +1,4 @@
-cupt (2.10.3~) UNRELEASED; urgency=low
+cupt (2.10.3) unstable; urgency=low
 
   * debian:
     - control:
@@ -9,7 +9,7 @@ cupt (2.10.3~) UNRELEASED; urgency=low
     - t/version.t: allow pluses and letters so the test cases still pass
       for NMUs. (Closes: #914058)
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 23 Sep 2018 13:33:35 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Mon, 10 Dec 2018 21:20:34 +0100
 
 cupt (2.10.2) unstable; urgency=medium
 
