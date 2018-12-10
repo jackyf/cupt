@@ -1,0 +1,5 @@
+# Cupt reads package indices (including the dpkg status file) into memory every
+# time it starts. It's a first-above-dpkg level API. For speed and consistency,
+# scanning the files are done via read-only custom-buffered random access to
+# index files.
+binary: uses-dpkg-database-directly usr/lib/libcupt*so*

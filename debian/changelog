@@ -3,6 +3,8 @@ cupt (2.10.3~) UNRELEASED; urgency=low
   * debian:
     - control:
       - Use https for Homepage and Vcs-Git fields. Patch by Jelmer Vernooĳ.
+    - libcupt4-2.lintian-overrides:
+      - Added to override 'uses-dpkg-database-directly'.
   * test:
     - t/version.t: allow pluses and letters so the test cases still pass
       for NMUs. (Closes: #914058)
