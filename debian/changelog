@@ -3,6 +3,9 @@ cupt (2.10.3~) UNRELEASED; urgency=low
   * debian:
     - control:
       - Use https for Homepage and Vcs-Git fields. Patch by Jelmer Vernooĳ.
+  * test:
+    - t/version.t: allow pluses and letters so the test cases still pass
+      for NMUs. (Closes: #914058)
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 23 Sep 2018 13:33:35 +0200
 

@@ -1,7 +1,7 @@
 use Test::More tests => 3;
 use IPC::Run3;
 
-my $sane_version_regex = qr/2\.\d+\.\d+~?/;
+my $sane_version_regex = qr/2\.\d+\.\d+(~|\w|\+)*/;
 my $cupt = setup();
 
 foreach my $command (qw(version -v --version)) {
