@@ -5,7 +5,7 @@ use warnings;
 
 sub get_shell {
 	my $cupt = shift;
-	return CuptInteractive->new("$cupt shell", 'cupt> ');
+	return CuptInteractive->new("$cupt shell");
 }
 
 sub test_output_identical_with_non_shell {

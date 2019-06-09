@@ -10,7 +10,7 @@ sub new {
 	my $o = {};
 	$o->{_impl} = Expect::Simple->new({
 		'Cmd' => $command,
-		'Prompt' => $prompt,
+		'Prompt' => $prompt//'cupt> ',
 		'DisconnectCmd' => 'q',
 		'Timeout' => '20',
 	});
