@@ -54,7 +54,7 @@ test('the signature is for a different content',
 sub remove_read_permission {
 	my ($variant, undef, undef, $path) = @_;
 	if ($variant eq 'detached') {
-		chmod(0220, $path);
+		chmod(0220, $path) or die("could not remove read permissons from '$path': $!");
 	}
 }
 test('no permissions to read the signature',
