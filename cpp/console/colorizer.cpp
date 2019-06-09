@@ -20,7 +20,27 @@
 
 #include "colorizer.hpp"
 
+namespace {
+
 const string noColor = "\e[0m";
+
+bool guessColorSupport() {
+	if (isatty(STDOUT_FILENO))
+	{
+		const char* term = getenv("TERM");
+		if (term)
+		{
+			if (strcmp(term, "xterm") == 0 || strcmp(term, "linux") == 0)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+}
 
 Colorizer::Colorizer(const Config& config)
 {
@@ -32,18 +52,7 @@ Colorizer::Colorizer(const Config& config)
 	}
 	else // guessing...
 	{
-		__enabled = false;
-		if (isatty(STDOUT_FILENO))
-		{
-			const char* term = getenv("TERM");
-			if (term)
-			{
-				if (strcmp(term, "xterm") == 0 || strcmp(term, "linux") == 0)
-				{
-					__enabled = true;
-				}
-			}
-		}
+		__enabled = guessColorSupport();
 	}
 }
 
