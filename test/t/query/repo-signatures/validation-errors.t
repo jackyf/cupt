@@ -8,28 +8,34 @@ my $expired_keyring = get_keyring_path('expired');
 my $good_keyring_revoked = get_keyring_path('revoke-for-good-1');
 
 sub test {
-	my ($input, $expected_error) = @_;
+	my ($input_desc, $input, $expected_error) = @_;
 
 	my $output = get_output(@$input);
-	subtest $expected_error => sub {
+	subtest "$input_desc -> $expected_error" => sub {
 		unlike($output, qr/Package/, 'validation failed');
 		like($output, qr/$expected_error/m, 'error message is right');
 	}
 }
 
 my $key_not_found_message = "public key '.*' is not found";
-test([[], get_good_signer($good_keyring)] => $key_not_found_message);
-test([[$other_good_keyring], get_good_signer($good_keyring)] => $key_not_found_message);
+test('no keyrings present',
+     [[], get_good_signer($good_keyring)] => $key_not_found_message);
+test('the keyring does not match the signature',
+     [[$other_good_keyring], get_good_signer($good_keyring)] => $key_not_found_message);
 
 my $expired_sig_options = '--faked-system-time 20161020T154812 --default-sig-expire 2016-10-22';
-test([[$good_keyring], get_good_signer($good_keyring, $expired_sig_options)] => "expired signature");
+test('the signature is too old',
+     [[$good_keyring], get_good_signer($good_keyring, $expired_sig_options)] => "expired signature");
 
 my $expired_key_options = '--faked-system-time 20150220T154812';
-test([[$expired_keyring], get_good_signer($expired_keyring, $expired_key_options)] => "expired key");
+test('the key is too old',
+     [[$expired_keyring], get_good_signer($expired_keyring, $expired_key_options)] => "expired key");
 
-test([[$good_keyring_revoked], get_good_signer($good_keyring)] => 'revoked key');
+test('keyring with a revoked key',
+     [[$good_keyring_revoked], get_good_signer($good_keyring)] => 'revoked key');
 
-test([[$good_keyring], \&bad_signer] => 'empty signature');
+test('garbage in the signature file',
+     [[$good_keyring], \&bad_signer] => 'empty signature');
 
 sub other_input_hook {
 	my ($variant, undef, undef, $content) = @_;
@@ -42,7 +48,8 @@ sub other_input_hook {
 		return undef;
 	}
 }
-test([[$good_keyring], get_good_signer($good_keyring), undef, ['input' => \&other_input_hook ]] => 'bad signature');
+test('the signature is for a different content',
+     [[$good_keyring], get_good_signer($good_keyring), undef, ['input' => \&other_input_hook ]] => 'bad signature');
 
 sub remove_read_permission {
 	my ($variant, undef, undef, $path) = @_;
@@ -50,7 +57,8 @@ sub remove_read_permission {
 		chmod(0220, $path);
 	}
 }
-test([[$good_keyring], get_good_signer($good_keyring), ['orig', 'detached'], ['file' => \&remove_read_permission ]] => 'empty signature');
+test('no permissions to read the signature',
+     [[$good_keyring], get_good_signer($good_keyring), ['orig', 'detached'], ['file' => \&remove_read_permission ]] => 'empty signature');
 
 sub unknown_signature_hash_algorighm {
 	my ($variant, undef, undef, $content) = @_;
@@ -58,5 +66,6 @@ sub unknown_signature_hash_algorighm {
 	$content =~ s/^Hash: .*/Hash: SHA377/m;
 	return $content;
 }
-test([[$good_keyring], get_good_signer($good_keyring), ['inline'], ['seal' => \&unknown_signature_hash_algorighm]] =>
+test('unknown hash algorithm',
+     [[$good_keyring], get_good_signer($good_keyring), ['inline'], ['seal' => \&unknown_signature_hash_algorighm]] =>
 		'could not verify a signature');
