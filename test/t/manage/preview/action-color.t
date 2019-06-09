@@ -1,18 +1,7 @@
 use Test::More tests => 14;
-use Term::ANSIColor;
 
 require(get_rinclude_path('actions'));
-
-sub check_color_part {
-	my ($desc, $output, $str, $attrs) = @_;
-
-	my $color_prefix = defined($attrs) ? color($attrs) : '';
-	my $color_suffix = defined($attrs) ? color('reset') : '';
-	my $expected_regex = qr/\Q$color_prefix\E$str\Q$color_suffix\E/;
-	my $printed_attrs = $attrs//'';
-
-	like($output, $expected_regex, "$desc: '$printed_attrs'");
-}
+require(get_rinclude_path('color-check'));
 
 sub test {
 	my ($action, $action_phrase, $phrase_attrs, $package_attrs) = @_;
