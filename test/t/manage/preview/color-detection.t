@@ -38,10 +38,7 @@ test('auto', 1, 'linuzz' => 0);
 test('auto', 1, 'linux' => 1);
 
 test('auto', 1, 'xtermal' => 0);
-TODO: {
-	local $TODO = 'other xterm variants';
-	test('auto', 1, 'xterm-color' => 1);
-	test('auto', 1, 'xterm-256color' => 1);
-	test('auto', 1, 'xterm-qwerty' => 1);
-}
+test('auto', 1, 'xterm-color' => 1);
+test('auto', 1, 'xterm-256color' => 1);
+test('auto', 1, 'xterm-qwerty' => 1);
 

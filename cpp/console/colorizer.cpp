@@ -30,7 +30,9 @@ bool guessColorSupport() {
 		const char* term = getenv("TERM");
 		if (term)
 		{
-			if (strcmp(term, "xterm") == 0 || strcmp(term, "linux") == 0)
+			if (strcmp(term, "xterm") == 0 ||
+				strncmp(term, "xterm-", 6) == 0 ||
+				strcmp(term, "linux") == 0)
 			{
 				return true;
 			}
