@@ -44,16 +44,9 @@ bool guessColorSupport() {
 
 Colorizer::Colorizer(const Config& config)
 {
-	string optionName("cupt::console::use-colors");
-	auto stringEnabledValue = config.getString(optionName);
-	if (stringEnabledValue != "auto")
-	{
-		__enabled = config.getBool(optionName);
-	}
-	else // guessing...
-	{
-		__enabled = guessColorSupport();
-	}
+	const string optionName("cupt::console::use-colors");
+	const auto strValue = config.getString(optionName);
+	__enabled = (strValue == "auto" ? guessColorSupport() : config.getBool(optionName));
 }
 
 string Colorizer::makeBold(const string& input) const
