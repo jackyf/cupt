@@ -1,3 +1,6 @@
+use strict;
+use warnings;
+
 my $apt_keyring_dir = 'etc/apt/trusted.gpg.d/';
 my $apt_keyring_file = 'etc/apt/trusted.gpg';
 
