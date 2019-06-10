@@ -1,4 +1,4 @@
-use Test::More tests => 5 + 5*3 + 7*5;
+use Test::More tests => 5 + 2 + 5*3 + 7*5;
 
 require(get_rinclude_path('common'));
 
@@ -22,6 +22,10 @@ test({'signer'=>\&bad_signer}, 0, 'bad signature, no keyrings');
 test({'keyrings'=>[$keyring1], 'signer'=>\&no_signer}, 0, 'no signature, keyring 1');
 test({'keyrings'=>[$keyring1], 'signer'=>\&bad_signer}, 0, 'bad signature, keyring 1');
 test({'keyrings'=>[$keyring1, $keyring2], 'signer'=>\&bad_signer}, 0, 'bad signature, keyring 1+2');
+
+test({'signer'=>\&bad_signer, 'trusted'=>1}, 1, 'bad signatures, no keyrings, but marked as trusted');
+test({'keyrings'=>[$keyring1], 'signer'=>get_good_signer($keyring1), 'trusted'=>0}, 0,
+	'good signature, good keyring, but marked as untrusted');
 
 sub test_good_signer {
 	my ($files, $key, $expected_result, $desc) = @_;

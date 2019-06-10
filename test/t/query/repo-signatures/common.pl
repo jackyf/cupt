@@ -37,12 +37,13 @@ sub get_output {
 	my $signer = $params{'signer'};
 	my $sign_variants = $params{'sign-variants'}//['orig','detached'];
 	my $hooks = $params{'hooks'}//[];
+	my $trusted = $params{'trusted'}//'check';
 
 	my $cupt = setup(
 		'releases' => [
 			{
 				'packages' => [ compose_package_record('p', 1) ],
-				'trusted' => 'check',
+				'trusted' => $trusted,
 				'hooks' => {
 					'sign' => {
 						'input' => get_variant_filter_hook($sign_variants),
