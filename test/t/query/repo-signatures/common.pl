@@ -31,8 +31,12 @@ sub get_variant_filter_hook {
 }
 
 sub get_output {
-	my ($files, $signer, $sign_variants, $hooks) = @_;
-	$sign_variants //= ['orig','detached'];
+	my %params = %{shift()};
+
+	my $keyrings = $params{'keyrings'}//[];
+	my $signer = $params{'signer'};
+	my $sign_variants = $params{'sign-variants'}//['orig','detached'];
+	my $hooks = $params{'hooks'}//[];
 
 	my $cupt = setup(
 		'releases' => [
@@ -51,9 +55,9 @@ sub get_output {
 	);
 
 	mkdir $apt_keyring_dir or die;
-	link_keyring($files->[0] => $apt_keyring_file);
-	link_keyring($files->[1] => "$apt_keyring_dir/first.gpg");
-	link_keyring($files->[2] => "$apt_keyring_dir/second.gpg");
+	link_keyring($keyrings->[0] => $apt_keyring_file);
+	link_keyring($keyrings->[1] => "$apt_keyring_dir/first.gpg");
+	link_keyring($keyrings->[2] => "$apt_keyring_dir/second.gpg");
 
 	return stdall("$cupt show 'trusted()'");
 }
