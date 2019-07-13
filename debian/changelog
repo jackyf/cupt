@@ -2,6 +2,10 @@ cupt (2.10.4~) UNRELEASED; urgency=low
 
   * console:
     - Auto-detect color support for more variants of 'xterm'-terminals.
+  * lib:
+    - cache:
+      - Parsing sources.list records: fix parsing option values containing
+        commas.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Jun 2019 12:42:22 +0200
 

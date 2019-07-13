@@ -37,10 +37,7 @@ sub test_bad {
 test_good('');
 test_good('[ abc=xcv ]');
 test_good('[ abc=def uio=a8 ]');
-TODO: {
-	local $TODO = 'broken';
-	test_good('[ abc=aaa,bbb,7 ]');
-}
+test_good('[ abc=aaa,bbb,7 ]');
 test_good('[ YuP=nMp ]');
 
 test_unrecognised('[]');

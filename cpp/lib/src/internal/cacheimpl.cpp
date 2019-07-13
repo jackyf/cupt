@@ -299,7 +299,7 @@ static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry*
 	for (auto it = openingBracketTokenIt+1; it != closingBracketTokenIt; ++it)
 	{
 		const string& token = *it;
-		parse::processSpaceCharSpaceDelimitedStrings(token.begin(), token.end(), ',', [&entry](auto from, auto to) {
+		parse::processSpaceCharSpaceDelimitedStrings(token.begin(), token.end(), ' ', [&entry](auto from, auto to) {
 			auto keyValueDelimiterPosition = std::find(from, to, '=');
 			if (keyValueDelimiterPosition == to)
 			{

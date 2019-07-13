@@ -257,7 +257,7 @@ sub get_sources_list_option_string_predefined {
 	}
 
 	if (scalar @parts) {
-		return "[ " . join(',', @parts) . " ]";
+		return "[ " . join(' ', @parts) . " ]";
 	} else {
 		return '';
 	}
