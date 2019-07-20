@@ -1,4 +1,4 @@
-use Test::More tests => 17;
+use Test::More tests => 17 + 4;
 
 require(get_rinclude_path('FSE'));
 
@@ -37,4 +37,10 @@ eis($cupt, "or(or($pa,$pb), or($pb,$pc))", qw(a b c));
 eis($cupt, "and(not($pa), not($pb), not($pc))", qw(d));
 
 eis($cupt, "$pa & with(_v, $pa, _v)", qw(a));
+
+
+eis($cupt, "$pa | $pb | $pc", qw(a b c));
+eis($cupt, "$pa & $pb & $pc", qw());
+eis($cupt, "$pa & $pb | $pc", qw(c));
+eis($cupt, "$pa | $pb & $pc", qw(a));
 
