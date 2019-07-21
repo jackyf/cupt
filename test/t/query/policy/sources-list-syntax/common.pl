@@ -6,7 +6,14 @@ use warnings;
 sub run_case_raw {
 	my ($desc, $hook, $success, $output_regex, $error_regex) = @_;
 
-	my $re = {'archive' => 'bozon', 'sources' => [], 'line-hook' => $hook};
+	my $source_list_lines = "";
+	my $wrapped_hook = sub {
+		my $result = $hook->($_[0]);
+		$source_list_lines .= $result;
+		return $result;
+	};
+
+	my $re = {'archive' => 'bozon', 'sources' => [], 'line-hook' => $wrapped_hook};
 	my $cupt = setup('releases' => [$re]);
 	run3("$cupt policysrc", \undef, \my $stdout, \my $stderr);
 	my $exitcode = $?;
@@ -34,7 +41,7 @@ sub run_case_raw {
 		} else {
 			like($stderr, qr/\n*/, 'no errors/warnings');
 		}
-	};
+	} or diag($source_list_lines);
 }
 
 1;
