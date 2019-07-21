@@ -18,6 +18,7 @@ sub run_case_raw {
 	run3("$cupt policysrc", \undef, \my $stdout, \my $stderr);
 	my $exitcode = $?;
 
+	my $orig_stdall = $stdout . $stderr;
 	$stdout =~ s/^Source files:$//m; # only keep release lines
 	$stderr =~ s/^.*signature.*$//mg; # ignore a warning no longer suppressed by the default option
 
@@ -41,7 +42,7 @@ sub run_case_raw {
 		} else {
 			like($stderr, qr/\n*/, 'no errors/warnings');
 		}
-	} or diag($source_list_lines);
+	} or diag("In:\n\n$source_list_lines\n\nOut:\n\n$orig_stdall");
 }
 
 1;
