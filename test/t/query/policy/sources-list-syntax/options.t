@@ -1,27 +1,24 @@
 use Test::More tests => 5 + 5 + 4;
 
-use IPC::Run3;
+require(get_rinclude_path('common'));
 
 sub run_case {
-	my ($line, $success, $recognised, $stderr_regex) = @_;
+	my ($opts, $success, $recognised, $error_regex) = @_;
 
-	my $hook = sub { return $line };
-	my $re = {'archive' => 'bozon', 'sources' => [], 'options-hook' => $hook};
-	my $cupt = setup('releases' => [$re]);
-	run3("$cupt policysrc", \undef, \my $stdout, \my $stderr);
-
-	$stdout =~ s/^Source files:$//m; # only keep release lines
-	$stderr =~ s/^.*signature.*$//mg; # ignore a warning no longer suppressed by the default option
-
-	subtest "$line => ($success, $recognised)" => sub {
-		($success ? \&is : \&isnt)->($?, '0', 'exit code');
-		like($stdout, $recognised ? qr/bozon/ : qr/^$/s);
-		like($stderr, $stderr_regex, 'errors/warnings');
+	my $hook = sub {
+		my $line = shift;
+		$line =~ s/\[.*\]//;
+		$line =~ s/ / $opts/;
+		return $line;
 	};
+
+	my $desc = "$opts => ($success, $recognised)";
+	my $output_regex = $recognised ? qr// : undef;
+	run_case_raw($desc, $hook => $success, $output_regex, $error_regex); 
 };
 
 sub test_good {
-	run_case(@_, 1, 1, qr/^$/);
+	run_case(@_, 1, 1, undef);
 }
 
 sub test_unrecognised {

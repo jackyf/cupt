@@ -241,7 +241,7 @@ sub generate_deb_caches {
 my $default_scheme = 'copy';
 my $default_server = './localrepo';
 
-sub get_sources_list_option_string_predefined {
+sub get_sources_list_option_string {
 	my $e = shift;
 
 	my @parts;
@@ -261,18 +261,6 @@ sub get_sources_list_option_string_predefined {
 	} else {
 		return '';
 	}
-}
-
-sub get_sources_list_option_string {
-	my $e = shift;
-
-	my $result = get_sources_list_option_string_predefined($e);
-	if (defined $e->{'options-hook'}) {
-		$result = $e->{'options-hook'}->($result);
-	}
-	$result =~ s/ ?$/ /;
-
-	return $result;
 }
 
 sub fill_hook {
@@ -564,7 +552,7 @@ sub generate_sources_list {
 		};
 
 		my $common_line = get_sources_list_option_string($e);
-		$common_line .= "$e->{scheme}://$e->{server} $e->{archive}";
+		$common_line .= " $e->{scheme}://$e->{server} $e->{archive}";
 
 		my @components = $get_components_for->('packages');
 		if (@components) {
@@ -574,6 +562,11 @@ sub generate_sources_list {
 		@components = $get_components_for->('sources');
 		if (@components) {
 			$result .= "deb-src $common_line @components\n";
+		}
+
+		if (defined $e->{'line-hook'}) {
+			my $hook = $e->{'line-hook'};
+			$result =~ s/^(.*?)$/$hook->($1)/mge;
 		}
 	}
 	generate_file('etc/apt/sources.list', $result);
