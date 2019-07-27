@@ -394,23 +394,37 @@ sub local_ps_callback {
 	}
 }
 
-sub remote_ps_callback {
-	my ($kind, $entry, $content) = @_;
-	my %e = %{$entry->{release}};
-	my $component = $entry->{component};
+sub is_easy_entry {
+	my $entry = shift;
+	return $entry->{release}->{archive} =~ m%/%;
+}
 
-	my $subpath;
-	if ($kind =~ m/Release/) {
-		$subpath = $kind;
+sub get_remote_subpath {
+	my ($kind, $entry) = @_;
+	my %e = %{$entry->{release}};
+
+	my $component = $entry->{component};
+	if (is_easy_entry($entry)) {
+		return $kind;
+	} elsif ($kind =~ m/Release/) {
+		return $kind;
 	} elsif ($kind =~ m/Packages/) {
-		$subpath = "$component/binary-$e{architecture}/$kind";
+		return "$component/binary-$e{architecture}/$kind";
 	} elsif ($kind eq 'Sources') {
-		$subpath = "$component/source/$kind";
+		return "$component/source/$kind";
 	} elsif ($kind =~ m/Translation/) {
-		$subpath = "$component/i18n/$kind";
+		return "$component/i18n/$kind";
 	} else {
 		die "wrong kind $kind";
 	}
+
+}
+
+sub remote_ps_callback {
+	my ($kind, $entry, $content) = @_;
+	my %e = %{$entry->{release}};
+
+	my $subpath = get_remote_subpath($kind, $entry);
 
 	if (defined $content) {
 		my $section = ($kind =~ /diff/ and $kind !~ m/Index$/) ? '_diff_files' : '_ps_files';
@@ -421,7 +435,11 @@ sub remote_ps_callback {
 		};
 	}
 
-	return "$e{hostname}/dists/$e{archive}/$subpath";
+	if (is_easy_entry($entry)) {
+		return "$e{hostname}/$e{archive}/$subpath";
+	} else {
+		return "$e{hostname}/dists/$e{archive}/$subpath";
+	}
 }
 
 sub join_records_if_needed {
