@@ -32,8 +32,8 @@
 #include <internal/cacheimpl.hpp>
 #include <internal/filesystem.hpp>
 #include <internal/pininfo.hpp>
-#include <internal/tagparser.hpp>
 #include <internal/regex.hpp>
+#include <internal/tagparser.hpp>
 #include <internal/parse.hpp>
 #include <internal/cachefiles.hpp>
 #include <internal/indexofindex.hpp>
@@ -284,19 +284,41 @@ void stripComment(string& s)
 	}
 }
 
-static void parseSourceListType(vector<string> const& tokens, Cache::IndexEntry* entry)
+static const char sourceLineTokenSeparator[] = "[\\t ]+";
+
+static sregex getSourceLineRegex() {
+	const string separator = sourceLineTokenSeparator;
+	const char token[] = "(.+?)";
+
+	const auto makeOptional = [](const string& s)
+	{
+		return format2("(?:%s)?", s);
+	};
+
+	const string type = makeOptional(token);
+	const string options = makeOptional(format2("%s\\[%s\\]", separator, token));
+	const string uri = makeOptional(separator+token);
+	const string dist = makeOptional(separator+token);
+	const string components = makeOptional(separator+token);
+	const string appendix = makeOptional(separator);
+
+	const string lineRegexString = type + options + uri + dist + components + appendix;
+	return sregex::compile(lineRegexString);
+}
+
+static void parseSourceListType(ssub_match const& type, Cache::IndexEntry* entry)
 {
-	if (tokens.empty())
+	if (!type.matched)
 	{
 		fatal2(__("undefined source type"));
 	}
 	else
 	{
-		if (tokens[0] == "deb")
+		if (type == "deb")
 		{
 			entry->category = Cache::IndexEntry::Binary;
 		}
-		else if (tokens[0] == "deb-src")
+		else if (type == "deb-src")
 		{
 			entry->category = Cache::IndexEntry::Source;
 		}
@@ -307,43 +329,33 @@ static void parseSourceListType(vector<string> const& tokens, Cache::IndexEntry*
 	}
 }
 
-static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry* entry)
+static void parseOutKeyValueOptions(ssub_match const& options, Cache::IndexEntry* entry)
 {
-	if (tokens.size() < 2) return;
-	auto openingBracketTokenIt = tokens.begin() + 1;
-	if (*openingBracketTokenIt != "[") return;
+	if (!options.matched) return;
 
-	auto closingBracketTokenIt = std::find(openingBracketTokenIt+1, tokens.end(), "]");
-	if (closingBracketTokenIt == tokens.end())
+	static const auto splitRegex = sregex::compile(sourceLineTokenSeparator);
+	for (const auto& option: internal::rsplit(splitRegex, {options.first, options.second}))
 	{
-		fatal2(__("no closing token (']') for options"));
-	}
+		if (option.length() == 0) continue;
 
-	for (auto it = openingBracketTokenIt+1; it != closingBracketTokenIt; ++it)
-	{
-		const string& token = *it;
-		parse::processSpaceCharSpaceDelimitedStrings(token.begin(), token.end(), ' ', [&entry](auto from, auto to) {
-			auto keyValueDelimiterPosition = std::find(from, to, '=');
-			if (keyValueDelimiterPosition == to)
-			{
-				fatal2(__("no key-value separator ('=') in the option token '%s'"), std::string(from, to));
-			}
-			entry->options[string(from, keyValueDelimiterPosition)] = string(keyValueDelimiterPosition+1, to);
-		});
+		auto keyValueDelimiterPosition = std::find(option.first, option.second, '=');
+		if (keyValueDelimiterPosition == option.second)
+		{
+			fatal2(__("no key-value separator ('=') in the option token '%s'"), option.str());
+		}
+		entry->options[string(option.first, keyValueDelimiterPosition)] = string(keyValueDelimiterPosition+1, option.second);
 	}
-
-	tokens.erase(openingBracketTokenIt, closingBracketTokenIt+1);
 }
 
-static void parseSourceListUri(vector<string> const& tokens, Cache::IndexEntry* entry)
+static void parseSourceListUri(ssub_match const& uri, Cache::IndexEntry* entry)
 {
-	if (tokens.size() < 2)
+	if (!uri.matched)
 	{
 		fatal2(__("undefined source uri"));
 	}
 	else
 	{
-		entry->uri = tokens[1];
+		entry->uri = uri;
 	}
 
 	if (*entry->uri.rbegin() == '/')
@@ -352,28 +364,29 @@ static void parseSourceListUri(vector<string> const& tokens, Cache::IndexEntry* 
 	}
 }
 
-static void parseSourceListDistribution(vector<string> const& tokens, Cache::IndexEntry* entry)
+static void parseSourceListDistribution(ssub_match const& dist, Cache::IndexEntry* entry)
 {
-	if (tokens.size() < 3)
+	if (!dist.matched)
 	{
 		fatal2(__("undefined source distribution"));
 	}
 	else
 	{
-		entry->distribution = tokens[2];
+		entry->distribution = dist;
 	}
 }
 
-static vector<string> parseSourceListComponents(vector<string> const& tokens, Cache::IndexEntry* entry)
+static vector<string> parseSourceListComponents(ssub_match const& components, Cache::IndexEntry* entry)
 {
-	if (tokens.size() > 3)
+	if (components.matched)
 	{
 		// there are components (sections) specified, it's a normal entry
+		static const auto splitRegex = sregex::compile(sourceLineTokenSeparator);
 		vector<string> result;
-		for_each(tokens.begin() + 3, tokens.end(), [&result](const string& component)
+		for (auto const& token: internal::rsplit(splitRegex, {components.first, components.second}))
 		{
-			result.push_back(component);
-		});
+			result.push_back(token);
+		}
 		return result;
 	}
 	else
@@ -394,18 +407,21 @@ static vector<string> parseSourceListComponents(vector<string> const& tokens, Ca
 
 static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
 {
-	vector< string > tokens;
-	static const sregex tokenRegex = sregex::compile("[\\t ]+");
-	tokens = internal::split(tokenRegex, line);
+	static const sregex lineRegex = getSourceLineRegex();
+
+	smatch m;
+	if (!regex_match(line, m, lineRegex)) {
+		fatal2i("parsing a source list line '%s': regular expression should have matched anything", line);
+	}
 
 	Cache::IndexEntry entry;
 
-	parseSourceListType(tokens, &entry);
-	parseOutKeyValueOptions(tokens, &entry);
-	parseSourceListUri(tokens, &entry);
-	parseSourceListDistribution(tokens, &entry);
+	parseSourceListType(m[1], &entry);
+	parseOutKeyValueOptions(m[2], &entry);
+	parseSourceListUri(m[3], &entry);
+	parseSourceListDistribution(m[4], &entry);
 
-	for (auto&& component: parseSourceListComponents(tokens, &entry))
+	for (auto&& component: parseSourceListComponents(m[5], &entry))
 	{
 		entry.component = std::move(component);
 		indexEntries->push_back(entry);

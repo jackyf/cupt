@@ -6,6 +6,8 @@ cupt (2.10.4~) UNRELEASED; urgency=low
     - cache:
       - Parsing sources.list records: fix parsing option values containing
         commas.
+      - Parsing sources.list records: fix parsing options where there is
+        no whitespace between '[' and the option key.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Jun 2019 12:42:22 +0200
 

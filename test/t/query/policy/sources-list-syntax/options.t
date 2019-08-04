@@ -1,4 +1,4 @@
-use Test::More tests => 5 + 5 + 4;
+use Test::More tests => 6 + 7 + 1;
 
 require(get_rinclude_path('common'));
 
@@ -36,16 +36,15 @@ test_good('[ abc=xcv ]');
 test_good('[ abc=def uio=a8 ]');
 test_good('[ abc=aaa,bbb,7 ]');
 test_good('[ YuP=nMp ]');
+test_good('[abc=xcv]');
 
 test_unrecognised('[]');
-test_unrecognised('[abc=xcv]');
 test_unrecognised('{ x=0 }');
 test_unrecognised('{ x=0 ]');
 test_unrecognised(']');
+test_unrecognised('[');
+test_unrecognised('[ x=0 }');
+test_unrecognised('[ xxx=w');
 
-my $nct = "no closing token (']') for options";
-test_bad('[', $nct);
-test_bad('[ x=0 }', $nct);
-test_bad('[ xxx=w', $nct);
 test_bad('[ abc ]', "no key-value separator ('=') in the option token 'abc'");
 
