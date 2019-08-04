@@ -20,6 +20,8 @@
 
 #include <common/regex.hpp>
 
+#include <cupt/common.hpp>
+
 namespace cupt {
 namespace internal {
 
@@ -32,7 +34,7 @@ RegexT stringToRegex(const string& input)
 	{
 		return RegexT::compile(input);
 	}
-	catch (regex_error& e)
+	catch (const regex_error&)
 	{
 		fatal2(__("invalid regular expression '%s'"), input);
 	}
