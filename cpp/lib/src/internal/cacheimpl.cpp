@@ -352,6 +352,18 @@ static void parseSourceListUri(vector<string> const& tokens, Cache::IndexEntry* 
 	}
 }
 
+static void parseSourceListDistribution(vector<string> const& tokens, Cache::IndexEntry* entry)
+{
+	if (tokens.size() < 3)
+	{
+		fatal2(__("undefined source distribution"));
+	}
+	else
+	{
+		entry->distribution = tokens[2];
+	}
+}
+
 static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
 {
 	vector< string > tokens;
@@ -363,15 +375,7 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 	parseSourceListType(tokens, &entry);
 	parseOutKeyValueOptions(tokens, &entry);
 	parseSourceListUri(tokens, &entry);
-
-	if (tokens.size() < 3)
-	{
-		fatal2(__("undefined source distribution"));
-	}
-	else
-	{
-		entry.distribution = tokens[2];
-	}
+	parseSourceListDistribution(tokens, &entry);
 
 	if (tokens.size() > 3)
 	{
