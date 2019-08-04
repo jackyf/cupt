@@ -364,6 +364,34 @@ static void parseSourceListDistribution(vector<string> const& tokens, Cache::Ind
 	}
 }
 
+static vector<string> parseSourceListComponents(vector<string> const& tokens, Cache::IndexEntry* entry)
+{
+	if (tokens.size() > 3)
+	{
+		// there are components (sections) specified, it's a normal entry
+		vector<string> result;
+		for_each(tokens.begin() + 3, tokens.end(), [&result](const string& component)
+		{
+			result.push_back(component);
+		});
+		return result;
+	}
+	else
+	{
+		// this a candidate for easy entry; distribution must end with a slash
+		if (*entry->distribution.rbegin() == '/')
+		{
+			entry->distribution.erase(entry->distribution.end() - 1); // strip last '/' if present
+		}
+		else
+		{
+			fatal2(__("distribution doesn't end with a slash"));
+		}
+
+		return { "" };
+	}
+}
+
 static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
 {
 	vector< string > tokens;
@@ -377,29 +405,10 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 	parseSourceListUri(tokens, &entry);
 	parseSourceListDistribution(tokens, &entry);
 
-	if (tokens.size() > 3)
+	for (auto&& component: parseSourceListComponents(tokens, &entry))
 	{
-		// there are components (sections) specified, it's a normal entry
-		for_each(tokens.begin() + 3, tokens.end(), [&indexEntries, &entry](const string& component)
-		{
-			entry.component = component;
-			indexEntries->push_back(entry);
-		});
-	}
-	else
-	{
-		// this a candidate for easy entry
-		// distribution must end with a slash
-		if (*entry.distribution.rbegin() == '/')
-		{
-			entry.distribution.erase(entry.distribution.end() - 1); // strip last '/' if present
-			entry.component = "";
-			indexEntries->push_back(entry);
-		}
-		else
-		{
-			fatal2(__("distribution doesn't end with a slash"));
-		}
+		entry.component = std::move(component);
+		indexEntries->push_back(entry);
 	}
 }
 
