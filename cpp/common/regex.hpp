@@ -25,6 +25,7 @@ namespace cupt {
 using boost::xpressive::sregex;
 using boost::xpressive::sregex_token_iterator;
 using boost::xpressive::smatch;
+using boost::xpressive::ssub_match;
 
 using boost::xpressive::cregex;
 using boost::xpressive::cmatch;

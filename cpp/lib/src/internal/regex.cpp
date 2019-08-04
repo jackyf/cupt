@@ -21,10 +21,18 @@
 namespace cupt {
 namespace internal {
 
-vector< string > split(const sregex& regex, const string& str)
+vector<string> split(const sregex& regex, const string& str) {
+	vector<string> result;
+	for (auto const& token: rsplit(regex, {str.cbegin(), str.cend()})) {
+		result.push_back(token.str());
+	}
+	return result;
+}
+
+vector<ssub_match> rsplit(const sregex& regex, const Range<string::const_iterator> range)
 {
-	vector< string > result;
-	sregex_token_iterator tokenIterator(str.begin(), str.end(), regex, -1);
+	vector<ssub_match> result;
+	sregex_token_iterator tokenIterator(range.begin(), range.end(), regex, -1);
 	sregex_token_iterator end;
 	std::copy(tokenIterator, end, std::back_inserter(result));
 	return result;

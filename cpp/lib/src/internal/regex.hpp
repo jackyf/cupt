@@ -21,11 +21,13 @@
 #include <common/regex.hpp>
 
 #include <cupt/common.hpp>
+#include <cupt/range.hpp>
 
 namespace cupt {
 namespace internal {
 
-vector< string > split(const sregex&, const string&);
+vector<string> split(const sregex&, const string&);
+vector<ssub_match> rsplit(const sregex&, Range<string::const_iterator>);
 
 template< typename RegexT >
 RegexT stringToRegex(const string& input)
