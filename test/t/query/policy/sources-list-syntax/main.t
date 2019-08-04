@@ -1,4 +1,4 @@
-use Test::More tests => 6 + 2 + 3 + 3 + 4;
+use Test::More tests => 6 + 6 + 2 + 3 + 3 + 4;
 
 require(get_rinclude_path('common'));
 
@@ -44,6 +44,10 @@ sub set_dist_and_comps {
 	my $dc = "file:///unk $dist";
 	return sub { return $_[0] =~ s/ .*/ $dc/r; };
 }
+sub set_separator {
+	my $sep = shift;
+	return sub { return $_[0] =~ s/ /$sep/gr; }
+}
 
 test_nooutput('empty line', set_line(''));
 test_nooutput('whitespaces', set_line('   '));
@@ -51,6 +55,13 @@ test_nooutput('comment', set_line('# qwe'));
 test_nooutput('whitespaces plus comment', set_line('   #Y!'));
 test_valid_same('whitespace after a full line', append("  \t "));
 test_valid_same('comment after a full line', append('# cheeeeese'));
+
+test_valid_same('separated by spaces', set_separator(' '));
+test_valid_same('separated by tabs', set_separator("\t"));
+test_invalid('separated by vertical tabs', set_separator("\x0B"));
+test_invalid('separated by random character', set_separator('|'));
+test_valid_same('separated by several good characters', set_separator(" \t"));
+test_valid_different('separated by several bad characters', set_separator(" 4\t"));
 
 test_invalid('only one token', set_line('deb-src') => qr/undefined source uri/);
 test_invalid('only two tokens', set_line('deb-src file:///abc') => qr/undefined source distribution/);
