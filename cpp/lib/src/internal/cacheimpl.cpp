@@ -335,6 +335,23 @@ static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry*
 	tokens.erase(openingBracketTokenIt, closingBracketTokenIt+1);
 }
 
+static void parseSourceListUri(vector<string> const& tokens, Cache::IndexEntry* entry)
+{
+	if (tokens.size() < 2)
+	{
+		fatal2(__("undefined source uri"));
+	}
+	else
+	{
+		entry->uri = tokens[1];
+	}
+
+	if (*entry->uri.rbegin() == '/')
+	{
+		entry->uri.erase(entry->uri.end() - 1); // strip last '/' if present
+	}
+}
+
 static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
 {
 	vector< string > tokens;
@@ -345,16 +362,7 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 
 	parseSourceListType(tokens, &entry);
 	parseOutKeyValueOptions(tokens, &entry);
-
-	// uri
-	if (tokens.size() < 2)
-	{
-		fatal2(__("undefined source uri"));
-	}
-	else
-	{
-		entry.uri = tokens[1];
-	}
+	parseSourceListUri(tokens, &entry);
 
 	if (tokens.size() < 3)
 	{
@@ -363,11 +371,6 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 	else
 	{
 		entry.distribution = tokens[2];
-	}
-
-	if (*entry.uri.rbegin() == '/')
-	{
-		entry.uri.erase(entry.uri.end() - 1); // strip last '/' if present
 	}
 
 	if (tokens.size() > 3)
