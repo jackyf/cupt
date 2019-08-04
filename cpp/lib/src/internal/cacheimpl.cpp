@@ -284,6 +284,29 @@ void stripComment(string& s)
 	}
 }
 
+static void parseSourceListType(vector<string> const& tokens, Cache::IndexEntry* entry)
+{
+	if (tokens.empty())
+	{
+		fatal2(__("undefined source type"));
+	}
+	else
+	{
+		if (tokens[0] == "deb")
+		{
+			entry->category = Cache::IndexEntry::Binary;
+		}
+		else if (tokens[0] == "deb-src")
+		{
+			entry->category = Cache::IndexEntry::Source;
+		}
+		else
+		{
+			fatal2(__("incorrect source type"));
+		}
+	}
+}
+
 static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry* entry)
 {
 	if (tokens.size() < 2) return;
@@ -320,27 +343,7 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 
 	Cache::IndexEntry entry;
 
-	// type
-	if (tokens.empty())
-	{
-		fatal2(__("undefined source type"));
-	}
-	else
-	{
-		if (tokens[0] == "deb")
-		{
-			entry.category = Cache::IndexEntry::Binary;
-		}
-		else if (tokens[0] == "deb-src")
-		{
-			entry.category = Cache::IndexEntry::Source;
-		}
-		else
-		{
-			fatal2(__("incorrect source type"));
-		}
-	}
-
+	parseSourceListType(tokens, &entry);
 	parseOutKeyValueOptions(tokens, &entry);
 
 	// uri
