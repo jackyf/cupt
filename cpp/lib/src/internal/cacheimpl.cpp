@@ -314,13 +314,11 @@ static void parseOutKeyValueOptions(vector< string >& tokens, Cache::IndexEntry*
 
 static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >* indexEntries)
 {
-	typedef Cache::IndexEntry IndexEntry;
-
 	vector< string > tokens;
 	static const sregex tokenRegex = sregex::compile("[\\t ]+");
 	tokens = internal::split(tokenRegex, line);
 
-	IndexEntry entry;
+	Cache::IndexEntry entry;
 
 	// type
 	if (tokens.empty())
@@ -331,11 +329,11 @@ static void parseSourceListLine(const string& line, vector< Cache::IndexEntry >*
 	{
 		if (tokens[0] == "deb")
 		{
-			entry.category = IndexEntry::Binary;
+			entry.category = Cache::IndexEntry::Binary;
 		}
 		else if (tokens[0] == "deb-src")
 		{
-			entry.category = IndexEntry::Source;
+			entry.category = Cache::IndexEntry::Source;
 		}
 		else
 		{
