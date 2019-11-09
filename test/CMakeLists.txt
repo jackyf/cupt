@@ -1,5 +1,3 @@
-cmake_policy(SET CMP0037 OLD)
-
 set(SDIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_custom_target(
 	test

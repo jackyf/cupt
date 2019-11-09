@@ -8,6 +8,9 @@ cupt (2.10.4~) UNRELEASED; urgency=low
         commas.
       - Parsing sources.list records: fix parsing options where there is
         no whitespace between '[' and the option key.
+  * cmakelists:
+    - Remove explicit setting of the policy CMP0037. Presumably, since
+      CMake 3.11 the target 'test' is no longer auto-reserved.
 
  -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Jun 2019 12:42:22 +0200
 
