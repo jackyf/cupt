@@ -568,8 +568,7 @@ void verifyReleaseValidityDate(const string& date, const Config& config, const s
 	}
 }
 
-shared_ptr< cache::ReleaseInfo > getReleaseInfo(const Config& config,
-		const string& path, const string& alias)
+shared_ptr< cache::ReleaseInfo > getReleaseInfo(const string& path, const string& alias)
 {
 	shared_ptr< cache::ReleaseInfo > result(new cache::ReleaseInfo);
 	result->notAutomatic = false; // default

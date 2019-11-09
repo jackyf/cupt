@@ -602,7 +602,7 @@ shared_ptr<ReleaseInfo> getReleaseInfoNotCached(const Config& config, const Cach
 	}
 	else
 	{
-		auto result = cachefiles::getReleaseInfo(config, path, alias);
+		auto result = cachefiles::getReleaseInfo(path, alias);
 		validateValidUntil(config, indexEntry, *result, alias);
 		result->verified = getVerifiedBitForIndexEntry(indexEntry, config, path, alias);
 		return result;

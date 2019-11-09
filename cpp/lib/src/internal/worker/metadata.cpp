@@ -207,14 +207,13 @@ std::function< string() > combineDownloadPostActions(
 	};
 }
 
-std::function< string() > getReleaseCheckPostAction(
-		const Config& config, const string& path, const string&)
+std::function< string() > getReleaseCheckPostAction(const Config&, const string& path, const string&)
 {
-	return [&config, path]() -> string
+	return [path]() -> string
 	{
 		try
 		{
-			cachefiles::getReleaseInfo(config, path, path);
+			cachefiles::getReleaseInfo(path, path);
 		}
 		catch (Exception& e)
 		{
