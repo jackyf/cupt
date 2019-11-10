@@ -1,4 +1,4 @@
-cupt (2.10.4~) UNRELEASED; urgency=low
+cupt (2.10.4) unstable; urgency=low
 
   * console:
     - Auto-detect color support for more variants of 'xterm'-terminals.
@@ -12,7 +12,7 @@ cupt (2.10.4~) UNRELEASED; urgency=low
     - Remove explicit setting of the policy CMP0037. Presumably, since
       CMake 3.11 the target 'test' is no longer auto-reserved.
 
- -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 09 Jun 2019 12:42:22 +0200
+ -- Eugene V. Lyubimkin <jackyf@debian.org>  Sun, 10 Nov 2019 10:53:34 +0100
 
 cupt (2.10.3) unstable; urgency=low
 
